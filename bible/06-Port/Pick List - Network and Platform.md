@@ -97,7 +97,7 @@ Server side lands as a Rust rebuild with DFO as the specification; client side a
 | `scripts/desktopRelease`, `buildTag`, `updateNumber`, `updateLine`, `firstVisitPins`, `noTopLevelAwait`, `openFileLimit`, `landingHtml`, `makeIcons`, `forgeWebp`, `artIndex`, `studioArtIndex` | Build and release scripts: version stamps, installers, landing page, icons | Tooling | Clean | TS port | No game data. | M | `scripts/desktopRelease.mjs` |
 | `scripts/steNotes.mjs`, `leanBundle.mjs` | STE patch-notes checker; bundle author-name scrub | Tooling | Clean | Practice | `steNotes` carries as-is; `leanBundle` enforces a DFU/mod credit rule. | S | `scripts/steNotes.mjs` |
 | `scripts/bakeBooks.mjs`, `bakeSettings.mjs`, `bakeSettingsText.mjs` | Bake DFU's MIT books, settings defaults, settings text | Tooling | Can't | — | Exist to import Daggerfall Unity vendor data. | — | `scripts/bakeBooks.mjs` |
-| `scripts/bakeWindmill.mjs`, `bakeWindmillInterior.mjs` | Bake the windmills mod's rotor and farm interior | Content | Can't | — | Port of a mod's geometry, from its vendor folder; the windmills are open ([[Open Questions]]). | — | `scripts/bakeWindmill.mjs` |
+| `scripts/bakeWindmill.mjs`, `bakeWindmillInterior.mjs` | Bake the windmills mod's rotor and farm interior | Content | Can't | — | Port of a mod's geometry, from its vendor folder; the windmills stay; we design our own ([[Which Made-for-DFO Mods Come Over]]). | — | `scripts/bakeWindmill.mjs` |
 
 ## Unmerged work in this area
 

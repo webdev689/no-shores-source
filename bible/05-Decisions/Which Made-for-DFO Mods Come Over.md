@@ -12,6 +12,8 @@ status: in force
 > 4. Warm ashes yes
 > 5. Enemy expansion no"
 
+> On World of Daggerfall and the windmills: "No. We can design our own elements"
+
 ## What it settles
 
 | Mod | Outcome |
@@ -21,8 +23,9 @@ status: in force
 | Raiding Parties | Comes over |
 | Warm Ashes ships (ship encounters, ocean travel) | Comes over |
 | Enemy Expansion | Stays |
+| World of Daggerfall | Stays; we design our own elements |
+| The windmills | Stay; we design our own elements |
 
 - "Comes over" means the design and the geometry, rebuilt in our own formats with our own art. Their Daggerfall
   models, textures and blocks, their quests in Daggerfall Unity's script, and code ported off compiled mods stay
   behind ([[Own Work]], [[Readers of Our Own Formats Only]]).
-- World of Daggerfall and the windmills are not decided yet ([[Open Questions]]).
