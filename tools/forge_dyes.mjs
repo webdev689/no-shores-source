@@ -49,4 +49,6 @@ const table = {
   armour: Object.fromEntries(Object.entries(METALS).map(([name, indices]) => [name, ramp(indices)])),
 };
 writeFileSync(OUT, `${JSON.stringify(table)}\n`);
-console.log(`wrote ${OUT.pathname}: 256 colours, ${Object.keys(CLOTHING).length} dyes, ${Object.keys(METALS).length} metals`);
+console.log(
+  `wrote ${OUT.pathname}: 256 colours, ${Object.keys(CLOTHING).length} dyes, ${Object.keys(METALS).length} metals`,
+);
