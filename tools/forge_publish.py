@@ -1,0 +1,135 @@
+"""Publishes the sprite forge's renders and tables to R2, and pulls the tables back so the forge can render more.
+
+    python3 -I tools/forge_publish.py publish   # pack tools/forge/public/art/studio, upload, write the manifest
+    python3 -I tools/forge_publish.py pull [--strips]   # the tables back, and with --strips every strip as PNG
+
+Every object is named by the SHA-256 of its bytes, so a published object never changes and is cached for good. The
+upload uses CLOUDFLARE_API_TOKEN when it is set; in a cloud session the network adds the token itself.
+"""
+import argparse
+import hashlib
+import io
+import json
+import os
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(HERE)
+FORGE = os.path.join(HERE, 'forge')
+TABLES_DIR = os.path.join(FORGE, 'src', 'systems', 'studioArt')
+PACKED = os.path.join(FORGE, 'packs')
+MANIFEST = os.path.join(REPO, 'content', 'forge', 'renders.json')
+ACCOUNT = 'a27adccb38c8e8b82fa32e5736274a94'
+BUCKET = 'overlook-forge'
+PUBLIC = 'https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/'
+API = f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/r2/buckets/{BUCKET}/objects/'
+TABLES = {
+    'looks': 'forgeLooks.json',
+    'skins': 'forgeRaceSkins.json',
+    'hair': 'forgeHairColours.json',
+    'points-male': 'forgePoints-male.json',
+    'points-female': 'forgePoints-female.json',
+}
+
+
+def fetch(method, url, data=None, kind='application/octet-stream', signed=False):
+    """One HTTP request's answer: its status and bytes, a refusal included."""
+    # Cloudflare refuses Python's own user agent, so the script names itself.
+    headers = {'content-type': kind, 'user-agent': 'overlook-forge-publish'}
+    request = urllib.request.Request(url, data=data, method=method, headers=headers)
+    token = os.environ.get('CLOUDFLARE_API_TOKEN')
+    if signed and token:
+        request.add_header('authorization', f'Bearer {token}')
+    try:
+        with urllib.request.urlopen(request, timeout=900) as answer:
+            return answer.status, answer.read()
+    except urllib.error.HTTPError as error:
+        return error.code, error.read()
+
+
+def put(data, folder, extension, kind):
+    """Uploads bytes under their hash, unless R2 already serves them; gives the object's key."""
+    key = f'{folder}/{hashlib.sha256(data).hexdigest()}.{extension}'
+    if fetch('HEAD', PUBLIC + key)[0] == 200:
+        return key
+    status, body = fetch('PUT', API + key, data, kind, signed=True)
+    if status != 200:
+        sys.exit(f'upload of {key} refused ({status}): {body[:300]!r}')
+    print(f'uploaded {key} ({len(data) / 2 ** 20:.1f} MiB)', flush=True)
+    return key
+
+
+def publish():
+    pack = os.path.join(FORGE, 'tools', 'forgeViewer', 'pack.py')
+    # Every pack as an asset pack: R2 has no per-page file budget to split them by.
+    subprocess.run([sys.executable, '-I', pack, '--out', PACKED, '--files-mib', '0'], check=True)
+    with open(os.path.join(PACKED, 'index.json')) as file:
+        index = json.load(file)
+    keys = []
+    for name in index['packs']:
+        with open(os.path.join(PACKED, name), 'rb') as file:
+            keys.append(put(file.read(), 'packs', 'webp', 'image/webp'))
+    index['packs'] = keys
+    listing = json.dumps(index, separators=(',', ':')).encode()
+    manifest = {'base': PUBLIC, 'index': put(listing, 'index', 'json', 'application/json'), 'tables': {}}
+    for name, file_name in TABLES.items():
+        with open(os.path.join(TABLES_DIR, file_name), 'rb') as file:
+            manifest['tables'][name] = put(file.read(), 'tables', 'json', 'application/json')
+    os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
+    with open(MANIFEST, 'w') as file:
+        json.dump(manifest, file, indent=2)
+        file.write('\n')
+    print(f'{len(index["pictures"])} pictures in {len(keys)} packs; manifest written to {MANIFEST}')
+
+
+def published(manifest, key):
+    """An object's bytes, checked against the hash its key names: anything else is not what was published."""
+    status, data = fetch('GET', manifest['base'] + key)
+    if status != 200 or os.path.splitext(os.path.basename(key))[0] != hashlib.sha256(data).hexdigest():
+        sys.exit(f'{key} did not come back as published ({status})')
+    return data
+
+
+def pull(strips):
+    from PIL import Image
+
+    with open(MANIFEST) as file:
+        manifest = json.load(file)
+    os.makedirs(TABLES_DIR, exist_ok=True)
+    for name, key in manifest['tables'].items():
+        with open(os.path.join(TABLES_DIR, TABLES[name]), 'wb') as file:
+            file.write(published(manifest, key))
+        print(f'pulled {TABLES[name]}')
+    if not strips:
+        return
+    index = json.loads(published(manifest, manifest['index']))
+    by_pack = {}
+    for path, (pack, offset, length, _kind) in index['pictures'].items():
+        by_pack.setdefault(pack, []).append((path, offset, length))
+    studio = os.path.join(FORGE, 'public', 'art', 'studio')
+    for pack, pictures in sorted(by_pack.items()):
+        data = published(manifest, index['packs'][pack])
+        for path, offset, length in pictures:
+            out = os.path.join(studio, path)
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            # Lossless WebP back to PNG: the same texels the forge wrote.
+            Image.open(io.BytesIO(data[offset:offset + length])).save(out)
+        print(f'unpacked pack {pack + 1} of {len(index["packs"])}', flush=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    parser.add_argument('command', choices=['publish', 'pull'])
+    parser.add_argument('--strips', action='store_true', help='pull: unpack every strip as PNG too')
+    args = parser.parse_args()
+    if args.command == 'publish':
+        publish()
+    else:
+        pull(args.strips)
+
+
+if __name__ == '__main__':
+    main()

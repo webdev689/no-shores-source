@@ -1,0 +1,9 @@
+{
+ "archive": "WEAPON07.CIF",
+ "name": "Pick-Axe, first person (the warhammer's frames)",
+ "weapon": "pickfit",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [86, 89], "screen": [234, 111]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [156, 200], "screen": [164, 0]}
+ ]
+}

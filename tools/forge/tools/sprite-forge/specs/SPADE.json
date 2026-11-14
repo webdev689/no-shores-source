@@ -1,0 +1,9 @@
+{
+ "archive": "SPADE",
+ "name": "spade, first person (keyed by hand)",
+ "weapon": "spade",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Dig", "frames": 5, "canvas": [320, 200], "screen": [0, 0]}
+ ]
+}

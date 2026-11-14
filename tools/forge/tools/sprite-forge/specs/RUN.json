@@ -1,0 +1,8 @@
+{
+  "archive": "RUN",
+  "name": "The running arms, first person",
+  "weapon": "fists",
+  "records": [
+    {"state": "Run", "frames": 8, "canvas": [105, 100], "screen": [177, 100], "part": "fist"}
+  ]
+}

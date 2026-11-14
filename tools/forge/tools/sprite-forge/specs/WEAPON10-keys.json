@@ -1,0 +1,4 @@
+{
+  "0:0": {"base": [319.521, 269.771], "depth": 0.772, "tip": [224.864, 168.64], "roll": 94.555, "knuckle": 56.913, "fold": 89.669, "spread": -5.331, "thumb_in": 30.264, "thumb_bend": 37.25, "wrist": -28.051, "tilt": -10.958, "hold": ["knuckle", "fold", "spread", "thumb_in", "thumb_bend", "wrist", "tilt"]},
+  "1:4": {"base": [159.505, 266.337], "depth": 0.899, "tip": [226.969, 173.335], "roll": 30.675, "bend": -25.627}
+}

@@ -1,0 +1,12 @@
+{
+  "pictures": {
+    "festival/38291_0-0": {"model": "soulCake", "px": 24, "words": {}, "seed": 382910},
+    "festival/38291_1-0": {"model": "offeringIcon", "px": 28, "words": {}, "seed": 382911},
+    "festival/38291_3-0": {"model": "turnipLantern", "px": 26, "elevation": 12, "words": {}, "seed": 382913, "canvas": [24, 26], "anchor": "foot"},
+    "festival/38291_4-0": {"model": "strawEffigy", "px": 61, "elevation": 4, "words": {}, "seed": 382914, "canvas": [32, 64], "anchor": "foot"},
+    "festival/38291_5-0": {"model": "wardStaff", "px": 56, "elevation": 4, "words": {}, "seed": 382915, "canvas": [24, 56], "anchor": "foot"},
+    "lockpick/38321_0-0": {"model": "lockpick", "px": 22, "elevation": 76, "words": {}, "seed": 383210},
+    "starglass/38302_0-0": {"model": "starglass", "px": 21, "elevation": 10, "words": {}, "seed": 383020},
+    "weirkey/38282_0-0": {"model": "weirKey", "px": 31, "elevation": 64, "words": {}, "seed": 382820}
+  }
+}

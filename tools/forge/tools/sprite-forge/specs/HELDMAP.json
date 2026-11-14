@@ -1,0 +1,9 @@
+{
+ "archive": "HELDMAP",
+ "name": "The held map, first person",
+ "weapon": "heldmap",
+ "records": [
+  {"state": "Held", "frames": 1, "canvas": [274, 158], "screen": [23, 19], "part": "held",
+   "picture": "public/art/held-map.png", "grid": 6, "classes": "held", "foot": true}
+ ]
+}

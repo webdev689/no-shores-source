@@ -1,0 +1,14 @@
+{
+  "pictures": {
+    "gather/56800_0-0": {"anchor": "centre", "canvas": [14, 10], "elevation": 10, "model": "gatherNotch", "px": 13, "seed": 568000, "words": {}},
+    "gather/56800_1-0": {"anchor": "foot", "canvas": [6, 4], "elevation": 30, "model": "gatherChip", "px": 6, "seed": 568001, "words": {}},
+    "gather/56800_2-0": {"anchor": "foot", "canvas": [36, 13], "elevation": 4, "model": "gatherLog", "px": 36, "seed": 568002, "words": {}},
+    "gather/56800_3-0": {"anchor": "foot", "canvas": [24, 18], "elevation": 10, "model": "gatherLeaves", "px": 24, "seed": 568003, "words": {}},
+    "gather/56800_4-0": {"anchor": "foot", "canvas": [22, 9], "elevation": 10, "model": "gatherTwig", "px": 22, "seed": 568004, "words": {}},
+    "gather/56800_5-0": {"anchor": "foot", "canvas": [20, 14], "elevation": 4, "model": "gatherDust", "px": 20, "seed": 568005, "words": {}},
+    "gather/56800_6-0": {"anchor": "foot", "canvas": [12, 9], "elevation": 22, "model": "gatherMushrooms", "px": 12, "seed": 568006, "words": {}},
+    "gather/56800_7-0": {"anchor": "foot", "canvas": [12, 7], "elevation": 9, "model": "gatherEggs", "px": 12, "seed": 568007, "words": {}},
+    "gather/56800_8-0": {"anchor": "foot", "canvas": [12, 10], "elevation": 8, "model": "gatherBerries", "px": 12, "seed": 568008, "words": {}},
+    "gather/56800_9-0": {"anchor": "foot", "canvas": [6, 4], "elevation": 30, "model": "gatherHerbBits", "px": 6, "seed": 568009, "words": {}}
+  }
+}

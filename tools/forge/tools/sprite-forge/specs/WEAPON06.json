@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON06.CIF",
+ "name": "Flail, first person",
+ "weapon": "flail",
+ "grown": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [87, 109], "screen": [233, 91], "sway": {"record": 7, "frames": 9, "angle": 25, "canvas": [130, 109], "drawn": [173, 88, 206, 112]}, "drawn": [218, 88, 119, 112]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [120, 200], "screen": [200, 0], "drawn": [193, 0, 127, 200]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [273, 200], "screen": [47, 0], "drawn": [39, 0, 281, 200]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [320, 151], "screen": [0, 49], "drawn": [0, 36, 320, 164]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [320, 151], "screen": [0, 49], "mirror": 3, "drawn": [0, 36, 320, 164]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [273, 200], "screen": [0, 0], "mirror": 2, "drawn": [0, 0, 281, 200]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [126, 200], "screen": [194, 0], "drawn": [188, 0, 132, 200]}
+ ]
+}

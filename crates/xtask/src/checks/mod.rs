@@ -36,8 +36,13 @@ impl fmt::Display for Problem {
     }
 }
 
-/// The co-dev's toolkit, approved whole by the owner, stays as its author ships it: our code rules are for our code.
-const KEPT_AS_SHIPPED: [&str; 1] = ["tools/claude-toolkit/"];
+/// Kept exactly as their authors ship them, by the owner's choice: the co-dev's toolkit, and DFO's sprite forge with
+/// its models. Our code and asset rules are for the code we write.
+const KEPT_AS_SHIPPED: [&str; 2] = ["tools/claude-toolkit/", "tools/forge/"];
+
+fn kept_as_shipped(path: &str) -> bool {
+    KEPT_AS_SHIPPED.iter().any(|root| path.starts_with(root))
+}
 
 /// Every extension a TypeScript or JavaScript file may carry; the checks that read scripts all use this one list.
 const SCRIPT_EXTENSIONS: [&str; 7] = [".ts", ".mts", ".cts", ".tsx", ".js", ".mjs", ".cjs"];
@@ -48,8 +53,7 @@ fn is_script(path: &str) -> bool {
 
 /// Source files the size and comment checks read.
 fn is_code(path: &str) -> bool {
-    let ours = !KEPT_AS_SHIPPED.iter().any(|root| path.starts_with(root));
-    ours && (path.ends_with(".rs") || path.ends_with(".py") || is_script(path))
+    !kept_as_shipped(path) && (path.ends_with(".rs") || path.ends_with(".py") || is_script(path))
 }
 
 /// The files a check would read but cannot, since they are not UTF-8: each is a problem, never skipped.
@@ -64,7 +68,8 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     problems.extend(size::check(&code));
     problems.extend(comments::check(&code));
     problems.extend(layers::check(&code));
-    let sized: Vec<(String, u64)> = repo.files.iter().map(|path| (path.clone(), repo.size(path))).collect();
+    let sized: Vec<(String, u64)> =
+        repo.files.iter().filter(|path| !kept_as_shipped(path)).map(|path| (path.clone(), repo.size(path))).collect();
     problems.extend(assets::check(&sized));
     let (manifests, skipped) =
         repo.sources(|path| path == "Cargo.toml" || (path.starts_with("crates/") && path.ends_with("/Cargo.toml")));
@@ -79,7 +84,7 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_code, is_script};
+    use super::{is_code, is_script, kept_as_shipped};
 
     #[test]
     fn our_source_files_are_code() {
@@ -99,6 +104,9 @@ mod tests {
     #[test]
     fn the_kept_toolkit_and_non_code_files_are_not() {
         assert!(!is_code("tools/claude-toolkit/check_tools.py"));
+        assert!(!is_code("tools/forge/tools/sprite-forge/layers.py"));
         assert!(!is_code("bible/Home.md"));
+        assert!(kept_as_shipped("tools/forge/tools/sprite-forge/models/crossbows.blend"));
+        assert!(!kept_as_shipped("tools/forged.py"));
     }
 }

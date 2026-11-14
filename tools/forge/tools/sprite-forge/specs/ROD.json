@@ -1,0 +1,13 @@
+{
+ "archive": "ROD",
+ "name": "rod, first person (keyed by hand)",
+ "weapon": "rod",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Wind", "frames": 4, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Fly", "frames": 4, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Wait", "frames": 2, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Tug", "frames": 3, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Haul", "frames": 4, "canvas": [320, 200], "screen": [0, 0]}
+ ]
+}

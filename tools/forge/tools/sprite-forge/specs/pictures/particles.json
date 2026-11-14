@@ -1,0 +1,9 @@
+{
+  "pictures": {
+    "particles/112395_0-0": {"canvas": [52, 41], "elevation": 90, "model": "wakeSplash", "px": 52, "seed": 1123950, "words": {}},
+    "particles/PixelSnow": {"canvas": [64, 64], "elevation": 0, "model": "pixelSnowflake", "px": 60, "seed": 1408, "words": {}},
+    "particles/fall_leaves": {"canvas": [64, 64], "elevation": 0, "model": "windfallLeaves", "px": 64, "seed": 1406, "words": {"season": "fall"}},
+    "particles/snowflake": {"canvas": [16, 16], "elevation": 0, "model": "windfallSnowflake", "px": 16, "seed": 1407, "words": {}},
+    "particles/spring_summer_leaves": {"canvas": [64, 64], "elevation": 0, "model": "windfallLeaves", "px": 64, "seed": 1406, "words": {"season": "spring"}}
+  }
+}

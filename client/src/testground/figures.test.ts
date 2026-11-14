@@ -1,0 +1,42 @@
+import { strict as assert } from 'node:assert';
+import { test } from 'node:test';
+import { bearing, eyeOf, frameAt, groundPoint, viewOf } from './figures.ts';
+
+const QUARTER = Math.PI / 2;
+
+test('bearings run clockwise from north, with y pointing south', () => {
+  assert.equal(bearing(0, 0, 0, -10), 0);
+  assert.ok(Math.abs(bearing(0, 0, 10, 0) - QUARTER) < 1e-9);
+  assert.ok(Math.abs(Math.abs(bearing(0, 0, 0, 10)) - Math.PI) < 1e-9);
+});
+
+test('a figure facing the eye shows its front, and its back when facing away', () => {
+  // The eye stands south of the figure; the figure faces south.
+  assert.deepEqual(viewOf(Math.PI, 0, 0, 0, 10), { view: 0, flip: false });
+  assert.deepEqual(viewOf(0, 0, 0, 0, 10), { view: 4, flip: false });
+});
+
+test('turning to the eye left counts the views up; to its right, the same views mirrored', () => {
+  // Facing south-west from the south-facing front is a turn to the eye's left: view 1.
+  assert.deepEqual(viewOf(Math.PI + Math.PI / 4, 0, 0, 0, 10), { view: 1, flip: false });
+  assert.deepEqual(viewOf(Math.PI + QUARTER, 0, 0, 0, 10), { view: 2, flip: false });
+  assert.deepEqual(viewOf(Math.PI - Math.PI / 4, 0, 0, 0, 10), { view: 1, flip: true });
+  assert.deepEqual(viewOf(Math.PI - QUARTER, 0, 0, 0, 10), { view: 2, flip: true });
+});
+
+test('frames loop at their rate', () => {
+  assert.equal(frameAt(0, 4, 6), 0);
+  assert.equal(frameAt(0.5, 4, 6), 3);
+  assert.equal(frameAt(0.7, 4, 6), 0);
+  assert.equal(frameAt(5, 0, 6), 0);
+});
+
+test('a ray down to the ground lands where it crosses z = 0; one looking up never does', () => {
+  assert.deepEqual(groundPoint([0, 0, 10], [0.6, 0, -0.8]), { x: 7.5, y: 0 });
+  assert.equal(groundPoint([0, 0, 10], [0, 0.6, 0.8]), null);
+});
+
+test('an eye looking north stands south of its target', () => {
+  const eye = eyeOf({ targetX: 5, targetY: 5, yaw: 0, pitch: 0, distance: 10 });
+  assert.ok(Math.abs(eye.x - 5) < 1e-9 && Math.abs(eye.y - 15) < 1e-9);
+});

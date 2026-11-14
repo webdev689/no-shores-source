@@ -30,8 +30,9 @@ order a failure is cheapest to read:
 | vault | every wikilink resolves; every `code:` path exists and holds its symbol | [[Notes Say How It Works Now]] |
 
 The checks read scripts of every extension: `.ts`, `.mts`, `.cts`, `.tsx`, `.js`, `.mjs` and `.cjs`. A file that is
-not UTF-8 is reported, not skipped. The co-dev's toolkit in `tools/claude-toolkit/` is kept as its author ships it,
-so the size and comment checks skip it ([[The Co-Dev's Toolkit, Whole]]).
+not UTF-8 is reported, not skipped. Two folders are kept as their authors ship them, so the size, comment and assets
+checks skip them: the co-dev's toolkit in `tools/claude-toolkit/` ([[The Co-Dev's Toolkit, Whole]]) and DFO's sprite
+forge in `tools/forge/` ([[DFO's Sprite Forge Comes Over Exactly]]).
 
 ## Adding a check
 

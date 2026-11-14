@@ -1,0 +1,27 @@
+{
+ "archive": 297,
+ "name": "Lamia",
+ "beast": "lamia",
+ "elevation": 10,
+ "work": [
+  360,
+  260
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 8, "canvas": [81, 101], "scale": -100, "place": [39, 110]},
+  {"anim": "walk", "view": 1, "frames": 8, "canvas": [129, 62], "scale": 0, "place": [48, 70]},
+  {"anim": "walk", "view": 2, "frames": 8, "canvas": [170, 66], "scale": 0, "place": [44, 70]},
+  {"anim": "walk", "view": 3, "frames": 8, "canvas": [164, 69], "scale": 0, "place": [50, 70]},
+  {"anim": "walk", "view": 4, "frames": 8, "canvas": [48, 70], "scale": 0, "place": [27, 71]},
+  {"anim": "attack", "view": 0, "frames": 8, "canvas": [128, 108], "scale": -100, "place": [63, 110]},
+  {"anim": "attack", "view": 1, "frames": 8, "canvas": [134, 69], "scale": 0, "place": [53, 76]},
+  {"anim": "attack", "view": 2, "frames": 8, "canvas": [169, 70], "scale": 0, "place": [46, 77]},
+  {"anim": "attack", "view": 3, "frames": 8, "canvas": [171, 79], "scale": 0, "place": [59, 82]},
+  {"anim": "attack", "view": 4, "frames": 8, "canvas": [76, 74], "scale": 0, "place": [39, 78]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [70, 133], "scale": -100, "place": [55, 111]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [82, 69], "scale": 0, "place": [36, 69]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [123, 77], "scale": 0, "place": [36, 73]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [117, 86], "scale": 0, "place": [28, 73]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [37, 89], "scale": 0, "place": [17, 76]}
+ ]
+}

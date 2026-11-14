@@ -1,0 +1,27 @@
+{
+ "archive": 296,
+ "name": "Dreugh",
+ "beast": "dreugh",
+ "elevation": 10,
+ "work": [
+  300,
+  320
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 8, "canvas": [126, 159], "scale": -70, "place": [56, 159]},
+  {"anim": "walk", "view": 1, "frames": 8, "canvas": [103, 160], "scale": -70, "place": [38, 164]},
+  {"anim": "walk", "view": 2, "frames": 8, "canvas": [75, 157], "scale": -70, "place": [37, 165]},
+  {"anim": "walk", "view": 3, "frames": 8, "canvas": [89, 151], "scale": -70, "place": [41, 160]},
+  {"anim": "walk", "view": 4, "frames": 8, "canvas": [121, 148], "scale": -70, "place": [68, 161]},
+  {"anim": "attack", "view": 0, "frames": 8, "canvas": [126, 160], "scale": -70, "place": [60, 153]},
+  {"anim": "attack", "view": 1, "frames": 8, "canvas": [115, 160], "scale": -70, "place": [49, 164]},
+  {"anim": "attack", "view": 2, "frames": 8, "canvas": [96, 158], "scale": -70, "place": [58, 163]},
+  {"anim": "attack", "view": 3, "frames": 8, "canvas": [100, 152], "scale": -70, "place": [51, 158]},
+  {"anim": "attack", "view": 4, "frames": 8, "canvas": [120, 148], "scale": -70, "place": [66, 157]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [106, 150], "scale": -70, "place": [49, 152]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [92, 144], "scale": -70, "place": [27, 146]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [76, 140], "scale": -70, "place": [40, 145]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [92, 133], "scale": -70, "place": [47, 143]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [106, 136], "scale": -70, "place": [58, 143]}
+ ]
+}

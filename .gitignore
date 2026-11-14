@@ -6,6 +6,11 @@ node_modules/
 dist/
 generated/
 client/public/*.wasm
+# The forge's renders, its tables and its packs: published to R2 by tools/forge/publish.py.
+tools/forge/public/
+tools/forge/src/systems/
+tools/forge/packs/
+__pycache__/
 
 # The toolkit's working folders: the code map it generates and Serena's project data.
 graphify-out/

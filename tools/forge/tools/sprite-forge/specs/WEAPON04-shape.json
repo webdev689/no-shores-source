@@ -1,0 +1,16 @@
+{
+ "focal": 301.328,
+ "aspect": 1.0,
+ "blade_len": 1.0,
+ "blade_w": 0.0599,
+ "blade_t": 0.3189,
+ "narrow": 0.7984,
+ "tip": 0.3039,
+ "tip_k": 1.5362,
+ "curve": 0.0,
+ "bevel": 0.2992,
+ "fuller_w": 0.4926,
+ "fuller_d": 0.0,
+ "fuller_len": 0.6552,
+ "fuller_floor": 0.835
+}

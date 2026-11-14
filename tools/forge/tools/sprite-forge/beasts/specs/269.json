@@ -1,0 +1,27 @@
+{
+ "archive": 269,
+ "name": "Wereboar",
+ "beast": "wereboar",
+ "elevation": 10,
+ "work": [
+  260,
+  240
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [63, 72], "scale": 0, "place": [32, 71]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [66, 76], "scale": 0, "place": [29, 73]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [66, 75], "scale": 0, "place": [32, 73]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [59, 71], "scale": 0, "place": [28, 68]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [60, 73], "scale": 0, "place": [29, 70]},
+  {"anim": "attack", "view": 0, "frames": 3, "canvas": [65, 84], "scale": 0, "place": [32, 82]},
+  {"anim": "attack", "view": 1, "frames": 3, "canvas": [52, 84], "scale": 0, "place": [39, 82]},
+  {"anim": "attack", "view": 2, "frames": 3, "canvas": [57, 77], "scale": 0, "place": [41, 79]},
+  {"anim": "attack", "view": 3, "frames": 3, "canvas": [60, 80], "scale": 0, "place": [33, 81]},
+  {"anim": "attack", "view": 4, "frames": 3, "canvas": [59, 88], "scale": 0, "place": [27, 85]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [52, 90], "scale": 0, "place": [28, 89]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [47, 98], "scale": 0, "place": [28, 96]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [46, 95], "scale": 0, "place": [30, 96]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [42, 92], "scale": 0, "place": [25, 92]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [47, 93], "scale": 0, "place": [22, 92]}
+ ]
+}

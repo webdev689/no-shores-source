@@ -1,0 +1,32 @@
+{
+ "archive": 259,
+ "name": "Grizzly Bear",
+ "beast": "bear",
+ "elevation": 10,
+ "work": [
+  320,
+  220
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [50, 78], "scale": -70, "place": [23, 75]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [140, 77], "scale": -70, "place": [68, 72]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [172, 75], "scale": -70, "place": [85, 70]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [131, 76], "scale": -70, "place": [67, 72]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [50, 77], "scale": -70, "place": [25, 74]},
+  {"anim": "attack", "view": 0, "frames": 4, "canvas": [129, 141], "scale": -70, "place": [77, 139]},
+  {"anim": "attack", "view": 1, "frames": 4, "canvas": [138, 145], "scale": -70, "place": [76, 144]},
+  {"anim": "attack", "view": 2, "frames": 4, "canvas": [148, 147], "scale": -70, "place": [80, 145]},
+  {"anim": "attack", "view": 3, "frames": 4, "canvas": [121, 144], "scale": -70, "place": [62, 143]},
+  {"anim": "attack", "view": 4, "frames": 4, "canvas": [119, 144], "scale": -70, "place": [55, 143]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [89, 132], "scale": -70, "place": [47, 129]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [136, 132], "scale": -70, "place": [73, 132]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [136, 130], "scale": -70, "place": [72, 128]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [130, 126], "scale": -70, "place": [70, 125]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [76, 126], "scale": -70, "place": [38, 126]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [58, 73], "scale": -70, "place": [26, 74]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [130, 70], "scale": -70, "place": [62, 69]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [154, 70], "scale": -70, "place": [85, 69]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [118, 69], "scale": -70, "place": [54, 70]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [61, 70], "scale": -70, "place": [30, 71]}
+ ]
+}

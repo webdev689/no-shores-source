@@ -1,0 +1,12 @@
+{
+ "archive": 398,
+ "name": "Townsfolk (redguard female)",
+ "records": [
+  {"anim":"walk","view":0,"frames":4,"canvas":[47,111],"place":[23,111]},
+  {"anim":"walk","view":1,"frames":4,"canvas":[53,111],"place":[24,111]},
+  {"anim":"walk","view":2,"frames":4,"canvas":[65,110],"place":[34,110]},
+  {"anim":"walk","view":3,"frames":4,"canvas":[52,111],"place":[25,111]},
+  {"anim":"walk","view":4,"frames":4,"canvas":[47,111],"place":[22,111]},
+  {"anim":"idle","view":0,"frames":2,"canvas":[68,163],"place":[21,163]}
+ ]
+}

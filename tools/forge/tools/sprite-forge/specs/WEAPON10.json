@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON10.CIF",
+ "name": "Fists and kicks, first person",
+ "weapon": "fists",
+ "grown": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [63, 53], "screen": [209, 147], "part": "fist", "weigh": [[0, 0, 33, 28, 1.0]], "drawn": [202, 142, 87, 58]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [182, 93], "screen": [69, 107], "part": "boot", "drawn": [56, 98, 201, 102]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [104, 84], "screen": [108, 116], "part": "fist", "drawn": [100, 102, 120, 98]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [103, 93], "screen": [108, 107], "part": "boot", "drawn": [80, 103, 148, 97]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [198, 84], "screen": [61, 116], "part": "fist", "drawn": [54, 101, 220, 99]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [125, 98], "screen": [97, 102], "part": "fist", "drawn": [90, 97, 139, 103]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [51, 94], "screen": [134, 106], "part": "boot", "drawn": [129, 96, 68, 104]}
+ ]
+}

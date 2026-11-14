@@ -1,0 +1,9 @@
+{
+  "0:0": {"base": [202.49, 209.864], "depth": 0.614, "tip": [560.19, 7.702], "roll": -159.312, "draw": 0.0, "arrow": 1.0, "loose": 0.0, "fly_yaw": 0.0, "fly_pitch": 0.0, "hand_r": 0.0, "r_roll": 0.0, "r_hook": 60.0, "r_curl": 95.0, "l_turn": 23.0, "l_lean": -10.0},
+  "0:1": {"base": [204.08, 167.912], "depth": 0.565, "tip": [485.563, -73.872], "roll": -170.544, "draw": 0.05, "arrow": 1.0, "loose": 0.0, "fly_yaw": 0.0, "fly_pitch": 0.0, "hand_r": 1.0, "r_roll": 3.54, "r_hook": 100.0, "r_curl": 114.995, "l_turn": 23.0, "l_lean": -10.0},
+  "0:2": {"base": [207.514, 139.745], "depth": 0.604, "tip": [463.876, -100.467], "roll": -173.055, "draw": 0.5, "arrow": 1.0, "loose": 0.0, "fly_yaw": 0.0, "fly_pitch": 0.0, "hand_r": 1.0, "r_roll": 66.794, "r_hook": 2.732, "r_curl": 88.0, "l_turn": 23.0, "l_lean": -10.0},
+  "0:3": {"base": [201.84, 136.368], "depth": 0.607, "tip": [460.005, -86.694], "roll": -170.336, "draw": 1.0, "arrow": 1.0, "loose": 0.0, "fly_yaw": 0.0, "fly_pitch": 0.0, "hand_r": 1.0, "r_roll": 56.227, "r_hook": 19.103, "r_curl": 94.361, "l_turn": 23.0, "l_lean": -10.0},
+  "0:4": {"base": [196.905, 134.426], "depth": 0.594, "tip": [532.87, -146.0], "roll": -160.876, "draw": 0.0, "arrow": 1.0, "loose": 0.001, "fly_yaw": -23.452, "fly_pitch": -4.483, "hand_r": 0.0, "r_roll": 117.216, "r_hook": 60.0, "r_curl": 95.0, "l_turn": 23.0, "l_lean": -10.0},
+  "0:5": {"base": [199.273, 139.938], "depth": 0.59, "tip": [545.84, -166.076], "roll": -154.816, "draw": 0.0, "arrow": 1.0, "loose": 1.35, "fly_yaw": -28.163, "fly_pitch": -5.829, "hand_r": 0.0, "r_roll": -36.0, "r_hook": 60.0, "r_curl": 95.0, "l_turn": 23.0, "l_lean": -10.0},
+  "0:6": {"base": [210.238, 193.442], "depth": 0.639, "tip": [521.188, 38.644], "roll": -160.021, "draw": 0.0, "arrow": 0.0, "loose": 0.0, "fly_yaw": 0.0, "fly_pitch": 0.0, "hand_r": 0.0, "r_roll": 0.0, "r_hook": 60.0, "r_curl": 95.0, "l_turn": 23.0, "l_lean": -10.0}
+}

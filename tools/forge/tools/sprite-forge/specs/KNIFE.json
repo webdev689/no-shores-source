@@ -1,0 +1,9 @@
+{
+ "archive": "WEAPON02.CIF",
+ "name": "Skinning Knife, first person (the dagger's frames)",
+ "weapon": "knife",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [65, 143], "screen": [242, 57]},
+  {"state": "Cut", "frames": 5, "canvas": [320, 200], "screen": [0, 0]}
+ ]
+}

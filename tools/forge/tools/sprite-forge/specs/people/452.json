@@ -1,0 +1,12 @@
+{
+ "archive": 452,
+ "name": "Townsfolk (nord female)",
+ "records": [
+  {"anim":"walk","view":0,"frames":4,"canvas":[53,116],"place":[26,116]},
+  {"anim":"walk","view":1,"frames":4,"canvas":[59,115],"place":[22,115]},
+  {"anim":"walk","view":2,"frames":4,"canvas":[75,115],"place":[41,115]},
+  {"anim":"walk","view":3,"frames":4,"canvas":[61,116],"place":[41,116]},
+  {"anim":"walk","view":4,"frames":4,"canvas":[50,117],"place":[24,117]},
+  {"anim":"idle","view":0,"frames":2,"canvas":[78,178],"place":[30,178]}
+ ]
+}

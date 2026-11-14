@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON07.CIF",
+ "name": "Warhammer, first person",
+ "weapon": "warhammer",
+ "grown": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [86, 89], "screen": [234, 111], "drawn": [231, 89, 120, 111]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [156, 200], "screen": [164, 0], "drawn": [161, 0, 159, 200]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [320, 200], "screen": [0, 0], "drawn": [0, 0, 320, 200]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [320, 125], "screen": [0, 75], "drawn": [0, 52, 320, 148]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [320, 125], "screen": [0, 75], "mirror": 3, "drawn": [0, 52, 320, 148]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [320, 200], "screen": [0, 0], "mirror": 2, "drawn": [0, 0, 320, 200]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [180, 141], "screen": [140, 59], "drawn": [137, 33, 183, 167]}
+ ]
+}

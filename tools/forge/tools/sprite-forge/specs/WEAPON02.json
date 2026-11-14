@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON02.CIF",
+ "name": "Dagger, first person",
+ "weapon": "dagger",
+ "grown": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [65, 143], "screen": [242, 57], "drawn": [239, 48, 75, 152]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [162, 200], "screen": [158, 0], "drawn": [151, 0, 169, 200]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [296, 200], "screen": [24, 0], "drawn": [16, 0, 304, 200]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [311, 125], "screen": [9, 75], "drawn": [0, 67, 320, 133]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [311, 125], "screen": [0, 75], "mirror": 3, "drawn": [0, 67, 320, 133]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [294, 200], "screen": [0, 0], "mirror": 2, "shift": -1, "drawn": [0, 0, 303, 200]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [184, 120], "screen": [136, 80], "drawn": [116, 69, 204, 131]}
+ ]
+}

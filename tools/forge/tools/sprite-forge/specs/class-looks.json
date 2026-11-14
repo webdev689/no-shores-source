@@ -1,0 +1,710 @@
+{
+ "381": {
+  "body": "male",
+  "race": "redguard",
+  "gear": [
+   "face_hooded",
+   "plain_robes_hooded",
+   "plain_robes_hooded_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "plain_robes_hooded": 6,
+   "plain_robes_hooded_drape": 6,
+   "shoes": 5
+  }
+ },
+ "382": {
+  "body": "male",
+  "race": "redguard",
+  "gear": [
+   "short_tunic",
+   "short_tunic_drape",
+   "casual_pants",
+   "shoes"
+  ],
+  "dyes": {
+   "short_tunic": 8,
+   "short_tunic_drape": 8,
+   "casual_pants": 6,
+   "shoes": 3
+  }
+ },
+ "383": {
+  "body": "male",
+  "race": "redguard",
+  "gear": [
+   "shirt_long_round",
+   "belt",
+   "breeches",
+   "boots"
+  ],
+  "dyes": {
+   "shirt_long_round": 2,
+   "belt": 2,
+   "breeches": 5,
+   "boots": 3
+  }
+ },
+ "384": {
+  "body": "male",
+  "race": "redguard",
+  "gear": [
+   "shirt_short_v",
+   "vest",
+   "belt",
+   "casual_pants",
+   "tall_boots"
+  ],
+  "dyes": {
+   "shirt_short_v": 6,
+   "vest": 6,
+   "belt": 6,
+   "casual_pants": 0,
+   "tall_boots": 3
+  }
+ },
+ "385": {
+  "body": "male",
+  "race": "breton",
+  "gear": [
+   "short_tunic",
+   "short_tunic_drape",
+   "breeches",
+   "shoes"
+  ],
+  "dyes": {
+   "short_tunic": 0,
+   "short_tunic_drape": 0,
+   "breeches": 1,
+   "shoes": 3
+  }
+ },
+ "386": {
+  "body": "male",
+  "race": "breton",
+  "gear": [
+   "shirt_short_round",
+   "belt",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "shirt_short_round": 2,
+   "belt": 2,
+   "casual_pants": 3,
+   "boots": 3
+  }
+ },
+ "387": {
+  "body": "male",
+  "race": "nord",
+  "gear": [
+   "shirt_long_round",
+   "belt",
+   "breeches",
+   "tall_boots"
+  ],
+  "dyes": {
+   "shirt_long_round": 1,
+   "belt": 1,
+   "breeches": 3,
+   "tall_boots": 3
+  }
+ },
+ "388": {
+  "body": "male",
+  "race": "nord",
+  "gear": [
+   "short_tunic",
+   "short_tunic_drape",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "short_tunic": 9,
+   "short_tunic_drape": 9,
+   "casual_pants": 1,
+   "boots": 3
+  }
+ },
+ "389": {
+  "body": "male",
+  "race": "nord",
+  "gear": [
+   "shirt_long_deep",
+   "vest",
+   "breeches",
+   "tall_boots"
+  ],
+  "dyes": {
+   "shirt_long_deep": 0,
+   "vest": 0,
+   "breeches": 3,
+   "tall_boots": 3
+  }
+ },
+ "390": {
+  "body": "male",
+  "race": "nord",
+  "gear": [
+   "face_hooded",
+   "plain_robes_hooded",
+   "plain_robes_hooded_drape",
+   "boots"
+  ],
+  "dyes": {
+   "plain_robes_hooded": 1,
+   "plain_robes_hooded_drape": 1,
+   "boots": 3
+  }
+ },
+ "391": {
+  "body": "male",
+  "race": "breton",
+  "gear": [
+   "shirt_long_v",
+   "belt",
+   "breeches",
+   "tall_boots"
+  ],
+  "dyes": {
+   "shirt_long_v": 4,
+   "belt": 4,
+   "breeches": 3,
+   "tall_boots": 3
+  }
+ },
+ "392": {
+  "body": "female",
+  "race": "nord",
+  "gear": [
+   "shirt_long_round",
+   "belt",
+   "long_skirt",
+   "long_skirt_drape",
+   "boots"
+  ],
+  "dyes": {
+   "shirt_long_round": 1,
+   "belt": 1,
+   "long_skirt": 3,
+   "long_skirt_drape": 3,
+   "boots": 3
+  }
+ },
+ "393": {
+  "body": "female",
+  "race": "nord",
+  "gear": [
+   "peasant_blouse",
+   "long_skirt",
+   "long_skirt_drape",
+   "tall_boots"
+  ],
+  "dyes": {
+   "peasant_blouse": 6,
+   "long_skirt": 9,
+   "long_skirt_drape": 9,
+   "tall_boots": 3
+  }
+ },
+ "394": {
+  "body": "male",
+  "race": "breton",
+  "gear": [
+   "shirt_short_deep",
+   "vest",
+   "casual_pants",
+   "shoes"
+  ],
+  "dyes": {
+   "shirt_short_deep": 6,
+   "vest": 6,
+   "casual_pants": 9,
+   "shoes": 3
+  }
+ },
+ "395": {
+  "body": "female",
+  "race": "redguard",
+  "gear": [
+   "peasant_blouse",
+   "long_skirt",
+   "long_skirt_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "peasant_blouse": 6,
+   "long_skirt": 2,
+   "long_skirt_drape": 2,
+   "shoes": 3
+  }
+ },
+ "396": {
+  "body": "female",
+  "race": "redguard",
+  "gear": [
+   "shirt_long_round",
+   "long_skirt_slit",
+   "long_skirt_slit_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "shirt_long_round": 8,
+   "long_skirt_slit": 0,
+   "long_skirt_slit_drape": 0,
+   "shoes": 5
+  }
+ },
+ "397": {
+  "body": "female",
+  "race": "redguard",
+  "gear": [
+   "shirt_short_deep",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "shirt_short_deep": 6,
+   "casual_pants": 2,
+   "boots": 3
+  }
+ },
+ "398": {
+  "body": "female",
+  "race": "redguard",
+  "gear": [
+   "face_hooded",
+   "casual_cloak_hooded_skirted",
+   "shirt_long_deep",
+   "long_skirt",
+   "long_skirt_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "casual_cloak_hooded_skirted": 5,
+   "shirt_long_deep": 6,
+   "long_skirt": 8,
+   "long_skirt_drape": 8,
+   "shoes": 5
+  }
+ },
+ "399": {
+  "body": "male",
+  "type": 146,
+  "gear": [
+   "face_steel",
+   "helm_steel",
+   "cuirass_steel",
+   "greaves_steel",
+   "boots_steel",
+   "gauntlets_steel",
+   "dwynnen_surcoat",
+   "dwynnen_surcoat_plated",
+   "breeches"
+  ],
+  "dyes": {
+   "helm_steel": 16,
+   "cuirass_steel": 16,
+   "greaves_steel": 16,
+   "boots_steel": 16,
+   "gauntlets_steel": 16,
+   "dwynnen_surcoat": 2,
+   "dwynnen_surcoat_plated": 2,
+   "breeches": 3
+  }
+ },
+ "451": {
+  "body": "female",
+  "race": "nord",
+  "gear": [
+   "face_hooded",
+   "casual_cloak_hooded_skirted",
+   "shirt_long_deep",
+   "long_skirt",
+   "long_skirt_drape",
+   "boots"
+  ],
+  "dyes": {
+   "casual_cloak_hooded_skirted": 1,
+   "shirt_long_deep": 0,
+   "long_skirt": 3,
+   "long_skirt_drape": 3,
+   "boots": 3
+  }
+ },
+ "452": {
+  "body": "female",
+  "race": "nord",
+  "gear": [
+   "shirt_long_deep",
+   "vest",
+   "casual_pants",
+   "tall_boots"
+  ],
+  "dyes": {
+   "shirt_long_deep": 2,
+   "vest": 2,
+   "casual_pants": 3,
+   "tall_boots": 3
+  }
+ },
+ "453": {
+  "body": "female",
+  "race": "breton",
+  "gear": [
+   "peasant_blouse",
+   "long_skirt",
+   "long_skirt_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "peasant_blouse": 6,
+   "long_skirt": 0,
+   "long_skirt_drape": 0,
+   "shoes": 3
+  }
+ },
+ "454": {
+  "body": "female",
+  "race": "breton",
+  "gear": [
+   "shirt_long_v",
+   "belt",
+   "long_skirt_slit",
+   "long_skirt_slit_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "shirt_long_v": 4,
+   "belt": 4,
+   "long_skirt_slit": 1,
+   "long_skirt_slit_drape": 1,
+   "shoes": 3
+  }
+ },
+ "455": {
+  "body": "female",
+  "race": "breton",
+  "gear": [
+   "shirt_short_round",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "shirt_short_round": 8,
+   "casual_pants": 9,
+   "boots": 3
+  }
+ },
+ "456": {
+  "body": "female",
+  "race": "breton",
+  "gear": [
+   "face_hooded",
+   "casual_cloak_hooded_skirted",
+   "shirt_long_deep",
+   "long_skirt",
+   "long_skirt_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "casual_cloak_hooded_skirted": 2,
+   "shirt_long_deep": 6,
+   "long_skirt": 2,
+   "long_skirt_drape": 2,
+   "shoes": 3
+  }
+ },
+ "475": {
+  "body": "female",
+  "type": 129,
+  "gear": [
+   "cuirass_chain",
+   "casual_cloak_short_plated",
+   "open_tunic",
+   "casual_pants",
+   "tall_boots"
+  ],
+  "dyes": {
+   "cuirass_chain": 16,
+   "casual_cloak_short_plated": 2,
+   "open_tunic": 2,
+   "casual_pants": 3,
+   "tall_boots": 3
+  }
+ },
+ "476": {
+  "body": "male",
+  "type": 129,
+  "gear": [
+   "cuirass_chain",
+   "casual_cloak_short_plated",
+   "reversible_tunic",
+   "reversible_tunic_plated",
+   "breeches",
+   "tall_boots"
+  ],
+  "dyes": {
+   "cuirass_chain": 16,
+   "casual_cloak_short_plated": 2,
+   "reversible_tunic": 2,
+   "reversible_tunic_plated": 2,
+   "breeches": 3,
+   "tall_boots": 3
+  }
+ },
+ "477": {
+  "body": "female",
+  "type": 131,
+  "gear": [
+   "priestess_robes",
+   "priestess_robes_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "priestess_robes": 4,
+   "priestess_robes_drape": 4,
+   "shoes": 1
+  }
+ },
+ "478": {
+  "body": "male",
+  "type": 131,
+  "gear": [
+   "priest_robes",
+   "priest_robes_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "priest_robes": 4,
+   "priest_robes_drape": 4,
+   "shoes": 1
+  }
+ },
+ "479": {
+  "body": "female",
+  "type": 136,
+  "gear": [
+   "cuirass_leather",
+   "casual_cloak_plated",
+   "open_tunic",
+   "casual_pants",
+   "tall_boots"
+  ],
+  "dyes": {
+   "cuirass_leather": 16,
+   "casual_cloak_plated": 3,
+   "open_tunic": 9,
+   "casual_pants": 5,
+   "tall_boots": 3
+  }
+ },
+ "480": {
+  "body": "male",
+  "type": 136,
+  "gear": [
+   "cuirass_leather",
+   "casual_cloak_plated",
+   "short_tunic",
+   "short_tunic_plated",
+   "casual_pants",
+   "tall_boots"
+  ],
+  "dyes": {
+   "cuirass_leather": 16,
+   "casual_cloak_plated": 3,
+   "short_tunic": 9,
+   "short_tunic_plated": 9,
+   "casual_pants": 5,
+   "tall_boots": 3
+  }
+ },
+ "481": {
+  "body": "female",
+  "type": 141,
+  "gear": [
+   "cuirass_leather",
+   "face_hooded",
+   "casual_cloak_hooded_plated",
+   "open_tunic",
+   "casual_pants",
+   "tall_boots"
+  ],
+  "dyes": {
+   "cuirass_leather": 16,
+   "casual_cloak_hooded_plated": 9,
+   "open_tunic": 5,
+   "casual_pants": 3,
+   "tall_boots": 3
+  }
+ },
+ "482": {
+  "body": "male",
+  "type": 141,
+  "gear": [
+   "cuirass_leather",
+   "face_hooded",
+   "casual_cloak_hooded_plated",
+   "short_tunic",
+   "short_tunic_plated",
+   "breeches",
+   "tall_boots"
+  ],
+  "dyes": {
+   "cuirass_leather": 16,
+   "casual_cloak_hooded_plated": 9,
+   "short_tunic": 5,
+   "short_tunic_plated": 5,
+   "breeches": 3,
+   "tall_boots": 3
+  }
+ },
+ "483": {
+  "body": "female",
+  "type": 138,
+  "gear": [
+   "face_hooded",
+   "casual_cloak_hooded_drape",
+   "shirt_long_round",
+   "belt",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "casual_cloak_hooded_drape": 3,
+   "shirt_long_round": 3,
+   "belt": 3,
+   "casual_pants": 3,
+   "boots": 3
+  }
+ },
+ "484": {
+  "body": "male",
+  "type": 138,
+  "gear": [
+   "face_hooded",
+   "casual_cloak_hooded_drape",
+   "shirt_long_round",
+   "belt",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "casual_cloak_hooded_drape": 3,
+   "shirt_long_round": 3,
+   "belt": 3,
+   "casual_pants": 3,
+   "boots": 3
+  }
+ },
+ "485": {
+  "body": "female",
+  "type": 128,
+  "gear": [
+   "face_hooded",
+   "plain_robes_hooded",
+   "plain_robes_hooded_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "plain_robes_hooded": 0,
+   "plain_robes_hooded_drape": 0,
+   "shoes": 3
+  }
+ },
+ "486": {
+  "body": "male",
+  "type": 128,
+  "gear": [
+   "face_hooded",
+   "plain_robes_hooded",
+   "plain_robes_hooded_drape",
+   "shoes"
+  ],
+  "dyes": {
+   "plain_robes_hooded": 0,
+   "plain_robes_hooded_drape": 0,
+   "shoes": 3
+  }
+ },
+ "487": {
+  "body": "female",
+  "type": 144,
+  "gear": [
+   "face_chain",
+   "helm_chain",
+   "cuirass_chain",
+   "shirt_short_v",
+   "belt",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "helm_chain": 16,
+   "cuirass_chain": 16,
+   "shirt_short_v": 2,
+   "belt": 2,
+   "casual_pants": 3,
+   "boots": 3
+  }
+ },
+ "488": {
+  "body": "male",
+  "type": 144,
+  "gear": [
+   "face_chain",
+   "helm_chain",
+   "cuirass_chain",
+   "shirt_short_v",
+   "belt",
+   "breeches",
+   "boots"
+  ],
+  "dyes": {
+   "helm_chain": 16,
+   "cuirass_chain": 16,
+   "shirt_short_v": 2,
+   "belt": 2,
+   "breeches": 3,
+   "boots": 3
+  }
+ },
+ "489": {
+  "body": "female",
+  "type": 130,
+  "gear": [
+   "cuirass_steel",
+   "dwynnen_surcoat",
+   "dwynnen_surcoat_plated",
+   "casual_pants",
+   "boots"
+  ],
+  "dyes": {
+   "cuirass_steel": 16,
+   "dwynnen_surcoat": 7,
+   "dwynnen_surcoat_plated": 7,
+   "casual_pants": 1,
+   "boots": 3
+  }
+ },
+ "490": {
+  "body": "male",
+  "type": 130,
+  "gear": [
+   "cuirass_steel",
+   "dwynnen_surcoat",
+   "dwynnen_surcoat_plated",
+   "breeches",
+   "boots"
+  ],
+  "dyes": {
+   "cuirass_steel": 16,
+   "dwynnen_surcoat": 7,
+   "dwynnen_surcoat_plated": 7,
+   "breeches": 1,
+   "boots": 3
+  }
+ }
+}

@@ -33,6 +33,7 @@ export default tseslint.config(
       'generated/**',
       'target/**',
       'bible/**',
+      'tools/forge/**',
       '.claude/**',
       'graphify-out/**',
       '.serena/**',

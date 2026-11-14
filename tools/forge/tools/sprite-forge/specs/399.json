@@ -1,0 +1,28 @@
+{
+ "archive": 399,
+ "name": "City Watch (guard)",
+ "body": "male",
+ "outfit": "guard",
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [74, 115], "place": [40, 113]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [97, 116], "place": [65, 113]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [94, 113], "place": [60, 113]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [71, 111], "place": [37, 110]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [66, 109], "place": [33, 106]},
+  {"anim": "attack", "view": 0, "frames": 5, "canvas": [134, 142], "place": [76, 140], "keys": [0, 2, 3, 4, 5]},
+  {"anim": "attack", "view": 1, "frames": 5, "canvas": [140, 142], "place": [77, 140], "keys": [1, 2, 3, 4, 5]},
+  {"anim": "attack", "view": 2, "frames": 5, "canvas": [122, 142], "place": [86, 140], "keys": [0, 2, 3, 4, 0]},
+  {"anim": "attack", "view": 3, "frames": 5, "canvas": [82, 142], "place": [54, 138], "keys": [1, 2, 3, 4, 5]},
+  {"anim": "attack", "view": 4, "frames": 5, "canvas": [127, 140], "place": [59, 139], "keys": [0, 2, 3, 4, 5]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [93, 130], "place": [45, 127]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [85, 130], "place": [50, 130]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [97, 132], "place": [54, 128]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [91, 134], "place": [58, 131]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [90, 134], "place": [47, 136]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [58, 112], "place": [34, 109]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [86, 112], "place": [59, 112]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [98, 112], "place": [63, 112]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [66, 112], "place": [39, 111]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [58, 111], "place": [25, 110]}
+ ]
+}

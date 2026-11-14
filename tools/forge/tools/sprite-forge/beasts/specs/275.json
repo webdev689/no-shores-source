@@ -1,0 +1,27 @@
+{
+ "archive": 275,
+ "name": "Giant Scorpion",
+ "beast": "scorpion",
+ "elevation": 8,
+ "work": [
+  320,
+  160
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 5, "canvas": [133, 84], "scale": 0, "place": [64, 82]},
+  {"anim": "walk", "view": 1, "frames": 5, "canvas": [178, 88], "scale": 0, "mirror": true, "place": [89, 86]},
+  {"anim": "walk", "view": 2, "frames": 5, "canvas": [210, 88], "scale": 0, "mirror": true, "place": [116, 82]},
+  {"anim": "walk", "view": 3, "frames": 5, "canvas": [173, 87], "scale": 0, "mirror": true, "place": [82, 81]},
+  {"anim": "walk", "view": 4, "frames": 5, "canvas": [141, 82], "scale": 0, "place": [69, 80]},
+  {"anim": "attack", "view": 0, "frames": 4, "canvas": [114, 98], "scale": 0, "place": [56, 98]},
+  {"anim": "attack", "view": 1, "frames": 4, "canvas": [174, 100], "scale": 0, "mirror": true, "place": [69, 95]},
+  {"anim": "attack", "view": 2, "frames": 4, "canvas": [179, 102], "scale": 0, "mirror": true, "place": [82, 105]},
+  {"anim": "attack", "view": 3, "frames": 4, "canvas": [153, 106], "scale": 0, "mirror": true, "place": [63, 105]},
+  {"anim": "attack", "view": 4, "frames": 4, "canvas": [124, 105], "scale": 0, "place": [65, 105]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [114, 79], "scale": 0, "place": [55, 80]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [174, 81], "scale": 0, "mirror": true, "place": [86, 81]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [179, 90], "scale": 0, "mirror": true, "place": [99, 92]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [150, 90], "scale": 0, "mirror": true, "place": [76, 96]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [124, 86], "scale": 0, "place": [63, 90]}
+ ]
+}

@@ -1,0 +1,238 @@
+{
+ "archive": "112360",
+ "name": "The shields in the left hand, first person (Shield Widget's)",
+ "weapon": "shield",
+ "module": "fpshield",
+ "view": [
+  356,
+  296
+ ],
+ "weights": {
+  "sil": 0.5,
+  "7": 0.25,
+  "5": 0.25
+ },
+ "records": [
+  {
+   "state": "Buckler",
+   "frames": 5,
+   "canvas": [
+    134,
+    131
+   ],
+   "screen": [
+    31,
+    158
+   ],
+   "part": "buckler",
+   "archive": 112360,
+   "pictures": [
+    "vendor/shield-widget/Textures/112360_0-0.png",
+    "vendor/shield-widget/Textures/112360_0-1.png",
+    "vendor/shield-widget/Textures/112360_0-2.png",
+    "vendor/shield-widget/Textures/112360_0-3.png",
+    "vendor/shield-widget/Textures/112360_0-4.png"
+   ],
+   "keys": {
+    "back": [
+     0.25,
+     0.93,
+     -0.25
+    ]
+   },
+   "read": "shield",
+   "rim_from": [
+    "vendor/shield-widget/Textures/112360_9-0.png",
+    "vendor/shield-widget/Textures/112360_9-1.png",
+    "vendor/shield-widget/Textures/112360_9-2.png",
+    "vendor/shield-widget/Textures/112360_9-3.png",
+    "vendor/shield-widget/Textures/112360_9-4.png"
+   ]
+  },
+  {
+   "state": "Round",
+   "frames": 5,
+   "canvas": [
+    157,
+    132
+   ],
+   "screen": [
+    20,
+    157
+   ],
+   "part": "round",
+   "archive": 112361,
+   "pictures": [
+    "vendor/shield-widget/Textures/112361_0-0.png",
+    "vendor/shield-widget/Textures/112361_0-1.png",
+    "vendor/shield-widget/Textures/112361_0-2.png",
+    "vendor/shield-widget/Textures/112361_0-3.png",
+    "vendor/shield-widget/Textures/112361_0-4.png"
+   ],
+   "keys": {
+    "back": [
+     0.25,
+     0.93,
+     -0.25
+    ],
+    "handle": [
+     [
+      125.9,
+      193.8
+     ],
+     [
+      137.9,
+      249.5
+     ]
+    ],
+    "strap": [
+     [
+      47.7,
+      229.3
+     ],
+     [
+      88.8,
+      272.7
+     ]
+    ]
+   },
+   "read": "shield",
+   "rim_from": [
+    "vendor/shield-widget/Textures/112361_9-0.png",
+    "vendor/shield-widget/Textures/112361_9-1.png",
+    "vendor/shield-widget/Textures/112361_9-2.png",
+    "vendor/shield-widget/Textures/112361_9-3.png",
+    "vendor/shield-widget/Textures/112361_9-4.png"
+   ]
+  },
+  {
+   "state": "Kite",
+   "frames": 5,
+   "canvas": [
+    157,
+    125
+   ],
+   "screen": [
+    20,
+    161
+   ],
+   "part": "kite",
+   "archive": 112362,
+   "pictures": [
+    "vendor/shield-widget/Textures/112362_0-0.png",
+    "vendor/shield-widget/Textures/112362_0-1.png",
+    "vendor/shield-widget/Textures/112362_0-2.png",
+    "vendor/shield-widget/Textures/112362_0-3.png",
+    "vendor/shield-widget/Textures/112362_0-4.png"
+   ],
+   "keys": {
+    "back": [
+     0.25,
+     0.93,
+     -0.25
+    ],
+    "handle": [
+     [
+      125.9,
+      190.8
+     ],
+     [
+      137.9,
+      246.5
+     ]
+    ],
+    "strap": [
+     [
+      47.7,
+      226.3
+     ],
+     [
+      88.8,
+      269.7
+     ]
+    ],
+    "up": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "read": "shield",
+   "rim_from": [
+    "vendor/shield-widget/Textures/112362_9-0.png",
+    "vendor/shield-widget/Textures/112362_9-1.png",
+    "vendor/shield-widget/Textures/112362_9-2.png",
+    "vendor/shield-widget/Textures/112362_9-3.png",
+    "vendor/shield-widget/Textures/112362_9-4.png"
+   ]
+  },
+  {
+   "state": "Tower",
+   "frames": 5,
+   "canvas": [
+    196,
+    146
+   ],
+   "screen": [
+    0,
+    150
+   ],
+   "part": "tower",
+   "archive": 112363,
+   "pictures": [
+    "vendor/shield-widget/Textures/112363_0-0.png",
+    "vendor/shield-widget/Textures/112363_0-1.png",
+    "vendor/shield-widget/Textures/112363_0-2.png",
+    "vendor/shield-widget/Textures/112363_0-3.png",
+    "vendor/shield-widget/Textures/112363_0-4.png"
+   ],
+   "keys": {
+    "back": [
+     0.25,
+     0.93,
+     -0.25
+    ],
+    "handle": [
+     [
+      125.9,
+      200.8
+     ],
+     [
+      137.9,
+      256.5
+     ]
+    ],
+    "strap": [
+     [
+      47.7,
+      236.3
+     ],
+     [
+      88.8,
+      279.7
+     ]
+    ],
+    "up": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "read": "shield",
+   "rim_from": [
+    "vendor/shield-widget/Textures/112363_9-0.png",
+    "vendor/shield-widget/Textures/112363_9-1.png",
+    "vendor/shield-widget/Textures/112363_9-2.png",
+    "vendor/shield-widget/Textures/112363_9-3.png",
+    "vendor/shield-widget/Textures/112363_9-4.png"
+   ]
+  }
+ ],
+ "classes": {
+  "gauntlet": 1,
+  "grip": 1,
+  "strap": 1,
+  "rivet": 9,
+  "dish": 7
+ }
+}
