@@ -20,6 +20,11 @@ const FRAMES: Record<string, number> = {
   walk_bow: 4,
   idle_bow: 1,
   bow: 4,
+  gunshot: 6,
+  gunreload: 4,
+  pistolshot: 6,
+  pistolreload: 4,
+  braceshot: 6,
 };
 const frames = (anim: string) => FRAMES[anim] ?? 4;
 const everything = () => true;
@@ -68,6 +73,17 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
     (anim: string) => anim !== 'thrust',
   );
   assert.equal(axe.anim, 'attack_axe');
+});
+
+test("a shot plays its weapon's own move whole, then its reload; a brace fires right then left", () => {
+  const shot = (right: string, left: string | null, reload: boolean, second: boolean, progress: number) =>
+    shownMove({ ...doing, right, left, blow: { direction: null, second, progress, reload } }, frames, everything);
+  assert.deepEqual(shot('thunderlock', null, false, true, 0.99), { anim: 'gunshot', frame: 5, frameSeconds: 0 });
+  assert.deepEqual(shot('thunderlock', null, true, false, 0.5), { anim: 'gunreload', frame: 2, frameSeconds: 0 });
+  assert.equal(shot('pistolet', null, true, false, 0).anim, 'pistolreload');
+  assert.deepEqual(shot('pistolet', 'pistolet_l', false, true, 0), { anim: 'braceshot', frame: 3, frameSeconds: 0 });
+  assert.equal(shot('crossbow_iron', null, false, false, 0.5).anim, 'bow');
+  assert.equal(shot('crossbow_iron', null, true, false, 0.5).anim, 'idle_bow');
 });
 
 test('in the air the jump shows rising, at the top and falling; on a wall the climb moves', () => {

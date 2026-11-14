@@ -207,7 +207,11 @@ export interface Worn {
 /** The fists' records that are kicks, which wear the boots; every other is a punch, in the gauntlets. */
 const KICKS = new Set([1, 3, 6]);
 
-async function firstOf(source: FrameSource, paths: readonly string[]): Promise<{ path: string; strip: Strip } | null> {
+/** The first of `paths` the forge drew, and its strip. */
+export async function firstOf(
+  source: FrameSource,
+  paths: readonly string[],
+): Promise<{ path: string; strip: Strip } | null> {
   for (const path of paths) {
     const strip = await source.strip(path);
     if (strip) return { path, strip };

@@ -17,8 +17,14 @@ export interface Doing {
   readonly drawn: boolean;
   readonly right: string | null;
   readonly left: string | null;
-  /** The blow being struck: its direction, whether it is the second stroke of the swing, and its progress 0..1. */
-  readonly blow: { readonly direction: Direction; readonly second: boolean; readonly progress: number } | null;
+  /** The blow being struck or the shot fired: its direction (null for a shot), whether it is the second stroke of the
+   *  swing, its progress 0..1, and whether a shot's weapon is reloading. */
+  readonly blow: {
+    readonly direction: Direction | null;
+    readonly second: boolean;
+    readonly progress: number;
+    readonly reload?: boolean;
+  } | null;
   /** A cast's progress 0..1, or null. */
   readonly cast: number | null;
   /** A move chosen by hand in the panel, and its progress 0..1. */
@@ -42,6 +48,8 @@ interface Kit {
   readonly idle: string;
   readonly walk: string;
   readonly attack: string;
+  /** A gun's reload after its shot. */
+  readonly reload?: string;
 }
 const GUARD: Kit = { idle: 'guard', walk: 'march', attack: 'slash' };
 const PAIR: Kit = { idle: 'twinguard', walk: 'twinmarch', attack: 'twinslash' };
@@ -51,11 +59,11 @@ function ownKit(right: string | null, left: string | null): Kit {
   const kind = right?.split('_')[0] ?? '';
   if (kind === 'bow' || kind === 'crossbow') return { idle: 'idle_bow', walk: 'walk_bow', attack: 'bow' };
   if (kind === 'staff') return { idle: 'idle_staff', walk: 'walk_staff', attack: 'attack_staff' };
-  if (kind === 'thunderlock') return { idle: 'gunready', walk: 'gunwalk', attack: 'gunshot' };
+  if (kind === 'thunderlock') return { idle: 'gunready', walk: 'gunwalk', attack: 'gunshot', reload: 'gunreload' };
   if (kind === 'pistolet')
     return left?.startsWith('pistolet')
       ? { idle: 'braceready', walk: 'bracewalk', attack: 'braceshot' }
-      : { idle: 'pistolready', walk: 'pistolwalk', attack: 'pistolshot' };
+      : { idle: 'pistolready', walk: 'pistolwalk', attack: 'pistolshot', reload: 'pistolreload' };
   if (!right) return { idle: 'idle', walk: 'walk', attack: 'thrust' };
   const swingsAxe = kind === 'axe' || kind === 'flail' || kind === 'warhammer';
   return { idle: 'idle', walk: 'walk', attack: swingsAxe ? 'attack_axe' : 'attack_sword' };
@@ -91,8 +99,9 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
  * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall the
  * mantle, vault, hang, shimmy or climb (frame by progress, or looping once a second); in the air the jump, its frame
  * by rising or falling; mounted, the horse's walk or gallop; a cast; a blow, one stroke of the swing (frames 0-2, the
- * next blow 3-5), up a thrust, down a chop, left or right a two-handed swing where the weapon draws them; crouching;
- * running; else the weapon's own walk and rest. `draws` says whether the forge draws a held thing in a move.
+ * next blow 3-5), up a thrust, down a chop, left or right a two-handed swing where the weapon draws them; a shot, its
+ * weapon's own move, then its reload where drawn; crouching; running; else the weapon's own walk and rest. `draws`
+ * says whether the forge draws a held thing in a move.
  */
 export function shownMove(doing: Doing, frames: (anim: string) => number, draws: Draws): Shown {
   const byProgress = (anim: string, progress: number): Shown => ({
@@ -114,14 +123,17 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
   }
   if (doing.cast !== null) return byProgress('cast', doing.cast);
   const kit = kitOf(doing.drawn ? doing.right : null, doing.drawn ? doing.left : null, draws);
-  if (doing.blow) {
-    const stroke = STROKE_OF[doing.blow.direction];
+  const { blow } = doing;
+  if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(kit.reload, blow.progress);
+  if (blow && !blow.reload) {
+    const stroke = blow.direction && STROKE_OF[blow.direction];
     // The owner's strokes for a weapon held alone: an off hand's blade, shield or torch is drawn in none of them.
     const anim = stroke && doing.right && !doing.left && draws(stroke, doing.right) ? stroke : kit.attack;
-    const strokes = frames(anim) >= 6 ? 2 : 1;
+    // A shot is one stroke of its move; a brace fires right, then left.
+    const strokes = frames(anim) >= 6 && (blow.direction !== null || anim === 'braceshot') ? 2 : 1;
     const span = frames(anim) / strokes;
-    const first = doing.blow.second && strokes === 2 ? span : 0;
-    return { anim, frame: first + Math.min(span - 1, Math.floor(doing.blow.progress * span)), frameSeconds: 0 };
+    const first = blow.second && strokes === 2 ? span : 0;
+    return { anim, frame: first + Math.min(span - 1, Math.floor(blow.progress * span)), frameSeconds: 0 };
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
   if (doing.running && doing.moving && draws('run', doing.drawn ? doing.right : null))

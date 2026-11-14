@@ -1,19 +1,18 @@
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
+import { gripFrame, gripPicture, gripPlace } from './climbing.ts';
 import { FirstPersonView, type ScreenQuad } from './firstPersonView.ts';
 import {
   type FrameSource,
   type FramesTable,
   type Picture,
-  type Wielded,
   type Worn,
   FramePainter,
   castPicture,
   forgeName,
   runPicture,
   weaponPicture,
-  wieldedOf,
 } from './fpFrames.ts';
 import {
   Bob,
@@ -27,11 +26,33 @@ import {
   runFrameAt,
   swayFrame,
 } from './fpMotion.ts';
-import { type AttackInput, type Direction, type MachineEvents, WeaponMachine } from './weaponMachine.ts';
+import { type HandView, type HandsEvents, Hands, SWAY_FRAMES, SWAY_RECORD, type Swing, everyView } from './hands.ts';
+import { type Hand, type HandsPlan, type Holding, handsPlan } from './handsLaw.ts';
+import {
+  LIGHT_FRAMES,
+  SHIELD_FRAMES,
+  crossbowPicture,
+  gunPicture,
+  lightPicture,
+  shieldPicture,
+} from './heldPictures.ts';
+import {
+  type Gait,
+  type RideShot,
+  RIDE_AHEAD,
+  RideMotion,
+  type Side,
+  horsePicture,
+  reinPicture,
+  ridePlace,
+} from './riding.ts';
+import type { AttackInput } from './weaponMachine.ts';
 
-/** What the first person shows this frame, from the one who sees it. `right` and `left` are forge weapon layers
- *  (`sword_iron`, `bow_long_elven`; null for an empty hand), `armour` the sets worn on the hands and feet (`iron`,
- *  `fighters`), `stride` the metres walked, `climbing` how far into a climb (0 to 1), `element` a cast's light. */
+/** What the first person shows this frame, from the one who sees it. `right` and `left` are forge layers (`sword_iron`,
+ *  `bow_long_elven`, `pistolet_l`, `shield_kite_iron`, `torch_l`, `lantern`; null for an empty hand), `armour` the sets
+ *  worn on the hands and feet (`iron`, `fighters`), `stride` the metres walked, `climbing` how far the hands have
+ *  closed on a wall (0 to 1), `element` a cast's light, `mounted` riding, `yaw` the look's bearing in radians (rising
+ *  to the right), and `blocking` a shield raised for a block. */
 export interface FirstPersonState {
   readonly right: string | null;
   readonly left: string | null;
@@ -43,6 +64,9 @@ export interface FirstPersonState {
   readonly casting: boolean;
   readonly climbing: number;
   readonly element?: string;
+  readonly mounted?: boolean;
+  readonly yaw?: number;
+  readonly blocking?: boolean;
 }
 
 /** What the first person draws with: a texture a picture, and the quads over the scene. */
@@ -55,12 +79,6 @@ interface Wanted {
   readonly place: (picture: Picture) => Omit<ScreenQuad, 'texture'>;
 }
 
-/** A flail at rest wears its chain's swing, which the forge drew as record 7. */
-const SWAY_RECORD = 7;
-const SWAY_FRAMES = 9;
-/** The records a weapon in the left hand draws mirrored: at rest (a flail's swing too), and the strikes down and up,
- *  which the forge drew alike for either hand. Every other strike keeps its own side. */
-const MIRRORED_RECORDS = new Set([0, 1, 6, SWAY_RECORD]);
 /** The casting hands step through their records and back to the first, a step every 0.04 s. */
 const CAST_SEQUENCE = [0, 1, 2, 3, 4, 5, 0] as const;
 const CAST_STEP = 0.04;
@@ -68,16 +86,26 @@ const CAST_STEP = 0.04;
  *  put the hands. */
 const CAST_SCREEN_WIDTH = 300;
 const CAST_SMALL_INSET = 0.134;
+/** A held light's flame steps a frame this often, and a shield a frame toward its pose this often: our own pace. */
+const FLAME_STEP = 0.1;
+const SHIELD_STEP = 0.05;
+/** A shield at rest is held a frame below raised, and raised whole for a block. */
+const SHIELD_REST = 1;
+const SHIELD_BLOCK = 0;
 /** Composed pictures kept on the GPU before all are let go and composed again as needed. */
 const KEPT_PICTURES = 1500;
 const STILL: AttackInput = { attackHeld: false, attackPressed: false, attackReleased: false };
-const NO_EVENTS: MachineEvents = { blow: null, loose: false };
+const SIDES: readonly [Side, Hand][] = [
+  ['R', 'right'],
+  ['L', 'left'],
+];
 
-/** A picture placed at its own corner on the design screen, mirrored about the screen's middle for the left hand. */
-function atOwnPlace(flip: boolean, drop: number) {
+/** A picture placed at its own corner on the design screen, mirrored about the screen's middle for the left hand,
+ *  dropped `drop` design pixels and `lower` of its own height, and moved `across` design pixels after the mirror. */
+function atOwnPlace(flip: boolean, drop: number, lower = 0, across = 0) {
   return (picture: Picture) => ({
-    x: flip ? DESIGN_WIDTH - picture.at[0] - picture.width : picture.at[0],
-    y: picture.at[1] + drop,
+    x: (flip ? DESIGN_WIDTH - picture.at[0] - picture.width : picture.at[0]) + across,
+    y: picture.at[1] + drop + lower * picture.height,
     width: picture.width,
     height: picture.height,
     flip,
@@ -95,17 +123,27 @@ function castPlace(record: number, element: string, right: boolean) {
   };
 }
 
-/** The first person: the weapon or hands in view, swung by the attack button and drawn over the scene. */
+const gaitOf = (state: FirstPersonState): Gait => (!state.moving ? 'stand' : state.running ? 'gallop' : 'walk');
+/** Whether a hand holds something other than its own bare fist. */
+const holds = (holding: Holding | null | undefined) =>
+  !!holding && !(holding.kind === 'weapon' && holding.wielded.kind === 'fists');
+
+/** The first person: the weapons, the held things or the hands in view, swung by the attack button and drawn over the
+ *  scene. */
 export class FirstPerson {
   private readonly view: QuadDrawer;
   private readonly source: FrameSource;
   private readonly chain = new ChainSwing();
   private readonly bob = new Bob();
-  private readonly random: () => number;
-  private machine: WeaponMachine | null = null;
+  private readonly hands: Hands;
+  private readonly ride: RideMotion;
+  private plan: HandsPlan | null = null;
   private lower = 0;
   private castClock: number | null = null;
   private wasCasting = false;
+  private flameClock = 0;
+  private shield = SHIELD_REST;
+  private shieldClock = 0;
   private look = '';
   private wanted: Wanted[] = [];
   private shown: ScreenQuad[] = [];
@@ -115,7 +153,8 @@ export class FirstPerson {
   constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random) {
     this.view = view;
     this.source = source;
-    this.random = random;
+    this.hands = new Hands(random);
+    this.ride = new RideMotion(random);
   }
 
   /** Opens the first person on the forge's published pictures, with their placement and Daggerfall's colours. */
@@ -130,26 +169,22 @@ export class FirstPerson {
     });
   }
 
-  /** The swing or shot under way: its direction (null for a bow) and how far through it, or null at rest. */
-  get swing(): { direction: Direction | null; progress: number } | null {
-    const progress = this.machine?.progress ?? null;
-    return progress === null ? null : { direction: this.machine?.striking ?? null, progress };
+  /** The blow or shot under way: its direction (null for a bow, a gun or a crossbow), how far through it, the hand that
+   *  threw it and whether the hands take turns as a pair; null at rest. */
+  get swing(): Swing | null {
+    return this.hands.swing;
   }
 
-  /** Moves the first person on by `seconds`: the swing, the cast, the bob, the chain and the climb. Answers the blow
-   *  that lands now and whether an arrow leaves, so the figure seen from outside can match them. */
-  update(seconds: number, input: AttackInput, state: FirstPersonState): MachineEvents {
-    const mirrored = state.right === null && state.left !== null;
-    const held = mirrored ? state.left : state.right;
-    const wielded = state.drawn ? wieldedOf(held) : null;
+  /** Moves the first person on by `seconds`: the swings and shots, the cast, the bob, the chain, the climb, the ride and
+   *  the held things. Answers the blow that lands now and whether a shot leaves, and from which hand, so the figure seen
+   *  from outside can match them. */
+  update(seconds: number, input: AttackInput, state: FirstPersonState): HandsEvents {
+    this.plan = state.drawn ? handsPlan(state.right, state.left) : null;
     const worn: Worn = {
       hands: state.armour.gauntlets ? forgeName(state.armour.gauntlets) : null,
       feet: state.armour.boots ? forgeName(state.armour.boots) : null,
     };
-    if (wielded?.kind !== this.machine?.kind)
-      this.machine = wielded ? new WeaponMachine(wielded.kind, this.random) : null;
-
-    if (state.casting && !this.wasCasting && !this.machine?.busy) this.castClock = 0;
+    if (state.casting && !this.wasCasting && !this.hands.busy) this.castClock = 0;
     this.wasCasting = state.casting;
     if (this.castClock !== null) {
       this.castClock += seconds;
@@ -157,30 +192,36 @@ export class FirstPerson {
     }
     this.lower = lowerStep(this.lower, state.climbing, seconds);
     const free = this.castClock === null && this.lower < 0.5;
-    const events = this.machine?.update(seconds, free ? input : STILL) ?? NO_EVENTS;
-    const drop = this.bob.step(seconds, state.stride, state.moving, state.running) + lowerDrop(this.lower);
-    const sway = this.chain.step(seconds, state.running ? 2 : state.moving ? 1 : 0);
+    const motion = { running: state.running && state.moving && !state.mounted, stride: state.stride };
+    const events = this.hands.update(seconds, free ? input : STILL, this.plan, motion);
+    const walking = state.moving && !state.mounted;
+    const drop = this.bob.step(seconds, state.stride, walking, state.running) + lowerDrop(this.lower);
+    const sway = this.chain.step(seconds, !walking ? 0 : state.running ? 2 : 1);
+    this.flameClock += seconds;
+    this.stepShield(seconds, !!state.blocking);
+    const shot = state.mounted ? this.ride.step(seconds, gaitOf(state), state.yaw ?? null) : null;
 
-    const lookKey = `${held}|${state.drawn}|${worn.hands}|${worn.feet}`;
-    this.wanted = this.wantedNow(state, wielded, worn, mirrored, drop, sway, lookKey);
+    const lookKey = `${state.right}|${state.left}|${state.drawn}|${worn.hands}|${worn.feet}|${!!state.mounted}`;
+    this.wanted = this.wantedNow(state, worn, drop, sway, shot);
     // What is wanted now is asked for first, ahead of the rest of a new look's pictures.
     for (const wanted of this.wanted) this.request(wanted);
     if (lookKey !== this.look) {
       this.look = lookKey;
-      this.prefetch(wielded, worn, mirrored, lookKey);
+      this.prefetch(worn, !!state.mounted);
     }
     return events;
   }
 
-  private wantedNow(
-    state: FirstPersonState,
-    wielded: Wielded | null,
-    worn: Worn,
-    mirrored: boolean,
-    drop: number,
-    sway: number,
-    lookKey: string,
-  ): Wanted[] {
+  private stepShield(seconds: number, blocking: boolean): void {
+    const target = blocking ? SHIELD_BLOCK : SHIELD_REST;
+    this.shieldClock += seconds;
+    while (this.shieldClock >= SHIELD_STEP) {
+      this.shieldClock -= SHIELD_STEP;
+      this.shield += Math.sign(target - this.shield);
+    }
+  }
+
+  private wantedNow(state: FirstPersonState, worn: Worn, drop: number, sway: number, shot: RideShot | null): Wanted[] {
     if (this.castClock !== null) {
       const record = CAST_SEQUENCE[Math.floor(this.castClock / CAST_STEP)] ?? 0;
       const element = state.element ?? 'magic';
@@ -191,32 +232,57 @@ export class FirstPerson {
         { key, ask, place: castPlace(record, element, true) },
       ];
     }
-    if (this.lower >= LOWERED_GONE) return [];
-    const bareHanded = !state.drawn || (wielded?.kind === 'fists' && !this.machine?.busy);
-    if (state.running && bareHanded) {
-      return [false, true].map((left) => this.runWanted(worn, runFrameAt(state.stride, left), left, drop));
+    const wanted: Wanted[] = shot ? this.rideWanted(shot, worn) : [];
+    // On a horse an empty hand holds its rein, not its fist up.
+    const views = this.hands.views().filter((view) => !shot || holds(view.holding));
+    if (this.lower < LOWERED_GONE) {
+      if (state.running && !shot && (!this.plan || this.hands.bareAtRest)) {
+        for (const left of [false, true]) wanted.push(this.runWanted(worn, runFrameAt(state.stride, left), left, drop));
+      } else {
+        if (this.plan?.held) wanted.push(this.heldWanted(this.plan.held, worn, drop));
+        wanted.push(...views.map((view) => this.viewWanted(view, worn, drop, sway)));
+      }
     }
-    if (!wielded || !this.machine) return [];
-    let { record, frame } = this.machine;
-    if (wielded.kind === 'flail' && record === 0) [record, frame] = [SWAY_RECORD, swayFrame(sway, SWAY_FRAMES)];
-    const flip = mirrored && (wielded.kind === 'bow' || MIRRORED_RECORDS.has(record));
-    return [this.weaponWanted(wielded, worn, record, frame, flip, drop, lookKey)];
+    if (this.lower > 0.001 && !shot) wanted.push(...(['left', 'right'] as const).map((hand) => this.gripWanted(hand)));
+    return wanted;
   }
 
-  private weaponWanted(
-    wielded: Wielded,
-    worn: Worn,
-    record: number,
-    frame: number,
-    flip: boolean,
-    drop: number,
-    lookKey: string,
-  ): Wanted {
-    return {
-      key: `${lookKey}|${record}-${frame}${flip ? '|left' : ''}`,
-      ask: () => weaponPicture(this.source, wielded, worn, record, frame, flip),
-      place: atOwnPlace(flip, drop),
-    };
+  private viewWanted(view: HandView, worn: Worn, drop: number, sway: number): Wanted {
+    const across = view.hand === 'left' ? view.dx : -view.dx;
+    const place = atOwnPlace(view.flip, drop + view.dy, view.lower, across);
+    const { holding } = view;
+    if (holding.kind === 'shooter') {
+      const { shooter } = holding;
+      const key = `shot|${shooter.kind}|${shooter.metal}|${shooter.gilded}|${worn.hands}|${view.record}-${view.frame}|${view.pairArt}`;
+      const ask =
+        shooter.kind === 'crossbow'
+          ? () => crossbowPicture(this.source, shooter, view.frame, view.pairArt)
+          : () => gunPicture(this.source, shooter, worn.hands, view.record, view.frame);
+      return { key, ask, place };
+    }
+    if (holding.kind !== 'weapon') return this.heldWanted(holding, worn, drop);
+    const { wielded } = holding;
+    let { record, frame } = view;
+    if (wielded.kind === 'flail' && record === 0) [record, frame] = [SWAY_RECORD, swayFrame(sway, SWAY_FRAMES)];
+    const key = `weapon|${wielded.kind}|${wielded.make}|${wielded.bow}|${worn.hands}|${worn.feet}|${record}-${frame}|${view.flip}`;
+    return { key, ask: () => weaponPicture(this.source, wielded, worn, record, frame, view.flip), place };
+  }
+
+  /** A shield's frame is its pose's, raised to lowered; a light's its flame's. */
+  private heldFrame(held: Holding): number {
+    if (held.kind === 'shield') return Math.min(SHIELD_FRAMES - 1, Math.max(0, this.shield));
+    return Math.floor(this.flameClock / FLAME_STEP) % LIGHT_FRAMES;
+  }
+
+  private heldWanted(held: Holding, worn: Worn, drop: number, frame = this.heldFrame(held)): Wanted {
+    const place = atOwnPlace(false, drop);
+    if (held.kind === 'shield') {
+      const key = `shield|${held.archive}|${held.metal}|${worn.hands}|${frame}`;
+      return { key, ask: () => shieldPicture(this.source, held.archive, held.metal, worn.hands, frame), place };
+    }
+    const light = held.kind === 'light' ? held.light : 'torch';
+    const key = `light|${light}|${worn.hands}|${frame}`;
+    return { key, ask: () => lightPicture(this.source, light, worn.hands, frame), place };
   }
 
   private runWanted(worn: Worn, frame: number, left: boolean, drop: number): Wanted {
@@ -227,17 +293,36 @@ export class FirstPerson {
     };
   }
 
+  private gripWanted(hand: Hand): Wanted {
+    const frame = gripFrame(1 - this.lower);
+    return { key: `grip|${frame}`, ask: () => gripPicture(this.source, frame), place: gripPlace(hand, this.lower) };
+  }
+
+  /** The horse from the saddle, and each hand not holding something on its rein: a weapon takes the right hand, and a
+   *  weapon, a shield or a light the left. */
+  private rideWanted(shot: RideShot, worn: Worn): Wanted[] {
+    const busy: Record<Hand, boolean> = {
+      right: holds(this.plan?.right),
+      left: holds(this.plan?.left) || !!this.plan?.held,
+    };
+    const horse = { key: `ride|${shot.key}`, ask: () => horsePicture(this.source, shot), place: ridePlace(false) };
+    const reins = SIDES.filter(([, hand]) => !busy[hand]).map(([side]) => ({
+      key: `rein|${shot.key}|${side}|${worn.hands}`,
+      ask: () => reinPicture(this.source, shot, side, worn.hands),
+      place: ridePlace(side === 'L'),
+    }));
+    return [horse, ...reins];
+  }
+
   /** Asks for every picture a new look shows, so a swing's frames are ready before it needs them. */
-  private prefetch(wielded: Wielded | null, worn: Worn, mirrored: boolean, lookKey: string): void {
+  private prefetch(worn: Worn, mounted: boolean): void {
     for (let frame = 0; frame < RUN_FRAMES; frame++) this.request(this.runWanted(worn, frame, false, 0));
-    if (!wielded) return;
-    const records = wielded.kind === 'bow' ? [[0, 7]] : [[0, 1], ...[1, 2, 3, 4, 5, 6].map((record) => [record, 5])];
-    if (wielded.kind === 'flail') records.push([SWAY_RECORD, SWAY_FRAMES]);
-    for (const [record = 0, count = 0] of records) {
-      const flip = mirrored && (wielded.kind === 'bow' || MIRRORED_RECORDS.has(record));
-      for (let frame = 0; frame < count; frame++)
-        this.request(this.weaponWanted(wielded, worn, record, frame, flip, 0, lookKey));
-    }
+    if (mounted) for (const shot of RIDE_AHEAD) for (const wanted of this.rideWanted(shot, worn)) this.request(wanted);
+    if (!this.plan) return;
+    for (const view of everyView(this.plan)) this.request(this.viewWanted(view, worn, 0, 0));
+    const { held } = this.plan;
+    const frames = held?.kind === 'shield' ? SHIELD_FRAMES : LIGHT_FRAMES;
+    if (held) for (let frame = 0; frame < frames; frame++) this.request(this.heldWanted(held, worn, 0, frame));
   }
 
   private request(wanted: Wanted): void {
