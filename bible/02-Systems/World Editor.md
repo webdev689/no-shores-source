@@ -52,8 +52,11 @@ continent breaks.
 - **The rules** are the world crate compiled to WebAssembly (`crates/world-wasm`), loaded as `world.wasm` beside the pages. After
   each stroke the editor drafts the layout and the rules check it. Saving writes the layout in the one written form
   the world crate gives it, so the repository's test passes on what the editor saves.
-- **Continent ids** are kept as they are in the file; a new continent takes `continent-1` to `continent-9`. Climates
-  and isles already in the file pass through untouched.
+- **Continent ids** are kept as they are in the file. `continent-N` reopens on key `N` in its own colour; any other
+  id takes a free slot, and a new continent takes its slot's `continent-N`. Climates and isles already in the file
+  pass through untouched.
+- **Untouched coasts stay exact.** On save, a continent not painted or erased since the file was opened keeps its
+  outline as it was. Only changed continents are traced again, so saving never drifts a coast.
 
 ## Limits
 

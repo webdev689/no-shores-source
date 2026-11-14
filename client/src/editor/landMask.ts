@@ -79,6 +79,18 @@ export class LandMask {
     }
   }
 
+  /** The continents whose cells differ from `before`, an earlier copy of `cells`: those painted or erased since. */
+  changedLabels(before: Uint8Array): Set<number> {
+    const changed = new Set<number>();
+    for (let index = 0; index < this.cells.length; index++) {
+      const now = this.cells[index] ?? 0;
+      const was = before[index] ?? 0;
+      if (now !== was) changed.add(now).add(was);
+    }
+    changed.delete(0);
+    return changed;
+  }
+
   /** How many separate pieces each continent's land is in, cells joined by their sides. The sea is never walked. */
   piecesByLabel(): number[] {
     const pieces = new Array<number>(10).fill(0);

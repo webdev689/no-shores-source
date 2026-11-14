@@ -29,7 +29,7 @@ Each layer reads the one above it and owns its own data ([[Generated Files Stay 
 
 `content/world/layout.json` holds the layout: each continent's id, its outline as a closed ring of points, and its
 climate profile once chosen; each static isle's id, centre, radius, seed and climate. A point is `[x, y]`, whole metres
-east and south of the frame's north-west corner. The file starts empty: the owner places the continents.
+east and south of the frame's north-west corner. The owner paints the continents into it with the [[World Editor]].
 
 The `world` crate reads it (`layout.rs`) and checks it (`check.rs`), in integer arithmetic only (`geometry.rs`):
 

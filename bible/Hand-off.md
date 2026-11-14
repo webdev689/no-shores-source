@@ -15,11 +15,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Waiting on the owner
 
 - [[Open Questions]]: which nine climates, which the owner will decide later.
-- Turning on GitHub Pages once: Settings, Pages, Source: GitHub Actions. Until then the site's deploy fails.
 
 ## Next
 
 - The [[World Map]]'s layout file and its rules are built, and the [[World Editor]] paints continents into it, on GitHub
-  Pages ([[The World Editor Is on GitHub Pages]]). The file is empty until the owner paints the continents.
+  Pages ([[The World Editor Is on GitHub Pages]]). The owner has painted three of the nine: `continent-2`, `continent-6`
+  and `continent-9`.
 - Next: placing isles in the editor, then World 2.0's generators over the layout. The grid, place records, scene format, mesh kit and biome tables are in the [[Pick List]]'s
   seams.

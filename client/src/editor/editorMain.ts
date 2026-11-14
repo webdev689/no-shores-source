@@ -50,6 +50,7 @@ async function start(): Promise<void> {
 
   let layout: LayoutContent = { continents: [], isles: [] };
   let slotIds: string[] = [];
+  let loadedCells = mask.cells.slice();
   let camera: Camera = fitFrame(constants.frameWidthM, constants.frameHeightM, canvas.clientWidth, canvas.clientHeight);
   let tool: Tool = 'paint';
   let slot = 1;
@@ -70,7 +71,7 @@ async function start(): Promise<void> {
     rules.check(JSON.stringify({ continents: [{ id: 'probe', outline }], isles: [] })).continents.get('probe')
       ?.simple ?? false;
 
-  const draft = () => draftLayout(mask, slotIds, layout, isSimple);
+  const draft = () => draftLayout(mask, slotIds, layout, isSimple, mask.changedLabels(loadedCells));
 
   const recheck = () => {
     counts = mask.counts();
@@ -83,9 +84,11 @@ async function start(): Promise<void> {
     layout = JSON.parse(text) as LayoutContent;
     slotIds = slotIdsFor(layout, constants.continentCount);
     mask.cells.fill(0);
-    layout.continents
-      .slice(0, constants.continentCount)
-      .forEach((continent, index) => mask.fillOutline(continent.outline, index + 1));
+    for (const continent of layout.continents) {
+      const slot = slotIds.indexOf(continent.id);
+      if (slot > 0) mask.fillOutline(continent.outline, slot);
+    }
+    loadedCells = mask.cells.slice();
     view.upload(null);
     recheck();
   };
