@@ -60,3 +60,15 @@ test('land in two places is two pieces; joined by a side it is one', () => {
   assert.equal(pieces[2], 0);
   assert.equal(pieces[0], 0, 'the sea is never walked');
 });
+
+test('the continents painted or erased since a copy of the cells are the ones changed', () => {
+  const mask = new LandMask(100_000, 100_000);
+  mask.paintDisc(20_000, 20_000, 5_000, 1);
+  mask.paintDisc(70_000, 70_000, 5_000, 2);
+  const before = mask.cells.slice();
+  assert.deepEqual(mask.changedLabels(before), new Set());
+  mask.paintDisc(75_000, 70_000, 5_000, 2);
+  assert.deepEqual(mask.changedLabels(before), new Set([2]));
+  mask.paintDisc(20_000, 20_000, 2_000, 0);
+  assert.deepEqual(mask.changedLabels(before), new Set([1, 2]));
+});

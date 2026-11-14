@@ -24,21 +24,28 @@ export interface Draft {
 }
 
 /**
- * Drafts the layout from the painted land. Slot `n` (1 to 9) is the continent `slotIds[n]`. Each continent's coast
- * is traced and simplified at the coarsest tolerance `isSimple` accepts; a continent in more than one piece is not
- * drafted, and says why. Climates and isles carry over from `previous`.
+ * Drafts the layout from the painted land. Slot `n` (1 to 9) is the continent `slotIds[n]`. A continent in `previous`
+ * whose slot is not in `changed` keeps its outline exactly: tracing it again would move its coast a little each save.
+ * Every other coast is traced and simplified at the coarsest tolerance `isSimple` accepts; a continent in more than
+ * one piece is not drafted, and says why. Climates and isles carry over from `previous`.
  */
 export function draftLayout(
   mask: LandMask,
   slotIds: readonly string[],
   previous: LayoutContent,
   isSimple: (outline: readonly Point[]) => boolean,
+  changed: ReadonlySet<number>,
 ): Draft {
   const continents: ContinentEntry[] = [];
   const issues: string[] = [];
   const piecesBySlot = mask.piecesByLabel();
   for (let slot = 1; slot < slotIds.length; slot++) {
     const id = slotIds[slot] ?? `continent-${slot}`;
+    const loaded = previous.continents.find((continent) => continent.id === id);
+    if (loaded && !changed.has(slot)) {
+      continents.push(loaded);
+      continue;
+    }
     const pieces = piecesBySlot[slot] ?? 0;
     if (pieces === 0) continue;
     if (pieces > 1) {
@@ -47,20 +54,25 @@ export function draftLayout(
     }
     const coast = traceCoast(mask, slot);
     const outline = TOLERANCES_M.map((tolerance) => simplifyRing(coast, tolerance)).find(isSimple) ?? coast;
-    const climate = previous.continents.find((continent) => continent.id === id)?.climate;
+    const climate = loaded?.climate;
     continents.push(climate === undefined ? { id, outline } : { id, outline, climate });
   }
   return { layout: { continents, isles: previous.isles }, issues };
 }
 
-/** The continents' ids by slot, 1 to 9: those already in the layout first, in order, then new ones. */
+/**
+ * The continents' ids by slot, 1 to 9. `continent-N` keeps slot N, so a reopened layout keys and colours each
+ * continent as it was painted. Other ids take the free slots in order, and the slots left get new ids.
+ */
 export function slotIdsFor(layout: LayoutContent, slots: number): string[] {
-  const ids = [''];
-  const taken = new Set(layout.continents.map((continent) => continent.id));
-  layout.continents.slice(0, slots).forEach((continent) => ids.push(continent.id));
-  for (let next = 1; ids.length <= slots; next++) {
-    const id = `continent-${next}`;
-    if (!taken.has(id)) ids.push(id);
+  const bySlot = new Map<number, string>();
+  const rest: string[] = [];
+  for (const { id } of layout.continents) {
+    const slot = Number(/^continent-(\d+)$/.exec(id)?.[1] ?? 0);
+    if (slot >= 1 && slot <= slots && !bySlot.has(slot)) bySlot.set(slot, id);
+    else rest.push(id);
   }
+  const ids = [''];
+  for (let slot = 1; slot <= slots; slot++) ids.push(bySlot.get(slot) ?? rest.shift() ?? `continent-${slot}`);
   return ids;
 }
