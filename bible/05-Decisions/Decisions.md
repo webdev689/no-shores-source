@@ -20,6 +20,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Clients Predict With the Shared Rules]]
 - [[One Schema for Every Message]]
 - [[Review by the Owner and Claude]]
+- [[Ask Before Deploying]]
+- [[Generated Files on Cloudflare R2]]
+- [[Copyright Held by Vestige Studios]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

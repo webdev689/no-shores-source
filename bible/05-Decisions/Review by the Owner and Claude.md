@@ -10,5 +10,4 @@ status: in force
 ## What it settles
 
 - Claude reviews every change against the [[Rules]] and runs `cargo xtask check` before it is proposed.
-- The owner reviews pull requests. Claude's review is enough for a change to proceed, and the owner reviews as they
-  choose.
+- The owner reviews pull requests as they choose, and approves every merge into `main` ([[Ask Before Deploying]]).

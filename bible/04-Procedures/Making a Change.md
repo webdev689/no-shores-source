@@ -10,7 +10,8 @@ type: procedure
 5. **Run `cargo xtask check`** until it passes.
 6. **Open a pull request.** Its description says what changed, why, and how it was tested. History goes here, not
    in the code or the bible.
-7. **Squash-merge** once CI is green on the branch's latest commit, then delete the branch.
+7. **Ask the owner**, then squash-merge once CI is green on the branch's latest commit, and delete the branch. Every
+   merge into `main` and every deploy waits for the owner's yes ([[Ask Before Deploying]]).
 
 ## Done means
 
