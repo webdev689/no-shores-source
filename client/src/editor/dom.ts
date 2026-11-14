@@ -17,3 +17,12 @@ export function button(text: string, onClick: () => void): HTMLButtonElement {
   node.addEventListener('click', onClick);
   return node;
 }
+
+/** Hands the viewer a JSON file to save. */
+export function downloadJson(text: string, fileName: string): void {
+  const link = make('a');
+  link.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}

@@ -50,6 +50,19 @@ export interface LandPatch {
   readonly heights: Float32Array;
 }
 
+/** The exact ground over a grid of samples `step` metres apart from (left, top): each sample's height, its water's
+ *  surface (0 where dry) and its mark (3 a road, 4 a town, 5 a port, 0 none). */
+export interface GroundPatch {
+  readonly left: number;
+  readonly top: number;
+  readonly step: number;
+  readonly width: number;
+  readonly height: number;
+  readonly heights: Float32Array;
+  readonly water: Float32Array;
+  readonly marks: Uint8Array;
+}
+
 /** The land crate, running in WebAssembly. Each call throws with the reason when it cannot answer. */
 export interface LandRules {
   /** Generates one continent of a layout with its edits file's text on it (null for none). Kept, it stays open for
@@ -65,6 +78,8 @@ export interface LandRules {
   write(): { readonly id: string; readonly text: string };
   /** The open landmass's ground at each point, to the metre. */
   sample(points: readonly (readonly [number, number])[]): GroundSample;
+  /** The open landmass's exact ground over a grid, for a close look. */
+  patch(left: number, top: number, step: number, width: number, height: number): GroundPatch;
 }
 
 interface LandExports {
@@ -77,6 +92,7 @@ interface LandExports {
   land_set_edits(address: number, length: number): bigint;
   land_write(): bigint;
   land_sample(address: number, length: number): bigint;
+  land_patch(address: number, length: number): bigint;
 }
 
 interface ViewHeader {
@@ -184,6 +200,20 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
       };
       if (answer.error !== undefined) throw new Error(answer.error);
       return { id: answer.id ?? '', text: answer.text ?? '' };
+    },
+    patch: (left, top, step, width, height) => {
+      const packed = send(exports.land_patch, JSON.stringify({ left, top, step, width, height }));
+      const address = Number(packed >> 32n);
+      const length = Number(packed & 0xffff_ffffn);
+      try {
+        const { start } = readHeader(exports, address);
+        const cells = width * height;
+        const floats = (offset: number) => new Float32Array(exports.memory.buffer.slice(offset, offset + cells * 4));
+        const marks = new Uint8Array(exports.memory.buffer.slice(start + cells * 8, start + cells * 9));
+        return { left, top, step, width, height, heights: floats(start), water: floats(start + cells * 4), marks };
+      } finally {
+        exports.release(address, length);
+      }
     },
     sample: (points) => {
       const answer = JSON.parse(takeText(exports, send(exports.land_sample, JSON.stringify({ points })))) as {

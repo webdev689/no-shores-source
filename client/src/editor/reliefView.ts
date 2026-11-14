@@ -103,6 +103,21 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
 }
 `;
 
+/** The view that fits a landmass's window into the canvas with a margin. */
+export function fitWindow(view: LandView, width: number, height: number): Camera {
+  const [windowWidth, windowHeight] = [view.width * view.cellM, view.height * view.cellM];
+  const metresPerPixel = Math.max(windowWidth / (width * 0.9), windowHeight / (height * 0.9));
+  return { centreX: view.leftM + windowWidth / 2, centreY: view.topM + windowHeight / 2, metresPerPixel };
+}
+
+/** The ground's height in metres at a world point, or null off the window. */
+export function heightAt(view: LandView, x: number, y: number): number | null {
+  const i = Math.floor((x - view.leftM) / view.cellM);
+  const j = Math.floor((y - view.topM) / view.cellM);
+  if (i < 0 || j < 0 || i >= view.width || j >= view.height) return null;
+  return view.heights[j * view.width + i] ?? null;
+}
+
 /** Draws one landmass's relief with WebGPU: three textures of its cells, one full-screen pass. */
 export class ReliefView {
   private readonly gpu: Gpu;

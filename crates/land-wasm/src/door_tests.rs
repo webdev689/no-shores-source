@@ -30,3 +30,19 @@ fn edits_that_break_the_rules_are_refused() {
     let found = header(&set_edits_view(bad.as_bytes()));
     assert_eq!(found["error"], "stroke 1: its radius must be 1000 to 200000 m");
 }
+
+#[test]
+fn a_patch_samples_the_ground_with_its_water_and_marks() {
+    let edits = r#"{ "strokes": [], "roads": [{ "id": "road-1", "width_m": 10, "points": [[150000, 180000], [250000, 180000]] }] }"#;
+    let _ = open_view(format!(r#"{{ "id": "small", "edits": {edits}, {SQUARE} }}"#).as_bytes());
+    let bytes = patch_view(br#"{ "left": 199000, "top": 179980, "step": 4, "width": 10, "height": 10 }"#);
+    let found = header(&bytes);
+    assert_eq!((found["width"].as_u64(), found["height"].as_u64()), (Some(10), Some(10)));
+    let start = 4 + u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
+    assert_eq!(bytes.len(), start + 100 * 4 * 2 + 100);
+    let marks = &bytes[start + 800..];
+    assert_eq!(marks[5 * 10], 3, "the sample on the road's line is on its bed");
+    assert_eq!(marks[0], 0, "20 m off it is not");
+    let refused = header(&patch_view(br#"{ "left": 0, "top": 0, "step": 4, "width": 5000, "height": 10 }"#));
+    assert!(refused["error"].as_str().unwrap().starts_with("a patch is"));
+}

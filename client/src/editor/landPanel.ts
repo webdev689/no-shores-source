@@ -46,6 +46,7 @@ export interface LandPanelView {
   readonly depthM: number;
   readonly problems: readonly string[];
   readonly view: '2d' | '3d';
+  readonly walking: boolean;
   readonly exaggeration: number;
   readonly cursor: string;
   readonly status: string;
@@ -55,6 +56,7 @@ export interface LandPanelView {
 export interface LandPanelHandlers {
   select(id: string): void;
   view(view: '2d' | '3d'): void;
+  walk(): void;
   exaggeration(times: number): void;
   tool(tool: LandTool): void;
   radius(kilometres: number): void;
@@ -120,8 +122,10 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   const views = make('div', '', 'row');
   const flat = button('2D map (V)', () => handlers.view('2d'));
   const solid = button('3D view (V)', () => handlers.view('3d'));
-  views.append(flat, solid);
-  root.append(views);
+  const walk = button('Walk (G)', () => handlers.walk());
+  views.append(flat, solid, walk);
+  const walkHint = make('p', 'Walking: W A S D to move, Shift to run, drag to look round, G to stop.', 'hint');
+  root.append(views, walkHint);
 
   const exaggerationLabel = make('label', '', 'brush');
   const exaggeration = make('input');
@@ -188,6 +192,8 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       strength.text.textContent = ` ${strengthText(view.tool, view.strength)}`;
       flat.classList.toggle('active', view.view === '2d');
       solid.classList.toggle('active', view.view === '3d');
+      walk.classList.toggle('active', view.walking);
+      walkHint.hidden = !view.walking;
       exaggerationLabel.hidden = view.view !== '3d';
       exaggeration.value = String(view.exaggeration);
       exaggerationText.textContent = ` ${view.exaggeration}× in 3D`;

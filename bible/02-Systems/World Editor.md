@@ -64,11 +64,17 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Undo, Redo (`Ctrl+Z`, `Ctrl+Y`) | Steps back or forward through the last 100 strokes |
 | Save | On the site, downloads `<landmass>.json`; under `npm run dev`, writes `content/world/land/<landmass>.json` |
 | 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
-| Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar |
+| Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar; within 3 km heights are true to scale |
+| Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` to move (6 m/s, 40 with `Shift`), drag to look round |
 | In 2D: drag, wheel | Shapes with a brush (or pans with Look, or with the right button), and zooms |
 | In 3D: left-drag, right-drag, middle-drag, wheel | Shapes with a brush (or orbits with Look), orbits, pans along the ground, and zooms |
 
-The cursor's readout gives the ground's height under it, or the sea's depth, in either view. A stroke shows as it
+The cursor's readout gives the ground's height under it, or the sea's depth, in either view.
+
+Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled
+every 8 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports
+and the coast. A 1.8 m figure stands at the target with a scale bar beside it. It is sampled again as the target
+moves 400 m or the land changes. Walking, the readout gives where the walker stands and the ground's height there. A stroke shows as it
 is drawn; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in both views. The Problems list gives every rule the landmass's edits
 break. Each landmass's row says when it has unsaved shaping, which
 this browser keeps until it is saved and offers to restore on the next visit. To keep shaping done on the site, put

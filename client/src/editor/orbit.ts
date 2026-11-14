@@ -26,8 +26,8 @@ export const FIELD_OF_VIEW = (50 * Math.PI) / 180;
 /** Just above the horizon to almost straight down. */
 export const PITCH_LIMITS = { lowest: 0.05, highest: 1.5 } as const;
 
-/** The closest and farthest the camera sits from its target: 500 m to 5,000 km. */
-export const DISTANCE_LIMITS = { closest: 500, farthest: 5_000_000 } as const;
+/** The closest and farthest the camera sits from its target: 3 m, over a walker's shoulder, to 5,000 km. */
+export const DISTANCE_LIMITS = { closest: 3, farthest: 5_000_000 } as const;
 
 type Vector = [number, number, number];
 
@@ -62,7 +62,7 @@ const dot = (a: Vector, b: Vector) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
  */
 export function viewProjection(orbit: Orbit, aspect: number): Float32Array {
   const { eye, forward, right, up } = cameraFrame(orbit);
-  const near = Math.max(1, orbit.distance / 1000);
+  const near = Math.max(0.25, orbit.distance / 1000);
   const far = orbit.distance * 20 + 50_000;
   const focal = 1 / Math.tan(FIELD_OF_VIEW / 2);
   const depthScale = far / (near - far);

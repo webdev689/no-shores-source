@@ -20,6 +20,11 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     scope.postMessage({ ticket, patch }, [patch.heights.buffer]);
     return;
   }
+  if (request.kind === 'ground') {
+    const ground = rules.patch(request.left, request.top, request.step, request.width, request.height);
+    scope.postMessage({ ticket, ground }, [ground.heights.buffer, ground.water.buffer, ground.marks.buffer]);
+    return;
+  }
   if (request.kind === 'write') {
     scope.postMessage({ ticket, written: rules.write() }, []);
     return;

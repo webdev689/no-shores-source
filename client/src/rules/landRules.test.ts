@@ -76,6 +76,30 @@ test('a stroke lifts the ground live, settles, writes back, and undoes by replac
   assert.throws(() => rules.dab({ ...brush, radius_m: 1 }, [260_000, 360_000], true), /radius must be/);
 });
 
+test('a patch gives the exact ground over a grid, with water and marks', async () => {
+  const rules = await land();
+  const edits = {
+    strokes: [],
+    roads: [
+      {
+        id: 'road-1',
+        width_m: 10,
+        points: [
+          [220_000, 360_000],
+          [300_000, 360_000],
+        ],
+      },
+    ],
+  };
+  rules.open(square(200_000, 300_000, 120_000), 'square', JSON.stringify(edits));
+  const patch = rules.patch(259_000, 359_980, 4, 10, 10);
+  assert.equal(patch.heights.length, 100);
+  assert.equal(patch.marks[50], 3, 'on the road');
+  assert.equal(patch.marks[0], 0, 'beside it');
+  const sampled = rules.sample([[259_000, 359_980]]);
+  assert.equal(patch.heights[0], Math.fround(sampled.heights[0] ?? 0), 'the same ground the runtime samples');
+});
+
 test('a preview leaves the landmass open for strokes alone', async () => {
   const rules = await land();
   const twoSquares = square(200_000, 300_000, 120_000).replace(

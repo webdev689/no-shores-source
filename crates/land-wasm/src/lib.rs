@@ -222,6 +222,59 @@ pub fn sample_json(request: &[u8]) -> String {
     sampled.unwrap_or_else(|error: String| json!({ "error": error }).to_string())
 }
 
+/// What stands at a sampled point of a patch, beside its water: 3 a road, 4 a town, 5 a port, 0 none (the World
+/// Editor's marks).
+const PORT_MARK_M: f64 = 25.0;
+
+/// The open landmass's ground over a grid: `{ "left", "top", "step", "width", "height" }` in metres and samples. A
+/// header, then each sample's height, its water's surface (0 where dry) as f32, then its mark as a byte.
+#[must_use]
+pub fn patch_view(request: &[u8]) -> Vec<u8> {
+    let sampled = read(request).and_then(|request| {
+        let number = |key: &str| request[key].as_f64().ok_or(format!("the patch needs its {key}"));
+        let (left, top, step) = (number("left")?, number("top")?, number("step")?);
+        let (width, height) = (number("width")? as usize, number("height")? as usize);
+        if !(1..=1024).contains(&width) || !(1..=1024).contains(&height) || step <= 0.0 {
+            return Err("a patch is 1 to 1024 samples a side, a positive step apart".into());
+        }
+        OPEN.with(|open| {
+            let open = open.borrow();
+            let landmass = open.as_ref().ok_or("no landmass is open")?;
+            let ground = &landmass.surface;
+            let header = json!({ "width": width, "height": height, "left": left, "top": top, "step": step });
+            let mut bytes = view_bytes(&header, None);
+            let (mut water, mut marks) = (Vec::with_capacity(width * height), Vec::with_capacity(width * height));
+            for j in 0..height {
+                for i in 0..width {
+                    let (x, y) = (left + i as f64 * step, top + j as f64 * step);
+                    bytes.extend_from_slice(&(ground.height_at(x, y) as f32).to_le_bytes());
+                    water.push(match ground.water_at(x, y) {
+                        WaterAt::Lake { surface } | WaterAt::River { surface } => surface as f32,
+                        WaterAt::Sea | WaterAt::Dry => 0.0,
+                    });
+                    let near_port = landmass.edits.ports.iter().any(|port| {
+                        let (dx, dy) = (port.at.x as f64 - x, port.at.y as f64 - y);
+                        dx * dx + dy * dy < PORT_MARK_M * PORT_MARK_M
+                    });
+                    marks.push(if near_port {
+                        5
+                    } else if ground.on_road(x, y) {
+                        3
+                    } else if ground.in_town(x, y) {
+                        4
+                    } else {
+                        0
+                    });
+                }
+            }
+            water.iter().for_each(|value: &f32| bytes.extend_from_slice(&value.to_le_bytes()));
+            bytes.extend_from_slice(&marks);
+            Ok(bytes)
+        })
+    });
+    sampled.unwrap_or_else(|error: String| error_view(&error))
+}
+
 /// Hands bytes to JavaScript as one number: the address in the high 32 bits, the length in the low 32. WebAssembly's
 /// addresses are 32 bits; anywhere else the packing would lose them, so it refuses.
 fn hand_over(bytes: Vec<u8>) -> u64 {
@@ -295,6 +348,17 @@ pub unsafe extern "C" fn land_sample(address: *const u8, length: usize) -> u64 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let request = unsafe { std::slice::from_raw_parts(address, length) };
     hand_over(sample_json(request).into_bytes())
+}
+
+/// The open landmass's ground over the grid the request at `address`, `length` bytes long, names.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_patch(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(patch_view(request))
 }
 
 /// The open landmass's edits file text.
