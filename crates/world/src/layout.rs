@@ -49,7 +49,12 @@ pub fn parse(text: &str) -> Result<Layout, serde_json::Error> {
 /// Writes a layout file's text: indented, with each point on one line as `[x, y]`, so a coast of thousands of points
 /// stays readable and a change to it reads as the points that moved.
 pub fn write(layout: &Layout) -> Result<String, serde_json::Error> {
-    let pretty = serde_json::to_string_pretty(layout)?;
+    write_value(layout)
+}
+
+/// Any authored file's text in the same written form: indented, each `[x, y]` point on one line.
+pub fn write_value<T: Serialize>(value: &T) -> Result<String, serde_json::Error> {
+    let pretty = serde_json::to_string_pretty(value)?;
     let lines: Vec<&str> = pretty.lines().collect();
     let mut out = String::with_capacity(pretty.len());
     let mut index = 0;

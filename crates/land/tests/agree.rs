@@ -10,6 +10,6 @@ pub const SQUARE_GROUND_HASH: &str = "c3f0ce8d08683ead";
 fn the_square_generates_to_its_fingerprint() {
     let text = r#"{ "continents": [{ "id": "square", "outline": [[200000, 300000], [320000, 300000], [320000, 420000], [200000, 420000]] }], "isles": [] }"#;
     let layout = world::layout::parse(text).unwrap();
-    let landmass = generate(&layout.continents[0]);
+    let landmass = generate(&layout.continents[0], land::edits::Edits::default());
     assert_eq!(format!("{:016x}", ground_hash(&landmass.ground)), SQUARE_GROUND_HASH);
 }

@@ -1,9 +1,12 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 
-const LAYOUT_FILE = fileURLToPath(new URL('./content/world/layout.json', import.meta.url));
+const WORLD_DIR = fileURLToPath(new URL('./content/world/', import.meta.url));
+/** The authored world files the editors read and save: the layout, and one edits file a landmass. */
+const WORLD_FILE = /^\/(layout|land\/[a-z0-9-]+)\.json$/;
 
 async function bodyOf(request: IncomingMessage): Promise<string> {
   const parts: Buffer[] = [];
@@ -12,24 +15,31 @@ async function bodyOf(request: IncomingMessage): Promise<string> {
 }
 
 /**
- * The World Editor reads content/world/layout.json at `world/layout.json`. The dev server also saves it on PUT; a
- * build copies it in, so the published editor opens the layout on `main`.
+ * The World Editor reads content/world/ under `world/`: the layout and each landmass's edits file. The dev server
+ * also saves them on PUT; a build copies them in, so the published editor opens what is on `main`.
  */
-function worldLayoutFile(): Plugin {
+function worldFiles(): Plugin {
   return {
-    name: 'world-layout-file',
+    name: 'world-files',
     configureServer(server) {
-      server.middlewares.use('/world/layout.json', (request: IncomingMessage, response: ServerResponse) => {
+      server.middlewares.use('/world', (request: IncomingMessage, response: ServerResponse, next: () => void) => {
+        const name = WORLD_FILE.exec(request.url ?? '')?.[1];
+        if (!name) {
+          next();
+          return;
+        }
+        const file = `${WORLD_DIR}${name}.json`;
         const answer = async () => {
           if (request.method === 'GET') {
             response.setHeader('content-type', 'application/json');
-            response.end(await readFile(LAYOUT_FILE));
+            response.end(await readFile(file));
             return;
           }
           if (request.method === 'PUT') {
             const text = await bodyOf(request);
             JSON.parse(text);
-            await writeFile(LAYOUT_FILE, text);
+            await mkdir(dirname(file), { recursive: true });
+            await writeFile(file, text);
             response.statusCode = 204;
             response.end();
             return;
@@ -38,20 +48,29 @@ function worldLayoutFile(): Plugin {
           response.end();
         };
         answer().catch((error: unknown) => {
-          response.statusCode = 400;
+          response.statusCode = (error as { code?: string }).code === 'ENOENT' ? 404 : 400;
           response.end(String(error));
         });
       });
     },
     async generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'world/layout.json', source: await readFile(LAYOUT_FILE, 'utf8') });
+      const land = await readdir(`${WORLD_DIR}land`).catch(() => []);
+      for (const name of [
+        'layout.json',
+        ...land.filter((file) => file.endsWith('.json')).map((file) => `land/${file}`),
+      ])
+        this.emitFile({
+          type: 'asset',
+          fileName: `world/${name}`,
+          source: await readFile(`${WORLD_DIR}${name}`, 'utf8'),
+        });
     },
   };
 }
 
 export default defineConfig({
   root: 'client',
-  plugins: [worldLayoutFile()],
+  plugins: [worldFiles()],
   build: {
     outDir: '../dist',
     emptyOutDir: true,

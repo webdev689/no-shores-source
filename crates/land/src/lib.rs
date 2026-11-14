@@ -2,6 +2,7 @@
 //! the painted coast, erosion, and the water that runs over it. See the Land note in the bible.
 
 pub mod drainage;
+pub mod edits;
 pub mod erosion;
 pub mod exact;
 pub mod grid;

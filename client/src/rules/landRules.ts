@@ -21,10 +21,33 @@ export interface LandView {
   readonly groundHash: string;
 }
 
-/** The land crate, running in WebAssembly. */
+/** A sculpting brush, as an edits file stores a stroke's. */
+export interface Brush {
+  readonly tool: 'raise' | 'lower' | 'smooth' | 'flatten';
+  readonly radius_m: number;
+  readonly strength: number;
+  readonly level_m?: number;
+}
+
+/** The cells one dab changed, and their new heights row by row. */
+export interface LandPatch {
+  readonly rect: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number };
+  readonly heights: Float32Array;
+}
+
+/** The land crate, running in WebAssembly. Each call throws with the reason when it cannot answer. */
 export interface LandRules {
-  /** Generates and opens one continent of a layout; throws with the reason if it cannot. */
-  open(layoutText: string, id: string): LandView;
+  /** Generates one continent of a layout with its edits file's text on it (null for none). Kept, it stays open for
+   *  strokes; not kept, it is a preview and the open one stays open. */
+  open(layoutText: string, id: string, editsText: string | null, keep?: boolean): LandView;
+  /** One dab on the open landmass; `starts` begins a new stroke. */
+  dab(brush: Brush, point: readonly [number, number], starts: boolean): LandPatch;
+  /** The open landmass with its water run again. */
+  settle(): LandView;
+  /** The open landmass with these edits in place of its own. */
+  setEdits(editsText: string): LandView;
+  /** The open landmass's edits file, in its written form. */
+  write(): { readonly id: string; readonly text: string };
 }
 
 interface LandExports {
@@ -32,6 +55,10 @@ interface LandExports {
   reserve(length: number): number;
   release(address: number, length: number): void;
   land_open(address: number, length: number): bigint;
+  land_dab(address: number, length: number): bigint;
+  land_settle(): bigint;
+  land_set_edits(address: number, length: number): bigint;
+  land_write(): bigint;
 }
 
 interface ViewHeader {
@@ -44,6 +71,16 @@ interface ViewHeader {
   readonly cell_m?: number;
   readonly rivers?: RiverCourse[];
   readonly ground_hash?: string;
+  readonly rect?: [number, number, number, number];
+}
+
+/** The header of an answer and where its floats begin; throws the answer's error. */
+function readHeader(exports: LandExports, address: number): { header: ViewHeader; start: number } {
+  const headerLength = new DataView(exports.memory.buffer, address, 4).getUint32(0, true);
+  const bytes = new Uint8Array(exports.memory.buffer, address + 4, headerLength);
+  const header = JSON.parse(new TextDecoder().decode(bytes)) as ViewHeader;
+  if (header.error !== undefined) throw new Error(header.error);
+  return { header, start: address + 4 + headerLength };
 }
 
 /** Reads a view the module handed over (a header, then two floats a cell) and gives the memory back. */
@@ -51,13 +88,9 @@ function takeView(exports: LandExports, packed: bigint): LandView {
   const address = Number(packed >> 32n);
   const length = Number(packed & 0xffff_ffffn);
   try {
-    const bytes = new Uint8Array(exports.memory.buffer, address, length);
-    const headerLength = new DataView(bytes.buffer, address, 4).getUint32(0, true);
-    const header = JSON.parse(new TextDecoder().decode(bytes.subarray(4, 4 + headerLength))) as ViewHeader;
-    if (header.error !== undefined) throw new Error(header.error);
+    const { header, start } = readHeader(exports, address);
     const width = header.width ?? 0;
     const height = header.height ?? 0;
-    const start = address + 4 + headerLength;
     const cells = width * height;
     return {
       id: header.id ?? '',
@@ -76,21 +109,53 @@ function takeView(exports: LandExports, packed: bigint): LandView {
   }
 }
 
+/** Reads a patch the module handed over and gives the memory back. */
+function takePatch(exports: LandExports, packed: bigint): LandPatch {
+  const address = Number(packed >> 32n);
+  const length = Number(packed & 0xffff_ffffn);
+  try {
+    const { header, start } = readHeader(exports, address);
+    const [left, top, right, bottom] = header.rect ?? [0, 0, 0, 0];
+    const cells = (right - left) * (bottom - top);
+    const heights = new Float32Array(exports.memory.buffer.slice(start, start + cells * 4));
+    return { rect: { left, top, right, bottom }, heights };
+  } finally {
+    exports.release(address, length);
+  }
+}
+
 /** Starts the land from the compiled `land-wasm` module's bytes. */
 export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
   const { instance } = await WebAssembly.instantiate(moduleBytes);
   const exports = instance.exports as unknown as LandExports;
-  const call = (entry: (address: number, length: number) => bigint, text: string): LandView => {
+  const send = (entry: (address: number, length: number) => bigint, text: string): bigint => {
     const bytes = new TextEncoder().encode(text);
     const address = exports.reserve(bytes.length);
     new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
     try {
-      return takeView(exports, entry(address, bytes.length));
+      return entry(address, bytes.length);
     } finally {
       exports.release(address, bytes.length);
     }
   };
   return {
-    open: (layoutText, id) => call(exports.land_open, `{"id":${JSON.stringify(id)},"layout":${layoutText}}`),
+    open: (layoutText, id, editsText, keep = true) => {
+      const request = `{"id":${JSON.stringify(id)},"keep":${keep},"edits":${editsText ?? 'null'},"layout":${layoutText}}`;
+      return takeView(exports, send(exports.land_open, request));
+    },
+    dab: (brush, point, starts) =>
+      takePatch(exports, send(exports.land_dab, JSON.stringify({ brush: { ...brush, points: [] }, point, starts }))),
+    settle: () => takeView(exports, exports.land_settle()),
+    setEdits: (editsText) => takeView(exports, send(exports.land_set_edits, `{"edits":${editsText}}`)),
+    write: () => {
+      const packed = exports.land_write();
+      const address = Number(packed >> 32n);
+      const length = Number(packed & 0xffff_ffffn);
+      const text = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, address, length));
+      exports.release(address, length);
+      const answer = JSON.parse(text) as { id?: string; text?: string; error?: string };
+      if (answer.error !== undefined) throw new Error(answer.error);
+      return { id: answer.id ?? '', text: answer.text ?? '' };
+    },
   };
 }

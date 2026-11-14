@@ -1,8 +1,9 @@
 //! The land for the browser. JavaScript writes a request into memory this module reserves and reads back a view of a
 //! landmass: a JSON header, then its ground and lake surfaces as little-endian 32-bit floats, one a cell. The land
-//! stays in the land crate; the open landmass stays here between calls, so edits can follow.
+//! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
+use land::edits::{self, CellRect, Edits, Stroke};
 use land::landmass::{Landmass, generate, ground_hash};
 use serde_json::{Value, json};
 use std::cell::RefCell;
@@ -59,32 +60,133 @@ pub fn header_of(landmass: &Landmass) -> Value {
     })
 }
 
-/// Opens one continent of a layout: `{ "layout": <layout file>, "id": <continent id> }`. Generates its land, keeps it
-/// open, and answers its view, or a header holding only `error`.
-#[must_use]
-pub fn open_view(request: &[u8]) -> Vec<u8> {
-    let opened = std::str::from_utf8(request)
+fn read(request: &[u8]) -> Result<Value, String> {
+    std::str::from_utf8(request)
         .map_err(|error| error.to_string())
         .and_then(|text| serde_json::from_str::<Value>(text).map_err(|error| error.to_string()))
-        .and_then(|request| {
-            let layout: world::layout::Layout =
-                serde_json::from_value(request["layout"].clone()).map_err(|error| error.to_string())?;
-            let id = request["id"].as_str().unwrap_or_default();
-            layout
-                .continents
-                .iter()
-                .find(|continent| continent.id == id)
-                .map(generate)
-                .ok_or_else(|| format!("the layout has no continent \"{id}\""))
-        });
+}
+
+/// Edits from a request's value, refused if any stroke breaks the rules; null is no edits.
+fn edits_from(value: &Value) -> Result<Edits, String> {
+    if value.is_null() {
+        return Ok(Edits::default());
+    }
+    let edits: Edits = serde_json::from_value(value.clone()).map_err(|error| error.to_string())?;
+    match edits::check(&edits).first() {
+        Some(problem) => Err(format!("{}: {}", problem.subject, problem.message)),
+        None => Ok(edits),
+    }
+}
+
+fn error_view(error: &str) -> Vec<u8> {
+    view_bytes(&json!({ "error": error }), None)
+}
+
+/// Runs `change` on the open landmass and answers its whole view, or the reason it could not.
+fn with_open(change: impl FnOnce(&mut Landmass) -> Result<(), String>) -> Vec<u8> {
+    OPEN.with(|open| match open.borrow_mut().as_mut() {
+        None => error_view("no landmass is open"),
+        Some(landmass) => match change(landmass) {
+            Ok(()) => view_bytes(&header_of(landmass), Some(landmass)),
+            Err(error) => error_view(&error),
+        },
+    })
+}
+
+/// Opens one continent of a layout: `{ "layout": <layout file>, "id": <continent id>, "edits": <edits file or null>,
+/// "keep": bool }`. Generates its land with the edits on it and answers its view, or a header holding only `error`.
+/// Only a kept landmass stays open for strokes; one not kept is a preview and leaves the open one alone.
+#[must_use]
+pub fn open_view(request: &[u8]) -> Vec<u8> {
+    let opened = read(request).and_then(|request| {
+        let layout: world::layout::Layout =
+            serde_json::from_value(request["layout"].clone()).map_err(|error| error.to_string())?;
+        let id = request["id"].as_str().unwrap_or_default();
+        let edits = edits_from(&request["edits"])?;
+        let keep = request["keep"].as_bool().unwrap_or(true);
+        let continent = layout.continents.iter().find(|continent| continent.id == id);
+        let landmass = continent.map(|continent| generate(continent, edits));
+        landmass.map(|landmass| (landmass, keep)).ok_or_else(|| format!("the layout has no continent \"{id}\""))
+    });
     match opened {
-        Ok(landmass) => {
+        Ok((landmass, keep)) => {
             let bytes = view_bytes(&header_of(&landmass), Some(&landmass));
-            OPEN.with(|open| *open.borrow_mut() = Some(landmass));
+            if keep {
+                OPEN.with(|open| *open.borrow_mut() = Some(landmass));
+            }
             bytes
         }
-        Err(error) => view_bytes(&json!({ "error": error }), None),
+        Err(error) => error_view(&error),
     }
+}
+
+/// One live dab on the open landmass: `{ "brush": <a stroke, its points ignored>, "point": [x, y], "starts": bool }`.
+/// Answers the cells it changed: a header with `rect` [left, top, right, bottom], then their heights row by row.
+#[must_use]
+pub fn dab_patch(request: &[u8]) -> Vec<u8> {
+    let patched = read(request).and_then(|request| {
+        let point: world::geometry::Point =
+            serde_json::from_value(request["point"].clone()).map_err(|error| error.to_string())?;
+        let mut brush: Stroke = serde_json::from_value(request["brush"].clone()).map_err(|error| error.to_string())?;
+        brush.points = vec![point];
+        let checked = edits_from(&serde_json::to_value(Edits { strokes: vec![brush.clone()] }).unwrap_or_default())?;
+        let brush = checked.strokes.into_iter().next().ok_or("no brush")?;
+        let starts = request["starts"].as_bool().unwrap_or(true);
+        OPEN.with(|open| {
+            let mut open = open.borrow_mut();
+            let landmass = open.as_mut().ok_or("no landmass is open")?;
+            Ok(landmass.dab(&brush, point, starts).map(|rect| patch_bytes(landmass, rect)))
+        })
+    });
+    match patched {
+        Ok(Some(bytes)) => bytes,
+        Ok(None) => view_bytes(&json!({ "rect": [0, 0, 0, 0] }), None),
+        Err(error) => error_view(&error),
+    }
+}
+
+fn patch_bytes(landmass: &Landmass, rect: CellRect) -> Vec<u8> {
+    let mut bytes = view_bytes(&json!({ "rect": [rect.left, rect.top, rect.right, rect.bottom] }), None);
+    let width = landmass.ground.width;
+    for j in rect.top..rect.bottom {
+        for &value in &landmass.ground.data[j * width + rect.left..j * width + rect.right] {
+            bytes.extend_from_slice(&(value as f32).to_le_bytes());
+        }
+    }
+    bytes
+}
+
+/// The open landmass with its water run again over the ground as it stands.
+#[must_use]
+pub fn settle_view() -> Vec<u8> {
+    with_open(|landmass| {
+        landmass.settle();
+        Ok(())
+    })
+}
+
+/// The open landmass with these edits in place of its own: `{ "edits": <edits file> }`. Undo and redo use it.
+#[must_use]
+pub fn set_edits_view(request: &[u8]) -> Vec<u8> {
+    match read(request).and_then(|request| edits_from(&request["edits"])) {
+        Ok(edits) => with_open(|landmass| {
+            landmass.set_edits(edits);
+            Ok(())
+        }),
+        Err(error) => error_view(&error),
+    }
+}
+
+/// The open landmass's edits file in its written form: `{ "id", "text" }`, or `{ "error" }`.
+#[must_use]
+pub fn write_json() -> String {
+    OPEN.with(|open| match open.borrow().as_ref() {
+        None => json!({ "error": "no landmass is open" }).to_string(),
+        Some(landmass) => match edits::write(&landmass.edits) {
+            Ok(text) => json!({ "id": landmass.id, "text": text }).to_string(),
+            Err(error) => json!({ "error": error.to_string() }).to_string(),
+        },
+    })
 }
 
 /// Hands bytes to JavaScript as one number: the address in the high 32 bits, the length in the low 32. WebAssembly's
@@ -123,6 +225,44 @@ pub unsafe extern "C" fn land_open(address: *const u8, length: usize) -> u64 {
     hand_over(open_view(request))
 }
 
+/// One dab on the open landmass, from the request at `address`, `length` bytes long.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_dab(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(dab_patch(request))
+}
+
+/// The open landmass's water run again.
+#[unsafe(no_mangle)]
+pub extern "C" fn land_settle() -> u64 {
+    hand_over(settle_view())
+}
+
+/// The open landmass with the edits the request at `address`, `length` bytes long, holds.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_set_edits(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(set_edits_view(request))
+}
+
+/// The open landmass's edits file text.
+#[unsafe(no_mangle)]
+pub extern "C" fn land_write() -> u64 {
+    hand_over(write_json().into_bytes())
+}
+
+#[cfg(test)]
+#[path = "door_tests.rs"]
+mod door_tests;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -134,7 +274,7 @@ mod tests {
 
     #[test]
     fn a_continent_opens_as_a_header_and_two_floats_a_cell() {
-        let request = br#"{ "id": "small", "layout": { "continents": [{ "id": "small", "outline": [[100000, 100000], [300000, 100000], [300000, 260000], [100000, 260000]] }], "isles": [] } }"#;
+        let request = br#"{ "id": "small", "edits": null, "layout": { "continents": [{ "id": "small", "outline": [[100000, 100000], [300000, 100000], [300000, 260000], [100000, 260000]] }], "isles": [] } }"#;
         let bytes = open_view(request);
         let found = header(&bytes);
         assert_eq!(found["id"], "small");

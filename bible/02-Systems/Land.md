@@ -6,6 +6,7 @@ code:
   - crates/land/src/erosion.rs#erode_coarse
   - crates/land/src/water.rs#water
   - crates/land/src/landmass.rs#generate
+  - crates/land/src/edits.rs#dab
   - crates/land-wasm/src/lib.rs#land_open
   - client/src/rules/landRules.ts#startLand
 ---
@@ -33,6 +34,14 @@ the server and in every browser. The owner decided the generator makes the land 
   chooses the nine ([[Open Questions]]). Choosing generates the land again under the owner's edits.
 - **Seed.** The world's seed salted with the landmass's id, which never changes, so the same layout makes the same
   land on any machine.
+
+## The owner's edits
+
+Each landmass's shaping is kept in `content/world/land/<id>.json`: brush strokes, each a tool, a radius, a
+strength and the points it was dabbed at in whole metres. They apply after erosion and before the water, so the
+owner's shapes are final and the rivers and lakes run over them. Each dab reads the ground the dabs before it left;
+land stays at 1 m or more and sea at -2 m or less, so a brush never moves the coast. A test holds every file in the
+repository to its rules and its written form, and to a continent of the layout.
 
 ## Agreeing to the bit
 
