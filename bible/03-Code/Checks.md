@@ -25,6 +25,9 @@ code:
 | assets | no file over 1 MB; media only in `bible/Attachments/` | [[Generated Files Stay Out of Git]] |
 | vault | every wikilink resolves; every `code:` path exists and holds its symbol | [[Notes Say How It Works Now]] |
 
+The co-dev's toolkit in `tools/claude-toolkit/` is kept as its author ships it, so the size and comment checks skip
+it ([[The Co-Dev's Toolkit, Whole]]).
+
 ## Adding a check
 
 A check earns its place by catching something review keeps missing. It needs the owner's agreement, a test on

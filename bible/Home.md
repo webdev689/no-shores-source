@@ -12,6 +12,7 @@ This vault is the bible: how Overlook works now, the rules we hold the code to, 
 - [[Rules]]: the few rules every change follows, and why each exists.
 - [[Lessons from DFO]]: what DFO Online taught us, with the evidence. The rules come from it.
 - [[Making a Change]]: the procedure, from branch to merge.
+- [[Hand-off]]: where the work stands now.
 
 ## Sections
 

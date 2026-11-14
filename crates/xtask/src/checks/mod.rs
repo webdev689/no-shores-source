@@ -35,9 +35,13 @@ impl fmt::Display for Problem {
     }
 }
 
+/// The co-dev's toolkit, approved whole by the owner, stays as its author ships it: our code rules are for our code.
+const KEPT_AS_SHIPPED: [&str; 1] = ["tools/claude-toolkit/"];
+
 /// Source files the size and comment checks read.
 fn is_code(path: &str) -> bool {
-    [".rs", ".py", ".ts", ".js"].iter().any(|extension| path.ends_with(extension))
+    let ours = !KEPT_AS_SHIPPED.iter().any(|root| path.starts_with(root));
+    ours && [".rs", ".py", ".ts", ".js"].iter().any(|extension| path.ends_with(extension))
 }
 
 pub fn run_all(repo: &Repo) -> Vec<Problem> {
@@ -51,4 +55,22 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let notes = repo.sources(|path| path.starts_with(vault::VAULT_ROOT) && path.ends_with(".md"));
     problems.extend(vault::check(&notes, &repo.files, |path| repo.read(path)));
     problems
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_code;
+
+    #[test]
+    fn our_source_files_are_code() {
+        assert!(is_code("client/src/main.ts"));
+        assert!(is_code("crates/xtask/src/main.rs"));
+        assert!(is_code("forge/body.py"));
+    }
+
+    #[test]
+    fn the_kept_toolkit_and_non_code_files_are_not() {
+        assert!(!is_code("tools/claude-toolkit/check_tools.py"));
+        assert!(!is_code("bible/Home.md"));
+    }
 }

@@ -17,6 +17,7 @@ decision, made in the same change as its entry here.
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
+| `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[The Co-Dev's Toolkit, Whole]]) |
 | `bible/` | This vault |
 | `.github/workflows/` | CI: one workflow that runs `cargo xtask check` |
 
