@@ -7,6 +7,8 @@ import type { Card, SceneView } from './sceneView.ts';
 
 /** Composed frames kept on the GPU before all are let go and composed again as asked. */
 const KEPT_CARDS = 4000;
+/** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
+const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
 
 /** Each figure's frames, composed from the forge's strips once and kept as textures; while a frame is being composed,
  *  the figure keeps showing the last one it had. */
@@ -46,9 +48,13 @@ export class Cards {
     return !!own?.anims[anim] && (!held || !!own.layers[held]?.includes(anim));
   }
 
-  /** A figure's card in a move, a view and a frame, or the last card it showed while this one is composed. */
+  /** A figure's card in a move, a view and a frame, or the last card it showed while this one is composed. A move
+   *  carries the props, instrument or spark the forge draws in it. */
   card(id: number, dress: Dress, anim: string, view: number, frame: number): Card | null {
-    const figure = figureOf(dress, this.looks.bodies[dress.body]?.layers ?? {});
+    const layers = this.looks.bodies[dress.body]?.layers ?? {};
+    const dressed = figureOf(dress, layers);
+    const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
+    const figure = { ...dressed, gear: [...dressed.gear, ...carried] };
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);
     const kept = this.kept.get(key);
     if (kept) {
