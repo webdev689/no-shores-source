@@ -1,0 +1,65 @@
+{
+ "archive": "112359",
+ "name": "The torch in the left hand, first person",
+ "weapon": "torch",
+ "view": [
+  290,
+  392
+ ],
+ "records": [
+  {
+   "state": "Torch",
+   "frames": 4,
+   "canvas": [
+    90,
+    205
+   ],
+   "screen": [
+    0,
+    187
+   ],
+   "part": "torch",
+   "picture": "vendor/handheld-torches/Textures/112359_0-0.png",
+   "flame_cut": 66,
+   "margin": 4,
+   "shift": [
+    -9,
+    0
+   ],
+   "seed": {
+    "base": [
+     70,
+     316
+    ],
+    "depth": 0.7,
+    "tip": [
+     72,
+     256
+    ],
+    "roll": 0.0,
+    "l_lean": 0.0
+   },
+   "still": true,
+   "held_above": 93,
+   "keys": {
+    "axis": [
+     0.05,
+     0.25,
+     0.97
+    ]
+   },
+   "read": "torch",
+   "handle_rows": [
+    93,
+    113
+   ]
+  }
+ ],
+ "weights": {
+  "sil": 0.45,
+  "6": 0.2,
+  "5": 0.15,
+  "7": 0.15,
+  "8": 0.1
+ }
+}

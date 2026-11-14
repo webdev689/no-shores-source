@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON01.CIF",
+ "name": "Staff, first person",
+ "weapon": "staff",
+ "grown": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [37, 116], "screen": [276, 84], "drawn": [245, 55, 74, 145]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [103, 200], "screen": [217, 0], "drawn": [200, 0, 120, 200]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [271, 200], "screen": [49, 0], "drawn": [30, 0, 290, 200]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [320, 165], "screen": [0, 35], "drawn": [0, 8, 320, 192]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [320, 165], "screen": [0, 35], "mirror": 3, "drawn": [0, 8, 320, 192]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [270, 199], "screen": [0, 1], "drawn": [0, 0, 287, 200]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [83, 140], "screen": [237, 60], "drawn": [219, 37, 101, 163]}
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "archive": 260,
+ "name": "Sabretooth Tiger",
+ "beast": "tiger",
+ "elevation": 10,
+ "work": [
+  320,
+  200
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [45, 80], "scale": -57, "place": [22, 77]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [104, 61], "scale": 23, "place": [48, 59]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [112, 47], "scale": 115, "place": [50, 44]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [82, 44], "scale": 115, "place": [29, 41]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [27, 42], "scale": 115, "place": [15, 42]},
+  {"anim": "attack", "view": 0, "frames": 6, "canvas": [49, 97], "scale": -52, "place": [30, 85]},
+  {"anim": "attack", "view": 1, "frames": 6, "canvas": [113, 73], "scale": 92, "place": [65, 61]},
+  {"anim": "attack", "view": 2, "frames": 6, "canvas": [117, 57], "scale": 189, "place": [60, 55]},
+  {"anim": "attack", "view": 3, "frames": 6, "canvas": [72, 47], "scale": 256, "place": [38, 39]},
+  {"anim": "attack", "view": 4, "frames": 6, "canvas": [20, 46], "scale": 256, "place": [6, 43]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [59, 49], "scale": -52, "place": [19, 50]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [70, 30], "scale": 92, "place": [27, 30]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [63, 26], "scale": 189, "place": [16, 28]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [40, 20], "scale": 256, "place": [21, 18]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [26, 17], "scale": 256, "place": [23, 16]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [39, 62], "scale": -52, "place": [22, 60]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [88, 44], "scale": 92, "place": [47, 44]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [95, 35], "scale": 189, "place": [49, 35]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [56, 29], "scale": 256, "place": [29, 29]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [19, 30], "scale": 256, "place": [7, 29]}
+ ]
+}

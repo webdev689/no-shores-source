@@ -1,0 +1,14 @@
+{
+ "archive": "CLIMB",
+ "name": "The climbing arms, first person",
+ "weapon": "climbarm",
+ "records": [
+  {"state": "Grip", "frames": 1, "canvas": [105, 152], "screen": [15, 46], "part": "arm", "picture": "public/art/climb-grip.png",
+   "series": {"name": "grip", "frames": 6, "pad": [4, 44, 6, 0], "outline": 0.6,
+              "keys": [{"at": 0}, {"at": 1, "knuckle": 0, "fold": 8, "spread": 8, "thumb_in": 5, "thumb_bend": 5, "wrist": -10}]}},
+  {"state": "Reach", "frames": 1, "canvas": [183, 114], "screen": [4, 80], "part": "arm", "picture": "public/art/climb-reach.png",
+   "series": {"name": "reach", "frames": 5, "pad": [0, 14, 12, 6], "outline": 0.6,
+              "keys": [{"at": 0, "knuckle": 28, "fold": 62, "thumb_in": 30, "thumb_bend": 22}, {"at": 0.4},
+                       {"at": 1, "knuckle": 0, "fold": 10, "spread": 10, "thumb_in": 0, "thumb_bend": -5}]}}
+ ]
+}

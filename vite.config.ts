@@ -79,6 +79,7 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./client/index.html', import.meta.url)),
         editor: fileURLToPath(new URL('./client/editor/index.html', import.meta.url)),
+        testground: fileURLToPath(new URL('./client/testground/index.html', import.meta.url)),
       },
     },
   },

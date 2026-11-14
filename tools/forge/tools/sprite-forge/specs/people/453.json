@@ -1,0 +1,12 @@
+{
+ "archive": 453,
+ "name": "Townsfolk (breton female)",
+ "records": [
+  {"anim":"walk","view":0,"frames":4,"canvas":[45,115],"place":[21,115]},
+  {"anim":"walk","view":1,"frames":4,"canvas":[58,114],"place":[21,114]},
+  {"anim":"walk","view":2,"frames":4,"canvas":[75,114],"place":[43,114]},
+  {"anim":"walk","view":3,"frames":4,"canvas":[59,115],"place":[39,115]},
+  {"anim":"walk","view":4,"frames":4,"canvas":[45,116],"place":[22,116]},
+  {"anim":"idle","view":0,"frames":2,"canvas":[66,173],"place":[27,173]}
+ ]
+}

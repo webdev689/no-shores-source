@@ -1,0 +1,32 @@
+{
+ "archive": 261,
+ "name": "Spider",
+ "beast": "spider",
+ "elevation": 10,
+ "work": [
+  260,
+  160
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 8, "canvas": [147, 66], "scale": -64, "place": [71, 63]},
+  {"anim": "walk", "view": 1, "frames": 8, "canvas": [139, 76], "scale": -64, "place": [74, 74]},
+  {"anim": "walk", "view": 2, "frames": 8, "canvas": [113, 83], "scale": -64, "place": [65, 79]},
+  {"anim": "walk", "view": 3, "frames": 8, "canvas": [135, 75], "scale": -64, "place": [69, 70]},
+  {"anim": "walk", "view": 4, "frames": 8, "canvas": [153, 64], "scale": -64, "place": [75, 63]},
+  {"anim": "attack", "view": 0, "frames": 6, "canvas": [140, 73], "scale": -64, "place": [70, 72]},
+  {"anim": "attack", "view": 1, "frames": 6, "canvas": [135, 75], "scale": -64, "place": [70, 71]},
+  {"anim": "attack", "view": 2, "frames": 6, "canvas": [126, 77], "scale": -64, "place": [76, 71]},
+  {"anim": "attack", "view": 3, "frames": 6, "canvas": [126, 75], "scale": -64, "place": [70, 69]},
+  {"anim": "attack", "view": 4, "frames": 6, "canvas": [151, 69], "scale": -64, "place": [70, 67]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [129, 56], "scale": -64, "place": [64, 57]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [124, 65], "scale": -64, "place": [58, 69]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [112, 72], "scale": -64, "place": [62, 72]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [114, 67], "scale": -64, "place": [53, 68]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [143, 61], "scale": -64, "place": [68, 64]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [139, 61], "scale": -64, "place": [70, 62]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [136, 66], "scale": -64, "place": [71, 68]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [123, 71], "scale": -64, "place": [66, 74]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [125, 69], "scale": -64, "place": [69, 74]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [151, 64], "scale": -64, "place": [72, 67]}
+ ]
+}

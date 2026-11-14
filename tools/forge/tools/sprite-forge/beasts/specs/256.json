@@ -1,0 +1,27 @@
+{
+ "archive": 256,
+ "name": "Imp",
+ "beast": "imp",
+ "elevation": 10,
+ "work": [
+  340,
+  260
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [172, 129], "scale": -128, "place": [83, 152]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [90, 111], "scale": -67, "place": [35, 116]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [42, 90], "scale": -31, "place": [19, 99]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [75, 68], "scale": 0, "place": [43, 76]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [72, 50], "scale": 76, "place": [36, 60]},
+  {"anim": "attack", "view": 0, "frames": 4, "canvas": [172, 129], "scale": -128, "place": [83, 154]},
+  {"anim": "attack", "view": 1, "frames": 4, "canvas": [90, 111], "scale": -67, "place": [35, 117]},
+  {"anim": "attack", "view": 2, "frames": 4, "canvas": [55, 90], "scale": -31, "place": [31, 97]},
+  {"anim": "attack", "view": 3, "frames": 4, "canvas": [75, 68], "scale": 0, "place": [44, 77]},
+  {"anim": "attack", "view": 4, "frames": 4, "canvas": [72, 50], "scale": 76, "place": [36, 59]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [62, 67], "scale": -128, "place": [32, 102]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [41, 52], "scale": -67, "place": [15, 68]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [24, 42], "scale": -31, "place": [8, 58]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [27, 34], "scale": 0, "place": [10, 49]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [28, 28], "scale": 76, "place": [13, 39]}
+ ]
+}

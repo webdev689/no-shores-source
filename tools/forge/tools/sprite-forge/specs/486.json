@@ -1,0 +1,42 @@
+{
+ "archive": 486,
+ "name": "Mage (male)",
+ "body": "male",
+ "outfit": "naked",
+ "weapon": "staff",
+ "colours": 488,
+ "fit": {
+  "above": 0.95,
+  "weights": {
+   "sil": 0.6,
+   "axe": 0.4
+  }
+ },
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [67, 135], "place": [36, 129]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [82, 130], "place": [55, 127]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [72, 125], "place": [39, 121]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [62, 123], "place": [32, 121]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [62, 123], "place": [31, 114]},
+  {"anim": "attack", "view": 0, "frames": 6, "canvas": [144, 131], "place": [75, 127]},
+  {"anim": "attack", "view": 1, "frames": 6, "canvas": [143, 130], "place": [89, 126]},
+  {"anim": "attack", "view": 2, "frames": 6, "canvas": [111, 128], "place": [80, 126]},
+  {"anim": "attack", "view": 3, "frames": 6, "canvas": [114, 129], "place": [65, 128]},
+  {"anim": "attack", "view": 4, "frames": 6, "canvas": [138, 127], "place": [64, 123]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [121, 130], "place": [72, 131]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [113, 131], "place": [74, 131]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [93, 133], "place": [57, 131]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [83, 135], "place": [54, 135]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [111, 136], "place": [47, 136]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [55, 126], "place": [35, 124]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [68, 124], "place": [43, 121]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [66, 122], "place": [34, 122]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [41, 122], "place": [21, 120]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [54, 122], "place": [23, 118]},
+  {"anim": "spell", "view": 0, "frames": 4, "canvas": [149, 145], "place": [71, 142]},
+  {"anim": "spell", "view": 1, "frames": 4, "canvas": [128, 141], "place": [80, 137]},
+  {"anim": "spell", "view": 2, "frames": 4, "canvas": [134, 142], "place": [97, 139]},
+  {"anim": "spell", "view": 3, "frames": 4, "canvas": [117, 141], "place": [93, 140]},
+  {"anim": "spell", "view": 4, "frames": 4, "canvas": [135, 141], "place": [71, 137]}
+ ]
+}

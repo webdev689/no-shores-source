@@ -1,0 +1,27 @@
+{
+ "archive": 289,
+ "name": "Dragonling",
+ "beast": "dragonling",
+ "elevation": 10,
+ "work": [
+  300,
+  240
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [101, 75], "scale": 0, "place": [49, 85]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [88, 78], "scale": 0, "place": [35, 92]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [42, 73], "scale": 0, "place": [24, 86]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [98, 70], "scale": 0, "place": [44, 83]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [111, 74], "scale": 0, "place": [65, 87]},
+  {"anim": "attack", "view": 0, "frames": 4, "canvas": [101, 75], "scale": 0, "place": [51, 86]},
+  {"anim": "attack", "view": 1, "frames": 4, "canvas": [105, 78], "scale": 0, "place": [53, 90]},
+  {"anim": "attack", "view": 2, "frames": 4, "canvas": [72, 73], "scale": 0, "place": [54, 86]},
+  {"anim": "attack", "view": 3, "frames": 4, "canvas": [99, 70], "scale": 0, "place": [44, 85]},
+  {"anim": "attack", "view": 4, "frames": 4, "canvas": [111, 74], "scale": 0, "place": [64, 87]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [51, 58], "scale": 0, "place": [29, 94]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [63, 66], "scale": 0, "place": [31, 92]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [37, 63], "scale": 0, "place": [17, 97]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [60, 55], "scale": 0, "place": [30, 86]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [55, 60], "scale": 0, "place": [26, 90]}
+ ]
+}

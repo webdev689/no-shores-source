@@ -1,0 +1,27 @@
+{
+ "archive": 268,
+ "name": "Harpy",
+ "beast": "harpy",
+ "elevation": 10,
+ "work": [
+  300,
+  260
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [115, 95], "scale": 0, "place": [51, 99]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [91, 89], "scale": 0, "place": [32, 111]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [73, 87], "scale": 0, "place": [26, 96]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [100, 88], "scale": 0, "place": [51, 95]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [101, 87], "scale": 0, "place": [55, 90]},
+  {"anim": "attack", "view": 0, "frames": 4, "canvas": [115, 101], "scale": 0, "place": [64, 99]},
+  {"anim": "attack", "view": 1, "frames": 4, "canvas": [85, 86], "scale": 0, "place": [29, 109]},
+  {"anim": "attack", "view": 2, "frames": 4, "canvas": [85, 105], "scale": 0, "place": [31, 117]},
+  {"anim": "attack", "view": 3, "frames": 4, "canvas": [80, 92], "scale": 0, "place": [42, 97]},
+  {"anim": "attack", "view": 4, "frames": 4, "canvas": [101, 90], "scale": 0, "place": [48, 95]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [90, 101], "scale": 0, "place": [39, 112]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [73, 90], "scale": 0, "place": [29, 106]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [72, 81], "scale": 0, "place": [29, 93]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [71, 62], "scale": 0, "place": [19, 81]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [78, 79], "scale": 0, "place": [41, 96]}
+ ]
+}

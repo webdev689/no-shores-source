@@ -1,0 +1,9 @@
+{
+ "archive": "SICKLE",
+ "name": "sickle, first person (keyed by hand)",
+ "weapon": "sickle",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Reap", "frames": 5, "canvas": [320, 200], "screen": [0, 0]}
+ ]
+}

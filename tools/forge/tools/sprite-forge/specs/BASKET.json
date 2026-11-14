@@ -1,0 +1,9 @@
+{
+ "archive": "BASKET",
+ "name": "basket, first person (keyed by hand)",
+ "weapon": "basket",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Take", "frames": 4, "canvas": [320, 200], "screen": [0, 0]}
+ ]
+}

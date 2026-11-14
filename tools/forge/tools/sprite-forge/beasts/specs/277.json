@@ -1,0 +1,32 @@
+{
+ "archive": 277,
+ "name": "Gargoyle",
+ "beast": "gargoyle",
+ "elevation": 10,
+ "work": [
+  360,
+  260
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [115, 113], "scale": -52, "place": [57, 111]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [147, 113], "scale": -52, "place": [73, 110]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [129, 112], "scale": -52, "place": [65, 102]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [120, 110], "scale": -52, "place": [51, 98]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [126, 108], "scale": -52, "place": [62, 98]},
+  {"anim": "attack", "view": 0, "frames": 6, "canvas": [238, 135], "scale": -52, "place": [125, 133]},
+  {"anim": "attack", "view": 1, "frames": 6, "canvas": [192, 135], "scale": -52, "place": [114, 132]},
+  {"anim": "attack", "view": 2, "frames": 6, "canvas": [177, 133], "scale": -52, "place": [100, 130]},
+  {"anim": "attack", "view": 3, "frames": 6, "canvas": [181, 123], "scale": -52, "place": [112, 121]},
+  {"anim": "attack", "view": 4, "frames": 6, "canvas": [215, 114], "scale": -52, "place": [100, 111]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [132, 114], "scale": -52, "place": [67, 113]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [125, 114], "scale": -52, "place": [56, 113]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [116, 111], "scale": -52, "place": [56, 110]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [122, 116], "scale": -52, "place": [56, 112]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [130, 111], "scale": -52, "place": [67, 109]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [176, 102], "scale": -52, "place": [99, 101]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [142, 103], "scale": -52, "place": [72, 103]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [107, 102], "scale": -52, "place": [34, 100]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [117, 100], "scale": -52, "place": [45, 99]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [170, 97], "scale": -52, "place": [76, 96]}
+ ]
+}

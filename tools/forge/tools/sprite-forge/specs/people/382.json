@@ -1,0 +1,12 @@
+{
+ "archive": 382,
+ "name": "Townsfolk (redguard male)",
+ "records": [
+  {"anim":"walk","view":0,"frames":4,"canvas":[50,111],"place":[24,111]},
+  {"anim":"walk","view":1,"frames":4,"canvas":[62,110],"place":[28,110]},
+  {"anim":"walk","view":2,"frames":4,"canvas":[67,110],"place":[35,110]},
+  {"anim":"walk","view":3,"frames":4,"canvas":[61,110],"place":[30,110]},
+  {"anim":"walk","view":4,"frames":4,"canvas":[49,109],"place":[24,109]},
+  {"anim":"idle","view":0,"frames":2,"canvas":[78,165],"place":[30,165]}
+ ]
+}

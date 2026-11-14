@@ -1,0 +1,27 @@
+{
+ "archive": 258,
+ "name": "Giant Bat",
+ "beast": "bat",
+ "elevation": 10,
+ "work": [
+  340,
+  260
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [217, 167], "scale": -128, "place": [102, 172]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [90, 111], "scale": -67, "place": [31, 119]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [42, 90], "scale": -26, "place": [14, 96]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [75, 68], "scale": 64, "place": [41, 68]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [72, 50], "scale": 171, "place": [36, 52]},
+  {"anim": "attack", "view": 0, "frames": 4, "canvas": [217, 167], "scale": -128, "place": [102, 171]},
+  {"anim": "attack", "view": 1, "frames": 4, "canvas": [90, 111], "scale": -67, "place": [32, 119]},
+  {"anim": "attack", "view": 2, "frames": 4, "canvas": [42, 90], "scale": -26, "place": [16, 98]},
+  {"anim": "attack", "view": 3, "frames": 4, "canvas": [75, 68], "scale": 64, "place": [42, 71]},
+  {"anim": "attack", "view": 4, "frames": 4, "canvas": [72, 50], "scale": 171, "place": [37, 52]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [163, 83], "scale": -128, "place": [139, 114]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [63, 66], "scale": -67, "place": [63, 54]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [29, 55], "scale": -26, "place": [14, 66]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [46, 43], "scale": 64, "place": [12, 44]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [49, 33], "scale": 171, "place": [9, 33]}
+ ]
+}

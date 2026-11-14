@@ -1,0 +1,9 @@
+{
+ "archive": "RECORDER",
+ "name": "the Recorder, first person (keyed by hand): at rest, and the fingering of each of its eight notes",
+ "weapon": "recorder",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Note", "frames": 8, "canvas": [320, 200], "screen": [0, 0]}
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON08.CIF",
+ "name": "Battleaxe, first person",
+ "weapon": "battleaxe",
+ "grown": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [70, 150], "screen": [250, 50], "drawn": [243, -15, 126, 215]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [86, 200], "screen": [234, 0], "drawn": [227, 0, 93, 200]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [242, 150], "screen": [78, 50], "drawn": [69, 29, 251, 171]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [320, 135], "screen": [0, 65], "drawn": [0, 59, 320, 141]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [320, 137], "screen": [0, 63], "drawn": [0, 58, 320, 142]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [241, 153], "screen": [0, 47], "drawn": [0, 26, 251, 174]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [188, 156], "screen": [132, 44], "drawn": [118, 4, 202, 196]}
+ ]
+}

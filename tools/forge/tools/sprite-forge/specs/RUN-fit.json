@@ -1,0 +1,10 @@
+{
+  "0:0": {"base": [290.0, 272.0], "depth": 0.575, "tip": [235.0, 168.0], "roll": 100.0, "wrist": 12.0, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0},
+  "0:1": {"base": [268.08, 264.929], "depth": 0.522, "tip": [220.151, 132.645], "roll": 100.0, "wrist": 8.485, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0},
+  "0:2": {"base": [259.0, 262.0], "depth": 0.5, "tip": [214.0, 118.0], "roll": 100.0, "wrist": 0.0, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0},
+  "0:3": {"base": [268.08, 264.929], "depth": 0.522, "tip": [220.151, 132.645], "roll": 100.0, "wrist": -8.485, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0},
+  "0:4": {"base": [290.0, 272.0], "depth": 0.575, "tip": [235.0, 168.0], "roll": 100.0, "wrist": -12.0, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0},
+  "0:5": {"base": [311.92, 279.071], "depth": 0.628, "tip": [249.849, 203.355], "roll": 100.0, "wrist": -8.485, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0},
+  "0:6": {"base": [321.0, 282.0], "depth": 0.65, "tip": [256.0, 218.0], "roll": 100.0, "wrist": -0.0, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0},
+  "0:7": {"base": [311.92, 279.071], "depth": 0.628, "tip": [249.849, 203.355], "roll": 100.0, "wrist": 8.485, "tilt": 10.0, "knuckle": 88.0, "fold": 86.0, "spread": 0.0, "thumb_in": 55.0, "thumb_bend": 35.0}
+}

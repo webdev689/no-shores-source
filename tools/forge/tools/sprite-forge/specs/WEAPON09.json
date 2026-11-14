@@ -1,0 +1,9 @@
+{
+ "archive": "WEAPON09.CIF",
+ "name": "The bow, first person",
+ "weapon": "bow",
+ "grown": true,
+ "records": [
+  {"state": "StrikeDown", "frames": 7, "canvas": [204, 179], "screen": [116, 21], "part": "bow", "drawn": [86, -32, 330, 232]}
+ ]
+}

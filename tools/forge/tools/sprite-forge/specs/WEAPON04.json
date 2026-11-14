@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON04.CIF",
+ "name": "Sword, first person",
+ "weapon": "sword",
+ "placed": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [120, 172], "screen": [200, 28], "drawn": [141, -32, 275, 232]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [117, 154], "screen": [160, 46], "drawn": [155, 0, 165, 200]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [275, 154], "screen": [45, 46], "drawn": [35, 0, 285, 200]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [320, 99], "screen": [0, 101], "drawn": [0, 37, 320, 163]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [320, 99], "screen": [0, 101], "drawn": [0, 84, 320, 116]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [275, 154], "screen": [0, 46], "drawn": [0, 30, 318, 170]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [125, 100], "screen": [160, 100], "drawn": [143, 97, 177, 103]}
+ ]
+}

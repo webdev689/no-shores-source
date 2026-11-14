@@ -1,0 +1,8 @@
+{
+ "archive": "GATHER",
+ "name": "the gathering hand, first person (keyed by hand): the left hand reaching for a find and taking it",
+ "weapon": "climbarm",
+ "records": [
+  {"state": "Reach", "frames": 5, "canvas": [320, 200], "screen": [0, 0], "part": "arm"}
+ ]
+}

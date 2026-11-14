@@ -1,0 +1,11 @@
+{
+  "pictures": {
+    "fish/9001_0-0": {"model": "butterflyfish", "px": 84, "elevation": 0, "canvas": [89, 64], "words": {}, "seed": 9001},
+    "fish/9002_0-0": {"model": "largemouthBass", "px": 65, "elevation": 0, "canvas": [73, 32], "words": {}, "seed": 9002},
+    "fish/9003_0-0": {"model": "canaryRockfish", "px": 40, "elevation": 0, "canvas": [44, 16], "words": {}, "seed": 9003},
+    "fish/9004_0-0": {"model": "crucianCarp", "px": 49, "elevation": 0, "canvas": [52, 32], "words": {}, "seed": 9004},
+    "fish/9005_0-0": {"model": "mackerel", "px": 32, "elevation": 0, "canvas": [36, 16], "words": {}, "seed": 9005},
+    "fish/9006_0-0": {"model": "zebraAngelfish", "px": 61, "elevation": 0, "canvas": [40, 64], "words": {}, "seed": 9006},
+    "fish/9007_0-0": {"model": "paleGrouper", "px": 53, "elevation": 0, "canvas": [55, 32], "words": {}, "seed": 9007}
+  }
+}

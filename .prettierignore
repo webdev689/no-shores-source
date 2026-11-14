@@ -7,4 +7,5 @@ bible/
 package-lock.json
 Cargo.lock
 tools/claude-toolkit/
+tools/forge/
 content/

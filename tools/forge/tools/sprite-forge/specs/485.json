@@ -1,0 +1,42 @@
+{
+ "archive": 485,
+ "name": "Mage (female)",
+ "body": "female",
+ "outfit": "naked",
+ "weapon": "staff",
+ "colours": 487,
+ "fit": {
+  "above": 0.95,
+  "weights": {
+   "sil": 0.6,
+   "axe": 0.4
+  }
+ },
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [60, 130], "place": [29, 127]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [72, 128], "place": [53, 126]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [66, 124], "place": [38, 120]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [51, 123], "place": [27, 121]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [56, 123], "place": [29, 117]},
+  {"anim": "attack", "view": 0, "frames": 6, "canvas": [135, 136], "place": [64, 132]},
+  {"anim": "attack", "view": 1, "frames": 6, "canvas": [137, 136], "place": [77, 133]},
+  {"anim": "attack", "view": 2, "frames": 6, "canvas": [98, 134], "place": [71, 129]},
+  {"anim": "attack", "view": 3, "frames": 6, "canvas": [109, 133], "place": [68, 130]},
+  {"anim": "attack", "view": 4, "frames": 6, "canvas": [134, 129], "place": [71, 126]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [108, 129], "place": [67, 130]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [103, 130], "place": [71, 131]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [88, 133], "place": [55, 132]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [72, 135], "place": [52, 132]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [101, 137], "place": [42, 136]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [48, 125], "place": [24, 122]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [59, 124], "place": [37, 122]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [60, 122], "place": [34, 122]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [37, 123], "place": [18, 121]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [48, 123], "place": [26, 118]},
+  {"anim": "spell", "view": 0, "frames": 5, "canvas": [135, 144], "place": [64, 142], "keys": [0, 1, 2, 3, 3]},
+  {"anim": "spell", "view": 1, "frames": 5, "canvas": [120, 139], "place": [75, 135], "keys": [0, 1, 2, 3, 3]},
+  {"anim": "spell", "view": 2, "frames": 5, "canvas": [128, 141], "place": [91, 138], "keys": [0, 1, 2, 3, 3]},
+  {"anim": "spell", "view": 3, "frames": 5, "canvas": [116, 140], "place": [92, 136], "keys": [0, 1, 2, 3, 3]},
+  {"anim": "spell", "view": 4, "frames": 5, "canvas": [123, 141], "place": [64, 138], "keys": [0, 1, 2, 3, 3]}
+ ]
+}

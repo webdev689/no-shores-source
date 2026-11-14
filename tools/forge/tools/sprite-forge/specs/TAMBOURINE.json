@@ -1,0 +1,10 @@
+{
+ "archive": "TAMBOURINE",
+ "name": "the Tambourine, first person (keyed by hand): at rest, a stroke and a shake",
+ "weapon": "tambourine",
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Strike", "frames": 4, "canvas": [320, 200], "screen": [0, 0]},
+  {"state": "Shake", "frames": 4, "canvas": [320, 200], "screen": [0, 0]}
+ ]
+}

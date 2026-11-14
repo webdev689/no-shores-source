@@ -1,0 +1,20 @@
+{
+ "focal": 375.0,
+ "aspect": 1.0,
+ "hand": 1.2934,
+ "fist": 1.0,
+ "arm_r": 1.293,
+ "cuff": 1.7283,
+ "thumb": 1.0,
+ "handle_r": 0.0207,
+ "handle_below": 0.045,
+ "socket": 0.096,
+ "cage_len": 0.0824,
+ "cage_r": 0.043,
+ "cage_turn": 37.66,
+ "e_bend": 0.0,
+ "e_swing": 0.0,
+ "flame_h": 2.1702,
+ "flame_w": 1.1052,
+ "flame_up": 0.0
+}

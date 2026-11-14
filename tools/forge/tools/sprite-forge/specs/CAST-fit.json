@@ -1,0 +1,8 @@
+{
+  "0:0": {"base": [7.0, 333.0], "depth": 0.439, "tip": [66.35, 175.014], "roll": 10.0, "knuckle": 0.0, "fold": 0.0, "spread": 4.0, "thumb_in": 0.0, "thumb_bend": 0.0, "wrist": 0.0, "tilt": 0.0, "index_curl": 0.0, "middle_curl": 0.0, "ring_curl": 0.0, "little_curl": 0.0},
+  "1:0": {"base": [5.138, 317.651], "depth": 0.59, "tip": [89.203, 158.098], "roll": 10.0, "knuckle": 0.0, "fold": 0.0, "spread": 8.0, "thumb_in": -20.0, "thumb_bend": 0.0, "wrist": 0.0, "tilt": 0.0, "index_curl": 0.0, "middle_curl": 0.0, "ring_curl": 0.0, "little_curl": 0.0},
+  "2:0": {"base": [-0.756, 310.433], "depth": 0.548, "tip": [92.799, 146.426], "roll": 10.0, "knuckle": 0.0, "fold": 0.0, "spread": 8.0, "thumb_in": -20.0, "thumb_bend": 0.0, "wrist": 0.0, "tilt": 0.0, "index_curl": 0.0, "middle_curl": 0.0, "ring_curl": 0.0, "little_curl": 0.0},
+  "3:0": {"base": [10.673, 325.688], "depth": 0.553, "tip": [93.963, 151.611], "roll": 10.0, "knuckle": 0.0, "fold": 0.0, "spread": 8.0, "thumb_in": -20.0, "thumb_bend": 0.0, "wrist": 0.0, "tilt": 0.0, "index_curl": 0.0, "middle_curl": 0.0, "ring_curl": 0.0, "little_curl": 0.0},
+  "4:0": {"base": [10.132, 334.026], "depth": 0.524, "tip": [91.93, 147.973], "roll": 10.0, "knuckle": 0.0, "fold": 0.0, "spread": 8.0, "thumb_in": -20.0, "thumb_bend": 0.0, "wrist": 0.0, "tilt": 0.0, "index_curl": 0.0, "middle_curl": 0.0, "ring_curl": 0.0, "little_curl": 0.0},
+  "5:0": {"base": [3.241, 326.477], "depth": 0.56, "tip": [80.929, 152.67], "roll": 10.0, "knuckle": 0.0, "fold": 0.0, "spread": 8.0, "thumb_in": -20.0, "thumb_bend": 0.0, "wrist": 0.0, "tilt": 0.0, "index_curl": 0.0, "middle_curl": 0.0, "ring_curl": 0.0, "little_curl": 0.0}
+}

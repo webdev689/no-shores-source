@@ -1,0 +1,6 @@
+{
+  "pictures": {
+    "own/quiver-arrows": {"model": "quiver", "words": {"arrows": true}, "px": 38, "elevation": 0, "canvas": [7, 38], "anchor": "foot", "seed": 1},
+    "own/quiver-empty": {"model": "quiver", "words": {"arrows": false}, "px": 28, "elevation": 0, "canvas": [7, 28], "anchor": "foot", "seed": 1}
+  }
+}

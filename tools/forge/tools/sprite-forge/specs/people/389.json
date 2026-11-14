@@ -1,0 +1,12 @@
+{
+ "archive": 389,
+ "name": "Townsfolk (nord male)",
+ "records": [
+  {"anim":"walk","view":0,"frames":4,"canvas":[50,112],"place":[24,112]},
+  {"anim":"walk","view":1,"frames":4,"canvas":[63,111],"place":[28,111]},
+  {"anim":"walk","view":2,"frames":4,"canvas":[69,111],"place":[36,111]},
+  {"anim":"walk","view":3,"frames":4,"canvas":[62,111],"place":[31,111]},
+  {"anim":"walk","view":4,"frames":4,"canvas":[50,110],"place":[24,110]},
+  {"anim":"idle","view":0,"frames":2,"canvas":[74,165],"place":[28,165]}
+ ]
+}

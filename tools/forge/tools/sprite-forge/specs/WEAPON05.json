@@ -1,0 +1,15 @@
+{
+ "archive": "WEAPON05.CIF",
+ "name": "Mace, first person",
+ "weapon": "mace",
+ "grown": true,
+ "records": [
+  {"state": "Idle", "frames": 1, "canvas": [81, 79], "screen": [239, 121], "drawn": [235, 109, 96, 91]},
+  {"state": "StrikeDown", "frames": 5, "canvas": [122, 200], "screen": [198, 0], "drawn": [195, 0, 125, 200]},
+  {"state": "StrikeDownLeft", "frames": 5, "canvas": [292, 200], "screen": [28, 0], "drawn": [25, 0, 295, 200]},
+  {"state": "StrikeLeft", "frames": 5, "canvas": [320, 137], "screen": [0, 63], "drawn": [0, 42, 320, 158]},
+  {"state": "StrikeRight", "frames": 5, "canvas": [320, 137], "screen": [0, 63], "mirror": 3, "drawn": [0, 42, 320, 158]},
+  {"state": "StrikeDownRight", "frames": 5, "canvas": [292, 197], "screen": [0, 3], "mirror": 2, "drop": 3, "drawn": [0, 0, 295, 200]},
+  {"state": "StrikeUp", "frames": 5, "canvas": [122, 134], "screen": [198, 66], "drawn": [194, 57, 126, 143]}
+ ]
+}

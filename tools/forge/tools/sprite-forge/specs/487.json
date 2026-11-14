@@ -1,0 +1,33 @@
+{
+ "archive": 487,
+ "name": "Medium Fighter (female)",
+ "body": "female",
+ "outfit": "medium_f",
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [56, 113], "place": [30, 112], "keys": [0, 0, 3, 0]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [75, 112], "place": [58, 110], "keys": [0, 3, 3, 1]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [81, 111], "place": [58, 108], "keys": [2, 1, 0, 1]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [62, 111], "place": [39, 107], "keys": [1, 3, 1, 1]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [50, 111], "place": [22, 106], "keys": [0, 0, 2, 3]},
+  {"anim": "attack", "view": 0, "frames": 6, "canvas": [115, 142], "place": [70, 139]},
+  {"anim": "attack", "view": 1, "frames": 6, "canvas": [126, 141], "place": [72, 137]},
+  {"anim": "attack", "view": 2, "frames": 6, "canvas": [110, 141], "place": [76, 138]},
+  {"anim": "attack", "view": 3, "frames": 6, "canvas": [92, 142], "place": [63, 139]},
+  {"anim": "attack", "view": 4, "frames": 6, "canvas": [110, 141], "place": [47, 138]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [79, 131], "place": [37, 127]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [77, 131], "place": [44, 130]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [90, 134], "place": [51, 129]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [79, 137], "place": [49, 134]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [79, 139], "place": [42, 136]},
+  {"anim": "idle", "view": 0, "frames": 1, "canvas": [50, 110], "place": [28, 109]},
+  {"anim": "idle", "view": 1, "frames": 1, "canvas": [77, 109], "place": [53, 108]},
+  {"anim": "idle", "view": 2, "frames": 1, "canvas": [89, 109], "place": [61, 108]},
+  {"anim": "idle", "view": 3, "frames": 1, "canvas": [62, 110], "place": [37, 107]},
+  {"anim": "idle", "view": 4, "frames": 1, "canvas": [50, 110], "place": [21, 106]},
+  {"anim": "bow", "view": 0, "frames": 4, "canvas": [62, 139], "place": [36, 135]},
+  {"anim": "bow", "view": 1, "frames": 4, "canvas": [87, 137], "place": [61, 134]},
+  {"anim": "bow", "view": 2, "frames": 4, "canvas": [93, 133], "place": [62, 128]},
+  {"anim": "bow", "view": 3, "frames": 4, "canvas": [83, 130], "place": [43, 127]},
+  {"anim": "bow", "view": 4, "frames": 4, "canvas": [64, 129], "place": [25, 124]}
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "archive": 266,
+ "name": "Slaughterfish",
+ "beast": "fish",
+ "elevation": 10,
+ "work": [
+  340,
+  220
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 6, "canvas": [132, 103], "scale": -128, "place": [79, 126]},
+  {"anim": "walk", "view": 1, "frames": 6, "canvas": [120, 51], "scale": 0, "place": [60, 60]},
+  {"anim": "walk", "view": 2, "frames": 6, "canvas": [138, 39], "scale": 0, "place": [67, 54]},
+  {"anim": "walk", "view": 3, "frames": 6, "canvas": [112, 39], "scale": 0, "place": [54, 56]},
+  {"anim": "walk", "view": 4, "frames": 6, "canvas": [85, 40], "scale": 0, "place": [31, 58]},
+  {"anim": "attack", "view": 0, "frames": 10, "canvas": [132, 96], "scale": -128, "place": [62, 130]},
+  {"anim": "attack", "view": 1, "frames": 10, "canvas": [122, 46], "scale": 0, "place": [59, 58]},
+  {"anim": "attack", "view": 2, "frames": 10, "canvas": [138, 36], "scale": 0, "place": [68, 54]},
+  {"anim": "attack", "view": 3, "frames": 10, "canvas": [112, 36], "scale": 0, "place": [48, 57]},
+  {"anim": "attack", "view": 4, "frames": 10, "canvas": [85, 38], "scale": 0, "place": [31, 59]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [204, 103], "scale": -128, "place": [137, 116]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [92, 52], "scale": 0, "place": [63, 60]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [106, 42], "scale": 0, "place": [62, 53]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [92, 41], "scale": 0, "place": [46, 50]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [109, 40], "scale": 0, "place": [56, 57]}
+ ]
+}

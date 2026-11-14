@@ -1,0 +1,20 @@
+{
+ "focal": 310.5747,
+ "aspect": 1.0,
+ "haft_len": 0.5374,
+ "haft_r": 0.0173,
+ "haft_taper": 0.88,
+ "haft_below": 0.3,
+ "ring_at": 0.03,
+ "collar_len": 0.07,
+ "collar_r": 1.3,
+ "head_len": 0.2391,
+ "head_h": 0.0811,
+ "head_d": 0.1111,
+ "face_len": 0.05,
+ "face_grow": 1.2,
+ "slant": 0.6,
+ "spike_len": 0.038,
+ "spike_w": 0.016,
+ "head_off": -0.0033
+}

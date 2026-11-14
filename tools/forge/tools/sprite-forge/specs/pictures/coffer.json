@@ -1,0 +1,6 @@
+{
+  "pictures": {
+    "coffer/38351_0-0": {"anchor": "foot", "canvas": [33, 24], "elevation": 13, "model": "cofferShut", "px": 33, "seed": 383510, "words": {}},
+    "coffer/38351_1-0": {"anchor": "foot", "canvas": [33, 32], "elevation": 13, "model": "cofferOpen", "px": 33, "seed": 383511, "words": {}}
+  }
+}

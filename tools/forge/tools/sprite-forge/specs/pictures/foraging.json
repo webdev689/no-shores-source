@@ -1,0 +1,11 @@
+{
+  "pictures": {
+    "foraging/11600_0-0": {"model": "woodAxe", "px": 61, "words": {}, "elevation": 0, "canvas": [64, 64], "seed": 11600},
+    "foraging/11601_0-0": {"model": "pickAxe", "px": 58, "words": {}, "elevation": 0, "canvas": [64, 64], "seed": 11601},
+    "foraging/11602_0-0": {"model": "sickle", "px": 55, "words": {}, "elevation": 0, "canvas": [64, 64], "seed": 11602},
+    "foraging/11603_0-0": {"model": "fishingNet", "px": 109, "canvas": [128, 128], "words": {}, "elevation": 0, "seed": 11603},
+    "foraging/11604_0-0": {"model": "woodBundle", "px": 58, "elevation": 24, "words": {}, "canvas": [64, 64], "seed": 11604},
+    "foraging/11605_0-0": {"model": "forageEgg", "px": 41, "words": {}, "elevation": 0, "canvas": [64, 64], "seed": 11605},
+    "foraging/11606_0-0": {"model": "spade", "px": 52, "words": {}, "elevation": 0, "canvas": [64, 64], "seed": 11606}
+  }
+}

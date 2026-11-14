@@ -1,0 +1,27 @@
+{
+ "archive": "CAST",
+ "name": "The casting hands, first person",
+ "weapon": "castarm",
+ "elements": {"fire": "FIRE00C6.CIF", "frost": "FRST00C6.CIF", "poison": "POIS00C6.CIF", "shock": "SHOK00C6.CIF",
+              "magic": "MJIC00C6.CIF"},
+ "records": [
+  {"state": "Cast0", "frames": 1, "canvas": [49, 47], "screen": [40, 153], "part": "arm",
+   "cif": "SHOK00C6.CIF", "record": 0, "union": ["FRST00C6.CIF", "POIS00C6.CIF", "MJIC00C6.CIF"],
+   "series": {"name": "cast-0", "frames": 1, "pad": [0, 0, 0, 0], "outline": 0.6}},
+  {"state": "Cast1", "frames": 1, "canvas": [127, 200], "screen": [0, 0], "part": "arm",
+   "cif": "SHOK00C6.CIF", "record": 1, "union": ["FRST00C6.CIF", "POIS00C6.CIF", "MJIC00C6.CIF"],
+   "series": {"name": "cast-1", "frames": 1, "pad": [0, 0, 0, 0], "outline": 0.6}},
+  {"state": "Cast2", "frames": 1, "canvas": [132, 200], "screen": [0, 0], "part": "arm",
+   "cif": "SHOK00C6.CIF", "record": 2, "union": ["FRST00C6.CIF", "POIS00C6.CIF", "MJIC00C6.CIF"],
+   "series": {"name": "cast-2", "frames": 1, "pad": [0, 0, 0, 0], "outline": 0.6}},
+  {"state": "Cast3", "frames": 1, "canvas": [135, 200], "screen": [0, 0], "part": "arm",
+   "cif": "SHOK00C6.CIF", "record": 3, "union": ["FRST00C6.CIF", "POIS00C6.CIF", "MJIC00C6.CIF"],
+   "series": {"name": "cast-3", "frames": 1, "pad": [0, 0, 0, 0], "outline": 0.6}},
+  {"state": "Cast4", "frames": 1, "canvas": [158, 200], "screen": [0, 0], "part": "arm",
+   "cif": "SHOK00C6.CIF", "record": 4, "union": ["FRST00C6.CIF", "POIS00C6.CIF", "MJIC00C6.CIF"],
+   "series": {"name": "cast-4", "frames": 1, "pad": [0, 0, 0, 0], "outline": 0.6}},
+  {"state": "Cast5", "frames": 1, "canvas": [111, 93], "screen": [40, 107], "part": "arm",
+   "cif": "SHOK00C6.CIF", "record": 5, "union": ["FRST00C6.CIF", "POIS00C6.CIF", "MJIC00C6.CIF"],
+   "series": {"name": "cast-5", "frames": 1, "pad": [0, 0, 0, 0], "outline": 0.6}}
+ ]
+}

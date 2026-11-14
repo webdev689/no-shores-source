@@ -9,8 +9,13 @@ pub struct Layer {
 }
 
 /// The client's layers, by folder name under `client/src`. Files directly in `client/src` may import any of them.
-pub const LAYERS: &[Layer] =
-    &[Layer { name: "rules", may_import: &[] }, Layer { name: "editor", may_import: &["rules"] }];
+pub const LAYERS: &[Layer] = &[
+    Layer { name: "rules", may_import: &[] },
+    Layer { name: "editor", may_import: &["rules"] },
+    Layer { name: "forge", may_import: &[] },
+    Layer { name: "testground", may_import: &["forge", "editor", "firstperson"] },
+    Layer { name: "firstperson", may_import: &["forge"] },
+];
 
 /// The file that wires the layers together. The other files beside it (the GPU, the canvas size) are groundwork
 /// that any layer may import; the entry point itself sits above every layer, so none may import it.

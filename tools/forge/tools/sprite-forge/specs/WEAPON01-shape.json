@@ -1,0 +1,14 @@
+{
+ "focal": 298.4755,
+ "aspect": 1.0,
+ "staff_len": 0.9,
+ "staff_r": 0.0241,
+ "taper": 0.6206,
+ "cap_len": 0.0349,
+ "cap_r": 1.1788,
+ "records": {
+  "6": {
+   "staff_len": 0.6
+  }
+ }
+}

@@ -1,0 +1,20 @@
+{
+  "pictures": {
+    "survival/532_0-0": {"from": 532, "spoil": "mouldy", "seed": 5320},
+    "survival/532_1-0": {"from": 532, "spoil": "rotten", "seed": 532},
+    "survival/533_0-0": {"from": 533, "spoil": "mouldy", "seed": 5330},
+    "survival/533_1-0": {"from": 533, "spoil": "rotten", "seed": 533},
+    "survival/534_0-0": {"from": 534, "spoil": "mouldy", "seed": 5340},
+    "survival/534_1-0": {"from": 534, "spoil": "rotten", "seed": 534},
+    "survival/535_0-0": {"from": 535, "spoil": "mouldy", "seed": 5350},
+    "survival/535_1-0": {"from": 535, "spoil": "rotten", "seed": 535},
+    "survival/536_0-0": {"from": 536, "spoil": "mouldy", "seed": 5360},
+    "survival/536_1-0": {"from": 536, "spoil": "rotten", "seed": 536},
+    "survival/537_0-0": {"from": 537, "spoil": "mouldy", "seed": 5370},
+    "survival/537_1-0": {"from": 537, "spoil": "rotten", "seed": 537},
+    "survival/538_0-0": {"model": "rawMeat", "words": {}, "px": 47, "seed": 5380, "spoil": "mouldy"},
+    "survival/538_1-0": {"model": "rawMeat", "words": {}, "px": 47, "seed": 538, "spoil": "rotten"},
+    "survival/538_2-0": {"model": "rawMeat", "words": {}, "px": 47, "seed": 538},
+    "survival/539_0-0": {"model": "waterskin", "words": {}, "px": 26, "seed": 539}
+  }
+}

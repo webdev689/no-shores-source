@@ -1,0 +1,7 @@
+{
+  "0:0": {"base": [-40, 300], "depth": 0.4, "tip": [40, 232], "roll": -70, "knuckle": 20, "fold": 40, "spread": 0, "thumb_in": 10, "thumb_bend": 8, "wrist": -10, "tilt": 0},
+  "0:1": {"base": [-36, 268], "depth": 0.38, "tip": [108, 170], "roll": -70, "knuckle": 10, "fold": 24, "spread": 5, "thumb_in": 5, "thumb_bend": 2, "wrist": -12, "tilt": 0},
+  "0:2": {"base": [-24, 240], "depth": 0.36, "tip": [166, 120], "roll": -70, "knuckle": 0, "fold": 10, "spread": 10, "thumb_in": 0, "thumb_bend": -5, "wrist": -15, "tilt": 0},
+  "0:3": {"base": [-24, 243], "depth": 0.36, "tip": [162, 124], "roll": -70, "knuckle": 28, "fold": 62, "spread": 0, "thumb_in": 30, "thumb_bend": 22, "wrist": -12, "tilt": 0},
+  "0:4": {"base": [36, 264], "depth": 0.4, "tip": [244, 170], "roll": -80, "knuckle": 30, "fold": 66, "spread": 0, "thumb_in": 30, "thumb_bend": 24, "wrist": -8, "tilt": 0}
+}

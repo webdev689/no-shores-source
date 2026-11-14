@@ -1,0 +1,27 @@
+{
+ "archive": 264,
+ "name": "Werewolf",
+ "beast": "werewolf",
+ "elevation": 10,
+ "work": [
+  260,
+  240
+ ],
+ "records": [
+  {"anim": "walk", "view": 0, "frames": 4, "canvas": [63, 76], "scale": 0, "place": [31, 74]},
+  {"anim": "walk", "view": 1, "frames": 4, "canvas": [69, 77], "scale": 0, "place": [30, 75]},
+  {"anim": "walk", "view": 2, "frames": 4, "canvas": [69, 78], "scale": 0, "place": [36, 75]},
+  {"anim": "walk", "view": 3, "frames": 4, "canvas": [59, 71], "scale": 0, "place": [29, 70]},
+  {"anim": "walk", "view": 4, "frames": 4, "canvas": [61, 72], "scale": 0, "place": [28, 70]},
+  {"anim": "attack", "view": 0, "frames": 3, "canvas": [65, 92], "scale": 0, "place": [32, 90]},
+  {"anim": "attack", "view": 1, "frames": 3, "canvas": [58, 82], "scale": 0, "place": [39, 80]},
+  {"anim": "attack", "view": 2, "frames": 3, "canvas": [60, 79], "scale": 0, "place": [41, 79]},
+  {"anim": "attack", "view": 3, "frames": 3, "canvas": [60, 83], "scale": 0, "place": [32, 81]},
+  {"anim": "attack", "view": 4, "frames": 3, "canvas": [59, 89], "scale": 0, "place": [27, 87]},
+  {"anim": "hurt", "view": 0, "frames": 1, "canvas": [52, 93], "scale": 0, "place": [28, 91]},
+  {"anim": "hurt", "view": 1, "frames": 1, "canvas": [48, 95], "scale": 0, "place": [28, 94]},
+  {"anim": "hurt", "view": 2, "frames": 1, "canvas": [46, 95], "scale": 0, "place": [31, 99]},
+  {"anim": "hurt", "view": 3, "frames": 1, "canvas": [46, 98], "scale": 0, "place": [31, 99]},
+  {"anim": "hurt", "view": 4, "frames": 1, "canvas": [47, 92], "scale": 0, "place": [23, 92]}
+ ]
+}
