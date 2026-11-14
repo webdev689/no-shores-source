@@ -57,6 +57,10 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Look (`1`), Raise (`2`), Lower (`3`), Smooth (`4`), Flatten (`5`) | Look only, or shape the ground with a brush |
 | Radius, `[` and `]` | The brush's radius, 1 to 200 km |
 | Strength | Metres a dab for Raise and Lower; the share of the way a dab goes for Smooth (to the neighbours' mean) and Flatten (to the height where the stroke started) |
+| River (`6`), Road (`7`), Town (`8`) | Click point by point; double-click or `Enter` to finish, `Backspace` to take back a point, `Esc` to cancel. A road's points snap to ports, other roads and town edges |
+| Width, Depth | A new river's or road's width, and a new river's depth |
+| Port (`9`) | Click on the land by the coast |
+| Remove (`0`) | Click a river, road, town or port to remove it |
 | Undo, Redo (`Ctrl+Z`, `Ctrl+Y`) | Steps back or forward through the last 100 strokes |
 | Save | On the site, downloads `<landmass>.json`; under `npm run dev`, writes `content/world/land/<landmass>.json` |
 | 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
@@ -65,7 +69,8 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | In 3D: left-drag, right-drag, middle-drag, wheel | Shapes with a brush (or orbits with Look), orbits, pans along the ground, and zooms |
 
 The cursor's readout gives the ground's height under it, or the sea's depth, in either view. A stroke shows as it
-is drawn; the rivers and lakes follow when it ends. Each landmass's row says when it has unsaved shaping, which
+is drawn; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in both views. The Problems list gives every rule the landmass's edits
+break. Each landmass's row says when it has unsaved shaping, which
 this browser keeps until it is saved and offers to restore on the next visit. To keep shaping done on the site, put
 the downloaded file in `content/world/land/` through a pull request, or hand it to Claude.
 

@@ -385,11 +385,17 @@ async function start(): Promise<void> {
     canvas.hidden = next !== 'continents';
     svg.toggleAttribute('hidden', next !== 'continents');
     landCanvas.hidden = next !== 'land';
+    element('#land-overlay').toggleAttribute('hidden', next !== 'land');
     if (next === 'land') {
-      landEditor ??= await startLandEditor(landCanvas, element<HTMLElement>('#land-panel'), {
-        widthM: constants.frameWidthM,
-        heightM: constants.frameHeightM,
-      });
+      landEditor ??= await startLandEditor(
+        landCanvas,
+        element<SVGSVGElement>('#land-overlay'),
+        element<HTMLElement>('#land-panel'),
+        {
+          widthM: constants.frameWidthM,
+          heightM: constants.frameHeightM,
+        },
+      );
       landEditor.activate(rules.write(JSON.stringify(draft().layout)));
     } else landEditor?.deactivate();
     requestFrame();

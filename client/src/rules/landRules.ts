@@ -19,6 +19,21 @@ export interface LandView {
   readonly rivers: readonly RiverCourse[];
   /** A fingerprint of every ground height's bits, the same as the server's for the same land. */
   readonly groundHash: string;
+  /** Every rule the landmass's edits break, its places checked against its coast. */
+  readonly problems: readonly { readonly subject: string; readonly message: string }[];
+}
+
+/** The water at a point of the ground, and its surface. */
+export interface WaterAt {
+  readonly kind: 'dry' | 'sea' | 'lake' | 'river';
+  readonly surface?: number;
+}
+
+/** The ground at some points, as the runtime finds it: each height and its water, and a fingerprint of the heights. */
+export interface GroundSample {
+  readonly heights: readonly number[];
+  readonly water: readonly WaterAt[];
+  readonly sampleHash: string;
 }
 
 /** A sculpting brush, as an edits file stores a stroke's. */
@@ -48,6 +63,8 @@ export interface LandRules {
   setEdits(editsText: string): LandView;
   /** The open landmass's edits file, in its written form. */
   write(): { readonly id: string; readonly text: string };
+  /** The open landmass's ground at each point, to the metre. */
+  sample(points: readonly (readonly [number, number])[]): GroundSample;
 }
 
 interface LandExports {
@@ -59,6 +76,7 @@ interface LandExports {
   land_settle(): bigint;
   land_set_edits(address: number, length: number): bigint;
   land_write(): bigint;
+  land_sample(address: number, length: number): bigint;
 }
 
 interface ViewHeader {
@@ -71,6 +89,7 @@ interface ViewHeader {
   readonly cell_m?: number;
   readonly rivers?: RiverCourse[];
   readonly ground_hash?: string;
+  readonly problems?: { subject: string; message: string }[];
   readonly rect?: [number, number, number, number];
 }
 
@@ -103,6 +122,7 @@ function takeView(exports: LandExports, packed: bigint): LandView {
       lakes: new Float32Array(exports.memory.buffer.slice(start + cells * 4, start + cells * 8)),
       rivers: header.rivers ?? [],
       groundHash: header.ground_hash ?? '',
+      problems: header.problems ?? [],
     };
   } finally {
     exports.release(address, length);
@@ -122,6 +142,15 @@ function takePatch(exports: LandExports, packed: bigint): LandPatch {
   } finally {
     exports.release(address, length);
   }
+}
+
+/** Reads text the module handed over and gives the memory back. */
+function takeText(exports: LandExports, packed: bigint): string {
+  const address = Number(packed >> 32n);
+  const length = Number(packed & 0xffff_ffffn);
+  const text = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, address, length));
+  exports.release(address, length);
+  return text;
 }
 
 /** Starts the land from the compiled `land-wasm` module's bytes. */
@@ -148,14 +177,23 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     settle: () => takeView(exports, exports.land_settle()),
     setEdits: (editsText) => takeView(exports, send(exports.land_set_edits, `{"edits":${editsText}}`)),
     write: () => {
-      const packed = exports.land_write();
-      const address = Number(packed >> 32n);
-      const length = Number(packed & 0xffff_ffffn);
-      const text = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, address, length));
-      exports.release(address, length);
-      const answer = JSON.parse(text) as { id?: string; text?: string; error?: string };
+      const answer = JSON.parse(takeText(exports, exports.land_write())) as {
+        id?: string;
+        text?: string;
+        error?: string;
+      };
       if (answer.error !== undefined) throw new Error(answer.error);
       return { id: answer.id ?? '', text: answer.text ?? '' };
+    },
+    sample: (points) => {
+      const answer = JSON.parse(takeText(exports, send(exports.land_sample, JSON.stringify({ points })))) as {
+        heights?: number[];
+        water?: WaterAt[];
+        sample_hash?: string;
+        error?: string;
+      };
+      if (answer.error !== undefined) throw new Error(answer.error);
+      return { heights: answer.heights ?? [], water: answer.water ?? [], sampleHash: answer.sample_hash ?? '' };
     },
   };
 }

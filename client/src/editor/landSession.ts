@@ -1,11 +1,19 @@
 import type { Brush, LandPatch, LandView } from '../rules/landRules.ts';
 import type { LandWorker } from './landClient.ts';
 import type { LandState } from './landPanel.ts';
-import { riverCells } from './reliefView.ts';
+import { markCells, type Places } from './marks.ts';
 
 const EMPTY_EDITS = '{ "strokes": [] }';
 /** Where this browser keeps a landmass's unsaved edits between visits. */
 const keptKey = (id: string) => `overlook.worldEditor.land.${id}`;
+function editsOf(landmass: Landmass): Places {
+  try {
+    return JSON.parse(landmass.history[landmass.at] ?? EMPTY_EDITS) as Places;
+  } catch {
+    return {};
+  }
+}
+
 function readsAsJson(text: string): boolean {
   try {
     JSON.parse(text);
@@ -22,7 +30,7 @@ const HISTORY = 100;
 export interface Landmass {
   state: LandState;
   view: LandView | null;
-  rivers: Uint8Array | null;
+  marks: Uint8Array | null;
   savedText: string | null;
   history: string[];
   at: number;
@@ -41,7 +49,7 @@ export class LandSession {
     this.layoutText = layoutText;
     const ids = (JSON.parse(layoutText) as { continents: { id: string }[] }).continents.map(({ id }) => id);
     for (const id of ids)
-      this.landmasses.set(id, { state: 'waiting', view: null, rivers: null, savedText: null, history: [], at: 0 });
+      this.landmasses.set(id, { state: 'waiting', view: null, marks: null, savedText: null, history: [], at: 0 });
   }
 
   /** Runs worker calls one after another, so a dab never overtakes the stroke before it. */
@@ -53,7 +61,40 @@ export class LandSession {
 
   private show(landmass: Landmass, view: LandView): void {
     landmass.view = view;
-    landmass.rivers = riverCells(view);
+    landmass.marks = markCells(view, editsOf(landmass));
+  }
+
+  /** The open landmass's places, as its edits stand now. */
+  places(id: string): Places {
+    const landmass = this.landmasses.get(id);
+    return landmass ? editsOf(landmass) : {};
+  }
+
+  /** Changes the open landmass's edits by hand (adding or removing a place): the ground is laid again under them, the
+   *  change becomes an undo step and this browser keeps it. */
+  change(id: string, mutate: (edits: Record<string, unknown[]>) => void): Promise<Landmass | null> {
+    return this.then(async () => {
+      const landmass = this.landmasses.get(id);
+      if (!landmass || this.openId !== id) return null;
+      const edits = JSON.parse(landmass.history[landmass.at] ?? EMPTY_EDITS) as Record<string, unknown[]>;
+      mutate(edits);
+      const view = await this.worker.setEdits(JSON.stringify(edits));
+      const { text } = await this.worker.write();
+      this.record(landmass, id, text);
+      this.show(landmass, view);
+      return landmass;
+    });
+  }
+
+  /** A new undo step with this text, kept in this browser until saved. */
+  private record(landmass: Landmass, id: string, text: string): void {
+    landmass.history = [...landmass.history.slice(0, landmass.at + 1), text].slice(-HISTORY);
+    landmass.at = landmass.history.length - 1;
+    try {
+      localStorage.setItem(keptKey(id), text);
+    } catch {
+      // This browser keeps nothing: the file saved by Save is the only copy.
+    }
   }
 
   /** The edits a landmass opens with: those kept in this browser if `restore`, else its file in the repository. */
@@ -121,13 +162,7 @@ export class LandSession {
       if (!landmass || this.openId !== id) return null;
       this.show(landmass, await this.worker.settle());
       const { text } = await this.worker.write();
-      landmass.history = [...landmass.history.slice(0, landmass.at + 1), text].slice(-HISTORY);
-      landmass.at = landmass.history.length - 1;
-      try {
-        localStorage.setItem(keptKey(id), text);
-      } catch {
-        // This browser keeps nothing: the file saved by Save is the only copy.
-      }
+      this.record(landmass, id, text);
       return landmass;
     });
   }

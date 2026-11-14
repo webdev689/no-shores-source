@@ -4,6 +4,7 @@
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use land::edits::{self, CellRect, Edits, Stroke};
+use land::ground::{WaterAt, sample_hash};
 use land::landmass::{Landmass, generate, ground_hash};
 use serde_json::{Value, json};
 use std::cell::RefCell;
@@ -56,6 +57,7 @@ pub fn header_of(landmass: &Landmass) -> Value {
         "top_m": ground.top_m,
         "cell_m": ground.cell_m,
         "ground_hash": format!("{:016x}", ground_hash(ground)),
+        "problems": landmass.problems().iter().map(|problem| json!({ "subject": problem.subject, "message": problem.message })).collect::<Vec<_>>(),
         "rivers": rivers,
     })
 }
@@ -129,7 +131,9 @@ pub fn dab_patch(request: &[u8]) -> Vec<u8> {
             serde_json::from_value(request["point"].clone()).map_err(|error| error.to_string())?;
         let mut brush: Stroke = serde_json::from_value(request["brush"].clone()).map_err(|error| error.to_string())?;
         brush.points = vec![point];
-        let checked = edits_from(&serde_json::to_value(Edits { strokes: vec![brush.clone()] }).unwrap_or_default())?;
+        let checked = edits_from(
+            &serde_json::to_value(Edits { strokes: vec![brush.clone()], ..Edits::default() }).unwrap_or_default(),
+        )?;
         let brush = checked.strokes.into_iter().next().ok_or("no brush")?;
         let starts = request["starts"].as_bool().unwrap_or(true);
         OPEN.with(|open| {
@@ -187,6 +191,35 @@ pub fn write_json() -> String {
             Err(error) => json!({ "error": error.to_string() }).to_string(),
         },
     })
+}
+
+/// The open landmass's ground at each point of `{ "points": [[x, y], ...] }`, as the runtime finds it: each height, the
+/// water there (`dry`, `sea`, `lake` or `river`) and its surface, and a fingerprint of the heights' bits.
+#[must_use]
+pub fn sample_json(request: &[u8]) -> String {
+    let sampled = read(request).and_then(|request| {
+        let points: Vec<[f64; 2]> =
+            serde_json::from_value(request["points"].clone()).map_err(|error| error.to_string())?;
+        OPEN.with(|open| {
+            let open = open.borrow();
+            let landmass = open.as_ref().ok_or("no landmass is open")?;
+            let ground = &landmass.surface;
+            let pairs: Vec<(f64, f64)> = points.iter().map(|&[x, y]| (x, y)).collect();
+            let heights: Vec<f64> = pairs.iter().map(|&(x, y)| ground.height_at(x, y)).collect();
+            let water: Vec<Value> = pairs
+                .iter()
+                .map(|&(x, y)| match ground.water_at(x, y) {
+                    WaterAt::Dry => json!({ "kind": "dry" }),
+                    WaterAt::Sea => json!({ "kind": "sea", "surface": 0.0 }),
+                    WaterAt::Lake { surface } => json!({ "kind": "lake", "surface": surface }),
+                    WaterAt::River { surface } => json!({ "kind": "river", "surface": surface }),
+                })
+                .collect();
+            let hash = format!("{:016x}", sample_hash(ground, &pairs));
+            Ok(json!({ "heights": heights, "water": water, "sample_hash": hash }).to_string())
+        })
+    });
+    sampled.unwrap_or_else(|error: String| json!({ "error": error }).to_string())
 }
 
 /// Hands bytes to JavaScript as one number: the address in the high 32 bits, the length in the low 32. WebAssembly's
@@ -251,6 +284,17 @@ pub unsafe extern "C" fn land_set_edits(address: *const u8, length: usize) -> u6
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let request = unsafe { std::slice::from_raw_parts(address, length) };
     hand_over(set_edits_view(request))
+}
+
+/// The open landmass's ground at the points the request at `address`, `length` bytes long, lists.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_sample(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(sample_json(request).into_bytes())
 }
 
 /// The open landmass's edits file text.
