@@ -1,0 +1,82 @@
+import type { Figure, ForgeBody, IndexLook } from '../forge/looks.ts';
+import { ARMOUR_PIECES, type ArmourPiece, type Outfit, outfitLayers } from '../forge/outfit.ts';
+
+/** Overlook's three races: a Human's skin is a tone; Felid and Anole wear the forge's own bodies. */
+export const RACES = { human: null, felid: 'khajiit', anole: 'argonian' } as const;
+export type Race = keyof typeof RACES;
+
+/** Each body's hair styles, as the forge renders them. */
+const HAIR_STYLES: Readonly<Record<string, readonly string[]>> = {
+  male: ['crop', 'shoulder', 'tied'],
+  female: ['long', 'short', 'braid', 'tails'],
+};
+const WEAPON = /^(sword|dagger|axe|mace|flail|warhammer|staff|bow|crossbow|pistolet|thunderlock)(_|$)/;
+const NOT_GARMENT =
+  /^(body|face|under_|hair_|horse$|quiver$|spark$|torch|prop_|lute$|flute$|recorder$|tambourine$|sheath_|scabbard_|slung_|shield_)/;
+const HANG = /_(drape|plated_skirted|plated|skirted)$/;
+
+/** What a body can wear: the sets of each armour piece, its garments, and what each hand can hold. */
+export interface Wardrobe {
+  readonly sets: Readonly<Record<ArmourPiece, readonly string[]>>;
+  readonly garments: readonly string[];
+  readonly right: readonly string[];
+  readonly left: readonly string[];
+  readonly hairStyles: readonly string[];
+}
+
+export function wardrobeOf(body: string, drawn: ForgeBody['layers']): Wardrobe {
+  const layers = Object.keys(drawn).sort();
+  // Every armour set has a cuirass: a piece named for anything else (boots_laced) is a garment.
+  const known = new Set(layers.filter((layer) => layer.startsWith('cuirass_')).map((layer) => layer.slice(8)));
+  const pieces = new RegExp(`^(${ARMOUR_PIECES.join('|')})_([a-z]+)$`);
+  const sets = Object.fromEntries(ARMOUR_PIECES.map((piece) => [piece, [] as string[]])) as Record<
+    ArmourPiece,
+    string[]
+  >;
+  const garments = new Set<string>();
+  for (const layer of layers) {
+    const armour = pieces.exec(layer);
+    if (armour?.[1] && armour[2] && known.has(armour[2])) sets[armour[1] as ArmourPiece].push(armour[2]);
+    else if (!WEAPON.test(layer) && !NOT_GARMENT.test(layer)) garments.add(layer.replace(HANG, ''));
+  }
+  const weapons = layers.filter((layer) => WEAPON.test(layer));
+  return {
+    sets,
+    garments: [...garments].sort(),
+    right: weapons.filter((layer) => !layer.endsWith('_l')),
+    left: [...layers.filter((layer) => /^shield_/.test(layer)), ...weapons.filter((layer) => layer.endsWith('_l'))],
+    hairStyles: (HAIR_STYLES[body] ?? []).filter((style) => drawn[`hair_${style}`]),
+  };
+}
+
+/** A figure placed on the Test Ground, as it is chosen: a body, a race and a skin tone, and what it wears. */
+export interface Dress {
+  readonly body: string;
+  readonly race: Race;
+  readonly tone: number;
+  readonly outfit: Outfit;
+}
+
+/** The forge figure a dress stacks: the race's own body or the human tone, and its outfit's layers and hair. */
+export function figureOf(dress: Dress, drawn: ForgeBody['layers']): Figure {
+  const { gear, hair } = outfitLayers(dress.outfit, drawn);
+  const race = RACES[dress.race];
+  return { body: dress.body, race, tone: race ? null : dress.tone, hair, gear };
+}
+
+/** One of the forge's dressed looks as an outfit: its armour by piece and set, its garments, its weapon drawn. */
+export function lookOutfit(look: IndexLook, keep: Outfit): Outfit {
+  const pieces =
+    /^(helm|pauldrons|cuirass|gauntlets|greaves|boots)_(iron|steel|silver|elven|dwarven|mithril|adamantium|ebony|orcish|daedric|leather|chain|brotherhood|fighters|knights|mages|thieves)$/;
+  const armour: Partial<Record<ArmourPiece, string>> = {};
+  const garments: string[] = [];
+  for (const layer of look.gear) {
+    const piece = pieces.exec(layer);
+    if (piece?.[1] && piece[2]) armour[piece[1] as ArmourPiece] = piece[2];
+    else if (!/^(face|under_)/.test(layer)) {
+      const garment = layer.replace(HANG, '');
+      if (!garments.includes(garment)) garments.push(garment);
+    }
+  }
+  return { ...keep, armour, garments, right: look.weapon, left: null, drawn: !!look.weapon };
+}

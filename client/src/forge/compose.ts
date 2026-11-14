@@ -1,5 +1,5 @@
 import { type Figure, type ForgeLooks, layerCellOf, layerPath, layersOf, lookCell } from './looks.ts';
-import { type HairColours, type RaceSkins, hairRamp, raceSkinOf } from './skins.ts';
+import { type HairColours, type RaceSkins, hairRamp, raceSkinOf, toneSkinOf } from './skins.ts';
 
 /** A decoded strip: RGBA, top row first. */
 export interface Strip {
@@ -122,7 +122,10 @@ export async function composeFrame(
       figure.hair?.layer === layer ? hairRamp(colours.hair, figure.body, figure.race, figure.hair.colour) : null;
     const tint = dyeable.has(layer) ? tints[layer] : undefined;
     const ramp = hair ?? (tint ? tintRamp(tint) : null);
-    const skin = raceSkinOf(colours.skins, layer, figure.body, figure.race, view);
+    const skin =
+      figure.tone === null
+        ? raceSkinOf(colours.skins, layer, figure.body, figure.race, view)
+        : toneSkinOf(colours.skins, layer, figure.body, figure.tone, view);
     const column = Math.min(frame, own.frames - 1) * cellW;
     for (let row = 0; row < height; row++) {
       const cellY = row + shiftY;

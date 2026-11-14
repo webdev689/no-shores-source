@@ -37,6 +37,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The World Editor Paints in the Browser]]
 - [[The World Editor Is on GitHub Pages]]
 - [[DFO's Sprite Forge Comes Over Exactly]]
+- [[Three Races]]
+- [[The Player Plays as in DFO]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

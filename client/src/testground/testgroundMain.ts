@@ -3,6 +3,7 @@ import { GpuUnavailable, startGpu } from '../gpu.ts';
 import { EYE_M, walkStep } from '../editor/closeUp.ts';
 import { type Orbit, panOrbit, rayAt, rotateOrbit, zoomOrbit } from '../editor/orbit.ts';
 import { type Colours, composeFrame } from '../forge/compose.ts';
+import { figureOf } from './dressing.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
@@ -48,7 +49,6 @@ async function start(): Promise<void> {
   });
   showPanel({
     looks: { bodies: {} },
-    skins: { bodies: {} },
     hair: { bodies: {} },
     figures: [],
     chosen: null,
@@ -74,7 +74,19 @@ async function start(): Promise<void> {
     x: orbit.targetX + (nextId % 3) - 1,
     y: orbit.targetY,
     facing: Math.PI,
-    figure: { body: 'male', race: null, hair: null, gear: ['face'] },
+    dress: {
+      body: 'male',
+      race: 'human',
+      tone: 0.3,
+      outfit: {
+        armour: {},
+        garments: ['shirt_long_v', 'breeches', 'boots'],
+        right: null,
+        left: null,
+        drawn: false,
+        hair: { style: 'crop', colour: 'brown' },
+      },
+    },
     anim: 'idle',
     tints: {},
     spin: false,
@@ -86,7 +98,8 @@ async function start(): Promise<void> {
   const composing = new Set<string>();
   /** A figure's card in one view and frame: composed once and kept, null while it is being composed. */
   const cardOf = (placed: Placed, view: number, frame: number): Card | null => {
-    const key = JSON.stringify([placed.figure, placed.tints, placed.anim, view, frame]);
+    const figure = figureOf(placed.dress, looks.bodies[placed.dress.body]?.layers ?? {});
+    const key = JSON.stringify([figure, placed.tints, placed.anim, view, frame]);
     const kept = cards.get(key);
     if (kept !== undefined || composing.has(key)) return kept ?? null;
     if (cards.size > KEPT_CARDS) {
@@ -95,7 +108,7 @@ async function start(): Promise<void> {
     }
     composing.add(key);
     const strip = (path: string) => store.strip(path);
-    composeFrame(placed.figure, placed.anim, view, frame, looks, colours, placed.tints, strip)
+    composeFrame(figure, placed.anim, view, frame, looks, colours, placed.tints, strip)
       .then((composed) => {
         cards.set(key, composed && scene.card(composed.pixels, composed.width, composed.height, composed.root));
       })
@@ -172,7 +185,7 @@ async function start(): Promise<void> {
     const drawn: CardAt[] = [];
     for (const placed of figures) {
       if (placed.spin) placed.facing = (placed.facing + SPIN * seconds) % (2 * Math.PI);
-      const frames = looks.bodies[placed.figure.body]?.anims[placed.anim]?.frames ?? 1;
+      const frames = looks.bodies[placed.dress.body]?.anims[placed.anim]?.frames ?? 1;
       const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
       const card = cardOf(placed, view, frameAt(now / 1000, frames, fps)) ?? shown.get(placed.id);
       if (!card) continue;
@@ -181,7 +194,7 @@ async function start(): Promise<void> {
     }
     scene.draw(orbit, canvas.width, canvas.height, drawn, chosen);
     const loading = composing.size > 0 ? ` Composing ${composing.size} frame${composing.size === 1 ? '' : 's'}…` : '';
-    showPanel({ looks, skins, hair, figures, chosen, fps, walking, status: status + loading });
+    showPanel({ looks, hair, figures, chosen, fps, walking, status: status + loading });
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

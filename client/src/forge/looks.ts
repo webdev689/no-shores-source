@@ -32,10 +32,13 @@ export interface ForgeLooks {
   readonly looks?: Readonly<Record<string, IndexLook>>;
 }
 
-/** A figure as it is dressed: a body, a race, hair, and the layers it wears and holds, in the order they stack. */
+/** A figure as it is dressed: a body; a race whose own body it wears (the forge's `khajiit`, `argonian`), or a skin
+ *  tone from 0 (lightest) to 1 (darkest), or neither for the body as rendered; hair; and the layers it wears and holds,
+ *  in the order they stack. */
 export interface Figure {
   readonly body: string;
   readonly race: string | null;
+  readonly tone: number | null;
   readonly hair: { readonly layer: string; readonly colour: string } | null;
   readonly gear: readonly string[];
 }

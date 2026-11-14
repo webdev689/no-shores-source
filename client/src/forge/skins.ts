@@ -150,3 +150,49 @@ export function hairRamp(hair: HairColours, body: string, race: string | null, c
   const own = hair.bodies[body];
   return (race ? own?.[race]?.[colour] : undefined) ?? own?.['*']?.[colour] ?? null;
 }
+
+/** The forge's skin ramps a human may take, the four of natural skin; the forge's ash-grey and golden ones are not. */
+const HUMAN_SKINS = ['nord', 'breton', 'woodelf', 'redguard'];
+/** How much darker than the darkest ramp the deepest tone is. */
+const DEEPEST = 0.6;
+
+/** The human skin ramps a body has, lightest first. */
+export function skinTones(skins: RaceSkins, body: string): string[] {
+  const races = skins.bodies[body]?.races ?? {};
+  const light = (race: string) => (races[race] ?? []).reduce((total, colour) => total + sum3(colour), 0);
+  return HUMAN_SKINS.filter((race) => races[race]).sort((first, second) => light(second) - light(first));
+}
+
+/** How a layer's texels take a human skin tone from 0 (the lightest) to 1 (the deepest), changing `rgb` in place: the
+ *  two nearest ramps mixed by where the tone lies between them, the darkest ramp darkened for the deepest tones. Null
+ *  where the layer is not skin. */
+export function toneSkinOf(
+  skins: RaceSkins,
+  layer: string,
+  body: string,
+  tone: number,
+  view: number,
+): ((rgb: number[]) => void) | null {
+  const tones = skinTones(skins, body);
+  const spot = Math.max(0, Math.min(1, tone)) * tones.length;
+  const at = (index: number): ((rgb: number[]) => void) | null => {
+    const own = raceSkinOf(skins, layer, body, tones[Math.min(index, tones.length - 1)] ?? null, view);
+    if (!own || index < tones.length) return own;
+    return (rgb) => {
+      own(rgb);
+      for (const channel of CHANNELS) rgb[channel] = Math.round((rgb[channel] ?? 0) * DEEPEST);
+    };
+  };
+  const low = at(Math.floor(spot));
+  const high = at(Math.ceil(spot));
+  if (!low || !high) return low ?? high;
+  const share = spot - Math.floor(spot);
+  return (rgb) => {
+    const first = [...rgb];
+    const second = [...rgb];
+    low(first);
+    high(second);
+    for (const channel of CHANNELS)
+      rgb[channel] = Math.round((first[channel] ?? 0) * (1 - share) + (second[channel] ?? 0) * share);
+  };
+}

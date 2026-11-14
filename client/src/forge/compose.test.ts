@@ -16,7 +16,7 @@ const looks: ForgeLooks = {
   dye: ['shirt'],
   depth: { base: -3, scale: 10000 },
 };
-const figure = { body: 'male', race: null, hair: null, gear: ['shirt', 'cuirass'] };
+const figure = { body: 'male', race: null, tone: null, hair: null, gear: ['shirt', 'cuirass'] };
 const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
 
 /** A strip of one view: each frame's two texels with a colour (or depth, part) a texel; alpha 0 where `null`. */
@@ -85,4 +85,24 @@ test('orders weigh on one part and for a drape over what it hangs on, never for 
   assert.ok(!ordersMeet(PART.weapon, PART.weapon));
   assert.ok(!ordersMeet(PART.horse, PART.none));
   assert.ok(ordersMeet(PART.none, PART.head));
+});
+
+test('a skin tone mixes the two nearest natural skin ramps, lightest first, deepest past the darkest', async () => {
+  const ramp = (light: number) =>
+    Array.from({ length: 4 }, (unused, step) => [light * (step + 1), light * (step + 1), light * (step + 1)] as const);
+  const skins = {
+    bodies: { male: { skin: [ramp(50)], races: { breton: ramp(60), redguard: ramp(20), darkelf: ramp(40) } } },
+  };
+  const tones = (await import('./skins.ts')).skinTones(skins, 'male');
+  // Only natural skin: the ash-grey ramp is left out.
+  assert.deepEqual(tones, ['breton', 'redguard']);
+  const mixed = (tone: number) =>
+    composeFrame({ ...figure, gear: [], tone }, 'idle', 0, 0, looks, { ...colours, skins }, {}, read).then(
+      (frame) => frame?.pixels[0] ?? -1,
+    );
+  const [lightest, middle, darkest, deepest] = await Promise.all([mixed(0), mixed(0.33), mixed(0.66), mixed(1)]);
+  assert.ok(
+    lightest > middle && middle > darkest && darkest > deepest,
+    `${lightest} > ${middle} > ${darkest} > ${deepest}`,
+  );
 });
