@@ -67,18 +67,28 @@ test('jumping at a low thin wall vaults it; at a low deep one, mantles onto it',
   assert.equal(body.z, 1);
 });
 
-test('jumping at a higher lip hangs from it; sideways shimmies, forward climbs over, crouch lets go', () => {
-  const ledge: Block = { minX: -5, maxX: 5, minY: -4, maxY: -1, top: 1.7 };
+test('a lip in reach from the ground is mantled straight over; a higher one is caught on the jump and hung from', () => {
+  const crate: Block = { minX: -5, maxX: 5, minY: -4, maxY: -1, top: 1.7 };
+  let body = run(standing(0, 0), { forward: 1 }, 0.3, [crate]);
+  body = run(body, {}, 1.5, [crate], { forward: 1, jump: true });
+  assert.equal(body.mode, 'ground');
+  assert.equal(body.z, 1.7);
+});
+
+test('hanging from a lip: sideways shimmies, forward climbs over, crouch lets go', () => {
+  const ledge: Block = { minX: -5, maxX: 5, minY: -4, maxY: -1, top: 2.3 };
   let body = run(standing(0, 0), { forward: 1 }, 0.3, [ledge]);
-  body = run(body, {}, TICK, [ledge], { forward: 1, jump: true });
+  body = stepBody(body, { ...still, forward: 1, jump: true }, [ledge], TICK);
+  for (let tick = 0; tick < 60 && body.mode === 'air'; tick++)
+    body = stepBody(body, { ...still, forward: 1 }, [ledge], TICK);
   assert.equal(body.mode, 'hang');
-  close(body.z, 1.7 - TUNING.hang, 1e-9);
+  close(body.z, 2.3 - TUNING.hang, 1e-9);
   const shimmied = run(body, { sideways: 1 }, 1, [ledge]);
   close(shimmied.x - body.x, TUNING.shimmy, 0.02);
   assert.equal(shimmied.mode, 'hang');
   const over = run(run(body, { forward: 1 }, 0.2, [ledge]), {}, 1, [ledge]);
   assert.equal(over.mode, 'ground');
-  assert.equal(over.z, 1.7);
+  assert.equal(over.z, 2.3);
   const dropped = run(body, {}, 1, [ledge], { crouch: true });
   assert.equal(dropped.mode, 'ground');
   assert.equal(dropped.z, 0);

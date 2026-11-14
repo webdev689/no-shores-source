@@ -28,7 +28,7 @@ Click the view to play; Escape frees the mouse. The controls are DFO's:
 |---|---|
 | Mouse, arrow keys, `Insert` `Delete` | Look and turn |
 | `W` `A` `S` `D`, `Shift` | Walk at 4.43 m/s; run at 7.59 m/s |
-| `Space` | Jump, 0.5 m high. At a wall: vault a low thin one, mantle onto a low deep one, or hang from a lip in reach |
+| `Space` | Jump, 0.5 m high. At a wall: vault a low thin one, or mantle onto one whose lip is in reach (1.8 m). Held into a higher wall, the jump catches its lip and hangs from it |
 | `C` | Crouch or stand, 2.53 m/s crouched; let go of a ledge or a wall |
 | Into a wall too high to grab | Climb it; at the lip, hang |
 | Hanging: `A` `D`, `W` | Shimmy along the lip; climb over it |
@@ -42,8 +42,8 @@ Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves
 0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second and stops
 short of a wall.
 
-North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 1.7 m ledge to hang from and
-shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
+North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
+and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
 
 ## What the figure shows
 

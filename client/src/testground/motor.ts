@@ -222,13 +222,15 @@ export function stepBody(body: Body, controls: Controls, blocks: readonly Block[
       const ahead = wallAhead(blocks, { ...body, ...moved, z }, controls.yaw);
       const rise = ahead ? ahead.block.top - z : Infinity;
       if (ahead && rise <= TUNING.reach + TUNING.reachInAir) {
-        if (rise <= TUNING.vault)
+        // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
+        const lowLip = ahead.block.top - TUNING.hang < groundAt(blocks, moved.x, moved.y, body.z);
+        if (rise <= TUNING.vault || lowLip)
           return goOver(
             { ...body, ...moved, z },
             ahead.block,
             controls.yaw,
             ahead.depth,
-            ahead.depth <= TUNING.vaultDepth,
+            rise <= TUNING.vault && ahead.depth <= TUNING.vaultDepth,
           );
         return {
           ...body,
@@ -275,18 +277,15 @@ export function stepBody(body: Body, controls: Controls, blocks: readonly Block[
   if (controls.jump && grounded >= TUNING.groundedToJump && !controls.mounted) {
     const ahead = controls.forward > 0 ? wallAhead(blocks, next, controls.yaw) : null;
     const rise = ahead ? ahead.block.top - next.z : Infinity;
-    if (ahead && rise <= TUNING.vault)
-      return goOver(next, ahead.block, controls.yaw, ahead.depth, ahead.depth <= TUNING.vaultDepth);
+    // A lip in reach from the ground is vaulted if low and thin, else mantled; a higher one is caught in the air.
     if (ahead && rise <= TUNING.reach)
-      return {
-        ...next,
-        z: ahead.block.top - TUNING.hang,
-        mode: 'hang',
-        lip: ahead.block.top,
-        facing: controls.yaw,
-        vx: 0,
-        vy: 0,
-      };
+      return goOver(
+        next,
+        ahead.block,
+        controls.yaw,
+        ahead.depth,
+        rise <= TUNING.vault && ahead.depth <= TUNING.vaultDepth,
+      );
     const lift = TUNING.jump * (crouched ? TUNING.crouchedJump : 1);
     return {
       ...next,
