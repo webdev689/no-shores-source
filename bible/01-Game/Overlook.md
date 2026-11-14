@@ -25,5 +25,6 @@ decision is recorded in [[Decisions]].
 - [[WebGPU Only]]
 - [[More Organisation, Less Bloat]]
 - [[World 2.0 Feeds the World Map]]
+- [[The World Map]]
 - [[Quests Are Rebuilt, DFU's as Reference]]
 - [[Naval, Living World, Professions and Synth Come Over Leaner]]
