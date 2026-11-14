@@ -11,13 +11,15 @@ async function bodyOf(request: IncomingMessage): Promise<string> {
   return Buffer.concat(parts).toString('utf8');
 }
 
-/** On the dev server only: the World Editor reads and saves content/world/layout.json at /__world/layout. */
+/**
+ * The World Editor reads content/world/layout.json at `world/layout.json`. The dev server also saves it on PUT; a
+ * build copies it in, so the published editor opens the layout on `main`.
+ */
 function worldLayoutFile(): Plugin {
   return {
     name: 'world-layout-file',
-    apply: 'serve',
     configureServer(server) {
-      server.middlewares.use('/__world/layout', (request: IncomingMessage, response: ServerResponse) => {
+      server.middlewares.use('/world/layout.json', (request: IncomingMessage, response: ServerResponse) => {
         const answer = async () => {
           if (request.method === 'GET') {
             response.setHeader('content-type', 'application/json');
@@ -40,6 +42,9 @@ function worldLayoutFile(): Plugin {
           response.end(String(error));
         });
       });
+    },
+    async generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'world/layout.json', source: await readFile(LAYOUT_FILE, 'utf8') });
     },
   };
 }
