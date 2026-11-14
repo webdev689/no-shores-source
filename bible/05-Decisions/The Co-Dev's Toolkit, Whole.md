@@ -13,7 +13,7 @@ status: in force
 - The co-dev's toolkit is installed whole, as its author ships it, in `tools/claude-toolkit/`: superpowers,
   ponytail, claude-code-setup, claude-mem, impeccable, Headroom, graphify, SkillsMP, Serena, Caveman, rtk,
   task-observer, MarkItDown, Context7, its hooks, its commit guard and its headless workers.
-- Its rules join `CLAUDE.md`, filled in for this repo ([[Toolchain]]).
+- Its session steps are in `CLAUDE.md`; how to use each tool and worker is in [[Toolkit]].
 - Approved with it: Headroom's learning step sends session content to Google's Gemini API, and SkillsMP brings in
   skills from a public marketplace.
 - The kit is kept as one unit: the size and comment checks skip it, and its author keeps it. Its pinned copy of

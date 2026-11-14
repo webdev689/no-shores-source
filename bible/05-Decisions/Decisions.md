@@ -30,6 +30,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Naval, Living World, Professions and Synth Come Over Leaner]]
 - [[The Server Gets Its Own Rules]]
 - [[The Co-Dev's Toolkit, Whole]]
+- [[Readers of Our Own Formats Only]]
+- [[CLAUDE.md Points Into the Bible]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
