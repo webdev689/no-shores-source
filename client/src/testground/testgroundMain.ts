@@ -192,7 +192,7 @@ async function start(): Promise<void> {
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
       },
       (anim) => forge.frames(youDress.body, anim),
-      (anim) => forge.draws(youDress.body, anim, outfit.drawn ? outfit.right : null),
+      (anim, held) => forge.draws(youDress.body, anim, held),
     );
     if (player.view.shown > HIDE_FIGURE_M) {
       const { view, flip } = viewOf(player.facing, body.x, body.y, eye.x, eye.y);

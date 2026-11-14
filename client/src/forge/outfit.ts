@@ -65,11 +65,13 @@ export function wornWeapon(weapon: string, out: boolean): string[] {
  * game dresses a figure: a helm shades the face (`face_<set>`) and lays a hood down; a raised hood shades the face as
  * well (`face_hooded`); armour with nothing over the chest has its set's padding under it; a drape hangs over plate
  * (`_plated`) or over a skirt to the ankles (`_skirted`), which also hides greaves; hair is hung clear of plate and
- * over a cloak, and not drawn under a helm or a hood. Weapons put away are worn on the body.
+ * over a cloak, and not drawn under a helm or a hood. Weapons put away are worn on the body. Given a move, a weapon or
+ * shield the forge does not draw in it is worn for it, as the forge's game plays a move with what is held or worn.
  */
 export function outfitLayers(
   outfit: Outfit,
   drawn: Readonly<Record<string, readonly string[]>>,
+  anim?: string,
 ): { gear: string[]; hair: { layer: string; colour: string } | null } {
   const gear: string[] = [];
   const add = (layer: string) => {
@@ -101,9 +103,10 @@ export function outfitLayers(
     const hang = own.map((way) => `${name}_${way}`).find((layer) => drawn[layer]);
     if (hang) add(hang);
   }
+  const holds = (hand: string) => outfit.drawn && (anim === undefined || !!drawn[hand]?.includes(anim));
   for (const hand of [outfit.right, outfit.left])
-    if (hand) for (const layer of wornWeapon(hand, outfit.drawn)) add(layer);
-  if (outfit.drawn) for (const hand of [outfit.right, outfit.left]) if (hand) add(hand);
+    if (hand) for (const layer of wornWeapon(hand, holds(hand))) add(layer);
+  for (const hand of [outfit.right, outfit.left]) if (hand && holds(hand)) add(hand);
   const covered = gear.some((layer) => /^(face|helm|hood)(_|$)/.test(layer) || /_hooded(_|$)/.test(layer));
   const cloaked = gear.some((layer) => /(^|_)cloak(_|$)/.test(layer));
   const style = outfit.hair?.style ?? '';

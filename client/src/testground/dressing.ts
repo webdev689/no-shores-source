@@ -45,7 +45,10 @@ export function wardrobeOf(body: string, drawn: ForgeBody['layers']): Wardrobe {
     sets,
     garments: [...garments].sort(),
     right: weapons.filter((layer) => !layer.endsWith('_l')),
-    left: [...layers.filter((layer) => /^shield_/.test(layer)), ...weapons.filter((layer) => layer.endsWith('_l'))],
+    left: [
+      ...layers.filter((layer) => /^shield_/.test(layer) || layer === 'torch_l'),
+      ...weapons.filter((layer) => layer.endsWith('_l')),
+    ],
     hairStyles: (HAIR_STYLES[body] ?? []).filter((style) => drawn[`hair_${style}`]),
   };
 }
@@ -58,9 +61,10 @@ export interface Dress {
   readonly outfit: Outfit;
 }
 
-/** The forge figure a dress stacks: the race's own body or the human tone, and its outfit's layers and hair. */
-export function figureOf(dress: Dress, drawn: ForgeBody['layers']): Figure {
-  const { gear, hair } = outfitLayers(dress.outfit, drawn);
+/** The forge figure a dress stacks in a move: the race's own body or the human tone, and its outfit's layers and hair,
+ *  what is in hand worn for a move the forge does not draw it in. */
+export function figureOf(dress: Dress, drawn: ForgeBody['layers'], anim?: string): Figure {
+  const { gear, hair } = outfitLayers(dress.outfit, drawn, anim);
   const race = RACES[dress.race];
   return { body: dress.body, race, tone: race ? null : dress.tone, hair, gear };
 }

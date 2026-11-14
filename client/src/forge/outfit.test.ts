@@ -95,3 +95,12 @@ test('weapons put away are worn on the body; drawn, they are in hand last, over 
   assert.deepEqual(wornWeapon('mace_iron', false), []);
   assert.deepEqual(wornWeapon('dagger_iron_l', true), ['scabbard_dagger_iron_l']);
 });
+
+test('in a move the forge does not draw a held weapon or shield in, it is worn for that move', () => {
+  const armed = { ...bare, right: 'sword_iron', left: 'shield_kite_iron', drawn: true };
+  const moves = { ...drawn, sword_iron: ['idle', 'walk'], shield_kite_iron: ['guard'] };
+  assert.deepEqual(outfitLayers(armed, moves, 'guard').gear, ['sheath_sword', 'shield_kite_iron']);
+  assert.deepEqual(outfitLayers(armed, moves, 'idle').gear, ['scabbard_sword', 'slung_shield_kite_iron', 'sword_iron']);
+  // With no move named, what is drawn is held.
+  assert.deepEqual(outfitLayers(armed, moves).gear, ['scabbard_sword', 'sword_iron', 'shield_kite_iron']);
+});

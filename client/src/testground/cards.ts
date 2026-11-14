@@ -52,7 +52,7 @@ export class Cards {
    *  carries the props, instrument or spark the forge draws in it. */
   card(id: number, dress: Dress, anim: string, view: number, frame: number): Card | null {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
-    const dressed = figureOf(dress, layers);
+    const dressed = figureOf(dress, layers, anim);
     const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
     const figure = { ...dressed, gear: [...dressed.gear, ...carried] };
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);

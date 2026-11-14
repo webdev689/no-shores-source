@@ -65,7 +65,7 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
   const axe = shownMove(
     { ...doing, right: 'axe_iron', blow: { direction: 'up', second: false, progress: 0 } },
     frames,
-    (anim) => anim !== 'thrust',
+    (anim: string) => anim !== 'thrust',
   );
   assert.equal(axe.anim, 'attack_axe');
 });
@@ -87,4 +87,28 @@ test('mounted, the horse walks and gallops; a move chosen by hand plays over eve
   assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 12 }, frames, everything).anim, 'horsegallop');
   assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 6 }, frames, everything).anim, 'horsewalk');
   assert.equal(shownMove({ ...doing, act: { anim: 'death', progress: 0.5 } }, frames, everything).anim, 'death');
+});
+
+test('an off hand: two blades fight as a pair, and a shield or blade in the left keeps the weapon’s own attack', () => {
+  const pair = { ...doing, left: 'dagger_iron_l' };
+  assert.equal(shownMove(pair, frames, everything).anim, 'twinguard');
+  assert.equal(shownMove({ ...pair, right: null }, frames, everything).anim, 'twinguard');
+  const up = { direction: 'up', second: false, progress: 0 } as const;
+  assert.equal(shownMove({ ...pair, blow: up }, frames, everything).anim, 'twinslash');
+  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron', blow: up }, frames, everything).anim, 'slash');
+  assert.equal(shownMove({ ...doing, blow: up }, frames, everything).anim, 'thrust');
+});
+
+test('a shield or second blade pairs only with a weapon the forge draws in the pair’s moves', () => {
+  // An axe is drawn in none of the shield's or the pair's moves: it keeps its own; the shield or blade is worn.
+  const axeDraws = (anim: string, held: string | null) => held !== 'axe_iron' || !['slash', 'twinslash'].includes(anim);
+  assert.equal(shownMove({ ...doing, right: 'axe_iron', left: 'shield_kite_iron' }, frames, axeDraws).anim, 'idle');
+  const axeBlow = {
+    ...doing,
+    right: 'axe_iron',
+    left: 'sword_iron_l',
+    blow: { direction: 'down', second: false, progress: 0 },
+  } as const;
+  assert.equal(shownMove(axeBlow, frames, axeDraws).anim, 'attack_axe');
+  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, everything).anim, 'guard');
 });
