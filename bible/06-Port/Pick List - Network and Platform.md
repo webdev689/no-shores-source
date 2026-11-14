@@ -36,7 +36,7 @@ Server side lands as a Rust rebuild with DFO as the specification; client side a
 | `src/net/npcChapterLaw`, `npcHallBook`, `npcRollTracker`, `chapterEvents`, `chapterSheet`, `renown`, `renownTracker`, `questlineClaims`, `noticeBook`, `boardLaw` | NPC guild chapters, Renown, questline claims, notice boards | Gameplay | Cut | Rust rebuild + TS port | Daggerfall guilds and factions, `REGION_NAMES`, `nameHelper`, building names. | M | `src/net/npcChapterLaw.js` |
 | `src/net/homeLaw`, `homeListingLaw`, `homeListings.json`, `homeScene`, `homeVoteLaw`, `houseLaw`, `hallLaw`, `decorLaw`, `yardCellLaw`, `yardPush`, `yardRange`, `yardWordLaw` | Player homes, guild halls, decor, yards, town votes | Gameplay | Cut | Rust rebuild + TS port | A home is MAPS.BSA mapId plus RMB building key; decor reads Daggerfall flats and nature archives. | M | `src/net/homeLaw.js` |
 | `src/net/caravanVisitLink`, `sailingCabinLink`, `boatIdentity`, `crewSignLaw`, `wedSession` | Caravan visits, boat cabins, crew signing, weddings | Gameplay | Cut | TS port | Link logic generic; wagon/horse systems and Project Legacy bonds behind it. | S | `src/net/wedSession.js` |
-| `src/net/arena/` | Arena bouts, ladder, league: law, relay brain, receipts | Gameplay | Cut | Rust rebuild + TS port | ARENA4 law ours; colosseum is Kamer's mod data; ladder stats are DFU EnemyBasics rows. | M | `src/net/arena/arenaLaw.js` |
+| `src/net/arena/` | Arena bouts, ladder, league: law, relay brain, receipts | Gameplay | Cut | Rust rebuild + TS port | ARENA4 law ours; the colosseum comes over rebuilt in our formats ([[Which Made-for-DFO Mods Come Over]]); ladder stats are DFU EnemyBasics rows. | M | `src/net/arena/arenaLaw.js` |
 | `src/net/card/`, `src/net/holdemTable.js` | Hold'em: relay deals, stake escrow, receipts | Gameplay | Clean | Rust rebuild + TS port | "Not a DFU member"; imports only `dice.js`; card worth reads realm gold law. | M | `src/net/holdemTable.js` |
 | `src/net/iliac/` | Iliac Hand card game: deck, hand rules, table, receipts | Gameplay | Cut | Rust rebuild + TS port | Table engine reuses Hold'em's; the 1.6k-line deck is lore-named cards. | M | `src/net/iliac/iliacCards.js` |
 | `src/net/gambit/`, `src/net/kingsGambit.js` | King's Gambit board game: rules, relay table, receipts | Gameplay | Cut | Rust rebuild + TS port | Rules engine ours; pieces are Daggerfall monsters (`VANILLA_ENEMY_BASICS`). | M | `src/net/kingsGambit.js` |
@@ -51,7 +51,7 @@ Server side lands as a Rust rebuild with DFO as the specification; client side a
 | `src/net/superDungeon/` | Abyss Dungeon: Remnant brain, marks, strikes, herald, receipts | Gameplay | Cut | Rust rebuild + TS port | `sdHerald` imports `formats/mapsTables` REGION_NAMES; lore content. | M | `src/net/superDungeon/sdRemnant.js` |
 | `src/net/eliteGates/` | Elite Breach: director, halls, spans, legion, lords, route proofs | Gameplay | Cut | Rust rebuild + TS port | 21k lines of our own law; Battlespire lore; DFU-member constants through `gateBrain`. | L | `src/net/eliteGates/egBrain.js` |
 | `src/net/starfall/` | Starfall festival event: night, defence ledger, receipt | Gameplay | Cut | Rust rebuild + TS port | Tied to the Witches' Festival (a Daggerfall holiday); lore names. | S | `src/net/starfall/starfallLaw.js` (unread) |
-| `src/net/raid/` | Town raids online: relay ledger, receipts, claims | Gameplay | Cut | Rust rebuild | Ledger ours, over Kamer's Raiding Parties port: key, Unity Random roll pinned to the mod; towns table handed in by SHA. | S | `src/net/raid/raidLaw.js:raidTownsCanon` |
+| `src/net/raid/` | Town raids online: relay ledger, receipts, claims | Gameplay | Cut | Rust rebuild | Ledger ours, over the Raiding Parties port (Raiding Parties comes over as design): key, Unity Random roll pinned to the mod; towns table handed in by SHA. | S | `src/net/raid/raidLaw.js:raidTownsCanon` |
 | `src/net/delve/` | DELVE II encounters: kinds, ledger machine, plan hash | Gameplay | Clean | Rust rebuild + TS port | Pure; offline and relay run one state; borrows helpers from gate and starfall modules. | M | `src/net/delve/delveLaw.js` |
 | `src/net/invasion/` | Toybox invasion fight brain and its wire | Gameplay | Clean | Rust rebuild | No data or lore; reuses `gateBrain` constants and the toybox wave law. | S | `src/net/invasion/invasionBrain.js` |
 | `src/net/staffEvent/` | Staff-run live events: law, receipt, toybox event | Platform | Cut | Rust rebuild + TS port | Event ledger ours; places named by Daggerfall map ids. | S | `src/net/staffEvent/staffEventLaw.js` |
@@ -97,7 +97,7 @@ Server side lands as a Rust rebuild with DFO as the specification; client side a
 | `scripts/desktopRelease`, `buildTag`, `updateNumber`, `updateLine`, `firstVisitPins`, `noTopLevelAwait`, `openFileLimit`, `landingHtml`, `makeIcons`, `forgeWebp`, `artIndex`, `studioArtIndex` | Build and release scripts: version stamps, installers, landing page, icons | Tooling | Clean | TS port | No game data. | M | `scripts/desktopRelease.mjs` |
 | `scripts/steNotes.mjs`, `leanBundle.mjs` | STE patch-notes checker; bundle author-name scrub | Tooling | Clean | Practice | `steNotes` carries as-is; `leanBundle` enforces a DFU/mod credit rule. | S | `scripts/steNotes.mjs` |
 | `scripts/bakeBooks.mjs`, `bakeSettings.mjs`, `bakeSettingsText.mjs` | Bake DFU's MIT books, settings defaults, settings text | Tooling | Can't | — | Exist to import Daggerfall Unity vendor data. | — | `scripts/bakeBooks.mjs` |
-| `scripts/bakeWindmill.mjs`, `bakeWindmillInterior.mjs` | Bake Kamer's windmill rotor and farm interior | Content | Can't | — | Port of another author's mod geometry (`vendor/windmills-kamer`). | — | `scripts/bakeWindmill.mjs` |
+| `scripts/bakeWindmill.mjs`, `bakeWindmillInterior.mjs` | Bake the windmills mod's rotor and farm interior | Content | Can't | — | Port of a mod's geometry, from its vendor folder; the windmills are open ([[Open Questions]]). | — | `scripts/bakeWindmill.mjs` |
 
 ## Unmerged work in this area
 
@@ -207,9 +207,9 @@ Design lessons it proves:
   `server/src/index.js`), D1 replicas, bookmarks and Time Travel, Analytics Engine, cron triggers, workers.dev URLs, and code
   that exists to cut DO billing (`drainWindows.js`, lone sleep, `REGION_SHARDS` off). `infra-to-server` already ran
   the same relay and account code off Cloudflare.
-- **Misfiled**: `src/net/raid/` is our ledger over a mod port (Kamer's Raiding Parties: the key and a `UnityEngine.Random`
+- **Misfiled**: `src/net/raid/` is our ledger over a mod port (Raiding Parties: the key and a `UnityEngine.Random`
   roll pinned to the mod, a towns table the client hands in by SHA because the relay may not hold ARENA2 data);
-  `net/arena`'s colosseum is Kamer's mod data; `patronLaw` prices through Roleplay Realism Items; `peer/peerBodies`
+  `net/arena`'s colosseum is mod data, which comes over rebuilt in our formats; `patronLaw` prices through Roleplay Realism Items; `peer/peerBodies`
   imports Morrowind readers; guest names come from Daggerfall's name banks. Looks Daggerfall but ours:
   `gate/gateBrain.js` is the generic boss kernel under lore names, and `invasion/` and `delve/` are Clean.
 - **Port from tests and the bible, not the comments.** The `Room` class is ~12k lines in one file; `wire.js` is

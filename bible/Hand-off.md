@@ -14,7 +14,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- [[Open Questions]]: whether Kamer's work carries to Overlook.
+- [[Open Questions]]: whether World of Daggerfall and the windmills come over.
 
 ## Next
 
