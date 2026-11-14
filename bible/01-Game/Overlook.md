@@ -13,6 +13,8 @@ decision is recorded in [[Decisions]].
 
 > "Please do not make up your own vision for what I want this game to be. We build it as we go"
 
+> "More organization with less bloat. Thats the goal of this project"
+
 ## Decisions so far
 
 - [[Overlook Is Our Own Game]]
@@ -21,3 +23,7 @@ decision is recorded in [[Decisions]].
 - [[TypeScript and Rust]]
 - [[Server-Authoritative Multiplayer]]
 - [[WebGPU Only]]
+- [[More Organisation, Less Bloat]]
+- [[World 2.0 Feeds the World Map]]
+- [[Quests Are Rebuilt, DFU's as Reference]]
+- [[Naval, Living World, Professions and Synth Come Over Leaner]]

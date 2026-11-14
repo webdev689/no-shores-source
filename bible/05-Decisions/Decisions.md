@@ -23,6 +23,12 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Ask Before Deploying]]
 - [[Generated Files on Cloudflare R2]]
 - [[Copyright Held by Vestige Studios]]
+- [[More Organisation, Less Bloat]]
+- [[Our Own Keys for Materials, Places and Items]]
+- [[World 2.0 Feeds the World Map]]
+- [[Quests Are Rebuilt, DFU's as Reference]]
+- [[Naval, Living World, Professions and Synth Come Over Leaner]]
+- [[The Server Gets Its Own Rules]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
