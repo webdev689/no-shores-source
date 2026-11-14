@@ -57,9 +57,16 @@ The player's figure shows the move the forge draws for what the body does:
 - **In the air:** the jump's rising, top or falling frame.
 - **Mounted:** the horse's rest, walk or gallop.
 - **Acting:** the cast. A swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. Swung up, it thrusts; down, it chops; left or right, it swings two-handed, where the weapon draws those.
-- **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a staff, a shield, a second blade and
-  the guns each have their own.
+  to 5. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
+  right, where the forge draws it in those.
+- **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each
+  have their own.
+
+The left hand decides the stance. A shield or a torch there guards, marches and slashes; a blade there fights as a
+pair. Each holds only where the forge draws both hands' things in that stance's attack. Otherwise the right hand's
+weapon keeps its own moves and the left hand's thing is worn.
+
+In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
 Walking frames last 0.25 s, running 0.125 s and crouching 0.5 s. A swing lasts 1 s. On a wall or a ledge the weapon is
 worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. Swinging or casting,
@@ -110,6 +117,8 @@ eye.
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
 - The course's blocks are the only things to climb, and the climbing does not tire.
 - Composed frames are kept on the GPU up to 4,000, then all are let go and composed again as needed.
+- The player's likeliest moves are composed ahead, two frames a tick: its rest, walk and attack, its strokes, the run,
+  the jump and the crouch. A move not composed yet shows the last frame until it is.
 
 ## First person
 
