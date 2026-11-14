@@ -73,9 +73,9 @@ under `client/src` is a layer: declare it in `crates/xtask/src/checks/layers.rs`
 
 ## Tools
 
-- graphify: the code map. `graphify explain <symbol or file>` / `graphify path <A> <B>` for known names; `graphify
-  query` only with a pointed question naming a function or file. Ask it before grepping or opening big files; update
-  it after every merge or commit. Its `graphify-out/` is ignored here.
+- graphify: the code map. Use `graphify explain <symbol or file>` or `graphify path <A> <B>` for known names, and
+  `graphify query` only with a pointed question naming a function or file. Ask it before grepping or opening big
+  files; update it after every merge or commit. Its `graphify-out/` is ignored here.
 - Serena (MCP, tools interface): find_symbol, find_referencing_symbols, get_symbols_overview, replace_symbol_body.
   graphify finds the file or system, Serena then finds the exact symbol. Plain Edit only for small in-line changes and
   files Serena can't parse. If only serena_repl shows, the install is broken: fix it first.
