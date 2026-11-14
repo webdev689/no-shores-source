@@ -1,0 +1,17 @@
+[package]
+name = "world-wasm"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "The world rules for the browser: the world crate behind a small WebAssembly door, text in and text out."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+world = { path = "../world" }
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -55,6 +55,7 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     problems.extend(assets::check(&sized));
     let manifests = repo.sources(|path| path.starts_with("crates/") && path.ends_with("/Cargo.toml"));
     problems.extend(crates::check(&manifests));
+    problems.extend(crates::check_unsafe(&code));
     let notes = repo.sources(|path| path.starts_with(vault::VAULT_ROOT) && path.ends_with(".md"));
     problems.extend(vault::check(&notes, &repo.files, |path| repo.read(path)));
     problems

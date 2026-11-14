@@ -28,3 +28,7 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
   context.configure({ device, format, alphaMode: 'opaque' });
   return { device, context, format };
 }
+
+/** WebGPU's usage flags we use, by the specification's values: TypeScript's DOM types declare no constants for them. */
+export const TEXTURE_USAGE = { copyDestination: 0x02, textureBinding: 0x04 } as const;
+export const BUFFER_USAGE = { copyDestination: 0x08, uniform: 0x40 } as const;

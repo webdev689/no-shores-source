@@ -1,18 +1,21 @@
 use super::Problem;
 
-/// What a crate may depend on: other crates of this workspace, and outside crates. `*` allows any. A new crate is
-/// declared here in the same change as its entry in the Code Map note.
+/// What a crate may depend on: other crates of this workspace, and outside crates. `*` allows any. A door crate may
+/// hold unsafe code, to hand memory across a boundary; no other may. A new crate is declared here in the same change
+/// as its entry in the Code Map note.
 #[derive(Debug)]
 pub struct CrateRule {
     pub name: &'static str,
     pub workspace: &'static [&'static str],
     pub outside: &'static [&'static str],
+    pub door: bool,
 }
 
 /// The rules crates touch no platform, so the server and a predicting client run them alike.
 pub const CRATES: &[CrateRule] = &[
-    CrateRule { name: "world", workspace: &[], outside: &["serde", "serde_json"] },
-    CrateRule { name: "xtask", workspace: &["*"], outside: &["*"] },
+    CrateRule { name: "world", workspace: &[], outside: &["serde", "serde_json"], door: false },
+    CrateRule { name: "world-wasm", workspace: &["world"], outside: &["serde_json"], door: true },
+    CrateRule { name: "xtask", workspace: &["*"], outside: &["*"], door: false },
 ];
 
 /// The crates a manifest depends on at run time: its `[dependencies]` table, each `[dependencies.<name>]` table, and
@@ -45,6 +48,26 @@ pub fn dependencies(manifest: &str) -> Vec<String> {
 
 fn allows(list: &[&str], name: &str) -> bool {
     list.contains(&"*") || list.contains(&name)
+}
+
+/// Whether a source file carries an attribute allowing unsafe code, at the start of a line.
+fn allows_unsafe(text: &str) -> bool {
+    text.lines()
+        .map(str::trim_start)
+        .any(|line| line.starts_with("#![allow(unsafe_code") || line.starts_with("#[allow(unsafe_code"))
+}
+
+/// Only a door crate may allow unsafe code.
+pub fn check_unsafe(sources: &[(String, String)]) -> Vec<Problem> {
+    sources
+        .iter()
+        .filter(|(path, text)| path.starts_with("crates/") && path.ends_with(".rs") && allows_unsafe(text))
+        .filter_map(|(path, _)| {
+            let name = path.strip_prefix("crates/")?.split('/').next()?;
+            let door = CRATES.iter().any(|rule| rule.name == name && rule.door);
+            (!door).then(|| Problem::new("crates", path, None, format!("{name} is not a door crate: no unsafe code")))
+        })
+        .collect()
 }
 
 /// Every crate is declared, and depends only on what its rule allows.
@@ -116,6 +139,17 @@ mod tests {
             messages,
             ["world may not depend on the outside crate \"tokio\"", "world may not depend on the crate \"xtask\""]
         );
+    }
+
+    #[test]
+    fn only_a_door_crate_may_allow_unsafe_code() {
+        let sources = manifests(&[
+            ("crates/world-wasm/src/lib.rs", "#![allow(unsafe_code, reason = \"door\")]"),
+            ("crates/world/src/lib.rs", "#![allow(unsafe_code)]"),
+        ]);
+        let found = check_unsafe(&sources);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].file, "crates/world/src/lib.rs");
     }
 
     #[test]

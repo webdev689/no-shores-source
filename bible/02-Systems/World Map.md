@@ -11,7 +11,7 @@ code:
 
 The world's structure, as [[The World Map]] decides it: one ocean the size of Tamriel's frame, nine hand-placed
 continents, thousands of static isles, and discoveries that come and go. This note says how it is built. Built so far:
-the layout file and the rules it keeps.
+the layout file, the rules it keeps, and the [[World Editor]] that paints it.
 
 ## The layers
 
