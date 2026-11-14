@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import type { Action, InputFrame } from './input.ts';
-import { BLOW_SECONDS, newPlayer, updatePlayer } from './player.ts';
+import { newPlayer, updatePlayer } from './player.ts';
 
 /** A frame with these actions held, and those pressed this frame. */
 function frame(held: Action[] = [], pressed: Action[] = [], more: Partial<InputFrame> = {}): InputFrame {
@@ -18,17 +18,11 @@ function frame(held: Action[] = [], pressed: Action[] = [], more: Partial<InputF
 }
 const TICK = 1 / 60;
 
-test('a right click readies a weapon that is away; with it ready, a click swings and holding swings again', () => {
-  let player = updatePlayer(newPlayer(0, 0), frame([], ['swing']), [], TICK);
-  assert.equal(player.drawn, true);
-  assert.equal(player.blow, null);
-  player = updatePlayer(player, frame([], ['swing']), [], TICK, () => 0);
-  assert.deepEqual(player.blow, { direction: 'down', second: false, elapsed: 0 });
-  for (let tick = 0; tick < Math.ceil(BLOW_SECONDS / TICK); tick++)
-    player = updatePlayer(player, frame(['swing']), [], TICK, () => 0.99);
-  assert.equal(player.blow?.direction, 'up');
-  assert.equal(player.blow?.second, true);
-  assert.equal(player.blows, 2);
+test('a right click readies a weapon that is away; swinging turns the figure to the view', () => {
+  const readied = updatePlayer(newPlayer(0, 0), frame([], ['swing']), [], TICK);
+  assert.equal(readied.drawn, true);
+  const turned = updatePlayer({ ...readied, yaw: 1, facing: 0 }, frame(), [], TICK, true);
+  assert.equal(turned.facing, 1);
 });
 
 test('Z puts the weapon away and readies it; the wheel and Mouse4 move between first and third person', () => {
@@ -54,9 +48,8 @@ test('the mouse turns the view; the figure faces where it walks and keeps facing
   assert.equal(player.facing, player.yaw);
 });
 
-test('comma mounts and dismounts; mounted, the player does not swing', () => {
+test('comma mounts and dismounts; mounted, a right click does not ready the weapon', () => {
   const mounted = updatePlayer(newPlayer(0, 0), frame([], ['mount']), [], TICK);
   assert.equal(mounted.mounted, true);
-  const swung = updatePlayer({ ...mounted, drawn: true }, frame([], ['swing']), [], TICK);
-  assert.equal(swung.blow, null);
+  assert.equal(updatePlayer(mounted, frame([], ['swing']), [], TICK).drawn, false);
 });

@@ -48,7 +48,7 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
 Declared so far: `rules` and `forge` (each imports nothing), `editor` (imports `rules`), `testground` (imports
-`forge`, and the editor's camera, walk and panel helpers) and `firstperson` (imports `forge`).
+`forge`, `firstperson`, and the editor's camera and panel helpers) and `firstperson` (imports `forge`).
 
 ## The Rust crates
 

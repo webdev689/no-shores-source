@@ -99,6 +99,18 @@ export class WeaponMachine {
     return this.phase === 'strike' ? this.direction : null;
   }
 
+  /** How far through the swing or the shot under way, 0..1, or null at rest: the figure seen from outside plays its
+   *  own move at the same pace. A bow's draw is its first half and its loose the second. */
+  get progress(): number | null {
+    if (this.phase === 'strike') {
+      const length = this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT.length : STRIKE_FRAMES;
+      return Math.min(1, (this.step + this.clock / swingFrameSeconds(this.kind)) / length);
+    }
+    if (this.phase === 'draw') return (Math.min(BOW_HELD_FRAME, this.frame) / BOW_HELD_FRAME) * 0.5;
+    if (this.phase === 'release') return 0.5 + (0.5 * (this.frame - BOW_HELD_FRAME)) / (BOW_FRAMES - BOW_HELD_FRAME);
+    return null;
+  }
+
   /** Moves the machine on by `seconds` with this frame's button. */
   update(seconds: number, input: AttackInput): MachineEvents {
     this.reload = Math.max(0, this.reload - seconds);

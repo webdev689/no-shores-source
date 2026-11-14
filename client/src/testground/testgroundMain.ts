@@ -1,4 +1,5 @@
 import { canvasSize } from '../canvasSize.ts';
+import { FirstPerson } from '../firstperson/firstPerson.ts';
 import { GpuUnavailable, startGpu } from '../gpu.ts';
 import type { Colours } from '../forge/compose.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
@@ -10,7 +11,7 @@ import { COURSE, START } from './course.ts';
 import type { Dress } from './dressing.ts';
 import { type Placed, eyeOf, frameAt, viewOf } from './figures.ts';
 import { Input } from './input.ts';
-import { BLOW_SECONDS, CAST_SECONDS, newPlayer, playerCamera, updatePlayer } from './player.ts';
+import { CAST_SECONDS, newPlayer, playerCamera, updatePlayer } from './player.ts';
 import { shownMove } from './playerMoves.ts';
 import { startPanel } from './panel.ts';
 import { type CardAt, SceneView } from './sceneView.ts';
@@ -25,6 +26,8 @@ const ACT_FRAME = 0.2;
 const HIDE_FIGURE_M = 0.6;
 /** Faster than a walk on foot is running. */
 const RUNNING = 5.5;
+/** The weapon's button, untouched: what the first person's weapon gets while it may not swing. */
+const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
 
 function element<T extends Element>(selector: string): T {
   const found = document.querySelector<T>(selector);
@@ -111,6 +114,7 @@ async function start(): Promise<void> {
   const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
   const forge = new Cards(scene, store, looks, colours, dyes);
   cards = forge;
+  const firstPerson = await FirstPerson.open(gpu, store);
   status = 'Click the view to play.';
   canvas.addEventListener('click', () => {
     if (!input.locked) input.lock();
@@ -118,15 +122,19 @@ async function start(): Promise<void> {
 
   let last = performance.now();
   let clock = 0;
+  // How far the player has walked, for the first person's bob and stride; and the swings struck, each the other stroke.
+  let stride = 0;
+  let strokes = 0;
+  let swingWas: number | null = null;
   const frame = (now: number) => {
     const seconds = Math.min(0.1, (now - last) / 1000);
     last = now;
     clock += seconds;
     const controls = input.frame();
+    const wasDrawn = you.dress.outfit.drawn;
     if (controls.locked) {
-      player = updatePlayer({ ...player, drawn: you.dress.outfit.drawn }, controls, COURSE, seconds);
-      if (player.drawn !== you.dress.outfit.drawn)
-        you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
+      player = updatePlayer({ ...player, drawn: wasDrawn }, controls, COURSE, seconds, firstPerson.swing !== null);
+      if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
     const { body } = player;
     Object.assign(you, { x: body.x, y: body.y, facing: player.facing });
@@ -141,6 +149,31 @@ async function start(): Promise<void> {
     const youDress: Dress = holding ? you.dress : { ...you.dress, outfit: { ...you.dress.outfit, drawn: false } };
     const { outfit } = youDress;
     const speed = Math.hypot(body.vx, body.vy);
+    if (body.moving && body.mode === 'ground') stride += speed * seconds;
+    // The weapon swings only once it is out, on foot, with the hands free; the click that readies it does not swing.
+    const swings = controls.locked && wasDrawn && outfit.drawn && holding && !player.mounted;
+    const button = swings
+      ? {
+          attackHeld: controls.held('swing'),
+          attackPressed: controls.pressed('swing'),
+          attackReleased: controls.released('swing'),
+        }
+      : STILL;
+    firstPerson.update(seconds, button, {
+      right: outfit.right,
+      left: outfit.left,
+      armour: { gauntlets: outfit.armour.gauntlets, boots: outfit.armour.boots },
+      drawn: outfit.drawn,
+      moving: body.moving,
+      running: speed > RUNNING,
+      stride,
+      casting: player.cast !== null,
+      climbing: holding ? 0 : 1,
+    });
+    const swing = firstPerson.swing;
+    // A swing begins where there was none, or where the last one ended and the next began within the frame.
+    if (swing && (swingWas === null || swing.progress < swingWas)) strokes += 1;
+    swingWas = swing?.progress ?? null;
     const shown = shownMove(
       {
         mode: body.mode,
@@ -154,7 +187,7 @@ async function start(): Promise<void> {
         drawn: outfit.drawn,
         right: outfit.right,
         left: outfit.left,
-        blow: player.blow && { ...player.blow, progress: player.blow.elapsed / BLOW_SECONDS },
+        blow: swing && { direction: swing.direction ?? 'down', second: strokes % 2 === 0, progress: swing.progress },
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
       },
@@ -176,10 +209,14 @@ async function start(): Promise<void> {
       const card = forge.card(placed.id, placed.dress, placed.anim, view, index);
       if (card) drawn.push({ card, x: placed.x, y: placed.y, z: 0, flip });
     }
-    scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen);
+    const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;
+    scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
+      if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
+    });
     const composing = forge.pending > 0 ? ` Composing ${forge.pending} frame${forge.pending === 1 ? '' : 's'}…` : '';
     const failure = forge.failure ? ` A strip did not load: ${forge.failure}` : '';
-    showPanel(panelState(looks, hair, status + composing + failure));
+    const line = controls.locked ? 'Playing: Escape frees the mouse.' : status;
+    showPanel(panelState(looks, hair, line + composing + failure));
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

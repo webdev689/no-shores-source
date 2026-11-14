@@ -2,17 +2,9 @@ import type { Orbit } from '../editor/orbit.ts';
 import type { InputFrame } from './input.ts';
 import { type Block, type Body, eyeHeight, stepBody, standing } from './motor.ts';
 import { cameraOrbit, eased, FIRST_PERSON, scrolled, toggled, type ViewMode } from './playerCamera.ts';
-import type { Direction } from './playerMoves.ts';
-
-/** A swing's blow: its direction, whether it is the second stroke of the swing, and how far into it the player is. */
-export interface Blow {
-  readonly direction: Direction;
-  readonly second: boolean;
-  readonly elapsed: number;
-}
 
 /** The player: their body, where they look, how the camera is held, whether they ride, their weapon out or away, and
- *  the blow, cast or chosen move playing. */
+ *  the cast or chosen move playing. The first person's weapon swings; this only readies it. */
 export interface Player {
   readonly body: Body;
   readonly yaw: number;
@@ -20,16 +12,12 @@ export interface Player {
   readonly view: ViewMode;
   readonly mounted: boolean;
   readonly drawn: boolean;
-  readonly blow: Blow | null;
-  readonly blows: number;
   readonly cast: number | null;
   readonly act: { readonly anim: string; readonly elapsed: number; readonly seconds: number } | null;
   /** The way the figure faces, which only moving or acting turns. */
   readonly facing: number;
 }
 
-/** A blow lasts the five frames of the first-person swing, at DFO's 0.199 s a frame for an everyday fighter. */
-export const BLOW_SECONDS = 5 * 0.199;
 /** A cast lasts its four frames at 0.125 s each. */
 export const CAST_SECONDS = 4 * 0.125;
 /** How far the mouse turns the view, in radians a pixel, and the arrow and look keys in radians a second. */
@@ -39,7 +27,6 @@ const KEY_TURN = 2;
 const PITCH_LIMIT = 1.4;
 /** A rider's eye is this much higher than on foot. */
 const SADDLE = 0.9;
-const DIRECTIONS: readonly Direction[] = ['down', 'downLeft', 'left', 'right', 'downRight', 'up'];
 
 export const newPlayer = (x: number, y: number): Player => ({
   body: standing(x, y),
@@ -48,8 +35,6 @@ export const newPlayer = (x: number, y: number): Player => ({
   view: { ...scrolled(FIRST_PERSON, 1), shown: 2 },
   mounted: false,
   drawn: false,
-  blow: null,
-  blows: 0,
   cast: null,
   act: null,
   facing: 0,
@@ -57,16 +42,16 @@ export const newPlayer = (x: number, y: number): Player => ({
 
 /**
  * One frame of the player with DFO's controls: the mouse (with the pointer locked) and the arrow and look keys turn
- * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon; right click swings
- * and holding it swings again, readying the weapon first if it is away; Q casts; comma mounts or dismounts; the wheel
- * and Mouse4 move between first and third person. `random` picks each blow's direction.
+ * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon, and a right click
+ * readies it too; Q casts; comma mounts or dismounts; the wheel and Mouse4 move between first and third person.
+ * `swinging` says a swing is under way, which turns the figure to the view.
  */
 export function updatePlayer(
   player: Player,
   input: InputFrame,
   blocks: readonly Block[],
   seconds: number,
-  random: () => number = Math.random,
+  swinging = false,
 ): Player {
   const turn = (input.held('turnRight') ? 1 : 0) - (input.held('turnLeft') ? 1 : 0);
   const look = (input.held('lookDown') ? 1 : 0) - (input.held('lookUp') ? 1 : 0);
@@ -81,20 +66,7 @@ export function updatePlayer(
   const mounted = input.pressed('mount') ? !player.mounted : player.mounted;
   let drawn = input.pressed('ready') ? !player.drawn : player.drawn;
 
-  let blow = player.blow ? { ...player.blow, elapsed: player.blow.elapsed + seconds } : null;
-  if (blow && blow.elapsed >= BLOW_SECONDS) blow = null;
-  let blows = player.blows;
-  if (!blow && input.held('swing') && !mounted) {
-    if (!drawn && input.pressed('swing')) drawn = true;
-    else if (drawn) {
-      blow = {
-        direction: DIRECTIONS[Math.floor(random() * DIRECTIONS.length)] ?? 'down',
-        second: blows % 2 === 1,
-        elapsed: 0,
-      };
-      blows += 1;
-    }
-  }
+  if (!drawn && input.pressed('swing') && !mounted) drawn = true;
   let cast = player.cast === null ? null : player.cast + seconds;
   if (cast !== null && cast >= CAST_SECONDS) cast = null;
   if (cast === null && input.pressed('cast') && !mounted) cast = 0;
@@ -118,9 +90,9 @@ export function updatePlayer(
     seconds,
   );
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
-  const acting = blow !== null || cast !== null;
+  const acting = swinging || cast !== null;
   const facing = acting ? yaw : body.mode !== 'ground' ? body.facing : body.moving ? body.facing : player.facing;
-  return { body, yaw, pitch, view, mounted, drawn, blow, blows, cast, act, facing };
+  return { body, yaw, pitch, view, mounted, drawn, cast, act, facing };
 }
 
 /** The camera the scene draws the player's frame from. */

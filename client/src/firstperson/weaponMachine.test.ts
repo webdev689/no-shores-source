@@ -124,3 +124,16 @@ test('a quick click on a bow plays the whole draw and release', () => {
   const frames = run(machine, 7, BOW_TICK, none).map((step) => step.frame);
   assert.deepEqual(frames, [1, 2, 3, 4, 5, 6, 0]);
 });
+
+test('a swing and a shot report how far through them they are, for the figure seen from outside', () => {
+  const sword = new WeaponMachine('sword', () => 0);
+  assert.equal(sword.progress, null);
+  sword.update(0, { attackHeld: false, attackPressed: true, attackReleased: false });
+  assert.equal(sword.progress, 0);
+  sword.update(swingFrameSeconds('sword') * 2.5, { attackHeld: false, attackPressed: false, attackReleased: false });
+  assert.ok(Math.abs((sword.progress ?? 0) - 0.5) < 1e-9);
+  const bow = new WeaponMachine('bow');
+  bow.update(0, { attackHeld: true, attackPressed: true, attackReleased: false });
+  bow.update(1, { attackHeld: true, attackPressed: false, attackReleased: false });
+  assert.equal(bow.progress, 0.5);
+});

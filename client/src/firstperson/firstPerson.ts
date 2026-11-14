@@ -27,7 +27,7 @@ import {
   runFrameAt,
   swayFrame,
 } from './fpMotion.ts';
-import { type AttackInput, type MachineEvents, WeaponMachine } from './weaponMachine.ts';
+import { type AttackInput, type Direction, type MachineEvents, WeaponMachine } from './weaponMachine.ts';
 
 /** What the first person shows this frame, from the one who sees it. `right` and `left` are forge weapon layers
  *  (`sword_iron`, `bow_long_elven`; null for an empty hand), `armour` the sets worn on the hands and feet (`iron`,
@@ -130,6 +130,12 @@ export class FirstPerson {
     });
   }
 
+  /** The swing or shot under way: its direction (null for a bow) and how far through it, or null at rest. */
+  get swing(): { direction: Direction | null; progress: number } | null {
+    const progress = this.machine?.progress ?? null;
+    return progress === null ? null : { direction: this.machine?.striking ?? null, progress };
+  }
+
   /** Moves the first person on by `seconds`: the swing, the cast, the bob, the chain and the climb. Answers the blow
    *  that lands now and whether an arrow leaves, so the figure seen from outside can match them. */
   update(seconds: number, input: AttackInput, state: FirstPersonState): MachineEvents {
@@ -157,11 +163,12 @@ export class FirstPerson {
 
     const lookKey = `${held}|${state.drawn}|${worn.hands}|${worn.feet}`;
     this.wanted = this.wantedNow(state, wielded, worn, mirrored, drop, sway, lookKey);
+    // What is wanted now is asked for first, ahead of the rest of a new look's pictures.
+    for (const wanted of this.wanted) this.request(wanted);
     if (lookKey !== this.look) {
       this.look = lookKey;
       this.prefetch(wielded, worn, mirrored, lookKey);
     }
-    for (const wanted of this.wanted) this.request(wanted);
     return events;
   }
 
