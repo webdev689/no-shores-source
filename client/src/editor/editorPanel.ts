@@ -1,7 +1,8 @@
 import type { WorldConstants } from '../rules/worldRules.ts';
+import type { Issue } from './layoutDraft.ts';
 import type { AreaStanding, Reference } from './measure.ts';
 
-export type Tool = 'paint' | 'erase' | 'ruler' | 'reference';
+export type Tool = 'paint' | 'erase' | 'fill' | 'ruler' | 'reference';
 
 /** The nine continents' colours, matching the map. */
 export const SLOT_COLOURS = [
@@ -33,7 +34,7 @@ export interface PanelView {
   readonly brushKm: number;
   readonly referenceKey: string;
   readonly slots: readonly SlotView[];
-  readonly problems: readonly string[];
+  readonly problems: readonly Issue[];
   readonly cursor: string;
   readonly status: string;
 }
@@ -48,11 +49,13 @@ export interface PanelHandlers {
   save(): void;
   download(): void;
   open(text: string): void;
+  goTo(x: number, y: number): void;
 }
 
 const TOOLS: readonly (readonly [Tool, string, string])[] = [
   ['paint', 'Paint', 'P'],
   ['erase', 'Erase', 'E'],
+  ['fill', 'Fill', 'F'],
   ['ruler', 'Ruler', 'R'],
   ['reference', 'Compare', 'C'],
 ];
@@ -88,7 +91,8 @@ export function buildPanel(
   root.replaceChildren();
   root.append(make('h1', 'World Editor'));
   const range = `${constants.minContinentKm2.toLocaleString('en-US')}-${constants.maxContinentKm2.toLocaleString('en-US')} km²`;
-  root.append(make('p', `Paint each continent on a 1 km grid. Each may cover ${range}.`, 'hint'));
+  const hint = `Paint each continent on a 1 km grid, or draw its coast and Fill inside. Each may cover ${range}.`;
+  root.append(make('p', hint, 'hint'));
 
   const tools = make('div', '', 'row');
   const toolButtons = TOOLS.map(([tool, text, key]) => {
@@ -158,6 +162,13 @@ export function buildPanel(
   const status = make('p', '', 'status');
   root.append(cursor, status);
 
+  const issueItem = ({ text, at }: Issue) => {
+    const item = make('li');
+    if (at) item.append(button(text, () => handlers.goTo(at.x, at.y)));
+    else item.textContent = text;
+    return item;
+  };
+
   return {
     update(view: PanelView): void {
       for (const [tool, node] of toolButtons) node.classList.toggle('active', tool === view.tool);
@@ -174,7 +185,7 @@ export function buildPanel(
         row.area.textContent = `${slot.areaKm2.toLocaleString('en-US')} km² · ${STANDING_TEXT[slot.standing]}`;
         row.fill.style.width = `${Math.round(slot.fraction * 100)}%`;
       });
-      problems.replaceChildren(...(view.problems.length ? view.problems : ['None.']).map((text) => make('li', text)));
+      problems.replaceChildren(...(view.problems.length ? view.problems.map(issueItem) : [make('li', 'None.')]));
       cursor.textContent = view.cursor;
       status.textContent = view.status;
     },

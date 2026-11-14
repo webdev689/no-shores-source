@@ -56,7 +56,7 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
   let step = view.metres_per_pixel;
   let world = view.centre + (pixel.xy - view.viewport * 0.5) * step;
   if (any(world < vec2f(0.0)) || any(world > view.frame)) {
-    let edge = min(min(abs(world.x), abs(world.x - view.frame.x)), min(abs(world.y), abs(world.y - view.frame.y)));
+    let edge = length(max(max(-world, world - view.frame), vec2f(0.0)));
     return vec4f(select(OUTSIDE, vec3f(0.85), edge < step * 1.5), 1.0);
   }
   let label = label_at(world);

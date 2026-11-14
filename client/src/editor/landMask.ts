@@ -1,12 +1,23 @@
 /** One cell of the painted land is a square kilometre. */
 export const CELL_M = 1_000;
 
+/** Marks sea a fill has reached, until the fill either takes it or gives it back. Never a continent's label. */
+const REACHED = 255;
+
 /** A rectangle of cells, inclusive of `left`/`top`, exclusive of `right`/`bottom`. */
 export interface CellRect {
   readonly left: number;
   readonly top: number;
   readonly right: number;
   readonly bottom: number;
+}
+
+/** One connected piece of a continent's land: its label, its size in cells, and a point on it in metres. */
+export interface Piece {
+  readonly label: number;
+  readonly cells: number;
+  readonly x: number;
+  readonly y: number;
 }
 
 /**
@@ -79,6 +90,42 @@ export class LandMask {
     }
   }
 
+  /**
+   * Fills `label` into the sea a click lands in, as far as the land around it, cells joined by their sides. Sea that
+   * reaches the frame's edge or holds more than `limit` cells is open ocean: nothing changes, and that comes back.
+   */
+  fillSea(cellX: number, cellY: number, label: number, limit: number): CellRect | 'not sea' | 'open sea' {
+    if (cellX < 0 || cellY < 0 || cellX >= this.width || cellY >= this.height) return 'not sea';
+    const start = cellY * this.width + cellX;
+    if (this.cells[start] !== 0) return 'not sea';
+    const reached = [start];
+    this.cells[start] = REACHED;
+    let open = false;
+    for (let next = 0; next < reached.length && !open; next++) {
+      const index = reached[next] ?? 0;
+      const atX = index % this.width;
+      const atY = (index - atX) / this.width;
+      open = atX === 0 || atY === 0 || atX === this.width - 1 || atY === this.height - 1 || reached.length > limit;
+      if (open) break;
+      for (const side of [index - 1, index + 1, index - this.width, index + this.width]) {
+        if (this.cells[side] !== 0) continue;
+        this.cells[side] = REACHED;
+        reached.push(side);
+      }
+    }
+    const rect = { left: this.width, top: this.height, right: 0, bottom: 0 };
+    for (const index of reached) {
+      this.cells[index] = open ? 0 : label;
+      const atX = index % this.width;
+      const atY = (index - atX) / this.width;
+      rect.left = Math.min(rect.left, atX);
+      rect.top = Math.min(rect.top, atY);
+      rect.right = Math.max(rect.right, atX + 1);
+      rect.bottom = Math.max(rect.bottom, atY + 1);
+    }
+    return open ? 'open sea' : rect;
+  }
+
   /** The continents whose cells differ from `before`, an earlier copy of `cells`: those painted or erased since. */
   changedLabels(before: Uint8Array): Set<number> {
     const changed = new Set<number>();
@@ -91,20 +138,24 @@ export class LandMask {
     return changed;
   }
 
-  /** How many separate pieces each continent's land is in, cells joined by their sides. The sea is never walked. */
-  piecesByLabel(): number[] {
-    const pieces = new Array<number>(10).fill(0);
+  /**
+   * Every separate piece of land, cells joined by their sides; the sea is never walked. A piece is placed at the
+   * centre of its first cell in reading order, which always lies on it.
+   */
+  pieces(): Piece[] {
+    const found: Piece[] = [];
     const seen = new Uint8Array(this.cells.length);
     const stack: number[] = [];
     for (let start = 0; start < this.cells.length; start++) {
       const label = this.cells[start] ?? 0;
       if (label === 0 || seen[start]) continue;
-      pieces[label] = (pieces[label] ?? 0) + 1;
+      let cells = 0;
       seen[start] = 1;
       stack.push(start);
       while (stack.length > 0) {
         const index = stack.pop() ?? 0;
         const cellX = index % this.width;
+        cells++;
         const neighbours = [
           cellX > 0 ? index - 1 : -1,
           cellX < this.width - 1 ? index + 1 : -1,
@@ -117,7 +168,48 @@ export class LandMask {
           stack.push(next);
         }
       }
+      const startX = start % this.width;
+      const startY = (start - startX) / this.width;
+      found.push({ label, cells, x: (startX + 0.5) * CELL_M, y: (startY + 0.5) * CELL_M });
     }
-    return pieces;
+    return found;
+  }
+
+  /** The cells as runs, `[label, length, label, length, …]`: a painted map in a small part of its bytes. */
+  toRuns(): number[] {
+    const runs: number[] = [];
+    let label = this.cells[0] ?? 0;
+    let length = 0;
+    for (const cell of this.cells) {
+      if (cell === label) {
+        length++;
+        continue;
+      }
+      runs.push(label, length);
+      label = cell;
+      length = 1;
+    }
+    runs.push(label, length);
+    return runs;
+  }
+
+  /** Fills the cells from runs `toRuns` made. Runs that do not cover the mask exactly change nothing and give false. */
+  fromRuns(runs: readonly unknown[]): boolean {
+    let total = 0;
+    for (let index = 0; index < runs.length; index += 2) {
+      const label = runs[index];
+      const length = runs[index + 1];
+      const valid = Number.isInteger(label) && Number.isInteger(length) && (length as number) > 0;
+      if (!valid || (label as number) < 0 || (label as number) > 9) return false;
+      total += length as number;
+    }
+    if (total !== this.cells.length) return false;
+    let offset = 0;
+    for (let index = 0; index < runs.length; index += 2) {
+      const length = runs[index + 1] as number;
+      this.cells.fill(runs[index] as number, offset, offset + length);
+      offset += length;
+    }
+    return true;
   }
 }

@@ -17,17 +17,27 @@ export interface LayoutContent {
 /** Tolerances tried when simplifying a coast, coarsest first, down to none. */
 export const TOLERANCES_M = [2_000, 1_000, 500, 0] as const;
 
-/** A drafted layout, and what stopped any continent from being drafted. */
+/** Something wrong with the painted land, and where on the map it is, when it is one place. */
+export interface Issue {
+  readonly text: string;
+  readonly at?: { readonly x: number; readonly y: number };
+}
+
+/** A drafted layout, what stopped any continent from being drafted, and the painted continents it leaves out. */
 export interface Draft {
   readonly layout: LayoutContent;
-  readonly issues: readonly string[];
+  readonly issues: readonly Issue[];
+  readonly heldBack: readonly string[];
 }
+
+/** How many of one continent's stray pieces are listed one by one; past that they are counted. */
+const STRAYS_LISTED = 5;
 
 /**
  * Drafts the layout from the painted land. Slot `n` (1 to 9) is the continent `slotIds[n]`. A continent in `previous`
  * whose slot is not in `changed` keeps its outline exactly: tracing it again would move its coast a little each save.
- * Every other coast is traced and simplified at the coarsest tolerance `isSimple` accepts; a continent in more than
- * one piece is not drafted, and says why. Climates and isles carry over from `previous`.
+ * Every other coast is traced and simplified at the coarsest tolerance `isSimple` accepts. A continent in more than
+ * one piece is held back, with an issue at each stray piece, largest first. Climates and isles carry over.
  */
 export function draftLayout(
   mask: LandMask,
@@ -37,8 +47,9 @@ export function draftLayout(
   changed: ReadonlySet<number>,
 ): Draft {
   const continents: ContinentEntry[] = [];
-  const issues: string[] = [];
-  const piecesBySlot = mask.piecesByLabel();
+  const issues: Issue[] = [];
+  const heldBack: string[] = [];
+  const pieces = mask.pieces();
   for (let slot = 1; slot < slotIds.length; slot++) {
     const id = slotIds[slot] ?? `continent-${slot}`;
     const loaded = previous.continents.find((continent) => continent.id === id);
@@ -46,10 +57,17 @@ export function draftLayout(
       continents.push(loaded);
       continue;
     }
-    const pieces = piecesBySlot[slot] ?? 0;
-    if (pieces === 0) continue;
-    if (pieces > 1) {
-      issues.push(`${id} is in ${pieces} pieces: one continent is one landmass`);
+    const own = pieces.filter((piece) => piece.label === slot).sort((first, second) => second.cells - first.cells);
+    if (own.length === 0) continue;
+    if (own.length > 1) {
+      heldBack.push(id);
+      const strays = own.slice(1);
+      issues.push({ text: `${id} is in ${own.length} pieces, so Save leaves it out: join or erase the strays` });
+      for (const stray of strays.slice(0, STRAYS_LISTED)) {
+        const size = stray.cells.toLocaleString('en-US');
+        issues.push({ text: `${id}: a stray piece of ${size} km² (show it)`, at: { x: stray.x, y: stray.y } });
+      }
+      if (strays.length > STRAYS_LISTED) issues.push({ text: `${id}: ${strays.length - STRAYS_LISTED} more strays` });
       continue;
     }
     const coast = traceCoast(mask, slot);
@@ -57,7 +75,7 @@ export function draftLayout(
     const climate = loaded?.climate;
     continents.push(climate === undefined ? { id, outline } : { id, outline, climate });
   }
-  return { layout: { continents, isles: previous.isles }, issues };
+  return { layout: { continents, isles: previous.isles }, issues, heldBack };
 }
 
 /**

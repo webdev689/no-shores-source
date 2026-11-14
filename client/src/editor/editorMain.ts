@@ -4,12 +4,23 @@ import { startWorldRules, type WorldRules } from '../rules/worldRules.ts';
 import { type Camera, fitFrame, niceLength, pan, screenToWorld, zoomAt } from './camera.ts';
 import { buildPanel, type Tool } from './editorPanel.ts';
 import { type CellRect, CELL_M, LandMask } from './landMask.ts';
-import { draftLayout, type LayoutContent, slotIdsFor } from './layoutDraft.ts';
+import { draftLayout, type Issue, type LayoutContent, slotIdsFor } from './layoutDraft.ts';
 import { MapView } from './mapView.ts';
 import { areaStanding, rangeFraction, references } from './measure.ts';
 import { drawOverlay, type PinnedReference, type Ruler } from './overlay.ts';
 
 const LAYOUT_URL = `${import.meta.env.BASE_URL}world/layout.json`;
+/** Where this browser keeps the painting between visits, until it is saved. */
+const KEPT_KEY = 'overlook.worldEditor.painting';
+/** How close Show takes the map, in metres a pixel: a one-cell stray is a few pixels wide. */
+const SHOW_METRES_PER_PIXEL = 250;
+
+/** The painting as this browser keeps it; read back from storage, so every field is checked before use. */
+interface KeptPainting {
+  readonly width?: unknown;
+  readonly height?: unknown;
+  readonly runs?: unknown;
+}
 
 function element<T extends Element>(selector: string): T {
   const found = document.querySelector<T>(selector);
@@ -61,7 +72,7 @@ async function start(): Promise<void> {
   let pointer = { x: 0, y: 0, inside: false };
   let stroke: { x: number; y: number } | null = null;
   let panning: { x: number; y: number } | null = null;
-  let problems: string[] = [];
+  let problems: Issue[] = [];
   let counts = mask.counts();
   let countedAt = 0;
   let status = loaded.saved ? 'Loaded content/world/layout.json.' : 'No layout file found: starting empty.';
@@ -77,7 +88,45 @@ async function start(): Promise<void> {
     counts = mask.counts();
     const { layout: drafted, issues } = draft();
     const found = rules.check(JSON.stringify(drafted));
-    problems = [...issues, ...found.problems.map((problem) => `${problem.subject}: ${problem.message}`)];
+    problems = [...issues, ...found.problems.map((problem) => ({ text: `${problem.subject}: ${problem.message}` }))];
+  };
+
+  // The browser may refuse storage (a private window, a full quota): the editor works on without it.
+  const keep = () => {
+    try {
+      localStorage.setItem(KEPT_KEY, JSON.stringify({ width: mask.width, height: mask.height, runs: mask.toRuns() }));
+    } catch {
+      status = 'This browser cannot keep your painting: Save often.';
+    }
+  };
+  const forget = () => {
+    try {
+      localStorage.removeItem(KEPT_KEY);
+    } catch {
+      // Nothing kept, nothing to forget.
+    }
+  };
+  const readKept = (): KeptPainting | null => {
+    try {
+      return JSON.parse(localStorage.getItem(KEPT_KEY) ?? 'null') as KeptPainting | null;
+    } catch {
+      return null;
+    }
+  };
+  const restoreKept = () => {
+    const kept = readKept();
+    if (!kept || kept.width !== mask.width || kept.height !== mask.height || !Array.isArray(kept.runs)) return;
+    if (!window.confirm('Restore the painting you left unsaved in this browser? Cancel opens the saved layout.')) {
+      forget();
+      return;
+    }
+    if (!mask.fromRuns(kept.runs as unknown[])) {
+      forget();
+      return;
+    }
+    view.upload(null);
+    recheck();
+    status = 'Restored your unsaved painting. Save to keep it.';
   };
 
   const load = (text: string) => {
@@ -116,15 +165,32 @@ async function start(): Promise<void> {
       requestFrame();
     },
     save: () => void save(),
-    download: () => download(written()),
+    download: () => {
+      const text = written();
+      if (text === null) return;
+      download(text);
+      forget();
+    },
     open: (text) => {
       load(text);
+      forget();
       status = 'Opened a layout file.';
+      requestFrame();
+    },
+    goTo: (x, y) => {
+      camera = { centreX: x, centreY: y, metresPerPixel: Math.min(camera.metresPerPixel, SHOW_METRES_PER_PIXEL) };
       requestFrame();
     },
   });
 
-  const written = () => rules.write(JSON.stringify(draft().layout));
+  /** The layout as the file holds it, or null if the owner chose not to save with continents left out. */
+  const written = (): string | null => {
+    const { layout: drafted, heldBack } = draft();
+    const names = heldBack.join(', ');
+    const leaveOut = `${names} ${heldBack.length === 1 ? 'is' : 'are'} in pieces and will be left out of the file.`;
+    if (heldBack.length > 0 && !window.confirm(`${leaveOut} Save the rest anyway?`)) return null;
+    return rules.write(JSON.stringify(drafted));
+  };
 
   const download = (text: string) => {
     const link = document.createElement('a');
@@ -136,6 +202,7 @@ async function start(): Promise<void> {
 
   const save = async () => {
     const text = written();
+    if (text === null) return;
     // Only the dev server can write the file; the published editor is static.
     const answer = import.meta.env.DEV
       ? await fetch(LAYOUT_URL, { method: 'PUT', body: text }).catch(() => null)
@@ -145,6 +212,7 @@ async function start(): Promise<void> {
       download(text);
       status = 'Downloaded layout.json. Put it in content/world/ to keep it.';
     }
+    forget();
     requestFrame();
   };
 
@@ -163,6 +231,18 @@ async function start(): Promise<void> {
     }
     view.upload(dirty);
     stroke = { x, y };
+  };
+
+  const fillAt = (x: number, y: number) => {
+    const found = mask.fillSea(Math.floor(x / CELL_M), Math.floor(y / CELL_M), slot, constants.maxContinentKm2);
+    if (found === 'not sea') status = 'Fill works on sea: click inside a coast.';
+    else if (found === 'open sea') status = 'That sea is open, or bigger than any continent: close the coast first.';
+    else {
+      view.upload(found);
+      recheck();
+      keep();
+      status = `Filled ${slotIds[slot] ?? 'the continent'}.`;
+    }
   };
 
   const frame = () => {
@@ -226,6 +306,7 @@ async function start(): Promise<void> {
     const world = screenToWorld(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY);
     if (event.button !== 0) panning = { x: event.offsetX, y: event.offsetY };
     else if (tool === 'paint' || tool === 'erase') paintTo(world.x, world.y);
+    else if (tool === 'fill') fillAt(world.x, world.y);
     else if (tool === 'ruler') ruler = { fromX: world.x, fromY: world.y, toX: world.x, toY: world.y };
     else {
       const shape = shapes.find((candidate) => candidate.key === referenceKey);
@@ -246,7 +327,10 @@ async function start(): Promise<void> {
     requestFrame();
   });
   canvas.addEventListener('pointerup', () => {
-    if (stroke) recheck();
+    if (stroke) {
+      recheck();
+      keep();
+    }
     stroke = null;
     panning = null;
     requestFrame();
@@ -275,7 +359,7 @@ async function start(): Promise<void> {
     if (event.target instanceof HTMLInputElement) return;
     const digit = Number(event.key);
     if (digit >= 1 && digit <= constants.continentCount) slot = digit;
-    const byKey: Record<string, Tool> = { p: 'paint', e: 'erase', r: 'ruler', c: 'reference' };
+    const byKey: Record<string, Tool> = { p: 'paint', e: 'erase', f: 'fill', r: 'ruler', c: 'reference' };
     const chosen = byKey[event.key.toLowerCase()];
     if (chosen) tool = chosen;
     if (event.key === 'Escape') ruler = null;
@@ -284,6 +368,7 @@ async function start(): Promise<void> {
   new ResizeObserver(requestFrame).observe(canvas);
 
   load(loaded.text);
+  restoreKept();
   requestFrame();
 }
 
