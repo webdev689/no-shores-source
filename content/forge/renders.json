@@ -1,11 +1,13 @@
 {
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
-  "index": "index/a1832011bfe1ac54eae1302271d6d1a7023bdbac396976decba63d0f44dcbb60.json",
+  "index": "index/ae842bb28bfe1689e6c490f925124f5fc648f4b899068e454058e4cae6967de4.json",
   "tables": {
     "looks": "tables/9ff00875340ce35bfd49d45e3b0847e6d089f3df9a9bc6f958845d750feacd8f.json",
     "skins": "tables/54434a7828e43ff28697da8da79b2ea9bbb75c180b1316e24269074c6e7596b5.json",
     "hair": "tables/cf7d5c8c092def912cf1b7a10389cbb9319b5ba5f5426fa31f74b9aadc6a19f0.json",
     "points-male": "tables/3ddcba3a3dfe576bed16ff93b3d3f60d7c829f643441604de56237748ae03b74.json",
-    "points-female": "tables/f5fe02e8df3bb8e57287a59b6bc19aa7630f4dfbd0800edd8c1756072aa6a097.json"
+    "points-female": "tables/f5fe02e8df3bb8e57287a59b6bc19aa7630f4dfbd0800edd8c1756072aa6a097.json",
+    "dyes": "tables/778dfd1c6ab3f17098509bc849be96a452522abfff19ce1ba65c9f59b0033cc5.json",
+    "frames": "tables/595d64114fd0aa4a3eadd70497e1fde8c1b22d7ba01b6172c96860fdb4db8e52.json"
   }
 }
