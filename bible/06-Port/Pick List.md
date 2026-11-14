@@ -10,11 +10,11 @@ call; this list only says what can come.
 
 | Part | Rows | Clean | Cut | Can't |
 |---|---|---|---|---|
-| [[Pick List - Engine and World]] | 127 | 31 | 71 | 25 |
-| [[Pick List - Gameplay Systems]] | 129 | 20 | 68 | 41 |
+| [[Pick List - Engine and World]] | 127 | 31 | 72 | 24 |
+| [[Pick List - Gameplay Systems]] | 130 | 20 | 69 | 41 |
 | [[Pick List - Network and Platform]] | 85 | 27 | 55 | 3 |
 | [[Pick List - Presentation and Tooling]] | 126 | 28 | 68 | 30 |
-| **All** | **467** | **106** | **262** | **99** |
+| **All** | **468** | **106** | **264** | **98** |
 
 ## The seams that decide most rows
 
@@ -31,7 +31,7 @@ Most "Cut" rows are ours apart from one of these. Replacing each once frees many
 | The quest machine | Daggerfall Unity's, translated line for line (about 17,000 lines); our quests are written in its script language | A new quest system, DFU's as reference | [[Quests Are Rebuilt, DFU's as Reference]] |
 | Ships inside Come Sail Away's structure | Every hull, ours and the owner's, wrapped in the mod's prefabs; the sailing runtime is a port of the mod | Our own ship format and sailing runtime | [[Naval, Living World, Professions and Synth Come Over Leaner]] |
 | Combat rules | Damage, weapons and enemy movement are Daggerfall Unity translations or mod ports | Rust combat from our own rules; DFO's duels, PvP and techniques are the original parts | Not yet |
-| Other authors' work | Mod ports (Come Sail Away, Horse Cart and Cargo, Snowfall, the sea and underwater from Iliac Puddle No More, mod settings) and Kamer's mods | Our own systems ([[Own Work]]) | [[Open Questions]] for Kamer's work |
+| Other authors' work | Mod ports (Come Sail Away, Horse Cart and Cargo, Snowfall, the sea and underwater from Iliac Puddle No More, mod settings) and the mods made for DFO | Our own systems ([[Own Work]]); the Arena, Raiding Parties and Warm Ashes come over rebuilt | [[Which Made-for-DFO Mods Come Over]] |
 
 ## The best Clean pieces
 

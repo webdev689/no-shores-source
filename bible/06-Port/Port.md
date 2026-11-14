@@ -25,6 +25,7 @@ rules code is rebuilt in Rust ([[Porting from DFO]]).
 | **WebGPU rewrite** | GPU code rewritten for WebGPU and WGSL, with DFO's WebGL2 code as the specification |
 | **Rust rebuild** | Rules the server decides, rebuilt in Rust with DFO's version as the specification |
 | **Python** | Sprite forge code, which stays Python inside Blender |
+| **Content rebuild** | A design and its geometry rebuilt as our own data, in our own formats, with our own art |
 | **Practice** | A process or check to carry as an idea, not as code |
 
 Effort is the size of the work to bring it over: **S** small, **M** medium, **L** large. Whether a system belongs in
