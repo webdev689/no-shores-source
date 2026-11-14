@@ -14,9 +14,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- Nothing right now ([[Open Questions]] is empty).
+- [[Open Questions]]: which nine climates, which the owner will decide later.
 
 ## Next
 
-- Lay out the world map and decide its structure, with World 2.0 feeding it ([[World 2.0 Feeds the World Map]]). The
-  world grid, place records, scene format, mesh kit and biome tables it needs are listed in the [[Pick List]]'s seams.
+- Build the [[World Map]]: the layout file and World Editor support for continents and isles first, then World 2.0's
+  generators over it. Its grid, place records, scene format, mesh kit and biome tables are in the [[Pick List]]'s
+  seams.
