@@ -11,5 +11,7 @@ status: in force
 
 - The server decides every outcome. A client sends what its player does and shows what the server says happened.
 - The server and the game's rules are Rust ([[TypeScript and Rust]]), built for performance.
-- Whether a client predicts its own movement while it waits, using the same Rust rules compiled to WebAssembly, is
-  open until multiplayer work starts ([[Open Questions]]).
+- A client predicts its own actions with the same Rust rules, and the server corrects it
+  ([[Clients Predict With the Shared Rules]]).
+- Where it runs and what it stores: [[Servers on Dedicated-Core VPS]], [[PostgreSQL]]. How it talks:
+  [[WebSocket, Then WebTransport]], [[One Schema for Every Message]].

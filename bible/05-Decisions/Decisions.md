@@ -13,6 +13,13 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[TypeScript and Rust]]
 - [[Server-Authoritative Multiplayer]]
 - [[WebGPU Only]]
+- [[Browser and Desktop From the Start]]
+- [[Servers on Dedicated-Core VPS]]
+- [[PostgreSQL]]
+- [[WebSocket, Then WebTransport]]
+- [[Clients Predict With the Shared Rules]]
+- [[One Schema for Every Message]]
+- [[Review by the Owner and Claude]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
