@@ -6,6 +6,7 @@ node_modules/
 dist/
 generated/
 client/public/world.wasm
+client/public/land.wasm
 
 # The toolkit's working folders: the code map it generates and Serena's project data.
 graphify-out/
@@ -26,3 +27,6 @@ bible/.obsidian/graph.json
 bible/.obsidian/plugins/
 bible/.obsidian/themes/
 bible/.trash/
+
+# Worktrees the coding tools make for their helpers.
+.claude/worktrees/

@@ -1,0 +1,130 @@
+//! Exact maths for the land: hashing, noise and smooth steps built from + - * / and square root alone, so the
+//! server and a browser agree on every height to the bit (the Agree to the Bit rule).
+
+/// Mixes whole numbers into one 32-bit hash.
+#[must_use]
+pub fn hash32(numbers: &[i64]) -> u32 {
+    let mut hash: u32 = 0x811c_9dc5;
+    for &number in numbers {
+        hash ^= number as u32;
+        hash = hash.wrapping_mul(0x0100_0193);
+        hash ^= hash >> 15;
+        hash = hash.wrapping_mul(0x2c1b_3c6d);
+        hash ^= hash >> 12;
+    }
+    hash
+}
+
+/// A uniform number in [0, 1) from a seed and whole numbers.
+#[must_use]
+pub fn rand01(seed: u32, numbers: &[i64]) -> f64 {
+    let mut all = Vec::with_capacity(numbers.len() + 1);
+    all.push(i64::from(seed));
+    all.extend_from_slice(numbers);
+    f64::from(hash32(&all)) / 4_294_967_296.0
+}
+
+/// A child seed: a stage's or a feature's own stream off a parent seed.
+#[must_use]
+pub fn seed_of(seed: u32, salt: &str) -> u32 {
+    salt.bytes().fold(seed, |hash, byte| hash32(&[i64::from(hash), i64::from(byte)]))
+}
+
+#[must_use]
+pub fn clamp(value: f64, low: f64, high: f64) -> f64 {
+    if value < low {
+        low
+    } else if value > high {
+        high
+    } else {
+        value
+    }
+}
+
+#[must_use]
+pub fn lerp(from: f64, to: f64, fraction: f64) -> f64 {
+    from + (to - from) * fraction
+}
+
+/// 0 below `low`, 1 above `high`, the cubic step between.
+#[must_use]
+pub fn smooth(low: f64, high: f64, value: f64) -> f64 {
+    let fraction = clamp((value - low) / (high - low), 0.0, 1.0);
+    fraction * fraction * (3.0 - 2.0 * fraction)
+}
+
+const DIAGONAL: f64 = std::f64::consts::FRAC_1_SQRT_2;
+const GRADIENT_X: [f64; 12] = [1.0, -1.0, 0.0, 0.0, DIAGONAL, -DIAGONAL, DIAGONAL, -DIAGONAL, 1.0, -1.0, 0.0, 0.0];
+const GRADIENT_Y: [f64; 12] = [0.0, 0.0, 1.0, -1.0, DIAGONAL, DIAGONAL, -DIAGONAL, -DIAGONAL, 0.0, 0.0, 1.0, -1.0];
+
+fn fade(fraction: f64) -> f64 {
+    fraction * fraction * fraction * (fraction * (fraction * 6.0 - 15.0) + 10.0)
+}
+
+/// Seeded gradient noise in about [-1, 1] with no period: the lattice is hashed, not tabled.
+#[must_use]
+pub fn noise2(seed: u32, x: f64, y: f64) -> f64 {
+    let (cell_x, cell_y) = (x.floor(), y.floor());
+    let (fraction_x, fraction_y) = (x - cell_x, y - cell_y);
+    let dot = |i: i64, j: i64| {
+        let gradient = (hash32(&[i64::from(seed), cell_x as i64 + i, cell_y as i64 + j]) % 12) as usize;
+        GRADIENT_X[gradient] * (fraction_x - i as f64) + GRADIENT_Y[gradient] * (fraction_y - j as f64)
+    };
+    let (ease_x, ease_y) = (fade(fraction_x), fade(fraction_y));
+    let top = lerp(dot(0, 0), dot(1, 0), ease_x);
+    let bottom = lerp(dot(0, 1), dot(1, 1), ease_x);
+    lerp(top, bottom, ease_y) * std::f64::consts::SQRT_2
+}
+
+/// A fractal sum of `octaves` noise layers, each twice the frequency and half the weight, in about [-1, 1].
+#[must_use]
+pub fn fbm(seed: u32, x: f64, y: f64, octaves: u32) -> f64 {
+    let (mut sum, mut amplitude, mut norm, mut frequency) = (0.0, 1.0, 0.0, 1.0);
+    for octave in 0..octaves {
+        sum += amplitude * noise2(seed.wrapping_add(octave.wrapping_mul(7919)), x * frequency, y * frequency);
+        norm += amplitude;
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    sum / norm
+}
+
+/// Ridged fractal noise in [0, 1]: sharp crests where the noise crosses zero, the shape of a ridge's spine.
+#[must_use]
+pub fn ridged(seed: u32, x: f64, y: f64, octaves: u32) -> f64 {
+    let (mut sum, mut amplitude, mut norm, mut frequency, mut weight) = (0.0, 1.0, 0.0, 1.0, 1.0);
+    for octave in 0..octaves {
+        let crest = 1.0 - noise2(seed.wrapping_add(octave.wrapping_mul(104_729)), x * frequency, y * frequency).abs();
+        let shaped = crest * crest * weight;
+        weight = clamp(shaped * 2.0, 0.0, 1.0);
+        sum += amplitude * shaped;
+        norm += amplitude;
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    sum / norm
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn noise_is_bounded_and_repeats_for_the_same_seed() {
+        for step in 0..2000 {
+            let (x, y) = (f64::from(step) * 0.37, f64::from(step) * -0.21);
+            let value = noise2(7, x, y);
+            assert!((-1.5..=1.5).contains(&value), "{value}");
+            assert_eq!(value.to_bits(), noise2(7, x, y).to_bits());
+            assert!((0.0..=1.0).contains(&ridged(3, x, y, 4)));
+        }
+        assert_ne!(noise2(1, 0.5, 0.5).to_bits(), noise2(2, 0.5, 0.5).to_bits());
+    }
+
+    #[test]
+    fn seeds_and_steps_behave() {
+        assert_ne!(seed_of(1, "relief"), seed_of(1, "erosion"));
+        assert!((0.0..1.0).contains(&rand01(9, &[1, -2])));
+        assert!(smooth(0.0, 1.0, -1.0).abs() < f64::EPSILON && (smooth(0.0, 1.0, 2.0) - 1.0).abs() < f64::EPSILON);
+    }
+}

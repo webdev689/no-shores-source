@@ -9,6 +9,8 @@ code:
   - client/src/editor/measure.ts#references
   - client/src/rules/worldRules.ts#startWorldRules
   - crates/world-wasm/src/lib.rs#check_layout
+  - client/src/editor/landEditor.ts#startLandEditor
+  - client/src/editor/terrainView.ts#TerrainView
   - vite.config.ts#worldLayoutFile
   - .github/workflows/pages.yml
 ---
@@ -43,6 +45,21 @@ restore that painting; Cancel opens the saved layout instead. A private window m
 Each continent's row shows its area as painted and where it stands against the allowed range. The map carries a
 kilometre grid, a scale bar and a readout of the cursor's position. The Problems list shows every rule a painted
 continent breaks. A continent in pieces lists each stray piece with its size; clicking one shows it on the map.
+
+## Land mode
+
+The Land button switches from painting coasts to the [[Land]] the generator makes from them. Every continent in
+the layout as drafted generates in the background, the chosen one first; each row shows how far along it is.
+
+| Control | Does |
+|---|---|
+| A landmass's row | Shows that landmass |
+| 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
+| Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar |
+| In 2D: drag, wheel | Pans and zooms |
+| In 3D: left-drag, right-drag, wheel | Orbits, pans along the ground, and zooms |
+
+The cursor's readout gives the ground's height under it, or the sea's depth, in either view.
 
 ## How it works
 

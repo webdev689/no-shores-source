@@ -1,0 +1,18 @@
+[package]
+name = "land-wasm"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "The land for the browser: the land crate behind a small WebAssembly door, its heights handed over as bytes."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+land = { path = "../land" }
+world = { path = "../world" }
+serde_json.workspace = true
+
+[lints]
+workspace = true
