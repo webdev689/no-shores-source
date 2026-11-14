@@ -13,6 +13,9 @@ code:
   - client/src/forge/compose.ts#composeFrame
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
+  - client/src/firstperson/firstPerson.ts#FirstPerson
+  - client/src/firstperson/weaponMachine.ts#WeaponMachine
+  - client/src/firstperson/fpFrames.ts#weaponPicture
 ---
 # Test Ground
 
@@ -107,3 +110,50 @@ eye.
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
 - The course's blocks are the only things to climb, and the climbing does not tire.
 - Composed frames are kept on the GPU up to 4,000, then all are let go and composed again as needed.
+
+## First person
+
+`FirstPerson` draws what the player holds in first person, from the forge's first-person pictures. Each frame the
+page hands it the attack button and the player's state: the weapon in each hand, the gauntlets and boots worn, whether
+the weapon is drawn, walking or running, the metres walked, a cast and a climb. It answers the blow that lands, so the
+figure seen from outside can play a matching move.
+
+### Swinging
+
+A click swings once. Holding the button swings again as each blow ends. Each blow takes one of six directions at
+random: down, down and left, left, right, down and right, or up. A strike is five frames, and the blow lands as the
+third begins. A frame lasts 0.199 s for a sword, DFO's swing law at an average Speed. A dagger and bare hands come
+round quicker; a mace, a flail and the two-handed weapons slower. Bare hands' strike to the left goes up and back down
+over eight frames.
+
+A bow draws while the button is held and stays drawn at its fourth frame. Letting go looses it: the arrow leaves on
+the sixth frame, a frame every 0.0625 s. The bow then reloads for about half a second.
+
+### Which picture
+
+Each frame shows one picture, named by the weapon's file, its record and its frame. A metal's own picture is used where
+the forge drew one, else the picture every metal shares. A dagger or a sword is laid from two layers, the hand in the
+gauntlets worn and the blade in its own make, the nearer shown at each texel. A bow is laid under the hands that hold
+it. Fists wear the gauntlets for a punch and the boots for a kick.
+
+The forge draws every metal grey. A grey texel goes to the nearest step of Daggerfall's metal band and takes that
+step of the metal's ramp; every other colour snaps to the nearest palette colour. Steel, leather, chain and the guilds'
+sets keep their own colours. Bare hands take iron's.
+
+### On the screen
+
+Each picture lies at its own place on a 320 by 200 design screen, scaled to the canvas, texel for texel, with its
+clear texels cut out, over the scene. A weapon in the left hand alone is mirrored about the middle at rest and in the
+strikes down and up, from the forge's left-hand picture where it drew one.
+
+While walking, the picture dips a few design pixels each step, more at a run. A flail at rest wears its chain's swing,
+a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps both arms, the left half a stride behind
+the right. A climb lowers the weapon out of the bottom of the screen. A cast shows both casting hands for 0.28 s and
+hides the weapon meanwhile. A new look's pictures are composed ahead and kept on the GPU.
+
+### Not yet in first person
+
+- A shield, a torch or a lantern in the left hand, and the climbing hands.
+- A weapon's wear.
+- A weapon in each hand: only the right one is drawn.
+- The player's own Speed, Strength and the weapon's weight, which would change the swing's pace.
