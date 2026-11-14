@@ -10,6 +10,8 @@ rules are Rust, with the server the sole authority. The bible is the Obsidian va
   has not decided. Propose engineering; record design only once the owner decides it, in the owner's words
   (`bible/04-Procedures/Recording a Decision.md`). When a choice is the owner's, ask.
 - **Done means `cargo xtask check` passes.** Run it before every push (after `npm ci` once). CI runs the same command.
+- **Ask before merging or deploying.** Open a pull request for each change; merge into `main`, deploy or release only
+  after the owner says yes, every time.
 
 ## Commands
 
