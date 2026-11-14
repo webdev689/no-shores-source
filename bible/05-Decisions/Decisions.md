@@ -34,6 +34,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[CLAUDE.md Points Into the Bible]]
 - [[Which Made-for-DFO Mods Come Over]]
 - [[The World Map]]
+- [[The World Editor Paints in the Browser]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

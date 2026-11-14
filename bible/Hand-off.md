@@ -18,7 +18,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- The [[World Map]]'s layout file and its rules are built; the file is empty until the owner places the continents.
-- Next: World Editor support for drawing continents and placing isles in the layout file, then World 2.0's
-  generators over it. The grid, place records, scene format, mesh kit and biome tables are in the [[Pick List]]'s
+- The [[World Map]]'s layout file and its rules are built, and the [[World Editor]] paints continents into it. The file
+  is empty until the owner paints the continents.
+- Next: placing isles in the editor, then World 2.0's generators over the layout. The grid, place records, scene format, mesh kit and biome tables are in the [[Pick List]]'s
   seams.

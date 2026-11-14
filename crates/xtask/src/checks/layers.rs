@@ -10,7 +10,8 @@ pub struct Layer {
 
 /// The client's layers, by folder name under `client/src`. Files directly in `client/src` (the entry point) may
 /// import any of them.
-pub const LAYERS: &[Layer] = &[];
+pub const LAYERS: &[Layer] =
+    &[Layer { name: "rules", may_import: &[] }, Layer { name: "editor", may_import: &["rules"] }];
 
 /// Node's modules: the game runs in the browser, so only tests and build config may reach them.
 const NODE_MODULES: [&str; 12] =

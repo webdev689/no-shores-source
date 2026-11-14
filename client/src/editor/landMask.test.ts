@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { LandMask } from './landMask.ts';
+
+test('the mask covers the frame in whole square kilometres', () => {
+  const mask = new LandMask(4_915_200, 3_072_000);
+  assert.equal(mask.width, 4915);
+  assert.equal(mask.height, 3072);
+});
+
+test('a brush paints the cells whose centres it covers', () => {
+  const mask = new LandMask(100_000, 100_000);
+  const dirty = mask.paintDisc(50_000, 50_000, 10_000, 1);
+  assert.deepEqual(dirty, { left: 40, top: 40, right: 60, bottom: 60 });
+  const painted = mask.counts()[1] ?? 0;
+  assert.ok(painted > 300 && painted < 330, `about pi * 10^2 cells, got ${painted}`);
+  assert.equal(mask.labelAt(50, 50), 1);
+  assert.equal(mask.labelAt(30, 50), 0);
+});
+
+test('painting never covers another continent, but erasing clears anything', () => {
+  const mask = new LandMask(100_000, 100_000);
+  mask.paintDisc(40_000, 50_000, 10_000, 1);
+  mask.paintDisc(55_000, 50_000, 10_000, 2);
+  assert.equal(mask.labelAt(45, 50), 1, 'continent 1 keeps its overlap');
+  mask.paintDisc(45_000, 50_000, 3_000, 0);
+  assert.equal(mask.labelAt(45, 50), 0);
+});
+
+test('a brush off the edge of the frame paints nothing', () => {
+  const mask = new LandMask(100_000, 100_000);
+  assert.equal(mask.paintDisc(-50_000, 50_000, 10_000, 1), null);
+});
+
+test('an outline fills back into the cells it encloses', () => {
+  const mask = new LandMask(100_000, 100_000);
+  mask.fillOutline(
+    [
+      [10_000, 20_000],
+      [60_000, 20_000],
+      [60_000, 50_000],
+      [10_000, 50_000],
+    ],
+    3,
+  );
+  assert.equal(mask.counts()[3], 50 * 30);
+  assert.equal(mask.labelAt(10, 20), 3);
+  assert.equal(mask.labelAt(59, 49), 3);
+  assert.equal(mask.labelAt(60, 49), 0);
+});
+
+test('land in two places is two pieces; joined by a side it is one', () => {
+  const mask = new LandMask(100_000, 100_000);
+  mask.paintDisc(20_000, 50_000, 5_000, 1);
+  mask.paintDisc(80_000, 50_000, 5_000, 1);
+  assert.equal(mask.piecesByLabel()[1], 2);
+  mask.paintDisc(50_000, 50_000, 31_000, 1);
+  const pieces = mask.piecesByLabel();
+  assert.equal(pieces[1], 1);
+  assert.equal(pieces[2], 0);
+  assert.equal(pieces[0], 0, 'the sea is never walked');
+});

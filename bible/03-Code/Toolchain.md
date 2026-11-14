@@ -48,5 +48,6 @@ Only for tooling that runs inside Blender (the sprite forge), held to the same s
 | `npm ci` | Install the TypeScript tools (once, and when `package-lock.json` changes) |
 | `cargo xtask check` | Everything CI runs, both languages |
 | `cargo xtask repo` | Only the repo checks, in about a second |
-| `npm run dev` | The client in a browser, reloading as you edit |
+| `npm run dev` | The client in a browser, reloading as you edit; the [[World Editor]] at `/editor/` |
+| `npm run wasm` | Builds the world rules as WebAssembly into `client/public/world.wasm` (not in git); `dev` and `build` run it first |
 | `npm test`, `cargo test` | One side's tests |
