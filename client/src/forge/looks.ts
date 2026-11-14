@@ -29,6 +29,7 @@ export interface ForgeLooks {
   readonly under?: Readonly<Record<string, number>>;
   readonly depth?: { readonly base: number; readonly scale: number };
   readonly dye?: readonly string[];
+  readonly metal?: readonly string[];
   readonly looks?: Readonly<Record<string, IndexLook>>;
 }
 

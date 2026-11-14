@@ -33,7 +33,7 @@ const LAYERS = [
   'quiver',
 ];
 const drawn = Object.fromEntries(LAYERS.map((layer) => [layer, ['idle']]));
-const bare: Outfit = { armour: {}, garments: [], right: null, left: null, drawn: false, hair: null };
+const bare: Outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: false, hair: null };
 
 test('a helm shades the face, lays a hood down and hides the hair', () => {
   const outfit = {

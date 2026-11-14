@@ -3,7 +3,8 @@ import { GpuUnavailable, startGpu } from '../gpu.ts';
 import { EYE_M, walkStep } from '../editor/closeUp.ts';
 import { type Orbit, panOrbit, rayAt, rotateOrbit, zoomOrbit } from '../editor/orbit.ts';
 import { type Colours, composeFrame } from '../forge/compose.ts';
-import { figureOf } from './dressing.ts';
+import { PaletteSnap, type DyeTable } from '../forge/dyes.ts';
+import { figureOf, rampsOf } from './dressing.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
@@ -57,12 +58,13 @@ async function start(): Promise<void> {
     status,
   });
   const store = await ForgeStore.open();
-  const [looks, skins, hair] = await Promise.all([
+  const [looks, skins, hair, dyes] = await Promise.all([
     store.table<ForgeLooks>('looks'),
     store.table<RaceSkins>('skins'),
     store.table<HairColours>('hair'),
+    store.table<DyeTable>('dyes'),
   ]);
-  const colours: Colours = { skins, hair };
+  const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
   status = 'Choose a figure, dress it and set it moving.';
 
   let nextId = 1;
@@ -81,6 +83,7 @@ async function start(): Promise<void> {
       outfit: {
         armour: {},
         garments: ['shirt_long_v', 'breeches', 'boots'],
+        dyes: { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' },
         right: null,
         left: null,
         drawn: false,
@@ -88,7 +91,6 @@ async function start(): Promise<void> {
       },
     },
     anim: 'idle',
-    tints: {},
     spin: false,
   });
   let figures: Placed[] = [newFigure()];
@@ -99,7 +101,8 @@ async function start(): Promise<void> {
   /** A figure's card in one view and frame: composed once and kept, null while it is being composed. */
   const cardOf = (placed: Placed, view: number, frame: number): Card | null => {
     const figure = figureOf(placed.dress, looks.bodies[placed.dress.body]?.layers ?? {});
-    const key = JSON.stringify([figure, placed.tints, placed.anim, view, frame]);
+    const ramps = rampsOf(figure.gear, placed.dress.outfit, looks, dyes);
+    const key = JSON.stringify([figure, placed.dress.outfit.dyes, placed.anim, view, frame]);
     const kept = cards.get(key);
     if (kept !== undefined || composing.has(key)) return kept ?? null;
     if (cards.size > KEPT_CARDS) {
@@ -108,7 +111,7 @@ async function start(): Promise<void> {
     }
     composing.add(key);
     const strip = (path: string) => store.strip(path);
-    composeFrame(figure, placed.anim, view, frame, looks, colours, placed.tints, strip)
+    composeFrame(figure, placed.anim, view, frame, looks, colours, ramps, strip)
       .then((composed) => {
         cards.set(key, composed && scene.card(composed.pixels, composed.width, composed.height, composed.root));
       })

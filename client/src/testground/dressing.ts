@@ -1,4 +1,5 @@
-import type { Figure, ForgeBody, IndexLook } from '../forge/looks.ts';
+import { CLOTHING_DYES, type DyeTable, type Rgb, metalOfLayer } from '../forge/dyes.ts';
+import type { Figure, ForgeBody, ForgeLooks, IndexLook } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type ArmourPiece, type Outfit, outfitLayers } from '../forge/outfit.ts';
 
 /** Overlook's three races: a Human's skin is a tone; Felid and Anole wear the forge's own bodies. */
@@ -70,13 +71,41 @@ export function lookOutfit(look: IndexLook, keep: Outfit): Outfit {
     /^(helm|pauldrons|cuirass|gauntlets|greaves|boots)_(iron|steel|silver|elven|dwarven|mithril|adamantium|ebony|orcish|daedric|leather|chain|brotherhood|fighters|knights|mages|thieves)$/;
   const armour: Partial<Record<ArmourPiece, string>> = {};
   const garments: string[] = [];
+  const dyes: Record<string, string> = {};
   for (const layer of look.gear) {
     const piece = pieces.exec(layer);
     if (piece?.[1] && piece[2]) armour[piece[1] as ArmourPiece] = piece[2];
     else if (!/^(face|under_)/.test(layer)) {
       const garment = layer.replace(HANG, '');
       if (!garments.includes(garment)) garments.push(garment);
+      const dye = CLOTHING_DYES[look.dyes?.[layer] ?? -1];
+      if (dye) dyes[garment] = dye;
     }
   }
-  return { ...keep, armour, garments, right: look.weapon, left: null, drawn: !!look.weapon };
+  return { ...keep, armour, garments, dyes, right: look.weapon, left: null, drawn: !!look.weapon };
+}
+
+/** A garment's dye until one is chosen. */
+export const PLAIN_DYE = 'LightBrown';
+
+/** The ramp each dyed layer a figure wears is laid on: a metal layer its set's or metal's, a garment and its hangs
+ *  their garment's dye. Layers that keep their own colours have none. */
+export function rampsOf(
+  gear: readonly string[],
+  outfit: Outfit,
+  looks: ForgeLooks,
+  table: DyeTable,
+): Record<string, readonly Rgb[]> {
+  const metal = new Set(looks.metal ?? []);
+  const dyed = new Set(looks.dye ?? []);
+  const ramps: Record<string, readonly Rgb[]> = {};
+  for (const layer of gear) {
+    const ramp = metal.has(layer)
+      ? table.armour[metalOfLayer(layer) ?? '']
+      : dyed.has(layer)
+        ? table.clothing[outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE]
+        : undefined;
+    if (ramp) ramps[layer] = ramp;
+  }
+  return ramps;
 }

@@ -79,7 +79,7 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
   return (state: PanelState) => {
     status.textContent = state.status;
     // Rebuilt only when the figures or the chosen one change, so typing in a field keeps its focus.
-    const figures = state.figures.map((each) => [each.id, each.anim, each.dress, each.tints]);
+    const figures = state.figures.map((each) => [each.id, each.anim, each.dress]);
     const key = JSON.stringify([figures, state.chosen?.id, state.walking]);
     if (key === shown) return;
     shown = key;

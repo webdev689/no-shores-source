@@ -1,0 +1,123 @@
+/** A colour, red, green and blue 0..255. */
+export type Rgb = readonly [number, number, number];
+
+/** Daggerfall's colours as the forge's figures take them (the forge's forgeDyes.json): the 256-colour palette every
+ *  frame is snapped to, and the 16 colours, darkest first, each clothing dye and each metal lays the forge's greys on. */
+export interface DyeTable {
+  readonly palette: readonly Rgb[];
+  readonly clothing: Readonly<Record<string, readonly Rgb[]>>;
+  readonly armour: Readonly<Record<string, readonly Rgb[]>>;
+}
+
+/** The clothing dyes, in the order the forge's index numbers them. */
+export const CLOTHING_DYES = [
+  'Blue',
+  'Grey',
+  'Red',
+  'DarkBrown',
+  'Purple',
+  'LightBrown',
+  'White',
+  'Aquamarine',
+  'Yellow',
+  'Green',
+] as const;
+
+/** The metal each armour set is coloured in. Leather's buckles and chain's mail take steel; a guild's set and a plain
+ *  shield keep their own colours. */
+export const METAL_OF_SET: Readonly<Record<string, string>> = {
+  iron: 'Iron',
+  steel: 'Steel',
+  silver: 'Silver',
+  elven: 'Elven',
+  dwarven: 'Dwarven',
+  mithril: 'Mithril',
+  adamantium: 'Adamantium',
+  ebony: 'Ebony',
+  orcish: 'Orcish',
+  daedric: 'Daedric',
+  leather: 'Steel',
+  chain: 'Steel',
+};
+
+/** The metal a metal layer is coloured in, by the set or metal its name ends with (`cuirass_iron`, `shield_kite_ebony`,
+ *  `sheath_bow_long_elven`), or null for a set that keeps its own colours. */
+export function metalOfLayer(layer: string): string | null {
+  return METAL_OF_SET[layer.split('_').pop() ?? ''] ?? null;
+}
+
+/** A colour in OKLab: L its lightness, a and b its hue and chroma, each step about as far to the eye. */
+export function oklab(red: number, green: number, blue: number): [number, number, number] {
+  const linear = (channel: number) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  const [linRed, linGreen, linBlue] = [linear(red), linear(green), linear(blue)];
+  const long = Math.cbrt(0.4122214708 * linRed + 0.5363325363 * linGreen + 0.0514459929 * linBlue);
+  const middle = Math.cbrt(0.2119034982 * linRed + 0.6806995451 * linGreen + 0.1073969566 * linBlue);
+  const short = Math.cbrt(0.0883024619 * linRed + 0.2817188376 * linGreen + 0.6299787005 * linBlue);
+  return [
+    0.2104542553 * long + 0.793617785 * middle - 0.0040720468 * short,
+    1.9779984951 * long - 2.428592205 * middle + 0.4505937099 * short,
+    0.0259040371 * long + 0.7827717662 * middle - 0.808675766 * short,
+  ];
+}
+
+/** How much more a step of hue counts than a step of light when finding the nearest palette colour. */
+const HUE_WEIGHT = 4;
+
+/** Snaps pictures to Daggerfall's palette, as the forge's game lays its look on a composed frame: each drawn texel to
+ *  the nearest of the palette's colours 1..255 (0 is a clear texel), nearest in OKLab with hue weighed above light. */
+export class PaletteSnap {
+  private readonly rgb: Uint8Array;
+  private readonly lab: Float32Array;
+  // Each colour texel 6 bits a channel and its nearest palette index, found as asked (-1 not yet).
+  private readonly nearest = new Int16Array(1 << 18).fill(-1);
+
+  constructor(palette: readonly Rgb[]) {
+    this.rgb = new Uint8Array(256 * 3);
+    this.lab = new Float32Array(256 * 3);
+    palette.slice(0, 256).forEach((colour, index) => {
+      this.rgb.set(colour, index * 3);
+      this.lab.set(oklab(...colour), index * 3);
+    });
+  }
+
+  private nearestIndex(red: number, green: number, blue: number): number {
+    const [lightness, hueA, hueB] = oklab(red, green, blue);
+    let best = 1;
+    let bestDistance = Infinity;
+    for (let index = 1; index < 256; index++) {
+      const dLight = lightness - (this.lab[index * 3] ?? 0);
+      const dHueA = hueA - (this.lab[index * 3 + 1] ?? 0);
+      const dHueB = hueB - (this.lab[index * 3 + 2] ?? 0);
+      const distance = dLight * dLight + HUE_WEIGHT * HUE_WEIGHT * (dHueA * dHueA + dHueB * dHueB);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = index;
+      }
+    }
+    return best;
+  }
+
+  /** Snaps an RGBA picture in place; clear texels (alpha 0) are left as they are. */
+  snap(pixels: Uint8Array | Uint8ClampedArray): void {
+    for (let texel = 0; texel < pixels.length; texel += 4) {
+      if (!pixels[texel + 3]) continue;
+      const [red, green, blue] = [
+        (pixels[texel] ?? 0) >> 2,
+        (pixels[texel + 1] ?? 0) >> 2,
+        (pixels[texel + 2] ?? 0) >> 2,
+      ];
+      const key = (red << 12) | (green << 6) | blue;
+      let index = this.nearest[key] ?? -1;
+      if (index < 0) {
+        index = this.nearestIndex(red * 4 + 2, green * 4 + 2, blue * 4 + 2);
+        this.nearest[key] = index;
+      }
+      pixels[texel] = this.rgb[index * 3] ?? 0;
+      pixels[texel + 1] = this.rgb[index * 3 + 1] ?? 0;
+      pixels[texel + 2] = this.rgb[index * 3 + 2] ?? 0;
+    }
+  }
+}

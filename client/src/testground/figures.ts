@@ -1,4 +1,3 @@
-import type { Tint } from '../forge/compose.ts';
 import type { Dress } from './dressing.ts';
 
 /** The forge drew every picture at 62 pixels a metre. */
@@ -15,7 +14,6 @@ export interface Placed {
   facing: number;
   dress: Dress;
   anim: string;
-  tints: Record<string, Tint>;
   spin: boolean;
 }
 

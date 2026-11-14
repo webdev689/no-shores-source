@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { type Strip, PART, composeFrame, ordersMeet, tintRamp } from './compose.ts';
+import { type Strip, PART, composeFrame, ordersMeet } from './compose.ts';
+import { PaletteSnap } from './dyes.ts';
 import { type ForgeLooks, layersOf, lookCell } from './looks.ts';
 
 const cell = { cell: [2, 1], frames: 2, root: [1, 1] } as const;
@@ -55,25 +56,19 @@ test('the cell holds every layer about the root, one reaching past the animation
   assert.deepEqual(lookCell(figure, 'idle', looks), { cell: [2, 1], frames: 2, root: [1, 1] });
 });
 
-test('the nearest texel is drawn, armour over the clothes it lies on by its order, and a tint dyes grey only', async () => {
-  const frame = await composeFrame(figure, 'idle', 0, 0, looks, colours, { shirt: [0, 0, 220] }, read);
+const blue = Array.from({ length: 16 }, (unused, step) => [0, 0, step * 16] as const);
+
+test('the nearest texel is drawn, armour over the clothes it lies on by its order, and a dye lays grey only', async () => {
+  const frame = await composeFrame(figure, 'idle', 0, 0, looks, colours, { shirt: blue }, read);
   assert.ok(frame);
   // Left: the cuirass lies 0.5 mm behind the shirt, but its 1 cm order draws it over.
   assert.deepEqual([...frame.pixels.subarray(0, 4)], [90, 90, 99, 255]);
   // Right: no shirt, the cuirass over the body.
   assert.deepEqual([...frame.pixels.subarray(4, 8)], [90, 90, 99, 255]);
-  const bare = await composeFrame(
-    { ...figure, gear: ['shirt'] },
-    'idle',
-    0,
-    0,
-    looks,
-    colours,
-    { shirt: [0, 0, 220] },
-    read,
-  );
+  const bare = await composeFrame({ ...figure, gear: ['shirt'] }, 'idle', 0, 0, looks, colours, { shirt: blue }, read);
   assert.ok(bare);
-  assert.deepEqual([...bare.pixels.subarray(0, 4)], [...(tintRamp([0, 0, 220])[8] ?? []), 255]);
+  // Grey 128 is step 8 of the ramp.
+  assert.deepEqual([...bare.pixels.subarray(0, 4)], [0, 0, 128, 255]);
   assert.deepEqual([...bare.pixels.subarray(4, 8)], [200, 150, 120, 255]);
   assert.ok(Math.abs((bare.depth[0] ?? 0) - (117 * 256 + 40) / 10000 + 3) < 1e-4);
 });
@@ -105,4 +100,26 @@ test('a skin tone mixes the two nearest natural skin ramps, lightest first, deep
     lightest > middle && middle > darkest && darkest > deepest,
     `${lightest} > ${middle} > ${darkest} > ${deepest}`,
   );
+});
+
+test('a composed frame is snapped to the palette, its clear texels left alone', async () => {
+  const snap = new PaletteSnap([
+    [0, 0, 0],
+    [250, 0, 0],
+    [0, 0, 250],
+    [128, 128, 128],
+  ]);
+  const frame = await composeFrame(
+    { ...figure, gear: ['shirt'] },
+    'idle',
+    0,
+    0,
+    looks,
+    { ...colours, snap },
+    { shirt: blue },
+    read,
+  );
+  assert.ok(frame);
+  // The dyed blue goes to the palette's blue; the bare body's tan to its nearest, the grey.
+  assert.deepEqual([...frame.pixels.subarray(0, 8)], [0, 0, 250, 255, 128, 128, 128, 255]);
 });

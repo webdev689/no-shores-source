@@ -1,4 +1,5 @@
 import { type Figure, type ForgeLooks, layerCellOf, layerPath, layersOf, lookCell } from './looks.ts';
+import type { PaletteSnap, Rgb } from './dyes.ts';
 import { type HairColours, type RaceSkins, hairRamp, raceSkinOf, toneSkinOf } from './skins.ts';
 
 /** A decoded strip: RGBA, top row first. */
@@ -18,14 +19,13 @@ export interface Frame {
   readonly depth: Float32Array;
 }
 
-/** The colour tables a frame is composed with: each race's skin and each hair colour. */
+/** The colour tables a frame is composed with: each race's skin and each hair colour, and the palette a finished
+ *  frame is snapped to (none leaves it as composed). */
 export interface Colours {
   readonly skins: RaceSkins;
   readonly hair: HairColours;
+  readonly snap?: PaletteSnap;
 }
-
-/** A colour a dyeable layer's grey is laid on, red, green and blue 0..255. */
-export type Tint = readonly [number, number, number];
 
 /** The parts of the body a depth strip's blue names: none, torso, the arms, the head, the feet, a weapon, what hangs
  *  free, the horse under a rider, hair. */
@@ -58,23 +58,12 @@ export function ordersMeet(first: number, second: number): boolean {
   return false;
 }
 
-/** A tint's ramp of 16 steps, darkest first, for a dyeable layer's grey to be laid on by brightness. */
-export function tintRamp(tint: Tint): Tint[] {
-  return Array.from({ length: 16 }, (unused, step) => {
-    const light = (step + 1) / 11;
-    return [
-      Math.min(255, Math.round(tint[0] * light)),
-      Math.min(255, Math.round(tint[1] * light)),
-      Math.min(255, Math.round(tint[2] * light)),
-    ] as const;
-  });
-}
-
 /**
  * One frame of a figure, composed as the forge's game draws it: each layer's cell (a row a view, a column a frame)
  * laid on the figure's cell by its root; at each pixel the nearest texel, a layer drawn nearer by its order where it
  * meets another on one part, armour over the clothes under it by its cover, a worn weapon and a drape by `under`.
- * The skin takes the race, the hair its colour's ramp, and a tinted layer's grey its tint.
+ * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp; the frame
+ * is then snapped to the palette.
  */
 export async function composeFrame(
   figure: Figure,
@@ -83,7 +72,7 @@ export async function composeFrame(
   frame: number,
   looks: ForgeLooks,
   colours: Colours,
-  tints: Readonly<Record<string, Tint>>,
+  ramps: Readonly<Record<string, readonly Rgb[]>>,
   strip: (path: string) => Promise<Strip | null>,
 ): Promise<Frame | null> {
   const box = lookCell(figure, anim, looks);
@@ -120,8 +109,7 @@ export async function composeFrame(
     const under = weigh(looks.under, layer);
     const hair =
       figure.hair?.layer === layer ? hairRamp(colours.hair, figure.body, figure.race, figure.hair.colour) : null;
-    const tint = dyeable.has(layer) ? tints[layer] : undefined;
-    const ramp = hair ?? (tint ? tintRamp(tint) : null);
+    const ramp = hair ?? (dyeable.has(layer) ? (ramps[layer] ?? null) : null);
     const skin =
       figure.tone === null
         ? raceSkinOf(colours.skins, layer, figure.body, figure.race, view)
@@ -186,6 +174,7 @@ export async function composeFrame(
       }
     }
   }
+  colours.snap?.snap(pixels);
   const base = looks.depth?.base ?? -3;
   const metres = Float32Array.from(best, (lies) => (lies === FAR ? Number.NaN : lies / scale + base));
   return { width, height, root: box.root, pixels, depth: metres };

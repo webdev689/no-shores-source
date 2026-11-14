@@ -1,17 +1,11 @@
 import { make } from '../editor/dom.ts';
-import type { Tint } from '../forge/compose.ts';
+import { CLOTHING_DYES } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type Outfit } from '../forge/outfit.ts';
 import type { HairColours } from '../forge/skins.ts';
-import { type Dress, type Race, RACES, figureOf, lookOutfit, wardrobeOf } from './dressing.ts';
+import { type Dress, type Race, PLAIN_DYE, RACES, lookOutfit, wardrobeOf } from './dressing.ts';
 import type { Placed } from './figures.ts';
 
-const hex = (tint: Tint) => `#${tint.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
-const fromHex = (text: string): Tint => [
-  parseInt(text.slice(1, 3), 16),
-  parseInt(text.slice(3, 5), 16),
-  parseInt(text.slice(5, 7), 16),
-];
 const pairs = (keys: readonly string[]) => keys.map((key) => [key, key] as const);
 
 /** A control with its name before it, on one row. */
@@ -42,7 +36,7 @@ function checkbox(checked: boolean, onChange: (checked: boolean) => void): HTMLI
 
 /**
  * The chosen figure's dress: its body, race and skin tone, hair, armour by piece, garments, what each hand holds and
- * whether it is drawn, its tints, and one of the forge's dressed looks to start from. `changed` follows each edit.
+ * whether it is drawn, each garment's dye, and one of the forge's dressed looks to start from. `changed` follows each edit.
  */
 export function dressControls(
   looks: ForgeLooks,
@@ -110,17 +104,16 @@ export function dressControls(
   listGarments();
 
   const dyeable = new Set(looks.dye ?? []);
-  const tints = figureOf(placed.dress, drawn)
-    .gear.filter((layer) => dyeable.has(layer))
-    .map((layer) => {
-      const picker = make('input');
-      Object.assign(picker, { type: 'color', value: hex(placed.tints[layer] ?? [128, 128, 128]) });
-      picker.addEventListener('change', () => {
-        placed.tints = { ...placed.tints, [layer]: fromHex(picker.value) };
-        changed();
-      });
-      return labelled(layer, picker);
-    });
+  const dyeChoices = outfit.garments
+    .filter((garment) => Object.keys(drawn).some((layer) => dyeable.has(layer) && layer.startsWith(garment)))
+    .map((garment) =>
+      labelled(
+        garment,
+        choice(pairs(CLOTHING_DYES), outfit.dyes[garment] ?? PLAIN_DYE, (dye) =>
+          wear({ dyes: { ...outfit.dyes, [garment]: dye } }),
+        ),
+      ),
+    );
   const presets = Object.entries(looks.looks ?? {})
     .filter(([, look]) => look.body === placed.dress.body)
     .map(
@@ -192,8 +185,10 @@ export function dressControls(
       'Drawn',
       checkbox(outfit.drawn, (drawnOut) => wear({ drawn: drawnOut })),
     ),
-    make('h2', 'Tints'),
-    ...(tints.length > 0 ? tints : [make('p', 'Wear a dyeable layer to tint it.', 'hint')]),
+    make('h2', 'Dyes'),
+    ...(dyeChoices.length > 0
+      ? dyeChoices
+      : [make('p', 'Wear a garment to dye it. Metal takes its set’s colour.', 'hint')]),
     make('h2', 'Clothes'),
     search,
     list,

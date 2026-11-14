@@ -11,6 +11,7 @@ import hashlib
 import io
 import json
 import os
+import struct
 import subprocess
 import sys
 import urllib.error
@@ -32,7 +33,47 @@ TABLES = {
     'hair': 'forgeHairColours.json',
     'points-male': 'forgePoints-male.json',
     'points-female': 'forgePoints-female.json',
+    'dyes': 'forgeDyes.json',
+    'frames': 'forgeFrames.json',
 }
+ART = os.path.join(FORGE, 'public', 'art')
+
+
+def placed(path):
+    """Where a first-person frame sits on the 320 x 200 screen (its PNG's `oFFs`), and the box within it Daggerfall
+    aligns (`boXs`), or None. WebP keeps neither, so they are kept in the frames table."""
+    with open(path, 'rb') as file:
+        data = file.read()
+    found, at = {}, 8
+    while at + 8 <= len(data):
+        length, kind = struct.unpack('>I4s', data[at:at + 8])
+        body = data[at + 8:at + 8 + length]
+        if kind == b'oFFs':
+            found['at'] = list(struct.unpack('>ii', body[:8]))
+        elif kind == b'boXs':
+            found['box'] = list(struct.unpack('>iiii', body[:16]))
+        elif kind == b'IDAT':
+            break
+        at += 12 + length
+    return found or None
+
+
+def frames_table():
+    """Every picture's placement, by its path in the pack index: the studio's own, and the site's own as `@art/`."""
+    table = {}
+    for base, _dirs, names in os.walk(ART):
+        for name in names:
+            if not name.endswith('.png'):
+                continue
+            full = os.path.join(base, name)
+            rel = os.path.relpath(full, ART).replace(os.sep, '/')
+            key = rel[len('studio/'):] if rel.startswith('studio/') else f'@art/{rel}'
+            where = placed(full)
+            if where:
+                table[key] = where
+    with open(os.path.join(TABLES_DIR, TABLES['frames']), 'w') as file:
+        json.dump(table, file, separators=(',', ':'))
+    print(f'{len(table)} placed frames', flush=True)
 
 
 def fetch(method, url, data=None, kind='application/octet-stream', signed=False):
@@ -63,6 +104,7 @@ def put(data, folder, extension, kind):
 
 
 def publish():
+    frames_table()
     pack = os.path.join(FORGE, 'tools', 'forgeViewer', 'pack.py')
     # Every pack as an asset pack: R2 has no per-page file budget to split them by.
     subprocess.run([sys.executable, '-I', pack, '--out', PACKED, '--files-mib', '0'], check=True)

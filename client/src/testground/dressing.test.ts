@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { figureOf, lookOutfit, wardrobeOf } from './dressing.ts';
+import { figureOf, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
 
 const LAYERS = [
   'body',
@@ -24,7 +24,7 @@ const LAYERS = [
   'mace_iron',
 ];
 const drawn = Object.fromEntries(LAYERS.map((layer) => [layer, ['idle']]));
-const outfit = { armour: {}, garments: [], right: null, left: null, drawn: false, hair: null };
+const outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: false, hair: null };
 
 test('a wardrobe sorts a body layers into armour sets, garments and what each hand holds', () => {
   const wardrobe = wardrobeOf('male', drawn);
@@ -52,13 +52,37 @@ test('a dressed look becomes an outfit: armour by piece, garments without their 
     body: 'male',
     gear: ['face_iron', 'helm_iron', 'cuirass_iron', 'casual_cloak_plated', 'under_iron'],
     weapon: 'sword',
+    dyes: { casual_cloak_plated: 2 },
   };
   assert.deepEqual(lookOutfit(look, outfit), {
     armour: { helm: 'iron', cuirass: 'iron' },
     garments: ['casual_cloak'],
+    dyes: { casual_cloak: 'Red' },
     right: 'sword',
     left: null,
     drawn: true,
     hair: null,
+  });
+});
+
+test('metal layers take their set metal; garments their dye, plain until one is chosen', () => {
+  const ramp = (light: number) => [[light, light, light] as const];
+  const table = {
+    palette: [],
+    clothing: { Red: ramp(1), LightBrown: ramp(2) },
+    armour: { Iron: ramp(3), Steel: ramp(4) },
+  };
+  const looks = {
+    bodies: {},
+    dye: ['cuirass_iron', 'under_leather', 'shirt_long_v', 'casual_cloak_plated'],
+    metal: ['cuirass_iron', 'under_leather'],
+  };
+  const gear = ['cuirass_iron', 'under_leather', 'shirt_long_v', 'casual_cloak_plated', 'sword_iron'];
+  const dressed = { ...outfit, dyes: { casual_cloak: 'Red' } };
+  assert.deepEqual(rampsOf(gear, dressed, looks, table), {
+    cuirass_iron: ramp(3),
+    under_leather: ramp(4),
+    shirt_long_v: ramp(2),
+    casual_cloak_plated: ramp(1),
   });
 });

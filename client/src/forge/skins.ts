@@ -175,7 +175,7 @@ export function toneSkinOf(
 ): ((rgb: number[]) => void) | null {
   const tones = skinTones(skins, body);
   const spot = Math.max(0, Math.min(1, tone)) * tones.length;
-  const at = (index: number): ((rgb: number[]) => void) | null => {
+  const rampAt = (index: number): ((rgb: number[]) => void) | null => {
     const own = raceSkinOf(skins, layer, body, tones[Math.min(index, tones.length - 1)] ?? null, view);
     if (!own || index < tones.length) return own;
     return (rgb) => {
@@ -183,8 +183,8 @@ export function toneSkinOf(
       for (const channel of CHANNELS) rgb[channel] = Math.round((rgb[channel] ?? 0) * DEEPEST);
     };
   };
-  const low = at(Math.floor(spot));
-  const high = at(Math.ceil(spot));
+  const low = rampAt(Math.floor(spot));
+  const high = rampAt(Math.ceil(spot));
   if (!low || !high) return low ?? high;
   const share = spot - Math.floor(spot);
   return (rgb) => {
