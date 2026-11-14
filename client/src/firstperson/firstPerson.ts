@@ -94,11 +94,18 @@ const SHIELD_REST = 1;
 const SHIELD_BLOCK = 0;
 /** Composed pictures kept on the GPU before all are let go and composed again as needed. */
 const KEPT_PICTURES = 1500;
+/** How far below its own place a sword rests, in design pixels, as the owner placed it. Its strikes keep their own
+ *  places: lowered as far, they leave the screen. */
+const SWORD_DROP = 60;
 const STILL: AttackInput = { attackHeld: false, attackPressed: false, attackReleased: false };
 const SIDES: readonly [Side, Hand][] = [
   ['R', 'right'],
   ['L', 'left'],
 ];
+
+/** Whether a held thing ducks below the screen while the weapon strikes: a shield or a torch, not a lantern. */
+const ducks = (held: Holding | null | undefined) =>
+  held?.kind === 'shield' || (held?.kind === 'light' && held.light === 'torch');
 
 /** A picture placed at its own corner on the design screen, mirrored about the screen's middle for the left hand,
  *  dropped `drop` design pixels and `lower` of its own height, and moved `across` design pixels after the mirror. */
@@ -139,6 +146,8 @@ export class FirstPerson {
   private readonly ride: RideMotion;
   private plan: HandsPlan | null = null;
   private lower = 0;
+  /** How far a shield or a torch has ducked out of a strike's way, 0 held to 1 gone below the screen. */
+  private duck = 0;
   private castClock: number | null = null;
   private wasCasting = false;
   private flameClock = 0;
@@ -194,6 +203,7 @@ export class FirstPerson {
     const free = this.castClock === null && this.lower < 0.5;
     const motion = { running: state.running && state.moving && !state.mounted, stride: state.stride };
     const events = this.hands.update(seconds, free ? input : STILL, this.plan, motion);
+    this.duck = lowerStep(this.duck, ducks(this.plan?.held) && this.hands.swing ? 1 : 0, seconds);
     const walking = state.moving && !state.mounted;
     const drop = this.bob.step(seconds, state.stride, walking, state.running) + lowerDrop(this.lower);
     const sway = this.chain.step(seconds, !walking ? 0 : state.running ? 2 : 1);
@@ -249,8 +259,9 @@ export class FirstPerson {
 
   private viewWanted(view: HandView, worn: Worn, drop: number, sway: number): Wanted {
     const across = view.hand === 'left' ? view.dx : -view.dx;
-    const place = atOwnPlace(view.flip, drop + view.dy, view.lower, across);
     const { holding } = view;
+    const own = holding.kind === 'weapon' && holding.wielded.kind === 'sword' && view.record === 0 ? SWORD_DROP : 0;
+    const place = atOwnPlace(view.flip, drop + view.dy + own, view.lower, across);
     if (holding.kind === 'shooter') {
       const { shooter } = holding;
       const key = `shot|${shooter.kind}|${shooter.metal}|${shooter.gilded}|${worn.hands}|${view.record}-${view.frame}|${view.pairArt}`;
@@ -275,7 +286,7 @@ export class FirstPerson {
   }
 
   private heldWanted(held: Holding, worn: Worn, drop: number, frame = this.heldFrame(held)): Wanted {
-    const place = atOwnPlace(false, drop);
+    const place = atOwnPlace(false, ducks(held) ? drop + lowerDrop(this.duck) : drop);
     if (held.kind === 'shield') {
       const key = `shield|${held.archive}|${held.metal}|${worn.hands}|${frame}`;
       return { key, ask: () => shieldPicture(this.source, held.archive, held.metal, worn.hands, frame), place };

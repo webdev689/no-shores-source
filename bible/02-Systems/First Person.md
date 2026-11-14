@@ -104,14 +104,18 @@ sets keep their own colours. Bare hands take iron's.
 ### On the screen
 
 Each picture lies on a 320 by 200 design screen, scaled to the canvas, texel for texel, with its clear texels cut
-out, over the scene. A weapon lies at its own place. A gun sits flush in the bottom right corner, sunk its kick's
+out, over the scene. A weapon lies at its own place, but a sword rests 60 pixels below its own; its strikes keep
+their own places, since lowered as far they leave the screen ([[First-Person Placement Is Our Own]]). A gun sits flush in the bottom right corner, sunk its kick's
 height below the foot. A crossbow's rest frame sits flush in that corner, and every frame where that puts it. The left
 hand of a pair is mirrored about the middle.
 
-The left hand's things are placed as our own: in the lower left, the mirror of the weapon side, a texel a pixel. A
+The left hand's things are placed as our own ([[First-Person Placement Is Our Own]]): in the lower left, the mirror of the weapon side, a texel a pixel. A
 shield's and the lantern's arms leave through their left edge, so they sit flush to it, their feet on the screen's.
 The torch stands 4 pixels in, its arm leaving through its foot across from where a dagger's does. A shield is held a
-frame below raised, and raised whole for a block when the state asks for one. A light's flame steps every 0.1 s.
+frame below raised, and raised whole for a block when the state asks for one. While the weapon strikes, a shield
+or a torch ducks below the screen, as fast as a climb lowers a weapon, and comes back up once the strike ends. A
+lantern stays up. A light's flame
+steps every 0.1 s.
 
 While walking, the picture dips a few design pixels each step, more at a run. A flail at rest wears its chain's swing,
 a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps both arms, the left half a stride behind

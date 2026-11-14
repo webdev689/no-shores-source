@@ -58,18 +58,23 @@ const standing: FirstPersonState = {
 const wholeFrames = (path: string) =>
   /WEAPON\d\d\.CIF_\d+-\d+(_[A-Za-z]+)?\.png$/.test(path) || path.startsWith('@art');
 
-test('a drawn sword rests at its own place; sheathed, nothing shows', async () => {
+test('a drawn sword rests 60 design pixels below its own place and strikes from its own; sheathed, nothing shows', async () => {
   const { frame, asked } = firstPerson(wholeFrames);
   const shown = await frame(0.016, standing);
-  assert.deepEqual(shown.quads, [{ x: 10, y: 20, width: 2, height: 1, flip: false }]);
+  assert.deepEqual(shown.quads, [{ x: 10, y: 80, width: 2, height: 1, flip: false }]);
   assert.ok(asked.includes('forge/WEAPON04/WEAPON04.CIF_0-0_Iron.png'));
   assert.deepEqual((await frame(0.016, { ...standing, drawn: false })).quads, []);
+  const press = { attackHeld: true, attackPressed: true, attackReleased: false };
+  assert.equal((await frame(0.016, standing, press)).quads[0]?.y, 20);
+  // Only a sword is lowered; every other weapon keeps its own place.
+  const mace = await frame(0.016, { ...standing, right: 'mace_iron' });
+  assert.deepEqual(mace.quads, [{ x: 10, y: 20, width: 2, height: 1, flip: false }]);
 });
 
 test('a weapon in the left hand alone is mirrored about the middle, from its left-hand twin', async () => {
   const { frame, asked } = firstPerson(wholeFrames);
   const shown = await frame(0.016, { ...standing, right: null, left: 'sword_iron_l' });
-  assert.deepEqual(shown.quads, [{ x: 320 - 10 - 2, y: 20, width: 2, height: 1, flip: true }]);
+  assert.deepEqual(shown.quads, [{ x: 320 - 10 - 2, y: 80, width: 2, height: 1, flip: true }]);
   const whole = asked.filter((path) => path.includes('CIF_0-0') && !path.includes('/layers/'));
   assert.equal(whole[0], 'forge/WEAPON04/WEAPON04.CIF_0-0_IronLeft.png');
 });
@@ -158,6 +163,30 @@ test('a shield is held in the lower left beside the weapon, and raised for a blo
   assert.ok(asked.includes('forge/held/112362_0-1_ShieldIron.png'));
   await frame(0.2, { ...shielded, blocking: true });
   assert.ok(asked.includes('forge/held/112362_0-0_ShieldIron.png'));
+});
+
+test('a shield or a torch ducks below the screen while the weapon strikes, and comes back up after', async () => {
+  for (const left of ['shield_kite_iron', 'torch_l']) {
+    const { frame } = firstPerson(everything);
+    const holding = { ...standing, left };
+    const heldY = async (input = still) => (await frame(0.05, holding, input)).quads[0]?.y ?? 0;
+    const rest = await heldY();
+    await heldY({ attackHeld: true, attackPressed: true, attackReleased: false });
+    let ducked = 0;
+    for (let step = 0; step < 6; step++) ducked = await heldY();
+    assert.ok(ducked >= rest + 190, `${left} ducked from ${rest} to ${ducked}`);
+    let back = 0;
+    for (let step = 0; step < 60; step++) back = await heldY();
+    assert.equal(back, rest, left);
+  }
+});
+
+test('a lantern stays up while the weapon strikes', async () => {
+  const { frame } = firstPerson(everything);
+  const holding = { ...standing, left: 'lantern' };
+  const rest = (await frame(0.05, holding)).quads[0]?.y;
+  await frame(0.05, holding, { attackHeld: true, attackPressed: true, attackReleased: false });
+  assert.equal((await frame(0.3, holding)).quads[0]?.y, rest);
 });
 
 test("a crossbow's shot is reported through the swing, its bolt leaving on the second frame", async () => {
