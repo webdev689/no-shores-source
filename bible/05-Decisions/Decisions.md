@@ -41,6 +41,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Player Plays as in DFO]]
 - [[The Forge's Renders Will Use daggerfalljs.dev]]
 - [[First-Person Placement Is Our Own]]
+- [[The Staff Walk's Body Is Drawn Again]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

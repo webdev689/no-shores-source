@@ -26,7 +26,8 @@ status: in force
 - The [[Sprite Forge]] comes over exactly as DFO has it, in `tools/forge/`: its code, its fitted tables, its models
   and the tools that read Daggerfall's files. The size, comment and assets checks skip that folder.
 - DFO's renders come over as they are, with all their moves and gear, and are not rendered again. They are stored on
-  R2 in DFO's Cloudflare account ([[Generated Files on Cloudflare R2]]).
+  R2 in DFO's Cloudflare account ([[Generated Files on Cloudflare R2]]). The staff walk's body is the one exception
+  ([[The Staff Walk's Body Is Drawn Again]]).
 - These are exceptions to [[Own Work]] and [[Readers of Our Own Formats Only]]: the renders and fitted tables carry
   Daggerfall's fitting, and the nine moves carry Quaternius's CC0 motion.
 - The horse and the two weapon models are the owner's own.

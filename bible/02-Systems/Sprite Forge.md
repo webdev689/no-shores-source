@@ -63,6 +63,12 @@ A garment's grey takes its dye's ramp. Armour, its padding, shields, bows, staff
 Leather and chain take steel's; the guild sets keep their own colours. A composed frame is then snapped to the palette,
 nearest in OKLab with hue weighed four times light, as DFO's game does.
 
+## Drawn again here
+
+In DFO's staff walk, the bare body was drawn after the clothes and armour fitted to it, so the two walked out of step.
+The forge here drew the body's staff walk again, for the man and the woman. Every other strip is DFO's
+([[The Staff Walk's Body Is Drawn Again]]).
+
 ## Running it
 
 Blender runs as a Python module: `pip install bpy==5.2.3` on Python 3.13, with `scipy`, `cma` and `pillow`. Run
@@ -73,7 +79,8 @@ python -I tools/sprite-forge/layers.py --body male --anims walk,idle --layers he
 python -I tools/sprite-forge/forgepoints.py --body male
 ```
 
-A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
+A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. A render rewrites the
+index, so set `FORGE_LOOKS` to a copy of it to leave the published one as it is. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
