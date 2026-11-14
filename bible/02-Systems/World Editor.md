@@ -11,7 +11,7 @@ code:
   - crates/world-wasm/src/lib.rs#check_layout
   - client/src/editor/landEditor.ts#startLandEditor
   - client/src/editor/terrainView.ts#TerrainView
-  - vite.config.ts#worldLayoutFile
+  - vite.config.ts#worldFiles
   - .github/workflows/pages.yml
 ---
 # World Editor
@@ -53,13 +53,21 @@ the layout as drafted generates in the background, the chosen one first; each ro
 
 | Control | Does |
 |---|---|
-| A landmass's row | Shows that landmass |
+| A landmass's row | Shows that landmass and opens it for shaping |
+| Look (`1`), Raise (`2`), Lower (`3`), Smooth (`4`), Flatten (`5`) | Look only, or shape the ground with a brush |
+| Radius, `[` and `]` | The brush's radius, 1 to 200 km |
+| Strength | Metres a dab for Raise and Lower; the share of the way a dab goes for Smooth (to the neighbours' mean) and Flatten (to the height where the stroke started) |
+| Undo, Redo (`Ctrl+Z`, `Ctrl+Y`) | Steps back or forward through the last 100 strokes |
+| Save | On the site, downloads `<landmass>.json`; under `npm run dev`, writes `content/world/land/<landmass>.json` |
 | 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
 | Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar |
-| In 2D: drag, wheel | Pans and zooms |
-| In 3D: left-drag, right-drag, wheel | Orbits, pans along the ground, and zooms |
+| In 2D: drag, wheel | Shapes with a brush (or pans with Look, or with the right button), and zooms |
+| In 3D: left-drag, right-drag, middle-drag, wheel | Shapes with a brush (or orbits with Look), orbits, pans along the ground, and zooms |
 
-The cursor's readout gives the ground's height under it, or the sea's depth, in either view.
+The cursor's readout gives the ground's height under it, or the sea's depth, in either view. A stroke shows as it
+is drawn; the rivers and lakes follow when it ends. Each landmass's row says when it has unsaved shaping, which
+this browser keeps until it is saved and offers to restore on the next visit. To keep shaping done on the site, put
+the downloaded file in `content/world/land/` through a pull request, or hand it to Claude.
 
 ## How it works
 

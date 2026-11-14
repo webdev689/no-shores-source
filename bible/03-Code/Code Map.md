@@ -24,7 +24,7 @@ decision, made in the same change as its entry here.
 | `crates/land` | The [[Land]]: relief, erosion and water generated from the painted coasts |
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
-| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json` |
+| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, and each landmass's edits in `content/world/land/` |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `bible/` | This vault |
 | `.github/workflows/` | `ci.yml` runs `cargo xtask check`; `pages.yml` publishes the client to GitHub Pages on each merge into `main` |

@@ -29,7 +29,7 @@ const square = (west: number, north: number, side: number) =>
   });
 
 test('a continent opens as its window, with land inside the coast and sea around it', async () => {
-  const view = (await land()).open(square(200_000, 300_000, 120_000), 'square');
+  const view = (await land()).open(square(200_000, 300_000, 120_000), 'square', null);
   assert.equal(view.id, 'square');
   assert.equal(view.cellM, 1000);
   assert.deepEqual([view.leftM, view.topM, view.width, view.height], [160_000, 260_000, 200, 200]);
@@ -42,10 +42,49 @@ test('a continent opens as its window, with land inside the coast and sea around
 });
 
 test('the land agrees to the bit with the native build (crates/land/tests/agree.rs holds the same fingerprint)', async () => {
-  const view = (await land()).open(square(200_000, 300_000, 120_000), 'square');
+  const view = (await land()).open(square(200_000, 300_000, 120_000), 'square', null);
   assert.equal(view.groundHash, 'c3f0ce8d08683ead');
 });
 
 test('an unknown continent is refused with the reason', async () => {
-  await assert.rejects(async () => (await land()).open(square(0, 0, 10), 'none'), /no continent "none"/);
+  await assert.rejects(async () => (await land()).open(square(0, 0, 10), 'none', null), /no continent "none"/);
+});
+
+test('a stroke lifts the ground live, settles, writes back, and undoes by replacing the edits', async () => {
+  const rules = await land();
+  const before = rules.open(square(200_000, 300_000, 120_000), 'square', null);
+  const brush = { tool: 'raise', radius_m: 6000, strength: 200 } as const;
+  const patch = rules.dab(brush, [260_000, 360_000], true);
+  rules.dab(brush, [262_000, 360_000], false);
+  const { left, top, right } = patch.rect;
+  const width = right - left;
+  const middle = (100 - top) * width + (100 - left);
+  assert.ok((patch.heights[middle] ?? 0) > (before.heights[100 * before.width + 100] ?? 0) + 150, 'the dab lifts it');
+  const written = rules.write();
+  assert.equal(written.id, 'square');
+  assert.match(written.text, /"tool": "raise"/);
+  assert.equal(
+    rules.settle().heights[100 * before.width + 100],
+    rules.setEdits(written.text).heights[100 * before.width + 100],
+  );
+  const undone = rules.setEdits('{ "strokes": [] }');
+  assert.equal(
+    undone.heights[100 * undone.width + 100],
+    before.heights[100 * before.width + 100],
+    'undo is the land again',
+  );
+  assert.throws(() => rules.dab({ ...brush, radius_m: 1 }, [260_000, 360_000], true), /radius must be/);
+});
+
+test('a preview leaves the landmass open for strokes alone', async () => {
+  const rules = await land();
+  const twoSquares = square(200_000, 300_000, 120_000).replace(
+    ']]}',
+    ']]},{"id":"other","outline":[[600000,300000],[720000,300000],[720000,420000],[600000,420000]]}',
+  );
+  rules.open(twoSquares, 'square', null, true);
+  rules.open(twoSquares, 'other', null, false);
+  assert.equal(rules.write().id, 'square');
+  rules.open(twoSquares, 'other', null);
+  assert.equal(rules.write().id, 'other', 'kept by default');
 });
