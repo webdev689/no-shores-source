@@ -1,0 +1,48 @@
+# Publishes the client, the World Editor with it, to GitHub Pages on every merge into main.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        run: npm ci
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Build the client
+        run: npm run build -- --base="${{ steps.pages.outputs.base_path }}/"
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}editor/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

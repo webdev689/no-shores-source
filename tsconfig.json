@@ -1,12 +1,13 @@
 {
-  // The client: strict from the first line, DOM types, no Node types (the game never touches Node in the browser).
+  // The client: strict from the first line, DOM and Vite's types, no Node types (the game never touches Node in the
+  // browser).
   // Only erasable syntax, so Node runs the tests' TypeScript directly with no build step.
   "compilerOptions": {
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": [],
+    "types": ["vite/client"],
     "strict": true,
     "noUnusedLocals": true,
     "noFallthroughCasesInSwitch": true,

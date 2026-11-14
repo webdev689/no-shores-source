@@ -25,7 +25,7 @@ decision, made in the same change as its entry here.
 | `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json` |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `bible/` | This vault |
-| `.github/workflows/` | CI: one workflow that runs `cargo xtask check` |
+| `.github/workflows/` | `ci.yml` runs `cargo xtask check`; `pages.yml` publishes the client to GitHub Pages on each merge into `main` |
 
 ## The client's layers
 

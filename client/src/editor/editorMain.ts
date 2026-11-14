@@ -9,7 +9,7 @@ import { MapView } from './mapView.ts';
 import { areaStanding, rangeFraction, references } from './measure.ts';
 import { drawOverlay, type PinnedReference, type Ruler } from './overlay.ts';
 
-const LAYOUT_URL = '/__world/layout';
+const LAYOUT_URL = `${import.meta.env.BASE_URL}world/layout.json`;
 
 function element<T extends Element>(selector: string): T {
   const found = document.querySelector<T>(selector);
@@ -39,7 +39,9 @@ async function start(): Promise<void> {
   const canvas = element<HTMLCanvasElement>('#map');
   const svg = element<SVGSVGElement>('#overlay');
   const gpu = await startGpu(canvas);
-  const rules: WorldRules = await startWorldRules(await (await fetch('/world.wasm')).arrayBuffer());
+  const rules: WorldRules = await startWorldRules(
+    await (await fetch(`${import.meta.env.BASE_URL}world.wasm`)).arrayBuffer(),
+  );
   const { constants } = rules;
   const shapes = references(constants);
   const mask = new LandMask(constants.frameWidthM, constants.frameHeightM);
@@ -61,7 +63,7 @@ async function start(): Promise<void> {
   let problems: string[] = [];
   let counts = mask.counts();
   let countedAt = 0;
-  let status = loaded.saved ? 'Loaded content/world/layout.json.' : 'No dev server: Save downloads the file instead.';
+  let status = loaded.saved ? 'Loaded content/world/layout.json.' : 'No layout file found: starting empty.';
   let frameQueued = false;
 
   const isSimple = (outline: readonly (readonly [number, number])[]) =>
@@ -131,11 +133,14 @@ async function start(): Promise<void> {
 
   const save = async () => {
     const text = written();
-    const answer = await fetch(LAYOUT_URL, { method: 'PUT', body: text }).catch(() => null);
+    // Only the dev server can write the file; the published editor is static.
+    const answer = import.meta.env.DEV
+      ? await fetch(LAYOUT_URL, { method: 'PUT', body: text }).catch(() => null)
+      : null;
     if (answer?.ok) status = `Saved content/world/layout.json at ${new Date().toLocaleTimeString()}.`;
     else {
       download(text);
-      status = 'No dev server to save to: downloaded layout.json instead.';
+      status = 'Downloaded layout.json. Put it in content/world/ to keep it.';
     }
     requestFrame();
   };

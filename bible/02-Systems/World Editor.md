@@ -9,6 +9,8 @@ code:
   - client/src/editor/measure.ts#references
   - client/src/rules/worldRules.ts#startWorldRules
   - crates/world-wasm/src/lib.rs#check_layout
+  - vite.config.ts#worldLayoutFile
+  - .github/workflows/pages.yml
 ---
 # World Editor
 
@@ -17,7 +19,9 @@ Where the owner paints the nine continents ([[The World Editor Paints in the Bro
 
 ## Using it
 
-Run `npm run dev` and open `/editor/`. The map shows the whole frame; the panel on the left holds the tools.
+Open `https://lattymoy.github.io/overlook-source/editor/` in a browser with WebGPU, such as Chrome
+([[The World Editor Is on GitHub Pages]]). It opens the layout on `main`. To work on the editor itself, run
+`npm run dev` and open `/editor/`. The map shows the whole frame; the panel on the left holds the tools.
 
 | Control | Does |
 |---|---|
@@ -26,8 +30,11 @@ Run `npm run dev` and open `/editor/`. The map shows the whole frame; the panel 
 | Ruler (`R`) | Left-drag measures a straight distance in kilometres; `Esc` clears it |
 | Compare (`C`) | Click pins a reference shape: the smallest continent (161,600 km²), the largest (940,000 km²), or Daggerfall's whole map (819 × 410 km) |
 | Right- or middle-drag, wheel | Pans and zooms, from 50 m to 20 km a pixel |
-| Save | Writes `content/world/layout.json` through the dev server; without one, downloads the file |
+| Save | On the site, downloads `layout.json`; under `npm run dev`, writes `content/world/layout.json` |
 | Download, Open… | Saves or loads a layout file by hand |
+
+To keep a layout painted on the site, put the downloaded file in `content/world/` through a pull request, or hand it
+to Claude. To carry on painting later, Open… the downloaded file.
 
 Each continent's row shows its area as painted and where it stands against the allowed range. The map carries a
 kilometre grid, a scale bar and a readout of the cursor's position. The Problems list shows every rule a painted
@@ -42,7 +49,7 @@ continent breaks.
 - **A coast** is traced around each continent's land, cell corner to cell corner, then simplified: the editor tries
   2, 1 and 0.5 km tolerances and keeps the coarsest whose outline the rules call simple. Lakes inside are not part of
   the coast; inland water comes from World 2.0.
-- **The rules** are the world crate compiled to WebAssembly (`crates/world-wasm`), loaded as `/world.wasm`. After
+- **The rules** are the world crate compiled to WebAssembly (`crates/world-wasm`), loaded as `world.wasm` beside the pages. After
   each stroke the editor drafts the layout and the rules check it. Saving writes the layout in the one written form
   the world crate gives it, so the repository's test passes on what the editor saves.
 - **Continent ids** are kept as they are in the file; a new continent takes `continent-1` to `continent-9`. Climates
