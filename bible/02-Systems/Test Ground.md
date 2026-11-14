@@ -4,57 +4,106 @@ status: live
 code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
-  - client/src/testground/sceneView.ts#SceneView
-  - client/src/testground/figures.ts#viewOf
+  - client/src/testground/player.ts#updatePlayer
+  - client/src/testground/motor.ts#stepBody
+  - client/src/testground/playerCamera.ts#scrolled
+  - client/src/testground/playerMoves.ts#shownMove
+  - client/src/testground/dressing.ts#figureOf
+  - client/src/forge/outfit.ts#outfitLayers
   - client/src/forge/compose.ts#composeFrame
+  - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
 ---
 # Test Ground
 
-An open stretch of ground for trying the [[Sprite Forge]]'s figures: dress one, set it moving and walk round it. It is
-published with the site at `https://lattymoy.github.io/overlook-source/testground/`. Under `npm run dev`, open
-`/testground/`.
+An open stretch of ground for playing a [[Sprite Forge]] figure with every move the forge draws, as the player plays
+it ([[The Player Plays as in DFO]]). It is published with the site at
+`https://lattymoy.github.io/overlook-source/testground/`. Under `npm run dev`, open `/testground/`.
 
-## Using it
+## Playing
+
+Click the view to play; Escape frees the mouse. The controls are DFO's:
 
 | Control | Does |
 |---|---|
-| Right-drag, middle-drag, wheel | Turns the view round its target, pans it and zooms it |
-| Click the ground | Moves the chosen figure there; clicking a figure chooses it |
-| `G` | Walks at eye height: `W` `A` `S` `D` or the arrows, 6 m/s or 40 with `Shift`; drag to look round |
-| Add a figure, Remove the chosen | Places a figure at the view's target, or takes the chosen one away |
-| Frames a second | How fast every move plays, 1 to 30; 6 at first |
+| Mouse, arrow keys, `Insert` `Delete` | Look and turn |
+| `W` `A` `S` `D`, `Shift` | Walk at 4.43 m/s; run at 7.59 m/s |
+| `Space` | Jump, 0.5 m high. At a wall: vault a low thin one, mantle onto a low deep one, or hang from a lip in reach |
+| `C` | Crouch or stand, 2.53 m/s crouched; let go of a ledge or a wall |
+| Into a wall too high to grab | Climb it; at the lip, hang |
+| Hanging: `A` `D`, `W` | Shimmy along the lip; climb over it |
+| `Z` | Ready the weapon or put it away |
+| Right click, held | Swing; holding swings again. A swing readies a weapon put away |
+| `Q` | Cast |
+| `,` | Mount or dismount: 6 m/s, galloping at 12 with `Shift` |
+| Wheel, Mouse4 | Pull back into third person and further, or come back into first person; Mouse4 switches straight |
 
-For the chosen figure, the panel sets:
+Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than
+0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second and stops
+short of a wall.
 
-- its body and race, and its hair and the hair's colour;
-- **Dress as**, one of the forge's dressed looks, which sets the gear and race;
-- its move, with its frame count;
-- its facing, and **Turn round**, which turns it once every 8 seconds;
-- its gear, a list of every layer the body wears, with a filter;
-- a tint for each dyeable layer it wears. Without one, the layer shows its own grey.
+North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 1.7 m ledge to hang from and
+shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
 
-The ground is flat, with a line every metre, a stronger line every 10 m and the two axes through the start in gold.
-It fades into the sky over the first 1.2 km.
+## What the figure shows
+
+The player's figure shows the move the forge draws for what the body does:
+
+- **On a wall or a ledge:** the mantle and vault by their progress; the hang, or the shimmy while moving along the
+  lip; the climb, held on its first frame while still.
+- **In the air:** the jump's rising, top or falling frame.
+- **Mounted:** the horse's rest, walk or gallop.
+- **Acting:** the cast. A swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
+  to 5. Swung up, it thrusts; down, it chops; left or right, it swings two-handed, where the weapon draws those.
+- **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a staff, a shield, a second blade and
+  the guns each have their own.
+
+Walking frames last 0.25 s, running 0.125 s and crouching 0.5 s. A swing lasts 1 s. On a wall or a ledge the weapon is
+worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. Swinging or casting,
+it turns to face where the camera looks.
+
+## Dressing
+
+The panel lists the figures. The player is first; the others stand where they are placed, each playing a chosen move
+in a loop. For the chosen figure it sets:
+
+- **Body and race:** Human with a skin tone from light to deep, Felid or Anole ([[Three Races]]).
+- **Hair:** a style and its colour.
+- **Armour:** a set for each piece, or one set for all.
+- **Clothes:** worn in the order they are ticked, each in one of Daggerfall's dyes.
+- **Hands:** what is in each hand, and whether it is drawn.
+- **Dress as:** one of the forge's dressed looks.
+
+The player's entry plays any move once. Each other figure's entry sets its move, facing and turning.
+
+The figure is dressed as DFO's game dresses it ([[DFO's Sprite Forge Comes Over Exactly]]):
+
+- A helm shades the face and lays a hood down; a raised hood shades the face too.
+- Armour with nothing on the chest has its set's padding under it.
+- A cloak or robe hangs clear of plate, and of a skirt to the ankles, which hides the greaves.
+- Hair hangs clear of plate and over a cloak, and is not drawn under a helm or a hood.
+- A weapon put away is worn on the body.
 
 ## How it draws
 
-The page reads `content/forge/renders.json` and fetches the forge's index and colour tables from R2. Each strip is
-read from its pack by its byte range and decoded once.
+The page reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
+its pack by its byte range and decoded once.
 
-A figure's frame is composed in the browser as DFO's game composes it (`composeFrame`):
+A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 
 - Each layer's cell is laid on the figure's cell by its root.
 - At each pixel the nearest texel shows. Where two layers meet on one part of the body, the one with the higher order
   is drawn over the other: armour over cloth by its cover, a drape and a worn weapon by `under`.
-- The bare body's skin takes the race's colours, the hair its colour, and a tinted layer's grey the tint.
+- The bare body takes the race's skin or the human tone. Hair takes its colour's ramp. A metal layer's grey takes its
+  set's metal and a garment's grey its dye, each a run of Daggerfall's palette.
+- Then every texel is snapped to the nearest colour of the palette.
 
 The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are
-the other side's, mirrored. The frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
-eye, and the ground's depth hides what is below it.
+the other side's, mirrored. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
+eye.
 
 ## Limits
 
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
-- Tints stand in for the forge's dyes, which name colours in Daggerfall's palette.
+- The course's blocks are the only things to climb, and the climbing does not tire.
 - Composed frames are kept on the GPU up to 4,000, then all are let go and composed again as needed.

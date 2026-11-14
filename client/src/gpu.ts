@@ -31,5 +31,5 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
 
 /** WebGPU's usage flags we use, by the specification's values: TypeScript's DOM types declare no constants for them. */
 export const TEXTURE_USAGE = { copyDestination: 0x02, textureBinding: 0x04, renderAttachment: 0x10 } as const;
-export const BUFFER_USAGE = { copyDestination: 0x08, uniform: 0x40 } as const;
+export const BUFFER_USAGE = { copyDestination: 0x08, vertex: 0x20, uniform: 0x40 } as const;
 export const SHADER_STAGE = { vertex: 0x1, fragment: 0x2 } as const;

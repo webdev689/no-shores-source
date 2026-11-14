@@ -17,7 +17,7 @@ decision, made in the same change as its entry here.
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up |
-| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that places, dresses and draws the forge's figures on open ground |
+| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/rules/` | The rules layer: the Rust rules and the [[Land]], loaded as WebAssembly, for any page that needs them |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
@@ -30,6 +30,7 @@ decision, made in the same change as its entry here.
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
+| `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
 | `bible/` | This vault |
 | `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `pages.yml` to publish the client to GitHub Pages |
 

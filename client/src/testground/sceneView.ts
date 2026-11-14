@@ -1,6 +1,7 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { type Orbit, viewProjection } from '../editor/orbit.ts';
 import { PX_PER_M } from './figures.ts';
+import type { Block } from './motor.ts';
 
 /** A figure's picture as the scene draws it: its texture, its size in pixels, and its feet on it. */
 export interface Card {
@@ -15,6 +16,7 @@ export interface CardAt {
   readonly card: Card;
   readonly x: number;
   readonly y: number;
+  readonly z: number;
   readonly flip: boolean;
 }
 
@@ -67,6 +69,27 @@ fn gridLine(world: vec2f, spacing: f32) -> f32 {
   return vec4f(mix(colour, SKY, fog * fog), 1.0);
 }
 
+struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) world: vec3f }
+
+@vertex fn blockVertex(@location(0) position: vec3f, @location(1) normal: vec3f) -> BlockOut {
+  var out: BlockOut;
+  out.position = scene.viewProjection * vec4f(position, 1.0);
+  out.normal = normal;
+  out.world = position;
+  return out;
+}
+
+@fragment fn blockFragment(in: BlockOut) -> @location(0) vec4f {
+  let light = normalize(vec3f(0.4, -0.3, 0.85));
+  let shade = 0.55 + 0.45 * max(dot(in.normal, light), 0.0);
+  // A darker line at each metre of height on the sides, to judge a lip's height by.
+  let metre = 1.0 - min(abs(fract(in.world.z + 0.5) - 0.5) / max(fwidth(in.world.z), 1e-4), 1.0);
+  let side = 1.0 - abs(in.normal.z);
+  let stone = vec3f(0.64, 0.61, 0.56) * (1.0 - 0.35 * metre * side);
+  let fog = clamp(length(in.world.xy - scene.eye.xy) / 1200.0, 0.0, 1.0);
+  return vec4f(mix(stone * shade, SKY, fog * fog), 1.0);
+}
+
 struct Card { feet: vec4f, side: vec4f, root: vec4f }
 @group(1) @binding(0) var<uniform> card: Card;
 @group(1) @binding(1) var picture: texture_2d<f32>;
@@ -80,7 +103,7 @@ struct CardOut { @builtin(position) position: vec4f, @location(0) corner: vec2f 
   // Across from the feet along the eye's right, and up from them: the card stands upright on its root.
   let across = corner.x * size.x - card.root.x;
   let up = card.root.y - corner.y * size.y;
-  let world = vec3f(card.feet.xy + card.side.xy * across, up);
+  let world = vec3f(card.feet.xy + card.side.xy * across, card.feet.z + up);
   var out: CardOut;
   out.position = scene.viewProjection * vec4f(world, 1.0);
   out.corner = corner;
@@ -105,6 +128,8 @@ export class SceneView {
   private readonly ground: GPURenderPipeline;
   private readonly cards: GPURenderPipeline;
   private readonly cardLayout: GPUBindGroupLayout;
+  private readonly blockPipeline: GPURenderPipeline;
+  private blockVertices: { buffer: GPUBuffer; count: number } | null = null;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
   private depth: GPUTexture | null = null;
 
@@ -132,6 +157,25 @@ export class SceneView {
       });
     this.ground = pipeline('groundVertex', 'groundFragment', [sceneLayout]);
     this.cards = pipeline('cardVertex', 'cardFragment', [sceneLayout, this.cardLayout]);
+    this.blockPipeline = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
+      vertex: {
+        module,
+        entryPoint: 'blockVertex',
+        buffers: [
+          {
+            arrayStride: 24,
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: 'float32x3' },
+              { shaderLocation: 1, offset: 12, format: 'float32x3' },
+            ],
+          },
+        ],
+      },
+      fragment: { module, entryPoint: 'blockFragment', targets: [{ format: gpu.format }] },
+      primitive: { topology: 'triangle-list' },
+      depthStencil,
+    });
     this.sceneBuffer = device.createBuffer({
       size: SCENE_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -177,14 +221,88 @@ export class SceneView {
     return { buffer: slot.buffer, group: slot.group };
   }
 
-  /** Draws the ground and the cards as seen from `orbit` into the canvas, `width` by `height` device pixels, with a
-   *  ring round the chosen figure's feet. */
+  /** The blocks the scene stands on the ground, each a box from the ground to its top. */
+  setBlocks(blocks: readonly Block[]): void {
+    const faces: [number, number, number, number[][]][] = [];
+    for (const { minX, minY, maxX, maxY, top } of blocks) {
+      faces.push([
+        0,
+        0,
+        1,
+        [
+          [minX, minY, top],
+          [maxX, minY, top],
+          [maxX, maxY, top],
+          [minX, maxY, top],
+        ],
+      ]);
+      faces.push([
+        0,
+        -1,
+        0,
+        [
+          [minX, minY, 0],
+          [maxX, minY, 0],
+          [maxX, minY, top],
+          [minX, minY, top],
+        ],
+      ]);
+      faces.push([
+        0,
+        1,
+        0,
+        [
+          [maxX, maxY, 0],
+          [minX, maxY, 0],
+          [minX, maxY, top],
+          [maxX, maxY, top],
+        ],
+      ]);
+      faces.push([
+        -1,
+        0,
+        0,
+        [
+          [minX, maxY, 0],
+          [minX, minY, 0],
+          [minX, minY, top],
+          [minX, maxY, top],
+        ],
+      ]);
+      faces.push([
+        1,
+        0,
+        0,
+        [
+          [maxX, minY, 0],
+          [maxX, maxY, 0],
+          [maxX, maxY, top],
+          [maxX, minY, top],
+        ],
+      ]);
+    }
+    const values: number[] = [];
+    for (const [normalX, normalY, normalZ, corners] of faces)
+      for (const corner of [0, 1, 2, 0, 2, 3]) values.push(...(corners[corner] ?? []), normalX, normalY, normalZ);
+    this.blockVertices?.buffer.destroy();
+    const data = new Float32Array(values);
+    const buffer = this.gpu.device.createBuffer({
+      size: Math.max(16, data.byteLength),
+      usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
+    });
+    this.gpu.device.queue.writeBuffer(buffer, 0, data);
+    this.blockVertices = { buffer, count: values.length / 6 };
+  }
+
+  /** Draws the ground, the blocks and the cards as seen from `orbit` into the canvas, `width` by `height` device
+   *  pixels, with a ring round the chosen figure's feet; `after` may draw over the frame before it is shown. */
   draw(
     orbit: Orbit,
     width: number,
     height: number,
     drawn: readonly CardAt[],
     chosen: { x: number; y: number } | null,
+    after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
   ): void {
     const { device, context } = this.gpu;
     if (!this.depth || this.depth.width !== width || this.depth.height !== height) {
@@ -202,10 +320,11 @@ export class SceneView {
     values.set([chosen?.x ?? 0, chosen?.y ?? 0, 0, chosen ? 1 : 0], 20);
     device.queue.writeBuffer(this.sceneBuffer, 0, values);
     const encoder = device.createCommandEncoder();
+    const colourView = context.getCurrentTexture().createView();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: context.getCurrentTexture().createView(),
+          view: colourView,
           clearValue: { r: SKY[0], g: SKY[1], b: SKY[2], a: 1 },
           loadOp: 'clear',
           storeOp: 'store',
@@ -221,13 +340,19 @@ export class SceneView {
     pass.setPipeline(this.ground);
     pass.setBindGroup(0, this.sceneGroup);
     pass.draw(6 * TILES * TILES);
+    if (this.blockVertices) {
+      pass.setPipeline(this.blockPipeline);
+      pass.setBindGroup(0, this.sceneGroup);
+      pass.setVertexBuffer(0, this.blockVertices.buffer);
+      pass.draw(this.blockVertices.count);
+    }
     pass.setPipeline(this.cards);
     pass.setBindGroup(0, this.sceneGroup);
-    drawn.forEach(({ card, x, y, flip }, index) => {
+    drawn.forEach(({ card, x, y, z, flip }, index) => {
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
-        ...[x, y, 0, flip ? 1 : 0],
+        ...[x, y, z, flip ? 1 : 0],
         ...[...right, card.width / PX_PER_M, card.height / PX_PER_M],
         ...[rootX, card.root[1] / PX_PER_M, 0, 0],
       ]);
@@ -236,6 +361,7 @@ export class SceneView {
       pass.draw(6);
     });
     pass.end();
+    after?.(encoder, colourView);
     device.queue.submit([encoder.finish()]);
   }
 }
