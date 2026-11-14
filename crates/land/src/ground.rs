@@ -307,6 +307,21 @@ impl Ground {
         ground
     }
 
+    /// Whether a world point lies on a road's bed.
+    #[must_use]
+    pub fn on_road(&self, x: f64, y: f64) -> bool {
+        self.nearest(x, y, true).is_some_and(|(road, distance)| distance < road.width / 2.0)
+    }
+
+    /// Whether a world point lies inside a town's area.
+    #[must_use]
+    pub fn in_town(&self, x: f64, y: f64) -> bool {
+        self.towns.iter().any(|town| {
+            let (west, north, east, south) = town.bounds;
+            x >= west && x <= east && y >= north && y <= south && in_ring(&town.outline, x, y).0
+        })
+    }
+
     /// What water stands at a world point.
     #[must_use]
     pub fn water_at(&self, x: f64, y: f64) -> WaterAt {

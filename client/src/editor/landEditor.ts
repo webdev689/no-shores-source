@@ -1,14 +1,27 @@
 import { canvasSize } from '../canvasSize.ts';
 import { startGpu } from '../gpu.ts';
-import type { Brush, LandView } from '../rules/landRules.ts';
+import type { Brush, GroundPatch } from '../rules/landRules.ts';
 import { type Camera, pan, screenToWorld, zoomAt } from './camera.ts';
+import { downloadJson } from './dom.ts';
 import { startLandWorker } from './landClient.ts';
+import {
+  CLOSE_RANGE_M,
+  drawScaleCues,
+  EYE_M,
+  groundUnder,
+  PATCH_SAMPLES,
+  PATCH_STEP_M,
+  patchData,
+  patchHole,
+  REFRESH_M,
+  shownExaggeration,
+} from './closeUp.ts';
 import { BRUSHES, buildLandPanel, DRAWN, LAND_TOOLS, type LandTool } from './landPanel.ts';
 import { LandSession } from './landSession.ts';
 import type { CellRect } from './landMask.ts';
 import { fitOrbit, type Orbit, panOrbit, pickTerrain, rayAt, rotateOrbit, zoomOrbit } from './orbit.ts';
 import { drawDraft, nextId, placeAt, snapPoint, type Spot } from './placeDrawing.ts';
-import { ReliefView } from './reliefView.ts';
+import { fitWindow, heightAt, ReliefView } from './reliefView.ts';
 import { type TerrainData, TerrainView } from './terrainView.ts';
 
 /** The Land mode: the land the generator makes from the painted coasts, shaped by the owner's brushes. */
@@ -16,21 +29,6 @@ export interface LandEditor {
   /** Shows the Land mode for this layout, generating its landmasses in the background. */
   activate(layoutText: string): void;
   deactivate(): void;
-}
-
-/** The view that fits a landmass's window into the canvas with a margin. */
-function fitWindow(view: LandView, width: number, height: number): Camera {
-  const [windowWidth, windowHeight] = [view.width * view.cellM, view.height * view.cellM];
-  const metresPerPixel = Math.max(windowWidth / (width * 0.9), windowHeight / (height * 0.9));
-  return { centreX: view.leftM + windowWidth / 2, centreY: view.topM + windowHeight / 2, metresPerPixel };
-}
-
-/** The ground's height in metres at a world point, or null off the window. */
-export function heightAt(view: LandView, x: number, y: number): number | null {
-  const i = Math.floor((x - view.leftM) / view.cellM);
-  const j = Math.floor((y - view.topM) / view.cellM);
-  if (i < 0 || j < 0 || i >= view.width || j >= view.height) return null;
-  return view.heights[j * view.width + i] ?? null;
 }
 
 const DEFAULT_STRENGTH: Partial<Record<LandTool, number>> = { raise: 40, lower: 40, smooth: 50, flatten: 50 };
@@ -63,6 +61,19 @@ export async function startLandEditor(
   let dragging: { x: number; y: number; button: number } | null = null;
   let stroke: { brush: Brush; last: readonly [number, number] } | null = null;
   let draft: { kind: Drawn; points: Spot[] } | null = null;
+  let closeUp: {
+    id: string;
+    patch: GroundPatch;
+    data: TerrainData;
+    view: TerrainView;
+    centre: Spot;
+    version: number;
+  } | null = null;
+  let patchPending = false;
+  let editsVersion = 0;
+  let walking = false;
+  const held = new Set<string>();
+  let lastStep = 0;
   const placeWidth = { river: 40, road: 8 };
   let riverDepth = 4;
   let status = '';
@@ -95,6 +106,7 @@ export async function startLandEditor(
 
   /** Lays changed cells on both views: a dab's rectangle, or everything after the water settles. */
   const refresh = (rect: CellRect | null) => {
+    if (rect === null) editsVersion++;
     const now = landmass();
     if (!now?.view || !now.marks) return;
     relief.update(now.view, now.marks, rect);
@@ -117,7 +129,8 @@ export async function startLandEditor(
     const view = shown();
     if (!data || !view) return null;
     const ndc = [(pixelX / canvas.clientWidth) * 2 - 1, 1 - (pixelY / canvas.clientHeight) * 2] as const;
-    const hit = pickTerrain(rayAt(orbit, aspect(), ndc[0], ndc[1]), data, exaggeration);
+    const shownHeight = shownExaggeration(exaggeration, orbit.distance);
+    const hit = pickTerrain(rayAt(orbit, aspect(), ndc[0], ndc[1]), data, shownHeight);
     return hit ? { x: hit.x + view.leftM, y: hit.y + view.topM } : null;
   };
 
@@ -141,6 +154,61 @@ export async function startLandEditor(
       if (id !== selected) await forSession.generate(id, false, restoring).catch(fail);
       requestFrame();
     }
+  };
+
+  /** The ground's height at a world point: the exact ground where the close-up reaches, the 1 km land elsewhere;
+   *  water's surface over the sea. */
+  const groundAt = (x: number, y: number): number => {
+    const exact = closeUp?.id === selected ? groundUnder(closeUp.patch, x, y) : null;
+    const view = shown();
+    return Math.max(0, exact ?? (view ? (heightAt(view, x, y) ?? 0) : 0));
+  };
+
+  /** Samples the exact ground round the 3D camera's target when it is close, again once it moves or the land changes. */
+  const keepCloseUp = () => {
+    const view = shown();
+    if (!session || !view || patchPending || viewMode !== '3d' || orbit.distance >= CLOSE_RANGE_M) return;
+    if (!session.isOpen(selected)) return;
+    const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
+    const fresh =
+      closeUp?.id === selected &&
+      closeUp.version === editsVersion &&
+      Math.hypot(x - closeUp.centre[0], y - closeUp.centre[1]) < REFRESH_M;
+    if (fresh) return;
+    patchPending = true;
+    const half = ((PATCH_SAMPLES - 1) * PATCH_STEP_M) / 2;
+    const [id, version] = [selected, editsVersion];
+    session
+      .ground(id, Math.round(x - half), Math.round(y - half), PATCH_STEP_M, PATCH_SAMPLES)
+      .then((patch) => {
+        patchPending = false;
+        if (!patch || id !== selected) return;
+        closeUp?.view.destroy();
+        const data = patchData(patch, view.leftM, view.topM);
+        closeUp = { id, patch, data, view: new TerrainView(gpu, data), centre: [x, y], version };
+        requestFrame();
+      })
+      .catch((error: unknown) => {
+        patchPending = false;
+        fail(error);
+      });
+  };
+
+  /** Moves the walker along the ground while a movement key is held: 6 m/s, 40 m/s running. */
+  const walkOn = (now: number) => {
+    const seconds = Math.min(0.1, (now - lastStep) / 1000);
+    lastStep = now;
+    if (!walking || held.size === 0) return;
+    const speed = (held.has('shift') ? 40 : 6) * seconds;
+    const forward = Number(held.has('w') || held.has('arrowup')) - Number(held.has('s') || held.has('arrowdown'));
+    const sideways = Number(held.has('d') || held.has('arrowright')) - Number(held.has('a') || held.has('arrowleft'));
+    const [sin, cos] = [Math.sin(orbit.yaw), Math.cos(orbit.yaw)];
+    orbit = {
+      ...orbit,
+      targetX: orbit.targetX + (sin * forward + cos * sideways) * speed,
+      targetY: orbit.targetY + (-cos * forward + sin * sideways) * speed,
+    };
+    requestFrame();
   };
 
   /** One dab at a world point; the first of a stroke starts it, and a flatten takes its level there. */
@@ -264,15 +332,18 @@ export async function startLandEditor(
     const answer = import.meta.env.DEV ? await fetch(url, { method: 'PUT', body: text }).catch(() => null) : null;
     if (answer?.ok) status = `Saved content/world/land/${selected}.json.`;
     else {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-      link.download = `${selected}.json`;
-      link.click();
-      URL.revokeObjectURL(link.href);
+      downloadJson(text, `${selected}.json`);
       status = `Downloaded ${selected}.json. Put it in content/world/land/ to keep it.`;
     }
     requestFrame();
   };
+
+  const pointedAt = (ground: number | null, where: string) =>
+    ground === null
+      ? ''
+      : `${where} · ${ground >= 0 ? `${Math.round(ground)} m` : `sea, ${Math.round(-ground)} m deep`}`;
+  const standing = (x: number, y: number) =>
+    `Walking at ${(x / 1000).toFixed(3)} km east, ${(y / 1000).toFixed(3)} km south, on ground at ${groundAt(x, y).toFixed(1)} m`;
 
   const panel = buildLandPanel(panelRoot, {
     select: (id) => {
@@ -283,8 +354,10 @@ export async function startLandEditor(
     },
     view: (next) => {
       viewMode = next;
+      if (next === '2d') walking = false;
       requestFrame();
     },
+    walk: () => toggleWalk(),
     exaggeration: (times) => {
       exaggeration = times;
       requestFrame();
@@ -315,9 +388,20 @@ export async function startLandEditor(
     save: () => void save().catch(fail),
   });
 
-  const frameNow = () => {
+  /** Starts or stops walking: the camera drops to just behind a walker's eyes on the ground at its target. */
+  function toggleWalk() {
+    walking = !walking;
+    viewMode = '3d';
+    orbit = walking ? { ...orbit, distance: 4, pitch: 0.1 } : { ...orbit, distance: 600, pitch: 0.5 };
+    lastStep = performance.now();
+    requestFrame();
+  }
+
+  const frameNow = (now: number) => {
     frameQueued = false;
     if (!active) return;
+    walkOn(now);
+    keepCloseUp();
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio || 1);
     if (canvas.width !== size.width || canvas.height !== size.height)
       [canvas.width, canvas.height] = [size.width, size.height];
@@ -326,12 +410,22 @@ export async function startLandEditor(
     const brushShown = world && BRUSHES.includes(tool) ? { ...world, radiusM: radiusKm * 1000 } : null;
     const solid = viewMode === '3d' ? terrainNow() : null;
     if (solid && view) {
+      const shownHeight = shownExaggeration(exaggeration, orbit.distance);
+      const ground = groundAt(orbit.targetX + view.leftM, orbit.targetY + view.topM);
+      orbit = { ...orbit, targetZ: (ground + (walking ? EYE_M : 0)) * shownHeight };
       const brush = brushShown && {
         x: brushShown.x - view.leftM,
         y: brushShown.y - view.topM,
         radiusM: brushShown.radiusM,
       };
-      solid.draw(orbit, size.width, size.height, { exaggeration, brush });
+      const near = closeUp?.id === selected && orbit.distance < CLOSE_RANGE_M ? closeUp : null;
+      const options = { exaggeration: shownHeight, brush, ...(near ? { hole: patchHole(near.data) } : {}) };
+      const detail = near && { view: near.view, options: { exaggeration: shownHeight, brush } };
+      solid.draw(orbit, size.width, size.height, options, detail);
+      const flat = { width: canvas.clientWidth, height: canvas.clientHeight };
+      const feet = [orbit.targetX, orbit.targetY, ground * shownHeight] as const;
+      if (near && !walking) drawScaleCues(overlay, orbit, flat, feet, shownHeight);
+      else overlay.replaceChildren();
     } else {
       const scale = size.width / canvas.clientWidth;
       relief.draw(
@@ -354,7 +448,7 @@ export async function startLandEditor(
         ? snapPoint(session.places(selected), [world.x, world.y], reach)
         : [world.x, world.y];
     const flat = { camera, width: canvas.clientWidth, height: canvas.clientHeight };
-    drawDraft(overlay, flat, viewMode === '2d' ? draft : null, cursorSpot);
+    if (viewMode === '2d') drawDraft(overlay, flat, draft, cursorSpot);
     const ground = view && world ? heightAt(view, world.x, world.y) : null;
     const where = world
       ? `${Math.round(world.x / 1000).toLocaleString('en-US')} km east, ${Math.round(world.y / 1000).toLocaleString('en-US')} km south`
@@ -373,11 +467,10 @@ export async function startLandEditor(
       depthM: riverDepth,
       problems: (view?.problems ?? []).map(({ subject, message }) => `${subject}: ${message}`),
       view: viewMode,
+      walking,
       exaggeration,
       cursor:
-        ground === null
-          ? ''
-          : `${where} · ${ground >= 0 ? `${Math.round(ground)} m` : `sea, ${Math.round(-ground)} m deep`}`,
+        walking && view ? standing(orbit.targetX + view.leftM, orbit.targetY + view.topM) : pointedAt(ground, where),
       status,
     });
   };
@@ -392,7 +485,7 @@ export async function startLandEditor(
   canvas.addEventListener('pointerdown', (event) => {
     canvas.setPointerCapture(event.pointerId);
     dragging = { x: event.offsetX, y: event.offsetY, button: event.button };
-    const world = event.button === 0 ? worldAt(event.offsetX, event.offsetY) : null;
+    const world = event.button === 0 && !walking ? worldAt(event.offsetX, event.offsetY) : null;
     if (world && BRUSHES.includes(tool)) startStroke(world.x, world.y);
     else if (world && tool !== 'look') {
       if (viewMode === '3d') status = 'Draw places on the 2D map: press V.';
@@ -407,8 +500,8 @@ export async function startLandEditor(
       if (world) continueStroke(world.x, world.y);
     } else if (dragging) {
       const [moveX, moveY] = [event.offsetX - dragging.x, event.offsetY - dragging.y];
-      if (dragging.button === 0 && tool !== 'look') return;
-      const orbiting = dragging.button === 0 || (dragging.button === 2 && tool !== 'look');
+      if (dragging.button === 0 && tool !== 'look' && !walking) return;
+      const orbiting = walking || dragging.button === 0 || (dragging.button === 2 && tool !== 'look');
       if (viewMode === '2d') camera = pan(camera, moveX, moveY);
       else if (orbiting) orbit = rotateOrbit(orbit, moveX * 0.005, -moveY * 0.005);
       else orbit = panOrbit(orbit, moveX, moveY, canvas.clientHeight);
@@ -442,13 +535,23 @@ export async function startLandEditor(
   window.addEventListener('keydown', (event) => {
     if (!active || event.target instanceof HTMLInputElement) return;
     const key = event.key.toLowerCase();
-    if (key === 'enter') finishDraft();
+    const moving = ['w', 'a', 's', 'd', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+    if (walking && moving.includes(key)) {
+      if (held.size === 0) lastStep = performance.now();
+      held.add(key);
+      requestFrame();
+      return;
+    }
+    if (key === 'g') toggleWalk();
+    else if (key === 'enter') finishDraft();
     else if (key === 'escape') draft = null;
     else if (key === 'backspace' && draft) draft = { ...draft, points: draft.points.slice(0, -1) };
     else if ((event.ctrlKey || event.metaKey) && key === 'z') step(event.shiftKey ? 1 : -1);
     else if ((event.ctrlKey || event.metaKey) && key === 'y') step(1);
-    else if (key === 'v') viewMode = viewMode === '2d' ? '3d' : '2d';
-    else if (key === '[') radiusKm = Math.max(1, radiusKm - 5);
+    else if (key === 'v') {
+      viewMode = viewMode === '2d' ? '3d' : '2d';
+      walking = false;
+    } else if (key === '[') radiusKm = Math.max(1, radiusKm - 5);
     else if (key === ']') radiusKm = Math.min(200, radiusKm + 5);
     else if (/^[0-9]$/.test(key)) {
       tool = LAND_TOOLS[(Number(key) + 9) % 10]?.[0] ?? tool;
@@ -456,6 +559,10 @@ export async function startLandEditor(
     }
     requestFrame();
   });
+  window.addEventListener('keyup', (event) => {
+    held.delete(event.key.toLowerCase());
+  });
+  window.addEventListener('blur', () => held.clear());
   new ResizeObserver(requestFrame).observe(canvas);
 
   return {

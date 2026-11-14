@@ -14,18 +14,23 @@ export interface TerrainData {
   readonly heights: Float32Array;
   readonly lakes: Float32Array;
   readonly marks: Uint8Array;
+  /** Where cell (0, 0)'s corner lies in the window, metres: 0 for the whole window, the patch's corner for a close-up. */
+  readonly originX?: number;
+  readonly originY?: number;
 }
 
 /** What one frame shows besides the terrain. `brush` is a circle on the ground in metres, or null for none. */
 export interface TerrainOptions {
   readonly exaggeration: number;
   readonly brush: { readonly x: number; readonly y: number; readonly radiusM: number } | null;
+  /** A rectangle of the window this view leaves undrawn, metres (west, north, east, south): where a close-up lies. */
+  readonly hole?: readonly [number, number, number, number];
 }
 
 /** The most mesh vertices along the window's longer side; past it the mesh skips cells, keeping about 1.2 million. */
 const MESH_SIDE = 1100;
 
-const UNIFORM_BYTES = 96;
+const UNIFORM_BYTES = 128;
 
 /**
  * The mesh is built in the vertex shader from the vertex index alone: a grid of quads, two triangles each, one
@@ -35,7 +40,9 @@ const UNIFORM_BYTES = 96;
 const SHADER = /* wgsl */ `
 struct View {
   view_projection: mat4x4f,
+  hole: vec4f,
   brush_centre: vec2f,
+  origin: vec2f,
   brush_radius: f32,
   exaggeration: f32,
   cell_m: f32,
@@ -96,7 +103,7 @@ fn vertex_main(@builtin(vertex_index) index: u32) -> Surface {
   let gradient = vec2f(top_at(east) - top_at(west), top_at(south) - top_at(north)) / span;
 
   var surface: Surface;
-  surface.world = (vec2f(cell) + 0.5) * view.cell_m;
+  surface.world = view.origin + (vec2f(cell) + 0.5) * view.cell_m;
   surface.bed = textureLoad(heights, cell, 0).r;
   surface.lake = textureLoad(lakes, cell, 0).r;
   surface.normal = normalize(vec3f(-gradient * view.exaggeration, 1.0));
@@ -113,6 +120,8 @@ fn land_colour(bed: f32, slope: f32) -> vec3f {
 
 @fragment
 fn fragment_main(surface: Surface) -> @location(0) vec4f {
+  let hole = view.hole;
+  if (all(surface.world > hole.xy) && all(surface.world < hole.zw)) { discard; }
   let from_brush = distance(surface.world, view.brush_centre);
   let ring_width = fwidth(from_brush);
 
@@ -125,7 +134,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   } else {
     colour = land_colour(surface.bed, surface.slope);
     normal = normalize(surface.normal);
-    let cell = clamp(vec2i(floor(surface.world / view.cell_m)), vec2i(0), last_cell());
+    let cell = clamp(vec2i(floor((surface.world - view.origin) / view.cell_m)), vec2i(0), last_cell());
     let mark = textureLoad(marks, cell, 0).r;
     if (mark == 1u || mark == 2u) { colour = mix(colour, RIVER, 0.7); }
     if (mark == 3u) { colour = ROAD; }
@@ -145,6 +154,7 @@ export class TerrainView {
   private readonly width: number;
   private readonly height: number;
   private readonly cellM: number;
+  private readonly origin: readonly [number, number];
   private readonly step: number;
   private readonly quadsX: number;
   private readonly vertexCount: number;
@@ -161,6 +171,7 @@ export class TerrainView {
     this.width = data.width;
     this.height = data.height;
     this.cellM = data.cellM;
+    this.origin = [data.originX ?? 0, data.originY ?? 0];
     this.step = Math.ceil(Math.max(data.width, data.height) / MESH_SIDE);
     this.quadsX = Math.ceil((data.width - 1) / this.step);
     this.vertexCount = this.quadsX * Math.ceil((data.height - 1) / this.step) * 6;
@@ -221,8 +232,38 @@ export class TerrainView {
     }
   }
 
-  /** Draws one frame into the canvas, `width` by `height` pixels, seen from `orbit`. */
-  draw(orbit: Orbit, width: number, height: number, options: TerrainOptions): void {
+  /** Gives the GPU back this view's textures and buffers; the view draws nothing after. */
+  destroy(): void {
+    for (const resource of [this.heights, this.lakes, this.marks, this.uniforms, this.depth]) resource?.destroy();
+  }
+
+  /** Writes this view's uniforms for a frame seen from `orbit`. */
+  private prepare(orbit: Orbit, aspect: number, options: TerrainOptions): void {
+    const values = new ArrayBuffer(UNIFORM_BYTES);
+    const floats = new Float32Array(values);
+    floats.set(viewProjection(orbit, aspect));
+    floats.set(options.hole ?? [1, 1, 0, 0], 16);
+    const brush = options.brush ?? { x: 0, y: 0, radiusM: 0 };
+    floats.set([brush.x, brush.y, ...this.origin, brush.radiusM, options.exaggeration, this.cellM], 20);
+    new Uint32Array(values).set([this.step, this.quadsX], 27);
+    this.gpu.device.queue.writeBuffer(this.uniforms, 0, values);
+  }
+
+  private drawInto(pass: GPURenderPassEncoder): void {
+    pass.setPipeline(this.pipeline);
+    pass.setBindGroup(0, this.bindGroup);
+    pass.draw(this.vertexCount);
+  }
+
+  /** Draws one frame into the canvas, `width` by `height` pixels, seen from `orbit`; a close-up view, if given, is
+   *  drawn in the same pass so the two share one depth. */
+  draw(
+    orbit: Orbit,
+    width: number,
+    height: number,
+    options: TerrainOptions,
+    closeUp: { readonly view: TerrainView; readonly options: TerrainOptions } | null = null,
+  ): void {
     const { device, context } = this.gpu;
     const target = context.getCurrentTexture();
     if (!this.depth || this.depth.width !== target.width || this.depth.height !== target.height) {
@@ -234,13 +275,8 @@ export class TerrainView {
       });
     }
 
-    const values = new ArrayBuffer(UNIFORM_BYTES);
-    const floats = new Float32Array(values);
-    floats.set(viewProjection(orbit, width / height));
-    const brush = options.brush ?? { x: 0, y: 0, radiusM: 0 };
-    floats.set([brush.x, brush.y, brush.radiusM, options.exaggeration, this.cellM], 16);
-    new Uint32Array(values).set([this.step, this.quadsX], 21);
-    device.queue.writeBuffer(this.uniforms, 0, values);
+    this.prepare(orbit, width / height, options);
+    closeUp?.view.prepare(orbit, width / height, closeUp.options);
 
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
@@ -254,9 +290,8 @@ export class TerrainView {
         depthStoreOp: 'discard',
       },
     });
-    pass.setPipeline(this.pipeline);
-    pass.setBindGroup(0, this.bindGroup);
-    pass.draw(this.vertexCount);
+    this.drawInto(pass);
+    closeUp?.view.drawInto(pass);
     pass.end();
     device.queue.submit([encoder.finish()]);
   }

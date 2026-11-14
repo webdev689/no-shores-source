@@ -1,4 +1,4 @@
-import type { Brush, LandPatch, LandView } from '../rules/landRules.ts';
+import type { Brush, GroundPatch, LandPatch, LandView } from '../rules/landRules.ts';
 
 /** What the page asks the land worker. */
 export type LandRequest =
@@ -12,7 +12,15 @@ export type LandRequest =
   | { readonly kind: 'dab'; readonly brush: Brush; readonly point: readonly [number, number]; readonly starts: boolean }
   | { readonly kind: 'settle' }
   | { readonly kind: 'setEdits'; readonly editsText: string }
-  | { readonly kind: 'write' };
+  | { readonly kind: 'write' }
+  | {
+      readonly kind: 'ground';
+      readonly left: number;
+      readonly top: number;
+      readonly step: number;
+      readonly width: number;
+      readonly height: number;
+    };
 
 /** What the land worker answers: one of a view, a patch or a written file, or why there is none. */
 export interface LandAnswer {
@@ -20,6 +28,7 @@ export interface LandAnswer {
   readonly view?: LandView;
   readonly patch?: LandPatch;
   readonly written?: { readonly id: string; readonly text: string };
+  readonly ground?: GroundPatch;
   readonly error?: string;
 }
 
@@ -30,6 +39,7 @@ export interface LandWorker {
   settle(): Promise<LandView>;
   setEdits(editsText: string): Promise<LandView>;
   write(): Promise<{ readonly id: string; readonly text: string }>;
+  ground(left: number, top: number, step: number, width: number, height: number): Promise<GroundPatch>;
 }
 
 export function startLandWorker(): LandWorker {
@@ -66,6 +76,11 @@ export function startLandWorker(): LandWorker {
     },
     settle: () => view({ kind: 'settle' }),
     setEdits: (editsText) => view({ kind: 'setEdits', editsText }),
+    ground: async (left, top, step, width, height) => {
+      const { ground } = await ask({ kind: 'ground', left, top, step, width, height });
+      if (!ground) throw new Error('the land worker answered no ground');
+      return ground;
+    },
     write: async () => {
       const { written } = await ask({ kind: 'write' });
       if (!written) throw new Error('the land worker wrote nothing');

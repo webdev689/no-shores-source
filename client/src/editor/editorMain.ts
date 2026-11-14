@@ -3,7 +3,7 @@ import { GpuUnavailable, startGpu } from '../gpu.ts';
 import { startWorldRules, type WorldRules } from '../rules/worldRules.ts';
 import { type Camera, fitFrame, niceLength, pan, screenToWorld, zoomAt } from './camera.ts';
 import { buildPanel, type Tool } from './editorPanel.ts';
-import { button } from './dom.ts';
+import { button, downloadJson } from './dom.ts';
 import { startLandEditor, type LandEditor } from './landEditor.ts';
 import { type CellRect, CELL_M, LandMask } from './landMask.ts';
 import { draftLayout, type Issue, type LayoutContent, slotIdsFor } from './layoutDraft.ts';
@@ -194,13 +194,7 @@ async function start(): Promise<void> {
     return rules.write(JSON.stringify(drafted));
   };
 
-  const download = (text: string) => {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-    link.download = 'layout.json';
-    link.click();
-    URL.revokeObjectURL(link.href);
-  };
+  const download = (text: string) => downloadJson(text, 'layout.json');
 
   const save = async () => {
     const text = written();
