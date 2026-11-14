@@ -3,6 +3,8 @@ import { GpuUnavailable, startGpu } from '../gpu.ts';
 import { startWorldRules, type WorldRules } from '../rules/worldRules.ts';
 import { type Camera, fitFrame, niceLength, pan, screenToWorld, zoomAt } from './camera.ts';
 import { buildPanel, type Tool } from './editorPanel.ts';
+import { button } from './dom.ts';
+import { startLandEditor, type LandEditor } from './landEditor.ts';
 import { type CellRect, CELL_M, LandMask } from './landMask.ts';
 import { draftLayout, type Issue, type LayoutContent, slotIdsFor } from './layoutDraft.ts';
 import { MapView } from './mapView.ts';
@@ -142,7 +144,7 @@ async function start(): Promise<void> {
     recheck();
   };
 
-  const panel = buildPanel(document.querySelector<HTMLElement>('#panel') ?? document.body, constants, shapes, {
+  const panel = buildPanel(element<HTMLElement>('#continents-panel'), constants, shapes, {
     tool: (next) => {
       tool = next;
       requestFrame();
@@ -356,7 +358,7 @@ async function start(): Promise<void> {
     { passive: false },
   );
   window.addEventListener('keydown', (event) => {
-    if (event.target instanceof HTMLInputElement) return;
+    if (mode !== 'continents' || event.target instanceof HTMLInputElement) return;
     const digit = Number(event.key);
     if (digit >= 1 && digit <= constants.continentCount) slot = digit;
     const byKey: Record<string, Tool> = { p: 'paint', e: 'erase', f: 'fill', r: 'ruler', c: 'reference' };
@@ -366,6 +368,33 @@ async function start(): Promise<void> {
     requestFrame();
   });
   new ResizeObserver(requestFrame).observe(canvas);
+
+  // The Land mode works on the layout as drafted now, so a coast painted a moment ago is land there too.
+  let mode: 'continents' | 'land' = 'continents';
+  let landEditor: LandEditor | null = null;
+  const landCanvas = element<HTMLCanvasElement>('#land');
+  const continentsButton = button('Continents', () => void setMode('continents'));
+  const landButton = button('Land', () => void setMode('land'));
+  element<HTMLElement>('#modes').append(continentsButton, landButton);
+  const setMode = async (next: 'continents' | 'land') => {
+    mode = next;
+    continentsButton.classList.toggle('active', next === 'continents');
+    landButton.classList.toggle('active', next === 'land');
+    element<HTMLElement>('#continents-panel').hidden = next !== 'continents';
+    element<HTMLElement>('#land-panel').hidden = next !== 'land';
+    canvas.hidden = next !== 'continents';
+    svg.toggleAttribute('hidden', next !== 'continents');
+    landCanvas.hidden = next !== 'land';
+    if (next === 'land') {
+      landEditor ??= await startLandEditor(landCanvas, element<HTMLElement>('#land-panel'), {
+        widthM: constants.frameWidthM,
+        heightM: constants.frameHeightM,
+      });
+      landEditor.activate(rules.write(JSON.stringify(draft().layout)));
+    } else landEditor?.deactivate();
+    requestFrame();
+  };
+  continentsButton.classList.add('active');
 
   load(loaded.text);
   restoreKept();

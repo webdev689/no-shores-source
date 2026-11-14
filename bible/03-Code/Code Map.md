@@ -17,10 +17,12 @@ decision, made in the same change as its entry here.
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints, traces and measures |
-| `client/src/rules/` | The rules layer: the Rust rules, loaded as WebAssembly, for any page that needs them |
+| `client/src/rules/` | The rules layer: the Rust rules and the [[Land]], loaded as WebAssembly, for any page that needs them |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world-wasm` | The world rules for the browser: a door crate, text in and text out |
+| `crates/land` | The [[Land]]: relief, erosion and water generated from the painted coasts |
+| `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
 | `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json` |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
@@ -50,5 +52,5 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `serde_json`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client.
-- **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. The first is
-  `world-wasm`, which puts the world rules behind a WebAssembly door for the browser.
+- **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
+  `world-wasm` and `land-wasm`, which put the world rules and the land behind WebAssembly doors for the browser.

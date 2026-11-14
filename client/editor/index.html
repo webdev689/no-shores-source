@@ -134,7 +134,8 @@
         position: relative;
       }
       #map,
-      #overlay {
+      #overlay,
+      #land {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -143,16 +144,24 @@
       #map {
         cursor: crosshair;
       }
+      [hidden] {
+        display: none !important;
+      }
       #overlay {
         pointer-events: none;
       }
     </style>
   </head>
   <body>
-    <aside id="panel"></aside>
+    <aside id="panel">
+      <nav id="modes" class="row"></nav>
+      <div id="continents-panel"></div>
+      <div id="land-panel" hidden></div>
+    </aside>
     <main>
       <canvas id="map"></canvas>
       <svg id="overlay"></svg>
+      <canvas id="land" hidden></canvas>
     </main>
     <script type="module" src="/src/editor/editorMain.ts"></script>
   </body>

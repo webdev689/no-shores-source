@@ -1,4 +1,5 @@
 import type { WorldConstants } from '../rules/worldRules.ts';
+import { button, make } from './dom.ts';
 import type { Issue } from './layoutDraft.ts';
 import type { AreaStanding, Reference } from './measure.ts';
 
@@ -59,20 +60,6 @@ const TOOLS: readonly (readonly [Tool, string, string])[] = [
   ['ruler', 'Ruler', 'R'],
   ['reference', 'Compare', 'C'],
 ];
-
-function make<K extends keyof HTMLElementTagNameMap>(name: K, text = '', className = ''): HTMLElementTagNameMap[K] {
-  const node = document.createElement(name);
-  node.textContent = text;
-  if (className) node.className = className;
-  return node;
-}
-
-function button(text: string, onClick: () => void): HTMLButtonElement {
-  const node = make('button', text);
-  node.type = 'button';
-  node.addEventListener('click', onClick);
-  return node;
-}
 
 const STANDING_TEXT: Record<AreaStanding, string> = {
   'empty': 'not painted',
