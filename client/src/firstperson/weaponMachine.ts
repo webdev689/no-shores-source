@@ -46,6 +46,7 @@ const HANDLING: Readonly<Record<WeaponKind, number>> = {
 };
 /** The kinds that take both hands, as Daggerfall's staves, warhammers, axes and bows do. */
 const BOTH_HANDS: ReadonlySet<WeaponKind> = new Set(['staff', 'warhammer', 'axe', 'bow']);
+export const takesBothHands = (kind: WeaponKind): boolean => BOTH_HANDS.has(kind);
 
 /** The seconds one strike frame of `kind` lasts. */
 export function swingFrameSeconds(kind: WeaponKind): number {
@@ -111,13 +112,14 @@ export class WeaponMachine {
     return null;
   }
 
-  /** Moves the machine on by `seconds` with this frame's button. */
-  update(seconds: number, input: AttackInput): MachineEvents {
+  /** Moves the machine on by `seconds` with this frame's button. A strike begun now starts on the frame `opening`
+   *  answers: a pair's flurry is thrown from a hand already raised. */
+  update(seconds: number, input: AttackInput, opening: () => number = () => 0): MachineEvents {
     this.reload = Math.max(0, this.reload - seconds);
-    return this.kind === 'bow' ? this.shoot(seconds, input) : this.swing(seconds, input);
+    return this.kind === 'bow' ? this.shoot(seconds, input) : this.swing(seconds, input, opening);
   }
 
-  private swing(seconds: number, input: AttackInput): MachineEvents {
+  private swing(seconds: number, input: AttackInput, opening: () => number): MachineEvents {
     let blow: MachineEvents['blow'] = null;
     if (this.phase === 'strike') {
       const tick = swingFrameSeconds(this.kind);
@@ -127,23 +129,28 @@ export class WeaponMachine {
         if (this.advanceStrike()) blow = { direction: this.direction };
       }
     }
-    if (this.phase === 'idle' && (input.attackPressed || input.attackHeld)) this.beginStrike();
+    if (this.phase === 'idle' && (input.attackPressed || input.attackHeld)) this.beginStrike(opening());
     return { blow, loose: false };
   }
 
-  private beginStrike(): void {
+  private beginStrike(fromStep: number): void {
     this.direction = DIRECTIONS[Math.floor(this.random() * DIRECTIONS.length)] ?? 'down';
     this.phase = 'strike';
     this.record = RECORD_OF[this.direction];
-    this.frame = 0;
-    this.step = 0;
+    this.step = Math.max(0, Math.min(HIT_FRAME - 1, fromStep));
+    this.frame = (this.sequence?.[this.step] ?? this.step) | 0;
     this.clock = 0;
+  }
+
+  /** Bare hands' strike to the left steps through its own list of frames; every other strike counts up. */
+  private get sequence(): readonly number[] | null {
+    return this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT : null;
   }
 
   /** One frame on; true when the blow lands on it. Bare hands' strike to the left steps through its own list. */
   private advanceStrike(): boolean {
     this.step += 1;
-    const sequence = this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT : null;
+    const sequence = this.sequence;
     const length = sequence?.length ?? STRIKE_FRAMES;
     if (this.step >= length) {
       this.phase = 'idle';

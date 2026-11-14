@@ -15,6 +15,8 @@ const WEAPON = /^(sword|dagger|axe|mace|flail|warhammer|staff|bow|crossbow|pisto
 const NOT_GARMENT =
   /^(body|face|under_|hair_|horse$|quiver$|spark$|torch|prop_|lute$|flute$|recorder$|tambourine$|sheath_|scabbard_|slung_|shield_)/;
 const HANG = /_(drape|plated_skirted|plated|skirted)$/;
+/** The lights a left hand carries. The lantern is drawn in first person only: the forge's bodies have no layer for it. */
+const LIGHTS = ['torch_l', 'lantern'];
 
 /** What a body can wear: the sets of each armour piece, its garments, and what each hand can hold. */
 export interface Wardrobe {
@@ -45,7 +47,11 @@ export function wardrobeOf(body: string, drawn: ForgeBody['layers']): Wardrobe {
     sets,
     garments: [...garments].sort(),
     right: weapons.filter((layer) => !layer.endsWith('_l')),
-    left: [...layers.filter((layer) => /^shield_/.test(layer)), ...weapons.filter((layer) => layer.endsWith('_l'))],
+    left: [
+      ...layers.filter((layer) => /^shield_/.test(layer)),
+      ...weapons.filter((layer) => layer.endsWith('_l')),
+      ...LIGHTS.filter((light) => light === 'lantern' || drawn[light]),
+    ],
     hairStyles: (HAIR_STYLES[body] ?? []).filter((style) => drawn[`hair_${style}`]),
   };
 }
@@ -58,9 +64,10 @@ export interface Dress {
   readonly outfit: Outfit;
 }
 
-/** The forge figure a dress stacks: the race's own body or the human tone, and its outfit's layers and hair. */
-export function figureOf(dress: Dress, drawn: ForgeBody['layers']): Figure {
-  const { gear, hair } = outfitLayers(dress.outfit, drawn);
+/** The forge figure a dress stacks in a move: the race's own body or the human tone, and its outfit's layers and hair,
+ *  what is in hand worn for a move the forge does not draw it in. */
+export function figureOf(dress: Dress, drawn: ForgeBody['layers'], anim?: string): Figure {
+  const { gear, hair } = outfitLayers(dress.outfit, drawn, anim);
   const race = RACES[dress.race];
   return { body: dress.body, race, tone: race ? null : dress.tone, hair, gear };
 }

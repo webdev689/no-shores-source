@@ -12,7 +12,7 @@ import type { Dress } from './dressing.ts';
 import { type Placed, eyeOf, frameAt, viewOf } from './figures.ts';
 import { Input } from './input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, updatePlayer } from './player.ts';
-import { shownMove } from './playerMoves.ts';
+import { likelyMoves, shownMove } from './playerMoves.ts';
 import { startPanel } from './panel.ts';
 import { type CardAt, SceneView } from './sceneView.ts';
 
@@ -24,8 +24,9 @@ const PLAYER_ID = 1;
 const ACT_FRAME = 0.2;
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 const HIDE_FIGURE_M = 0.6;
-/** Faster than a walk on foot is running. */
+/** Faster than a walk on foot is running, and faster than a horse's walk a gallop. */
 const RUNNING = 5.5;
+const GALLOP = 10;
 /** The weapon's button, untouched: what the first person's weapon gets while it may not swing. */
 const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
 
@@ -165,10 +166,12 @@ async function start(): Promise<void> {
       armour: { gauntlets: outfit.armour.gauntlets, boots: outfit.armour.boots },
       drawn: outfit.drawn,
       moving: body.moving,
-      running: speed > RUNNING,
+      running: speed > (player.mounted ? GALLOP : RUNNING),
       stride,
       casting: player.cast !== null,
       climbing: holding ? 0 : 1,
+      mounted: player.mounted,
+      yaw: player.yaw,
     });
     const swing = firstPerson.swing;
     // A swing begins where there was none, or where the last one ended and the next began within the frame.
@@ -187,13 +190,25 @@ async function start(): Promise<void> {
         drawn: outfit.drawn,
         right: outfit.right,
         left: outfit.left,
-        blow: swing && { direction: swing.direction ?? 'down', second: strokes % 2 === 0, progress: swing.progress },
+        blow: swing && {
+          direction: swing.direction,
+          reload: swing.reload,
+          // A pair's blows are its two hands' strokes; one weapon's alternate.
+          second: swing.paired ? swing.hand === 'left' : strokes % 2 === 0,
+          progress: swing.progress,
+        },
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
       },
       (anim) => forge.frames(youDress.body, anim),
-      (anim) => forge.draws(youDress.body, anim, outfit.drawn ? outfit.right : null),
+      (anim, held) => forge.draws(youDress.body, anim, held),
     );
+    const hands = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
+    forge.warm(
+      youDress,
+      likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, held) => forge.draws(youDress.body, anim, held)),
+    );
+    forge.pump();
     if (player.view.shown > HIDE_FIGURE_M) {
       const { view, flip } = viewOf(player.facing, body.x, body.y, eye.x, eye.y);
       const frames = forge.frames(youDress.body, shown.anim);

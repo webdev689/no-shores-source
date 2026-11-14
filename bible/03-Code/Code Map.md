@@ -19,7 +19,7 @@ decision, made in the same change as its entry here.
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up |
 | `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
-| `client/src/firstperson/` | The first-person layer: the weapon or hands in view, swung, dyed and drawn over the scene ([[Test Ground]]) |
+| `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/rules/` | The rules layer: the Rust rules and the [[Land]], loaded as WebAssembly, for any page that needs them |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |

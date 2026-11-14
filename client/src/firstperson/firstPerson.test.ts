@@ -80,7 +80,7 @@ test('a click swings and lands its blow two frames in', async () => {
   await frame(0.016, standing, press);
   const tick = swingFrameSeconds('sword');
   assert.equal((await frame(tick, standing)).events.blow, null);
-  assert.deepEqual((await frame(tick, standing)).events.blow, { direction: 'down' });
+  assert.deepEqual((await frame(tick, standing)).events.blow, { direction: 'down', hand: 'right' });
 });
 
 test('running with empty hands or a sheathed weapon pumps both arms, the left one mirrored', async () => {
@@ -105,12 +105,19 @@ test('a cast shows both hands, the right mirrored, and hides the weapon until it
   assert.equal(after.quads.length, 1);
 });
 
-test('a climb lowers the weapon out of sight', async () => {
-  const { frame } = firstPerson(wholeFrames);
+test('a climb lowers the weapon out of sight and brings both hands up onto the wall, closed', async () => {
+  const { frame, asked } = firstPerson(wholeFrames);
   const start = await frame(0.016, standing);
   const lowering = await frame(0.05, { ...standing, climbing: 1 });
   assert.ok((lowering.quads[0]?.y ?? 0) > (start.quads[0]?.y ?? 0));
-  assert.deepEqual((await frame(1, { ...standing, climbing: 1 })).quads, []);
+  const holding = await frame(1, { ...standing, climbing: 1 });
+  assert.deepEqual(
+    holding.quads.map((quad) => quad.flip),
+    [false, true],
+  );
+  assert.ok(holding.quads.every((quad) => quad.y + quad.height > 200 && quad.y < 200));
+  assert.ok(asked.includes('@art/climb/linen/grip-0.png') && asked.includes('@art/climb/gauntlet/grip-0.png'));
+  assert.deepEqual((await frame(1, standing)).quads.length, 1);
 });
 
 test('a flail at rest wears its chain swing, mirrored in the left hand', async () => {
@@ -121,5 +128,55 @@ test('a flail at rest wears its chain swing, mirrored in the left hand', async (
   assert.deepEqual(
     left.quads.map((quad) => quad.flip),
     [true],
+  );
+});
+
+const everything = (path: string) => wholeFrames(path) || path.startsWith('forge/held/');
+
+test('two one-handed weapons are both drawn, the left mirrored, and their blows take turns', async () => {
+  const { frame } = firstPerson(everything);
+  const pair = { ...standing, left: 'dagger_iron_l' };
+  const rest = await frame(0.016, pair);
+  assert.deepEqual(
+    rest.quads.map((quad) => quad.flip),
+    [false, true],
+  );
+  const held = { attackHeld: true, attackPressed: true, attackReleased: false };
+  const hands: string[] = [];
+  for (let step = 0; step < 100 && hands.length < 2; step++) {
+    const { events } = await frame(0.05, pair, held);
+    if (events.blow) hands.push(events.blow.hand);
+  }
+  assert.deepEqual(hands, ['right', 'left']);
+});
+
+test('a shield is held in the lower left beside the weapon, and raised for a block', async () => {
+  const { frame, asked } = firstPerson(everything);
+  const shielded = { ...standing, left: 'shield_kite_iron' };
+  const rest = await frame(0.016, shielded);
+  assert.deepEqual(rest.quads[0], { x: 0, y: 199, width: 2, height: 1, flip: false });
+  assert.ok(asked.includes('forge/held/112362_0-1_ShieldIron.png'));
+  await frame(0.2, { ...shielded, blocking: true });
+  assert.ok(asked.includes('forge/held/112362_0-0_ShieldIron.png'));
+});
+
+test("a crossbow's shot is reported through the swing, its bolt leaving on the second frame", async () => {
+  const { frame } = firstPerson(everything);
+  const armed = { ...standing, right: 'crossbow_iron' };
+  await frame(0.016, armed, { attackHeld: true, attackPressed: true, attackReleased: false });
+  const { events } = await frame(0.15, armed);
+  assert.deepEqual([events.loose, events.hand], [true, 'right']);
+  assert.equal((await frame(0.016, armed)).events.loose, false);
+});
+
+test('riding shows the horse and a rein in each free hand; a drawn weapon takes the right', async () => {
+  const { frame, asked } = firstPerson(everything);
+  const riding = await frame(0.016, { ...standing, drawn: false, mounted: true });
+  assert.equal(riding.quads.length, 3);
+  assert.ok(asked.includes('@art/ride/RIDE_stand-0.png') && asked.includes('@art/ride/REIN_stand-0_L.png'));
+  const armed = await frame(0.016, { ...standing, mounted: true });
+  assert.deepEqual(
+    armed.quads.map((quad) => quad.flip),
+    [false, true, false],
   );
 });

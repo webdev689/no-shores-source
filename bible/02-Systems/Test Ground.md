@@ -13,9 +13,6 @@ code:
   - client/src/forge/compose.ts#composeFrame
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
-  - client/src/firstperson/firstPerson.ts#FirstPerson
-  - client/src/firstperson/weaponMachine.ts#WeaponMachine
-  - client/src/firstperson/fpFrames.ts#weaponPicture
 ---
 # Test Ground
 
@@ -57,9 +54,17 @@ The player's figure shows the move the forge draws for what the body does:
 - **In the air:** the jump's rising, top or falling frame.
 - **Mounted:** the horse's rest, walk or gallop.
 - **Acting:** the cast. A swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. Swung up, it thrusts; down, it chops; left or right, it swings two-handed, where the weapon draws those.
-- **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a staff, a shield, a second blade and
-  the guns each have their own.
+  to 5. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
+  right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
+  move whole, a brace's right then left, then its reload where the forge draws one.
+- **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each
+  have their own.
+
+The left hand decides the stance. A shield or a torch there guards, marches and slashes; a blade there fights as a
+pair. Each holds only where the forge draws both hands' things in that stance's attack. Otherwise the right hand's
+weapon keeps its own moves and the left hand's thing is worn.
+
+In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
 Walking frames last 0.25 s, running 0.125 s and crouching 0.5 s. A swing lasts 1 s. On a wall or a ledge the weapon is
 worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. Swinging or casting,
@@ -74,7 +79,8 @@ in a loop. For the chosen figure it sets:
 - **Hair:** a style and its colour.
 - **Armour:** a set for each piece, or one set for all.
 - **Clothes:** worn in the order they are ticked, each in one of Daggerfall's dyes.
-- **Hands:** what is in each hand, and whether it is drawn.
+- **Hands:** what is in each hand, and whether it is drawn. The left can carry a torch, or a lantern, which only the
+  first person draws.
 - **Dress as:** one of the forge's dressed looks.
 
 The player's entry plays any move once. Each other figure's entry sets its move, facing and turning.
@@ -110,50 +116,11 @@ eye.
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
 - The course's blocks are the only things to climb, and the climbing does not tire.
 - Composed frames are kept on the GPU up to 4,000, then all are let go and composed again as needed.
+- The player's likeliest moves are composed ahead, two frames a tick: its rest, walk and attack, its strokes, the run,
+  the jump and the crouch. A move not composed yet shows the last frame until it is.
 
 ## First person
 
-`FirstPerson` draws what the player holds in first person, from the forge's first-person pictures. Each frame the
-page hands it the attack button and the player's state: the weapon in each hand, the gauntlets and boots worn, whether
-the weapon is drawn, walking or running, the metres walked, a cast and a climb. It answers the blow that lands, so the
-figure seen from outside can play a matching move.
-
-### Swinging
-
-A click swings once. Holding the button swings again as each blow ends. Each blow takes one of six directions at
-random: down, down and left, left, right, down and right, or up. A strike is five frames, and the blow lands as the
-third begins. A frame lasts 0.199 s for a sword, DFO's swing law at an average Speed. A dagger and bare hands come
-round quicker; a mace, a flail and the two-handed weapons slower. Bare hands' strike to the left goes up and back down
-over eight frames.
-
-A bow draws while the button is held and stays drawn at its fourth frame. Letting go looses it: the arrow leaves on
-the sixth frame, a frame every 0.0625 s. The bow then reloads for about half a second.
-
-### Which picture
-
-Each frame shows one picture, named by the weapon's file, its record and its frame. A metal's own picture is used where
-the forge drew one, else the picture every metal shares. A dagger or a sword is laid from two layers, the hand in the
-gauntlets worn and the blade in its own make, the nearer shown at each texel. A bow is laid under the hands that hold
-it. Fists wear the gauntlets for a punch and the boots for a kick.
-
-The forge draws every metal grey. A grey texel goes to the nearest step of Daggerfall's metal band and takes that
-step of the metal's ramp; every other colour snaps to the nearest palette colour. Steel, leather, chain and the guilds'
-sets keep their own colours. Bare hands take iron's.
-
-### On the screen
-
-Each picture lies at its own place on a 320 by 200 design screen, scaled to the canvas, texel for texel, with its
-clear texels cut out, over the scene. A weapon in the left hand alone is mirrored about the middle at rest and in the
-strikes down and up, from the forge's left-hand picture where it drew one.
-
-While walking, the picture dips a few design pixels each step, more at a run. A flail at rest wears its chain's swing,
-a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps both arms, the left half a stride behind
-the right. A climb lowers the weapon out of the bottom of the screen. A cast shows both casting hands for 0.28 s and
-hides the weapon meanwhile. A new look's pictures are composed ahead and kept on the GPU.
-
-### Not yet in first person
-
-- A shield, a torch or a lantern in the left hand, and the climbing hands.
-- A weapon's wear.
-- A weapon in each hand: only the right one is drawn.
-- The player's own Speed, Strength and the weapon's weight, which would change the swing's pace.
+In first person the player sees what they hold, swung, fired and carried as DFO plays it ([[First Person]]). The page
+hands it the attack button and the player's state each frame, and plays the move it reports on the figure seen from
+outside: a pair's blows are its two hands' strokes, one weapon's swings alternate its two strokes.

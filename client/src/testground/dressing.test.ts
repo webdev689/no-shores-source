@@ -20,8 +20,10 @@ const LAYERS = [
   'sword_iron',
   'sword_iron_l',
   'shield_kite_iron',
+  'torch_l',
   'sheath_sword',
   'mace_iron',
+  'torch_l',
 ];
 const drawn = Object.fromEntries(LAYERS.map((layer) => [layer, ['idle']]));
 const outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: false, hair: null };
@@ -32,7 +34,7 @@ test('a wardrobe sorts a body layers into armour sets, garments and what each ha
   assert.deepEqual(wardrobe.sets.boots, ['iron']);
   assert.deepEqual(wardrobe.garments, ['boots', 'boots_laced', 'casual_cloak', 'shirt_long_v']);
   assert.deepEqual(wardrobe.right, ['mace_iron', 'sword_iron']);
-  assert.deepEqual(wardrobe.left, ['shield_kite_iron', 'sword_iron_l']);
+  assert.deepEqual(wardrobe.left, ['shield_kite_iron', 'sword_iron_l', 'torch_l', 'lantern']);
   assert.deepEqual(wardrobe.hairStyles, ['crop', 'shoulder']);
 });
 

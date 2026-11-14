@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { type Doing, shownMove } from './playerMoves.ts';
+import { type Doing, likelyMoves, shownMove } from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -20,6 +20,11 @@ const FRAMES: Record<string, number> = {
   walk_bow: 4,
   idle_bow: 1,
   bow: 4,
+  gunshot: 6,
+  gunreload: 4,
+  pistolshot: 6,
+  pistolreload: 4,
+  braceshot: 6,
 };
 const frames = (anim: string) => FRAMES[anim] ?? 4;
 const everything = () => true;
@@ -65,9 +70,20 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
   const axe = shownMove(
     { ...doing, right: 'axe_iron', blow: { direction: 'up', second: false, progress: 0 } },
     frames,
-    (anim) => anim !== 'thrust',
+    (anim: string) => anim !== 'thrust',
   );
   assert.equal(axe.anim, 'attack_axe');
+});
+
+test("a shot plays its weapon's own move whole, then its reload; a brace fires right then left", () => {
+  const shot = (right: string, left: string | null, reload: boolean, second: boolean, progress: number) =>
+    shownMove({ ...doing, right, left, blow: { direction: null, second, progress, reload } }, frames, everything);
+  assert.deepEqual(shot('thunderlock', null, false, true, 0.99), { anim: 'gunshot', frame: 5, frameSeconds: 0 });
+  assert.deepEqual(shot('thunderlock', null, true, false, 0.5), { anim: 'gunreload', frame: 2, frameSeconds: 0 });
+  assert.equal(shot('pistolet', null, true, false, 0).anim, 'pistolreload');
+  assert.deepEqual(shot('pistolet', 'pistolet_l', false, true, 0), { anim: 'braceshot', frame: 3, frameSeconds: 0 });
+  assert.equal(shot('crossbow_iron', null, false, false, 0.5).anim, 'bow');
+  assert.equal(shot('crossbow_iron', null, true, false, 0.5).anim, 'idle_bow');
 });
 
 test('in the air the jump shows rising, at the top and falling; on a wall the climb moves', () => {
@@ -87,4 +103,37 @@ test('mounted, the horse walks and gallops; a move chosen by hand plays over eve
   assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 12 }, frames, everything).anim, 'horsegallop');
   assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 6 }, frames, everything).anim, 'horsewalk');
   assert.equal(shownMove({ ...doing, act: { anim: 'death', progress: 0.5 } }, frames, everything).anim, 'death');
+});
+
+test('an off hand: two blades fight as a pair, and a shield or blade in the left keeps the weapon’s own attack', () => {
+  const pair = { ...doing, left: 'dagger_iron_l' };
+  assert.equal(shownMove(pair, frames, everything).anim, 'twinguard');
+  assert.equal(shownMove({ ...pair, right: null }, frames, everything).anim, 'twinguard');
+  const up = { direction: 'up', second: false, progress: 0 } as const;
+  assert.equal(shownMove({ ...pair, blow: up }, frames, everything).anim, 'twinslash');
+  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron', blow: up }, frames, everything).anim, 'slash');
+  assert.equal(shownMove({ ...doing, blow: up }, frames, everything).anim, 'thrust');
+});
+
+test('a shield or second blade pairs only with a weapon the forge draws in the pair’s moves', () => {
+  // An axe is drawn in none of the shield's or the pair's moves: it keeps its own; the shield or blade is worn.
+  const axeDraws = (anim: string, held: string | null) => held !== 'axe_iron' || !['slash', 'twinslash'].includes(anim);
+  assert.equal(shownMove({ ...doing, right: 'axe_iron', left: 'shield_kite_iron' }, frames, axeDraws).anim, 'idle');
+  const axeBlow = {
+    ...doing,
+    right: 'axe_iron',
+    left: 'sword_iron_l',
+    blow: { direction: 'down', second: false, progress: 0 },
+  } as const;
+  assert.equal(shownMove(axeBlow, frames, axeDraws).anim, 'attack_axe');
+  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, everything).anim, 'guard');
+});
+
+test('the likeliest moves are the kit’s, the strokes of a weapon held alone, and the moves on foot', () => {
+  const alone = likelyMoves('sword_iron', null, everything);
+  for (const anim of ['idle', 'walk', 'attack_sword', 'thrust', 'chop', 'swing2h', 'run', 'jump'])
+    assert.ok(alone.includes(anim));
+  const paired = likelyMoves('sword_iron', 'dagger_iron_l', everything);
+  assert.ok(paired.includes('twinslash') && !paired.includes('chop'));
+  assert.equal(new Set(paired).size, paired.length);
 });
