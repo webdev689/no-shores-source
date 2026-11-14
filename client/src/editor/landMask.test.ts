@@ -53,12 +53,32 @@ test('land in two places is two pieces; joined by a side it is one', () => {
   const mask = new LandMask(100_000, 100_000);
   mask.paintDisc(20_000, 50_000, 5_000, 1);
   mask.paintDisc(80_000, 50_000, 5_000, 1);
-  assert.equal(mask.piecesByLabel()[1], 2);
+  const two = mask.pieces();
+  assert.deepEqual(
+    two.map((piece) => piece.label),
+    [1, 1],
+  );
+  for (const piece of two) assert.equal(mask.labelAt(Math.floor(piece.x / 1_000), Math.floor(piece.y / 1_000)), 1);
   mask.paintDisc(50_000, 50_000, 31_000, 1);
-  const pieces = mask.piecesByLabel();
-  assert.equal(pieces[1], 1);
-  assert.equal(pieces[2], 0);
-  assert.equal(pieces[0], 0, 'the sea is never walked');
+  const one = mask.pieces();
+  assert.equal(one.length, 1, 'the sea is never walked');
+  assert.equal(one[0]?.cells, mask.counts()[1]);
+});
+
+test('runs carry the cells exactly, and runs that do not fit change nothing', () => {
+  const mask = new LandMask(100_000, 100_000);
+  mask.paintDisc(20_000, 50_000, 5_000, 1);
+  mask.paintDisc(80_000, 50_000, 9_000, 7);
+  const runs = mask.toRuns();
+  assert.ok(runs.length < 200, 'a painted map is a few runs');
+  const copy = new LandMask(100_000, 100_000);
+  assert.equal(copy.fromRuns(runs), true);
+  assert.deepEqual(copy.cells, mask.cells);
+  const before = copy.cells.slice();
+  assert.equal(copy.fromRuns([0, 5]), false);
+  assert.equal(copy.fromRuns([12, copy.cells.length]), false);
+  assert.equal(copy.fromRuns(['1', copy.cells.length]), false);
+  assert.deepEqual(copy.cells, before);
 });
 
 test('the continents painted or erased since a copy of the cells are the ones changed', () => {

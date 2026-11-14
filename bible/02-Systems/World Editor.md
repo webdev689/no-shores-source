@@ -30,15 +30,18 @@ Open `https://lattymoy.github.io/overlook-source/editor/` in a browser with WebG
 | Ruler (`R`) | Left-drag measures a straight distance in kilometres; `Esc` clears it |
 | Compare (`C`) | Click pins a reference shape: the smallest continent (161,600 km²), the largest (940,000 km²), or Daggerfall's whole map (819 × 410 km) |
 | Right- or middle-drag, wheel | Pans and zooms, from 50 m to 20 km a pixel |
-| Save | On the site, downloads `layout.json`; under `npm run dev`, writes `content/world/layout.json` |
+| Save | On the site, downloads `layout.json`; under `npm run dev`, writes `content/world/layout.json`. Asks first if a continent must be left out |
 | Download, Open… | Saves or loads a layout file by hand |
 
 To keep a layout painted on the site, put the downloaded file in `content/world/` through a pull request, or hand it
 to Claude. To carry on painting later, Open… the downloaded file.
 
+The browser also keeps the painting after every stroke, until it is saved. Coming back to the editor, it offers to
+restore that painting; Cancel opens the saved layout instead. A private window may not keep it.
+
 Each continent's row shows its area as painted and where it stands against the allowed range. The map carries a
 kilometre grid, a scale bar and a readout of the cursor's position. The Problems list shows every rule a painted
-continent breaks.
+continent breaks. A continent in pieces lists each stray piece with its size; clicking one shows it on the map.
 
 ## How it works
 
@@ -60,8 +63,8 @@ continent breaks.
 
 ## Limits
 
-- A continent must be one landmass: land in two pieces is held back with a problem until it is joined. Land that
-  meets only at a diagonal counts as two pieces' worth of coast and is refused as touching itself.
+- A continent must be one landmass. Land in more than one piece is held back, and Save leaves it out of the file,
+  after asking, until the strays are joined or erased. Land that meets only at a diagonal counts as two pieces.
 - Isles are not placed in the editor yet.
 - The first draw uploads the whole grid, about 15 MB, to the GPU: instant on a graphics card, slow on a machine
   without one.

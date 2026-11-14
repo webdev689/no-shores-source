@@ -20,13 +20,22 @@ test('each painted slot becomes a continent with its traced coast', () => {
   assert.ok((layout.continents[0]?.outline.length ?? 0) >= 3);
 });
 
-test('a continent in two pieces is held back with the reason', () => {
+test('a continent in pieces is held back, with each stray piece listed where it lies', () => {
   const mask = new LandMask(100_000, 100_000);
   mask.paintDisc(20_000, 50_000, 5_000, 3);
   mask.paintDisc(80_000, 50_000, 5_000, 3);
-  const { layout, issues } = draftLayout(mask, slotIdsFor(empty, 9), empty, always, none);
+  mask.paintDisc(50_000, 20_000, 2_000, 3);
+  const { layout, issues, heldBack } = draftLayout(mask, slotIdsFor(empty, 9), empty, always, none);
   assert.deepEqual(layout.continents, []);
-  assert.deepEqual(issues, ['continent-3 is in 2 pieces: one continent is one landmass']);
+  assert.deepEqual(heldBack, ['continent-3']);
+  assert.equal(issues[0]?.text, 'continent-3 is in 3 pieces, so Save leaves it out: join or erase the strays');
+  const strays = issues.slice(1);
+  assert.deepEqual(
+    strays.map((issue) => issue.text),
+    ['continent-3: a stray piece of 80 km² (show it)', 'continent-3: a stray piece of 12 km² (show it)'],
+  );
+  for (const { at } of strays)
+    assert.equal(mask.labelAt(Math.floor((at?.x ?? 0) / 1_000), Math.floor((at?.y ?? 0) / 1_000)), 3);
 });
 
 test('the coarsest simplification the rules accept is kept', () => {
