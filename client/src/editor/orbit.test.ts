@@ -37,7 +37,7 @@ function grid(width: number, height: number, heightAt: (column: number, row: num
     for (let column = 0; column < width; column++) heights[row * width + column] = heightAt(column, row);
   }
   const cells = width * height;
-  return { width, height, cellM: 1000, heights, lakes: new Float32Array(cells), rivers: new Uint8Array(cells) };
+  return { width, height, cellM: 1000, heights, lakes: new Float32Array(cells), marks: new Uint8Array(cells) };
 }
 
 test('the target is drawn at the centre of the screen, between the near and far planes', () => {

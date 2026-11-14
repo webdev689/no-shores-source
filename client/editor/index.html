@@ -135,7 +135,8 @@
       }
       #map,
       #overlay,
-      #land {
+      #land,
+      #land-overlay {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -147,7 +148,8 @@
       [hidden] {
         display: none !important;
       }
-      #overlay {
+      #overlay,
+      #land-overlay {
         pointer-events: none;
       }
     </style>
@@ -162,6 +164,7 @@
       <canvas id="map"></canvas>
       <svg id="overlay"></svg>
       <canvas id="land" hidden></canvas>
+      <svg id="land-overlay" hidden></svg>
     </main>
     <script type="module" src="/src/editor/editorMain.ts"></script>
   </body>

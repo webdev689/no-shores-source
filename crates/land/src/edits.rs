@@ -5,6 +5,7 @@
 
 use crate::exact::smooth;
 use crate::grid::Grid;
+use crate::places::{CarvedRiver, Port, Road, Town, check_places};
 use crate::relief::{LAND_FLOOR_M, SEA_CEILING_M};
 use serde::{Deserialize, Serialize};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
@@ -16,12 +17,20 @@ pub const RAISE_M: (u32, u32) = (1, 500);
 pub const PERCENT: (u32, u32) = (1, 100);
 pub const LEVEL_M: (i64, i64) = (-500, 9_000);
 
-/// One landmass's edits file.
+/// One landmass's edits file: its shaping strokes, and the places drawn on it.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Edits {
     #[serde(default)]
     pub strokes: Vec<Stroke>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rivers: Vec<CarvedRiver>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub roads: Vec<Road>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub towns: Vec<Town>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ports: Vec<Port>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,7 +87,16 @@ pub fn write(edits: &Edits) -> Result<String, serde_json::Error> {
     world::layout::write_value(edits)
 }
 
-/// Every rule a file's strokes break.
+/// Every rule a file breaks on the landmass whose coast is `coast`: its strokes', then its places'.
+#[must_use]
+pub fn check_on(edits: &Edits, coast: &[Point]) -> Vec<Problem> {
+    let mut problems = check(edits);
+    let places = check_places(coast, &edits.rivers, &edits.roads, &edits.towns, &edits.ports);
+    problems.extend(places.into_iter().map(|(subject, message)| Problem { subject, message }));
+    problems
+}
+
+/// Every rule a file's strokes break, and every point of a place outside the world's frame.
 #[must_use]
 pub fn check(edits: &Edits) -> Vec<Problem> {
     let mut problems = Vec::new();
@@ -112,6 +130,19 @@ pub fn check(edits: &Edits) -> Vec<Problem> {
             .any(|point| !(0..=FRAME_WIDTH_M).contains(&point.x) || !(0..=FRAME_HEIGHT_M).contains(&point.y))
         {
             problem("a point lies outside the world's frame".into());
+        }
+    }
+    let in_frame = |point: &Point| (0..=FRAME_WIDTH_M).contains(&point.x) && (0..=FRAME_HEIGHT_M).contains(&point.y);
+    let places = edits
+        .rivers
+        .iter()
+        .map(|river| (&river.id, river.points.as_slice()))
+        .chain(edits.roads.iter().map(|road| (&road.id, road.points.as_slice())))
+        .chain(edits.towns.iter().map(|town| (&town.id, town.outline.as_slice())))
+        .chain(edits.ports.iter().map(|port| (&port.id, std::slice::from_ref(&port.at))));
+    for (id, points) in places {
+        if !points.iter().all(in_frame) {
+            problems.push(Problem { subject: id.clone(), message: "a point lies outside the world's frame".into() });
         }
     }
     problems

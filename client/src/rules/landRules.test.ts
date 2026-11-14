@@ -88,3 +88,58 @@ test('a preview leaves the landmass open for strokes alone', async () => {
   rules.open(twoSquares, 'other', null);
   assert.equal(rules.write().id, 'other', 'kept by default');
 });
+
+test('the sampled ground agrees to the bit with the native build (crates/land/tests/agree.rs holds the same)', async () => {
+  const rules = await land();
+  const edits = {
+    strokes: [],
+    rivers: [
+      {
+        id: 'river-1',
+        width_m: 40,
+        depth_m: 4,
+        points: [
+          [260_000, 330_000],
+          [260_000, 400_000],
+        ],
+      },
+    ],
+    roads: [
+      {
+        id: 'road-1',
+        width_m: 8,
+        points: [
+          [220_000, 360_000],
+          [300_000, 360_000],
+        ],
+      },
+    ],
+    towns: [
+      {
+        id: 'town-1',
+        outline: [
+          [230_000, 370_000],
+          [240_000, 370_000],
+          [240_000, 380_000],
+          [230_000, 380_000],
+        ],
+      },
+    ],
+  };
+  const view = rules.open(square(200_000, 300_000, 120_000), 'square', JSON.stringify(edits));
+  assert.deepEqual(view.problems, []);
+  const steps = (count: number) => [...Array(count).keys()];
+  const points: [number, number][] = [
+    ...steps(10).map((step): [number, number] => [225_000 + 7_000 * step, 360_000]),
+    ...steps(10).map((step): [number, number] => [260_000, 335_000 + 6_000 * step]),
+    ...steps(16).map((step): [number, number] => [
+      232_000 + 2_000 * (step % 4),
+      372_000 + 2_000 * Math.floor(step / 4),
+    ]),
+    ...steps(100).map((step): [number, number] => [205_000 + 1_100 * step, 305_000 + 1_100 * step]),
+  ];
+  const sample = rules.sample(points);
+  assert.equal(sample.sampleHash, 'ee55746a7aba0eae');
+  assert.equal(sample.water[10]?.kind, 'river', 'the carved river holds water');
+  assert.ok((sample.heights[10] ?? 0) < (sample.water[10]?.surface ?? 0), 'its bed lies under its surface');
+});

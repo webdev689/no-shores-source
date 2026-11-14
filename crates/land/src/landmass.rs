@@ -2,10 +2,11 @@
 //! the ground with the owner's edits on it, and the water over that ground. Built the same on any machine from the
 //! layout alone: the seed is the world's, salted with the landmass's id.
 
-use crate::edits::{self, CellRect, Edits, Stroke};
+use crate::edits::{self, CellRect, Edits, Problem, Stroke};
 use crate::erosion::erode_coarse;
 use crate::exact::seed_of;
 use crate::grid::Grid;
+use crate::ground::Ground;
 use crate::relief::{Climate, PLACEHOLDER, coast_distance_km, land_mask, relief, window};
 use crate::water::{Water, water};
 use world::geometry::Point;
@@ -20,6 +21,9 @@ pub const EROSION_STEPS: usize = 40;
 #[derive(Debug, Clone)]
 pub struct Landmass {
     pub id: String,
+    pub seed: u32,
+    /// The painted coast, which the places are checked against.
+    pub coast: Vec<Point>,
     pub climate: Climate,
     pub land: Vec<bool>,
     /// What the generator makes, before the owner's edits.
@@ -29,6 +33,8 @@ pub struct Landmass {
     /// The ground: the generated land with the owner's edits on it.
     pub ground: Grid,
     pub water: Water,
+    /// The ground anywhere, to the metre, with the places' channels, beds and pads: what the runtime samples.
+    pub surface: Ground,
 }
 
 /// A fingerprint of every ground height's bits (FNV-1a, 64-bit): the same on every machine, or the land disagrees.
@@ -63,9 +69,16 @@ impl Landmass {
         edits::dab(&mut self.ground, &self.land, &stroke, point)
     }
 
-    /// Runs the water over the ground as it stands.
+    /// Runs the water over the ground as it stands, and lays the places on it.
     pub fn settle(&mut self) {
         self.water = water(&self.ground, &self.land, self.climate.rain_mm);
+        self.surface = Ground::new(&self.ground, &self.water.lake_level, &self.water.rivers, &self.edits, self.seed);
+    }
+
+    /// Every rule the landmass's edits break, its places checked against its coast.
+    #[must_use]
+    pub fn problems(&self) -> Vec<Problem> {
+        edits::check_on(&self.edits, &self.coast)
     }
 }
 
@@ -82,15 +95,21 @@ pub fn generate(continent: &Continent, edits: Edits) -> Landmass {
     let grid = window(&continent.outline);
     let land = land_mask(&grid, &continent.outline);
     let coast = coast_distance_km(&grid, &land);
-    let (elevation, uplift) = relief(&grid, &land, &coast, seed_of(WORLD_SEED, &continent.id), climate);
+    let seed = seed_of(WORLD_SEED, &continent.id);
+    let (elevation, uplift) = relief(&grid, &land, &coast, seed, climate);
     let generated = erode_coarse(&elevation, &uplift, &land, climate.rain_mm, EROSION_STEPS, EROSION_FACTOR);
+    let water = Water { rivers: Vec::new(), lake_level: vec![0.0; generated.data.len()] };
+    let surface = Ground::new(&generated, &water.lake_level, &[], &Edits::default(), seed);
     let mut landmass = Landmass {
         id: continent.id.clone(),
+        seed,
+        coast: continent.outline.clone(),
+        surface,
         climate,
         land,
         edits: Edits::default(),
         ground: generated.clone(),
-        water: Water { rivers: Vec::new(), lake_level: Vec::new() },
+        water,
         generated,
     };
     landmass.set_edits(edits);

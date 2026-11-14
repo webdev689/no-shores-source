@@ -3,17 +3,37 @@ import { button, make } from './dom.ts';
 /** How far along a landmass's land is. */
 export type LandState = 'waiting' | 'generating' | 'ready' | 'failed';
 
-/** What a press on the land does: look around, or one of the sculpting brushes. */
-export type LandTool = 'look' | 'raise' | 'lower' | 'smooth' | 'flatten';
+/** What a press on the land does: look around, shape the ground with a brush, or draw and remove places. */
+export type LandTool =
+  'look' | 'raise' | 'lower' | 'smooth' | 'flatten' | 'river' | 'road' | 'town' | 'port' | 'remove';
 
-/** The tools in their keys' order: 1 to 5. */
+/** The brushes that shape the ground. */
+export const BRUSHES: readonly LandTool[] = ['raise', 'lower', 'smooth', 'flatten'];
+/** The tools that draw a course or an area point by point. */
+export const DRAWN: readonly LandTool[] = ['river', 'road', 'town'];
+
+/** The tools in their keys' order: 1 to 9, then 0. */
 export const LAND_TOOLS: readonly (readonly [LandTool, string])[] = [
   ['look', 'Look'],
   ['raise', 'Raise'],
   ['lower', 'Lower'],
   ['smooth', 'Smooth'],
   ['flatten', 'Flatten'],
+  ['river', 'River'],
+  ['road', 'Road'],
+  ['town', 'Town'],
+  ['port', 'Port'],
+  ['remove', 'Remove'],
 ];
+
+/** What each place tool asks for, in a line. */
+const TOOL_HINTS: Partial<Record<LandTool, string>> = {
+  river: 'Click from the source down to the mouth; double-click or Enter to finish, Esc to cancel.',
+  road: 'Click along the road; its points snap to ports, towns and other roads. Double-click or Enter to finish.',
+  town: 'Click round the town’s edge; double-click or Enter to close it.',
+  port: 'Click on the land by the coast.',
+  remove: 'Click a river, road, town or port to remove it.',
+};
 
 /** Everything the Land panel shows. */
 export interface LandPanelView {
@@ -22,6 +42,9 @@ export interface LandPanelView {
   readonly tool: LandTool;
   readonly radiusKm: number;
   readonly strength: number;
+  readonly widthM: number;
+  readonly depthM: number;
+  readonly problems: readonly string[];
   readonly view: '2d' | '3d';
   readonly exaggeration: number;
   readonly cursor: string;
@@ -36,6 +59,8 @@ export interface LandPanelHandlers {
   tool(tool: LandTool): void;
   radius(kilometres: number): void;
   strength(value: number): void;
+  width(metres: number): void;
+  depth(metres: number): void;
   undo(): void;
   redo(): void;
   save(): void;
@@ -63,7 +88,7 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
 
   const tools = make('div', '', 'row');
   const toolButtons = LAND_TOOLS.map(([tool, text], index) => {
-    const node = button(`${text} (${index + 1})`, () => handlers.tool(tool));
+    const node = button(`${text} (${(index + 1) % 10})`, () => handlers.tool(tool));
     tools.append(node);
     return [tool, node] as const;
   });
@@ -80,6 +105,10 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   };
   const radius = slider('Radius ', 1, 200, (value) => handlers.radius(value));
   const strength = slider('Strength ', 1, 500, (value) => handlers.strength(value));
+  const width = slider('Width ', 2, 300, (value) => handlers.width(value));
+  const depth = slider('Depth ', 1, 30, (value) => handlers.depth(value));
+  const hint = make('p', '', 'hint');
+  root.append(hint);
   const history = make('div', '', 'row');
   history.append(
     button('Undo (Ctrl+Z)', () => handlers.undo()),
@@ -105,6 +134,9 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   root.append(make('h2', 'Landmasses'));
   const list = make('ol', '', 'slots');
   root.append(list);
+  root.append(make('h2', 'Problems'));
+  const problems = make('ul', '', 'problems');
+  root.append(problems);
   const cursor = make('p', '', 'cursor');
   const status = make('p', '', 'status');
   root.append(cursor, status);
@@ -136,9 +168,19 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
         shown.state.textContent = `${STATE_TEXT[landmass.state]}${landmass.unsaved ? ' · unsaved' : ''}`;
       }
       for (const [tool, node] of toolButtons) node.classList.toggle('active', tool === view.tool);
-      const sculpting = view.tool !== 'look';
+      const sculpting = BRUSHES.includes(view.tool);
       radius.row.hidden = !sculpting;
       strength.row.hidden = !sculpting;
+      width.row.hidden = view.tool !== 'river' && view.tool !== 'road';
+      depth.row.hidden = view.tool !== 'river';
+      width.input.min = view.tool === 'road' ? '2' : '5';
+      width.input.max = view.tool === 'road' ? '30' : '300';
+      width.input.value = String(view.widthM);
+      width.text.textContent = ` ${view.widthM} m`;
+      depth.input.value = String(view.depthM);
+      depth.text.textContent = ` ${view.depthM} m`;
+      hint.textContent = TOOL_HINTS[view.tool] ?? '';
+      problems.replaceChildren(...(view.problems.length ? view.problems : ['None.']).map((text) => make('li', text)));
       radius.input.value = String(view.radiusKm);
       radius.text.textContent = ` ${view.radiusKm} km`;
       strength.input.max = view.tool === 'raise' || view.tool === 'lower' ? '500' : '100';

@@ -7,6 +7,8 @@ code:
   - crates/land/src/water.rs#water
   - crates/land/src/landmass.rs#generate
   - crates/land/src/edits.rs#dab
+  - crates/land/src/places.rs#check_places
+  - crates/land/src/ground.rs#height_at
   - crates/land-wasm/src/lib.rs#land_open
   - client/src/rules/landRules.ts#startLand
 ---
@@ -43,12 +45,41 @@ owner's shapes are final and the rivers and lakes run over them. Each dab reads 
 land stays at 1 m or more and sea at -2 m or less, so a brush never moves the coast. A test holds every file in the
 repository to its rules and its written form, and to a continent of the layout.
 
+## Places
+
+The same file holds the places the owner draws, each with an id that never changes:
+
+| Place | Kept as | Its rules |
+|---|---|---|
+| A carved river | Its course from source to mouth, its width (5 to 300 m) and depth (1 to 30 m) | Its source on the land |
+| A road | Its course and its width (2 to 30 m) | All of it on the land |
+| A town | Its area, a ring of points | A ring that never crosses itself, on the land, overlapping no other town |
+| A port | One point | On the land within 3 km of the coast |
+
+The World Editor snaps a road's points to ports, other roads' points and town edges, so roads meet what they lead to
+exactly. A road's ends are not required to meet anything.
+
+## The ground anywhere
+
+What the server judges a body against and every client draws. `Ground::height_at` gives the ground at any point to
+the metre, and `water_at` what water stands there: sea, a lake, a river, or none.
+
+- The 1 km land is interpolated by Catmull-Rom, with a grain of 4 m at a 250 m scale on the land.
+- A town's area is levelled to the mean of its ground, easing back to the land over 150 m past its edge.
+- A river's channel is cut under its surface with 10 m banks; its surface never rises downstream. Hand-carved
+  rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
+  (2.4 √q + 1.5 m wide).
+- A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder.
+
+The door's `land_sample` gives the editor, and later the game, the same answers.
+
 ## Agreeing to the bit
 
 The land crate uses only exact maths ([[Agree to the Bit]]): its noise is hashed gradient noise made of + - * / and
 square root. Clippy refuses the platform's `sin`, `exp`, `powf` and their kin across the workspace. A fingerprint
 of every ground height's bits is tested natively (`crates/land/tests/agree.rs`) and through WebAssembly
-(`landRules.test.ts`) against the same value.
+(`landRules.test.ts`) against the same value, and so is a fingerprint of the ground sampled on a road, along a
+river, in a town and across the land.
 
 ## In the browser
 
@@ -58,4 +89,7 @@ responsive while a continent generates: about 1.5 s for 200,000 km² and 4 s for
 ## Limits
 
 - Only continents are generated; isles are not placed yet.
+- A hand-carved river is cut where the ground is sampled; the 1 km land under it, and the rivers the water gathers,
+  do not follow it.
+- The map shows places on the 1 km cells they cross, so a road reads as a band a kilometre wide.
 - One climate for every landmass until the owner chooses.

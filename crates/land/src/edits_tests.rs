@@ -37,6 +37,7 @@ fn land_stays_land_and_flatten_reaches_its_level() {
             stroke(Tool::Lower, 500, None, &[[20_000, 20_000]]),
             stroke(Tool::Flatten, 100, Some(300), &[[10_000, 10_000]]),
         ],
+        ..Edits::default()
     };
     apply(&mut ground, &land, &edits);
     assert!(ground.data.iter().all(|&height| height >= LAND_FLOOR_M), "the coast holds");
@@ -57,7 +58,7 @@ fn a_file_reads_checks_and_writes_back_in_its_one_form() {
     let edits = parse(text).unwrap();
     assert!(check(&edits).is_empty());
     assert_eq!(write(&edits).unwrap(), text);
-    let broken = Edits { strokes: vec![stroke(Tool::Flatten, 400, None, &[[-1, 0]])] };
+    let broken = Edits { strokes: vec![stroke(Tool::Flatten, 400, None, &[[-1, 0]])], ..Edits::default() };
     let messages: Vec<String> = check(&broken).into_iter().map(|problem| problem.message).collect();
     assert_eq!(
         messages,

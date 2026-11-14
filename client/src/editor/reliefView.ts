@@ -15,7 +15,7 @@ export interface ReliefScene {
 }
 
 /** One full-screen pass over a landmass's window: the seabed by depth, the land by height under a hillshade, lakes,
- *  river cells, the frame's edge and the brush. */
+ *  each cell's mark (rivers, roads, towns, ports), the frame's edge and the brush. */
 const SHADER = /* wgsl */ `
 struct View {
   centre: vec2f,
@@ -33,13 +33,16 @@ struct View {
 @group(0) @binding(0) var<uniform> view: View;
 @group(0) @binding(1) var heights: texture_2d<f32>;
 @group(0) @binding(2) var lakes: texture_2d<f32>;
-@group(0) @binding(3) var rivers: texture_2d<u32>;
+@group(0) @binding(3) var marks: texture_2d<u32>;
 
 const OUTSIDE = vec3f(0.05, 0.05, 0.06);
 const OPEN_SEA = vec3f(0.06, 0.13, 0.23);
 const SHALLOW = vec3f(0.16, 0.36, 0.52);
 const LAKE = vec3f(0.20, 0.45, 0.66);
 const RIVER = vec3f(0.24, 0.52, 0.80);
+const ROAD = vec3f(0.62, 0.48, 0.30);
+const TOWN = vec3f(0.75, 0.30, 0.22);
+const PORT = vec3f(0.95, 0.95, 0.90);
 
 @vertex
 fn vertex_main(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
@@ -87,7 +90,11 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
     colour = land_colour(height) * (0.45 + 0.75 * shade);
     let lake = textureLoad(lakes, cell, 0).r;
     if (lake > height) { colour = LAKE; }
-    if (textureLoad(rivers, cell, 0).r != 0u) { colour = mix(colour, RIVER, 0.85); }
+    let mark = textureLoad(marks, cell, 0).r;
+    if (mark == 1u || mark == 2u) { colour = mix(colour, RIVER, 0.85); }
+    if (mark == 3u) { colour = ROAD; }
+    if (mark == 4u) { colour = mix(colour, TOWN, 0.6); }
+    if (mark == 5u) { colour = PORT; }
   }
   if (view.brush_radius > 0.0 && abs(distance(world, view.brush) - view.brush_radius) < step) {
     colour = vec3f(1.0);
@@ -96,25 +103,12 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
 }
 `;
 
-/** Each cell a river runs through, from a view's courses: 1 on a river, 0 off. */
-export function riverCells(view: LandView): Uint8Array {
-  const cells = new Uint8Array(view.width * view.height);
-  for (const river of view.rivers) {
-    for (const [x, y] of river.points) {
-      const i = Math.floor((x - view.leftM) / view.cellM);
-      const j = Math.floor((y - view.topM) / view.cellM);
-      if (i >= 0 && j >= 0 && i < view.width && j < view.height) cells[j * view.width + i] = 1;
-    }
-  }
-  return cells;
-}
-
 /** Draws one landmass's relief with WebGPU: three textures of its cells, one full-screen pass. */
 export class ReliefView {
   private readonly gpu: Gpu;
   private readonly uniforms: GPUBuffer;
   private readonly pipeline: GPURenderPipeline;
-  private textures: { heights: GPUTexture; lakes: GPUTexture; rivers: GPUTexture } | null = null;
+  private textures: { heights: GPUTexture; lakes: GPUTexture; marks: GPUTexture } | null = null;
   private bindGroup: GPUBindGroup | null = null;
   private land: LandView | null = null;
 
@@ -132,17 +126,17 @@ export class ReliefView {
   }
 
   /** Shows a landmass, replacing any shown before. */
-  show(land: LandView, rivers: Uint8Array): void {
+  show(land: LandView, marks: Uint8Array): void {
     const { device } = this.gpu;
     this.textures?.heights.destroy();
     this.textures?.lakes.destroy();
-    this.textures?.rivers.destroy();
+    this.textures?.marks.destroy();
     const usage = TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination;
     const size = [land.width, land.height];
     this.textures = {
       heights: device.createTexture({ size, format: 'r32float', usage }),
       lakes: device.createTexture({ size, format: 'r32float', usage }),
-      rivers: device.createTexture({ size, format: 'r8uint', usage }),
+      marks: device.createTexture({ size, format: 'r8uint', usage }),
     };
     this.bindGroup = device.createBindGroup({
       layout: this.pipeline.getBindGroupLayout(0),
@@ -150,15 +144,15 @@ export class ReliefView {
         { binding: 0, resource: { buffer: this.uniforms } },
         { binding: 1, resource: this.textures.heights.createView() },
         { binding: 2, resource: this.textures.lakes.createView() },
-        { binding: 3, resource: this.textures.rivers.createView() },
+        { binding: 3, resource: this.textures.marks.createView() },
       ],
     });
     this.land = land;
-    this.update(land, rivers, null);
+    this.update(land, marks, null);
   }
 
   /** Sends changed cells to the GPU: a rectangle after a brush stroke, or everything when `rect` is null. */
-  update(land: LandView, rivers: Uint8Array, rect: CellRect | null): void {
+  update(land: LandView, marks: Uint8Array, rect: CellRect | null): void {
     if (!this.textures) return;
     this.land = land;
     const { left, top, right, bottom } = rect ?? { left: 0, top: 0, right: land.width, bottom: land.height };
@@ -177,7 +171,7 @@ export class ReliefView {
     for (const [texture, source, bytes] of [
       [this.textures.heights, land.heights, 4],
       [this.textures.lakes, land.lakes, 4],
-      [this.textures.rivers, rivers, 1],
+      [this.textures.marks, marks, 1],
     ] as const) {
       const { out, bytesPerRow } = rows(source, bytes);
       queue.writeTexture({ texture, origin: [left, top] }, out, { bytesPerRow, rowsPerImage: height }, [width, height]);

@@ -1,5 +1,6 @@
-//! Every edits file in the repository belongs to a continent of the layout, keeps its rules and is in its written
-//! form, so a file the World Editor saves merges and one hand-edited wrong does not.
+//! Every edits file in the repository belongs to a continent of the layout, keeps its rules (its places checked
+//! against that continent's coast) and is in its written form, so a file the World Editor saves merges and one
+//! hand-edited wrong does not.
 
 use std::path::Path;
 
@@ -13,8 +14,9 @@ fn each_land_file_keeps_its_rules() {
         let name = path.file_stem().unwrap().to_string_lossy().to_string();
         let text = std::fs::read_to_string(&path).unwrap();
         let edits = land::edits::parse(&text).unwrap_or_else(|error| panic!("{name}: {error}"));
-        assert!(layout.continents.iter().any(|continent| continent.id == name), "{name}: no continent has this id");
-        let problems = land::edits::check(&edits);
+        let continent = layout.continents.iter().find(|continent| continent.id == name);
+        let continent = continent.unwrap_or_else(|| panic!("{name}: no continent has this id"));
+        let problems = land::edits::check_on(&edits, &continent.outline);
         assert!(problems.is_empty(), "{name} breaks its rules: {problems:#?}");
         assert_eq!(land::edits::write(&edits).unwrap(), text, "{name} is in its written form");
     }

@@ -4,8 +4,8 @@ import { viewProjection, type Orbit } from './orbit.ts';
 
 /**
  * One landmass window's terrain, one value a cell, row by row from the north-west. Heights in metres: land at 1 or
- * more, the seabed at -2 or less. `lakes` holds a lake's surface in metres, 0 where there is none; `rivers` is 1
- * where a river runs through the cell. A cell is `cellM` metres square.
+ * more, the seabed at -2 or less. `lakes` holds a lake's surface in metres, 0 where there is none; `marks` holds
+ * what each cell is marked with (marks.ts MARK): rivers, roads, towns, ports. A cell is `cellM` metres square.
  */
 export interface TerrainData {
   readonly width: number;
@@ -13,7 +13,7 @@ export interface TerrainData {
   readonly cellM: number;
   readonly heights: Float32Array;
   readonly lakes: Float32Array;
-  readonly rivers: Uint8Array;
+  readonly marks: Uint8Array;
 }
 
 /** What one frame shows besides the terrain. `brush` is a circle on the ground in metres, or null for none. */
@@ -46,7 +46,7 @@ struct View {
 @group(0) @binding(0) var<uniform> view: View;
 @group(0) @binding(1) var heights: texture_2d<f32>;
 @group(0) @binding(2) var lakes: texture_2d<f32>;
-@group(0) @binding(3) var rivers: texture_2d<u32>;
+@group(0) @binding(3) var marks: texture_2d<u32>;
 
 struct Surface {
   @builtin(position) clip: vec4f,
@@ -68,6 +68,9 @@ const SHALLOW_SEA = vec3f(0.16, 0.40, 0.58);
 const DEEP_SEA = vec3f(0.03, 0.09, 0.24);
 const LAKE = vec3f(0.22, 0.52, 0.68);
 const RIVER = vec3f(0.18, 0.42, 0.72);
+const ROAD = vec3f(0.62, 0.48, 0.30);
+const TOWN = vec3f(0.75, 0.30, 0.22);
+const PORT = vec3f(0.95, 0.95, 0.90);
 const RING = vec3f(1.0, 0.95, 0.70);
 
 fn last_cell() -> vec2i {
@@ -123,7 +126,11 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
     colour = land_colour(surface.bed, surface.slope);
     normal = normalize(surface.normal);
     let cell = clamp(vec2i(floor(surface.world / view.cell_m)), vec2i(0), last_cell());
-    if (textureLoad(rivers, cell, 0).r != 0u) { colour = mix(colour, RIVER, 0.7); }
+    let mark = textureLoad(marks, cell, 0).r;
+    if (mark == 1u || mark == 2u) { colour = mix(colour, RIVER, 0.7); }
+    if (mark == 3u) { colour = ROAD; }
+    if (mark == 4u) { colour = mix(colour, TOWN, 0.6); }
+    if (mark == 5u) { colour = PORT; }
   }
   colour *= AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0);
 
@@ -143,7 +150,7 @@ export class TerrainView {
   private readonly vertexCount: number;
   private readonly heights: GPUTexture;
   private readonly lakes: GPUTexture;
-  private readonly rivers: GPUTexture;
+  private readonly marks: GPUTexture;
   private readonly uniforms: GPUBuffer;
   private readonly pipeline: GPURenderPipeline;
   private readonly bindGroup: GPUBindGroup;
@@ -166,7 +173,7 @@ export class TerrainView {
       });
     this.heights = cellTexture('r32float');
     this.lakes = cellTexture('r32float');
-    this.rivers = cellTexture('r8uint');
+    this.marks = cellTexture('r8uint');
     this.uniforms = device.createBuffer({
       size: UNIFORM_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -185,7 +192,7 @@ export class TerrainView {
         { binding: 0, resource: { buffer: this.uniforms } },
         { binding: 1, resource: this.heights.createView() },
         { binding: 2, resource: this.lakes.createView() },
-        { binding: 3, resource: this.rivers.createView() },
+        { binding: 3, resource: this.marks.createView() },
       ],
     });
     this.update(data, null);
@@ -205,7 +212,7 @@ export class TerrainView {
     const sources = [
       [this.heights, data.heights],
       [this.lakes, data.lakes],
-      [this.rivers, data.rivers],
+      [this.marks, data.marks],
     ] as const;
     for (const [texture, values] of sources) {
       const bytes = values.BYTES_PER_ELEMENT;
