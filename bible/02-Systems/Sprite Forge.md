@@ -49,6 +49,8 @@ tables in `src/systems/studioArt/`, packs in `packs/`.
 - `pull` fetches the tables back for the forge to render more. `pull --strips` also unpacks every strip as PNG.
 
 The bucket is public at `pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev` and lets the site and local servers read it.
+Cloudflare limits how often an `r2.dev` address answers; the renders will move to a name under `daggerfalljs.dev`
+([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
 ## Colours
 

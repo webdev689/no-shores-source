@@ -12,6 +12,8 @@ status: in force
 
 > Asked who made the horse, `orcish_swords.blend` and `crossbows.blend`: "Mine, I own them"
 
+> Told that DFO's own notes call the horse "the Morrowind lane's, reused whole": "Its mine"
+
 > Told that DFO's renders carry Daggerfall's fitting, and asked whether to re-render them clean or bring them as they
 > are: "Bring them as they are". On where a re-render would run: "no re render"
 

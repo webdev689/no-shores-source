@@ -39,6 +39,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[DFO's Sprite Forge Comes Over Exactly]]
 - [[Three Races]]
 - [[The Player Plays as in DFO]]
+- [[The Forge's Renders Will Use daggerfalljs.dev]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
