@@ -1,13 +1,17 @@
 ---
 type: system
 status: planned
-code: []
+code:
+  - content/world/layout.json
+  - crates/world/src/layout.rs#Layout
+  - crates/world/src/check.rs#check
+  - crates/world/src/geometry.rs#doubled_area
 ---
 # World Map
 
 The world's structure, as [[The World Map]] decides it: one ocean the size of Tamriel's frame, nine hand-placed
-continents, thousands of static isles, and discoveries that come and go. This note says how it is built; nothing is
-built yet.
+continents, thousands of static isles, and discoveries that come and go. This note says how it is built. Built so far:
+the layout file and the rules it keeps.
 
 ## The layers
 
@@ -20,6 +24,26 @@ Each layer reads the one above it and owns its own data ([[Generated Files Stay 
 | The settlements | Towns, ports, roads and buildings | World 2.0's settlement generator and our editors | Baked with the land |
 | The persistent state | Who first discovered each isle; what players own and change | The server | PostgreSQL ([[PostgreSQL]]) |
 | The passing state | Discoveries, weather, sea state | The shared Rust rules, from seeds and world time | Nowhere: regenerated identically from the seed |
+
+## The layout file
+
+`content/world/layout.json` holds the layout: each continent's id, its outline as a closed ring of points, and its
+climate profile once chosen; each static isle's id, centre, radius, seed and climate. A point is `[x, y]`, whole metres
+east and south of the frame's north-west corner. The file starts empty: the owner places the continents.
+
+The `world` crate reads it (`layout.rs`) and checks it (`check.rs`), in integer arithmetic only (`geometry.rs`):
+
+| Rule | From the decision |
+|---|---|
+| Every point within the frame, 4,915,200 × 3,072,000 m | Tamriel's frame at DFO's scale |
+| At most nine continents while drafting; exactly nine when finished | Nine continents |
+| Each continent between 161,600 and 940,000 km² | Daggerfall's whole map up to Hammerfell |
+| An outline has three points or more and never crosses or touches itself | A coast is one closed line |
+| No two continents overlap | Continents spread across the ocean |
+| An isle is smaller than the smallest continent, inside the frame, and clear of every continent and other isle | Much smaller islands in the open sea |
+| Every id is unique, for good | Places, saves and discoveries refer to it |
+
+A test reads the repository's layout file and holds it to these rules, so a layout that breaks one cannot merge.
 
 ## Scale and precision
 

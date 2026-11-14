@@ -3,6 +3,7 @@ type: reference
 code:
   - crates/xtask/src/checks/layout.rs#TOP_LEVEL
   - crates/xtask/src/checks/layers.rs#LAYERS
+  - crates/xtask/src/checks/crates.rs#CRATES
   - client/src/main.ts
 ---
 # Code Map
@@ -16,7 +17,9 @@ decision, made in the same change as its entry here.
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
+| `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
+| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json` |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `bible/` | This vault |
 | `.github/workflows/` | CI: one workflow that runs `cargo xtask check` |
@@ -34,10 +37,11 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 
 ## The Rust crates
 
-Crates appear when the work reaches them. At multiplayer ([[Server-Authoritative Multiplayer]]):
+Crates appear when the work reaches them. Each is declared in the crates check's table, which says which other crates
+and outside crates it may use (`CRATES`, [[Checks]]):
 
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
-  predicting client compute the same bits ([[Agree to the Bit]]).
-- **The server**: the authority. It depends on the rules and its own platform crates, never on the client.
-
-When the second crate arrives, the layout check gains a table of which crate may depend on which.
+  predicting client compute the same bits ([[Agree to the Bit]]). The first is `world`, which may use only `serde` and
+  `serde_json`.
+- **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
+  own platform crates, never on the client.
