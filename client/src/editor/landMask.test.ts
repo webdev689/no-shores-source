@@ -92,3 +92,36 @@ test('the continents painted or erased since a copy of the cells are the ones ch
   mask.paintDisc(20_000, 20_000, 2_000, 0);
   assert.deepEqual(mask.changedLabels(before), new Set([1, 2]));
 });
+
+/** Paints a ring of coast, leaving out the arc from `gapFrom` to `gapTo` radians. */
+function ring(mask: LandMask, label: number, gapFrom = 0, gapTo = 0): void {
+  for (let step = 0; step < 360; step++) {
+    const angle = (step / 360) * Math.PI * 2;
+    if (angle >= gapFrom && angle < gapTo) continue;
+    mask.paintDisc(50_000 + Math.cos(angle) * 30_000, 50_000 + Math.sin(angle) * 30_000, 2_000, label);
+  }
+}
+
+test('a fill takes the sea inside a closed coast', () => {
+  const mask = new LandMask(100_000, 100_000);
+  ring(mask, 4);
+  const coast = mask.counts()[4] ?? 0;
+  const rect = mask.fillSea(50, 50, 4, 10_000);
+  assert.notEqual(typeof rect, 'string');
+  assert.ok((mask.counts()[4] ?? 0) > coast + 2_000, 'the inside is land now');
+  assert.equal(mask.pieces().length, 1);
+  assert.ok(!mask.cells.includes(255), 'no cell is left marked');
+});
+
+test('a fill refuses open sea, land, and sea bigger than its limit, changing nothing', () => {
+  const mask = new LandMask(100_000, 100_000);
+  ring(mask, 4, 0, 1);
+  const before = mask.cells.slice();
+  assert.equal(mask.fillSea(50, 50, 4, 10_000), 'open sea');
+  assert.equal(mask.fillSea(20, 50, 4, 10_000), 'not sea', 'a click on the coast');
+  ring(mask, 4);
+  const closed = mask.cells.slice();
+  assert.equal(mask.fillSea(50, 50, 4, 100), 'open sea', 'the inside is bigger than the limit');
+  assert.deepEqual(mask.cells, closed);
+  assert.notDeepEqual(before, closed);
+});

@@ -1,6 +1,9 @@
 /** One cell of the painted land is a square kilometre. */
 export const CELL_M = 1_000;
 
+/** Marks sea a fill has reached, until the fill either takes it or gives it back. Never a continent's label. */
+const REACHED = 255;
+
 /** A rectangle of cells, inclusive of `left`/`top`, exclusive of `right`/`bottom`. */
 export interface CellRect {
   readonly left: number;
@@ -85,6 +88,42 @@ export class LandMask {
         for (let cellX = first; cellX <= last; cellX++) this.cells[cellY * this.width + cellX] = label;
       }
     }
+  }
+
+  /**
+   * Fills `label` into the sea a click lands in, as far as the land around it, cells joined by their sides. Sea that
+   * reaches the frame's edge or holds more than `limit` cells is open ocean: nothing changes, and that comes back.
+   */
+  fillSea(cellX: number, cellY: number, label: number, limit: number): CellRect | 'not sea' | 'open sea' {
+    if (cellX < 0 || cellY < 0 || cellX >= this.width || cellY >= this.height) return 'not sea';
+    const start = cellY * this.width + cellX;
+    if (this.cells[start] !== 0) return 'not sea';
+    const reached = [start];
+    this.cells[start] = REACHED;
+    let open = false;
+    for (let next = 0; next < reached.length && !open; next++) {
+      const index = reached[next] ?? 0;
+      const atX = index % this.width;
+      const atY = (index - atX) / this.width;
+      open = atX === 0 || atY === 0 || atX === this.width - 1 || atY === this.height - 1 || reached.length > limit;
+      if (open) break;
+      for (const side of [index - 1, index + 1, index - this.width, index + this.width]) {
+        if (this.cells[side] !== 0) continue;
+        this.cells[side] = REACHED;
+        reached.push(side);
+      }
+    }
+    const rect = { left: this.width, top: this.height, right: 0, bottom: 0 };
+    for (const index of reached) {
+      this.cells[index] = open ? 0 : label;
+      const atX = index % this.width;
+      const atY = (index - atX) / this.width;
+      rect.left = Math.min(rect.left, atX);
+      rect.top = Math.min(rect.top, atY);
+      rect.right = Math.max(rect.right, atX + 1);
+      rect.bottom = Math.max(rect.bottom, atY + 1);
+    }
+    return open ? 'open sea' : rect;
   }
 
   /** The continents whose cells differ from `before`, an earlier copy of `cells`: those painted or erased since. */

@@ -27,6 +27,7 @@ Open `https://lattymoy.github.io/overlook-source/editor/` in a browser with WebG
 |---|---|
 | `1` to `9`, or a continent's row | Chooses the continent to paint |
 | Paint (`P`), Erase (`E`) | Left-drag paints or erases with the brush; the slider sets its radius, 5 to 250 km |
+| Fill (`F`) | Click inside a closed coast to fill the sea there with the continent. Sea that reaches the open ocean, or is bigger than the largest continent, is refused |
 | Ruler (`R`) | Left-drag measures a straight distance in kilometres; `Esc` clears it |
 | Compare (`C`) | Click pins a reference shape: the smallest continent (161,600 km²), the largest (940,000 km²), or Daggerfall's whole map (819 × 410 km) |
 | Right- or middle-drag, wheel | Pans and zooms, from 50 m to 20 km a pixel |

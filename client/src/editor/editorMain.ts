@@ -233,6 +233,18 @@ async function start(): Promise<void> {
     stroke = { x, y };
   };
 
+  const fillAt = (x: number, y: number) => {
+    const found = mask.fillSea(Math.floor(x / CELL_M), Math.floor(y / CELL_M), slot, constants.maxContinentKm2);
+    if (found === 'not sea') status = 'Fill works on sea: click inside a coast.';
+    else if (found === 'open sea') status = 'That sea is open, or bigger than any continent: close the coast first.';
+    else {
+      view.upload(found);
+      recheck();
+      keep();
+      status = `Filled ${slotIds[slot] ?? 'the continent'}.`;
+    }
+  };
+
   const frame = () => {
     frameQueued = false;
     const ratio = window.devicePixelRatio || 1;
@@ -294,6 +306,7 @@ async function start(): Promise<void> {
     const world = screenToWorld(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY);
     if (event.button !== 0) panning = { x: event.offsetX, y: event.offsetY };
     else if (tool === 'paint' || tool === 'erase') paintTo(world.x, world.y);
+    else if (tool === 'fill') fillAt(world.x, world.y);
     else if (tool === 'ruler') ruler = { fromX: world.x, fromY: world.y, toX: world.x, toY: world.y };
     else {
       const shape = shapes.find((candidate) => candidate.key === referenceKey);
@@ -346,7 +359,7 @@ async function start(): Promise<void> {
     if (event.target instanceof HTMLInputElement) return;
     const digit = Number(event.key);
     if (digit >= 1 && digit <= constants.continentCount) slot = digit;
-    const byKey: Record<string, Tool> = { p: 'paint', e: 'erase', r: 'ruler', c: 'reference' };
+    const byKey: Record<string, Tool> = { p: 'paint', e: 'erase', f: 'fill', r: 'ruler', c: 'reference' };
     const chosen = byKey[event.key.toLowerCase()];
     if (chosen) tool = chosen;
     if (event.key === 'Escape') ruler = null;

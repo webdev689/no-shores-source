@@ -2,7 +2,7 @@ import type { WorldConstants } from '../rules/worldRules.ts';
 import type { Issue } from './layoutDraft.ts';
 import type { AreaStanding, Reference } from './measure.ts';
 
-export type Tool = 'paint' | 'erase' | 'ruler' | 'reference';
+export type Tool = 'paint' | 'erase' | 'fill' | 'ruler' | 'reference';
 
 /** The nine continents' colours, matching the map. */
 export const SLOT_COLOURS = [
@@ -55,6 +55,7 @@ export interface PanelHandlers {
 const TOOLS: readonly (readonly [Tool, string, string])[] = [
   ['paint', 'Paint', 'P'],
   ['erase', 'Erase', 'E'],
+  ['fill', 'Fill', 'F'],
   ['ruler', 'Ruler', 'R'],
   ['reference', 'Compare', 'C'],
 ];
@@ -90,7 +91,8 @@ export function buildPanel(
   root.replaceChildren();
   root.append(make('h1', 'World Editor'));
   const range = `${constants.minContinentKm2.toLocaleString('en-US')}-${constants.maxContinentKm2.toLocaleString('en-US')} km²`;
-  root.append(make('p', `Paint each continent on a 1 km grid. Each may cover ${range}.`, 'hint'));
+  const hint = `Paint each continent on a 1 km grid, or draw its coast and Fill inside. Each may cover ${range}.`;
+  root.append(make('p', hint, 'hint'));
 
   const tools = make('div', '', 'row');
   const toolButtons = TOOLS.map(([tool, text, key]) => {
