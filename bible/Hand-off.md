@@ -16,16 +16,23 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
   shows it in 2D and 3D, close up at true scale, and on foot.
+- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
+  secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
+  move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
 
 ## Waiting on the owner
 
-- Merging the [[Sprite Forge]] and the [[Test Ground]] (`forge/test-ground`): DFO's forge exactly, its 120,435
-  renders on R2, and the open area to try its figures.
+- Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
+- Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
+  ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 - The layout with all nine continents: on the site, Save it after Problems is clear and send it.
 - [[Open Questions]]: which nine climates, which the owner will decide later. Until then every landmass uses one
   placeholder climate.
 
 ## Next
+
+- The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
+  Overlook's own.
 
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.
