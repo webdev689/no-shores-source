@@ -38,6 +38,15 @@ pub fn erode(elevation: &Grid, uplift: &Grid, land: &[bool], rain_mm: f64, steps
     for _ in 0..steps {
         let routing = route_flow(&ground, width, height, cell_m, &sea);
         let gathered = crate::drainage::accumulate(&routing, &rain);
+        // The lakes are the hollows of the ground the flood routed, found before any cell is cut: afterwards every
+        // cut cell would sit under its old filled level and look flooded.
+        let pools = hollows(&routing, &ground, width, height, 0.0);
+        let mut pool_of = vec![usize::MAX; count];
+        for (pool, hollow) in pools.iter().enumerate() {
+            for &cell in &hollow.cells {
+                pool_of[cell as usize] = pool;
+            }
+        }
         for &cell in &routing.order {
             let cell = cell as usize;
             eroded[cell] = 0.0;
@@ -56,13 +65,6 @@ pub fn erode(elevation: &Grid, uplift: &Grid, land: &[bool], rain_mm: f64, steps
             ground[cell] = next;
         }
         load.fill(0.0);
-        let pools = hollows(&routing, &ground, width, height, 0.0);
-        let mut pool_of = vec![usize::MAX; count];
-        for (pool, hollow) in pools.iter().enumerate() {
-            for &cell in &hollow.cells {
-                pool_of[cell as usize] = pool;
-            }
-        }
         let mut held = vec![0.0; pools.len()];
         for &cell in routing.order.iter().rev() {
             let cell = cell as usize;
@@ -163,6 +165,23 @@ mod tests {
     use super::*;
     use crate::relief::{PLACEHOLDER, coast_distance_km, land_mask, relief, window};
     use world::geometry::Point;
+
+    #[test]
+    fn what_a_slope_loses_reaches_the_sea() {
+        // a plain ramp with no hollow, falling west to the sea: whatever the streams cut must leave the land
+        let mut elevation = Grid::new(40, 20, 0.0, 0.0, 1000.0);
+        let land: Vec<bool> = (0..800).map(|index| index % 40 > 1).collect();
+        for (index, value) in elevation.data.iter_mut().enumerate() {
+            let (i, j) = (index % 40, index / 40);
+            *value = if i > 1 { 20.0 * i as f64 + 2.0 * (j as f64 - 10.0).abs() } else { -10.0 };
+        }
+        let still = elevation.like(0.0);
+        let worked = erode(&elevation, &still, &land, 800.0, 1);
+        let volume = |grid: &Grid| (0..800).filter(|&index| land[index]).map(|index| grid.data[index]).sum::<f64>();
+        // One step cuts about 79 metre-cells from this ramp; finding the lakes after the cut laid a third of it back.
+        let lost = volume(&elevation) - volume(&worked);
+        assert!(lost > 70.0, "what the streams cut leaves the land: {lost}");
+    }
 
     #[test]
     fn erosion_cuts_the_land_and_keeps_the_coast() {

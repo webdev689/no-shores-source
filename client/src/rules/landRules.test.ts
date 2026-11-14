@@ -43,7 +43,7 @@ test('a continent opens as its window, with land inside the coast and sea around
 
 test('the land agrees to the bit with the native build (crates/land/tests/agree.rs holds the same fingerprint)', async () => {
   const view = (await land()).open(square(200_000, 300_000, 120_000), 'square', null);
-  assert.equal(view.groundHash, 'c3f0ce8d08683ead');
+  assert.equal(view.groundHash, '2723ccc818961ecb');
 });
 
 test('an unknown continent is refused with the reason', async () => {
@@ -161,9 +161,13 @@ test('the sampled ground agrees to the bit with the native build (crates/land/te
       372_000 + 2_000 * Math.floor(step / 4),
     ]),
     ...steps(100).map((step): [number, number] => [205_000 + 1_100 * step, 305_000 + 1_100 * step]),
+    ...steps(50).map((step): [number, number] => [
+      205_000.123456789 + 2_201.987654321 * step,
+      305_000.75 + 2_199.0625 * step,
+    ]),
   ];
   const sample = rules.sample(points);
-  assert.equal(sample.sampleHash, 'ee55746a7aba0eae');
+  assert.equal(sample.sampleHash, '1316e7b1b67f5f55');
   assert.equal(sample.water[10]?.kind, 'river', 'the carved river holds water');
   assert.ok((sample.heights[10] ?? 0) < (sample.water[10]?.surface ?? 0), 'its bed lies under its surface');
 });

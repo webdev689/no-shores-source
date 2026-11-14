@@ -6,13 +6,8 @@ import { markCells, type Places } from './marks.ts';
 const EMPTY_EDITS = '{ "strokes": [] }';
 /** Where this browser keeps a landmass's unsaved edits between visits. */
 const keptKey = (id: string) => `overlook.worldEditor.land.${id}`;
-function editsOf(landmass: Landmass): Places {
-  try {
-    return JSON.parse(landmass.history[landmass.at] ?? EMPTY_EDITS) as Places;
-  } catch {
-    return {};
-  }
-}
+/** Undo reaches this many changes back. */
+const HISTORY = 100;
 
 function readsAsJson(text: string): boolean {
   try {
@@ -22,9 +17,6 @@ function readsAsJson(text: string): boolean {
     return false;
   }
 }
-
-/** Undo reaches this many strokes back. */
-const HISTORY = 100;
 
 /** One landmass as the Land mode holds it: its land, its edits file as saved and as now, and its undo history. */
 export interface Landmass {
@@ -36,13 +28,25 @@ export interface Landmass {
   at: number;
 }
 
+function editsOf(landmass: Landmass): Places {
+  try {
+    return JSON.parse(landmass.history[landmass.at] ?? EMPTY_EDITS) as Places;
+  } catch {
+    return {};
+  }
+}
+
 /** The landmasses of one layout, each generated in the worker; one at a time is open for strokes. */
 export class LandSession {
   readonly landmasses = new Map<string, Landmass>();
+  /** Set once this browser could not keep a change: the file Save writes is then the only copy. */
+  storageFailed = false;
   private readonly worker: LandWorker;
   private readonly layoutText: string;
   private openId = '';
+  private closed = false;
   private queue: Promise<unknown> = Promise.resolve();
+  private readonly opening = new Map<string, Promise<Landmass | null>>();
 
   constructor(worker: LandWorker, layoutText: string) {
     this.worker = worker;
@@ -52,9 +56,17 @@ export class LandSession {
       this.landmasses.set(id, { state: 'waiting', view: null, marks: null, savedText: null, history: [], at: 0 });
   }
 
+  /** Stops the session: work still queued does nothing, so a newer session's worker calls are never overtaken. */
+  close(): void {
+    this.closed = true;
+  }
+
   /** Runs worker calls one after another, so a dab never overtakes the stroke before it. */
   private then<T>(work: () => Promise<T>): Promise<T> {
-    const next = this.queue.then(work);
+    const next = this.queue.then(() => {
+      if (this.closed) throw new Error('the layout changed: this work was dropped');
+      return work();
+    });
     this.queue = next.catch(() => undefined);
     return next;
   }
@@ -71,7 +83,7 @@ export class LandSession {
   }
 
   /** Changes the open landmass's edits by hand (adding or removing a place): the ground is laid again under them, the
-   *  change becomes an undo step and this browser keeps it. */
+   *  change becomes an undo step and this browser keeps it. `mutate` sees the edits as they stand when it runs. */
   change(id: string, mutate: (edits: Record<string, unknown[]>) => void): Promise<Landmass | null> {
     return this.then(async () => {
       const landmass = this.landmasses.get(id);
@@ -86,20 +98,27 @@ export class LandSession {
     });
   }
 
+  /** Keeps a landmass's edits in this browser until they are saved; says if the browser refused. */
+  private keep(id: string, text: string): void {
+    try {
+      localStorage.setItem(keptKey(id), text);
+    } catch {
+      this.storageFailed = true;
+    }
+  }
+
   /** A new undo step with this text, kept in this browser until saved. */
   private record(landmass: Landmass, id: string, text: string): void {
     landmass.history = [...landmass.history.slice(0, landmass.at + 1), text].slice(-HISTORY);
     landmass.at = landmass.history.length - 1;
-    try {
-      localStorage.setItem(keptKey(id), text);
-    } catch {
-      // This browser keeps nothing: the file saved by Save is the only copy.
-    }
+    this.keep(id, text);
   }
 
-  /** The edits a landmass opens with: those kept in this browser if `restore`, else its file in the repository. */
+  /** The edits a landmass opens with: those kept in this browser if `restore` and they read, else its file. */
   private async editsOf(id: string, restore: boolean): Promise<{ saved: string | null; now: string }> {
-    const answer = await fetch(`${import.meta.env.BASE_URL}world/land/${id}.json`).catch(() => null);
+    const answer = await fetch(`${import.meta.env.BASE_URL}world/land/${encodeURIComponent(id)}.json`).catch(
+      () => null,
+    );
     const text = answer?.ok ? await answer.text() : null;
     // A host may answer a missing file with its own page: only text that reads as JSON is an edits file.
     const saved = text !== null && readsAsJson(text) ? text : null;
@@ -109,16 +128,19 @@ export class LandSession {
     } catch {
       kept = null;
     }
-    return { saved, now: kept ?? saved ?? EMPTY_EDITS };
+    return { saved, now: (kept !== null && readsAsJson(kept) ? kept : null) ?? saved ?? EMPTY_EDITS };
   }
 
-  /** Generates a landmass; `keep` leaves it open for strokes. */
+  /** Generates a landmass; `keep` leaves it open for strokes. One open at a time per landmass: asking again while
+   *  it is being opened answers the same. */
   generate(id: string, keep: boolean, restore: boolean): Promise<Landmass | null> {
     const landmass = this.landmasses.get(id);
     if (!landmass) return Promise.resolve(null);
     if (landmass.state === 'ready' && (!keep || this.openId === id)) return Promise.resolve(landmass);
+    const pending = keep ? this.opening.get(id) : undefined;
+    if (pending) return pending;
     landmass.state = 'generating';
-    return this.then(async () => {
+    const opened = this.then(async () => {
       if (landmass.history.length === 0) {
         const edits = await this.editsOf(id, restore);
         landmass.savedText = edits.saved;
@@ -136,6 +158,11 @@ export class LandSession {
       }
       return landmass;
     });
+    if (keep) {
+      this.opening.set(id, opened);
+      void opened.finally(() => this.opening.delete(id)).catch(() => undefined);
+    }
+    return opened;
   }
 
   /** One dab on the open landmass; the patch is laid on its view as it comes back. */
@@ -145,10 +172,11 @@ export class LandSession {
       const patch = await this.worker.dab(brush, point, starts);
       const view = this.landmasses.get(id)?.view;
       const { left, top, right, bottom } = patch.rect;
+      const width = right - left;
       if (view)
         for (let row = top; row < bottom; row++)
           view.heights.set(
-            patch.heights.subarray((row - top) * (right - left), (row - top + 1) * (right - left)),
+            patch.heights.subarray((row - top) * width, (row - top + 1) * width),
             row * view.width + left,
           );
       return patch;
@@ -167,7 +195,7 @@ export class LandSession {
     });
   }
 
-  /** Steps the open landmass's edits back (-1) or forward (+1) through its history. */
+  /** Steps the open landmass's edits back (-1) or forward (+1) through its history; this browser keeps the step. */
   step(id: string, direction: -1 | 1): Promise<Landmass | null> {
     return this.then(async () => {
       const landmass = this.landmasses.get(id);
@@ -175,22 +203,26 @@ export class LandSession {
       if (!landmass || text === undefined || this.openId !== id) return null;
       landmass.at += direction;
       this.show(landmass, await this.worker.setEdits(text));
+      this.keep(id, text);
       return landmass;
     });
   }
 
-  /** The open landmass's edits file text, and that it is now the saved one. */
+  /** The open landmass's edits file text, and that it is now the saved one. Refused unless `id` is the landmass
+   *  open in the worker, so one landmass's edits are never saved under another's name. */
   written(id: string): Promise<string> {
     return this.then(async () => {
-      const { text } = await this.worker.write();
+      if (this.openId !== id) throw new Error(`${id} is not open yet: try Save again in a moment`);
+      const written = await this.worker.write();
+      if (written.id !== id) throw new Error(`the open landmass is ${written.id}, not ${id}: nothing was saved`);
       const landmass = this.landmasses.get(id);
-      if (landmass) landmass.savedText = text;
+      if (landmass) landmass.savedText = written.text;
       try {
         localStorage.removeItem(keptKey(id));
       } catch {
         // Nothing kept, nothing to forget.
       }
-      return text;
+      return written.text;
     });
   }
 

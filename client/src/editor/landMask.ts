@@ -4,6 +4,38 @@ export const CELL_M = 1_000;
 /** Marks sea a fill has reached, until the fill either takes it or gives it back. Never a continent's label. */
 const REACHED = 255;
 
+/** A grid of square cells laid on the world: its size in cells, its top-left corner and its cell in metres. */
+export interface CellGrid {
+  readonly width: number;
+  readonly height: number;
+  readonly leftM: number;
+  readonly topM: number;
+  readonly cellM: number;
+}
+
+/** Calls `each` with the index of every cell whose centre lies inside a ring of points in metres (even-odd, by rows). */
+export function eachCellInRing(
+  grid: CellGrid,
+  ring: readonly (readonly [number, number])[],
+  each: (index: number) => void,
+): void {
+  const { width, height, leftM, topM, cellM } = grid;
+  for (let row = 0; row < height; row++) {
+    const y = topM + (row + 0.5) * cellM;
+    const crossings: number[] = [];
+    ring.forEach(([fromX, fromY], index) => {
+      const [toX, toY] = ring[(index + 1) % ring.length] ?? [fromX, fromY];
+      if (fromY > y !== toY > y) crossings.push(fromX + ((y - fromY) / (toY - fromY)) * (toX - fromX));
+    });
+    crossings.sort((first, second) => first - second);
+    for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
+      const first = Math.max(0, Math.ceil(((crossings[pair] ?? 0) - leftM) / cellM - 0.5));
+      const last = Math.min(width - 1, Math.floor(((crossings[pair + 1] ?? 0) - leftM) / cellM - 0.5));
+      for (let column = first; column <= last; column++) each(row * width + column);
+    }
+  }
+}
+
 /** A rectangle of cells, inclusive of `left`/`top`, exclusive of `right`/`bottom`. */
 export interface CellRect {
   readonly left: number;
@@ -66,28 +98,17 @@ export class LandMask {
 
   /** How many cells, and so square kilometres, each label holds; index 0 is the sea. */
   counts(): number[] {
-    const counts = new Array<number>(10).fill(0);
-    for (const label of this.cells) counts[label] = (counts[label] ?? 0) + 1;
-    return counts;
+    // Typed and indexed: this runs over the whole frame while a stroke paints.
+    const counts = new Uint32Array(256);
+    const { cells } = this;
+    for (let index = 0; index < cells.length; index++) counts[cells[index] ?? 0]++;
+    return [...counts.subarray(0, 10)];
   }
 
   /** Fills `label` into every cell whose centre lies inside an outline of points in metres, as a layout stores it. */
   fillOutline(outline: readonly (readonly [number, number])[], label: number): void {
-    for (let cellY = 0; cellY < this.height; cellY++) {
-      const y = (cellY + 0.5) * CELL_M;
-      const crossings: number[] = [];
-      outline.forEach(([fromX, fromY], index) => {
-        const [toX, toY] = outline[(index + 1) % outline.length] ?? [fromX, fromY];
-        if (fromY > y === toY > y) return;
-        crossings.push(fromX + ((y - fromY) / (toY - fromY)) * (toX - fromX));
-      });
-      crossings.sort((a, b) => a - b);
-      for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
-        const first = Math.max(0, Math.ceil((crossings[pair] ?? 0) / CELL_M - 0.5));
-        const last = Math.min(this.width - 1, Math.floor((crossings[pair + 1] ?? 0) / CELL_M - 0.5));
-        for (let cellX = first; cellX <= last; cellX++) this.cells[cellY * this.width + cellX] = label;
-      }
-    }
+    const grid = { width: this.width, height: this.height, leftM: 0, topM: 0, cellM: CELL_M };
+    eachCellInRing(grid, outline, (index) => (this.cells[index] = label));
   }
 
   /**
@@ -152,21 +173,20 @@ export class LandMask {
       let cells = 0;
       seen[start] = 1;
       stack.push(start);
+      // Neighbours are visited in place, with no array a cell: a full frame holds millions of land cells.
+      const visit = (next: number) => {
+        if (seen[next] || this.cells[next] !== label) return;
+        seen[next] = 1;
+        stack.push(next);
+      };
       while (stack.length > 0) {
         const index = stack.pop() ?? 0;
         const cellX = index % this.width;
         cells++;
-        const neighbours = [
-          cellX > 0 ? index - 1 : -1,
-          cellX < this.width - 1 ? index + 1 : -1,
-          index - this.width,
-          index + this.width,
-        ];
-        for (const next of neighbours) {
-          if (next < 0 || next >= this.cells.length || seen[next] || this.cells[next] !== label) continue;
-          seen[next] = 1;
-          stack.push(next);
-        }
+        if (cellX > 0) visit(index - 1);
+        if (cellX < this.width - 1) visit(index + 1);
+        if (index >= this.width) visit(index - this.width);
+        if (index + this.width < this.cells.length) visit(index + this.width);
       }
       const startX = start % this.width;
       const startY = (start - startX) / this.width;
@@ -180,7 +200,9 @@ export class LandMask {
     const runs: number[] = [];
     let label = this.cells[0] ?? 0;
     let length = 0;
-    for (const cell of this.cells) {
+    const { cells } = this;
+    for (let index = 0; index < cells.length; index++) {
+      const cell = cells[index] ?? 0;
       if (cell === label) {
         length++;
         continue;

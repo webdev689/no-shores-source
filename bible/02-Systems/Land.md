@@ -21,7 +21,8 @@ the server and in every browser. The owner decided the generator makes the land 
 
 - **The window.** Each continent is generated on its own grid of 1 km cells: its coast's bounds and 40 km of sea
   around it. The painted coast decides land and sea, never the heights: land stays at 1 m or more and the seabed at
-  -2 m or less, so the coast stays where it was painted.
+  -2 m or less, so the coast stays where it was painted. A coast of fewer than 3 points, or a window over 6 million
+  cells, is refused with a reason instead of generated.
 - **The relief.** The land rises inland from the coast to uplands, about 650 m at 140 km in. Ranges stand where a slow
   ridge network, about 380 km across, crosses the interior, up to the climate's range height. The hills' grain
   grows with height. The seabed falls with distance from the coast.
@@ -39,11 +40,15 @@ the server and in every browser. The owner decided the generator makes the land 
 
 ## The owner's edits
 
-Each landmass's shaping is kept in `content/world/land/<id>.json`: brush strokes, each a tool, a radius, a
-strength and the points it was dabbed at in whole metres. They apply after erosion and before the water, so the
-owner's shapes are final and the rivers and lakes run over them. Each dab reads the ground the dabs before it left;
-land stays at 1 m or more and sea at -2 m or less, so a brush never moves the coast. A test holds every file in the
-repository to its rules and its written form, and to a continent of the layout.
+Each landmass's shaping is kept in `content/world/land/<id>.json`: brush strokes, each a tool, a radius of 1 to
+200 km, a strength, a falloff and the points it was dabbed at in whole metres. Raise and Lower move the ground 1 to
+500 m a dab; Smooth and Flatten move it 1 to 100 % of the way. A Flatten stroke also keeps its `level_m`, -500 to
+9,000 m. The falloff is smooth unless the stroke says linear or flat.
+
+Strokes apply after erosion and before the water, so the owner's shapes are final and the rivers and lakes run over
+them. Each dab reads the ground the dabs before it left; land stays at 1 m or more and sea at -2 m or less, so a
+brush never moves the coast. A test holds every file in the repository to its rules and its written form, and to a
+continent of the layout.
 
 ## Places
 
@@ -56,8 +61,12 @@ The same file holds the places the owner draws, each with an id that never chang
 | A town | Its area, a ring of points | A ring that never crosses itself, on the land, overlapping no other town |
 | A port | One point | On the land within 3 km of the coast |
 
-The World Editor snaps a road's points to ports, other roads' points and town edges, so roads meet what they lead to
-exactly. A road's ends are not required to meet anything.
+A place's id is lowercase letters, digits and hyphens, and no other place in the file has it. The World Editor
+names new places `river-N`, `road-N`, `town-N` and `port-N`. It snaps a road's points to ports, other roads' points
+and town edges, so roads meet what they lead to exactly. A road's ends are not required to meet anything.
+
+A road or a town is on the land along every edge, not only at its points, so a road never crosses a bay. A file
+holds at most 200,000 dabs, a place at most 10,000 points, and a course at most 5,000 km.
 
 ## The ground anywhere
 
@@ -66,12 +75,13 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
 
 - The 1 km land is interpolated by Catmull-Rom, with a grain of 4 m at a 250 m scale on the land.
 - A town's area is levelled to the mean of its ground, easing back to the land over 150 m past its edge.
-- A river's channel is cut under its surface with 10 m banks; its surface never rises downstream. Hand-carved
+- A river's channel is cut under its surface with 10 m banks; its surface never rises downstream. A river the water
+  gathered keeps the level the flood gave it, so it crosses a lake at the lake's surface. Hand-carved
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).
 - A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder.
 
-The door's `land_sample` gives the editor, and later the game, the same answers.
+The land's WebAssembly door gives the browser the same answers.
 
 ## Agreeing to the bit
 
@@ -86,10 +96,19 @@ river, in a town and across the land.
 `crates/land-wasm` is the land's WebAssembly door. The World Editor runs it in a worker, so the page stays
 responsive while a continent generates: about 1.5 s for 200,000 km² and 4 s for 500,000 km² on one core.
 
+One landmass at a time is open for shaping. The editor also generates the others as previews (`keep: false`), which
+leave the open one alone. The door answers for the open landmass:
+
+- `land_patch`: the ground over a grid of up to 1,024 samples a side. Each sample has its height, its water's
+  surface, and a mark for a road, a town or a port. The editor's close-up draws it.
+- `land_sample`: the ground at a list of points. Each point has its height and its water (dry, sea, lake or river)
+  with the water's surface. The answer also holds a fingerprint of the heights. The game will call it.
+
 ## Limits
 
 - Only continents are generated; isles are not placed yet.
 - A hand-carved river is cut where the ground is sampled; the 1 km land under it, and the rivers the water gathers,
   do not follow it.
-- The map shows places on the 1 km cells they cross, so a road reads as a band a kilometre wide.
+- The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
+  band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 8 m.
 - One climate for every landmass until the owner chooses.

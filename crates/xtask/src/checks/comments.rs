@@ -1,5 +1,5 @@
-use super::Problem;
 use super::script_comments::script_comments;
+use super::{Problem, is_script};
 
 /// A comment says why in at most this many lines. Lines inside a doc comment's code example do not count.
 pub const MAX_COMMENT_LINES: usize = 8;
@@ -222,7 +222,7 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
     for (path, text) in sources {
         let comments = if path.ends_with(".py") {
             python_comments(text)
-        } else if path.ends_with(".ts") || path.ends_with(".js") {
+        } else if is_script(path) {
             script_comments(text)
         } else {
             rust_comments(text)
@@ -230,20 +230,25 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
         for comment in comments {
             let mut in_example = false;
             let mut counted = 0;
+            let mut example_lines = 0;
             for (line, body) in &comment.lines {
                 let words = words_of(body);
-                if words.starts_with("```") {
-                    in_example = !in_example;
-                    continue;
-                }
-                if in_example || words.is_empty() {
-                    continue;
-                }
-                counted += 1;
                 if let Some(marker) = history_marker(words) {
                     let message = format!("this comment holds {marker}: history lives in git and the pull request");
                     problems.push(Problem::new("comments", path, Some(*line), message));
                 }
+                if words.starts_with("```") {
+                    in_example = !in_example;
+                    example_lines = 0;
+                } else if in_example && !words.is_empty() {
+                    example_lines += 1;
+                } else if !words.is_empty() {
+                    counted += 1;
+                }
+            }
+            // A fence never closed is no example: its lines count like any other.
+            if in_example {
+                counted += example_lines;
             }
             if counted > MAX_COMMENT_LINES {
                 let first = comment.lines.first().map(|(line, _)| *line);

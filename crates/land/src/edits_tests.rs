@@ -70,3 +70,17 @@ fn a_file_reads_checks_and_writes_back_in_its_one_form() {
     );
     assert!(parse(r#"{ "strokes": [], "extra": 1 }"#).is_err(), "unknown fields are refused");
 }
+
+#[test]
+fn a_place_too_wide_or_too_long_is_refused_without_its_coast() {
+    let road = |width_m: i64, points: &[[i64; 2]]| crate::places::Road {
+        id: "road-1".into(),
+        width_m,
+        points: points.iter().map(|&point| point.into()).collect(),
+    };
+    let wide = Edits { roads: vec![road(4_000_000, &[[0, 0], [10, 0]])], ..Edits::default() };
+    assert_eq!(check(&wide)[0].message, "its width must be 2 to 30 m");
+    let zigzag: Vec<[i64; 2]> = (0..20).map(|at| if at % 2 == 0 { [0, 0] } else { [4_000_000, 3_000_000] }).collect();
+    let long = Edits { roads: vec![road(8, &zigzag)], ..Edits::default() };
+    assert_eq!(check(&long)[0].message, "it runs over 5000 km");
+}

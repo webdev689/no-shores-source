@@ -4,10 +4,13 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
+# A newer push to a pull request cancels its older run. Every other run has a group of its own, so none on main is
+# cancelled and each merge is checked before it is published.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -20,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install the pinned toolchain
         run: rustup toolchain install
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -29,3 +32,14 @@ jobs:
         run: npm ci
       - name: cargo xtask check
         run: cargo xtask check
+
+  # Publishes to GitHub Pages from main, once this same commit has passed the check. A called workflow's jobs get
+  # at most what its caller grants; inside, only the deploy job takes the write and the identity token.
+  pages:
+    needs: check
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml

@@ -64,8 +64,29 @@ fn a_road_eases_to_its_level_and_a_town_levels_its_area() {
 fn courses_are_densified_and_rounded_at_their_corners() {
     let dense = densify(&[(0.0, 0.0), (100.0, 0.0)], 50.0);
     assert_eq!(dense, [(0.0, 0.0), (50.0, 0.0), (100.0, 0.0)]);
-    let cut = chaikin(&[(0.0, 0.0, 1.0), (100.0, 0.0, 1.0), (100.0, 100.0, 3.0)]);
+    let cut = chaikin(&[[0.0, 0.0, 1.0], [100.0, 0.0, 1.0], [100.0, 100.0, 3.0]]);
     assert_eq!(cut.len(), 6);
-    assert_eq!(cut[0], (0.0, 0.0, 1.0));
-    assert_eq!(*cut.last().unwrap(), (100.0, 100.0, 3.0));
+    assert_eq!(cut[0], [0.0, 0.0, 1.0]);
+    assert_eq!(*cut.last().unwrap(), [100.0, 100.0, 3.0]);
+}
+
+#[test]
+fn a_gathered_river_through_a_lake_keeps_its_level_beyond_it() {
+    // a valley falling west to the sea, with a deep pit 30 km up it that the river fills and spills from
+    let mut land = Grid::new(60, 30, 0.0, 0.0, 1000.0);
+    let mask: Vec<bool> = (0..1800).map(|index| index % 60 != 0).collect();
+    for (index, value) in land.data.iter_mut().enumerate() {
+        let (i, j) = (index % 60, index / 60);
+        *value = if i == 0 { -5.0 } else { 10.0 * i as f64 + (j as f64 - 15.0).abs() * 30.0 };
+        if (29..=31).contains(&i) && j == 15 {
+            *value -= 200.0;
+        }
+    }
+    let gathered = crate::water::water(&land, &mask, 800.0);
+    let ground = Ground::new(&land, &gathered.lake_level, &gathered.rivers, &Edits::default(), 1);
+    for i in [5, 12, 20, 26] {
+        let (x, y) = land.centre(i, 15);
+        let below = land.data[15 * 60 + i] - ground.height_at(x, y);
+        assert!(below < 6.0, "the channel {} km from the sea is {below} m under the land", i);
+    }
 }

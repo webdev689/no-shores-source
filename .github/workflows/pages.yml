@@ -1,29 +1,25 @@
-# Publishes the client, the World Editor with it, to GitHub Pages on every merge into main.
+# Publishes the client, the World Editor with it, to GitHub Pages. Only ci.yml calls it, from main and once the
+# same commit has passed the check, so nothing is published that the check has not passed.
 name: pages
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+  workflow_call:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: read
     steps:
       - uses: actions/checkout@v4
       - name: Install the pinned toolchain
         run: rustup toolchain install
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -37,9 +33,18 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
+
+  # The only job whose token may write to Pages. One deploy at a time; a newer merge's deploy replaces one waiting.
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}editor/

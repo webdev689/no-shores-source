@@ -107,8 +107,8 @@ pub fn open_view(request: &[u8]) -> Vec<u8> {
         let edits = edits_from(&request["edits"])?;
         let keep = request["keep"].as_bool().unwrap_or(true);
         let continent = layout.continents.iter().find(|continent| continent.id == id);
-        let landmass = continent.map(|continent| generate(continent, edits));
-        landmass.map(|landmass| (landmass, keep)).ok_or_else(|| format!("the layout has no continent \"{id}\""))
+        let continent = continent.ok_or_else(|| format!("the layout has no continent \"{id}\""))?;
+        generate(continent, edits).map(|landmass| (landmass, keep))
     });
     match opened {
         Ok((landmass, keep)) => {

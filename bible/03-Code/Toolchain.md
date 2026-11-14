@@ -18,15 +18,17 @@ code:
 - **Two configurations**: `tsconfig.json` for the client (browser types, no Node types) and `tsconfig.node.json` for
   the tests and the build configuration (with Node's types).
 - **Node 22.18 or later** runs the tests (`node --test`).
-- **Vite 8** serves and builds the client from `client/` into `dist/`.
+- **Vite 8** serves and builds the client from `client/` into `dist/`. CI publishes the client to GitHub Pages after
+  `cargo xtask check` passes on a merge into `main` ([[The World Editor Is on GitHub Pages]]).
 - **ESLint 10** with `typescript-eslint`: spelled-out names, no `any`, type-only imports marked.
 - **Prettier**, 120 columns, the same settings as DFO Online, so ported code keeps its layout.
 
 ## Rust (the server, the rules, the tooling)
 
 - **Rust 1.97.0**, pinned in `rust-toolchain.toml` with `rustfmt`, `clippy` and the `wasm32-unknown-unknown` target.
-- **Edition 2024**, one workspace. Every crate takes the workspace's lints. Unsafe code is forbidden; clippy warnings
-  are errors.
+- **Edition 2024**, one workspace. Every crate takes the workspace's lints. Unsafe code is denied everywhere except
+  the door crates `world-wasm` and `land-wasm`, which allow it to hand memory to JavaScript. Clippy warnings are
+  errors.
 - **Build profiles**: debug builds optimise dependencies fully and our own crates lightly, so they run at a usable
   speed and still rebuild quickly.
 

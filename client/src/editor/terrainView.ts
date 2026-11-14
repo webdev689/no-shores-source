@@ -148,6 +148,26 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
 }
 `;
 
+/** Each GPU's terrain pipeline, compiled once: every terrain and close-up drawn on it shares one. */
+const pipelines = new WeakMap<GPUDevice, Map<GPUTextureFormat, GPURenderPipeline>>();
+
+function pipelineFor(gpu: Gpu): GPURenderPipeline {
+  const byFormat = pipelines.get(gpu.device) ?? new Map<GPUTextureFormat, GPURenderPipeline>();
+  pipelines.set(gpu.device, byFormat);
+  const known = byFormat.get(gpu.format);
+  if (known) return known;
+  const module = gpu.device.createShaderModule({ code: SHADER });
+  const pipeline = gpu.device.createRenderPipeline({
+    layout: 'auto',
+    vertex: { module, entryPoint: 'vertex_main' },
+    fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
+    primitive: { topology: 'triangle-list' },
+    depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
+  });
+  byFormat.set(gpu.format, pipeline);
+  return pipeline;
+}
+
 /** Draws one landmass's terrain in 3D with WebGPU: three textures of cell values and a mesh made on the GPU. */
 export class TerrainView {
   private readonly gpu: Gpu;
@@ -189,14 +209,7 @@ export class TerrainView {
       size: UNIFORM_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
     });
-    const module = device.createShaderModule({ code: SHADER });
-    this.pipeline = device.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module, entryPoint: 'vertex_main' },
-      fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
-      primitive: { topology: 'triangle-list' },
-      depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
-    });
+    this.pipeline = pipelineFor(gpu);
     this.bindGroup = device.createBindGroup({
       layout: this.pipeline.getBindGroupLayout(0),
       entries: [

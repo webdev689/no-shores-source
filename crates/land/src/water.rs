@@ -24,11 +24,13 @@ pub fn river_depth_m(flow: f64) -> f64 {
     0.45 * flow.sqrt().sqrt() + 0.3
 }
 
-/// One river: its course through cell centres from source to mouth, world metres, with the flow at each point.
+/// One river: its course through cell centres from source to mouth, world metres, with the flow at each point and
+/// the level its water stands at there: the ground with every hollow filled, so across a lake it is the lake's.
 #[derive(Debug, Clone, PartialEq)]
 pub struct River {
     pub points: Vec<(f64, f64)>,
     pub flow: Vec<f64>,
+    pub level: Vec<f64>,
 }
 
 /// The water of a landmass: its rivers, and each cell's lake surface in metres (0 where no lake stands).
@@ -67,10 +69,11 @@ pub fn water(ground: &Grid, land: &[bool], rain_mm: f64) -> Water {
         if !is_river(source) || fed[source] {
             continue;
         }
-        let (mut points, mut flows, mut at) = (Vec::new(), Vec::new(), source);
+        let (mut points, mut flows, mut levels, mut at) = (Vec::new(), Vec::new(), Vec::new(), source);
         loop {
             points.push(ground.centre(at % width, at / width));
             flows.push(flow[at]);
+            levels.push(routing.filled[at]);
             let receiver = routing.receiver[at];
             if taken[at] || receiver == OUTLET {
                 break;
@@ -79,7 +82,7 @@ pub fn water(ground: &Grid, land: &[bool], rain_mm: f64) -> Water {
             at = receiver as usize;
         }
         if points.len() >= 2 {
-            rivers.push(River { points, flow: flows });
+            rivers.push(River { points, flow: flows, level: levels });
         }
     }
     Water { rivers, lake_level }

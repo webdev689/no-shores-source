@@ -13,8 +13,8 @@ fast enough to run before every push.
 - **Rust unit tests** sit with the code: a `mod tests` at the foot of the file, or a sibling `<name>_tests.rs`
   included with `#[path]` when the cases are long.
 - **Integration tests** for a crate's public behaviour go in its `tests/` folder.
-- **Agreement tests** for the rules crate run the same inputs natively and as WebAssembly and compare the bits
-  ([[Agree to the Bit]]). They arrive with the rules crate.
+- **Agreement tests** run the same inputs natively and as WebAssembly and compare the bits ([[Agree to the Bit]]).
+  `crates/land/tests/agree.rs` and `client/src/rules/landRules.test.ts` hold the same fingerprints of the land.
 - **GPU code** is checked in a browser with WebGPU; the pure parts around it (sizes, layouts, maths) are unit-tested.
 
 ## What a good test looks like

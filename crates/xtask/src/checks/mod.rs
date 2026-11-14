@@ -39,37 +39,61 @@ impl fmt::Display for Problem {
 /// The co-dev's toolkit, approved whole by the owner, stays as its author ships it: our code rules are for our code.
 const KEPT_AS_SHIPPED: [&str; 1] = ["tools/claude-toolkit/"];
 
+/// Every extension a TypeScript or JavaScript file may carry; the checks that read scripts all use this one list.
+const SCRIPT_EXTENSIONS: [&str; 7] = [".ts", ".mts", ".cts", ".tsx", ".js", ".mjs", ".cjs"];
+
+fn is_script(path: &str) -> bool {
+    SCRIPT_EXTENSIONS.iter().any(|extension| path.ends_with(extension))
+}
+
 /// Source files the size and comment checks read.
 fn is_code(path: &str) -> bool {
     let ours = !KEPT_AS_SHIPPED.iter().any(|root| path.starts_with(root));
-    ours && [".rs", ".py", ".ts", ".js"].iter().any(|extension| path.ends_with(extension))
+    ours && (path.ends_with(".rs") || path.ends_with(".py") || is_script(path))
+}
+
+/// The files a check would read but cannot, since they are not UTF-8: each is a problem, never skipped.
+fn unreadable(paths: &[String]) -> impl Iterator<Item = Problem> {
+    paths.iter().map(|path| Problem::new("text", path, None, "not UTF-8, so no check can read it: save it as UTF-8"))
 }
 
 pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let mut problems = layout::check(&repo.files, |path| repo.read(path));
-    let code = repo.sources(is_code);
+    let (code, skipped) = repo.sources(is_code);
+    problems.extend(unreadable(&skipped));
     problems.extend(size::check(&code));
     problems.extend(comments::check(&code));
     problems.extend(layers::check(&code));
     let sized: Vec<(String, u64)> = repo.files.iter().map(|path| (path.clone(), repo.size(path))).collect();
     problems.extend(assets::check(&sized));
-    let manifests = repo.sources(|path| path.starts_with("crates/") && path.ends_with("/Cargo.toml"));
+    let (manifests, skipped) =
+        repo.sources(|path| path == "Cargo.toml" || (path.starts_with("crates/") && path.ends_with("/Cargo.toml")));
+    problems.extend(unreadable(&skipped));
     problems.extend(crates::check(&manifests));
     problems.extend(crates::check_unsafe(&code));
-    let notes = repo.sources(|path| path.starts_with(vault::VAULT_ROOT) && path.ends_with(".md"));
+    let (notes, skipped) = repo.sources(|path| path.starts_with(vault::VAULT_ROOT) && path.ends_with(".md"));
+    problems.extend(unreadable(&skipped));
     problems.extend(vault::check(&notes, &repo.files, |path| repo.read(path)));
     problems
 }
 
 #[cfg(test)]
 mod tests {
-    use super::is_code;
+    use super::{is_code, is_script};
 
     #[test]
     fn our_source_files_are_code() {
         assert!(is_code("client/src/main.ts"));
         assert!(is_code("crates/xtask/src/main.rs"));
         assert!(is_code("forge/body.py"));
+    }
+
+    #[test]
+    fn every_script_extension_is_code() {
+        for path in ["a.ts", "a.mts", "a.cts", "a.tsx", "a.js", "a.mjs", "a.cjs"] {
+            assert!(is_script(path) && is_code(&format!("client/src/{path}")), "{path}");
+        }
+        assert!(!is_script("client/index.html"));
     }
 
     #[test]

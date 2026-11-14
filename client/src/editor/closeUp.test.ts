@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { groundUnder, patchData, patchHole, shownExaggeration, toScreen } from './closeUp.ts';
+import { groundUnder, patchData, patchHole, shownExaggeration, toScreen, walkStep } from './closeUp.ts';
 
 const patch = {
   left: 101_000,
@@ -33,4 +33,12 @@ test('the target lands at the middle of the screen', () => {
   const orbit = { targetX: 500, targetY: 500, targetZ: 0, yaw: 0, pitch: 0.5, distance: 100 };
   const centre = toScreen(orbit, { width: 800, height: 600 }, [500, 500, 0]);
   assert.ok(centre && Math.abs(centre.x - 400) < 0.01 && Math.abs(centre.y - 300) < 0.01, JSON.stringify(centre));
+});
+
+test('a walker goes where the camera looks, faster running, and stands still with no key held', () => {
+  const lookingNorth = { targetX: 0, targetY: 0, targetZ: 0, yaw: 0, pitch: 0.1, distance: 4 };
+  const walked = walkStep(lookingNorth, new Set(['w']), 1);
+  assert.ok(Math.abs(walked.targetX) < 1e-9 && Math.abs(walked.targetY + 6) < 1e-9, 'north is -y');
+  assert.ok(Math.abs(walkStep(lookingNorth, new Set(['d', 'shift']), 1).targetX - 40) < 1e-9, 'right is east');
+  assert.deepEqual(walkStep(lookingNorth, new Set(), 1), lookingNorth);
 });

@@ -4,7 +4,7 @@
 //! a town's ground levelled.
 
 use serde::{Deserialize, Serialize};
-use world::geometry::{Point, ring_contains, ring_is_simple, rings_overlap};
+use world::geometry::{Point, edges, ring_contains, ring_is_simple, rings_overlap, segments_meet};
 
 /// A hand-carved river's width and depth limits, metres.
 pub const RIVER_WIDTH_M: (i64, i64) = (5, 300);
@@ -81,15 +81,15 @@ pub fn check_places(
 ) -> Vec<(String, String)> {
     let mut problems = Vec::new();
     let on_land = |point: &Point| ring_contains(coast, *point);
+    // A course or an area stays on the land only if no edge of it crosses the coast between its points.
+    let crosses_coast = |points: &[Point], closed: bool| {
+        let spans = if closed { points.len() } else { points.len().saturating_sub(1) };
+        (0..spans).any(|at| {
+            let span = (points[at], points[(at + 1) % points.len()]);
+            edges(coast).any(|edge| segments_meet(span, edge))
+        })
+    };
     for river in rivers {
-        if !(RIVER_WIDTH_M.0..=RIVER_WIDTH_M.1).contains(&river.width_m) {
-            problems
-                .push((river.id.clone(), format!("its width must be {} to {} m", RIVER_WIDTH_M.0, RIVER_WIDTH_M.1)));
-        }
-        if !(RIVER_DEPTH_M.0..=RIVER_DEPTH_M.1).contains(&river.depth_m) {
-            problems
-                .push((river.id.clone(), format!("its depth must be {} to {} m", RIVER_DEPTH_M.0, RIVER_DEPTH_M.1)));
-        }
         if river.points.len() < 2 {
             problems.push((river.id.clone(), "a river runs between two points or more".into()));
         } else if !on_land(&river.points[0]) {
@@ -97,13 +97,10 @@ pub fn check_places(
         }
     }
     for road in roads {
-        if !(ROAD_WIDTH_M.0..=ROAD_WIDTH_M.1).contains(&road.width_m) {
-            problems.push((road.id.clone(), format!("its width must be {} to {} m", ROAD_WIDTH_M.0, ROAD_WIDTH_M.1)));
-        }
         if road.points.len() < 2 {
             problems.push((road.id.clone(), "a road runs between two points or more".into()));
         }
-        if !road.points.iter().all(on_land) {
+        if !road.points.iter().all(on_land) || crosses_coast(&road.points, false) {
             problems.push((road.id.clone(), "it leaves the land".into()));
         }
     }
@@ -112,7 +109,7 @@ pub fn check_places(
             problems.push((town.id.clone(), "its area must be a ring that never crosses itself".into()));
             continue;
         }
-        if !town.outline.iter().all(on_land) {
+        if !town.outline.iter().all(on_land) || crosses_coast(&town.outline, true) {
             problems.push((town.id.clone(), "its area reaches past the coast".into()));
         }
         for other in &towns[index + 1..] {

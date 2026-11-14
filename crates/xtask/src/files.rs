@@ -37,13 +37,40 @@ impl Repo {
         std::fs::metadata(self.root.join(path)).map(|meta| meta.len()).unwrap_or(0)
     }
 
-    /// The text of every file whose path passes `keep`.
-    pub fn sources(&self, keep: impl Fn(&str) -> bool) -> Vec<(String, String)> {
-        self.files.iter().filter(|path| keep(path)).filter_map(|path| Some((path.clone(), self.read(path)?))).collect()
+    /// The text of every file whose path passes `keep`, and apart the paths of those that are not UTF-8, so a check
+    /// can report them rather than pass over them.
+    pub fn sources(&self, keep: impl Fn(&str) -> bool) -> (Vec<(String, String)>, Vec<String>) {
+        let mut texts = Vec::new();
+        let mut unreadable = Vec::new();
+        for path in self.files.iter().filter(|path| keep(path)) {
+            match self.read(path) {
+                Some(text) => texts.push((path.clone(), text)),
+                None => unreadable.push(path.clone()),
+            }
+        }
+        (texts, unreadable)
     }
 }
 
 /// The workspace root: two folders above this crate's manifest.
 pub fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..").canonicalize().unwrap_or_else(|_| PathBuf::from("."))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Repo;
+
+    #[test]
+    fn a_file_that_is_not_utf8_is_reported_not_skipped() {
+        let root = std::env::temp_dir().join(format!("xtask-sources-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("good.rs"), "fn sail() {}\n").unwrap();
+        std::fs::write(root.join("bad.rs"), [0x66, 0xff, 0xfe, 0x0a]).unwrap();
+        let repo = Repo { root: root.clone(), files: vec!["good.rs".to_owned(), "bad.rs".to_owned()] };
+        let (texts, unreadable) = repo.sources(|path| path.ends_with(".rs"));
+        std::fs::remove_dir_all(&root).unwrap();
+        assert_eq!(texts, [("good.rs".to_owned(), "fn sail() {}\n".to_owned())]);
+        assert_eq!(unreadable, ["bad.rs"]);
+    }
 }

@@ -5,8 +5,7 @@ node_modules/
 # Builds and generated outputs never enter git: forge renders, world bakes, web builds.
 dist/
 generated/
-client/public/world.wasm
-client/public/land.wasm
+client/public/*.wasm
 
 # The toolkit's working folders: the code map it generates and Serena's project data.
 graphify-out/
