@@ -1,4 +1,5 @@
 import type { LandView } from '../rules/landRules.ts';
+import { eachCellInRing } from './landMask.ts';
 
 /** What a cell of a landmass's map is marked with, drawn over its ground in both views. */
 export const MARK = { none: 0, river: 1, carvedRiver: 2, road: 3, town: 4, port: 5 } as const;
@@ -33,7 +34,7 @@ export function markCells(view: LandView, places: Places): Uint8Array {
   };
   for (const river of view.rivers) for (const [x, y] of river.points) mark(x, y, MARK.river);
   for (const town of places.towns ?? []) {
-    fillRing(view, town.outline, (index) => (marks[index] = MARK.town));
+    eachCellInRing(view, town.outline, (index) => (marks[index] = MARK.town));
     line(town.outline, MARK.town, true);
   }
   for (const river of places.rivers ?? []) line(river.points, MARK.carvedRiver);
@@ -42,22 +43,4 @@ export function markCells(view: LandView, places: Places): Uint8Array {
     for (const stepY of [-1, 0, 1])
       for (const stepX of [-1, 0, 1]) mark(at[0] + stepX * view.cellM, at[1] + stepY * view.cellM, MARK.port);
   return marks;
-}
-
-/** Calls `each` with the index of every cell of the view whose centre lies inside a ring (even-odd, row by row). */
-function fillRing(view: LandView, ring: Points, each: (index: number) => void): void {
-  for (let j = 0; j < view.height; j++) {
-    const y = view.topM + (j + 0.5) * view.cellM;
-    const crossings: number[] = [];
-    ring.forEach(([fromX, fromY], index) => {
-      const [toX, toY] = ring[(index + 1) % ring.length] ?? [fromX, fromY];
-      if (fromY > y !== toY > y) crossings.push(fromX + ((y - fromY) / (toY - fromY)) * (toX - fromX));
-    });
-    crossings.sort((first, second) => first - second);
-    for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
-      const first = Math.max(0, Math.ceil(((crossings[pair] ?? 0) - view.leftM) / view.cellM - 0.5));
-      const last = Math.min(view.width - 1, Math.floor(((crossings[pair + 1] ?? 0) - view.leftM) / view.cellM - 0.5));
-      for (let i = first; i <= last; i++) each(j * view.width + i);
-    }
-  }
 }

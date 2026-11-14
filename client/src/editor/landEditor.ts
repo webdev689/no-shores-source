@@ -15,6 +15,7 @@ import {
   patchHole,
   REFRESH_M,
   shownExaggeration,
+  walkStep,
 } from './closeUp.ts';
 import { BRUSHES, buildLandPanel, DRAWN, LAND_TOOLS, type LandTool } from './landPanel.ts';
 import { LandSession } from './landSession.ts';
@@ -100,6 +101,7 @@ export async function startLandEditor(
       camera = fitWindow(now.view, canvas.clientWidth, canvas.clientHeight);
       orbit = fitOrbit(now.view.width * now.view.cellM, now.view.height * now.view.cellM, aspect());
     }
+    terrain?.view.destroy();
     terrain = null;
     requestFrame();
   };
@@ -118,7 +120,10 @@ export async function startLandEditor(
   const terrainNow = () => {
     const data = terrainData();
     if (!data) return null;
-    if (terrain?.id !== selected) terrain = { id: selected, view: new TerrainView(gpu, data) };
+    if (terrain?.id !== selected) {
+      terrain?.view.destroy();
+      terrain = { id: selected, view: new TerrainView(gpu, data) };
+    }
     return terrain.view;
   };
 
@@ -199,15 +204,7 @@ export async function startLandEditor(
     const seconds = Math.min(0.1, (now - lastStep) / 1000);
     lastStep = now;
     if (!walking || held.size === 0) return;
-    const speed = (held.has('shift') ? 40 : 6) * seconds;
-    const forward = Number(held.has('w') || held.has('arrowup')) - Number(held.has('s') || held.has('arrowdown'));
-    const sideways = Number(held.has('d') || held.has('arrowright')) - Number(held.has('a') || held.has('arrowleft'));
-    const [sin, cos] = [Math.sin(orbit.yaw), Math.cos(orbit.yaw)];
-    orbit = {
-      ...orbit,
-      targetX: orbit.targetX + (sin * forward + cos * sideways) * speed,
-      targetY: orbit.targetY + (-cos * forward + sin * sideways) * speed,
-    };
+    orbit = walkStep(orbit, held, seconds);
     requestFrame();
   };
 
@@ -219,12 +216,17 @@ export async function startLandEditor(
     session
       .dab(selected, stroke.brush, point, starts)
       .then((patch) => refresh(patch.rect))
-      .catch(fail);
+      .catch((error: unknown) => {
+        // A stroke whose first dab is refused must not go on: its next dabs would join the stroke before it.
+        if (starts) stroke = null;
+        fail(error);
+      });
   };
 
   const startStroke = (x: number, y: number) => {
     const view = shown();
     if (!session || !view || !BRUSHES.includes(tool)) return;
+    if (x < 0 || y < 0 || x > frame.widthM || y > frame.heightM) return;
     if (!session.isOpen(selected)) {
       status = `Opening ${selected} for shaping…`;
       open(selected, false);
@@ -289,8 +291,9 @@ export async function startLandEditor(
       const spot = kind === 'road' ? snapPoint(places, [x, y], reach) : ([Math.round(x), Math.round(y)] as const);
       draft = draft?.kind === kind ? { kind, points: [...draft.points, spot] } : { kind, points: [spot] };
     } else if (tool === 'port') {
-      const port = { id: nextId(places, 'port'), at: [Math.round(x), Math.round(y)] };
-      changePlaces((edits) => (edits['ports'] = [...(edits['ports'] ?? []), port]));
+      const spot = [Math.round(x), Math.round(y)];
+      // The id is taken from the edits as they stand when the change runs, so quick clicks never share one.
+      changePlaces((edits) => (edits['ports'] = [...(edits['ports'] ?? []), { id: nextId(edits, 'port'), at: spot }]));
     } else if (tool === 'remove') {
       const found = placeAt(places, [x, y], reach);
       const keep = (place: unknown) => (place as { id?: string }).id !== found?.id;
@@ -306,14 +309,16 @@ export async function startLandEditor(
     const { kind } = draft;
     draft = null;
     if (points.length < (kind === 'town' ? 3 : 2)) return;
-    const id = nextId(session.places(selected), kind);
-    const place =
+    const shape =
       kind === 'town'
-        ? { id, outline: points }
+        ? { outline: points }
         : kind === 'road'
-          ? { id, width_m: placeWidth.road, points }
-          : { id, width_m: placeWidth.river, depth_m: riverDepth, points };
-    changePlaces((edits) => (edits[`${kind}s`] = [...(edits[`${kind}s`] ?? []), place]));
+          ? { width_m: placeWidth.road, points }
+          : { width_m: placeWidth.river, depth_m: riverDepth, points };
+    changePlaces((edits) => {
+      const place = { id: nextId(edits, kind), ...shape };
+      edits[`${kind}s`] = [...(edits[`${kind}s`] ?? []), place];
+    });
   };
 
   const step = (direction: -1 | 1) => {
@@ -328,7 +333,7 @@ export async function startLandEditor(
   const save = async () => {
     if (!session) return;
     const text = await session.written(selected);
-    const url = `${import.meta.env.BASE_URL}world/land/${selected}.json`;
+    const url = `${import.meta.env.BASE_URL}world/land/${encodeURIComponent(selected)}.json`;
     const answer = import.meta.env.DEV ? await fetch(url, { method: 'PUT', body: text }).catch(() => null) : null;
     if (answer?.ok) status = `Saved content/world/land/${selected}.json.`;
     else {
@@ -471,7 +476,9 @@ export async function startLandEditor(
       exaggeration,
       cursor:
         walking && view ? standing(orbit.targetX + view.leftM, orbit.targetY + view.topM) : pointedAt(ground, where),
-      status,
+      status: session?.storageFailed
+        ? `${status} This browser could not keep your shaping: Save often.`.trim()
+        : status,
     });
   };
 
@@ -569,12 +576,14 @@ export async function startLandEditor(
     activate(nextLayout) {
       active = true;
       if (nextLayout !== layoutText) {
+        // Asked once, the first time Land opens; after that a changed coast carries the kept shaping over.
+        const first = layoutText === '';
         layoutText = nextLayout;
+        session?.close();
         const next = new LandSession(worker, nextLayout);
-        restoring =
-          next.keptAny() &&
-          window.confirm('Restore the shaping you left unsaved in this browser? Cancel opens the saved edits.');
-        if (!restoring) next.forgetKept();
+        const question = 'Restore the shaping you left unsaved in this browser? Cancel opens the saved edits.';
+        restoring = first ? next.keptAny() && window.confirm(question) : true;
+        if (first && !restoring) next.forgetKept();
         session = next;
         const ids = [...next.landmasses.keys()];
         if (!next.landmasses.has(selected)) selected = ids[0] ?? '';

@@ -35,7 +35,6 @@ fn places_that_break_the_rules_say_how() {
     assert_eq!(
         messages,
         [
-            "road-1: its width must be 2 to 30 m",
             "road-1: it leaves the land",
             "town-1: its area overlaps town-1",
             "Port 1: a port stands on the land within 3000 m of the coast",
@@ -44,4 +43,22 @@ fn places_that_break_the_rules_say_how() {
         ]
     );
     assert!((distance_to_ring(&coast(), Point::new(50_000, 50_000)) - 50_000.0).abs() < 1e-9);
+}
+
+#[test]
+fn a_road_across_a_bay_leaves_the_land() {
+    // a coast with a bay cut into its east side; both ends of the road are on the land, its middle over the water
+    let bay = ring(&[
+        [0, 0],
+        [100_000, 0],
+        [100_000, 40_000],
+        [50_000, 40_000],
+        [50_000, 60_000],
+        [100_000, 60_000],
+        [100_000, 100_000],
+        [0, 100_000],
+    ]);
+    let road = Road { id: "road-1".into(), width_m: 8, points: ring(&[[80_000, 30_000], [80_000, 70_000]]) };
+    let found = check_places(&bay, &[], &[road], &[], &[]);
+    assert_eq!(found, [("road-1".to_owned(), "it leaves the land".to_owned())]);
 }

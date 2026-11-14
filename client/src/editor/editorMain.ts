@@ -131,7 +131,13 @@ async function start(): Promise<void> {
     status = 'Restored your unsaved painting. Save to keep it.';
   };
 
-  const load = (text: string) => {
+  /** Loads a layout file's text, or says why not and changes nothing: it must read as a layout. */
+  const load = (text: string): boolean => {
+    const checked = rules.check(text);
+    if (!checked.reads) {
+      status = `That file is not a layout: ${checked.error}`;
+      return false;
+    }
     layout = JSON.parse(text) as LayoutContent;
     slotIds = slotIdsFor(layout, constants.continentCount);
     mask.cells.fill(0);
@@ -142,6 +148,7 @@ async function start(): Promise<void> {
     loadedCells = mask.cells.slice();
     view.upload(null);
     recheck();
+    return true;
   };
 
   const panel = buildPanel(element<HTMLElement>('#continents-panel'), constants, shapes, {
@@ -168,15 +175,19 @@ async function start(): Promise<void> {
     },
     save: () => void save(),
     download: () => {
-      const text = written();
-      if (text === null) return;
-      download(text);
-      forget();
+      const file = written();
+      if (file === null) return;
+      download(file.text);
+      // A continent left out of the file stays only in this browser's copy: keep it until the file holds it.
+      if (file.whole) forget();
     },
     open: (text) => {
-      load(text);
-      forget();
-      status = 'Opened a layout file.';
+      const unsaved = mask.changedLabels(loadedCells).size > 0;
+      if (unsaved && !window.confirm('Open this file in place of the painting you have not saved?')) return;
+      if (load(text)) {
+        forget();
+        status = 'Opened a layout file.';
+      }
       requestFrame();
     },
     goTo: (x, y) => {
@@ -186,19 +197,20 @@ async function start(): Promise<void> {
   });
 
   /** The layout as the file holds it, or null if the owner chose not to save with continents left out. */
-  const written = (): string | null => {
+  const written = (): { text: string; whole: boolean } | null => {
     const { layout: drafted, heldBack } = draft();
     const names = heldBack.join(', ');
     const leaveOut = `${names} ${heldBack.length === 1 ? 'is' : 'are'} in pieces and will be left out of the file.`;
     if (heldBack.length > 0 && !window.confirm(`${leaveOut} Save the rest anyway?`)) return null;
-    return rules.write(JSON.stringify(drafted));
+    return { text: rules.write(JSON.stringify(drafted)), whole: heldBack.length === 0 };
   };
 
   const download = (text: string) => downloadJson(text, 'layout.json');
 
   const save = async () => {
-    const text = written();
-    if (text === null) return;
+    const file = written();
+    if (file === null) return;
+    const { text } = file;
     // Only the dev server can write the file; the published editor is static.
     const answer = import.meta.env.DEV
       ? await fetch(LAYOUT_URL, { method: 'PUT', body: text }).catch(() => null)
@@ -208,7 +220,7 @@ async function start(): Promise<void> {
       download(text);
       status = 'Downloaded layout.json. Put it in content/world/ to keep it.';
     }
-    forget();
+    if (file.whole) forget();
     requestFrame();
   };
 
@@ -365,7 +377,7 @@ async function start(): Promise<void> {
 
   // The Land mode works on the layout as drafted now, so a coast painted a moment ago is land there too.
   let mode: 'continents' | 'land' = 'continents';
-  let landEditor: LandEditor | null = null;
+  let landEditor: Promise<LandEditor> | null = null;
   const landCanvas = element<HTMLCanvasElement>('#land');
   const continentsButton = button('Continents', () => void setMode('continents'));
   const landButton = button('Land', () => void setMode('land'));
@@ -381,7 +393,8 @@ async function start(): Promise<void> {
     landCanvas.hidden = next !== 'land';
     element('#land-overlay').toggleAttribute('hidden', next !== 'land');
     if (next === 'land') {
-      landEditor ??= await startLandEditor(
+      // One Land editor for the page: a second click while it starts waits for the same one.
+      landEditor ??= startLandEditor(
         landCanvas,
         element<SVGSVGElement>('#land-overlay'),
         element<HTMLElement>('#land-panel'),
@@ -390,13 +403,15 @@ async function start(): Promise<void> {
           heightM: constants.frameHeightM,
         },
       );
-      landEditor.activate(rules.write(JSON.stringify(draft().layout)));
-    } else landEditor?.deactivate();
+      const land = await landEditor;
+      if (mode === 'land') land.activate(rules.write(JSON.stringify(draft().layout)));
+    } else void landEditor?.then((land) => land.deactivate());
     requestFrame();
   };
   continentsButton.classList.add('active');
 
-  load(loaded.text);
+  // The shipped layout passes the content check, so a page that cannot read it has nothing to edit.
+  if (!load(loaded.text)) throw new Error(status);
   restoreKept();
   requestFrame();
 }

@@ -16,23 +16,24 @@ decision, made in the same change as its entry here.
 | `client/` | The game in the browser, TypeScript ([[TypeScript and Rust]]). `index.html` and `src/` |
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
-| `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints, traces and measures |
+| `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up |
 | `client/src/rules/` | The rules layer: the Rust rules and the [[Land]], loaded as WebAssembly, for any page that needs them |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world-wasm` | The world rules for the browser: a door crate, text in and text out |
-| `crates/land` | The [[Land]]: relief, erosion and water generated from the painted coasts |
+| `crates/land` | The [[Land]]: relief, erosion and water from the painted coasts, the owner's edits and places, and the ground anywhere to the metre |
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
 | `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, and each landmass's edits in `content/world/land/` |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `bible/` | This vault |
-| `.github/workflows/` | `ci.yml` runs `cargo xtask check`; `pages.yml` publishes the client to GitHub Pages on each merge into `main` |
+| `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `pages.yml` to publish the client to GitHub Pages |
 
 ## The client's layers
 
 Every folder directly under `client/src` is a layer, declared in `LAYERS` with what it may import, when its first
-file arrives. Files directly in `client/src` are the entry point and may import any layer. Client code never imports
+file arrives. Files directly in `client/src` may import any layer. They are also groundwork any layer may import,
+such as `gpu.ts`, except the entry point `main.ts`. Client code never imports
 Node's modules (tests may) and never uses WebGL. As the code arrives, the layers follow one direction:
 
 - **The engine** (GPU, drawing, sound, input, assets) knows nothing of the game.
@@ -48,8 +49,8 @@ Crates appear when the work reaches them. Each is declared in the crates check's
 and outside crates it may use (`CRATES`, [[Checks]]):
 
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
-  predicting client compute the same bits ([[Agree to the Bit]]). The first is `world`, which may use only `serde` and
-  `serde_json`.
+  predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
+  `serde_json`, and `land`, which may use `world`, `serde` and `serde_json`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are

@@ -55,6 +55,31 @@ fn a_doc_example_does_not_count_toward_the_limit() {
 }
 
 #[test]
+fn an_unclosed_example_counts_toward_the_limit() {
+    let text = format!("/// why\n/// ```\n{}", "/// let speed = 2;\n".repeat(MAX_COMMENT_LINES));
+    let problems = problems_in("crates/core/src/lib.rs", &text);
+    assert_eq!(problems.len(), 1);
+    assert!(problems[0].message.contains("9-line comment"));
+}
+
+#[test]
+fn history_inside_an_example_is_still_a_problem() {
+    let text = "/// why\n/// ```\n/// let fixed = 1; // see #1674\n/// ```\n";
+    let problems = problems_in("crates/core/src/lib.rs", text);
+    assert_eq!(problems.len(), 1);
+    assert_eq!(problems[0].line, Some(3));
+}
+
+#[test]
+fn every_script_extension_is_read_as_a_script() {
+    let text = "const page = `\n// see #1674\n`;\n";
+    assert_eq!(problems_in("crates/core/src/lib.rs", text).len(), 1);
+    for path in ["client/src/a.mts", "client/src/a.cts", "client/src/a.tsx", "client/src/a.mjs", "client/src/a.cjs"] {
+        assert!(problems_in(path, text).is_empty(), "{path}");
+    }
+}
+
+#[test]
 fn history_in_a_comment_is_a_problem() {
     let cases = [
         "// changed on 2026-11-14 for the patch\n",

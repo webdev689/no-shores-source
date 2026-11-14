@@ -13,6 +13,20 @@ export const REFRESH_M = 400;
 export const EYE_M = 1.7;
 export const FIGURE_M = 1.8;
 
+/** A walker's step: `held` keys (W A S D or arrows, Shift to run) move the target along the ground for `seconds`, at
+ *  6 m/s or 40 running, forward being where the camera looks. */
+export function walkStep(orbit: Orbit, held: ReadonlySet<string>, seconds: number): Orbit {
+  const speed = (held.has('shift') ? 40 : 6) * seconds;
+  const forward = Number(held.has('w') || held.has('arrowup')) - Number(held.has('s') || held.has('arrowdown'));
+  const sideways = Number(held.has('d') || held.has('arrowright')) - Number(held.has('a') || held.has('arrowleft'));
+  const [sin, cos] = [Math.sin(orbit.yaw), Math.cos(orbit.yaw)];
+  return {
+    ...orbit,
+    targetX: orbit.targetX + (sin * forward + cos * sideways) * speed,
+    targetY: orbit.targetY + (-cos * forward + sin * sideways) * speed,
+  };
+}
+
 /** Heights drawn at true scale close up, easing to the chosen exaggeration from 3 km to 30 km away. */
 export function shownExaggeration(exaggeration: number, distance: number): number {
   const fraction = Math.min(1, Math.max(0, (distance - 3000) / 27_000));

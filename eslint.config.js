@@ -25,9 +25,22 @@ const SHORT_NAMES = [
 ];
 
 export default tseslint.config(
-  { ignores: ['node_modules/**', 'dist/**', 'generated/**', 'target/**', 'bible/**'] },
+  // ESLint does not read .gitignore, so the toolkit's working folders and the helpers' worktrees are named here too.
   {
-    files: ['**/*.ts', '**/*.js'],
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'generated/**',
+      'target/**',
+      'bible/**',
+      '.claude/**',
+      'graphify-out/**',
+      '.serena/**',
+    ],
+  },
+  {
+    // Every extension a script may carry: the same list as the repo checks' SCRIPT_EXTENSIONS.
+    files: ['**/*.{ts,mts,cts,tsx,js,mjs,cjs}'],
     extends: [tseslint.configs.base],
     linterOptions: { reportUnusedDisableDirectives: 'error' },
     rules: {

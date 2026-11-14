@@ -1,4 +1,4 @@
-use super::Problem;
+use super::{Problem, is_script};
 
 /// A part of the client and the parts it may import. Every folder directly under `client/src` is one, declared here
 /// on purpose when its first file arrives, with its entry in the Code Map note.
@@ -8,32 +8,39 @@ pub struct Layer {
     pub may_import: &'static [&'static str],
 }
 
-/// The client's layers, by folder name under `client/src`. Files directly in `client/src` (the entry point) may
-/// import any of them.
+/// The client's layers, by folder name under `client/src`. Files directly in `client/src` may import any of them.
 pub const LAYERS: &[Layer] =
     &[Layer { name: "rules", may_import: &[] }, Layer { name: "editor", may_import: &["rules"] }];
+
+/// The file that wires the layers together. The other files beside it (the GPU, the canvas size) are groundwork
+/// that any layer may import; the entry point itself sits above every layer, so none may import it.
+const ENTRY_POINT: &str = "client/src/main.ts";
 
 /// Node's modules: the game runs in the browser, so only tests and build config may reach them.
 const NODE_MODULES: [&str; 12] =
     ["fs", "path", "os", "child_process", "crypto", "url", "util", "stream", "http", "https", "net", "worker_threads"];
 
-/// What a client file may not use, whatever its layer: Overlook draws with WebGPU only.
-const WEBGL_MARKERS: [&str; 4] =
-    ["getContext('webgl", "getContext(\"webgl", "WebGLRenderingContext", "WebGL2RenderingContext"];
+/// What a client file may not use, whatever its layer: Overlook draws with WebGPU only. Any lowercase `webgl` on a
+/// line catches every context name, `experimental-webgl` included, in any quote.
+const WEBGL_MARKERS: [&str; 3] = ["webgl", "WebGLRenderingContext", "WebGL2RenderingContext"];
 
-/// Every module a TypeScript file imports, with its line: `import … from '…'`, `export … from '…'`,
-/// `import '…'` and `import('…')`.
+/// Where a module is named: `import … from '…'`, `export … from '…'`, `import '…'`, `import('…')`, a worker's
+/// `new URL('…', import.meta.url)` and Vite's `import.meta.glob('…')`, in any quote.
+const IMPORT_MARKERS: [&str; 5] = ["from ", "import ", "import(", "new URL(", "import.meta.glob("];
+
+/// Every module a script file imports, with its line. A glob's list of patterns yields each pattern.
 pub fn imports_of(text: &str) -> Vec<(String, usize)> {
     let mut found = Vec::new();
     for (offset, line) in text.lines().enumerate() {
-        for marker in ["from ", "import ", "import("] {
+        for marker in IMPORT_MARKERS {
             let mut rest = line;
             while let Some(at) = rest.find(marker) {
-                let after = rest[at + marker.len()..].trim_start();
-                if let Some(quote) = after.chars().next().filter(|ch| *ch == '\'' || *ch == '"')
+                let mut after = rest[at + marker.len()..].trim_start().trim_start_matches('[').trim_start();
+                while let Some(quote) = after.chars().next().filter(|ch| matches!(ch, '\'' | '"' | '`'))
                     && let Some(close) = after[1..].find(quote)
                 {
                     found.push((after[1..=close].to_owned(), offset + 1));
+                    after = after[close + 2..].trim_start().trim_start_matches(',').trim_start();
                 }
                 rest = &rest[at + marker.len()..];
             }
@@ -66,8 +73,8 @@ fn resolve(from_file: &str, specifier: &str) -> String {
 /// Client code imports only what its layer allows, never Node's modules, and never draws with WebGL.
 pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
     let mut problems = Vec::new();
-    for (path, text) in sources.iter().filter(|(path, _)| path.starts_with("client/src/") && path.ends_with(".ts")) {
-        let is_test = path.ends_with(".test.ts");
+    for (path, text) in sources.iter().filter(|(path, _)| path.starts_with("client/src/") && is_script(path)) {
+        let is_test = path.rsplit_once('.').is_some_and(|(stem, _)| stem.ends_with(".test"));
         let own_layer = layer_folder(path);
         if let Some(folder) = own_layer
             && !LAYERS.iter().any(|layer| layer.name == folder)
@@ -87,8 +94,13 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
                 continue;
             }
             let target = resolve(path, &specifier);
-            let (Some(from), Some(to)) = (own_layer, layer_folder(&target)) else { continue };
-            let allowed = from == to || LAYERS.iter().any(|layer| layer.name == from && layer.may_import.contains(&to));
+            let Some(from) = own_layer else { continue };
+            let (allowed, to) = match layer_folder(&target) {
+                Some(to) => {
+                    (from == to || LAYERS.iter().any(|layer| layer.name == from && layer.may_import.contains(&to)), to)
+                }
+                None => (target != ENTRY_POINT, "the entry point"),
+            };
             if !allowed {
                 problems.push(Problem::new("layers", path, Some(line), format!("{from} may not import {to}")));
             }
@@ -119,8 +131,47 @@ mod tests {
     }
 
     #[test]
+    fn workers_globs_and_backtick_imports_are_read() {
+        let text = "const worker = new Worker(new URL('./landWorker.ts', import.meta.url));\nconst sea = await import(`../sea/waves.ts`);\nconst pages = import.meta.glob(['./a/*.ts', \"../b/*.ts\"]);\n";
+        let found: Vec<String> = imports_of(text).into_iter().map(|(specifier, _)| specifier).collect();
+        assert_eq!(found, ["./landWorker.ts", "../sea/waves.ts", "./a/*.ts", "../b/*.ts"]);
+    }
+
+    #[test]
+    fn a_layer_reaching_up_by_any_form_is_a_problem() {
+        let cases = [
+            "const worker = new Worker(new URL('../editor/landWorker.ts', import.meta.url));\n",
+            "const panel = await import(`../editor/editorPanel.ts`);\n",
+            "const views = import.meta.glob('../editor/*.ts');\n",
+        ];
+        for case in cases {
+            let problems = run("client/src/rules/landRules.ts", case);
+            assert_eq!(problems.len(), 1, "{case}");
+            assert_eq!(problems[0].message, "rules may not import editor");
+        }
+    }
+
+    #[test]
     fn the_entry_point_may_import_its_neighbours() {
         assert!(run("client/src/main.ts", "import { canvasSize } from './canvasSize.ts';\n").is_empty());
+    }
+
+    #[test]
+    fn a_layer_may_import_the_groundwork_but_not_the_entry_point() {
+        assert!(run("client/src/editor/editorMain.ts", "import { startGpu } from '../gpu.ts';\n").is_empty());
+        let problems = run("client/src/editor/editorMain.ts", "import { fitCanvas } from '../main.ts';\n");
+        assert_eq!(problems.len(), 1);
+        assert_eq!(problems[0].message, "editor may not import the entry point");
+    }
+
+    #[test]
+    fn every_script_extension_is_held_to_the_layers() {
+        for path in
+            ["client/src/rules/a.mts", "client/src/rules/a.tsx", "client/src/rules/a.mjs", "client/src/rules/a.cjs"]
+        {
+            assert_eq!(run(path, "import { panel } from '../editor/editorPanel.ts';\n").len(), 1, "{path}");
+        }
+        assert!(run("client/src/rules/a.test.mts", "import { test } from 'node:test';\n").is_empty());
     }
 
     #[test]
@@ -143,6 +194,18 @@ mod tests {
         assert_eq!(problems.len(), 1);
         assert!(problems[0].message.contains("WebGPU only"));
         assert!(run("client/src/main.ts", "const context = canvas.getContext('webgpu');\n").is_empty());
+    }
+
+    #[test]
+    fn webgl_is_refused_in_any_quote_or_name() {
+        let cases = [
+            "const context = canvas.getContext(`webgl2`);\n",
+            "const context = canvas.getContext('experimental-webgl');\n",
+            "const kind = 'webgl';\n",
+        ];
+        for case in cases {
+            assert_eq!(run("client/src/main.ts", case).len(), 1, "{case}");
+        }
     }
 
     #[test]

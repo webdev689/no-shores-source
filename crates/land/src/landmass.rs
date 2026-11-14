@@ -88,11 +88,22 @@ pub fn climate_of(_continent: &Continent) -> Climate {
     PLACEHOLDER
 }
 
-/// Generates a continent's land from its painted coast, with the owner's edits on it.
-#[must_use]
-pub fn generate(continent: &Continent, edits: Edits) -> Landmass {
+/// The most cells a landmass's window may hold: about 2,450 km square, room for the largest continent drawn in any
+/// shape, and a bound on the memory and time one landmass may take.
+pub const MAX_WINDOW_CELLS: usize = 6_000_000;
+
+/// Generates a continent's land from its painted coast, with the owner's edits on it, or says why it cannot: a coast
+/// of fewer than three points, or one whose window is too big.
+pub fn generate(continent: &Continent, edits: Edits) -> Result<Landmass, String> {
+    if continent.outline.len() < 3 {
+        return Err(format!("{}'s coast has fewer than three points", continent.id));
+    }
     let climate = climate_of(continent);
     let grid = window(&continent.outline);
+    if grid.width * grid.height > MAX_WINDOW_CELLS {
+        let (east, south) = (grid.width as f64 * grid.cell_m / 1000.0, grid.height as f64 * grid.cell_m / 1000.0);
+        return Err(format!("{} spans {east:.0} × {south:.0} km: too wide a reach to generate", continent.id));
+    }
     let land = land_mask(&grid, &continent.outline);
     let coast = coast_distance_km(&grid, &land);
     let seed = seed_of(WORLD_SEED, &continent.id);
@@ -113,5 +124,5 @@ pub fn generate(continent: &Continent, edits: Edits) -> Landmass {
         generated,
     };
     landmass.set_edits(edits);
-    landmass
+    Ok(landmass)
 }

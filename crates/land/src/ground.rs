@@ -82,17 +82,18 @@ pub fn densify(points: &[(f64, f64)], step: f64) -> Vec<(f64, f64)> {
     out
 }
 
-/// One pass of Chaikin's corner cutting, its ends kept.
+/// One pass of Chaikin's corner cutting, its ends kept; every value a point carries is cut alike.
 #[must_use]
-pub fn chaikin(points: &[(f64, f64, f64)]) -> Vec<(f64, f64, f64)> {
+pub fn chaikin<const N: usize>(points: &[[f64; N]]) -> Vec<[f64; N]> {
     if points.len() < 3 {
         return points.to_vec();
     }
+    let mix =
+        |from: &[f64; N], to: &[f64; N], fraction: f64| std::array::from_fn(|at| lerp(from[at], to[at], fraction));
     let mut out = vec![points[0]];
     for pair in points.windows(2) {
-        let ((ax, ay, aq), (bx, by, bq)) = (pair[0], pair[1]);
-        out.push((lerp(ax, bx, 0.25), lerp(ay, by, 0.25), lerp(aq, bq, 0.25)));
-        out.push((lerp(ax, bx, 0.75), lerp(ay, by, 0.75), lerp(aq, bq, 0.75)));
+        out.push(mix(&pair[0], &pair[1], 0.25));
+        out.push(mix(&pair[0], &pair[1], 0.75));
     }
     out.extend(points.last());
     out
@@ -190,18 +191,16 @@ impl Ground {
                 points.iter().zip(surface).map(|(&(x, y), level)| CoursePoint { x, y, level, width, depth }).collect(),
             );
         }
+        // A gathered river's surface is the drainage's: the ground with every hollow filled, so it runs level across a
+        // lake and never cuts down to the lake's floor beyond it.
         for river in rivers {
-            let raw: Vec<(f64, f64, f64)> =
-                river.points.iter().zip(&river.flow).map(|(&(x, y), &flow)| (x, y, flow)).collect();
-            let smoothed = chaikin(&chaikin(&raw));
-            let points: Vec<(f64, f64)> = smoothed.iter().map(|&(x, y, _)| (x, y)).collect();
-            let surface = held_surface(&points, |x, y| ground.padded(x, y));
-            let course = smoothed.iter().zip(surface).map(|(&(x, y, flow), level)| CoursePoint {
-                x,
-                y,
-                level,
-                width: river_width_m(flow),
-                depth: river_depth_m(flow),
+            let raw: Vec<[f64; 4]> = (0..river.points.len())
+                .map(|at| [river.points[at].0, river.points[at].1, river.flow[at], river.level[at]])
+                .collect();
+            let mut surface = f64::MAX;
+            let course = chaikin(&chaikin(&raw)).into_iter().map(|[x, y, flow, level]| {
+                surface = surface.min(level - 0.5).max(0.0);
+                CoursePoint { x, y, level: surface, width: river_width_m(flow), depth: river_depth_m(flow) }
             });
             ground.rivers.push(course.collect());
         }
@@ -280,7 +279,9 @@ impl Ground {
                 depth: lerp(from.depth, to.depth, along),
             };
             let reach = point.width / 2.0 + if roads { SHOULDER_M } else { BANK_M };
-            if distance < reach && best.is_none_or(|(_, nearest)| distance < nearest) {
+            // The course whose edge is nearest wins, so a point in a wide channel is not given a tributary's bank.
+            let beyond = distance - point.width / 2.0;
+            if distance < reach && best.is_none_or(|(near, nearest)| beyond < nearest - near.width / 2.0) {
                 best = Some((point, distance));
             }
         }
@@ -297,8 +298,8 @@ impl Ground {
                 let from_middle = distance / half;
                 return ground.min(river.level - river.depth * (1.0 - from_middle * from_middle));
             }
-            let top = ground.max(river.level + 0.4);
-            return river.level + 0.4 + (top - river.level - 0.4) * smooth(half, half + BANK_M, distance);
+            let top = ground.max(river.level);
+            return river.level + (top - river.level) * smooth(half, half + BANK_M, distance);
         }
         if let Some((road, distance)) = self.nearest(x, y, true) {
             let half = road.width / 2.0;

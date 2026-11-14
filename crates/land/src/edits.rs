@@ -5,7 +5,7 @@
 
 use crate::exact::smooth;
 use crate::grid::Grid;
-use crate::places::{CarvedRiver, Port, Road, Town, check_places};
+use crate::places::{CarvedRiver, Port, RIVER_DEPTH_M, RIVER_WIDTH_M, ROAD_WIDTH_M, Road, Town, check_places};
 use crate::relief::{LAND_FLOOR_M, SEA_CEILING_M};
 use serde::{Deserialize, Serialize};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
@@ -16,6 +16,11 @@ pub const RADIUS_M: (i64, i64) = (1_000, 200_000);
 pub const RAISE_M: (u32, u32) = (1, 500);
 pub const PERCENT: (u32, u32) = (1, 100);
 pub const LEVEL_M: (i64, i64) = (-500, 9_000);
+/// The most a file may hold, so no request can make the land run for hours: dabs in all its strokes, points in one
+/// place, and the length of one river or road.
+pub const MAX_DABS: usize = 200_000;
+pub const MAX_PLACE_POINTS: usize = 10_000;
+pub const MAX_COURSE_M: f64 = 5_000_000.0;
 
 /// One landmass's edits file: its shaping strokes, and the places drawn on it.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -132,6 +137,35 @@ pub fn check(edits: &Edits) -> Vec<Problem> {
             problem("a point lies outside the world's frame".into());
         }
     }
+    let dabs: usize = edits.strokes.iter().map(|stroke| stroke.points.len()).sum();
+    if dabs > MAX_DABS {
+        problems.push(Problem { subject: "strokes".into(), message: format!("they hold over {MAX_DABS} dabs") });
+    }
+    let mut size = |id: &String, wrong: bool, message: String| {
+        if wrong {
+            problems.push(Problem { subject: id.clone(), message });
+        }
+    };
+    for river in &edits.rivers {
+        let (width, depth) = (RIVER_WIDTH_M, RIVER_DEPTH_M);
+        let wide = !(width.0..=width.1).contains(&river.width_m);
+        size(&river.id, wide, format!("its width must be {} to {} m", width.0, width.1));
+        let deep = !(depth.0..=depth.1).contains(&river.depth_m);
+        size(&river.id, deep, format!("its depth must be {} to {} m", depth.0, depth.1));
+    }
+    for road in &edits.roads {
+        let wide = !(ROAD_WIDTH_M.0..=ROAD_WIDTH_M.1).contains(&road.width_m);
+        size(&road.id, wide, format!("its width must be {} to {} m", ROAD_WIDTH_M.0, ROAD_WIDTH_M.1));
+    }
+    let courses = edits
+        .rivers
+        .iter()
+        .map(|river| (&river.id, &river.points))
+        .chain(edits.roads.iter().map(|road| (&road.id, &road.points)));
+    for (id, points) in courses {
+        let long = course_length_m(points) > MAX_COURSE_M;
+        size(id, long, format!("it runs over {} km", MAX_COURSE_M / 1000.0));
+    }
     let in_frame = |point: &Point| (0..=FRAME_WIDTH_M).contains(&point.x) && (0..=FRAME_HEIGHT_M).contains(&point.y);
     let places = edits
         .rivers
@@ -144,8 +178,22 @@ pub fn check(edits: &Edits) -> Vec<Problem> {
         if !points.iter().all(in_frame) {
             problems.push(Problem { subject: id.clone(), message: "a point lies outside the world's frame".into() });
         }
+        if points.len() > MAX_PLACE_POINTS {
+            problems.push(Problem { subject: id.clone(), message: format!("it has over {MAX_PLACE_POINTS} points") });
+        }
     }
     problems
+}
+
+/// A course's length along its points, metres.
+fn course_length_m(points: &[Point]) -> f64 {
+    points
+        .windows(2)
+        .map(|pair| {
+            let (dx, dy) = ((pair[1].x - pair[0].x) as f64, (pair[1].y - pair[0].y) as f64);
+            (dx * dx + dy * dy).sqrt()
+        })
+        .sum()
 }
 
 /// The cells a dab changed, as a rectangle: `right` and `bottom` exclusive.
