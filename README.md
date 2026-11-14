@@ -3,16 +3,18 @@
 > "A proper pirate sandbox experience with goals of venturing into MMO territory. Everything built by us with 0
 > bethesda assets."
 
-Private and proprietary. Rust throughout: client, engine, rules, server and tooling, in one Cargo workspace.
+Private and proprietary. The client is TypeScript drawing with WebGPU; the server and the game's rules are Rust.
 
 ## Start
 
 ```sh
-cargo xtask check   # everything CI runs: format, lints, tests, repo checks
+npm ci              # once: the TypeScript tools
+npm run dev         # the client in a browser with WebGPU
+cargo xtask check   # everything CI runs, both languages
 cargo xtask repo    # only the repo checks, in about a second
 ```
 
-Rust 1.97.0 is pinned in `rust-toolchain.toml`; `rustup` installs it on first use.
+Rust 1.97.0 is pinned in `rust-toolchain.toml`; `rustup` installs it on first use. Node 22.18 or later.
 
 ## The bible
 

@@ -2,22 +2,31 @@ use super::Problem;
 
 /// Everything allowed at the top of the repository. A new top-level folder is a decision: add it here and to the
 /// Code Map note in the same change.
-pub const TOP_LEVEL: [&str; 15] = [
+pub const TOP_LEVEL: [&str; 24] = [
     ".cargo",
     ".editorconfig",
     ".gitattributes",
     ".github",
     ".gitignore",
+    ".prettierignore",
+    ".prettierrc.json",
     "CLAUDE.md",
     "Cargo.lock",
     "Cargo.toml",
     "LICENSE",
     "README.md",
     "bible",
+    "client",
     "clippy.toml",
     "crates",
+    "eslint.config.js",
+    "package-lock.json",
+    "package.json",
     "rust-toolchain.toml",
     "rustfmt.toml",
+    "tsconfig.json",
+    "tsconfig.node.json",
+    "vite.config.ts",
 ];
 
 /// Where files may live, and that every folder under `crates/` is a crate named after its folder.

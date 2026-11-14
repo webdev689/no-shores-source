@@ -18,4 +18,6 @@ decision is recorded in [[Decisions]].
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
 - [[Built From What DFO Taught Us]]
-- [[Rust for Everything]]
+- [[TypeScript and Rust]]
+- [[Server-Authoritative Multiplayer]]
+- [[WebGPU Only]]

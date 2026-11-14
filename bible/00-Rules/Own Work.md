@@ -4,7 +4,7 @@ type: rule
 # Own Work
 
 Everything in the repository is made by us, or made by our tools from sources in the repository. Outside code enters
-only as a Cargo dependency we agree to add, its licence read when it is added. No other author's art, sound,
+only as a Cargo or npm dependency we agree to add, its licence read when it is added. No other author's art, sound,
 models, words or data, and nothing of Bethesda's.
 
 **Why.** DFO Online ported other authors' mods and later spent months replacing them with its own work, and one ship

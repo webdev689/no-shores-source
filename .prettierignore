@@ -1,0 +1,8 @@
+node_modules/
+dist/
+generated/
+target/
+crates/
+bible/
+package-lock.json
+Cargo.lock

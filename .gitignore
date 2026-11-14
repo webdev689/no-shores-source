@@ -1,5 +1,6 @@
-# Rust
+# Rust and TypeScript
 target/
+node_modules/
 
 # Builds and generated outputs never enter git: forge renders, world bakes, web builds.
 dist/

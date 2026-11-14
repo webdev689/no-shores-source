@@ -6,7 +6,7 @@ pub const MAX_LINES: usize = 600;
 pub const MAX_TEST_LINES: usize = 800;
 
 fn is_test_file(path: &str) -> bool {
-    path.contains("/tests/") || path.ends_with("_tests.rs") || path.ends_with("_test.py")
+    path.contains("/tests/") || path.ends_with("_tests.rs") || path.ends_with("_test.py") || path.ends_with(".test.ts")
 }
 
 pub fn check(sources: &[(String, String)]) -> Vec<Problem> {

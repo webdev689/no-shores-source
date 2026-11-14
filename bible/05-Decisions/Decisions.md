@@ -10,10 +10,17 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[TypeScript and Rust]]
+- [[Server-Authoritative Multiplayer]]
+- [[WebGPU Only]]
+
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
 - [[Built From What DFO Taught Us]]
-- [[Rust for Everything]]
 - [[Private Repo overlook-source]]
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
+
+## Replaced
+
+- [[Rust for Everything]], by [[TypeScript and Rust]]

@@ -17,14 +17,14 @@ merges).
 | Branches lived long | 1,319 branches; the newest work 1,793 commits ahead of `main`; 31% of commits are merges | [[Short Branches, Green Main]] |
 | Generated art lived in git | 251 forge shard branches; deploy size guards at 900 MB and 1.8 GB | [[Generated Files Stay Out of Git]] |
 | Version counters collided | ~172 commits renumbering relay and database versions; relay at version 311; 215 migrations | [[Versions Are Not Counters]] |
-| Rules moved to the server after the fact | The server branch: 734 commits moving foes, loot and spells onto the server | The rules are one crate the server runs from the start ([[Rust for Everything]]) |
+| Rules moved to the server after the fact | The server branch: 734 commits moving foes, loot and spells onto the server | The server is the authority from its first line, running one Rust rules crate ([[Server-Authoritative Multiplayer]]) |
 | Agreeing to the bit took discipline | World 2.0's exact kit bans `Math.sin` and hand-writes an arctangent | [[Agree to the Bit]], by construction |
 | Tests outgrew the code | 5,142 test files, 1.29 million lines | [[Tests Check Behaviour]]; [[Testing]] |
 | The bible outgrew its readers | 263 pages, 355,000 words, 7 pages over 3,000 words | One note per system, how it works now; decisions kept apart |
 | The world had a fixed size, widened later | The Tamriel-wide baseline: map bounds hard-coded to the Bay, then unpicked | No fixed world size in the code's keys or bounds |
 | Other authors' work was ported, then replaced | The Own Work page's record of retired folders; a ship system ported off a mod's compiled code | [[Own Work]] |
 | Prototype pages piled up at the root | 26 HTML entry pages at the repository root | Labs live in their own folder, by decision ([[Code Map]]) |
-| Formatting and types covered part of the code | ~349 format commits; a formatter list of owned folders; types only at "the seams" | rustfmt and the compiler cover everything ([[Toolchain]]) |
+| Formatting and types covered part of the code | ~349 format commits; a formatter list of owned folders; types only at "the seams" | Prettier, rustfmt, strict TypeScript and the Rust compiler cover everything ([[Toolchain]]) |
 
 ## What DFO got right, and we keep
 

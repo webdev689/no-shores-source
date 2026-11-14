@@ -1,4 +1,5 @@
 use super::Problem;
+use super::script_comments::script_comments;
 
 /// A comment says why in at most this many lines. Lines inside a doc comment's code example do not count.
 pub const MAX_COMMENT_LINES: usize = 8;
@@ -219,7 +220,13 @@ fn has_ticket_tag(words: &str) -> bool {
 pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
     let mut problems = Vec::new();
     for (path, text) in sources {
-        let comments = if path.ends_with(".py") { python_comments(text) } else { rust_comments(text) };
+        let comments = if path.ends_with(".py") {
+            python_comments(text)
+        } else if path.ends_with(".ts") || path.ends_with(".js") {
+            script_comments(text)
+        } else {
+            rust_comments(text)
+        };
         for comment in comments {
             let mut in_example = false;
             let mut counted = 0;

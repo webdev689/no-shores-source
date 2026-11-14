@@ -2,7 +2,9 @@
 
 mod assets;
 mod comments;
+mod layers;
 mod layout;
+mod script_comments;
 mod size;
 mod vault;
 
@@ -35,7 +37,7 @@ impl fmt::Display for Problem {
 
 /// Source files the size and comment checks read.
 fn is_code(path: &str) -> bool {
-    path.ends_with(".rs") || path.ends_with(".py")
+    [".rs", ".py", ".ts", ".js"].iter().any(|extension| path.ends_with(extension))
 }
 
 pub fn run_all(repo: &Repo) -> Vec<Problem> {
@@ -43,6 +45,7 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let code = repo.sources(is_code);
     problems.extend(size::check(&code));
     problems.extend(comments::check(&code));
+    problems.extend(layers::check(&code));
     let sized: Vec<(String, u64)> = repo.files.iter().map(|path| (path.clone(), repo.size(path))).collect();
     problems.extend(assets::check(&sized));
     let notes = repo.sources(|path| path.starts_with(vault::VAULT_ROOT) && path.ends_with(".md"));

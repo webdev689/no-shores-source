@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-14
-status: in force
+status: replaced
+replaced_by: "[[TypeScript and Rust]]"
 ---
 # Rust for Everything
+
+Replaced by [[TypeScript and Rust]] the same day.
 
 > "I want the entire thing rust with the backend being GO."
 

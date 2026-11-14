@@ -10,9 +10,9 @@ something DFO Online taught us ([[Lessons from DFO]]). A new rule needs the owne
 | Rule | In short | Checked by |
 |---|---|---|
 | [[Own Work]] | Everything in the repo is made by us or by our tools | assets check, review |
-| [[Agree to the Bit]] | The rules give the same bits on the server and in every browser | lints, tests |
+| [[Agree to the Bit]] | The game's rules are one Rust crate; the server is the authority | lints, tests |
 | [[Small Files]] | A source file holds 600 lines at most | size check |
-| [[Names Say What They Are]] | Names are spelled out | clippy |
+| [[Names Say What They Are]] | Names are spelled out | clippy, ESLint |
 | [[Comments Say Why]] | Eight lines at most, and no history | comments check |
 | [[Notes Say How It Works Now]] | Each system has a note, updated in the same change | vault check, review |
 | [[Tests Check Behaviour]] | Tests pin what the code does, never where its lines sit | review |
