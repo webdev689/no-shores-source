@@ -22,6 +22,7 @@ code:
 | size | source files to 600 lines, tests to 800 | [[Small Files]] |
 | comments | comments to eight lines, with no dates, issue numbers, ticket tags or bible pointers | [[Comments Say Why]] |
 | layers | client imports follow the declared layers; no Node modules in client code; no WebGL | [[Code Map]], [[WebGPU Only]] |
+| crates | every crate is declared, and depends only on the crates its rule allows | [[Code Map]] |
 | assets | no file over 1 MB; media only in `bible/Attachments/` | [[Generated Files Stay Out of Git]] |
 | vault | every wikilink resolves; every `code:` path exists and holds its symbol | [[Notes Say How It Works Now]] |
 
