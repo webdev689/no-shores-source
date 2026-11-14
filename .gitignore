@@ -6,6 +6,10 @@ node_modules/
 dist/
 generated/
 
+# The toolkit's working folders: the code map it generates and Serena's project data.
+graphify-out/
+.serena/
+
 # Local
 *.log
 .DS_Store

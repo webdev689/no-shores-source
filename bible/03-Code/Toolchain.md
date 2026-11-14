@@ -30,6 +30,13 @@ code:
 - **Build profiles**: debug builds optimise dependencies fully and our own crates lightly, so they run at a usable
   speed and still rebuild quickly.
 
+## The toolkit
+
+The co-dev's Claude Code toolkit lives in `tools/claude-toolkit/` ([[The Co-Dev's Toolkit, Whole]]). Each session
+starts with `bash tools/claude-toolkit/install-all.sh`, which installs its plugins, MCP servers and hooks and ends
+with a check of every tool. `CLAUDE.md` holds its rules for this repo. Its working folders, `graphify-out/` and
+`.serena/`, are ignored by git.
+
 ## Python
 
 Only for tooling that runs inside Blender (the sprite forge), held to the same size and comment checks.

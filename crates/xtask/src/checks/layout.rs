@@ -2,7 +2,7 @@ use super::Problem;
 
 /// Everything allowed at the top of the repository. A new top-level folder is a decision: add it here and to the
 /// Code Map note in the same change.
-pub const TOP_LEVEL: [&str; 24] = [
+pub const TOP_LEVEL: [&str; 25] = [
     ".cargo",
     ".editorconfig",
     ".gitattributes",
@@ -24,6 +24,7 @@ pub const TOP_LEVEL: [&str; 24] = [
     "package.json",
     "rust-toolchain.toml",
     "rustfmt.toml",
+    "tools",
     "tsconfig.json",
     "tsconfig.node.json",
     "vite.config.ts",
