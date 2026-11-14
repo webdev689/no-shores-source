@@ -1,0 +1,5 @@
+# Names say what they are: single-letter names only where everyone reads them at a glance.
+allowed-idents-below-min-chars = ["i", "j", "k", "x", "y", "z", "w", "h", "a", "b", "t", "n", "_"]
+min-ident-chars-threshold = 1
+# Tests may unwrap: a failed unwrap there is a failed test with its line.
+allow-unwrap-in-tests = true

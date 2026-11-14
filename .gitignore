@@ -1,0 +1,22 @@
+# Rust
+target/
+
+# Builds and generated outputs never enter git: forge renders, world bakes, web builds.
+dist/
+generated/
+
+# Local
+*.log
+.DS_Store
+.env
+.env.*
+.idea/
+.vscode/
+
+# Obsidian: personal layout and caches stay local; the shared settings are committed.
+bible/.obsidian/workspace.json
+bible/.obsidian/workspace-mobile.json
+bible/.obsidian/graph.json
+bible/.obsidian/plugins/
+bible/.obsidian/themes/
+bible/.trash/

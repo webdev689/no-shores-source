@@ -1,0 +1,14 @@
+filters:
+  and:
+    - file.inFolder("05-Decisions")
+    - type == "decision"
+views:
+  - type: table
+    name: Decisions
+    order:
+      - file.name
+      - date
+      - status
+    sort:
+      - property: date
+        direction: DESC

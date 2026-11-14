@@ -1,0 +1,11 @@
+filters:
+  and:
+    - file.inFolder("02-Systems")
+    - type == "system"
+views:
+  - type: table
+    name: Systems
+    order:
+      - file.name
+      - status
+      - code
