@@ -38,8 +38,10 @@ main biome.
 
 - **Static isles** are fixed by the layout: a place, a seed and one biome. Thousands are too many to hand-shape, so
   each is generated from its seed by the same generators, identically everywhere. The server holds who discovered
-  each first and tells a client about an isle only once it may know of it, so a hidden isle cannot be read out of the
-  client.
+  each first.
+- **Fog of war.** Each player's map starts dark and clears where they have been. The server keeps each character's
+  charted ground and the isles they have found, and tells a client about an isle only once that player has found it
+  or is close enough to see it, so a hidden isle cannot be read out of the client.
 - **Discoveries** are rolled by the server in the open sea between landmasses: a place and a seed. Every client near
   one generates the same island from the seed, as DFO's spawned dungeons are shared. The server lets one go a while
   after the last player leaves.
@@ -54,7 +56,5 @@ main biome.
 
 ## Limits
 
-- Which nine of World 2.0's ten climates the continents take, and the continents' outlines, are the owner's to choose
-  ([[Open Questions]]).
-- Whether "hidden until discovered" hides an isle from each player until they find it, or from everyone until anyone
-  does, is open ([[Open Questions]]).
+- Which nine of World 2.0's ten climates the continents take is decided later, and the continents' outlines are
+  ours to draw ([[Open Questions]]).

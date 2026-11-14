@@ -14,7 +14,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- [[Open Questions]]: whether isles hide per player or for everyone; which nine climates.
+- [[Open Questions]]: which nine climates, which the owner will decide later.
 
 ## Next
 
