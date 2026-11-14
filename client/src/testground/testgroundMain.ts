@@ -12,7 +12,7 @@ import type { Dress } from './dressing.ts';
 import { type Placed, eyeOf, frameAt, viewOf } from './figures.ts';
 import { Input } from './input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, updatePlayer } from './player.ts';
-import { shownMove } from './playerMoves.ts';
+import { likelyMoves, shownMove } from './playerMoves.ts';
 import { startPanel } from './panel.ts';
 import { type CardAt, SceneView } from './sceneView.ts';
 
@@ -194,6 +194,12 @@ async function start(): Promise<void> {
       (anim) => forge.frames(youDress.body, anim),
       (anim, held) => forge.draws(youDress.body, anim, held),
     );
+    const hands = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
+    forge.warm(
+      youDress,
+      likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, held) => forge.draws(youDress.body, anim, held)),
+    );
+    forge.pump();
     if (player.view.shown > HIDE_FIGURE_M) {
       const { view, flip } = viewOf(player.facing, body.x, body.y, eye.x, eye.y);
       const frames = forge.frames(youDress.body, shown.anim);

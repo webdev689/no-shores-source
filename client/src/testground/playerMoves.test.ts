@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { type Doing, shownMove } from './playerMoves.ts';
+import { type Doing, likelyMoves, shownMove } from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -111,4 +111,13 @@ test('a shield or second blade pairs only with a weapon the forge draws in the p
   } as const;
   assert.equal(shownMove(axeBlow, frames, axeDraws).anim, 'attack_axe');
   assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, everything).anim, 'guard');
+});
+
+test('the likeliest moves are the kit’s, the strokes of a weapon held alone, and the moves on foot', () => {
+  const alone = likelyMoves('sword_iron', null, everything);
+  for (const anim of ['idle', 'walk', 'attack_sword', 'thrust', 'chop', 'swing2h', 'run', 'jump'])
+    assert.ok(alone.includes(anim));
+  const paired = likelyMoves('sword_iron', 'dagger_iron_l', everything);
+  assert.ok(paired.includes('twinslash') && !paired.includes('chop'));
+  assert.equal(new Set(paired).size, paired.length);
 });

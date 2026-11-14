@@ -9,6 +9,11 @@ import type { Card, SceneView } from './sceneView.ts';
 const KEPT_CARDS = 4000;
 /** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
 const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
+/** The forge's views of a figure. */
+const VIEWS = 5;
+/** Warming starts at most this many frames a tick, and none while this many are under way. */
+const WARM_A_TICK = 2;
+const WARM_UNDER_WAY = 6;
 
 /** Each figure's frames, composed from the forge's strips once and kept as textures; while a frame is being composed,
  *  the figure keeps showing the last one it had. */
@@ -16,6 +21,8 @@ export class Cards {
   private readonly kept = new Map<string, Card | null>();
   private readonly composing = new Set<string>();
   private readonly last = new Map<number, Card>();
+  private readonly queued: { dress: Dress; anim: string; view: number; frame: number }[] = [];
+  private readonly warmed = new Set<string>();
   private readonly scene: SceneView;
   private readonly store: ForgeStore;
   private readonly looks: ForgeLooks;
@@ -48,39 +55,66 @@ export class Cards {
     return !!own?.anims[anim] && (!held || !!own.layers[held]?.includes(anim));
   }
 
-  /** A figure's card in a move, a view and a frame, or the last card it showed while this one is composed. A move
-   *  carries the props, instrument or spark the forge draws in it. */
-  card(id: number, dress: Dress, anim: string, view: number, frame: number): Card | null {
+  /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A
+   *  move carries the props, instrument or spark the forge draws in it. */
+  private ask(dress: Dress, anim: string, view: number, frame: number): Card | null {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
     const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
     const figure = { ...dressed, gear: [...dressed.gear, ...carried] };
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);
     const kept = this.kept.get(key);
-    if (kept) {
-      this.last.set(id, kept);
-      return kept;
+    if (kept !== undefined || this.composing.has(key)) return kept ?? null;
+    if (this.kept.size > KEPT_CARDS) {
+      for (const old of this.kept.values()) old?.texture.destroy();
+      this.kept.clear();
+      this.last.clear();
     }
-    if (kept === undefined && !this.composing.has(key)) {
-      if (this.kept.size > KEPT_CARDS) {
-        for (const old of this.kept.values()) old?.texture.destroy();
-        this.kept.clear();
-        this.last.clear();
-      }
-      this.composing.add(key);
-      const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
-      composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, (path) => this.store.strip(path))
-        .then((composed) => {
-          this.kept.set(
-            key,
-            composed && this.scene.card(composed.pixels, composed.width, composed.height, composed.root),
-          );
-        })
-        .catch((error: unknown) => {
-          this.failure = error instanceof Error ? error.message : String(error);
-        })
-        .finally(() => this.composing.delete(key));
+    this.composing.add(key);
+    const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
+    composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, (path) => this.store.strip(path))
+      .then((composed) => {
+        this.kept.set(
+          key,
+          composed && this.scene.card(composed.pixels, composed.width, composed.height, composed.root),
+        );
+      })
+      .catch((error: unknown) => {
+        this.failure = error instanceof Error ? error.message : String(error);
+      })
+      .finally(() => this.composing.delete(key));
+    return null;
+  }
+
+  /** A figure's card in a move, a view and a frame, or the last card it showed while this one is composed. */
+  card(id: number, dress: Dress, anim: string, view: number, frame: number): Card | null {
+    const card = this.ask(dress, anim, view, frame);
+    if (card) this.last.set(id, card);
+    return card ?? this.last.get(id) ?? null;
+  }
+
+  /** Queues every view and frame of a dress's moves to be composed ahead of need, once for each dress; they replace
+   *  whatever is still queued, as only the newest dress will be shown. */
+  warm(dress: Dress, anims: readonly string[]): void {
+    const key = JSON.stringify([dress, anims]);
+    if (this.warmed.has(key)) return;
+    this.warmed.add(key);
+    this.queued.length = 0;
+    const kept = structuredClone(dress);
+    for (const anim of anims) {
+      if (!this.looks.bodies[dress.body]?.anims[anim]) continue;
+      for (let view = 0; view < VIEWS; view++)
+        for (let frame = 0; frame < this.frames(dress.body, anim); frame++)
+          this.queued.push({ dress: kept, anim, view, frame });
     }
-    return this.last.get(id) ?? null;
+  }
+
+  /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. */
+  pump(): void {
+    for (let started = 0; started < WARM_A_TICK && this.composing.size < WARM_UNDER_WAY; started++) {
+      const next = this.queued.shift();
+      if (!next) return;
+      this.ask(next.dress, next.anim, next.view, next.frame);
+    }
   }
 }

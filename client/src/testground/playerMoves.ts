@@ -71,6 +71,14 @@ function kitOf(right: string | null, left: string | null, draws: Draws): Kit {
   return ownKit(right, left);
 }
 
+/** The moves a figure with these hands is likeliest to show next, to compose ahead of need: its rest, walk and
+ *  attack, the strokes of a weapon held alone, running, jumping and crouching. */
+export function likelyMoves(right: string | null, left: string | null, draws: Draws): string[] {
+  const kit = kitOf(right, left, draws);
+  const strokes = right && !left ? ['thrust', 'chop', 'swing2h'] : [];
+  return [...new Set([kit.idle, kit.walk, kit.attack, ...strokes, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
+}
+
 /** The forge's own strokes the owner gave the player, by the swing's direction. */
 const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
   up: 'thrust',
