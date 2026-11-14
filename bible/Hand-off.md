@@ -13,7 +13,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Waiting on the owner
 
 - [[Open Questions]]: which readers come over; whether Kamer's work carries.
-- Keys for the toolkit: a SkillsMP key, and a Gemini key for `headroom learn`.
+- The toolkit is installed and its check passes but for SkillsMP, whose key is saved on the Default environment.
+  Gemini is reachable for `headroom learn`. Three kit fixes are logged with task-observer for the co-dev.
 
 ## Next
 
