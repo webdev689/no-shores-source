@@ -108,7 +108,8 @@ A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 - Then every texel is snapped to the nearest colour of the palette.
 
 The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are
-the other side's, mirrored. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
+the other side's, mirrored. A mirrored view with nothing in hand wears each hip piece (a sword's or dagger's sheath, a
+Pistolet's) at the other hip first, so the mirror lays it back at its own; the forge draws a twin of each for that. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
 eye.
 
 ## Limits

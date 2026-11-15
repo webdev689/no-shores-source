@@ -104,7 +104,8 @@ sets keep their own colours. Bare hands take iron's.
 ### On the screen
 
 Each picture lies on a 320 by 200 design screen, scaled to the canvas, texel for texel, with its clear texels cut
-out, over the scene. A weapon lies at its own place, but a sword rests 60 pixels below its own; its strikes keep
+out, over the scene. A weapon lies at its own place, but a sword rests 60 pixels below its own and 40 to the right, its blade clear of
+the crosshair (in the left hand, 40 to the left); its strikes keep
 their own places, since lowered as far they leave the screen ([[First-Person Placement Is Our Own]]). A gun sits flush in the bottom right corner, sunk its kick's
 height below the foot. A crossbow's rest frame sits flush in that corner, and every frame where that puts it. The left
 hand of a pair is mirrored about the middle, and each weapon of a pair stands 34 pixels further out toward its own side,

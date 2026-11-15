@@ -152,7 +152,10 @@ def room_of(spec, r):
     frames the widget's bob and inertia move, on a spec drawn on canvases of its own or grown; else none."""
     if not (spec.get('placed') or spec.get('grown')):
         return (0, 0, 0)
-    return ROOM if record_of(spec, r).get('state') == 'Idle' or spec['weapon'] == 'bow' else (0, 0, 0)
+    rec = record_of(spec, r)
+    if rec.get('room'):   # a record the game draws lower than forged needs as much more room above
+        return tuple(rec['room'])
+    return ROOM if rec.get('state') == 'Idle' or spec['weapon'] == 'bow' else (0, 0, 0)
 
 
 def aim(spec, r):

@@ -57,6 +57,35 @@ function bodyLayer(figure: Figure, anim: string, drawn: ForgeBody['layers']): { 
   return { layer: covered ? `body_${race}_helmed` : `body_${race}`, beast: race };
 }
 
+/** A worn piece hung at one hip, which a mirror moves to the other: its twin (`<layer>_l`) hangs at the other hip. */
+const HIP = /^(sheath|scabbard)_(sword|dagger|pistolet)(_|$)/;
+/** What a mirror cannot twin: a piece off the body's middle with none (the quiver, a weapon slung across the back), and
+ *  what a fist holds (the torch, the cast's light). */
+const NO_TWIN = /^(quiver$|sheath_(greatsword|axe|staff|bow|thunderlock)|scabbard_greatsword|torch_l$|spark$)/;
+
+/** A hip piece's twin at the other hip, or null for a layer that has none. */
+export const hipTwin = (layer: string): string | null =>
+  HIP.test(layer) ? (layer.endsWith('_l') ? layer.slice(0, -2) : `${layer}_l`) : null;
+
+/**
+ * A figure's gear as a mirrored view of `anim` composes it. The forge draws a right-handed body, so a mirror hangs each
+ * hip piece at the other hip; swapped for its twin first, the mirror lays it back at its own. Null where the mirror
+ * needs no twin or cannot have one: something in hand (`holding`), a piece with no twin, or a twin not drawn in `anim`.
+ */
+export function mirroredGear(
+  gear: readonly string[],
+  anim: string,
+  drawn: ForgeBody['layers'],
+  holding: boolean,
+): string[] | null {
+  if (holding) return null;
+  const stacked = gear.filter((layer) => drawn[layer]?.includes(anim));
+  if (stacked.some((layer) => NO_TWIN.test(layer))) return null;
+  const hips = stacked.filter((layer) => hipTwin(layer) !== null);
+  if (hips.length === 0 || hips.some((layer) => !drawn[hipTwin(layer) ?? '']?.includes(anim))) return null;
+  return gear.map((layer) => hipTwin(layer) ?? layer);
+}
+
 /** The layers a figure stacks in `anim`, bottom first: bare body, hair, gear and a ridden horse.
  *  A beast race's face under a helm or a hood is its own. Only layers the body draws in `anim` are kept. */
 export function layersOf(figure: Figure, anim: string, looks: ForgeLooks): string[] {

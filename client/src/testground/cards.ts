@@ -1,6 +1,6 @@
 import { type Colours, composeFrame } from '../forge/compose.ts';
 import type { DyeTable } from '../forge/dyes.ts';
-import type { ForgeLooks } from '../forge/looks.ts';
+import { type ForgeLooks, mirroredGear } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Dress, figureOf, rampsOf } from './dressing.ts';
 import type { Card, SceneView } from './sceneView.ts';
@@ -57,11 +57,14 @@ export class Cards {
 
   /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A
    *  move carries the props, instrument or spark the forge draws in it. */
-  private ask(dress: Dress, anim: string, view: number, frame: number): Card | null {
+  private ask(dress: Dress, anim: string, view: number, frame: number, flip = false): Card | null {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
     const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
-    const figure = { ...dressed, gear: [...dressed.gear, ...carried] };
+    const gear = [...dressed.gear, ...carried];
+    // A view drawn mirrored keeps each hip piece at its own hip.
+    const holding = [dress.outfit.right, dress.outfit.left].some((hand) => !!hand && gear.includes(hand));
+    const figure = { ...dressed, gear: (flip && mirroredGear(gear, anim, layers, holding)) || gear };
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);
     const kept = this.kept.get(key);
     if (kept !== undefined || this.composing.has(key)) return kept ?? null;
@@ -87,8 +90,8 @@ export class Cards {
   }
 
   /** A figure's card in a move, a view and a frame, or the last card it showed while this one is composed. */
-  card(id: number, dress: Dress, anim: string, view: number, frame: number): Card | null {
-    const card = this.ask(dress, anim, view, frame);
+  card(id: number, dress: Dress, anim: string, view: number, frame: number, flip = false): Card | null {
+    const card = this.ask(dress, anim, view, frame, flip);
     if (card) this.last.set(id, card);
     return card ?? this.last.get(id) ?? null;
   }
