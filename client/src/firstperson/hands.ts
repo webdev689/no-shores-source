@@ -68,6 +68,9 @@ export const SWAY_RECORD = 7;
 export const SWAY_FRAMES = 9;
 const BOW_FRAMES = 7;
 const STRIKE_FRAMES = 5;
+/** A pair's weapons stand this many design pixels further out, each toward its own side: two blades leaning in from
+ *  the sides otherwise close on the middle. */
+const PAIR_APART = 34;
 const STILL: AttackInput = { attackHeld: false, attackPressed: false, attackReleased: false };
 const PULL: AttackInput = { attackHeld: true, attackPressed: true, attackReleased: false };
 const NOTHING: HandsEvents = { blow: null, loose: false, hand: null };
@@ -136,7 +139,9 @@ export class Hands {
     }
     const guns = this.arms.length > 0 && this.arms.every((arm) => arm.shot && arm.holding.kind === 'shooter');
     const crossbows = this.arms.some((arm) => kindOf(arm.holding) === 'crossbow');
-    this.carry.step(seconds, guns && !crossbows && motion.running && this.arms.every((arm) => arm.shot?.loaded));
+    // A pair of crossbows keeps its own frames at a run; one is carried as a gun is.
+    const carries = guns && !(crossbows && this.plan?.pair);
+    this.carry.step(seconds, carries && motion.running && this.arms.every((arm) => arm.shot?.loaded));
     return events;
   }
 
@@ -270,7 +275,7 @@ export class Hands {
         return { ...base, record, frame, flip: aloneFlip(arm.hand, arm.holding, record) };
       }
       const { record, mirror } = strikePicture(arm.hand, machine?.striking ?? null, bare(arm));
-      if (!bare(arm)) return { ...base, record, frame, flip: mirror, lower: arm.guard * GUARD.lower };
+      if (!bare(arm)) return { ...base, record, frame, flip: mirror, lower: arm.guard * GUARD.lower, dx: -PAIR_APART };
       const resting = !machine?.busy;
       const tuck = fistGuard(arm.guard, arm.hand, this.clock, resting);
       return { ...base, record, frame, flip: mirror, dx: tuck.dx, dy: tuck.dy };
@@ -313,7 +318,7 @@ export function everyView(plan: HandsPlan): HandView[] {
     if (holding?.kind === 'shooter') {
       const { kind } = holding.shooter;
       add(hand, holding, 0, SHOOTER_FEEL[kind].frames, hand === 'left', plan.pair && kind === 'crossbow');
-      if (kind !== 'crossbow') add(hand, holding, 1, CARRY_FRAMES, hand === 'left');
+      if (kind !== 'crossbow' || !plan.pair) add(hand, holding, 1, CARRY_FRAMES, hand === 'left');
     }
     if (holding?.kind !== 'weapon') continue;
     if (holding.wielded.kind === 'bow') {

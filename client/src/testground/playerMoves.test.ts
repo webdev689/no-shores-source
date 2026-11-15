@@ -137,3 +137,13 @@ test('the likeliest moves are the kit’s, the strokes of a weapon held alone, a
   assert.ok(paired.includes('twinslash') && !paired.includes('chop'));
   assert.equal(new Set(paired).size, paired.length);
 });
+
+test('running with a gun or a crossbow drawn plays its own run; put away, the plain run', () => {
+  const running = { ...doing, moving: true, running: true, speed: 7.6 };
+  assert.equal(shownMove({ ...running, right: 'thunderlock' }, frames, everything).anim, 'gunrun');
+  assert.equal(shownMove({ ...running, right: 'pistolet' }, frames, everything).anim, 'pistolrun');
+  assert.equal(shownMove({ ...running, right: 'pistolet', left: 'pistolet_l' }, frames, everything).anim, 'bracerun');
+  assert.equal(shownMove({ ...running, right: 'crossbow_iron' }, frames, everything).anim, 'xbowrun');
+  assert.equal(shownMove({ ...running, right: 'crossbow_iron', drawn: false }, frames, everything).anim, 'run');
+  assert.ok(likelyMoves('crossbow_iron', null, everything).includes('xbowrun'));
+});

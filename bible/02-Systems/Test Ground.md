@@ -58,7 +58,7 @@ The player's figure shows the move the forge draws for what the body does:
   right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
   move whole, a brace's right then left, then its reload where the forge draws one.
 - **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each
-  have their own.
+  have their own. A gun or a crossbow drawn runs with its own run, held at port arms.
 
 The left hand decides the stance. A shield or a torch there guards, marches and slashes; a blade there fights as a
 pair. Each holds only where the forge draws both hands' things in that stance's attack. Otherwise the right hand's

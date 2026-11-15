@@ -50,6 +50,8 @@ interface Kit {
   readonly attack: string;
   /** A gun's reload after its shot. */
   readonly reload?: string;
+  /** A gun's or a crossbow's own run, held at port arms. */
+  readonly run?: string;
 }
 const GUARD: Kit = { idle: 'guard', walk: 'march', attack: 'slash' };
 const PAIR: Kit = { idle: 'twinguard', walk: 'twinmarch', attack: 'twinslash' };
@@ -57,13 +59,15 @@ const PAIR: Kit = { idle: 'twinguard', walk: 'twinmarch', attack: 'twinslash' };
 /** The moves the right hand's weapon plays on its own: at rest, walking, and its own attack. */
 function ownKit(right: string | null, left: string | null): Kit {
   const kind = right?.split('_')[0] ?? '';
-  if (kind === 'bow' || kind === 'crossbow') return { idle: 'idle_bow', walk: 'walk_bow', attack: 'bow' };
+  if (kind === 'bow') return { idle: 'idle_bow', walk: 'walk_bow', attack: 'bow' };
+  if (kind === 'crossbow') return { idle: 'idle_bow', walk: 'walk_bow', attack: 'bow', run: 'xbowrun' };
   if (kind === 'staff') return { idle: 'idle_staff', walk: 'walk_staff', attack: 'attack_staff' };
-  if (kind === 'thunderlock') return { idle: 'gunready', walk: 'gunwalk', attack: 'gunshot', reload: 'gunreload' };
+  if (kind === 'thunderlock')
+    return { idle: 'gunready', walk: 'gunwalk', attack: 'gunshot', reload: 'gunreload', run: 'gunrun' };
   if (kind === 'pistolet')
     return left?.startsWith('pistolet')
-      ? { idle: 'braceready', walk: 'bracewalk', attack: 'braceshot' }
-      : { idle: 'pistolready', walk: 'pistolwalk', attack: 'pistolshot', reload: 'pistolreload' };
+      ? { idle: 'braceready', walk: 'bracewalk', attack: 'braceshot', run: 'bracerun' }
+      : { idle: 'pistolready', walk: 'pistolwalk', attack: 'pistolshot', reload: 'pistolreload', run: 'pistolrun' };
   if (!right) return { idle: 'idle', walk: 'walk', attack: 'thrust' };
   const swingsAxe = kind === 'axe' || kind === 'flail' || kind === 'warhammer';
   return { idle: 'idle', walk: 'walk', attack: swingsAxe ? 'attack_axe' : 'attack_sword' };
@@ -84,7 +88,14 @@ function kitOf(right: string | null, left: string | null, draws: Draws): Kit {
 export function likelyMoves(right: string | null, left: string | null, draws: Draws): string[] {
   const kit = kitOf(right, left, draws);
   const strokes = right && !left ? ['thrust', 'chop', 'swing2h'] : [];
-  const own = [kit.idle, kit.walk, kit.attack, ...(kit.reload ? [kit.reload] : []), ...strokes];
+  const own = [
+    kit.idle,
+    kit.walk,
+    kit.attack,
+    ...(kit.reload ? [kit.reload] : []),
+    ...(kit.run ? [kit.run] : []),
+    ...strokes,
+  ];
   return [...new Set([...own, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
 }
 
@@ -137,8 +148,10 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     return { anim, frame: first + Math.min(span - 1, Math.floor(blow.progress * span)), frameSeconds: 0 };
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
-  if (doing.running && doing.moving && draws('run', doing.drawn ? doing.right : null))
-    return loop('run', WALK_FRAME / 2);
+  if (doing.running && doing.moving) {
+    if (kit.run && draws(kit.run, doing.right)) return loop(kit.run, WALK_FRAME / 2);
+    if (draws('run', doing.drawn ? doing.right : null)) return loop('run', WALK_FRAME / 2);
+  }
   const rest = doing.moving ? kit.walk : kit.idle;
   return loop(draws(rest, doing.drawn ? doing.right : null) ? rest : doing.moving ? 'walk' : 'idle', WALK_FRAME);
 }

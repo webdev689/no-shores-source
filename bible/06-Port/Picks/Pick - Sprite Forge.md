@@ -19,7 +19,7 @@ dfo_paths:
   - src/systems/studioArt/forgeLayers.js
   - src/systems/studioArt/forgeRaces.js
   - src/systems/studioArt/forgeHair.js
-dfo_commit: fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit)
+dfo_commit: 7da875100f (ccr-aff93cb4-gw1nto-sprites)
 ---
 # Pick - Sprite Forge
 
@@ -29,15 +29,17 @@ composes a figure from them.
 ## What comes over
 
 - The forge's code, fitted tables, keys and models, exactly, in `tools/forge/` in DFO's own layout.
-- Its 120,435 strips and its five tables as they are, published to R2 ([[DFO's Sprite Forge Comes Over Exactly]]).
+- Its 127,253 strips and its five tables as they are, published to R2 ([[DFO's Sprite Forge Comes Over Exactly]]).
+  The first-person art it makes outside the studio comes too; the other authors' mod art on DFO's main does not.
 - The compositor (`forgeLayers.js` `composeFrame`, `layersOf`, `lookCell`), the race skins (`forgeRaces.js`) and the
   hair ramps (`forgeHair.js`), as TypeScript in `client/src/forge/`.
 
 ## What stays behind
 
 - The forge viewer page and DFO's game code it runs on: the [[Test Ground]] takes its place.
-- The palette snap and the dye tables, which need Daggerfall's palette: the Test Ground tints instead.
-- The weapon-glow and depth stores the game kept for its own drawing, and the horse's coats.
+- The weapon-glow and depth stores the game kept for its own drawing, and the archives it recycles.
+- The horse's coats, tack and mount looks, and the held map's and the gathering tools' hands: nothing here uses them
+  yet.
 
 ## Our version
 

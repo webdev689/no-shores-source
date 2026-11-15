@@ -24,6 +24,8 @@ const LAYERS = [
   'sheath_sword',
   'mace_iron',
   'torch_l',
+  'horse',
+  'horse_warhorse',
 ];
 const drawn = Object.fromEntries(LAYERS.map((layer) => [layer, ['idle']]));
 const outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: false, hair: null };

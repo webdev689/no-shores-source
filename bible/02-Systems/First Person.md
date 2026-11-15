@@ -107,7 +107,8 @@ Each picture lies on a 320 by 200 design screen, scaled to the canvas, texel for
 out, over the scene. A weapon lies at its own place, but a sword rests 60 pixels below its own; its strikes keep
 their own places, since lowered as far they leave the screen ([[First-Person Placement Is Our Own]]). A gun sits flush in the bottom right corner, sunk its kick's
 height below the foot. A crossbow's rest frame sits flush in that corner, and every frame where that puts it. The left
-hand of a pair is mirrored about the middle.
+hand of a pair is mirrored about the middle, and each weapon of a pair stands 34 pixels further out toward its own side,
+at rest and through every blow, so the two blades do not close on the middle.
 
 The left hand's things are placed as our own ([[First-Person Placement Is Our Own]]): in the lower left, the mirror of the weapon side, a texel a pixel. A
 shield's and the lantern's arms leave through their left edge, so they sit flush to it, their feet on the screen's.
@@ -119,15 +120,18 @@ steps every 0.1 s.
 
 While walking, the picture dips a few design pixels each step, more at a run. A flail at rest wears its chain's swing,
 a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps both arms, the left half a stride behind
-the right. A cast shows both casting hands for 0.28 s and hides the weapon meanwhile. A new look's pictures are
-composed ahead and kept on the GPU.
+the right. A gun, or one crossbow, is carried across the chest at a run, from the forge's own carry frames in the
+gauntlets worn; a pair of crossbows keeps its own frames. A cast shows both casting hands for 0.28 s and hides the
+weapon meanwhile. In an armour set's gauntlets each casting hand is the set's whole arm, dyed as its fists are, under
+the element's light; with none it is the linen sleeve and the leather glove. A new look's pictures are composed ahead
+and kept on the GPU.
 
 ### Climbing
 
 A climb lowers what is held out of the bottom of the screen and brings both hands up onto the wall from under it, the
 painting of a left hand as drawn and the right its mirror, each 93 pixels from the middle, the sleeve 34 pixels under
-the screen's foot. Each hand opens as it comes and closes on the stone as it arrives. The forge drew the climbing arm
-in a linen sleeve and the leather glove, laid as drawn, undyed.
+the screen's foot. Each hand opens as it comes and closes on the stone as it arrives. In an armour set's gauntlets the
+arm is the set's, dyed as its fists are; with none it is the linen sleeve and the leather glove, laid as drawn, undyed.
 
 ### Riding
 
@@ -151,5 +155,4 @@ rein, not its fist up.
 - The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.
 - The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.
-- The casting hands wear the leather glove whatever gauntlets are worn: the forge drew no other.
 - The tools, the instruments and the held map are not drawn.

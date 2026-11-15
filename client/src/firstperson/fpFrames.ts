@@ -347,13 +347,22 @@ export const CAST_LIGHTS = ['fire', 'frost', 'poison', 'shock', 'magic'] as cons
 /** The casting arm's garments under the light, in order. */
 const CAST_GARMENTS = ['linen', 'gauntlet'] as const;
 
-/** The casting hand's record `record` lit by `element`: its sleeve, its glove and the light, laid in order. Placed by
- *  the caller, as a casting hand is placed by its record. */
-export async function castPicture(source: FrameSource, element: string, record: number): Promise<Picture | null> {
-  const strips = await Promise.all([...CAST_GARMENTS, element].map((layer) => source.strip(castPath(layer, record))));
+/** The casting hand's record `record` lit by `element`: its sleeve, its glove and the light, laid in order; in a set's
+ *  gauntlets (`hands`) the set's whole arm under the light, else the sleeve and glove. Placed by the caller, as a
+ *  casting hand is placed by its record. */
+export async function castPicture(
+  source: FrameSource,
+  element: string,
+  record: number,
+  hands: string | null = null,
+): Promise<Picture | null> {
+  const layers = hands ? [hands, element] : [...CAST_GARMENTS, element];
+  const strips = await Promise.all(layers.map((layer) => source.strip(castPath(layer, record))));
   const [base, ...over] = strips;
-  if (!base || over.some((strip) => strip?.width !== base.width || strip.height !== base.height)) return null;
-  const pixels = source.painter.paint(base, null);
+  if (!base || over.some((strip) => strip?.width !== base.width || strip.height !== base.height))
+    return hands ? castPicture(source, element, record) : null;
+  // A set's arm is dyed as its fists are.
+  const pixels = source.painter.paint(base, hands ? setRamp(source.dyes, hands, 'Iron') : null);
   for (const strip of over) if (strip) layOver(pixels, source.painter.paint(strip, null));
   return { width: base.width, height: base.height, pixels, at: [0, 0] };
 }
