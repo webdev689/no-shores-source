@@ -17,7 +17,14 @@ stem, a glint) and never show a cut edge. Each record's frames share one canvas,
 them. The frames go to `<out>/<tool>/<state>-<frame>.png`, and `<out>/<tool>/frames.json` says where each record's
 canvas stands on the 320 x 200 screen (`rect`, its corner off the screen where it runs past) and where each frame's
 working point lands (`points`, [u, v, depth]): the axe's edge, the pick's point, the sickle's hook, the knife's tip,
-the spade's edge, the basket's mouth, the rod's tip, the hand's palm."""
+the spade's edge, the basket's mouth, the rod's tip, the hand's palm.
+
+    python -I tools/sprite-forge/fptools.py --out public/art/tools --tools gather --armour all --sets-only
+
+With `--armour`, a tool whose frames are a hand (`ARMOURED`) is rendered again in each armour set's gauntlets
+(fparmset.py), `<state>-<frame>_<Set>.png`. Every set's and the bare frames share one canvas a state, so the game
+swaps them with the gauntlets worn and the table stays one. `--sets-only` renders the sets beside the bare frames
+already out."""
 import argparse
 import json
 import math
@@ -51,6 +58,8 @@ TOOLS = {
     'rod': {'spec': 'ROD.json', 'records': None, 'light': ('WEAPON08', False), 'grade': ('WEAPON08', False, ('axehead',))},
     'gather': {'spec': 'GATHER.json', 'records': None, 'light': ('CLIMB', False), 'grade': ('CLIMB', False)},
 }
+# the tools whose frames are a hand, rendered again in each armour set (src/combat/toolForge.js ARMOURED_TOOLS)
+ARMOURED = ('gather',)
 W, H = 320, 200
 OVER = 64   # texels drawn past each edge of the screen: as far as the game moves a tool onto its mark
 # each tool's materials graded onto Daggerfall's own tones for their like (its archive, its material): the iron onto the
@@ -144,8 +153,9 @@ def overscan(eye):
     return base
 
 
-def screens(tool, samples, keyed_only=False):
-    """Every frame of the tool's records, whole screens by record: {record: (state, [screen...], [point...])}."""
+def screens(tool, samples, keyed_only=False, points=True):
+    """Every frame of the tool's records, whole screens by record: {record: (state, [screen...], [point...])}. With
+    `points` off, no points: a set's frames keep the bare frames' (its pose is theirs)."""
     t = TOOLS[tool]
     spec_path = os.path.join(SPECS, t['spec'])
     spec = fpforge.load(spec_path)
@@ -170,7 +180,7 @@ def screens(tool, samples, keyed_only=False):
             fpforge.GRADE.update(whole)
             fpforge.FRAME_GRADE.update(each)
         return {r: (state, [eye.screen(pose, part, record=r, frame=f) for r, f, pose, part in fs],
-                    [point(tool, eye, spec, pose, part, r) for r, _, pose, part in fs])
+                    [point(tool, eye, spec, pose, part, r) for r, _, pose, part in fs] if points else [])
                 for r, (state, fs) in drawn.items()}
     finally:
         if raster:
@@ -265,16 +275,61 @@ def canvas(frames):
     return [x0 - OVER, y0 - OVER, x1 - x0, y1 - y0], [x0, y0, x1 - x0, y1 - y0]
 
 
+def armour_pass(tool, sets, out, samples):
+    """Each set's frames beside the bare ones (`<state>-<frame>_<Set>.png`): every set's and the bare frames on one
+    canvas a state, the bare frames laid again on it and the table's rect grown to it (fpinstruments.py's)."""
+    import fparmset
+    import stage
+    from PIL import Image
+    weapon = json.load(open(os.path.join(SPECS, TOOLS[tool]['spec'])))['weapon']
+    worn = {}
+    for material in sets:
+        dressed = fparmset.dress(weapon, material)
+        try:
+            worn[material] = screens(tool, samples, points=False)
+        finally:
+            fparmset.undress(dressed)
+        print(f'{tool}: {material} rendered', flush=True)
+    folder = os.path.join(out, tool)
+    table = json.load(open(os.path.join(folder, 'frames.json')))
+    for r, (state, frames, _) in worn[sets[0]].items():
+        rects = [table[state]['rect']] + [canvas(worn[m][r][1])[0] for m in sets]
+        x0, y0 = min(q[0] for q in rects), min(q[1] for q in rects)
+        x1, y1 = max(q[0] + q[2] for q in rects), max(q[1] + q[3] for q in rects)
+        rect = [x0, y0, x1 - x0, y1 - y0]
+        cut = [x0 + OVER, y0 + OVER, x1 - x0, y1 - y0]
+        bx, by = table[state]['rect'][0] - x0, table[state]['rect'][1] - y0
+        for f in range(len(frames)):
+            path = os.path.join(folder, f'{state}-{f}.png')
+            bare = Image.new('RGBA', (rect[2], rect[3]), (0, 0, 0, 0))
+            bare.paste(Image.open(path).convert('RGBA'), (bx, by))
+            stage.write_png(path, np.asarray(bare))
+            for m in sets:
+                stage.write_png(os.path.join(folder, f'{state}-{f}_{m}.png'), fpstage.crop(worn[m][r][1][f], cut))
+        table[state]['rect'] = rect
+    with open(os.path.join(folder, 'frames.json'), 'w') as fh:
+        fh.write(json.dumps(table, separators=(',', ':')) + '\n')
+    print(f'{tool}: {len(sets)} sets, {json.dumps({k: v["rect"] for k, v in table.items()})}', flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default='')
     ap.add_argument('--preview', default='', help='write whole screens over a grey ground instead')
     ap.add_argument('--tools', default=','.join(TOOLS))
     ap.add_argument('--samples', type=int, default=96)
+    ap.add_argument('--armour', default='', help='the armour sets a hand is rendered in too (all: every set)')
+    ap.add_argument('--sets-only', action='store_true', help='render only the sets, beside the bare frames already out')
     args = ap.parse_args()
     import stage
     from PIL import Image
+    import fparmset
+    sets = list(fparmset.SETS) if args.armour == 'all' else [m for m in args.armour.split(',') if m]
     for tool in [x for x in args.tools.split(',') if x]:
+        if args.sets_only:
+            if sets and tool in ARMOURED:
+                armour_pass(tool, sets, args.out, args.samples)
+            continue
         recs = screens(tool, args.samples, keyed_only=bool(args.preview))
         table = {}
         for r, (state, frames, points) in recs.items():
@@ -302,6 +357,8 @@ def main():
             with open(os.path.join(args.out, tool, 'frames.json'), 'w') as fh:
                 fh.write(json.dumps(table, separators=(',', ':')) + '\n')
         print(f'{tool}: {json.dumps({k: v["rect"] for k, v in table.items()})}', flush=True)
+        if table and sets and tool in ARMOURED:
+            armour_pass(tool, sets, args.out, args.samples)
 
 
 if __name__ == '__main__':

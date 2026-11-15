@@ -8,6 +8,7 @@ import { decodePng } from '../../src/systems/textureReplacement.js';
 import { studioUrl, STUDIO_INDEX } from '../../src/systems/studioArt/studioArt.js';
 import { getBytes } from '../../src/scenes/dataSource.js';
 import * as K from './kit.js';
+import { choiceOfHash, hashOfChoice } from './address.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = /** @type {HTMLCanvasElement} */ ($('stage'));
@@ -63,21 +64,28 @@ const DEFAULT = {
   studio: { folder: '', record: '', make: '', filter: '' },
   move: '', view: 0, frame: 0, fps: 8, zoom: 3, mode: 'colour', bg: 'check', all: false, outline: false, hidden: [],
 };
-const merge = (base, over) => (over && typeof over === 'object' && !Array.isArray(over) && typeof base === 'object' && !Array.isArray(base)
-  ? Object.fromEntries([...new Set([...Object.keys(base), ...Object.keys(over)])].map((k) => [k, k in base ? merge(base[k], over[k]) : over[k]]))
-  : (over ?? base));
-let state = (() => {
-  try { return structuredClone(merge(DEFAULT, JSON.parse(decodeURIComponent(location.hash.slice(1)) || '{}'))); } catch { return structuredClone(DEFAULT); }
-})();
+let state = choiceOfHash(location.hash, DEFAULT);
 state.playing = false;
 let saving = 0;
+/** The hash the page wrote last: an address change to any other is a look sent or typed, and is read. */
+let written = location.hash;
 function save() {
   clearTimeout(saving);
-  const kept = (key, value) => (key === 'playing' ? undefined : value);
   saving = setTimeout(() => {
-    try { history.replaceState(null, '', `#${encodeURIComponent(JSON.stringify(state, kept))}`); } catch { /* a frame that keeps its own address */ }
+    written = hashOfChoice(state);
+    try { history.replaceState(null, '', written); } catch { /* a frame that keeps its own address */ }
   }, 200);
 }
+// a new choice in the address (a link followed, the hash typed) opens in the page already open: the page keeps no
+// other copy of the choice, so the pictures drawn are always the address's
+window.addEventListener('hashchange', () => {
+  if (location.hash === written) return;
+  clearTimeout(saving);
+  written = location.hash;
+  state = choiceOfHash(location.hash, DEFAULT);
+  state.playing = false;
+  refresh();
+});
 /** Change the choice and draw it again; `fresh` starts the move over (a new subject). */
 function set(change, fresh = false) {
   change(state);

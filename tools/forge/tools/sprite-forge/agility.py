@@ -11,11 +11,11 @@ are keyed here, the hands laid on the lip or a hold by the arm's IK (`rig.solve_
 These moves are the player's, so a class look's own moves never name them (layers.py `own_moves`)."""
 import math
 
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 import poses
 from poses import captured, held, root_matrix, grounded
-from rig import Pose, solve_arm
+from rig import JOINTS, Pose, solve_arm
 
 # each move's frames a view
 MOVES = {'run': 4, 'crouch_idle': 1, 'crouch_walk': 4, 'jump': 3, 'hang': 1, 'shimmy': 4, 'climb': 4, 'mantle': 4, 'vault': 4}
@@ -167,9 +167,28 @@ def _forearm_up(p, side):
     return tuple(root_matrix(p).inverted().to_3x3() @ (fore + Vector((0.0, 0.0, 0.6))))
 
 
+JUMP_SPREAD = 60.0   # the jump's arms out at most this far from hanging: raised higher, the armpit's skin sheets out
+
+
+def _arms_down(p, most=JUMP_SPREAD):
+    """The captured arms let down at the shoulder, about the body's front-to-back axis, to `most` degrees out from the
+    side; an arm already lower is left as captured."""
+    R = root_matrix(p).to_3x3()
+    axis = R @ Vector((0.0, 1.0, 0.0))
+    for side, sign in (('L', 1.0), ('R', -1.0)):
+        W = p.world()
+        j = f'uarm_{side}'
+        d = (R.inverted() @ (W[f'farm_{side}'].translation - W[j].translation)).normalized()
+        spread = math.degrees(math.atan2(abs(d.x), -d.z))
+        if spread > most:
+            turn = Matrix.Rotation(math.radians(sign * (spread - most)), 3, axis)
+            p.quat[j] = (W[JOINTS[j][0]].to_3x3().inverted() @ turn @ W[j].to_3x3()).to_quaternion()
+
+
 def jump(frame, view, yaw):
     """Up, at the top, coming down: the arms out for the balance, the weapon up along the forearm."""
     p = captured('jump', frame, yaw)
+    _arms_down(p)
     return p, {'axe': held(p, _forearm_up(p, 'R'), blades=JUMP_BLADES)}
 
 

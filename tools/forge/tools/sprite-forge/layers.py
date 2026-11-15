@@ -230,7 +230,9 @@ def weapon_anims(weapon):
         return [*onehand.TWIN, *agility.HELD]
     if weapon == torch3p.LAYER:
         return list(torch3p.ANIMS)
-    if weapon in BOW_LAYERS or weapon in CROSSBOW_LAYERS:   # in hand at rest too, and let fall as any weapon is
+    if weapon in CROSSBOW_LAYERS:   # and carried at port arms in its own sprint (gunplay.py `xbowrun`)
+        return ['bow', *BOW_REST, 'death', 'fallen', 'xbowrun']
+    if weapon in BOW_LAYERS:   # in hand at rest too, and let fall as any weapon is
         return ['bow', *BOW_REST, 'death', 'fallen']
     if weapon == 'bow':
         return ['bow']
@@ -527,7 +529,8 @@ class Layer:
         self.extras = name == 'bow' or name in BOW_LAYERS   # the string and the arrow, made each frame
 
     def shows(self, ob):
-        return ob in self.obs or (self.extras and ob in self.fighter.extra)
+        held = getattr(self, 'holdout', None)
+        return ob in self.obs or (self.extras and ob in self.fighter.extra) or (held is not None and ob in held.objects)
 
 
 def class_names():
@@ -763,8 +766,13 @@ def build_layers(body, classify, want=None):
     out += [Layer(name, holder, obs, classify) for name, obs in made.items()]
     out += guns3p.held_layers(body, classify, Bare, Layer)   # the guns, each with its shot's flash
     out += torch3p.held_layers(body, classify, Bare, Layer)   # the torch, lit
-    # the horse under the rider (riding.py), the Morrowind lane's Courser whole: posed by the frame, held by no hand
+    # the horse under the rider (riding.py), the Morrowind lane's Courser whole: posed by the frame, held by no hand;
+    # and each mount look's own pieces, a layer each, drawn where they stand in front of the horse held out
     out.append(Layer('horse', naked['axe'], riding.mount().objects, classify))
+    for name in riding.LOOK_LAYERS:
+        look = Layer(name, naked['axe'], riding.mount().look_objects(name[len('horse_'):]), classify)
+        look.holdout = riding.mount()
+        out.append(look)
     holder = Bare(body, 'axe')   # a body holding every prop of the placed people's poses, each a layer of its own
     made = props3p.build_all()
     holder.arm_staffs([ob for obs in made.values() for ob in obs])
@@ -1035,7 +1043,16 @@ def render(layer, anim, frame, view, per, tmp, names):
             ob.hide_render = True
     for ob in layer.casters:
         ob.hide_render, ob.visible_camera = False, False
-    work = stage.render_rgba(tmp)
+    held = getattr(layer, 'holdout', None)
+    if held is not None:
+        held.held_out(True)
+    try:
+        work = stage.render_rgba(tmp)
+    finally:
+        if held is not None:
+            held.held_out(False)
+    if layer.name == 'horse':   # what each pixel shows: the hide's texel, or the mane, the tack (forgeLayers.js)
+        texels = riding.mount().texel_kinds(work, lambda: stage.render_rgba(tmp))
     for ob in layer.casters:
         ob.hide_render, ob.visible_camera = True, True
     v, t, c, pc = layer.cloud.mesh(p, gear, pieces=True, moved=moved)
@@ -1093,7 +1110,39 @@ def render(layer, anim, frame, view, per, tmp, names):
     cut = (slice(y0, y1), slice(x0, x1))
     if RAW['all']:   # each texel's material in the depth strip's blue, in place of its part: what a grade is measured on
         part = ids
+    if layer.name == 'horse':
+        TEXELS[(anim, frame, view)] = texels[cut]
     return work[cut], np.where(on, zs, np.inf)[cut], int(x0), int(y0), part[cut].astype(np.uint8)
+
+
+# the horse's texel frames (horse.py `texel_kinds`) by animation, frame and view, as `render` cuts them
+TEXELS = {}
+# a mount look's depth is kept in steps of this many of the depth's units (6.4 mm): its pieces stand a centimetre and
+# more off the hide, so the rider in front of or behind them is never mistaken, and the strip is near half the size
+LOOK_DEPTH_STEP = 64
+
+
+def coarse_depth(zimg):
+    """A depth strip's depth rounded down to LOOK_DEPTH_STEP, its part and alpha as they are."""
+    out = zimg.copy()
+    d = (zimg[..., 0].astype(np.int64) * 256 + zimg[..., 1]) // LOOK_DEPTH_STEP * LOOK_DEPTH_STEP
+    out[..., 0], out[..., 1] = d >> 8, d & 255
+    return out
+
+
+def write_palette(path, rgba):
+    """A look's colour strip on a palette of 256 of its own colours, its alpha exact: the game snaps every composed
+    frame to its palette anyway, and the strip is a quarter of the size."""
+    from PIL import Image
+    Image.fromarray(np.ascontiguousarray(rgba, dtype=np.uint8)).quantize(256, method=Image.FASTOCTREE).save(
+        path, 'PNG', optimize=True)
+
+
+def write_small(path, arr):
+    """A strip written with PNG's row filters chosen row by row (the texel strip's smooth texels pack a third
+    smaller so): RGB or RGBA as `arr` has it."""
+    from PIL import Image
+    Image.fromarray(np.ascontiguousarray(arr, dtype=np.uint8)).save(path, 'PNG', optimize=True)
 
 
 def on_lines(hole, lines, scale, reach=1.5):
@@ -1395,8 +1444,16 @@ def main():
                 del mine_cells[name][anim]
                 if not mine_cells[name]:
                     del mine_cells[name]
-            stage.write_png(os.path.join(out, f'{name}_{anim}.png'), rgba)
-            stage.write_png(os.path.join(out, f'{name}_{anim}_z.png'), zimg)
+            if name in riding.LOOK_LAYERS:   # a look's colours on a palette of its own, its depth in coarse steps
+                write_palette(os.path.join(out, f'{name}_{anim}.png'), rgba)
+                write_small(os.path.join(out, f'{name}_{anim}_z.png'), coarse_depth(zimg))
+            else:
+                stage.write_png(os.path.join(out, f'{name}_{anim}.png'), rgba)
+                stage.write_png(os.path.join(out, f'{name}_{anim}_z.png'), zimg)
+            if name == 'horse':   # its texel strip, laid as its colour is (forgeLayers.js `HORSE_TEXELS`)
+                tex_rows = [[None if got is None or (anim, f, v) not in TEXELS else (TEXELS[(anim, f, v)], *got[1:]) for f, got in enumerate(row)]
+                            for v, row in enumerate(rows)]
+                write_small(os.path.join(out, f'{name}_{anim}_t.png'), strip(tex_rows, *own.get(name, (cell, root)))[0][..., :3])
             drew.append((name, anim))
             laid = own.get(name, (cell, root))
             if views == set(range(5)):   # drawn in some views alone, it keeps its old key: a plan draws it whole later

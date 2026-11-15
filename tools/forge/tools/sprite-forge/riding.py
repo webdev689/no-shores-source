@@ -40,8 +40,9 @@ HEEL_DOWN = 10.0   # degrees the toe is lifted in the stirrup: a rider's heel si
 RIDE = {'horseidle': 1, 'horsewalk': 8, 'horsegallop': 8}
 GAIT_OF = {'horseidle': 'idle', 'horsewalk': 'walk', 'horsegallop': 'gallop'}
 LEAN_OF = {'horseidle': 0.0, 'horsewalk': 0.0, 'horsegallop': 1.0}
-# the layers only the mounted animations draw
-LAYERS = ('horse',)
+# the layers only the mounted animations draw: the horse, and each shop mount look's own pieces (barding.py) over it
+LOOK_LAYERS = tuple(f'horse_{look}' for look in ('warhorse', 'spectral', 'dawnfire', 'automaton'))
+LAYERS = ('horse', *LOOK_LAYERS)
 
 # the trunk and the head over the seat: a little round in the back and the chin up, no two sides alike. The lean is
 # laid on the pelvis, so the legs are solved from the hips as they lean
@@ -59,7 +60,9 @@ HORSE_GRADE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs', 
 def mount():
     """The horse the layers draw: made once, its meshes in the scene, its strands sized for the sprites."""
     if not COURSER:
-        COURSER.append(horse.Courser(strand_radius=STRAND_RADIUS, tack_height=HEIGHT))
+        import barding
+        COURSER.append(horse.Courser(strand_radius=STRAND_RADIUS, tack_height=HEIGHT, locks=horse.SPRITE_LOCKS,
+                                     horn=True, looks=barding.LOOKS))
     return COURSER[0]
 
 

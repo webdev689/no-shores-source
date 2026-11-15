@@ -1,9 +1,9 @@
 {
  "shape": {
-  "torso_w": 1.036,
-  "torso_d": 1.085,
-  "arm_r": 1.177,
-  "leg_r": 1.267,
+  "torso_w": 0.953,
+  "torso_d": 0.998,
+  "arm_r": 1.059,
+  "leg_r": 1.14,
   "head": 1.0297,
   "hand": 1.3139,
   "waist_w": 0.988,
