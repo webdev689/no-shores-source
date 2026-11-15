@@ -12,7 +12,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP and Context7 keys are
   network secrets on the Default environment. Four kit fixes are logged with task-observer for the co-dev.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
-  ([[The World Editor Is on GitHub Pages]]). The owner has painted three continents into `main`.
+  ([[The World Editor Is on GitHub Pages]]). The owner has drawn all nine continents; continent 1 is the main social space, with the port city.
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
   shows it in 2D and 3D, close up at true scale, and on foot.
