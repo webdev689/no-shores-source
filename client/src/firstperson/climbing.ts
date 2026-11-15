@@ -1,4 +1,4 @@
-import { type FrameSource, type Picture, layOver } from './fpFrames.ts';
+import { type FrameSource, type Picture, layOver, setRamp } from './fpFrames.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 import { hardened } from './heldPictures.ts';
 import type { Hand } from './handsLaw.ts';
@@ -22,7 +22,20 @@ export function gripFrame(open: number): number {
 }
 
 /** The climbing hand's frame, its sleeve under its glove, as the forge drew it: no dye, no palette. */
-export async function gripPicture(source: FrameSource, frame: number): Promise<Picture | null> {
+export async function gripPicture(
+  source: FrameSource,
+  frame: number,
+  hands: string | null = null,
+): Promise<Picture | null> {
+  // In a set's gauntlets the whole arm is the set's, dyed as its fists are.
+  const arm = hands ? await source.strip(climbPath(hands, frame)) : null;
+  if (arm)
+    return {
+      width: arm.width,
+      height: arm.height,
+      pixels: source.painter.paint(arm, setRamp(source.dyes, hands, 'Iron')),
+      at: [0, 0],
+    };
   const strips = await Promise.all(CLIMB_GARMENTS.map((garment) => source.strip(climbPath(garment, frame))));
   const [sleeve, glove] = strips;
   if (!sleeve || !glove || glove.width !== sleeve.width || glove.height !== sleeve.height) return null;

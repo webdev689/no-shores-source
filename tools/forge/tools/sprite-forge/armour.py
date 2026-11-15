@@ -18,6 +18,7 @@ import fabric
 import materials
 import metals
 import model
+import rendercache
 import shape
 from armourkit import (TAU, Mesh, Outline, angles, box, cap_band, dome, faceted, fleece, fur, keel, rot, sleeve, solid,
                        spike, squared, strap, teeth, tube)
@@ -1745,7 +1746,10 @@ def gauntlet_hands(hands, mat, style):
             me.materials.clear()
             me.materials.append(mat[glove])
             me.update()
-            cover = bpy.data.objects.new(f'armour_gauntlets.{ob.name}', me)
+            # named by the hand's own name: a run that built another set first holds `hand_L_fist.001`, and that
+            # suffix inside a name would move every later set's key (rendercache.plain strips only a trailing one)
+            hand = rendercache.plain(ob.name)
+            cover = bpy.data.objects.new(f'armour_gauntlets.{hand}', me)
             bpy.context.scene.collection.objects.link(cover)
             for mod in ob.modifiers:
                 if mod.type == 'SUBSURF':
@@ -1760,7 +1764,7 @@ def gauntlet_hands(hands, mat, style):
             if own:
                 own(m, x, kname == 'fist', model.hand_frame(x))
             m.v = [shape.transform(f'hand_{side}', v - J) for v in m.v]
-            out.append((ob.name, m.object(f'armour_gauntlets.{ob.name}.plates', _mats(mat))))
+            out.append((ob.name, m.object(f'armour_gauntlets.{hand}.plates', _mats(mat))))
     return out
 
 

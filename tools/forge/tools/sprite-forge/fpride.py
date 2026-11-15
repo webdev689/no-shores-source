@@ -24,7 +24,11 @@ horse reaches in any frame of the ride or the cart, from the highest row it reac
 
 `--cart` forges the cart's picture (MRED01I0.CFA) instead, as `CART_<gait>-<frame>.png`: the Small Cart's driver rides
 the horse in its shafts, so the eye is the same, and the horse wears the driving harness over its tack (tack.py
-`collar_pieces`, `blinker_pieces`). The cart is never dyed, so it has no coat maps."""
+`collar_pieces`, `blinker_pieces`). The cart is never dyed, so it has no coat maps.
+
+`--looks` forges the shop's mount looks' own pieces over the ride instead (barding.py), as `RIDE_<key>_<look>.png`
+on the same canvas: each look's pieces alone where they stand before the horse, the horse held out, in their own
+colours and glow. The game lays them over the ride's frames dyed in that look (rideForge.js `rideLookFile`)."""
 import argparse
 import json
 import math
@@ -232,20 +236,31 @@ def setup(samples):
     sc.render.pixel_aspect_x, sc.render.pixel_aspect_y = TEXEL_X, 1.0
 
 
-def frames(samples, only=None):
+def frames(samples, only=None, looks=()):
     """Every shot's frame over the whole screen, and each texel's part: {key: ((h, w, 4) uint8, (h, w))}; `only` a few
-    keys alone."""
+    keys alone. With `looks`, each look's pieces alone over the held-out horse instead: {(key, look): frame}."""
     setup(samples)
     courser = horse.Courser(tack_height=riding.HEIGHT, reins=False, harness=bool(HARNESS),
-                            groomed=True, coat=COAT)   # the reins in the hands; the mane groomed on the neck
+                            groomed=True, coat=COAT, looks=looks, keep=in_ride)   # the reins in the hands; the mane groomed on the neck
     tmp = os.path.join(tempfile.mkdtemp(), 'r.png')
     out = {}
     for sh in shots():
         if only and sh['key'] not in only:
             continue
         courser.pose(sh['gait'], sh['time'], 180.0, sh['extra'], sh['calm'])   # back to the bake's frame
-        for ob in courser.objects:
+        for ob in [*courser.objects, *(o for look in looks for o in courser.look_objects(look))]:
             ob.matrix_world = view_of(sh['eye'], sh['down'], sh['roll'], sh['yaw'])
+        if looks:
+            courser.held_out(True)
+            for look in looks:
+                for ob in courser.look_objects(look):
+                    ob.hide_render = False
+                out[(sh['key'], look)] = stage.render_rgba(tmp)
+                for ob in courser.look_objects(look):
+                    ob.hide_render = True
+            courser.held_out(False)
+            print(sh['key'], flush=True)
+            continue
         shot = stage.render_rgba(tmp)
         parts = courser.mane_where(shot, lambda: stage.render_rgba(tmp))
         out[sh['key']] = (shot, parts)
@@ -253,6 +268,12 @@ def frames(samples, only=None):
             TEXELS[sh['key']] = courser.coat_texels(parts == 1, lambda: stage.render_rgba(tmp))
         print(sh['key'], flush=True)
     return out
+
+
+def in_ride(pc):
+    """Whether a mount look's piece is drawn over the ride: never one that streams back at the eye (barding.py)."""
+    import barding
+    return not barding.near_rider(pc)
 
 
 TEXELS = {}   # a shot's key -> each pixel's coat texel (horse.py `coat_texels`), from the last `frames`
@@ -303,9 +324,20 @@ def main():
     ap.add_argument('--reference', default='', help="rideReference.mjs's measure: fit the grade again from it")
     ap.add_argument('--cart', action='store_true', help="the cart's picture: the horse in harness, CART_ frames")
     ap.add_argument('--only', default='', help='these shots alone (keys, as gallop-3_tL), for a look')
+    ap.add_argument('--looks', action='store_true', help="the mount looks' own pieces over the ride, RIDE_<key>_<look>")
     args = ap.parse_args()
     if args.cart:
         HARNESS.append(True)
+    if args.looks:
+        import barding
+        made = frames(args.samples, set(args.only.split(',')) if args.only else None, barding.LOOKS)
+        os.makedirs(args.out, exist_ok=True)
+        cw, ch = CANVAS
+        for (key, look), f in made.items():   # on the ride's canvas, as `canvas_of` lays it
+            x0, y0 = f.shape[1] // 2 - cw // 2, f.shape[0] - ch
+            stage.write_png(os.path.join(args.out, f'RIDE_{key}_{look}.png'), f[y0:y0 + ch, x0:x0 + cw])
+        print(f'{len(made)} look frames')
+        return
     rendered = frames(args.samples, set(args.only.split(',')) if args.only else None)
     if args.reference and not args.cart:
         with open(GRADE_PATH, 'w') as fh:

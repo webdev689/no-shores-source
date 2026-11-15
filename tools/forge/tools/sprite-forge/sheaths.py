@@ -335,7 +335,7 @@ STEP = 0.005    # how finely the push out is found, metres
 # The frames above are those a worn weapon is laid clear in. It is drawn, rigid where it was laid, in more: the
 # weapon sheathed while the body is struck, casts, falls, lies, rides, crouches, jumps and climbs; its sheath empty in
 # every move the blade is in the hand, a foe's own moves too, the shield's, the twin blades', the crouch and the jump
-STRUCK = ('hurt', 'spell', 'cast', 'death', 'fallen', *riding.RIDE, *agility.MOVES)
+STRUCK = ('hurt', 'spell', 'cast', 'death', 'fallen', *riding.RIDE, *agility.MOVES, *gunplay.RUNS)
 OWN_MOVES = ('parry', 'warcry', 'breathe', 'thrust', 'chop', 'swing2h')
 # a crossbow's moves as a player plays them: the shot and the crossbow at rest
 SHOT = ('bow', 'idle_bow', 'walk_bow', 'hurt_bow')
@@ -356,7 +356,7 @@ def anims_of(layer):
     if layer == 'scabbard_pistolet':
         return list(EMPTY_HOLSTER + ('death', 'fallen'))
     if layer == 'quiver':
-        return list(dict.fromkeys(NOCKED + ('spell', 'cast', *riding.RIDE, *agility.MOVES)))
+        return list(dict.fromkeys(NOCKED + ('spell', 'cast', *riding.RIDE, *agility.MOVES, *gunplay.RUNS)))
     if layer.startswith('sheath_crossbow_'):   # put away, or beside the other hand's weapon out; over a shield: away
         return list(dict.fromkeys(SHEATHED + STRUCK + (() if layer.rsplit('_', 1)[1] in shields3p.KINDS else BESIDE)))
     if layer.startswith('slung_shield_'):   # and while an axe, a Pistolet or a crossbow is out (not a blade: a guard)
@@ -372,7 +372,7 @@ FELL = ('death', 'fallen')
 FLOOR = 0.01
 # in the body's moves a hip's piece swings on its belt as the hips lean (the run's, the crouch's): it hangs at the
 # angle it hangs at standing, turned about its grip, a share of the lean taken (the belt holds it a little)
-HUNG = tuple(agility.MOVES)
+HUNG = (*agility.MOVES, *gunplay.RUNS)
 HANG_SHARE = 0.8
 
 

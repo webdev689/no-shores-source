@@ -4,8 +4,8 @@ each, keyed in body space as the one-handed moves are (onehand.py) and the same 
 (src/characters/enemy/foeOwnMoves.js).
 
 Each key: (the right fist, the weapon's line up from it), the chest's turn and lean, and the legs. A one-handed weapon's
-edge leads its stroke: down the chop, across the swing; a thrust's flat lies level. The two-handed swing holds the
-left fist on the haft above the right (`TWO_HANDS` up it).
+edge leads its stroke: down the chop, across the swing; a thrust's flat lies level. The two-handed swing holds the left
+fist on the haft above the right (`TWO_HANDS` up it).
 
 Points and ways are in body space, as poses.py's: the ground under the body, +X its left, -Y ahead, +Z up."""
 from mathutils import Vector
@@ -21,12 +21,14 @@ BACK = {'thigh_L': (-14, -8, -12), 'shin_L': (8, 0, 0), 'thigh_R': (6, 10, 16), 
 LUNGE = {'thigh_L': (-40, -8, -12), 'shin_L': (40, 0, 0), 'thigh_R': (30, 10, 16), 'shin_R': (4, 0, 0)}
 DRIVE = {'thigh_L': (-30, -8, -12), 'shin_L': (30, 0, 0), 'thigh_R': (22, 10, 16), 'shin_R': (10, 0, 0)}
 
-# the thrust: drawn back to the ribs, the point level, driven straight out on a lunge, held, drawn back to the guard
+# the thrust: drawn back to the ribs, driven out on a lunge, held, drawn back to the guard. The point rises a little and
+# crosses the body toward its middle, as a thrust at a standing foe's chest does: a line straight ahead points at the
+# front view's eye and draws no blade in the view a foe attacks from.
 THRUST = [(SWORD_GUARD, 0, 0, {}),
-          (((-0.28, 0.04, 1.14), (0.05, -1.0, 0.08)), -22, -2, BACK),
-          (((-0.18, -0.34, 1.18), (0.02, -1.0, 0.04)), -4, 6, DRIVE),
-          (((-0.08, -0.64, 1.22), (0.0, -1.0, 0.02)), 14, 12, LUNGE),
-          (((-0.12, -0.50, 1.20), (0.02, -1.0, 0.06)), 8, 8, DRIVE),
+          (((-0.28, 0.04, 1.14), (0.28, -0.90, 0.33)), -22, -2, BACK),
+          (((-0.18, -0.34, 1.18), (0.32, -0.84, 0.43)), -4, 6, DRIVE),
+          (((-0.06, -0.62, 1.24), (0.36, -0.80, 0.48)), 14, 12, LUNGE),
+          (((-0.10, -0.48, 1.20), (0.33, -0.83, 0.45)), 8, 8, DRIVE),
           (SWORD_GUARD, 0, 0, {})]
 
 # the chop: raised high over the head, the head behind it, brought straight down before the body and through, back
@@ -37,15 +39,15 @@ CHOP = [(SWORD_GUARD, 0, 0, {}),
         (((-0.04, -0.46, 0.94), (0.0, -0.4, -0.92)), 8, 20, LUNGE),
         (SWORD_GUARD, 0, 0, {})]
 
-# the two-handed swing: wound back over the right shoulder, swept flat round from the right, through the front and
-# out to the left, and back to the ready, both fists on the haft
+# the two-handed swing: wound back over the right shoulder, swept down and round from the right, through the front and
+# out to the left, and back to the ready, both fists on the haft. The sweep falls from high right to low left, and at
+# the blow the head is already past the middle: a head swept flat through the middle points at the front view's eye.
 SWING2H = [(((-0.12, -0.30, 1.00), (0.2, -0.5, 0.85)), 0, 0, {}),
            (((-0.28, 0.04, 1.30), (-0.6, 0.5, 0.62)), -36, -4, BACK),
-           (((-0.30, -0.28, 1.14), (-0.9, -0.35, 0.2)), -12, 4, DRIVE),
-           (((-0.04, -0.50, 1.10), (0.0, -1.0, 0.05)), 12, 10, LUNGE),
-           (((0.22, -0.34, 1.04), (0.9, -0.4, -0.1)), 36, 12, LUNGE),
+           (((-0.30, -0.28, 1.18), (-0.82, -0.30, 0.48)), -12, 4, DRIVE),
+           (((-0.04, -0.50, 1.10), (0.42, -0.86, 0.22)), 12, 10, LUNGE),
+           (((0.22, -0.34, 1.00), (0.84, -0.36, -0.40)), 36, 12, LUNGE),
            (((-0.12, -0.30, 1.00), (0.2, -0.5, 0.85)), 0, 0, {})]
-
 
 def _stance(turn, lean, legs, yaw):
     rot = dict(GUARD)

@@ -481,6 +481,12 @@ for _kind in ('thunderlock', 'pistolet'):
                       'girth': lambda S, part: 0.05, 'root_r': lambda S, part: 0.03, 'joints': {_kind: fpguns.JOINTS},
                       'root_seen': True}   # the hands' grade the spec's own (fpguns.write_grade)
 
+# the owner's crossbow carried at a run: the crossbow and both hands one rigid part, a metal its own model (fpcrossbow.py)
+import fpcrossbow  # noqa: E402
+WEAPONS['crossbow'] = {'parts': {'crossbow': fpcrossbow.part}, 'mats': fptorch.mats(None, fpcrossbow.OWN),
+                       'shape': fpcrossbow.SHAPE, 'posed': fpcrossbow.posed, 'length': fpcrossbow.length,
+                       'girth': lambda S, part: 0.05, 'root_r': lambda S, part: 0.03, 'root_seen': True}
+
 # the shields in the left fist (Shield Widget's): each kind a part, the shield and the arm one rigid piece (fpshield.py)
 import fpshield  # noqa: E402
 WEAPONS['shield'] = {'parts': {kind: fpshield.part_for(kind) for kind in fpshield.KINDS}, 'mats': fpshield.mats(),

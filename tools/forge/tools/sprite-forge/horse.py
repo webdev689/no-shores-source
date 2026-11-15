@@ -266,10 +266,12 @@ def cut_cards(mesh, img):
     return np.concatenate(bars), np.concatenate(owners), tri
 
 
-def clump_paths(mesh, img, n=STRANDS, step=STRAND_STEP, seed=7):
+def clump_paths(mesh, img, n=STRANDS, step=STRAND_STEP, seed=7, clump=None):
     """The strands every card draws, in its UV: `n` paths from the clump's root edge down through its picture, fanned
     across its opaque width as the clump fans, each ending where its column's hair ends. A path's points are UVs, each
-    with its curl off the card's face (-1..1, `CURL`)."""
+    with its curl off the card's face (-1..1, `CURL`). `clump` how far a strand draws to its lock's middle at its tip
+    (`CLUMP` by default)."""
+    clump = CLUMP if clump is None else clump
     uv = np.array(mesh['uvs'], dtype=np.float64).reshape(-1, 2)
     (u0, v0), (u1, v1) = uv.min(axis=0), uv.max(axis=0)
     h, w = img.shape[:2]
@@ -292,7 +294,7 @@ def clump_paths(mesh, img, n=STRANDS, step=STRAND_STEP, seed=7):
             if not len(rows[r]):
                 break
             down = (r - top) / max(1, bottom - top)
-            x = rows[r][0] + (f + (lock - f) * CLUMP * down ** 1.2) * (rows[r][-1] - rows[r][0])
+            x = rows[r][0] + (f + (lock - f) * clump * down ** 1.2) * (rows[r][-1] - rows[r][0])
             if not hair[r, int(round(x))]:
                 break   # this column's hair ends: the strand's tip
             turn = 2 * math.pi * (r - top) / WAVE_LENGTH + phase
@@ -561,13 +563,17 @@ class Courser:
     lays a gait's frame on them, turned as the view turns the body."""
 
     def __init__(self, strand_radius=STRAND_RADIUS, tack_height=None, reins=True, harness=False, groomed=False,
-                 coat=None, team=False, seed=None):
+                 coat=None, team=False, seed=None, locks=None, horn=False, looks=(), keep=None):
         """`tack_height`: the horse wears its tack (tack.py), the stirrups and reins hung for a rider of that height
         (1 the measured biped); None, bare. `reins` off leaves the reins to the hands that hold them (fpreins.py).
         `harness` puts the Small Cart's driving harness on as well (tack.py `all_pieces`). `groomed`: the mane grown
         on the neck for the eye up close (`Groom`), and no cards, so no tail. `coat`: the hide's own shine and sampling
         for a near view ({'roughness', 'specular', 'filter'}), the sprites' by default. `team`: a pole team's harness
-        in place of the riding tack (tack.py `all_pieces`). `seed`: the groomed mane's own (a pair's manes differ)."""
+        in place of the riding tack (tack.py `all_pieces`). `seed`: the groomed mane's own (a pair's manes differ).
+        `locks`: the cards' strands as locks for the sprites ({'strands', 'radius', 'clump'}, `SPRITE_LOCKS`), where a
+        lone strand is a speck. `horn`: each hoof below the crown in dark horn (`HORN`), as the sprites draw it.
+        `looks`: the shop's mount looks whose own pieces it carries (barding.py), each hidden until shown; `keep`
+        says which of their pieces it carries (all by default)."""
         import bpy
         b = bake()
         self.strand_radius = strand_radius
@@ -577,7 +583,8 @@ class Courser:
             part = mesh['part']
             if groomed and mesh['alpha']:
                 continue
-            mat = self._material(MATERIAL_OF[part], PICTURES[mesh['texture']], mesh['alpha'], coat)
+            mat = self._material(MATERIAL_OF[part], PICTURES[mesh['texture']], mesh['alpha'], coat,
+                                 horn=horn and not mesh['alpha'])
             if mesh['alpha']:
                 img = _rgba(PICTURES[mesh['texture']])
                 bars, owners, tri = cut_cards(mesh, img)
@@ -613,10 +620,13 @@ class Courser:
                                                  g.share, {**HAIR, **GROOM_HAIR})
         else:
             cards = next(m for m in b['meshes'] if m['alpha'])
-            self.strands = card_strands(cards, clump_paths(cards, _rgba(PICTURES[cards['texture']]), n=STRANDS))
+            lk = locks or {}
+            self.strands = card_strands(cards, clump_paths(cards, _rgba(PICTURES[cards['texture']]),
+                                                           n=lk.get('strands', STRANDS), clump=lk.get('clump')))
             if not len(self.strands[2]):
                 raise ValueError('the mane\'s cards hold no strand')
-            self.strand_ob = self._strand_object(self.strands[2], strand_radius)
+            self.strand_ob = self._strand_object(self.strands[2], lk.get('radius', strand_radius),
+                                                 hair={**HAIR, **lk['hair']} if 'hair' in lk else None)
         self.objects.append(self.strand_ob)
         self.ear_ramp = ear_ramp(b)
         self.tack = []
@@ -633,9 +643,33 @@ class Courser:
                 bpy.context.scene.collection.objects.link(ob)
                 self.tack.append((ob, pc))
             self.objects += [ob for ob, _ in self.tack]
+        self.looks = {}
+        for look in looks:   # each mount look's own pieces (barding.py), hidden until its layer shows them
+            import barding
+            made = []
+            for pc in barding.pieces(look):
+                if keep is not None and not keep(pc):
+                    continue
+                me = bpy.data.meshes.new(f'look_{look}_{pc['name']}')
+                me.from_pydata(pc['positions'].tolist(), [], pc['triangles'].tolist())
+                uv = barding.swatch_uv(pc['material'], pc['v'])
+                layer = me.uv_layers.new(name='UVMap')
+                layer.data.foreach_set('uv', uv[pc['triangles'].ravel()].astype(np.float32).ravel())
+                me.materials.append(_look_material(pc['material']))
+                for poly in me.polygons:
+                    poly.use_smooth = not barding.SWATCHES[pc['material']][3]
+                ob = bpy.data.objects.new(f'look_{look}_{pc['name']}', me)
+                bpy.context.scene.collection.objects.link(ob)
+                ob.hide_render = True
+                made.append((ob, pc))
+            self.looks[look] = made
+
+    def look_objects(self, look):
+        """Mount look `look`'s own objects."""
+        return [ob for ob, _ in self.looks.get(look, ())]
 
     @staticmethod
-    def _material(name, picture, alpha, coat=None):
+    def _material(name, picture, alpha, coat=None, horn=False):
         import bpy
         coat = {**COAT, **(coat or {})}
         m = bpy.data.materials.new(name)
@@ -689,6 +723,28 @@ class Courser:
             nt.links.new(tex.outputs['Alpha'], bsdf.inputs['Alpha'])
         else:
             nt.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
+        if horn:   # below the crown the hoof's horn, dark and dull, in place of the picture's grey-white noise
+            rest = nt.nodes.new('ShaderNodeAttribute')
+            rest.attribute_name = 'rest'
+            xyz = nt.nodes.new('ShaderNodeSeparateXYZ')
+            nt.links.new(rest.outputs['Vector'], xyz.inputs[0])
+            under = nt.nodes.new('ShaderNodeMath')
+            under.operation = 'LESS_THAN'
+            nt.links.new(xyz.outputs['Z'], under.inputs[0])
+            under.inputs[1].default_value = HORN['crown']
+            mix = nt.nodes.new('ShaderNodeMix')
+            mix.data_type = 'RGBA'
+            nt.links.new(under.outputs['Value'], mix.inputs['Factor'])
+            was = bsdf.inputs['Base Color'].links[0].from_socket
+            nt.links.new(was, mix.inputs['A'])
+            mix.inputs['B'].default_value = (*HORN['colour'], 1.0)
+            nt.links.new(mix.outputs['Result'], bsdf.inputs['Base Color'])
+            rough = nt.nodes.new('ShaderNodeMix')
+            rough.data_type = 'FLOAT'
+            nt.links.new(under.outputs['Value'], rough.inputs['Factor'])
+            rough.inputs['A'].default_value = coat['roughness']
+            rough.inputs['B'].default_value = HORN['roughness']
+            nt.links.new(rough.outputs['Result'], bsdf.inputs['Roughness'])
         bsdf.inputs['Roughness'].default_value = 0.7 if alpha else coat['roughness']
         bsdf.inputs['Specular IOR Level'].default_value = 0.25 if alpha else coat['specular']
         return m
@@ -753,7 +809,7 @@ class Courser:
             at += normal * offsets[:, None]   # a strand on either face of its card, curling off it
         self.strand_ob.data.position_data.foreach_set('vector', at.astype(np.float32).ravel())
         self.strand_ob.data.update_tag()
-        for ob, pc in self.tack:   # each piece on the bones under it, as the hide is
+        for ob, pc in [*self.tack, *(x for made in self.looks.values() for x in made)]:   # on the bones under it
             co = posed(pc, S) @ R.T
             ob.data.vertices.foreach_set('co', co.astype(np.float32).ravel())
             ob.data.update()
@@ -837,10 +893,97 @@ class Courser:
         address = shot[iy, ix, :2]   # every pixel takes the nearest found texel's address
         return np.where(coat[..., None], address, 0).astype(np.uint8)
 
+    def _swap(self, pairs):
+        """Each (data, material) laid on; answers what to put back."""
+        was = [(d, d.materials[0]) for d, _ in pairs]
+        for d, m in pairs:
+            d.materials[0] = m
+        return was
+
+    def texel_kinds(self, shot, render):
+        """What each pixel of a frame of the horse (`shot`, rendered as the horse stands) shows: (h, w, 4) uint8, its
+        hide texel in red and green (the body's picture's column and row, top row first), its part (`KIND`) in blue,
+        255 in alpha where `shot` draws. A pixel the pass missed (a softened edge, a strand finer than its one ray)
+        takes its nearest found neighbour's. `render` renders the scene; for it every part glows its numbers raw."""
+        import bpy
+        from scipy import ndimage
+        sc = bpy.context.scene
+        pairs = [(self.parts['body'][0].data, _texel_address(PICTURES['body']))]
+        if 'hair' in self.parts:
+            pairs.append((self.parts['hair'][0].data, _kind_glow('hair', KIND['hair'], PICTURES['hair'])))
+        pairs.append((self.strand_ob.data, _kind_glow('strands', KIND['hair'])))
+        for ob, pc in self.tack:
+            kind = TACK_KIND.get(pc['material'], 'leather')
+            pairs.append((ob.data, _kind_glow(kind, KIND[kind])))
+        was = self._swap(pairs)
+        settings = (sc.cycles.samples, sc.view_settings.view_transform, sc.render.dither_intensity)
+        # one ray a pixel, and no dither: the numbers come through as they are, never a step off
+        sc.cycles.samples, sc.view_settings.view_transform, sc.render.dither_intensity = 1, 'Raw', 0.0
+        try:
+            got = render()
+        finally:
+            self._swap(was)
+            sc.cycles.samples, sc.view_settings.view_transform, sc.render.dither_intensity = settings
+        on = shot[..., 3] > 0
+        found = (got[..., 3] > 0) & (got[..., 2] >= KIND_STEP // 2)   # a card's clear edge glows under half a step
+        out = np.zeros(shot.shape[:2] + (4,), np.uint8)
+        if not found.any():
+            return out
+        _, (iy, ix) = ndimage.distance_transform_edt(~found, return_indices=True)
+        out[..., :3] = got[iy, ix, :3]
+        out[..., 2] = np.round(out[..., 2] / KIND_STEP)   # a part glows KIND_STEP apart, read back to its number
+        out[..., 3] = 255
+        out[~on] = 0
+        return out
+
+    def held_out(self, on):
+        """The horse itself (its body, mane, strands and tack) held out of the render, or put back: a look's layer
+        shows only its own pieces where they stand in front of the horse."""
+        if on:
+            datas = self._datas(['body', 'hair', 'strands', *TACK])
+            self._held = self._swap([(d, _holdout()) for d in datas])
+        elif getattr(self, '_held', None):
+            self._swap(self._held)
+            self._held = None
+
+
+def _kind_glow(name, kind, cut=None):
+    """A material that glows (0, 0, kind) raw: what `Courser.texel_kinds` reads a part by. `cut` an alpha picture: the
+    material is clear where its alpha is under ALPHA_CUT (a card between its strands)."""
+    import bpy
+    key = f'kind_{name}'
+    m = bpy.data.materials.get(key)
+    if m is not None:
+        return m
+    m = bpy.data.materials.new(key)
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.remove(nt.nodes['Principled BSDF'])
+    glow = nt.nodes.new('ShaderNodeEmission')
+    glow.inputs['Color'].default_value = (0.0, 0.0, kind * KIND_STEP / 255.0, 1.0)
+    out = nt.nodes['Material Output'].inputs['Surface']
+    if cut is None:
+        nt.links.new(glow.outputs[0], out)
+        return m
+    tex = nt.nodes.new('ShaderNodeTexImage')
+    tex.image = bpy.data.images.load(cut, check_existing=True)
+    tex.interpolation = CARD_FILTER
+    over = nt.nodes.new('ShaderNodeMath')
+    over.operation = 'GREATER_THAN'
+    nt.links.new(tex.outputs['Alpha'], over.inputs[0])
+    over.inputs[1].default_value = ALPHA_CUT
+    clear = nt.nodes.new('ShaderNodeBsdfTransparent')
+    mix = nt.nodes.new('ShaderNodeMixShader')
+    nt.links.new(over.outputs['Value'], mix.inputs['Fac'])
+    nt.links.new(clear.outputs[0], mix.inputs[1])
+    nt.links.new(glow.outputs[0], mix.inputs[2])
+    nt.links.new(mix.outputs[0], out)
+    return m
+
 
 def _texel_address(picture):
     """A material that glows, at each point of the coat, the address of the coat texel there: its column in red and
-    its row (top row first) in green, each 0..255 over a 256-texel picture, never filtered."""
+    its row (top row first) in green, each 0..255 over a 256-texel picture, never filtered; its part (`KIND`) in blue."""
     import bpy
     m = bpy.data.materials.get('texel_address')
     if m is not None:
@@ -850,7 +993,7 @@ def _texel_address(picture):
     if (w, h) != (256, 256):
         raise ValueError(f'the coat is {w} x {h}: a texel address takes a byte a side, 256 at most')
     cols, rows = np.meshgrid(np.arange(w), np.arange(h)[::-1])   # Blender's rows run from the foot up
-    px = np.stack([cols / 255.0, rows / 255.0, np.zeros_like(cols, dtype=float), np.ones_like(cols, dtype=float)],
+    px = np.stack([cols / 255.0, rows / 255.0, np.full(cols.shape, KIND['hide'] * KIND_STEP / 255.0), np.ones_like(cols, dtype=float)],
                   axis=-1)
     address = bpy.data.images.new('texel_address', w, h, float_buffer=True)
     address.colorspace_settings.name = 'Non-Color'
@@ -869,6 +1012,44 @@ def _texel_address(picture):
 
 
 TACK = ('tack',)   # the name `_datas` reads as every piece of the tack
+# what a horse pixel shows, the texel strip's blue (forgeLayers.js HORSE_KIND): the hide (its texel in red and green),
+# the mane and tail, the tack's leather, its cloth, its metal
+KIND = {'hide': 1, 'hair': 2, 'leather': 3, 'cloth': 4, 'metal': 5}
+KIND_STEP = 40   # how far apart the parts glow in the pass, so a step's error never reads as another part
+TACK_KIND = {'strap': 'leather', 'seat': 'leather', 'cloth': 'cloth', 'iron': 'metal', 'trim': 'metal'}
+# the hooves' horn below the crown (horseModel.js horseHide: the coronet, 8.75 cm up), its colour linear
+HORN = {'crown': 0.0875, 'colour': (0.018, 0.014, 0.012), 'roughness': 0.6}
+# the mane and tail as the sprites draw them: locks a pixel or two round, a few dozen a card, each a dark mass with a
+# soft sheen along it, not single strands that glint as grey specks
+SPRITE_LOCKS = {'strands': 36, 'radius': 0.011, 'clump': 0.9,
+                'hair': {'Roughness': 0.38, 'Radial Roughness': 0.75, 'Random Color': 0.1, 'Random Roughness': 0.15}}
+
+
+def _look_material(name):
+    """A mount look's swatch (barding.py SWATCHES): its stripe of the swatches' picture by the piece's UV, a metal or a
+    hide's sheen, and its glow, the stripe's colour by how much it glows."""
+    import bpy
+    import barding
+    m = bpy.data.materials.get(f'look{name}')
+    if m is not None:
+        return m
+    picture = os.path.join(ASSETS, 'barding.png')
+    root, tip, glow, metal = barding.SWATCHES[name]
+    m = bpy.data.materials.new(f'look{name}')
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes['Principled BSDF']
+    tex = nt.nodes.new('ShaderNodeTexImage')
+    tex.image = bpy.data.images.load(picture, check_existing=True)
+    tex.image.alpha_mode = 'CHANNEL_PACKED'   # its alpha is the glow's code (barding.py), never a coverage
+    tex.interpolation = 'Linear'
+    nt.links.new(tex.outputs['Color'], b.inputs['Base Color'])
+    b.inputs['Metallic'].default_value = 0.85 if metal else 0.0
+    b.inputs['Roughness'].default_value = 0.32 if metal else 0.6
+    if glow:
+        nt.links.new(tex.outputs['Color'], b.inputs['Emission Color'])
+        b.inputs['Emission Strength'].default_value = 1.6 * glow   # bright, but never past white
+    return m
 
 
 def _tack_material(name):

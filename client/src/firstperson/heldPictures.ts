@@ -1,5 +1,14 @@
 import type { Strip } from '../forge/compose.ts';
-import { type FrameSource, type Picture, firstOf, layOver, looksAsked, metalRamp, setRamp } from './fpFrames.ts';
+import {
+  type FrameSource,
+  type Picture,
+  firstOf,
+  forgeName,
+  layOver,
+  looksAsked,
+  metalRamp,
+  setRamp,
+} from './fpFrames.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 import type { Shooter } from './handsLaw.ts';
 import { SHOOTER_FEEL } from './shotMachine.ts';
@@ -74,10 +83,14 @@ export async function gunPicture(
   record: number,
   frame: number,
 ): Promise<Picture | null> {
-  if (shooter.kind === 'crossbow') return null;
-  const archive = GUN_ARCHIVE[shooter.kind];
-  const ownPath = heldPath(archive, record, frame, shooter.gilded ? 'GunGilded' : 'Gun');
-  const laid = await withHands(source, ownPath, (look) => heldPath(archive, record, frame, look), hands, hardened);
+  // A crossbow is drawn as a gun is only in its carry at a run: its own archive's first record, a model a metal.
+  if (shooter.kind === 'crossbow' && record !== 1) return null;
+  const [archive, own, layer] =
+    shooter.kind === 'crossbow'
+      ? (['CROSSBOW', 0, `Crossbow${forgeName(crossbowMetal(shooter.metal))}`] as const)
+      : ([GUN_ARCHIVE[shooter.kind], record, shooter.gilded ? 'GunGilded' : 'Gun'] as const);
+  const ownPath = heldPath(archive, own, frame, layer);
+  const laid = await withHands(source, ownPath, (look) => heldPath(archive, own, frame, look), hands, hardened);
   if (!laid) return null;
   const sunk = record === 1 ? CARRY_SUNK : SHOOTER_FEEL[shooter.kind].sunk;
   return { ...laid, at: [DESIGN_WIDTH - laid.width, DESIGN_HEIGHT - laid.height + sunk] };
@@ -90,9 +103,13 @@ const CROSSBOW = { cells: 7, cellWidth: 282, cellHeight: 204, frameWidth: 218, f
 const CROSSBOW_METALS = new Set(['iron', 'steel', 'silver', 'elven', 'dwarven', 'mithril']);
 
 /** A crossbow's strip by its metal, or its pair's: the same cycle drawn farther off and across, for one of two. */
-export function crossbowPath(metal: string | null, pair: boolean): string {
+const crossbowMetal = (metal: string | null) => {
   const name = metal?.toLowerCase() ?? '';
-  return `@art/crossbow/crossbow-${CROSSBOW_METALS.has(name) ? name : 'steel'}${pair ? '-pair' : ''}.png`;
+  return CROSSBOW_METALS.has(name) ? name : 'steel';
+};
+
+export function crossbowPath(metal: string | null, pair: boolean): string {
+  return `@art/crossbow/crossbow-${crossbowMetal(metal)}${pair ? '-pair' : ''}.png`;
 }
 
 /** A crossbow's frame, undyed. Its rest frame's drawn box sits flush in the screen's bottom right corner, and every

@@ -209,3 +209,33 @@ test('riding shows the horse and a rein in each free hand; a drawn weapon takes 
     [false, true, false],
   );
 });
+
+test('in gauntlets the casting and climbing hands are the set’s whole arm', async () => {
+  const { frame, asked } = firstPerson(wholeFrames);
+  const ironed = { ...standing, armour: { gauntlets: 'iron' } };
+  await frame(0.016, { ...ironed, casting: true });
+  assert.ok(asked.includes('@art/cast/Iron/cast-0.png'));
+  await frame(1, { ...ironed, climbing: 1 });
+  assert.ok(asked.includes('@art/climb/Iron/grip-0.png'));
+  assert.ok(!asked.includes('@art/climb/linen/grip-0.png'));
+});
+
+test('a pair of weapons stands 34 design pixels further out on each side', async () => {
+  const { frame } = firstPerson(wholeFrames);
+  const alone = await frame(0.016, standing);
+  const pair = await frame(0.016, { ...standing, left: 'sword_iron_l' });
+  const [right, left] = pair.quads;
+  assert.equal((right?.x ?? 0) - (alone.quads[0]?.x ?? 0), 34);
+  assert.equal(left?.x, 320 - 10 - 2 - 34);
+});
+
+test('one crossbow is carried at a run in the forge’s own frames; a pair keeps its own', async () => {
+  const { frame, asked } = firstPerson(everything);
+  const crossbow = { ...standing, right: 'crossbow_iron', moving: true, running: true };
+  for (let step = 0; step < 20; step++) await frame(0.05, { ...crossbow, stride: step * 0.3 });
+  assert.ok(asked.some((path) => /^forge\/held\/CROSSBOW_0-\d_CrossbowIron\.png$/.test(path)));
+  const pair = firstPerson(everything);
+  for (let step = 0; step < 20; step++)
+    await pair.frame(0.05, { ...crossbow, left: 'crossbow_iron_l', stride: step * 0.3 });
+  assert.ok(!pair.asked.some((path) => path.startsWith('forge/held/CROSSBOW_')));
+});

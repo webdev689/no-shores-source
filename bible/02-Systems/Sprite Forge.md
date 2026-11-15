@@ -19,9 +19,9 @@ The [[Test Ground]] shows them.
 
 - **Bodies**: a man and a woman, with a boy and a girl for the townsfolk. Khajiit and Argonians wear bodies of their
   own; every other race is the bare body with its skin coloured as a frame is composed.
-- **Layers**: 656 on the man and 662 on the woman. Clothes, armour sets, helms, hair, worn and held weapons, bows,
+- **Layers**: 660 on the man and 666 on the woman. Clothes, armour sets, helms, hair, worn and held weapons, bows,
   staffs, shields, instruments, tools and the horse a rider sits on.
-- **Moves**: 78 on each adult body. They include walking, running, fighting with each weapon, casting, dying, climbing,
+- **Moves**: 82 on each adult body. They include walking, running, fighting with each weapon, casting, dying, climbing,
   riding and playing each instrument. Nine moves turn the body by CC0 motion from Quaternius's library.
 - **Views**: five, from the front round to the back. The other three are drawn mirrored.
 

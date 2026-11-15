@@ -235,8 +235,8 @@ export class FirstPerson {
     if (this.castClock !== null) {
       const record = CAST_SEQUENCE[Math.floor(this.castClock / CAST_STEP)] ?? 0;
       const element = state.element ?? 'magic';
-      const ask = () => castPicture(this.source, element, record);
-      const key = `cast|${element}|${record}`;
+      const ask = () => castPicture(this.source, element, record, worn.hands);
+      const key = `cast|${element}|${record}|${worn.hands}`;
       return [
         { key, ask, place: castPlace(record, element, false) },
         { key, ask, place: castPlace(record, element, true) },
@@ -253,7 +253,8 @@ export class FirstPerson {
         wanted.push(...views.map((view) => this.viewWanted(view, worn, drop, sway)));
       }
     }
-    if (this.lower > 0.001 && !shot) wanted.push(...(['left', 'right'] as const).map((hand) => this.gripWanted(hand)));
+    if (this.lower > 0.001 && !shot)
+      wanted.push(...(['left', 'right'] as const).map((hand) => this.gripWanted(hand, worn)));
     return wanted;
   }
 
@@ -266,7 +267,7 @@ export class FirstPerson {
       const { shooter } = holding;
       const key = `shot|${shooter.kind}|${shooter.metal}|${shooter.gilded}|${worn.hands}|${view.record}-${view.frame}|${view.pairArt}`;
       const ask =
-        shooter.kind === 'crossbow'
+        shooter.kind === 'crossbow' && view.record === 0
           ? () => crossbowPicture(this.source, shooter, view.frame, view.pairArt)
           : () => gunPicture(this.source, shooter, worn.hands, view.record, view.frame);
       return { key, ask, place };
@@ -304,9 +305,10 @@ export class FirstPerson {
     };
   }
 
-  private gripWanted(hand: Hand): Wanted {
+  private gripWanted(hand: Hand, worn: Worn): Wanted {
     const frame = gripFrame(1 - this.lower);
-    return { key: `grip|${frame}`, ask: () => gripPicture(this.source, frame), place: gripPlace(hand, this.lower) };
+    const key = `grip|${frame}|${worn.hands}`;
+    return { key, ask: () => gripPicture(this.source, frame, worn.hands), place: gripPlace(hand, this.lower) };
   }
 
   /** The horse from the saddle, and each hand not holding something on its rein: a weapon takes the right hand, and a

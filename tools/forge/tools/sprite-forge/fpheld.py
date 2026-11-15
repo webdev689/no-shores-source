@@ -12,11 +12,13 @@ puts it, by the sheet's left side; its forearm leans in from below and from near
 hand bends at the hand's own joints, the thumb on the sheet's face and the fingers behind it. The right arm is the left
 mirrored across the sheet's middle: the painting holds the sheet alike in both hands.
 
-    python -I tools/sprite-forge/fpheld.py --out public/art
+    python -I tools/sprite-forge/fpheld.py --out public/art [--sets Iron,Daedric]
 
 renders the game's two pictures (`NAMES`): the sheet alone, drawn `GRID` times its grid at the painting's size
 (`SIZE`), and the hands' hold (`hold`), a strip of frames on the painting's grid - its rest, then each hand's stir -
-each the hands alone where they lie nearer the eye than the sheet. The game draws them over the map's ink."""
+each the hands alone where they lie nearer the eye than the sheet. The game draws them over the map's ink. With
+`--sets`, only the hold again in each armour set's gauntlets (fparmset.py; `all`, every set), `held-map-forge-hands-
+<Set>.png`: the same poses, the set's outfit and plate on both arms, plate and mail grey for the game's dye."""
 import argparse
 import math
 import os
@@ -38,6 +40,8 @@ SHAPE = {
 HANDS = 'CLIMB'   # the spec whose hands these are: their size (its shape) and their colours (its grade)
 HAND_KEYS = ('hand', 'arm_r', 'cuff', 'thumb', 'fingers')   # the arm's own values, as fparm.arm takes them
 HAND_MATS = fparm.mats()   # the arm's materials: graded as the hands' own, never onto the painting
+# the armour set the arms wear (fparmset.py's sets), None the bare glove and sleeve
+ARMOUR = {'set': None}
 # the left arm's place on the sheet and its hand's grip: (name, the fit's step, its bounds, the prior's unit, its rest).
 # The wrist: `wx` metres in from the sheet's left side (+X; below 0, outside it), `wy` in front of its face (a little,
 # as the thumb lies on it), `wz` up from its foot. The forearm: `lean` degrees in from upright toward the sheet's
@@ -159,12 +163,24 @@ def hands():
     return {k: table[k] for k in HAND_KEYS if k in table}
 
 
+def hand_mats():
+    """The arms' materials as their triangles count them: the bare garments', or the set's worn (fparmset.armed)."""
+    if not ARMOUR['set']:
+        return HAND_MATS
+    import fparmset
+    return fparmset.armed(ARMOUR['set'])[1]
+
+
 def _rest_arm():
     H = hands()
-    key = tuple(sorted(H.items()))
+    key = (tuple(sorted(H.items())), ARMOUR['set'])
     if key not in _ARMS:
-        _ARMS[key] = (fparm.arm(H['hand'], H['arm_r'], 'L', cuff=H.get('cuff'), thumb=H.get('thumb'),
-                                fingers=H.get('fingers')), H)
+        if ARMOUR['set']:   # the set's outfit and plate, riding the hand's pieces as the fists' do
+            import fparmset
+            arm = fparmset.armed(ARMOUR['set'])[0](H)
+        else:
+            arm = fparm.arm(H['hand'], H['arm_r'], 'L', cuff=H.get('cuff'), thumb=H.get('thumb'), fingers=H.get('fingers'))
+        _ARMS[key] = (arm, H)
     return _ARMS[key]
 
 
@@ -378,6 +394,7 @@ def parchment():
 
 SIZE = (1648, 1086)   # the painting's own pixels (src/ui/heldMap.js SPRITE): the game's pictures are laid where it was
 NAMES = {'sheet': 'held-map-forge-sheet.png', 'hands': 'held-map-forge-hands.png'}
+SET_HANDS = 'held-map-forge-hands-{}.png'   # a set's hold (src/ui/heldMapForge.js heldMapHandsUrl)
 
 
 def picture(native, size=SIZE):
@@ -404,7 +421,13 @@ def main():
     ap.add_argument('--spec', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'specs', 'HELDMAP.json'))
     ap.add_argument('--out', required=True, help='the folder the two pictures go to (public/art)')
     ap.add_argument('--samples', type=int, default=128)
+    ap.add_argument('--sets', default='', help='the hold again in these armour sets (all: every set), and only it')
     args = ap.parse_args()
+    if args.sets:
+        import fparmset
+        for material in fparmset.SETS if args.sets == 'all' else [m for m in args.sets.split(',') if m]:
+            hold_in(args.spec, args.out, args.samples, material)
+        return
     spec = fpforge.load(args.spec)
     eye = fpforge.Eye(spec, args.samples)
     rec = spec['records'][0]
@@ -414,17 +437,51 @@ def main():
     # the sheet alone, the arms set far off so they neither show on it nor shade it: the hands' frames lie over it
     sheet = eye.screen({**pose, 'wx': -2.0, 'wz': -2.0}, part, record=0, frame=0, only=('parchment',))
     picture(fpstage.crop(sheet, rect)).save(os.path.join(args.out, NAMES['sheet']))
-    # the hands alone, a frame a step of the hold's loop: each the whole picture's own pixels where the hands lie
-    # nearer the eye than the sheet, so a frame sits on the sheet with no seam. A strip of them on the painting's grid
-    frames = []
+    # the hands alone, a frame a step of the hold's loop, a strip of them on the painting's grid, none through the paper
     for k, p in enumerate(hold(pose)):
         bad = [t for t in through(spec_shape(), p) if t[0] > THROUGH_OK or t[1] > 0]
         assert not bad, f'hold frame {k} passes through the paper: {bad}'
+    Image.fromarray(hold_strip(eye, pose, part, rect, HAND_MATS)).save(os.path.join(args.out, NAMES['hands']))
+    print(f'the held map\'s sheet and its {len(hold(pose))} hands\' frames -> {args.out}')
+
+
+def hold_strip(eye, pose, part, rect, mats):
+    """The hold's frames side by side: each the whole picture's own pixels where the hands (`mats`) lie nearer the eye
+    than the sheet, so a frame sits on the sheet with no seam."""
+    import fpstage
+    frames = []
+    for p in hold(pose):
         whole = eye.screen(p, part, record=0, frame=0)
-        cover = eye.screen(p, part, record=0, frame=0, only=HAND_MATS, under=('parchment',))[..., 3:] > 0
+        cover = eye.screen(p, part, record=0, frame=0, only=mats, under=('parchment',))[..., 3:] > 0
         frames.append(fpstage.crop(np.where(cover, whole, 0).astype(whole.dtype), rect))
-    Image.fromarray(np.concatenate(frames, axis=1)).save(os.path.join(args.out, NAMES['hands']))
-    print(f'the held map\'s sheet and its {len(frames)} hands\' frames -> {args.out}')
+    return np.concatenate(frames, axis=1)
+
+
+def hold_in(spec_path, out, samples, material):
+    """The hold in `material`'s set (`SET_HANDS`): the bare hold's poses, checked through the paper there, with the
+    set's arms in them, graded as the fists' gauntlets are (fparmset.wear_look)."""
+    from PIL import Image
+    import fparmset
+    import fpforge
+    import fpmodel
+    import fpheld as held   # the module the part is built by (fpmodel's), not this script's own copy
+    weapon = fpmodel.WEAPONS['heldmap']
+    held.ARMOUR['set'] = material
+    mats = held.hand_mats()
+    fpmodel.WEAPONS['heldmap'] = {**weapon, 'mats': ('parchment',) + mats}
+    look = fparmset.wear_look(material)
+    try:
+        spec = fpforge.load(spec_path)
+        eye = fpforge.Eye(spec, samples)
+        rec = spec['records'][0]
+        rect = [*rec['screen'], rec['canvas'][0], SIZE[1] // GRID]
+        strip = hold_strip(eye, fpforge.FIT['0:0'], rec['part'], rect, mats)
+        Image.fromarray(strip).save(os.path.join(out, SET_HANDS.format(material)))
+        print(f'{material}: its hold -> {os.path.join(out, SET_HANDS.format(material))}', flush=True)
+    finally:
+        fparmset.unwear_look(look)
+        fpmodel.WEAPONS['heldmap'] = weapon
+        held.ARMOUR['set'] = None
 
 
 if __name__ == '__main__':

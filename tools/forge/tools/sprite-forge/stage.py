@@ -7,6 +7,7 @@ import json
 import math
 import os
 import struct
+import sys
 import zlib
 
 import bpy
@@ -131,8 +132,31 @@ def write_png(path, arr, offset=None, box=None):
     _png(path, w, h, np.ascontiguousarray(arr, dtype=np.uint8).tobytes(), offset, box)
 
 
+def unlit(out):
+    """Whether a render drew pixels but no light on any of them: its colour all black where its alpha stands."""
+    on = out[..., 3] > 0
+    return bool(on.any()) and int(out[..., :3][on].max()) == 0
+
+
 def render_rgba(tmp_path):
-    """Render the scene; return (h, w, 4) uint8 rows top first, alpha cut hard at one half."""
+    """Render the scene; return (h, w, 4) uint8 rows top first, alpha cut hard at one half. A frame drawn with no
+    light is drawn again with the scene synced whole, and the rest of the process renders without persistent data."""
+    out = _render_rgba(tmp_path)
+    sc = bpy.context.scene
+    if unlit(out) and sc.render.use_persistent_data:
+        # a long run's kept scene can lose its light under load, and then every frame after it is black with its
+        # shape whole: only a scene synced from nothing has it back
+        sc.render.use_persistent_data = False
+        again = _render_rgba(tmp_path)
+        if not unlit(again):
+            print(f'stage: a frame drawn without light, drawn again with the scene synced whole ({tmp_path})',
+                  file=sys.stderr, flush=True)
+            return again
+        sc.render.use_persistent_data = True   # black synced whole too: the frame's own, and the scene was sound
+    return out
+
+
+def _render_rgba(tmp_path):
     sc = bpy.context.scene
     sc.render.filepath = tmp_path
     bpy.ops.render.render(write_still=True)

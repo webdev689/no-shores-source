@@ -1,13 +1,13 @@
 {
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
-  "index": "index/ae842bb28bfe1689e6c490f925124f5fc648f4b899068e454058e4cae6967de4.json",
+  "index": "index/a4463f1c63f3fb5e179cc0b9057924f1e137609900d150d62dbb790bc230dd8f.json",
   "tables": {
-    "looks": "tables/9ff00875340ce35bfd49d45e3b0847e6d089f3df9a9bc6f958845d750feacd8f.json",
+    "looks": "tables/912e091e668ed980fd3dd759a9aa0493eb160942b224dab1716122d68c9425ee.json",
     "skins": "tables/54434a7828e43ff28697da8da79b2ea9bbb75c180b1316e24269074c6e7596b5.json",
     "hair": "tables/cf7d5c8c092def912cf1b7a10389cbb9319b5ba5f5426fa31f74b9aadc6a19f0.json",
-    "points-male": "tables/3ddcba3a3dfe576bed16ff93b3d3f60d7c829f643441604de56237748ae03b74.json",
-    "points-female": "tables/f5fe02e8df3bb8e57287a59b6bc19aa7630f4dfbd0800edd8c1756072aa6a097.json",
+    "points-male": "tables/6305e92606971e971889b8c7a277dac506231de3af309427ef4c5e9edfdf6be1.json",
+    "points-female": "tables/19a8f46444302dccc649f6d4925fb8d2f09175922ddbfea25ea24deae965fd14.json",
     "dyes": "tables/778dfd1c6ab3f17098509bc849be96a452522abfff19ce1ba65c9f59b0033cc5.json",
-    "frames": "tables/595d64114fd0aa4a3eadd70497e1fde8c1b22d7ba01b6172c96860fdb4db8e52.json"
+    "frames": "tables/e0851b3f65f0cfd6546c0823b6c423af92bbea72fc79bd29252dd2fc8022dd80.json"
   }
 }
