@@ -61,6 +61,8 @@ status: in force
 
 > With the nine continents drawn in the [[World Editor]]: "#1 is the main social space with the port city"
 
+> Asked whether continent 1 is Saltmere: "Yes"
+
 > Asked how the four open names are chosen: "Suggest some to pick from". From the names offered, the owner chose the
 > island "Saltmere", the region "The Pale Expanse", the attacking faction "The Grey Tithe" and its captain "Captain
 > Brannoc Thule".
@@ -70,8 +72,8 @@ status: in force
 - Overlook is a shared world, not an MMO. Destiny 1 vanilla is the main reference for its quests and gear.
 - **The names:** Overlook is the port town of Saltmere, an island in the Pale Expanse. The ships that attack are the
   Grey Tithe's, and their captain is Captain Brannoc Thule.
-- **Where:** continent 1 (`continent-1` in `content/world/layout.json`) is the main social space, with the port
-  city.
+- **Where:** continent 1 (`continent-1` in `content/world/layout.json`) is Saltmere, the main social space, with the
+  port city.
 - **The beginning:** the player is a captain sailing for the port town of Overlook. Unknown ships attack: a naval
   fight, then a ramming vessel and a fight on the deck in waves, then a boss fight with its captain, with lock-on,
   dodging and parrying. The player loses, is thrown overboard and drowns, then washes up on Overlook's beach. The
