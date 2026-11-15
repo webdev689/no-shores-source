@@ -97,6 +97,8 @@ const KEPT_PICTURES = 1500;
 /** How far below its own place a sword rests, in design pixels, as the owner placed it. Its strikes keep their own
  *  places: lowered as far, they leave the screen. */
 const SWORD_DROP = 60;
+/** How far right of its own place a sword rests, its blade clear of the crosshair; in the left hand, as far left. */
+const SWORD_RIGHT = 40;
 const STILL: AttackInput = { attackHeld: false, attackPressed: false, attackReleased: false };
 const SIDES: readonly [Side, Hand][] = [
   ['R', 'right'],
@@ -261,8 +263,9 @@ export class FirstPerson {
   private viewWanted(view: HandView, worn: Worn, drop: number, sway: number): Wanted {
     const across = view.hand === 'left' ? view.dx : -view.dx;
     const { holding } = view;
-    const own = holding.kind === 'weapon' && holding.wielded.kind === 'sword' && view.record === 0 ? SWORD_DROP : 0;
-    const place = atOwnPlace(view.flip, drop + view.dy + own, view.lower, across);
+    const resting = holding.kind === 'weapon' && holding.wielded.kind === 'sword' && view.record === 0;
+    const aside = resting ? (view.flip ? -SWORD_RIGHT : SWORD_RIGHT) : 0;
+    const place = atOwnPlace(view.flip, drop + view.dy + (resting ? SWORD_DROP : 0), view.lower, across + aside);
     if (holding.kind === 'shooter') {
       const { shooter } = holding;
       const key = `shot|${shooter.kind}|${shooter.metal}|${shooter.gilded}|${worn.hands}|${view.record}-${view.frame}|${view.pairArt}`;

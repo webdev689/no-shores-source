@@ -19,7 +19,7 @@ dfo_paths:
   - src/systems/studioArt/forgeLayers.js
   - src/systems/studioArt/forgeRaces.js
   - src/systems/studioArt/forgeHair.js
-dfo_commit: 7da875100f (ccr-aff93cb4-gw1nto-sprites)
+dfo_commit: 6e5958e7fb (ccr-aff93cb4-gw1nto-sprites)
 ---
 # Pick - Sprite Forge
 

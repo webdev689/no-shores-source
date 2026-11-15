@@ -1,6 +1,6 @@
 {
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
-  "index": "index/a4463f1c63f3fb5e179cc0b9057924f1e137609900d150d62dbb790bc230dd8f.json",
+  "index": "index/ae987c67a7defee18a63c976c9127c579ac7ff22d00e168b187a262d8f4691ce.json",
   "tables": {
     "looks": "tables/912e091e668ed980fd3dd759a9aa0493eb160942b224dab1716122d68c9425ee.json",
     "skins": "tables/54434a7828e43ff28697da8da79b2ea9bbb75c180b1316e24269074c6e7596b5.json",
@@ -8,6 +8,6 @@
     "points-male": "tables/6305e92606971e971889b8c7a277dac506231de3af309427ef4c5e9edfdf6be1.json",
     "points-female": "tables/19a8f46444302dccc649f6d4925fb8d2f09175922ddbfea25ea24deae965fd14.json",
     "dyes": "tables/778dfd1c6ab3f17098509bc849be96a452522abfff19ce1ba65c9f59b0033cc5.json",
-    "frames": "tables/e0851b3f65f0cfd6546c0823b6c423af92bbea72fc79bd29252dd2fc8022dd80.json"
+    "frames": "tables/82d42d8ee50421874bfeae1bf2e584ce4349cd88a02c8a1a40bb025dc622e06f.json"
   }
 }

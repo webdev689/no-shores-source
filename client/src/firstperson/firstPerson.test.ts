@@ -58,10 +58,10 @@ const standing: FirstPersonState = {
 const wholeFrames = (path: string) =>
   /WEAPON\d\d\.CIF_\d+-\d+(_[A-Za-z]+)?\.png$/.test(path) || path.startsWith('@art');
 
-test('a drawn sword rests 60 design pixels below its own place and strikes from its own; sheathed, nothing shows', async () => {
+test('a drawn sword rests 60 design pixels below and 40 right of its own place, and strikes from its own; sheathed, nothing shows', async () => {
   const { frame, asked } = firstPerson(wholeFrames);
   const shown = await frame(0.016, standing);
-  assert.deepEqual(shown.quads, [{ x: 10, y: 80, width: 2, height: 1, flip: false }]);
+  assert.deepEqual(shown.quads, [{ x: 50, y: 80, width: 2, height: 1, flip: false }]);
   assert.ok(asked.includes('forge/WEAPON04/WEAPON04.CIF_0-0_Iron.png'));
   assert.deepEqual((await frame(0.016, { ...standing, drawn: false })).quads, []);
   const press = { attackHeld: true, attackPressed: true, attackReleased: false };
@@ -74,7 +74,7 @@ test('a drawn sword rests 60 design pixels below its own place and strikes from 
 test('a weapon in the left hand alone is mirrored about the middle, from its left-hand twin', async () => {
   const { frame, asked } = firstPerson(wholeFrames);
   const shown = await frame(0.016, { ...standing, right: null, left: 'sword_iron_l' });
-  assert.deepEqual(shown.quads, [{ x: 320 - 10 - 2, y: 80, width: 2, height: 1, flip: true }]);
+  assert.deepEqual(shown.quads, [{ x: 320 - 10 - 2 - 40, y: 80, width: 2, height: 1, flip: true }]);
   const whole = asked.filter((path) => path.includes('CIF_0-0') && !path.includes('/layers/'));
   assert.equal(whole[0], 'forge/WEAPON04/WEAPON04.CIF_0-0_IronLeft.png');
 });
@@ -226,7 +226,7 @@ test('a pair of weapons stands 34 design pixels further out on each side', async
   const pair = await frame(0.016, { ...standing, left: 'sword_iron_l' });
   const [right, left] = pair.quads;
   assert.equal((right?.x ?? 0) - (alone.quads[0]?.x ?? 0), 34);
-  assert.equal(left?.x, 320 - 10 - 2 - 34);
+  assert.equal(left?.x, 320 - 10 - 2 - 34 - 40);
 });
 
 test('one crossbow is carried at a run in the forge’s own frames; a pair keeps its own', async () => {

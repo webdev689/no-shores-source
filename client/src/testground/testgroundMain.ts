@@ -213,7 +213,7 @@ async function start(): Promise<void> {
       const { view, flip } = viewOf(player.facing, body.x, body.y, eye.x, eye.y);
       const frames = forge.frames(youDress.body, shown.anim);
       const index = shown.frame ?? Math.floor(clock / Math.max(shown.frameSeconds, 0.01)) % frames;
-      const card = forge.card(you.id, youDress, shown.anim, view, index);
+      const card = forge.card(you.id, youDress, shown.anim, view, index, flip);
       if (card) drawn.push({ card, x: body.x, y: body.y, z: body.z, flip });
     }
     for (const placed of figures) {
@@ -221,7 +221,7 @@ async function start(): Promise<void> {
       if (placed.spin) placed.facing = (placed.facing + SPIN * seconds) % (2 * Math.PI);
       const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
       const index = frameAt(clock, forge.frames(placed.dress.body, placed.anim), fps);
-      const card = forge.card(placed.id, placed.dress, placed.anim, view, index);
+      const card = forge.card(placed.id, placed.dress, placed.anim, view, index, flip);
       if (card) drawn.push({ card, x: placed.x, y: placed.y, z: 0, flip });
     }
     const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;
