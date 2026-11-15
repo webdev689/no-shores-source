@@ -56,6 +56,9 @@ status: in force
 
 > Asked how [[Overlook Is Our Own Game]] and [[The World Map]] stand now: "Keep where they agree"
 
+> Asked whether Stargrim, `vestige-gps-source` and project-dagger, which project-final draws on, are the owner's, and
+> where its music came from: "Yes all mine". Then: "My javascript repos have a lot of reusable stuff"
+
 > Asked how the four open names are chosen: "Suggest some to pick from". From the names offered, the owner chose the
 > island "Saltmere", the region "The Pale Expanse", the attacking faction "The Grey Tithe" and its captain "Captain
 > Brannoc Thule".
@@ -84,6 +87,9 @@ status: in force
   world.
 - The systems already built and ported can still be used. `project-final` is a reference, and DFO stays the source
   of system imports ([[Built From What DFO Taught Us]]).
+- Stargrim, `vestige-gps-source` and project-dagger are the owner's own, and so is project-final's music: what
+  project-final takes from them is the owner's work ([[Own Work]]). Daggerfall's data and Destiny's own names in it
+  are not.
 
 ## Still open
 
