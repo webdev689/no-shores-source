@@ -59,4 +59,7 @@ The owner's answers to the questions that followed:
 | Weather | DFO's dynamic weather and cloud rendering over the whole map |
 | Travel | Ships sail faster than real speed; DFO's Overworld comes over, and ships go faster still in it |
 
+Where [[Overlook Is a Shared World After Destiny 1]] differs, it holds: islands are landed on, not walked as an open
+world.
+
 How it is built: [[World Map]].

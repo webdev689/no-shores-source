@@ -54,6 +54,8 @@ status: in force
 > project-final is another repo of mine that can be used as a huge reference, along will continuing to use dfo for
 > system imports."
 
+> Asked how [[Overlook Is Our Own Game]] and [[The World Map]] stand now: "Keep where they agree"
+
 ## What it settles
 
 - Overlook is a shared world, not an MMO. Destiny 1 vanilla is the main reference for its quests and gear.
@@ -71,12 +73,13 @@ status: in force
   from Overlook on their own ship and sees other players on their own adventures. Islands, and Overlook itself, are
   not walked as an open world: the player lands when close enough. From the side of an island they get a bird's-eye
   view of the area, choose missions and are taken to them, and may find other social havens.
+- [[Overlook Is Our Own Game]] and [[The World Map]] stay in force where they agree with this scope. Where they
+  differ, this scope holds: a shared world rather than MMO scale, and islands landed on rather than walked as an open
+  world.
 - The systems already built and ported can still be used. `project-final` is a reference, and DFO stays the source
   of system imports ([[Built From What DFO Taught Us]]).
 
 ## Still open
 
 - The names of the island, the region, the attacking faction and its captain.
-- How this stands with [[Overlook Is Our Own Game]] ("venturing into MMO territory") and [[The World Map]] (open-world
-  continents and discoveries).
 - Ship building and progression, and the rest the owner has yet to discuss.
