@@ -15,9 +15,15 @@ decision is recorded in [[Decisions]].
 
 > "More organization with less bloat. Thats the goal of this project"
 
+> "A shared world instead of an MMO. A main island acting as a social space and other locations being almost sharded
+> shared instances, proper mission structure, gear based power, weapon upgrades, etc"
+
+The scope in full is in [[Overlook Is a Shared World After Destiny 1]].
+
 ## Decisions so far
 
 - [[Overlook Is Our Own Game]]
+- [[Overlook Is a Shared World After Destiny 1]]
 - [[The Owner Sets the Vision]]
 - [[Built From What DFO Taught Us]]
 - [[TypeScript and Rust]]

@@ -9,6 +9,7 @@ rules code is rebuilt in Rust ([[Porting from DFO]]).
 
 - [[Pick List]]: every DFO system, `main` and the unmerged branches, with what comes over, what stays, and the
   effort, in four parts.
+- [[Pick List - project-final]]: the owner's own project-final, sorted the same way.
 - `Picks/`: one note per approved pick, made from the Pick template as it is ported.
 
 ## How the pick list reads

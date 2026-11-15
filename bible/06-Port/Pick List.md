@@ -16,6 +16,8 @@ call; this list only says what can come.
 | [[Pick List - Presentation and Tooling]] | 126 | 28 | 68 | 30 |
 | **All** | **468** | **106** | **264** | **98** |
 
+The owner's own project-final is sorted the same way in [[Pick List - project-final]].
+
 ## The seams that decide most rows
 
 Most "Cut" rows are ours apart from one of these. Replacing each once frees many rows at a time.
