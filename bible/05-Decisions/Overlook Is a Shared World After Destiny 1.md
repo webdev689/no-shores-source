@@ -86,7 +86,7 @@ status: in force
   differ, this scope holds: a shared world rather than MMO scale, and islands landed on rather than walked as an open
   world.
 - The systems already built and ported can still be used. `project-final` is a reference, and DFO stays the source
-  of system imports ([[Built From What DFO Taught Us]]).
+  of system imports ([[Built From What DFO Taught Us]]). Its pick list is [[Pick List - project-final]].
 - Stargrim, `vestige-gps-source` and project-dagger are the owner's own, and so is project-final's music: what
   project-final takes from them is the owner's work ([[Own Work]]). Daggerfall's data and Destiny's own names in it
   are not.
