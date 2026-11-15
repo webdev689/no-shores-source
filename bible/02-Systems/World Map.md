@@ -53,10 +53,9 @@ relative to the camera. The server and its rules use the same units ([[Agree to 
 
 ## Continents and biomes
 
-Each continent carries a climate profile, starting from one of World 2.0's ten (temperature, rainfall, prevailing
-wind, seasons, ruggedness, wetness, rocks). World 2.0's climate and biome generation varies that profile across the
-continent with latitude, height, rain shadow and distance from the sea, which keeps each landmass distinct inside its
-main biome.
+Each continent is one biome ([[Each Continent Is One Biome]]). It carries a climate profile, starting from one of
+World 2.0's ten (temperature, rainfall, prevailing wind, seasons, ruggedness, wetness, rocks), and the profile is not
+varied across the continent into other biomes.
 
 ## Static isles and discoveries
 
