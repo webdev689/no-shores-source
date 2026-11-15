@@ -3,6 +3,10 @@ import type { LandView } from '../rules/landRules.ts';
 import type { Camera } from './camera.ts';
 import type { CellRect } from './landMask.ts';
 
+/** The low ground and snow line drawn for a landmass with no biome. */
+const DEFAULT_GROUND = [0.33, 0.52, 0.29] as const;
+const DEFAULT_SNOW_M = 2300;
+
 /** What one frame of the relief map shows besides the land. */
 export interface ReliefScene {
   readonly camera: Camera;
@@ -28,6 +32,7 @@ struct View {
   cell_m: f32,
   brush_radius: f32,
   unused: f32,
+  ground: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> view: View;
@@ -55,16 +60,17 @@ fn height_at(cell: vec2i) -> f32 {
   return textureLoad(heights, clamp(cell, vec2i(0), size - 1), 0).r;
 }
 
+// The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w).
 fn land_colour(height: f32) -> vec3f {
-  let low = vec3f(0.33, 0.52, 0.29);
-  let hill = vec3f(0.55, 0.58, 0.34);
+  let low = view.ground.rgb;
+  let hill = mix(low, vec3f(0.55, 0.58, 0.34), 0.5);
   let high = vec3f(0.52, 0.42, 0.31);
   let rock = vec3f(0.55, 0.53, 0.50);
   let snow = vec3f(0.93, 0.94, 0.96);
   var colour = mix(low, hill, smoothstep(0.0, 600.0, height));
   colour = mix(colour, high, smoothstep(600.0, 1500.0, height));
   colour = mix(colour, rock, smoothstep(1500.0, 2200.0, height));
-  return mix(colour, snow, smoothstep(2300.0, 2700.0, height));
+  return mix(colour, snow, smoothstep(view.ground.w, view.ground.w + 400.0, height));
 }
 
 @fragment
@@ -130,7 +136,7 @@ export class ReliefView {
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     const { device } = gpu;
-    this.uniforms = device.createBuffer({ size: 64, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
+    this.uniforms = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     const module = device.createShaderModule({ code: SHADER });
     this.pipeline = device.createRenderPipeline({
       layout: 'auto',
@@ -197,11 +203,12 @@ export class ReliefView {
   draw(scene: ReliefScene, width: number, height: number): void {
     const { device, context } = this.gpu;
     const land = this.land;
-    const floats = new Float32Array(16);
+    const floats = new Float32Array(20);
     floats.set([scene.camera.centreX, scene.camera.centreY, width, height]);
     if (land) floats.set([land.leftM, land.topM, land.width * land.cellM, land.height * land.cellM], 4);
     floats.set([scene.frameWidthM, scene.frameHeightM, scene.brushX, scene.brushY], 8);
     floats.set([scene.camera.metresPerPixel, land?.cellM ?? 1000, scene.brushRadiusM, 0], 12);
+    floats.set([...(land?.ground ?? DEFAULT_GROUND), land?.snowM ?? DEFAULT_SNOW_M], 16);
     device.queue.writeBuffer(this.uniforms, 0, floats);
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({

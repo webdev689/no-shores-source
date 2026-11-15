@@ -46,6 +46,22 @@ test('the land agrees to the bit with the native build (crates/land/tests/agree.
   assert.equal(view.groundHash, '2723ccc818961ecb');
 });
 
+test('a continent of a biome opens with its ground colour and snow line; one with none, without', async () => {
+  const rules = await land();
+  const plain = rules.open(square(200_000, 300_000, 120_000), 'square', null);
+  assert.equal(plain.ground, undefined);
+  assert.equal(plain.snowM, undefined);
+  const layout = JSON.parse(square(200_000, 300_000, 120_000)) as { continents: Record<string, unknown>[] };
+  layout.continents[0] = { ...layout.continents[0], climate: 'tundra' };
+  const tundra = rules.open(JSON.stringify(layout), 'square', null);
+  assert.deepEqual(
+    tundra.ground?.map((channel) => Math.round(channel * 255)),
+    [150, 156, 130],
+  );
+  assert.equal(tundra.snowM, 615);
+  assert.notEqual(tundra.groundHash, plain.groundHash, 'the tundra makes land of its own');
+});
+
 test('an unknown continent is refused with the reason', async () => {
   await assert.rejects(async () => (await land()).open(square(0, 0, 10), 'none', null), /no continent "none"/);
 });

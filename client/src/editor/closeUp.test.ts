@@ -21,10 +21,11 @@ test('heights are true to scale close up and eased to the chosen exaggeration fa
 });
 
 test('a patch sits in its window, its samples at the vertices, and the ground reads between them', () => {
-  const data = patchData(patch, 100_000, 200_000);
+  const data = patchData(patch, { leftM: 100_000, topM: 200_000, ground: [0.2, 0.4, 0.6], snowM: 615 });
   assert.equal(data.originX, 996, 'sample 0 at 1,000 m east of the window, half a step back');
   assert.equal(data.originY, 1996);
   assert.deepEqual(patchHole(data), [1008, 2008, 1008, 2008]);
+  assert.deepEqual([data.ground, data.snowM], [[0.2, 0.4, 0.6], 615], 'the close-up wears the landmass’s biome');
   assert.equal(groundUnder(patch, 101_004, 202_000), 15);
   assert.equal(groundUnder(patch, 99_000, 202_000), null);
 });

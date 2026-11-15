@@ -79,5 +79,4 @@ varied across the continent into other biomes. Which biome each continent is: [[
 
 ## Limits
 
-- Which nine of World 2.0's ten climates the continents take is decided later, and the continents' outlines are
-  ours to draw ([[Open Questions]]).
+- No isles are placed yet; the nine continents are drawn and each has its biome ([[The Continents' Biomes]]).

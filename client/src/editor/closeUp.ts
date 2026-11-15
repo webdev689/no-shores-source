@@ -33,8 +33,11 @@ export function shownExaggeration(exaggeration: number, distance: number): numbe
   return 1 + (exaggeration - 1) * fraction * fraction * (3 - 2 * fraction);
 }
 
-/** A ground patch as the 3D renderer draws it, placed in the landmass's window. */
-export function patchData(patch: GroundPatch, windowLeftM: number, windowTopM: number): TerrainData {
+/** A ground patch as the 3D renderer draws it, placed in the landmass's window, in the landmass's biome. */
+export function patchData(
+  patch: GroundPatch,
+  window: Pick<TerrainData, 'ground' | 'snowM'> & { readonly leftM: number; readonly topM: number },
+): TerrainData {
   return {
     width: patch.width,
     height: patch.height,
@@ -42,8 +45,10 @@ export function patchData(patch: GroundPatch, windowLeftM: number, windowTopM: n
     heights: patch.heights,
     lakes: patch.water,
     marks: patch.marks,
-    originX: patch.left - windowLeftM - patch.step / 2,
-    originY: patch.top - windowTopM - patch.step / 2,
+    originX: patch.left - window.leftM - patch.step / 2,
+    originY: patch.top - window.topM - patch.step / 2,
+    ...(window.ground ? { ground: window.ground } : {}),
+    ...(window.snowM === undefined ? {} : { snowM: window.snowM }),
   };
 }
 

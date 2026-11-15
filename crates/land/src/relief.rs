@@ -16,7 +16,7 @@ pub const MARGIN_M: i64 = 40_000;
 pub const LAND_FLOOR_M: f64 = 1.0;
 pub const SEA_CEILING_M: f64 = -2.0;
 
-/// The climate a landmass is generated in. Every landmass uses `PLACEHOLDER` until the owner chooses the nine.
+/// The climate a landmass is generated in: its biome's (biome.rs), or `PLACEHOLDER` for a landmass with none.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Climate {
     pub rain_mm: f64,

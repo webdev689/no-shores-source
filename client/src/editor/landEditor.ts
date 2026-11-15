@@ -189,7 +189,7 @@ export async function startLandEditor(
         patchPending = false;
         if (!patch || id !== selected) return;
         closeUp?.view.destroy();
-        const data = patchData(patch, view.leftM, view.topM);
+        const data = patchData(patch, view);
         closeUp = { id, patch, data, view: new TerrainView(gpu, data), centre: [x, y], version };
         requestFrame();
       })

@@ -5,6 +5,16 @@
 use std::path::Path;
 
 #[test]
+fn each_continent_of_the_layout_is_one_of_the_nine_biomes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/world");
+    let layout = world::layout::parse(&std::fs::read_to_string(root.join("layout.json")).unwrap()).unwrap();
+    for continent in &layout.continents {
+        let named = continent.climate.as_deref().unwrap_or("none");
+        assert!(land::biome::biome_of(named).is_some(), "{} is {named}, not one of the nine biomes", continent.id);
+    }
+}
+
+#[test]
 fn each_land_file_keeps_its_rules() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/world");
     let layout = world::layout::parse(&std::fs::read_to_string(root.join("layout.json")).unwrap()).unwrap();
