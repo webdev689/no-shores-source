@@ -55,7 +55,7 @@ relative to the camera. The server and its rules use the same units ([[Agree to 
 
 Each continent is one biome ([[Each Continent Is One Biome]]). It carries a climate profile, starting from one of
 World 2.0's ten (temperature, rainfall, prevailing wind, seasons, ruggedness, wetness, rocks), and the profile is not
-varied across the continent into other biomes.
+varied across the continent into other biomes. Which biome each continent is: [[The Continents' Biomes]].
 
 ## Static isles and discoveries
 
@@ -79,5 +79,4 @@ varied across the continent into other biomes.
 
 ## Limits
 
-- Which nine of World 2.0's ten climates the continents take is decided later, and the continents' outlines are
-  ours to draw ([[Open Questions]]).
+- No isles are placed yet; the nine continents are drawn and each has its biome ([[The Continents' Biomes]]).

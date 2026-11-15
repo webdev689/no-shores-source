@@ -59,6 +59,9 @@ pub fn header_of(landmass: &Landmass) -> Value {
         "ground_hash": format!("{:016x}", ground_hash(ground)),
         "problems": landmass.problems().iter().map(|problem| json!({ "subject": problem.subject, "message": problem.message })).collect::<Vec<_>>(),
         "rivers": rivers,
+        // The biome's low ground (0..1) and snow line, metres; null for a landmass with no biome.
+        "ground": landmass.biome.map(|biome| biome.ground.map(|channel| f64::from(channel) / 255.0)),
+        "snow_m": landmass.biome.map(|biome| biome.snow_m().round()),
     })
 }
 

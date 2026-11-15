@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - crates/land/src/relief.rs#relief
+  - crates/land/src/biome.rs#biome_of
   - crates/land/src/erosion.rs#erode_coarse
   - crates/land/src/water.rs#water
   - crates/land/src/landmass.rs#generate
@@ -33,8 +34,13 @@ the server and in every browser. The owner decided the generator makes the land 
 - **Water.** A priority flood fills every hollow to its spill and finds each cell's way down. A river starts where
   the water a cell gathers reaches 1 m³/s, and runs to the sea or into a larger river. A lake stands wherever a
   hollow holds water 0.5 m deep.
-- **Climate.** Every landmass uses one placeholder climate (800 mm of rain, ranges to 2,600 m) until the owner
-  chooses the nine ([[Open Questions]]). Choosing generates the land again under the owner's edits.
+- **Climate.** Each continent is generated in its biome's climate ([[The Continents' Biomes]]): its rain drives
+  erosion and the rivers, its ruggedness the hills' grain, and its range height the mountains. The numbers are World
+  2.0's profiles', with the range height doubled: World 2.0 adds it to Daggerfall's own relief, which this land has no
+  copy of. A landmass with no biome uses a placeholder (800 mm of rain, ranges to 2,600 m), the steppe's.
+- **The biome on the map.** The World Editor draws a continent's low ground in its biome's colour, from World 2.0's
+  biome table, and snow above its snow line: the height where the mean temperature, falling 6.5 °C a kilometre
+  (World 2.0's lapse rate), reaches -2 °C. The tundra's lies at 615 m, the desert's never reached.
 - **Seed.** The world's seed salted with the landmass's id, which never changes, so the same layout makes the same
   land on any machine.
 
@@ -111,4 +117,4 @@ leave the open one alone. The door answers for the open landmass:
   do not follow it.
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
   band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 8 m.
-- One climate for every landmass until the owner chooses.
+- A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.

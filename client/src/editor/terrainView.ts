@@ -17,6 +17,9 @@ export interface TerrainData {
   /** Where cell (0, 0)'s corner lies in the window, metres: 0 for the whole window, the patch's corner for a close-up. */
   readonly originX?: number;
   readonly originY?: number;
+  /** The biome's low ground (0..1) and snow line in metres; the default green and 2,300 m without one. */
+  readonly ground?: readonly [number, number, number];
+  readonly snowM?: number;
 }
 
 /** What one frame shows besides the terrain. `brush` is a circle on the ground in metres, or null for none. */
@@ -30,7 +33,10 @@ export interface TerrainOptions {
 /** The most mesh vertices along the window's longer side; past it the mesh skips cells, keeping about 1.2 million. */
 const MESH_SIDE = 1100;
 
-const UNIFORM_BYTES = 128;
+const UNIFORM_BYTES = 144;
+/** The low ground and snow line drawn for a landmass with no biome. */
+const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
+const DEFAULT_SNOW_M = 2300;
 
 /**
  * The mesh is built in the vertex shader from the vertex index alone: a grid of quads, two triangles each, one
@@ -48,6 +54,7 @@ struct View {
   cell_m: f32,
   step: u32,
   quads_x: u32,
+  ground: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> view: View;
@@ -67,7 +74,6 @@ struct Surface {
 const CORNERS = array<vec2i, 6>(vec2i(0, 0), vec2i(1, 0), vec2i(0, 1), vec2i(0, 1), vec2i(1, 0), vec2i(1, 1));
 const SUN = vec3f(-0.5417, 0.5417, 0.6428);
 const AMBIENT = 0.35;
-const LOWLAND = vec3f(0.30, 0.48, 0.22);
 const HIGHLAND = vec3f(0.50, 0.40, 0.27);
 const ROCK = vec3f(0.48, 0.47, 0.45);
 const SNOW = vec3f(0.94, 0.95, 0.97);
@@ -112,10 +118,11 @@ fn vertex_main(@builtin(vertex_index) index: u32) -> Surface {
   return surface;
 }
 
+// The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w).
 fn land_colour(bed: f32, slope: f32) -> vec3f {
-  let ground = mix(LOWLAND, HIGHLAND, smoothstep(200.0, 1600.0, bed));
+  let ground = mix(view.ground.rgb, HIGHLAND, smoothstep(200.0, 1600.0, bed));
   let bare = mix(ground, ROCK, smoothstep(0.25, 0.5, slope));
-  return mix(bare, SNOW, smoothstep(2100.0, 2300.0, bed));
+  return mix(bare, SNOW, smoothstep(view.ground.w - 200.0, view.ground.w, bed));
 }
 
 @fragment
@@ -175,6 +182,8 @@ export class TerrainView {
   private readonly height: number;
   private readonly cellM: number;
   private readonly origin: readonly [number, number];
+  private readonly ground: readonly [number, number, number];
+  private readonly snowM: number;
   private readonly step: number;
   private readonly quadsX: number;
   private readonly vertexCount: number;
@@ -192,6 +201,8 @@ export class TerrainView {
     this.height = data.height;
     this.cellM = data.cellM;
     this.origin = [data.originX ?? 0, data.originY ?? 0];
+    this.ground = data.ground ?? DEFAULT_GROUND;
+    this.snowM = data.snowM ?? DEFAULT_SNOW_M;
     this.step = Math.ceil(Math.max(data.width, data.height) / MESH_SIDE);
     this.quadsX = Math.ceil((data.width - 1) / this.step);
     this.vertexCount = this.quadsX * Math.ceil((data.height - 1) / this.step) * 6;
@@ -259,6 +270,7 @@ export class TerrainView {
     const brush = options.brush ?? { x: 0, y: 0, radiusM: 0 };
     floats.set([brush.x, brush.y, ...this.origin, brush.radiusM, options.exaggeration, this.cellM], 20);
     new Uint32Array(values).set([this.step, this.quadsX], 27);
+    floats.set([...this.ground, this.snowM], 32);
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, values);
   }
 

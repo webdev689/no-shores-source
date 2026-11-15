@@ -25,9 +25,6 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- The layout with all nine continents: on the site, Save it after Problems is clear and send it.
-- [[Open Questions]]: which nine climates, which the owner will decide later. Until then every landmass uses one
-  placeholder climate.
 
 ## Next
 

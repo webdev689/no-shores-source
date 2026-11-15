@@ -2,6 +2,7 @@
 //! the ground with the owner's edits on it, and the water over that ground. Built the same on any machine from the
 //! layout alone: the seed is the world's, salted with the landmass's id.
 
+use crate::biome::{Biome, biome_of};
 use crate::edits::{self, CellRect, Edits, Problem, Stroke};
 use crate::erosion::erode_coarse;
 use crate::exact::seed_of;
@@ -24,6 +25,8 @@ pub struct Landmass {
     pub seed: u32,
     /// The painted coast, which the places are checked against.
     pub coast: Vec<Point>,
+    /// The biome the layout names for it, or None for a landmass with none.
+    pub biome: Option<&'static Biome>,
     pub climate: Climate,
     pub land: Vec<bool>,
     /// What the generator makes, before the owner's edits.
@@ -82,10 +85,16 @@ impl Landmass {
     }
 }
 
-/// The climate a continent is generated in: the placeholder until the owner chooses the nine.
+/// The biome a continent is: its `climate` in the layout, if that names one of the nine.
 #[must_use]
-pub fn climate_of(_continent: &Continent) -> Climate {
-    PLACEHOLDER
+pub fn biome_of_continent(continent: &Continent) -> Option<&'static Biome> {
+    continent.climate.as_deref().and_then(biome_of)
+}
+
+/// The climate a continent is generated in: its biome's, or the placeholder for a continent with none.
+#[must_use]
+pub fn climate_of(continent: &Continent) -> Climate {
+    biome_of_continent(continent).map_or(PLACEHOLDER, |biome| biome.climate)
 }
 
 /// The most cells a landmass's window may hold: about 2,450 km square, room for the largest continent drawn in any
@@ -115,6 +124,7 @@ pub fn generate(continent: &Continent, edits: Edits) -> Result<Landmass, String>
         id: continent.id.clone(),
         seed,
         coast: continent.outline.clone(),
+        biome: biome_of_continent(continent),
         surface,
         climate,
         land,

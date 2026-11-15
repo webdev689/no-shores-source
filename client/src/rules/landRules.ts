@@ -21,6 +21,9 @@ export interface LandView {
   readonly groundHash: string;
   /** Every rule the landmass's edits break, its places checked against its coast. */
   readonly problems: readonly { readonly subject: string; readonly message: string }[];
+  /** The biome's low ground (red, green, blue, 0..1) and snow line in metres; absent for a landmass with no biome. */
+  readonly ground?: readonly [number, number, number];
+  readonly snowM?: number;
 }
 
 /** The water at a point of the ground, and its surface. */
@@ -107,6 +110,8 @@ interface ViewHeader {
   readonly ground_hash?: string;
   readonly problems?: { subject: string; message: string }[];
   readonly rect?: [number, number, number, number];
+  readonly ground?: [number, number, number] | null;
+  readonly snow_m?: number | null;
 }
 
 /** The header of an answer and where its floats begin; throws the answer's error. */
@@ -139,6 +144,8 @@ function takeView(exports: LandExports, packed: bigint): LandView {
       rivers: header.rivers ?? [],
       groundHash: header.ground_hash ?? '',
       problems: header.problems ?? [],
+      ...(header.ground ? { ground: header.ground } : {}),
+      ...(typeof header.snow_m === 'number' ? { snowM: header.snow_m } : {}),
     };
   } finally {
     exports.release(address, length);
