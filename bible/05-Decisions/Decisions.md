@@ -43,6 +43,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[First-Person Placement Is Our Own]]
 - [[Overlook Is a Shared World After Destiny 1]]
 - [[Each Continent Is One Biome]]
+- [[The Continents' Biomes]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
