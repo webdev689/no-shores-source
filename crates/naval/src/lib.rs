@@ -3,6 +3,8 @@
 //! ship's hull, canvas and men, fire and sinking, and a captain who fights by DFO's laws, all stepped in whole ticks
 //! of `sailing::TICK_SECONDS`. See the Naval Combat note in the bible.
 
+pub mod arms;
 pub mod ballistics;
+pub mod gunnery;
 pub mod guns;
 pub mod random;

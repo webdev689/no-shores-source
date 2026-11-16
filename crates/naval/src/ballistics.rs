@@ -87,6 +87,19 @@ pub fn scatter(dir: [f64; 2], elevation: f64, yaw_deg: f64, pitch_deg: f64, draw
     (turned(dir, yaw), elevation + pitch)
 }
 
+/// A ball fired: where and when it leaves its gun, its launch velocity, which ship fired it, the gun as loaded and
+/// its load, and how long it has flown when last stepped (seconds).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Ball {
+    pub start: [f64; 3],
+    pub launch: [f64; 3],
+    pub born: f64,
+    pub shooter: usize,
+    pub gun: crate::guns::Gun,
+    pub shot: crate::guns::Shot,
+    pub flown: f64,
+}
+
 /// A box that turns with what it bounds: its middle, its three unit axes and its half size along each, metres.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Block {

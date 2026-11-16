@@ -169,6 +169,24 @@ fn the_sloop_sails_on_the_waterline_her_export_measured() {
     );
 }
 
+#[test]
+fn the_sloops_guns_and_boxes_are_where_her_export_measured() {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/ships/ships.json");
+    let ships: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let sloop = &ships["ships"]["sloop"];
+    let triple = |value: &Value| -> [f64; 3] { [0, 1, 2].map(|axis| value[axis].as_f64().unwrap()) };
+    let arms = naval::arms::SLOOP_ARMS;
+    let guns = sloop["guns"].as_array().unwrap();
+    assert_eq!(guns.len(), 6);
+    for (gun, mouth) in guns.iter().zip(arms.mouths) {
+        assert_eq!(triple(&gun["mouth_m"]), mouth, "{}: re-exported, the rules' guns must follow", gun["name"]);
+    }
+    let corners = |value: &Value| [triple(&value[0]), triple(&value[1])];
+    assert_eq!(corners(&sloop["boxes"]["hull"]), arms.hull);
+    let sails = sloop["boxes"]["sails"].as_array().unwrap();
+    assert_eq!(sails.iter().map(corners).collect::<Vec<_>>(), arms.sails.to_vec());
+}
+
 /// A voyage onto the square's west shore and off it, the browser's test sails too: under sail for two minutes until
 /// she takes the ground, her sails struck, then her oars astern.
 fn shore_voyage() -> Vec<[f64; 4]> {
