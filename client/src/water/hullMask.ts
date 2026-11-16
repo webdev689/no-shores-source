@@ -50,31 +50,44 @@ export function hullFoam(mask: HullMask, point: readonly [number, number]): numb
   return band * bow * Math.min(1, mask.way / HULL_FOAM_WAY);
 }
 
-/** The footprint's WGSL, read from the water's frame (hull_place, hull_size). */
+/** How many ships' footprints the water holds: the player's and a captain's. */
+export const HULLS = 2;
+
+/** The footprints' WGSL, read from the water's frame (`hulls`: each ship's place, then her size). */
 export const HULL_WGSL = /* wgsl */ `
-// A point (from the eye) against the ship's footprint: metres along her and outside its edge (WGSL of hullEdge).
-fn hull_edge(offset: vec2f) -> vec2f {
-  let from_middle = offset - frame.hull_place.xy;
-  let along = dot(from_middle, vec2f(frame.hull_place.z, -frame.hull_place.w));
-  let across = dot(from_middle, frame.hull_place.wz);
-  let size = frame.hull_size.xy;
+// A point (from the eye) against a ship's footprint: metres along her and outside its edge (WGSL of hullEdge).
+fn hull_edge(index: u32, offset: vec2f) -> vec2f {
+  let place = frame.hulls[index * 2u];
+  let from_middle = offset - place.xy;
+  let along = dot(from_middle, vec2f(place.z, -place.w));
+  let across = dot(from_middle, place.wz);
+  let size = frame.hulls[index * 2u + 1u].xy;
   let reach = length(vec2f(along, across) / size);
   let rise = length(vec2f(along, across) / (size * size));
   return vec2f(along, select(-size.y, (reach - 1.0) * reach / rise, rise > 1e-6));
 }
 
-// How much of a point is inside the ship's footprint: her waterline holds no water (hullInside).
+// How much of a point is inside a ship's footprint: a waterline holds no water (hullInside).
 fn hull_inside(offset: vec2f, footprint: f32) -> f32 {
-  if (frame.hull_size.w < 0.5) { return 0.0; }
-  return 1.0 - smoothstep(-footprint, 0.0, hull_edge(offset).y);
+  var inside = 0.0;
+  for (var index = 0u; index < ${HULLS}u; index++) {
+    if (frame.hulls[index * 2u + 1u].w < 0.5) { continue; }
+    inside = max(inside, 1.0 - smoothstep(-footprint, 0.0, hull_edge(index, offset).y));
+  }
+  return inside;
 }
 
-// Her bow wave's foam round her footprint (hullFoam).
+// The bow waves' foam round the footprints (hullFoam).
 fn hull_foam(offset: vec2f) -> f32 {
-  if (frame.hull_size.w < 0.5) { return 0.0; }
-  let edge = hull_edge(offset);
-  let band = smoothstep(-0.05, 0.0, edge.y) * (1.0 - smoothstep(0.0, ${HULL_FOAM_M}, edge.y));
-  let bow = 0.25 + 0.75 * clamp(edge.x / (frame.hull_size.x / ${HULL_FIT}) / 2.0 + 0.5, 0.0, 1.0);
-  return band * bow * min(1.0, frame.hull_size.z / ${HULL_FOAM_WAY.toFixed(1)});
+  var foam = 0.0;
+  for (var index = 0u; index < ${HULLS}u; index++) {
+    let size = frame.hulls[index * 2u + 1u];
+    if (size.w < 0.5) { continue; }
+    let edge = hull_edge(index, offset);
+    let band = smoothstep(-0.05, 0.0, edge.y) * (1.0 - smoothstep(0.0, ${HULL_FOAM_M}, edge.y));
+    let bow = 0.25 + 0.75 * clamp(edge.x / (size.x / ${HULL_FIT}) / 2.0 + 0.5, 0.0, 1.0);
+    foam = max(foam, band * bow * min(1.0, size.z / ${HULL_FOAM_WAY.toFixed(1)}));
+  }
+  return foam;
 }
 `;

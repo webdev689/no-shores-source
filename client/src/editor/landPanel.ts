@@ -50,6 +50,8 @@ export interface LandPanelView {
   readonly sailing: boolean;
   readonly exaggeration: number;
   readonly cursor: string;
+  /** A fight's lines: both ships, the guns, the warning to brace, and what happened. */
+  readonly fight: readonly string[];
   readonly status: string;
 }
 
@@ -137,7 +139,13 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
     'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows her sideways, B to stop.',
     'hint',
   );
-  root.append(views, walkHint, sailHint);
+  const fightHint = make(
+    'p',
+    'F calls a pirate, or sends her off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
+      ' A left click holds fire, the wheel changes shot, and C braces.',
+    'hint',
+  );
+  root.append(views, walkHint, sailHint, fightHint);
 
   const exaggerationLabel = make('label', '', 'brush');
   const exaggeration = make('input');
@@ -154,8 +162,10 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   const problems = make('ul', '', 'problems');
   root.append(problems);
   const cursor = make('p', '', 'cursor');
+  const fight = make('div', '', 'fight');
   const status = make('p', '', 'status');
-  root.append(cursor, status);
+  root.append(cursor, fight, status);
+  let shownFight = '';
   let shownIds = '';
   let rows = new Map<string, { row: HTMLLIElement; state: HTMLSpanElement }>();
 
@@ -208,10 +218,17 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       walkHint.hidden = !view.walking;
       sail.classList.toggle('active', view.sailing);
       sailHint.hidden = !view.sailing;
+      fightHint.hidden = !view.sailing;
       exaggerationLabel.hidden = view.view !== '3d';
       exaggeration.value = String(view.exaggeration);
       exaggerationText.textContent = ` ${view.exaggeration}× in 3D`;
       cursor.textContent = view.cursor;
+      if (view.fight.join('\n') !== shownFight) {
+        shownFight = view.fight.join('\n');
+        fight.replaceChildren(
+          ...view.fight.map((line) => make('p', line, line.startsWith('BROADSIDE') ? 'warning' : 'cursor')),
+        );
+      }
       status.textContent = view.status;
     },
   };

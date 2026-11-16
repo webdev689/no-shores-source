@@ -5,6 +5,7 @@ import { type Camera, pan, screenToWorld, zoomAt } from './camera.ts';
 import { downloadJson } from './dom.ts';
 import { startLandWorker } from './landClient.ts';
 import { drawScaleCues, shownExaggeration } from './closeUp.ts';
+import { AIM_HIGHEST_LOOK, AimInput } from './aimInput.ts';
 import { BRUSHES, buildLandPanel, DRAWN, LAND_TOOLS, type LandTool } from './landPanel.ts';
 import { LandSession } from './landSession.ts';
 import type { CellRect } from './landMask.ts';
@@ -53,6 +54,9 @@ export async function startLandEditor(
   let editsVersion = 0;
   let walking = false;
   let sailing = false;
+  const aim = new AimInput();
+  /** The lowest the camera may look: over the horizon while aiming, a swimmer's own, else the orbit's. */
+  const lowestLook = () => (aim.aiming ? AIM_HIGHEST_LOOK : walking ? scene.lowestPitch : undefined);
   const held = new Set<string>();
   const pressed: string[] = [];
   const placeWidth = { river: 40, road: 8 };
@@ -333,6 +337,7 @@ export async function startLandEditor(
   /** Puts the Sloop to sea at the camera's target, or brings her in: the camera stands off her quarter. */
   function toggleSail() {
     sailing = !sailing;
+    aim.reset();
     walking = false;
     viewMode = '3d';
     orbit = sailing ? { ...orbit, distance: 25, pitch: 0.3 } : { ...orbit, distance: 600, pitch: 0.5 };
@@ -368,6 +373,7 @@ export async function startLandEditor(
         sailing,
         held,
         pressed,
+        ...aim.take(),
         source,
         editsVersion,
         stroking: stroke !== null,
@@ -427,6 +433,7 @@ export async function startLandEditor(
       sailing,
       exaggeration,
       cursor: (walking || sailing) && view ? scene.describe(view, orbit) : pointedAt(ground, where),
+      fight: sailing ? scene.fightLines() : [],
       status: session?.storageFailed
         ? `${status} This browser could not keep your shaping: Save often.`.trim()
         : status,
@@ -443,6 +450,7 @@ export async function startLandEditor(
   canvas.addEventListener('pointerdown', (event) => {
     canvas.setPointerCapture(event.pointerId);
     dragging = { x: event.offsetX, y: event.offsetY, button: event.button };
+    if (sailing && aim.down(event.button)) return;
     const world = event.button === 0 && !walking && !sailing ? worldAt(event.offsetX, event.offsetY) : null;
     if (world && BRUSHES.includes(tool)) startStroke(world.x, world.y);
     else if (world && tool !== 'look') {
@@ -461,15 +469,15 @@ export async function startLandEditor(
       if (dragging.button === 0 && tool !== 'look' && !walking && !sailing) return;
       const orbiting = walking || sailing || dragging.button === 0 || (dragging.button === 2 && tool !== 'look');
       if (viewMode === '2d') camera = pan(camera, moveX, moveY);
-      else if (orbiting)
-        orbit = rotateOrbit(orbit, moveX * 0.005, -moveY * 0.005, walking ? scene.lowestPitch : undefined);
+      else if (orbiting) orbit = rotateOrbit(orbit, moveX * 0.005, -moveY * 0.005, lowestLook());
       else orbit = panOrbit(orbit, moveX, moveY, canvas.clientHeight);
     }
     if (dragging) dragging = { ...dragging, x: event.offsetX, y: event.offsetY };
     requestFrame();
   });
-  canvas.addEventListener('pointerup', () => {
+  canvas.addEventListener('pointerup', (event) => {
     dragging = null;
+    aim.up(event.button);
     endStroke();
   });
   canvas.addEventListener('dblclick', () => {
@@ -484,6 +492,7 @@ export async function startLandEditor(
     'wheel',
     (event) => {
       event.preventDefault();
+      if (sailing && aim.wheel(event.deltaY, performance.now() / 1000)) return;
       const factor = Math.exp(event.deltaY * 0.0015);
       if (viewMode === '3d') orbit = zoomOrbit(orbit, factor);
       else camera = zoomAt(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY, factor);
@@ -494,7 +503,7 @@ export async function startLandEditor(
   window.addEventListener('keydown', (event) => {
     if (!active || event.target instanceof HTMLInputElement) return;
     const key = event.key.toLowerCase();
-    const moving = ['w', 'a', 's', 'd', 'shift', 'c', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+    const moving = ['w', 'a', 's', 'd', 'shift', 'c', 'f', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
     if ((walking || sailing) && moving.includes(key)) {
       event.preventDefault();
       held.add(key);

@@ -57,6 +57,8 @@ struct Place {
   turn: mat4x4f,
   // Her middle from the eye, metres as drawn.
   offset: vec4f,
+  // How light she is drawn: 1 as modelled, less for a darker ship.
+  shade: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> place: Place;
@@ -81,18 +83,22 @@ fn vertex_main(@location(0) position: vec3f, @location(1) normal: vec4f, @locati
 fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   // Sails and planks are single faces seen from both sides: the side seen is lit.
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
-  return vec4f(drawn.colour * (AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0)), 1.0);
+  return vec4f(drawn.colour * place.shade.x * (AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0)), 1.0);
 }
 `;
 
-/** Draws a ship's mesh at her place, lit as the land is, into the land's pass so the water sees her. */
+/** How many ships of one model are drawn in a frame: the player's and a captain's. */
+export const SHIP_SLOTS = 2;
+const PLACE_FLOATS = 40;
+
+/** Draws a ship's mesh at her place, lit as the land is, into the land's pass so the water sees her: one model, up
+ *  to `SHIP_SLOTS` ships of it a frame, each with her own place. */
 export class ShipView {
   private readonly device: GPUDevice;
   private readonly pipeline: GPURenderPipeline;
   private readonly vertices: GPUBuffer;
   private readonly indices: GPUBuffer;
-  private readonly uniforms: GPUBuffer;
-  private readonly bindGroup: GPUBindGroup;
+  private readonly slots: { readonly uniforms: GPUBuffer; readonly bindGroup: GPUBindGroup }[];
   private readonly indexCount: number;
   /** Her waterline, for her footprint on the water and her wake. */
   readonly waterline: Waterline;
@@ -133,25 +139,32 @@ export class ShipView {
     });
     gpu.device.queue.writeBuffer(this.indices, 0, mesh.indices);
     this.indexCount = mesh.indices.length;
-    this.uniforms = gpu.device.createBuffer({
-      size: 36 * 4,
-      usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
-    });
-    this.bindGroup = gpu.device.createBindGroup({
-      layout: this.pipeline.getBindGroupLayout(0),
-      entries: [{ binding: 0, resource: { buffer: this.uniforms } }],
+    this.slots = Array.from({ length: SHIP_SLOTS }, () => {
+      const uniforms = gpu.device.createBuffer({
+        size: PLACE_FLOATS * 4,
+        usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
+      });
+      const bindGroup = gpu.device.createBindGroup({
+        layout: this.pipeline.getBindGroupLayout(0),
+        entries: [{ binding: 0, resource: { buffer: uniforms } }],
+      });
+      return { uniforms, bindGroup };
     });
   }
 
-  /** Draws her into a pass the land's pipelines draw into (its formats, samples and reversed depth). */
-  drawInto(pass: GPURenderPassEncoder, place: ShipPlace, camera: ShipCamera): void {
-    const values = new Float32Array(36);
+  /** Draws her into a pass the land's pipelines draw into (its formats, samples and reversed depth), in her own
+   *  `slot` of the frame, `shade` as light as modelled. */
+  drawInto(pass: GPURenderPassEncoder, place: ShipPlace, camera: ShipCamera, slot = 0, shade = 1): void {
+    const drawn = this.slots[slot];
+    if (!drawn) return;
+    const values = new Float32Array(PLACE_FLOATS);
     values.set(camera.fromEye);
     values.set(shipTurn(place.heading, place.pitch, place.roll), 16);
     values.set([place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2], 0], 32);
-    this.device.queue.writeBuffer(this.uniforms, 0, values);
+    values.set([shade, 0, 0, 0], 36);
+    this.device.queue.writeBuffer(drawn.uniforms, 0, values);
     pass.setPipeline(this.pipeline);
-    pass.setBindGroup(0, this.bindGroup);
+    pass.setBindGroup(0, drawn.bindGroup);
     pass.setVertexBuffer(0, this.vertices);
     pass.setIndexBuffer(this.indices, 'uint32');
     pass.drawIndexed(this.indexCount);

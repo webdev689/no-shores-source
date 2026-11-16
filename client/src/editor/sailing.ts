@@ -101,6 +101,23 @@ export class Sailing {
       });
   }
 
+  /** Her numbers, for a fight to begin from. */
+  floats(): ShipFloats {
+    return this.ship;
+  }
+
+  /** Takes her numbers and pose as a fight's answer left them, her run since then stirring her wake. */
+  adopt(sailed: Sailed): void {
+    this.keepWake(sailed.ship);
+    this.ship = sailed.ship;
+    this.pose = sailed.pose;
+  }
+
+  /** The next rung press, for a fight's helm. */
+  takePress(): string | undefined {
+    return this.presses.shift();
+  }
+
   /** Counts the stirrings her run since the last answer owes the water, once she makes a wake. */
   private keepWake(next: ShipFloats): void {
     if (Math.hypot(next[3] ?? 0, next[4] ?? 0) < WAKE_WAY) return;

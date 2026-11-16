@@ -1,5 +1,6 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
+import type { HullMask } from '../water/hullMask.ts';
 import { loadShip } from '../ships/shipMesh.ts';
 import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
@@ -20,12 +21,14 @@ import type { CloseGround } from './landClient.ts';
 import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
+import type { FightSource } from './fighting.ts';
 import { Harbour } from './harbour.ts';
+import { Naval } from './naval.ts';
 import type { SailSource } from './sailing.ts';
 import { type TerrainData, type TerrainOptions, TerrainView } from './terrainView.ts';
 
-/** Where the close-up's exact ground comes from, and where a ship is sailed. */
-export interface GroundSource extends SailSource {
+/** Where the close-up's exact ground comes from, and where a ship is sailed and fought. */
+export interface GroundSource extends SailSource, FightSource {
   ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null>;
   isOpen(id: string): boolean;
 }
@@ -76,6 +79,11 @@ export interface SceneFrame {
   readonly held: ReadonlySet<string>;
   /** Keys pressed (not repeats) since the last frame; the scene takes them. */
   readonly pressed: string[];
+  /** The right mouse is held: the look lays her guns. */
+  readonly aiming: boolean;
+  /** Releases of the guns, and steps of the load (the wheel while aiming), since the last frame. */
+  readonly fires: number;
+  readonly loadSteps: number;
   readonly source: GroundSource | null;
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
@@ -121,6 +129,8 @@ export class LandScene {
   /** The Sloop and her model; and whether she may still sail (the rules have not refused her). */
   private readonly harbour: Harbour<ShipView>;
   private mayStillSail = true;
+  /** A captain's fight round the Sloop. */
+  private readonly naval: Naval;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
     this.gpu = gpu;
@@ -128,6 +138,7 @@ export class LandScene {
     this.fail = fail;
     this.water = new WaterView(gpu);
     this.harbour = new Harbour(() => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh)), fail);
+    this.naval = new Naval(gpu);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -143,6 +154,7 @@ export class LandScene {
     this.shownClose = null;
     [this.body, this.footing] = [null, null];
     this.harbour.leave();
+    this.naval.end();
   }
 
   private get sailing() {
@@ -202,6 +214,7 @@ export class LandScene {
     else {
       this.mayStillSail = true;
       this.harbour.leave();
+      this.naval.end();
     }
     this.keepCloseUp(frame, orbit);
     const shown = shownExaggeration(frame.exaggeration, orbit.distance);
@@ -219,7 +232,11 @@ export class LandScene {
       terrain.showCloseUp(near && closeUpData(near.patch, near.field.levels, view));
       this.shownClose = near;
     }
-    const seen = this.clearOfBed(orbit);
+    const sailing = this.sailing;
+    const seen =
+      frame.aiming && sailing && this.naval.fighting
+        ? this.naval.aimCamera(orbit, sailing, view, shown)
+        : this.clearOfBed(orbit);
     const camera = cameraOf(seen);
     const fromEye = viewProjection(seen, frame.size.width / frame.size.height, true);
     const eyeWorld = [camera.eye[0] + view.leftM, camera.eye[1] + view.topM] as const;
@@ -260,6 +277,7 @@ export class LandScene {
     terrain.drawInto(pass);
     if (this.sailing && this.ship)
       this.ship.drawInto(pass, this.sailing.place(view, shown), { fromEye, eye: camera.eye });
+    this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, this.ship, time);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -291,7 +309,7 @@ export class LandScene {
       eyeWater,
       eyeAboveM: Math.abs(camera.eye[2] / shown - (eyeWater?.surface ?? this.groundAt(id, view, ...eyeWorld))),
       focus: [orbit.targetX, orbit.targetY],
-      hull: this.sailing && this.ship ? this.sailing.hull(view, this.ship.waterline) : null,
+      hulls: this.hulls(view),
       drawn,
       target: this.gpu.context.getCurrentTexture().createView(),
     });
@@ -312,13 +330,42 @@ export class LandScene {
       frame.pressed.length = 0;
       return orbit;
     }
-    for (const key of frame.pressed.splice(0)) sailing.press(key);
-    sailing.advance(seconds, frame.held, time, this.fail);
+    for (const key of frame.pressed.splice(0)) {
+      if (key === 'f') this.naval.toggle(source, id, sailing, time, this.fail);
+      else sailing.press(key);
+    }
+    if (this.naval.fighting) {
+      const look = frame.aiming ? this.naval.look(orbit, sailing, view) : null;
+      const input = {
+        held: frame.held,
+        press: sailing.takePress(),
+        look,
+        fire: frame.fires > 0,
+        loadSteps: frame.loadSteps,
+      };
+      for (const splash of this.naval.step(seconds, input, time, sailing, view, this.fail))
+        this.water.stir(splash.x, splash.y, splash.radiusM, splash.strength);
+    } else sailing.advance(seconds, frame.held, time, this.fail);
     const waterline = this.ship?.waterline;
     for (const stir of waterline ? sailing.wake(view, waterline) : []) {
       this.water.stir(stir.x, stir.y, stir.radiusM, stir.strength);
     }
-    return sailing.orbit(orbit, view);
+    // Aiming may look over the horizon; the camera round her stays above it.
+    const round = sailing.orbit(orbit, view);
+    return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
+  }
+
+  /** The ships' footprints on the water: hers, and a captain's while she floats. */
+  private hulls(view: LandView): HullMask[] {
+    const waterline = this.ship?.waterline;
+    if (!waterline || !this.sailing) return [];
+    const captain = this.naval.hull(view, waterline);
+    return [this.sailing.hull(view, waterline), ...(captain ? [captain] : [])];
+  }
+
+  /** The fight's lines for the panel, if one is on. */
+  fightLines(): string[] {
+    return this.naval.lines(performance.now() / 1000);
   }
 
   /** The camera a diver looks up from: behind them, but brought in so it never sinks into the bed. */
