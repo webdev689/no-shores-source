@@ -41,7 +41,10 @@ The two-handers are the staff, the warhammer, the battleaxe, the bows and the Th
 A click swings once. Holding the button swings again as each blow ends. Each blow takes one of six directions at
 random: down, down and left, left, right, down and right, or up. In the [[Test Ground]] the [[Combat]] rules decide
 when a swing begins and the direction is chosen before it, so the first person swings as the rules do; a swing the
-rules refuse (no stamina, a stagger) is not drawn. A strike is five frames, and the blow lands as the
+rules refuse (no stamina, a stagger) is not drawn. A swing the rules begin once the last blow has landed starts the
+strike again, a pair's from the other hand, so no held swing is lost to the frames' rounding; one the rules end early
+(a dodge, a flinch, a guard) ends in the first person at once, and a bow's draw let go too soon to shoot is put away
+without a loose. A strike is five frames, and the blow lands as the
 third begins. A frame lasts 0.199 s for a sword, DFO's swing law at an average Speed. A dagger and bare hands come
 round quicker; a mace, a flail and the two-handed weapons slower. Bare hands' strike to the left goes up and back down
 over eight frames.

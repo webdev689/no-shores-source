@@ -154,3 +154,5 @@ human limits ([[Foes]]).
 - No gear power yet: every sword strikes alike whatever its metal.
 - Running costs no stamina.
 - Casting does no harm yet.
+- A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).
+- No hit-stop: the rules step in fixed ticks for everyone, so a blow cannot pause them.

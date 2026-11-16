@@ -68,12 +68,22 @@ room's word for it, so playing alone and online are the same game.
   block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
   wind-up and held at its end when it overreaches. A foe's swings are its stroke's frames, by its weapon.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
-  drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. Arrows and bolts are
-  drawn in flight.
-- **The display.** Health, stamina and poise at the bottom left; the soft lock's target marked at its chest, with its
-  name, health and poise at the top; a small health bar over each struck foe within 16 m; words over whoever was
-  struck for each blow and what it came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered,
-  Guard broken, Slain, a foe's Feint); and, while the player lies dead, how long until they stand again at the start.
+  drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
+  edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
+  one. Arrows and bolts are drawn in flight.
+- **The display.** Health, stamina and poise at the bottom left, the stamina flashing when a swing or a dodge is
+  pressed with none; the soft lock's target marked at its chest, with its name, health and poise at the top; a small
+  health bar over each struck foe within 16 m; words on a dark chip over whoever was struck for each blow and what it
+  came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
+  gold or green when it is good for the player and red when bad; in first person, words about the player under the
+  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; a red
+  edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
+  with `?room=`, that the link to the room was lost and why.
+- **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
+  frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
+  rolled among those that reach the locked foe. Alone, Escape pauses the fight.
+- **Others.** Foes and other players are drawn gliding between the room's snapshots, so they move smoothly however the
+  snapshots come and whatever the screen's rate.
 
 ## Playing together
 

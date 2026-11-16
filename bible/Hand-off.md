@@ -47,8 +47,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   riposte, dodge with its perfect stretch and counter, stamina, poise and the soft lock, foes' telegraphed blows and
   shots in flight, in the Rust `combat` crate. [[Foes]]: DFO's Enhanced AI in the `foes` crate, five kinds, built upon
   to guard, parry and dodge. The [[Navmesh]], DFO's, in Rust. The [[Server]]'s rooms run them all, judging each blow
-  as its defender saw it; the [[Test Ground]] fights them alone or together, predicted to the bit, with its display
-  and the ground's marks. Tested offline, in a headless browser and on a local server with two players; not deployed.
+  as its defender saw it; the [[Test Ground]] fights them alone or together, predicted to the bit. Then audited end to
+  end (the rules, the foes against DFO's source, the room and its host, the browser) and every finding fixed with a
+  test; the timings set against shipped games and a person's reaction ([[Combat]], "Why these numbers"). Tested
+  offline, in a headless browser and on a local server; not deployed.
 
 ## Waiting on the owner
 
