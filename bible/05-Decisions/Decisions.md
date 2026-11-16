@@ -47,6 +47,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Gameplay Starts With the Shared Rules]]
 - [[Messages Are FlatBuffers]]
 - [[The Server's Shell Is in server]]
+- [[The Audit Branch's Forge Renders Come Over]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -1,6 +1,7 @@
 """Publishes the sprite forge's renders and tables to R2, and pulls the tables back so the forge can render more.
 
     python3 -I tools/forge_publish.py publish   # pack tools/forge/public/art/studio, upload, write the manifest
+    python3 -I tools/forge_publish.py add       # the same for the pictures there, beside those already published
     python3 -I tools/forge_publish.py pull [--strips]   # the tables back, and with --strips every strip as PNG
 
 Every object is named by the SHA-256 of its bytes, so a published object never changes and is cached for good. The
@@ -58,7 +59,7 @@ def placed(path):
     return found or None
 
 
-def frames_table():
+def placements():
     """Every picture's placement, by its path in the pack index: the studio's own, and the site's own as `@art/`."""
     table = {}
     for base, _dirs, names in os.walk(ART):
@@ -71,6 +72,10 @@ def frames_table():
             where = placed(full)
             if where:
                 table[key] = where
+    return table
+
+
+def write_frames(table):
     with open(os.path.join(TABLES_DIR, TABLES['frames']), 'w') as file:
         json.dump(table, file, separators=(',', ':'))
     print(f'{len(table)} placed frames', flush=True)
@@ -103,8 +108,8 @@ def put(data, folder, extension, kind):
     return key
 
 
-def publish():
-    frames_table()
+def packed():
+    """The pictures on disk packed and uploaded: their index, its packs named by their keys on R2."""
     pack = os.path.join(FORGE, 'tools', 'forgeViewer', 'pack.py')
     # Every pack as an asset pack: R2 has no per-page file budget to split them by.
     subprocess.run([sys.executable, '-I', pack, '--out', PACKED, '--files-mib', '0'], check=True)
@@ -115,6 +120,31 @@ def publish():
         with open(os.path.join(PACKED, name), 'rb') as file:
             keys.append(put(file.read(), 'packs', 'webp', 'image/webp'))
     index['packs'] = keys
+    return index
+
+
+def publish():
+    write_frames(placements())
+    write_manifest(packed())
+
+
+def add():
+    """The pictures on disk published beside those already published, so the rest need not be pulled: new packs for
+    them alone, added to the published index and frames table (a path already published is replaced). The other
+    tables are those in the forge's table folder, so `pull` comes first."""
+    with open(MANIFEST) as file:
+        manifest = json.load(file)
+    index = json.loads(published(manifest, manifest['index']))
+    write_frames({**json.loads(published(manifest, manifest['tables']['frames'])), **placements()})
+    new = packed()
+    for path, (pack, *rest) in new['pictures'].items():
+        index['pictures'][path] = [len(index['packs']) + pack, *rest]
+    index['packs'] += new['packs']
+    write_manifest(index)
+
+
+def write_manifest(index):
+    """The index and the tables uploaded, and the manifest that names them written."""
     listing = json.dumps(index, separators=(',', ':')).encode()
     manifest = {'base': PUBLIC, 'index': put(listing, 'index', 'json', 'application/json'), 'tables': {}}
     for name, file_name in TABLES.items():
@@ -124,7 +154,7 @@ def publish():
     with open(MANIFEST, 'w') as file:
         json.dump(manifest, file, indent=2)
         file.write('\n')
-    print(f'{len(index["pictures"])} pictures in {len(keys)} packs; manifest written to {MANIFEST}')
+    print(f'{len(index["pictures"])} pictures in {len(index["packs"])} packs; manifest written to {MANIFEST}')
 
 
 def published(manifest, key):
@@ -164,11 +194,13 @@ def pull(strips):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    parser.add_argument('command', choices=['publish', 'pull'])
+    parser.add_argument('command', choices=['publish', 'add', 'pull'])
     parser.add_argument('--strips', action='store_true', help='pull: unpack every strip as PNG too')
     args = parser.parse_args()
     if args.command == 'publish':
         publish()
+    elif args.command == 'add':
+        add()
     else:
         pull(args.strips)
 

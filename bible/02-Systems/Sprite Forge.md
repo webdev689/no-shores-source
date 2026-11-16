@@ -6,6 +6,7 @@ code:
   - tools/forge/tools/sprite-forge/fanout.py
   - tools/forge/tools/forgeViewer/pack.py
   - tools/forge_publish.py#publish
+  - tools/forge_publish.py#add
   - tools/forge_dyes.mjs
   - content/forge/renders.json
 ---
@@ -27,7 +28,9 @@ The [[Test Ground]] shows them.
 
 The first-person frames are pictures of their own: each weapon's idle and its six strokes, the bow's draw and loose,
 fists and kicks, held things, and the hands that cast, climb, run, ride and work. DFO kept them outside the studio
-folder as its site's art; they are published with the rest.
+folder as its site's art; they are published with the rest. So are the instruments' first-person frames, and the
+pictures of things the forge renders from models of its own: items, props and the light set's pieces
+([[The Audit Branch's Forge Renders Come Over]]).
 
 Each strip is a layer in one move: a row for each view, a cell for each frame, at 62 pixels a metre. Its twin, `_z`,
 holds the depth of each pixel in red and green, and the part of the body (torso, arm, head, foot, weapon, drape,
@@ -46,6 +49,8 @@ tables in `src/systems/studioArt/`, packs in `packs/`.
 - `publish` packs every picture as lossless WebP with DFO's `pack.py`, uploads the packs, the pack index and the
   tables, and writes `content/forge/renders.json`, which names each by its hash. WebP keeps no PNG chunks, so it first
   reads each first-person frame's place on the 320 by 200 screen (`oFFs`, `boXs`) into the `frames` table.
+- `add` publishes the pictures on disk beside those already published, in packs of their own, adding them to the
+  published index and frames table, so the rest need not be pulled first.
 - `pull` fetches the tables back for the forge to render more. `pull --strips` also unpacks every strip as PNG.
 
 The bucket is public at `pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev` and lets the site and local servers read it.
