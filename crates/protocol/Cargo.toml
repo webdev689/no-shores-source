@@ -1,0 +1,15 @@
+[package]
+name = "protocol"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Every network message between a browser and a room: the Rust flatc makes from the one schema, and the server's side of reading and writing them."
+
+[dependencies]
+flatbuffers.workspace = true
+movement = { path = "../movement" }
+room = { path = "../room" }
+
+[lints]
+workspace = true

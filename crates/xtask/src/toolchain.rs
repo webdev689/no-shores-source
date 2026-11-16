@@ -16,7 +16,8 @@ enum Program {
 }
 
 /// The toolchains' own checks, Rust and TypeScript side by side, in the order a failure is cheapest to read.
-const STEPS: [Step; 9] = [
+const STEPS: [Step; 10] = [
+    Step { name: "messages (FlatBuffers)", program: Program::Npm, args: &["run", "-s", "schema"] },
     Step { name: "format (Rust)", program: Program::Cargo, args: &["fmt", "--all", "--check"] },
     Step { name: "format (TypeScript)", program: Program::Npm, args: &["run", "-s", "format:check"] },
     Step {
