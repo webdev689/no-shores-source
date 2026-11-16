@@ -1,7 +1,7 @@
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
+import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 
 /** Where a ship is drawn: her middle in window metres (her height as drawn), her heading (radians clockwise from
  *  north), her bow's rise and her heel to starboard (radians). */
@@ -86,9 +86,12 @@ export class ShipView {
   private readonly uniforms: GPUBuffer;
   private readonly bindGroup: GPUBindGroup;
   private readonly indexCount: number;
+  /** Her waterline, for her footprint on the water and her wake. */
+  readonly waterline: Waterline;
 
   constructor(gpu: Gpu, mesh: ShipMesh) {
     this.device = gpu.device;
+    this.waterline = mesh.waterline;
     const module = gpu.device.createShaderModule({ code: SHIP_SHADER });
     this.pipeline = gpu.device.createRenderPipeline({
       layout: 'auto',

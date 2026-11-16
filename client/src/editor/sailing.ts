@@ -1,6 +1,8 @@
 import type { Helm, LandView, Pose, ShipFloats } from '../rules/landRules.ts';
 import { helmOf, isRungKey, RUNG_WORDS } from '../ships/helmKeys.ts';
+import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
+import type { HullMask } from '../water/hullMask.ts';
 import type { Sailed } from './landClient.ts';
 import type { Orbit } from './orbit.ts';
 
@@ -10,6 +12,18 @@ export const TICK_SECONDS = 1 / 60;
 export const MOST_TICKS_A_FRAME = 6;
 /** Her deck and a little over, metres above her waterline: where the camera looks at her. */
 const LOOK_AT_M = 1.5;
+/** Come Sail Away's wake threshold (a quarter of its sailing speed), m/s, and how far she runs between stirrings of
+ *  the water at her bow and quarters, metres. */
+const WAKE_WAY = 0.5;
+const WAKE_STEP_M = 0.5;
+
+/** A push on the water's ripples: where (window metres), how wide and how deep. */
+export interface Stir {
+  readonly x: number;
+  readonly y: number;
+  readonly radiusM: number;
+  readonly strength: number;
+}
 
 /** Where a ship is sailed: the land's rules, over the open landmass; null when another landmass is open. */
 export interface SailSource {
@@ -28,6 +42,8 @@ export class Sailing {
   private owed = 0;
   private pending = false;
   private readonly presses: string[] = [];
+  private travelled = 0;
+  private stirrings = 0;
 
   private constructor(source: SailSource, id: string, sailed: Sailed) {
     this.source = source;
@@ -72,6 +88,7 @@ export class Sailing {
       .then((sailed) => {
         this.pending = false;
         if (!sailed) return;
+        this.keepWake(sailed.ship);
         this.ship = sailed.ship;
         this.pose = sailed.pose;
       })
@@ -79,6 +96,47 @@ export class Sailing {
         this.pending = false;
         fail(error);
       });
+  }
+
+  /** Counts the stirrings her run since the last answer owes the water, once she makes a wake. */
+  private keepWake(next: ShipFloats): void {
+    if (Math.hypot(next[3] ?? 0, next[4] ?? 0) < WAKE_WAY) return;
+    this.travelled += Math.hypot((next[0] ?? 0) - (this.ship[0] ?? 0), (next[1] ?? 0) - (this.ship[1] ?? 0));
+    const whole = Math.floor(this.travelled / WAKE_STEP_M);
+    this.stirrings += whole;
+    this.travelled -= whole * WAKE_STEP_M;
+  }
+
+  /** The stirrings owed, taken: each at her bow and her two quarters, deeper the faster she runs. */
+  wake(view: LandView, waterline: Waterline): readonly Stir[] {
+    const count = this.stirrings;
+    this.stirrings = 0;
+    if (count === 0) return [];
+    const { x, y, heading } = this.place(view, 1);
+    const [forward, starboard] = [
+      [Math.sin(heading), -Math.cos(heading)],
+      [Math.cos(heading), Math.sin(heading)],
+    ] as const;
+    const [halfLength, halfBeam] = [waterline.lengthM / 2, waterline.beamM / 2];
+    const strength = -0.02 * Math.min(this.way() / 2, 1.5);
+    const stirAt = (along: number, across: number, radiusM: number, share: number): Stir => ({
+      x: x + forward[0] * along + starboard[0] * across,
+      y: y + forward[1] * along + starboard[1] * across,
+      radiusM,
+      strength: strength * share,
+    });
+    const once = [
+      stirAt(halfLength, 0, 0.6, 1),
+      stirAt(-0.7 * halfLength, -halfBeam, 0.4, 0.5),
+      stirAt(-0.7 * halfLength, halfBeam, 0.4, 0.5),
+    ];
+    return Array.from({ length: count }, () => once).flat();
+  }
+
+  /** Her footprint on the water, for the water's surface. */
+  hull(view: LandView, waterline: Waterline): HullMask {
+    const { x, y, heading } = this.place(view, 1);
+    return { x, y, heading, halfLength: waterline.lengthM / 2, halfBeam: waterline.beamM / 2, way: this.way() };
   }
 
   /** Her way, m/s. */

@@ -72,3 +72,31 @@ test('while one step is with the door, no other is asked, and a press waits for 
   assert.equal(asked.length, 3);
   assert.equal(asked[2]?.helm.climb, 0, 'the press went with the first step');
 });
+
+test('under way she stirs the water at her bow and quarters each half metre, and none at rest', async () => {
+  const moving: SailSource = {
+    sail: async (_id, ship, _helm, _time, ticks) => {
+      const next = new Float64Array(ship);
+      next[1] = (ship[1] ?? 0) - 0.4 * ticks;
+      next[3] = 2;
+      return { ship: next, pose: { heave: 0, pitch: 0, roll: 0, aground: false } };
+    },
+  };
+  const sailing = await Sailing.putToSea(moving, 'square', 100, 100, 0, 0);
+  assert.ok(sailing instanceof Sailing);
+  const view = { leftM: 0, topM: 0 } as Parameters<Sailing['wake']>[0];
+  const waterline = { lengthM: 6, beamM: 2, draughtM: 0.5 };
+  assert.equal(sailing.wake(view, waterline).length, 0, 'at rest');
+  sailing.advance(3 / 60, new Set(), 1, ignore);
+  await settle();
+  const stirs = sailing.wake(view, waterline);
+  assert.equal(stirs.length, 6, 'she ran 1.2 m: two stirrings of bow and quarters');
+  const [bow] = stirs;
+  assert.ok(
+    bow && Math.abs(bow.x - 100) < 1e-9 && bow.y < 100 - 1.2 - 2,
+    `her bow is ahead, north: ${JSON.stringify(bow)}`,
+  );
+  assert.equal(sailing.wake(view, waterline).length, 0, 'taken once');
+  const mask = sailing.hull(view, waterline);
+  assert.deepEqual([mask.halfLength, mask.halfBeam, mask.way], [3, 1, 2]);
+});

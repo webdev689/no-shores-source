@@ -279,6 +279,7 @@ export class LandScene {
       eyeWater,
       eyeAboveM: Math.abs(camera.eye[2] / shown - (eyeWater?.surface ?? this.groundAt(id, view, ...eyeWorld))),
       focus: [orbit.targetX, orbit.targetY],
+      hull: this.sailing && this.ship ? this.sailing.hull(view, this.ship.waterline) : null,
       drawn,
       target: this.gpu.context.getCurrentTexture().createView(),
     });
@@ -326,6 +327,10 @@ export class LandScene {
     }
     for (const key of frame.pressed.splice(0)) this.sailing.press(key);
     this.sailing.advance(seconds, frame.held, time, this.fail);
+    const waterline = this.ship?.waterline;
+    for (const stir of waterline ? this.sailing.wake(view, waterline) : []) {
+      this.water.stir(stir.x, stir.y, stir.radiusM, stir.strength);
+    }
     return this.sailing.orbit(orbit, view);
   }
 

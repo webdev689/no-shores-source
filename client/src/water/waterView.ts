@@ -2,6 +2,7 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { RippleField } from './ripples.ts';
 import { GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
+import { HULL_FIT, type HullMask } from './hullMask.ts';
 import { ANCHOR_M, CHOP_WAVES, MOST_WAVES } from './waterCommon.ts';
 import { WATER_SHADER } from './waterShader.ts';
 
@@ -50,6 +51,8 @@ export interface WaterScene {
   readonly eyeAboveM: number;
   /** Where the ripples follow, window metres. */
   readonly focus: readonly [number, number];
+  /** A ship on the water: no water inside her, foam round her bow. */
+  readonly hull: HullMask | null;
   /** The land drawn so far: its colour and depth (a float a pixel) to see through, and the multisampled colour and
    *  depth the water's pass draws into, testing against the land's. */
   readonly drawn: {
@@ -61,7 +64,7 @@ export interface WaterScene {
   readonly target: GPUTextureView;
 }
 
-const FRAME_FLOATS = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4;
+const FRAME_FLOATS = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4 + 8;
 /** Samples taken of each pixel by the land and the water, so every edge between them is smooth. */
 export const SAMPLES = 4;
 /** The disc of water round the eye: rings out to the far plane, each this share wider than the last, and segments. */
@@ -244,6 +247,12 @@ export class WaterView {
       this.chop && this.chop.swell === scene.swell ? this.chop : { swell: scene.swell, waves: chopWaves(scene.swell) };
     this.chop = chop;
     values.set(chop.waves, 64 + MOST_WAVES * 8);
+    const hull = scene.hull;
+    if (hull) {
+      const start = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4;
+      values.set([hull.x - eyeX, hull.y - eyeY, Math.sin(hull.heading), Math.cos(hull.heading)], start);
+      values.set([hull.halfLength * HULL_FIT, hull.halfBeam * HULL_FIT, hull.way, 1], start + 4);
+    }
     return values;
   }
 
