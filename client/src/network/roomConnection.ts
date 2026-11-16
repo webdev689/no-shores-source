@@ -1,11 +1,19 @@
-import type { Controls } from '../rules/movementRules.ts';
-import { type FromRoomMessage, type Look, type PlayerDress, inputBytes, readFromRoom } from './messages.ts';
+import { type FromRoomMessage, type PlayerDress, readFromRoom } from './messages.ts';
 
-/** A room's snapshot, as the connection hands it on. */
+/** A room's snapshot, as a link hands it on. */
 export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
 
+/** A browser's way into a room, wherever the room runs: the player's number and the dresses at their welcome, their
+ *  inputs sent, and the room's clock let run (a room in the page ticks itself; one elsewhere runs on its own). */
+export interface RoomLink {
+  readonly player: number;
+  readonly dressed: readonly PlayerDress[];
+  send(bytes: Uint8Array<ArrayBuffer>): void;
+  pump(seconds: number): void;
+}
+
 /** A browser's WebSocket to one room: it joins, sends the player's input for each tick, and hands on every snapshot. */
-export class RoomConnection {
+export class RoomConnection implements RoomLink {
   private readonly socket: WebSocket;
   /** The player's number in the room, and every dress in it when they joined, from its welcome. */
   readonly player: number;
@@ -32,9 +40,11 @@ export class RoomConnection {
     });
   }
 
-  /** Sends one tick's controls, numbered `sequence`, with what the player's figure shows and their dress when it
-   *  changed; while the socket is not open, nothing is sent. */
-  send(sequence: number, controls: Controls, look: Look, dress?: string): void {
-    if (this.socket.readyState === WebSocket.OPEN) this.socket.send(inputBytes(sequence, controls, look, dress));
+  /** Sends one tick's input bytes; while the socket is not open, nothing is sent. */
+  send(bytes: Uint8Array<ArrayBuffer>): void {
+    if (this.socket.readyState === WebSocket.OPEN) this.socket.send(bytes);
   }
+
+  /** The room runs on its own clock, on the server. */
+  pump(): void {}
 }

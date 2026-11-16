@@ -2,6 +2,7 @@ import { button, make } from '../editor/dom.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
+import { CLEAR_FOES, FOE_KINDS } from '../combat/foeKinds.ts';
 import type { Placed } from './figures.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
@@ -26,6 +27,8 @@ export interface PanelHandlers {
   fps(value: number): void;
   /** Plays a move once on the player. */
   act(anim: string): void;
+  /** Stands a foe of this kind before the player, or sends every foe away. */
+  fight(kind: number): void;
 }
 
 /** DFO's controls, as the hint lists them. */
@@ -34,6 +37,7 @@ const CONTROLS = [
   'W A S D move, the mouse looks, Shift runs, Space jumps (at a wall: grabs, vaults or mantles), C crouches or lets go.',
   'Into a wall too high to grab: climb. Hanging: A D shimmy, W climbs over.',
   'Z readies or puts away the weapon; right click swings, holding swings again. Q casts. Comma mounts.',
+  'Left click or F guards; pressed just as a blow lands, it parries. V or Mouse5 dodges the way you move.',
   'The wheel moves between first and third person; Mouse4 switches straight.',
 ];
 
@@ -104,7 +108,11 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
       list.append(pick);
     }
     const chosen = state.chosen;
+    const foes = FOE_KINDS.map((kind) => button(`A ${kind.name.toLowerCase()}`, () => handlers.fight(kind.number)));
     body.replaceChildren(
+      make('h2', 'Foes'),
+      ...foes,
+      button('Send every foe away', () => handlers.fight(CLEAR_FOES)),
       make('h2', 'Figures'),
       list,
       button('Add a figure ahead', handlers.add),

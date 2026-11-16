@@ -29,7 +29,16 @@ export interface Doing {
   readonly cast: number | null;
   /** A move chosen by hand in the panel, and its progress 0..1. */
   readonly act: { readonly anim: string; readonly progress: number } | null;
+  /** What the fight holds the figure to, and how far through it, 0..1; null when nothing does. */
+  readonly fight?: Fight | null;
 }
+
+/** What a fight holds a figure to: dead, knocked down, staggered or flinching, hopping aside, deflecting a blow,
+ *  guarding, winding up a telegraphed blow (`stroke` the move it is struck with), overreached after one, or drawing a
+ *  bow. */
+export type Fight =
+  | { readonly kind: 'dead' | 'down' | 'struck' | 'dodge' | 'parry' | 'guard' | 'draw'; readonly progress: number }
+  | { readonly kind: 'windup' | 'overreach'; readonly stroke: string; readonly progress: number };
 
 /** A move to show: its animation, and either a fixed frame or how long each frame lasts as it loops. */
 export interface Shown {
@@ -122,6 +131,7 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     frameSeconds: 0,
   });
   const loop = (anim: string, frameSeconds: number): Shown => ({ anim, frame: null, frameSeconds });
+  if (doing.fight) return fightMove(doing, doing.fight, frames, draws, byProgress, loop);
   if (doing.act) return byProgress(doing.act.anim, doing.act.progress);
   if (doing.mode === 'mantle' || doing.mode === 'vault') return byProgress(doing.mode, doing.over);
   if (doing.mode === 'hang') return doing.moving ? loop('shimmy', 1 / frames('shimmy')) : byProgress('hang', 0);
@@ -154,4 +164,60 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
   }
   const rest = doing.moving ? kit.walk : kit.idle;
   return loop(draws(rest, doing.drawn ? doing.right : null) ? rest : doing.moving ? 'walk' : 'idle', WALK_FRAME);
+}
+
+/** The share of a dodge's hop each of the jump's frames shows: rising, at the top, falling. */
+const HOP_FRAMES = [0.3, 0.7] as const;
+
+/**
+ * The move a fight holds a figure to, from the forge's own moves: the death, then lying fallen; fallen while knocked
+ * down; hurt while staggered or flinching (its bow's or staff's own); the jump's frames through a dodge's hop, or the
+ * run where the forge does not draw what it holds in the jump; the parry through a deflect, a shield's block; the
+ * guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its wind-up
+ * and held at its end when it overreaches; and the bow drawn.
+ */
+function fightMove(
+  doing: Doing,
+  fight: Fight,
+  frames: (anim: string) => number,
+  draws: Draws,
+  byProgress: (anim: string, progress: number) => Shown,
+  loop: (anim: string, frameSeconds: number) => Shown,
+): Shown {
+  const right = doing.drawn ? doing.right : null;
+  const left = doing.drawn ? doing.left : null;
+  const holds = (anim: string) => draws(anim, right) && (!left || draws(anim, left));
+  const own = (anim: string) => {
+    const kind = right?.split('_')[0];
+    const special = kind === 'bow' || kind === 'crossbow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
+    return special && draws(special, right) ? special : anim;
+  };
+  const shield = !!left?.startsWith('shield_') && draws('block', left);
+  const still = (anim: string, frame = 0): Shown => ({
+    anim,
+    frame: Math.min(frame, frames(anim) - 1),
+    frameSeconds: 0,
+  });
+  switch (fight.kind) {
+    case 'dead':
+      return fight.progress >= 1 ? still('fallen') : byProgress('death', fight.progress);
+    case 'down':
+      return still('fallen');
+    case 'struck':
+      return still(own('hurt'));
+    case 'dodge':
+      if (!holds('jump')) return loop('run', WALK_FRAME / 2);
+      return still('jump', fight.progress < HOP_FRAMES[0] ? 0 : fight.progress < HOP_FRAMES[1] ? 1 : 2);
+    case 'parry':
+      return shield ? still('block') : byProgress(own('parry'), fight.progress);
+    case 'guard':
+      if (shield) return still('block');
+      return draws(own('parry'), right) ? still(own('parry')) : still('guard');
+    case 'windup':
+      return still(fight.stroke, fight.progress < 0.8 ? 0 : 1);
+    case 'overreach':
+      return still(fight.stroke, 2);
+    case 'draw':
+      return byProgress('bow', fight.progress * 0.5);
+  }
 }

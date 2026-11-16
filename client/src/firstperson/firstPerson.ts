@@ -161,23 +161,20 @@ export class FirstPerson {
   private readonly kept = new Map<string, { texture: GPUTexture; picture: Picture } | null>();
   private readonly loading = new Set<string>();
 
-  constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random) {
+  /** `strokes` picks each swing's direction as a share of DFO's six; the fight's rules may choose it. */
+  constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random, strokes = random) {
     this.view = view;
     this.source = source;
-    this.hands = new Hands(random);
+    this.hands = new Hands(strokes);
     this.ride = new RideMotion(random);
   }
 
   /** Opens the first person on the forge's published pictures, with their placement and Daggerfall's colours. */
-  static async open(gpu: Gpu, store: ForgeStore): Promise<FirstPerson> {
+  static async open(gpu: Gpu, store: ForgeStore, strokes: () => number = Math.random): Promise<FirstPerson> {
     const [frames, dyes] = await Promise.all([store.table<FramesTable>('frames'), store.table<DyeTable>('dyes')]);
     const painter = new FramePainter(dyes, new PaletteSnap(dyes.palette));
-    return new FirstPerson(new FirstPersonView(gpu), {
-      strip: (path) => store.strip(path),
-      frames,
-      dyes,
-      painter,
-    });
+    const source = { strip: (path: string) => store.strip(path), frames, dyes, painter };
+    return new FirstPerson(new FirstPersonView(gpu), source, Math.random, strokes);
   }
 
   /** The blow or shot under way: its direction (null for a bow, a gun or a crossbow), how far through it, the hand that
