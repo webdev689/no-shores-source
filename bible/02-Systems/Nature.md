@@ -95,8 +95,9 @@ width, and from the exact close patch where it reaches, eased in over its outer 
 - **Light.** As the land is lit, its ambient bounced warm from the ground onto a crown's underside and cool from the
   sky onto its top, with a little sun through the leaves. Gusts roll downwind across the land, each plant rocks on its
   own beat and its leaves tremble.
-- **Shadows.** In the game the near plants round the eye cast into the sun's shadow map, swaying as they are drawn,
-  and every plant is lit through it ([[Game]]): a tree in another's shade, or a wall's, is in shade.
+- **Shadows.** In the game the near plants round the eye cast into the sun's near shadow map, swaying as they are
+  drawn, and every plant is lit through the near and far maps ([[Game]]): a tree in another's shade, or a wall's, is
+  in shade.
 - **Woods from afar.** Past where its trees are drawn, a biome's woods are coloured on the land itself (`woodsOf`):
   its canopy's colour where the grove field puts its groves, as thick as its trees grow, and the forest floor darker
   under them near. So a forest reads from the sea and over an island's side, and stands where its trees stand.
@@ -110,7 +111,7 @@ Each frame a page calls `update` with the camera and the ground, then `drawInto`
 
 ## Limits
 
-- Only the near plants within the shadow map's square cast; past it the contact shade stands in under each one.
+- Only the near plants within the near shadow map's square cast; past it the contact shade stands in under each one.
 - Low plants keep off the feet of the tall ones in their own tile only: within a couple of metres of a tile's edge,
   grass can grow into a neighbouring tile's boulder or trunk.
 - Beyond the close patch the sampler knows no roads, towns or ports: the caller's cleared ground must cover them.
@@ -118,4 +119,4 @@ Each frame a page calls `update` with the camera and the ground, then `drawInto`
 - A teleport fills the view from the eye outward over about a second.
 - A step into another tile lists every drawn slot again: in the densest biomes (about 230,000 within 3 km) that
   takes some 10 to 15 ms of the frame it happens in, and sends under a megabyte to the GPU.
-- The [[World Editor]]'s 3D view and the game do not draw it yet.
+- The [[World Editor]]'s 3D view does not draw it yet; the [[Game]] does.

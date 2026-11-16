@@ -177,13 +177,11 @@ export class GameScene {
     );
     const targets = this.targetsOf(size.width, size.height);
     const encoder = this.gpu.device.createCommandEncoder();
-    // The sun's shadows first: what casts draws its depth along the sun, for everything after to read.
+    // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
     this.shadow.update(shot.eye, shot.yaw, above);
-    if (this.shadow.active) {
-      const cast = this.shadow.beginPass(encoder);
+    this.shadow.cast(encoder, (cast) => {
       for (const drawer of drawers) drawer.castInto?.(cast, fromEye, shot, time, this.shadow);
-      cast.end();
-    }
+    });
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {

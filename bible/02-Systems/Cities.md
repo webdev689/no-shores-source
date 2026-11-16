@@ -153,7 +153,8 @@ warmer, a factor a channel, as its own layer. The ground's tiles and the solids'
 forged models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
 painted, and what is painted is kept for the next city. Gold, iron and bone are plain colours; the glow is lit warm
 and unshaded. Faces are lit as the land is, with a little light thrown back onto walls from the ground. In the game
-the solids and the near cells' models cast into the sun's shadow map, and every face and plate is lit through it.
+the solids and the near cells' models cast into the sun's near and far shadow maps, and the masses and hulls into the
+far one, in the tiers they are drawn in; every face and plate is lit through both ([[Game]]).
 
 | Material | Temperate | Desert | Mountain | Swamp |
 |---|---|---|---|---|
