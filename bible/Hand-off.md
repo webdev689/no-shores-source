@@ -35,9 +35,6 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- Which of Cloudflare's runs the rooms ([[Servers on Cloudflare]]): Durable Objects, which the work uses, or
-  Containers.
-- Deploying the rooms to Cloudflare ([[Ask Before Deploying]]), with a Cloudflare token that may deploy Workers.
 
 ## Next
 
