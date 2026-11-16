@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { fighterView, glanceView } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
 import { courseBytes, inputBytes, readFromRoom } from './messages.ts';
 
@@ -46,6 +47,32 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     ],
   );
   assert.deepEqual([snapshot.dressed, snapshot.ships], [dressed, []]);
+  // The second player's fighter: a sword drawn, its lock on foe 12, stamina spent.
+  const fighting = fighterView(snapshot.players[1]?.fighter ?? []);
+  assert.deepEqual([fighting.target, fighting.stamina, fighting.health, fighting.side], [12, 88, 100, 'players']);
+  assert.equal(fighting.x, walked.x);
+  // The brute, staggered by a parry, 40 of its 130 health gone, its lock on the player.
+  const [foe] = snapshot.foes;
+  const brute = glanceView(foe?.glance ?? []);
+  assert.deepEqual(
+    [foe?.id, foe?.kind, brute.health, brute.healthMax, brute.target, brute.side],
+    [12, 3, 90, 130, 9, 'foes'],
+  );
+  assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
+  assert.deepEqual(
+    snapshot.events.map((event) => [event.tick, event.kind, event.how, event.striker, event.defender, event.amount]),
+    [
+      [1233n, 3, 1, 12, 9, 0],
+      [1234n, 1, 2, 9, 12, 35],
+    ],
+  );
+  const [arrow] = snapshot.shots;
+  assert.deepEqual([arrow?.owner, arrow?.ranged], [12, 1]);
+  const flat = Math.cos(0.1);
+  const along = [Math.sin(0.5) * flat, -Math.cos(0.5) * flat, Math.sin(0.1)];
+  arrow?.at.forEach((value, axis) =>
+    assert.ok(Math.abs(value - ([3, -6, 1.1][axis] ?? 0) - (along[axis] ?? 0) * 0.4) < 1e-12),
+  );
 });
 
 test('the sea’s snapshot the server wrote reads back as its ships', async () => {
@@ -60,18 +87,22 @@ test('the sea’s snapshot the server wrote reads back as its ships', async () =
   ]);
 });
 
-test('an input is its number, its seven controls in the movement crate’s order, its look, a dress if given and a respawn', () => {
-  const controls = { forward: 1, sideways: -0.5, yaw: 0.3, run: true, jump: false, crouch: true, mounted: false };
+test('an input is its number, its controls and fight buttons in the combat crate’s order, its look, its arms, the tick seen, a foe asked for, a dress if given, and a respawn', () => {
+  const intent = new Float64Array([1, -0.5, 0.3, 1, 0, 1, 0, 6, 1, 0, 1, -0.2]);
   const look = { anim: 'ride_gallop', frame: 3, facing: -1.5 };
-  const bytes = inputBytes(42, controls, look, '{"body":"female"}', true);
-  const input = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
+  const parts = { intent, look, arms: 0x10002, seen: 977n, spawn: 3 };
+  const input = Input.getRootAsInput(
+    new flatbuffers.ByteBuffer(inputBytes(42, { ...parts, dress: '{"body":"female"}', respawn: true })),
+  );
   assert.equal(input.sequence(), 42);
   assert.deepEqual(Array.from(input.controlsArray() ?? []), [1, -0.5, 0.3, 1, 0, 1, 0]);
+  assert.deepEqual(Array.from(input.combatArray() ?? []), [6, 1, 0, 1, -0.2]);
   assert.deepEqual(
-    [input.anim(), input.frame(), input.facing(), input.dress(), input.respawn()],
-    ['ride_gallop', 3, -1.5, '{"body":"female"}', true],
+    [input.anim(), input.frame(), input.facing(), input.dress(), input.arms(), input.seen(), input.spawn()],
+    ['ride_gallop', 3, -1.5, '{"body":"female"}', 0x10002, 977n, 3],
   );
-  const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, controls, look)));
+  assert.equal(input.respawn(), true);
+  const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, parts)));
   assert.deepEqual([plain.dress(), plain.respawn()], [null, false]);
 });
 

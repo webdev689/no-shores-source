@@ -5,8 +5,12 @@
 namespace overlook.wire;
 
 // A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted. Numbered 1, 2, 3 and so on.
-// With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces),
-// their dress, as the browser writes it, only when it changed, and whether they ask to respawn.
+// With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
+// their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
+// 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
+// combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
+// (0 none; 255 sends every foe away), and whether they ask to respawn, dead past a node's section. New fields go at
+// the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -14,6 +18,10 @@ table Input {
   frame: ushort;
   facing: double;
   dress: string;
+  combat: [double];
+  arms: uint;
+  seen: ulong;
+  spawn: ubyte;
   respawn: bool;
 }
 
@@ -39,19 +47,46 @@ table Joined {
   bounds: [double];
 }
 
-// One player as the room last stepped them: their body's 22 numbers, the number of their last input it took, what
-// their figure showed with it, and where they stand with the section: 0 inside it or on its edge, 1 outside and
-// warned to go back, with the ticks left, 2 dead, with the ticks since. A number, not a schema enum, so the
-// TypeScript flatc makes stays erasable.
+// One player as the room last stepped them: the number of their last input it took, what their figure showed with
+// it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body, and
+// where they stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks
+// left, 2 dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable.
 table Seen {
   player: uint;
   acknowledged: uint;
-  body: [double];
+  body: [double] (deprecated);
   anim: string;
   frame: ushort;
   facing: double;
+  fighter: [double];
   standing: ubyte;
   standing_ticks: uint;
+}
+
+// A foe as the room last stepped it: its number, its kind, and a glance at its fighter (combat's glance order).
+table Foe {
+  id: uint;
+  kind: ubyte;
+  glance: [double];
+}
+
+// Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
+// and who was struck, and how much it did.
+table Event {
+  tick: ulong;
+  kind: ubyte;
+  how: ubyte;
+  striker: uint;
+  defender: uint;
+  amount: double;
+}
+
+// A shot in flight: who shot it, what shot it (combat's number), where it is (x, y, z) and how fast it goes.
+table Flying {
+  owner: uint;
+  ranged: ubyte;
+  at: [double];
+  velocity: [double];
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and its pace, 0
@@ -64,12 +99,15 @@ table Ship {
   pace: ushort;
 }
 
-// Every player in the room after one of its ticks, and the dresses that changed since the last snapshot; in the sea
-// room, every ship at sea.
+// Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
+// happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea.
 table Snapshot {
   tick: ulong;
   players: [Seen];
   dressed: [Dressed];
+  foes: [Foe];
+  events: [Event];
+  shots: [Flying];
   ships: [Ship];
 }
 

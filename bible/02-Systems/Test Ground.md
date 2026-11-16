@@ -37,7 +37,9 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Into a wall too high to grab | Climb it; at the lip, hang |
 | Hanging: `A` `D`, `W` | Shimmy along the lip; climb over it |
 | `Z` | Ready the weapon or put it away |
-| Right click, held | Swing; holding swings again. A swing readies a weapon put away |
+| Right click, held | Swing; holding swings again. A swing readies a weapon put away. A bow draws while held and looses when let go; a gun or a crossbow fires |
+| Left click or `F`, held | Guard; pressed just as a blow lands, parry |
+| `V` or Mouse5 | Dodge the way you move, or straight back |
 | `Q` | Cast |
 | `,` | Mount or dismount: 6 m/s, galloping at 12 with `Shift` |
 | Wheel, Mouse4 | Pull back into third person and further, or come back into first person; Mouse4 switches straight |
@@ -49,13 +51,48 @@ short of a wall.
 North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
 and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
 
+## Fighting
+
+The Test Ground plays the [[Combat]] rules in a room, always: alone, the room crate itself runs in the page's
+WebAssembly; with `?room=`, a server's. The page predicts the player's fighter by the room's own rules and takes the
+room's word for it, so playing alone and online are the same game.
+
+- **Foes.** The panel stands a foe of each kind 5 m ahead of where the player looks, facing them, at most twelve, or
+  sends every foe away; a foe asked for while the forge still loads is not asked for. Each
+  fights by its brain ([[Foes]]) and is dressed by its kind: the skirmisher in leather with a pair of daggers, the
+  swordsman in mail with a sword and kite shield, the brute in iron plate with a warhammer, the archer in leather with
+  a short bow, and the captain in ebony plate with an ebony sword.
+- **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen
+  when knocked down; hurt while staggered or flinching; the jump's rising, top and falling frames through a dodge's
+  hop (the run where the forge does not draw what it holds in the jump, a shield); the parry's deflect, or a shield's
+  block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
+  wind-up and held at its end when it overreaches. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
+- **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
+  drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
+  edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
+  one. Arrows and bolts are drawn in flight.
+- **The display.** Health, stamina and poise at the bottom left, the stamina flashing when a swing or a dodge is
+  pressed with none; the soft lock's target marked at its chest, with its name, health and poise at the top; a small
+  health bar over each struck foe within 16 m; words on a dark chip over whoever was struck for each blow and what it
+  came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
+  gold or green when it is good for the player and red when bad; in first person, words about the player under the
+  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; a red
+  edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
+  with `?room=`, that the link to the room was lost and why.
+- **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
+  frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
+  rolled among those that reach the locked foe. Alone, Escape pauses the fight.
+- **Others.** Foes and other players are drawn gliding between the room's snapshots, so they move smoothly however the
+  snapshots come and whatever the screen's rate.
+
 ## Playing together
 
 With `?room=` and a room's name in the page's address (`?room=playtest`), the Test Ground joins that room on the
 deployed [[Server]]: everyone who uses the same name is in the same room. A name is letters, digits and hyphens, in
 any case. A whole address joins another server's room instead: locally, under `npm run server`,
 `?room=ws://127.0.0.1:8787/room/<name>`. The player plays as before, predicted here: each
-tick's controls also go to the room, and the room's word on the player's body corrects it. Every other player in the
+tick's controls and fight's buttons also go to the room, and the room's word on the player's fighter corrects it. Foes
+are the room's, the same for everyone in it, and fight whoever is near. Every other player in the
 room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
@@ -70,7 +107,9 @@ The player's figure shows the move the forge draws for what the body does:
 - **In the air:** the jump's rising, top or falling frame.
 - **Mounted:** the horse's rest, walk or gallop.
 - **Acting:** the cast. A swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
+  to 5. The stroke's frames run through the swing's wind-up so its last lands with the blow, two fifths of the way
+  through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the follow-through: the figure strikes
+  as fast as its blow comes and shows itself open while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
   right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
   move whole, a brace's right then left, then its reload where the forge draws one.
 - **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each

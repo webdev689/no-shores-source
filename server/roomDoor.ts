@@ -7,16 +7,17 @@ export interface CourseBlock {
   readonly top: number;
 }
 
-/** What became of a player's input: the room took it, or why not. At sea, `too many waiting` is a second course in
- *  one tick, and `refused` a course the sea's law will not sail: across land, at a pace off the steps, or too long. */
-export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'too many waiting' | 'no such player' | 'refused';
+/** What became of a player's input: the room took it, or why not. At sea, `too soon` is a second course in one tick,
+ *  and `refused` a course the sea's law will not sail: across land, at a pace off the steps, or too long. */
+export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'no such player' | 'too soon' | 'refused';
 
+/** By the door's numbers (room-wasm's TAKEN, NOT_AN_INPUT, OUT_OF_ORDER, NO_SUCH_PLAYER, TOO_SOON, REFUSED). */
 const ANSWERS: readonly InputAnswer[] = [
   'taken',
   'not an input',
   'out of order',
-  'too many waiting',
   'no such player',
+  'too soon',
   'refused',
 ];
 
@@ -30,7 +31,7 @@ export interface RoomDoor {
   openNode(nodeText: string): boolean;
   /** Opens the sea round the continents of a layout file's text; false if the text is not a layout. */
   openSea(layoutText: string): boolean;
-  /** A new player's number. */
+  /** A new player's number, or 0 when the room is full. */
   join(): number;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;

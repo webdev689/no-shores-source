@@ -4,8 +4,8 @@ import { test } from 'node:test';
 import course from '../content/testground/course.json' with { type: 'json' };
 // The browser's side of the messages and rules, so these tests send the room exactly the bytes a browser sends and
 // check its bodies with the browser's own steps.
-import { type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
-import { type Controls, floatsOf, startMovementRules } from '../client/src/rules/movementRules.ts';
+import { type Look, type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
+import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 const built = (name: string) =>
@@ -13,8 +13,20 @@ const built = (name: string) =>
     throw new Error(`${name}.wasm is not built: run \`npm run wasm\` first`);
   });
 const compiled = new WebAssembly.Module(await built('room_wasm'));
-const walk = { forward: 1, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+/** Forward at a walk, looking north, no fight's buttons. */
+const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 const walking = { anim: 'walk', frame: 2, facing: 0 };
+/** An input as a browser writes it, holding nothing and seeing the start of the room. */
+const asking = (sequence: number, intent: Float64Array, look: Look, dress?: string, respawn = false) =>
+  inputBytes(sequence, {
+    intent,
+    look,
+    arms: 0,
+    seen: 0n,
+    spawn: 0,
+    respawn,
+    ...(dress === undefined ? {} : { dress }),
+  });
 
 test('a room welcomes players, takes the inputs a browser writes in order, and its snapshots read back in the browser', () => {
   const room = startRoomDoor(compiled);
@@ -22,11 +34,11 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.equal(room.open(course.start, course.blocks), true);
   const [first, second] = [room.join(), room.join()];
   assert.deepEqual(readFromRoom(room.joined(first)), { kind: 'joined', player: first, dressed: [], node: null });
-  assert.equal(room.input(first, inputBytes(1, walk, walking, '{"body":"male"}')), 'taken');
+  assert.equal(room.input(first, asking(1, walk, walking, '{"body":"male"}')), 'taken');
   for (let sequence = 2; sequence <= 30; sequence++)
-    assert.equal(room.input(first, inputBytes(sequence, walk, walking)), 'taken');
-  assert.equal(room.input(first, inputBytes(40, walk, walking)), 'out of order');
-  assert.equal(room.input(second, inputBytes(1, walk, { ...walking, anim: 'Not A Move' })), 'not an input');
+    assert.equal(room.input(first, asking(sequence, walk, walking)), 'taken');
+  assert.equal(room.input(first, asking(40, walk, walking)), 'out of order');
+  assert.equal(room.input(second, asking(1, walk, { ...walking, anim: 'Not A Move' })), 'not an input');
   assert.equal(room.input(second, new Uint8Array([1, 2, 3])), 'not an input');
   for (let tick = 0; tick < 30; tick++) room.tick();
   const snapshot = readFromRoom(room.snapshot());
@@ -99,7 +111,8 @@ function nodeFile(): { text: string; ground: string } {
 
 /** Sends one input a browser writes and ticks the room; answers what the room then saw of the player. */
 function play(room: RoomDoor, player: number, sequence: number, controls: Controls, respawn = false): SeenPlayer {
-  assert.equal(room.input(player, inputBytes(sequence, controls, walking, undefined, respawn)), 'taken');
+  const intent = new Float64Array([...floatsOfControls(controls), 0, 0, 0, 0, 0]);
+  assert.equal(room.input(player, asking(sequence, intent, walking, undefined, respawn)), 'taken');
   room.tick();
   const snapshot = readFromRoom(room.snapshot());
   const seen = snapshot?.kind === 'snapshot' ? snapshot.players.find((each) => each.player === player) : undefined;
@@ -124,7 +137,8 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   const bodies = joined?.kind === 'snapshot' ? joined.players.map((seen) => floatsOf(seen.body)) : [];
   assert.deepEqual(bodies, [floatsOf(movement.standing(0, 0)), floatsOf(movement.standing(30, -40))], 'in turn');
 
-  const east = { ...walk, yaw: Math.PI / 2, run: true };
+  const still = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+  const east = { ...still, forward: 1, yaw: Math.PI / 2, run: true };
   let sequence = 0;
   let seen = play(room, second, ++sequence, east);
   while (seen.standing.kind === 'inside') seen = play(room, second, ++sequence, east);
@@ -170,7 +184,7 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
     ),
     'refused',
   );
-  assert.equal(room.input(second, inputBytes(1, walk, walking)), 'not an input', 'the sea takes courses');
+  assert.equal(room.input(second, asking(1, walk, walking)), 'not an input', 'the sea takes courses');
   for (let tick = 0; tick < 60; tick++) room.tick();
   const snapshot = readFromRoom(room.snapshot());
   const ships = snapshot?.kind === 'snapshot' ? snapshot.ships : [];

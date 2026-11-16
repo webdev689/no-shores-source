@@ -54,6 +54,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Every Island Is Seen Whole and Reached by Nodes]]
 - [[The World Is Claude's to Mold]]
 - [[The World as Claude Shapes It]]
+- [[Combat Is Soulframe's, With DFO's Enhanced AI]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

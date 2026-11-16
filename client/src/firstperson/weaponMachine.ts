@@ -100,6 +100,11 @@ export class WeaponMachine {
     return this.phase === 'strike' ? this.direction : null;
   }
 
+  /** Whether a strike's blow has landed and only its follow-through is left. */
+  get followingThrough(): boolean {
+    return this.phase === 'strike' && this.step > HIT_FRAME;
+  }
+
   /** How far through the swing or the shot under way, 0..1, or null at rest: the figure seen from outside plays its
    *  own move at the same pace. A bow's draw is its first half and its loose the second. */
   get progress(): number | null {
@@ -112,8 +117,30 @@ export class WeaponMachine {
     return null;
   }
 
+  /** Ends a swing or a draw under way at once, with no blow and no arrow, back at rest: the fight's rules ended it. */
+  cancel(): void {
+    this.phase = 'idle';
+    this.record = 0;
+    this.frame = 0;
+    this.clock = 0;
+  }
+
+  /** How far through a strike its blow lands: on the hit frame, of five frames or of bare hands' left strike's eight. */
+  get lands(): number {
+    const length = this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT.length : STRIKE_FRAMES;
+    return HIT_FRAME / length;
+  }
+
+  /** Holds the weapon at rest in a pose a fight asks for, one of its own strokes' frames, or lets it back to rest. */
+  pose(shown: { readonly record: number; readonly frame: number } | null): void {
+    if (this.phase !== 'idle' || this.kind === 'bow') return;
+    this.record = shown?.record ?? 0;
+    this.frame = shown?.frame ?? 0;
+  }
+
   /** Moves the machine on by `seconds` with this frame's button. A strike begun now starts on the frame `opening`
-   *  answers: a pair's flurry is thrown from a hand already raised. */
+   *  answers: a pair's flurry is thrown from a hand already raised. A press while a strike's blow has already landed
+   *  starts a new strike: the fight's rules, timed in whole ticks, may begin the next swing a little sooner. */
   update(seconds: number, input: AttackInput, opening: () => number = () => 0): MachineEvents {
     this.reload = Math.max(0, this.reload - seconds);
     return this.kind === 'bow' ? this.shoot(seconds, input) : this.swing(seconds, input, opening);
@@ -129,7 +156,8 @@ export class WeaponMachine {
         if (this.advanceStrike()) blow = { direction: this.direction };
       }
     }
-    if (this.phase === 'idle' && (input.attackPressed || input.attackHeld)) this.beginStrike(opening());
+    const again = this.followingThrough && input.attackPressed;
+    if (again || (this.phase === 'idle' && (input.attackPressed || input.attackHeld))) this.beginStrike(opening());
     return { blow, loose: false };
   }
 

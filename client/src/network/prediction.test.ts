@@ -20,7 +20,7 @@ const script: Controls[] = Array.from({ length: 40 }, (unused, tick) => ({
 }));
 
 /** The room's word after each input: the bodies the same rules step, from where the player stood. */
-function predictedRun(prediction: Prediction, from: Body, stepWith: typeof step): Body[] {
+function predictedRun(prediction: Prediction<Controls>, from: Body, stepWith: typeof step): Body[] {
   const bodies = [from];
   for (const controls of script) {
     prediction.next(controls);
@@ -30,7 +30,7 @@ function predictedRun(prediction: Prediction, from: Body, stepWith: typeof step)
 }
 
 test('while the room agrees, its word corrected by the inputs it has not taken is the predicted body, to the bit', () => {
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   const roomSaw = predictedRun(prediction, rules.standing(0, 2), step);
   // The room has taken the first 25 inputs; 15 are still on their way.
   const predicted = roomSaw[roomSaw.length - 1];
@@ -54,7 +54,7 @@ test('on a window of the land, the room’s word and the prediction still agree 
   const window = { land: grid(10), lake_level: [0, 0, 0, 0], rivers: [], roads: [], towns: [], coast: grid(5000) };
   const ground = { ...window, across: grid(-50), pads: [{ bounds: [-10, -10, 10, 10], level: 12 }], seed: 7 };
   assert.equal(onLand.setGround(JSON.stringify(ground)), true);
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   const roomSaw = predictedRun(prediction, onLand.standing(0, -9), (body, controls) => onLand.step(body, controls));
   assert.equal(roomSaw[0]?.z, 12, 'standing on the terrace');
   const last = roomSaw[roomSaw.length - 1];
@@ -66,7 +66,7 @@ test('on a window of the land, the room’s word and the prediction still agree 
 });
 
 test('a body the room says is still, as a dead one is, stays where the room saw it', () => {
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   for (const controls of script.slice(0, 5)) prediction.next(controls);
   const dead = rules.standing(3, 3);
   assert.deepEqual(floatsOf(prediction.corrected(dead, 2, step, true)), floatsOf(dead));
@@ -74,7 +74,7 @@ test('a body the room says is still, as a dead one is, stays where the room saw 
 });
 
 test('where the room knows better, the body moves to the room’s word with the waiting inputs on top', () => {
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   for (const controls of script.slice(0, 5)) prediction.next(controls);
   const elsewhere = rules.standing(3, 3);
   const corrected = prediction.corrected(elsewhere, 2, step);
@@ -83,6 +83,16 @@ test('where the room knows better, the body moves to the room’s word with the 
 });
 
 test('inputs are numbered 1, 2, 3 and so on', () => {
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   assert.deepEqual([prediction.next(still), prediction.next(still), prediction.next(still)], [1, 2, 3]);
+});
+
+test('a room that takes nothing for 4 s leaves at most 240 inputs waiting, the newest', () => {
+  const prediction = new Prediction<number>();
+  for (let tick = 1; tick <= 300; tick += 1) prediction.next(tick);
+  assert.equal(prediction.waitingCount, 240);
+  assert.equal(
+    prediction.corrected(0, 0, (sum, ask) => sum + ask),
+    (61 + 300) * 120,
+  );
 });

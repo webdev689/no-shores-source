@@ -1,0 +1,17 @@
+[package]
+name = "navmesh"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Where a foe can walk: a navmesh baked from a course's blocks at room start, and the paths across it, the same on every machine."
+
+[dependencies]
+movement = { path = "../movement" }
+libm.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -31,10 +31,16 @@ fn players_in(bytes: &[u8]) -> Vec<(PlayerId, u32, movement::Body)> {
     players
         .iter()
         .map(|seen| {
-            let numbers: Vec<f64> = seen.body().unwrap().iter().collect();
+            let numbers: Vec<f64> = seen.fighter().unwrap().iter().take(22).collect();
             (seen.player(), seen.acknowledged(), protocol::body_of(&numbers).unwrap())
         })
         .collect()
+}
+
+/// An input that walks by these controls and asks nothing else.
+fn walk_input(sequence: u32, walk: &[f64; 7]) -> Vec<u8> {
+    let intent = combat::Intent { controls: Controls::from_floats(walk), ..combat::Intent::default() };
+    protocol::input_bytes(&room::Input { sequence, intent, ..room::Input::default() })
 }
 
 #[test]
@@ -50,11 +56,10 @@ fn players_join_send_inputs_and_are_seen_as_the_movement_rules_step_them() {
     assert!(open(&bytes_of(&[0.0, 2.0, ledge[0], ledge[1], ledge[2], ledge[3], ledge[4]])));
     let (first, second) = (room_join(), room_join());
     let walk = [1.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0];
-    let shown = room::Shown::default();
-    assert_eq!(input(first, &protocol::input_bytes(1, &walk, &shown, None, false)), TAKEN);
-    assert_eq!(input(first, &protocol::input_bytes(3, &walk, &shown, None, false)), OUT_OF_ORDER);
+    assert_eq!(input(first, &walk_input(1, &walk)), TAKEN);
+    assert_eq!(input(first, &walk_input(3, &walk)), OUT_OF_ORDER);
     assert_eq!(input(second, b"not an input"), NOT_AN_INPUT);
-    assert_eq!(input(99, &protocol::input_bytes(1, &walk, &shown, None, false)), NO_SUCH_PLAYER);
+    assert_eq!(input(99, &walk_input(1, &walk)), NO_SUCH_PLAYER);
     room_tick();
     let course = [Block::from_floats(&ledge)];
     let walked = step_body(&standing(0.0, 2.0), &Controls::from_floats(&walk), &course, &Flat, TICK_SECONDS);
@@ -76,7 +81,7 @@ fn a_node_opens_on_its_ground_and_welcomes_with_its_id_and_rect() {
     assert_eq!(bodies[0].2.z, 12.0, "on the terrace at the spawn");
     let walk = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
     for sequence in 1..=300 {
-        assert_eq!(input(player, &protocol::input_bytes(sequence, &walk, &room::Shown::default(), None, false)), TAKEN);
+        assert_eq!(input(player, &walk_input(sequence, &walk)), TAKEN);
         room_tick();
     }
     let blocked = players_in(&snapshot())[0].2;
@@ -126,7 +131,7 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     assert_eq!(input(first, &protocol::course_bytes(&[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10)), TAKEN);
     assert_eq!(input(second, &protocol::course_bytes(&[[50_000.0, 150_000.0], [250_000.0, 150_000.0]], 10)), REFUSED);
     let off_the_steps = protocol::course_bytes(&[[50_000.0, 150_000.0]], 3);
-    assert_eq!(input(second, &off_the_steps), TOO_MANY_WAITING, "one course a tick, dropped as a flood");
+    assert_eq!(input(second, &off_the_steps), TOO_SOON, "one course a tick, dropped as a flood");
     assert_eq!(input(second, b"no course"), NOT_AN_INPUT);
     room_tick();
     assert_eq!(input(second, &off_the_steps), REFUSED);
@@ -143,4 +148,23 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     assert_eq!(ships.len(), 1, "only the ship whose course was taken is at sea");
     assert_eq!((ships[0].0, ships[0].1.x, ships[0].1.pace), (first, 50_000.0, 10));
     assert!(ships[0].1.y < 150_000.0);
+}
+
+#[test]
+fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms() {
+    assert!(set_course(&bytes_of(&[-5.0, -4.0, 5.0, -1.0, 2.3])));
+    let fighter = combat::fighter::player(standing(0.0, 2.0), combat::arms::BARE_HANDS);
+    let controls = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
+    let intent = combat::Intent { controls, ..combat::Intent::default() };
+    let mut numbers: Vec<f64> = fighter.to_floats().to_vec();
+    numbers.extend(intent.to_floats());
+    numbers.push(1.0);
+    let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3])];
+    let (expected, _) = combat::player_tick(1, &fighter, &intent, &[], &course, &Flat);
+    let next = floats_of(&predict(&bytes_of(&numbers)));
+    assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected);
+    assert!(predict(&bytes_of(&[1.0, 2.0])).is_empty());
+    let sword = combat::arms_of("sword_iron", "shield_kite_steel", true).code();
+    assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword);
+    assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\nworn"), combat::arms::BARE_HANDS.code());
 }

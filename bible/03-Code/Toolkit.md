@@ -21,7 +21,8 @@ when to install it and what each session does at its start and end; this note sa
 - `SHARED_DIR` defaults to `~/toolkit-data`, which a cloud container loses at its end: the claude-mem store and the
   task-observer log carry over only where `SHARED_DIR` points at storage that survives.
 - The SkillsMP and Context7 keys are network secrets the proxy adds to requests; their variables hold only the
-  placeholder `proxy-injected`.
+  placeholder `proxy-injected`, which check-tools' key check passes without scanning. A real key is still looked for
+  on disk.
 
 ## Tools
 
@@ -43,7 +44,7 @@ when to install it and what each session does at its start and end; this note sa
 | task-observer | Log each correction, tool clash or slow rule with its `new-observation.sh` into `$SHARED_DIR/task-observer`, never the repo. Workers never log; they end with an "OBSERVATIONS:" line and the controller logs it. The owner approves every rule change at a review. |
 | Syntax hook | "syntax check failed" after an Edit or Write means fix it now. |
 | Commit guard | The clone's pre-commit hook refuses archives and C2PA-stamped PNGs. Never bypass it with `--no-verify`. |
-| Browser QA | Playwright with the preinstalled Chromium; never run `playwright install` in a cloud session. |
+| Browser QA | Playwright with the preinstalled Chromium; never run `playwright install` in a cloud session. Before a PR, drive an interactive feature once in the real editor with Playwright's keys and mouse. Poll the panel for state, not the clock: headless frames run the sim at about a fifth of real time. Pin a random outcome with an `addInitScript` stub of `crypto.getRandomValues`. Page screenshots of a WebGPU canvas are blank, so draw the scene into an offscreen texture and read it back. For a visual defect, patch one shader layer off per run at `GPUDevice.prototype.createShaderModule`, measure a crop, and look at one montage per round. |
 
 ## Workers
 

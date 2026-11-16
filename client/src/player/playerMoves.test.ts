@@ -63,6 +63,18 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
     shownMove({ ...doing, blow: { direction, second, progress } }, frames, everything);
   assert.deepEqual(blow('downLeft', false, 0), { anim: 'attack_sword', frame: 0, frameSeconds: 0 });
   assert.deepEqual(blow('downLeft', true, 0.99), { anim: 'attack_sword', frame: 5, frameSeconds: 0 });
+  // The stroke's three frames run through the wind-up, the last landing with the blow (two fifths through the swing,
+  // DFO's law), and hold through the follow-through: a sword's swing is struck in 0.4 s of its second.
+  assert.deepEqual(
+    [0.1, 0.25, 0.39, 0.4, 0.7].map((progress) => blow('downLeft', false, progress).frame),
+    [0, 1, 1, 2, 2],
+  );
+  const late = shownMove(
+    { ...doing, blow: { direction: 'down', second: false, progress: 0.45, lands: 0.5 } },
+    frames,
+    everything,
+  );
+  assert.equal(late.frame, 1, 'a heavier blow that lands later shows its last frame later');
   assert.equal(blow('up', false, 0).anim, 'thrust');
   assert.equal(blow('down', false, 0).anim, 'chop');
   assert.equal(blow('left', false, 0).anim, 'swing2h');

@@ -3,10 +3,12 @@
 //! crate's numbers, in its order. See the Server note in the bible.
 #![allow(unsafe_code, reason = "the code flatc makes reads a message's bytes in place, once the verifier passes them")]
 
+use combat::floats::INTENT_FLOATS;
+use combat::{Intent, Shot};
+use movement::Body;
 use movement::floats::CONTROLS_FLOATS;
-use movement::{Body, Controls};
 use room::sea::Ship;
-use room::{Input, PlayerId, Seen, Shown, Standing};
+use room::{Event, FoeSeen, Input, PlayerId, Seen, Shown, Standing};
 
 /// The code flatc makes from the schema, into `generated/`, which git leaves out (`npm run schema`).
 #[allow(
@@ -23,34 +25,59 @@ pub mod wire {
 
 use wire::overlook::wire as messages;
 
-/// The input an input's bytes hold: its number, its controls, what the player's figure shows, their dress when it
-/// changed and whether they ask to respawn; or why they do not read. The bytes come from a player's machine, so the
-/// verifier passes them first.
+/// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch.
+const COMBAT_NUMBERS: usize = INTENT_FLOATS - CONTROLS_FLOATS;
+
+/// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
+/// changed, what their hands hold, the tick their screen showed, a foe asked for, and whether they ask to respawn; or
+/// why they do not read. The bytes come from a player's machine, so the verifier passes them first. An input with no
+/// fight's numbers asks for nothing in the fight.
 pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let input = flatbuffers::root::<messages::Input>(bytes).map_err(|error| error.to_string())?;
-    let numbers: Vec<f64> = input.controls().map(|controls| controls.iter().collect()).unwrap_or_default();
-    let controls: &[f64; CONTROLS_FLOATS] = numbers
-        .as_slice()
-        .try_into()
-        .map_err(|_| format!("controls are {CONTROLS_FLOATS} numbers, not {}", numbers.len()))?;
+    let controls: Vec<f64> = input.controls().map(|controls| controls.iter().collect()).unwrap_or_default();
+    if controls.len() != CONTROLS_FLOATS {
+        return Err(format!("controls are {CONTROLS_FLOATS} numbers, not {}", controls.len()));
+    }
+    let combat: Vec<f64> =
+        input.combat().map(|combat| combat.iter().collect()).unwrap_or_else(|| vec![0.0; COMBAT_NUMBERS]);
+    if combat.len() != COMBAT_NUMBERS {
+        return Err(format!("the fight's numbers are {COMBAT_NUMBERS}, not {}", combat.len()));
+    }
+    let numbers: Vec<f64> = controls.into_iter().chain(combat).collect();
+    let intent = Intent::from_floats(numbers.as_slice().try_into().map_err(|_| "an intent's numbers".to_owned())?);
     let anim = input.anim().unwrap_or_default().to_owned();
     let shown = Shown { anim, frame: input.frame(), facing: input.facing() };
     let dress = input.dress().map(str::to_owned);
-    let (sequence, respawn) = (input.sequence(), input.respawn());
-    Ok(Input { sequence, controls: Controls::from_floats(controls), shown, dress, respawn })
+    let spawn = Some(input.spawn()).filter(|kind| *kind != 0);
+    let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
+    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn })
 }
 
-/// An input as its bytes, with `controls` as numbers: what a browser sends, written from Rust for tests.
+/// An input as its bytes: what a browser sends, written from Rust for tests.
 #[must_use]
-pub fn input_bytes(sequence: u32, controls: &[f64], shown: &Shown, dress: Option<&str>, respawn: bool) -> Vec<u8> {
+pub fn input_bytes(input: &Input) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let numbers = input.intent.to_floats();
+    let (controls, combat) = numbers.split_at(CONTROLS_FLOATS);
     let controls = Some(builder.create_vector(controls));
-    let anim = Some(builder.create_string(&shown.anim));
-    let dress = dress.map(|dress| builder.create_string(dress));
-    let (frame, facing) = (shown.frame, shown.facing);
-    let args = messages::InputArgs { sequence, controls, anim, frame, facing, dress, respawn };
-    let input = messages::Input::create(&mut builder, &args);
-    builder.finish(input, None);
+    let combat = Some(builder.create_vector(combat));
+    let anim = Some(builder.create_string(&input.shown.anim));
+    let dress = input.dress.as_ref().map(|dress| builder.create_string(dress));
+    let args = messages::InputArgs {
+        sequence: input.sequence,
+        controls,
+        anim,
+        frame: input.shown.frame,
+        facing: input.shown.facing,
+        dress,
+        combat,
+        arms: input.arms,
+        seen: input.seen,
+        spawn: input.spawn.unwrap_or_default(),
+        respawn: input.respawn,
+    };
+    let message = messages::Input::create(&mut builder, &args);
+    builder.finish(message, None);
     builder.finished_data().to_vec()
 }
 
@@ -131,25 +158,76 @@ pub fn standing_of(kind: u8, ticks: u32) -> Standing {
     }
 }
 
-/// Every player as the room saw them after its tick `tick`, and the dresses that changed since the last snapshot.
+/// Everything a snapshot carries after a room's tick.
+#[derive(Clone, Copy, Debug)]
+pub struct Snapshot<'snapshot> {
+    pub tick: u64,
+    pub players: &'snapshot [Seen],
+    pub dressed: &'snapshot [(PlayerId, &'snapshot str)],
+    pub foes: &'snapshot [FoeSeen],
+    pub events: &'snapshot [Event],
+    pub shots: &'snapshot [Shot],
+}
+
+/// Every player as the room saw them after its tick, the dresses that changed since the last snapshot, every foe,
+/// what happened in the fight since, and the shots in flight.
 #[must_use]
-pub fn snapshot_bytes(tick: u64, players: &[Seen], dressed: &[(PlayerId, &str)]) -> Vec<u8> {
+pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let seen: Vec<_> = players
+    let seen: Vec<_> = snapshot
+        .players
         .iter()
         .map(|seen| {
-            let body = Some(builder.create_vector(&seen.body.to_floats()));
+            let fighter = Some(builder.create_vector(&seen.fighter.to_floats()));
             let anim = Some(builder.create_string(&seen.shown.anim));
             let (frame, facing) = (seen.shown.frame, seen.shown.facing);
             let (standing, standing_ticks) = standing_parts(seen.standing);
             let (player, acknowledged) = (seen.player, seen.acknowledged);
-            let args = messages::SeenArgs { player, acknowledged, body, anim, frame, facing, standing, standing_ticks };
+            let args =
+                messages::SeenArgs { player, acknowledged, anim, frame, facing, fighter, standing, standing_ticks };
             messages::Seen::create(&mut builder, &args)
         })
         .collect();
     let players = Some(builder.create_vector(&seen));
-    let dressed = Some(dressed_vector(&mut builder, dressed));
-    let args = messages::SnapshotArgs { tick, players, dressed, ships: None };
+    let dressed = Some(dressed_vector(&mut builder, snapshot.dressed));
+    let foes: Vec<_> = snapshot
+        .foes
+        .iter()
+        .map(|foe| {
+            let glance = Some(builder.create_vector(&foe.fighter.glance()));
+            messages::Foe::create(&mut builder, &messages::FoeArgs { id: foe.foe, kind: foe.kind, glance })
+        })
+        .collect();
+    let foes = Some(builder.create_vector(&foes));
+    let events: Vec<_> = snapshot
+        .events
+        .iter()
+        .map(|event| {
+            let args = messages::EventArgs {
+                tick: event.tick,
+                kind: event.kind as u8,
+                how: event.how.map_or(0, |how| how as u8),
+                striker: event.striker,
+                defender: event.defender,
+                amount: event.amount,
+            };
+            messages::Event::create(&mut builder, &args)
+        })
+        .collect();
+    let events = Some(builder.create_vector(&events));
+    let shots: Vec<_> = snapshot
+        .shots
+        .iter()
+        .map(|shot| {
+            let at = Some(builder.create_vector(&shot.at));
+            let velocity = Some(builder.create_vector(&shot.velocity));
+            let args = messages::FlyingArgs { owner: shot.owner, ranged: shot.ranged as u8, at, velocity };
+            messages::Flying::create(&mut builder, &args)
+        })
+        .collect();
+    let shots = Some(builder.create_vector(&shots));
+    let tick = snapshot.tick;
+    let args = messages::SnapshotArgs { tick, players, dressed, foes, events, shots, ships: None };
     finish_snapshot(builder, &args)
 }
 
@@ -164,7 +242,7 @@ pub fn sea_snapshot_bytes(tick: u64, ships: &[(PlayerId, Ship)]) -> Vec<u8> {
         })
         .collect();
     let ships = Some(builder.create_vector(&each));
-    let args = messages::SnapshotArgs { tick, players: None, dressed: None, ships };
+    let args = messages::SnapshotArgs { tick, ships, ..messages::SnapshotArgs::default() };
     finish_snapshot(builder, &args)
 }
 

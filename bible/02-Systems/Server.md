@@ -4,6 +4,10 @@ status: live
 code:
   - crates/room/src/lib.rs#Room
   - crates/room/src/lib.rs#Floor
+  - crates/room/src/judging.rs#Event
+  - crates/room/src/players.rs#VIEW_LAG
+  - client/src/network/localRoom.ts#LocalRoom
+  - client/src/combat/fighting.ts#Fighting
   - crates/room/src/lib.rs#SLACK_TICKS
   - crates/room/src/lib.rs#WAITING_LIMIT
   - crates/room/src/sea.rs#Sea
@@ -41,20 +45,44 @@ on Cloudflare.
   body runs into ([[Movement]]). Any other room stands them on its course of blocks on open ground at 0 m.
 - **Joining:** a player gets a number no one else in the room has had. In a node's room they stand on the ground at
   the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn.
-- **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused. An input is one
-  tick's controls ([[Movement]]) and steps that player's body once, exactly as the browser that predicted it did, so
-  a prediction can only differ where the server knows more ([[Clients Predict With the Shared Rules]]).
+  A room holds 16 players; past that, it turns the next away.
+- **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused, as is one with a
+  number in it that is not a number. An input is one tick's intent, the controls ([[Movement]]) and the fight's
+  buttons ([[Combat]]), with what the player's hands hold and the room tick their screen last showed. It steps that
+  player's fighter once by combat's player tick, on the room's ground, among the fighters as that screen showed them,
+  exactly as the browser that predicted it did, so a prediction can only differ where the server knows more
+  ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
+  swing, a guard, a draw or a reload.
+- **Foes:** a player may ask for a foe (the [[Test Ground]]'s panel), one with each input; the room stands it 5 m
+  along the player's aim, which follows their look, on its navmesh, facing them, and holds at most twelve.
+  Each tick every foe thinks over the room as it stands and steps by the same rules ([[Foes]]), routing on a
+  [[Navmesh]] the room bakes from its blocks when it opens.
+- **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
+  screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
+  same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way.
+- **Blows on a player** (a foe's swing, a telegraphed blow, a shot) wait until the player's inputs show they had seen
+  them land, 24 ticks at most, and are judged against the player as they stood then: whether it reached them, their
+  guard, their parry window, their dodge. What the verdict does is done to everyone as they are now. A telegraphed
+  blow that finds no one overreaches its foe once every player near it has been judged.
+- **Shots** fly a tick at a time and strike the first body of the other side on their line; arrows and bolts fly in
+  the room's own time.
+- **The dead** stand again, whole, after four seconds, at the spawn nearest where they fell, and the foes leave them be
+  for three more unless they strike first; a dead foe is gone after ten.
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
-  ticks since they joined, plus a slack of 6 ticks for the network's jitter, so no one moves faster than real time.
-  At most 2 inputs step a body in one tick, so a backlog after a stall drains at twice real time, and a player who
-  sends nothing banks at most 60 ticks: one who waits gains a second at most. More than 30 waiting inputs are
-  dropped, and counted, so the player's next input still follows on. An input is acknowledged by its own number.
-- **The section:** after each tick a node's room judges every body against the node's section ([[Reach]]): inside,
-  warned with a count, or dead. A dead body is still: its inputs are taken without moving it. An input that asks to
-  respawn, once the section allows it, stands the body on the ground at the spawn nearest where it died. A room with
-  no section never judges.
-- **What it sees:** every player's body, where they stand with the section, and the number of their last input it
-  took, in the order of their numbers, the same on every machine.
+  ticks since they joined, plus a slack of 6 ticks for the network's jitter, and a tick takes at most 3, so no one
+  moves faster than real time and one catching up after a stall replays no faster than three times over.
+- **A player whose inputs stop** is stepped standing still once they fall a view's lag (24 ticks) behind, so nothing
+  they were doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend
+  as speed. Past 30 waiting inputs, the oldest is let go as though taken, so a burst after a stall never breaks the
+  order. The room tick a player says their screen showed moves on at most 4 ticks an input, so they cannot pick the
+  moment they are judged at. A dress change is taken at most once a second.
+- **The section:** after each player's inputs a node's room judges their body against the node's section ([[Reach]]):
+  inside, warned with a count, or dead. A body dead past the section is still: its inputs are taken without moving it.
+  An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn nearest where
+  it died. A room with no section never judges.
+- **What it sees:** every player's fighter, where they stand with the section, and the number of their last input it
+  took; every foe; the shots in flight; and what happened in the fight since it was last asked: hits, blocks, parries,
+  guard breaks, dodges, staggers, deaths, players standing again, feints, foes arriving. The same on every machine.
 
 ## The sea
 
@@ -62,7 +90,7 @@ The room named `sea` holds every player's ship. A player sets their ship's cours
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s.
 A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
 nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest. A player sets
-one course a tick; a second in the same tick is dropped, as a flood of inputs is.
+one course a tick; a second in the same tick is dropped.
 
 - Each tick, each ship sails its pace's distance along its course, turning onto each leg as it comes to it, and comes
   to rest at the course's end. Its heading is the bearing of the leg it sails, clockwise from north.
@@ -95,10 +123,10 @@ an older reader skips them.
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser, on land | Its number, one tick's controls, the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, and whether they ask to respawn |
+| Input | A browser, on land | Its number, one tick's controls and the fight's buttons, the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their body, the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; and at sea every ship: its player, position, heading and pace, 0 at rest |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight; and at sea every ship: its player, position, heading and pace, 0 at rest |
 
 The server reads an input or a course only after FlatBuffers' verifier passes its bytes, so bytes that are not one,
 controls that are not 7 numbers, or a course's numbers that are not pairs, are refused. The browser reads a message
@@ -123,9 +151,11 @@ so every decision is Rust and the shell only carries bytes and time.
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
 - A WebSocket joins the room and is welcomed with the player's number; each binary message is one of their inputs,
-  or at sea their course. A flood is dropped and a course the sea will not sail is refused; anything else refused
-  closes the socket and the player leaves the room, since that browser is not keeping to the messages. A room holds
-  at most 64 players; one more is turned away (503).
+  or at sea their course. A second course in a tick is dropped and a course the sea will not sail is refused; any
+  other input refused, or a message over 8 KB, closes the socket, since that browser is not keeping to the messages.
+  Its player leaves at once, and no snapshot is sent to a socket that is closing.
+- A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
+  room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
   sends every player the snapshot after each tick; a socket closing as it is sent to is passed over, so the rest
   still get the tick. When the last player leaves it stops, and the room goes with the object.
@@ -147,6 +177,7 @@ so every decision is Rust and the shell only carries bytes and time.
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`.
   `npm run server:deploy` deploys it, with the owner's yes each time ([[Ask Before Deploying]]); CI does not.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
+- **In the page**, the Test Ground played alone runs the same room in its own WebAssembly, ticked by the page.
 
 Measured on the deployed rooms with two browsers in one room: 60.0 ticks a second; snapshots 16.2 ms apart at the
 median, 59 ms at the 99th in a hundred and 84 ms at the most; the room taking a player's input about 4 ticks after it
@@ -156,15 +187,24 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 
 - Deploys are by hand, with the owner's yes; the rooms' code can lag `main` until the next deploy, and a deployed
   node's window can lag the edits files until then.
+- A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
+  account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
 - Any page can join a room, under any name; no one signs in.
-- A snapshot sends every player's whole body and look every tick: fine for a few players, heavy for many.
+- A snapshot sends every player's whole fighter and look and every foe's glance every tick: fine for a few players and
+  foes, heavy for many.
+- A player's view may lag 24 ticks at most; a screen further behind is judged as it stands. A player could hold a
+  claimed lag at the most to gain up to 24 ticks of reaction; nothing checks it.
+- Arrows and bolts are not judged as their shooter saw: they fly in the room's time.
+- Riding is the browser's word: the room takes `mounted` as it is sent.
+- Players do not harm one another.
 - A dress travels with a player's inputs, which flow only while they play: until then, others see a plain figure.
-- A player who sends nothing stands still in time: their body waits, mid-jump if need be, until their inputs come.
-  The section judges them all the same, so the warning's count runs on.
-- Bodies pass through each other.
+- A player who sends nothing waits a view's lag, then stands still where they were until their inputs come. The
+  section judges them all the same, so the warning's count runs on.
+- Bodies pass through each other; foes keep apart by steering.
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
-  the [[Game]] does both.
+  the [[Game]] does both, and asks for no foe and swings no blow.
+- A node's room bakes its foes' navmesh over its boxes on open ground at 0 m, not on its window of the land.
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.
 - Where a ship puts to sea is the player's word, any point of open sea; the sea room does not yet know which port

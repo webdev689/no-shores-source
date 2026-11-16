@@ -1,0 +1,96 @@
+//! The fight agrees to the bit wherever it runs: this scripted fight of a player against a still foe, through swings,
+//! a guard, a dodge and a draw, is fingerprinted here, natively, and by the client's test of the same fight through
+//! WebAssembly (client/src/rules/combatRules.test.ts lists the same course and script).
+
+use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
+use combat::fighter::{Side, Weight, fighter};
+use combat::{CombatInput, Fighter, Intent, Stroke, player_tick};
+use movement::{Block, Controls, standing};
+
+/// Both tests hold this value; a change to the fight changes it in both, on purpose.
+pub const FIGHT_HASH: &str = "9cd81176dbfb19c9";
+
+const COURSE: [Block; 1] = [Block { min_x: -3.0, min_y: -8.0, max_x: 3.0, max_y: -7.0, top: 1.2 }];
+
+/// Ticks, then forward, sideways, yaw, the stroke held (0 none), guard, dodge, shoot, and arms (0 a sword and shield,
+/// 1 a bow).
+type Phase = (usize, f64, f64, f64, u8, bool, bool, bool, u8);
+
+/// Walk at the foe, swing twice, back off guarding, dodge aside, then draw a bow and loose it.
+const SCRIPT: [Phase; 7] = [
+    (40, 1.0, 0.0, 0.1, 0, false, false, false, 0),
+    (70, 0.0, 0.0, 0.1, 6, false, false, false, 0),
+    (80, -1.0, 0.0, 0.0, 0, true, false, false, 0),
+    (1, 0.0, 1.0, 0.0, 0, false, true, false, 0),
+    (40, 0.0, 0.0, 0.0, 0, false, false, false, 0),
+    (50, 0.0, 0.0, -0.2, 0, false, false, true, 1),
+    (40, 0.0, 0.0, -0.2, 0, false, false, false, 1),
+];
+
+/// The still foe the player fights, 3 m north of where it starts.
+pub fn foe() -> Fighter {
+    let arms = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Empty };
+    fighter(Side::Foes, standing(0.0, -3.0), arms, Weight::Medium, 70.0, 35.0)
+}
+
+pub fn run_script() -> Vec<Fighter> {
+    let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Shield };
+    let bow = Arms { melee: WeaponClass::Fists, ranged: Some(Ranged::Bow), off_hand: OffHand::Empty };
+    let mut fighters = Vec::new();
+    let mut player = combat::fighter::player(standing(0.0, 2.0), sword);
+    let view = [(2, foe())];
+    for (ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, arms) in SCRIPT {
+        for tick in 0..ticks {
+            player.arms = if arms == 1 { bow } else { sword };
+            let controls = Controls { forward, sideways, yaw, ..Controls::default() };
+            let combat = CombatInput {
+                attack: Stroke::from_number(stroke),
+                guard,
+                dodge: dodge && tick == 0,
+                shoot,
+                pitch: 0.1,
+                telegraph: None,
+            };
+            player = player_tick(1, &player, &Intent { controls, combat }, &view, &COURSE, &movement::Flat).0;
+            fighters.push(player);
+        }
+    }
+    fighters
+}
+
+/// FNV-1a over each fighter's numbers' little-endian bits, as the client's test takes it.
+pub fn fingerprint(fighters: &[Fighter]) -> String {
+    let hash = fighters.iter().flat_map(Fighter::to_floats).fold(0xcbf2_9ce4_8422_2325_u64, |hash, value| {
+        value
+            .to_bits()
+            .to_le_bytes()
+            .iter()
+            .fold(hash, |hash, &byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
+    });
+    format!("{hash:016x}")
+}
+
+#[test]
+fn the_scripted_fight_swings_guards_dodges_and_shoots() {
+    let fighters = run_script();
+    let kinds: Vec<&str> = fighters
+        .iter()
+        .map(|fighter| match fighter.action {
+            combat::Action::Attack(_) => "attack",
+            combat::Action::Guard { .. } => "guard",
+            combat::Action::Dodge { .. } => "dodge",
+            combat::Action::Draw { .. } => "draw",
+            combat::Action::Reload { .. } => "reload",
+            _ => "other",
+        })
+        .collect();
+    for kind in ["attack", "guard", "dodge", "draw", "reload"] {
+        assert!(kinds.contains(&kind), "the script never puts the fighter in {kind}");
+    }
+    assert_eq!(fighters.iter().filter_map(|fighter| fighter.target).next(), Some(2), "its lock takes the foe");
+}
+
+#[test]
+fn the_scripted_fight_moves_to_the_fingerprint_both_tests_hold() {
+    assert_eq!(fingerprint(&run_script()), FIGHT_HASH);
+}

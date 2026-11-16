@@ -1,5 +1,6 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
+import { MARK_FLOATS } from '../combat/marks.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { Block } from '../rules/movementRules.ts';
@@ -51,6 +52,19 @@ fn gridLine(world: vec2f, spacing: f32) -> f32 {
   colour = mix(colour, vec3f(1.0, 0.85, 0.2), scene.marker.w * (1.0 - min(ring / 2.0, 1.0)));
   let fog = clamp(length(in.world - scene.eye.xy) / 1200.0, 0.0, 1.0);
   return vec4f(mix(colour, SKY, fog * fog), 1.0);
+}
+
+struct MarkOut { @builtin(position) position: vec4f, @location(0) colour: vec4f }
+
+@vertex fn markVertex(@location(0) position: vec3f, @location(1) colour: vec4f) -> MarkOut {
+  var out: MarkOut;
+  out.position = scene.viewProjection * vec4f(position, 1.0);
+  out.colour = colour;
+  return out;
+}
+
+@fragment fn markFragment(in: MarkOut) -> @location(0) vec4f {
+  return vec4f(in.colour.rgb * in.colour.a, in.colour.a);
 }
 
 struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) world: vec3f }
@@ -114,6 +128,9 @@ export class SceneView implements CardMaker {
   private readonly cardLayout: GPUBindGroupLayout;
   private readonly blockPipeline: GPURenderPipeline;
   private blockVertices: { buffer: GPUBuffer; count: number } | null = null;
+  private readonly markPipeline: GPURenderPipeline;
+  private markBuffer: GPUBuffer | null = null;
+  private markCount = 0;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
   private depth: GPUTexture | null = null;
 
@@ -164,6 +181,39 @@ export class SceneView implements CardMaker {
       primitive: { topology: 'triangle-list' },
       depthStencil,
     });
+    // Marks lie over the ground, blended, tested against the scene's depth but writing none, so figures stand over
+    // them and they never hide one another.
+    this.markPipeline = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
+      vertex: {
+        module,
+        entryPoint: 'markVertex',
+        buffers: [
+          {
+            arrayStride: MARK_FLOATS * 4,
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: 'float32x3' },
+              { shaderLocation: 1, offset: 12, format: 'float32x4' },
+            ],
+          },
+        ],
+      },
+      fragment: {
+        module,
+        entryPoint: 'markFragment',
+        targets: [
+          {
+            format: gpu.format,
+            blend: {
+              color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+              alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+            },
+          },
+        ],
+      },
+      primitive: { topology: 'triangle-list' },
+      depthStencil: { ...depthStencil, depthWriteEnabled: false },
+    });
     this.sceneBuffer = device.createBuffer({
       size: SCENE_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -172,6 +222,19 @@ export class SceneView implements CardMaker {
       layout: sceneLayout,
       entries: [{ binding: 0, resource: { buffer: this.sceneBuffer } }],
     });
+  }
+
+  /** The marks the next frames draw: telegraphed blows on the ground and shots in flight, as `marksMesh` lays them. */
+  setMarks(vertices: Float32Array): void {
+    const { device } = this.gpu;
+    this.markCount = vertices.length / MARK_FLOATS;
+    if (this.markCount === 0) return;
+    if (!this.markBuffer || this.markBuffer.size < vertices.byteLength) {
+      this.markBuffer?.destroy();
+      const size = Math.max(4096, 2 ** Math.ceil(Math.log2(vertices.byteLength)));
+      this.markBuffer = device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
+    }
+    device.queue.writeBuffer(this.markBuffer, 0, vertices);
   }
 
   /** A composed picture as a texture the scene can draw. */
@@ -348,6 +411,12 @@ export class SceneView implements CardMaker {
       pass.setBindGroup(1, group);
       pass.draw(6);
     });
+    if (this.markBuffer && this.markCount > 0) {
+      pass.setPipeline(this.markPipeline);
+      pass.setBindGroup(0, this.sceneGroup);
+      pass.setVertexBuffer(0, this.markBuffer);
+      pass.draw(this.markCount);
+    }
     pass.end();
     after?.(encoder, colourView);
     device.queue.submit([encoder.finish()]);

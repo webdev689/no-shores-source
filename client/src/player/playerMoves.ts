@@ -18,18 +18,29 @@ export interface Doing {
   readonly right: string | null;
   readonly left: string | null;
   /** The blow being struck or the shot fired: its direction (null for a shot), whether it is the second stroke of the
-   *  swing, its progress 0..1, and whether a shot's weapon is reloading. */
+   *  swing, its progress 0..1, how far through the swing its blow lands (DFO's swing law's by default), and whether a
+   *  shot's weapon is reloading. */
   readonly blow: {
     readonly direction: Direction | null;
     readonly second: boolean;
     readonly progress: number;
+    readonly lands?: number;
     readonly reload?: boolean;
   } | null;
   /** A cast's progress 0..1, or null. */
   readonly cast: number | null;
   /** A move chosen by hand in the panel, and its progress 0..1. */
   readonly act: { readonly anim: string; readonly progress: number } | null;
+  /** What the fight holds the figure to, and how far through it, 0..1; null when nothing does. */
+  readonly fight?: Fight | null;
 }
+
+/** What a fight holds a figure to: dead, knocked down, staggered or flinching, hopping aside, deflecting a blow,
+ *  guarding, winding up a telegraphed blow (`stroke` the move it is struck with), overreached after one, or drawing a
+ *  bow. */
+export type Fight =
+  | { readonly kind: 'dead' | 'down' | 'struck' | 'dodge' | 'parry' | 'guard' | 'draw'; readonly progress: number }
+  | { readonly kind: 'windup' | 'overreach'; readonly stroke: string; readonly progress: number };
 
 /** A move to show: its animation, and either a fixed frame or how long each frame lasts as it loops. */
 export interface Shown {
@@ -37,6 +48,9 @@ export interface Shown {
   readonly frame: number | null;
   readonly frameSeconds: number;
 }
+
+/** The jump's frame in the air, by how fast the body rises: rising, at the top, falling. */
+const jumpFrame = (rising: number) => (rising > 1.5 ? 0 : rising < -1.5 ? 2 : 1);
 
 /** How long a walking frame lasts; a run's is half, a crouch's double, a ride's a quarter of a run's. */
 const WALK_FRAME = 0.25;
@@ -107,6 +121,17 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
   right: 'swing2h',
 };
 
+/** How far through a swing its blow lands by DFO's swing law: as the third of five strike frames begins. */
+export const BLOW_LANDS = 2 / 5;
+
+/** The frame (whole part) of a stroke `span` frames long at `progress` through its swing: the frames run through the
+ *  wind-up to land the last on the blow (`lands` through the swing), held through the follow-through, so the figure
+ *  strikes as fast as the blow comes and shows itself open while it recovers. */
+export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): number {
+  if (span <= 1 || progress >= lands) return span - 1;
+  return (Math.max(0, progress) / Math.max(lands, 1e-6)) * (span - 1);
+}
+
 /**
  * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall the
  * mantle, vault, hang, shimmy or climb (frame by progress, or looping once a second); in the air the jump, its frame
@@ -122,13 +147,15 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     frameSeconds: 0,
   });
   const loop = (anim: string, frameSeconds: number): Shown => ({ anim, frame: null, frameSeconds });
+  // A dodge holds the figure to its hop only in the air: on the ground, before and after, it stands or walks.
+  const fight = doing.fight?.kind === 'dodge' && doing.mode !== 'air' ? null : doing.fight;
+  if (fight) return fightMove(doing, fight, frames, draws, byProgress, loop);
   if (doing.act) return byProgress(doing.act.anim, doing.act.progress);
   if (doing.mode === 'mantle' || doing.mode === 'vault') return byProgress(doing.mode, doing.over);
   if (doing.mode === 'hang') return doing.moving ? loop('shimmy', 1 / frames('shimmy')) : byProgress('hang', 0);
   if (doing.mode === 'climb')
     return doing.moving ? loop('climb', 1 / frames('climb')) : { anim: 'climb', frame: 0, frameSeconds: 0 };
-  if (doing.mode === 'air')
-    return { anim: 'jump', frame: doing.vz > 1.5 ? 0 : doing.vz < -1.5 ? 2 : 1, frameSeconds: 0 };
+  if (doing.mode === 'air') return { anim: 'jump', frame: jumpFrame(doing.vz), frameSeconds: 0 };
   if (doing.mounted) {
     if (!doing.moving) return loop('horseidle', WALK_FRAME);
     return doing.speed > 10 ? loop('horsegallop', WALK_FRAME / 4) : loop('horsewalk', WALK_FRAME / 2);
@@ -145,7 +172,8 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     const strokes = frames(anim) >= 6 && (blow.direction !== null || anim === 'braceshot') ? 2 : 1;
     const span = frames(anim) / strokes;
     const first = blow.second && strokes === 2 ? span : 0;
-    return { anim, frame: first + Math.min(span - 1, Math.floor(blow.progress * span)), frameSeconds: 0 };
+    const through = blow.direction === null ? blow.progress * span : strokeFrame(blow.progress, blow.lands, span);
+    return { anim, frame: first + Math.min(span - 1, Math.floor(through)), frameSeconds: 0 };
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
   if (doing.running && doing.moving) {
@@ -154,4 +182,57 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
   }
   const rest = doing.moving ? kit.walk : kit.idle;
   return loop(draws(rest, doing.drawn ? doing.right : null) ? rest : doing.moving ? 'walk' : 'idle', WALK_FRAME);
+}
+
+/**
+ * The move a fight holds a figure to, from the forge's own moves: the death, then lying fallen; fallen while knocked
+ * down; hurt while staggered or flinching (its bow's or staff's own); the jump's frames through a dodge's hop in the air, by its rise and fall, or the
+ * run where the forge does not draw what it holds in the jump; the parry through a deflect, a shield's block; the
+ * guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its wind-up
+ * and held at its end when it overreaches; and the bow drawn.
+ */
+function fightMove(
+  doing: Doing,
+  fight: Fight,
+  frames: (anim: string) => number,
+  draws: Draws,
+  byProgress: (anim: string, progress: number) => Shown,
+  loop: (anim: string, frameSeconds: number) => Shown,
+): Shown {
+  const right = doing.drawn ? doing.right : null;
+  const left = doing.drawn ? doing.left : null;
+  const holds = (anim: string) => draws(anim, right) && (!left || draws(anim, left));
+  const own = (anim: string) => {
+    const kind = right?.split('_')[0];
+    const special = kind === 'bow' || kind === 'crossbow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
+    return special && draws(special, right) ? special : anim;
+  };
+  const shield = !!left?.startsWith('shield_') && draws('block', left);
+  const still = (anim: string, frame = 0): Shown => ({
+    anim,
+    frame: Math.min(frame, frames(anim) - 1),
+    frameSeconds: 0,
+  });
+  switch (fight.kind) {
+    case 'dead':
+      return fight.progress >= 1 ? still('fallen') : byProgress('death', fight.progress);
+    case 'down':
+      return still('fallen');
+    case 'struck':
+      return still(own('hurt'));
+    case 'dodge':
+      if (!holds('jump')) return loop('run', WALK_FRAME / 2);
+      return still('jump', jumpFrame(doing.vz));
+    case 'parry':
+      return shield ? still('block') : byProgress(own('parry'), fight.progress);
+    case 'guard':
+      if (shield) return still('block');
+      return draws(own('parry'), right) ? still(own('parry')) : still('guard');
+    case 'windup':
+      return still(fight.stroke, fight.progress < 0.8 ? 0 : 1);
+    case 'overreach':
+      return still(fight.stroke, 2);
+    case 'draw':
+      return byProgress('bow', fight.progress * 0.5);
+  }
 }

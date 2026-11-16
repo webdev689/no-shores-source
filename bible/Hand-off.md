@@ -11,7 +11,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
 - The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP and Context7 keys are
   network secrets on the Default environment. Kit fixes are logged with task-observer for the co-dev; the log lives
-  in `~/toolkit-data`, which a container loses at its end.
+  in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
+  provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
   ([[The World Editor Is on GitHub Pages]]). The owner has drawn all nine continents; continent 1 is the main social
   space, with the port city.
@@ -21,7 +22,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Water]], on `main`: the shared swell in the land crate, breakers that shoal and break on every shore, a
   stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an underwater
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
-  the ground's own contours, and every edge of land and water at each pixel, at any distance.
+  the ground's own contours, and every edge of land and water at each pixel, at any distance. The sea's reflection
+  blurs the sky's clouds by the roughness of waves too small to draw.
 - The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
@@ -31,7 +33,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 - [[Sailing]], step 1 of the naval port, on `main`: the `sailing` crate (Come Sail Away's helm under DFO's responsive
   helm, the swell's pose, grounding on the land), stepped through `land-wasm`, and the owner's Sloop put to sea and
   sailed in the World Editor, the water parting round her. Her model and mesh are on R2 (`content/ships/ships.json`).
-- [[Naval Combat]], step 2, on branch `naval/combat` until its PR merges: the `naval` crate (DFO's ballistics, swivel
+- [[Naval Combat]], step 2, on `main`: the `naval` crate (DFO's ballistics, swivel
   and shot kinds, gunnery, damage, the shot field and a pirate captain's AI, and the `Fight` that steps both ships),
   a stateful fight door in `land-wasm`, and the fight in the World Editor (`F` while sailing; the right mouse aims and
   fires). The Sloop's guns and hit boxes come from her model through the export.
@@ -51,10 +53,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   the Overworld's sea and an island's side seen from above ([[Overworld]]); DFO's procedural textures, forged models
   and nature; and the [[Game]] page that plays it from arriving in Overlook to landing at another node. Its AAA pass
   is on the same pull request: the sun's shadows round the eye, the Tower's courtyard on every plaza, landmarks
-  dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found, among them a
-  speed hack, a dropped-input disconnect and a stalled broadcast in the deployed rooms.
-- On its pull request: the forge renders DFO's audit branch had and Overlook did not, published to R2
+  dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found.
+- On `main`: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
+- On `main` and deployed: the fight
+  ([[Combat Is Soulframe's, With DFO's Enhanced AI]]). [[Combat]]: DFO's swings and strokes, Soulframe's guard, parry,
+  riposte, dodge with its perfect stretch and counter, stamina, poise and the soft lock, foes' telegraphed blows and
+  shots in flight, in the Rust `combat` crate. [[Foes]]: DFO's Enhanced AI in the `foes` crate, five kinds, built upon
+  to guard, parry and dodge. The [[Navmesh]], DFO's, in Rust. The [[Server]]'s rooms run them all, judging each blow
+  as its defender saw it; the [[Test Ground]] fights them alone or together, predicted to the bit. Then audited end to
+  end (the rules, the foes against DFO's source, the room and its host, the browser) and every finding fixed with a
+  test; the timings set against shipped games and a person's reaction ([[Combat]], "Why these numbers"); third-person
+  attacks strike as fast as their blow lands. Deployed with the owner's yes, and tested live: two browsers on the
+  published Test Ground fought one brute together in a deployed room.
 
 ## Waiting on the owner
 
@@ -63,17 +74,20 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
+- Named approval for the kit's Context7 key check to pass when the key is the network proxy's placeholder, not a key
+  on disk (task-observer observation 4). Until then check-tools fails that line in every cloud session.
 
 ## Next
 
-- Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] is on
-  `main`, and [[Naval Combat]] is in its pull request. Next is the pick's step 3: boarding, ramming, crew, quays and
+- Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
+  [[Naval Combat]] are on `main`. Next is the pick's step 3: boarding, ramming, crew, quays and
   ports ([[Pick - Sailing and Naval Combat]]).
-- A look at the sea about 17 m deep shows faint blocky squares of the 4 m close-up seabed through the water: a task
-  is suggested for it.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
+- The fight's open ends ([[Combat]], [[Foes]]): gear power by metal, running's stamina, casting's harm, foes that
+  flank or seek a line around a block, and the navmesh baked over the [[Land]]. Whether players may harm one another
+  is the owner's to decide.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them;

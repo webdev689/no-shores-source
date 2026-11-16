@@ -127,3 +127,35 @@ test("every picture a plan shows is composed ahead: a pair's left hand mirrored 
   const brace = everyView(handsPlan('pistolet', 'pistolet_l'));
   assert.equal(brace.length, 2 * (6 + 6));
 });
+
+test('a pair: each swing the rules begin in a follow-through ends it and throws the other hand, one blow a swing', () => {
+  const hands = new Hands(() => 0);
+  const plan = handsPlan('mace_iron', 'mace_iron_l');
+  const struck: string[] = [];
+  for (let tick = 0; tick < 20 * 60; tick += 1) {
+    const begun = tick % 61 === 0;
+    const events = hands.update(
+      1 / 60,
+      { attackHeld: false, attackPressed: begun, attackReleased: false },
+      plan,
+      still,
+    );
+    if (events.blow) struck.push(events.blow.hand);
+  }
+  assert.equal(struck.length, 20);
+  assert.deepEqual(struck.slice(0, 4), ['right', 'left', 'right', 'left']);
+});
+
+test('the hands cancelled stop their strike at once: no blow lands, and the weapon takes a pose', () => {
+  const hands = new Hands(() => 0);
+  const plan = handsPlan('sword_iron', null);
+  hands.update(0.01, press, plan, still);
+  hands.cancel();
+  assert.equal(hands.swing, null);
+  assert.deepEqual(run(hands, plan, 40, 0.05, none), []);
+  hands.pose({ record: 3, frame: 2 });
+  assert.deepEqual(
+    hands.views().map((view) => [view.record, view.frame]),
+    [[3, 2]],
+  );
+});

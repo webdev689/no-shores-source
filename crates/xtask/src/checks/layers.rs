@@ -36,7 +36,11 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "ships", may_import: &["rules", "water"] },
     Layer { name: "forge", may_import: &[] },
     Layer { name: "player", may_import: &["rules", "network", "forge", "editor", "firstperson"] },
-    Layer { name: "testground", may_import: &["rules", "network", "forge", "editor", "firstperson", "player"] },
+    Layer {
+        name: "testground",
+        may_import: &["rules", "network", "forge", "editor", "firstperson", "player", "combat"],
+    },
+    Layer { name: "combat", may_import: &["rules", "network"] },
     Layer { name: "firstperson", may_import: &["forge"] },
     Layer { name: "overworld", may_import: &[] },
     Layer { name: "textures", may_import: &[] },

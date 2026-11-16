@@ -1,5 +1,5 @@
 use super::*;
-use movement::Mode;
+use movement::{Controls, Mode};
 use reach::{RESPAWN_TICKS, WARNING_TICKS};
 use serde_json::json;
 use std::f64::consts::PI;
@@ -39,13 +39,14 @@ struct Driver {
 
 impl Driver {
     fn join(room: &mut Room) -> Self {
-        Driver { player: room.join(), sequence: 0 }
+        Driver { player: room.join().unwrap(), sequence: 0 }
     }
 
     /// Sends one input and ticks the room once.
     fn play(&mut self, room: &mut Room, controls: Controls, respawn: bool) -> Seen {
         self.sequence += 1;
-        room.input(self.player, Input { sequence: self.sequence, controls, respawn, ..Input::default() }).unwrap();
+        let intent = combat::Intent { controls, ..combat::Intent::default() };
+        room.input(self.player, Input { sequence: self.sequence, intent, respawn, ..Input::default() }).unwrap();
         room.tick();
         room.seen().find(|seen| seen.player == self.player).unwrap()
     }
@@ -72,7 +73,7 @@ fn a_body_that_walks_out_is_warned_and_dies_ten_seconds_later() {
     let mut room = flat_node();
     let mut walker = Driver::join(&mut room);
     let (_, out) = walker.until(&mut room, NORTH, |standing| standing == Standing::Inside);
-    assert!(out.body.y < -50.0 && out.body.y > -51.0, "just past the edge at {}", out.body.y);
+    assert!(out.fighter.body.y < -50.0 && out.fighter.body.y > -51.0, "just past the edge at {}", out.fighter.body.y);
     assert_eq!(out.standing, Standing::Warned { ticks_left: WARNING_TICKS - 1 });
     for left in (1..WARNING_TICKS - 1).rev() {
         assert_eq!(walker.play(&mut room, STILL, false).standing, Standing::Warned { ticks_left: left });
@@ -80,7 +81,11 @@ fn a_body_that_walks_out_is_warned_and_dies_ten_seconds_later() {
     let dead = walker.play(&mut room, STILL, false);
     assert_eq!(dead.standing, Standing::Dead { ticks: 0 }, "600 ticks, 10 s, outside");
     let moved = walker.play(&mut room, SOUTH, false);
-    assert_eq!((moved.body, moved.standing), (dead.body, Standing::Dead { ticks: 1 }), "a dead body is still");
+    assert_eq!(
+        (moved.fighter.body, moved.standing),
+        (dead.fighter.body, Standing::Dead { ticks: 1 }),
+        "a dead body is still"
+    );
     assert_eq!(moved.acknowledged, dead.acknowledged + 1, "its inputs are still taken");
 }
 
@@ -104,7 +109,7 @@ fn sixty_metres_past_the_edge_kills_at_once() {
     let (outside, dead) = runner.until(&mut room, RUN_NORTH, |standing| matches!(standing, Standing::Warned { .. }));
     assert_eq!(dead.standing, Standing::Dead { ticks: 0 });
     assert!(outside + 1 < WARNING_TICKS, "dead after {outside} ticks outside, before the count ran out");
-    assert!(dead.body.y <= -110.0, "60 m past the edge at {}", dead.body.y);
+    assert!(dead.fighter.body.y <= -110.0, "60 m past the edge at {}", dead.fighter.body.y);
     assert!(to_edge > 0);
 }
 
@@ -116,13 +121,21 @@ fn a_respawn_is_refused_for_four_seconds_then_stands_the_body_at_the_nearest_spa
     assert_eq!(dead.standing, Standing::Dead { ticks: 0 });
     for ticks in 1..=RESPAWN_TICKS {
         let asked = runner.play(&mut room, NORTH, true);
-        assert_eq!((asked.standing, asked.body), (Standing::Dead { ticks }, dead.body), "refused at {ticks}");
+        assert_eq!(
+            (asked.standing, asked.fighter.body),
+            (Standing::Dead { ticks }, dead.fighter.body),
+            "refused at {ticks}"
+        );
     }
     let back = runner.play(&mut room, NORTH, true);
     assert_eq!(back.standing, Standing::Inside);
-    assert_eq!(back.body, standing_on(&Floor::Flat, &[], 30.0, -40.0), "the spawn nearest where it died, north");
+    assert_eq!(
+        back.fighter.body,
+        standing_on(&Floor::Flat, &[], 30.0, -40.0),
+        "the spawn nearest where it died, north"
+    );
     let walked = runner.play(&mut room, NORTH, false);
-    assert!(walked.body.y < back.body.y, "alive again, it walks");
+    assert!(walked.fighter.body.y < back.fighter.body.y, "alive again, it walks");
 }
 
 #[test]
@@ -130,7 +143,7 @@ fn players_join_at_the_spawns_in_turn_standing_on_the_land_and_walk_on_it() {
     let floor = land();
     let mut room = Room::node(floor.clone(), Vec::new(), section());
     let mut walkers: Vec<Driver> = (0..3).map(|_| Driver::join(&mut room)).collect();
-    let bodies: Vec<Body> = room.seen().map(|seen| seen.body).collect();
+    let bodies: Vec<Body> = room.seen().map(|seen| seen.fighter.body).collect();
     assert_eq!((bodies[0].x, bodies[0].y, bodies[0].z), (0.0, 0.0, 12.0), "on the terrace");
     assert_eq!((bodies[1].x, bodies[1].y), (30.0, -40.0));
     assert_eq!(bodies[1].z.to_bits(), floor.height_at(30.0, -40.0).to_bits(), "on the land");
@@ -138,8 +151,8 @@ fn players_join_at_the_spawns_in_turn_standing_on_the_land_and_walk_on_it() {
     let second = &mut walkers[1];
     for _ in 0..60 {
         let seen = second.play(&mut room, Controls { yaw: PI, ..NORTH }, false);
-        assert_eq!(seen.body.mode, Mode::Ground);
-        assert_eq!(seen.body.z.to_bits(), floor.height_at(seen.body.x, seen.body.y).to_bits());
+        assert_eq!(seen.fighter.body.mode, Mode::Ground);
+        assert_eq!(seen.fighter.body.z.to_bits(), floor.height_at(seen.fighter.body.x, seen.fighter.body.y).to_bits());
     }
 }
 
@@ -151,5 +164,17 @@ fn a_room_with_no_section_never_judges_its_bodies() {
         assert_eq!(walker.play(&mut room, RUN_NORTH, false).standing, Standing::Inside);
     }
     let seen = room.seen().next().unwrap();
-    assert!(seen.body.y < -200.0);
+    assert!(seen.fighter.body.y < -200.0);
+}
+
+#[test]
+fn a_node_s_room_stands_no_foe_a_player_asks_for_where_a_course_s_room_does() {
+    let foes_after_asking = |mut room: Room| {
+        let player = room.join().unwrap();
+        room.input(player, Input { sequence: 1, spawn: Some(1), ..Input::default() }).unwrap();
+        room.tick();
+        room.foes_seen().count()
+    };
+    assert_eq!(foes_after_asking(Room::node(land(), Vec::new(), section())), 0);
+    assert_eq!(foes_after_asking(Room::new(Vec::new(), (0.0, 0.0))), 1);
 }

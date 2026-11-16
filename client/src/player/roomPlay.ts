@@ -1,12 +1,15 @@
-import type { JoinedNode, PlayerDress, Standing } from '../network/messages.ts';
+import { type JoinedNode, type PlayerDress, type Standing, inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
-import type { MovementRules } from '../rules/movementRules.ts';
+import { type Controls, type MovementRules, floatsOfControls } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
 import { type Dress, dressFrom, plainDress } from './dressing.ts';
 import type { Placed } from './figures.ts';
 import { showOther } from './others.ts';
 import type { Walker } from './walker.ts';
+
+/** The fight's numbers after the controls in an input (stroke, guard, dodge, shoot, pitch): a walker asks for none. */
+const NO_FIGHT = [0, 0, 0, 0, 0];
 
 /** How a page keeps other players' figures: it places one for a player who comes, and takes away one who leaves. */
 export interface Others {
@@ -30,7 +33,7 @@ export interface RoomContext {
 export class RoomPlay {
   /** Where the player stands with the room's section, as its last snapshot said. */
   standing: Standing = { kind: 'inside' };
-  private readonly prediction = new Prediction();
+  private readonly prediction = new Prediction<Controls>();
   private readonly others = new Map<number, Placed>();
   private readonly dresses = new Map<number, Dress>();
   private readonly context: RoomContext;
@@ -38,6 +41,8 @@ export class RoomPlay {
   private own = 0;
   private sentDress = '';
   private respawnAsked = false;
+  /** The room tick of the last snapshot taken. */
+  private lastTick = 0n;
 
   private constructor(context: RoomContext) {
     this.context = context;
@@ -78,7 +83,17 @@ export class RoomPlay {
         this.sentDress = walker.lookDress;
         // Once the room is lost nothing is numbered for it, so nothing waits on its word for ever.
         if (this.connection?.open) {
-          this.connection.send(this.prediction.next(controls), controls, walker.look, dress, this.respawnAsked);
+          const intent = new Float64Array([...floatsOfControls(controls), ...NO_FIGHT]);
+          const parts = {
+            intent,
+            look: walker.look,
+            arms: 0,
+            seen: this.lastTick,
+            spawn: 0,
+            respawn: this.respawnAsked,
+          };
+          const sequence = this.prediction.next(controls);
+          this.connection.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
         }
         this.respawnAsked = false;
         return this.standing.kind === 'dead' ? body : movement.step(body, controls);
@@ -111,6 +126,7 @@ export class RoomPlay {
 
   private seen(snapshot: Snapshot): void {
     const { movement, walker, forge, others } = this.context;
+    this.lastTick = snapshot.tick;
     this.takeDresses(snapshot.dressed);
     const present = new Set<number>();
     for (const seen of snapshot.players) {

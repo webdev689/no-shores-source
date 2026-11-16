@@ -1,35 +1,39 @@
-//! The room for its Cloudflare host. Each WebAssembly instance keeps one room: a course's, a node's or the sea's. The
-//! host opens it, lets players join and leave, hands it each player's input bytes as they come, ticks it, and sends
-//! out the bytes it answers. The rules stay in the room crate and the messages in the protocol crate. See the Server
-//! note in the bible.
+//! The room for its Cloudflare host and for a browser playing alone. Each WebAssembly instance keeps one room: a
+//! course's, a node's or the sea's. The host opens it, lets players join and leave, hands it each player's input bytes
+//! as they come, ticks it, and sends out the bytes it answers. A browser also steps its own player's fighter here, by
+//! the same rules, to predict it. The rules stay in the combat and room crates and the messages in the protocol crate.
+//! See the Server and Combat notes in the bible.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
+use combat::Fighter;
+use combat::floats::{FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS};
 use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
 use room::sea::{CourseRefused, Sea};
-use room::{Floor, PlayerId, Refused, Room, Section, Seen};
+use room::{Floor, FoeSeen, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
 use std::cell::RefCell;
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's, or the sea.
 #[derive(Debug)]
 enum Opened {
-    Land { room: Room, node: Option<(String, [f64; 4])> },
+    Land { room: Box<Room>, node: Option<(String, [f64; 4])> },
     Sea(Sea),
 }
 
 thread_local! {
     static OPEN: RefCell<Option<Opened>> = const { RefCell::new(None) };
+    static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
 }
 
 /// What became of an input the host handed over.
 pub const TAKEN: i32 = 0;
 pub const NOT_AN_INPUT: i32 = 1;
 pub const OUT_OF_ORDER: i32 = 2;
-/// Past the waiting limit on land; at sea, a second course in one tick. Either is dropped as a flood.
-pub const TOO_MANY_WAITING: i32 = 3;
-pub const NO_SUCH_PLAYER: i32 = 4;
+pub const NO_SUCH_PLAYER: i32 = 3;
+/// At sea, a second course in one tick, dropped as a flood.
+pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
@@ -61,12 +65,14 @@ fn keep(opened: Opened) {
 pub fn open(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);
     let Some((spawn, blocks)) = floats.split_first_chunk::<2>() else { return false };
-    if blocks.len() % BLOCK_FLOATS != 0 {
+    if !blocks.len().is_multiple_of(BLOCK_FLOATS) {
         return false;
     }
     let blocks =
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
-    keep(Opened::Land { room: Room::new(blocks.collect(), (spawn[0], spawn[1])), node: None });
+    let blocks: Vec<Block> = blocks.collect();
+    COURSE.with(|course| *course.borrow_mut() = blocks.clone());
+    keep(Opened::Land { room: Box::new(Room::new(blocks, (spawn[0], spawn[1]))), node: None });
     true
 }
 
@@ -80,7 +86,7 @@ pub fn open_node(text: &[u8]) -> bool {
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
     let room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
-    keep(Opened::Land { room, node: Some((node.id, node.bounds)) });
+    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
     true
 }
 
@@ -93,6 +99,60 @@ pub fn open_sea(text: &[u8]) -> bool {
     true
 }
 
+/// Keeps a course for predicting a fighter without a room: the blocks, five numbers each. Answers whether they made
+/// one.
+pub fn set_course(bytes: &[u8]) -> bool {
+    let floats = floats_of(bytes);
+    if !floats.len().is_multiple_of(BLOCK_FLOATS) {
+        return false;
+    }
+    let blocks =
+        floats.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
+    COURSE.with(|course| *course.borrow_mut() = blocks.collect());
+    true
+}
+
+/// One tick of a player's fighter as a course's room would take it, on open ground, from its numbers: the fighter,
+/// the intent, the player's number, then every fighter it sees as a number and a glance. Answers the next fighter's
+/// numbers, or none when the numbers are not that.
+#[must_use]
+pub fn predict(bytes: &[u8]) -> Vec<u8> {
+    let floats = floats_of(bytes);
+    let Some((fighter, rest)) = floats.split_first_chunk::<FIGHTER_FLOATS>() else { return Vec::new() };
+    let Some((intent, rest)) = rest.split_first_chunk::<INTENT_FLOATS>() else { return Vec::new() };
+    let Some((id, seen)) = rest.split_first() else { return Vec::new() };
+    if !seen.len().is_multiple_of(GLANCE_FLOATS + 1) {
+        return Vec::new();
+    }
+    let view: Vec<(u32, Fighter)> = seen
+        .chunks_exact(GLANCE_FLOATS + 1)
+        .filter_map(|each| {
+            let (other, glance) = each.split_first()?;
+            Some((whole(*other), Fighter::from_glance(glance.try_into().ok()?)))
+        })
+        .collect();
+    let fighter = Fighter::from_floats(fighter);
+    let intent = combat::Intent::from_floats(intent);
+    let (next, _) = COURSE
+        .with(|course| combat::player_tick(whole(*id), &fighter, &intent, &view, &course.borrow(), &movement::Flat));
+    next.to_floats().iter().flat_map(|value| value.to_le_bytes()).collect()
+}
+
+/// A fighter's number from a float, 0 for anything that is not one.
+fn whole(number: f64) -> u32 {
+    if number.is_finite() && (0.0..=f64::from(u32::MAX)).contains(&number) { number as u32 } else { 0 }
+}
+
+/// What a fighter's hands hold, as combat's arms code, from the right hand's forge layer, the left's, and whether they
+/// are drawn, as text on three lines.
+#[must_use]
+pub fn arms_code(text: &[u8]) -> u32 {
+    let text = String::from_utf8_lossy(text);
+    let mut lines = text.split('\n');
+    let (right, left) = (lines.next().unwrap_or_default(), lines.next().unwrap_or_default());
+    combat::arms_of(right, left, lines.next() == Some("drawn")).code()
+}
+
 /// A player's input bytes, read and handed to the room: an input on land, a course at sea. One of the answers above.
 pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     let answer = with_open(|opened| match opened {
@@ -101,7 +161,6 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             Ok(input) => match room.input(player, input) {
                 Ok(()) => TAKEN,
                 Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
-                Err(Refused::TooManyWaiting) => TOO_MANY_WAITING,
                 Err(Refused::BadLook) => NOT_AN_INPUT,
                 Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
             },
@@ -111,7 +170,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             Ok((points, pace)) => match sea.course(player, &points, pace) {
                 Ok(()) => TAKEN,
                 Err(CourseRefused::NoSuchPlayer) => NO_SUCH_PLAYER,
-                Err(CourseRefused::TooSoon) => TOO_MANY_WAITING,
+                Err(CourseRefused::TooSoon) => TOO_SOON,
                 Err(_) => REFUSED,
             },
         },
@@ -119,16 +178,28 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     answer.unwrap_or(NO_SUCH_PLAYER)
 }
 
-/// Every player after the room's last tick, and the dresses changed since the last snapshot, as a snapshot's bytes;
-/// at sea, every ship. Empty with no room open.
+/// Every player and foe after the room's last tick, the dresses changed and what happened in the fight since the last
+/// snapshot, and the shots in flight, as a snapshot's bytes; at sea, every ship. Empty with no room open.
 #[must_use]
 pub fn snapshot() -> Vec<u8> {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {
             let changed = room.take_dress_changes();
+            let events = room.take_events();
             let dressed: Vec<(PlayerId, &str)> =
                 changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-            protocol::snapshot_bytes(room.clock(), &room.seen().collect::<Vec<Seen>>(), &dressed)
+            let players: Vec<Seen> = room.seen().collect();
+            let foes: Vec<FoeSeen> = room.foes_seen().collect();
+            let tick = room.clock();
+            let snapshot = protocol::Snapshot {
+                tick,
+                players: &players,
+                dressed: &dressed,
+                foes: &foes,
+                events: &events,
+                shots: room.shots(),
+            };
+            protocol::snapshot_bytes(&snapshot)
         }
         Opened::Sea(sea) => protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>()),
     })
@@ -209,13 +280,14 @@ pub extern "C" fn room_tick_seconds() -> f64 {
     movement::TICK_SECONDS
 }
 
-/// A new player's number, or 0 with no room open.
+/// A new player's number, or 0 with no room open or the room full.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join() -> PlayerId {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.join(),
-        Opened::Sea(sea) => sea.join(),
+        Opened::Sea(sea) => Some(sea.join()),
     })
+    .flatten()
     .unwrap_or(0)
 }
 
@@ -255,6 +327,56 @@ pub extern "C" fn room_tick() {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot() -> u64 {
     hand_over(snapshot())
+}
+
+/// Keeps the course written at `address` for predicting; 1 if it was one, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_course(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_course(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Steps the fighter whose numbers are written at `address` a tick, as `predict` says; answers the next fighter's
+/// bytes.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_predict(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    hand_over(predict(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// The arms code for the hands written at `address`, as `arms_code` reads them.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_arms(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    arms_code(unsafe { std::slice::from_raw_parts(address, length) })
+}
+
+/// The farthest stroke `stroke` (1 to 6) of the melee weapon in arms code `arms` reaches, feet to a body's middle;
+/// 0 for no stroke.
+#[unsafe(no_mangle)]
+pub extern "C" fn fighter_reach(arms: u32, stroke: u32) -> f64 {
+    let melee = combat::arms::Arms::from_code(arms).melee;
+    u8::try_from(stroke)
+        .ok()
+        .and_then(combat::Stroke::from_number)
+        .map_or(0.0, |stroke| combat::strike::stroke_reach(melee, stroke))
+}
+
+/// How many numbers a fighter, an intent and a glance are, for the browser to lay them out: as one number, each in a
+/// byte.
+#[unsafe(no_mangle)]
+pub extern "C" fn fighter_sizes() -> u32 {
+    let byte = |size: usize| u32::try_from(size).unwrap_or_default() & 0xff;
+    byte(FIGHTER_FLOATS) | byte(INTENT_FLOATS) << 8 | byte(GLANCE_FLOATS) << 16
 }
 
 #[cfg(test)]
