@@ -35,6 +35,15 @@ The owner's answers to the questions that followed:
 > overworld sea travel, plus the birds eye island viewing. Nodes are seperated into missions, dungeons, social spaces,
 > patrol areas, world bosses, etc"
 
+Then, asked whether the branch's models, procedural textures and RMB come over with their Daggerfall measures as an
+exception to [[Own Work]] (B), or are given our own plans, keys and palette (A): "B. It all comes over"
+
+> What happens when the player does not go back: "They die and are asked to respawn"
+>
+> The sizes in metres: "Your choice"
+>
+> Whether "every island" includes the static isles: "9 contients"
+
 ## What it settles
 
 - **Destiny 1 is the reference** for how the world works.
@@ -44,23 +53,20 @@ The owner's answers to the questions that followed:
   works the same way.
 - **All the land is kept.** Every part of every island can be used later, but is never reached until then. This is
   where Overlook moves away from DFO.
-- **Port cities.** One major port city on each island, each about half the size of DFO's Imperial City, all of them
-  the same size. Each has its own design and motif, as DFO's Imperial City has its enormous tower. Overlook is
-  Saltmere's.
+- **Port cities.** One major port city on each of the nine continents, each about half the size of DFO's Imperial
+  City, all of them the same size. Each has its own design and motif, as DFO's Imperial City has its enormous tower.
+  Overlook is Saltmere's. The sizes in metres are Claude's to choose ([[The World as Claude Shapes It]]).
 - **The social space**, the part of Overlook the player walks, is the size of Destiny 1's Tower.
-- **Building.** The models and the procedural texture system on DFO's branch `ccr-cab30c1a-oddrwb` come over and
-  become a staple of the project. World 2.0 and RMB lay out the towns.
-- **A section's edge** warns the player to go back.
+- **Building.** The models and the procedural texture system on DFO's branch `ccr-cab30c1a-oddrwb` come over whole
+  and become a staple of the project, with the Daggerfall measures their plans are built on, the Daggerfall texture
+  archives and palette their pictures are filed under, and RMB's town blocks. World 2.0 and RMB lay out the towns.
+  This is an exception to [[Own Work]]; for these, it holds where [[Our Own Keys for Materials, Places and Items]] and
+  [[Readers of Our Own Formats Only]] differ.
+- **A section's edge** warns the player to go back. A player who does not go back dies and is asked to respawn.
 - **The Overworld** comes over from DFO, for travel across the sea and for the bird's-eye view of an island. The places
   the player is taken to are nodes, by kind: missions, dungeons, social spaces, patrol areas, world bosses and more.
 
 It builds on [[Overlook Is a Shared World After Destiny 1]] and [[The World Map]]: islands are landed on, not walked as
 an open world, and ships go faster in the Overworld. How it is built: [[World Map]].
 
-## Still open
-
-In [[Open Questions]]:
-
-- Which parts of the branch's models and textures come over under [[Own Work]], and what RMB brings.
-- What happens when the player does not go back.
-- The sizes in metres, and whether "every island" includes the static isles.
+The owner then handed the world's working to Claude: [[The World Is Claude's to Mold]].
