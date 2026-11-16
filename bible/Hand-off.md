@@ -28,10 +28,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the
   Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, agreeing to the bit
   wherever it runs.
-- [[Sailing]], step 1 of the naval port, on branch `naval/sailing` until its PR merges: the `sailing` crate (Come
-  Sail Away's helm under DFO's responsive helm, the swell's pose, grounding on the land), stepped through `land-wasm`,
-  and the owner's Sloop put to sea and sailed in the World Editor, the water parting round her. Her model and mesh are
-  on R2 (`content/ships/ships.json`).
+- [[Sailing]], step 1 of the naval port, on `main`: the `sailing` crate (Come Sail Away's helm under DFO's responsive
+  helm, the swell's pose, grounding on the land), stepped through `land-wasm`, and the owner's Sloop put to sea and
+  sailed in the World Editor, the water parting round her. Her model and mesh are on R2 (`content/ships/ships.json`).
+- [[Naval Combat]], step 2, on branch `naval/combat` until its PR merges: the `naval` crate (DFO's ballistics, swivel
+  and shot kinds, gunnery, damage, the shot field and a pirate captain's AI, and the `Fight` that steps both ships),
+  a stateful fight door in `land-wasm`, and the fight in the World Editor (`F` while sailing; the right mouse aims and
+  fires). The Sloop's guns and hit boxes come from her model through the export.
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
   ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room and its messages, with Google's `flatc` installed
   by the schema step itself; the room hosted by a Cloudflare Durable Object in `server/`; the browser's connection and
@@ -51,10 +54,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, has begun: [[Sailing]]'s first step
-  is in its pull request. Next is the naval combat core, broadsides between the Sloop and one captain
-  ([[Pick - Sailing and Naval Combat]]); her six cannons are named in her model (`Cannon`,
-  [[Ship Models Live on R2]]), for the export to read her muzzles.
+- Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] is on
+  `main`, and [[Naval Combat]] is in its pull request. Next is the pick's step 3: boarding, ramming, crew, quays and
+  ports ([[Pick - Sailing and Naval Combat]]).
+- A look at the sea about 17 m deep shows faint blocky squares of the 4 m close-up seabed through the water: a task
+  is suggested for it.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
