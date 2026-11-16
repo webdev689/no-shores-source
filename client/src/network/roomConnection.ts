@@ -55,4 +55,9 @@ export class RoomConnection {
   sendCourse(points: readonly (readonly [number, number])[], pace: number): void {
     if (this.socket.readyState === WebSocket.OPEN) this.socket.send(courseBytes(points, pace));
   }
+
+  /** Leaves the room: the socket closes, and the room lets the player go. */
+  close(): void {
+    this.socket.close();
+  }
 }

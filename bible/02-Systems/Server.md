@@ -29,7 +29,8 @@ code:
 The authority every player's game answers to ([[Server-Authoritative Multiplayer]]), on Cloudflare
 ([[Servers on Cloudflare]]). Each shared space is one room: a node of an island, the sea, or a course to play on.
 Built so far: the rooms, their messages, their Cloudflare host, the bake that cuts each node's ground, and the
-browser's side; the [[Test Ground]] plays in a room. It is deployed on Cloudflare.
+browser's side; the [[Game]] plays its node rooms and the sea, and the [[Test Ground]] plays in a room. It is deployed
+on Cloudflare.
 
 ## The room
 
@@ -159,8 +160,8 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
   The section judges them all the same, so the warning's count runs on.
 - Bodies pass through each other.
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
-- No page plays a node's room yet. The [[Test Ground]] joins any room by name, a node's too, but predicts on its own
-  course, does not tell `Prediction` when its body is dead, and never asks to respawn.
+- The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
+  the [[Game]] does both.
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.
 - Where a ship puts to sea is the player's word, any point of open sea; the sea room does not yet know which port

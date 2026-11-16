@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: live
 code:
   - client/src/overworld/overworldCamera.ts#stepCamera
   - client/src/overworld/overworldInput.ts#stepLift
@@ -16,8 +16,8 @@ code:
 DFO's raised, tilted travel camera over the real world, for two things
 ([[Every Island Is Seen Whole and Reached by Nodes]]): sailing the sea, the player's ship seen from above, faster than
 real speed ([[The World Map]]); and the bird's-eye view of the side of an island, its nodes marked by kind, where the
-player picks one to land at. Built so far: the pure core in the `overworld` layer, with no page, drawing or server
-part yet.
+player picks one to land at. Its core is pure, in the `overworld` layer, with no page or drawing; the [[Game]] wires
+and draws it.
 
 ## The frame
 
@@ -101,7 +101,6 @@ the climb reads as one steady zoom.
 
 ## Limits
 
-- No page wires it and nothing draws it yet.
 - A voyage runs in the client. The server does not check it until sailing comes into the rules ([[Agree to the Bit]]).
 - The bird's-eye view stands far above any cloud deck; only the sea camera keeps under it.
 - The mask is coarse: where a route hugs the coast it can run within a cell of real land.

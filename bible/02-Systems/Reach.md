@@ -41,14 +41,14 @@ dies and is asked to respawn. The times and distances are Claude's choices ([[Th
 
 ## Who judges
 
-The node's room, alone ([[Server]]). After each of its ticks it judges every player's body where its inputs left it,
-once a tick, whether or not that player sent any. A dead body is still: the room takes its inputs without moving it.
+In play with others, the node's room alone ([[Server]]). After each of its ticks it judges every player's body where
+its inputs left it, once a tick, whether or not that player sent any. A dead body is still: the room takes its inputs without moving it.
 An input asking to respawn is granted only once the standing offers it, and stands the body on the ground at the
 nearest spawn. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
-the browser shows what the room says; it does not judge.
+the browser shows what the room says; it does not judge. Offline, with no room, the [[Game]] judges its player by
+these same rules, run in the browser through the movement door.
 
 ## Limits
 
-- The browser shows no warning or count yet; the standing reaches it in every snapshot.
 - The distance past the edge is measured on the map, not along the ground.
 - A section is one ring, with no holes; a ring is not checked for crossing itself.

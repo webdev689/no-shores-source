@@ -15,11 +15,14 @@ decision, made in the same change as its entry here.
 | Path | What it holds |
 |---|---|
 | `client/` | The game in the browser, TypeScript ([[TypeScript and Rust]]). `index.html` and `src/` |
-| `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
+| `client/index.html` | The [[Game]]'s page: its canvas, its heads-up display and their look |
+| `client/src/main.ts` | The entry point: fits the canvas, starts the GPU and hands both to the game layer |
+| `client/src/game/` | The game layer: the [[Game]]'s flow from arriving to landing, on foot in a node, at sea in the [[Overworld]], the scene every drawer draws into, and the heads-up display |
+| `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's controls, the forge's figure and its frames |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up |
 | `client/src/terrain/` | The terrain layer: the land drawn in rings round the eye on WebGPU, and the land crate's worker, for the [[World Editor]] and the game |
-| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
+| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
@@ -67,9 +70,10 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 
 Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and
 `water` (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`),
-`editor` (imports `rules`, `water` and `terrain`), `testground` (imports `rules`, `network`, `forge`, `firstperson`,
-and the editor's camera and panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`,
-`rules` and `water`) and `game` (imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork
+`editor` (imports `rules`, `water` and `terrain`), `player` (imports `rules`, `network`, `forge`, `firstperson`
+and the editor's camera), `testground` (imports what `player` does, `player` itself and the editor's panel helpers),
+`firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`) and `game` (imports
+the layers it wires). The code `flatc` makes, in `generated/`, is groundwork
 any layer may import.
 
 ## The Rust crates

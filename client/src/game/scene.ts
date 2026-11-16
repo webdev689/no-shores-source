@@ -1,5 +1,5 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
-import { CLOSE_RANGE_M, closeUpData, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
+import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
@@ -80,12 +80,8 @@ export class GameScene {
     const view = this.terrain?.view;
     if (!view) return null;
     const close = this.close?.ground.patch;
-    if (close) {
-      const [column, row] = [(x - view.leftM - close.left) / close.step, (y - view.topM - close.top) / close.step];
-      if (column >= 0 && row >= 0 && column < close.width - 1 && row < close.height - 1) {
-        return close.heights[Math.round(row) * close.width + Math.round(column)] ?? null;
-      }
-    }
+    const exact = close ? groundUnder(close, x, y) : null;
+    if (exact !== null) return exact;
     const [column, row] = [(x - view.leftM) / view.cellM - 0.5, (y - view.topM) / view.cellM - 0.5];
     const [left, top] = [Math.floor(column), Math.floor(row)];
     if (left < 0 || top < 0 || left >= view.width - 1 || top >= view.height - 1) return null;
@@ -103,7 +99,8 @@ export class GameScene {
     if (this.close && Math.hypot(focus[0] - this.close.centre[0], focus[1] - this.close.centre[1]) < REFRESH_M) return;
     this.pending = true;
     const half = ((PATCH_SAMPLES - 1) * PATCH_STEP_M) / 2;
-    const [left, top] = [Math.round(focus[0] - view.leftM - half), Math.round(focus[1] - view.topM - half)];
+    // The land's door samples in world metres, as the patch and the shore's field keep them.
+    const [left, top] = [Math.round(focus[0] - half), Math.round(focus[1] - half)];
     source(left, top, PATCH_STEP_M, PATCH_SAMPLES)
       .then((ground) => {
         this.pending = false;
@@ -117,6 +114,12 @@ export class GameScene {
       });
   }
 
+  /** Whether the exact ground round a world point has come. */
+  closeReady(x: number, y: number): boolean {
+    const centre = this.close?.centre;
+    return !!centre && Math.hypot(x - centre[0], y - centre[1]) < REFRESH_M;
+  }
+
   /** The water at a world point now: its surface over the sea or a lake or river, or null on dry ground. */
   waterAt(x: number, y: number, time: number): { surface: number; fresh: boolean } | null {
     const view = this.terrain?.view;
@@ -128,13 +131,15 @@ export class GameScene {
     return (this.groundAt(x, y) ?? 0) < 0 ? { surface: 0, fresh: false } : null;
   }
 
-  /** Draws one frame from `shot` into the canvas, with the drawers drawn with the land. */
+  /** Draws one frame from `shot` into the canvas, with the drawers drawn with the land; `after` may draw over the
+   *  finished picture (the first person's hands) before it is shown. */
   draw(
     shot: Shot,
     size: { width: number; height: number },
     time: number,
     seconds: number,
     drawers: readonly Drawer[],
+    after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
   ): void {
     const terrain = this.terrain;
     if (!terrain) return;
@@ -193,6 +198,7 @@ export class GameScene {
     copy.draw(3);
     copy.end();
     const camera = frameOf(local);
+    const target = this.gpu.context.getCurrentTexture().createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(shot.fov / 2) },
@@ -209,8 +215,9 @@ export class GameScene {
       eyeAboveM: Math.abs(shot.eye[2] - (eyeWater?.surface ?? ground)),
       focus: [local.eye[0], local.eye[1]],
       drawn: targets,
-      target: this.gpu.context.getCurrentTexture().createView(),
+      target,
     });
+    after?.(encoder, target);
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 

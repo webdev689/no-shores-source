@@ -1,15 +1,20 @@
 import { button, make } from '../editor/dom.ts';
-import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette } from './hudLaw.ts';
+import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 
-/** A mark on the screen: a node, a port or a ship, where it stands in pixels. */
+/** A mark on the screen: a node or a port, where it stands in CSS pixels, its size there, and what it says. */
 export interface ScreenMark {
   readonly id: string;
   readonly kind: MarkKind;
   readonly name: string;
   readonly x: number;
   readonly y: number;
+  readonly sizePx: number;
   readonly note: string;
   readonly chosen: boolean;
+  /** Whether its name and note show: off where they would print over a nearer mark's. */
+  readonly named: boolean;
+  /** Held at the picture's edge: the way its arrow points, degrees clockwise from up. */
+  readonly arrowDegrees: number | null;
 }
 
 /** One choice of a menu. */
@@ -27,6 +32,15 @@ const GLYPHS: Record<MarkKind, string> = {
   port: '⚓',
 };
 
+/** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
+interface MarkNode {
+  readonly root: HTMLButtonElement;
+  readonly glyph: HTMLElement;
+  readonly name: HTMLElement;
+  readonly note: HTMLElement;
+  readonly arrow: HTMLElement;
+}
+
 /** The game's heads-up display: plain elements over the canvas, nothing drawn on the GPU. */
 export class Hud {
   private readonly placeTitle = make('div', '', 'title');
@@ -38,12 +52,18 @@ export class Hud {
   private readonly respawn: HTMLButtonElement;
   private readonly hintList = make('div', '', 'hints');
   private readonly veilText = make('div', '', 'veil-text');
-  private readonly veilNode = make('div', '', 'veil');
+  private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
+  private readonly marksShown = new Map<string, MarkNode>();
   private readonly menuNode = make('div', '', 'menu');
   private readonly status = make('div', '', 'status');
+  private readonly sea = make('div', '', 'sea-bar');
+  private readonly paceValue = make('span', '', 'pace');
+  private readonly landings: HTMLButtonElement;
   private respawnWanted: () => void = () => undefined;
   private markChosen: (id: string) => void = () => undefined;
+  private paceWanted: (direction: number) => void = () => undefined;
+  private landingsWanted: () => void = () => undefined;
 
   constructor(root: HTMLElement) {
     root.classList.add('hud');
@@ -57,30 +77,42 @@ export class Hud {
       this.respawn,
     );
     this.veilNode.append(this.veilText);
+    this.landings = button('View landings  L', () => this.landingsWanted());
+    this.landings.classList.add('landings');
+    this.sea.append(
+      make('span', 'Pace', 'pace-label'),
+      button('−  [', () => this.paceWanted(-1)),
+      this.paceValue,
+      button(']  +', () => this.paceWanted(1)),
+      this.landings,
+    );
     root.append(
       this.shade,
+      this.markLayer,
       place,
       this.warning,
-      this.markLayer,
       this.hintList,
       this.status,
+      this.sea,
       this.menuNode,
       this.death,
       this.veilNode,
     );
-    this.reach({ kind: 'inside' }, 10);
+    this.reach({ kind: 'inside' });
     this.menu(null);
+    this.seaBar(null);
+    this.note('');
   }
 
-  /** Names the place the player stands in. */
+  /** Names the place the player is in. */
   place(title: string, kind: string): void {
     this.placeTitle.textContent = title;
     this.placeKind.textContent = kind;
   }
 
   /** Shows the player's standing against their section's edge: the warning and its count, or death. */
-  reach(standing: Standing, warningSeconds: number): void {
-    this.shade.style.opacity = String(vignette(standing, warningSeconds));
+  reach(standing: Standing): void {
+    this.shade.style.opacity = String(vignette(standing, WARNING_SECONDS));
     this.warning.hidden = standing.kind !== 'warned';
     if (standing.kind === 'warned') this.count.textContent = countdownText(standing.secondsLeft);
     this.death.hidden = standing.kind !== 'dead';
@@ -97,12 +129,15 @@ export class Hud {
 
   /** The keys the player can press now, one a line. */
   hints(lines: readonly string[]): void {
+    const text = lines.join('\n');
+    if (this.hintList.dataset['text'] === text) return;
+    this.hintList.dataset['text'] = text;
     this.hintList.replaceChildren(...lines.map((line) => make('div', line)));
   }
 
   /** A line of what is happening (a voyage, a connection), or none. */
   note(text: string): void {
-    this.status.textContent = text;
+    if (this.status.textContent !== text) this.status.textContent = text;
     this.status.hidden = text === '';
   }
 
@@ -114,20 +149,43 @@ export class Hud {
 
   /** Places the marks on the screen; choosing one calls what `onMark` set. */
   marks(marks: readonly ScreenMark[]): void {
-    this.markLayer.replaceChildren(
-      ...marks.map((mark) => {
-        const node = make('button', '', `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}`);
-        node.type = 'button';
-        node.style.transform = `translate(${mark.x.toFixed(1)}px, ${mark.y.toFixed(1)}px)`;
-        node.append(
-          make('span', GLYPHS[mark.kind], 'glyph'),
-          make('span', mark.name, 'name'),
-          make('span', `${KIND_WORDS[mark.kind]} · ${mark.note}`, 'note'),
-        );
-        node.addEventListener('click', () => this.markChosen(mark.id));
-        return node;
-      }),
-    );
+    const kept = new Set<string>();
+    marks.forEach((mark, order) => {
+      kept.add(mark.id);
+      const shown = this.marksShown.get(mark.id) ?? this.markNode(mark.id);
+      shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}`;
+      shown.root.style.transform = `translate(${mark.x.toFixed(1)}px, ${mark.y.toFixed(1)}px)`;
+      shown.root.style.zIndex = String(order + 1);
+      shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
+      shown.glyph.textContent = GLYPHS[mark.kind];
+      shown.name.textContent = mark.name;
+      const note = `${KIND_WORDS[mark.kind]} · ${mark.note}`;
+      if (shown.note.textContent !== note) shown.note.textContent = note;
+      shown.arrow.hidden = mark.arrowDegrees === null;
+      if (mark.arrowDegrees !== null)
+        shown.arrow.style.transform = `rotate(${mark.arrowDegrees.toFixed(0)}deg) translateY(calc(var(--size) / -2 - 9px))`;
+    });
+    for (const [id, shown] of this.marksShown) {
+      if (kept.has(id)) continue;
+      shown.root.remove();
+      this.marksShown.delete(id);
+    }
+  }
+
+  private markNode(id: string): MarkNode {
+    const root = make('button');
+    root.type = 'button';
+    const [glyph, name, note] = [make('span', '', 'glyph'), make('span', '', 'name'), make('span', '', 'note')];
+    const arrow = make('span', '▲', 'arrow');
+    root.append(arrow, glyph, name, note);
+    root.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.markChosen(id);
+    });
+    const shown = { root, glyph, name, note, arrow };
+    this.markLayer.append(root);
+    this.marksShown.set(id, shown);
+    return shown;
   }
 
   /** What choosing a mark does. */
@@ -145,7 +203,22 @@ export class Hud {
     );
   }
 
-  get menuOpen(): boolean {
-    return !this.menuNode.hidden;
+  /** The sea's bar: the pace dial, and View landings while an island's side is in reach; null hides it. */
+  seaBar(state: { readonly pace: number; readonly canLand: boolean } | null): void {
+    this.sea.hidden = state === null;
+    if (!state) return;
+    const pace = `×${state.pace}`;
+    if (this.paceValue.textContent !== pace) this.paceValue.textContent = pace;
+    this.landings.hidden = !state.canLand;
+  }
+
+  /** What the pace buttons do: -1 slower, +1 faster. */
+  onPace(step: (direction: number) => void): void {
+    this.paceWanted = step;
+  }
+
+  /** What View landings does. */
+  onLandings(view: () => void): void {
+    this.landingsWanted = view;
   }
 }

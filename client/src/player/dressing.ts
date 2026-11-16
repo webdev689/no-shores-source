@@ -121,6 +121,22 @@ export function lookOutfit(look: IndexLook, keep: Outfit): Outfit {
   return { ...keep, armour, garments, dyes, right: look.weapon, left: null, drawn: !!look.weapon };
 }
 
+/** A plain figure: a shirt, breeches and boots, an iron sword worn at the hip, of a race and skin tone. */
+export const plainDress = (race: Race, tone: number): Dress => ({
+  body: 'male',
+  race,
+  tone,
+  outfit: {
+    armour: {},
+    garments: ['shirt_long_v', 'breeches', 'boots'],
+    dyes: { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' },
+    right: 'sword_iron',
+    left: null,
+    drawn: false,
+    hair: { style: 'crop', colour: 'brown' },
+  },
+});
+
 /** A garment's dye until one is chosen. */
 export const PLAIN_DYE = 'LightBrown';
 

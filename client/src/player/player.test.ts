@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startMovementRules } from '../rules/movementRules.ts';
-import { COURSE } from './course.ts';
 import { cardStand, eyeOf } from './figures.ts';
 import type { Action, InputFrame } from './input.ts';
 import { newPlayer, playerCamera, shownBody, updatePlayer } from './player.ts';
@@ -14,7 +14,7 @@ const moduleBytes = await readFile(MODULE).catch(() => {
 const movement = await startMovementRules(moduleBytes);
 movement.setCourse([]);
 const onCourse = await startMovementRules(moduleBytes);
-onCourse.setCourse(COURSE);
+onCourse.setCourse(course.blocks);
 const TICK = movement.tickSeconds;
 
 /** A frame with these actions held, and those pressed this frame. */
@@ -102,7 +102,7 @@ test('going over a lip, the body’s centre passes behind the wall’s face, but
     const body = shownBody(player);
     if (player.body.mode !== 'mantle' || body.z >= ledge.lip) continue;
     wentOver = true;
-    const eye = eyeOf(playerCamera(player, onCourse, COURSE));
+    const eye = eyeOf(playerCamera(player, onCourse, course.blocks));
     centreBehind ||= body.y < ledge.face;
     cardBehind ||= cardStand(body.x, body.y, eye.x, eye.y).y < ledge.face;
   }

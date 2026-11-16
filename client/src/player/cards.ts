@@ -3,7 +3,28 @@ import type { DyeTable } from '../forge/dyes.ts';
 import { type ForgeLooks, mirroredGear } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Dress, figureOf, rampsOf } from './dressing.ts';
-import type { Card, SceneView } from './sceneView.ts';
+
+/** A figure's picture as a scene draws it: its texture, its size in pixels, and its feet on it. */
+export interface Card {
+  readonly texture: GPUTexture;
+  readonly width: number;
+  readonly height: number;
+  readonly root: readonly [number, number];
+}
+
+/** One card to draw: where its feet stand (world metres) and whether it is mirrored. */
+export interface CardAt {
+  readonly card: Card;
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly flip: boolean;
+}
+
+/** Whatever turns a composed picture into a card it can draw: the Test Ground's scene, or the game's figures. */
+export interface CardMaker {
+  card(pixels: Uint8Array, width: number, height: number, root: readonly [number, number]): Card;
+}
 
 /** Composed frames kept on the GPU before all are let go and composed again as asked. */
 const KEPT_CARDS = 4000;
@@ -23,7 +44,7 @@ export class Cards {
   private readonly last = new Map<number, Card>();
   private readonly queued: { dress: Dress; anim: string; view: number; frame: number }[] = [];
   private readonly warmed = new Set<string>();
-  private readonly scene: SceneView;
+  private readonly scene: CardMaker;
   private readonly store: ForgeStore;
   private readonly looks: ForgeLooks;
   private readonly colours: Colours;
@@ -31,7 +52,7 @@ export class Cards {
   /** The last strip that failed to load, for the status line. */
   failure = '';
 
-  constructor(scene: SceneView, store: ForgeStore, looks: ForgeLooks, colours: Colours, dyes: DyeTable) {
+  constructor(scene: CardMaker, store: ForgeStore, looks: ForgeLooks, colours: Colours, dyes: DyeTable) {
     this.scene = scene;
     this.store = store;
     this.looks = looks;

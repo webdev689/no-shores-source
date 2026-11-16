@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { frameOf, fromEyeMatrix, lookOf, onScreen, type Shot } from './camera.ts';
+import { frameOf, fromEyeMatrix, lookOf, onScreen, type Shot, shotOfOrbit } from './camera.ts';
 
 const shot: Shot = { eye: [1_000_000, 2_000_000, 100], yaw: 0, pitch: 0, fov: Math.PI / 2, near: 1, far: 10_000 };
 const size = { width: 800, height: 400 };
@@ -30,6 +30,20 @@ test('the matrix puts the near plane at depth 1 and the far at 0', () => {
   assert.ok(Math.abs(depthAt(1) - 1) < 1e-6);
   assert.ok(Math.abs(depthAt(10_000)) < 1e-6);
   assert.ok(depthAt(10) > depthAt(100));
+});
+
+test("an orbit's shot stands back from its target along its look, and over the ground", () => {
+  const orbit = { targetX: 100, targetY: 200, targetZ: 10, yaw: 0, pitch: 0, distance: 3 };
+  const lens = { fov: 1, near: 0.1, far: 1000 };
+  const level = shotOfOrbit(orbit, lens, () => null, 0.3);
+  assert.deepEqual(
+    level.eye.map((value) => Math.round(value * 1e9) / 1e9),
+    [100, 203, 10],
+    'looking north, the eye stands south of its target',
+  );
+  const buried = shotOfOrbit(orbit, lens, () => 12, 0.3);
+  assert.equal(buried.eye[2], 12.3);
+  assert.equal(buried.yaw, 0);
 });
 
 test('a forward vector reads back as its bearing and pitch', () => {
