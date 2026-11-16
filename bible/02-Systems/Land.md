@@ -107,7 +107,8 @@ One landmass at a time is open for shaping. The editor also generates the others
 leave the open one alone. The door answers for the open landmass:
 
 - `land_patch`: the ground over a grid of up to 1,024 samples a side. Each sample has its height, its water's
-  surface, and a mark for a road, a town or a port. The editor's close-up draws it.
+  surface, how far past fresh water's edge it lies (beyond a river's channel, or above a lake's surface), and a mark
+  for a road, a town or a port. The editor's close-up draws it, its water's edge drawn where that distance is 0.
 - `land_sample`: the ground at a list of points. Each point has its height, its water (dry, sea, lake or river) with
   the water's surface, and the sea's swell over it at a given moment ([[Water]]). The answer also holds fingerprints
   of the heights and of the sea. The game will call it.

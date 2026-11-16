@@ -92,8 +92,7 @@ fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
   let radius = ring_radius(ring);
   let angle = f32(segment) / f32(segments) * TAU;
   let offset = vec2f(cos(angle), sin(angle)) * radius;
-  let point = frame.eye.xy + offset;
-  let water = water_at(point);
+  let water = water_at(offset);
   let depth = water.level - water.bed;
   let spacing = max(radius, frame.grid.x) * (ring_growth() - 1.0);
   var shift = vec2f(0.0);
@@ -101,7 +100,7 @@ fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
   if (!water.fresh) {
     let swell = swell_at(offset, depth, spacing);
     shift = swell.shift;
-    height += swell.height + breaker_at(point, max(depth, 0.0), spacing).height;
+    height += swell.height + breaker_at(offset, max(depth, 0.0), spacing).height;
   }
   var surface: Surface;
   surface.offset = offset;
@@ -113,14 +112,15 @@ fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
 }
 
 // A river runs down its surface's slope, faster the steeper it falls: its flow at a point, metres a second.
-fn river_flow(point: vec2f) -> vec2f {
-  if (inside_patch(point) < 2.0) { return vec2f(0.0); }
-  let step = frame.patch_area.z;
-  let corner = frame.patch_area.xy;
+fn river_flow(offset: vec2f) -> vec2f {
+  if (inside_patch(offset) < 2.0) { return vec2f(0.0); }
+  let at = close_at(offset);
+  let east = vec2f(1.0, 0.0);
+  let south = vec2f(0.0, 1.0);
   let fall = vec2f(
-    fresh_at(patch_levels, patch_heights, point + vec2f(step, 0.0), corner, step).x - fresh_at(patch_levels, patch_heights, point - vec2f(step, 0.0), corner, step).x,
-    fresh_at(patch_levels, patch_heights, point + vec2f(0.0, step), corner, step).x - fresh_at(patch_levels, patch_heights, point - vec2f(0.0, step), corner, step).x,
-  ) / (2.0 * step);
+    grid_at(patch_levels, at + east).r - grid_at(patch_levels, at - east).r,
+    grid_at(patch_levels, at + south).r - grid_at(patch_levels, at - south).r,
+  ) / (2.0 * frame.patch_area.z);
   let steep = length(fall);
   if (steep < 1e-5) { return vec2f(0.0); }
   return -fall / steep * clamp(steep * 600.0, 0.15, 2.5);
@@ -129,7 +129,6 @@ fn river_flow(point: vec2f) -> vec2f {
 @fragment
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   let pixel = surface.clip.xy;
-  let point = frame.eye.xy + surface.offset;
   let local = surface.offset + frame.local.xy;
   let footprint = max(length(fwidth(surface.offset)), 0.01);
   let fresh = surface.fresh == 1u;
@@ -144,13 +143,13 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   var breaker: Breaker;
   var drift = vec2f(0.0);
   if (fresh) {
-    let flow = river_flow(point);
+    let flow = river_flow(surface.offset);
     let slope = chop_slope(local, flow, 0.3 + 0.35 * min(length(flow), 1.0), footprint);
     normal = normalize(vec3f(-slope, 1.0));
     drift = flow * frame.eye.w * 0.75;
   } else {
     let swell = swell_at(surface.offset, depth, footprint);
-    breaker = breaker_at(point, max(depth, 0.0), footprint);
+    breaker = breaker_at(surface.offset, max(depth, 0.0), footprint);
     let slope = chop_slope(local, vec2f(0.0), 1.0, footprint) + breaker.slope;
     let rolled = swell_normal(swell);
     normal = normalize(rolled / max(rolled.z, 0.05) + vec3f(-slope, 0.0));

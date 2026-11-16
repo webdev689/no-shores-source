@@ -332,15 +332,33 @@ impl Ground {
             return WaterAt::River { surface: river.level };
         }
         let height = self.height_at(x, y);
-        let (i, j) = ((x - self.land.left_m) / self.land.cell_m, (y - self.land.top_m) / self.land.cell_m);
-        if self.land.covers(x, y) {
-            // A lake level of 0 is no lake: the sea's own cells hold it too.
-            let surface = self.lake_level[j as usize * self.land.width + i as usize];
-            if surface > 0.0 && surface > height {
-                return WaterAt::Lake { surface };
-            }
+        if let Some(surface) = self.lake_surface(x, y)
+            && surface > height
+        {
+            return WaterAt::Lake { surface };
         }
         if height < 0.0 { WaterAt::Sea } else { WaterAt::Dry }
+    }
+
+    /// The surface of the lake whose cell holds a point, if any. A lake level of 0 is no lake: the sea's own cells
+    /// hold it too.
+    fn lake_surface(&self, x: f64, y: f64) -> Option<f64> {
+        if !self.land.covers(x, y) {
+            return None;
+        }
+        let (i, j) = ((x - self.land.left_m) / self.land.cell_m, (y - self.land.top_m) / self.land.cell_m);
+        Some(self.lake_level[j as usize * self.land.width + i as usize]).filter(|&surface| surface > 0.0)
+    }
+
+    /// How far past fresh water's edge a point lies, metres, negative inside it: a lake's depth under its surface (or
+    /// height above it on its shore), or the distance beyond a river's channel within its banks' reach. None where no
+    /// fresh water is near. Drawn water follows this, so its edge is smooth wherever the ground is sampled.
+    #[must_use]
+    pub fn fresh_edge(&self, x: f64, y: f64) -> Option<f64> {
+        if let Some(surface) = self.lake_surface(x, y) {
+            return Some(self.height_at(x, y) - surface);
+        }
+        self.nearest(x, y, false).map(|(river, distance)| distance - river.width / 2.0)
     }
 }
 

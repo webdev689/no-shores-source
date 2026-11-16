@@ -1,5 +1,6 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import type { LandView } from '../rules/landRules.ts';
+import { SHARED_WGSL } from '../water/waterCommon.ts';
 import type { Camera } from './camera.ts';
 import type { CellRect } from './landMask.ts';
 
@@ -21,6 +22,8 @@ export interface ReliefScene {
 /** One full-screen pass over a landmass's window: the seabed by depth, the land by height under a hillshade, lakes,
  *  each cell's mark (rivers, roads, towns, ports), the frame's edge and the brush. */
 const SHADER = /* wgsl */ `
+${SHARED_WGSL}
+
 struct View {
   centre: vec2f,
   viewport: vec2f,
@@ -55,10 +58,6 @@ fn vertex_main(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
 }
 
-fn height_at(cell: vec2i) -> f32 {
-  let size = vec2i(textureDimensions(heights));
-  return textureLoad(heights, clamp(cell, vec2i(0), size - 1), 0).r;
-}
 
 // The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w).
 fn land_colour(height: f32) -> vec3f {
@@ -83,28 +82,23 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
   }
   let local = world - view.origin;
   if (any(local < vec2f(0.0)) || any(local >= view.window_size)) { return vec4f(OPEN_SEA, 1.0); }
-  let cell = vec2i(floor(local / view.cell_m));
-  let height = height_at(cell);
-  var colour: vec3f;
-  if (height < 0.0) {
-    colour = mix(SHALLOW, OPEN_SEA, smoothstep(0.0, 300.0, -height));
-  } else {
-    let east = height_at(cell + vec2i(1, 0)) - height_at(cell - vec2i(1, 0));
-    let south = height_at(cell + vec2i(0, 1)) - height_at(cell - vec2i(0, 1));
-    let normal = normalize(vec3f(-east, -south, 4.0 * view.cell_m));
-    let shade = clamp(dot(normal, normalize(vec3f(-1.0, -1.0, 1.2))), 0.0, 1.0);
-    colour = land_colour(height) * (0.45 + 0.75 * shade);
-    let lake = textureLoad(lakes, cell, 0).r;
-    if (lake > height) { colour = LAKE; }
-    let mark = textureLoad(marks, cell, 0).r;
-    if (mark == 1u || mark == 2u) { colour = mix(colour, RIVER, 0.85); }
-    if (mark == 3u) { colour = ROAD; }
-    if (mark == 4u) { colour = mix(colour, TOWN, 0.6); }
-    if (mark == 5u) { colour = PORT; }
-  }
-  if (view.brush_radius > 0.0 && abs(distance(world, view.brush) - view.brush_radius) < step) {
-    colour = vec3f(1.0);
-  }
+  // The cells are read along the same splines the 3D view draws, and every edge (the coast, a lake's shore, a mark,
+  // the brush) is softened across a pixel, so nothing shows the cells' squares.
+  let at = local / view.cell_m - 0.5;
+  let ground = spline_at(heights, at);
+  let height = ground.x;
+  let pixel_m = max(step, 1e-3);
+  let sea = mix(SHALLOW, OPEN_SEA, smoothstep(0.0, 300.0, -height));
+  let normal = normalize(vec3f(-0.5 * ground.yz / view.cell_m, 1.0));
+  let shade = clamp(dot(normal, normalize(vec3f(-1.0, -1.0, 1.2))), 0.0, 1.0);
+  var land = land_colour(max(height, 0.0)) * (0.45 + 0.75 * shade);
+  let lake = grid_at(lakes, at).r - height;
+  land = mix(land, LAKE, smoothstep(-0.5, 0.5, lake / max(fwidth(lake), 1e-3)) * select(0.0, 1.0, grid_at(lakes, at).r > 0.0));
+  land = mix(land, RIVER, 0.85 * marked(marks, at, 1u, 2u));
+  land = mix(mix(mix(land, ROAD, marked(marks, at, 3u, 3u)), TOWN, 0.6 * marked(marks, at, 4u, 4u)), PORT, marked(marks, at, 5u, 5u));
+  var colour = mix(sea, land, smoothstep(-0.5, 0.5, height / max(fwidth(height), 1e-3)));
+  let ring = 1.0 - smoothstep(0.0, pixel_m * 1.2, abs(distance(world, view.brush) - view.brush_radius));
+  colour = mix(colour, vec3f(1.0), select(0.0, ring, view.brush_radius > 0.0));
   return vec4f(colour, 1.0);
 }
 `;

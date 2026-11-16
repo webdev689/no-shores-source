@@ -1,4 +1,5 @@
 import type { GroundPatch, Swell } from '../rules/landRules.ts';
+import { splineAt } from './spline.ts';
 import { swellHeight } from './swell.ts';
 
 /** The breakers' tuning, one swell rolling in to every shore. The GPU draws them from these same numbers. */
@@ -23,6 +24,10 @@ export const GRAVITY = 9.81;
 /** Fresh water is drawn this far under its level: a river's banks stand at its level for metres, and the land, not
  *  the water, should win there. */
 export const FRESH_SINK_M = 0.05;
+/** Between the samples, still water this high or more is fresh; lower, it is the sea's level under a bank. */
+export const FRESH_LEVEL_M = 0.01;
+/** A sample's distance past fresh water's edge where none is near, as the land's door gives it. */
+export const FAR_FROM_FRESH_M = 1e6;
 /** Travel times stop here, seconds: past it no breaker is drawn and the swell rolls on alone. */
 const LONGEST_TRAVEL_S = 400;
 /** The slow clock the breakers' groups drift by, seconds: the GPU's floats keep their precision under it. */
@@ -37,8 +42,7 @@ export interface ShoreField {
   readonly height: number;
   /** The seabed and ground, metres. */
   readonly heights: Float32Array;
-  /** Where the water stands: a lake's or river's surface; 0, the sea's still water, elsewhere. The GPU carries a
-   *  surface one sample past its edge, under the bank, so the land draws the waterline. */
+  /** Where still water stands and its edge, two floats a sample (stillLevels). */
   readonly levels: Float32Array;
   /** Four floats a sample: a breaker's travel time to the waterline (seconds, negative up the beach), its slope east
    *  and south (seconds a metre), and 1 where the sample is sea. */
@@ -205,8 +209,44 @@ export function shoreField(patch: GroundPatch): ShoreField {
     const capped = Math.abs(value) >= LONGEST_TRAVEL_S - 1;
     shore.set([value, capped ? 0 : east, capped ? 0 : south, isSea[sample] ?? 0], sample * 4);
   }
-  const levels = Float32Array.from(water, (surface) => Math.max(0, surface));
+  const levels = stillLevels(heights, water, patch.edges, width, height);
   return { left: patch.left, top: patch.top, step, width, height, heights, levels, shore };
+}
+
+/**
+ * Each sample's still water as two floats: fresh water's surface, carried two samples past its wet samples (0, the
+ * sea's level under all land, elsewhere), and how far past the water's edge the sample lies, metres. `edges` are the
+ * land's own (rivers and lakes alike); without them a sample's edge is its height above the carried surface, a lake's
+ * shore. Drawn, the surface dips under the land as far as the edge runs past it, so the waterline lies on the edge
+ * itself, smooth wherever the samples fall.
+ */
+export function stillLevels(
+  heights: Float32Array,
+  water: Float32Array,
+  edges: Float32Array | null,
+  width: number,
+  height: number,
+): Float32Array {
+  let levels = Float32Array.from(water, (surface) => Math.max(0, surface));
+  for (let pass = 0; pass < 2; pass++) {
+    const next = levels.slice();
+    for (let sample = 0; sample < levels.length; sample++) {
+      if ((levels[sample] ?? 0) > 0) continue;
+      const [column, row] = [sample % width, Math.floor(sample / width)];
+      for (const [across, down] of NEIGHBOURS) {
+        const [nextColumn, nextRow] = [column + across, row + down];
+        if (nextColumn < 0 || nextRow < 0 || nextColumn >= width || nextRow >= height) continue;
+        next[sample] = Math.max(next[sample] ?? 0, levels[nextRow * width + nextColumn] ?? 0);
+      }
+    }
+    levels = next;
+  }
+  const out = new Float32Array(levels.length * 2);
+  for (const [sample, level] of levels.entries()) {
+    const edge = level > 0 ? (edges?.[sample] ?? (heights[sample] ?? 0) - level) : FAR_FROM_FRESH_M;
+    out.set([level, edge], sample * 2);
+  }
+  return out;
 }
 
 const smoothstep = (low: number, high: number, value: number) => {
@@ -259,15 +299,10 @@ export function waterUnder(
   corners.push((corners[0] ?? 0) + field.width, (corners[1] ?? 0) + field.width);
   const blend = (values: ArrayLike<number>, stride = 1, offset = 0) =>
     corners.reduce((sum, sample, index) => sum + (weights[index] ?? 0) * (values[sample * stride + offset] ?? 0), 0);
-  const bed = blend(field.heights);
-  let [freshWeight, freshLevel] = [0, 0];
-  for (const [index, sample] of corners.entries()) {
-    const level = field.levels[sample] ?? 0;
-    if (level > 0)
-      [freshWeight, freshLevel] = [freshWeight + (weights[index] ?? 0), freshLevel + (weights[index] ?? 0) * level];
-  }
-  if (freshWeight > 0) {
-    const surface = freshLevel / freshWeight - FRESH_SINK_M;
+  const bed = splineAt(field.heights, field.width, field.height, gridX, gridY);
+  const level = blend(field.levels, 2, 0);
+  if (level > FRESH_LEVEL_M) {
+    const surface = level - FRESH_SINK_M - Math.max(0, blend(field.levels, 2, 1));
     return { kind: surface > bed ? 'fresh' : 'dry', surface, bed };
   }
   const depth = Math.max(0, -bed);

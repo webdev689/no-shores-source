@@ -77,7 +77,8 @@ export interface LandPatch {
 }
 
 /** The exact ground over a grid of samples `step` metres apart from (left, top): each sample's height, its water's
- *  surface (0 where dry) and its mark (3 a road, 4 a town, 5 a port, 0 none). */
+ *  surface (0 where dry), how far past fresh water's edge it lies (negative inside; a million metres where none is
+ *  near) and its mark (3 a road, 4 a town, 5 a port, 0 none). */
 export interface GroundPatch {
   readonly left: number;
   readonly top: number;
@@ -86,6 +87,7 @@ export interface GroundPatch {
   readonly height: number;
   readonly heights: Float32Array;
   readonly water: Float32Array;
+  readonly edges: Float32Array;
   readonly marks: Uint8Array;
 }
 
@@ -249,8 +251,9 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         const { start } = readHeader(exports, address);
         const cells = width * height;
         const floats = (offset: number) => new Float32Array(exports.memory.buffer.slice(offset, offset + cells * 4));
-        const marks = new Uint8Array(exports.memory.buffer.slice(start + cells * 8, start + cells * 9));
-        return { left, top, step, width, height, heights: floats(start), water: floats(start + cells * 4), marks };
+        const marks = new Uint8Array(exports.memory.buffer.slice(start + cells * 12, start + cells * 13));
+        const [heights, water, edges] = [floats(start), floats(start + cells * 4), floats(start + cells * 8)];
+        return { left, top, step, width, height, heights, water, edges, marks };
       } finally {
         exports.release(address, length);
       }

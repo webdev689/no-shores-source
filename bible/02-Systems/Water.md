@@ -53,7 +53,9 @@ pixel fade out. The land is drawn first, with its seabed, then the water over it
 - **Foam.** Foam is a lace of bubble walls. It covers crests that fold, a breaker's face and the surf behind it, the
   swash's edge and a splash. Far off it shows as the share of the surface it covers.
 - **Fresh water.** A lake lies still under a light chop; a river's chop runs downstream at a pace set by its fall.
-  Its surface is drawn 5 cm under its level, so a bank at the level shows dry.
+  Its surface is carried two samples past its water, and dips under the land as far as the land's door says a point
+  lies past its edge, so the waterline runs along a river's channel or a lake's shore however the samples fall, even
+  where the plain lies level with the river. It is drawn 5 cm under its level, so a bank at the level shows dry.
 
 ## In the water
 
@@ -75,5 +77,4 @@ deep. A diver's camera comes in close rather than sink into the bed.
 
 - The breakers and the ripples are drawn in the browser only; the server has the swell alone.
 - One swell for the whole world, until the weather drives it ([[World Map]]).
-- A river's edge follows the close-up's 8 m samples, so a river running across them shows stepped banks.
 - The walker has no body yet: the ripples and splashes come from the point the camera follows.

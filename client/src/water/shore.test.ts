@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GroundPatch } from '../rules/landRules.ts';
-import { breaker, breakerProfile, FRESH_SINK_M, SHORE, shoreField, waterUnder } from './shore.ts';
+import { breaker, breakerProfile, FAR_FROM_FRESH_M, FRESH_SINK_M, SHORE, shoreField, waterUnder } from './shore.ts';
 
 /** A patch 8 m a sample: a beach rising to the west, its waterline 200 m from the west edge, the sea deepening east. */
 function beach(lake?: { column: number; row: number; level: number }): GroundPatch {
@@ -17,7 +17,20 @@ function beach(lake?: { column: number; row: number; level: number }): GroundPat
       }
     }
   }
-  return { left: 10_000, top: 20_000, step, width, height, heights, water, marks: new Uint8Array(width * height) };
+  const edges = Float32Array.from(water, (surface, index) =>
+    surface > 0 ? (heights[index] ?? 0) - surface : FAR_FROM_FRESH_M,
+  );
+  return {
+    left: 10_000,
+    top: 20_000,
+    step,
+    width,
+    height,
+    heights,
+    water,
+    edges,
+    marks: new Uint8Array(width * height),
+  };
 }
 
 const travelAt = (field: ReturnType<typeof shoreField>, column: number, row: number) =>
@@ -67,7 +80,7 @@ test('a breaker rises fast on its face and falls slowly on its back', () => {
 });
 
 test('a point of the close-up is sea, fresh water on its banks, or dry ground', () => {
-  const patch = beach({ column: 4, row: 16, level: 3.5 });
+  const patch = beach({ column: 4, row: 16, level: 1.5 });
   const field = shoreField(patch);
   const place = (column: number, row: number) => ({
     x: patch.left + column * patch.step,
@@ -77,7 +90,36 @@ test('a point of the close-up is sea, fresh water on its banks, or dry ground', 
   assert.equal(sea?.kind, 'sea');
   assert.ok(Math.abs(sea?.surface ?? 9) < 0.01, 'calm far out');
   const lake = waterUnder(field, undefined, place(4, 16), 0);
-  assert.deepEqual([lake?.kind, lake?.surface], ['fresh', 3.5 - FRESH_SINK_M]);
+  assert.deepEqual([lake?.kind, lake?.surface], ['fresh', 1.5 - FRESH_SINK_M]);
+  assert.equal(
+    field.levels[(16 * patch.width + 6) * 2],
+    1.5,
+    'the surface is carried onto the bank, for the land to cut',
+  );
+  assert.equal(waterUnder(field, undefined, place(6, 16), 0)?.kind, 'dry', 'the bank at 2.3 m stands above it');
   assert.equal(waterUnder(field, undefined, place(12, 16), 0)?.kind, 'dry');
   assert.equal(waterUnder(field, undefined, { x: 0, y: 0 }, 0), null);
+});
+
+test('a river running level with its plain keeps to its channel: its waterline is its edge, between the samples', () => {
+  const [width, height, step] = [21, 3, 4];
+  const heights = new Float32Array(width * height).fill(10);
+  const water = new Float32Array(width * height);
+  const edges = new Float32Array(width * height);
+  for (let row = 0; row < height; row++) {
+    for (let column = 0; column < width; column++) {
+      const index = row * width + column;
+      // A channel 22 m wide down the middle; the plain beside it lies 2 cm under the river's surface.
+      const fromMiddle = Math.abs(column - 10) * step;
+      edges[index] = fromMiddle - 11;
+      if (fromMiddle < 11) [heights[index], water[index]] = [8, 10.02];
+    }
+  }
+  const patch = { left: 0, top: 0, step, width, height, heights, water, edges, marks: new Uint8Array(width * height) };
+  const field = shoreField(patch);
+  const kindAt = (x: number) => waterUnder(field, undefined, { x, y: 4 }, 0)?.kind;
+  assert.equal(kindAt(40), 'fresh', 'mid-channel');
+  assert.equal(kindAt(40 + 10.5), 'fresh', 'just inside its edge, between samples');
+  assert.equal(kindAt(40 + 11.6), 'dry', 'just past its edge, though the plain lies under its level');
+  assert.equal(kindAt(40 - 11.6), 'dry');
 });

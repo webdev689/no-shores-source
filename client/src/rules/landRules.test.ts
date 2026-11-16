@@ -114,6 +114,25 @@ test('a patch gives the exact ground over a grid, with water and marks', async (
   assert.equal(patch.marks[0], 0, 'beside it');
   const sampled = rules.sample([[259_000, 359_980]]);
   assert.equal(patch.heights[0], Math.fround(sampled.heights[0] ?? 0), 'the same ground the runtime samples');
+  assert.equal(patch.edges[0], 1e6, 'no fresh water near');
+});
+
+test('a patch across a river says how far each sample lies past its edge', async () => {
+  const rules = await land();
+  const river = {
+    id: 'river-1',
+    width_m: 40,
+    depth_m: 4,
+    points: [
+      [260_000, 330_000],
+      [260_000, 400_000],
+    ],
+  };
+  rules.open(square(200_000, 300_000, 120_000), 'square', JSON.stringify({ strokes: [], rivers: [river] }));
+  const patch = rules.patch(259_950, 360_000, 5, 21, 1);
+  assert.ok(Math.abs((patch.edges[10] ?? 0) + 20) < 1e-3, `mid-channel: ${patch.edges[10]}`);
+  assert.ok(Math.abs((patch.edges[15] ?? 0) - 5) < 1e-3, `on the bank: ${patch.edges[15]}`);
+  assert.equal(patch.edges[0], 1e6, 'past the banks');
 });
 
 test('a preview leaves the landmass open for strokes alone', async () => {

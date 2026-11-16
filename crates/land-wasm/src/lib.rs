@@ -250,9 +250,12 @@ pub fn sample_json(request: &[u8]) -> String {
 /// What stands at a sampled point of a patch, beside its water: 3 a road, 4 a town, 5 a port, 0 none (the World
 /// Editor's marks).
 const PORT_MARK_M: f64 = 25.0;
+/// A patch sample's distance past fresh water's edge where no fresh water is near, metres.
+const FAR_FROM_FRESH_M: f32 = 1.0e6;
 
 /// The open landmass's ground over a grid: `{ "left", "top", "step", "width", "height" }` in metres and samples. A
-/// header, then each sample's height, its water's surface (0 where dry) as f32, then its mark as a byte.
+/// header, then each sample's height, its water's surface (0 where dry) and how far past fresh water's edge it lies
+/// (FAR_FROM_FRESH_M where none is near) as f32, then its mark as a byte.
 #[must_use]
 pub fn patch_view(request: &[u8]) -> Vec<u8> {
     let sampled = read(request).and_then(|request| {
@@ -269,6 +272,7 @@ pub fn patch_view(request: &[u8]) -> Vec<u8> {
             let header = json!({ "width": width, "height": height, "left": left, "top": top, "step": step });
             let mut bytes = view_bytes(&header, None);
             let (mut water, mut marks) = (Vec::with_capacity(width * height), Vec::with_capacity(width * height));
+            let mut edges = Vec::with_capacity(width * height);
             for j in 0..height {
                 for i in 0..width {
                     let (x, y) = (left + i as f64 * step, top + j as f64 * step);
@@ -277,6 +281,7 @@ pub fn patch_view(request: &[u8]) -> Vec<u8> {
                         WaterAt::Lake { surface } | WaterAt::River { surface } => surface as f32,
                         WaterAt::Sea | WaterAt::Dry => 0.0,
                     });
+                    edges.push(ground.fresh_edge(x, y).map_or(FAR_FROM_FRESH_M, |edge| edge as f32));
                     let near_port = landmass.edits.ports.iter().any(|port| {
                         let (dx, dy) = (port.at.x as f64 - x, port.at.y as f64 - y);
                         dx * dx + dy * dy < PORT_MARK_M * PORT_MARK_M
@@ -292,7 +297,7 @@ pub fn patch_view(request: &[u8]) -> Vec<u8> {
                     });
                 }
             }
-            water.iter().for_each(|value: &f32| bytes.extend_from_slice(&value.to_le_bytes()));
+            water.iter().chain(&edges).for_each(|value: &f32| bytes.extend_from_slice(&value.to_le_bytes()));
             bytes.extend_from_slice(&marks);
             Ok(bytes)
         })

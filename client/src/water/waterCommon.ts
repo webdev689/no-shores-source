@@ -1,4 +1,4 @@
-import { FRESH_SINK_M, GRAVITY, SHORE, SLOW_CLOCK_S } from './shore.ts';
+import { FRESH_LEVEL_M, FRESH_SINK_M, GRAVITY, SHORE, SLOW_CLOCK_S } from './shore.ts';
 
 /** The most swell waves the GPU sums; crates/land/src/sea.rs makes ten. The wind's chop is eight more. */
 export const MOST_WAVES = 12;
@@ -72,6 +72,81 @@ fn caustics(point: vec2f, time: f32) -> f32 {
   return lines * 0.75 + finer * 0.45 + lines * finer;
 }
 
+const FRESH_SINK = ${FRESH_SINK_M};
+const FRESH_LEVEL = ${FRESH_LEVEL_M};
+
+// The value of a grid of samples at 'at', in samples from sample (0, 0), along Catmull-Rom splines through them (the
+// land crate's own cubic), and its slope a sample east and south.
+fn spline_at(grid: texture_2d<f32>, at: vec2f) -> vec3f {
+  let last = vec2i(textureDimensions(grid)) - 1;
+  let base = floor(at);
+  let t = at - base;
+  let t2 = t * t;
+  let t3 = t2 * t;
+  var weights = array<vec2f, 4>(-0.5 * t3 + t2 - 0.5 * t, 1.5 * t3 - 2.5 * t2 + 1.0, -1.5 * t3 + 2.0 * t2 + 0.5 * t, 0.5 * t3 - 0.5 * t2);
+  var slopes = array<vec2f, 4>(-1.5 * t2 + 2.0 * t - 0.5, 4.5 * t2 - 5.0 * t, -4.5 * t2 + 4.0 * t + 0.5, 1.5 * t2 - t);
+  var out = vec3f(0.0);
+  for (var row = 0; row < 4; row++) {
+    for (var column = 0; column < 4; column++) {
+      let value = textureLoad(grid, clamp(vec2i(base) + vec2i(column - 1, row - 1), vec2i(0), last), 0).r;
+      out += value * vec3f(weights[column].x * weights[row].y, slopes[column].x * weights[row].y, weights[column].x * slopes[row].y);
+    }
+  }
+  return out;
+}
+
+// How much of a point is the close-up's: 1 inside it, easing to 0 across its outer 24 samples (0 with none shown).
+fn close_share(close: texture_2d<f32>, close_at: vec2f, shown: bool) -> f32 {
+  let size = vec2f(textureDimensions(close)) - 1.0;
+  let inside = min(min(close_at.x, close_at.y), min(size.x - close_at.x, size.y - close_at.y));
+  return select(0.0, smoothstep(1.0, 24.0, inside), shown);
+}
+
+// The ground at a point, height and slope a metre: the close-up's spline eased into the 1 km land's by 'share', so
+// the two never meet in a step. 'wide_at' and 'close_at' are the point in each grid's samples.
+fn ground_at(wide: texture_2d<f32>, wide_at: vec2f, cell: f32, close: texture_2d<f32>, close_at: vec2f, step: f32, share: f32) -> vec3f {
+  let far = spline_at(wide, wide_at) * vec3f(1.0, 1.0 / cell, 1.0 / cell);
+  if (share <= 0.0) { return far; }
+  return mix(far, spline_at(close, close_at) * vec3f(1.0, 1.0 / step, 1.0 / step), share);
+}
+
+// The value a grid holds at 'at', in samples from sample (0, 0), between its four nearest.
+fn grid_at(grid: texture_2d<f32>, at: vec2f) -> vec4f {
+  let last = vec2i(textureDimensions(grid)) - 1;
+  let base = vec2i(floor(at));
+  let fraction = at - floor(at);
+  let a = textureLoad(grid, clamp(base, vec2i(0), last), 0);
+  let b = textureLoad(grid, clamp(base + vec2i(1, 0), vec2i(0), last), 0);
+  let c = textureLoad(grid, clamp(base + vec2i(0, 1), vec2i(0), last), 0);
+  let d = textureLoad(grid, clamp(base + vec2i(1, 1), vec2i(0), last), 0);
+  return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
+}
+
+// The still water at a point: its level and 1 where it is fresh. The levels hold shore.ts's stillLevels (a surface
+// and the edge, metres past it); past the edge the surface dips under the land as far as the edge runs, so the
+// waterline lies on the edge between the samples. Fresh water is drawn FRESH_SINK under its own level; the sea at 0.
+fn still_at(wide_levels: texture_2d<f32>, wide_at: vec2f, close_levels: texture_2d<f32>, close_at: vec2f, share: f32) -> vec2f {
+  let still = mix(grid_at(wide_levels, wide_at).rg, grid_at(close_levels, close_at).rg, share);
+  let fresh = still.x > FRESH_LEVEL;
+  return vec2f(select(0.0, still.x - FRESH_SINK - max(still.y, 0.0), fresh), select(0.0, 1.0, fresh));
+}
+
+// How much of the four samples round 'at' carry a mark (marks.ts), between 'first' and 'last' kinds: a soft edge
+// along the samples, never their square.
+fn marked(marks: texture_2d<u32>, at: vec2f, first: u32, last: u32) -> f32 {
+  let top = vec2i(textureDimensions(marks)) - 1;
+  let base = vec2i(floor(at));
+  let fraction = at - floor(at);
+  var cover = 0.0;
+  for (var corner_index = 0; corner_index < 4; corner_index++) {
+    let offset = vec2i(corner_index & 1, corner_index >> 1);
+    let mark = textureLoad(marks, clamp(base + offset, vec2i(0), top), 0).r;
+    let share = mix(1.0 - fraction.x, fraction.x, f32(offset.x)) * mix(1.0 - fraction.y, fraction.y, f32(offset.y));
+    cover += select(0.0, share, mark >= first && mark <= last);
+  }
+  return smoothstep(0.3, 0.7, cover);
+}
+
 fn sky(direction: vec3f, slow_time: f32) -> vec3f {
   let up = direction.z;
   var colour = mix(HORIZON, ZENITH, sqrt(clamp(up, 0.0, 1.0)));
@@ -112,7 +187,7 @@ struct Frame {
 
 @group(0) @binding(0) var<uniform> frame: Frame;
 @group(0) @binding(1) var scene_colour: texture_2d<f32>;
-@group(0) @binding(2) var scene_depth: texture_depth_2d;
+@group(0) @binding(2) var scene_depth: texture_2d<f32>;
 @group(0) @binding(3) var coarse_heights: texture_2d<f32>;
 @group(0) @binding(4) var coarse_lakes: texture_2d<f32>;
 @group(0) @binding(5) var patch_heights: texture_2d<f32>;
@@ -130,7 +205,6 @@ const BREAK_START = ${SHORE.startDepthM}.0;
 const BREAK_RATIO = ${SHORE.breakRatio};
 const RUN_UP = ${SHORE.runUpM};
 const SWASH_TIME = ${SHORE.swashS}.0;
-const FRESH_SINK = ${FRESH_SINK_M};
 
 const SEA_ABSORB = vec3f(0.42, 0.085, 0.06);
 const SEA_BODY = vec3f(0.012, 0.15, 0.21);
@@ -139,57 +213,20 @@ const FRESH_ABSORB = vec3f(0.55, 0.24, 0.30);
 const FRESH_BODY = vec3f(0.05, 0.19, 0.17);
 const FOAM = vec3f(0.93, 0.96, 0.97);
 
-// The value a grid of samples holds at a point of the window, between its four nearest: the grid's sample (0, 0)
-// lies at 'corner', 'step' metres apart.
-fn grid_at(grid: texture_2d<f32>, point: vec2f, corner: vec2f, step: f32) -> vec4f {
-  let last = vec2i(textureDimensions(grid)) - 1;
-  let at = (point - corner) / step;
-  let base = vec2i(floor(at));
-  let fraction = at - floor(at);
-  let a = textureLoad(grid, clamp(base, vec2i(0), last), 0);
-  let b = textureLoad(grid, clamp(base + vec2i(1, 0), vec2i(0), last), 0);
-  let c = textureLoad(grid, clamp(base + vec2i(0, 1), vec2i(0), last), 0);
-  let d = textureLoad(grid, clamp(base + vec2i(1, 1), vec2i(0), last), 0);
-  return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
+// A point 'offset' metres from the eye in the close-up's samples (measured from the eye, for the floats' sake) and
+// in the 1 km land's.
+fn close_at(offset: vec2f) -> vec2f {
+  return (offset + frame.local.zw) / frame.patch_area.z;
 }
 
-// Fresh water's level at a point, and 1 where any of the four nearest samples holds some (0 and 0 where none does).
-// A wet sample gives its level; a dry one standing at least that high (a bank) carries it, so the land draws the
-// waterline; a dry one lower down (ground beside a river that runs above it) sinks the surface under itself.
-fn fresh_at(grid: texture_2d<f32>, beds: texture_2d<f32>, point: vec2f, corner: vec2f, step: f32) -> vec2f {
-  let last = vec2i(textureDimensions(grid)) - 1;
-  let at = (point - corner) / step;
-  let base = vec2i(floor(at));
-  let fraction = at - floor(at);
-  var levels: array<f32, 4>;
-  var shares: array<f32, 4>;
-  var weight = 0.0;
-  var sum = 0.0;
-  for (var corner_index = 0; corner_index < 4; corner_index++) {
-    let offset = vec2i(corner_index & 1, corner_index >> 1);
-    levels[corner_index] = textureLoad(grid, clamp(base + offset, vec2i(0), last), 0).r;
-    shares[corner_index] = mix(1.0 - fraction.x, fraction.x, f32(offset.x)) * mix(1.0 - fraction.y, fraction.y, f32(offset.y));
-    if (levels[corner_index] > 0.0) {
-      weight += shares[corner_index];
-      sum += shares[corner_index] * levels[corner_index];
-    }
-  }
-  if (weight <= 0.0) { return vec2f(0.0); }
-  let wet = sum / weight;
-  var surface = 0.0;
-  for (var corner_index = 0; corner_index < 4; corner_index++) {
-    let offset = vec2i(corner_index & 1, corner_index >> 1);
-    let bed = textureLoad(beds, clamp(base + offset, vec2i(0), last), 0).r;
-    let dry = select(bed - 1.0, wet, bed >= wet - FRESH_SINK);
-    surface += shares[corner_index] * select(dry, levels[corner_index], levels[corner_index] > 0.0);
-  }
-  return vec2f(surface, 1.0);
+fn wide_at(offset: vec2f) -> vec2f {
+  return (frame.eye.xy + offset) / frame.coarse_area.x - 0.5;
 }
 
 // How far inside the close-up a point lies, in samples; negative outside it or with none.
-fn inside_patch(point: vec2f) -> f32 {
+fn inside_patch(offset: vec2f) -> f32 {
   if (frame.patch_area.w < 0.5) { return -1.0; }
-  let at = (point - frame.patch_area.xy) / frame.patch_area.z;
+  let at = close_at(offset);
   let size = vec2f(textureDimensions(patch_heights)) - 1.0;
   return min(min(at.x, at.y), min(size.x - at.x, size.y - at.y));
 }
@@ -200,24 +237,12 @@ struct Water {
   fresh: bool,
 };
 
-// The bed and the water's still level at a point: the close-up's where it reaches, the 1 km land's elsewhere.
-fn water_at(point: vec2f) -> Water {
-  var water: Water;
-  if (inside_patch(point) > 1.0) {
-    let step = frame.patch_area.z;
-    water.bed = grid_at(patch_heights, point, frame.patch_area.xy, step).r;
-    let fresh = fresh_at(patch_levels, patch_heights, point, frame.patch_area.xy, step);
-    water.level = fresh.x;
-    water.fresh = fresh.y > 0.0;
-  } else {
-    let corner = vec2f(frame.coarse_area.x * 0.5);
-    water.bed = grid_at(coarse_heights, point, corner, frame.coarse_area.x).r;
-    let fresh = fresh_at(coarse_lakes, coarse_heights, point, corner, frame.coarse_area.x);
-    water.level = fresh.x;
-    water.fresh = fresh.y > 0.0;
-  }
-  water.level = select(0.0, water.level - FRESH_SINK, water.fresh);
-  return water;
+// The bed and the water's still level at a point, read as the land's own drawing reads them.
+fn water_at(offset: vec2f) -> Water {
+  let share = close_share(patch_heights, close_at(offset), frame.patch_area.w > 0.5);
+  let ground = ground_at(coarse_heights, wide_at(offset), frame.coarse_area.x, patch_heights, close_at(offset), frame.patch_area.z, share);
+  let still = still_at(coarse_lakes, wide_at(offset), patch_levels, close_at(offset), share);
+  return Water(ground.x, still.x, still.y > 0.0);
 }
 
 fn reach(depth: f32) -> f32 {
@@ -283,12 +308,12 @@ struct Breaker {
 
 // The breakers at a point of the close-up in water 'depth' deep (0 up the beach): shore.ts's breaker, with the
 // slope its travel time gives, faded out toward the close-up's edge and where 'footprint' metres are too coarse.
-fn breaker_at(point: vec2f, depth: f32, footprint: f32) -> Breaker {
+fn breaker_at(offset: vec2f, depth: f32, footprint: f32) -> Breaker {
   var breaker: Breaker;
-  let inside = inside_patch(point);
+  let inside = inside_patch(offset);
   if (inside < 1.0) { return breaker; }
-  let shore = grid_at(patch_shore, point, frame.patch_area.xy, frame.patch_area.z);
-  let local = point - frame.patch_area.xy;
+  let shore = grid_at(patch_shore, close_at(offset));
+  let local = close_at(offset) * frame.patch_area.z;
   let slow = frame.eye.w;
   let sets = 1.0 + 0.25 * sin(0.019 * local.x + 0.13 * slow) * sin(0.023 * local.y - 0.09 * slow);
   let turn = (frame.swell_terms.w + shore.x) / BREAK_PERIOD;
@@ -314,18 +339,17 @@ fn breaker_at(point: vec2f, depth: f32, footprint: f32) -> Breaker {
 // since its cells are finer than a float's step this far from the window's corner): their height and slope,
 // metres; nothing outside the field.
 fn ripple_at(offset: vec2f) -> vec3f {
-  let point = offset;
   let size = frame.ripple_area.w;
-  let at = (point - frame.ripple_area.xy) / frame.ripple_area.z;
-  let inside = min(min(at.x, at.y), min(size - at.x, size - at.y));
-  if (inside < 2.0) { return vec3f(0.0); }
-  let corner = frame.ripple_area.xy + vec2f(frame.ripple_area.z * 0.5);
   let step = frame.ripple_area.z;
-  // Slopes over two cells either way, so the cells' corners do not show in the light.
+  let from_corner = (offset - frame.ripple_area.xy) / step;
+  let inside = min(min(from_corner.x, from_corner.y), min(size - from_corner.x, size - from_corner.y));
+  if (inside < 2.0) { return vec3f(0.0); }
+  // Cell centres lie half a cell in; slopes are taken over two cells either way, so the cells do not show in the light.
+  let at = from_corner - 0.5;
   let across = step * 2.0;
-  let height = grid_at(ripples, point, corner, step).r;
-  let east = grid_at(ripples, point + vec2f(across, 0.0), corner, step).r - grid_at(ripples, point - vec2f(across, 0.0), corner, step).r;
-  let south = grid_at(ripples, point + vec2f(0.0, across), corner, step).r - grid_at(ripples, point - vec2f(0.0, across), corner, step).r;
+  let height = grid_at(ripples, at).r;
+  let east = grid_at(ripples, at + vec2f(2.0, 0.0)).r - grid_at(ripples, at - vec2f(2.0, 0.0)).r;
+  let south = grid_at(ripples, at + vec2f(0.0, 2.0)).r - grid_at(ripples, at - vec2f(0.0, 2.0)).r;
   return vec3f(height, east / (2.0 * across), south / (2.0 * across)) * smoothstep(2.0, 16.0, inside);
 }
 
@@ -357,7 +381,9 @@ fn foam_cover(local: vec2f, drift: vec2f, amount: f32) -> f32 {
   let froth = smoothstep(0.0, 0.3, small.y - small.x);
   let patches = value_noise(local * 0.5 + drift * 0.6 + warp * 0.5);
   let pattern = walls * 0.42 + froth * 0.26 + patches * 0.32;
-  return (1.0 - smoothstep(amount - 0.16, amount + 0.04, pattern)) * smoothstep(0.04, 0.2, amount);
+  // The lace's edge is at least a pixel wide, so it never flickers where its cells grow small on screen.
+  let soft = max(0.2, fwidth(pattern) * 1.5);
+  return (1.0 - smoothstep(amount - soft * 0.8, amount + soft * 0.2, pattern)) * smoothstep(0.04, 0.2, amount);
 }
 
 // The ray from the eye through a pixel, its forward part 1, so a depth's forward distance scales it.
@@ -369,7 +395,7 @@ fn ray_through(pixel: vec2f) -> vec3f {
 
 // How far the scene drawn so far lies from the eye at a pixel, metres along the ray; a huge distance for the sky.
 fn scene_distance(pixel: vec2f) -> f32 {
-  let depth = textureLoad(scene_depth, vec2i(pixel), 0);
+  let depth = textureLoad(scene_depth, vec2i(pixel), 0).r;
   if (depth <= 0.0) { return 1e9; }
   let forward = frame.depth_terms.y / (depth + frame.depth_terms.x);
   return forward * length(ray_through(pixel));

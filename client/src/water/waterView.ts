@@ -48,11 +48,20 @@ export interface WaterScene {
   readonly eyeWater: { readonly surface: number; readonly fresh: boolean } | null;
   /** Where the ripples follow, window metres. */
   readonly focus: readonly [number, number];
-  readonly drawn: { readonly colour: GPUTexture; readonly depth: GPUTexture };
+  /** The land drawn so far: its colour and depth (a float a pixel) to see through, and the multisampled colour and
+   *  depth the water's pass draws into, testing against the land's. */
+  readonly drawn: {
+    readonly colour: GPUTexture;
+    readonly depth: GPUTexture;
+    readonly multisampled: GPUTexture;
+    readonly multidepth: GPUTexture;
+  };
   readonly target: GPUTextureView;
 }
 
 const FRAME_FLOATS = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4;
+/** Samples taken of each pixel by the land and the water, so every edge between them is smooth. */
+export const SAMPLES = 4;
 /** The disc of water round the eye: rings out to the far plane, each this share wider than the last, and segments. */
 const RINGS = 220;
 const SEGMENTS = 192;
@@ -98,8 +107,7 @@ export class WaterView {
       entries: [
         { binding: 0, visibility: seen, buffer: { type: 'uniform' } },
         { binding: 1, visibility: seen, texture: { sampleType: 'float' } },
-        { binding: 2, visibility: seen, texture: { sampleType: 'depth' } },
-        ...[3, 4, 5, 6, 7, 8].map((binding) => ({ binding, visibility: seen, texture: cells })),
+        ...[2, 3, 4, 5, 6, 7, 8].map((binding) => ({ binding, visibility: seen, texture: cells })),
         { binding: 9, visibility: seen, sampler: { type: 'filtering' } },
       ],
     });
@@ -111,6 +119,7 @@ export class WaterView {
         fragment: { module, entryPoint: `${entry}_fragment`, targets: [{ format: gpu.format }] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
         depthStencil: { format: 'depth32float', depthWriteEnabled: false, depthCompare },
+        multisample: { count: SAMPLES },
       });
     this.backdrop = pipeline('backdrop', 'always');
     this.surface = pipeline('surface', 'greater');
@@ -144,7 +153,7 @@ export class WaterView {
       corner: [field.left - window[0], field.top - window[1]],
       step: field.step,
       heights: upload(field.heights, 'r32float', 1),
-      levels: upload(field.levels, 'r32float', 1),
+      levels: upload(field.levels, 'rg32float', 2),
       shore: upload(field.shore, 'rgba32float', 4),
     };
   }
@@ -175,8 +184,16 @@ export class WaterView {
       ],
     });
     const pass = encoder.beginRenderPass({
-      colorAttachments: [{ view: scene.target, clearValue: [0, 0, 0, 1], loadOp: 'clear', storeOp: 'store' }],
-      depthStencilAttachment: { view: scene.drawn.depth.createView(), depthReadOnly: true },
+      colorAttachments: [
+        {
+          view: scene.drawn.multisampled.createView(),
+          resolveTarget: scene.target,
+          clearValue: [0, 0, 0, 1],
+          loadOp: 'clear',
+          storeOp: 'discard',
+        },
+      ],
+      depthStencilAttachment: { view: scene.drawn.multidepth.createView(), depthReadOnly: true },
     });
     pass.setBindGroup(0, bindGroup);
     pass.setPipeline(this.backdrop);
@@ -209,10 +226,9 @@ export class WaterView {
     const waves = scene.swell?.waves.slice(0, MOST_WAVES) ?? [];
     const breakerClock = scene.time % SHORE.periodS;
     values.set([scene.swell?.fullDepthM ?? 15, scene.swell?.goneDepthM ?? 1, waves.length, breakerClock], 56);
-    values.set(
-      [eyeX - Math.floor(eyeX / ANCHOR_M) * ANCHOR_M, eyeY - Math.floor(eyeY / ANCHOR_M) * ANCHOR_M, 0, 0],
-      60,
-    );
+    const fromCorner = patch ? [eyeX - patch.corner[0], eyeY - patch.corner[1]] : [0, 0];
+    const fromAnchor = [eyeX - Math.floor(eyeX / ANCHOR_M) * ANCHOR_M, eyeY - Math.floor(eyeY / ANCHOR_M) * ANCHOR_M];
+    values.set([...fromAnchor, ...fromCorner], 60);
     const [worldX, worldY] = [eyeX + scene.world[0], eyeY + scene.world[1]];
     for (const [index, wave] of waves.entries()) {
       const along = wave.direction[0] * worldX + wave.direction[1] * worldY;

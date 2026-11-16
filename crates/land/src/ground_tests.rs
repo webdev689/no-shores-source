@@ -42,6 +42,25 @@ fn a_carved_river_cuts_its_channel_and_holds_water() {
 }
 
 #[test]
+fn fresh_water_s_edge_is_found_to_the_metre_either_side_of_a_river() {
+    let edits = Edits {
+        rivers: vec![CarvedRiver {
+            id: "river-1".into(),
+            width_m: 40,
+            depth_m: 4,
+            points: points(&[[30_000, 20_000], [5_000, 20_000]]),
+        }],
+        ..Edits::default()
+    };
+    let ground = ground_with(&edits);
+    let edge = |y: f64| ground.fresh_edge(20_000.0, y).unwrap();
+    assert!((edge(20_000.0) - -20.0).abs() < 1e-6, "mid-channel is half its width inside");
+    assert!(edge(20_019.5) < 0.0 && edge(20_020.5) > 0.0, "the edge runs at the channel's side");
+    assert!((edge(20_026.0) - 6.0).abs() < 1e-6);
+    assert_eq!(ground.fresh_edge(20_000.0, 25_000.0), None, "far off there is no fresh water");
+}
+
+#[test]
 fn a_road_eases_to_its_level_and_a_town_levels_its_area() {
     let edits = Edits {
         roads: vec![Road { id: "road-1".into(), width_m: 10, points: points(&[[5_000, 10_000], [35_000, 10_000]]) }],

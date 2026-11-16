@@ -1,6 +1,8 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
-import { FRESH_SINK_M } from '../water/shore.ts';
+import { stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL } from '../water/waterCommon.ts';
+import { SAMPLES } from '../water/waterView.ts';
+import { CLIPMAP_LEVELS, CLIPMAP_QUADS, type ClipLevel } from './clipmap.ts';
 import type { CellRect } from './landMask.ts';
 
 /**
@@ -15,34 +17,42 @@ export interface TerrainData {
   readonly heights: Float32Array;
   readonly lakes: Float32Array;
   readonly marks: Uint8Array;
-  /** Where cell (0, 0)'s corner lies in the window, metres: 0 for the whole window, the patch's corner for a close-up. */
-  readonly originX?: number;
-  readonly originY?: number;
   /** The biome's low ground (0..1) and snow line in metres; the default green and 2,300 m without one. */
   readonly ground?: readonly [number, number, number];
   readonly snowM?: number;
+}
+
+/** The exact ground round the camera's target: samples `step` metres apart, sample (0, 0) at `corner` (window
+ *  metres); each sample's height, its still water (shore.ts stillLevels, two floats) and its mark (3 road, 4 town,
+ *  5 port). */
+export interface CloseUpData {
+  readonly corner: readonly [number, number];
+  readonly step: number;
+  readonly width: number;
+  readonly height: number;
+  readonly heights: Float32Array;
+  readonly levels: Float32Array;
+  readonly marks: Uint8Array;
 }
 
 /** What one frame shows besides the terrain. `brush` is a circle on the ground in metres, or null for none. */
 export interface TerrainOptions {
   readonly exaggeration: number;
   readonly brush: { readonly x: number; readonly y: number; readonly radiusM: number } | null;
-  /** A rectangle of the window this view leaves undrawn, metres (west, north, east, south): where a close-up lies. */
-  readonly hole?: readonly [number, number, number, number];
 }
 
 /** The camera a frame is drawn from: its view-projection of points measured from its eye, the eye in window metres
- *  (height as drawn), and the moment, seconds. */
+ *  (height as drawn), the moment in seconds, and the rings of land round the eye. */
 export interface TerrainFrame {
   readonly fromEye: Float32Array;
   readonly eye: readonly [number, number, number];
   readonly time: number;
+  readonly rings: readonly ClipLevel[];
+  /** The farthest the camera draws, metres. */
+  readonly far: number;
 }
 
-/** The most mesh vertices along the window's longer side; past it the mesh skips cells, keeping about 1.2 million. */
-const MESH_SIDE = 1100;
-
-const UNIFORM_BYTES = 176;
+const UNIFORM_FLOATS = 40 + CLIPMAP_LEVELS * 8;
 /** The caustics' clock wraps here, seconds, as the water's does. */
 const SLOW_CLOCK_S = 3600;
 /** The low ground and snow line drawn for a landmass with no biome. */
@@ -50,45 +60,46 @@ const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
 const DEFAULT_SNOW_M = 2300;
 
 /**
- * The mesh is built in the vertex shader from the vertex index alone: a grid of quads, two triangles each, one
- * vertex every `step` cells at that cell's centre. It is the bed: the water is drawn over it afterwards. The
- * fragment shader tells land from the bed of a lake or the sea by the bed height and lake surface it is given;
- * under water the sun's caustics dance on it. Points are measured from the eye, and from the noise's anchor.
+ * The land is drawn as rings round the eye (clipmap.ts), from the vertex index and the ring alone. A ring's heights
+ * are read along Catmull-Rom splines through the samples, the close-up's eased into the 1 km land's, so a coast or a
+ * bank is a smooth curve wherever the vertices fall. Toward a ring's edge its odd vertices slide onto the next ring's
+ * grid, so the rings meet without a crack; the quads under the finer ring are left empty. It is the bed: the water is
+ * drawn over it afterwards, from the same splines. Points are measured from the eye, and from the noise's anchor.
  */
 const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 
 struct View {
   from_eye: mat4x4f,
-  hole: vec4f,
-  brush_centre: vec2f,
-  origin: vec2f,
-  brush_radius: f32,
-  exaggeration: f32,
-  cell_m: f32,
-  step: u32,
-  quads_x: u32,
-  ground: vec4f,
+  brush: vec4f,
   eye: vec4f,
   local: vec4f,
+  close: vec4f,
+  wide: vec4f,
+  ground: vec4f,
+  rings: array<vec4f, ${CLIPMAP_LEVELS * 2}>,
 };
 
 @group(0) @binding(0) var<uniform> view: View;
-@group(0) @binding(1) var heights: texture_2d<f32>;
-@group(0) @binding(2) var lakes: texture_2d<f32>;
-@group(0) @binding(3) var marks: texture_2d<u32>;
+@group(0) @binding(1) var wide_heights: texture_2d<f32>;
+@group(0) @binding(2) var wide_lakes: texture_2d<f32>;
+@group(0) @binding(3) var wide_marks: texture_2d<u32>;
+@group(0) @binding(4) var close_heights: texture_2d<f32>;
+@group(0) @binding(5) var close_levels: texture_2d<f32>;
+@group(0) @binding(6) var close_marks: texture_2d<u32>;
 
 struct Surface {
   @builtin(position) clip: vec4f,
-  @location(0) world: vec2f,
+  @location(0) offset: vec2f,
   @location(1) bed: f32,
-  @location(2) lake: f32,
+  @location(2) still: vec2f,
   @location(3) normal: vec3f,
   @location(4) slope: f32,
-  @location(5) local: vec2f,
 };
 
-const CORNERS = array<vec2i, 6>(vec2i(0, 0), vec2i(1, 0), vec2i(0, 1), vec2i(0, 1), vec2i(1, 0), vec2i(1, 1));
+const QUADS = ${CLIPMAP_QUADS}u;
+const CORNERS = array<vec2u, 6>(vec2u(0u, 0u), vec2u(1u, 0u), vec2u(0u, 1u), vec2u(0u, 1u), vec2u(1u, 0u), vec2u(1u, 1u));
+const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
 const AMBIENT = 0.35;
 const SAND = vec3f(0.84, 0.76, 0.56);
 const SEABED = vec3f(0.50, 0.52, 0.40);
@@ -103,43 +114,47 @@ const TOWN = vec3f(0.75, 0.30, 0.22);
 const PORT = vec3f(0.95, 0.95, 0.90);
 const RING = vec3f(1.0, 0.95, 0.70);
 
-fn last_cell() -> vec2i {
-  return vec2i(textureDimensions(heights)) - 1;
+fn wide_at(offset: vec2f) -> vec2f {
+  return (view.eye.xy + offset) / view.wide.x - 0.5;
 }
 
-fn bed_at(cell: vec2i) -> f32 {
-  return textureLoad(heights, cell, 0).r;
+fn close_at(offset: vec2f) -> vec2f {
+  return (offset + view.local.zw) / view.close.x;
 }
 
 @vertex
-fn vertex_main(@builtin(vertex_index) index: u32) -> Surface {
-  let stride = i32(view.step);
-  let quad = vec2i(i32((index / 6u) % view.quads_x), i32((index / 6u) / view.quads_x));
-  let last = last_cell();
-  let cell = min((quad + CORNERS[index % 6u]) * stride, last);
-
-  let west = max(cell - vec2i(stride, 0), vec2i(0));
-  let east = min(cell + vec2i(stride, 0), last);
-  let north = max(cell - vec2i(0, stride), vec2i(0));
-  let south = min(cell + vec2i(0, stride), last);
-  let span = max(vec2f(f32(east.x - west.x), f32(south.y - north.y)), vec2f(1.0)) * view.cell_m;
-  let gradient = vec2f(bed_at(east) - bed_at(west), bed_at(south) - bed_at(north)) / span;
-
+fn vertex_main(@builtin(vertex_index) index: u32, @builtin(instance_index) ring: u32) -> Surface {
   var surface: Surface;
-  let from_origin = (vec2f(cell) + 0.5) * view.cell_m;
-  surface.world = view.origin + from_origin;
-  surface.local = view.local.xy + from_origin;
-  surface.bed = bed_at(cell);
-  // A bank beside fresh water (dry, standing at its level or above) takes that level, so the bed's waterline follows
-  // the ground, not the grid; as the water's own surface does.
-  let own = textureLoad(lakes, cell, 0).r;
-  let beside = max(max(textureLoad(lakes, west, 0).r, textureLoad(lakes, east, 0).r), max(textureLoad(lakes, north, 0).r, textureLoad(lakes, south, 0).r));
-  let banked = select(0.0, beside, bed_at(cell) >= beside - ${FRESH_SINK_M});
-  surface.lake = select(banked, own, own > 0.0);
-  surface.normal = normalize(vec3f(-gradient * view.exaggeration, 1.0));
-  surface.slope = length(gradient);
-  let from_eye = vec3f(view.eye.xy + from_origin, surface.bed * view.exaggeration - view.eye.z);
-  surface.clip = view.from_eye * vec4f(from_eye, 1.0);
+  let first = view.rings[ring * 2u];
+  let hole = view.rings[ring * 2u + 1u];
+  let spacing = first.z;
+  let quad = vec2u((index / 6u) % QUADS, (index / 6u) / QUADS);
+  let finer = vec2f(quad) - hole.xy;
+  if (hole.z > 0.5 && all(finer >= vec2f(0.0)) && all(finer < vec2f(f32(QUADS / 2u)))) {
+    surface.clip = NOWHERE;
+    return surface;
+  }
+  // Quads off the window, or past the far plane, hold nothing to draw.
+  let near_corner = view.eye.xy + first.xy + vec2f(quad) * spacing;
+  let nearest = clamp(vec2f(0.0), first.xy + vec2f(quad) * spacing, first.xy + vec2f(quad + 1u) * spacing);
+  if (any(near_corner + spacing < vec2f(0.0)) || any(near_corner > view.close.zw) || length(nearest) > view.wide.y) {
+    surface.clip = NOWHERE;
+    return surface;
+  }
+  let grid = vec2f(quad + CORNERS[index % 6u]);
+  let half = f32(QUADS) * 0.5;
+  let reach = max(abs(grid.x - half), abs(grid.y - half)) / half;
+  let morph = clamp((reach - 0.7) / 0.25, 0.0, 1.0);
+  let snapped = grid - (grid - 2.0 * floor(grid * 0.5)) * morph;
+  let offset = first.xy + snapped * spacing;
+  let share = close_share(close_heights, close_at(offset), view.close.y > 0.5);
+  let ground = ground_at(wide_heights, wide_at(offset), view.wide.x, close_heights, close_at(offset), view.close.x, share);
+  surface.offset = offset;
+  surface.bed = ground.x;
+  surface.still = still_at(wide_lakes, wide_at(offset), close_levels, close_at(offset), share);
+  surface.normal = normalize(vec3f(-ground.yz * view.brush.w, 1.0));
+  surface.slope = length(ground.yz);
+  surface.clip = view.from_eye * vec4f(offset, ground.x * view.brush.w - view.eye.z, 1.0);
   return surface;
 }
 
@@ -162,37 +177,40 @@ fn bed_colour(depth: f32, slope: f32, fresh: bool) -> vec3f {
 
 @fragment
 fn fragment_main(surface: Surface) -> @location(0) vec4f {
-  let hole = view.hole;
-  if (all(surface.world > hole.xy) && all(surface.world < hole.zw)) { discard; }
-  let from_brush = distance(surface.world, view.brush_centre);
-  let ring_width = fwidth(from_brush);
-  let fine = 1.0 - smoothstep(0.06, 0.3, length(fwidth(surface.local)));
-
-  var colour: vec3f;
+  let point = view.eye.xy + surface.offset;
+  let local = surface.offset + view.local.xy;
+  let from_brush = distance(point, view.brush.xy);
+  let ring_width = max(fwidth(from_brush), 1e-3);
+  let fine = 1.0 - smoothstep(0.06, 0.3, length(fwidth(local)));
+  let depth = surface.still.x - surface.bed;
+  // The bed's colour turns to the land's across a pixel, not at a hard line.
+  let under = smoothstep(-0.5, 0.5, depth / max(fwidth(depth), 1e-3));
+  let fresh = surface.still.y > 0.5;
   let normal = normalize(surface.normal);
-  let fresh = surface.lake > 0.0;
-  let depth = select(0.0, surface.lake - ${FRESH_SINK_M}, fresh) - surface.bed;
-  if (depth > 0.0) {
-    colour = bed_colour(depth, surface.slope, fresh);
-    let light = caustics(surface.local, view.eye.w) * fine * exp(-depth / 9.0) * smoothstep(0.0, 0.4, depth);
-    colour += SUN_LIGHT * light * select(0.32, 0.12, fresh);
-  } else {
-    colour = land_colour(surface.bed, surface.slope);
-    let cell = clamp(vec2i(floor((surface.world - view.origin) / view.cell_m)), vec2i(0), last_cell());
-    let mark = textureLoad(marks, cell, 0).r;
-    if (mark == 1u || mark == 2u) { colour = mix(colour, RIVER, 0.7); }
-    if (mark == 3u) { colour = ROAD; }
-    if (mark == 4u) { colour = mix(colour, TOWN, 0.6); }
-    if (mark == 5u) { colour = PORT; }
-  }
-  colour *= AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0);
 
-  if (view.brush_radius > 0.0 && abs(from_brush - view.brush_radius) < ring_width) { colour = RING; }
+  var wet = bed_colour(max(depth, 0.0), surface.slope, fresh);
+  let light = caustics(local, view.eye.w) * fine * exp(-max(depth, 0.0) / 9.0) * smoothstep(0.0, 0.4, depth);
+  wet += SUN_LIGHT * light * select(0.32, 0.12, fresh);
+
+  var dry = land_colour(surface.bed, surface.slope);
+  let close = close_at(surface.offset);
+  let in_close = close_share(close_heights, close, view.close.y > 0.5) > 0.5;
+  let wide = wide_at(surface.offset);
+  dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
+  let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);
+  let town = select(marked(wide_marks, wide, 4u, 4u), marked(close_marks, close, 4u, 4u), in_close);
+  let port = select(marked(wide_marks, wide, 5u, 5u), marked(close_marks, close, 5u, 5u), in_close);
+  dry = mix(mix(mix(dry, ROAD, road), TOWN, 0.6 * town), PORT, port);
+
+  var colour = mix(dry, wet, under);
+  colour *= AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0);
+  let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));
+  colour = mix(colour, RING, select(0.0, ring, view.brush.z > 0.0));
   return vec4f(colour, 1.0);
 }
 `;
 
-/** Each GPU's terrain pipeline, compiled once: every terrain and close-up drawn on it shares one. */
+/** Each GPU's terrain pipeline, compiled once: every landmass drawn on it shares one. */
 const pipelines = new WeakMap<GPUDevice, Map<GPUTextureFormat, GPURenderPipeline>>();
 
 function pipelineFor(gpu: Gpu): GPURenderPipeline {
@@ -207,66 +225,68 @@ function pipelineFor(gpu: Gpu): GPURenderPipeline {
     fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
     primitive: { topology: 'triangle-list' },
     depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
+    multisample: { count: SAMPLES },
   });
   byFormat.set(gpu.format, pipeline);
   return pipeline;
 }
 
-/** Draws one landmass's terrain in 3D with WebGPU: three textures of cell values and a mesh made on the GPU. */
+/** Draws one landmass's terrain in 3D with WebGPU: its 1 km cells, the close-up's exact ground when one is shown,
+ *  and rings of mesh made on the GPU round the eye. */
 export class TerrainView {
   private readonly gpu: Gpu;
   private readonly width: number;
   private readonly height: number;
   private readonly cellM: number;
-  private readonly origin: readonly [number, number];
   private readonly ground: readonly [number, number, number];
   private readonly snowM: number;
-  private readonly step: number;
-  private readonly quadsX: number;
-  private readonly vertexCount: number;
   private readonly heights: GPUTexture;
   private readonly lakes: GPUTexture;
   private readonly marks: GPUTexture;
   private readonly uniforms: GPUBuffer;
   private readonly pipeline: GPURenderPipeline;
-  private readonly bindGroup: GPUBindGroup;
+  private close: { readonly data: CloseUpData; readonly textures: readonly GPUTexture[] } | null = null;
+  /** The lakes' still water, as the water reads it (stillLevels); made again when the whole window changes. */
+  private banked: Float32Array | null = null;
+  private bindGroup: GPUBindGroup;
 
   constructor(gpu: Gpu, data: TerrainData) {
     this.gpu = gpu;
     this.width = data.width;
     this.height = data.height;
     this.cellM = data.cellM;
-    this.origin = [data.originX ?? 0, data.originY ?? 0];
     this.ground = data.ground ?? DEFAULT_GROUND;
     this.snowM = data.snowM ?? DEFAULT_SNOW_M;
-    this.step = Math.ceil(Math.max(data.width, data.height) / MESH_SIDE);
-    this.quadsX = Math.ceil((data.width - 1) / this.step);
-    this.vertexCount = this.quadsX * Math.ceil((data.height - 1) / this.step) * 6;
-    const { device } = gpu;
-    const cellTexture = (format: GPUTextureFormat) =>
-      device.createTexture({
-        size: [data.width, data.height],
-        format,
-        usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
-      });
-    this.heights = cellTexture('r32float');
-    this.lakes = cellTexture('r32float');
-    this.marks = cellTexture('r8uint');
-    this.uniforms = device.createBuffer({
-      size: UNIFORM_BYTES,
+    this.heights = this.texture(data.width, data.height, 'r32float');
+    this.lakes = this.texture(data.width, data.height, 'rg32float');
+    this.marks = this.texture(data.width, data.height, 'r8uint');
+    this.uniforms = gpu.device.createBuffer({
+      size: UNIFORM_FLOATS * 4,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
     });
     this.pipeline = pipelineFor(gpu);
-    this.bindGroup = device.createBindGroup({
+    this.bindGroup = this.bind();
+    this.update(data, null);
+  }
+
+  private texture(width: number, height: number, format: GPUTextureFormat): GPUTexture {
+    return this.gpu.device.createTexture({
+      size: [width, height],
+      format,
+      usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
+    });
+  }
+
+  private bind(): GPUBindGroup {
+    const [heights, levels, marks] = this.close?.textures ?? [this.heights, this.lakes, this.marks];
+    const textures = [this.heights, this.lakes, this.marks, heights, levels, marks];
+    return this.gpu.device.createBindGroup({
       layout: this.pipeline.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: { buffer: this.uniforms } },
-        { binding: 1, resource: this.heights.createView() },
-        { binding: 2, resource: this.lakes.createView() },
-        { binding: 3, resource: this.marks.createView() },
+        ...textures.map((texture, index) => ({ binding: index + 1, resource: (texture ?? this.heights).createView() })),
       ],
     });
-    this.update(data, null);
   }
 
   /**
@@ -280,21 +300,46 @@ export class TerrainView {
     if (width <= 0 || height <= 0) return;
     const { queue } = this.gpu.device;
     const first = top * this.width + left;
+    if (!rect || !this.banked) this.banked = stillLevels(data.heights, data.lakes, null, this.width, this.height);
     const sources = [
       [this.heights, data.heights],
-      [this.lakes, data.lakes],
+      [this.lakes, this.banked],
       [this.marks, data.marks],
     ] as const;
     for (const [texture, values] of sources) {
-      const bytes = values.BYTES_PER_ELEMENT;
+      const bytes = (values.length / (this.width * this.height)) * values.BYTES_PER_ELEMENT;
       const layout = { offset: first * bytes, bytesPerRow: this.width * bytes, rowsPerImage: height };
       queue.writeTexture({ texture, origin: [left, top] }, values, layout, [width, height]);
     }
   }
 
+  /** Shows the exact ground round the camera's target in place of the 1 km cells there, or none. */
+  showCloseUp(data: CloseUpData | null): void {
+    for (const texture of this.close?.textures ?? []) texture.destroy();
+    this.close = null;
+    if (data) {
+      const { queue } = this.gpu.device;
+      const sources = [
+        [data.heights, 'r32float', 1],
+        [data.levels, 'rg32float', 2],
+        [data.marks, 'r8uint', 1],
+      ] as const;
+      const textures = sources.map(([values, format, floats]) => {
+        const texture = this.texture(data.width, data.height, format);
+        const bytesPerRow = data.width * values.BYTES_PER_ELEMENT * floats;
+        queue.writeTexture({ texture }, values, { bytesPerRow }, [data.width, data.height]);
+        return texture;
+      });
+      this.close = { data, textures };
+    }
+    this.bindGroup = this.bind();
+  }
+
   /** Gives the GPU back this view's textures and buffers; the view draws nothing after. */
   destroy(): void {
-    for (const resource of [this.heights, this.lakes, this.marks, this.uniforms]) resource.destroy();
+    for (const resource of [this.heights, this.lakes, this.marks, this.uniforms, ...(this.close?.textures ?? [])]) {
+      resource.destroy();
+    }
   }
 
   /** The cells' heights and lake surfaces on the GPU, for the water drawn over them, and their size, metres. */
@@ -304,25 +349,30 @@ export class TerrainView {
 
   /** Writes this view's uniforms for one frame. */
   prepare(frame: TerrainFrame, options: TerrainOptions): void {
-    const values = new ArrayBuffer(UNIFORM_BYTES);
-    const floats = new Float32Array(values);
+    const floats = new Float32Array(UNIFORM_FLOATS);
     floats.set(frame.fromEye);
-    floats.set(options.hole ?? [1, 1, 0, 0], 16);
     const brush = options.brush ?? { x: 0, y: 0, radiusM: 0 };
-    floats.set([brush.x, brush.y, ...this.origin, brush.radiusM, options.exaggeration, this.cellM], 20);
-    new Uint32Array(values).set([this.step, this.quadsX], 27);
-    floats.set([...this.ground, this.snowM], 32);
+    floats.set([brush.x, brush.y, brush.radiusM, options.exaggeration], 16);
     const [eyeX, eyeY, eyeZ] = frame.eye;
-    const anchor = [Math.floor(eyeX / ANCHOR_M) * ANCHOR_M, Math.floor(eyeY / ANCHOR_M) * ANCHOR_M];
-    floats.set([this.origin[0] - eyeX, this.origin[1] - eyeY, eyeZ, frame.time % SLOW_CLOCK_S], 36);
-    floats.set([this.origin[0] - (anchor[0] ?? 0), this.origin[1] - (anchor[1] ?? 0), 0, 0], 40);
-    this.gpu.device.queue.writeBuffer(this.uniforms, 0, values);
+    floats.set([eyeX, eyeY, eyeZ, frame.time % SLOW_CLOCK_S], 20);
+    const anchor = [Math.floor(eyeX / ANCHOR_M) * ANCHOR_M, Math.floor(eyeY / ANCHOR_M) * ANCHOR_M] as const;
+    const close = this.close?.data;
+    const fromClose = close ? [eyeX - close.corner[0], eyeY - close.corner[1]] : [0, 0];
+    floats.set([eyeX - anchor[0], eyeY - anchor[1], ...fromClose], 24);
+    floats.set([close?.step ?? 1, close ? 1 : 0, this.width * this.cellM, this.height * this.cellM], 28);
+    floats.set([this.cellM, frame.far, 0, 0], 32);
+    floats.set([...this.ground, this.snowM], 36);
+    for (const [index, ring] of frame.rings.entries()) {
+      floats.set([ring.corner[0] - eyeX, ring.corner[1] - eyeY, ring.spacing, 0], 40 + index * 8);
+      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 44 + index * 8);
+    }
+    this.gpu.device.queue.writeBuffer(this.uniforms, 0, floats);
   }
 
   /** Draws the terrain into a pass whose uniforms `prepare` wrote. */
   drawInto(pass: GPURenderPassEncoder): void {
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
-    pass.draw(this.vertexCount);
+    pass.draw(CLIPMAP_QUADS * CLIPMAP_QUADS * 6, CLIPMAP_LEVELS);
   }
 }

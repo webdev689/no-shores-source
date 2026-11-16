@@ -1,12 +1,13 @@
 import type { GroundPatch } from '../rules/landRules.ts';
 import { type Orbit, viewProjection } from './orbit.ts';
-import type { TerrainData } from './terrainView.ts';
+import { splineAt } from '../water/spline.ts';
+import type { CloseUpData } from './terrainView.ts';
 
 /** Under this distance from its target, the 3D camera shows the exact ground around the target. */
 export const CLOSE_RANGE_M = 8000;
-/** The close-up's samples a side and their spacing: a little over 2 km square, every 8 m. */
-export const PATCH_SAMPLES = 257;
-export const PATCH_STEP_M = 8;
+/** The close-up's samples a side and their spacing: 2 km square, every 4 m. */
+export const PATCH_SAMPLES = 513;
+export const PATCH_STEP_M = 4;
 /** The close-up is sampled again once the target moves this far from its centre. */
 export const REFRESH_M = 400;
 /** A walker's eyes, and the figure that shows a person's height, metres. */
@@ -33,41 +34,28 @@ export function shownExaggeration(exaggeration: number, distance: number): numbe
   return 1 + (exaggeration - 1) * fraction * fraction * (3 - 2 * fraction);
 }
 
-/** A ground patch as the 3D renderer draws it, placed in the landmass's window, in the landmass's biome. */
-export function patchData(
+/** The close-up as the 3D view draws it: its samples placed in the landmass's window, with their still water. */
+export function closeUpData(
   patch: GroundPatch,
-  window: Pick<TerrainData, 'ground' | 'snowM'> & { readonly leftM: number; readonly topM: number },
-): TerrainData {
+  levels: Float32Array,
+  window: { readonly leftM: number; readonly topM: number },
+): CloseUpData {
   return {
+    corner: [patch.left - window.leftM, patch.top - window.topM],
+    step: patch.step,
     width: patch.width,
     height: patch.height,
-    cellM: patch.step,
     heights: patch.heights,
-    lakes: patch.water,
+    levels,
     marks: patch.marks,
-    originX: patch.left - window.leftM - patch.step / 2,
-    originY: patch.top - window.topM - patch.step / 2,
-    ...(window.ground ? { ground: window.ground } : {}),
-    ...(window.snowM === undefined ? {} : { snowM: window.snowM }),
   };
 }
 
-/** The part of the window the close-up covers, a sample in from its edge, so the coarse land meets it unbroken. */
-export function patchHole(data: TerrainData): readonly [number, number, number, number] {
-  const [west, north] = [(data.originX ?? 0) + data.cellM * 1.5, (data.originY ?? 0) + data.cellM * 1.5];
-  return [west, north, west + (data.width - 3) * data.cellM, north + (data.height - 3) * data.cellM];
-}
-
-/** The exact ground's height at a world point, between the patch's samples, or null off the patch. */
+/** The exact ground's height at a world point, along the splines the 3D view draws it by, or null off the patch. */
 export function groundUnder(patch: GroundPatch, x: number, y: number): number | null {
   const [gridX, gridY] = [(x - patch.left) / patch.step, (y - patch.top) / patch.step];
-  const [i, j] = [Math.floor(gridX), Math.floor(gridY)];
-  if (i < 0 || j < 0 || i >= patch.width - 1 || j >= patch.height - 1) return null;
-  const [fractionX, fractionY] = [gridX - i, gridY - j];
-  const sample = (column: number, row: number) => patch.heights[row * patch.width + column] ?? 0;
-  const north = sample(i, j) + (sample(i + 1, j) - sample(i, j)) * fractionX;
-  const south = sample(i, j + 1) + (sample(i + 1, j + 1) - sample(i, j + 1)) * fractionX;
-  return north + (south - north) * fractionY;
+  if (gridX < 0 || gridY < 0 || gridX >= patch.width - 1 || gridY >= patch.height - 1) return null;
+  return splineAt(patch.heights, patch.width, patch.height, gridX, gridY);
 }
 
 /** A point in the window's metres (z up) on the screen, or null behind the camera. */

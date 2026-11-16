@@ -78,9 +78,18 @@ the water is when they wade, swim or dive.
 
 The 3D view draws the [[Water]] over the land, under a sky with clouds, and so draws every frame while it shows.
 
+The 3D view draws the land as rings of mesh round the camera, each twice as coarse as the one inside it, from a
+quarter metre a step near a walker. They are snapped to the world, so the land never slides as the camera moves, and
+each ring's edge eases onto the next ring's grid, so they meet without a crack. Heights are read along the same
+Catmull-Rom splines the land crate uses, so a coast or a bank is a smooth curve wherever the mesh falls. Every pixel
+is sampled four times, so no edge of the land or the water is stepped. The 2D map reads the land along the same
+splines and softens every edge across a pixel.
+
 Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled
-every 8 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports
-and the coast. It is sampled again once the target moves 400 m, and after every stroke, place change, undo or redo.
+every 4 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports
+and the coast. It eases into the 1 km land over its outer 96 m. It is sampled again once the target moves 400 m,
+and after every stroke, place change, undo or redo; the land's worker samples it and works out the breakers over it,
+so the page never waits.
 Except while walking, a 1.8 m figure stands at the target with a scale bar beside it.
 
 A stroke shows as it is drawn; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in

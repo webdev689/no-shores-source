@@ -1,19 +1,20 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
-import { type ShoreField, shoreField, waterUnder } from '../water/shore.ts';
+import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
-import { dropPatchWater, type PatchWater, WaterView } from '../water/waterView.ts';
+import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
+import { clipmapLevels, finestSpacing } from './clipmap.ts';
 import {
   CLOSE_RANGE_M,
+  closeUpData,
   groundUnder,
   PATCH_SAMPLES,
   PATCH_STEP_M,
-  patchData,
-  patchHole,
   REFRESH_M,
   shownExaggeration,
   walkStep,
 } from './closeUp.ts';
+import type { CloseGround } from './landClient.ts';
 import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
@@ -21,9 +22,39 @@ import { type TerrainData, type TerrainOptions, TerrainView } from './terrainVie
 
 /** Where the close-up's exact ground comes from. */
 export interface GroundSource {
-  ground(id: string, left: number, top: number, step: number, size: number): Promise<GroundPatch | null>;
+  ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null>;
   isOpen(id: string): boolean;
 }
+
+/** The scene drawn so far, for the water: the land's colour and depth (one sample a pixel, the depth as metres-ready
+ *  floats) and the multisampled colour and depth the passes draw into. */
+export interface Drawn {
+  readonly colour: GPUTexture;
+  readonly depth: GPUTexture;
+  readonly multisampled: GPUTexture;
+  readonly multidepth: GPUTexture;
+}
+
+/** Copies the land's multisampled depth into one float a pixel, which the water's shaders can read. */
+const DEPTH_COPY = /* wgsl */ `
+@group(0) @binding(0) var depths: texture_depth_multisampled_2d;
+
+@vertex
+fn copy_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
+  let corner = vec2f(f32((index << 1u) & 2u), f32(index & 2u));
+  return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
+}
+
+// The nearest of the pixel's samples (depth is reversed: nearer is larger), so the water never sees past a near edge.
+@fragment
+fn copy_fragment(@builtin(position) position: vec4f) -> @location(0) vec4f {
+  var nearest = 0.0;
+  for (var sample = 0; sample < ${SAMPLES}; sample++) {
+    nearest = max(nearest, textureLoad(depths, vec2i(position.xy), sample));
+  }
+  return vec4f(nearest, 0.0, 0.0, 1.0);
+}
+`;
 
 /** One frame of the 3D view: the landmass, its 1 km window, the camera, and the walker's keys. */
 export interface SceneFrame {
@@ -42,8 +73,6 @@ export interface SceneFrame {
 
 interface CloseUp {
   readonly id: string;
-  readonly data: TerrainData;
-  readonly view: TerrainView;
   readonly patch: GroundPatch;
   readonly field: ShoreField;
   readonly water: PatchWater;
@@ -72,7 +101,9 @@ export class LandScene {
   private body: Body | null = null;
   private footing: Footing | null = null;
   private travelled = 0;
-  private drawn: { colour: GPUTexture; depth: GPUTexture } | null = null;
+  private drawn: Drawn | null = null;
+  private shownClose: CloseUp | null = null;
+  private readonly depthCopy: GPURenderPipeline;
   private lastFrame = performance.now();
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
@@ -80,12 +111,19 @@ export class LandScene {
     this.redraw = redraw;
     this.fail = fail;
     this.water = new WaterView(gpu);
+    const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
+    this.depthCopy = gpu.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: { module, entryPoint: 'copy_vertex' },
+      fragment: { module, entryPoint: 'copy_fragment', targets: [{ format: 'r32float' }] },
+    });
   }
 
   /** Lets the 1 km terrain go, so the next frame builds it again. */
   reset(): void {
     this.terrain?.view.destroy();
     this.terrain = null;
+    this.shownClose = null;
   }
 
   /** Lays changed cells on the 1 km terrain. */
@@ -130,38 +168,66 @@ export class LandScene {
     orbit = { ...orbit, targetZ: (this.body?.eye ?? ground) * shown };
 
     if (this.terrain?.id !== id) {
-      this.terrain?.view.destroy();
+      this.reset();
       this.terrain = { id, view: new TerrainView(this.gpu, frame.data) };
     }
     const terrain = this.terrain.view;
-    const near = this.closeUp?.id === id && orbit.distance < CLOSE_RANGE_M ? this.closeUp : null;
+    // The close-up shows while it is current: near enough, and made after the last change to the land.
+    const near =
+      this.closeUp?.id === id && orbit.distance < CLOSE_RANGE_M && this.closeUp.version === frame.editsVersion
+        ? this.closeUp
+        : null;
+    if (near !== this.shownClose) {
+      terrain.showCloseUp(near && closeUpData(near.patch, near.field.levels, view));
+      this.shownClose = near;
+    }
     const seen = this.clearOfBed(orbit);
     const camera = cameraOf(seen);
     const fromEye = viewProjection(seen, frame.size.width / frame.size.height, true);
-    const terrainFrame = { fromEye, eye: camera.eye, time };
-    terrain.prepare(terrainFrame, {
-      exaggeration: shown,
-      brush: frame.brush,
-      ...(near ? { hole: patchHole(near.data) } : {}),
-    });
-    near?.view.prepare(terrainFrame, { exaggeration: shown, brush: frame.brush });
+    const eyeWorld = [camera.eye[0] + view.leftM, camera.eye[1] + view.topM] as const;
+    const above = camera.eye[2] / shown - this.groundAt(id, view, eyeWorld[0], eyeWorld[1]);
+    const rings = clipmapLevels(camera.eye[0], camera.eye[1], finestSpacing(above));
+    terrain.prepare(
+      { fromEye, eye: camera.eye, time, rings, far: camera.far },
+      { exaggeration: shown, brush: frame.brush },
+    );
 
     const drawn = this.targets(frame.size.width, frame.size.height);
     const encoder = this.gpu.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
-        { view: drawn.colour.createView(), clearValue: [0, 0, 0, 1], loadOp: 'clear', storeOp: 'store' },
+        {
+          view: drawn.multisampled.createView(),
+          resolveTarget: drawn.colour.createView(),
+          clearValue: [0, 0, 0, 1],
+          loadOp: 'clear',
+          storeOp: 'discard',
+        },
       ],
       depthStencilAttachment: {
-        view: drawn.depth.createView(),
+        view: drawn.multidepth.createView(),
         depthClearValue: 0,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',
       },
     });
     terrain.drawInto(pass);
-    near?.view.drawInto(pass);
     pass.end();
+    const copy = encoder.beginRenderPass({
+      colorAttachments: [
+        { view: drawn.depth.createView(), loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] },
+      ],
+    });
+    copy.setPipeline(this.depthCopy);
+    copy.setBindGroup(
+      0,
+      this.gpu.device.createBindGroup({
+        layout: this.depthCopy.getBindGroupLayout(0),
+        entries: [{ binding: 0, resource: drawn.multidepth.createView() }],
+      }),
+    );
+    copy.draw(3);
+    copy.end();
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(FIELD_OF_VIEW / 2) },
       size: [frame.size.width, frame.size.height],
@@ -256,24 +322,13 @@ export class LandScene {
     const version = frame.editsVersion;
     source
       .ground(id, Math.round(x - half), Math.round(y - half), PATCH_STEP_M, PATCH_SAMPLES)
-      .then((patch) => {
+      .then((ground) => {
         this.patchPending = false;
-        if (!patch) return;
-        this.closeUp?.view.destroy();
+        if (!ground) return;
         dropPatchWater(this.closeUp?.water ?? null);
-        const data = patchData(patch, view);
-        const field = shoreField(patch);
+        const { patch, field } = ground;
         const water = this.water.patchWater(field, [view.leftM, view.topM]);
-        this.closeUp = {
-          id,
-          data,
-          view: new TerrainView(this.gpu, data),
-          patch,
-          field,
-          water,
-          centre: [x, y],
-          version,
-        };
+        this.closeUp = { id, patch, field, water, centre: [x, y], version };
         this.redraw();
       })
       .catch((error: unknown) => {
@@ -282,16 +337,18 @@ export class LandScene {
       });
   }
 
-  /** The offscreen colour and depth the land is drawn into, for the water to see through. */
-  private targets(width: number, height: number): { colour: GPUTexture; depth: GPUTexture } {
+  /** The offscreen targets the land is drawn into, for the water to see through. */
+  private targets(width: number, height: number): Drawn {
     if (this.drawn?.colour.width === width && this.drawn.colour.height === height) return this.drawn;
-    this.drawn?.colour.destroy();
-    this.drawn?.depth.destroy();
+    for (const texture of Object.values(this.drawn ?? {})) texture.destroy();
     const usage = TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.textureBinding;
     const { device, format } = this.gpu;
+    const size = [width, height];
     this.drawn = {
-      colour: device.createTexture({ size: [width, height], format, usage }),
-      depth: device.createTexture({ size: [width, height], format: 'depth32float', usage }),
+      colour: device.createTexture({ size, format, usage }),
+      depth: device.createTexture({ size, format: 'r32float', usage }),
+      multisampled: device.createTexture({ size, format, usage: TEXTURE_USAGE.renderAttachment, sampleCount: SAMPLES }),
+      multidepth: device.createTexture({ size, format: 'depth32float', usage, sampleCount: SAMPLES }),
     };
     return this.drawn;
   }
