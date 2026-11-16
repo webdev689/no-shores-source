@@ -68,12 +68,15 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Save | On the site, downloads `<landmass>.json`; under `npm run dev`, writes `content/world/land/<landmass>.json` |
 | 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
 | Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar. Within 3 km heights are true to scale; they ease to the chosen height by 30 km |
-| Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift`), drag to look round. `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
+| Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift` on land), drag to look round. In water the walker wades, then swims; `C` dives and `Space` rises ([[Water]]). `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
 | In 2D: drag, wheel | Shapes with a brush (or pans with Look, or with the right button), and zooms |
 | In 3D: left-drag, right-drag, middle-drag, wheel | Left-drag shapes with a brush (or orbits with Look); right-drag orbits (or pans with Look); middle-drag pans along the ground; the wheel zooms, 3 m to 5,000 km from the target |
 
 The cursor's readout gives where it points and the height of the 1 km cell there, or the sea's depth, in either
-view. Walking, it gives where the walker stands and the ground's height there, exact inside the close-up.
+view. Walking, it gives where the walker stands and the ground's height there, exact inside the close-up, or how deep
+the water is when they wade, swim or dive.
+
+The 3D view draws the [[Water]] over the land, under a sky with clouds, and so draws every frame while it shows.
 
 Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled
 every 8 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports

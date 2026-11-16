@@ -8,6 +8,7 @@ import {
   pickTerrain,
   rayAt,
   rotateOrbit,
+  cameraOf,
   viewProjection,
   zoomOrbit,
   type Orbit,
@@ -45,6 +46,8 @@ test('the target is drawn at the centre of the screen, between the near and far 
   close(centre.x, 0, 1e-6, 'x');
   close(centre.y, 0, 1e-6, 'y');
   assert.ok(centre.depth > 0 && centre.depth < 1, `depth ${centre.depth}`);
+  const nearer = project(viewProjection(lookingNorth, 1.5), 100_000, 110_000, 0);
+  assert.ok(nearer.depth > centre.depth, 'depth is reversed: nearer is larger');
 });
 
 test('the view is not mirrored: looking north, east is on the right and the far ground is higher', () => {
@@ -79,6 +82,16 @@ test('rotation keeps the pitch between the horizon and straight down', () => {
   assert.equal(rotateOrbit(lookingNorth, 0.5, 10).pitch, PITCH_LIMITS.highest);
   assert.equal(rotateOrbit(lookingNorth, 0.5, -10).pitch, PITCH_LIMITS.lowest);
   assert.equal(rotateOrbit(lookingNorth, 0.5, 0).yaw, 0.5);
+  assert.equal(rotateOrbit(lookingNorth, 0, -10, -1.2).pitch, -1.2, 'a swimmer may look up');
+});
+
+test('points measured from the eye land where the same points measured from the corner do', () => {
+  const { eye } = cameraOf(lookingEast);
+  const [x, y, z] = [101_234.5, 99_876.25, 120];
+  const placed = project(viewProjection(lookingEast, 1.5), x, y, z);
+  const fromEye = project(viewProjection(lookingEast, 1.5, true), x - eye[0], y - eye[1], z - eye[2]);
+  // The matrices are 32-bit: the one from the corner loses a little in its long translation.
+  for (const key of ['x', 'y', 'depth'] as const) close(fromEye[key], placed[key], 1e-6, key);
 });
 
 test('zoom stops at its limits', () => {

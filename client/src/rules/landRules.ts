@@ -24,6 +24,26 @@ export interface LandView {
   /** The biome's low ground (red, green, blue, 0..1) and snow line in metres; absent for a landmass with no biome. */
   readonly ground?: readonly [number, number, number];
   readonly snowM?: number;
+  /** The sea's swell, the same over every landmass. */
+  readonly swell?: Swell;
+}
+
+/** One wave of the sea's swell (crates/land/src/sea.rs): the way it travels (a unit vector east and south), its
+ *  wavenumber (radians a metre), frequency (radians a second), height and sideways carry (metres) and phase. */
+export interface SeaWave {
+  readonly direction: readonly [number, number];
+  readonly number: number;
+  readonly frequency: number;
+  readonly amplitude: number;
+  readonly shift: number;
+  readonly phase: number;
+}
+
+/** The sea's swell: its waves, longest first, whole where the sea is `fullDepthM` deep and gone at `goneDepthM`. */
+export interface Swell {
+  readonly waves: readonly SeaWave[];
+  readonly fullDepthM: number;
+  readonly goneDepthM: number;
 }
 
 /** The water at a point of the ground, and its surface. */
@@ -32,11 +52,14 @@ export interface WaterAt {
   readonly surface?: number;
 }
 
-/** The ground at some points, as the runtime finds it: each height and its water, and a fingerprint of the heights. */
+/** The ground at some points, as the runtime finds it: each height and its water, the sea's surface there at the
+ *  moment asked (null off the sea), and fingerprints of the heights and of the sea. */
 export interface GroundSample {
   readonly heights: readonly number[];
   readonly water: readonly WaterAt[];
+  readonly sea: readonly (number | null)[];
   readonly sampleHash: string;
+  readonly seaHash: string;
 }
 
 /** A sculpting brush, as an edits file stores a stroke's. */
@@ -79,8 +102,8 @@ export interface LandRules {
   setEdits(editsText: string): LandView;
   /** The open landmass's edits file, in its written form. */
   write(): { readonly id: string; readonly text: string };
-  /** The open landmass's ground at each point, to the metre. */
-  sample(points: readonly (readonly [number, number])[]): GroundSample;
+  /** The open landmass's ground at each point, to the metre, and the sea over it at `time`, seconds of world time. */
+  sample(points: readonly (readonly [number, number])[], time?: number): GroundSample;
   /** The open landmass's exact ground over a grid, for a close look. */
   patch(left: number, top: number, step: number, width: number, height: number): GroundPatch;
 }
@@ -112,6 +135,7 @@ interface ViewHeader {
   readonly rect?: [number, number, number, number];
   readonly ground?: [number, number, number] | null;
   readonly snow_m?: number | null;
+  readonly swell?: { waves: SeaWave[]; full_depth_m: number; gone_depth_m: number };
 }
 
 /** The header of an answer and where its floats begin; throws the answer's error. */
@@ -146,6 +170,15 @@ function takeView(exports: LandExports, packed: bigint): LandView {
       problems: header.problems ?? [],
       ...(header.ground ? { ground: header.ground } : {}),
       ...(typeof header.snow_m === 'number' ? { snowM: header.snow_m } : {}),
+      ...(header.swell
+        ? {
+            swell: {
+              waves: header.swell.waves,
+              fullDepthM: header.swell.full_depth_m,
+              goneDepthM: header.swell.gone_depth_m,
+            },
+          }
+        : {}),
     };
   } finally {
     exports.release(address, length);
@@ -222,15 +255,23 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         exports.release(address, length);
       }
     },
-    sample: (points) => {
-      const answer = JSON.parse(takeText(exports, send(exports.land_sample, JSON.stringify({ points })))) as {
+    sample: (points, time = 0) => {
+      const answer = JSON.parse(takeText(exports, send(exports.land_sample, JSON.stringify({ points, time })))) as {
         heights?: number[];
         water?: WaterAt[];
+        sea?: (number | null)[];
         sample_hash?: string;
+        sea_hash?: string;
         error?: string;
       };
       if (answer.error !== undefined) throw new Error(answer.error);
-      return { heights: answer.heights ?? [], water: answer.water ?? [], sampleHash: answer.sample_hash ?? '' };
+      return {
+        heights: answer.heights ?? [],
+        water: answer.water ?? [],
+        sea: answer.sea ?? [],
+        sampleHash: answer.sample_hash ?? '',
+        seaHash: answer.sea_hash ?? '',
+      };
     },
   };
 }

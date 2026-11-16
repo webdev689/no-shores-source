@@ -6,6 +6,7 @@
 use land::edits::{self, CellRect, Edits, Stroke};
 use land::ground::{WaterAt, sample_hash};
 use land::landmass::{Landmass, generate, ground_hash};
+use land::sea::{Swell, sea_hash, sea_surface};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
@@ -62,7 +63,23 @@ pub fn header_of(landmass: &Landmass) -> Value {
         // The biome's low ground (0..1) and snow line, metres; null for a landmass with no biome.
         "ground": landmass.biome.map(|biome| biome.ground.map(|channel| f64::from(channel) / 255.0)),
         "snow_m": landmass.biome.map(|biome| biome.snow_m().round()),
+        "swell": swell_of(&Swell::default()),
     })
+}
+
+/// The swell's waves as the client draws them: each one's way, wavenumber, frequency, height, sideways carry and
+/// phase, and the depths over which the swell fades.
+#[must_use]
+pub fn swell_of(swell: &Swell) -> Value {
+    let waves: Vec<Value> = swell
+        .waves
+        .iter()
+        .map(|wave| {
+            json!({ "direction": wave.direction, "number": wave.number, "frequency": wave.frequency,
+                "amplitude": wave.amplitude, "shift": wave.shift, "phase": wave.phase })
+        })
+        .collect();
+    json!({ "waves": waves, "full_depth_m": land::sea::FULL_DEPTH_M, "gone_depth_m": land::sea::GONE_DEPTH_M })
 }
 
 fn read(request: &[u8]) -> Result<Value, String> {
@@ -196,8 +213,9 @@ pub fn write_json() -> String {
     })
 }
 
-/// The open landmass's ground at each point of `{ "points": [[x, y], ...] }`, as the runtime finds it: each height, the
-/// water there (`dry`, `sea`, `lake` or `river`) and its surface, and a fingerprint of the heights' bits.
+/// The open landmass's ground at each point of `{ "points": [[x, y], ...], "time": seconds }`, as the runtime finds
+/// it: each height, the water there (`dry`, `sea`, `lake` or `river`) and its surface, the sea's swell over it at
+/// that time (null off the sea), and fingerprints of the heights' and the sea's bits.
 #[must_use]
 pub fn sample_json(request: &[u8]) -> String {
     let sampled = read(request).and_then(|request| {
@@ -219,7 +237,11 @@ pub fn sample_json(request: &[u8]) -> String {
                 })
                 .collect();
             let hash = format!("{:016x}", sample_hash(ground, &pairs));
-            Ok(json!({ "heights": heights, "water": water, "sample_hash": hash }).to_string())
+            let (swell, time) = (Swell::default(), request["time"].as_f64().unwrap_or(0.0));
+            let sea: Vec<Option<f64>> = pairs.iter().map(|&(x, y)| sea_surface(ground, &swell, x, y, time)).collect();
+            let sea_hash = format!("{:016x}", sea_hash(ground, &swell, &pairs, time));
+            Ok(json!({ "heights": heights, "water": water, "sample_hash": hash, "sea": sea, "sea_hash": sea_hash })
+                .to_string())
         })
     });
     sampled.unwrap_or_else(|error: String| json!({ "error": error }).to_string())

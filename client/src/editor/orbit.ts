@@ -57,16 +57,30 @@ function cameraFrame(orbit: Orbit) {
 const dot = (a: Vector, b: Vector) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
 /**
- * World to clip space as a column-major 4x4 matrix, for WebGPU's clip depth of 0 (near) to 1 (far). `aspect` is the
- * viewport's width over its height.
+ * The camera's place and directions, the nearest and farthest it draws (metres), and how a point's distance ahead
+ * maps to depth: the near plane at 1 and the far at 0, reversed so 32-bit depth keeps its precision far off. A
+ * depth d lies `depthOffset / (d + depthScale)` metres ahead.
  */
-export function viewProjection(orbit: Orbit, aspect: number): Float32Array {
-  const { eye, forward, right, up } = cameraFrame(orbit);
-  const near = Math.max(0.25, orbit.distance / 1000);
-  const far = orbit.distance * 20 + 50_000;
+export function cameraOf(orbit: Orbit) {
+  const [near, far] = [Math.max(0.25, orbit.distance / 1000), orbit.distance * 20 + 50_000];
+  return {
+    ...cameraFrame(orbit),
+    near,
+    far,
+    depthScale: near / (far - near),
+    depthOffset: (near * far) / (far - near),
+  };
+}
+
+/**
+ * World to clip space as a column-major 4x4 matrix, depth reversed: 1 at the near plane, 0 at the far. `aspect` is the
+ * viewport's width over its height. `fromEye` takes points measured from the camera instead, so a GPU's floats keep
+ * their centimetres however far the window's corner lies.
+ */
+export function viewProjection(orbit: Orbit, aspect: number, fromEye = false): Float32Array {
+  const { eye: placed, forward, right, up, depthScale, depthOffset } = cameraOf(orbit);
+  const eye: Vector = fromEye ? [0, 0, 0] : placed;
   const focal = 1 / Math.tan(FIELD_OF_VIEW / 2);
-  const depthScale = far / (near - far);
-  const depthOffset = (near * far) / (near - far);
   // View space looks down its -z: x along `right`, y along `up`, z against `forward`.
   const viewRows = [
     [...right, -dot(right, eye)],
@@ -86,9 +100,15 @@ export function viewProjection(orbit: Orbit, aspect: number): Float32Array {
   return matrix;
 }
 
-/** Turns the camera around its target; the pitch stays between just above the horizon and almost straight down. */
-export function rotateOrbit(orbit: Orbit, yawChange: number, pitchChange: number): Orbit {
-  const pitch = clamp(orbit.pitch + pitchChange, PITCH_LIMITS.lowest, PITCH_LIMITS.highest);
+/** Turns the camera around its target; the pitch stays between `lowest` (just above the horizon, unless a swimmer
+ *  looks up) and almost straight down. */
+export function rotateOrbit(
+  orbit: Orbit,
+  yawChange: number,
+  pitchChange: number,
+  lowest: number = PITCH_LIMITS.lowest,
+): Orbit {
+  const pitch = clamp(orbit.pitch + pitchChange, lowest, PITCH_LIMITS.highest);
   return { ...orbit, yaw: orbit.yaw + yawChange, pitch };
 }
 

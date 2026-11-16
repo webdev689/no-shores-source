@@ -16,6 +16,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
   shows it in 2D and 3D, close up at true scale, and on foot.
+- The [[Water]], on its pull request: the shared swell in the land crate, breakers that shoal and break on every
+  shore, a stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an
+  underwater view, in the World Editor's 3D view ([[The Water Is Stylised Realism]]).
 - The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
@@ -27,6 +30,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
 ## Next
+
+- The water's open ends ([[Water]]): a body for the walker, the weather driving the swell, and the breakers and
+  ripples for ships once ships sail.
 
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.

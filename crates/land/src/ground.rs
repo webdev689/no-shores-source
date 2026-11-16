@@ -334,8 +334,9 @@ impl Ground {
         let height = self.height_at(x, y);
         let (i, j) = ((x - self.land.left_m) / self.land.cell_m, (y - self.land.top_m) / self.land.cell_m);
         if self.land.covers(x, y) {
+            // A lake level of 0 is no lake: the sea's own cells hold it too.
             let surface = self.lake_level[j as usize * self.land.width + i as usize];
-            if surface > height {
+            if surface > 0.0 && surface > height {
                 return WaterAt::Lake { surface };
             }
         }

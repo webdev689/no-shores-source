@@ -92,10 +92,11 @@ The land's WebAssembly door gives the browser the same answers.
 ## Agreeing to the bit
 
 The land crate uses only exact maths ([[Agree to the Bit]]): its noise is hashed gradient noise made of + - * / and
-square root. Clippy refuses the platform's `sin`, `exp`, `powf` and their kin across the workspace. A fingerprint
-of every ground height's bits is tested natively (`crates/land/tests/agree.rs`) and through WebAssembly
-(`landRules.test.ts`) against the same value, and so is a fingerprint of the ground sampled on a road, along a
-river, in a town and across the land.
+square root, and its sine and cosine are fdlibm's polynomials on the same operations. Clippy refuses the platform's
+`sin`, `exp`, `powf` and their kin across the workspace. A fingerprint of every ground height's bits is tested
+natively (`crates/land/tests/agree.rs`) and through WebAssembly (`landRules.test.ts`) against the same value, and so
+are a fingerprint of the ground sampled on a road, along a river, in a town and across the land, and one of the
+sea's swell ([[Water]]) over the land's margin at a moment of world time.
 
 ## In the browser
 
@@ -107,8 +108,11 @@ leave the open one alone. The door answers for the open landmass:
 
 - `land_patch`: the ground over a grid of up to 1,024 samples a side. Each sample has its height, its water's
   surface, and a mark for a road, a town or a port. The editor's close-up draws it.
-- `land_sample`: the ground at a list of points. Each point has its height and its water (dry, sea, lake or river)
-  with the water's surface. The answer also holds a fingerprint of the heights. The game will call it.
+- `land_sample`: the ground at a list of points. Each point has its height, its water (dry, sea, lake or river) with
+  the water's surface, and the sea's swell over it at a given moment ([[Water]]). The answer also holds fingerprints
+  of the heights and of the sea. The game will call it.
+
+Each landmass's view also carries the sea's swell: its waves, for the browser to draw.
 
 ## Limits
 

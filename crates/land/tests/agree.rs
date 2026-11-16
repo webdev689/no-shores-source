@@ -47,3 +47,19 @@ fn sample_points() -> Vec<(f64, f64)> {
     });
     road.chain(river).chain(town).chain(across).chain(fractions).collect()
 }
+
+/// The sea's swell over the square's margin at a moment of world time, at points a fraction of a metre off the grid
+/// (landRules.test.ts samples the same).
+pub const SQUARE_SEA_HASH: &str = "b6ceaaa9dd1a37f4";
+
+#[test]
+fn the_sea_over_the_square_swells_to_its_fingerprint() {
+    let text = r#"{ "continents": [{ "id": "square", "outline": [[200000, 300000], [320000, 300000], [320000, 420000], [200000, 420000]] }], "isles": [] }"#;
+    let layout = world::layout::parse(text).unwrap();
+    let landmass = generate(&layout.continents[0], land::edits::Edits::default()).unwrap();
+    let swell = land::sea::Swell::default();
+    let points: Vec<(f64, f64)> =
+        (0..60).map(|step| (162_000.5 + 550.25 * f64::from(step), 262_000.75 + 3_300.5 * f64::from(step))).collect();
+    assert!(points.iter().all(|&(x, y)| land::sea::sea_surface(&landmass.surface, &swell, x, y, 1234.567).is_some()));
+    assert_eq!(format!("{:016x}", land::sea::sea_hash(&landmass.surface, &swell, &points, 1234.567)), SQUARE_SEA_HASH);
+}

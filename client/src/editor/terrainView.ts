@@ -1,6 +1,7 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
+import { FRESH_SINK_M } from '../water/shore.ts';
+import { ANCHOR_M, SHARED_WGSL } from '../water/waterCommon.ts';
 import type { CellRect } from './landMask.ts';
-import { viewProjection, type Orbit } from './orbit.ts';
 
 /**
  * One landmass window's terrain, one value a cell, row by row from the north-west. Heights in metres: land at 1 or
@@ -30,22 +31,35 @@ export interface TerrainOptions {
   readonly hole?: readonly [number, number, number, number];
 }
 
+/** The camera a frame is drawn from: its view-projection of points measured from its eye, the eye in window metres
+ *  (height as drawn), and the moment, seconds. */
+export interface TerrainFrame {
+  readonly fromEye: Float32Array;
+  readonly eye: readonly [number, number, number];
+  readonly time: number;
+}
+
 /** The most mesh vertices along the window's longer side; past it the mesh skips cells, keeping about 1.2 million. */
 const MESH_SIDE = 1100;
 
-const UNIFORM_BYTES = 144;
+const UNIFORM_BYTES = 176;
+/** The caustics' clock wraps here, seconds, as the water's does. */
+const SLOW_CLOCK_S = 3600;
 /** The low ground and snow line drawn for a landmass with no biome. */
 const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
 const DEFAULT_SNOW_M = 2300;
 
 /**
  * The mesh is built in the vertex shader from the vertex index alone: a grid of quads, two triangles each, one
- * vertex every `step` cells at that cell's centre. Water sits on the mesh at its surface (the sea at 0); the
- * fragment shader tells land from lake from sea by the bed height and lake surface it is given.
+ * vertex every `step` cells at that cell's centre. It is the bed: the water is drawn over it afterwards. The
+ * fragment shader tells land from the bed of a lake or the sea by the bed height and lake surface it is given;
+ * under water the sun's caustics dance on it. Points are measured from the eye, and from the noise's anchor.
  */
 const SHADER = /* wgsl */ `
+${SHARED_WGSL}
+
 struct View {
-  view_projection: mat4x4f,
+  from_eye: mat4x4f,
   hole: vec4f,
   brush_centre: vec2f,
   origin: vec2f,
@@ -55,6 +69,8 @@ struct View {
   step: u32,
   quads_x: u32,
   ground: vec4f,
+  eye: vec4f,
+  local: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> view: View;
@@ -69,17 +85,18 @@ struct Surface {
   @location(2) lake: f32,
   @location(3) normal: vec3f,
   @location(4) slope: f32,
+  @location(5) local: vec2f,
 };
 
 const CORNERS = array<vec2i, 6>(vec2i(0, 0), vec2i(1, 0), vec2i(0, 1), vec2i(0, 1), vec2i(1, 0), vec2i(1, 1));
-const SUN = vec3f(-0.5417, 0.5417, 0.6428);
 const AMBIENT = 0.35;
+const SAND = vec3f(0.84, 0.76, 0.56);
+const SEABED = vec3f(0.50, 0.52, 0.40);
+const DEEP_BED = vec3f(0.24, 0.30, 0.30);
+const MUD = vec3f(0.33, 0.30, 0.21);
 const HIGHLAND = vec3f(0.50, 0.40, 0.27);
 const ROCK = vec3f(0.48, 0.47, 0.45);
 const SNOW = vec3f(0.94, 0.95, 0.97);
-const SHALLOW_SEA = vec3f(0.16, 0.40, 0.58);
-const DEEP_SEA = vec3f(0.03, 0.09, 0.24);
-const LAKE = vec3f(0.22, 0.52, 0.68);
 const RIVER = vec3f(0.18, 0.42, 0.72);
 const ROAD = vec3f(0.62, 0.48, 0.30);
 const TOWN = vec3f(0.75, 0.30, 0.22);
@@ -90,8 +107,8 @@ fn last_cell() -> vec2i {
   return vec2i(textureDimensions(heights)) - 1;
 }
 
-fn top_at(cell: vec2i) -> f32 {
-  return max(max(textureLoad(heights, cell, 0).r, textureLoad(lakes, cell, 0).r), 0.0);
+fn bed_at(cell: vec2i) -> f32 {
+  return textureLoad(heights, cell, 0).r;
 }
 
 @vertex
@@ -106,23 +123,41 @@ fn vertex_main(@builtin(vertex_index) index: u32) -> Surface {
   let north = max(cell - vec2i(0, stride), vec2i(0));
   let south = min(cell + vec2i(0, stride), last);
   let span = max(vec2f(f32(east.x - west.x), f32(south.y - north.y)), vec2f(1.0)) * view.cell_m;
-  let gradient = vec2f(top_at(east) - top_at(west), top_at(south) - top_at(north)) / span;
+  let gradient = vec2f(bed_at(east) - bed_at(west), bed_at(south) - bed_at(north)) / span;
 
   var surface: Surface;
-  surface.world = view.origin + (vec2f(cell) + 0.5) * view.cell_m;
-  surface.bed = textureLoad(heights, cell, 0).r;
-  surface.lake = textureLoad(lakes, cell, 0).r;
+  let from_origin = (vec2f(cell) + 0.5) * view.cell_m;
+  surface.world = view.origin + from_origin;
+  surface.local = view.local.xy + from_origin;
+  surface.bed = bed_at(cell);
+  // A bank beside fresh water (dry, standing at its level or above) takes that level, so the bed's waterline follows
+  // the ground, not the grid; as the water's own surface does.
+  let own = textureLoad(lakes, cell, 0).r;
+  let beside = max(max(textureLoad(lakes, west, 0).r, textureLoad(lakes, east, 0).r), max(textureLoad(lakes, north, 0).r, textureLoad(lakes, south, 0).r));
+  let banked = select(0.0, beside, bed_at(cell) >= beside - ${FRESH_SINK_M});
+  surface.lake = select(banked, own, own > 0.0);
   surface.normal = normalize(vec3f(-gradient * view.exaggeration, 1.0));
   surface.slope = length(gradient);
-  surface.clip = view.view_projection * vec4f(surface.world, top_at(cell) * view.exaggeration, 1.0);
+  let from_eye = vec3f(view.eye.xy + from_origin, surface.bed * view.exaggeration - view.eye.z);
+  surface.clip = view.from_eye * vec4f(from_eye, 1.0);
   return surface;
 }
 
-// The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w).
+// The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w). Just above the sea
+// lies a beach, darker below the swash's reach.
 fn land_colour(bed: f32, slope: f32) -> vec3f {
   let ground = mix(view.ground.rgb, HIGHLAND, smoothstep(200.0, 1600.0, bed));
   let bare = mix(ground, ROCK, smoothstep(0.25, 0.5, slope));
-  return mix(bare, SNOW, smoothstep(view.ground.w - 200.0, view.ground.w, bed));
+  let snowy = mix(bare, SNOW, smoothstep(view.ground.w - 200.0, view.ground.w, bed));
+  let beach = (1.0 - smoothstep(0.5, 1.05, bed)) * (1.0 - smoothstep(0.12, 0.3, slope));
+  let wet = (1.0 - smoothstep(0.1, 0.4, bed)) * beach;
+  return mix(snowy, SAND, beach) * (1.0 - 0.32 * wet);
+}
+
+// The bed under water: sand in the shallows giving way to silt and darker ground with depth; mud under fresh water.
+fn bed_colour(depth: f32, slope: f32, fresh: bool) -> vec3f {
+  let sea_floor = mix(mix(SAND, SEABED, smoothstep(1.5, 18.0, depth)), DEEP_BED, smoothstep(18.0, 90.0, depth));
+  return mix(select(sea_floor, MUD, fresh), ROCK * 0.8, smoothstep(0.3, 0.6, slope));
 }
 
 @fragment
@@ -131,16 +166,18 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   if (all(surface.world > hole.xy) && all(surface.world < hole.zw)) { discard; }
   let from_brush = distance(surface.world, view.brush_centre);
   let ring_width = fwidth(from_brush);
+  let fine = 1.0 - smoothstep(0.06, 0.3, length(fwidth(surface.local)));
 
   var colour: vec3f;
-  var normal = vec3f(0.0, 0.0, 1.0);
-  if (surface.lake > 0.0 && surface.lake > surface.bed) {
-    colour = LAKE;
-  } else if (surface.bed < 0.0) {
-    colour = mix(SHALLOW_SEA, DEEP_SEA, smoothstep(0.0, 3000.0, -surface.bed));
+  let normal = normalize(surface.normal);
+  let fresh = surface.lake > 0.0;
+  let depth = select(0.0, surface.lake - ${FRESH_SINK_M}, fresh) - surface.bed;
+  if (depth > 0.0) {
+    colour = bed_colour(depth, surface.slope, fresh);
+    let light = caustics(surface.local, view.eye.w) * fine * exp(-depth / 9.0) * smoothstep(0.0, 0.4, depth);
+    colour += SUN_LIGHT * light * select(0.32, 0.12, fresh);
   } else {
     colour = land_colour(surface.bed, surface.slope);
-    normal = normalize(surface.normal);
     let cell = clamp(vec2i(floor((surface.world - view.origin) / view.cell_m)), vec2i(0), last_cell());
     let mark = textureLoad(marks, cell, 0).r;
     if (mark == 1u || mark == 2u) { colour = mix(colour, RIVER, 0.7); }
@@ -169,7 +206,7 @@ function pipelineFor(gpu: Gpu): GPURenderPipeline {
     vertex: { module, entryPoint: 'vertex_main' },
     fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
     primitive: { topology: 'triangle-list' },
-    depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
+    depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
   });
   byFormat.set(gpu.format, pipeline);
   return pipeline;
@@ -193,7 +230,6 @@ export class TerrainView {
   private readonly uniforms: GPUBuffer;
   private readonly pipeline: GPURenderPipeline;
   private readonly bindGroup: GPUBindGroup;
-  private depth: GPUTexture | null = null;
 
   constructor(gpu: Gpu, data: TerrainData) {
     this.gpu = gpu;
@@ -258,66 +294,35 @@ export class TerrainView {
 
   /** Gives the GPU back this view's textures and buffers; the view draws nothing after. */
   destroy(): void {
-    for (const resource of [this.heights, this.lakes, this.marks, this.uniforms, this.depth]) resource?.destroy();
+    for (const resource of [this.heights, this.lakes, this.marks, this.uniforms]) resource.destroy();
   }
 
-  /** Writes this view's uniforms for a frame seen from `orbit`. */
-  private prepare(orbit: Orbit, aspect: number, options: TerrainOptions): void {
+  /** The cells' heights and lake surfaces on the GPU, for the water drawn over them, and their size, metres. */
+  get cells(): { readonly heights: GPUTexture; readonly lakes: GPUTexture; readonly cellM: number } {
+    return { heights: this.heights, lakes: this.lakes, cellM: this.cellM };
+  }
+
+  /** Writes this view's uniforms for one frame. */
+  prepare(frame: TerrainFrame, options: TerrainOptions): void {
     const values = new ArrayBuffer(UNIFORM_BYTES);
     const floats = new Float32Array(values);
-    floats.set(viewProjection(orbit, aspect));
+    floats.set(frame.fromEye);
     floats.set(options.hole ?? [1, 1, 0, 0], 16);
     const brush = options.brush ?? { x: 0, y: 0, radiusM: 0 };
     floats.set([brush.x, brush.y, ...this.origin, brush.radiusM, options.exaggeration, this.cellM], 20);
     new Uint32Array(values).set([this.step, this.quadsX], 27);
     floats.set([...this.ground, this.snowM], 32);
+    const [eyeX, eyeY, eyeZ] = frame.eye;
+    const anchor = [Math.floor(eyeX / ANCHOR_M) * ANCHOR_M, Math.floor(eyeY / ANCHOR_M) * ANCHOR_M];
+    floats.set([this.origin[0] - eyeX, this.origin[1] - eyeY, eyeZ, frame.time % SLOW_CLOCK_S], 36);
+    floats.set([this.origin[0] - (anchor[0] ?? 0), this.origin[1] - (anchor[1] ?? 0), 0, 0], 40);
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, values);
   }
 
-  private drawInto(pass: GPURenderPassEncoder): void {
+  /** Draws the terrain into a pass whose uniforms `prepare` wrote. */
+  drawInto(pass: GPURenderPassEncoder): void {
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
     pass.draw(this.vertexCount);
-  }
-
-  /** Draws one frame into the canvas, `width` by `height` pixels, seen from `orbit`; a close-up view, if given, is
-   *  drawn in the same pass so the two share one depth. */
-  draw(
-    orbit: Orbit,
-    width: number,
-    height: number,
-    options: TerrainOptions,
-    closeUp: { readonly view: TerrainView; readonly options: TerrainOptions } | null = null,
-  ): void {
-    const { device, context } = this.gpu;
-    const target = context.getCurrentTexture();
-    if (!this.depth || this.depth.width !== target.width || this.depth.height !== target.height) {
-      this.depth?.destroy();
-      this.depth = device.createTexture({
-        size: [target.width, target.height],
-        format: 'depth24plus',
-        usage: TEXTURE_USAGE.renderAttachment,
-      });
-    }
-
-    this.prepare(orbit, width / height, options);
-    closeUp?.view.prepare(orbit, width / height, closeUp.options);
-
-    const encoder = device.createCommandEncoder();
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [
-        { view: target.createView(), clearValue: [0.04, 0.05, 0.08, 1], loadOp: 'clear', storeOp: 'store' },
-      ],
-      depthStencilAttachment: {
-        view: this.depth.createView(),
-        depthClearValue: 1,
-        depthLoadOp: 'clear',
-        depthStoreOp: 'discard',
-      },
-    });
-    this.drawInto(pass);
-    closeUp?.view.drawInto(pass);
-    pass.end();
-    device.queue.submit([encoder.finish()]);
   }
 }
