@@ -1,0 +1,85 @@
+//! Stage I: the city's social space, the one part of it a player walks, as Destiny 1's Tower is the one part of its
+//! City walked. A plaza the Tower's size beside the landmark on its seaward side, level with the landmark's foot, its
+//! open edges walled with a parapet; from it the city below and the harbour are seen whole and never reached.
+
+use crate::landmarks::{Landmark, ahead};
+use crate::solids::{Material, Shape, Solid};
+use land::ground::Ground;
+use serde::Serialize;
+
+/// The plaza's length and depth, metres: the size of Destiny 1's Tower, walked end to end.
+pub const PLAZA_M: [f64; 2] = [260.0, 120.0];
+/// How far inside the plaza's edge its section runs, metres, so the parapet stands past the warning's line.
+pub const SECTION_INSET_M: f64 = 2.0;
+/// The parapet's height and thickness, metres.
+const PARAPET_M: [f64; 2] = [1.1, 0.8];
+/// A gap between the landmark's reach and the plaza, metres.
+const APART_M: f64 = 10.0;
+
+/// The social space: its plaza's bounds (west, north, east, south) and level, its section's ring, its spawns, and its
+/// parapets and retaining walls.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Social {
+    pub bounds: [f64; 4],
+    pub level: f64,
+    pub ring: Vec<[f64; 2]>,
+    pub spawns: Vec<[f64; 2]>,
+    pub solids: Vec<Solid>,
+}
+
+/// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
+/// looks out over the city to the sea.
+#[must_use]
+pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], landmark: &Landmark) -> Social {
+    let east_west = seaward[0].abs() >= seaward[1].abs();
+    let along_seaward = if east_west { [seaward[0].signum(), 0.0] } else { [0.0, seaward[1].signum()] };
+    let (extent_x, extent_y) = if east_west { (PLAZA_M[1], PLAZA_M[0]) } else { (PLAZA_M[0], PLAZA_M[1]) };
+    let depth = if east_west { extent_x } else { extent_y };
+    let middle = ahead(centre, along_seaward, landmark.reach + APART_M + depth / 2.0);
+    let bounds = [
+        middle[0] - extent_x / 2.0,
+        middle[1] - extent_y / 2.0,
+        middle[0] + extent_x / 2.0,
+        middle[1] + extent_y / 2.0,
+    ];
+    let inset = SECTION_INSET_M;
+    let ring = vec![
+        [bounds[0] + inset, bounds[1] + inset],
+        [bounds[2] - inset, bounds[1] + inset],
+        [bounds[2] - inset, bounds[3] - inset],
+        [bounds[0] + inset, bounds[3] - inset],
+    ];
+    // The spawns stand along the landmark's side, looking out: where a player arrives and comes back.
+    let landward = ahead(middle, along_seaward, -depth / 2.0 + 12.0);
+    let across = [-along_seaward[1], along_seaward[0]];
+    let spawns = [-60.0, -20.0, 20.0, 60.0].into_iter().map(|offset| ahead(landward, across, offset)).collect();
+    let mut solids = Vec::new();
+    let edges = [
+        ([middle[0], bounds[1]], [extent_x, PARAPET_M[1]], [0.0, -1.0]),
+        ([middle[0], bounds[3]], [extent_x, PARAPET_M[1]], [0.0, 1.0]),
+        ([bounds[0], middle[1]], [PARAPET_M[1], extent_y], [-1.0, 0.0]),
+        ([bounds[2], middle[1]], [PARAPET_M[1], extent_y], [1.0, 0.0]),
+    ];
+    for (edge_middle, size, outward) in edges {
+        if outward == [-along_seaward[0], -along_seaward[1]] {
+            continue; // the landmark's side opens onto its base
+        }
+        let out = ahead(edge_middle, outward, 4.0);
+        let below = ground.height_at(out[0], out[1]).min(level);
+        let foot = below - 2.0;
+        let shape = Shape::Block;
+        solids.push(Solid::upright(
+            shape,
+            [edge_middle[0], edge_middle[1], foot],
+            [size[0], size[1], level + PARAPET_M[0] - foot],
+            Material::Stone,
+        ));
+    }
+    solids.push(Solid::upright(
+        Shape::Block,
+        [middle[0], middle[1], level - 0.05],
+        [extent_x, extent_y, 0.05],
+        Material::Paving,
+    ));
+    Social { bounds, level, ring, spawns, solids }
+}
