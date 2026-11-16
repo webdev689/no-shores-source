@@ -134,6 +134,15 @@ fn she_takes_the_ground_on_the_shelf_and_stops() {
     let bow_keel = ship.x + 0.8 * SLOOP.half_length_m;
     assert!(bow_keel > 140.0 && bow_keel <= 144.0, "her bow's keel stops where the water is her draught: {bow_keel}");
     assert!(ship.ahead.abs() < 0.05, "she has lost her way: {}", ship.ahead);
+    assert!(pose_of(&ship, &SLOOP, &Shelf, 0.0).aground, "her keel touches, so the panel can say so");
+}
+
+#[test]
+fn she_steers_off_the_shelf_under_sail() {
+    let aground = sail(at_rest(FRAC_PI_2, 2), STILL, EAST, &Shelf, 60 * 90);
+    let ship = sail(aground, Helm { steer: -1.0, ..STILL }, EAST, &Shelf, 60 * 30);
+    assert!(ship.heading < FRAC_PI_2 - 0.5 || ship.heading > PI, "her helm swings her: {}", ship.heading);
+    assert!(length(ship.x - aground.x, ship.y - aground.y) > 10.0, "and she sails off: {ship:?} from {aground:?}");
     assert!(!pose_of(&ship, &SLOOP, &Shelf, 0.0).aground);
 }
 

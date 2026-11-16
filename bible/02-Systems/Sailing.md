@@ -39,8 +39,9 @@ rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop
   along and across her as her pitch and roll. The swell replaces the mod's sine bob over a flat sea. She heels into a
   turn as the mod's boat did, once she makes a wake (0.5 m/s). On a lake or river she floats at its level.
 - **The ground.** Her keel has three points: aft, amidships and forward. A point is aground where the water over the
-  bed is shallower than her draught. A move that grounds a point afloat before is refused, and she loses her way. A
-  point already aground may stay so, so oars astern take her off.
+  bed is shallower than her draught. A move that grounds a point afloat before is refused, and she loses her way, but
+  her helm may still swing her clear, as the mod refused only a turn into what she touched. A point already aground
+  may stay so, so oars astern take her off. Within a hand of her draught she touches, and the panel says so.
 - **One crate, every machine.** The browser steps her through `land-wasm`'s door, over the open landmass, in ticks of
   1/60 s, a second's at most a request. Its maths is exact or `libm`'s, so a voyage's fingerprint is the same natively
   and as WebAssembly ([[Agree to the Bit]]). The door refuses numbers that are not a ship.
@@ -52,9 +53,10 @@ Its handling is the mod's own, unscaled, and its gain (1.159) DFO's for that rig
 2.4 m/s.
 
 Her model is a `.blend`. `tools/ships/export_ship.py` turns it into Overlook's mesh: 20 bytes a vertex (position,
-normal, colour), indices, and a header with her waterline. Her waterline is 0.4 m above the model's base, where her
-beam nears its widest: 6.2 m long, 1.9 m across, her keel 0.6 m below it. Both the `.blend` and the mesh live on R2
-under their hashes, named in `content/ships/ships.json` ([[Generated Files Stay Out of Git]]).
+normal, colour), indices, and a header with her waterline. Her waterline is 0.4 m above the model's z = 0 (her keel
+reaches 0.2 m below it), where her beam nears its widest: 6.2 m long, 1.9 m across, her keel 0.6 m below it. Both the
+`.blend` and the mesh live on R2 under their hashes, named in `content/ships/ships.json`
+([[Generated Files Stay Out of Git]]).
 
 ## In the World Editor
 

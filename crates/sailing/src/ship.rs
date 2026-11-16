@@ -160,11 +160,16 @@ pub fn step_ship(
         rung,
     };
     let before = keel_aground(ship, hull, waters, time);
-    let after = keel_aground(&moved, hull, waters, time);
-    if after.iter().zip(before).any(|(&now, then)| now && !then) {
-        return Ship { ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung, ..*ship };
+    let grounds = |candidate: &Ship| {
+        keel_aground(candidate, hull, waters, time).iter().zip(before).any(|(&now, then)| now && !then)
+    };
+    if !grounds(&moved) {
+        return moved;
     }
-    moved
+    // She takes the ground and loses her way, but her helm may still swing her clear: the mod refused only a turn
+    // into what she touched.
+    let swung = Ship { heading: moved.heading, ahead: 0.0, abeam: 0.0, turn, sail_way: 0.0, rung, ..*ship };
+    if grounds(&swung) { Ship { ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung, ..*ship } } else { swung }
 }
 
 #[cfg(test)]

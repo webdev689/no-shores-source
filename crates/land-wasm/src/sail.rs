@@ -10,11 +10,17 @@ use sailing::ship::{Helm, SAILS_SET, Ship, step_ship};
 use sailing::waters::{LandWaters, steady_wind};
 use sailing::{SLOOP, TICK_SECONDS};
 use serde_json::json;
+use std::f64::consts::TAU;
 
 /// A ship, her helm, the time and the ticks.
 pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 2;
 /// The most ticks one request may step: a second's.
 pub const MOST_TICKS: f64 = 60.0;
+/// What no ship's numbers pass: a place a million kilometres out, a way (or her canvas's share of it) of 100 m/s, a
+/// swing of a turn a second.
+const MOST_PLACE_M: f64 = 1e9;
+const MOST_WAY: f64 = 100.0;
+const MOST_TURN_DEG: f64 = 360.0;
 
 fn is_whole(number: f64) -> bool {
     number == number.trunc()
@@ -35,8 +41,13 @@ fn read(request: &[u8]) -> Result<([f64; SHIP_FLOATS], [f64; HELM_FLOATS], f64, 
     let helm: [f64; HELM_FLOATS] =
         numbers[SHIP_FLOATS..SHIP_FLOATS + HELM_FLOATS].try_into().map_err(|_| "a helm is 3 numbers")?;
     let (time, ticks) = (numbers[REQUEST_FLOATS - 2], numbers[REQUEST_FLOATS - 1]);
-    let rung = ship[SHIP_FLOATS - 1];
+    let [x, y, heading, ahead, abeam, turn, sail_way, rung] = ship;
     let [steer, crab, climb] = helm;
+    let placed = x.abs() <= MOST_PLACE_M && y.abs() <= MOST_PLACE_M && (0.0..TAU).contains(&heading);
+    let moving = ahead.abs() <= MOST_WAY && abeam.abs() <= MOST_WAY && turn.abs() <= MOST_TURN_DEG;
+    if !placed || !moving || !(0.0..=MOST_WAY).contains(&sail_way) {
+        return Err("her place, heading, way or swing is none a ship could have".into());
+    }
     if !is_whole(rung) || !(-1.0..=f64::from(SAILS_SET)).contains(&rung) {
         return Err("her rung is a whole number from -1 to 2".into());
     }

@@ -7,7 +7,7 @@ use crate::ship::{Ship, length};
 use crate::waters::Waters;
 
 /// Her waterline's middle above still water (metres), her bow's rise and her heel to starboard (radians), and
-/// whether her keel touches the ground anywhere.
+/// whether her keel touches the ground anywhere (within a hand of it, so a ship the ground has stopped says so).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pose {
     pub heave: f64,
@@ -35,15 +35,23 @@ fn level_at(waters: &impl Waters, (x, y): (f64, f64), time: f64) -> f64 {
     spot.surface.unwrap_or(spot.bed)
 }
 
+/// How near her draught the water under her keel may come before she is said to touch the ground, metres.
+const TOUCH_M: f64 = 0.05;
+
+/// The water over the bed under her keel's points aft, amidships and forward, metres; none where it is dry.
+fn keel_depths(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> [Option<f64>; 3] {
+    [-0.8, 0.0, 0.8].map(|share| {
+        let (x, y) = place(ship, share * hull.half_length_m, 0.0);
+        let spot = waters.at(x, y, time);
+        spot.surface.map(|surface| surface - spot.bed)
+    })
+}
+
 /// Her keel's points aft, amidships and forward, each aground where the water over the bed is shallower than her
 /// draught (or there is none).
 #[must_use]
 pub fn keel_aground(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> [bool; 3] {
-    [-0.8, 0.0, 0.8].map(|share| {
-        let (x, y) = place(ship, share * hull.half_length_m, 0.0);
-        let spot = waters.at(x, y, time);
-        spot.surface.is_none_or(|surface| surface - spot.bed < hull.draught_m)
-    })
+    keel_depths(ship, hull, waters, time).map(|depth| depth.is_none_or(|depth| depth < hull.draught_m))
 }
 
 /// Come Sail Away's heel in a turn, radians: into it, by her swing and her way, once she makes a wake.
@@ -69,6 +77,8 @@ pub fn pose_of(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> Pos
         heave,
         pitch: libm::atan2(bow - stern, 2.0 * half_length),
         roll: libm::atan2(port - starboard, 2.0 * half_beam) + turn_heel(ship),
-        aground: keel_aground(ship, hull, waters, time).contains(&true),
+        aground: keel_depths(ship, hull, waters, time)
+            .iter()
+            .any(|depth| depth.is_none_or(|depth| depth < hull.draught_m + TOUCH_M)),
     }
 }

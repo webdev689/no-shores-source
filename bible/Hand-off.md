@@ -38,7 +38,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- Whether the Sloop sits right: her waterline is taken 0.4 m above her model's base, where her beam nears its widest
+- Whether the Sloop sits right: her waterline is taken 0.4 m above her model's z = 0, where her beam nears its widest
   ([[Sailing]]). And what the small cube at her bow is.
 
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).

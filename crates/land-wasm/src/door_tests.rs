@@ -132,3 +132,21 @@ fn bad_numbers_through_the_sail_door_are_refused() {
     assert!(header(&sail_bytes(&[0; 16])).get("error").is_some(), "too few numbers");
     assert!(!refused(&ship, &[0.0; 3], 60.0), "a second's ticks are fine");
 }
+
+#[test]
+fn numbers_no_ship_could_have_are_refused_before_they_reach_the_rules() {
+    assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
+    let ship = [180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0];
+    let with = |index: usize, value: f64| {
+        let mut changed = ship;
+        changed[index] = value;
+        header(&sail_bytes(&sail_request(&changed, &[0.0; 3], 0.0, 1.0))).get("error").is_some()
+    };
+    assert!(with(0, 1e12), "a thousand million kilometres east");
+    assert!(with(2, 7.0) && with(2, -0.1), "a heading outside a turn");
+    assert!(with(3, 1e200) && with(4, -1e200), "a way no hull makes");
+    assert!(with(5, 1e9), "a swing no rudder gives");
+    assert!(with(6, -1.0) && with(6, 1e200), "a canvas share of way no hull makes");
+    let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[1.0, 0.0, 0.0], 0.0, 60.0)));
+    assert!(answer.iter().all(|number| number.is_finite()), "{answer:?}");
+}

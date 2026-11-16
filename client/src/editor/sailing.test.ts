@@ -100,3 +100,9 @@ test('under way she stirs the water at her bow and quarters each half metre, and
   const mask = sailing.hull(view, waterline);
   assert.deepEqual([mask.halfLength, mask.halfBeam, mask.way], [3, 1, 2]);
 });
+
+test('she is put to sea heading where the camera looks, as a heading within a turn', async () => {
+  const { source, asked } = fakeDoor();
+  await Sailing.putToSea(source, 'square', 0, 0, -0.5, 0);
+  assert.ok(Math.abs((asked[0]?.ship[2] ?? 0) - (2 * Math.PI - 0.5)) < 1e-12);
+});

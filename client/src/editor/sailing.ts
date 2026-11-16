@@ -61,7 +61,9 @@ export class Sailing {
     heading: number,
     time: number,
   ): Promise<Sailing | string> {
-    const sailed = await source.sail(id, new Float64Array([x, y, heading, 0, 0, 0, 0, 0]), STILL, time, 0);
+    const turn = 2 * Math.PI;
+    const within = ((heading % turn) + turn) % turn;
+    const sailed = await source.sail(id, new Float64Array([x, y, within, 0, 0, 0, 0, 0]), STILL, time, 0);
     if (!sailed) return 'Open this landmass to sail on it.';
     if (sailed.pose.aground) return 'The Sloop needs water deeper than her draught: put her to sea off the coast.';
     return new Sailing(source, id, sailed);
