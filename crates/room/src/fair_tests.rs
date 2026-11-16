@@ -147,3 +147,30 @@ fn a_player_who_stands_again_is_left_be_until_they_strike() {
     room.tick();
     assert_eq!(room.players[&player].graced, 0, "striking ends it");
 }
+
+#[test]
+fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
+    for ahead in [20.0, 45.0] {
+        let mut room = room();
+        let archer = stand(&mut room, ::foes::Kind::Archer, 0.0, -ahead);
+        let foe = *room.fighter(archer).expect("stood");
+        let order = combat::shapes::TelegraphOrder {
+            shape: combat::shapes::Shape::Aimed,
+            windup: 36,
+            iron: false,
+            feint_at: None,
+            bearing: core::f64::consts::PI,
+            ahead,
+        };
+        let aimed = combat::shapes::Telegraph::begin(&order, [0.0, -ahead, 0.0]);
+        room.telegraph_lands(archer, &foe, &aimed);
+        let mut shot = room.shots.pop().expect("an arrow leaves");
+        let landed = loop {
+            match combat::shots::fly(&shot, &[], &[]) {
+                combat::shots::Flight::Flying(next) => shot = next,
+                combat::shots::Flight::Stopped { at, .. } => break at,
+            }
+        };
+        assert!(landed[1] >= -0.5, "at {ahead} m it carries to the end of its line: came down at {landed:?}");
+    }
+}
