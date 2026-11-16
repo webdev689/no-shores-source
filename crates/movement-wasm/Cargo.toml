@@ -1,0 +1,16 @@
+[package]
+name = "movement-wasm"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Movement for the browser: the movement crate behind a small WebAssembly door, a body stepped one tick at a time."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+movement = { path = "../movement" }
+
+[lints]
+workspace = true

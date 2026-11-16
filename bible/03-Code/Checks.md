@@ -14,7 +14,7 @@ order a failure is cheapest to read:
 2. **lints**: clippy on every crate and target, then ESLint; warnings are errors. Clippy also refuses clocks and
    every float method the platform may round its own way, such as `sin`, `exp` and `powf` ([[Agree to the Bit]]).
 3. **types**: TypeScript, strict, for the client and for the tests.
-4. **tests**: `cargo test`, then the world rules and the land built as WebAssembly (`npm run wasm`), then
+4. **tests**: `cargo test`, then the world rules, the land and movement built as WebAssembly (`npm run wasm`), then
    `node --test`, whose bridge tests load them.
 5. **build**: the client, with Vite.
 6. **repo checks**, each a pure function with tests beside it:

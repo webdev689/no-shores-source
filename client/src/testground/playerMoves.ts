@@ -1,4 +1,4 @@
-import type { Mode } from './motor.ts';
+import type { Mode } from '../rules/movementRules.ts';
 
 /** A swing's direction, as the first-person weapon draws it. */
 export type Direction = 'down' | 'downLeft' | 'left' | 'right' | 'downRight' | 'up';

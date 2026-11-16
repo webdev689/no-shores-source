@@ -27,10 +27,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "libm"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
+
+[[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "movement"
+version = "0.0.0"
+dependencies = [
+ "libm",
+]
+
+[[package]]
+name = "movement-wasm"
+version = "0.0.0"
+dependencies = [
+ "movement",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -48,6 +68,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "room"
+version = "0.0.0"
+dependencies = [
+ "movement",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 import type { Orbit } from '../editor/orbit.ts';
-import type { Block } from './motor.ts';
+import type { Block } from '../rules/movementRules.ts';
 
 /** First or third person, how far behind the head the camera is meant to sit, and how far it sits now as it eases. */
 export interface ViewMode {
