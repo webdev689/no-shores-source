@@ -12,7 +12,7 @@ code:
   - crates/movement-wasm/src/lib.rs#set_ground
   - crates/room/src/lib.rs#standing_on
   - client/src/rules/movementRules.ts#startMovementRules
-  - client/src/testground/player.ts#updatePlayer
+  - client/src/player/player.ts#updatePlayer
 ---
 # Movement
 
@@ -88,7 +88,8 @@ cuts the same windows there, and steps them through the movement door. Both hold
 
 ## Limits
 
-- The Test Ground stands bodies on open ground at 0 m; only a node's room stands them on the [[Land]].
+- The Test Ground stands bodies on open ground at 0 m; a node's room, and the [[Game]] on foot in a node, stand them
+  on the [[Land]].
 - A body that lands on terrain steeper than the slope limit stands there and does not slide down, so a jump can
   gain height up a slope too steep to walk.
 - A body slides along a rise too steep for its path an axis at a time, as along a block, not along the rise's own

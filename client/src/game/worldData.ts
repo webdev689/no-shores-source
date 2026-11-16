@@ -23,9 +23,10 @@ export interface CityInfo {
   readonly centre: Point;
 }
 
-/** A continent of the layout: its id, its biome, and its edits file's text (null for none). */
+/** A continent of the layout: its id, its painted coast, its biome, and its edits file's text (null for none). */
 export interface ContinentInfo {
   readonly id: string;
+  readonly outline: readonly Point[];
   readonly climate: string | null;
   readonly editsText: string | null;
 }
@@ -71,10 +72,11 @@ export async function loadWorld(base: string): Promise<WorldData> {
     return response.text();
   };
   const layoutText = await text('layout.json');
-  const layout = JSON.parse(layoutText) as { continents: { id: string; climate?: string }[] };
+  const layout = JSON.parse(layoutText) as { continents: { id: string; outline: Point[]; climate?: string }[] };
   const continents = await Promise.all(
     layout.continents.map(async (continent) => ({
       id: continent.id,
+      outline: continent.outline,
       climate: continent.climate ?? null,
       editsText: await text(`land/${continent.id}.json`).catch(() => null),
     })),

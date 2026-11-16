@@ -1,15 +1,8 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
-import { PX_PER_M } from '../testground/figures.ts';
-import type { Card } from '../testground/sceneView.ts';
+import { PX_PER_M } from '../player/figures.ts';
+import type { Card, CardAt, CardMaker } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
-
-/** One figure to draw: its card, its feet in world metres, and whether it is mirrored. */
-export interface FigureAt {
-  readonly card: Card;
-  readonly feet: readonly [number, number, number];
-  readonly flip: boolean;
-}
 
 const VIEW_BYTES = 80;
 const CARD_BYTES = 48;
@@ -48,7 +41,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
 `;
 
 /** Draws the forge's figures into the scene's pass, after the land and before the water. */
-export class FigureView {
+export class FigureView implements CardMaker {
   private readonly gpu: Gpu;
   private readonly pipeline: GPURenderPipeline;
   private readonly cardLayout: GPUBindGroupLayout;
@@ -127,7 +120,7 @@ export class FigureView {
     fromEye: Float32Array,
     eye: readonly [number, number, number],
     yaw: number,
-    figures: readonly FigureAt[],
+    figures: readonly CardAt[],
   ): void {
     if (figures.length === 0) return;
     const right = [Math.cos(yaw), Math.sin(yaw)];
@@ -137,11 +130,11 @@ export class FigureView {
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.viewGroup);
-    figures.forEach(({ card, feet, flip }, index) => {
+    figures.forEach(({ card, x, y, z, flip }, index) => {
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
-        ...[feet[0] - eye[0], feet[1] - eye[1], feet[2] - eye[2], flip ? 1 : 0],
+        ...[x - eye[0], y - eye[1], z - eye[2], flip ? 1 : 0],
         ...[card.width / PX_PER_M, card.height / PX_PER_M, 0, 0],
         ...[rootX, card.root[1] / PX_PER_M, 0, 0],
       ]);

@@ -4,6 +4,22 @@ export type Standing =
   | { readonly kind: 'warned'; readonly secondsLeft: number }
   | { readonly kind: 'dead'; readonly secondsDead: number; readonly canRespawn: boolean };
 
+/** The reach rules' times (crates/reach): the warning's count, and how long a body lies dead before it may respawn,
+ *  in seconds of 60 ticks. The browser reads them off a standing's ticks. */
+export const WARNING_SECONDS = 10;
+export const RESPAWN_SECONDS = 4;
+const TICKS_A_SECOND = 60;
+
+/** A standing given in ticks, as the movement door's reach rules and a room's snapshots give it (the ticks left of a
+ *  warning, or the ticks dead), as the player reads it: in seconds, with Respawn offered once the body has lain dead
+ *  long enough. */
+export function standingOf(kind: Standing['kind'], ticks: number): Standing {
+  if (kind === 'inside') return { kind };
+  if (kind === 'warned') return { kind, secondsLeft: ticks / TICKS_A_SECOND };
+  const secondsDead = ticks / TICKS_A_SECOND;
+  return { kind, secondsDead, canRespawn: secondsDead >= RESPAWN_SECONDS };
+}
+
 /** The warning's count, as the player reads it: whole seconds, never below 0. */
 export function countdownText(secondsLeft: number): string {
   return String(Math.max(0, Math.ceil(secondsLeft)));
