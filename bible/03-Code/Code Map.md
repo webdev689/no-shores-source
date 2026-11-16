@@ -23,6 +23,7 @@ decision, made in the same change as its entry here.
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] and [[Movement]], loaded as WebAssembly, for any page that needs them |
+| `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
