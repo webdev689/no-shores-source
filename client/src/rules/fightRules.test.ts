@@ -94,3 +94,10 @@ test('the arms of a forge layer pair read as the combat crate reads them', () =>
   assert.equal(rules.armsCode('bow_short_iron', null, true), BOW);
   assert.equal(rules.armsCode('sword_iron', 'shield_kite_steel', false), 0, 'put away, bare hands');
 });
+
+test('a stroke reaches as far as the combat crate says: a sword’s thrust farthest, its sweeps least', () => {
+  const rules = startFightRules(compiled);
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 6) - (1.8 + 0.5 + 0.35)) < 1e-12);
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 3) - (1.8 - 0.1 + 0.35)) < 1e-12);
+  assert.equal(rules.strokeReach(SWORD_AND_SHIELD, 0), 0, 'no stroke');
+});

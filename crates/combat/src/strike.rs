@@ -2,11 +2,17 @@
 //! (close in, almost any way it faces), near the striker's own height, with nothing between them. The nearest first,
 //! the soft lock's target before all, up to the stroke's count.
 
-use crate::arms::{stroke_shape, weapon};
+use crate::arms::{Stroke, WeaponClass, stroke_shape, weapon};
 use crate::fighter::{Attack, Fighter, FighterId};
 use crate::sight::{apart, bearing, clear_line, off};
 use crate::tuning::{BODY_RADIUS, CLOSE_ARC, CLOSE_IN, STRIKE_HEIGHT};
 use movement::Block;
+
+/// The farthest a stroke of this weapon reaches, from the striker's feet to the middle of a body it strikes.
+#[must_use]
+pub fn stroke_reach(melee: WeaponClass, stroke: Stroke) -> f64 {
+    weapon(melee).reach + stroke_shape(stroke).reach + BODY_RADIUS
+}
 
 /// Whether a swing's blow, struck along `aim`, reaches a body standing at `feet`.
 #[must_use]
@@ -14,7 +20,7 @@ pub fn reaches(striker: &Fighter, attack: &Attack, feet: [f64; 3], blocks: &[Blo
     let body = striker.body;
     let shape = stroke_shape(attack.stroke);
     let distance = apart([body.x, body.y], [feet[0], feet[1]]);
-    let reach = weapon(striker.arms.melee).reach + shape.reach + BODY_RADIUS;
+    let reach = stroke_reach(striker.arms.melee, attack.stroke);
     if distance > reach || (feet[2] - body.z).abs() > STRIKE_HEIGHT {
         return false;
     }

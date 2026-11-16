@@ -254,6 +254,17 @@ pub unsafe extern "C" fn fighter_arms(address: *const u8, length: usize) -> u32 
     arms_code(unsafe { std::slice::from_raw_parts(address, length) })
 }
 
+/// The farthest stroke `stroke` (1 to 6) of the melee weapon in arms code `arms` reaches, feet to a body's middle;
+/// 0 for no stroke.
+#[unsafe(no_mangle)]
+pub extern "C" fn fighter_reach(arms: u32, stroke: u32) -> f64 {
+    let melee = combat::arms::Arms::from_code(arms).melee;
+    u8::try_from(stroke)
+        .ok()
+        .and_then(combat::Stroke::from_number)
+        .map_or(0.0, |stroke| combat::strike::stroke_reach(melee, stroke))
+}
+
 /// How many numbers a fighter, an intent and a glance are, for the browser to lay them out: as one number, each in a
 /// byte.
 #[unsafe(no_mangle)]

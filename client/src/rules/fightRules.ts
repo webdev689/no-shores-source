@@ -22,6 +22,8 @@ export interface FightRules {
   predict(fighter: Float64Array, intent: Float64Array, id: number, view: readonly Glanced[]): Float64Array;
   /** What hands holding these forge layers fight with, as combat's arms code. */
   armsCode(right: string | null, left: string | null, drawn: boolean): number;
+  /** The farthest a stroke (1 to 6) of the melee weapon in this arms code reaches, feet to a body's middle. */
+  strokeReach(arms: number, stroke: number): number;
 }
 
 interface FightExports {
@@ -32,6 +34,7 @@ interface FightExports {
   fighter_predict(address: number, length: number): bigint;
   fighter_arms(address: number, length: number): number;
   fighter_sizes(): number;
+  fighter_reach(arms: number, stroke: number): number;
 }
 
 /** Starts the fight's rules from the compiled `room-wasm` module. */
@@ -81,5 +84,6 @@ export function startFightRules(module: WebAssembly.Module): FightRules {
       const text = new TextEncoder().encode(`${right ?? ''}\n${left ?? ''}\n${drawn ? 'drawn' : 'worn'}`);
       return lend(text, (address) => exports.fighter_arms(address, text.length));
     },
+    strokeReach: (arms, stroke) => exports.fighter_reach(arms, stroke),
   };
 }
