@@ -103,6 +103,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "room-wasm"
+version = "0.0.0"
+dependencies = [
+ "movement",
+ "protocol",
+ "room",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

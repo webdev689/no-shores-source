@@ -31,6 +31,7 @@ export default tseslint.config(
       'node_modules/**',
       'dist/**',
       'generated/**',
+      '**/.wrangler/**',
       'target/**',
       'bible/**',
       'tools/forge/**',

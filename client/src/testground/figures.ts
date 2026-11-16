@@ -6,11 +6,13 @@ export const PX_PER_M = 62;
  *  turns past the back are the views on the other side, mirrored. */
 const VIEW_OF_TURN = [0, 1, 2, 3, 4, 3, 2, 1] as const;
 
-/** A figure placed on the ground: where it stands (x east, y south), the compass bearing it faces, and how it moves. */
+/** A figure placed on the ground: where it stands (x east, y south, z up), the compass bearing it faces, and how it
+ *  moves. */
 export interface Placed {
   readonly id: number;
   x: number;
   y: number;
+  z: number;
   facing: number;
   dress: Dress;
   anim: string;

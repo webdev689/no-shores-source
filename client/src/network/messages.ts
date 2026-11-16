@@ -15,11 +15,11 @@ export type FromRoomMessage =
   | { readonly kind: 'snapshot'; readonly tick: bigint; readonly players: readonly SeenPlayer[] };
 
 /** One tick's controls as an input's bytes, numbered `sequence`, as the schema defines them. */
-export function inputBytes(sequence: number, controls: Controls): Uint8Array {
+export function inputBytes(sequence: number, controls: Controls): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(96);
   const numbers = Input.createControlsVector(builder, floatsOfControls(controls));
   builder.finish(Input.createInput(builder, sequence, numbers));
-  return builder.asUint8Array();
+  return builder.asUint8Array().slice();
 }
 
 /** The message a room's bytes hold, or null when they hold neither a welcome nor a snapshot that reads. */
