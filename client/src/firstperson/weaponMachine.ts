@@ -112,6 +112,13 @@ export class WeaponMachine {
     return null;
   }
 
+  /** Holds the weapon at rest in a pose a fight asks for, one of its own strokes' frames, or lets it back to rest. */
+  pose(shown: { readonly record: number; readonly frame: number } | null): void {
+    if (this.phase !== 'idle' || this.kind === 'bow') return;
+    this.record = shown?.record ?? 0;
+    this.frame = shown?.frame ?? 0;
+  }
+
   /** Moves the machine on by `seconds` with this frame's button. A strike begun now starts on the frame `opening`
    *  answers: a pair's flurry is thrown from a hand already raised. */
   update(seconds: number, input: AttackInput, opening: () => number = () => 0): MachineEvents {

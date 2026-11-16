@@ -67,6 +67,8 @@ export interface FirstPersonState {
   readonly mounted?: boolean;
   readonly yaw?: number;
   readonly blocking?: boolean;
+  /** A weapon held in a fight's pose, one of its strokes' frames: a guard, a parry's deflect. */
+  readonly pose?: { readonly record: number; readonly frame: number } | null;
 }
 
 /** What the first person draws with: a texture a picture, and the quads over the scene. */
@@ -202,6 +204,7 @@ export class FirstPerson {
     const free = this.castClock === null && this.lower < 0.5;
     const motion = { running: state.running && state.moving && !state.mounted, stride: state.stride };
     const events = this.hands.update(seconds, free ? input : STILL, this.plan, motion);
+    this.hands.pose(state.pose ?? null);
     this.duck = lowerStep(this.duck, ducks(this.plan?.held) && this.hands.swing ? 1 : 0, seconds);
     const walking = state.moving && !state.mounted;
     const drop = this.bob.step(seconds, state.stride, walking, state.running) + lowerDrop(this.lower);

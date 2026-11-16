@@ -6,7 +6,8 @@ import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
-import { fightOf, foeDoing } from '../combat/fightMoves.ts';
+import type { Action } from '../combat/fighter.ts';
+import { FIGHT_TICKS, fightOf, foeDoing } from '../combat/fightMoves.ts';
 import { foeKind } from '../combat/foeKinds.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
@@ -43,6 +44,15 @@ const GALLOP = 10;
 const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
 /** The weapons that shoot: their button draws or fires, as the fight's rules take a shot. */
 const SHOOTERS = /^(bow|crossbow|pistolet|thunderlock)(_|$)/;
+/** The first person's guard, a weapon's own stroke frame held upright across the middle of the view, and a parry's
+ *  deflect, the next stroke's middle frames played through. */
+const GUARD_POSE = { record: 3, frame: 2 } as const;
+const PARRY_RECORD = 4;
+const guardPose = (action: Action) => {
+  if (action.kind === 'guard') return GUARD_POSE;
+  if (action.kind !== 'parry') return null;
+  return { record: PARRY_RECORD, frame: 1 + Math.min(2, Math.floor((action.elapsed / FIGHT_TICKS.parry) * 3)) };
+};
 /** What the fight holds the player to, when their weapon neither swings nor shoots. */
 const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
 
@@ -287,6 +297,7 @@ async function start(): Promise<void> {
       mounted: player.mounted,
       yaw: player.yaw,
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
+      pose: own ? guardPose(own.action) : null,
     });
     const swing = firstPerson.swing;
     // A swing begins where there was none, or where the last one ended and the next began within the frame.

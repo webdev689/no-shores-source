@@ -120,6 +120,11 @@ export class Hands {
     return { direction: arm.melee?.striking ?? null, progress, hand: arm.hand, paired: !!this.plan?.pair, reload };
   }
 
+  /** Holds every weapon at rest in a pose a fight asks for (a guard, a parry's deflect), or back at rest. */
+  pose(shown: { readonly record: number; readonly frame: number } | null): void {
+    for (const arm of this.arms) arm.melee?.pose(shown);
+  }
+
   /** Moves the hands on by `seconds` with this frame's button, holding as `plan` says (null: nothing in hand). */
   update(seconds: number, input: AttackInput, plan: HandsPlan | null, motion: { running: boolean; stride: number }) {
     this.clock += seconds;
