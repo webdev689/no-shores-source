@@ -10,8 +10,7 @@ use crate::senses::{Here, Sight};
 use crate::steer::Ask;
 use crate::tell::aimed;
 use crate::tuning::{
-    KITE_COOLDOWN, KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, PATIENCE, QUICK_DRAW, RANGED_LEASE, SHOT_GAP, STEP_PACE,
-    SWING_FACE,
+    KITE_COOLDOWN, KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, PATIENCE, RANGED_LEASE, SHOT_GAP, STEP_PACE, SWING_FACE,
 };
 use combat::fighter::Action;
 use combat::lock::sees;
@@ -123,9 +122,4 @@ pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: 
         board.hand_on(target, me, tick);
     }
     ask
-}
-
-/// Caught close, a shooter looses quick half-drawn shots: the combat rules give a bow's holder no swing of its fists.
-pub fn close(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, may: bool) -> Ask {
-    draw(brain, here, sight, QUICK_DRAW, may).0
 }

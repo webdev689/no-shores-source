@@ -8,7 +8,10 @@ description = "A shared space on the server: its players, each player's inputs t
 
 [dependencies]
 combat = { path = "../combat" }
+foes = { path = "../foes" }
+libm.workspace = true
 movement = { path = "../movement" }
+navmesh = { path = "../navmesh" }
 
 [lints]
 workspace = true

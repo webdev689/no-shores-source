@@ -34,24 +34,25 @@ test('the page predicts its own fighter exactly as its room steps it, through sw
   const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
   const rules = startFightRules(compiled);
   rules.setCourse(course.blocks);
-  fight = new Fighting(rules, room);
-  fight.arms = rules.armsCode('sword_iron', null, true);
+  const fighting = new Fighting(rules, room);
+  fight = fighting;
+  fighting.arms = rules.armsCode('sword_iron', null, true);
   room.pump(TICK);
-  const steps = fight.steps(movement);
+  const steps = fighting.steps(movement);
   let body = {} as Body;
   let ticks = 0;
   let swings = 0;
   for (const [count, controls, buttons] of SCRIPT) {
     for (let tick = 0; tick < count; tick += 1) {
       const held = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
-      fight.press({ swing: false, shoot: false, guard: false, dodge: false, pitch: 0, ...buttons });
+      fighting.press({ swing: false, shoot: false, guard: false, dodge: false, pitch: 0, ...buttons });
       body = steps.step(body, { ...held, ...controls });
-      const predicted = JSON.stringify(fight.own);
-      swings += fight.swingsBegun;
-      fight.swingsBegun = 0;
+      const predicted = JSON.stringify(fighting.own);
+      swings += fighting.swingsBegun;
+      fighting.swingsBegun = 0;
       room.pump(TICK);
       // The room has taken this input: its word is the fighter the page predicted, to the bit.
-      assert.equal(JSON.stringify(fight.own), predicted, `tick ${ticks}`);
+      assert.equal(JSON.stringify(fighting.own), predicted, `tick ${ticks}`);
       ticks += 1;
     }
   }

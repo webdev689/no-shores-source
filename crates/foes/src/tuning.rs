@@ -114,5 +114,5 @@ pub const THREAT_MARGIN: f64 = 1.0;
 
 /// A shooter holds its draw this long for a full shot, half as long caught close, and waits between these after one.
 pub const FULL_DRAW: u32 = 60;
-pub const QUICK_DRAW: u32 = 30;
+
 pub const SHOT_GAP: (f64, f64) = (0.5, 1.5);

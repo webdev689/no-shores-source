@@ -10,7 +10,7 @@ use crate::brain::{Brain, Plan};
 use crate::dice::Purpose;
 use crate::react::{defend, opening};
 use crate::senses::{Here, Sight, sense};
-use crate::shoot::{close, ranged, shooting};
+use crate::shoot::{ranged, shooting};
 use crate::steer::{Ask, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
@@ -96,7 +96,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         return if shooting(brain, here, &sight) {
             ranged(brain, here, board, &sight)
         } else {
-            close(brain, here, &sight, true)
+            melee(brain, here, board, &sight)
         };
     }
     melee(brain, here, board, &sight)

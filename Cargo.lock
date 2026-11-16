@@ -127,7 +127,10 @@ name = "room"
 version = "0.0.0"
 dependencies = [
  "combat",
+ "foes",
+ "libm",
  "movement",
+ "navmesh",
 ]
 
 [[package]]

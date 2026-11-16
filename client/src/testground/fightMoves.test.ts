@@ -24,7 +24,7 @@ const standing: FighterView = {
   action: { kind: 'idle' },
 };
 const doing = (action: Action) => ({ ...standing, action });
-const lunge = (elapsed: number, iron: boolean): TelegraphMark => ({
+const lunge = (elapsed: number, iron: boolean): Action => ({
   kind: 'telegraph',
   shape: 'lunge',
   elapsed,

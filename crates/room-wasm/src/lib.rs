@@ -37,7 +37,7 @@ fn with_room<T>(use_room: impl FnOnce(&mut Room) -> T) -> Option<T> {
 pub fn open(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);
     let Some((spawn, blocks)) = floats.split_first_chunk::<2>() else { return false };
-    if blocks.len() % BLOCK_FLOATS != 0 {
+    if !blocks.len().is_multiple_of(BLOCK_FLOATS) {
         return false;
     }
     let blocks =
@@ -53,7 +53,7 @@ pub fn open(bytes: &[u8]) -> bool {
 /// one.
 pub fn set_course(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);
-    if floats.len() % BLOCK_FLOATS != 0 {
+    if !floats.len().is_multiple_of(BLOCK_FLOATS) {
         return false;
     }
     let blocks =
@@ -71,7 +71,7 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let Some((fighter, rest)) = floats.split_first_chunk::<FIGHTER_FLOATS>() else { return Vec::new() };
     let Some((intent, rest)) = rest.split_first_chunk::<INTENT_FLOATS>() else { return Vec::new() };
     let Some((id, seen)) = rest.split_first() else { return Vec::new() };
-    if seen.len() % (GLANCE_FLOATS + 1) != 0 {
+    if !seen.len().is_multiple_of(GLANCE_FLOATS + 1) {
         return Vec::new();
     }
     let view: Vec<(u32, Fighter)> = seen

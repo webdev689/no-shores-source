@@ -68,7 +68,7 @@ built upon so foes use the guard, the parry and the dodge of [[Combat]] too
 - **Shooters.** A ranged turn gates a shot and a shot spends it; held 5 s unused it goes on. Without one an archer stands
   off and holds its fire, never circling. It draws by holding its shot for a full second, aiming up for the arrow's
   fall, and looses by letting go, 0.5 to 1.5 s between shots. A target inside 6 m it walks away from, one burst of at
-  most 2 s, out to 7 m; caught or cornered, it fights close for 3 s, and kites again only 8 s after.
+  most 2 s, out to 7 m; caught or cornered, it fights close with its fists for 3 s, and kites again only 8 s after.
 
 ## Answers to blows
 
@@ -100,8 +100,6 @@ might 1.5), and it chains up to two blows after a first.
 
 ## Limits
 
-- A bow's holder cannot swing its fists: the combat rules turn any attack into a draw. Caught close, an archer looses
-  quick half-drawn shots instead.
 - Foes do not seek a line around a block to shoot past it, nor flank; out of sight they walk to where the target was.
 - A foe answers one blow at a time: a second swing seen while it answers the first is not weighed.
 - A shot is taken to leave as the room says it was loosed; a draw is not read.

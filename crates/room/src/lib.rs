@@ -3,9 +3,11 @@
 //! step each tick; blows are judged as their defenders saw them. It has no network and no clock: whatever hosts the
 //! room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
 
+mod foes;
 mod judging;
 mod players;
 
+pub use foes::{CLEAR_FOES, FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};
 pub use players::{DRESS_LIMIT, Input, MOVE_LIMIT, PlayerId, Refused, SLACK_TICKS, Shown, VIEW_LAG, WAITING_LIMIT};
 
@@ -30,11 +32,12 @@ pub struct Seen {
     pub acknowledged: u32,
 }
 
-/// A foe as the room keeps it: its fighter and its kind's number.
+/// A foe as the room keeps it: its fighter, its kind's number and its brain.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Foe {
     pub fighter: Fighter,
     pub kind: u8,
+    pub brain: ::foes::Brain,
 }
 
 /// A foe as the room last stepped it.
@@ -66,14 +69,24 @@ pub struct Room {
     pub(crate) ended_telegraphs: Vec<(FighterId, bool, bool)>,
     /// Foes the players asked to stand before them: (player, kind).
     pub(crate) spawns: Vec<(PlayerId, u8)>,
+    /// Swings begun this tick, for the foes' brains to see.
+    pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
+    /// Shots loosed this tick, by whom.
+    pub(crate) loosed: Vec<FighterId>,
+    /// What the foes share, the routes they walk, and the seed their chances are drawn from.
+    pub(crate) board: ::foes::Board,
+    pub(crate) nav: navmesh::NavMesh,
+    pub(crate) seed: u64,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
     past: VecDeque<(u64, Vec<(FighterId, Fighter)>)>,
 }
 
 impl Room {
-    /// An empty room on a course of blocks, where players stand at `spawn` (x, y) when they join.
+    /// An empty room on a course of blocks, where players stand at `spawn` (x, y) when they join. Its navmesh is
+    /// baked over the course and open ground around it.
     #[must_use]
     pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
+        let nav = navmesh::NavMesh::bake(&blocks, ground_around(&blocks, spawn), &navmesh::AGENT);
         Room {
             blocks,
             spawn,
@@ -89,6 +102,11 @@ impl Room {
             verdicts: Vec::new(),
             ended_telegraphs: Vec::new(),
             spawns: Vec::new(),
+            swings: Vec::new(),
+            loosed: Vec::new(),
+            board: ::foes::Board::default(),
+            nav,
+            seed: SEED,
             past: VecDeque::new(),
         }
     }
@@ -147,9 +165,11 @@ impl Room {
         self.verdicts.clear();
         self.ended_telegraphs.clear();
         self.step_players();
+        self.spawn_asked();
+        self.step_foes();
         self.fly_shots();
         self.judge_waiting();
-        self.spawns.clear();
+        self.tell_brains();
         self.raise_the_dead();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {
@@ -205,6 +225,7 @@ impl Room {
         view: &[(FighterId, Fighter)],
     ) {
         match happening {
+            Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
                 for defender in struck(id, fighter, &attack, view, &self.blocks) {
                     let blow = swing_blow(id, fighter, &attack, defender);
@@ -218,7 +239,10 @@ impl Room {
                     }
                 }
             }
-            Some(Happening::Loosed(shot)) => self.shots.push(Shot { owner: id, ..shot }),
+            Some(Happening::Loosed(shot)) => {
+                self.shots.push(Shot { owner: id, ..shot });
+                self.loosed.push(id);
+            }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
             _ => {}
         }
@@ -239,7 +263,16 @@ impl Room {
         for id in raised {
             self.tell(EventKind::Respawned, None, id, id, 0.0);
         }
-        self.foes.retain(|_, foe| !matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE));
+        let gone: Vec<FighterId> = self
+            .foes
+            .iter()
+            .filter(|(_, foe)| matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE))
+            .map(|(id, _)| *id)
+            .collect();
+        for id in gone {
+            self.foes.remove(&id);
+            self.board.forget(id);
+        }
     }
 
     /// Every fighter now, players then foes, each in the order of their numbers.
@@ -320,6 +353,28 @@ impl Room {
     }
 }
 
+/// The seed every room's chances are drawn from: one room plays the same fight for the same inputs.
+const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
+/// Open ground a navmesh covers beyond the course's blocks and the spawn, each way.
+const GROUND_AROUND: f64 = 30.0;
+
+/// The ground a room's navmesh covers: the course's blocks and the spawn, and open ground around them.
+fn ground_around(blocks: &[Block], spawn: (f64, f64)) -> navmesh::Bounds {
+    let start = navmesh::Bounds { min_x: spawn.0, min_y: spawn.1, max_x: spawn.0, max_y: spawn.1 };
+    let covered = blocks.iter().fold(start, |bounds, block| navmesh::Bounds {
+        min_x: bounds.min_x.min(block.min_x),
+        min_y: bounds.min_y.min(block.min_y),
+        max_x: bounds.max_x.max(block.max_x),
+        max_y: bounds.max_y.max(block.max_y),
+    });
+    navmesh::Bounds {
+        min_x: covered.min_x - GROUND_AROUND,
+        min_y: covered.min_y - GROUND_AROUND,
+        max_x: covered.max_x + GROUND_AROUND,
+        max_y: covered.max_y + GROUND_AROUND,
+    }
+}
+
 #[cfg(test)]
 #[path = "room_tests.rs"]
 mod room_tests;
@@ -327,3 +382,7 @@ mod room_tests;
 #[cfg(test)]
 #[path = "fight_tests.rs"]
 mod fight_tests;
+
+#[cfg(test)]
+#[path = "foe_tests.rs"]
+mod foe_tests;

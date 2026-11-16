@@ -196,8 +196,8 @@ fn begin(next: &mut Fighter, intent: &Intent, pressed: Held, around: &Surroundin
         next.action = Action::Guard { elapsed: 0, window };
         return Some(Happening::Guarded { window: window > 0 });
     }
-    let shooting = input.shoot || input.attack.is_some();
-    if let Some(ranged) = next.arms.ranged.filter(|_| shooting) {
+    // The shot's button shoots; the swing's swings the melee hand, a bow's holder's fists.
+    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot) {
         if ranged == Ranged::Bow {
             next.action = Action::Draw { elapsed: 0 };
             return None;
@@ -288,8 +288,7 @@ fn wind_up(next: &mut Fighter, telegraph: Telegraph, around: &Surroundings<'_>) 
 
 /// A bow drawn while the button is held, loosed when it is let go: too soon and nothing leaves.
 fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent) -> Option<Happening> {
-    let holding = intent.combat.shoot || intent.combat.attack.is_some();
-    if holding {
+    if intent.combat.shoot {
         next.action = Action::Draw { elapsed: (elapsed + 1).min(DRAW_FULL) };
         return None;
     }

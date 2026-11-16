@@ -1,6 +1,5 @@
 use super::*;
 use combat::arms::{OffHand, Stroke, WeaponClass};
-use combat::fighter::{Side, Weight, fighter};
 use combat::{CombatInput, Intent};
 use judging::{Check, How};
 use movement::Controls;
@@ -11,16 +10,26 @@ fn room() -> Room {
     Room::new(Vec::new(), (0.0, 0.0))
 }
 
-/// A foe standing 1.5 m north of the origin, facing south, put straight into the room.
-fn stand_foe(room: &mut Room) -> FighterId {
+/// A foe of a kind standing at (x, y), facing south, put straight into the room.
+fn stand(room: &mut Room, kind: ::foes::Kind, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
-    let mut body = standing(0.0, -1.5);
-    body.facing = core::f64::consts::PI;
-    let arms = combat::arms_of("sword_steel", "", true);
-    let mut foe = fighter(Side::Foes, body, arms, Weight::Medium, 70.0, 35.0);
-    foe.aim = core::f64::consts::PI;
-    room.foes.insert(id, Foe { fighter: foe, kind: 2 });
+    let (fighter, brain) = ::foes::spawn(kind, x, y, core::f64::consts::PI);
+    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
     id
+}
+
+/// A brute 1.5 m north of the origin: it never guards, parries or dodges.
+fn stand_foe(room: &mut Room) -> FighterId {
+    stand(room, ::foes::Kind::Brute, 0.0, -1.5)
+}
+
+/// A swordsman far out of sight, and a copy of it as though it stood 1.5 m north of the origin, to strike from.
+fn far_foe(room: &mut Room) -> (FighterId, Fighter) {
+    let id = stand(room, ::foes::Kind::Swordsman, 0.0, -60.0);
+    let mut near = *room.fighter(id).unwrap();
+    near.body = standing(0.0, -1.5);
+    near.aim = core::f64::consts::PI;
+    (id, near)
 }
 
 fn asking(sequence: u32, seen: u64, combat: CombatInput) -> Input {
@@ -44,7 +53,7 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
     let hit = events.iter().find(|event| event.kind == EventKind::Hit).expect("the chop lands");
     assert_eq!((hit.striker, hit.defender, hit.how), (player, foe, Some(How::Swing)));
     assert!((hit.amount - 14.0 * 1.15).abs() < 1e-9);
-    assert!((room.fighter(foe).unwrap().health - (70.0 - 14.0 * 1.15)).abs() < 1e-9);
+    assert!((room.fighter(foe).unwrap().health - (130.0 - 14.0 * 1.15)).abs() < 1e-9);
     assert_eq!(room.fighter(player).unwrap().target, Some(foe), "the lock takes the foe it struck");
 }
 
@@ -52,14 +61,13 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
 fn a_blow_on_a_player_waits_for_their_view_and_is_judged_as_they_stood_then() {
     let mut room = room();
     let player = room.join();
-    let foe = stand_foe(&mut room);
+    let (foe, striker) = far_foe(&mut room);
     // The player's screen lags: every input sees the room 6 ticks behind its clock.
     let lag = 6;
     for sequence in 1..=10 {
         room.input(player, asking(sequence, room.clock().saturating_sub(lag), CombatInput::default())).unwrap();
         room.tick();
     }
-    let striker = *room.fighter(foe).unwrap();
     let attack = combat::fighter::Attack {
         stroke: Stroke::Down,
         elapsed: 24,
@@ -91,8 +99,7 @@ fn a_blow_on_a_player_waits_for_their_view_and_is_judged_as_they_stood_then() {
 fn a_blow_waits_no_longer_than_a_view_may_lag() {
     let mut room = room();
     let player = room.join();
-    let foe = stand_foe(&mut room);
-    let striker = *room.fighter(foe).unwrap();
+    let (foe, striker) = far_foe(&mut room);
     let attack = combat::fighter::Attack {
         stroke: Stroke::Down,
         elapsed: 24,
