@@ -3,8 +3,12 @@
 //! swell and where she takes the ground. Ships step by whole ticks of `TICK_SECONDS`. See the Sailing note in the
 //! bible.
 
+pub mod floats;
 pub mod helm;
 pub mod hull;
+pub mod pose;
+pub mod ship;
+pub mod waters;
 
 pub use hull::{Hull, SLOOP, Sail, SailKind, SailSize};
 

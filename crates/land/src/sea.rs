@@ -35,7 +35,7 @@ pub struct Wave {
     pub phase: f64,
 }
 
-/// The swell: its waves, longest first, and the bearing they come from.
+/// The swell: its waves, longest first, and the bearing they run toward (radians clockwise from north), the wind's.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Swell {
     pub bearing: f64,

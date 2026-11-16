@@ -44,5 +44,8 @@ pub const SLOOP: Hull = Hull {
     half_beam_m: 1.856 / 2.0,
     draught_m: 0.6,
     gain: 1.159,
-    sails: &[Sail { kind: SailKind::Gaff, size: SailSize::Small }, Sail { kind: SailKind::Stay, size: SailSize::Small }],
+    sails: &[
+        Sail { kind: SailKind::Gaff, size: SailSize::Small },
+        Sail { kind: SailKind::Stay, size: SailSize::Small },
+    ],
 };
