@@ -18,7 +18,7 @@ pub mod ways;
 
 use crate::districts::{District, fill};
 use crate::footprint::{Footprint, SHORE_M};
-use crate::grid::{CELL_M, Grid, SIDE_CELLS, index};
+use crate::grid::{Grid, SIDE_CELLS, index};
 use crate::landmarks::{Site, landmark};
 use crate::rmb::Blocks;
 use crate::social::{Social, plaza};
@@ -29,6 +29,11 @@ use land::ground::Ground;
 pub use land::pads::Pad;
 use land::sites::City;
 use serde::Serialize;
+
+/// How far round the plaza the city must stand lower than it, and how much higher than that the plaza stands, metres:
+/// over the roofs of the houses below, as Destiny 1's Tower stands over its City.
+pub const OVERLOOK_M: f64 = 250.0;
+pub const PLATFORM_RISE_M: f64 = 12.0;
 
 /// What a cell is used for.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -85,23 +90,44 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     let seaward =
         footprint.seaward().ok_or_else(|| format!("{}: a port city needs a shore within its reach", city.id))?;
     let shore = footprint.rays[footprint.ray_toward(seaward[0], seaward[1])].reach;
-    let level = rounded(ground.height_at(centre[0], centre[1]).max(SHORE_M));
-    let site = Site { centre, level, seaward, along: [-seaward[1], seaward[0]], shore };
+    // The landmark and its plaza stand on one platform over the highest ground under both, so the plaza looks down
+    // on the city round it; the landmark is planned twice, first only to learn how far its base reaches.
+    let along = [-seaward[1], seaward[0]];
+    let first =
+        Site { centre, level: rounded(ground.height_at(centre[0], centre[1]).max(SHORE_M)), seaward, along, shore };
+    let reach = landmark(&city.motif, &first, ground)
+        .ok_or_else(|| format!("{}: no motif called {}", city.id, city.motif))?
+        .reach;
+    let base = [centre[0] - reach, centre[1] - reach, centre[0] + reach, centre[1] + reach];
+    let plaza_at = social::plaza_bounds(centre, seaward, reach).0;
+    let mut cell_footings = footings(ground, &grid, &footprint);
+    let near_plaza =
+        [plaza_at[0] - OVERLOOK_M, plaza_at[1] - OVERLOOK_M, plaza_at[2] + OVERLOOK_M, plaza_at[3] + OVERLOOK_M];
+    let highest_near = (0..SIDE_CELLS * SIDE_CELLS)
+        .filter_map(|at| match cell_footings[at] {
+            Footing::Level { level } => {
+                let bounds = grid.bounds(at % SIDE_CELLS, at / SIDE_CELLS);
+                let near = bounds[2] > near_plaza[0]
+                    && bounds[0] < near_plaza[2]
+                    && bounds[3] > near_plaza[1]
+                    && bounds[1] < near_plaza[3];
+                near.then_some(level)
+            }
+            _ => None,
+        })
+        .fold(f64::MIN, f64::max);
+    let level = terraces::platform_level(ground, &[base, plaza_at]).max(highest_near) + PLATFORM_RISE_M;
+    let site = Site { level, ..first };
     let built =
         landmark(&city.motif, &site, ground).ok_or_else(|| format!("{}: no motif called {}", city.id, city.motif))?;
     let social = plaza(ground, centre, level, seaward, &built);
-    let mut cell_footings = footings(ground, &grid, &footprint);
-    let reserved = |bounds: [f64; 4]| {
-        let landmark_reach = built.reach + 2.0 * CELL_M;
-        let middle = [(bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0];
-        let near_landmark =
-            (middle[0] - centre[0]).abs() < landmark_reach && (middle[1] - centre[1]).abs() < landmark_reach;
-        let near_plaza = bounds[2] > social.bounds[0] - CELL_M
-            && bounds[0] < social.bounds[2] + CELL_M
-            && bounds[3] > social.bounds[1] - CELL_M
-            && bounds[1] < social.bounds[3] + CELL_M;
-        near_landmark || near_plaza
+    // Only the cells under the landmark's base and the plaza are kept at their level, so the plaza's open sides look
+    // straight down onto the terraced city, as the Tower's do, with no empty precinct between.
+    let overlaps = |bounds: [f64; 4], other: [f64; 4]| {
+        bounds[2] > other[0] && bounds[0] < other[2] && bounds[3] > other[1] && bounds[1] < other[3]
     };
+    let base = [centre[0] - built.reach, centre[1] - built.reach, centre[0] + built.reach, centre[1] + built.reach];
+    let reserved = |bounds: [f64; 4]| overlaps(bounds, base) || overlaps(bounds, social.bounds);
     let gate_rays = ways::gate_rays(ground, &footprint, seed);
     let gates: Vec<[f64; 2]> = gate_rays
         .iter()

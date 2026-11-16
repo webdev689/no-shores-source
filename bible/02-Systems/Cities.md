@@ -63,9 +63,11 @@ city stands on it:
    and a gatehouse at each gate; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
    stands apart from the ground or terrace beyond it.
 8. **The landmark**, of the motif's solids.
-9. **The social space**: a plaza of 260 × 120 m on the landmark's seaward side, level with its foot, walled with a
-   parapet on its open sides, its section 2 m inside its edge and its four spawns along the landmark's side. Its node
-   is `<city id>-social`.
+9. **The social space**: a plaza of 260 × 120 m on the landmark's seaward side, walled with a parapet on its open
+   sides, its section 2 m inside its edge and its four spawns along the landmark's side. Its node is
+   `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
+   over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
+   from Destiny 1's Tower. Only the cells under the landmark's base and the plaza are levelled to it.
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the

@@ -104,6 +104,25 @@ pub fn footings(ground: &Ground, grid: &Grid, footprint: &Footprint) -> Vec<Foot
     footings
 }
 
+/// The level a platform over these rectangles (west, north, east, south) stands at: half a metre over the highest
+/// ground under any of them, sampled every 20 m, so it looks down on everything round it and buries none of it.
+#[must_use]
+pub fn platform_level(ground: &Ground, rects: &[[f64; 4]]) -> f64 {
+    let mut highest = f64::MIN;
+    for rect in rects {
+        let (columns, rows) =
+            (((rect[2] - rect[0]) / 20.0).ceil() as usize, ((rect[3] - rect[1]) / 20.0).ceil() as usize);
+        for row in 0..=rows {
+            for column in 0..=columns {
+                let x = rect[0] + (rect[2] - rect[0]) * column as f64 / columns.max(1) as f64;
+                let y = rect[1] + (rect[3] - rect[1]) * row as f64 / rows.max(1) as f64;
+                highest = highest.max(ground.height_at(x, y));
+            }
+        }
+    }
+    (highest.max(SHORE_M) / LEVEL_ROUND_M).ceil() * LEVEL_ROUND_M + 0.5
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

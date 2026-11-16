@@ -27,21 +27,32 @@ pub struct Social {
     pub solids: Vec<Solid>,
 }
 
-/// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
-/// looks out over the city to the sea.
+/// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
+/// and the way to the sea along the world's axes that it looks out along.
 #[must_use]
-pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], landmark: &Landmark) -> Social {
+pub fn plaza_bounds(centre: [f64; 2], seaward: [f64; 2], reach: f64) -> ([f64; 4], [f64; 2]) {
     let east_west = seaward[0].abs() >= seaward[1].abs();
     let along_seaward = if east_west { [seaward[0].signum(), 0.0] } else { [0.0, seaward[1].signum()] };
     let (extent_x, extent_y) = if east_west { (PLAZA_M[1], PLAZA_M[0]) } else { (PLAZA_M[0], PLAZA_M[1]) };
     let depth = if east_west { extent_x } else { extent_y };
-    let middle = ahead(centre, along_seaward, landmark.reach + APART_M + depth / 2.0);
+    let middle = ahead(centre, along_seaward, reach + APART_M + depth / 2.0);
     let bounds = [
         middle[0] - extent_x / 2.0,
         middle[1] - extent_y / 2.0,
         middle[0] + extent_x / 2.0,
         middle[1] + extent_y / 2.0,
     ];
+    (bounds, along_seaward)
+}
+
+/// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
+/// looks out over the city to the sea.
+#[must_use]
+pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], landmark: &Landmark) -> Social {
+    let (bounds, along_seaward) = plaza_bounds(centre, seaward, landmark.reach);
+    let (extent_x, extent_y) = (bounds[2] - bounds[0], bounds[3] - bounds[1]);
+    let middle = [(bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0];
+    let depth = if along_seaward[0] == 0.0 { extent_y } else { extent_x };
     let inset = SECTION_INSET_M;
     let ring = vec![
         [bounds[0] + inset, bounds[1] + inset],
