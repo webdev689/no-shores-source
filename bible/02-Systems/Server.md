@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: live
 code:
   - crates/room/src/lib.rs#Room
   - crates/room/src/lib.rs#SLACK_TICKS
@@ -8,13 +8,19 @@ code:
   - crates/protocol/messages.fbs
   - crates/protocol/src/lib.rs#read_input
   - crates/protocol/src/lib.rs#snapshot_bytes
+  - crates/room-wasm/src/lib.rs#room_input
+  - server/worker.ts#RoomHost
+  - server/roomDoor.ts#startRoomDoor
+  - server/wrangler.jsonc
   - client/src/network/messages.ts#readFromRoom
+  - client/src/network/roomConnection.ts#RoomConnection
+  - client/src/network/prediction.ts#Prediction
 ---
 # Server
 
-The authority every player's game answers to ([[Server-Authoritative Multiplayer]]), run on Cloudflare
-([[Servers on Cloudflare]]). Each shared space is one room. Built so far: the room, the server's core, which no host
-runs yet, and its messages.
+The authority every player's game answers to ([[Server-Authoritative Multiplayer]]), on Cloudflare
+([[Servers on Cloudflare]]). Each shared space is one room. Built so far: the room, its messages, its Cloudflare
+host, and the browser's side; the [[Test Ground]] plays in a room. It runs locally; it is not deployed.
 
 ## The room
 
@@ -46,9 +52,39 @@ The server reads an input only after FlatBuffers' verifier passes its bytes, so 
 controls that are not 7 numbers, are refused. The browser reads a message the room sent, and takes one it cannot read
 as nothing.
 
+## The host
+
+A Cloudflare Worker, in `server/` ([[The Server's Shell Is in server]]), sends `/room/<name>` to one Durable Object for
+each room's name. The object keeps its room in WebAssembly: the room and protocol crates behind the `room-wasm` door,
+so every decision is Rust and the shell only carries bytes and time.
+
+- A WebSocket joins the room and is welcomed with the player's number; each binary message is one of their inputs.
+  An input refused for any reason but a flood closes the socket, since that browser is not keeping to the messages.
+- While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
+  sends every player the snapshot after each tick. When the last player leaves it stops, and the room goes with the
+  object.
+- The course is the Test Ground's, `content/testground/course.json`, which the client reads too.
+
+## The browser's side
+
+- `RoomConnection` joins a room and sends each tick's controls, numbered, as the player plays.
+- `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
+  with those inputs stepped on top by the same rules: while the room agrees, that is the body already shown, to the
+  bit; where it knows better, the body moves to it.
+- The [[Test Ground]] joins a room when its address carries `?room=`, and shows every other player where the room
+  last saw them.
+
+## Running it
+
+`npm run server` runs the rooms locally with Cloudflare's `wrangler`, at `ws://127.0.0.1:8787/room/<name>`. Measured
+there with two browsers in one room: 60.5 ticks a second; snapshots 17.4 ms apart at the median, 45 ms at the 99th
+in a hundred, and every snapshot of a player matching that player's inputs replayed by the movement rules, to the
+bit.
+
 ## Limits
 
-- No host yet: the Cloudflare shell, and the browsers' connection to it, come next.
+- Not deployed: going live on Cloudflare waits for the owner's yes ([[Ask Before Deploying]]).
+- Any page can join a room, under any name; no one signs in.
 - A snapshot sends every player's whole body every tick: fine for a few players, heavy for many.
 - A player who sends nothing stands still in time: their body waits, mid-jump if need be, until their inputs come.
 - Every player joins at the same spot, and bodies pass through each other.

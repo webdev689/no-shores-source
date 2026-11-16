@@ -15,10 +15,10 @@ order a failure is cheapest to read:
 2. **format**: rustfmt, then Prettier.
 3. **lints**: clippy on every crate and target, then ESLint; warnings are errors. Clippy also refuses clocks and
    every float method the platform may round its own way, such as `sin`, `exp` and `powf` ([[Agree to the Bit]]).
-4. **types**: TypeScript, strict, for the client and for the tests.
+4. **types**: TypeScript, strict, for the client, the server's shell and the tests.
 5. **tests**: `cargo test`, then the world rules, the land and movement built as WebAssembly (`npm run wasm`), then
    `node --test`, whose bridge tests load them.
-6. **build**: the client, with Vite.
+6. **build**: the client, with Vite; then the server's Cloudflare Worker bundled as a deploy would, without deploying.
 7. **repo checks**, each a pure function with tests beside it:
 
 | Check | Holds | Rule |

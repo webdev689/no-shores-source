@@ -34,6 +34,16 @@ pub fn read_input(bytes: &[u8]) -> Result<(u32, Controls), String> {
     Ok((input.sequence(), Controls::from_floats(controls)))
 }
 
+/// One tick's controls as an input's bytes, numbered `sequence`: what a browser sends, written from Rust for tests.
+#[must_use]
+pub fn input_bytes(sequence: u32, controls: &[f64]) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let controls = Some(builder.create_vector(controls));
+    let input = messages::Input::create(&mut builder, &messages::InputArgs { sequence, controls });
+    builder.finish(input, None);
+    builder.finished_data().to_vec()
+}
+
 /// The welcome to a joining player: their number.
 #[must_use]
 pub fn joined_bytes(player: u32) -> Vec<u8> {

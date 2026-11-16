@@ -1,0 +1,11 @@
+// The Cloudflare Worker that hosts the rooms: one Durable Object for each room's name. `npm run server` runs it here.
+{
+  "name": "overlook-rooms",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-01",
+  "send_metrics": false,
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "RoomHost" }],
+  },
+  "migrations": [{ "tag": "rooms", "new_sqlite_classes": ["RoomHost"] }],
+}

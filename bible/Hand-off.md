@@ -21,26 +21,27 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
-- Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, and
-  agreeing to the bit with the crate run natively.
+- Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the
+  Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, agreeing to the bit
+  wherever it runs.
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
-  ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room, its core: players' inputs in order, their bodies
-  stepped tick by tick, never faster than the room's clock. On its pull request: the messages, their schema and the
-  code `flatc` makes from it, Google's `flatc` pinned by its checksum. Nothing hosts the room yet.
+  ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room and its messages, with Google's `flatc` installed
+  by the schema step itself. On its pull request: the room hosted by a Cloudflare Durable Object in `server/`, the
+  browser's connection and prediction, and the Test Ground played together (`?room=`). Run locally with
+  `npm run server`; two browsers saw each other, and the room agreed with each prediction to the bit. Not deployed.
 
 ## Waiting on the owner
 
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- Which of Cloudflare's runs the rooms ([[Servers on Cloudflare]]): Durable Objects, as Claude recommends, or
+- Which of Cloudflare's runs the rooms ([[Servers on Cloudflare]]): Durable Objects, which the work uses, or
   Containers.
+- Deploying the rooms to Cloudflare ([[Ask Before Deploying]]), with a Cloudflare token that may deploy Workers.
 
 ## Next
 
-- The thin server, the rest of it: the room hosted on Cloudflare, ticking 60 times a second; each browser sending its controls over WebSocket, predicting its own player
-  and corrected by the room; and two browsers seeing each other on the Test Ground
-  ([[Gameplay Starts With the Shared Rules]]).
+- With the thin server merged and deployed, step 1 of [[Gameplay Starts With the Shared Rules]] is done.
 - Swimming, which the water's pull request has in TypeScript, moves into the `movement` crate once both are merged,
   so a body on foot meets the water by the same rules everywhere.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of

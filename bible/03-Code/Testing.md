@@ -17,7 +17,8 @@ fast enough to run before every push.
   `crates/land/tests/agree.rs` and `client/src/rules/landRules.test.ts` hold the same fingerprints of the land, and
   `crates/movement/tests/agree.rs` and `client/src/rules/movementRules.test.ts` the same fingerprint of a run.
   `crates/protocol/src/protocol_tests.rs` writes a welcome and a snapshot into `target/protocol/`, and
-  `client/src/network/messages.test.ts` reads them back to the bit.
+  `client/src/network/messages.test.ts` reads them back to the bit; `server/roomDoor.test.ts` hands the room, in
+  WebAssembly, the bytes the browser's own code writes, and reads its snapshots back with the browser's.
 - **GPU code** is checked in a browser with WebGPU; the pure parts around it (sizes, layouts, maths) are unit-tested.
 
 ## What a good test looks like

@@ -20,9 +20,9 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 ## How it works
 
 - **One crate for every machine.** The `movement` crate holds the rules. A browser runs it as WebAssembly through the
-  `movement-wasm` door; the server is to run the same crate natively ([[Clients Predict With the Shared Rules]]). Its
-  sines, cosines and arctangents come from `libm`, a pure-Rust maths library compiled into it, so every machine
-  rounds them alike ([[Agree to the Bit]]).
+  `movement-wasm` door, and the [[Server]] runs the same crate in its rooms
+  ([[Clients Predict With the Shared Rules]]). Its sines, cosines and arctangents come from `libm`, a pure-Rust maths
+  library compiled into it, so every machine rounds them alike ([[Agree to the Bit]]).
 - **Ticks.** A body moves in whole ticks of 1/60 s. Each tick takes the body and the player's controls: forward and
   sideways (held to -1 to 1), the look's bearing, run, mounted, and jump and crouch pressed. A control that is not a
   number counts as none, so a body never takes one in. A press between two ticks is kept for the next. The view turns
@@ -64,5 +64,3 @@ WebAssembly, and both hold the same value.
 - The ground is the course's blocks on open ground at 0 m; bodies do not stand on the [[Land]] yet.
 - Whether the body is mounted is the client's to say; the rules take it as a control.
 - A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time.
-- No server runs the crate yet; a thin server that two browsers share comes next
-  ([[Gameplay Starts With the Shared Rules]]).

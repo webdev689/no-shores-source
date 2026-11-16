@@ -4,6 +4,6 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["client/**/*.test.ts", "vite.config.ts"],
+  "include": ["client/**/*.test.ts", "server/**/*.test.ts", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

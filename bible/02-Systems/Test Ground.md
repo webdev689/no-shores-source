@@ -6,6 +6,7 @@ code:
   - client/src/testground/testgroundMain.ts
   - client/src/testground/player.ts#updatePlayer
   - client/src/testground/player.ts#shownBody
+  - client/src/testground/others.ts#showOther
   - client/src/testground/playerCamera.ts#scrolled
   - client/src/testground/playerMoves.ts#shownMove
   - client/src/testground/dressing.ts#figureOf
@@ -44,6 +45,14 @@ short of a wall.
 
 North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
 and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
+
+## Playing together
+
+With `?room=` and a room's address in the page's address (`?room=ws://127.0.0.1:8787/room/test` under
+`npm run server`), the Test Ground joins that room on the [[Server]]. The player plays as before, predicted here: each
+tick's controls also go to the room, and the room's word on the player's body corrects it. Every other player in the
+room stands where the room last saw them, playing the move their body is in, and the status line says which player
+this is.
 
 ## What the figure shows
 

@@ -14,7 +14,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "network", may_import: &["rules"] },
     Layer { name: "editor", may_import: &["rules"] },
     Layer { name: "forge", may_import: &[] },
-    Layer { name: "testground", may_import: &["rules", "forge", "editor", "firstperson"] },
+    Layer { name: "testground", may_import: &["rules", "network", "forge", "editor", "firstperson"] },
     Layer { name: "firstperson", may_import: &["forge"] },
 ];
 
