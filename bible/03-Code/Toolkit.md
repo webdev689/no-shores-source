@@ -21,7 +21,8 @@ when to install it and what each session does at its start and end; this note sa
 - `SHARED_DIR` defaults to `~/toolkit-data`, which a cloud container loses at its end: the claude-mem store and the
   task-observer log carry over only where `SHARED_DIR` points at storage that survives.
 - The SkillsMP and Context7 keys are network secrets the proxy adds to requests; their variables hold only the
-  placeholder `proxy-injected`.
+  placeholder `proxy-injected`, which check-tools' key check passes without scanning. A real key is still looked for
+  on disk.
 
 ## Tools
 

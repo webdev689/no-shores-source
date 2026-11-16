@@ -84,6 +84,10 @@ if [ -n "$serena_proj" ] && [ -d "$serena_proj/.git" ]; then
   # "n" answers the extra-server prompts, which abort without a terminal.
   [ -f "$serena_proj/.serena/project.yml" ] || yes n | serena project create $(bash "$KIT_DIR/serena-languages.sh" "$serena_proj") "$serena_proj"
   grep -qx '.serena/' "$serena_proj/.git/info/exclude" || echo '.serena/' >> "$serena_proj/.git/info/exclude"   # never committed
+  # A clone made for one branch fetches only that branch, so origin/main never moves and a check against it compares
+  # a branch with its own base. Keep main's tracking ref fetched.
+  git -C "$serena_proj" config --get-all remote.origin.fetch | grep -qE 'refs/heads/(\*|main):' ||
+    git -C "$serena_proj" config --add remote.origin.fetch '+refs/heads/main:refs/remotes/origin/main'
   serena_where="--project $serena_proj"
 else
   serena_where="--project-from-cwd"
