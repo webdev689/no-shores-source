@@ -1,0 +1,13 @@
+[package]
+name = "room"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "A shared space on the server: its players, each player's inputs taken in order, and their bodies stepped tick by tick, never faster than the room's clock."
+
+[dependencies]
+movement = { path = "../movement" }
+
+[lints]
+workspace = true

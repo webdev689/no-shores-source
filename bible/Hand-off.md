@@ -21,22 +21,28 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
-- Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on its pull
-  request: the Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, and
+- Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, and
   agreeing to the bit with the crate run natively.
+- The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
+  ([[Messages Are FlatBuffers]]). The [[Server]]'s room, its core, on its pull request: players' inputs in order,
+  their bodies stepped tick by tick, never faster than the room's clock. Nothing hosts it yet.
 
 ## Waiting on the owner
 
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- The schema tool for the first network message ([[One Schema for Every Message]]), before the thin server.
+- Where `flatc` comes from ([[Messages Are FlatBuffers]]): Google's release, pinned by its checksum, or a build of
+  it. Running a downloaded `flatc` here was refused by the session's permission check.
+- Which of Cloudflare's runs the rooms ([[Servers on Cloudflare]]): Durable Objects, as Claude recommends, or
+  Containers.
 
 ## Next
 
-- The thin server: the `movement` crate run natively at the same tick, players' controls sent over WebSocket, each
-  browser predicting its own player and corrected by the server, and two browsers seeing each other on the Test
-  Ground ([[Gameplay Starts With the Shared Rules]]).
+- The thin server, the rest of it: the messages' schema and the code `flatc` makes from it; the room hosted on
+  Cloudflare, ticking 60 times a second; each browser sending its controls over WebSocket, predicting its own player
+  and corrected by the room; and two browsers seeing each other on the Test Ground
+  ([[Gameplay Starts With the Shared Rules]]).
 - Swimming, which the water's pull request has in TypeScript, moves into the `movement` crate once both are merged,
   so a body on foot meets the water by the same rules everywhere.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
