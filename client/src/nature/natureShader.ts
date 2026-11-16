@@ -1,14 +1,17 @@
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 
-/** The frame's uniform floats: the view-projection, the anchor, the wind and the land's snow line. */
-export const FRAME_FLOATS = 28;
+/** The frame's uniform floats: the view-projection, the anchor, the wind, the snow line and the biome's ground. */
+export const FRAME_FLOATS = 32;
+/** The segments of a plant's contact shade, a fan round its middle. */
+export const SHADE_SEGMENTS = 10;
 
 /**
- * The plants, drawn instanced: each instance placed from the packing's anchor, which is measured from the eye, so
- * the GPU's floats keep their centimetres however far the world reaches. Lit as the land is lit, with a little sun
- * through the leaves. A plant fades by its samples, not by blending: the near mesh hands its samples to the far
- * one across the crossfade band, each taking exactly what the other leaves, and both give theirs up toward the
- * reach and as the far ones thin out. Four samples and a dither over two pixels give seventeen steps.
+ * The plants, drawn instanced: each instance's slot is read from the list, and its foot placed from its tile's
+ * corner, measured from an anchor beside the eye, so the GPU's floats keep their centimetres however far the world
+ * reaches. Lit as the land is lit, its ambient bounced warm from the ground under a crown and cool from the sky over
+ * it, with a little sun through the leaves. A plant fades by its samples, not by blending: the near mesh hands its
+ * samples to the far one across the crossfade band, each taking exactly what the other leaves, and both give theirs
+ * up toward the reach and as the far ones thin out. Four samples and a dither over two pixels give seventeen steps.
  */
 export const NATURE_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
@@ -21,6 +24,8 @@ struct Frame {
   wind: vec4f,
   // The snow line, metres.
   land: vec4f,
+  // The biome's low ground, and 1 when it is known.
+  ground: vec4f,
 };
 
 struct Form {
@@ -28,10 +33,24 @@ struct Form {
   ranges: vec4f,
   // Where the far plants start thinning, the share kept at the reach, and the sway at the top, metres.
   thin: vec4f,
+  // The contact shade's radius and the crown's height at size 1, metres, and how dark its middle is.
+  shade: vec4f,
+};
+
+struct Instance {
+  // Its foot from its tile's corner (east, south), the foot's height and its turn.
+  place: vec4f,
+  // Its width and height scales, its tint (-1..1) and its rank (0..1).
+  look: vec4f,
+  // The ground's rise a metre east and south, its tile's number, and the ground's height at its foot.
+  ground: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> frame: Frame;
 @group(0) @binding(1) var<uniform> form: Form;
+@group(0) @binding(2) var<storage, read> instances: array<Instance>;
+@group(0) @binding(3) var<storage, read> list: array<u32>;
+@group(0) @binding(4) var<storage, read> corners: array<vec2f>;
 
 struct Vertex {
   @location(0) position: vec3f,
@@ -39,10 +58,6 @@ struct Vertex {
   @location(1) normal: vec4f,
   // The colour, and how far up the plant it sways.
   @location(2) colour: vec4f,
-  // The instance: its foot from the anchor (east, south), its foot's height and its turn.
-  @location(3) place: vec4f,
-  // Its width and height scales, its tint (-1..1) and its rank (0..1).
-  @location(4) look: vec4f,
 };
 
 struct Shaded {
@@ -58,50 +73,79 @@ struct Shaded {
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
 const AMBIENT = 0.35;
 const SNOW = vec3f(0.94, 0.95, 0.97);
+// The ambient's tint from below (light bounced off the ground) and from above (the sky).
+const BOUNCE = vec3f(0.95, 0.9, 0.76);
+const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
 // How far a gust travels in a second, as a phase a metre and a second.
 const GUST_PER_M = 0.035;
 const GUST_PER_S = 1.4;
 
+// An instance's foot from the anchor, and from the eye with its height as drawn.
+struct Foot {
+  item: Instance,
+  anchored: vec2f,
+  from_eye: vec3f,
+};
+
+fn foot_of(which: u32) -> Foot {
+  let item = instances[list[which]];
+  let anchored = corners[u32(item.ground.z)] + item.place.xy;
+  let from_eye = vec3f(anchored + frame.anchor.xy, item.place.z * frame.anchor.w + frame.anchor.z);
+  return Foot(item, anchored, from_eye);
+}
+
+// How much of a plant is left by the reach and the thinning at a distance: steep ground thins far plants more, so a
+// mountainside reads as a scatter of trees fading out, not a speckle.
+fn kept_share(item: Instance, distance: f32) -> vec2f {
+  let flank = smoothstep(0.3, 0.6, length(item.ground.xy)) * smoothstep(500.0, 1500.0, distance);
+  let keep = (1.0 - (1.0 - form.thin.y) * smoothstep(form.thin.x, form.ranges.y, distance)) * (1.0 - 0.85 * flank);
+  let left = (1.0 - smoothstep(form.ranges.y * 0.85, form.ranges.y, distance)) * clamp((keep + 0.05 - item.look.w) * 20.0, 0.0, 1.0);
+  return vec2f(keep, left);
+}
+
 @vertex
-fn plant_vertex(vertex: Vertex) -> Shaded {
+fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
   var out: Shaded;
-  let foot = vertex.place.xy + frame.anchor.xy;
+  let foot = foot_of(which);
+  let item = foot.item;
   // The detail changes by the distance across the ground, as the packing chose each tile's details; the reach and
   // the thinning by the distance from the eye, which is never less, so they only ever take away.
-  let across = length(foot);
-  let distance = length(vec3f(foot, vertex.place.z * frame.anchor.w + frame.anchor.z));
+  let across = length(foot.from_eye.xy);
+  let distance = length(foot.from_eye);
   let far = form.ranges.w > 0.5;
   let near_share = 1.0 - smoothstep(form.ranges.x - form.ranges.z, form.ranges.x, across);
-  let keep = 1.0 - (1.0 - form.thin.y) * smoothstep(form.thin.x, form.ranges.y, distance);
-  let left = (1.0 - smoothstep(form.ranges.y * 0.85, form.ranges.y, distance)) * clamp((keep + 0.05 - vertex.look.w) * 20.0, 0.0, 1.0);
-  out.cover = vec2f(near_share, left);
-  if (select(near_share, 1.0 - near_share, far) <= 0.0 || left <= 0.0) {
+  let kept = kept_share(item, distance);
+  out.cover = vec2f(near_share, kept.y);
+  if (select(near_share, 1.0 - near_share, far) <= 0.0 || kept.y <= 0.0) {
     out.clip = NOWHERE;
     return out;
   }
   // The far plants left standing widen to fill the gaps of those thinned out.
-  let grow = select(1.0, inverseSqrt(max(keep, 0.05)), far);
-  let size = vec3f(vertex.look.x * grow, vertex.look.x * grow, vertex.look.y * (1.0 + (grow - 1.0) * 0.3));
+  let grow = select(1.0, inverseSqrt(max(kept.x, 0.05)), far);
+  let size = vec3f(item.look.x * grow, item.look.x * grow, item.look.y * (1.0 + (grow - 1.0) * 0.3));
   let local = vertex.position * size;
-  let turn = vec2f(cos(vertex.place.w), sin(vertex.place.w));
+  let turn = vec2f(cos(item.place.w), sin(item.place.w));
   var offset = vec2f(turn.x * local.x - turn.y * local.y, turn.y * local.x + turn.x * local.y);
   // Gusts roll downwind across the land; each plant also rocks on its own beat, its leaves trembling.
-  let gust = 0.6 + 0.4 * sin(frame.wind.w + dot(vertex.place.xy, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S);
-  let rock = 0.35 * sin(frame.wind.x * 2.3 + vertex.look.w * 40.0);
-  let bend = vertex.colour.a * form.thin.z * vertex.look.y * (gust + rock);
+  let gust = 0.6 + 0.4 * sin(frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S);
+  let sway = 0.35 * sin(frame.wind.x * 2.3 + item.look.w * 40.0);
+  let bend = vertex.colour.a * form.thin.z * item.look.y * (gust + sway);
   offset += frame.wind.yz * bend;
   let tremble = vertex.normal.w * 0.03 * sin(frame.wind.x * 7.0 + dot(vertex.position, vec3f(3.1, 2.3, 1.7)));
-  let point = vec3f(foot + offset, vertex.place.z * frame.anchor.w + frame.anchor.z + local.z - abs(bend) * 0.2 + tremble);
+  let point = foot.from_eye + vec3f(offset, local.z - abs(bend) * 0.2 + tremble);
   out.clip = frame.from_eye * vec4f(point, 1.0);
   let scaled = normalize(vertex.normal.xyz / size);
   out.normal = vec3f(turn.x * scaled.x - turn.y * scaled.y, turn.y * scaled.x + turn.x * scaled.y, scaled.z);
   out.leaf = vertex.normal.w;
   // The tint turns foliage warmer and yellower one way, deeper and cooler the other; bark only lightens or darkens.
-  let tint = vertex.look.z;
+  let tint = item.look.z;
   let hue = select(vec3f(0.9, 0.98, 1.05), vec3f(1.12, 1.05, 0.8), tint > 0.0);
   let tinted = mix(vec3f(1.0), hue, abs(tint) * vertex.normal.w);
-  out.colour = vertex.colour.rgb * tinted * (1.0 + 0.08 * tint * (1.0 - vertex.normal.w));
-  out.snow = smoothstep(frame.land.x - 100.0, frame.land.x + 50.0, vertex.place.z);
+  let own = vertex.colour.rgb * tinted * (1.0 + 0.08 * tint * (1.0 - vertex.normal.w));
+  // Far off, a plant's colour leans toward the biome's ground, so a far forest sits in its land.
+  let lean = select(0.0, 0.35 * smoothstep(900.0, form.ranges.y, distance), frame.ground.w > 0.5);
+  out.colour = mix(own, frame.ground.rgb * 0.85, lean);
+  out.snow = smoothstep(frame.land.x - 100.0, frame.land.x + 50.0, item.place.z);
   return out;
 }
 
@@ -135,12 +179,51 @@ fn plant_fragment(shaded: Shaded, @builtin(front_facing) front: bool) -> Drawn {
     normal = vec3f(-normal.xy, normal.z);
   }
   let direct = max(dot(normal, SUN), 0.0);
-  // The sky lights tops more than undersides; leaves pass on a little of the sky and the sun behind them.
-  let skyward = 0.85 + 0.15 * normal.z;
-  let through = shaded.leaf * (0.08 + 0.3 * max(-dot(normal, SUN), 0.0));
-  var colour = shaded.colour * (AMBIENT * skyward + (1.0 - AMBIENT) * direct) + shaded.colour * SUN_LIGHT * through;
+  let ambient = AMBIENT * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
+  // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
+  let through = shaded.leaf * (0.2 + 0.3 * max(-dot(normal, SUN), 0.0));
+  var colour = shaded.colour * (ambient + (1.0 - AMBIENT) * direct) + shaded.colour * SUN_LIGHT * through;
   let settled = shaded.snow * smoothstep(0.35, 0.75, normal.z);
   colour = mix(colour, SNOW * (AMBIENT + (1.0 - AMBIENT) * direct), settled);
   return Drawn(vec4f(colour, 1.0), mask);
+}
+
+struct Shade {
+  @builtin(position) clip: vec4f,
+  // 0 at the shade's middle, 1 at its rim; and how dark its middle is.
+  @location(0) out_from_middle: f32,
+  @location(1) @interpolate(flat) darkness: f32,
+};
+
+// A plant's contact shade: a soft dark disc on the ground under it, leaning a little the way the sun throws shadows,
+// laid on the ground's slope at its foot. With no shadows drawn, it is what keeps a plant from looking pasted on.
+@vertex
+fn shade_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) which: u32) -> Shade {
+  var out: Shade;
+  let foot = foot_of(which);
+  let item = foot.item;
+  let distance = length(foot.from_eye);
+  let fade = (1.0 - smoothstep(form.ranges.x * 0.4, form.ranges.x * 0.75, distance)) * kept_share(item, distance).y;
+  if (fade <= 0.0 || form.shade.x <= 0.0) {
+    out.clip = NOWHERE;
+    return out;
+  }
+  let corner = index % 3u;
+  let angle = f32(index / 3u + select(0u, 1u, corner == 2u)) / ${SHADE_SEGMENTS}.0 * TAU;
+  let rim = select(1.0, 0.0, corner == 0u);
+  let lean = -SUN.xy / SUN.z * form.shade.y * item.look.y * 0.35;
+  let offset = lean + vec2f(cos(angle), sin(angle)) * form.shade.x * item.look.x * rim;
+  let ground = item.ground.w + dot(item.ground.xy, offset) + 0.12;
+  let point = vec3f(foot.from_eye.xy + offset, ground * frame.anchor.w + frame.anchor.z);
+  out.clip = frame.from_eye * vec4f(point, 1.0);
+  out.out_from_middle = rim;
+  out.darkness = form.shade.z * fade;
+  return out;
+}
+
+@fragment
+fn shade_fragment(shade: Shade) -> @location(0) vec4f {
+  let soft = 1.0 - shade.out_from_middle * shade.out_from_middle;
+  return vec4f(0.0, 0.0, 0.0, shade.darkness * soft * soft);
 }
 `;

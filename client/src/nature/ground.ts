@@ -20,6 +20,8 @@ export interface GroundAt {
   readonly coastM?: number;
   /** Metres from the nearest fresh water's edge, when the source knows it; unknown counts as far. */
   readonly freshM?: number;
+  /** The ground's rise a metre east and south, when the source knows it; unknown counts as level. */
+  readonly rise?: readonly [number, number];
 }
 
 /** The ground at a world point (metres east and south). */
@@ -233,7 +235,7 @@ const SHORE_RISE = 0.04;
 export function landSampler(view: LandView, patch: GroundPatch | null): GroundSampler {
   return (x, y) => {
     const [wideHeight, east, south, coastM] = wideGround(view, x, y);
-    let [height, slope] = [wideHeight, Math.hypot(east, south)];
+    let [height, slope, riseEast, riseSouth] = [wideHeight, Math.hypot(east, south), east, south];
     const lake = lakeAt(view, x, y);
     let share = 0;
     let mark: GroundMark = 0;
@@ -248,6 +250,8 @@ export function landSampler(view: LandView, patch: GroundPatch | null): GroundSa
         const exactSouth = (exact(gridX, gridY + 0.5) - exact(gridX, gridY - 0.5)) / patch.step;
         height += (exact(gridX, gridY) - height) * share;
         slope += (Math.hypot(exactEast, exactSouth) - slope) * share;
+        riseEast += (exactEast - riseEast) * share;
+        riseSouth += (exactSouth - riseSouth) * share;
         const sample = Math.round(gridY) * patch.width + Math.round(gridX);
         const marked = patch.marks[sample] ?? 0;
         if (share > 0.5 && (marked === 3 || marked === 4 || marked === 5)) mark = marked;
@@ -268,6 +272,6 @@ export function landSampler(view: LandView, patch: GroundPatch | null): GroundSa
       else if (lake !== null && lake > height) water = 'lake';
       else if (river < 0) water = 'river';
     }
-    return { height, slope, water, mark, coastM, freshM };
+    return { height, slope, water, mark, coastM, freshM, rise: [riseEast, riseSouth] };
   };
 }

@@ -6,9 +6,10 @@ export const TILE_M = 64;
 /** The side of a layer's slots: each holds one plant at most, somewhere inside it. */
 export const SLOT_M: Readonly<Record<Layer, number>> = { tall: 8, low: 4 };
 /** A planted instance's floats: its form (the cast's forms in order), where it stands from its tile's north-west
- *  corner (east, south), its foot's height, its turn, its width and height scales, its tint (-1..1) and its rank
- *  (0..1), by which the far ones thin out. */
-export const PLANTED_FLOATS = 9;
+ *  corner (east, south), its foot's height, its turn, its width and height scales, its tint (-1..1), its rank
+ *  (0..1), by which the far ones thin out, the ground's rise a metre east and south under it, and the ground's height
+ *  at its foot. */
+export const PLANTED_FLOATS = 12;
 
 /** The ground a scatter reads: the sampler, the caller's cleared places and the snow line, metres. */
 export interface ScatterGround {
@@ -176,6 +177,9 @@ export function scatterTile(
       height,
       drawn(seed, 7) * 2 - 1,
       drawn(seed, 8),
+      here.rise?.[0] ?? 0,
+      here.rise?.[1] ?? 0,
+      here.height,
     ]);
   }
   planted.sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0) || (a[8] ?? 0) - (b[8] ?? 0));

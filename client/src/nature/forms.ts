@@ -16,6 +16,8 @@ export interface Part {
   readonly vertexCount: number;
   readonly twoSided: boolean;
   readonly block: number;
+  /** A contact shade is drawn under each instance. */
+  readonly shaded: boolean;
 }
 
 /** A cast's meshes for the GPU: every form's near and far mesh in one vertex buffer, each part's place in it (by
@@ -42,8 +44,24 @@ function packMesh(mesh: Mesh, bytes: DataView, firstVertex: number): void {
   }
 }
 
-/** Packs a cast's meshes and the terms each is drawn by: its ranges, crossfade band and detail, its thinning and its
- *  sway. */
+/** A plant's contact shade, from its near mesh: the radius its crown (or, with no leaves, its body) spreads to, how
+ *  high its leaves hang on average, metres at size 1, and how dark the shade's middle is. */
+export function contactShade(mesh: Mesh, tall: boolean): [number, number, number] {
+  let [spread, leafy, heights, leaves] = [0, false, 0, 0];
+  for (let offset = 0; offset < mesh.vertices.length; offset += VERTEX_FLOATS) {
+    if ((mesh.vertices[offset + 9] ?? 0) > 0.5)
+      [leafy, heights, leaves] = [true, heights + (mesh.vertices[offset + 2] ?? 0), leaves + 1];
+  }
+  for (let offset = 0; offset < mesh.vertices.length; offset += VERTEX_FLOATS) {
+    if (leafy && (mesh.vertices[offset + 9] ?? 0) <= 0.5) continue;
+    spread = Math.max(spread, Math.hypot(mesh.vertices[offset] ?? 0, mesh.vertices[offset + 1] ?? 0));
+  }
+  const darkness = !leafy ? 0.26 : tall ? 0.34 : 0.24;
+  return [spread * 0.9, leaves > 0 ? heights / leaves : 0, darkness];
+}
+
+/** Packs a cast's meshes and the terms each is drawn by: its ranges, crossfade band and detail, its thinning, its
+ *  sway and its contact shade. Only plants with a far mesh cast a shade; grass, ferns and reeds are too low. */
 export function formBuffers(cast: Cast): FormBuffers {
   const meshes = cast.kinds.flatMap((kind) => kind.plants.map((plant) => ({ kind, plant })));
   const total = meshes.reduce(
@@ -72,10 +90,11 @@ export function formBuffers(cast: Cast): FormBuffers {
           thins ? cast.keepAtReach : 1,
           kind.swayM,
           0,
+          ...(plant.far && !far ? contactShade(plant.near, kind.layer === 'tall') : [0, 0, 0]),
         ],
         block * floatsPerBlock,
       );
-      const part = { firstVertex: next, vertexCount, twoSided: !mesh.closed, block };
+      const part = { firstVertex: next, vertexCount, twoSided: !mesh.closed, block, shaded: !!plant.far && !far };
       next += vertexCount;
       return part;
     };

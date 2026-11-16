@@ -56,3 +56,21 @@ test('a vertex keeps its position exactly and its normal, leaf, colour and sway 
     assert.ok(Math.abs(bytes.getUint8(byteAt + 19) / 255 - (mesh.vertices[from + 10] ?? 0)) < 0.003);
   }
 });
+
+test("a tree's contact shade spreads as wide as its crown and leans from where its leaves hang; grass casts none", () => {
+  const cast = castOf('woodland');
+  const { parts, blocks } = formBuffers(cast);
+  const plants = cast.kinds.flatMap((kind) => kind.plants.map(() => kind));
+  for (const [form, [near]] of parts.entries()) {
+    const kind = plants[form];
+    assert.ok(kind);
+    const [radius, crownHeight, darkness] = blocks.subarray((near.block * FORM_BLOCK_BYTES) / 4 + 8);
+    if (kind.name === 'fern') {
+      assert.equal(near.shaded, false);
+      continue;
+    }
+    assert.equal(near.shaded, true, kind.name);
+    assert.ok((radius ?? 0) > 0.5 && (darkness ?? 0) > 0 && (darkness ?? 1) < 0.5, kind.name);
+    if (kind.name === 'oak') assert.ok((radius ?? 0) > 3 && (crownHeight ?? 0) > 5, `${radius} ${crownHeight}`);
+  }
+});

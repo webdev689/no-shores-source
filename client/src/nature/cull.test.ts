@@ -23,7 +23,8 @@ function lookingNorth(aspect: number): Float32Array {
 
 const packedWith = (tiles: number[][]): Packed => ({
   anchor: [0, 0],
-  instances: new Float32Array(),
+  list: new Uint32Array(),
+  corners: new Float32Array(),
   tiles: Float32Array.from(tiles.flat()),
   groups: [],
   spread: 15,
