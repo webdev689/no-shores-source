@@ -9,6 +9,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
 
 [[package]]
+name = "combat"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "movement",
+]
+
+[[package]]
 name = "flatbuffers"
 version = "25.12.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -16,6 +24,15 @@ checksum = "35f6839d7b3b98adde531effaf34f0c2badc6f4735d26fe74709d8e513a96ef3"
 dependencies = [
  "bitflags",
  "rustc_version",
+]
+
+[[package]]
+name = "foes"
+version = "0.0.0"
+dependencies = [
+ "combat",
+ "libm",
+ "movement",
 ]
 
 [[package]]
@@ -79,6 +96,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "navmesh"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "movement",
+ "serde_json",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -91,6 +117,7 @@ dependencies = [
 name = "protocol"
 version = "0.0.0"
 dependencies = [
+ "combat",
  "flatbuffers",
  "movement",
  "room",
@@ -109,13 +136,18 @@ dependencies = [
 name = "room"
 version = "0.0.0"
 dependencies = [
+ "combat",
+ "foes",
+ "libm",
  "movement",
+ "navmesh",
 ]
 
 [[package]]
 name = "room-wasm"
 version = "0.0.0"
 dependencies = [
+ "combat",
  "movement",
  "protocol",
  "room",

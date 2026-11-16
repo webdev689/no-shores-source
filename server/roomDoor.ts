@@ -8,9 +8,10 @@ export interface CourseBlock {
 }
 
 /** What became of a player's input: the room took it, or why not. */
-export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'too many waiting' | 'no such player';
+export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'no such player';
 
-const ANSWERS: readonly InputAnswer[] = ['taken', 'not an input', 'out of order', 'too many waiting', 'no such player'];
+/** By the door's numbers (room-wasm's TAKEN, NOT_AN_INPUT, OUT_OF_ORDER, NO_SUCH_PLAYER). */
+const ANSWERS: readonly InputAnswer[] = ['taken', 'not an input', 'out of order', 'no such player'];
 
 /** One room, running in the `room-wasm` module: the room crate and its messages. */
 export interface RoomDoor {
@@ -18,7 +19,7 @@ export interface RoomDoor {
   readonly tickSeconds: number;
   /** Opens the room on a course, its players standing at the spawn when they join; false if the course is not one. */
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
-  /** A new player's number. */
+  /** A new player's number, or 0 when the room is full. */
   join(): number;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;

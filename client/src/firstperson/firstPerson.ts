@@ -67,6 +67,8 @@ export interface FirstPersonState {
   readonly mounted?: boolean;
   readonly yaw?: number;
   readonly blocking?: boolean;
+  /** A weapon held in a fight's pose, one of its strokes' frames: a guard, a parry's deflect. */
+  readonly pose?: { readonly record: number; readonly frame: number } | null;
 }
 
 /** What the first person draws with: a texture a picture, and the quads over the scene. */
@@ -161,29 +163,32 @@ export class FirstPerson {
   private readonly kept = new Map<string, { texture: GPUTexture; picture: Picture } | null>();
   private readonly loading = new Set<string>();
 
-  constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random) {
+  /** `strokes` picks each swing's direction as a share of DFO's six; the fight's rules may choose it. */
+  constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random, strokes = random) {
     this.view = view;
     this.source = source;
-    this.hands = new Hands(random);
+    this.hands = new Hands(strokes);
     this.ride = new RideMotion(random);
   }
 
   /** Opens the first person on the forge's published pictures, with their placement and Daggerfall's colours. */
-  static async open(gpu: Gpu, store: ForgeStore): Promise<FirstPerson> {
+  static async open(gpu: Gpu, store: ForgeStore, strokes: () => number = Math.random): Promise<FirstPerson> {
     const [frames, dyes] = await Promise.all([store.table<FramesTable>('frames'), store.table<DyeTable>('dyes')]);
     const painter = new FramePainter(dyes, new PaletteSnap(dyes.palette));
-    return new FirstPerson(new FirstPersonView(gpu), {
-      strip: (path) => store.strip(path),
-      frames,
-      dyes,
-      painter,
-    });
+    const source = { strip: (path: string) => store.strip(path), frames, dyes, painter };
+    return new FirstPerson(new FirstPersonView(gpu), source, Math.random, strokes);
   }
 
   /** The blow or shot under way: its direction (null for a bow, a gun or a crossbow), how far through it, the hand that
    *  threw it and whether the hands take turns as a pair; null at rest. */
   get swing(): Swing | null {
     return this.hands.swing;
+  }
+
+  /** Ends any swing or draw under way at once, with no blow and no arrow: the fight's rules ended it (a dodge, a
+   *  flinch, a guard, a draw let go too soon to shoot). */
+  cancel(): void {
+    this.hands.cancel();
   }
 
   /** Moves the first person on by `seconds`: the swings and shots, the cast, the bob, the chain, the climb, the ride and
@@ -205,6 +210,7 @@ export class FirstPerson {
     const free = this.castClock === null && this.lower < 0.5;
     const motion = { running: state.running && state.moving && !state.mounted, stride: state.stride };
     const events = this.hands.update(seconds, free ? input : STILL, this.plan, motion);
+    this.hands.pose(state.pose ?? null);
     this.duck = lowerStep(this.duck, ducks(this.plan?.held) && this.hands.swing ? 1 : 0, seconds);
     const walking = state.moving && !state.mounted;
     const drop = this.bob.step(seconds, state.stride, walking, state.running) + lowerDrop(this.lower);

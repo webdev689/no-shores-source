@@ -21,7 +21,7 @@ const script: Controls[] = Array.from({ length: 40 }, (unused, tick) => ({
 }));
 
 test('while the room agrees, its word corrected by the inputs it has not taken is the predicted body, to the bit', () => {
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   let predicted = rules.standing(0, 2);
   const roomSaw: Body[] = [predicted];
   for (const controls of script) {
@@ -36,7 +36,7 @@ test('while the room agrees, its word corrected by the inputs it has not taken i
 });
 
 test('where the room knows better, the body moves to the room’s word with the waiting inputs on top', () => {
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   for (const controls of script.slice(0, 5)) prediction.next(controls);
   const elsewhere = rules.standing(3, 3);
   const corrected = prediction.corrected(elsewhere, 2, step);
@@ -45,6 +45,16 @@ test('where the room knows better, the body moves to the room’s word with the 
 });
 
 test('inputs are numbered 1, 2, 3 and so on', () => {
-  const prediction = new Prediction();
+  const prediction = new Prediction<Controls>();
   assert.deepEqual([prediction.next(still), prediction.next(still), prediction.next(still)], [1, 2, 3]);
+});
+
+test('a room that takes nothing for 4 s leaves at most 240 inputs waiting, the newest', () => {
+  const prediction = new Prediction<number>();
+  for (let tick = 1; tick <= 300; tick += 1) prediction.next(tick);
+  assert.equal(prediction.waitingCount, 240);
+  assert.equal(
+    prediction.corrected(0, 0, (sum, ask) => sum + ask),
+    (61 + 300) * 120,
+  );
 });

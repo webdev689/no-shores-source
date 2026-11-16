@@ -14,6 +14,8 @@ export const BINDINGS = {
   crouch: ['c'],
   ready: ['z'],
   swing: ['mouse2'],
+  guard: ['mouse0', 'f'],
+  dodge: ['v', 'mouse4'],
   cast: ['q'],
   perspective: ['mouse3'],
   mount: [','],
@@ -66,7 +68,14 @@ export class Input {
       event.preventDefault();
       press(`mouse${event.button}`);
     });
-    addEventListener('mouseup', (event) => release(`mouse${event.button}`));
+    // A side button's own work (back, forward) is done on its release and its click, so those are kept too.
+    addEventListener('mouseup', (event) => {
+      if (this.locked) event.preventDefault();
+      release(`mouse${event.button}`);
+    });
+    addEventListener('auxclick', (event) => {
+      if (this.locked) event.preventDefault();
+    });
     addEventListener('mousemove', (event) => {
       if (!this.locked) return;
       this.lookX += event.movementX;

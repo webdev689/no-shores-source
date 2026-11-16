@@ -89,8 +89,9 @@ interface Tuning {
 
 const flag = (value: boolean): number => (value ? 1 : 0);
 
-/** How many numbers a body is. */
+/** How many numbers a body is, and the controls. */
 export const BODY_FLOATS = 22;
+export const CONTROLS_FLOATS = 7;
 
 /** A body's numbers in the movement crate's order: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded;
  *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving. */

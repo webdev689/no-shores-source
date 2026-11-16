@@ -1,0 +1,15 @@
+[package]
+name = "foes"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "How foes think: the kinds of foe, and the brain each fights with on the combat rules, the same on every machine."
+
+[dependencies]
+combat = { path = "../combat" }
+movement = { path = "../movement" }
+libm.workspace = true
+
+[lints]
+workspace = true

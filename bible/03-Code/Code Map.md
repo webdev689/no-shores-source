@@ -17,13 +17,14 @@ decision, made in the same change as its entry here.
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up |
-| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
+| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb, the foes' dresses and the moves a fight holds a figure to |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
+| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display, and the ground's marks for telegraphed blows and shots |
 | `client/src/ships/` | The ships layer: a ship's mesh read from R2 and drawn at her pose on the water ([[Sailing]]), and a fight's balls and effects drawn as small spheres ([[Naval Combat]]) |
-| `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room, and the prediction it corrects |
-| `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] and [[Movement]], loaded as WebAssembly, for any page that needs them |
+| `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
+| `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] (with its door's sailing and naval fights), [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
@@ -32,6 +33,9 @@ decision, made in the same change as its entry here.
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
+| `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks, and the paths across it |
+| `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |
+| `crates/foes` | [[Foes]]: the kinds of foe and the brain each fights with: turns at a target, the ring, telegraphed blows and answers to blows |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
@@ -62,9 +66,10 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
 Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `ships`
-(imports `rules`, and the water's sun and samples), `editor` (imports `rules`, `water` and `ships`), `testground`
-(imports `rules`, `network`, `forge`, `firstperson`, and the editor's camera and panel helpers) and `firstperson`
-(imports `forge`). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
+(imports `rules`, and the water's sun and samples), `editor` (imports `rules`, `water` and `ships`), `combat` (imports
+`rules` and `network`), `testground` (imports `rules`, `network`, `forge`, `firstperson`, `combat`, and the editor's
+camera and panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork
+any layer may import.
 
 ## The Rust crates
 
@@ -74,11 +79,14 @@ and outside crates it may use (`CRATES`, [[Checks]]):
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
   predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
-  `sailing`, which may use `land` and `libm`; and `naval`, which may use `sailing` and `libm`.
+  `sailing`, which may use `land` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use
+  `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; and `foes`, which may use `combat`, `movement`
+  and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use only `movement`; its messages are
-  `protocol`, which may use `movement`, `room` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door
-  for the Cloudflare shell in `server/`.
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `movement`,
+  `navmesh` and `libm`; its messages are `protocol`, which may use `combat`, `movement`, `room` and `flatbuffers`; and
+  `room-wasm` puts them behind a WebAssembly door for the Cloudflare shell in `server/`, and for a browser playing
+  alone.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
   `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land (and a ship sailing and fighting over it) and
   movement behind WebAssembly doors for the browser; `room-wasm`, which puts the room behind one for its Cloudflare
