@@ -47,9 +47,10 @@ export function fightOf(view: FighterView): Fight | null {
   }
 }
 
-/** What a foe's figure is doing, from the room's glance at it now and at the tick before. */
-export function foeDoing(view: FighterView, before: FighterView | null, dress: Dress, tickSeconds: number): Doing {
-  const speed = before ? Math.hypot(view.x - before.x, view.y - before.y) / tickSeconds : 0;
+/** What a foe's figure is doing, from the room's glance at it now and at its snapshot before, `seconds` earlier (a
+ *  snapshot may come after several ticks). */
+export function foeDoing(view: FighterView, before: FighterView | null, dress: Dress, seconds: number): Doing {
+  const speed = before ? Math.hypot(view.x - before.x, view.y - before.y) / seconds : 0;
   const { action } = view;
   const blow =
     action.kind === 'attack'
@@ -66,7 +67,7 @@ export function foeDoing(view: FighterView, before: FighterView | null, dress: D
     crouched: view.crouched,
     mounted: false,
     speed,
-    vz: before ? (view.z - before.z) / tickSeconds : 0,
+    vz: before ? (view.z - before.z) / seconds : 0,
     over: 0,
     drawn: dress.outfit.drawn,
     right: dress.outfit.right,

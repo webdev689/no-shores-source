@@ -24,6 +24,9 @@ const EDGE = 0.75;
 const EDGE_M = 0.06;
 const NOW_TICKS = 12;
 const NOW_BRIGHTER = 1.6;
+/** An iron blow's edge is drawn twice, the second this far inside the first: its shape says iron, not its colour alone,
+ *  for those who cannot tell red from gold. */
+const IRON_INSET = 0.2;
 /** How far above the ground a mark lies, so it never fights the ground for depth. */
 const LIFT = 0.03;
 /** An arrow's length and thickness, its colour, and the steps a curve is drawn in. */
@@ -65,6 +68,7 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
     if (!first || !second || !third || !fourth) return;
     for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);
   };
+  const insets = telegraph.iron ? [0, IRON_INSET] : [0];
   const lane = (length: number, width: number) => {
     quad(
       [
@@ -75,33 +79,23 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
       ],
       fill,
     );
-    quad(
-      [
-        onGround(-0.3, -width),
-        onGround(length, -width),
-        onGround(length, -width + EDGE_M),
-        onGround(-0.3, -width + EDGE_M),
-      ],
-      edge,
-    );
-    quad(
-      [
-        onGround(-0.3, width - EDGE_M),
-        onGround(length, width - EDGE_M),
-        onGround(length, width),
-        onGround(-0.3, width),
-      ],
-      edge,
-    );
-    quad(
-      [
-        onGround(length - EDGE_M, -width),
-        onGround(length, -width),
-        onGround(length, width),
-        onGround(length - EDGE_M, width),
-      ],
-      edge,
-    );
+    for (const inset of insets) {
+      // A narrow lane's second edge keeps to its own half.
+      const side = width - Math.min(inset, width / 2);
+      const end = length - inset;
+      quad(
+        [onGround(-0.3, -side), onGround(end, -side), onGround(end, -side + EDGE_M), onGround(-0.3, -side + EDGE_M)],
+        edge,
+      );
+      quad(
+        [onGround(-0.3, side - EDGE_M), onGround(end, side - EDGE_M), onGround(end, side), onGround(-0.3, side)],
+        edge,
+      );
+      quad(
+        [onGround(end - EDGE_M, -side), onGround(end, -side), onGround(end, side), onGround(end - EDGE_M, side)],
+        edge,
+      );
+    }
   };
   // A band of the circle about (ahead, 0) from radius `inner` to `outer`, between two angles off the bearing.
   const band = (ahead: number, inner: number, outer: number, from: number, to: number, colour: readonly number[]) => {
@@ -115,6 +109,13 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
       quad([point(inner, first), point(outer, first), point(outer, second), point(inner, second)], colour);
     }
   };
+  // An edge band inside radius `outer` (and its iron double further in), or outside `inner`.
+  const edgeIn = (ahead: number, outer: number, from: number, to: number) => {
+    for (const inset of insets) band(ahead, outer - EDGE_M - inset, outer - inset, from, to, edge);
+  };
+  const edgeOut = (inner: number) => {
+    for (const inset of insets) band(0, inner + inset, inner + inset + EDGE_M, -Math.PI, Math.PI, edge);
+  };
   switch (telegraph.shape) {
     case 'lunge':
     case 'charge':
@@ -125,18 +126,18 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
       break;
     case 'sweep':
       band(0, 0, ground.length * progress, -ground.halfArc, ground.halfArc, fill);
-      band(0, ground.length - EDGE_M, ground.length, -ground.halfArc, ground.halfArc, edge);
+      edgeIn(0, ground.length, -ground.halfArc, ground.halfArc);
       break;
     case 'ring':
       band(0, ground.length - (ground.length - ground.inner) * progress, ground.length, -Math.PI, Math.PI, fill);
-      band(0, ground.inner, ground.inner + EDGE_M, -Math.PI, Math.PI, edge);
-      band(0, ground.length - EDGE_M, ground.length, -Math.PI, Math.PI, edge);
+      edgeOut(ground.inner);
+      edgeIn(0, ground.length, -Math.PI, Math.PI);
       break;
     case 'slam':
     case 'leap': {
       const ahead = telegraph.shape === 'slam' ? ground.length : telegraph.ahead;
       band(ahead, 0, ground.width * progress, -Math.PI, Math.PI, fill);
-      band(ahead, ground.width - EDGE_M, ground.width, -Math.PI, Math.PI, edge);
+      edgeIn(ahead, ground.width, -Math.PI, Math.PI);
       break;
     }
   }

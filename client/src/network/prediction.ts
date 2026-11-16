@@ -1,3 +1,6 @@
+/** The most inputs kept waiting: 4 s of ticks. A room silent that long has let the player go, so the oldest go. */
+const WAITING_MOST = 240;
+
 /** The player's own inputs that a room has not taken yet, and how to set the player's state by the room's word. */
 export class Prediction<Ask> {
   private sequence = 0;
@@ -7,6 +10,7 @@ export class Prediction<Ask> {
   next(ask: Ask): number {
     this.sequence += 1;
     this.waiting.push({ sequence: this.sequence, ask });
+    if (this.waiting.length > WAITING_MOST) this.waiting.shift();
     return this.sequence;
   }
 

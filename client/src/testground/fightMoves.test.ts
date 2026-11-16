@@ -45,8 +45,6 @@ test('a fighter’s action holds its figure to the forge’s own moves', () => {
   assert.deepEqual(shown({ kind: 'dead', elapsed: 24 }), { anim: 'death', frame: 3, frameSeconds: 0 });
   assert.equal(shown({ kind: 'dead', elapsed: 90 }).anim, 'fallen');
   assert.equal(shown({ kind: 'staggered', left: 20, cause: 'parried' }).anim, 'hurt');
-  assert.deepEqual(shown({ kind: 'dodge', elapsed: 2, toward: [1, 0] }), { anim: 'jump', frame: 0, frameSeconds: 0 });
-  assert.equal(shown({ kind: 'dodge', elapsed: 12, toward: [1, 0] }).frame, 1);
   assert.equal(shown({ kind: 'guard', elapsed: 5, window: 12 }).anim, 'block', 'a shield in the left hand blocks');
   assert.equal(shown({ kind: 'parry', elapsed: 9 }).anim, 'block');
   const windup = lunge(10, false);
@@ -59,4 +57,27 @@ test('a fighter’s action holds its figure to the forge’s own moves', () => {
     1 / 60,
   );
   assert.deepEqual(swinging.blow, { direction: 'up', second: true, progress: 0.5 });
+});
+
+test('a dodge shows the jump only in the air, rising, at the top and falling by the body; landed, the figure stands', () => {
+  const dress = FOE_KINDS.find((kind) => kind.name === 'Swordsman')?.dress;
+  assert.ok(dress);
+  const frames = (anim: string) => ({ jump: 3 })[anim] ?? 1;
+  const hop = (elapsed: number, z: number, zBefore: number, mode: FighterView['mode']) => {
+    const dodging = { ...standing, mode, z, action: { kind: 'dodge', elapsed, toward: [1, 0] } as Action };
+    return shownMove(foeDoing(dodging, { ...dodging, z: zBefore }, dress, 1 / 60), frames, () => true);
+  };
+  assert.deepEqual(hop(2, 0.1, 0.05, 'air'), { anim: 'jump', frame: 0, frameSeconds: 0 });
+  assert.equal(hop(9, 0.4, 0.4, 'air').frame, 1);
+  assert.equal(hop(16, 0.1, 0.15, 'air').frame, 2);
+  const resting = shownMove(foeDoing(standing, standing, dress, 1 / 60), frames, () => true);
+  assert.deepEqual(hop(20, 0, 0, 'ground'), resting, 'its last ticks are on the ground');
+});
+
+test('a foe that moved over a snapshot of several ticks walks at its own pace, not their sum', () => {
+  const dress = FOE_KINDS.find((kind) => kind.name === 'Swordsman')?.dress;
+  assert.ok(dress);
+  // Walking at 3 m/s: 0.15 m over the three ticks between two snapshots.
+  const walked = foeDoing({ ...standing, x: 0.15 }, standing, dress, 3 / 60);
+  assert.deepEqual([walked.moving, walked.running, Math.round(walked.speed * 100) / 100], [true, false, 3]);
 });

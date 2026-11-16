@@ -9,6 +9,7 @@ import { ForgeStore } from '../forge/store.ts';
 import type { Action } from '../rules/fighters.ts';
 import { FIGHT_TICKS, fightOf, foeDoing } from './fightMoves.ts';
 import { foeKind } from './foeKinds.ts';
+import { Glides } from './glide.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { Hud } from '../combat/hud.ts';
@@ -214,8 +215,11 @@ async function start(): Promise<void> {
   const steps = fight.steps(movement);
   if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
   const hud = new Hud(element<HTMLElement>('#hud'));
-  /** The foes' figures, by the room's number for each, apart from the panel's figures. */
+  /** The foes' figures, by the room's number for each, apart from the panel's figures; they and other players are
+   *  drawn gliding between the room's snapshots. */
   const foeFigures = new Map<number, Placed>();
+  const foeGlides = new Glides();
+  const otherGlides = new Glides();
   let foeId = -1;
   let armsKey = '';
 
@@ -236,19 +240,27 @@ async function start(): Promise<void> {
     const free = player.body.mode === 'ground' || player.body.mode === 'air';
     const armed = controls.locked && wasDrawn && free && !player.mounted;
     const shooter = SHOOTERS.test(you.dress.outfit.right ?? '');
+    const guards = controls.locked && free && !player.mounted;
+    // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the
+    // other is held is a fresh press.
     fight.press({
       swing: armed && !shooter && controls.held('swing'),
       shoot: armed && shooter && controls.held('swing'),
-      guard: controls.locked && free && !player.mounted && controls.held('guard'),
+      guard: guards && controls.held('guard'),
       dodge: controls.locked && controls.pressed('dodge'),
       pitch: -player.pitch,
+      swingPressed: armed && !shooter && controls.pressed('swing'),
+      shootPressed: armed && shooter && controls.pressed('swing'),
+      guardPressed: guards && controls.pressed('guard'),
     });
     if (controls.locked) {
       player = updatePlayer({ ...player, drawn: wasDrawn }, controls, steps, seconds, firstPerson.swing !== null);
       if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
-    fight.pump(seconds);
+    // Alone, the room in the page waits while the pointer is free: Escape pauses the fight.
+    if (roomUrl || controls.locked) fight.pump(seconds);
     const own = fight.own;
+    const frameTicks = seconds / movement.tickSeconds;
     const body = shownBody(player);
     // Fighting, the figure faces where its arms point.
     const fighting = own && own.action.kind !== 'idle' && own.action.kind !== 'dead';
@@ -275,6 +287,10 @@ async function start(): Promise<void> {
     const held = own && HELD.has(own.action.kind);
     const begun = fight.swingsBegun > 0;
     fight.swingsBegun = 0;
+    // A swing the rules end early (a dodge, a flinch, a guard) ends in the first person too, as does a bow's draw let
+    // go too soon to shoot.
+    if ((own && !shooter && own.action.kind !== 'attack') || (shooter && fight.drawsDropped > 0)) firstPerson.cancel();
+    fight.drawsDropped = 0;
     const button =
       !swings || held
         ? STILL
@@ -348,6 +364,17 @@ async function start(): Promise<void> {
       const card = forge.card(you.id, youDress, shown.anim, view, index, flip);
       if (card) drawn.push({ card, ...cardStand(body.x, body.y, eye.x, eye.y), z: body.z, flip });
     }
+    for (const [number, placed] of others) {
+      const body = fight.others.get(number)?.body;
+      if (body)
+        [placed.x, placed.y, placed.z] = otherGlides.follow(
+          number,
+          [body.x, body.y, body.z],
+          fight.roomTick,
+          frameTicks,
+        );
+    }
+    otherGlides.keep(new Set(others.keys()));
     for (const placed of figures) {
       if (placed === you) continue;
       if (placed.spin) placed.facing = (placed.facing + SPIN * seconds) % (2 * Math.PI);
@@ -358,7 +385,7 @@ async function start(): Promise<void> {
       const card = forge.card(placed.id, placed.dress, placed.anim, view, shownFrame, flip);
       if (card) drawn.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip });
     }
-    drawn.push(...drawFoes(eye));
+    drawn.push(...drawFoes(eye, frameTicks));
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
@@ -369,15 +396,15 @@ async function start(): Promise<void> {
     });
     const where = (id: number): [number, number, number] | null => {
       if (id === fight.player && own) return [own.x, own.y, own.z];
-      const foe = fight.foes.get(id)?.view;
-      const other = others.get(id);
-      return foe ? [foe.x, foe.y, foe.z] : other ? [other.x, other.y, other.z] : null;
+      const figure = foeFigures.get(id) ?? others.get(id);
+      return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const foesMarked = [...fight.foes.values()].map((kept) => ({
-      id: kept.id,
-      name: foeKind(kept.kind)?.name ?? 'Foe',
-      view: kept.view,
-    }));
+    // Each foe marked where its figure is drawn.
+    const foesMarked = [...fight.foes.values()].map((kept) => {
+      const figure = foeFigures.get(kept.id);
+      const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
+      return { id: kept.id, name: foeKind(kept.kind)?.name ?? 'Foe', view };
+    });
     const matrix = viewProjection(camera, canvas.width / Math.max(1, canvas.height));
     hud.update(
       {
@@ -389,6 +416,9 @@ async function start(): Promise<void> {
         height: canvas.clientHeight,
         events: fight.takeEvents(),
         player: fight.player,
+        firstPerson: inFirstPerson,
+        pressed: (armed && !shooter && controls.pressed('swing')) || (controls.locked && controls.pressed('dodge')),
+        lost: link.lost,
       },
       seconds,
     );
@@ -399,8 +429,9 @@ async function start(): Promise<void> {
     requestAnimationFrame(frame);
   };
 
-  /** Every foe's figure, placed where the room last saw it and showing the move its fight holds it to. */
-  const drawFoes = (eye: { x: number; y: number }): CardAt[] => {
+  /** Every foe's figure, gliding toward where the room last saw it (`frameTicks` the frame's share of ticks) and showing
+   *  the move its fight holds it to. */
+  const drawFoes = (eye: { x: number; y: number }, frameTicks: number): CardAt[] => {
     const cards: CardAt[] = [];
     for (const kept of fight.foes.values()) {
       const kind = foeKind(kept.kind);
@@ -421,7 +452,7 @@ async function start(): Promise<void> {
         foeFigures.set(kept.id, placed);
       }
       const { view } = kept;
-      const doing = foeDoing(view, kept.before, kind.dress, movement.tickSeconds);
+      const doing = foeDoing(view, kept.before, kind.dress, kept.ticks * movement.tickSeconds);
       const move = shownMove(
         doing,
         (anim) => forge.frames(kind.dress.body, anim),
@@ -429,10 +460,11 @@ async function start(): Promise<void> {
       );
       const moveFrames = forge.frames(kind.dress.body, move.anim);
       const frameShown = move.frame ?? Math.floor(clock / Math.max(move.frameSeconds, 0.01)) % moveFrames;
+      const [x, y, z] = foeGlides.follow(kept.id, [view.x, view.y, view.z], fight.roomTick, frameTicks);
       Object.assign(placed, {
-        x: view.x,
-        y: view.y,
-        z: view.z,
+        x,
+        y,
+        z,
         facing: view.facing,
         anim: move.anim,
         frame: frameShown,
@@ -443,6 +475,7 @@ async function start(): Promise<void> {
       if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip });
     }
     for (const id of foeFigures.keys()) if (!fight.foes.has(id)) foeFigures.delete(id);
+    foeGlides.keep(new Set(fight.foes.keys()));
     return cards;
   };
   requestAnimationFrame(frame);

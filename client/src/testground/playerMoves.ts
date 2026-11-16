@@ -47,6 +47,9 @@ export interface Shown {
   readonly frameSeconds: number;
 }
 
+/** The jump's frame in the air, by how fast the body rises: rising, at the top, falling. */
+const jumpFrame = (rising: number) => (rising > 1.5 ? 0 : rising < -1.5 ? 2 : 1);
+
 /** How long a walking frame lasts; a run's is half, a crouch's double, a ride's a quarter of a run's. */
 const WALK_FRAME = 0.25;
 
@@ -131,14 +134,15 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     frameSeconds: 0,
   });
   const loop = (anim: string, frameSeconds: number): Shown => ({ anim, frame: null, frameSeconds });
-  if (doing.fight) return fightMove(doing, doing.fight, frames, draws, byProgress, loop);
+  // A dodge holds the figure to its hop only in the air: on the ground, before and after, it stands or walks.
+  const fight = doing.fight?.kind === 'dodge' && doing.mode !== 'air' ? null : doing.fight;
+  if (fight) return fightMove(doing, fight, frames, draws, byProgress, loop);
   if (doing.act) return byProgress(doing.act.anim, doing.act.progress);
   if (doing.mode === 'mantle' || doing.mode === 'vault') return byProgress(doing.mode, doing.over);
   if (doing.mode === 'hang') return doing.moving ? loop('shimmy', 1 / frames('shimmy')) : byProgress('hang', 0);
   if (doing.mode === 'climb')
     return doing.moving ? loop('climb', 1 / frames('climb')) : { anim: 'climb', frame: 0, frameSeconds: 0 };
-  if (doing.mode === 'air')
-    return { anim: 'jump', frame: doing.vz > 1.5 ? 0 : doing.vz < -1.5 ? 2 : 1, frameSeconds: 0 };
+  if (doing.mode === 'air') return { anim: 'jump', frame: jumpFrame(doing.vz), frameSeconds: 0 };
   if (doing.mounted) {
     if (!doing.moving) return loop('horseidle', WALK_FRAME);
     return doing.speed > 10 ? loop('horsegallop', WALK_FRAME / 4) : loop('horsewalk', WALK_FRAME / 2);
@@ -166,12 +170,9 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
   return loop(draws(rest, doing.drawn ? doing.right : null) ? rest : doing.moving ? 'walk' : 'idle', WALK_FRAME);
 }
 
-/** The share of a dodge's hop each of the jump's frames shows: rising, at the top, falling. */
-const HOP_FRAMES = [0.3, 0.7] as const;
-
 /**
  * The move a fight holds a figure to, from the forge's own moves: the death, then lying fallen; fallen while knocked
- * down; hurt while staggered or flinching (its bow's or staff's own); the jump's frames through a dodge's hop, or the
+ * down; hurt while staggered or flinching (its bow's or staff's own); the jump's frames through a dodge's hop in the air, by its rise and fall, or the
  * run where the forge does not draw what it holds in the jump; the parry through a deflect, a shield's block; the
  * guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its wind-up
  * and held at its end when it overreaches; and the bow drawn.
@@ -207,7 +208,7 @@ function fightMove(
       return still(own('hurt'));
     case 'dodge':
       if (!holds('jump')) return loop('run', WALK_FRAME / 2);
-      return still('jump', fight.progress < HOP_FRAMES[0] ? 0 : fight.progress < HOP_FRAMES[1] ? 1 : 2);
+      return still('jump', jumpFrame(doing.vz));
     case 'parry':
       return shield ? still('block') : byProgress(own('parry'), fight.progress);
     case 'guard':
