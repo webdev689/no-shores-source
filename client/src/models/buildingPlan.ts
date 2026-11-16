@@ -92,6 +92,10 @@ function terrace(block: Block, doors: readonly MeasuredDoor[]): boolean {
   });
 }
 
+/** Whether the squares beside a block's side leave it standing in the open: none of them, or all lower. */
+export const openBeside = (block: Block, cells: readonly (Block | null)[]): boolean =>
+  cells.every((cell) => !cell || cell.top < block.top - 0.05);
+
 /** A pitched roof over a block: its eaves' extent, named as a mass's sides, and its rise over the block's top. */
 export type Roof = {
   readonly west: number;
@@ -115,10 +119,7 @@ export function roofOf(block: Block, plan: Plan, fit: Frame, doors: readonly Mea
     fit.y1 - block.top > 0.3 &&
     !terrace(block, doors);
   if (!pitched) return null;
-  const out = (side: readonly (Block | null)[]): number => {
-    const open = side.every((cell) => !cell || cell.top < block.top - 0.05);
-    return open ? EAVE_M : 0;
-  };
+  const out = (side: readonly (Block | null)[]): number => (openBeside(block, side) ? EAVE_M : 0);
   const cellsAlong = (fixed: number, from: number, to: number, horizontal: boolean): (Block | null)[] =>
     Array.from({ length: to - from }, (unused, k) =>
       horizontal ? plan.blockAt(from + k, fixed) : plan.blockAt(fixed, from + k),
@@ -138,7 +139,8 @@ export function roofOf(block: Block, plan: Plan, fit: Frame, doors: readonly Mea
 /**
  * A solid mass of a building's plan, in the model's frame: from x `west` to `east` and z `south` to `north`, from
  * `base` (the ground, or a covered way's underside) to `eaves`, roofed up to `ridge` as the forge roofs it, the
- * ridge running along `ridgeAlong`. Every number comes of + - * /, min and max, so any engine reads the same masses.
+ * ridge running along `ridgeAlong`; the model's eaves may run up to 0.3 m past a side over open ground. Every
+ * number comes of + - * /, min and max, so any engine reads the same masses.
  */
 export type Mass = {
   readonly west: number;

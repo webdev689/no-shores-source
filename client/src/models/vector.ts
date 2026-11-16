@@ -11,6 +11,9 @@ export const cross = (a: readonly number[], b: readonly number[]): Vector => [
   a[0] * b[1] - a[1] * b[0],
 ];
 
+/** The point with its x and z swapped. */
+export const swap = (point: readonly number[]): Vector => [point[2], point[1], point[0]];
+
 /** The vector at length one; a zero vector stays zero. */
 export const unit = (vector: readonly number[]): Vector => {
   const length = Math.hypot(vector[0], vector[1], vector[2]) || 1;

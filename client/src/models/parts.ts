@@ -3,7 +3,7 @@
 // long side or toward its door whichever way the piece stands.
 import { meshBuilder, type ForgedModel, type Picture } from './model.ts';
 import { solidsOf, type Solids } from './solids.ts';
-import { faceNormal, type Vector } from './vector.ts';
+import { faceNormal, swap, type Vector } from './vector.ts';
 
 /** Texels a metre a picture is laid at. */
 export const TEXELS_PER_METRE = 40;
@@ -33,8 +33,6 @@ export type PartBuilder = Solids & {
   /** The same builder mirrored across z = zSum / 2. */
   mirror(zSum: number): PartBuilder;
 };
-
-const swap = (point: readonly number[]): Vector => [point[2], point[1], point[0]];
 
 export function partBuilder(): PartBuilder {
   const mesh = meshBuilder();

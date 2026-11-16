@@ -25,6 +25,12 @@ const doorIds = ids.filter((id) => propTable[id].doors);
 test('every measured piece has a family that builds it, and the table measures those pieces, no more', () => {
   assert.equal(ids.length, 434);
   for (const id of ids) {
+    const relief = propTable[id].relief;
+    if (relief)
+      assert.equal(relief.tops.length, relief.grid[0] * relief.grid[1], `${id}: a relief's nodes fill its grid`);
+    if (relief) assert.ok(relief.grid[0] >= 2 && relief.grid[1] >= 2, `${id}: a relief's grid reads between nodes`);
+  }
+  for (const id of ids) {
     const role = PROP_ROLES.get(id);
     assert.ok(role, `${id}: a family`);
     assert.equal(typeof PROP_FAMILIES[role], 'function', `${id}: ${role} builds`);

@@ -1,7 +1,8 @@
-// The forged models came over whole, so this layer builds DFO's shapes to the bit. These SHA-256 hashes are DFO's
-// own Building Forge, Prop Forge and Room Kit run over the same tables: a building from every stretch of the table
-// and every kind of wing, a prop of every family, and pieces of the kit with doors, slopes and the big rooms. Each
-// hashes the positions, normals, UVs and indices as bytes, then the parts. A deliberate change to a shape re-pins it.
+// The forged models are DFO's, whole, so this layer must build DFO's shapes to the bit, and only bytes show that.
+// Each hash is what DFO's own Building Forge, Prop Forge or Room Kit builds from the same table: a building from
+// every stretch of the table and every kind of wing, a prop of every family, and pieces of the kit with doors,
+// slopes and the big rooms. It covers the positions, normals, UVs and indices as bytes, then the parts. A deliberate
+// change to a shape re-pins its hash.
 import { strict as assert } from 'node:assert';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';

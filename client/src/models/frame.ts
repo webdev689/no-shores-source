@@ -2,7 +2,7 @@
 // side or toward its door whichever way the piece stands.
 import type { Relief } from './tables.ts';
 import type { PartBuilder } from './parts.ts';
-import { cross, dot, minus, unit, type Vector } from './vector.ts';
+import { cross, dot, minus, swap, unit, type Vector } from './vector.ts';
 
 /** A box's extents and sizes: x along it, z across (its front +z), y up from its floor. */
 export type Frame = {
@@ -45,6 +45,15 @@ export const boxFrame = (box: { readonly min: readonly number[]; readonly max: r
 };
 
 export const clampTo = (value: number, low: number, high: number): number => Math.min(high, Math.max(low, value));
+
+/** Whether a point stands in the frame's box, give or take a centimetre. */
+export const inFrame = (point: readonly number[], fit: Frame): boolean =>
+  point[0] >= fit.x0 - 0.011 &&
+  point[0] <= fit.x1 + 0.011 &&
+  point[1] >= fit.y0 - 0.011 &&
+  point[1] <= fit.y1 + 0.011 &&
+  point[2] >= fit.z0 - 0.011 &&
+  point[2] <= fit.z1 + 0.011;
 
 /** How far `point` may run along `direction` and stay in the frame's box. */
 export function room(point: readonly number[], direction: readonly number[], fit: Frame): number {
@@ -125,7 +134,6 @@ const swapped = (fit: Frame): Frame => ({
   middleX: fit.middleZ,
   middleZ: fit.middleX,
 });
-const swap = (point: readonly number[]): Vector => [point[2], point[1], point[0]];
 /** Doors seen through `point` (a corner's map) and `normal` (a normal's). */
 const doorsSeen = (
   doors: readonly DoorCorners[],
@@ -181,13 +189,6 @@ export function behindDoor(
   { margin, above, deep }: { margin: number; above: number; deep: number },
 ): void {
   const { centre, n, across, up, width, height } = doorAxes(door);
-  const inBox = (point: readonly number[]): boolean =>
-    point[0] >= fit.x0 - 0.011 &&
-    point[0] <= fit.x1 + 0.011 &&
-    point[1] >= fit.y0 - 0.011 &&
-    point[1] <= fit.y1 + 0.011 &&
-    point[2] >= fit.z0 - 0.011 &&
-    point[2] <= fit.z1 + 0.011;
   const step = (point: readonly number[], direction: readonly number[], distance: number): Vector => [
     point[0] + direction[0] * distance,
     point[1] + direction[1] * distance,
@@ -210,7 +211,7 @@ export function behindDoor(
     const corners = [0, 1].flatMap((i) =>
       [0, 1].flatMap((j) => [0, 1].map((k) => step(step(step(origin, wide, i), tall, j), w, k))),
     );
-    if (corners.every(inBox)) {
+    if (corners.every((corner) => inFrame(corner, fit))) {
       add.block(picture, origin, wide, tall, w);
       return;
     }

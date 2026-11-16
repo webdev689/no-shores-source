@@ -7,6 +7,7 @@ import type { KitMeasure, KitTable, MeasuredDoor } from './tables.ts';
 import { boxFrame } from './frame.ts';
 import { TEXELS_PER_METRE, partBuilder } from './parts.ts';
 import { withDoors } from './doors.ts';
+import { dot } from './vector.ts';
 
 /** The skirting's height and how far it stands off its wall (m). */
 export const SKIRTING_M = [0.12, 0.02];
@@ -62,8 +63,6 @@ function mappingOf(side: number, corners: readonly number[][], picture: readonly
   // As one faces a wall, its right is up crossed with its normal: (normal z, 0, -normal x).
   const across = level ? [1, 0, 0] : [normal[2], 0, -normal[0]];
   const down = level ? [0, 0, 1] : [0, -1, 0];
-  const dot = (corner: readonly number[], axis: readonly number[]): number =>
-    corner[0] * axis[0] + corner[1] * axis[1] + corner[2] * axis[2];
   const acrossAt = corners.map((corner) => dot(corner, across)),
     downAt = corners.map((corner) => dot(corner, down));
   const [acrossLow, acrossHigh, downLow, downHigh] = [

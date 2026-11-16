@@ -4,7 +4,7 @@
 // a tent opens on a clean way in.
 import type { ForgedModel, ModelDoor, ModelPart, Point } from './model.ts';
 import type { MeasuredDoor } from './tables.ts';
-import { doorAxes, room, type DoorCorners, type Frame } from './frame.ts';
+import { doorAxes, inFrame, room, type DoorCorners, type Frame } from './frame.ts';
 import { partBuilder, type PartBuilder } from './parts.ts';
 import { cross, dot, minus, type Vector } from './vector.ts';
 
@@ -150,10 +150,6 @@ function dressDoor(
         [0, 0],
       ],
     );
-  const lowest = [fit.x0, fit.y0, fit.z0],
-    highest = [fit.x1, fit.y1, fit.z1];
-  const inBox = (corner: readonly number[]): boolean =>
-    corner.every((value, axis) => value >= lowest[axis] - 0.011 && value <= highest[axis] + 0.011);
   // Back into the piece level with the ground, so a door that leans back at the floor still has a frame behind it.
   const level =
     Math.hypot(n[0], n[2]) > 0.3
@@ -187,7 +183,7 @@ function dressDoor(
         ),
       ),
     );
-    if (!eight.every(inBox)) return;
+    if (!eight.every((corner) => inFrame(corner, fit))) return;
     parts.block(side, origin, acrossSlab, upSlab, w);
   };
   slab(
