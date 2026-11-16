@@ -102,17 +102,22 @@ pub const FIGHT_LEGS: [[f64; 8]; 9] = [
 fn a_fight_steps_to_its_pinned_fingerprint() {
     let mut last = begun(7);
     let mut time = 1000.0;
-    let mut kinds = Vec::new();
+    let (mut kinds, mut prints) = (Vec::new(), Vec::new());
     for leg in FIGHT_LEGS {
         last = answer(&fight_step_json(step_request(leg, time).as_bytes()));
         assert!(last.get("error").is_none(), "{last}");
         kinds.extend(
             last["events"].as_array().into_iter().flatten().map(|event| format!("{}{}", event["kind"], event["ship"])),
         );
+        prints.push(last["fingerprint"].as_str().unwrap_or("").to_string());
         time += leg[7] / 60.0;
     }
     let fired = kinds.iter().filter(|kind| kind.as_str() == r#""muzzle"0"#).count();
     assert_eq!(fired, 6, "two broadsides of three, the third refused braced or loading: {kinds:?}");
     assert_eq!(last["player"]["guns"]["load"], "grape");
-    assert_eq!(last["fingerprint"], "567b4bddda81f749");
+    // Each leg's: the balls aloft at a leg's end are in it.
+    assert_eq!(
+        prints.join(" "),
+        "a5c0d39eeb17893c 74506578b683e8a2 aeaf36b6ca60c8cc 9aff61ffcc9e671a 8cb013d3ab3702b7 7b58f4772709c29e 5615a0179dc1b60e 53b0562d4c9edb37 567b4bddda81f749"
+    );
 }

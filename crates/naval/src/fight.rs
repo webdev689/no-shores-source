@@ -203,12 +203,16 @@ impl Fight {
         }
     }
 
-    /// The side the player's look lays, as her guns would fire it now, if a side bears there.
+    /// The side the player's look lays, as her guns would fire it now, if a side bears there: `range_m` out along
+    /// her fire from her middle, so from her guns' middle less the way they stand out from it.
     #[must_use]
     pub fn laid(&self, aim: &Aim) -> Option<Lay> {
         let side = side_for_bearing(aim.bearing_deg)?;
         let player = &self.player;
-        Some(lay(&player.ship, &player.pose, &SLOOP_ARMS, side, player.guns.load, aim.range_m.max(0.0), None))
+        let (ship, load) = (&player.ship, player.guns.load);
+        let square = lay(ship, &player.pose, &SLOOP_ARMS, side, load, 0.0, None);
+        let out = (square.centre[0] - ship.x) * square.dir[0] + (square.centre[1] - ship.y) * square.dir[1];
+        Some(lay(ship, &player.pose, &SLOOP_ARMS, side, load, (aim.range_m - out).max(0.0), None))
     }
 
     /// The player's lay, or why her guns will not fire it.

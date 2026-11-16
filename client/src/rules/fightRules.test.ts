@@ -61,13 +61,19 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   const rules = await openSquare();
   let view = rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000);
   let time = 1000;
+  const prints: string[] = [];
   for (const leg of FIGHT_LEGS) {
     const ticks = leg[7] ?? 0;
     view = rules.fightStep(ordersOf(leg), time, ticks);
+    prints.push(view.fingerprint);
     time += ticks / 60;
   }
   assert.equal(view.player.guns.load, 'grape');
-  assert.equal(view.fingerprint, '567b4bddda81f749');
+  assert.equal(
+    prints.join(' '),
+    'a5c0d39eeb17893c 74506578b683e8a2 aeaf36b6ca60c8cc 9aff61ffcc9e671a 8cb013d3ab3702b7 7b58f4772709c29e ' +
+      '5615a0179dc1b60e 53b0562d4c9edb37 567b4bddda81f749',
+  );
 });
 
 test('the fight door refuses a step with no fight and a look past its reach', async () => {

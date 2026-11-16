@@ -167,3 +167,12 @@ fn the_rest_of_the_volley_that_made_her_strike_cannot_sink_her() {
     fight.strike(&hit(100.0), &mut events);
     assert_eq!((fight.captain.damage.state, fight.captain.damage.hull), (State::Struck, 1.0));
 }
+
+#[test]
+fn a_look_lays_its_range_out_from_her_middle() {
+    let fight = alongside(500.0, Temper::Wary);
+    let laid = fight.laid(&Aim { bearing_deg: 90.0, range_m: 60.0 }).map_or(f64::NAN, |lay| lay.elevation);
+    let from_guns =
+        lay(&fight.player.ship, &fight.player.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, 60.0 - 1.1093, None);
+    assert!((laid - from_guns.elevation).abs() < 1e-3, "her guns stand about 1.1 m out from her middle");
+}
