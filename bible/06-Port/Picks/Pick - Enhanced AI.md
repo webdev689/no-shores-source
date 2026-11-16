@@ -46,4 +46,4 @@ enhanced ai from dfo as it handles enemies and build upon it to utilize the new 
 
 ## Our version
 
-[[Combat]] and [[Foes]].
+[[Combat]], [[Foes]] and [[Navmesh]].
