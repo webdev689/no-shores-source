@@ -641,6 +641,9 @@ def _():
     key = os.environ.get('CONTEXT7_API_KEY', '')
     if len(key) < 8:
         return out('WARN', 'context7 key', 'no CONTEXT7_API_KEY in this environment; nothing to scan')
+    # The proxy's stand-in is no secret, and transcripts quote it: only a real key is looked for on disk.
+    if key == 'proxy-injected':
+        return out('PASS', 'context7 key', 'key held by the network proxy; the variable has only its placeholder')
     roots = [CLAUDE_JSON, HOME + '/.claude', HOME + '/.config', HOME + '/.serena', HOME + '/.claude-mem/settings.json', WT_ROOT + '/reports',
              '/tmp/claude-0/logs', KIT, SHARED, '/tmp/claude/memory', REPO + '/.serena',
              '/tmp/headroom-proxy.log']
