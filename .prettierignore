@@ -10,3 +10,4 @@ tools/claude-toolkit/
 tools/forge/
 content/
 .wrangler/
+.superpowers/
