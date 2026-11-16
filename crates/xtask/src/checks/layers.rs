@@ -12,7 +12,8 @@ pub struct Layer {
 pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "network", may_import: &["rules"] },
-    Layer { name: "editor", may_import: &["rules", "water"] },
+    Layer { name: "editor", may_import: &["rules", "water", "terrain"] },
+    Layer { name: "terrain", may_import: &["rules", "water"] },
     Layer { name: "water", may_import: &["rules"] },
     Layer { name: "forge", may_import: &[] },
     Layer { name: "testground", may_import: &["rules", "network", "forge", "editor", "firstperson"] },

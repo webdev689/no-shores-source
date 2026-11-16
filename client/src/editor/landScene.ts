@@ -3,7 +3,7 @@ import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
-import { clipmapLevels, finestSpacing } from './clipmap.ts';
+import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import {
   CLOSE_RANGE_M,
   closeUpData,
@@ -14,11 +14,11 @@ import {
   shownExaggeration,
   walkStep,
 } from './closeUp.ts';
-import type { CloseGround } from './landClient.ts';
+import type { CloseGround } from '../terrain/landClient.ts';
 import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
-import { type TerrainData, type TerrainOptions, TerrainView } from './terrainView.ts';
+import { type TerrainData, type TerrainOptions, TerrainView } from '../terrain/terrainView.ts';
 
 /** Where the close-up's exact ground comes from. */
 export interface GroundSource {

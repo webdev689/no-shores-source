@@ -10,7 +10,7 @@ code:
   - client/src/rules/worldRules.ts#startWorldRules
   - crates/world-wasm/src/lib.rs#check_layout
   - client/src/editor/landEditor.ts#startLandEditor
-  - client/src/editor/terrainView.ts#TerrainView
+  - client/src/terrain/terrainView.ts#TerrainView
   - vite.config.ts#worldFiles
   - .github/workflows/ci.yml
   - .github/workflows/pages.yml

@@ -3,7 +3,13 @@ import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CLIPMAP_LEVELS, CLIPMAP_QUADS, type ClipLevel } from './clipmap.ts';
-import type { CellRect } from './landMask.ts';
+/** A rectangle of whole cells, right and bottom exclusive. */
+export interface CellRect {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
 
 /**
  * One landmass window's terrain, one value a cell, row by row from the north-west. Heights in metres: land at 1 or

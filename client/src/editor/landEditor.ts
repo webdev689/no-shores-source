@@ -3,7 +3,7 @@ import { startGpu } from '../gpu.ts';
 import type { Brush } from '../rules/landRules.ts';
 import { type Camera, pan, screenToWorld, zoomAt } from './camera.ts';
 import { downloadJson } from './dom.ts';
-import { startLandWorker } from './landClient.ts';
+import { startLandWorker } from '../terrain/landClient.ts';
 import { drawScaleCues, shownExaggeration } from './closeUp.ts';
 import { BRUSHES, buildLandPanel, DRAWN, LAND_TOOLS, type LandTool } from './landPanel.ts';
 import { LandSession } from './landSession.ts';
@@ -12,7 +12,7 @@ import { LandScene } from './landScene.ts';
 import { fitOrbit, type Orbit, panOrbit, pickTerrain, rayAt, rotateOrbit, zoomOrbit } from './orbit.ts';
 import { drawDraft, nextId, placeAt, snapPoint, type Spot } from './placeDrawing.ts';
 import { fitWindow, heightAt, ReliefView } from './reliefView.ts';
-import type { TerrainData } from './terrainView.ts';
+import type { TerrainData } from '../terrain/terrainView.ts';
 
 /** The Land mode: the land the generator makes from the painted coasts, shaped by the owner's brushes. */
 export interface LandEditor {

@@ -1,5 +1,5 @@
 import type { Brush, LandPatch, LandView } from '../rules/landRules.ts';
-import type { CloseGround, LandWorker } from './landClient.ts';
+import type { CloseGround, LandWorker } from '../terrain/landClient.ts';
 import type { LandState } from './landPanel.ts';
 import { markCells, type Places } from './marks.ts';
 

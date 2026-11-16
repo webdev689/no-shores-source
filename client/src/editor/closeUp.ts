@@ -1,7 +1,7 @@
 import type { GroundPatch } from '../rules/landRules.ts';
 import { type Orbit, viewProjection } from './orbit.ts';
 import { splineAt } from '../water/spline.ts';
-import type { CloseUpData } from './terrainView.ts';
+import type { CloseUpData } from '../terrain/terrainView.ts';
 
 /** Under this distance from its target, the 3D camera shows the exact ground around the target. */
 export const CLOSE_RANGE_M = 8000;

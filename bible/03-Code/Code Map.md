@@ -17,6 +17,7 @@ decision, made in the same change as its entry here.
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up |
+| `client/src/terrain/` | The terrain layer: the land drawn in rings round the eye on WebGPU, and the land crate's worker, for the [[World Editor]] and the game |
 | `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
@@ -56,8 +57,8 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
-Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `editor`
-(imports `rules` and `water`), `testground` (imports `rules`, `network`, `forge`, `firstperson`, and the editor's
+Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `terrain`
+(imports `rules` and `water`), `editor` (imports `rules`, `water` and `terrain`), `testground` (imports `rules`, `network`, `forge`, `firstperson`, and the editor's
 camera and panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork
 any layer may import.
 
