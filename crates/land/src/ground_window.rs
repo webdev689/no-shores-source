@@ -3,6 +3,7 @@
 
 use super::{BANK_M, CoursePoint, Ground, SHOULDER_M, TOWN_EDGE_M, TownPad};
 use crate::grid::Grid;
+use crate::pads::Pads;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
@@ -16,6 +17,8 @@ pub(super) struct SavedGround {
     towns: Vec<TownPad>,
     coast: Grid,
     across: Grid,
+    #[serde(default)]
+    pads: Pads,
     seed: u32,
 }
 
@@ -24,7 +27,7 @@ impl TryFrom<SavedGround> for Ground {
 
     /// A saved ground, refused unless every layer holds the land's cells, at least one, so sampling it never fails.
     fn try_from(saved: SavedGround) -> Result<Self, String> {
-        let SavedGround { land, lake_level, rivers, roads, towns, coast, across, seed } = saved;
+        let SavedGround { land, lake_level, rivers, roads, towns, coast, across, pads, seed } = saved;
         let shape = |grid: &Grid| (grid.width, grid.height, grid.first_column, grid.first_row, grid.data.len());
         let cells = land.width.checked_mul(land.height).filter(|&cells| cells > 0 && cells == land.data.len());
         if cells.is_none() || shape(&coast) != shape(&land) || shape(&across) != shape(&land) {
@@ -33,7 +36,8 @@ impl TryFrom<SavedGround> for Ground {
         if lake_level.len() != land.data.len() {
             return Err("the lake levels must hold one level for each cell".to_owned());
         }
-        let mut ground = Ground { land, lake_level, rivers, roads, towns, coast, across, seed, index: BTreeMap::new() };
+        let mut ground =
+            Ground { land, lake_level, rivers, roads, towns, coast, across, pads, seed, index: BTreeMap::new() };
         ground.index_courses();
         Ok(ground)
     }
@@ -78,6 +82,7 @@ impl Ground {
             towns: self.towns.iter().filter(|town| near(town.bounds, TOWN_EDGE_M)).cloned().collect(),
             coast: cut(&self.coast.data),
             across: cut(&self.across.data),
+            pads: self.pads.within(west, north, east, south),
             seed: self.seed,
             index: BTreeMap::new(),
         };

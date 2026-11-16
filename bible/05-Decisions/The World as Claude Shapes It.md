@@ -23,3 +23,4 @@ owner can change any of them.
 | A world boss's section | About 500 m across | An arena with room to circle |
 | Past a section's edge | "Return to the area" and a 10 s count; back inside ends it; at 0, or 60 m past the edge, the player dies | Destiny 1's out-of-bounds warning |
 | Respawning | Offered 4 s after death, at the section's nearest spawn | Destiny 1's patrol respawn |
+| The steepest ground walked | 50° (1.19 m of rise a metre); steeper is a wall to slide along | Hills and banks walk; cliffs stop a body, as Destiny 1's do |

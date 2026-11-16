@@ -6,6 +6,7 @@
 use crate::edits::Edits;
 use crate::exact::{clamp, fbm, lerp, seed_of, smooth};
 use crate::grid::{D8_X, D8_Y, Grid, catmull};
+use crate::pads::Pads;
 use crate::relief::{COAST_REACH_M, LAND_FLOOR_M, SEA_CEILING_M};
 use crate::water::{River, river_depth_m, river_width_m};
 use serde::{Deserialize, Serialize};
@@ -76,6 +77,8 @@ pub struct Ground {
     pub coast: Grid,
     /// Each cell's height carried over the coast from the other side: a land cell's seabed, a sea cell's land.
     pub across: Grid,
+    /// The levels a city sets its terraces to, over everything else where they lie.
+    pub pads: Pads,
     seed: u32,
     #[serde(skip)]
     index: CourseIndex,
@@ -232,6 +235,7 @@ impl Ground {
             coast: coast.clone(),
             across: carried(land, coast),
             seed: seed_of(seed, "grain"),
+            pads: Pads::default(),
             index: BTreeMap::new(),
         };
         for town in &edits.towns {
@@ -413,6 +417,9 @@ impl Ground {
     /// The ground's height at a world point, metres: what a body stands on.
     #[must_use]
     pub fn height_at(&self, x: f64, y: f64) -> f64 {
+        if let Some(level) = self.pads.level_at(x, y) {
+            return level;
+        }
         let ground = self.padded(x, y);
         if let Some((river, distance)) = self.nearest(x, y, false) {
             let half = river.width / 2.0;
@@ -450,6 +457,9 @@ impl Ground {
     /// What water stands at a world point.
     #[must_use]
     pub fn water_at(&self, x: f64, y: f64) -> WaterAt {
+        if self.pads.level_at(x, y).is_some() {
+            return WaterAt::Dry;
+        }
         if let Some((river, distance)) = self.nearest(x, y, false)
             && distance < river.width / 2.0
         {
