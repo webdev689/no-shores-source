@@ -185,6 +185,12 @@ export class FirstPerson {
     return this.hands.swing;
   }
 
+  /** Ends any swing or draw under way at once, with no blow and no arrow: the fight's rules ended it (a dodge, a
+   *  flinch, a guard, a draw let go too soon to shoot). */
+  cancel(): void {
+    this.hands.cancel();
+  }
+
   /** Moves the first person on by `seconds`: the swings and shots, the cast, the bob, the chain, the climb, the ride and
    *  the held things. Answers the blow that lands now and whether a shot leaves, and from which hand, so the figure seen
    *  from outside can match them. */

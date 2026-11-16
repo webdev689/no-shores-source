@@ -48,3 +48,13 @@ test('inputs are numbered 1, 2, 3 and so on', () => {
   const prediction = new Prediction<Controls>();
   assert.deepEqual([prediction.next(still), prediction.next(still), prediction.next(still)], [1, 2, 3]);
 });
+
+test('a room that takes nothing for 4 s leaves at most 240 inputs waiting, the newest', () => {
+  const prediction = new Prediction<number>();
+  for (let tick = 1; tick <= 300; tick += 1) prediction.next(tick);
+  assert.equal(prediction.waitingCount, 240);
+  assert.equal(
+    prediction.corrected(0, 0, (sum, ask) => sum + ask),
+    (61 + 300) * 120,
+  );
+});

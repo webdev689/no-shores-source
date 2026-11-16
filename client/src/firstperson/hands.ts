@@ -125,6 +125,15 @@ export class Hands {
     for (const arm of this.arms) arm.melee?.pose(shown);
   }
 
+  /** Ends every swing or draw under way at once, with no blow and no arrow: the fight's rules ended it. */
+  cancel(): void {
+    for (const arm of this.arms) {
+      if (!arm.melee?.busy) continue;
+      arm.melee.cancel();
+      if (this.last === arm.hand) this.lastEnd = this.clock;
+    }
+  }
+
   /** Moves the hands on by `seconds` with this frame's button, holding as `plan` says (null: nothing in hand). */
   update(seconds: number, input: AttackInput, plan: HandsPlan | null, motion: { running: boolean; stride: number }) {
     this.clock += seconds;
@@ -225,12 +234,19 @@ export class Hands {
     return lastArm && busy(lastArm) ? 0 : this.clock - this.lastEnd;
   }
 
-  /** A pair takes turns: a blow or a shot at a time. A pull the law gives a gun still reloading falls to the blade. */
+  /** A pair takes turns: a blow or a shot at a time. A pull the law gives a gun still reloading falls to the blade. A
+   *  press while a blow's follow-through still plays ends it and throws the next, as a lone weapon's strike starts
+   *  again. */
   private turns(seconds: number, input: AttackInput): HandsEvents {
     let events = NOTHING;
     for (const arm of [...this.arms]) {
       const next = this.advance(arm, seconds);
       if (next.hand) events = next;
+    }
+    const following = this.arms.find((arm) => arm.melee?.followingThrough);
+    if (following && input.attackPressed && !this.arms.some((arm) => arm !== following && busy(arm))) {
+      following.melee?.cancel();
+      this.lastEnd = this.clock;
     }
     if (this.arms.some(busy) || !(input.attackPressed || input.attackHeld)) return events;
     const named = strikeHandOf(this.last, this.sinceLast);

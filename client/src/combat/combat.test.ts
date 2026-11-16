@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { project } from './hud.ts';
 import { MARK_FLOATS, type TelegraphMark, marksMesh } from './marks.ts';
+import { SHAPES } from '../rules/fighters.ts';
 
 const lunge = (elapsed: number, iron: boolean): TelegraphMark => ({
   kind: 'telegraph',
@@ -43,4 +44,17 @@ test('a point projects through the camera onto the canvas, and nothing behind it
   assert.deepEqual(project(identity, [1, 1, 0.5], 800, 600), { x: 800, y: 0 });
   const behind = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1]);
   assert.equal(project(behind, [0, 0, 0], 800, 600), null);
+});
+
+test('an iron blow’s edge is drawn twice, the second inside the first: its shape says iron, not its colour alone', () => {
+  for (const shape of SHAPES) {
+    const mark = (iron: boolean) => marksMesh([{ ...lunge(20, iron), shape, ahead: 3 }], []).length;
+    assert.ok(mark(true) > mark(false), shape);
+  }
+  // A lunge's lane lies 0.6 m either side of its line, 2 m south; its iron edge again 0.2 m in.
+  const iron = marksMesh([lunge(20, true)], []);
+  const asides = new Set<number>();
+  for (let index = 0; index < iron.length; index += MARK_FLOATS)
+    asides.add(Math.round(Math.abs((iron[index + 1] ?? 0) - 2) * 100) / 100);
+  assert.ok(asides.has(0.6) && asides.has(0.4), [...asides].join(' '));
 });

@@ -137,3 +137,51 @@ test('a swing and a shot report how far through them they are, for the figure se
   bow.update(1, { attackHeld: true, attackPressed: false, attackReleased: false });
   assert.equal(bow.progress, 0.5);
 });
+
+/** Steps a machine through `seconds` at 60 frames a second, pressed on each tick the fight's rules begin a swing (every
+ *  `every` ticks), and counts the blows it lands. */
+function blowsWhenRulesBegin(machine: WeaponMachine, every: number, seconds: number): number {
+  let blows = 0;
+  for (let tick = 0; tick < seconds * 60; tick += 1) {
+    const begun = tick % every === 0;
+    if (machine.update(1 / 60, { attackHeld: false, attackPressed: begun, attackReleased: false }).blow) blows += 1;
+  }
+  return blows;
+}
+
+test('a swing the rules begin while the last strike follows through starts again: a mace held 20 s lands 20 blows', () => {
+  // The rules end a mace's swing on its 61st tick; its five strike frames last 61.5.
+  assert.ok(5 * swingFrameSeconds('mace') * 60 > 61);
+  assert.equal(blowsWhenRulesBegin(new WeaponMachine('mace', always('down')), 61, 20), 20);
+});
+
+test('a press before the blow lands does not start the strike again', () => {
+  const machine = new WeaponMachine('sword', always('down'));
+  machine.update(0, press);
+  machine.update(swingFrameSeconds('sword') * 1.5, none);
+  machine.update(0, press);
+  assert.deepEqual([machine.frame, machine.followingThrough], [1, false]);
+});
+
+test('a strike or a draw cancelled ends at once, with no blow and no arrow, and the weapon at rest', () => {
+  const sword = new WeaponMachine('sword', always('right'));
+  sword.update(0, press);
+  sword.cancel();
+  assert.deepEqual([sword.busy, sword.record, sword.frame, sword.progress], [false, 0, 0, null]);
+  assert.equal(
+    run(sword, 6, swingFrameSeconds('sword'), none).some((step) => step.events.blow),
+    false,
+  );
+  sword.pose({ record: 3, frame: 2 });
+  assert.deepEqual([sword.record, sword.frame], [3, 2], 'a guard takes the weapon at once');
+  const bow = new WeaponMachine('bow');
+  bow.update(0, press);
+  run(bow, 2, BOW_TICK, hold);
+  bow.cancel();
+  assert.equal(
+    run(bow, 8, BOW_TICK, none).some((step) => step.events.loose),
+    false,
+  );
+  bow.update(0, press);
+  assert.equal(bow.busy, true, 'with no shot, no reload');
+});

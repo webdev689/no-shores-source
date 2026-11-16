@@ -1,7 +1,8 @@
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import { edgeArrow, threatens, wordOf } from './cues.ts';
 
-/** A foe as the display marks it: its number, its kind's name and its glance. */
+/** A foe as the display marks it: its number, its kind's name and its glance (its place as it is drawn). */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
@@ -9,7 +10,9 @@ export interface MarkedFoe {
 }
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
- *  camera projects a point, the canvas's size in CSS pixels, and the fight's events since the last frame. */
+ *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
+ *  is the player's own eyes, whether a swing or a dodge was pressed since the last frame, and why the link to the room
+ *  was lost (null while it holds). */
 export interface HudFrame {
   readonly own: FighterView | null;
   readonly foes: readonly MarkedFoe[];
@@ -19,68 +22,41 @@ export interface HudFrame {
   readonly height: number;
   readonly events: readonly FightEvent[];
   readonly player: number;
+  readonly firstPerson: boolean;
+  readonly pressed: boolean;
+  readonly lost: string | null;
 }
 
-/** The room's events by their numbers (crates/room/src/judging.rs EventKind), and how a blow was struck (How). */
-const EVENT = {
-  hit: 1,
-  blocked: 2,
-  parried: 3,
-  guardBroken: 4,
-  dodged: 5,
-  perfect: 6,
-  staggered: 7,
-  killed: 8,
-  feinted: 10,
-};
-const HOW = { riposte: 2, counter: 3, iron: 5 };
 /** Seconds a word floats over where it happened, and how far it rises in that time, in CSS pixels. */
 const WORD_SECONDS = 1.1;
 const WORD_RISE = 36;
+/** In first person, a word on the player stands this far below the crosshair, the next ones each a line lower. */
+const OWN_WORD_BELOW = 56;
+const OWN_WORD_LINE = 22;
 /** A foe's bar shows over it this near, once it has been struck. */
 const BAR_NEAR_M = 16;
+/** A foe winding up an iron blow this near is told to be dodged. */
+const IRON_NEAR_M = 12;
 /** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
 const RESPAWN_TICKS = 240;
+/** How long the stamina bar flashes for a swing or a dodge asked with none, and the screen's edge for a blow taken. */
+const FLASH_SECONDS = 0.45;
+/** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels. */
+const ARROW_INSET = 28;
 
-/** Where a point falls on the canvas in CSS pixels, or null behind the camera. */
-export function project(matrix: Float32Array, point: readonly [number, number, number], width: number, height: number) {
+/** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
+function clipOf(matrix: Float32Array, point: readonly [number, number, number]): [number, number, number] {
   const [x, y, z] = point;
   const component = (row: number) =>
     (matrix[row] ?? 0) * x + (matrix[4 + row] ?? 0) * y + (matrix[8 + row] ?? 0) * z + (matrix[12 + row] ?? 0);
-  const w = component(3);
-  if (w <= 1e-6) return null;
-  return { x: ((component(0) / w + 1) / 2) * width, y: ((1 - component(1) / w) / 2) * height };
+  return [component(0), component(1), component(3)];
 }
 
-/** A word for what an event came to, from whose side, and its colour's class; null for one nothing is said of. */
-function wordOf(event: FightEvent, player: number): { text: string; tone: string } | null {
-  const mine = event.striker === player;
-  switch (event.kind) {
-    case EVENT.hit: {
-      const amount = Math.max(1, Math.round(event.amount));
-      if (event.how === HOW.riposte) return { text: `Riposte ${amount}`, tone: 'great' };
-      if (event.how === HOW.counter) return { text: `Counter ${amount}`, tone: 'great' };
-      return { text: String(amount), tone: mine ? 'dealt' : 'taken' };
-    }
-    case EVENT.blocked:
-      return { text: 'Blocked', tone: 'plain' };
-    case EVENT.parried:
-      return { text: mine ? 'Parried' : 'Parry!', tone: mine ? 'taken' : 'great' };
-    case EVENT.guardBroken:
-      return { text: 'Guard broken', tone: 'taken' };
-    case EVENT.dodged:
-      return { text: 'Dodged', tone: 'plain' };
-    case EVENT.perfect:
-      return { text: 'Perfect dodge!', tone: 'great' };
-    case EVENT.staggered:
-      return { text: 'Staggered', tone: mine ? 'great' : 'taken' };
-    case EVENT.killed:
-      return { text: 'Slain', tone: 'great' };
-    case EVENT.feinted:
-      return { text: 'Feint', tone: 'plain' };
-    default:
-      return null;
-  }
+/** Where a point falls on the canvas in CSS pixels, or null behind the camera. */
+export function project(matrix: Float32Array, point: readonly [number, number, number], width: number, height: number) {
+  const [clipX, clipY, clipW] = clipOf(matrix, point);
+  if (clipW <= 1e-6) return null;
+  return { x: ((clipX / clipW + 1) / 2) * width, y: ((1 - clipY / clipW) / 2) * height };
 }
 
 function element(tag: string, className: string, parent: HTMLElement): HTMLElement {
@@ -105,6 +81,14 @@ class Bar {
   }
 }
 
+/** A word floating up and fading: over a place in the world, or (null) at the player's own spot in first person. */
+interface Word {
+  readonly element: HTMLElement;
+  readonly at: readonly [number, number, number] | null;
+  readonly line: number;
+  age: number;
+}
+
 /** The fight's display over the canvas. */
 export class Hud {
   private readonly health: Bar;
@@ -116,11 +100,18 @@ export class Hud {
   private readonly targetPoise: Bar;
   private readonly mark: HTMLElement;
   private readonly over: HTMLElement;
+  private readonly hurt: HTMLElement;
   private readonly veil: HTMLElement;
   private readonly bars = new Map<number, Bar>();
-  private words: { readonly element: HTMLElement; readonly at: readonly [number, number, number]; age: number }[] = [];
+  private readonly arrows = new Map<number, HTMLElement>();
+  /** The foes whose iron wind-up the player has been told of, until it ends. */
+  private readonly ironTold = new Set<number>();
+  private words: Word[] = [];
+  private staminaFlash = 0;
+  private hurtFlash = 0;
 
   constructor(root: HTMLElement) {
+    this.hurt = element('div', 'hurt', root);
     const own = element('div', 'own', root);
     this.health = new Bar(own, 'health');
     this.stamina = new Bar(own, 'stamina');
@@ -139,13 +130,28 @@ export class Hud {
     this.health.set(own ? own.health / Math.max(1, own.healthMax) : 1);
     this.stamina.set(own ? own.stamina / 100 : 1);
     this.poise.set(own ? own.poise / Math.max(1, own.poiseMax) : 0);
+    this.flash(frame, seconds);
     const dead = own?.action.kind === 'dead' ? own.action : null;
-    this.veil.hidden = !dead;
-    if (dead)
+    this.veil.hidden = !dead && frame.lost === null;
+    if (frame.lost !== null) this.veil.textContent = `The link to the room was lost: ${frame.lost}.`;
+    else if (dead)
       this.veil.textContent = `You fell. Standing again in ${Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60)} s`;
     this.markTarget(frame);
     this.markFoes(frame);
+    this.pointAtThreats(frame);
     this.floatWords(frame, seconds);
+  }
+
+  /** The stamina bar flashes for a swing or a dodge asked with no stamina; the screen's edge, red, for a blow taken. */
+  private flash(frame: HudFrame, seconds: number): void {
+    const { own } = frame;
+    if (frame.pressed && own && own.stamina <= 0) this.staminaFlash = FLASH_SECONDS;
+    const struck = frame.events.some((event) => event.defender === frame.player && event.amount > 0);
+    if (struck) this.hurtFlash = FLASH_SECONDS;
+    this.staminaFlash = Math.max(0, this.staminaFlash - seconds);
+    this.hurtFlash = Math.max(0, this.hurtFlash - seconds);
+    this.stamina.root.classList.toggle('flash', this.staminaFlash > 0);
+    this.hurt.style.opacity = String(this.hurtFlash / FLASH_SECONDS);
   }
 
   /** The soft lock's target: a mark at its chest and its bars at the top. */
@@ -188,19 +194,57 @@ export class Hud {
     }
   }
 
-  /** The events' words, each rising and fading over where it happened. */
+  /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
+   *  ends. */
+  private pointAtThreats(frame: HudFrame): void {
+    const shown = new Set<number>();
+    for (const { id, view } of frame.foes) {
+      if (!threatens(view, frame.player)) continue;
+      const clip = clipOf(frame.matrix, [view.x, view.y, view.z + 1.1]);
+      const spot = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
+      if (!spot) continue;
+      shown.add(id);
+      const arrow = this.arrows.get(id) ?? element('div', 'arrow', this.over);
+      this.arrows.set(id, arrow);
+      arrow.style.transform = `translate(${spot.x}px, ${spot.y}px) rotate(${spot.angle}rad)`;
+    }
+    for (const [id, arrow] of this.arrows) {
+      if (shown.has(id)) continue;
+      arrow.remove();
+      this.arrows.delete(id);
+    }
+  }
+
+  private say(text: string, tone: string, place: Word['at']): void {
+    const made = element('div', `word ${tone}`, this.over);
+    made.textContent = text;
+    const line = place ? 0 : this.words.filter((word) => !word.at).length;
+    this.words.push({ element: made, at: place, line, age: 0 });
+  }
+
+  /** The events' words, each rising and fading over where it happened (in first person, those on the player below the
+   *  crosshair), and a warning over a foe near the player as it begins an iron wind-up. */
   private floatWords(frame: HudFrame, seconds: number): void {
     for (const event of frame.events) {
       const word = wordOf(event, frame.player);
       const place = frame.where(event.defender);
       if (!word || !place) continue;
-      const made = element('div', `word ${word.tone}`, this.over);
-      made.textContent = word.text;
-      this.words.push({ element: made, at: [place[0], place[1], place[2] + 1.9], age: 0 });
+      const own = frame.firstPerson && event.defender === frame.player;
+      this.say(word.text, word.tone, own ? null : [place[0], place[1], place[2] + 1.9]);
+    }
+    for (const { id, view } of frame.foes) {
+      const iron = view.action.kind === 'telegraph' && view.action.iron;
+      const near = !!frame.own && Math.hypot(view.x - frame.own.x, view.y - frame.own.y) <= IRON_NEAR_M;
+      if (!iron) this.ironTold.delete(id);
+      else if (near && !this.ironTold.has(id)) {
+        this.ironTold.add(id);
+        this.say('Dodge!', 'warn', [view.x, view.y, view.z + 2.3]);
+      }
     }
     this.words = this.words.filter((word) => {
       word.age += seconds;
-      const spot = project(frame.matrix, word.at, frame.width, frame.height);
+      const ownSpot = { x: frame.width / 2, y: frame.height / 2 + OWN_WORD_BELOW + word.line * OWN_WORD_LINE };
+      const spot = word.at ? project(frame.matrix, word.at, frame.width, frame.height) : ownSpot;
       if (word.age >= WORD_SECONDS || !spot) {
         word.element.remove();
         return false;
