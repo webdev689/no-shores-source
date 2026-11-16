@@ -10,6 +10,7 @@ pub mod grid;
 pub mod ground;
 pub mod heap;
 pub mod landmass;
+pub mod pads;
 pub mod places;
 pub mod relief;
 pub mod sea;

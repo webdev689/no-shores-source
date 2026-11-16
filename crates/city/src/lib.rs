@@ -25,15 +25,9 @@ use crate::solids::Solid;
 use crate::terraces::{Footing, footings, rounded};
 use land::exact::seed_of;
 use land::ground::Ground;
+pub use land::pads::Pad;
 use land::sites::City;
 use serde::Serialize;
-
-/// A level the land is set to over a rectangle: west, north, east, south, and the level, metres.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
-pub struct Pad {
-    pub bounds: [f64; 4],
-    pub level: f64,
-}
 
 /// What a cell is used for.
 #[derive(Debug, Clone, PartialEq, Serialize)]
