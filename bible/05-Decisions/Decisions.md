@@ -30,6 +30,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Naval, Living World, Professions and Synth Come Over Leaner]]
 - [[Come Sail Away's Sailing Comes Over]]
 - [[Ship Models Live on R2]]
+- [[The Sloop's Trim]]
 - [[The Server Gets Its Own Rules]]
 - [[The Co-Dev's Toolkit, Whole]]
 - [[Readers of Our Own Formats Only]]

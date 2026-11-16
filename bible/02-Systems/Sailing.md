@@ -60,10 +60,10 @@ Her model is a `.blend`. `tools/ships/export_ship.py` turns what Blender would r
 with her waterline, 20 bytes a vertex (position, normal, colour) and the corners' indices. Her frame is x to her
 bow, y to starboard and z up, mirrored from the model's as the world (east, south, up) is, so each face keeps the
 model's corner order and reaches the screen counter-clockwise, as the land's and the water's do. The export refuses a
-model whose faces are not wound outward. Her waterline is 0.4 m above the model's z = 0 (her keel reaches 0.2 m below
-it), where her beam nears its widest: 6.2 m long, 1.9 m across, her keel 0.6 m below it. The mesh lives on R2 under
-its hash ([[Generated Files Stay Out of Git]]); its key and her waterline are in `content/ships/ships.json`, and a
-test holds the rules' Sloop to that waterline. Her `.blend` is on R2 beside it ([[Ship Models Live on R2]]). Her
+model whose faces are not wound outward. Her waterline is 0.4 m above the model's z = 0, where her beam nears its
+widest ([[The Sloop's Trim]]): 6.2 m long, 1.9 m across, her keel 0.6 m below it. The mesh lives on R2 under its hash
+([[Generated Files Stay Out of Git]]); its key and her waterline are in `content/ships/ships.json`, and a test holds
+the rules' Sloop to that waterline. Her `.blend` is on R2 beside it ([[Ship Models Live on R2]]). Her
 cannons are the objects named `Cannon` in it, three a side, fore to aft.
 
 ## In the World Editor
