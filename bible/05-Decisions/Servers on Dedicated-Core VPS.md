@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-14
-status: in force
+status: replaced
+replaced_by: "[[Servers on Cloudflare]]"
 ---
 # Servers on Dedicated-Core VPS
+
+Replaced by [[Servers on Cloudflare]].
 
 > "VPS?"
 
