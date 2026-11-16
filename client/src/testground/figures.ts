@@ -53,6 +53,19 @@ export function groundPoint(
   return { x: origin[0] + direction[0] * along, y: origin[1] + direction[1] * along };
 }
 
+/** How far a figure's card stands in front of its body's centre, toward the eye: a body's radius in the movement
+ *  rules. A card is flat, so standing at the centre, a wall the body touches or a lip it is going over would cut it. */
+const CARD_FORWARD_M = 0.35;
+
+/** Where a figure's card stands: its body's centre (x, y) moved toward the eye by the body's radius, never past it. */
+export function cardStand(x: number, y: number, eyeX: number, eyeY: number): { x: number; y: number } {
+  const [toEyeX, toEyeY] = [eyeX - x, eyeY - y];
+  const length = Math.hypot(toEyeX, toEyeY);
+  if (length < 1e-6) return { x, y };
+  const forward = Math.min(CARD_FORWARD_M, length) / length;
+  return { x: x + toEyeX * forward, y: y + toEyeY * forward };
+}
+
 /** Where the eye of an orbit stands: back from its target along the bearing it looks, raised by its pitch. */
 export function eyeOf(orbit: {
   readonly targetX: number;
