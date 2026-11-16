@@ -20,14 +20,14 @@ pub struct Shot {
 }
 
 /// What each weapon's shot does: speed (0 for a ball, which arrives at once), damage at a full draw, weight against
-/// poise and guards, and the ticks to reload after it. A bow is drawn instead of reloaded.
+/// poise and guards, and the ticks before it shoots again: the first person's firing frames and its reload.
 #[must_use]
 pub fn shot_numbers(ranged: Ranged) -> (f64, f64, f64, u32) {
     match ranged {
-        Ranged::Bow => (45.0, 18.0, 0.5, 26),
-        Ranged::Crossbow => (55.0, 26.0, 0.6, 90),
-        Ranged::Pistolet => (0.0, 30.0, 0.8, 150),
-        Ranged::Thunderlock => (0.0, 45.0, 1.0, 210),
+        Ranged::Bow => (45.0, 18.0, 0.5, 37),
+        Ranged::Crossbow => (55.0, 26.0, 0.6, 96),
+        Ranged::Pistolet => (0.0, 30.0, 0.8, 114),
+        Ranged::Thunderlock => (0.0, 45.0, 1.0, 132),
     }
 }
 
@@ -35,7 +35,7 @@ pub fn shot_numbers(ranged: Ranged) -> (f64, f64, f64, u32) {
 pub const FALL: f64 = 6.0;
 pub const BALL_REACH: f64 = 60.0;
 /// A bow loosed sooner than this does not shoot; drawn this long it is at full power, and never less than this.
-pub const DRAW_LEAST: u32 = 24;
+pub const DRAW_LEAST: u32 = 12;
 pub const DRAW_FULL: u32 = 60;
 pub const DRAW_POWER_LEAST: f64 = 0.4;
 /// A flight is let go after this many ticks.

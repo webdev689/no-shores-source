@@ -105,10 +105,11 @@ half again after a perfect dodge), taking 1.3 times more and staggered by the fi
 
 ## Shots
 
-A bow is drawn while the button is held and loosed when it is let go: drawn under 0.4 s nothing leaves; at a second it
+A bow is drawn while the button is held and loosed when it is let go: drawn under 0.2 s nothing leaves; at a second it
 is at full power. An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block or a body
 stops it; a pistolet's or thunderlock's ball reaches 60 m along its line at once. A body is an upright cylinder 0.35 m
-wide and 1.8 m tall. A crossbow reloads in 1.5 s, a pistolet in 2.5, a thunderlock in 3.5.
+wide and 1.8 m tall. A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a pistolet's
+1.9, a thunderlock's 2.2.
 
 ## Limits
 
