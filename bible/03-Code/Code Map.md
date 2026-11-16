@@ -26,6 +26,7 @@ decision, made in the same change as its entry here.
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] and [[Movement]], loaded as WebAssembly, for any page that needs them |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
+| `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
@@ -62,10 +63,11 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
-Declared so far: `rules`, `forge` and `overworld` (each imports nothing), `network` and `water` (each imports
-`rules`), `terrain` (imports `rules` and `water`), `editor` (imports `rules`, `water` and `terrain`), `testground`
-(imports `rules`, `network`, `forge`, `firstperson`, and the editor's camera and panel helpers), `firstperson`
-(imports `forge`) and `game` (imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork
+Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and
+`water` (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`),
+`editor` (imports `rules`, `water` and `terrain`), `testground` (imports `rules`, `network`, `forge`, `firstperson`,
+and the editor's camera and panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`,
+`rules` and `water`) and `game` (imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork
 any layer may import.
 
 ## The Rust crates
