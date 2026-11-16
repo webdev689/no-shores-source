@@ -137,11 +137,14 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     let mut uses = vec![Use::Open; SIDE_CELLS * SIDE_CELLS];
     for row in 0..SIDE_CELLS {
         for column in 0..SIDE_CELLS {
-            if reserved(grid.bounds(column, row))
-                && matches!(cell_footings[index(column, row)], Footing::Level { .. } | Footing::Steep)
-            {
+            let bounds = grid.bounds(column, row);
+            if reserved(bounds) && matches!(cell_footings[index(column, row)], Footing::Level { .. } | Footing::Steep) {
                 uses[index(column, row)] = Use::Landmark;
-                cell_footings[index(column, row)] = Footing::Level { level };
+                // Under the landmark the cell rises to the platform; under the plaza it keeps its own level, the
+                // plaza's pad standing over it with its parapet for a wall, so the city is seen just past the edge.
+                if overlaps(bounds, base) {
+                    cell_footings[index(column, row)] = Footing::Level { level };
+                }
             }
         }
     }
@@ -156,7 +159,11 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     fill(&grid, &cell_footings, &mut uses, &footprint, blocks, seed);
     let mut works = walls::city_wall(ground, &footprint, &gate_rays);
     works.extend(walls::harbour_works(&footprint));
-    works.extend(walls::retaining_walls(ground, &grid, &cell_footings));
+    // The plaza's pad stands over the cells under it: no terrace wall of theirs may cross it.
+    works.extend(walls::retaining_walls(ground, &grid, &cell_footings).into_iter().filter(|wall| {
+        let [west, north, east, south, _, _] = wall.bounds();
+        !overlaps([west, north, east, south], social.bounds)
+    }));
     let mut pads: Vec<Pad> = Vec::new();
     let mut cells = Vec::new();
     for row in 0..SIDE_CELLS {

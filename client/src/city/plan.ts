@@ -66,8 +66,8 @@ export type CityPlan = {
 /** The climate and season a city's pictures are drawn in. */
 export type CityClimate = { readonly climate: Climate; readonly season: Season };
 
-/** Each continent's biome, as the layout names it, read as Daggerfall's climate sets: the tundra is the mountain's
- *  set under snow. */
+/** Each continent's biome, as the layout names it, read as Daggerfall's climate sets. The tundra takes the mountain's
+ *  set without snow: its coast lies below its snow line, and roofs under snow on bare ground read wrong. */
 const BIOME_CLIMATES: Readonly<Record<string, CityClimate>> = {
   'temperate-coast': { climate: 'temperate', season: 'summer' },
   woodland: { climate: 'temperate', season: 'summer' },
@@ -77,7 +77,7 @@ const BIOME_CLIMATES: Readonly<Record<string, CityClimate>> = {
   savanna: { climate: 'desert', season: 'summer' },
   rainforest: { climate: 'swamp', season: 'summer' },
   swamp: { climate: 'swamp', season: 'summer' },
-  tundra: { climate: 'mountain', season: 'winter' },
+  tundra: { climate: 'mountain', season: 'summer' },
 };
 
 /** The climate a continent's city is drawn in, from its biome; temperate for a biome the table does not know. */

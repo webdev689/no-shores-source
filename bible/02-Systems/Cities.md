@@ -79,7 +79,9 @@ city stands on it:
    sides, its section 2 m inside its edge and its four spawns along the landmark's side. Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
-   from Destiny 1's Tower. Only the cells under the landmark's base and the plaza are levelled to it.
+   from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep
+   their own levels and nothing is built, the plaza's pad standing over them, its parapet for a wall, with no terrace
+   wall crossing it.
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the
@@ -106,7 +108,7 @@ precision 3 km out.
 | highland, steppe | mountain |
 | desert, savanna | desert |
 | rainforest, swamp | swamp |
-| tundra | mountain, in winter |
+| tundra | mountain, without snow: its coast lies below its snow line |
 
 Each cell is drawn in a tier by the eye's distance to its middle at its level. Inside a band it is drawn in both
 tiers, and a 4 x 4 dither pattern gives each pixel to exactly one, so nothing pops.
@@ -173,4 +175,3 @@ SwiftShader at 1280 x 720:
   1 m lip at that cell's edge hide the city within about a kilometre; the harbour and the sea show.
 - Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.
 - The depth pull lets the city show through land within its share of the distance in front of it.
-- Rimeholt's city is under snow while its tundra below the snow line is not.
