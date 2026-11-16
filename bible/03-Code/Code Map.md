@@ -21,6 +21,7 @@ decision, made in the same change as its entry here.
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
+| `client/src/ships/` | The ships layer: a ship's mesh read from R2 and drawn at her pose on the water ([[Sailing]]) |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]'s messages, made from the same schema |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] and [[Movement]], loaded as WebAssembly, for any page that needs them |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
@@ -55,8 +56,8 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
-Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `editor`
-(imports `rules` and `water`), `testground` (imports `rules`, `forge`, `firstperson`, and the editor's camera and
+Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `ships`
+(imports `rules`, and the water's sun and samples), `editor` (imports `rules`, `water` and `ships`), `testground` (imports `rules`, `forge`, `firstperson`, and the editor's camera and
 panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork any layer
 may import.
 
