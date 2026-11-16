@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs Google's flatc, the FlatBuffers compiler the messages are made with, at the one pinned version, and
-# refuses the download unless its checksum matches. CI, the Pages build and a cloud session's setup run this.
-# Usage: bash tools/install-flatc.sh [folder on the PATH, default ~/.local/bin]
+# refuses the download unless its checksum matches. `npm run schema` runs it on its first use on a machine.
+# shortcut: Linux x86-64 only (CI and cloud sessions); add the Mac and Windows zips and their checksums for those.
+# Usage: bash tools/install-flatc.sh [folder, default ~/.local/bin]
 set -euo pipefail
 VERSION=25.12.19
 SHA256=50c1915deeeb714f2a05c8ec795bd1af898d251a62e2774067703b29188efc90

@@ -38,7 +38,6 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- A cloud session needs `flatc`: run `bash tools/install-flatc.sh` once ([[Toolchain]]).
 - The thin server, the rest of it: the room hosted on Cloudflare, ticking 60 times a second; each browser sending its controls over WebSocket, predicting its own player
   and corrected by the room; and two browsers seeing each other on the Test Ground
   ([[Gameplay Starts With the Shared Rules]]).

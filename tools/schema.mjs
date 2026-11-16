@@ -1,25 +1,24 @@
 // Makes the Rust and the TypeScript for every network message from the one schema, with flatc at the version
-// tools/install-flatc.sh pins, into generated/messages/, which git leaves out.
+// tools/install-flatc.sh pins, into generated/messages/, which git leaves out. The first run on a machine installs
+// that flatc into target/flatc/, so nothing needs installing by hand.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const SCHEMA = 'crates/protocol/messages.fbs';
 const OUT = 'generated/messages';
-const pinned = /^VERSION=(\S+)$/m.exec(readFileSync('tools/install-flatc.sh', 'utf8'))?.[1];
+const pinned = /^VERSION=(\S+)$/m.exec(readFileSync('tools/install-flatc.sh', 'utf8'))?.[1] ?? '';
+const flatc = join('target', 'flatc', pinned, 'flatc');
 
-let installed = '';
-try {
-  installed = execFileSync('flatc', ['--version'], { encoding: 'utf8' }).trim();
-} catch {
-  throw new Error('flatc is not installed: run `bash tools/install-flatc.sh` first');
-}
+if (!existsSync(flatc))
+  execFileSync('bash', ['tools/install-flatc.sh', join('target', 'flatc', pinned)], { stdio: 'inherit' });
+const installed = execFileSync(flatc, ['--version'], { encoding: 'utf8' }).trim();
 if (installed !== `flatc version ${pinned}`)
-  throw new Error(`flatc ${pinned} is pinned, but "${installed}" is installed`);
+  throw new Error(`flatc ${pinned} is pinned, but ${flatc} is "${installed}"`);
 
 rmSync(OUT, { recursive: true, force: true });
-execFileSync('flatc', ['--rust', '-o', join(OUT, 'rust'), SCHEMA]);
-execFileSync('flatc', ['--ts', '-o', join(OUT, 'ts'), SCHEMA]);
+execFileSync(flatc, ['--rust', '-o', join(OUT, 'rust'), SCHEMA]);
+execFileSync(flatc, ['--ts', '-o', join(OUT, 'ts'), SCHEMA]);
 // flatc's TypeScript imports its own files as .js; the client and Node's test runner import them as .ts.
 for (const name of readdirSync(join(OUT, 'ts'), { recursive: true, encoding: 'utf8' })) {
   if (!name.endsWith('.ts')) continue;
