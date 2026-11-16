@@ -22,7 +22,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an underwater
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
   the ground's own contours, and every edge of land and water at each pixel, at any distance.
-- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
+- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
 - Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the
@@ -30,11 +30,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   wherever it runs.
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
   ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room and its messages, with Google's `flatc` installed
-  by the schema step itself. On its pull request: the room hosted by a Cloudflare Durable Object in `server/`, the
-  browser's connection and prediction, and the Test Ground played together (`?room=`). Run locally with
-  `npm run server`; two browsers saw each other, and the room agreed with each prediction to the bit. Deployed on
-  Cloudflare with the owner's yes: `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`, measured live at 60
-  ticks a second.
+  by the schema step itself; the room hosted by a Cloudflare Durable Object in `server/`; the browser's connection and
+  prediction; and the Test Ground played together (`?room=<name>`). Deployed with the owner's yes:
+  `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`, measured live at 60 ticks a second, the room agreeing
+  with each prediction to the bit.
+- On `main` and deployed: other players shown in their own dress, with their weapon drawn, swings, casts, panel moves
+  and horse, checked live with two browsers on the deployed rooms.
+- On its pull request: the forge renders DFO's audit branch had and Overlook did not, published to R2
+  ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
 
 ## Waiting on the owner
 
@@ -46,7 +49,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- Step 1 of [[Gameplay Starts With the Shared Rules]] is done once the thin server's pull request merges. Step 2 is
+- Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2 is
   sailing, with DFO's sailing and combat systems: which of their rows come is the owner's to approve first
   ([[Porting from DFO]]).
 - The water's open ends ([[Water]]): a body for the walker, the weather driving the swell, and the breakers and

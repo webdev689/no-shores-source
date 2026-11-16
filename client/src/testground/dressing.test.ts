@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { figureOf, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
+import { dressFrom, figureOf, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
 
 const LAYERS = [
   'body',
@@ -89,4 +89,19 @@ test('metal layers take their set metal; garments their dye, plain until one is 
     shirt_long_v: ramp(2),
     casual_cloak_plated: ramp(1),
   });
+});
+
+test('another player’s dress is taken only when it has a dress’s shape', () => {
+  const dress = { body: 'male', race: 'human', tone: 0.3, outfit: { ...outfit, right: 'sword_iron', drawn: true } };
+  assert.deepEqual(dressFrom(JSON.stringify(dress)), dress);
+  for (const broken of [
+    'not json',
+    JSON.stringify({ ...dress, race: 'toString' }),
+    JSON.stringify({ ...dress, tone: '0.3' }),
+    JSON.stringify({ ...dress, outfit: { ...outfit, garments: 'shirt' } }),
+    JSON.stringify({ ...dress, outfit: { ...outfit, armour: { tail: 'iron' } } }),
+    JSON.stringify({ ...dress, outfit: { ...outfit, right: 'x'.repeat(65) } }),
+    JSON.stringify({ ...dress, outfit: { ...outfit, hair: { style: 'crop' } } }),
+  ])
+    assert.equal(dressFrom(broken), null, broken.slice(0, 60));
 });
