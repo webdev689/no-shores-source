@@ -45,5 +45,6 @@ DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over
 
 1. Sailing on the swell: one hull, boarded and sailed in the World Editor's 3D view. Built: [[Sailing]], with the
    owner's Sloop.
-2. The naval combat core: broadsides between the player's hull and one captain.
+2. The naval combat core: broadsides between the player's hull and one captain. Built: [[Naval Combat]], a pirate
+   captain on a second Sloop.
 3. Boarding, ramming, crew, quays and ports.

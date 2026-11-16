@@ -35,6 +35,17 @@ pub struct Helm {
 /// The rung her sails are set at.
 pub const SAILS_SET: i8 = 2;
 
+/// The shares of the way her sails and her oars may ask that her hurts leave her (naval combat's: canvas shot away,
+/// a wreck's oars); whole for a sound ship.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Pull {
+    pub sail: f64,
+    pub oars: f64,
+}
+
+/// A sound ship's pull.
+pub const WHOLE: Pull = Pull { sail: 1.0, oars: 1.0 };
+
 /// A vector's length, from a square root alone.
 #[must_use]
 pub fn length(east: f64, south: f64) -> f64 {
@@ -58,7 +69,8 @@ fn toward_vector(current: [f64; 2], target: [f64; 2], most: f64) -> [f64; 2] {
 }
 
 /// Degrees between her forward and where the wind blows to: 0 running before it, 180 in its eye.
-fn off_run_deg(forward: [f64; 2], wind: [f64; 2]) -> f64 {
+#[must_use]
+pub fn off_run_deg(forward: [f64; 2], wind: [f64; 2]) -> f64 {
     let cross = forward[0] * wind[1] - forward[1] * wind[0];
     let dot = forward[0] * wind[0] + forward[1] * wind[1];
     libm::atan2(cross.abs(), dot).to_degrees()
@@ -126,16 +138,33 @@ pub fn step_ship(
     time: f64,
     seconds: f64,
 ) -> Ship {
+    step_pulled(ship, helm, hull, wind, waters, time, seconds, WHOLE)
+}
+
+/// One step of a ship her hurts hold back: the way her sails or her oars ask is `pull`'s share of a sound ship's.
+#[must_use]
+#[allow(clippy::too_many_arguments, reason = "a sound ship's step and the pull her hurts leave")]
+pub fn step_pulled(
+    ship: &Ship,
+    helm: &Helm,
+    hull: &Hull,
+    wind: [f64; 2],
+    waters: &impl Waters,
+    time: f64,
+    seconds: f64,
+    pull: Pull,
+) -> Ship {
     let top = if hull.sails.is_empty() { 1 } else { SAILS_SET };
     let rung = ship.rung.saturating_add(helm.climb).clamp(-1, top);
     let was = length(ship.ahead, ship.abeam);
     let (forward, starboard) = frame(ship.heading);
     let sail_way = ship.sail_way.min(was);
-    let asked = if rung == SAILS_SET {
-        under_sail(helm, hull, was, forward, wind)
+    let (asked, share) = if rung == SAILS_SET {
+        (under_sail(helm, hull, was, forward, wind), pull.sail)
     } else {
-        under_oars(helm, hull, rung, was, sail_way)
+        (under_oars(helm, hull, rung, was, sail_way), pull.oars)
     };
+    let asked = Asked { way: [asked.way[0] * share, asked.way[1] * share], ..asked };
     let turn = toward(ship.turn, asked.turn, asked.turn_accel * seconds);
     let [ahead, abeam] = toward_vector([ship.ahead, ship.abeam], asked.way, asked.accel * seconds);
     let way = length(ahead, abeam);

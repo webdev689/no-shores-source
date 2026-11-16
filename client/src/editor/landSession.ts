@@ -1,3 +1,4 @@
+import type { FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Brush, Helm, LandPatch, LandView, ShipFloats } from '../rules/landRules.ts';
 import type { CloseGround, LandWorker, Sailed } from './landClient.ts';
 import type { LandState } from './landPanel.ts';
@@ -235,6 +236,21 @@ export class LandSession {
   /** A ship sailed over a landmass; null when another is open. */
   sail(id: string, ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed | null> {
     return this.then(async () => (this.openId === id ? this.worker.sail(ship, helm, time, ticks) : null));
+  }
+
+  /** A fight begun round a ship over a landmass; null when another is open. */
+  fightBegin(id: string, ship: ShipFloats, seed: number, time: number): Promise<FightView | null> {
+    return this.then(async () => (this.openId === id ? this.worker.fightBegin(ship, seed, time) : null));
+  }
+
+  /** The fight stepped by the player's orders; null when another landmass is open. */
+  fightStep(id: string, orders: FightOrders, time: number, ticks: number): Promise<FightView | null> {
+    return this.then(async () => (this.openId === id ? this.worker.fightStep(orders, time, ticks) : null));
+  }
+
+  /** The fight ended. */
+  fightEnd(): Promise<void> {
+    return this.then(() => this.worker.fightEnd());
   }
 
   /** Whether a landmass is the one open for strokes. */

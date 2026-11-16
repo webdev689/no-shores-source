@@ -1,3 +1,5 @@
+import { beginRequest, type FightOrders, type FightView, readFight, stepRequest } from './fightRules.ts';
+
 /** A river as the land generates it: its course through cell centres, source first, with the flow at each point. */
 export interface RiverCourse {
   readonly points: readonly (readonly [number, number])[];
@@ -144,6 +146,12 @@ export interface LandRules {
   patch(left: number, top: number, step: number, width: number, height: number): GroundPatch;
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
+  /** A fight begun round the ship: a pirate captain put to sea, every chance drawn from `seed`. */
+  fightBegin(ship: ShipFloats, seed: number, time: number): FightView;
+  /** The fight stepped `ticks` ticks from `time` by the player's orders. */
+  fightStep(orders: FightOrders, time: number, ticks: number): FightView;
+  /** The fight ended. */
+  fightEnd(): void;
 }
 
 interface LandExports {
@@ -158,6 +166,9 @@ interface LandExports {
   land_sample(address: number, length: number): bigint;
   land_patch(address: number, length: number): bigint;
   land_sail(address: number, length: number): bigint;
+  land_fight_begin(address: number, length: number): bigint;
+  land_fight_step(address: number, length: number): bigint;
+  land_fight_end(): void;
 }
 
 interface ViewHeader {
@@ -296,6 +307,13 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
       } finally {
         exports.release(address, length);
       }
+    },
+    fightBegin: (ship, seed, time) =>
+      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time)))),
+    fightStep: (orders, time, ticks) =>
+      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks)))),
+    fightEnd: () => {
+      exports.land_fight_end();
     },
     sail: (ship, helm, time, ticks) => {
       const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks]);
