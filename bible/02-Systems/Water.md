@@ -10,6 +10,7 @@ code:
   - client/src/water/waterView.ts#WaterView
   - client/src/water/waterShader.ts#WATER_SHADER
   - client/src/editor/landScene.ts#LandScene
+  - client/src/water/hullMask.ts#hullInside
 ---
 # Water
 
@@ -68,6 +69,13 @@ diver drifts back up. Each stride or stroke pushes the water once; stepping in, 
 The pushes are ripples: a damped wave field 32 m square round the walker, stepped 60 times a second on the GPU at a
 ripple's own pace. The field follows the walker; its ripples fade at its edge.
 
+## A ship on it
+
+A ship drawn with the land hides the water behind her and is seen through it below her waterline. Her footprint (an
+ellipse a hair inside her waterline) holds no water, so none shows in her open hull or over her gunwale. A band of
+foam rings her footprint once she makes way, most at her bow, whole at 2 m/s. Above a wake's way (0.5 m/s) she stirs
+the ripples at her bow and both quarters each half metre she runs, and the field follows her ([[Sailing]]).
+
 ## Underwater
 
 With the eye below its water, the land is seen through it. The water swallows red first, so the view turns blue-green
@@ -80,3 +88,4 @@ deep. A diver's camera comes in close rather than sink into the bed.
 - The breakers and the ripples are drawn in the browser only; the server has the swell alone.
 - One swell for the whole world, until the weather drives it ([[World Map]]).
 - The walker has no body yet: the ripples and splashes come from the point the camera follows.
+- One ship's footprint at a time, an ellipse, not her hull's own line.

@@ -27,12 +27,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
 - Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, and
   agreeing to the bit with the crate run natively.
+- [[Sailing]], step 1 of the naval port, on branch `naval/sailing` until its PR merges: the `sailing` crate (Come
+  Sail Away's helm under DFO's responsive helm, the swell's pose, grounding on the land), stepped through `land-wasm`,
+  and the owner's Sloop put to sea and sailed in the World Editor, the water parting round her. Her model and mesh are
+  on R2 (`content/ships/ships.json`).
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
   ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room, its core: players' inputs in order, their bodies
   stepped tick by tick, never faster than the room's clock; and the messages, their schema and the code `flatc` makes
   from it, Google's `flatc` pinned by its checksum. Nothing hosts the room yet.
 
 ## Waiting on the owner
+
+- Whether the Sloop sits right: her waterline is taken 0.4 m above her model's base, where her beam nears its widest
+  ([[Sailing]]). And what the small cube at her bow is.
 
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
@@ -42,8 +49,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- The water's open ends ([[Water]]): a body for the walker, the weather driving the swell, and the breakers and
-  ripples for ships once ships sail.
+- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - The thin server, the rest of it: the room hosted on Cloudflare, ticking 60 times a second; each browser sending its
   controls over WebSocket, predicting its own player and corrected by the room; and two browsers seeing each other on
   the Test Ground ([[Gameplay Starts With the Shared Rules]]).
@@ -52,7 +58,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The game itself: the client drawing the world from the land's door, and the server reading the same land crate.
-- Then sailing, bringing over DFO's sailing and combat systems, each pick approved by the owner first
-  ([[Porting from DFO]]).
+- Sailing's step 2, the naval combat core: broadsides between the Sloop and one captain
+  ([[Pick - Sailing and Naval Combat]]). The Sloop's six cannons need names in her `.blend` first (`Cannon`), so the
+  export can find her muzzles.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.
