@@ -8,6 +8,7 @@ import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { fightOf, foeDoing } from '../combat/fightMoves.ts';
 import { foeKind } from '../combat/foeKinds.ts';
+import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { Hud } from '../combat/hud.ts';
 import { LocalRoom } from '../network/localRoom.ts';
@@ -346,6 +347,10 @@ async function start(): Promise<void> {
       if (card) drawn.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip });
     }
     drawn.push(...drawFoes(eye));
+    const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
+      kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
+    );
+    scene.setMarks(marksMesh(telegraphs, fight.shots));
     const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
       if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
