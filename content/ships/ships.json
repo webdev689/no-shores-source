@@ -1,0 +1,9 @@
+{
+  "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
+  "ships": {
+    "sloop": {
+      "mesh": "ships/855174a7208ad15b1dd94352c88d755c827b615326a8c2c52f5a576ca094648c.mesh",
+      "source": "sources/27aeefb509011fe605f0be7f7b9694c84ffa0b17b49e16994bb1be7dfbb0d44f.blend"
+    }
+  }
+}
