@@ -24,6 +24,16 @@ fn a_foe_sees_a_player_across_open_ground_within_its_range() {
 }
 
 #[test]
+fn a_foe_notices_only_what_lies_ahead_of_it_as_dfos_do() {
+    let mut behind = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Swordsman, 0.0, -10.0, 0.0);
+    behind.step(&mut still(0.0));
+    assert_eq!(behind.brain(10).target(), None, "the player stands behind it, facing away");
+    let mut beside = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Swordsman, 0.0, -10.0, PI / 2.0);
+    beside.step(&mut still(0.0));
+    assert_eq!(beside.brain(10).target(), Some(PLAYER), "a quarter turn off is still within its sight");
+}
+
+#[test]
 fn a_foe_does_not_see_through_a_block() {
     let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Swordsman, 0.0, -10.0, PI);
     room.blocks.push(Block { min_x: -3.0, min_y: -5.5, max_x: 3.0, max_y: -4.5, top: 3.0 });

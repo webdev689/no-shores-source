@@ -8,12 +8,12 @@ use crate::brain::Brain;
 use crate::dice::Purpose;
 use crate::senses::Here;
 use crate::steer::Ask;
-use crate::tuning::{GUARD_AFTER, PRESS_LATEST, PRESS_LEAD, THREAT_MARGIN};
+use crate::tuning::{BACK_TURNED, GUARD_AFTER, PRESS_LATEST, PRESS_LEAD, THREAT_MARGIN};
 use combat::arms::{OffHand, stroke_shape, weapon};
 use combat::fighter::{Action, Attack};
 use combat::shots::shot_numbers;
 use combat::sight::{apart, bearing, off};
-use combat::tuning::{BODY_RADIUS, DODGE_STAMINA};
+use combat::tuning::{BODY_RADIUS, DODGE_STAMINA, PARRY_WINDOW};
 use combat::{CombatInput, FighterId, Stroke};
 use core::f64::consts::FRAC_PI_2;
 
@@ -80,6 +80,10 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let striker = here.enemy(threat.by)?;
     let at = here.at();
     let from = [striker.body.x, striker.body.y];
+    // A blow from behind it is not seen coming.
+    if off(here.fighter.aim, bearing(at, from)) > BACK_TURNED {
+        return None;
+    }
     let distance = apart(from, at);
     let facing = off(striker.aim, bearing(from, at));
     let lands = match threat.lands {
@@ -132,11 +136,15 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     if answer == Answer::Dodge && fighter.stamina < DODGE_STAMINA {
         return None;
     }
-    let press = tick.max(lands.saturating_sub(PRESS_LEAD));
+    let span = PRESS_LEAD.1 - PRESS_LEAD.0 + 1;
+    let lead = PRESS_LEAD.0 + ((here.dice.roll(Purpose::Press) * span as f64) as u64).min(span - 1);
+    let press = tick.max(lands.saturating_sub(lead));
+    let held = matches!(fighter.action, Action::Guard { .. });
     let press = match answer {
-        Answer::Guard if tick < lands => tick,
+        // A block is a guard raised so its parry window has closed before the blow lands, or one already held; raised
+        // any later it would parry, which this answer is not.
+        Answer::Guard if held || lands > tick + u64::from(PARRY_WINDOW) => tick,
         Answer::Parry | Answer::Dodge if press + PRESS_LATEST <= lands => press,
-        Answer::Parry if tick < lands => return Some(defence(here, Answer::Guard, threat.by, tick, lands)),
         _ => return None,
     };
     Some(defence(here, answer, threat.by, press, lands))
@@ -183,17 +191,13 @@ pub fn defend(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Ask> {
     Some(ask)
 }
 
-/// Whether a target is open to a blow now: spent in its swing's follow-through, staggered, down, overreached or
-/// tending a bow.
+/// Whether a target is open to a blow now: spent in its swing's follow-through, staggered, overreached or tending a
+/// bow. Not one knocked down: an iron blow already punished that.
 #[must_use]
 pub fn spent(action: &Action) -> bool {
     match action {
         Action::Attack(attack) => attack.elapsed > attack.strike,
-        Action::Staggered { .. }
-        | Action::Down { .. }
-        | Action::Overreach { .. }
-        | Action::Draw { .. }
-        | Action::Reload { .. } => true,
+        Action::Staggered { .. } | Action::Overreach { .. } | Action::Draw { .. } | Action::Reload { .. } => true,
         _ => false,
     }
 }

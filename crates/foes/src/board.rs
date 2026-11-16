@@ -12,11 +12,13 @@ struct Fight {
     melee: BTreeMap<FighterId, u64>,
     ranged: BTreeMap<FighterId, u64>,
     waiting: BTreeMap<FighterId, (u64, bool)>,
+    /// The one foe striking it on an opening, without a turn: a back turned to it, or a walk in on it.
+    opportunist: Option<FighterId>,
 }
 
 impl Fight {
     fn empty(&self) -> bool {
-        self.melee.is_empty() && self.ranged.is_empty() && self.waiting.is_empty()
+        self.melee.is_empty() && self.ranged.is_empty() && self.waiting.is_empty() && self.opportunist.is_none()
     }
 
     fn tokens(&mut self, ranged: bool) -> &mut BTreeMap<FighterId, u64> {
@@ -37,6 +39,9 @@ impl Board {
             fight.melee.remove(&foe);
             fight.ranged.remove(&foe);
             fight.waiting.remove(&foe);
+            if fight.opportunist == Some(foe) {
+                fight.opportunist = None;
+            }
         }
         self.fights.retain(|_, fight| !fight.empty());
     }
@@ -97,6 +102,23 @@ impl Board {
     #[must_use]
     pub fn held_since(&self, target: FighterId, foe: FighterId) -> Option<u64> {
         self.fights.get(&target).and_then(|fight| fight.ranged.get(&foe).copied())
+    }
+
+    /// An opening on `target` that a foe without a turn would strike: only one foe at a time may, so a crowd cannot
+    /// pile in past its turns on a back turned. Answers whether this foe has it; letting it go (`wants` false) frees it.
+    pub fn opening(&mut self, target: FighterId, foe: FighterId, wants: bool) -> bool {
+        let fight = self.fights.entry(target).or_default();
+        if !wants {
+            if fight.opportunist == Some(foe) {
+                fight.opportunist = None;
+            }
+            return false;
+        }
+        if fight.opportunist.is_none_or(|holder| holder == foe) {
+            fight.opportunist = Some(foe);
+            return true;
+        }
+        false
     }
 
     /// How many melee and ranged tokens `target` has out.

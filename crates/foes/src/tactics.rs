@@ -16,7 +16,7 @@ use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSING, FLEE, FLEE_SHARE,
     GUARD_RESERVE, HURT_SHARE, PATIENCE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_GAP, RING_SLACK, RUN_FROM, SLOT_TURN,
-    STEP_PACE, SWING_DELAY, SWING_FACE,
+    STALE, STEP_PACE, SWING_DELAY, SWING_FACE,
 };
 use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
@@ -51,6 +51,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
             return Ask { face: Some(face), combat, ..Ask::default() };
         }
         Some(After::Spent) => recover(brain, here, board),
+        Some(After::Wait) => return Ask::facing(sight.map_or(brain.heading, |sight| sight.toward)),
         None => {}
     }
     if matches!(here.fighter.action, Action::Attack(_)) {
@@ -68,7 +69,10 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         return ask;
     }
     if !sight.seen {
-        board.forget(me);
+        // Its turn it keeps a moment, as DFO's stale lease does; past that it waits again like anyone.
+        if here.tick() > brain.seen_at + Here::ticks(STALE) {
+            board.forget(me);
+        }
         if sight.distance < 0.5 {
             return Ask::default();
         }
@@ -124,7 +128,7 @@ fn held(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Option<Ask
     };
     // A wind-up broken or missed is over: nothing follows it.
     brain.tells.windup = None;
-    brain.tells.landed = false;
+    brain.tells.ended = None;
     if brain.plan != Plan::Recover || brain.until < tick + left {
         if let Some(target) = brain.target {
             board.hand_on(target, here.me, tick);
@@ -201,7 +205,8 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let body = sight.fighter.body;
     let closing = body.vx * libm::sin(from_target) - body.vy * libm::cos(from_target) > CLOSING;
     let inside = sight.distance < ring - RING_SLACK && (closing || brain.plan == Plan::Engage);
-    let open = (back_turned && sight.distance <= ring + RING_SLACK) || inside;
+    let opened = (back_turned && sight.distance <= ring + RING_SLACK) || inside;
+    let open = board.opening(sight.id, me, opened && !board.holds(sight.id, me, false));
     if brain.plan == Plan::Wait && (board.take(sight.id, me, false, tick, Here::ticks(PATIENCE)) || open) {
         brain.plan = Plan::Engage;
     }
@@ -317,8 +322,12 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     let slot = wrap(brain.slot.unwrap_or(away) + SLOT_TURN / 60.0);
     brain.slot = Some(slot);
     let gap = wrap(slot - away);
-    if gap.abs() < 0.2 {
-        return Ask::facing(sight.toward);
-    }
-    Ask::stepping(away + gap.signum() * FRAC_PI_2, CIRCLE_PACE, sight.toward)
+    let mut ask = if gap.abs() < 0.2 {
+        Ask::facing(sight.toward)
+    } else {
+        Ask::stepping(away + gap.signum() * FRAC_PI_2, CIRCLE_PACE, sight.toward)
+    };
+    // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does.
+    ask.combat.guard = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
+    ask
 }

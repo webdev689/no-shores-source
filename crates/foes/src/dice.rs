@@ -20,6 +20,7 @@ pub enum Purpose {
     Cooldown = 12,
     ShotGap = 13,
     Aimed = 14,
+    Press = 15,
 }
 
 /// One foe's dice for one tick.

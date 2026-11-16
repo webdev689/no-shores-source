@@ -8,7 +8,7 @@ use crate::senses::{Here, Sight};
 use crate::tuning::{
     AIMED_SHARE, BLOW_CHANCE, BLOW_NEAR, CHAIN_CHANCE, CHAIN_LEAST, CHAIN_WINDUP, CLASSIC_TICKS_A_TICK, COOLDOWN_ELITE,
     COOLDOWN_ORDINARY, FEINT_AT, FEINT_CHANCE, FEINT_GAP, IRON_ELITE, PHASE_CHAINS, PHASE_COOLDOWN, PHASE_TWO,
-    PHASE_WINDUP, ROAR, WINDUP_ELITE, WINDUP_LEAST, WINDUP_VARY,
+    PHASE_WINDUP, ROAR, WINDUP_ELITE, WINDUP_LEAST, WINDUP_VARY, WORD_WAIT,
 };
 use combat::fighter::{Action, Weight};
 use combat::shapes::{CHARGE_FROM, IRON_EXTRA, LEAP_FROM, Shape, TelegraphOrder, numbers};
@@ -19,11 +19,13 @@ use combat::sight::{apart, clear_line};
 pub struct Windup {
     pub order: TelegraphOrder,
     pub begun: bool,
+    /// The tick the wind-up ended, while its foe waits on the room's word.
+    pub ended_at: Option<u64>,
 }
 
 /// What a foe keeps for its telegraphed blows: when it may throw again, the blow winding up, how many it has wound up
-/// and when it last feinted, its last shape, whether its last landed (a chain may follow) and how many have chained,
-/// and its second phase.
+/// and when it last feinted, its last shape, the room's word on whether its last landed (none until told; a chain may
+/// follow one that did) and how many have chained, and its second phase.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Tells {
     pub blow_ready: u64,
@@ -31,7 +33,7 @@ pub struct Tells {
     pub windups: u32,
     pub last_feint: Option<u32>,
     pub last: Option<Shape>,
-    pub landed: bool,
+    pub ended: Option<bool>,
     pub chained: u32,
     pub phase_two: bool,
     pub roar: bool,
@@ -44,6 +46,8 @@ pub enum After {
     Swing,
     Chain(TelegraphOrder),
     Spent,
+    /// Standing its ground until the room says whether the blow landed.
+    Wait,
 }
 
 const GAP_CLOSERS: [Shape; 2] = [Shape::Charge, Shape::Leap];
@@ -108,7 +112,7 @@ fn order(
         });
     let order = TelegraphOrder { shape, windup, iron, feint_at, bearing, ahead };
     tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, tells);
-    tells.windup = Some(Windup { order, begun: false });
+    tells.windup = Some(Windup { order, begun: false, ended_at: None });
     tells.last = Some(shape);
     if !chain {
         tells.chained = 0;
@@ -183,22 +187,36 @@ pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight) -> Option<Te
     (ready && wants).then(|| order(brain, here, Shape::Aimed, sight.toward, sight.distance, false))
 }
 
-/// What follows a wind-up that has ended: a feint's swing at once; a chain after a blow that landed; else the blow was
-/// its turn, spent. None while it winds up, or when no wind-up of its ended.
+/// What follows a wind-up that has ended: a feint's swing at once; once the room says whether the blow landed (it
+/// judges each player as they saw it, so its word may lag), a chain after one that did, else the blow was its turn,
+/// spent. It waits on the word WORD_WAIT at most. None while it winds up, or when no wind-up of its ended.
 pub fn follow(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> Option<After> {
     let windup = brain.tells.windup?;
     if matches!(here.fighter.action, Action::Telegraph(_)) {
         brain.tells.windup = Some(Windup { begun: true, ..windup });
+        brain.tells.ended = None;
         return None;
     }
-    brain.tells.windup = None;
-    let landed = std::mem::take(&mut brain.tells.landed);
     if !windup.begun {
+        brain.tells.windup = None;
         return None;
     }
     if windup.order.feint_at.is_some() {
+        brain.tells.windup = None;
         return Some(After::Swing);
     }
+    let tick = here.tick();
+    let ended_at = windup.ended_at.unwrap_or(tick);
+    let Some(landed) = brain.tells.ended else {
+        if tick < ended_at + Here::ticks(WORD_WAIT) {
+            brain.tells.windup = Some(Windup { ended_at: Some(ended_at), ..windup });
+            return Some(After::Wait);
+        }
+        brain.tells.windup = None;
+        return Some(After::Spent);
+    };
+    brain.tells.windup = None;
+    brain.tells.ended = None;
     let chained = landed && matches!(here.fighter.action, Action::Idle);
     Some(chained.then(|| chain(brain, here, sight)).flatten().map_or(After::Spent, After::Chain))
 }
@@ -249,7 +267,7 @@ pub fn roar(brain: &mut Brain, here: &Here<'_, '_>) -> Option<TelegraphOrder> {
     let order =
         TelegraphOrder { shape: Shape::Ring, windup, iron: true, feint_at: None, bearing: brain.heading, ahead: 0.0 };
     brain.tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &brain.tells);
-    brain.tells.windup = Some(Windup { order, begun: false });
+    brain.tells.windup = Some(Windup { order, begun: false, ended_at: None });
     brain.tells.last = Some(Shape::Ring);
     brain.tells.chained = 0;
     Some(order)

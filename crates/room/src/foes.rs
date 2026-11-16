@@ -184,10 +184,11 @@ impl Room {
         let tick = self.clock;
         for (id, foe) in &mut self.foes {
             let mut brain = foe.brain.clone();
-            for (by, attack) in swings.iter().filter(|(by, _)| by != id) {
+            // Only a player's swing or shot is a threat to answer: an ally's would only crowd it out.
+            for (by, attack) in swings.iter().filter(|(by, _)| self.players.contains_key(by)) {
                 brain = notice(&brain, *id, &Seen::Swung { by: *by, attack: *attack }, tick);
             }
-            for by in loosed.iter().filter(|by| *by != id) {
+            for by in loosed.iter().filter(|by| self.players.contains_key(*by)) {
                 brain = notice(&brain, *id, &Seen::Loosed { by: *by }, tick);
             }
             for (striker, defender, verdict) in &verdicts {

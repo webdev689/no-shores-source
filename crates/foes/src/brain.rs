@@ -90,10 +90,11 @@ impl Brain {
         numbers(self.kind).might * if self.tells.phase_two { PHASE_MIGHT } else { 1.0 }
     }
 
-    /// The foe its soft lock should hold (its chosen target), if any.
+    /// The fighter its soft lock should hold: its chosen target, but while it answers a blow, the one whose blow it
+    /// is, so its guard and its dodge face that one.
     #[must_use]
     pub fn target(&self) -> Option<FighterId> {
-        self.target
+        self.reactions.defence.map(|defence| defence.from).or(self.target)
     }
 
     /// Notes its health every few ticks; answers how much of its most it lost across the hurt window.
@@ -127,7 +128,7 @@ pub fn notice(brain: &Brain, me: FighterId, seen: &Seen, tick: u64) -> Brain {
         Seen::Landed { verdict, .. } => {
             next.blocked = if matches!(verdict, Verdict::Blocked { .. }) { next.blocked.saturating_add(1) } else { 0 };
         }
-        Seen::TelegraphEnded { missed, .. } => next.tells.landed = !missed,
+        Seen::TelegraphEnded { missed, .. } => next.tells.ended = Some(!missed),
         _ => {}
     }
     next

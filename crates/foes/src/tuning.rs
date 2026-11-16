@@ -9,8 +9,13 @@ pub const RANGED_TOKENS: usize = 2;
 /// A foe fights a target it sees within this; a shooter within this.
 pub const ENGAGE_RANGE: f64 = 14.0;
 pub const SHOOT_RANGE: f64 = 51.2;
-/// Out of sight, a foe hunts where it last saw its target this long before it lets it go.
+/// Out of sight, a foe hunts where it last saw its target this long before it lets it go, and keeps its turn at it
+/// this long (DFO's stale lease), so a moment behind a pillar does not lose its place.
 pub const HUNT: f64 = 5.0;
+pub const STALE: f64 = 1.5;
+/// A foe notices a fighter it is not already fighting only within this much of where it faces, as DFO's do: half of
+/// all round.
+pub const SIGHT_ARC: f64 = 90.0 * DEGREES;
 
 /// The ring the waiting stand on: this far outside their reach, with this much give either side. A waiting foe circles
 /// at this share of its walk toward its place on the ring, which drifts this far round a second.
@@ -80,7 +85,7 @@ pub const COOLDOWN_ELITE: (f64, f64) = (6.0, 11.0);
 /// A wind-up is its shape's times U(WINDUP_VARY), an elite's times WINDUP_ELITE, never under WINDUP_LEAST.
 pub const WINDUP_VARY: (f64, f64) = (0.9, 1.25);
 pub const WINDUP_ELITE: f64 = 0.9;
-pub const WINDUP_LEAST: f64 = 0.55;
+pub const WINDUP_LEAST: f64 = 0.6;
 /// An elite's blow is iron one time in this.
 pub const IRON_ELITE: f64 = 1.0 / 3.0;
 /// A feint: one wind-up in five, cut at this share of it, never two within this many wind-ups.
@@ -89,8 +94,11 @@ pub const FEINT_AT: f64 = 0.55;
 pub const FEINT_GAP: u32 = 3;
 /// A chain: at a landing, another blow at once this often, its wind-up this long and never under the least.
 pub const CHAIN_CHANCE: f64 = 0.35;
-pub const CHAIN_WINDUP: f64 = 0.5;
-pub const CHAIN_LEAST: f64 = 0.45;
+pub const CHAIN_WINDUP: f64 = 0.6;
+pub const CHAIN_LEAST: f64 = 0.55;
+/// A wind-up ended, a foe waits this long at most for the room's word on whether its blow landed: the room judges
+/// each player as their own screen showed it, which may lag.
+pub const WORD_WAIT: f64 = 0.5;
 /// An archer's shots aimed, one in this.
 pub const AIMED_SHARE: f64 = 1.0 / 3.0;
 
@@ -103,16 +111,15 @@ pub const PHASE_COOLDOWN: f64 = 0.6;
 pub const PHASE_MIGHT: f64 = 1.25;
 pub const PHASE_CHAINS: u32 = 2;
 
-/// Answering a blow: a guard or a dodge is pressed this many ticks before it lands, the parry window's middle and deep
-/// in a dodge's perfect stretch, and never later than PRESS_LATEST before it, so the room sees the guard or the hop
-/// whichever fighter it steps first. A guard is held this long past the blow it was raised for.
-pub const PRESS_LEAD: u64 = 6;
+/// Answering a blow: a parry or a dodge is pressed between these many ticks before it lands, by the dice, as a
+/// person's timing wanders: early in that span a parry's window has closed (it blocks instead) and a dodge is past its
+/// perfect stretch. Never later than PRESS_LATEST before it, so the room sees the guard or the hop whichever fighter it
+/// steps first. A guard is held this long past the blow it was raised for.
+pub const PRESS_LEAD: (u64, u64) = (2, 14);
 pub const PRESS_LATEST: u64 = 2;
 pub const GUARD_AFTER: u64 = 4;
 /// A swing threatens a foe within the striker's reach and this, the step it may take while its blow comes round.
 pub const THREAT_MARGIN: f64 = 1.0;
 
-/// A shooter holds its draw this long for a full shot, half as long caught close, and waits between these after one.
-pub const FULL_DRAW: u32 = 60;
-
+/// A shooter waits between these after a shot.
 pub const SHOT_GAP: (f64, f64) = (0.5, 1.5);

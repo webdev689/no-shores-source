@@ -6,9 +6,9 @@ use crate::World;
 use crate::brain::Brain;
 use crate::dice::Dice;
 use crate::kinds::KindNumbers;
-use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE};
+use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE, SIGHT_ARC};
 use combat::lock::sees;
-use combat::sight::{apart, bearing};
+use combat::sight::{apart, bearing, off};
 use combat::{Fighter, FighterId};
 
 /// A foe in its room this tick: its id, its fighter, the room, its kind's numbers and its dice.
@@ -96,7 +96,10 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
         .iter()
         .filter(|(id, _)| here.enemy(*id).is_some())
         .map(|(id, other)| (apart(at, [other.body.x, other.body.y]), *id, *other))
-        .filter(|(distance, _, other)| *distance <= here.range() && sees(here.world.blocks, &here.fighter, other))
+        .filter(|(distance, _, other)| {
+            let ahead = off(here.fighter.aim, bearing(at, [other.body.x, other.body.y])) <= SIGHT_ARC;
+            *distance <= here.range() && ahead && sees(here.world.blocks, &here.fighter, other)
+        })
         .min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))?;
     brain.target = Some(id);
     brain.last_seen = Some([other.body.x, other.body.y, other.body.z]);
