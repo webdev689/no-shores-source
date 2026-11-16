@@ -163,3 +163,19 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         pads,
     })
 }
+
+/// Plans a landmass's city on its land and lays the plan's pads on its ground, so every later reading of the ground
+/// stands on the city's terraces. The plan reads the ground without any pads. None for a landmass with no city.
+pub fn settle(landmass: &mut land::landmass::Landmass, blocks: &Blocks) -> Result<Option<Plan>, String> {
+    let Some(city) = landmass.edits.city.clone() else { return Ok(None) };
+    landmass.surface.pads = land::pads::Pads::default();
+    let planned = plan(&city, &landmass.surface, blocks)?;
+    landmass.surface.pads = land::pads::Pads::from(planned.pads.clone());
+    Ok(Some(planned))
+}
+
+/// The id of a city's social space as a node.
+#[must_use]
+pub fn social_id(city_id: &str) -> String {
+    format!("{city_id}{}", land::sites::SOCIAL_SUFFIX)
+}
