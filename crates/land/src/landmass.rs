@@ -8,7 +8,7 @@ use crate::erosion::erode_coarse;
 use crate::exact::seed_of;
 use crate::grid::Grid;
 use crate::ground::Ground;
-use crate::relief::{Climate, PLACEHOLDER, coast_distance_km, land_mask, relief, window};
+use crate::relief::{Climate, PLACEHOLDER, coast_distance_km, coast_signed_m, land_mask, relief, window};
 use crate::water::{Water, water};
 use world::geometry::Point;
 use world::layout::Continent;
@@ -29,6 +29,8 @@ pub struct Landmass {
     pub biome: Option<&'static Biome>,
     pub climate: Climate,
     pub land: Vec<bool>,
+    /// Each cell centre's distance from the painted coast, metres, positive on land: where the ground's coast runs.
+    pub coast_m: Grid,
     /// What the generator makes, before the owner's edits.
     pub generated: Grid,
     /// The owner's edits, from the landmass's edits file and the editor.
@@ -75,7 +77,14 @@ impl Landmass {
     /// Runs the water over the ground as it stands, and lays the places on it.
     pub fn settle(&mut self) {
         self.water = water(&self.ground, &self.land, self.climate.rain_mm);
-        self.surface = Ground::new(&self.ground, &self.water.lake_level, &self.water.rivers, &self.edits, self.seed);
+        self.surface = Ground::new(
+            &self.ground,
+            &self.coast_m,
+            &self.water.lake_level,
+            &self.water.rivers,
+            &self.edits,
+            self.seed,
+        );
     }
 
     /// Every rule the landmass's edits break, its places checked against its coast.
@@ -115,11 +124,12 @@ pub fn generate(continent: &Continent, edits: Edits) -> Result<Landmass, String>
     }
     let land = land_mask(&grid, &continent.outline);
     let coast = coast_distance_km(&grid, &land);
+    let coast_m = coast_signed_m(&grid, &continent.outline, &land);
     let seed = seed_of(WORLD_SEED, &continent.id);
     let (elevation, uplift) = relief(&grid, &land, &coast, seed, climate);
     let generated = erode_coarse(&elevation, &uplift, &land, climate.rain_mm, EROSION_STEPS, EROSION_FACTOR);
     let water = Water { rivers: Vec::new(), lake_level: vec![0.0; generated.data.len()] };
-    let surface = Ground::new(&generated, &water.lake_level, &[], &Edits::default(), seed);
+    let surface = Ground::new(&generated, &coast_m, &water.lake_level, &[], &Edits::default(), seed);
     let mut landmass = Landmass {
         id: continent.id.clone(),
         seed,
@@ -128,6 +138,7 @@ pub fn generate(continent: &Continent, edits: Edits) -> Result<Landmass, String>
         surface,
         climate,
         land,
+        coast_m,
         edits: Edits::default(),
         ground: generated.clone(),
         water,

@@ -1,4 +1,5 @@
 import type { Brush, GroundPatch, LandPatch, LandView } from '../rules/landRules.ts';
+import type { ShoreField } from '../water/shore.ts';
 
 /** What the page asks the land worker. */
 export type LandRequest =
@@ -22,6 +23,12 @@ export type LandRequest =
       readonly height: number;
     };
 
+/** The exact ground round a point, and the breakers' field over it. */
+export interface CloseGround {
+  readonly patch: GroundPatch;
+  readonly field: ShoreField;
+}
+
 /** What the land worker answers: one of a view, a patch or a written file, or why there is none. */
 export interface LandAnswer {
   readonly ticket: number;
@@ -29,6 +36,7 @@ export interface LandAnswer {
   readonly patch?: LandPatch;
   readonly written?: { readonly id: string; readonly text: string };
   readonly ground?: GroundPatch;
+  readonly shore?: ShoreField;
   readonly error?: string;
 }
 
@@ -39,7 +47,8 @@ export interface LandWorker {
   settle(): Promise<LandView>;
   setEdits(editsText: string): Promise<LandView>;
   write(): Promise<{ readonly id: string; readonly text: string }>;
-  ground(left: number, top: number, step: number, width: number, height: number): Promise<GroundPatch>;
+  /** The exact ground over a grid, and the breakers' field over it (worked here too: it takes a while). */
+  ground(left: number, top: number, step: number, width: number, height: number): Promise<CloseGround>;
 }
 
 export function startLandWorker(): LandWorker {
@@ -77,9 +86,9 @@ export function startLandWorker(): LandWorker {
     settle: () => view({ kind: 'settle' }),
     setEdits: (editsText) => view({ kind: 'setEdits', editsText }),
     ground: async (left, top, step, width, height) => {
-      const { ground } = await ask({ kind: 'ground', left, top, step, width, height });
-      if (!ground) throw new Error('the land worker answered no ground');
-      return ground;
+      const { ground, shore } = await ask({ kind: 'ground', left, top, step, width, height });
+      if (!ground || !shore) throw new Error('the land worker answered no ground');
+      return { patch: ground, field: shore };
     },
     write: async () => {
       const { written } = await ask({ kind: 'write' });

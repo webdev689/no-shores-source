@@ -32,8 +32,8 @@ the server and in every browser. The owner decided the generator makes the land 
   a 2 km grid, and what it changed is laid back on the 1 km land, so valleys follow the water and the land keeps its
   grain.
 - **Water.** A priority flood fills every hollow to its spill and finds each cell's way down. A river starts where
-  the water a cell gathers reaches 1 m³/s, and runs to the sea or into a larger river. A lake stands wherever a
-  hollow holds water 0.5 m deep.
+  the water a cell gathers reaches 1 m³/s, and runs to the sea or into a larger river. A lake fills a hollow that
+  holds water 0.5 m deep anywhere, out to its rim.
 - **Climate.** Each continent is generated in its biome's climate ([[The Continents' Biomes]]): its rain drives
   erosion and the rivers, its ruggedness the hills' grain, and its range height the mountains. The numbers are World
   2.0's profiles', with the range height doubled: World 2.0 adds it to Daggerfall's own relief, which this land has no
@@ -79,9 +79,15 @@ holds at most 200,000 dabs, a place at most 10,000 points, and a course at most 
 What the server judges a body against and every client draws. `Ground::height_at` gives the ground at any point to
 the metre, and `water_at` what water stands there: sea, a lake, a river, or none.
 
-- The 1 km land is interpolated by Catmull-Rom, with a grain of 4 m at a 250 m scale on the land.
+- The 1 km land is interpolated by Catmull-Rom, with a grain of 4 m at a 250 m scale on the land. The land and the
+  seabed are each splined on their own side of the painted coast, and within 1 km of it they meet along it: the
+  coast is the painted line to the metre, its corners rounded, never the cells' steps. Past that kilometre, land
+  stands at least 0.5 m up and the seabed 0.5 m down.
+- A lake's water reaches a cell past its cells, to where the ground meets its surface, so its shore is a curve.
 - A town's area is levelled to the mean of its ground, easing back to the land over 150 m past its edge.
-- A river's channel is cut under its surface with 10 m banks; its surface never rises downstream. A river the water
+- A river's channel is a trough cut under its surface, levelling into banks that ease back to the land over 10 m,
+  down as well as up where the land lies under it; its surface never rises downstream. A gathered river's surface
+  never stands above the ground off a lake, and its course ends where the painted coast crosses it. A river the water
   gathered keeps the level the flood gave it, so it crosses a lake at the lake's surface. Hand-carved
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).
@@ -92,10 +98,11 @@ The land's WebAssembly door gives the browser the same answers.
 ## Agreeing to the bit
 
 The land crate uses only exact maths ([[Agree to the Bit]]): its noise is hashed gradient noise made of + - * / and
-square root. Clippy refuses the platform's `sin`, `exp`, `powf` and their kin across the workspace. A fingerprint
-of every ground height's bits is tested natively (`crates/land/tests/agree.rs`) and through WebAssembly
-(`landRules.test.ts`) against the same value, and so is a fingerprint of the ground sampled on a road, along a
-river, in a town and across the land.
+square root, and its sine and cosine are fdlibm's polynomials on the same operations. Clippy refuses the platform's
+`sin`, `exp`, `powf` and their kin across the workspace. A fingerprint of every ground height's bits is tested
+natively (`crates/land/tests/agree.rs`) and through WebAssembly (`landRules.test.ts`) against the same value, and so
+are a fingerprint of the ground sampled on a road, along a river, in a town and across the land, and one of the
+sea's swell ([[Water]]) over the land's margin at a moment of world time.
 
 ## In the browser
 
@@ -106,9 +113,14 @@ One landmass at a time is open for shaping. The editor also generates the others
 leave the open one alone. The door answers for the open landmass:
 
 - `land_patch`: the ground over a grid of up to 1,024 samples a side. Each sample has its height, its water's
-  surface, and a mark for a road, a town or a port. The editor's close-up draws it.
-- `land_sample`: the ground at a list of points. Each point has its height and its water (dry, sea, lake or river)
-  with the water's surface. The answer also holds a fingerprint of the heights. The game will call it.
+  surface, how far past fresh water's edge it lies (beyond a river's channel, or above a lake's surface), and a mark
+  for a road, a town or a port. The editor's close-up draws it, its water's edge drawn where that distance is 0.
+- `land_sample`: the ground at a list of points. Each point has its height, its water (dry, sea, lake or river) with
+  the water's surface, and the sea's swell over it at a given moment ([[Water]]). The answer also holds fingerprints
+  of the heights and of the sea. The game will call it.
+
+Each landmass's view also carries the sea's swell, its waves, for the browser to draw; and each cell's distance from
+the painted coast and its height carried over the coast, so the browser draws the coast as the ground has it.
 
 ## Limits
 
@@ -116,5 +128,5 @@ leave the open one alone. The door answers for the open landmass:
 - A hand-carved river is cut where the ground is sampled; the 1 km land under it, and the rivers the water gathers,
   do not follow it.
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
-  band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 8 m.
+  band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 4 m.
 - A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.

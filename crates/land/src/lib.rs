@@ -12,4 +12,5 @@ pub mod heap;
 pub mod landmass;
 pub mod places;
 pub mod relief;
+pub mod sea;
 pub mod water;

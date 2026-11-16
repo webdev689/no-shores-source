@@ -1,11 +1,13 @@
 //! The land for the browser. JavaScript writes a request into memory this module reserves and reads back a view of a
-//! landmass: a JSON header, then its ground and lake surfaces as little-endian 32-bit floats, one a cell. The land
+//! landmass: a JSON header, then its ground, lake surfaces, distances from the coast and heights carried over the
+//! coast as little-endian 32-bit floats, one a cell. The land
 //! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use land::edits::{self, CellRect, Edits, Stroke};
 use land::ground::{WaterAt, sample_hash};
 use land::landmass::{Landmass, generate, ground_hash};
+use land::sea::{Swell, sea_hash, sea_surface};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
@@ -21,15 +23,18 @@ pub fn view_bytes(header: &Value, landmass: Option<&Landmass>) -> Vec<u8> {
         text.push(b' ');
     }
     let cells = landmass.map_or(0, |landmass| landmass.ground.data.len());
-    let mut out = Vec::with_capacity(4 + text.len() + 8 * cells);
+    let mut out = Vec::with_capacity(4 + text.len() + 16 * cells);
     out.extend_from_slice(&u32::try_from(text.len()).unwrap_or(u32::MAX).to_le_bytes());
     out.extend_from_slice(&text);
     if let Some(landmass) = landmass {
         for &value in &landmass.ground.data {
             out.extend_from_slice(&(value as f32).to_le_bytes());
         }
-        for &value in &landmass.water.lake_level {
-            out.extend_from_slice(&(value as f32).to_le_bytes());
+        let surface = &landmass.surface;
+        for values in [&landmass.water.lake_level, &surface.coast.data, &surface.across.data] {
+            for &value in values {
+                out.extend_from_slice(&(value as f32).to_le_bytes());
+            }
         }
     }
     out
@@ -62,7 +67,23 @@ pub fn header_of(landmass: &Landmass) -> Value {
         // The biome's low ground (0..1) and snow line, metres; null for a landmass with no biome.
         "ground": landmass.biome.map(|biome| biome.ground.map(|channel| f64::from(channel) / 255.0)),
         "snow_m": landmass.biome.map(|biome| biome.snow_m().round()),
+        "swell": swell_of(&Swell::default()),
     })
+}
+
+/// The swell's waves as the client draws them: each one's way, wavenumber, frequency, height, sideways carry and
+/// phase, and the depths over which the swell fades.
+#[must_use]
+pub fn swell_of(swell: &Swell) -> Value {
+    let waves: Vec<Value> = swell
+        .waves
+        .iter()
+        .map(|wave| {
+            json!({ "direction": wave.direction, "number": wave.number, "frequency": wave.frequency,
+                "amplitude": wave.amplitude, "shift": wave.shift, "phase": wave.phase })
+        })
+        .collect();
+    json!({ "waves": waves, "full_depth_m": land::sea::FULL_DEPTH_M, "gone_depth_m": land::sea::GONE_DEPTH_M })
 }
 
 fn read(request: &[u8]) -> Result<Value, String> {
@@ -196,8 +217,9 @@ pub fn write_json() -> String {
     })
 }
 
-/// The open landmass's ground at each point of `{ "points": [[x, y], ...] }`, as the runtime finds it: each height, the
-/// water there (`dry`, `sea`, `lake` or `river`) and its surface, and a fingerprint of the heights' bits.
+/// The open landmass's ground at each point of `{ "points": [[x, y], ...], "time": seconds }`, as the runtime finds
+/// it: each height, the water there (`dry`, `sea`, `lake` or `river`) and its surface, the sea's swell over it at
+/// that time (null off the sea), and fingerprints of the heights' and the sea's bits.
 #[must_use]
 pub fn sample_json(request: &[u8]) -> String {
     let sampled = read(request).and_then(|request| {
@@ -219,7 +241,11 @@ pub fn sample_json(request: &[u8]) -> String {
                 })
                 .collect();
             let hash = format!("{:016x}", sample_hash(ground, &pairs));
-            Ok(json!({ "heights": heights, "water": water, "sample_hash": hash }).to_string())
+            let (swell, time) = (Swell::default(), request["time"].as_f64().unwrap_or(0.0));
+            let sea: Vec<Option<f64>> = pairs.iter().map(|&(x, y)| sea_surface(ground, &swell, x, y, time)).collect();
+            let sea_hash = format!("{:016x}", sea_hash(ground, &swell, &pairs, time));
+            Ok(json!({ "heights": heights, "water": water, "sample_hash": hash, "sea": sea, "sea_hash": sea_hash })
+                .to_string())
         })
     });
     sampled.unwrap_or_else(|error: String| json!({ "error": error }).to_string())
@@ -228,17 +254,25 @@ pub fn sample_json(request: &[u8]) -> String {
 /// What stands at a sampled point of a patch, beside its water: 3 a road, 4 a town, 5 a port, 0 none (the World
 /// Editor's marks).
 const PORT_MARK_M: f64 = 25.0;
+/// A patch sample's distance past fresh water's edge where no fresh water is near, metres.
+const FAR_FROM_FRESH_M: f32 = 1.0e6;
 
 /// The open landmass's ground over a grid: `{ "left", "top", "step", "width", "height" }` in metres and samples. A
-/// header, then each sample's height, its water's surface (0 where dry) as f32, then its mark as a byte.
+/// header, then each sample's height, its water's surface (0 where dry) and how far past fresh water's edge it lies
+/// (FAR_FROM_FRESH_M where none is near) as f32, then its mark as a byte.
 #[must_use]
 pub fn patch_view(request: &[u8]) -> Vec<u8> {
     let sampled = read(request).and_then(|request| {
         let number = |key: &str| request[key].as_f64().ok_or(format!("the patch needs its {key}"));
         let (left, top, step) = (number("left")?, number("top")?, number("step")?);
         let (width, height) = (number("width")? as usize, number("height")? as usize);
-        if !(1..=1024).contains(&width) || !(1..=1024).contains(&height) || step <= 0.0 {
-            return Err("a patch is 1 to 1024 samples a side, a positive step apart".into());
+        let far = [left + step * width as f64, top + step * height as f64];
+        if !(1..=1024).contains(&width)
+            || !(1..=1024).contains(&height)
+            || step <= 0.0
+            || !far.iter().all(|corner| corner.is_finite())
+        {
+            return Err("a patch is 1 to 1024 samples a side, a positive step apart, within reach".into());
         }
         OPEN.with(|open| {
             let open = open.borrow();
@@ -247,6 +281,7 @@ pub fn patch_view(request: &[u8]) -> Vec<u8> {
             let header = json!({ "width": width, "height": height, "left": left, "top": top, "step": step });
             let mut bytes = view_bytes(&header, None);
             let (mut water, mut marks) = (Vec::with_capacity(width * height), Vec::with_capacity(width * height));
+            let mut edges = Vec::with_capacity(width * height);
             for j in 0..height {
                 for i in 0..width {
                     let (x, y) = (left + i as f64 * step, top + j as f64 * step);
@@ -255,6 +290,7 @@ pub fn patch_view(request: &[u8]) -> Vec<u8> {
                         WaterAt::Lake { surface } | WaterAt::River { surface } => surface as f32,
                         WaterAt::Sea | WaterAt::Dry => 0.0,
                     });
+                    edges.push(ground.fresh_edge(x, y).map_or(FAR_FROM_FRESH_M, |edge| edge as f32));
                     let near_port = landmass.edits.ports.iter().any(|port| {
                         let (dx, dy) = (port.at.x as f64 - x, port.at.y as f64 - y);
                         dx * dx + dy * dy < PORT_MARK_M * PORT_MARK_M
@@ -270,7 +306,7 @@ pub fn patch_view(request: &[u8]) -> Vec<u8> {
                     });
                 }
             }
-            water.iter().for_each(|value: &f32| bytes.extend_from_slice(&value.to_le_bytes()));
+            water.iter().chain(&edges).for_each(|value: &f32| bytes.extend_from_slice(&value.to_le_bytes()));
             bytes.extend_from_slice(&marks);
             Ok(bytes)
         })
@@ -384,7 +420,7 @@ mod tests {
     }
 
     #[test]
-    fn a_continent_opens_as_a_header_and_two_floats_a_cell() {
+    fn a_continent_opens_as_a_header_and_four_floats_a_cell() {
         let request = br#"{ "id": "small", "edits": null, "layout": { "continents": [{ "id": "small", "outline": [[100000, 100000], [300000, 100000], [300000, 260000], [100000, 260000]] }], "isles": [] } }"#;
         let bytes = open_view(request);
         let found = header(&bytes);
@@ -392,7 +428,11 @@ mod tests {
         let cells = found["width"].as_u64().unwrap() * found["height"].as_u64().unwrap();
         let header_length = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
         assert_eq!(header_length % 4, 0);
-        assert_eq!(bytes.len(), 4 + header_length + 8 * cells as usize);
+        assert_eq!(
+            bytes.len(),
+            4 + header_length + 16 * cells as usize,
+            "height, lake, coast distance, carried height"
+        );
     }
 
     #[test]

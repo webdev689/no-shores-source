@@ -20,6 +20,7 @@ decision, made in the same change as its entry here.
 | `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
+| `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] and [[Movement]], loaded as WebAssembly, for any page that needs them |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
@@ -55,9 +56,10 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
-Declared so far: `rules` and `forge` (each imports nothing), `network` and `editor` (each imports `rules`),
-`testground` (imports `rules`, `network`, `forge`, `firstperson`, and the editor's camera and panel helpers) and `firstperson`
-(imports `forge`). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
+Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `editor`
+(imports `rules` and `water`), `testground` (imports `rules`, `network`, `forge`, `firstperson`, and the editor's
+camera and panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork
+any layer may import.
 
 ## The Rust crates
 
