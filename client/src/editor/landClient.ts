@@ -1,4 +1,4 @@
-import type { Brush, GroundPatch, LandPatch, LandView } from '../rules/landRules.ts';
+import type { Brush, GroundPatch, Helm, LandPatch, LandView, Pose, ShipFloats } from '../rules/landRules.ts';
 import type { ShoreField } from '../water/shore.ts';
 
 /** What the page asks the land worker. */
@@ -21,7 +21,20 @@ export type LandRequest =
       readonly step: number;
       readonly width: number;
       readonly height: number;
+    }
+  | {
+      readonly kind: 'sail';
+      readonly ship: ShipFloats;
+      readonly helm: Helm;
+      readonly time: number;
+      readonly ticks: number;
     };
+
+/** A ship after her ticks, and how she lies. */
+export interface Sailed {
+  readonly ship: ShipFloats;
+  readonly pose: Pose;
+}
 
 /** The exact ground round a point, and the breakers' field over it. */
 export interface CloseGround {
@@ -37,6 +50,7 @@ export interface LandAnswer {
   readonly written?: { readonly id: string; readonly text: string };
   readonly ground?: GroundPatch;
   readonly shore?: ShoreField;
+  readonly sailed?: Sailed;
   readonly error?: string;
 }
 
@@ -49,6 +63,8 @@ export interface LandWorker {
   write(): Promise<{ readonly id: string; readonly text: string }>;
   /** The exact ground over a grid, and the breakers' field over it (worked here too: it takes a while). */
   ground(left: number, top: number, step: number, width: number, height: number): Promise<CloseGround>;
+  /** A ship sailed over the open landmass. */
+  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed>;
 }
 
 export function startLandWorker(): LandWorker {
@@ -89,6 +105,11 @@ export function startLandWorker(): LandWorker {
       const { ground, shore } = await ask({ kind: 'ground', left, top, step, width, height });
       if (!ground || !shore) throw new Error('the land worker answered no ground');
       return { patch: ground, field: shore };
+    },
+    sail: async (ship, helm, time, ticks) => {
+      const { sailed } = await ask({ kind: 'sail', ship, helm, time, ticks });
+      if (!sailed) throw new Error('the land worker answered no ship');
+      return sailed;
     },
     write: async () => {
       const { written } = await ask({ kind: 'write' });

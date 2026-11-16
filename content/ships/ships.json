@@ -1,0 +1,15 @@
+{
+  "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
+  "ships": {
+    "sloop": {
+      "mesh": "ships/292d90562ec88cbec3fc289da03cc37866226eef0185d54ae8df9a76c013f11e.mesh",
+      "source": "sources/d6f9093188019beb445d87a51ef5de3fd263f572ff247be95bb95e1c2600271c.blend",
+      "waterline": {
+        "level_m": 0.4,
+        "length_m": 6.2258,
+        "beam_m": 1.8561,
+        "draught_m": 0.6
+      }
+    }
+  }
+}

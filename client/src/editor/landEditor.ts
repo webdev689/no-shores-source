@@ -52,7 +52,9 @@ export async function startLandEditor(
   let draft: { kind: Drawn; points: Spot[] } | null = null;
   let editsVersion = 0;
   let walking = false;
+  let sailing = false;
   const held = new Set<string>();
+  const pressed: string[] = [];
   const placeWidth = { river: 40, road: 8 };
   let riverDepth = 4;
   let status = '';
@@ -278,15 +280,17 @@ export async function startLandEditor(
     select: (id) => {
       selected = id;
       status = '';
+      sailing = false;
       showSelected(true);
       open(id, true);
     },
     view: (next) => {
       viewMode = next;
-      if (next === '2d') walking = false;
+      if (next === '2d') [walking, sailing] = [false, false];
       requestFrame();
     },
     walk: () => toggleWalk(),
+    sail: () => toggleSail(),
     exaggeration: (times) => {
       exaggeration = times;
       requestFrame();
@@ -320,8 +324,18 @@ export async function startLandEditor(
   /** Starts or stops walking: the camera drops to just behind a walker's eyes on the ground at its target. */
   function toggleWalk() {
     walking = !walking;
+    sailing = false;
     viewMode = '3d';
     orbit = walking ? { ...orbit, distance: 4, pitch: 0.1 } : { ...orbit, distance: 600, pitch: 0.5 };
+    requestFrame();
+  }
+
+  /** Puts the Sloop to sea at the camera's target, or brings her in: the camera stands off her quarter. */
+  function toggleSail() {
+    sailing = !sailing;
+    walking = false;
+    viewMode = '3d';
+    orbit = sailing ? { ...orbit, distance: 25, pitch: 0.3 } : { ...orbit, distance: 600, pitch: 0.5 };
     requestFrame();
   }
 
@@ -351,12 +365,17 @@ export async function startLandEditor(
         exaggeration,
         brush,
         walking,
+        sailing,
         held,
+        pressed,
         source,
         editsVersion,
         stroking: stroke !== null,
       });
       orbit = drawn.orbit;
+      // A refused Sail stands the camera back off, as bringing her in does.
+      if (sailing && !drawn.sailing) orbit = { ...orbit, distance: 600, pitch: 0.5 };
+      sailing = drawn.sailing;
       const flat = { width: canvas.clientWidth, height: canvas.clientHeight };
       const shownHeight = shownExaggeration(exaggeration, orbit.distance);
       if (drawn.feet) drawScaleCues(overlay, orbit, flat, drawn.feet, shownHeight);
@@ -405,8 +424,9 @@ export async function startLandEditor(
       problems: (view?.problems ?? []).map(({ subject, message }) => `${subject}: ${message}`),
       view: viewMode,
       walking,
+      sailing,
       exaggeration,
-      cursor: walking && view ? scene.describe(view, orbit) : pointedAt(ground, where),
+      cursor: (walking || sailing) && view ? scene.describe(view, orbit) : pointedAt(ground, where),
       status: session?.storageFailed
         ? `${status} This browser could not keep your shaping: Save often.`.trim()
         : status,
@@ -423,7 +443,7 @@ export async function startLandEditor(
   canvas.addEventListener('pointerdown', (event) => {
     canvas.setPointerCapture(event.pointerId);
     dragging = { x: event.offsetX, y: event.offsetY, button: event.button };
-    const world = event.button === 0 && !walking ? worldAt(event.offsetX, event.offsetY) : null;
+    const world = event.button === 0 && !walking && !sailing ? worldAt(event.offsetX, event.offsetY) : null;
     if (world && BRUSHES.includes(tool)) startStroke(world.x, world.y);
     else if (world && tool !== 'look') {
       if (viewMode === '3d') status = 'Draw places on the 2D map: press V.';
@@ -438,8 +458,8 @@ export async function startLandEditor(
       if (world) continueStroke(world.x, world.y);
     } else if (dragging) {
       const [moveX, moveY] = [event.offsetX - dragging.x, event.offsetY - dragging.y];
-      if (dragging.button === 0 && tool !== 'look' && !walking) return;
-      const orbiting = walking || dragging.button === 0 || (dragging.button === 2 && tool !== 'look');
+      if (dragging.button === 0 && tool !== 'look' && !walking && !sailing) return;
+      const orbiting = walking || sailing || dragging.button === 0 || (dragging.button === 2 && tool !== 'look');
       if (viewMode === '2d') camera = pan(camera, moveX, moveY);
       else if (orbiting)
         orbit = rotateOrbit(orbit, moveX * 0.005, -moveY * 0.005, walking ? scene.lowestPitch : undefined);
@@ -475,13 +495,15 @@ export async function startLandEditor(
     if (!active || event.target instanceof HTMLInputElement) return;
     const key = event.key.toLowerCase();
     const moving = ['w', 'a', 's', 'd', 'shift', 'c', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
-    if (walking && moving.includes(key)) {
+    if ((walking || sailing) && moving.includes(key)) {
       event.preventDefault();
       held.add(key);
+      if (sailing && !event.repeat) pressed.push(key);
       requestFrame();
       return;
     }
     if (key === 'g') toggleWalk();
+    else if (key === 'b') toggleSail();
     else if (key === 'enter') finishDraft();
     else if (key === 'escape') draft = null;
     else if (key === 'backspace' && draft) draft = { ...draft, points: draft.points.slice(0, -1) };
@@ -489,7 +511,7 @@ export async function startLandEditor(
     else if ((event.ctrlKey || event.metaKey) && key === 'y') step(1);
     else if (key === 'v') {
       viewMode = viewMode === '2d' ? '3d' : '2d';
-      walking = false;
+      [walking, sailing] = [false, false];
     } else if (key === '[') radiusKm = Math.max(1, radiusKm - 5);
     else if (key === ']') radiusKm = Math.min(200, radiusKm + 5);
     else if (/^[0-9]$/.test(key)) {

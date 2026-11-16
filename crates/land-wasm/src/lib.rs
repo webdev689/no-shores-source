@@ -1,7 +1,8 @@
 //! The land for the browser. JavaScript writes a request into memory this module reserves and reads back a view of a
 //! landmass: a JSON header, then its ground, lake surfaces, distances from the coast and heights carried over the
 //! coast as little-endian 32-bit floats, one a cell. The land
-//! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live.
+//! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live, and a
+//! ship sails over it (`sail`).
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use land::edits::{self, CellRect, Edits, Stroke};
@@ -10,6 +11,9 @@ use land::landmass::{Landmass, generate, ground_hash};
 use land::sea::{Swell, sea_hash, sea_surface};
 use serde_json::{Value, json};
 use std::cell::RefCell;
+
+mod sail;
+pub use sail::sail_bytes;
 
 thread_local! {
     static OPEN: RefCell<Option<Landmass>> = const { RefCell::new(None) };
@@ -398,6 +402,17 @@ pub unsafe extern "C" fn land_patch(address: *const u8, length: usize) -> u64 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let request = unsafe { std::slice::from_raw_parts(address, length) };
     hand_over(patch_view(request))
+}
+
+/// The ship the request at `address`, `length` bytes long, holds, sailed over the open landmass.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_sail(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(sail_bytes(request))
 }
 
 /// The open landmass's edits file text.

@@ -3,7 +3,7 @@
 //! world time. The swell feels the bottom and fades as the sea shallows toward a coast, where the browser draws the
 //! breakers.
 
-use crate::exact::{rand01, seed_of, sin_cos, smooth};
+use crate::exact::{fingerprint, rand01, seed_of, sin_cos, smooth};
 use crate::ground::{Ground, WaterAt};
 use std::f64::consts::TAU;
 
@@ -35,7 +35,7 @@ pub struct Wave {
     pub phase: f64,
 }
 
-/// The swell: its waves, longest first, and the bearing they come from.
+/// The swell: its waves, longest first, and the bearing they run toward (radians clockwise from north), the wind's.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Swell {
     pub bearing: f64,
@@ -126,10 +126,7 @@ pub fn sea_surface(ground: &Ground, swell: &Swell, x: f64, y: f64, time: f64) ->
 /// server and a browser can be held to the same bits.
 #[must_use]
 pub fn sea_hash(ground: &Ground, swell: &Swell, points: &[(f64, f64)], time: f64) -> u64 {
-    points.iter().fold(0xcbf2_9ce4_8422_2325, |hash: u64, &(x, y)| {
-        let bits = sea_surface(ground, swell, x, y, time).unwrap_or(0.0).to_bits().to_le_bytes();
-        bits.iter().fold(hash, |hash, &byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
-    })
+    fingerprint(points.iter().map(|&(x, y)| sea_surface(ground, swell, x, y, time).unwrap_or(0.0)))
 }
 
 /// `base` to the power `exponent` for an exponent in [0, 1], from square roots: each binary digit of the exponent

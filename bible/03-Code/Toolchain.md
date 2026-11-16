@@ -64,9 +64,13 @@ with a check of every tool. How to use each tool and worker: [[Toolkit]]. Its wo
 
 ## Python
 
-Only for the [[Sprite Forge]], which runs inside Blender: `pip install bpy==5.2.3` on Python 3.13, with `scipy`,
+For the [[Sprite Forge]], which runs inside Blender: `pip install bpy==5.2.3` on Python 3.13, with `scipy`,
 `cma` and `pillow`. It is kept exactly as DFO ships it, so the size, comment and assets checks skip `tools/forge/`
 ([[DFO's Sprite Forge Comes Over Exactly]]).
+
+For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bpy==5.3.0` on Python 3.13. Its
+`--dry-run` writes the mesh into the working folder, so run it from one outside the repo. `tools/r2.py` holds the R2
+access both publishers use.
 
 ## Commands
 

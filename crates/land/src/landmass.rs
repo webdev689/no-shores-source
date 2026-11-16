@@ -5,7 +5,7 @@
 use crate::biome::{Biome, biome_of};
 use crate::edits::{self, CellRect, Edits, Problem, Stroke};
 use crate::erosion::erode_coarse;
-use crate::exact::seed_of;
+use crate::exact::{fingerprint, seed_of};
 use crate::grid::Grid;
 use crate::ground::Ground;
 use crate::relief::{Climate, PLACEHOLDER, coast_distance_km, coast_signed_m, land_mask, relief, window};
@@ -45,13 +45,7 @@ pub struct Landmass {
 /// A fingerprint of every ground height's bits (FNV-1a, 64-bit): the same on every machine, or the land disagrees.
 #[must_use]
 pub fn ground_hash(ground: &Grid) -> u64 {
-    ground.data.iter().fold(0xcbf2_9ce4_8422_2325, |hash: u64, value| {
-        value
-            .to_bits()
-            .to_le_bytes()
-            .iter()
-            .fold(hash, |hash, &byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
-    })
+    fingerprint(ground.data.iter().copied())
 }
 
 impl Landmass {
