@@ -24,3 +24,9 @@ owner can change any of them.
 | Past a section's edge | "Return to the area" and a 10 s count; back inside ends it; at 0, or 60 m past the edge, the player dies | Destiny 1's out-of-bounds warning |
 | Respawning | Offered 4 s after death, at the section's nearest spawn | Destiny 1's patrol respawn |
 | The steepest ground walked | 50° (1.19 m of rise a metre); steeper is a wall to slide along | Hills and banks walk; cliffs stop a body, as Destiny 1's do |
+| The port cities | Overlook (Saltmere), Cairnwatch, Elmhaven, Sunspire, Goldreach, Mistfall, Windmere, Fenhallow, Rimeholt, continents 1 to 9 | Names of our own, each read from its biome |
+| Their motifs | The Beacon, the Span, the Great Hall, the Sun Dome, the Granary Ring, the Stepped Temple, the Windwall, the Drowned Bell, the Whalebone Gate ([[Cities]]) | Each known from the sea by one shape, as DFO's Imperial City by its tower |
+| Where each city stands | On the continent's coast about 700 m inland, where the land round it is gentle and the water off it deep | A harbour below the landmark, the city between |
+| Their landforms | A headland raised under each landmark except on flat desert, rainforest and swamp coasts: Overlook's 75 m, Cairnwatch's 55 m, Rimeholt's 50 m, Windmere's 40 m, Elmhaven's 25 m, Goldreach's 15 m | The coasts are low; a social space should look down on its city and harbour, as the Tower does |
+| A continent's nodes | Ten in three sides round its coast: three patrol areas, four missions, two dungeons and a world boss; with its city's social space | Destiny 1's destinations: landing zones round a patrol space, each side seen from the sea |
+| Node names | Places of our own: a patrol area named for its biome's ground (The Saltgrass Downs), missions and dungeons for what stands there (Wrecker's Cove, Kraken's Grotto), bosses for their lair (The Maw of the Shallows) | Read on the Overworld's marks |
