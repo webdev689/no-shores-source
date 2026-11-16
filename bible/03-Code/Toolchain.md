@@ -27,10 +27,21 @@ code:
 
 - **Rust 1.97.0**, pinned in `rust-toolchain.toml` with `rustfmt`, `clippy` and the `wasm32-unknown-unknown` target.
 - **Edition 2024**, one workspace. Every crate takes the workspace's lints. Unsafe code is denied everywhere except
-  the door crates `world-wasm`, `land-wasm` and `movement-wasm`, which allow it to hand memory to JavaScript. Clippy warnings are
-  errors.
+  the door crates `world-wasm`, `land-wasm` and `movement-wasm`, which allow it to hand memory to JavaScript, and
+  `protocol`, whose code from `flatc` reads a message's bytes in place. Clippy warnings are errors.
 - **Build profiles**: debug builds optimise dependencies fully and our own crates lightly, so they run at a usable
   speed and still rebuild quickly.
+
+## FlatBuffers (the messages)
+
+- **`flatc` 25.12.19**, Google's own release ([[Messages Are FlatBuffers]]). `tools/install-flatc.sh` holds the
+  version and the checksum of its download, and refuses a download that does not match. It fetches the Linux build
+  only.
+- **`npm run schema`** makes the Rust and the TypeScript from `crates/protocol/messages.fbs` into
+  `generated/messages/` (not in git). On its first run on a machine it installs the pinned `flatc` into
+  `target/flatc/`, so nothing is installed by hand, in a cloud session, CI or the Pages build; it refuses any other
+  `flatc`. `cargo xtask check`, `dev` and `build` run it first.
+- **The runtimes**: the `flatbuffers` crate at exactly 25.12.19, and the `flatbuffers` npm package.
 
 ## The toolkit
 
@@ -53,5 +64,6 @@ Only for the [[Sprite Forge]], which runs inside Blender: `pip install bpy==5.2.
 | `cargo xtask check` | Everything CI runs, both languages |
 | `cargo xtask repo` | Only the repo checks, in about a second |
 | `npm run dev` | The client in a browser, reloading as you edit; the [[World Editor]] at `/editor/` |
+| `npm run schema` | Makes the messages' Rust and TypeScript into `generated/messages/` (not in git), installing the pinned `flatc` first if it is not there |
 | `npm run wasm` | Builds the world rules, the land and movement as WebAssembly into `client/public/` (not in git); `dev` and `build` run it first |
 | `npm test`, `cargo test` | One side's tests |

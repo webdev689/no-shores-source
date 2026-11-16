@@ -21,6 +21,7 @@ decision, made in the same change as its entry here.
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
+| `client/src/network/` | The network layer: the browser's side of the [[Server]]'s messages, made from the same schema |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] and [[Movement]], loaded as WebAssembly, for any page that needs them |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
@@ -29,6 +30,7 @@ decision, made in the same change as its entry here.
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
+| `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
 | `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, and `content/forge/renders.json`, which names the forge's published renders |
@@ -36,6 +38,7 @@ decision, made in the same change as its entry here.
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
+| `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
 | `bible/` | This vault |
 | `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `pages.yml` to publish the client to GitHub Pages |
 
@@ -51,9 +54,10 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
-Declared so far: `rules` and `forge` (each imports nothing), `water` (imports `rules`), `editor` (imports `rules`
-and `water`), `testground` (imports `rules`, `forge`, `firstperson`, and the editor's camera and panel helpers) and
-`firstperson` (imports `forge`).
+Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `editor`
+(imports `rules` and `water`), `testground` (imports `rules`, `forge`, `firstperson`, and the editor's camera and
+panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork any layer
+may import.
 
 ## The Rust crates
 
@@ -64,7 +68,8 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; and `movement`, which may use only `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use only `movement`.
+  own platform crates, never on the client. Its core is `room`, which may use only `movement`; its messages are
+  `protocol`, which may use `movement`, `room` and `flatbuffers`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
   `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land and movement behind WebAssembly
-  doors for the browser.
+  doors for the browser, and `protocol`, whose code from `flatc` reads a message's bytes in place.

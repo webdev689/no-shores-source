@@ -11,6 +11,7 @@ pub struct Layer {
 /// The client's layers, by folder name under `client/src`. Files directly in `client/src` may import any of them.
 pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
+    Layer { name: "network", may_import: &["rules"] },
     Layer { name: "editor", may_import: &["rules", "water"] },
     Layer { name: "water", may_import: &["rules"] },
     Layer { name: "forge", may_import: &[] },
