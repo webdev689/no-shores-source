@@ -15,7 +15,7 @@ import {
   TREES,
   twice,
 } from './kinds.ts';
-import { broadleaf, cypress, mangrove } from './trees.ts';
+import { mangrove, tiered } from './trees.ts';
 import { bush, fern, shrub } from './undergrowth.ts';
 import { acacia, baobab, cactus, palm } from './warmTrees.ts';
 
@@ -27,7 +27,7 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'cactus',
         SMALL_TREE,
-        { chance: 0.014, grove: 0.3, byWater: { reachM: 300, boost: 3 }, ...TREES, slopes: [0, 0.45] },
+        { chance: 0.014, grove: 0.6, byWater: { reachM: 300, boost: 3 }, ...TREES, slopes: [0, 0.45] },
         twice((seed) => cactus(seed, 6.5, [0.32, 0.48, 0.26]), 14),
         [0.6, 1.3],
         0.4,
@@ -87,7 +87,7 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'acacia',
         TREE,
-        { chance: 0.025, grove: 0.6, byWater: { reachM: 300, boost: 3 }, ...TREES },
+        { chance: 0.025, grove: 0.9, byWater: { reachM: 300, boost: 3 }, ...TREES },
         twice((seed) => acacia(seed, [0.28, 0.23, 0.18], [0.34, 0.42, 0.15]), 15),
         [0.8, 1.3],
         0.35,
@@ -95,7 +95,7 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'baobab',
         TREE,
-        { chance: 0.005, grove: 0, ...TREES },
+        { chance: 0.005, grove: 0.5, ...TREES },
         [baobab(25, [0.56, 0.49, 0.42], [0.4, 0.48, 0.19])],
         [0.8, 1.15],
         2.2,
@@ -136,20 +136,20 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'giant',
         TREE,
-        { chance: 0.08, grove: 0.1, ...TREES },
+        { chance: 0.08, grove: 0.5, ...TREES },
         twice(
           (seed) =>
-            broadleaf({
+            tiered({
               seed,
               height: 40,
-              trunkRadius: 0.95,
-              crownAt: 34,
-              crown: [7.5, 7.5, 3.0],
-              lobes: 5,
-              lobe: 3.4,
-              bark: [0.56, 0.52, 0.44],
-              leaves: [0.24, 0.42, 0.14],
-              fins: 3,
+              crownBase: 0.7,
+              spread: 9,
+              tiers: 3,
+              trunkRadius: 0.9,
+              flare: 1.6,
+              fins: 4,
+              bark: [0.4, 0.36, 0.3],
+              leaves: [0.22, 0.4, 0.13],
             }),
           16,
         ),
@@ -159,50 +159,54 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'canopy tree',
         TREE,
-        { chance: 0.5, grove: 0.3, ...TREES },
-        // Three canopy trees of their own heights, outlines and greens, so the canopy is never one even carpet.
+        { chance: 0.5, grove: 0.5, ...TREES },
+        // Three canopy trees of their own heights, spreads and greens, their flat crowns overlapping: never one even
+        // carpet, never caps on poles.
         [
-          broadleaf({
+          tiered({
             seed: 37,
             height: 22,
+            crownBase: 0.6,
+            spread: 7,
+            tiers: 2,
             trunkRadius: 0.5,
-            crownAt: 16.5,
-            crown: [3.8, 3.8, 4.8],
-            lobes: 6,
-            lobe: 2.3,
-            bark: [0.46, 0.42, 0.34],
-            leaves: [0.18, 0.38, 0.12],
+            flare: 1.5,
+            fins: 0,
+            bark: [0.42, 0.38, 0.3],
+            leaves: [0.17, 0.37, 0.11],
           }),
-          broadleaf({
+          tiered({
             seed: 36,
-            height: 16,
+            height: 17,
+            crownBase: 0.58,
+            spread: 7.5,
+            tiers: 2,
             trunkRadius: 0.45,
-            crownAt: 11.5,
-            crown: [4.6, 4.6, 4.2],
-            lobes: 6,
-            lobe: 2.5,
-            bark: [0.4, 0.36, 0.28],
+            flare: 1.5,
+            fins: 0,
+            bark: [0.38, 0.33, 0.26],
             leaves: [0.12, 0.32, 0.1],
           }),
-          broadleaf({
+          tiered({
             seed: 38,
-            height: 13,
+            height: 14,
+            crownBase: 0.55,
+            spread: 6.5,
+            tiers: 2,
             trunkRadius: 0.4,
-            crownAt: 9,
-            crown: [5.6, 5.6, 3.0],
-            lobes: 6,
-            lobe: 2.4,
+            flare: 1.4,
+            fins: 0,
             bark: [0.36, 0.3, 0.24],
             leaves: [0.27, 0.43, 0.13],
           }),
         ],
-        [0.7, 1.35],
+        [0.75, 1.3],
         0.6,
       ),
       tall(
         'palm',
         TREE,
-        { chance: 0.08, grove: 0.2, byWater: { reachM: 400, boost: 3 }, ...TREES, lowestM: 0.8 },
+        { chance: 0.08, grove: 0.5, byWater: { reachM: 400, boost: 2 }, ...TREES, lowestM: 0.8 },
         twice(
           (seed) =>
             palm({
@@ -251,15 +255,31 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'cypress',
         TREE,
-        { chance: 0.18, grove: 0.6, byWater: { reachM: 200, boost: 2 }, ...TREES, lowestM: 0.6 },
-        twice((seed) => cypress(seed, 20, [0.4, 0.32, 0.25], [0.24, 0.33, 0.15]), 18),
+        { chance: 0.18, grove: 0.9, byWater: { reachM: 200, boost: 2 }, ...TREES, lowestM: 0.6 },
+        twice(
+          (seed) =>
+            tiered({
+              seed,
+              height: 16,
+              crownBase: 0.5,
+              spread: 6.5,
+              tiers: 2,
+              trunkRadius: 0.5,
+              flare: 2.6,
+              fins: 4,
+              bark: [0.28, 0.22, 0.18],
+              leaves: [0.24, 0.32, 0.15],
+              moss: [0.2, 0.24, 0.17],
+            }),
+          18,
+        ),
         [0.75, 1.2],
         1.0,
       ),
       tall(
         'mangrove',
         SMALL_TREE,
-        { chance: 0.5, grove: 0.3, byWater: { reachM: 80, boost: 1, only: true }, ...TREES, lowestM: 0.3 },
+        { chance: 0.5, grove: 0.6, byWater: { reachM: 80, boost: 1, only: true }, ...TREES, lowestM: 0.3 },
         twice((seed) => mangrove(seed, [0.35, 0.28, 0.22], [0.16, 0.33, 0.13]), 28),
         [0.8, 1.3],
         1.6,

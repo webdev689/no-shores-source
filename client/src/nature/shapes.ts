@@ -202,11 +202,13 @@ export function lump(builder: MeshBuilder, shape: Lump): void {
     const corners = [corner(a), corner(b), corner(third)] as const;
     const face = unit(cross(sub(corners[1], corners[0]), sub(corners[2], corners[0])));
     // The sphere's own normal, squashed as the lump is, so a flat lump lights as a flat lump.
+    // Foliage is shaded as one soft mass over each lobe, its normals the lobe's own: only stone shows its facets.
+    const soft = shape.leaf > 0.5 ? Math.max(shape.soft, 0.95) : shape.soft;
     const round = (onSphere: Point) =>
       blend(
         face,
         unit([onSphere[0] / shape.radii[0], onSphere[1] / shape.radii[1], onSphere[2] / shape.radii[2]]),
-        shape.soft,
+        soft,
       );
     const height = (a[2] + b[2] + third[2]) / 3;
     const tinted = (onSphere: Point) => shape.colour(onSphere[2], cornerOf(onSphere).draw);

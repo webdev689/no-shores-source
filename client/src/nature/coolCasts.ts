@@ -27,7 +27,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'oak',
         TREE,
-        { chance: 0.11, grove: 0.8, ...TREES },
+        { chance: 0.11, grove: 0.95, ...TREES },
         twice(
           (seed) =>
             broadleaf({
@@ -49,7 +49,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'pine',
         TREE,
-        { chance: 0.07, grove: 0.6, ...TREES },
+        { chance: 0.07, grove: 0.85, ...TREES },
         twice((seed) => umbrellaPine(seed, 15, [0.5, 0.3, 0.2], [0.17, 0.33, 0.21]), 21),
         [0.85, 1.2],
         0.45,
@@ -92,11 +92,11 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
   highland: () => ({
     keepAtReach: 0.35,
     kinds: [
-      tall('fir', TREE, { chance: 0.13, grove: 0.8, ...TREES }, firs(12), [0.75, 1.25], 0.45),
+      tall('fir', TREE, { chance: 0.13, grove: 0.95, ...TREES }, firs(12), [0.75, 1.25], 0.45),
       tall(
         'birch',
         TREE,
-        { chance: 0.05, grove: 0.4, byWater: { reachM: 300, boost: 2.5 }, ...TREES },
+        { chance: 0.05, grove: 0.7, byWater: { reachM: 300, boost: 2.5 }, ...TREES },
         twice((seed) => birch(seed, 12, [0.46, 0.6, 0.22]), 22),
         [0.8, 1.2],
         0.25,
@@ -142,7 +142,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'oak',
         TREE,
-        { chance: 0.24, grove: 0.7, ...TREES },
+        { chance: 0.24, grove: 0.9, ...TREES },
         twice(
           (seed) =>
             broadleaf({
@@ -164,7 +164,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'beech',
         TREE,
-        { chance: 0.22, grove: 0.7, ...TREES },
+        { chance: 0.22, grove: 0.9, ...TREES },
         twice(
           (seed) =>
             broadleaf({
@@ -183,7 +183,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
         [0.8, 1.2],
         0.55,
       ),
-      tall('fir', TREE, { chance: 0.09, grove: 0.5, ...TREES }, firs(33), [0.8, 1.25], 0.45),
+      tall('fir', TREE, { chance: 0.09, grove: 0.8, ...TREES }, firs(33), [0.8, 1.25], 0.45),
       tall(
         'mossy boulder',
         ROCK,
@@ -209,7 +209,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'birch',
         TREE,
-        { chance: 0.25, grove: 0.4, byWater: { reachM: 140, boost: 1, only: true }, ...TREES },
+        { chance: 0.25, grove: 0.7, byWater: { reachM: 140, boost: 1, only: true }, ...TREES },
         twice((seed) => birch(seed, 11, [0.5, 0.6, 0.24]), 27),
         [0.8, 1.2],
         0.25,
@@ -250,7 +250,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'spruce',
         SMALL_TREE,
-        { chance: 0.04, grove: 0.7, ...TREES, snowLineM: -250 },
+        { chance: 0.04, grove: 0.95, ...TREES, snowLineM: -250 },
         twice(
           (seed) =>
             conifer({ seed, height: 5, width: 2.2, tiers: 4, skirt: 0.2, bark: FIR_BARK, needles: [0.12, 0.22, 0.17] }),
@@ -262,7 +262,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'dead tree',
         SMALL_TREE,
-        { chance: 0.012, grove: 0, ...TREES, snowLineM: -100 },
+        { chance: 0.012, grove: 0.5, ...TREES, snowLineM: -100 },
         twice((seed) => deadTree(seed, 6, [0.6, 0.57, 0.52]), 29),
         [0.7, 1.3],
         0.3,

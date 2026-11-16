@@ -45,10 +45,14 @@ function valueNoise(x: number, y: number, cellM: number, salt: number): number {
   return top + (bottom - top) * down;
 }
 
-/** Where the groves stand (toward 1) and the clearings open (toward 0): broad patches, ragged at their edges. */
+/** Where the groves stand (toward 1) and the glades open (toward 0): woods half a kilometre across, broken into
+ *  stands a couple of hundred metres across, their edges ragged with clumps, so no forest stands like an orchard. */
 export function groveAt(x: number, y: number): number {
-  return 0.65 * valueNoise(x, y, 180, 17) + 0.35 * valueNoise(x, y, 70, 29);
+  return 0.55 * valueNoise(x, y, 560, 17) + 0.3 * valueNoise(x, y, 230, 29) + 0.15 * valueNoise(x, y, 90, 41);
 }
+
+/** How far a grove's edge runs, in the grove field: thick woods above it, scattered trees across it, glades below. */
+const GROVE_EDGE = [0.4, 0.6] as const;
 
 /** The most a kind's growth can reach over its chance: its groves' and the water's boosts together. */
 function mostGrowth(kind: Kind): number {
@@ -66,7 +70,7 @@ export function growthAt(kind: Kind, ground: GroundAt, grove: number, snowM: num
   share *= 1 - smooth(snowM + growth.snowLineM - 150, snowM + growth.snowLineM, ground.height);
   if (gentlest > 0) share *= smooth(gentlest - 0.06, gentlest + 0.04, ground.slope);
   share *= 1 - smooth(steepest, steepest + 0.15, ground.slope);
-  share *= 1 + growth.grove * (2 * smooth(0.3, 0.7, grove) - 1);
+  share *= 1 + growth.grove * (2 * smooth(GROVE_EDGE[0], GROVE_EDGE[1], grove) - 1);
   if (growth.byWater) {
     const distance = Math.min(ground.coastM ?? Infinity, ground.freshM ?? Infinity);
     const near = 1 - smooth(growth.byWater.reachM * 0.5, growth.byWater.reachM, distance);
@@ -166,7 +170,8 @@ export function scatterTile(
     const form = (forms[share.kind] ?? 0) + plant;
     // Sunk by its foot's rise across the slope, so its downhill side never stands clear of the ground.
     const foot = here.height - here.slope * kind.footM * width - 0.1;
-    const height = width * (0.88 + 0.24 * drawn(seed, 5));
+    // Most stand a little shorter than their width says and a few half again as tall: a wood's ragged skyline.
+    const height = width * (0.65 + 0.7 * drawn(seed, 5) ** 2);
     planted.push([
       form,
       east,

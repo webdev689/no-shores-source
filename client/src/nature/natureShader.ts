@@ -1,4 +1,5 @@
 import { SHARED_WGSL } from '../water/waterCommon.ts';
+import { MOSS_LEAF } from './trees.ts';
 
 /** The frame's uniform floats: the view-projection, the anchor, the wind, the snow line and the biome's ground. */
 export const FRAME_FLOATS = 32;
@@ -79,6 +80,9 @@ const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
 // How far a gust travels in a second, as a phase a metre and a second.
 const GUST_PER_M = 0.035;
 const GUST_PER_S = 1.4;
+// Moss is known by its leaf share, and hangs only as far as a stone's throw: past that it is too fine to read.
+const MOSS = ${MOSS_LEAF};
+const MOSS_REACH = 150.0;
 
 // An instance's foot from the anchor, and from the eye with its height as drawn.
 struct Foot {
@@ -116,7 +120,8 @@ fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
   let near_share = 1.0 - smoothstep(form.ranges.x - form.ranges.z, form.ranges.x, across);
   let kept = kept_share(item, distance);
   out.cover = vec2f(near_share, kept.y);
-  if (select(near_share, 1.0 - near_share, far) <= 0.0 || kept.y <= 0.0) {
+  let moss = abs(vertex.normal.w - MOSS) < 0.04 && distance > MOSS_REACH;
+  if (select(near_share, 1.0 - near_share, far) <= 0.0 || kept.y <= 0.0 || moss) {
     out.clip = NOWHERE;
     return out;
   }
@@ -126,6 +131,10 @@ fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
   let local = vertex.position * size;
   let turn = vec2f(cos(item.place.w), sin(item.place.w));
   var offset = vec2f(turn.x * local.x - turn.y * local.y, turn.y * local.x + turn.x * local.y);
+  // Most trunks stand near upright and a few lean a little more, each its own way, read from its rank's digits.
+  let tilt_way = fract(item.look.w * 7.31) * TAU;
+  let tilt = select(0.0, fract(item.look.w * 13.7) * fract(item.look.w * 3.3) * 0.09, form.thin.z > 0.0);
+  offset += vec2f(cos(tilt_way), sin(tilt_way)) * tilt * local.z;
   // Gusts roll downwind across the land; each plant also rocks on its own beat, its leaves trembling.
   let gust = 0.6 + 0.4 * sin(frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S);
   let sway = 0.35 * sin(frame.wind.x * 2.3 + item.look.w * 40.0);

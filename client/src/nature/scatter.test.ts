@@ -163,7 +163,7 @@ test('each plant stands on the ground it was given, sunk a little on a slope', (
 
 test("a tile's plants run form by form, each form's in rank order, so the thinned-out far ones end each run", () => {
   // The densest of a row of tiles: a single tile may fall in a clearing.
-  const tall = [0, 1, 2, 3, 4]
+  const tall = Array.from({ length: 24 }, (_unused, step) => step)
     .map((step) =>
       scatterTile(
         castOf('woodland'),

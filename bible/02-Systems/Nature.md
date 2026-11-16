@@ -24,9 +24,12 @@ The casts are Claude's choices ([[The World Is Claude's to Mold]]).
 ## The casts
 
 Each biome has three to six kinds, each with outlines of its own so they read apart at a distance. Trees come in two
-or three forms a kind; every plant is turned, sized and tinted on its own. A broadleaf's crown is a smooth core with
-lobes in two layers, a wider, darker ring below and smaller sunlit clumps above, each its own size and shade, so its
-outline is ragged. Bushes are woody stems, each ending in a tuft of leaves.
+or three forms a kind; every plant is turned, sized and tinted on its own. Most stand a little shorter than their
+width says and a few half again as tall, and trunks lean a little, a few more. A broadleaf's crown is a smooth core
+with lobes in two layers, a wider, darker ring below and smaller sunlit clumps above, each its own size and shade, so
+its outline is ragged. Swamp cypresses and rainforest trees carry broad, flat tiers instead, wider than they are tall,
+drooping at their edges and stepping in as they rise. Bushes are woody stems, each ending in a tuft of leaves. Leaves
+are shaded as one soft mass over each lobe; only stone shows its facets.
 
 | Biome | Kinds |
 |---|---|
@@ -35,9 +38,9 @@ outline is ragged. Bushes are woody stems, each ending in a tuft of leaves.
 | `woodland` | Dense oaks and beeches, firs, hazel, ferns, mossy boulders |
 | `desert` | Columnar cacti, date palms only by water, dry bushes, red rocks |
 | `savanna` | Flat-crowned acacias, baobabs, tall golden grass, flat-topped thorn bushes, ochre boulders |
-| `rainforest` | Buttressed giants 40 m tall over a canopy of three trees of their own heights, outlines and greens, palms (thicker by water), tree ferns, understory |
+| `rainforest` | Buttressed giants 40 m tall over a canopy of three trees of their own heights, spreads and greens, palms (thicker by water), tree ferns, understory |
 | `steppe` | Birches only by water, silver sagebrush, dry grass, rocks |
-| `swamp` | Cypresses flaring onto buttresses under ragged crowns hung with moss, mangroves only by water, reeds at the water's edge, marsh ferns |
+| `swamp` | Cypresses flaring onto dark buttresses under broad drooping tiers, short clumps of dark moss under their edges, mangroves only by water, reeds at the water's edge, marsh ferns |
 | `tundra` | Stunted spruces, dead trees, dwarf shrubs, snowy rocks |
 
 Near trees are 90 to 300 triangles; far ones 20 to 60.
@@ -53,8 +56,9 @@ kind grows there:
 - **Height.** Trees keep off the beach; reeds and mangroves do not. Trees stop 300 m below the snow line; above it
   only rocks stand, and snow settles on them.
 - **Slope.** Trees grow up to a slope of 0.6; rocks stand only where it is steeper than about 0.2.
-- **Groves.** Broad patches of noise, 180 m and 70 m across, gather trees into groves and open clearings between
-  them, where some shrubs and grass prefer to grow.
+- **Groves.** Noise at three scales, about 560, 230 and 90 m across, gathers trees into woods and stands, thins them
+  to scattered trees at their edges and opens glades between them, where some shrubs and grass prefer to grow. No
+  forest stands like an orchard.
 - **Water.** Some kinds grow thicker near the coast or fresh water; some grow only there. In the dry biomes most
   kinds grow several times thicker near water.
 
@@ -80,7 +84,8 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   700 m; grass, ferns and reeds go at 160 m. From 1 km far trees thin out to a share kept at the reach (a seventh in
   the rainforest, a fifth in the woodland, nearly all in the desert), each widened to fill in. On steep ground they
   thin out further from half a kilometre, so a mountainside reads as trees fading out, not a speckle, and far off a
-  plant's colour leans toward the biome's ground. Distances are taken from the eye in three dimensions.
+  plant's colour leans toward the biome's ground. Moss is drawn to 150 m. Distances are taken from the eye in three
+  dimensions.
 - **No popping.** A plant fades by its samples, not by blending: across the last eighth of the near range the near
   mesh hands its samples to the far one, each taking exactly what the other leaves, and toward the reach and as the
   far trees thin out both give theirs up. Four samples and a dither over two pixels make seventeen steps.

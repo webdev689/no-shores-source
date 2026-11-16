@@ -312,62 +312,132 @@ export function birch(seed: number, height: number, leaves: Colour): Plant {
   return { near: near.finish(), far: far.finish() };
 }
 
-/** A swamp cypress: a trunk flaring wide at its foot, and a tall, ragged crown of flat tiers. */
-export function cypress(seed: number, height: number, bark: Colour, needles: Colour): Plant {
-  const random = randomStream(seed);
+/** How much a vertex is moss rather than leaf: the shader knows moss by it and lets it go past a stone's throw. */
+export const MOSS_LEAF = 0.6;
+
+/** A tree whose crown is broad, flat tiers drooping at their edges, wider than it is tall: a swamp cypress, a
+ *  rainforest tree. */
+export interface Tiered {
+  readonly seed: number;
+  /** To the crown's top, metres, and the share of it where the lowest tier sits. */
+  readonly height: number;
+  readonly crownBase: number;
+  /** How far the lowest tier reaches from the trunk, metres. */
+  readonly spread: number;
+  readonly tiers: 2 | 3;
+  readonly trunkRadius: number;
+  /** The foot's radius over the trunk's. */
+  readonly flare: number;
+  readonly fins: number;
+  readonly bark: Colour;
+  readonly leaves: Colour;
+  /** Clumps of moss hung under the lowest tier's edge. */
+  readonly moss?: Colour;
+}
+
+export function tiered(shape: Tiered): Plant {
+  const random = randomStream(shape.seed);
   const near = new MeshBuilder();
-  // A trunk flaring wide at its foot onto buttresses, tapering to a ragged, flat-topped crown hung with moss.
-  const path: Point[] = [0, 0.06, 0.18, 0.45, 0.75, 0.95].map((along) => [0, 0, height * along]);
-  tube(near, { path, radii: [1.5, 0.95, 0.6, 0.42, 0.3, 0.12], sides: 7, colour: barkBands(bark, 5) });
-  for (let fin = 0; fin < 4; fin++) {
-    buttress(near, (fin / 4) * Math.PI * 2 + random() * 0.6, 0.75, height * 0.12, shade(bark, 0.7));
+  const lean: Point = [(random() - 0.5) * 0.6, (random() - 0.5) * 0.6, 0];
+  const [radius, base, depth] = [
+    shape.trunkRadius,
+    shape.height * shape.crownBase,
+    shape.height * (1 - shape.crownBase),
+  ];
+  const trunkTop: Point = [lean[0], lean[1], shape.height * 0.82];
+  const path: Point[] = [
+    [0, 0, 0],
+    [lean[0] * 0.02, lean[1] * 0.02, base * 0.1],
+    [lean[0] * 0.2, lean[1] * 0.2, base * 0.45],
+    trunkTop,
+  ];
+  tube(near, {
+    path,
+    radii: [radius * shape.flare, radius * 1.2, radius, radius * 0.35],
+    sides: 6,
+    colour: barkBands(shape.bark, 3),
+  });
+  for (let fin = 0; fin < shape.fins; fin++) {
+    buttress(
+      near,
+      (fin / shape.fins) * Math.PI * 2 + random() * 0.6,
+      radius,
+      shape.height * 0.08,
+      shade(shape.bark, 0.8),
+    );
   }
-  const moss: Colour = [0.46, 0.5, 0.4];
-  for (let clump = 0; clump < 5; clump++) {
-    const angle = clump * 2.4 + random() * 0.8;
-    const out = clump === 0 ? 0.3 : 1.2 + random() * 1.2;
-    const size = (clump === 0 ? 3.4 : 2.2 + random() * 1.0) * (0.9 + random() * 0.2);
-    // The outer clumps sit lower, so the crown droops from its middle.
-    const spot: Point = [Math.cos(angle) * out, Math.sin(angle) * out, height * (0.88 - out * 0.05 - random() * 0.06)];
+  // Each tier a flat middle and lobes round it, the outer ones lower: a canopy that droops at its edges, its tiers
+  // stepping in as they rise.
+  const rings = shape.tiers === 2 ? [3, 3] : [3, 2, 1];
+  for (const [tier, ring] of rings.entries()) {
+    const share = tier / shape.tiers;
+    const level = base + depth * (0.2 + (0.75 * tier) / Math.max(1, shape.tiers - 1));
+    const reach = shape.spread * (1 - 0.32 * share) * (0.9 + random() * 0.2);
+    const thick = (depth / (shape.tiers + 1)) * 0.38;
+    const middle: Point = [lean[0] + (random() - 0.5), lean[1] + (random() - 0.5), level];
+    const tierLeaves = shade(shape.leaves, 0.88 + 0.12 * share + random() * 0.08);
     lump(near, {
-      centre: spot,
-      radii: [size, size * (0.8 + random() * 0.3), 1.1 + random() * 0.5],
+      centre: middle,
+      radii: [reach * 0.6, reach * 0.55, thick],
       detail: 0,
-      jitter: 0.3,
-      seed: seed + clump * 17,
-      soft: 0.75,
+      jitter: 0.2,
+      seed: shape.seed + tier * 31,
+      soft: 1,
       leaf: 1,
-      colour: foliage(shade(needles, 0.88 + random() * 0.24), 0.3),
+      colour: foliage(tierLeaves, 0.3),
     });
-    // Strands of moss hang from the clump's underside.
-    for (let strand = 0; strand < 2; strand++) {
-      const turn = angle + strand * 2.6 + random();
-      const hang: Point = [spot[0] + Math.cos(turn) * size * 0.6, spot[1] + Math.sin(turn) * size * 0.6, spot[2] - 0.8];
-      const side: Point = [-Math.sin(turn) * 0.25, Math.cos(turn) * 0.25, 0];
-      const tip: Point = [hang[0], hang[1], hang[2] - 1.6 - random() * 1.8];
-      near.sheet(vector.add(hang, side), vector.sub(hang, side), tip, moss, {
-        normals: [
-          vector.unit([Math.cos(turn), Math.sin(turn), 0.5]),
-          vector.unit([Math.cos(turn), Math.sin(turn), 0.5]),
-          vector.unit([Math.cos(turn), Math.sin(turn), 0.2]),
-        ],
+    for (let lobe = 0; lobe < ring; lobe++) {
+      const angle = (lobe / ring) * Math.PI * 2 + tier * 1.3 + random() * 0.9;
+      const out = reach * (0.55 + random() * 0.15);
+      const droop = thick * (0.6 + random() * 0.4);
+      const spot: Point = [middle[0] + Math.cos(angle) * out, middle[1] + Math.sin(angle) * out, level - droop];
+      const size = reach * (0.4 + random() * 0.1);
+      lump(near, {
+        centre: spot,
+        radii: [size, size * 0.9, thick * 0.7],
+        detail: 0,
+        jitter: 0.25,
+        seed: shape.seed + tier * 31 + lobe * 7,
+        soft: 1,
         leaf: 1,
+        colour: foliage(shade(tierLeaves, 0.9 + random() * 0.15), 0.3),
       });
+      if (shape.moss && tier < 2)
+        mossClump(
+          near,
+          [spot[0] + Math.cos(angle) * size * 0.6, spot[1] + Math.sin(angle) * size * 0.6, spot[2] - thick * 0.6],
+          angle,
+          shape.moss,
+          random,
+        );
     }
   }
   const far = new MeshBuilder();
-  trunk(far, { height: height * 0.6, radius: 1.0, top: 0.4, lean: [0, 0, 0], sides: 3, segments: 1, bark });
+  trunk(far, { height: base, radius: radius * 1.3, top: radius * 0.7, lean, sides: 3, segments: 1, bark: shape.bark });
   lump(far, {
-    centre: [0, 0, height * 0.82],
-    radii: [4.2, 4.2, 2.2],
+    centre: [lean[0], lean[1], base + depth * 0.5],
+    radii: [shape.spread, shape.spread, depth * 0.55],
     detail: 0,
-    jitter: 0.15,
-    seed: seed + 9,
-    soft: 0.8,
+    jitter: 0.12,
+    seed: shape.seed + 9,
+    soft: 1,
     leaf: 1,
-    colour: foliage(needles, 0.3),
+    colour: foliage(shape.leaves, 0.3),
   });
   return { near: near.finish(), far: far.finish() };
+}
+
+/** A short clump of moss under a crown's edge: two dark strands crossed, hanging a metre or so. */
+function mossClump(builder: MeshBuilder, from: Point, angle: number, moss: Colour, random: () => number): void {
+  for (const turn of [angle, angle + Math.PI / 2]) {
+    const side: Point = [-Math.sin(turn) * 0.3, Math.cos(turn) * 0.3, 0];
+    const tip: Point = [from[0], from[1], from[2] - 0.6 - random() * 0.6];
+    const outward = vector.unit([Math.cos(turn), Math.sin(turn), 0.4]);
+    builder.sheet(vector.add(from, side), vector.sub(from, side), tip, moss, {
+      normals: [outward, outward, outward],
+      leaf: MOSS_LEAF,
+    });
+  }
 }
 
 /** A mangrove: arching prop roots holding a short trunk and a dense, low crown clear of the water. */
