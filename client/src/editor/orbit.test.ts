@@ -9,6 +9,7 @@ import {
   rayAt,
   rotateOrbit,
   cameraOf,
+  REVERSED_DEPTH,
   viewProjection,
   zoomOrbit,
   type Orbit,
@@ -174,4 +175,18 @@ test('a ray that misses the window picks nothing', () => {
   assert.equal(pickTerrain({ origin: [-5_000, 5_000, 2_000], direction: [-1, 0, 0] }, flat, 1), null);
   assert.equal(pickTerrain({ origin: [5_000, 5_000, 2_000], direction: [0, 0, 1] }, flat, 1), null);
   assert.equal(pickTerrain({ origin: [5_000, 5_000, 2_000], direction: [0.8, 0, 0.6] }, flat, 1), null);
+});
+
+test('a nearer point has the greater depth, so every view keeps the greater depth and clears to 0', () => {
+  const walker: Orbit = { targetX: 3, targetY: 1, targetZ: 1.7, yaw: 0.4, pitch: -0.3, distance: 1 };
+  const { eye, forward } = cameraOf(walker);
+  const ahead = (metres: number) =>
+    project(
+      viewProjection(walker, 1.6),
+      ...(eye.map((value, axis) => value + (forward[axis] ?? 0) * metres) as [number, number, number]),
+    );
+  const [near, far] = [ahead(2), ahead(20)];
+  assert.ok(near.depth > far.depth, `${near.depth} at 2 m is not greater than ${far.depth} at 20 m`);
+  assert.ok(near.depth <= 1 && far.depth >= 0);
+  assert.deepEqual([REVERSED_DEPTH.compare, REVERSED_DEPTH.clearValue], ['greater', 0]);
 });

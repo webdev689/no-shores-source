@@ -72,6 +72,10 @@ export function cameraOf(orbit: Orbit) {
   };
 }
 
+/** How a view drawn with `viewProjection` tests depth, since its depth is reversed: cleared to the far plane's 0, a
+ *  fragment kept where its depth is greater, being nearer, in 32-bit floats for the precision reversing it is for. */
+export const REVERSED_DEPTH = { format: 'depth32float', clearValue: 0, compare: 'greater' } as const;
+
 /**
  * World to clip space as a column-major 4x4 matrix, depth reversed: 1 at the near plane, 0 at the far. `aspect` is the
  * viewport's width over its height. `fromEye` takes points measured from the camera instead, so a GPU's floats keep

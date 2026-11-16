@@ -1,5 +1,5 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
-import { type Orbit, viewProjection } from '../editor/orbit.ts';
+import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
 import { PX_PER_M } from './figures.ts';
 import type { Block } from '../rules/movementRules.ts';
 
@@ -137,7 +137,11 @@ export class SceneView {
     this.gpu = gpu;
     const { device } = gpu;
     const module = device.createShaderModule({ code: SHADER });
-    const depthStencil = { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' } as const;
+    const depthStencil = {
+      format: REVERSED_DEPTH.format,
+      depthWriteEnabled: true,
+      depthCompare: REVERSED_DEPTH.compare,
+    } as const;
     // One scene layout both pipelines share, so the scene's bind group fits each.
     const both = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
     const sceneLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: both, buffer: {} }] });
@@ -309,7 +313,7 @@ export class SceneView {
       this.depth?.destroy();
       this.depth = device.createTexture({
         size: [width, height],
-        format: 'depth24plus',
+        format: REVERSED_DEPTH.format,
         usage: TEXTURE_USAGE.renderAttachment,
       });
     }
@@ -332,7 +336,7 @@ export class SceneView {
       ],
       depthStencilAttachment: {
         view: this.depth.createView(),
-        depthClearValue: 1,
+        depthClearValue: REVERSED_DEPTH.clearValue,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',
       },
