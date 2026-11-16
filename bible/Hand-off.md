@@ -38,6 +38,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- The [[Open Questions]] from [[Every Island Is Seen Whole and Reached by Nodes]]: what of DFO's forged models and
+  procedural textures comes over under [[Own Work]], what happens past a section's edge, and the sizes in metres.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).

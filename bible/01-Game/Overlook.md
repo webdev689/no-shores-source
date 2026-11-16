@@ -32,6 +32,7 @@ The scope in full is in [[Overlook Is a Shared World After Destiny 1]].
 - [[More Organisation, Less Bloat]]
 - [[World 2.0 Feeds the World Map]]
 - [[The World Map]]
+- [[Every Island Is Seen Whole and Reached by Nodes]]
 - [[Quests Are Rebuilt, DFU's as Reference]]
 - [[Naval, Living World, Professions and Synth Come Over Leaner]]
 - [[Gameplay Starts With the Shared Rules]]

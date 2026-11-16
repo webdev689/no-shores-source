@@ -47,6 +47,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Gameplay Starts With the Shared Rules]]
 - [[Messages Are FlatBuffers]]
 - [[The Server's Shell Is in server]]
+- [[Every Island Is Seen Whole and Reached by Nodes]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
