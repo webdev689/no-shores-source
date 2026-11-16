@@ -11,7 +11,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use std::path::Path;
 
 /// Both tests hold this value; a change to the land, the city or the moves changes it in both, on purpose.
-pub const NODE_RUN_HASH: &str = "cb3fcdf37dcbebf9";
+pub const NODE_RUN_HASH: &str = "a50b7e725835a33f";
 
 /// Ticks, then forward, sideways, yaw, run, and jump on the first tick only.
 type Phase = (usize, f64, f64, f64, bool, bool);
@@ -28,7 +28,7 @@ const RUNS: [Run; 2] = [
     // Across the plaza into its parapet; vault it onto the terrace beyond; jump; run east along the terrace.
     Run {
         node: "mistfall-social",
-        bounds: [489_772.0, 2_270_352.0, 490_228.0, 2_270_668.0],
+        bounds: [489_770.0, 2_270_350.0, 490_230.0, 2_270_670.0],
         script: &[
             (900, 1.0, 0.0, 0.0, true, false),
             (60, 1.0, 0.0, 0.0, false, true),

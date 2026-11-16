@@ -96,7 +96,9 @@ same splines and softens every edge across a pixel.
 
 Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled
 every 4 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports
-and the coast. It eases into the 1 km land over its outer 96 m. It is sampled again once the target moves 400 m,
+and the coast. Its spline is held between the four samples round each point, so a city's pads (a terrace, a plaza)
+stand level to their edges, with no ridge where the cubic would overshoot their step. It eases into the 1 km land
+over its outer 96 m. It is sampled again once the target moves 400 m,
 and after every stroke, place change, undo or redo; the land's worker samples it and works out the breakers over it,
 so the page never waits.
 Except while walking, a 1.8 m figure stands at the target with a scale bar beside it.

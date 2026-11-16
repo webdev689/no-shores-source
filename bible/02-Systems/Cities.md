@@ -75,8 +75,11 @@ city stands on it:
    and a gatehouse at each gate; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
    stands apart from the ground or terrace beyond it.
 8. **The landmark**, of the motif's solids.
-9. **The social space**: a plaza of 260 × 120 m on the landmark's seaward side, walled with a parapet on its open
-   sides, its section 2 m inside its edge and its four spawns along the landmark's side. Its node is
+9. **The social space**: a plaza of 260 × 120 m on the landmark's seaward side, walled with a parapet 1.1 m high on
+   its open sides. Its section is its own edge, so its floor is walked right to the parapet and only climbing over
+   it warns; its four spawns stand 40 m apart, 4 m inside the seaward parapet, looking down over the city. Lanterns
+   stand on that parapet midway between the spawns, every 40 m, and in its middle a stepped plinth bears an obelisk
+   18 m high capped in gold, as the Tower's courtyard has its marks to find the way by. Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep
@@ -170,8 +173,7 @@ SwiftShader at 1280 x 720:
 - Only the social space is walked; the city's blocks stand no colliders.
 - Streets are the RMB blocks' own; an avenue is an open paved cell, not a street drawn through the blocks.
 - A leaning or rolled solid's box holds the whole of it, so a body meets it early.
-- Nothing in the game draws `CityView` yet; it was looked at on a page of its own.
-- From eye height by the plaza's parapet, the rest of the plaza's levelled cell beyond it and the retaining wall's
-  1 m lip at that cell's edge hide the city within about a kilometre; the harbour and the sea show.
+- The parapet hides the city just below it from back on the plaza: from a spawn, 4 m in, the city shows from about
+  250 m out, and all of it only from the parapet itself.
 - Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.
 - The depth pull lets the city show through land within its share of the distance in front of it.

@@ -1,6 +1,6 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
-import type { LandView } from '../rules/landRules.ts';
+import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
 import { type TerrainData, TerrainView } from '../terrain/terrainView.ts';
@@ -112,6 +112,11 @@ export class GameScene {
       .catch(() => {
         this.pending = false;
       });
+  }
+
+  /** The exact ground round the player as last sampled, or null before any. */
+  closePatch(): GroundPatch | null {
+    return this.close?.ground.patch ?? null;
   }
 
   /** Whether the exact ground round a world point has come. */

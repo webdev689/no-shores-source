@@ -116,7 +116,8 @@ const COAST_REACH = ${COAST_REACH_M.toFixed(1)};
 const FRESH_LEVEL = ${FRESH_LEVEL_M};
 
 // The value of a grid of samples at 'at', in samples from sample (0, 0), along Catmull-Rom splines through them (the
-// land crate's own cubic), and its slope a sample east and south.
+// land crate's own cubic), and its slope a sample east and south. Held between the lowest and the highest of the
+// four samples round it (spline.ts heldSplineAt): a cubic through a pad's sheer step overshoots it by about 7 %.
 fn spline_at(grid: texture_2d<f32>, at: vec2f) -> vec3f {
   let last = vec2i(textureDimensions(grid)) - 1;
   let base = floor(at);
@@ -126,13 +127,20 @@ fn spline_at(grid: texture_2d<f32>, at: vec2f) -> vec3f {
   var weights = array<vec2f, 4>(-0.5 * t3 + t2 - 0.5 * t, 1.5 * t3 - 2.5 * t2 + 1.0, -1.5 * t3 + 2.0 * t2 + 0.5 * t, 0.5 * t3 - 0.5 * t2);
   var slopes = array<vec2f, 4>(-1.5 * t2 + 2.0 * t - 0.5, 4.5 * t2 - 5.0 * t, -4.5 * t2 + 4.0 * t + 0.5, 1.5 * t2 - t);
   var out = vec3f(0.0);
+  var low = 3.4e38;
+  var high = -3.4e38;
   for (var row = 0; row < 4; row++) {
     for (var column = 0; column < 4; column++) {
       let value = textureLoad(grid, clamp(vec2i(base) + vec2i(column - 1, row - 1), vec2i(0), last), 0).r;
       out += value * vec3f(weights[column].x * weights[row].y, slopes[column].x * weights[row].y, weights[column].x * slopes[row].y);
+      if ((row == 1 || row == 2) && (column == 1 || column == 2)) {
+        low = min(low, value);
+        high = max(high, value);
+      }
     }
   }
-  return out;
+  let held = clamp(out.x, low, high);
+  return select(out, vec3f(held, 0.0, 0.0), held != out.x);
 }
 
 // A height and its slope kept softly at SHORE_FLOOR or more: unchanged from twice that up, eased onto it below.

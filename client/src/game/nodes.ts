@@ -1,4 +1,3 @@
-import type { PlanSolid } from './plainCity.ts';
 import { type NodeInfo, ringMiddle } from './worldData.ts';
 
 type Point = readonly [number, number];
@@ -24,11 +23,7 @@ export interface CityPlan {
     readonly level: number;
     readonly ring: readonly Point[];
     readonly spawns: readonly Point[];
-    readonly solids: readonly PlanSolid[];
   };
-  /** The landmark's solids, and the works: the wall, its towers and gates, the quay, piers and retaining walls. */
-  readonly landmark: readonly PlanSolid[];
-  readonly works: readonly PlanSolid[];
   readonly pads: readonly Pad[];
 }
 

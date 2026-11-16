@@ -1,6 +1,6 @@
 import type { GroundPatch } from '../rules/landRules.ts';
 import { type Orbit, viewProjection } from './orbit.ts';
-import { splineAt } from '../water/spline.ts';
+import { heldSplineAt } from '../water/spline.ts';
 import type { CloseUpData } from '../terrain/terrainView.ts';
 
 /** Under this distance from its target, the 3D camera shows the exact ground around the target. */
@@ -54,7 +54,7 @@ export function closeUpData(
 export function groundUnder(patch: GroundPatch, x: number, y: number): number | null {
   const [gridX, gridY] = [(x - patch.left) / patch.step, (y - patch.top) / patch.step];
   if (gridX < 0 || gridY < 0 || gridX >= patch.width - 1 || gridY >= patch.height - 1) return null;
-  return splineAt(patch.heights, patch.width, patch.height, gridX, gridY);
+  return heldSplineAt(patch.heights, patch.width, patch.height, gridX, gridY);
 }
 
 /** Puts points in the window's metres (z up) on the screen through one camera, or null behind it. */

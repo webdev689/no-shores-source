@@ -9,14 +9,13 @@ code:
   - client/src/game/foot.ts#Foot
   - client/src/game/sea.ts#Sea
   - client/src/game/landmass.ts#openLandmass
-  - client/src/game/landmass.ts#landDrawers
+  - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
   - client/src/game/hud.ts#Hud
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
   - client/src/game/seaLaw.ts#continentToOpen
   - client/src/game/meshes.ts#shipMesh
-  - client/src/game/plainCity.ts#plainCityMesh
   - client/src/game/rooms.ts#roomsFrom
 ---
 # Game
@@ -112,16 +111,15 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 
 `GameScene` draws the open landmass in rings round the eye, the exact ground round the player or the ship, every
 drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]). The game adds the
-open landmass's drawers each frame (`landDrawers`): its city, from the city layer, and its nature, from the nature
-layer, which is handed `cleared`, true on the city's pads. Until the city layer's drawer is merged, the plan's
-solids (the plaza, its parapets, the landmark and the works) are drawn plain in their materials' colours, as one
-mesh (`plainCityMesh`). Ships and figures are drawn into the same pass; the first person's hands over the finished
-picture.
+open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView` ([[Cities]]), drawn in
+its continent's climate once the forged models' tables and the RMB blocks its plan names have come from the pages'
+`world/` folder; the blocks are kept for every later city. Its nature is the nature layer's `NatureView`
+([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
+(`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture.
 
 ## Limits
 
-- Until the city and nature layers are merged, the city's blocks and every plant are missing: the land round the
-  plain city is bare.
+- Until the city's tables and blocks have come, the land shows without its city.
 - A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and others
   then see the ship at rest.
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.

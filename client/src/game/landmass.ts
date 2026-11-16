@@ -1,11 +1,10 @@
-import type { Gpu } from '../gpu.ts';
+import type { CityPlan as DrawnPlan } from '../city/plan.ts';
 import { type HeightAt, landHeightAt, type Point2 } from '../overworld/ground.ts';
 import { maskFromGrid, type SeaMask } from '../overworld/seaRoute.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import type { TerrainData } from '../terrain/terrainView.ts';
 import { type CityPlan, clearedBy, socialNode } from './nodes.ts';
-import type { Drawer } from './scene.ts';
 import type { NodeInfo, WorldData } from './worldData.ts';
 
 /** The landmass open in the land's worker, and what the game reads off it: its city's plan, its nodes (its city's
@@ -14,6 +13,8 @@ export interface Landmass {
   readonly id: string;
   readonly view: LandView;
   readonly plan: CityPlan | null;
+  /** The same plan as the city layer reads it, to draw. */
+  readonly drawnPlan: DrawnPlan | null;
   readonly nodes: readonly NodeInfo[];
   readonly outline: readonly Point2[];
   readonly heightAt: HeightAt;
@@ -40,6 +41,7 @@ export async function openLandmass(
     id,
     view,
     plan,
+    drawnPlan: planText === null ? null : (JSON.parse(planText) as DrawnPlan),
     nodes: plan ? [socialNode(plan, id), ...drawn] : drawn,
     outline: continent.outline,
     heightAt: landHeightAt([view]),
@@ -51,14 +53,4 @@ export async function openLandmass(
 /** The terrain's data for a landmass: its cells as the land worker gave them, with no places marked on them. */
 export function terrainOf(view: LandView): TerrainData {
   return { ...view, marks: new Uint8Array(view.width * view.height) };
-}
-
-/**
- * The drawers that stand on a landmass besides the land itself: its city, from the city layer, and its nature, from
- * the nature layer, which grows only where `landmass.cleared` is false. Each is made here once the layer is merged,
- * and the game adds both to the scene every frame. Until the city's arrives, the city's walls a body runs into are
- * drawn as plain boxes in its place.
- */
-export function landDrawers(_gpu: Gpu, _landmass: Landmass): { city: Drawer | null; nature: Drawer | null } {
-  return { city: null, nature: null };
 }

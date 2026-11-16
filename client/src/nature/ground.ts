@@ -1,6 +1,6 @@
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { FAR_FROM_FRESH_M, FRESH_LEVEL_M, FRESH_SINK_M, stillLevels } from '../water/shore.ts';
-import { splineAt } from '../water/spline.ts';
+import { heldSplineAt } from '../water/spline.ts';
 import { COAST_BLEND_M, SHORE_FLOOR_M } from '../water/waterCommon.ts';
 
 /** What water stands at a point. */
@@ -245,7 +245,7 @@ export function landSampler(view: LandView, patch: GroundPatch | null): GroundSa
       const inside = Math.min(gridX, gridY, patch.width - 1 - gridX, patch.height - 1 - gridY);
       share = smooth(1, 24, inside);
       if (share > 0) {
-        const exact = (atX: number, atY: number) => splineAt(patch.heights, patch.width, patch.height, atX, atY);
+        const exact = (atX: number, atY: number) => heldSplineAt(patch.heights, patch.width, patch.height, atX, atY);
         const exactEast = (exact(gridX + 0.5, gridY) - exact(gridX - 0.5, gridY)) / patch.step;
         const exactSouth = (exact(gridX, gridY + 0.5) - exact(gridX, gridY - 0.5)) / patch.step;
         height += (exact(gridX, gridY) - height) * share;

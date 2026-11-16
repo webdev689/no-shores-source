@@ -12,7 +12,7 @@ const built = (name: string) =>
 const content = (path: string) => readFile(new URL(`../../../content/world/${path}`, import.meta.url), 'utf8');
 
 /** The room crate's agreement test holds the same fingerprint, nodes, rects and scripts (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = 'cb3fcdf37dcbebf9';
+const NODE_RUN_HASH = 'a50b7e725835a33f';
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];
@@ -20,7 +20,7 @@ type Phase = readonly [number, number, number, number, boolean, boolean];
 const RUNS: readonly { node: string; bounds: Rect; script: readonly Phase[] }[] = [
   {
     node: 'mistfall-social',
-    bounds: [489_772, 2_270_352, 490_228, 2_270_668],
+    bounds: [489_770, 2_270_350, 490_230, 2_270_670],
     script: [
       [900, 1, 0, 0, true, false],
       [60, 1, 0, 0, false, true],

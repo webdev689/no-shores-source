@@ -19,11 +19,11 @@ import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
-import { type Landmass, landDrawers, openLandmass, terrainOf } from './landmass.ts';
+import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
+import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { shipMesh } from './meshes.ts';
 import { MeshView, type Placing } from './meshView.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
-import { plainCityMesh } from './plainCity.ts';
 import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
@@ -102,22 +102,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     openForge(gpu, figureView),
   ]);
   const { continents } = world;
-  /** The city's solids drawn plain, standing in for the city layer's drawer until it is merged. */
-  const plainCityOf = (opened: Landmass, made: { readonly city: Drawer | null }): Placing | null => {
-    const plan = opened.plan;
-    if (!plan || made.city) return null;
-    const solids = [...plan.social.solids, ...plan.landmark, ...plan.works];
-    return { mesh: meshes.mesh(plainCityMesh(solids, plan.centre)), at: [...plan.centre, 0], heading: 0 };
-  };
+  const cityAssets = loadCityAssets(base);
+  const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
+  const drawersOn = (opened: Landmass) => landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets);
   let landmass = await openLandmass(land, world, rmbText, FIRST_CONTINENT);
-  let drawers = landDrawers(gpu, landmass);
-  let plainCity = plainCityOf(landmass, drawers);
+  let drawers = drawersOn(landmass);
   scene.setLand(landmass.view, terrainOf(landmass.view));
 
   const input = new Input(canvas);
   const dress = plainDress('human', 0.3);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
-  const walker = new Walker(newPlayer(movement, 0, 0), you, firstPerson, forge);
+  // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
+  const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
+  const walker = new Walker({ ...newPlayer(movement, 0, 0), view: arrivalView }, you, firstPerson, forge);
   const footContext: FootContext = {
     movement,
     land,
@@ -286,10 +283,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (atSea()) sea?.zoom(wheelNotches(event.deltaY, event.deltaMode, canvas.clientHeight));
   });
 
-  /** The drawers that stand on the open landmass, its city (or its solids drawn plain) and its nature, and the
-   *  meshes and figures besides. */
-  const standing = (extra: readonly Placing[], figures: readonly CardAt[]): Drawer[] => {
-    const placings = plainCity ? [plainCity, ...extra] : extra;
+  /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides. */
+  const standing = (placings: readonly Placing[], figures: readonly CardAt[]): Drawer[] => {
     const found: (Drawer | null)[] = [
       drawers.city,
       drawers.nature,
@@ -356,9 +351,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     openLandmass(land, world, rmbText, other)
       .then((opened: Landmass) => {
         landmass = opened;
-        drawers = landDrawers(gpu, opened);
-        plainCity?.mesh.buffer.destroy();
-        plainCity = plainCityOf(opened, drawers);
+        drawers.release();
+        drawers = drawersOn(opened);
         scene.setLand(opened.view, terrainOf(opened.view));
         here.setLandmass(opened);
       })

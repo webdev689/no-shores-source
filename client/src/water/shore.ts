@@ -1,5 +1,5 @@
 import type { GroundPatch, Swell } from '../rules/landRules.ts';
-import { splineAt } from './spline.ts';
+import { heldSplineAt } from './spline.ts';
 import { swellHeight } from './swell.ts';
 
 /** The breakers' tuning, one swell rolling in to every shore. The GPU draws them from these same numbers. */
@@ -301,7 +301,7 @@ export function waterUnder(
   corners.push((corners[0] ?? 0) + field.width, (corners[1] ?? 0) + field.width);
   const blend = (values: ArrayLike<number>, stride = 1, offset = 0) =>
     corners.reduce((sum, sample, index) => sum + (weights[index] ?? 0) * (values[sample * stride + offset] ?? 0), 0);
-  const bed = splineAt(field.heights, field.width, field.height, gridX, gridY);
+  const bed = heldSplineAt(field.heights, field.width, field.height, gridX, gridY);
   const level = blend(field.levels, 2, 0);
   // As the GPU's still_at: fresh water dipping under the sea's level is the sea's.
   const freshSurface = level - FRESH_SINK_M - Math.max(0, blend(field.levels, 2, 1));
