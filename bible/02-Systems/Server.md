@@ -30,26 +30,36 @@ host, and the browser's side; the [[Test Ground]] plays in a room. It is deploye
 
 - **One shared space:** its course, its clock in ticks and its players. It has no network and no clock of its own:
   its host hands it each player's inputs, ticks it 60 times a second, and sends out what it sees.
-- **Joining:** a player gets a number no one else in the room has had, and stands at the room's spawn.
-- **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused. An input is one
-  tick's intent, the controls ([[Movement]]) and the fight's buttons ([[Combat]]), with what the player's hands hold
+- **Joining:** a player gets a number no one else in the room has had, and stands at the room's spawn. A room holds
+  16 players; past that, it turns the next away.
+- **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused, as is one with a
+  number in it that is not a number. An input is one tick's intent, the controls ([[Movement]]) and the fight's buttons ([[Combat]]), with what the player's hands hold
   and the room tick their screen last showed. It steps that player's fighter once by combat's player tick, among the
   fighters as that screen showed them, exactly as the browser that predicted it did, so a prediction can only differ
-  where the server knows more ([[Clients Predict With the Shared Rules]]).
+  where the server knows more ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at
+  rest, never in the middle of a swing, a guard, a draw or a reload.
 - **Foes:** a player may ask for a foe (the [[Test Ground]]'s panel), one with each input; the room stands it 5 m
   along the player's aim, which follows their look, on its navmesh, facing them, and holds at most twelve.
   Each tick every foe thinks over the room as it stands and steps by the same rules ([[Foes]]), routing on a
   [[Navmesh]] the room bakes from its course when it opens.
-- **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe as the player's
-  screen showed it, up to 24 ticks back. A blow on a player (a foe's swing, a telegraphed blow, a shot) waits until the
+- **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
+  screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
+  same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way. A blow on a player (a foe's swing, a telegraphed blow, a shot) waits until the
   player's inputs show they had seen it land, 24 ticks at most, and is judged against the player as they stood then:
   whether it reached them, their guard, their parry window, their dodge. What the verdict does is done to everyone as
   they are now. A telegraphed blow that finds no one overreaches its foe once every player near it has been judged.
-- **Shots** fly a tick at a time and strike the first body of the other side on their line.
-- **The dead** stand again at the spawn, whole, after four seconds; a dead foe is gone after ten.
+- **Shots** fly a tick at a time and strike the first body of the other side on their line; arrows and bolts fly in
+  the room's own time.
+- **The dead** stand again at the spawn, whole, after four seconds, and the foes leave them be for three more unless
+  they strike first; a dead foe is gone after ten.
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
-  ticks since they joined, plus a slack of 6 ticks for the network's jitter, so no one moves faster than real time.
-  More than 30 waiting inputs are refused.
+  ticks since they joined, plus a slack of 6 ticks for the network's jitter, and a tick takes at most 3, so no one
+  moves faster than real time and one catching up after a stall replays no faster than three times over. A player
+  whose inputs stop is stepped standing still once they fall a view's lag (24 ticks) behind, so nothing they were
+  doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend as speed.
+  Past 30 waiting inputs, the oldest is let go as though taken, so a burst after a stall never breaks the order. The
+  room tick a player says their screen showed moves on at most 4 ticks an input, so they cannot pick the moment they
+  are judged at. A dress change is taken at most once a second.
 - **What it sees:** every player's fighter and the number of their last input it took, every foe, the shots in
   flight, and what happened in the fight since it was last asked: hits, blocks, parries, guard breaks, dodges,
   staggers, deaths, players standing again, feints, foes arriving. The same on every machine.
@@ -64,7 +74,7 @@ it ([[Messages Are FlatBuffers]]). A body and controls cross as the movement cra
 |---|---|---|
 | Input | A browser | Its number, one tick's controls and the fight's buttons, the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, and a foe asked for |
 | Joined | The room | The joining player's number, and every dress in the room |
-| Snapshot | The room | The room's tick; every player: their number, their body, their whole fighter, the number of their last input taken and the look that came with it; the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; and the shots in flight |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken and the look that came with it; the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; and the shots in flight |
 
 The server reads an input only after FlatBuffers' verifier passes its bytes, so bytes that are not an input, or
 controls that are not 7 numbers, are refused. The browser reads a message the room sent, and takes one it cannot read
@@ -83,7 +93,9 @@ each room's name. The object keeps its room in WebAssembly: the room and protoco
 so every decision is Rust and the shell only carries bytes and time.
 
 - A WebSocket joins the room and is welcomed with the player's number; each binary message is one of their inputs.
-  An input refused for any reason but a flood closes the socket, since that browser is not keeping to the messages.
+  An input refused for any reason, or a message over 8 KB, closes the socket, since that browser is not keeping to the
+  messages; its player leaves at once, and no snapshot is sent to a socket that is closing. A full room closes the
+  socket saying so. Should the room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
   sends every player the snapshot after each tick. When the last player leaves it stops, and the room goes with the
   object.
@@ -117,9 +129,11 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 - Any page can join a room, under any name; no one signs in.
 - A snapshot sends every player's whole fighter and look and every foe's glance every tick: fine for a few players and
   foes, heavy for many.
-- A player's view may lag 24 ticks at most; a screen further behind is judged as it stands. A player could claim the
-  most lag to gain a little reaction time; nothing checks it.
+- A player's view may lag 24 ticks at most; a screen further behind is judged as it stands. A player could hold a
+  claimed lag at the most to gain up to 24 ticks of reaction; nothing checks it.
+- Arrows and bolts are not judged as their shooter saw: they fly in the room's time.
+- Riding is the browser's word: the room takes `mounted` as it is sent.
 - Players do not harm one another.
 - A dress travels with a player's inputs, which flow only while they play: until then, others see a plain figure.
-- A player who sends nothing stands still in time: their body waits, mid-jump if need be, until their inputs come.
+- A player who sends nothing waits a view's lag, then stands still where they were until their inputs come.
 - Every player joins at the same spot, and bodies pass through each other; foes keep apart by steering.
