@@ -167,6 +167,8 @@ pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, sho
                 gun: lay.gun,
                 shot: lay.shot,
                 flown: 0.0,
+                fired: false,
+                rigged: [false; 2],
             }
         })
         .collect()
