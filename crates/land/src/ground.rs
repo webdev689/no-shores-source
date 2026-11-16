@@ -355,10 +355,12 @@ impl Ground {
     /// fresh water is near. Drawn water follows this, so its edge is smooth wherever the ground is sampled.
     #[must_use]
     pub fn fresh_edge(&self, x: f64, y: f64) -> Option<f64> {
-        if let Some(surface) = self.lake_surface(x, y) {
-            return Some(self.height_at(x, y) - surface);
+        // In the order water_at finds water: a river's channel, then a lake, then a river's banks.
+        let river = self.nearest(x, y, false).map(|(river, distance)| distance - river.width / 2.0);
+        if let Some(inside) = river.filter(|&edge| edge < 0.0) {
+            return Some(inside);
         }
-        self.nearest(x, y, false).map(|(river, distance)| distance - river.width / 2.0)
+        self.lake_surface(x, y).map(|surface| self.height_at(x, y) - surface).or(river)
     }
 }
 

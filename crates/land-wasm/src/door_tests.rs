@@ -39,8 +39,13 @@ fn a_patch_samples_the_ground_with_its_water_and_marks() {
     let found = header(&bytes);
     assert_eq!((found["width"].as_u64(), found["height"].as_u64()), (Some(10), Some(10)));
     let start = 4 + u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
-    assert_eq!(bytes.len(), start + 100 * 4 * 2 + 100);
-    let marks = &bytes[start + 800..];
+    assert_eq!(bytes.len(), start + 100 * 4 * 3 + 100, "height, water and fresh water's edge, then the mark");
+    let float = |at: usize| f32::from_le_bytes([bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]]);
+    for sample in 0..100 {
+        let (water, edge) = (float(start + 400 + sample * 4), float(start + 800 + sample * 4));
+        assert_eq!(water > 0.0, edge < 0.0, "sample {sample}: under fresh water exactly where inside its edge");
+    }
+    let marks = &bytes[start + 1200..];
     assert_eq!(marks[5 * 10], 3, "the sample on the road's line is on its bed");
     assert_eq!(marks[0], 0, "20 m off it is not");
     let refused = header(&patch_view(br#"{ "left": 0, "top": 0, "step": 4, "width": 5000, "height": 10 }"#));
