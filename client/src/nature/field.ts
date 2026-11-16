@@ -1,7 +1,8 @@
 import { castOf } from './cast.ts';
 import type { Cast, Kind } from './kinds.ts';
-import { firstForms, formKinds, PLANTED_FLOATS, type ScatterGround, scatterTile, TILE_M } from './scatter.ts';
+import { formKinds, PLANTED_FLOATS, type ScatterGround, scatterTile, TILE_M } from './scatter.ts';
 import { VERTEX_FLOATS } from './shapes.ts';
+import { PAGE_SHIFT, PAGE_SLOTS, SLOT_FLOATS, SlotStore } from './slots.ts';
 
 /** The ground round the eye, as the caller has it this frame. */
 export interface NatureGround extends ScatterGround {
@@ -10,17 +11,15 @@ export interface NatureGround extends ScatterGround {
   /** Changes whenever the ground under the plants changes (an edit, a new close patch): every tile is scattered
    *  again, nearest first, the old plants drawn until their tile's turn comes. */
   readonly version: number;
+  /** The biome's low ground (0..1 a channel): the far plants' colours lean toward it. */
+  readonly groundColour?: readonly [number, number, number];
 }
 
-/** An instance as the GPU reads it: east and south of the anchor, its foot's height, its turn; its width and height
- *  scales, its tint and its rank. */
-export const INSTANCE_FLOATS = 8;
 /** The near mesh crossfades into the far one over this last share of its range. */
 export const LOD_BAND = 0.12;
 /** Far trees thin out from here to their reach, the rest widened to fill in. */
 export const THIN_FROM_M = 1000;
-/** While tiles still wait their turn, newly scattered ones are packed at most this often, milliseconds: a pack
- *  copies every instance, too much to do every frame. */
+/** While tiles still wait their turn, newly scattered ones are listed at most this often, milliseconds. */
 const REPACK_MS = 250;
 /** The eye stands anywhere in its tile, so a tile's distance from the eye's tile's middle is this uncertain. */
 const SLACK_M = TILE_M * Math.SQRT1_2;
@@ -43,27 +42,33 @@ export interface Group {
   readonly counts: readonly number[];
 }
 
-/** Everything drawn, packed for the GPU: the anchor (a world point near the eye, metres) every instance is placed
- *  from, the instances, each packed tile's middle (from the anchor) and the lowest and highest a plant of it reaches,
- *  and the groups to draw. */
+/** What is drawn from here: the anchor (a world point near the eye, metres); the slot of every instance drawn,
+ *  group by group and tile by tile (the slots themselves stay put in the store); each tile number's north-west
+ *  corner from the anchor; each listed tile's middle from the anchor and the lowest and highest a plant of it
+ *  reaches; and the groups to draw. */
 export interface Packed {
   readonly anchor: readonly [number, number];
-  readonly instances: Float32Array;
+  readonly list: Uint32Array;
+  readonly corners: Float32Array;
   readonly tiles: Float32Array;
   readonly groups: readonly Group[];
   /** How far a plant's crown may reach past its tile's edge, metres, the far ones widened as they thin. */
   readonly spread: number;
 }
 
-/** One layer of a tile: its plants, sorted by form, and where each form's begin (and the last ends). */
+/** One layer of a tile: its plants, sorted by form, where each form's begin (and the last ends), and the store's
+ *  pages that hold them. */
 interface Layered {
   readonly planted: Float32Array;
   readonly starts: Int32Array;
+  readonly pages: readonly number[];
 }
 
 interface Tile {
   readonly tileX: number;
   readonly tileY: number;
+  /** The tile's number while it is kept: its plants find its corner by it. */
+  readonly number: number;
   readonly tall: Layered;
   low: Layered | null;
   readonly version: number;
@@ -72,14 +77,21 @@ interface Tile {
   highest: number;
 }
 
-function layered(planted: Float32Array, forms: number): Layered {
+/** A layer's plants put in the store as the GPU reads them, and where each form's begin. */
+function layered(planted: Float32Array, forms: number, store: SlotStore, tileNumber: number): Layered {
   const starts = new Int32Array(forms + 1);
-  for (let offset = 0; offset < planted.length; offset += PLANTED_FLOATS) {
-    const form = (planted[offset] ?? 0) + 1;
+  const count = planted.length / PLANTED_FLOATS;
+  const slots = new Float32Array(count * SLOT_FLOATS);
+  for (let index = 0; index < count; index++) {
+    const [from, to] = [index * PLANTED_FLOATS, index * SLOT_FLOATS];
+    const form = (planted[from] ?? 0) + 1;
     starts[form] = (starts[form] ?? 0) + 1;
+    for (let part = 1; part <= 10; part++) slots[to + part - 1] = planted[from + part] ?? 0;
+    slots[to + 10] = tileNumber;
+    slots[to + 11] = planted[from + 11] ?? 0;
   }
   for (let form = 1; form <= forms; form++) starts[form] = (starts[form] ?? 0) + (starts[form - 1] ?? 0);
-  return { planted, starts };
+  return { planted, starts, pages: store.store(slots) };
 }
 
 /** The lowest and highest foot among some plants and the bounds so far. */
@@ -133,9 +145,10 @@ export class NatureField {
   private biome = '';
   private cast: Cast = castOf('');
   private kindOf: number[] = [];
-  private firstForm: number[] = [];
   private reach = { tall: 0, low: 0, top: 0, spread: 0 };
   private offsets: (readonly [number, number, number])[] = [];
+  /** The same offsets in turn round the eye, so the tiles in view run together in the list. */
+  private ring: (readonly [number, number, number])[] = [];
   private eyeTile: readonly [number, number] | null = null;
   /** The eye has crossed into another tile, or tiles have been scattered, since the last pack. */
   private moved = true;
@@ -145,11 +158,22 @@ export class NatureField {
   private settled: { readonly version: number } | null = null;
   /** How far through the offsets the last update got, for the version it worked on: the next carries on there. */
   private cursor = { at: 0, version: NaN };
-  /** The packing's working buffer, kept between packs so a step of the eye rarely makes a new one. */
-  private scratch = new Float32Array(1 << 16);
+  /** The list's working buffer, kept between lists so a step of the eye rarely makes a new one. */
+  private scratch = new Uint32Array(1 << 16);
+  /** Each group's run of slots as a list is made, kept between lists: near and far for each form in turn. */
+  private readonly runs: { slots: Uint32Array; length: number; tiles: number[]; counts: number[] }[] = [];
+  /** Whether each form has a far mesh. */
+  private hasFar: boolean[] = [];
+  /** Tile numbers let go of, for the next tiles kept; those let go since the last list wait for the next. */
+  private readonly freeNumbers: number[] = [];
+  private retiredNumbers: number[] = [];
+  private nextNumber = 0;
+  /** Every kept instance, in slots that stay put while its tile is kept. */
+  readonly store = new SlotStore();
   private packing: Packed = {
     anchor: [0, 0],
-    instances: new Float32Array(),
+    list: new Uint32Array(),
+    corners: new Float32Array(),
     tiles: new Float32Array(),
     groups: [],
     spread: 0,
@@ -198,12 +222,16 @@ export class NatureField {
       const key = keyOf(tileX, tileY);
       let kept = this.kept.get(key);
       if (!kept || kept.version !== ground.version) {
+        if (kept) this.letGo(kept, false);
+        const number = kept?.number ?? this.freeNumbers.pop() ?? this.nextNumber++;
         const tall = scatterTile(this.cast, 'tall', tileX, tileY, ground);
         const [lowest, highest] = feet(tall);
+        const forms = this.kindOf.length;
         kept = {
           tileX,
           tileY,
-          tall: layered(tall, this.kindOf.length),
+          number,
+          tall: layered(tall, forms, this.store, number),
           low: null,
           version: ground.version,
           lowest,
@@ -215,7 +243,7 @@ export class NatureField {
       }
       if (!kept.low && distance <= this.reach.low + RING_M) {
         const low = scatterTile(this.cast, 'low', tileX, tileY, ground, kept.tall.planted);
-        kept.low = layered(low, this.kindOf.length);
+        kept.low = layered(low, this.kindOf.length, this.store, kept.number);
         [kept.lowest, kept.highest] = feet(low, kept.lowest, kept.highest);
         this.scattered += 1;
         this.grown = true;
@@ -234,11 +262,15 @@ export class NatureField {
     this.biome = biome;
     this.cast = castOf(biome);
     this.kindOf = formKinds(this.cast);
-    this.firstForm = firstForms(this.cast);
+    this.hasFar = this.cast.kinds.flatMap((kind) => kind.plants.map((plant) => !!plant.far));
+    this.runs.length = 0;
     const reachOf = (layer: Kind['layer']) =>
       Math.max(0, ...this.cast.kinds.filter((kind) => kind.layer === layer).map((kind) => kind.reachM));
     this.reach = { tall: reachOf('tall'), low: reachOf('low'), ...extent(this.cast) };
     this.offsets = offsetsWithin(Math.max(this.reach.tall, this.reach.low));
+    const turn = ([across, down]: readonly [number, number, number]) => Math.atan2(down, across);
+    this.ring = [...this.offsets].sort((a, b) => turn(a) - turn(b) || a[2] - b[2]);
+    for (const kept of this.kept.values()) this.letGo(kept, true);
     this.kept.clear();
     this.eyeTile = null;
     this.settled = null;
@@ -249,75 +281,107 @@ export class NatureField {
   private forget(tile: readonly [number, number]): void {
     for (const [key, kept] of this.kept) {
       const distance = Math.hypot(kept.tileX - tile[0], kept.tileY - tile[1]) * TILE_M;
-      if (distance > Math.max(this.reach.tall, this.reach.low) + 3 * TILE_M) this.kept.delete(key);
-      else if (distance > this.reach.low + 3 * TILE_M) kept.low = null;
+      if (distance > Math.max(this.reach.tall, this.reach.low) + 3 * TILE_M) {
+        this.letGo(kept, true);
+        this.kept.delete(key);
+      } else if (distance > this.reach.low + 3 * TILE_M && kept.low) {
+        this.store.release(kept.low.pages);
+        kept.low = null;
+      }
     }
   }
 
-  /** Packs every kept instance its form's detail draws from here, tiles in turn round the eye so the ones in view
-   *  run together. */
+  /** Gives a tile's pages back to the store, and its number too when the tile itself goes. */
+  private letGo(kept: Tile, wholly: boolean): void {
+    this.store.release(kept.tall.pages);
+    if (kept.low) this.store.release(kept.low.pages);
+    if (wholly) this.retiredNumbers.push(kept.number);
+  }
+
+  /** Lists the slot of every kept instance its form's detail draws from here, tiles in turn round the eye so the
+   *  ones in view run together. Nothing moves in the store: only the list and the tiles' corners are made again. */
   private pack(tile: readonly [number, number]): void {
     const anchor = [tile[0] * TILE_M, tile[1] * TILE_M] as const;
-    const middle = [anchor[0] + TILE_M / 2, anchor[1] + TILE_M / 2] as const;
-    const tiles = [...this.kept.values()]
-      .map((kept) => {
-        const [east, south] = [(kept.tileX + 0.5) * TILE_M - middle[0], (kept.tileY + 0.5) * TILE_M - middle[1]];
-        return { kept, east, south, turn: Math.atan2(south, east), distance: Math.hypot(east, south) };
-      })
-      .sort((a, b) => a.turn - b.turn || a.distance - b.distance);
-    const bounds = new Float32Array(tiles.length * 4);
-    for (const [index, { kept, east, south }] of tiles.entries()) {
-      const [lowest, highest] = kept.lowest > kept.highest ? [0, 0] : [kept.lowest, kept.highest];
-      bounds.set([east + TILE_M / 2, south + TILE_M / 2, lowest - 1, highest + this.reach.top], index * 4);
+    const tiles: { kept: Tile; east: number; south: number; distance: number }[] = [];
+    for (const [across, down, distance] of this.ring) {
+      const kept = this.kept.get(keyOf(tile[0] + across, tile[1] + down));
+      if (kept) tiles.push({ kept, east: across * TILE_M, south: down * TILE_M, distance });
     }
-    let out = this.scratch;
-    let length = 0;
-    const groups: Group[] = [];
-    for (const [form, kindIndex] of this.kindOf.entries()) {
-      const kind = this.cast.kinds[kindIndex];
-      if (!kind) continue;
-      const plant = kind.plants[form - (this.firstForm[kindIndex] ?? 0)];
-      for (const far of plant?.far ? [false, true] : [false]) {
-        const group = { form, far, first: length / INSTANCE_FLOATS, tiles: [] as number[], counts: [] as number[] };
-        // Plain loops and scalars: this runs for every form over every tile each time the eye steps a tile.
-        for (let index = 0; index < tiles.length; index++) {
-          const entry = tiles[index];
-          if (!entry) continue;
-          const nearest = Math.max(0, entry.distance - SLACK_M * 2);
-          if (nearest > kind.reachM) continue;
-          if (!far && nearest > kind.nearM) continue;
-          if (far && entry.distance + SLACK_M * 2 < kind.nearM * (1 - LOD_BAND)) continue;
-          const layer = kind.layer === 'tall' ? entry.kept.tall : entry.kept.low;
-          if (!layer) continue;
-          const from = (layer.starts[form] ?? 0) * PLANTED_FLOATS;
-          const to = (layer.starts[form + 1] ?? 0) * PLANTED_FLOATS;
-          if (to <= from) continue;
-          if (length + to - from > out.length) {
-            const grown = new Float32Array(Math.max(out.length * 2, length + to - from));
-            grown.set(out.subarray(0, length));
-            out = grown;
+    const bounds = new Float32Array(tiles.length * 4);
+    const corners = new Float32Array(this.nextNumber * 2);
+    for (let index = 0; index < tiles.length; index++) {
+      const entry = tiles[index];
+      if (!entry) continue;
+      const { kept } = entry;
+      const none = kept.lowest > kept.highest;
+      bounds[index * 4] = entry.east + TILE_M / 2;
+      bounds[index * 4 + 1] = entry.south + TILE_M / 2;
+      bounds[index * 4 + 2] = (none ? 0 : kept.lowest) - 1;
+      bounds[index * 4 + 3] = (none ? 0 : kept.highest) + this.reach.top;
+      corners[kept.number * 2] = kept.tileX * TILE_M - anchor[0];
+      corners[kept.number * 2 + 1] = kept.tileY * TILE_M - anchor[1];
+    }
+    // Tile by tile, each form's plants go to its group's own run, then the runs are joined: a tile is weighed once,
+    // and only the forms it holds are visited.
+    const kinds = this.kindOf.map((kindIndex) => this.cast.kinds[kindIndex]);
+    const runs = this.runs;
+    while (runs.length < kinds.length * 2)
+      runs.push({ slots: new Uint32Array(1024), length: 0, tiles: [], counts: [] });
+    for (const run of runs) [run.length, run.tiles, run.counts] = [0, [], []];
+    for (let index = 0; index < tiles.length; index++) {
+      const entry = tiles[index];
+      if (!entry) continue;
+      const nearest = Math.max(0, entry.distance - SLACK_M * 2);
+      const farthest = entry.distance + SLACK_M * 2;
+      for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
+        const layer = layerIndex === 0 ? entry.kept.tall : entry.kept.low;
+        if (!layer) continue;
+        const { planted, pages, starts } = layer;
+        for (let form = 0; form < kinds.length; form++) {
+          const from = starts[form] ?? 0;
+          const to = starts[form + 1] ?? 0;
+          const kind = kinds[form];
+          if (to <= from || !kind || nearest > kind.reachM) continue;
+          for (let far = 0; far < 2; far++) {
+            if (far === 0 ? nearest > kind.nearM : !this.hasFar[form] || farthest < kind.nearM * (1 - LOD_BAND))
+              continue;
+            const run = runs[form * 2 + far];
+            if (!run) continue;
+            if (run.length + to - from > run.slots.length) {
+              const grown = new Uint32Array(Math.max(run.slots.length * 2, run.length + to - from));
+              grown.set(run.slots.subarray(0, run.length));
+              run.slots = grown;
+            }
+            const keep = far === 1 ? keptAt(kind, this.cast.keepAtReach, nearest) + 0.05 : 2;
+            const before = run.length;
+            for (let member = from; member < to; member++) {
+              // Each form's plants run in rank order, so the thinned-out ones are the end of the run.
+              if ((planted[member * PLANTED_FLOATS + 8] ?? 0) >= keep) break;
+              run.slots[run.length++] = (pages[member >> PAGE_SHIFT] ?? 0) * PAGE_SLOTS + (member & (PAGE_SLOTS - 1));
+            }
+            if (run.length === before) continue;
+            run.tiles.push(index);
+            run.counts.push(run.length - before);
           }
-          const keep = far ? keptAt(kind, this.cast.keepAtReach, nearest) + 0.05 : 2;
-          const east = entry.kept.tileX * TILE_M - anchor[0];
-          const south = entry.kept.tileY * TILE_M - anchor[1];
-          const planted = layer.planted;
-          const before = length;
-          for (let offset = from; offset < to; offset += PLANTED_FLOATS) {
-            // Each form's plants run in rank order, so the thinned-out ones are the end of the run.
-            if ((planted[offset + 8] ?? 0) >= keep) break;
-            out[length] = east + (planted[offset + 1] ?? 0);
-            out[length + 1] = south + (planted[offset + 2] ?? 0);
-            for (let part = 3; part < PLANTED_FLOATS; part++) out[length + part - 1] = planted[offset + part] ?? 0;
-            length += INSTANCE_FLOATS;
-          }
-          if (length === before) continue;
-          group.tiles.push(index);
-          group.counts.push((length - before) / INSTANCE_FLOATS);
         }
-        if (group.tiles.length > 0) groups.push(group);
       }
     }
+    let out = this.scratch;
+    const total = runs.reduce((sum, run) => sum + run.length, 0);
+    if (total > out.length) out = new Uint32Array(Math.max(out.length * 2, total));
+    let length = 0;
+    const groups: Group[] = [];
+    for (const [number, run] of runs.entries()) {
+      if (run.length === 0) continue;
+      out.set(run.slots.subarray(0, run.length), length);
+      groups.push({ form: number >> 1, far: (number & 1) === 1, first: length, tiles: run.tiles, counts: run.counts });
+      length += run.length;
+    }
     this.scratch = out;
-    this.packing = { anchor, instances: out.slice(0, length), tiles: bounds, groups, spread: this.reach.spread };
+    this.packing = { anchor, list: out.slice(0, length), corners, tiles: bounds, groups, spread: this.reach.spread };
+    // The new list names none of what was let go, so its pages and numbers may be handed out again.
+    this.store.recycle();
+    this.freeNumbers.push(...this.retiredNumbers);
+    this.retiredNumbers = [];
   }
 }

@@ -16,7 +16,7 @@ import {
   twice,
 } from './kinds.ts';
 import { broadleaf, cypress, mangrove } from './trees.ts';
-import { fern, shrub } from './undergrowth.ts';
+import { bush, fern, shrub } from './undergrowth.ts';
 import { acacia, baobab, cactus, palm } from './warmTrees.ts';
 
 /** The casts of the warmer biomes, by their keys in the layout. */
@@ -65,13 +65,15 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
         SHRUB,
         { chance: 0.014, grove: 0, byWater: { reachM: 250, boost: 4 }, ...LOW },
         [
-          shrub({
+          bush({
             seed: 44,
-            width: 1.2,
-            height: 0.8,
-            lumps: 3,
-            leaves: [0.5, 0.48, 0.32],
-            fleck: { colour: [0.42, 0.33, 0.24], share: 0.3 },
+            width: 1.3,
+            height: 0.9,
+            stems: 7,
+            tuft: 0.15,
+            flat: false,
+            leaves: [0.42, 0.47, 0.26],
+            wood: [0.45, 0.38, 0.3],
           }),
         ],
         [0.6, 1.3],
@@ -111,7 +113,18 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
         'thorn bush',
         SHRUB,
         { chance: 0.015, grove: 0.3, byWater: { reachM: 300, boost: 2 }, ...LOW },
-        [shrub({ seed: 45, width: 2.0, height: 1.2, lumps: 5, leaves: [0.42, 0.44, 0.22] })],
+        [
+          bush({
+            seed: 45,
+            width: 2.2,
+            height: 1.5,
+            stems: 6,
+            tuft: 0.24,
+            flat: true,
+            leaves: [0.36, 0.44, 0.18],
+            wood: [0.3, 0.25, 0.2],
+          }),
+        ],
         [0.7, 1.3],
         0.8,
       ),
@@ -123,45 +136,66 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       tall(
         'giant',
         TREE,
-        { chance: 0.08, grove: 0.2, ...TREES },
+        { chance: 0.08, grove: 0.1, ...TREES },
         twice(
           (seed) =>
             broadleaf({
               seed,
-              height: 32,
-              trunkRadius: 0.85,
-              crownAt: 25,
-              crown: [6.5, 6.5, 3.6],
-              lobes: 6,
+              height: 40,
+              trunkRadius: 0.95,
+              crownAt: 34,
+              crown: [7.5, 7.5, 3.0],
+              lobes: 5,
               lobe: 3.4,
-              bark: [0.52, 0.48, 0.4],
-              leaves: [0.2, 0.38, 0.12],
+              bark: [0.56, 0.52, 0.44],
+              leaves: [0.24, 0.42, 0.14],
               fins: 3,
             }),
           16,
         ),
-        [0.8, 1.2],
+        [0.85, 1.2],
         1.4,
       ),
       tall(
         'canopy tree',
         TREE,
         { chance: 0.5, grove: 0.3, ...TREES },
-        twice(
-          (seed) =>
-            broadleaf({
-              seed,
-              height: 17,
-              trunkRadius: 0.45,
-              crownAt: 12.5,
-              crown: [5.2, 5.2, 3.0],
-              lobes: 6,
-              lobe: 2.5,
-              bark: [0.4, 0.36, 0.28],
-              leaves: [0.13, 0.34, 0.1],
-            }),
-          36,
-        ),
+        // Three canopy trees of their own heights, outlines and greens, so the canopy is never one even carpet.
+        [
+          broadleaf({
+            seed: 37,
+            height: 22,
+            trunkRadius: 0.5,
+            crownAt: 16.5,
+            crown: [3.8, 3.8, 4.8],
+            lobes: 6,
+            lobe: 2.3,
+            bark: [0.46, 0.42, 0.34],
+            leaves: [0.18, 0.38, 0.12],
+          }),
+          broadleaf({
+            seed: 36,
+            height: 16,
+            trunkRadius: 0.45,
+            crownAt: 11.5,
+            crown: [4.6, 4.6, 4.2],
+            lobes: 6,
+            lobe: 2.5,
+            bark: [0.4, 0.36, 0.28],
+            leaves: [0.12, 0.32, 0.1],
+          }),
+          broadleaf({
+            seed: 38,
+            height: 13,
+            trunkRadius: 0.4,
+            crownAt: 9,
+            crown: [5.6, 5.6, 3.0],
+            lobes: 6,
+            lobe: 2.4,
+            bark: [0.36, 0.3, 0.24],
+            leaves: [0.27, 0.43, 0.13],
+          }),
+        ],
         [0.7, 1.35],
         0.6,
       ),
@@ -188,7 +222,7 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       low(
         'tree fern',
         TREE_FERN,
-        { chance: 0.1, grove: 0.4, ...LOW },
+        { chance: 0.14, grove: 0.4, ...LOW },
         twice((seed) => fern(seed, 2.4, [0.2, 0.46, 0.13], 3), 56),
         [0.7, 1.3],
         0.4,
@@ -196,7 +230,7 @@ export const WARM_CASTS: Readonly<Record<string, () => Cast>> = {
       low(
         'understory',
         SHRUB,
-        { chance: 0.2, grove: 0.2, ...LOW },
+        { chance: 0.3, grove: 0.2, ...LOW },
         [
           shrub({
             seed: 46,

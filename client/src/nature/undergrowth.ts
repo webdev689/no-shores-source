@@ -59,6 +59,57 @@ export function shrub(shape: Shrub): Plant {
   return { near: near.finish(), far: far.finish() };
 }
 
+/** A woody bush: stems fanning from one foot, each ending in a small tuft of leaves, gaps of sky between them. */
+export interface Bush {
+  readonly seed: number;
+  readonly width: number;
+  readonly height: number;
+  readonly stems: number;
+  /** A tuft's radius, a share of the width. */
+  readonly tuft: number;
+  /** Tufts held level at the top, as a thorn bush's, rather than in a dome. */
+  readonly flat: boolean;
+  readonly leaves: Colour;
+  readonly wood: Colour;
+}
+
+export function bush(shape: Bush): Plant {
+  const random = randomStream(shape.seed);
+  const near = new MeshBuilder();
+  const tuftRadius = shape.width * shape.tuft;
+  for (let stem = 0; stem < shape.stems; stem++) {
+    const angle = stem * 2.39996 + random() * 0.6;
+    const out = shape.width * (stem === 0 ? 0.05 : 0.22 + random() * 0.16);
+    const rise = shape.height * (shape.flat ? 0.82 + random() * 0.08 : stem === 0 ? 0.78 : 0.45 + random() * 0.25);
+    const tip: Point = [Math.cos(angle) * out, Math.sin(angle) * out, rise];
+    const foot: Point = [Math.cos(angle) * 0.04, Math.sin(angle) * 0.04, -0.05];
+    blade(near, foot, tip, Math.max(0.04, shape.width * 0.05), { foot: shade(shape.wood, 0.7), tip: shape.wood });
+    const size = tuftRadius * (0.8 + random() * 0.4);
+    lump(near, {
+      centre: [tip[0], tip[1], tip[2] + size * 0.2],
+      radii: [size, size, size * (shape.flat ? 0.45 : 0.8)],
+      detail: 0,
+      jitter: 0.3,
+      seed: shape.seed + stem * 23,
+      soft: 0.75,
+      leaf: 1,
+      colour: foliage(shade(shape.leaves, 0.9 + random() * 0.2), 0.3),
+    });
+  }
+  const far = new MeshBuilder();
+  lump(far, {
+    centre: [0, 0, shape.height * 0.6],
+    radii: [shape.width * 0.6, shape.width * 0.6, shape.height * (shape.flat ? 0.5 : 0.55)],
+    detail: 0,
+    jitter: 0.1,
+    seed: shape.seed + 1,
+    soft: 0.8,
+    leaf: 1,
+    colour: foliage(shape.leaves, 0.3),
+  });
+  return { near: near.finish(), far: far.finish() };
+}
+
 /** A tuft: blades fanned out from one foot, its own height and colours: grass, reeds. */
 export interface Tuft {
   readonly seed: number;

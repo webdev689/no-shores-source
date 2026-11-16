@@ -12,6 +12,7 @@ code:
   - client/src/nature/shapes.ts#MeshBuilder
   - client/src/nature/natureShader.ts#NATURE_SHADER
   - client/src/nature/cull.ts#tilesInView
+  - client/src/nature/slots.ts#SlotStore
 ---
 # Nature
 
@@ -23,18 +24,20 @@ The casts are Claude's choices ([[The World Is Claude's to Mold]]).
 ## The casts
 
 Each biome has three to six kinds, each with outlines of its own so they read apart at a distance. Trees come in two
-forms a kind; every plant is turned, sized and tinted on its own.
+or three forms a kind; every plant is turned, sized and tinted on its own. A broadleaf's crown is a smooth core with
+lobes in two layers, a wider, darker ring below and smaller sunlit clumps above, each its own size and shade, so its
+outline is ragged. Bushes are woody stems, each ending in a tuft of leaves.
 
 | Biome | Kinds |
 |---|---|
 | `temperate-coast` | Round-crowned oaks, umbrella pines, gorse flecked yellow (thicker by the coast), meadow grass, grey boulders |
 | `highland` | Firs, birches, heather, upland grass, granite boulders |
 | `woodland` | Dense oaks and beeches, firs, hazel, ferns, mossy boulders |
-| `desert` | Columnar cacti, date palms only by water, dry shrubs, red rocks |
-| `savanna` | Flat-crowned acacias, baobabs, tall golden grass, thorn bushes, ochre boulders |
-| `rainforest` | Buttressed giants over a closed canopy, palms (thicker by water), tree ferns, understory |
-| `steppe` | Birches only by water, sagebrush, dry grass, rocks |
-| `swamp` | Cypresses, mangroves only by water, reeds at the water's edge, marsh ferns |
+| `desert` | Columnar cacti, date palms only by water, dry bushes, red rocks |
+| `savanna` | Flat-crowned acacias, baobabs, tall golden grass, flat-topped thorn bushes, ochre boulders |
+| `rainforest` | Buttressed giants 40 m tall over a canopy of three trees of their own heights, outlines and greens, palms (thicker by water), tree ferns, understory |
+| `steppe` | Birches only by water, silver sagebrush, dry grass, rocks |
+| `swamp` | Cypresses flaring onto buttresses under ragged crowns hung with moss, mangroves only by water, reeds at the water's edge, marsh ferns |
 | `tundra` | Stunted spruces, dead trees, dwarf shrubs, snowy rocks |
 
 Near trees are 90 to 300 triangles; far ones 20 to 60.
@@ -67,21 +70,29 @@ width, and from the exact close patch where it reaches, eased in over its outer 
 ## Drawing
 
 - **Round the eye.** Tiles are kept round the eye: the tall layer out to 3 km, the low one to 0.9 km. A tile is
-  scattered once, nearest first, a few milliseconds' worth a frame, and the plants are packed for the GPU again
-  when the eye crosses into another tile, or as newly scattered tiles arrive (at most four times a second while some
-  still wait). A changed ground is scattered again tile by tile, the old plants drawn until their tile's turn. From
-  more than 3 km above the ground nothing is drawn or scattered.
+  scattered once, nearest first, a few milliseconds' worth a frame. Its plants go into slots of a store on the GPU
+  that stay put while the tile is kept, a page of sixteen at a time, and leave when it is let go. When the eye
+  crosses into another tile, or newly scattered tiles arrive (at most four times a second while some still wait),
+  only the list of which slots to draw is made again, and each tile's corner. A changed ground is scattered again
+  tile by tile, the old plants drawn until their tile's turn. From more than 3 km above the ground nothing is drawn
+  or scattered.
 - **Detail.** A tree's near mesh is drawn to 700 m and its far mesh beyond, to 3 km. Shrubs change at 200 m and go at
   700 m; grass, ferns and reeds go at 160 m. From 1 km far trees thin out to a share kept at the reach (a seventh in
-  the rainforest, a fifth in the woodland, nearly all in the desert), each widened to fill in. Distances are taken
-  from the eye in three dimensions.
+  the rainforest, a fifth in the woodland, nearly all in the desert), each widened to fill in. On steep ground they
+  thin out further from half a kilometre, so a mountainside reads as trees fading out, not a speckle, and far off a
+  plant's colour leans toward the biome's ground. Distances are taken from the eye in three dimensions.
 - **No popping.** A plant fades by its samples, not by blending: across the last eighth of the near range the near
   mesh hands its samples to the far one, each taking exactly what the other leaves, and toward the reach and as the
   far trees thin out both give theirs up. Four samples and a dither over two pixels make seventeen steps.
-- **Placing.** Instances are measured from an anchor beside the eye, so the GPU's floats keep their centimetres
-  anywhere in the world. Tiles out of view are culled, and the tiles in view drawn in runs, one instanced draw a run.
-- **Light.** As the land is lit, with a little less of the sky under a crown and a little of the sun through the
-  leaves. Gusts roll downwind across the land, each plant rocks on its own beat and its leaves tremble.
+- **Placing.** Each plant is placed from its tile's corner, measured from an anchor beside the eye, so the GPU's
+  floats keep their centimetres anywhere in the world. Tiles out of view are culled, and the tiles in view drawn in
+  runs, one instanced draw a run.
+- **Light.** As the land is lit, its ambient bounced warm from the ground onto a crown's underside and cool from the
+  sky onto its top, with a little sun through the leaves. Gusts roll downwind across the land, each plant rocks on its
+  own beat and its leaves tremble.
+- **Contact shade.** With no shadows drawn, each plant with a far mesh lays a soft dark disc on the ground under it,
+  as wide as its crown, leaning a little the way the sun throws shadows and laid on the ground's slope at its foot,
+  fading out by half its near range. Trunks darken toward the ground to meet it.
 - **In the frame.** Plants are drawn into the land's pass, four samples a pixel and depth reversed, before the
   [[Water]]'s pass, which hazes them with the rest.
 
@@ -89,12 +100,12 @@ Each frame a page calls `update` with the camera and the ground, then `drawInto`
 
 ## Limits
 
-- Plants cast no shadows, on the land or on each other.
+- Plants cast no shadows, on the land or on each other: the contact shade stands in under each one.
 - Low plants keep off the feet of the tall ones in their own tile only: within a couple of metres of a tile's edge,
   grass can grow into a neighbouring tile's boulder or trunk.
 - Beyond the close patch the sampler knows no roads, towns or ports: the caller's cleared ground must cover them.
 - A new close patch, every 400 m of travel, has every tile scattered again, which takes a few seconds of budget.
 - A teleport fills the view from the eye outward over about a second.
-- Packing copies every instance: in the densest biomes (about 230,000 within 3 km) a step into another tile costs
-  some 35 ms of the frame it happens in.
+- A step into another tile lists every drawn slot again: in the densest biomes (about 230,000 within 3 km) that
+  takes some 10 to 15 ms of the frame it happens in, and sends under a megabyte to the GPU.
 - The [[World Editor]]'s 3D view and the game do not draw it yet.

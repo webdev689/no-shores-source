@@ -2,10 +2,10 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { SLOW_CLOCK_S } from '../water/shore.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { runsInView, tilesInView } from './cull.ts';
-import { INSTANCE_FLOATS, NatureField, type NatureGround, type Packed } from './field.ts';
+import { NatureField, type NatureGround, type Packed } from './field.ts';
 import { FORM_BLOCK_BYTES, type FormBuffers, formBuffers, type Part, VERTEX_BYTES } from './forms.ts';
 import { type Cast, TREE } from './kinds.ts';
-import { FRAME_FLOATS, NATURE_SHADER } from './natureShader.ts';
+import { FRAME_FLOATS, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
 
 /** The camera a frame is drawn from. */
 export interface NatureFrame {
@@ -28,12 +28,19 @@ const GUST_PER_M = 0.035;
 /** The plants' faces wound counter-clockwise outward in the world (x east, y south, z up) reach the screen
  *  clockwise, its y flipped against the world's south: the view's frame is mirrored. */
 const FRONT_FACE: GPUFrontFace = 'cw';
+/** WebGPU's storage usage flag, by the specification's value (gpu.ts names the flags the rest of the client uses). */
+const STORAGE_USAGE = 0x80;
 
-/** One draw: a part, its block's offset and a run of instances. */
+/** One draw: a part, its block's offset and a run of the list. */
 interface Draw {
   readonly part: Part;
   readonly first: number;
   readonly count: number;
+}
+
+/** A buffer that grows by halves, so the eye's steps rarely make a new one. */
+interface Grown {
+  buffer: GPUBuffer | null;
 }
 
 /**
@@ -45,16 +52,18 @@ export class NatureView {
   private readonly gpu: Gpu;
   private readonly field: NatureField;
   private readonly layout: GPUBindGroupLayout;
-  private readonly pipelines: { readonly culled: GPURenderPipeline; readonly twoSided: GPURenderPipeline };
+  private readonly pipelines: {
+    readonly culled: GPURenderPipeline;
+    readonly twoSided: GPURenderPipeline;
+    readonly shade: GPURenderPipeline;
+  };
   private readonly frameBuffer: GPUBuffer;
-  private meshes: {
-    cast: Cast;
-    forms: FormBuffers;
-    vertices: GPUBuffer;
-    blocks: GPUBuffer;
-    bind: GPUBindGroup;
-  } | null = null;
-  private instances: { packed: Packed; buffer: GPUBuffer | null } | null = null;
+  private meshes: { cast: Cast; forms: FormBuffers; vertices: GPUBuffer; blocks: GPUBuffer } | null = null;
+  private readonly slots: Grown = { buffer: null };
+  private readonly list: Grown = { buffer: null };
+  private readonly corners: Grown = { buffer: null };
+  private bind: GPUBindGroup | null = null;
+  private listed: Packed | null = null;
   private visible = new Uint8Array();
   private draws: Draw[] = [];
 
@@ -64,44 +73,52 @@ export class NatureView {
     this.field = new NatureField(budgetMs);
     const { device } = gpu;
     const seen = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
+    const stored = { type: 'read-only-storage' } as const;
     this.layout = device.createBindGroupLayout({
       entries: [
         { binding: 0, visibility: seen, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: seen, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 32 } },
+        { binding: 1, visibility: seen, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 48 } },
+        { binding: 2, visibility: SHADER_STAGE.vertex, buffer: stored },
+        { binding: 3, visibility: SHADER_STAGE.vertex, buffer: stored },
+        { binding: 4, visibility: SHADER_STAGE.vertex, buffer: stored },
       ],
     });
     const module = device.createShaderModule({ code: NATURE_SHADER });
-    const pipeline = (cullMode: GPUCullMode) =>
+    const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
+    const mesh: GPUVertexBufferLayout = {
+      arrayStride: VERTEX_BYTES,
+      attributes: [
+        { shaderLocation: 0, offset: 0, format: 'float32x3' },
+        { shaderLocation: 1, offset: 12, format: 'snorm8x4' },
+        { shaderLocation: 2, offset: 16, format: 'unorm8x4' },
+      ],
+    };
+    const plants = (cullMode: GPUCullMode) =>
       device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
-        vertex: {
-          module,
-          entryPoint: 'plant_vertex',
-          buffers: [
-            {
-              arrayStride: VERTEX_BYTES,
-              attributes: [
-                { shaderLocation: 0, offset: 0, format: 'float32x3' },
-                { shaderLocation: 1, offset: 12, format: 'snorm8x4' },
-                { shaderLocation: 2, offset: 16, format: 'unorm8x4' },
-              ],
-            },
-            {
-              arrayStride: INSTANCE_FLOATS * 4,
-              stepMode: 'instance',
-              attributes: [
-                { shaderLocation: 3, offset: 0, format: 'float32x4' },
-                { shaderLocation: 4, offset: 16, format: 'float32x4' },
-              ],
-            },
-          ],
-        },
+        layout,
+        vertex: { module, entryPoint: 'plant_vertex', buffers: [mesh] },
         fragment: { module, entryPoint: 'plant_fragment', targets: [{ format: gpu.format }] },
         primitive: { topology: 'triangle-list', cullMode, frontFace: FRONT_FACE },
         depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
         multisample: { count: SAMPLES },
       });
-    this.pipelines = { culled: pipeline('back'), twoSided: pipeline('none') };
+    // The shade only darkens what is under it: the colour drawn is kept by the share its alpha leaves.
+    const darken: GPUBlendState = {
+      color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+      alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' },
+    };
+    this.pipelines = {
+      culled: plants('back'),
+      twoSided: plants('none'),
+      shade: device.createRenderPipeline({
+        layout,
+        vertex: { module, entryPoint: 'shade_vertex' },
+        fragment: { module, entryPoint: 'shade_fragment', targets: [{ format: gpu.format, blend: darken }] },
+        primitive: { topology: 'triangle-list', cullMode: 'none' },
+        depthStencil: { format: 'depth32float', depthWriteEnabled: false, depthCompare: 'greater' },
+        multisample: { count: SAMPLES },
+      }),
+    };
     this.frameBuffer = device.createBuffer({
       size: FRAME_FLOATS * 4,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -120,8 +137,10 @@ export class NatureView {
     }
     const waiting = this.field.update(frame.eye[0], frame.eye[1], ground);
     this.keepMeshes(this.field.drawnCast);
+    this.sendStore();
     const packed = this.field.packed;
-    if (this.instances?.packed !== packed) this.upload(packed);
+    if (this.listed !== packed) this.sendList(packed);
+    if (!this.bind) this.rebind();
     const [eastFromAnchor, southFromAnchor] = [packed.anchor[0] - frame.eye[0], packed.anchor[1] - frame.eye[1]];
     const wind = frame.wind ?? DEFAULT_WIND;
     const gusts = ((packed.anchor[0] * wind[0] + packed.anchor[1] * wind[1]) * GUST_PER_M) % (Math.PI * 2);
@@ -130,6 +149,7 @@ export class NatureView {
     floats.set([eastFromAnchor, southFromAnchor, -frame.eye[2], frame.exaggeration], 16);
     floats.set([frame.time % SLOW_CLOCK_S, wind[0], wind[1], gusts], 20);
     floats.set([ground.snowM, 0, 0, 0], 24);
+    floats.set([...(ground.groundColour ?? [0, 0, 0]), ground.groundColour ? 1 : 0], 28);
     this.gpu.device.queue.writeBuffer(this.frameBuffer, 0, floats);
     const anchorFromEye = [eastFromAnchor, southFromAnchor, -frame.eye[2]] as const;
     if (this.visible.length !== packed.tiles.length / 4) this.visible = new Uint8Array(packed.tiles.length / 4);
@@ -157,18 +177,23 @@ export class NatureView {
     return { instances, triangles, draws: this.draws.length };
   }
 
-  /** Draws into the land's pass (four samples, depth reversed) what `update` worked out. */
+  /** Draws into the land's pass (four samples, depth reversed) what `update` worked out: the contact shades on the
+   *  land first, then the plants over them. */
   drawInto(pass: GPURenderPassEncoder): void {
-    const meshes = this.meshes;
-    const instances = this.instances?.buffer;
-    if (!meshes || !instances || this.draws.length === 0) return;
+    const { meshes, bind } = this;
+    if (!meshes || !bind || this.draws.length === 0) return;
+    pass.setPipeline(this.pipelines.shade);
+    for (const { part, first, count } of this.draws) {
+      if (!part.shaded) continue;
+      pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
+      pass.draw(SHADE_SEGMENTS * 3, count, 0, first);
+    }
     pass.setVertexBuffer(0, meshes.vertices);
-    pass.setVertexBuffer(1, instances);
     let shown: GPURenderPipeline | null = null;
     for (const { part, first, count } of this.draws) {
       const pipeline = part.twoSided ? this.pipelines.twoSided : this.pipelines.culled;
       if (pipeline !== shown) pass.setPipeline((shown = pipeline));
-      pass.setBindGroup(0, meshes.bind, [part.block * FORM_BLOCK_BYTES]);
+      pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
       pass.draw(part.vertexCount, count, part.firstVertex, first);
     }
   }
@@ -178,8 +203,8 @@ export class NatureView {
     this.frameBuffer.destroy();
     this.meshes?.vertices.destroy();
     this.meshes?.blocks.destroy();
-    this.instances?.buffer?.destroy();
-    [this.meshes, this.instances, this.draws] = [null, null, []];
+    for (const grown of [this.slots, this.list, this.corners]) grown.buffer?.destroy();
+    [this.meshes, this.bind, this.draws] = [null, null, []];
   }
 
   /** The cast's meshes and terms on the GPU, made again when the biome changes. */
@@ -199,28 +224,64 @@ export class NatureView {
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
     });
     device.queue.writeBuffer(blocks, 0, forms.blocks);
-    const bind = device.createBindGroup({
+    this.meshes = { cast, forms, vertices, blocks };
+    this.bind = null;
+  }
+
+  /** Sends the store's changed pages to the GPU; all of it when it has grown. */
+  private sendStore(): void {
+    const { store } = this.field;
+    const { queue } = this.gpu.device;
+    if (store.replaced || !this.slots.buffer) {
+      this.ensure(this.slots, store.data.byteLength, true);
+      queue.writeBuffer(this.slots.buffer as GPUBuffer, 0, store.data);
+      store.replaced = false;
+      store.takeChanges();
+      return;
+    }
+    const runs = store.takeChanges();
+    for (let run = 0; run < runs.length; run += 2) {
+      const [first, floats] = [runs[run] ?? 0, runs[run + 1] ?? 0];
+      queue.writeBuffer(this.slots.buffer, first * 4, store.data, first, floats);
+    }
+  }
+
+  /** Sends a new list of slots, and the tiles' corners it places them from. */
+  private sendList(packed: Packed): void {
+    const { queue } = this.gpu.device;
+    this.ensure(this.list, packed.list.byteLength, false);
+    if (packed.list.length > 0) queue.writeBuffer(this.list.buffer as GPUBuffer, 0, packed.list);
+    this.ensure(this.corners, packed.corners.byteLength, false);
+    if (packed.corners.length > 0) queue.writeBuffer(this.corners.buffer as GPUBuffer, 0, packed.corners);
+    this.listed = packed;
+  }
+
+  /** Makes a storage buffer at least `bytes` long, `exactly` that or half again; a new one is bound anew. */
+  private ensure(grown: Grown, bytes: number, exactly: boolean): void {
+    const needed = Math.max(16, Math.ceil(bytes / 16) * 16);
+    if (grown.buffer && grown.buffer.size >= needed && !exactly) return;
+    if (grown.buffer && grown.buffer.size === needed) return;
+    grown.buffer?.destroy();
+    grown.buffer = this.gpu.device.createBuffer({
+      size: exactly ? needed : Math.ceil((needed * 1.5) / 16) * 16,
+      usage: STORAGE_USAGE | BUFFER_USAGE.copyDestination,
+    });
+    this.bind = null;
+    this.rebind();
+  }
+
+  private rebind(): void {
+    const [slots, list, corners] = [this.slots.buffer, this.list.buffer, this.corners.buffer];
+    if (!this.meshes || !slots || !list || !corners) return;
+    this.bind = this.gpu.device.createBindGroup({
       layout: this.layout,
       entries: [
         { binding: 0, resource: { buffer: this.frameBuffer } },
-        { binding: 1, resource: { buffer: blocks, size: 32 } },
+        { binding: 1, resource: { buffer: this.meshes.blocks, size: 48 } },
+        { binding: 2, resource: { buffer: slots } },
+        { binding: 3, resource: { buffer: list } },
+        { binding: 4, resource: { buffer: corners } },
       ],
     });
-    this.meshes = { cast, forms, vertices, blocks, bind };
-  }
-
-  /** Sends the packed instances to the GPU, in a buffer grown by halves so the eye's steps rarely make a new one. */
-  private upload(packed: Packed): void {
-    const bytes = packed.instances.byteLength;
-    let buffer = this.instances?.buffer ?? null;
-    if (bytes > 0 && (!buffer || buffer.size < bytes)) {
-      buffer?.destroy();
-      buffer = this.gpu.device.createBuffer({
-        size: Math.ceil((bytes * 1.5) / 256) * 256,
-        usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
-      });
-    }
-    if (buffer && bytes > 0) this.gpu.device.queue.writeBuffer(buffer, 0, packed.instances);
-    this.instances = { packed, buffer };
   }
 }

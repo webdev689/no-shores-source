@@ -17,7 +17,7 @@ import {
   FIR_BARK,
 } from './kinds.ts';
 import { birch, broadleaf, conifer, deadTree, umbrellaPine } from './trees.ts';
-import { fern, shrub } from './undergrowth.ts';
+import { bush, fern, shrub } from './undergrowth.ts';
 
 /** The casts of the cooler biomes, by their keys in the layout. */
 export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
@@ -36,7 +36,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
               trunkRadius: 0.42,
               crownAt: 7.2,
               crown: [4.2, 4.2, 2.8],
-              lobes: 7,
+              lobes: 6,
               lobe: 2.4,
               bark: [0.33, 0.27, 0.21],
               leaves: [0.24, 0.4, 0.15],
@@ -151,7 +151,7 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
               trunkRadius: 0.5,
               crownAt: 8.5,
               crown: [4.8, 4.8, 3.2],
-              lobes: 7,
+              lobes: 6,
               lobe: 2.6,
               bark: [0.3, 0.25, 0.2],
               leaves: [0.2, 0.37, 0.12],
@@ -219,7 +219,18 @@ export const COOL_CASTS: Readonly<Record<string, () => Cast>> = {
         'sagebrush',
         SHRUB,
         { chance: 0.025, grove: 0.4, ...LOW },
-        [shrub({ seed: 47, width: 1.1, height: 0.8, lumps: 3, leaves: [0.52, 0.56, 0.42] })],
+        [
+          bush({
+            seed: 47,
+            width: 1.2,
+            height: 0.9,
+            stems: 7,
+            tuft: 0.2,
+            flat: false,
+            leaves: [0.6, 0.64, 0.5],
+            wood: [0.42, 0.37, 0.3],
+          }),
+        ],
         [0.7, 1.3],
         0.5,
       ),
