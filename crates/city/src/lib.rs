@@ -3,6 +3,7 @@
 //! forged models, its wall and harbour, its landmark, and its social space. Only the social space is walked; the rest
 //! is seen. See the Cities note in the bible.
 
+pub mod articulation;
 pub mod collision;
 pub mod courtyard;
 pub mod districts;
@@ -122,13 +123,14 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     let built =
         landmark(&city.motif, &site, ground).ok_or_else(|| format!("{}: no motif called {}", city.id, city.motif))?;
     let social = plaza(ground, centre, level, seaward, &built);
-    // Only the cells under the landmark's base and the plaza are kept at their level, so the plaza's open sides look
-    // straight down onto the terraced city, as the Tower's do, with no empty precinct between.
+    // Only the cells under the landmark's base rise to the platform and are kept for it. The cells under the plaza keep
+    // their own levels and are built on as any other: the plaza's pad stands over its own footprint, its parapet for a
+    // wall, so what is built beneath it is hidden and the city runs right up to its foot, as round the Tower.
     let overlaps = |bounds: [f64; 4], other: [f64; 4]| {
         bounds[2] > other[0] && bounds[0] < other[2] && bounds[3] > other[1] && bounds[1] < other[3]
     };
     let base = [centre[0] - built.reach, centre[1] - built.reach, centre[0] + built.reach, centre[1] + built.reach];
-    let reserved = |bounds: [f64; 4]| overlaps(bounds, base) || overlaps(bounds, social.bounds);
+    let reserved = |bounds: [f64; 4]| overlaps(bounds, base);
     let gate_rays = ways::gate_rays(ground, &footprint, seed);
     let gates: Vec<[f64; 2]> = gate_rays
         .iter()
@@ -141,11 +143,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
             let bounds = grid.bounds(column, row);
             if reserved(bounds) && matches!(cell_footings[index(column, row)], Footing::Level { .. } | Footing::Steep) {
                 uses[index(column, row)] = Use::Landmark;
-                // Under the landmark the cell rises to the platform; under the plaza it keeps its own level, the
-                // plaza's pad standing over it with its parapet for a wall, so the city is seen just past the edge.
-                if overlaps(bounds, base) {
-                    cell_footings[index(column, row)] = Footing::Level { level };
-                }
+                cell_footings[index(column, row)] = Footing::Level { level };
             }
         }
     }

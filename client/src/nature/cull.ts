@@ -49,6 +49,28 @@ export function tilesInView(
   return out;
 }
 
+/** Marks the tiles whose plants may cast into the sun's shadow square, as `reaches` judges a box measured from the eye
+ *  (west, north, low, then east, south, high): those behind the camera too, whose shadows fall forward into view. */
+export function tilesCasting(
+  packed: Packed,
+  anchorFromEye: readonly [number, number, number],
+  exaggeration: number,
+  reaches: (low: readonly [number, number, number], high: readonly [number, number, number]) => boolean,
+  out: Uint8Array = new Uint8Array(packed.tiles.length / 4),
+): Uint8Array {
+  const { tiles } = packed;
+  const half = TILE_M / 2 + packed.spread;
+  for (let tile = 0; tile < tiles.length / 4; tile++) {
+    const [east, south] = [(tiles[tile * 4] ?? 0) + anchorFromEye[0], (tiles[tile * 4 + 1] ?? 0) + anchorFromEye[1]];
+    const [lowest, highest] = [tiles[tile * 4 + 2] ?? 0, tiles[tile * 4 + 3] ?? 0];
+    const low = [east - half, south - half, lowest * exaggeration + anchorFromEye[2]] as const;
+    // A tile records its plants' feet; the tallest tree stands some 40 m over its foot.
+    const high = [east + half, south + half, highest * exaggeration + anchorFromEye[2] + 40] as const;
+    out[tile] = reaches(low, high) ? 1 : 0;
+  }
+  return out;
+}
+
 /** A group's instances in view, as (first, count) pairs: neighbouring tiles in view join into one draw. */
 export function runsInView(group: Group, visible: Uint8Array): number[] {
   const runs: number[] = [];

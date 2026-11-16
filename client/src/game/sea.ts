@@ -24,6 +24,7 @@ import { lookOf, type Shot } from './camera.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
 import type { Landmass } from './landmass.ts';
+import type { HullMask } from '../water/hullMask.ts';
 import type { Mesh, Placing } from './meshView.ts';
 import { courseAhead, declutter, namesShown, paintOf, timeText } from './seaLaw.ts';
 
@@ -39,6 +40,10 @@ const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } 
 const MARK_GAP_PX = 30;
 /** The Overworld is not to scale: ships are drawn this many times their size, so one reads from the raised view. */
 const SHIP_SCALE = 2.5;
+/** A ship's waterline as drawn, half its length and beam, metres: the hull's (meshes.ts STATIONS) at the waterline. */
+const WATERLINE_HALF_M = [14 * SHIP_SCALE, 2.8 * SHIP_SCALE] as const;
+/** The way a ship under way shows the water, m/s: her bow wave foams whole. */
+const UNDER_WAY = 4;
 /** The view the ship first comes to: lower than DFO's, so the island it lies off stands in it. */
 const FIRST_TILT = (30 * Math.PI) / 180;
 /** Seconds the view takes to fall back from an island's side to the ship. */
@@ -72,6 +77,8 @@ type SeaView =
 export interface SeaFrame {
   readonly shot: Shot;
   readonly ships: readonly Placing[];
+  /** Each ship's footprint on the water, world metres: none inside her, foam round her bow under way. */
+  readonly hulls: readonly HullMask[];
   readonly marks: readonly ScreenMark[];
   readonly note: string;
   readonly canLand: boolean;
@@ -305,6 +312,7 @@ export class Sea {
     return {
       shot: { eye: pose.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM },
       ships: this.ships(time),
+      hulls: this.hulls(),
       marks: this.marks(pose, viewport),
       note: this.note(),
       canLand: this.canLand,
@@ -357,6 +365,21 @@ export class Sea {
     const others = (this.room?.others ?? []).map((ship) =>
       riding(ship.x, ship.y, ship.heading, paintOf(ship.player), ship.player),
     );
+    return [own, ...others];
+  }
+
+  private hulls(): HullMask[] {
+    const [halfLength, halfBeam] = WATERLINE_HALF_M;
+    const hull = (x: number, y: number, heading: number, moving: boolean): HullMask => ({
+      x,
+      y,
+      heading,
+      halfLength,
+      halfBeam,
+      way: moving ? UNDER_WAY : 0,
+    });
+    const own = hull(this.ship.x, this.ship.y, this.ship.heading, this.voyage !== null);
+    const others = (this.room?.others ?? []).map((ship) => hull(ship.x, ship.y, ship.heading, ship.pace > 0));
     return [own, ...others];
   }
 

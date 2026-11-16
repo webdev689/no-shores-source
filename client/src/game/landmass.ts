@@ -51,6 +51,6 @@ export async function openLandmass(
 }
 
 /** The terrain's data for a landmass: its cells as the land worker gave them, with no places marked on them. */
-export function terrainOf(view: LandView): TerrainData {
-  return { ...view, marks: new Uint8Array(view.width * view.height) };
+export function terrainOf(view: LandView, woods?: TerrainData['woods']): TerrainData {
+  return { ...view, marks: new Uint8Array(view.width * view.height), woods };
 }

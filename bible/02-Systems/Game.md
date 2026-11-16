@@ -11,6 +11,7 @@ code:
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
+  - client/src/shadow.ts#ShadowMap
   - client/src/game/hud.ts#Hud
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
@@ -98,7 +99,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 Within 30 km of the open landmass's coast, L or View landings flies the view up over the island's side the ship lies
 off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s; the ship heaves to. The side's nodes, its city's social space
 among them, are marked by kind with names and distances from the ship. A click chooses one; a second click on it, or
-Enter, lands there: the player stands at its first spawn, facing inland from the ship. Escape flies back down.
+Enter, lands there: the player stands at its first spawn, facing inland from the ship, or at a social space out from
+its landmark over the city, as on arriving. Escape flies back down.
 
 ## Rooms
 
@@ -123,6 +125,16 @@ its continent's climate once the forged models' tables and the RMB blocks its pl
 `world/` folder; the blocks are kept for every later city. Its nature is the nature layer's `NatureView`
 ([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
 (`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture.
+The land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
+
+**The sun's shadows.** Before the pass, what casts draws its depth along the sun into one map (`shadow.ts`, 2048
+texels a side over a square 300 m across, centred 75 m ahead of the camera and snapped to its texels so the edges
+hold still): the city's solids and near models, and the near plants, those behind the camera too. The land, the city
+and the plants are then lit through it, softened over eight taps and faded out toward the square's rim. From more
+than 400 m over the ground, at sea or over an island's side, no shadows are drawn.
+
+At sea each ship's footprint is handed to the water, which keeps out of her hull and foams round her bow under way.
+In death the world drains to grey, and comes back in colour on respawn or on leaving.
 
 ## Limits
 
@@ -132,5 +144,4 @@ its continent's climate once the forged models' tables and the RMB blocks its pl
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
 - Offline, the edge is judged in the browser; online, the room judges it and the browser predicts nothing of it.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
-- The water is handed no hull masks for the game's ships, so they part no water and raise no bow foam, as the
-  World Editor's Sloop does ([[Sailing]]).
+- The figures cast no shadows: they are cards that turn to the eye.

@@ -1,11 +1,12 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
+import { ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SLOW_CLOCK_S } from '../water/shore.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { runsInView, tilesInView } from './cull.ts';
+import { runsInView, tilesCasting, tilesInView } from './cull.ts';
 import { NatureField, type NatureGround, type Packed } from './field.ts';
 import { FORM_BLOCK_BYTES, type FormBuffers, formBuffers, type Part, VERTEX_BYTES } from './forms.ts';
 import { type Cast, TREE } from './kinds.ts';
-import { FRAME_FLOATS, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
+import { FRAME_FLOATS, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
 
 /** The camera a frame is drawn from. */
 export interface NatureFrame {
@@ -56,6 +57,8 @@ export class NatureView {
     readonly culled: GPURenderPipeline;
     readonly twoSided: GPURenderPipeline;
     readonly shade: GPURenderPipeline;
+    /** The near plants' depth along the sun, into the shadow map. */
+    readonly cast: GPURenderPipeline;
   };
   private readonly frameBuffer: GPUBuffer;
   private meshes: { cast: Cast; forms: FormBuffers; vertices: GPUBuffer; blocks: GPUBuffer } | null = null;
@@ -66,6 +69,8 @@ export class NatureView {
   private listed: Packed | null = null;
   private visible = new Uint8Array();
   private draws: Draw[] = [];
+  private casting = new Uint8Array();
+  private casts: Draw[] = [];
 
   /** `budgetMs` is how long one update may spend scattering newly near tiles. */
   constructor(gpu: Gpu, budgetMs = 6) {
@@ -84,7 +89,8 @@ export class NatureView {
       ],
     });
     const module = device.createShaderModule({ code: NATURE_SHADER });
-    const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
+    const shadows = shadowLayouts(device);
+    const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.receiver] });
     const mesh: GPUVertexBufferLayout = {
       arrayStride: VERTEX_BYTES,
       attributes: [
@@ -118,6 +124,16 @@ export class NatureView {
         depthStencil: { format: 'depth32float', depthWriteEnabled: false, depthCompare: 'greater' },
         multisample: { count: SAMPLES },
       }),
+      cast: device.createRenderPipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.caster] }),
+        vertex: {
+          module: device.createShaderModule({ code: NATURE_CAST_SHADER }),
+          entryPoint: 'plant_cast',
+          buffers: [mesh],
+        },
+        primitive: { topology: 'triangle-list', cullMode: 'none' },
+        depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
+      }),
     };
     this.frameBuffer = device.createBuffer({
       size: FRAME_FLOATS * 4,
@@ -125,14 +141,15 @@ export class NatureView {
     });
   }
 
-  /** Keeps the plants round the eye and works out what this frame draws. Answers whether tiles are still waiting
-   *  to be scattered, so a page that draws only when asked draws again. */
-  update(frame: NatureFrame, ground: NatureGround): boolean {
+  /** Keeps the plants round the eye and works out what this frame draws, and with a shadow map that is on, what its
+   *  near plants cast. Answers whether tiles are still waiting to be scattered, so a page that draws only when asked
+   *  draws again. */
+  update(frame: NatureFrame, ground: NatureGround, shadow?: ShadowMap): boolean {
     // From high above, every plant is past its reach: nothing is drawn and nothing scattered. The margin keeps the
     // plants on a ridge in view from high over the valley beside it.
     const below = ground.sample(frame.eye[0], frame.eye[1]).height * frame.exaggeration;
     if (frame.eye[2] - below > TREE.reachM + HIGH_MARGIN_M) {
-      this.draws = [];
+      [this.draws, this.casts] = [[], []];
       return false;
     }
     const waiting = this.field.update(frame.eye[0], frame.eye[1], ground);
@@ -164,7 +181,33 @@ export class NatureView {
         this.draws.push({ part, first: runs[run] ?? 0, count: runs[run + 1] ?? 0 });
       }
     }
+    this.casts = [];
+    if (shadow?.active) {
+      if (this.casting.length !== packed.tiles.length / 4) this.casting = new Uint8Array(packed.tiles.length / 4);
+      tilesCasting(packed, anchorFromEye, frame.exaggeration, (low, high) => shadow.reaches(low, high), this.casting);
+      for (const group of packed.groups) {
+        const part = group.far ? undefined : parts[group.form]?.[0];
+        if (!part) continue;
+        const runs = runsInView(group, this.casting);
+        for (let run = 0; run < runs.length; run += 2) {
+          this.casts.push({ part, first: runs[run] ?? 0, count: runs[run + 1] ?? 0 });
+        }
+      }
+    }
     return waiting;
+  }
+
+  /** Draws the near plants `update` found casting into the sun's shadow map. */
+  castInto(pass: GPURenderPassEncoder, shadow: ShadowMap): void {
+    const { meshes, bind } = this;
+    if (!meshes || !bind || this.casts.length === 0) return;
+    pass.setPipeline(this.pipelines.cast);
+    pass.setBindGroup(1, shadow.casterGroup(this.pipelines.cast));
+    pass.setVertexBuffer(0, meshes.vertices);
+    for (const { part, first, count } of this.casts) {
+      pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
+      pass.draw(part.vertexCount, count, part.firstVertex, first);
+    }
   }
 
   /** How many instances and triangles the last update drew, for a page's readout. */
@@ -178,11 +221,13 @@ export class NatureView {
   }
 
   /** Draws into the land's pass (four samples, depth reversed) what `update` worked out: the contact shades on the
-   *  land first, then the plants over them. */
-  drawInto(pass: GPURenderPassEncoder): void {
+   *  land first, then the plants over them, in the sun's shadows when a map is given. */
+  drawInto(pass: GPURenderPassEncoder, shadow?: ShadowMap): void {
     const { meshes, bind } = this;
     if (!meshes || !bind || this.draws.length === 0) return;
     pass.setPipeline(this.pipelines.shade);
+    // Every pipeline here shares the shadow's layout, so one group serves them all.
+    pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipelines.shade));
     for (const { part, first, count } of this.draws) {
       if (!part.shaded) continue;
       pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);

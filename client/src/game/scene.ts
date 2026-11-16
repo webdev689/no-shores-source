@@ -1,17 +1,21 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { ShadowMap } from '../shadow.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
 import { type TerrainData, TerrainView } from '../terrain/terrainView.ts';
+import type { HullMask } from '../water/hullMask.ts';
 import { waterUnder } from '../water/shore.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
 import { frameOf, fromEyeMatrix, type Shot } from './camera.ts';
 
 /** Anything else drawn with the land, into the same pass: a city, its nature, the figures. Its points are measured
- *  from the eye, which it is handed in world metres. */
+ *  from the eye, which it is handed in world metres. One that casts shadows draws them first, into the sun's map
+ *  (`castInto`), and every one is handed the map to receive them. */
 export interface Drawer {
-  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number): void;
+  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
+  castInto?(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
 }
 
 /** Where the exact ground round a point comes from: the land worker's sampler. */
@@ -44,6 +48,7 @@ const DEPTH_COPY = /* wgsl */ `
 export class GameScene {
   private readonly gpu: Gpu;
   private readonly water: WaterView;
+  private readonly shadow: ShadowMap;
   private readonly copy: GPURenderPipeline;
   private terrain: { view: LandView; drawn: TerrainView } | null = null;
   private close: CloseUp | null = null;
@@ -55,6 +60,7 @@ export class GameScene {
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     this.water = new WaterView(gpu);
+    this.shadow = new ShadowMap(gpu);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.copy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -137,14 +143,18 @@ export class GameScene {
   }
 
   /** Draws one frame from `shot` into the canvas, with the drawers drawn with the land; `after` may draw over the
-   *  finished picture (the first person's hands) before it is shown. */
+   *  finished picture (the first person's hands) before it is shown, and `hulls` are the ships on the water (world
+   *  metres), which it keeps out of and foams round. */
   draw(
     shot: Shot,
     size: { width: number; height: number },
     time: number,
     seconds: number,
     drawers: readonly Drawer[],
-    after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
+    more: {
+      readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
+      readonly hulls?: readonly HullMask[];
+    } = {},
   ): void {
     const terrain = this.terrain;
     if (!terrain) return;
@@ -167,6 +177,13 @@ export class GameScene {
     );
     const targets = this.targetsOf(size.width, size.height);
     const encoder = this.gpu.device.createCommandEncoder();
+    // The sun's shadows first: what casts draws its depth along the sun, for everything after to read.
+    this.shadow.update(shot.eye, shot.yaw, above);
+    if (this.shadow.active) {
+      const cast = this.shadow.beginPass(encoder);
+      for (const drawer of drawers) drawer.castInto?.(cast, fromEye, shot, time, this.shadow);
+      cast.end();
+    }
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -184,8 +201,8 @@ export class GameScene {
         depthStoreOp: 'store',
       },
     });
-    drawn.drawInto(pass);
-    for (const drawer of drawers) drawer.drawInto(pass, fromEye, shot, time);
+    drawn.drawInto(pass, this.shadow);
+    for (const drawer of drawers) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -219,11 +236,11 @@ export class GameScene {
       eyeWater,
       eyeAboveM: Math.abs(shot.eye[2] - (eyeWater?.surface ?? ground)),
       focus: [local.eye[0], local.eye[1]],
-      hulls: [],
+      hulls: (more.hulls ?? []).map((hull) => ({ ...hull, x: hull.x - origin[0], y: hull.y - origin[1] })),
       drawn: targets,
       target,
     });
-    after?.(encoder, target);
+    more.after?.(encoder, target);
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 

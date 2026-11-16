@@ -49,13 +49,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   motif's landmark and a social space the size of the Tower ([[Cities]]); nodes walked one section at a time, with
   the warning, death and respawn past a section's edge in the `reach` crate, offline and in the rooms ([[Reach]]);
   the Overworld's sea and an island's side seen from above ([[Overworld]]); DFO's procedural textures, forged models
-  and nature; and the [[Game]] page that plays it from arriving in Overlook to landing at another node.
+  and nature; and the [[Game]] page that plays it from arriving in Overlook to landing at another node. Its AAA pass
+  is on the same pull request: the sun's shadows round the eye, the Tower's courtyard on every plaza, landmarks
+  dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found, among them a
+  speed hack, a dropped-input disconnect and a stalled broadcast in the deployed rooms.
 - On its pull request: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
 
 ## Waiting on the owner
 
 - The world's pull request, to review and merge; deploying its rooms needs the bake's node files and the owner's yes.
+  The deployed rooms keep the speed hack and the two socket faults until that deploy.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
@@ -72,8 +76,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   the same rules everywhere.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
-- The world's open ends ([[Game]], [[Cities]]): the game's ships handed to the water's hull masks, so they part the
-  water as the Sloop does; colliders for the city's blocks before any node walks among them; flats (people, lamps)
-  and lit windows in the cities.
+- The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them;
+  flats (people, lamps) and lit windows in the cities; shadows for the figures, which are cards, and from the masses
+  past 700 m; the World Editor's 3D view without the woods and shadows the game draws.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.

@@ -2,6 +2,7 @@
 //! tower (see the bible's decision The World as Claude Shapes It). Each is solids, built from the landmark's site, its
 //! ground, and the way to the sea.
 
+use crate::articulation::articulated;
 use crate::landmarks_inland::{granary_ring, great_hall, stepped_temple, sun_dome, windwall};
 use crate::solids::{Material, Shape, Solid};
 use land::ground::Ground;
@@ -55,10 +56,11 @@ pub fn block(at: [f64; 2], base: f64, size: [f64; 3], material: Material) -> Sol
     Solid::upright(Shape::Block, [at[0], at[1], base], size, material)
 }
 
-/// The landmark a motif names, or None for a motif the city does not know.
+/// The landmark a motif names, its great masses dressed as built stone (`articulation`), or None for a motif the city
+/// does not know.
 #[must_use]
 pub fn landmark(motif: &str, site: &Site, ground: &Ground) -> Option<Landmark> {
-    Some(match motif {
+    let built = match motif {
         "beacon" => beacon(site),
         "span" => span(site, ground),
         "great-hall" => great_hall(site),
@@ -69,7 +71,8 @@ pub fn landmark(motif: &str, site: &Site, ground: &Ground) -> Option<Landmark> {
         "drowned-bell" => drowned_bell(site),
         "whalebone-gate" => whalebone_gate(site, ground),
         _ => return None,
-    })
+    };
+    Some(Landmark { solids: articulated(built.solids), reach: built.reach })
 }
 
 /// Overlook's Beacon: a round lighthouse-citadel on a stepped base, its fire 300 m over the headland.

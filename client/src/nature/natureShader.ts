@@ -1,3 +1,4 @@
+import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { MOSS_LEAF } from './trees.ts';
 
@@ -6,15 +7,8 @@ export const FRAME_FLOATS = 32;
 /** The segments of a plant's contact shade, a fan round its middle. */
 export const SHADE_SEGMENTS = 10;
 
-/**
- * The plants, drawn instanced: each instance's slot is read from the list, and its foot placed from its tile's
- * corner, measured from an anchor beside the eye, so the GPU's floats keep their centimetres however far the world
- * reaches. Lit as the land is lit, its ambient bounced warm from the ground under a crown and cool from the sky over
- * it, with a little sun through the leaves. A plant fades by its samples, not by blending: the near mesh hands its
- * samples to the far one across the crossfade band, each taking exactly what the other leaves, and both give theirs
- * up toward the reach and as the far ones thin out. Four samples and a dither over two pixels give seventeen steps.
- */
-export const NATURE_SHADER = /* wgsl */ `
+/** What the plants' passes share: their terms, their instances, and where each vertex stands. */
+const PLANTS = /* wgsl */ `
 ${SHARED_WGSL}
 
 struct Frame {
@@ -61,16 +55,6 @@ struct Vertex {
   @location(2) colour: vec4f,
 };
 
-struct Shaded {
-  @builtin(position) clip: vec4f,
-  @location(0) colour: vec3f,
-  @location(1) normal: vec3f,
-  @location(2) leaf: f32,
-  // The near mesh's share, and what the reach and the thinning leave, the same over the whole plant.
-  @location(3) @interpolate(flat) cover: vec2f,
-  @location(4) @interpolate(flat) snow: f32,
-};
-
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
 const AMBIENT = 0.35;
 const SNOW = vec3f(0.94, 0.95, 0.97);
@@ -107,29 +91,41 @@ fn kept_share(item: Instance, distance: f32) -> vec2f {
   return vec2f(keep, left);
 }
 
-@vertex
-fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
-  var out: Shaded;
+// A plant's vertex where it stands this frame, measured from the eye, or culled: by its detail's range across the
+// ground, by the reach and the thinning, and moss past a stone's throw.
+struct Standing {
+  point: vec3f,
+  culled: bool,
+  item: Instance,
+  size: vec3f,
+  turn: vec2f,
+  cover: vec2f,
+  distance: f32,
+};
+
+fn standing_of(vertex: Vertex, which: u32) -> Standing {
+  var out: Standing;
   let foot = foot_of(which);
   let item = foot.item;
+  out.item = item;
   // The detail changes by the distance across the ground, as the packing chose each tile's details; the reach and
   // the thinning by the distance from the eye, which is never less, so they only ever take away.
   let across = length(foot.from_eye.xy);
   let distance = length(foot.from_eye);
+  out.distance = distance;
   let far = form.ranges.w > 0.5;
   let near_share = 1.0 - smoothstep(form.ranges.x - form.ranges.z, form.ranges.x, across);
   let kept = kept_share(item, distance);
   out.cover = vec2f(near_share, kept.y);
   let moss = abs(vertex.normal.w - MOSS) < 0.04 && distance > MOSS_REACH;
-  if (select(near_share, 1.0 - near_share, far) <= 0.0 || kept.y <= 0.0 || moss) {
-    out.clip = NOWHERE;
-    return out;
-  }
+  out.culled = select(near_share, 1.0 - near_share, far) <= 0.0 || kept.y <= 0.0 || moss;
   // The far plants left standing widen to fill the gaps of those thinned out.
   let grow = select(1.0, inverseSqrt(max(kept.x, 0.05)), far);
   let size = vec3f(item.look.x * grow, item.look.x * grow, item.look.y * (1.0 + (grow - 1.0) * 0.3));
+  out.size = size;
   let local = vertex.position * size;
   let turn = vec2f(cos(item.place.w), sin(item.place.w));
+  out.turn = turn;
   var offset = vec2f(turn.x * local.x - turn.y * local.y, turn.y * local.x + turn.x * local.y);
   // Most trunks stand near upright and a few lean a little more, each its own way, read from its rank's digits.
   let tilt_way = fract(item.look.w * 7.31) * TAU;
@@ -141,8 +137,51 @@ fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
   let bend = vertex.colour.a * form.thin.z * item.look.y * (gust + sway);
   offset += frame.wind.yz * bend;
   let tremble = vertex.normal.w * 0.03 * sin(frame.wind.x * 7.0 + dot(vertex.position, vec3f(3.1, 2.3, 1.7)));
-  let point = foot.from_eye + vec3f(offset, local.z - abs(bend) * 0.2 + tremble);
+  out.point = foot.from_eye + vec3f(offset, local.z - abs(bend) * 0.2 + tremble);
+  return out;
+}
+`;
+
+/**
+ * The plants, drawn instanced: each instance's slot is read from the list, and its foot placed from its tile's
+ * corner, measured from an anchor beside the eye, so the GPU's floats keep their centimetres however far the world
+ * reaches. Lit as the land is lit, its ambient bounced warm from the ground under a crown and cool from the sky over
+ * it, with a little sun through the leaves, in the sun's shadows. A plant fades by its samples, not by blending: the
+ * near mesh hands its samples to the far one across the crossfade band, each taking exactly what the other leaves, and
+ * both give theirs up toward the reach and as the far ones thin out. Four samples and a dither over two pixels give
+ * seventeen steps.
+ */
+export const NATURE_SHADER = /* wgsl */ `
+${PLANTS}
+${SHADOW_WGSL}
+
+struct Shaded {
+  @builtin(position) clip: vec4f,
+  @location(0) colour: vec3f,
+  @location(1) normal: vec3f,
+  @location(2) leaf: f32,
+  // The near mesh's share, and what the reach and the thinning leave, the same over the whole plant.
+  @location(3) @interpolate(flat) cover: vec2f,
+  @location(4) @interpolate(flat) snow: f32,
+  @location(5) from_eye: vec3f,
+};
+
+@vertex
+fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
+  var out: Shaded;
+  let standing = standing_of(vertex, which);
+  out.cover = standing.cover;
+  if (standing.culled) {
+    out.clip = NOWHERE;
+    return out;
+  }
+  let item = standing.item;
+  let size = standing.size;
+  let turn = standing.turn;
+  let distance = standing.distance;
+  let point = standing.point;
   out.clip = frame.from_eye * vec4f(point, 1.0);
+  out.from_eye = point;
   let scaled = normalize(vertex.normal.xyz / size);
   out.normal = vec3f(turn.x * scaled.x - turn.y * scaled.y, turn.y * scaled.x + turn.x * scaled.y, scaled.z);
   out.leaf = vertex.normal.w;
@@ -187,10 +226,12 @@ fn plant_fragment(shaded: Shaded, @builtin(front_facing) front: bool) -> Drawn {
   if (!front) {
     normal = vec3f(-normal.xy, normal.z);
   }
-  let direct = max(dot(normal, SUN), 0.0);
+  // The sun as the shadow map lets it through: a tree under another's crown, or in a wall's shadow, is in shade.
+  let sun = sunlit(shaded.from_eye, normal);
+  let direct = max(dot(normal, SUN), 0.0) * sun;
   let ambient = AMBIENT * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
   // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
-  let through = shaded.leaf * (0.2 + 0.3 * max(-dot(normal, SUN), 0.0));
+  let through = shaded.leaf * (0.2 + 0.3 * max(-dot(normal, SUN), 0.0) * sun);
   var colour = shaded.colour * (ambient + (1.0 - AMBIENT) * direct) + shaded.colour * SUN_LIGHT * through;
   let settled = shaded.snow * smoothstep(0.35, 0.75, normal.z);
   colour = mix(colour, SNOW * (AMBIENT + (1.0 - AMBIENT) * direct), settled);
@@ -234,5 +275,20 @@ fn shade_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) whic
 fn shade_fragment(shade: Shade) -> @location(0) vec4f {
   let soft = 1.0 - shade.out_from_middle * shade.out_from_middle;
   return vec4f(0.0, 0.0, 0.0, shade.darkness * soft * soft);
+}
+`;
+
+/** The near plants' depth along the sun, for the shadow map: placed and swaying as they are drawn. */
+export const NATURE_CAST_SHADER = /* wgsl */ `
+${PLANTS}
+${SHADOW_CAST_WGSL}
+
+@vertex
+fn plant_cast(vertex: Vertex, @builtin(instance_index) which: u32) -> @builtin(position) vec4f {
+  let standing = standing_of(vertex, which);
+  if (standing.culled || form.ranges.w > 0.5) {
+    return NOWHERE;
+  }
+  return shadow.from_eye * vec4f(standing.point, 1.0);
 }
 `;

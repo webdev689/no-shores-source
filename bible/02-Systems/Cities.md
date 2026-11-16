@@ -13,6 +13,7 @@ code:
   - crates/city/src/landmarks_inland.rs#sun_dome
   - crates/city/src/social.rs#plaza
   - crates/city/src/courtyard.rs#courtyard
+  - crates/city/src/articulation.rs#articulated
   - crates/city/src/collision.rs#boxes_within
   - crates/land/src/pads.rs#Pads
   - crates/land/src/sites.rs#City
@@ -75,7 +76,8 @@ city stands on it:
 7. **The works.** The wall along the footprint where the land holds it, 16 m high, a round tower every sixth piece
    and a gatehouse at each gate; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
    stands apart from the ground or terrace beyond it.
-8. **The landmark**, of the motif's solids.
+8. **The landmark**, of the motif's solids, its great masses dressed as built stone (`articulation`): a stone block
+   24 m or more a side gets pilasters a bay of about 9 m apart round its faces and a cornice of trim along its top.
 9. **The social space**: a plaza of 260 × 120 m on the landmark's seaward side, walled all round with a parapet
    1.1 m high, the landward side too, since past the landmark's base the ground may be a terrace far below. Its
    section is its own edge, so its floor is walked right to the parapet and only climbing over it warns; its four
@@ -88,8 +90,9 @@ city stands on it:
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep
-   their own levels and nothing is built, the plaza's pad standing over them, its parapet for a wall, with no terrace
-   wall crossing it.
+   their own levels and are built on as any other, the plaza's pad standing over its own footprint with its parapet
+   for a wall, so what is built beneath it is hidden and the city runs right up to its foot. No terrace wall crosses
+   it.
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the
@@ -149,7 +152,8 @@ nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's
 warmer, a factor a channel, as its own layer. The ground's tiles and the solids' pictures come first, then the
 forged models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
 painted, and what is painted is kept for the next city. Gold, iron and bone are plain colours; the glow is lit warm
-and unshaded. Faces are lit as the land is, with a little light thrown back onto walls from the ground.
+and unshaded. Faces are lit as the land is, with a little light thrown back onto walls from the ground. In the game
+the solids and the near cells' models cast into the sun's shadow map, and every face and plate is lit through it.
 
 | Material | Temperate | Desert | Mountain | Swamp |
 |---|---|---|---|---|

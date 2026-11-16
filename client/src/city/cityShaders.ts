@@ -1,6 +1,7 @@
 // The city's WGSL: the forged models instanced in the near cells and the solids, the masses and hulls stood up from
 // one shape each, and the ground plates dressed in their tiles. All share one view, one cell table and one array of
 // pictures, are lit as the land is, and dither between tiers by the same thresholds the CPU's tiers test.
+import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
 import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
@@ -16,7 +17,7 @@ export const PULL_SHARE = 0.012;
 /** How far under its level a plate is drawn. */
 const PLATE_DROP_M = 0.03;
 
-const COMMON = /* wgsl */ `
+const VIEW = /* wgsl */ `
 ${SHARED_WGSL}
 struct View {
   from_eye: mat4x4f,
@@ -31,6 +32,11 @@ struct View {
 @group(0) @binding(3) var pictures: texture_2d_array<f32>;
 @group(0) @binding(4) var picture_sampler: sampler;
 @group(0) @binding(5) var tiles: texture_2d<u32>;
+`;
+
+const COMMON = /* wgsl */ `
+${VIEW}
+${SHADOW_WGSL}
 
 const AMBIENT = 0.35;
 const BOUNCE = 0.15;
@@ -86,14 +92,17 @@ fn colour_of(layer: u32, sampled: vec3f) -> vec3f {
   }
 }
 
-// The land's light, and the light the ground throws back onto a wall, so a wall in shade still reads.
-fn lit(layer: u32, albedo: vec3f, normal: vec3f) -> vec3f {
+// The land's light, and the light the ground throws back onto a wall, so a wall in shade still reads. The sun reaches
+// a point at 'from_eye' as the shadow map says.
+fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
     return vec3f(1.0, 0.72, 0.36) * 1.4;
   }
   let facing = normalize(normal);
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
-  return albedo * (ambient + (1.0 - ambient) * max(dot(facing, SUN), 0.0));
+  let direct = max(dot(facing, SUN), 0.0);
+  let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0);
+  return albedo * (ambient + (1.0 - ambient) * direct * sun);
 }
 
 struct Surface {
@@ -103,6 +112,7 @@ struct Surface {
   @location(2) @interpolate(flat) layer: u32,
   @location(3) @interpolate(flat) tier: u32,
   @location(4) @interpolate(flat) fades: vec2f,
+  @location(5) from_eye: vec3f,
 };
 
 @fragment
@@ -111,13 +121,13 @@ fn surface_fragment(surface: Surface) -> @location(0) vec4f {
   if !kept(surface.tier, surface.fades, surface.clip.xy) {
     discard;
   }
-  return vec4f(lit(surface.layer, colour_of(surface.layer, sampled), surface.normal), 1.0);
+  return vec4f(lit(surface.layer, colour_of(surface.layer, sampled), surface.normal, surface.from_eye), 1.0);
 }
 `;
 
-/** Forged models placed by instance (the near cells), and the solids and skirts as one placed at the origin. */
-export const MODEL_SHADER = /* wgsl */ `
-${COMMON}
+/** A model's or a solid's vertex where it stands, from the city's middle: shared by the models' pass and their
+ *  shadow's. */
+const MODEL_PLACE = /* wgsl */ `
 struct Vertex {
   @location(0) position: vec3f,
   @location(1) normal: vec3f,
@@ -136,12 +146,24 @@ fn turned(point: vec3f, yaw: f32) -> vec3f {
   return vec3f(point.x * cosine + point.z * sine, point.x * sine - point.z * cosine, point.y);
 }
 
+fn placed(vertex: Vertex) -> vec3f {
+  let solid = vertex.about.y == 0u;
+  return select(turned(vertex.position, vertex.place.w), vertex.position, solid) + vertex.place.xyz;
+}
+`;
+
+/** Forged models placed by instance (the near cells), and the solids and skirts as one placed at the origin. */
+export const MODEL_SHADER = /* wgsl */ `
+${COMMON}
+${MODEL_PLACE}
+
 @vertex
 fn model_vertex(vertex: Vertex) -> Surface {
   var surface: Surface;
   let solid = vertex.about.y == TIER_ALWAYS;
-  let point = select(turned(vertex.position, vertex.place.w), vertex.position, solid) + vertex.place.xyz;
+  let point = placed(vertex);
   surface.clip = clip_of(point);
+  surface.from_eye = point - view.eye.xyz;
   surface.normal = select(turned(vertex.normal, vertex.place.w), vertex.normal, solid);
   surface.uv = vertex.uv;
   surface.layer = vertex.layer;
@@ -207,6 +229,7 @@ fn mass_vertex(@builtin(vertex_index) index: u32, mass: Mass) -> Surface {
   let sine = sin(mass.place.w);
   let point = vec3f(mass.place.xy + here.x * vec2f(cosine, sine) + here.y * vec2f(-sine, cosine), mass.place.z + here.z);
   surface.clip = clip_of(point);
+  surface.from_eye = point - view.eye.xyz;
   surface.normal = vec3f(normal.x * cosine - normal.y * sine, normal.x * sine + normal.y * cosine, normal.z);
   surface.tier = mass.about.w & 6u;
   surface.fades = fades_of(mass.about.z);
@@ -220,6 +243,7 @@ ${COMMON}
 struct Plate {
   @builtin(position) clip: vec4f,
   @location(0) ground: vec2f,
+  @location(1) from_eye: vec3f,
 };
 
 @vertex
@@ -227,6 +251,7 @@ fn plate_vertex(@location(0) position: vec3f) -> Plate {
   var plate: Plate;
   // a few centimetres under its level, so a paved solid laid at the same level (the plaza's floor) shows over it
   plate.clip = clip_of(position - vec3f(0.0, 0.0, ${PLATE_DROP_M}));
+  plate.from_eye = position - view.eye.xyz;
   plate.ground = (position.xy - view.grid.xy) / ${TILE_M};
   return plate;
 }
@@ -251,6 +276,18 @@ fn plate_fragment(plate: Plate) -> @location(0) vec4f {
   let scale = select(vec2f(1.0), ${TILE_M} * SOLID_TEXELS / sizes[min(data.r, LAST_PICTURE)].xy, paved);
   uv = select(uv, plate.ground * scale, paved);
   let albedo = textureSampleGrad(pictures, picture_sampler, uv, data.r, along * scale, down * scale).rgb;
-  return vec4f(lit(data.r, albedo, vec3f(0.0, 0.0, 1.0)), 1.0);
+  return vec4f(lit(data.r, albedo, vec3f(0.0, 0.0, 1.0), plate.from_eye), 1.0);
+}
+`;
+
+/** The models' and solids' depth along the sun, for the shadow map: placed as they are drawn, nothing more. */
+export const MODEL_CAST_SHADER = /* wgsl */ `
+${VIEW}
+${SHADOW_CAST_WGSL}
+${MODEL_PLACE}
+
+@vertex
+fn model_cast(vertex: Vertex) -> @builtin(position) vec4f {
+  return shadow.from_eye * vec4f(placed(vertex) - view.eye.xyz, 1.0);
 }
 `;

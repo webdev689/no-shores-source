@@ -5,6 +5,8 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
+import { castOf } from '../nature/cast.ts';
+import { woodsOf } from '../nature/woods.ts';
 import { wheelNotches } from '../overworld/overworldInput.ts';
 import { type CardAt, Cards } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
@@ -114,7 +116,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   }
   let landmass = await openLandmass(land, world, rmbText, start.continent);
   let drawers = drawersOn(landmass);
-  scene.setLand(landmass.view, terrainOf(landmass.view));
+  /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
+  const terrainFor = (opened: Landmass) => {
+    const biome = biomeOf(opened.id);
+    return terrainOf(opened.view, biome ? woodsOf(castOf(biome)) : undefined);
+  };
+  scene.setLand(landmass.view, terrainFor(landmass));
 
   const input = new Input(canvas);
   const dress = plainDress('human', 0.3);
@@ -174,7 +181,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     behindVeil(after.words, work);
   };
 
+  /** Leaves wherever the player was: death's grey goes with them. */
+  const leaveHere = () => {
+    canvas.classList.remove('dead');
+    wasDead = false;
+  };
+
   const goFoot = async (node: NodeInfo, facing: number) => {
+    leaveHere();
     foot?.leave();
     foot = null;
     sea?.leaveRoom();
@@ -182,6 +196,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
 
   const goSea = async () => {
+    leaveHere();
     foot?.leave();
     foot = null;
     if (!sea) {
@@ -316,7 +331,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
       : undefined;
-    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures), hands);
+    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures), { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.standing.kind === 'dead' ? HINTS.dead : HINTS.foot);
@@ -330,6 +345,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     hud.reach(shown);
     const dead = shown.kind === 'dead';
     if (dead && !wasDead) document.exitPointerLock();
+    if (dead !== wasDead) canvas.classList.toggle('dead', dead);
     wasDead = dead;
   };
 
@@ -339,7 +355,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const tilt = held('lookDown') - held('lookUp');
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const shown = here.frame(seconds, clock, viewport, turn, tilt);
-    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, []));
+    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, []), { hulls: shown.hulls });
     showStanding({ kind: 'inside' });
     const island = ISLANDS[landmass.id];
     if (flow.mode === 'landing') hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
@@ -366,7 +382,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         landmass = opened;
         drawers.release();
         drawers = drawersOn(opened);
-        scene.setLand(opened.view, terrainOf(opened.view));
+        scene.setLand(opened.view, terrainFor(opened));
         here.setLandmass(opened);
       })
       .catch((error: unknown) => {

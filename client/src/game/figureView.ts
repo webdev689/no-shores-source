@@ -30,6 +30,30 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
   return out;
 }
 
+// A figure's contact shade: a soft dark disc on the ground at its feet, leaning a little the way the sun throws
+// shadows (SHARED_WGSL's SUN), so a card that casts no shadow still stands on the ground and not over it.
+const SUN = vec3f(-0.5417, 0.5417, 0.6428);
+const SHADE_SEGMENTS = 12u;
+struct Shade { @builtin(position) position: vec4f, @location(0) rim: f32 }
+
+@vertex fn shade_vertex(@builtin(vertex_index) index: u32) -> Shade {
+  let corner = index % 3u;
+  let angle = f32(index / 3u + select(0u, 1u, corner == 2u)) / f32(SHADE_SEGMENTS) * 6.2831853;
+  let rim = select(1.0, 0.0, corner == 0u);
+  let lean = -SUN.xy / SUN.z * card.size.y * 0.25;
+  let radius = vec2f(0.45, 0.45) * rim;
+  let offset = vec3f(card.feet.xy + lean * 0.5 * rim + vec2f(cos(angle), sin(angle)) * radius, card.feet.z + 0.03);
+  var out: Shade;
+  out.position = view.from_eye * vec4f(offset, 1.0);
+  out.rim = rim;
+  return out;
+}
+
+@fragment fn shade_fragment(shade: Shade) -> @location(0) vec4f {
+  let soft = 1.0 - shade.rim * shade.rim;
+  return vec4f(0.0, 0.0, 0.0, 0.42 * soft * soft);
+}
+
 @fragment fn card_fragment(in: Out) -> @location(0) vec4f {
   let size = vec2f(textureDimensions(picture));
   var at = in.corner;
@@ -44,6 +68,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
 export class FigureView implements CardMaker {
   private readonly gpu: Gpu;
   private readonly pipeline: GPURenderPipeline;
+  private readonly shade: GPURenderPipeline;
   private readonly cardLayout: GPUBindGroupLayout;
   private readonly viewBuffer: GPUBuffer;
   private readonly viewGroup: GPUBindGroup;
@@ -67,6 +92,19 @@ export class FigureView implements CardMaker {
       vertex: { module, entryPoint: 'card_vertex' },
       fragment: { module, entryPoint: 'card_fragment', targets: [{ format: gpu.format }] },
       depthStencil: { format: REVERSED_DEPTH.format, depthWriteEnabled: true, depthCompare: REVERSED_DEPTH.compare },
+      multisample: { count: SAMPLES },
+    });
+    // The shade only darkens what is under it, as the plants' contact shades do.
+    const darken: GPUBlendState = {
+      color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+      alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' },
+    };
+    this.shade = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [viewLayout, this.cardLayout] }),
+      vertex: { module, entryPoint: 'shade_vertex' },
+      fragment: { module, entryPoint: 'shade_fragment', targets: [{ format: gpu.format, blend: darken }] },
+      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      depthStencil: { format: REVERSED_DEPTH.format, depthWriteEnabled: false, depthCompare: REVERSED_DEPTH.compare },
       multisample: { count: SAMPLES },
     });
     this.viewBuffer = device.createBuffer({
@@ -128,9 +166,7 @@ export class FigureView implements CardMaker {
     values.set(fromEye);
     values.set([right[0] ?? 1, right[1] ?? 0, 0, 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
-    pass.setPipeline(this.pipeline);
-    pass.setBindGroup(0, this.viewGroup);
-    figures.forEach(({ card, x, y, z, flip }, index) => {
+    const groups = figures.map(({ card, x, y, z, flip }, index) => {
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
@@ -139,8 +175,18 @@ export class FigureView implements CardMaker {
         ...[rootX, card.root[1] / PX_PER_M, 0, 0],
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
+      return group;
+    });
+    pass.setBindGroup(0, this.viewGroup);
+    pass.setPipeline(this.shade);
+    for (const group of groups) {
+      pass.setBindGroup(1, group);
+      pass.draw(36);
+    }
+    pass.setPipeline(this.pipeline);
+    for (const group of groups) {
       pass.setBindGroup(1, group);
       pass.draw(6);
-    });
+    }
   }
 }

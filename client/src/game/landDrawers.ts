@@ -6,6 +6,8 @@ import { cityClimate } from '../city/plan.ts';
 import { landSampler } from '../nature/ground.ts';
 import { NatureView } from '../nature/natureView.ts';
 import type { Landmass } from './landmass.ts';
+import type { ShadowMap } from '../shadow.ts';
+import type { Shot } from './camera.ts';
 import type { Drawer, GameScene } from './scene.ts';
 
 /** The forged models' tables and the RMB blocks read so far, shared by every landmass's city. */
@@ -98,21 +100,32 @@ export function landDrawers(
   // The pads are kept clear from the first frame; the city's solids too once it is built.
   const cleared = (x: number, y: number) => landmass.cleared(x, y) || (city?.cleared(x, y) ?? false);
   const nature = biome ? new NatureView(gpu) : null;
+  // Nature is updated once a frame, for its shadow's pass and its own alike.
+  let updatedFor: Float32Array | null = null;
+  const keepNature = (view: NatureView, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap) => {
+    if (updatedFor === fromEye) return;
+    updatedFor = fromEye;
+    const now = scene.closePatch();
+    if (now !== patch) [patch, sample, version] = [now, landSampler(landmass.view, now), version + 1];
+    const land = landmass.view;
+    const ground = {
+      biome: biome ?? '',
+      snowM: land.snowM ?? 2300,
+      version,
+      sample,
+      cleared,
+      groundColour: land.ground,
+    };
+    view.update({ fromEye, eye: shot.eye, exaggeration: 1, time }, ground, shadow);
+  };
   const natureDrawer: Drawer | null = nature && {
-    drawInto: (pass, fromEye, shot, time) => {
-      const now = scene.closePatch();
-      if (now !== patch) [patch, sample, version] = [now, landSampler(landmass.view, now), version + 1];
-      const { view } = landmass;
-      const ground = {
-        biome: biome ?? '',
-        snowM: view.snowM ?? 2300,
-        version,
-        sample,
-        cleared,
-        groundColour: view.ground,
-      };
-      nature.update({ fromEye, eye: shot.eye, exaggeration: 1, time }, ground);
-      nature.drawInto(pass);
+    castInto: (pass, fromEye, shot, time, shadow) => {
+      keepNature(nature, fromEye, shot, time, shadow);
+      nature.castInto(pass, shadow);
+    },
+    drawInto: (pass, fromEye, shot, time, shadow) => {
+      keepNature(nature, fromEye, shot, time, shadow);
+      nature.drawInto(pass, shadow);
     },
   };
   return {

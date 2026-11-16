@@ -2,6 +2,7 @@
 // their hulls far off, dithered into each other; its landmark, works and plaza always; its ground plates at every
 // distance. A Drawer the game's scene draws into its own pass.
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData, type CityTables, type Range, runs } from './cityBuild.ts';
 import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines } from './cityGpu.ts';
@@ -23,8 +24,12 @@ export interface CityShot {
 
 /** Anything drawn into the scene's pass, as the game's scene takes it. */
 export interface CityDrawer {
-  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number): void;
+  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow?: ShadowMap): void;
 }
+
+/** What a frame draws, worked out once for its shadow's pass and its own: the chunks and near cells the view sees or
+ *  whose shadows may fall in the sun's square. */
+type Seen = { readonly fromEye: Float32Array; readonly chunks: Chunk[]; readonly cells: number[] };
 
 /** What the last frame drew. */
 export type CityFrame = { triangles: number; draws: number; nearCells: number; buildMs: number };
@@ -58,6 +63,7 @@ export class CityView implements CityDrawer {
   private readonly gpu: Gpu;
   private readonly pipelines: CityPipelines;
   private drawn: Drawn | null = null;
+  private seen: Seen | null = null;
   private onPainted: () => void = () => {};
 
   constructor(gpu: Gpu) {
@@ -177,9 +183,11 @@ export class CityView implements CityDrawer {
     return this.drawn?.data.cleared(x, y) ?? false;
   }
 
-  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number): void {
+  /** Works out, once a frame, what the frame draws, and writes the view's terms. */
+  private select(fromEye: Float32Array, shot: CityShot, time: number, shadow: ShadowMap | undefined): Seen | null {
     const drawn = this.drawn;
-    if (!drawn) return;
+    if (!drawn) return null;
+    if (this.seen?.fromEye === fromEye) return this.seen;
     const { data } = drawn;
     const eye: [number, number, number] = [shot.eye[0] - data.origin[0], shot.eye[1] - data.origin[1], shot.eye[2]];
     const uniforms = new Float32Array(VIEW_BYTES / 4);
@@ -188,12 +196,15 @@ export class CityView implements CityDrawer {
     uniforms.set([...data.grid, data.plates.width, 0], 20);
     this.gpu.device.queue.writeBuffer(drawn.view, 0, uniforms);
     const planes = viewPlanes(fromEye);
+    const casting = shadow?.active ? shadow : null;
+    const wanted = (low: [number, number, number], high: [number, number, number]) =>
+      boxSeen(planes, low, high) || (casting?.reaches(low, high) ?? false);
     const seenChunks: Chunk[] = [];
     const nearCells: number[] = [];
     for (const chunk of data.chunks) {
-      const low = [chunk.low[0] - eye[0], chunk.low[1] - eye[1], chunk.low[2] - eye[2]];
-      const high = [chunk.high[0] - eye[0], chunk.high[1] - eye[1], chunk.high[2] - eye[2]];
-      if (!boxSeen(planes, low, high)) continue;
+      const low: [number, number, number] = [chunk.low[0] - eye[0], chunk.low[1] - eye[1], chunk.low[2] - eye[2]];
+      const high: [number, number, number] = [chunk.high[0] - eye[0], chunk.high[1] - eye[1], chunk.high[2] - eye[2]];
+      if (!wanted(low, high)) continue;
       seenChunks.push(chunk);
       const middles = boxReach(
         [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
@@ -206,8 +217,7 @@ export class CityView implements CityDrawer {
         if (Math.hypot(offset[0], offset[1], offset[2]) >= NEAR_M) continue;
         const half = 51.2 + 10;
         if (
-          boxSeen(
-            planes,
+          wanted(
             [offset[0] - half, offset[1] - half, offset[2] - 5],
             [offset[0] + half, offset[1] + half, offset[2] + 70],
           )
@@ -215,8 +225,37 @@ export class CityView implements CityDrawer {
           nearCells.push(cell);
       }
     }
+    this.seen = { fromEye, chunks: seenChunks, cells: nearCells };
+    return this.seen;
+  }
+
+  /** Draws the city's solids and near models into the sun's shadow map. */
+  castInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow: ShadowMap): void {
+    const drawn = this.drawn;
+    const seen = this.select(fromEye, shot, time, shadow);
+    if (!drawn || !seen) return;
+    const cast = this.pipelines.modelsCast;
+    pass.setPipeline(cast);
+    pass.setBindGroup(0, drawn.group);
+    pass.setBindGroup(1, shadow.casterGroup(cast));
+    this.drawNear(pass, drawn, seen.cells, { triangles: 0, draws: 0, nearCells: 0, buildMs: 0 });
+    pass.setVertexBuffer(0, drawn.solidVertices);
+    pass.setVertexBuffer(1, drawn.origin);
+    pass.setIndexBuffer(drawn.solidIndices, 'uint32');
+    for (const run of runs(seen.chunks.map((chunk) => chunk.solids))) pass.drawIndexed(run.count, 1, run.first, 0, 0);
+  }
+
+  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow?: ShadowMap): void {
+    const drawn = this.drawn;
+    const seen = this.select(fromEye, shot, time, shadow);
+    if (!drawn || !seen) return;
+    const { data } = drawn;
+    const eye: [number, number, number] = [shot.eye[0] - data.origin[0], shot.eye[1] - data.origin[1], shot.eye[2]];
+    const { chunks: seenChunks, cells: nearCells } = seen;
     const frame = { triangles: 0, draws: 0, nearCells: nearCells.length, buildMs: this.frame.buildMs };
     pass.setBindGroup(0, drawn.group);
+    // The three pipelines share the shadow's layout, so one group serves them all.
+    pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipelines.plates));
 
     pass.setPipeline(this.pipelines.plates);
     pass.setVertexBuffer(0, drawn.plates);

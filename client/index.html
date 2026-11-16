@@ -30,6 +30,11 @@
         display: block;
         width: 100%;
         height: 100%;
+        transition: filter 1.4s ease-out;
+      }
+      /* In death the world drains to grey, as Destiny's does, and comes back in colour on respawn. */
+      canvas.dead {
+        filter: grayscale(0.92) brightness(0.72) contrast(1.05);
       }
       #hud {
         position: fixed;

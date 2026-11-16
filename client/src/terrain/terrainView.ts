@@ -1,4 +1,5 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
+import { SHADOW_WGSL, ShadowMap } from '../shadow.ts';
 import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -30,6 +31,15 @@ export interface TerrainData {
   /** The biome's low ground (0..1) and snow line in metres; the default green and 2,300 m without one. */
   readonly ground?: readonly [number, number, number];
   readonly snowM?: number;
+  /** The window's north-west corner in world metres, where the woods' grove field is read. */
+  readonly leftM?: number;
+  readonly topM?: number;
+  /** The biome's woods (nature's woodsOf), coloured on the land past the reach of its drawn trees; none without. */
+  readonly woods?: {
+    readonly canopy: readonly [number, number, number];
+    readonly cover: number;
+    readonly gather: number;
+  };
 }
 
 /** The exact ground round the camera's target: samples `step` metres apart, sample (0, 0) at `corner` (window
@@ -63,7 +73,7 @@ export interface TerrainFrame {
   readonly pixelAngle: number;
 }
 
-const UNIFORM_FLOATS = 44 + CLIPMAP_LEVELS * 8;
+const UNIFORM_FLOATS = 52 + CLIPMAP_LEVELS * 8;
 /** The low ground and snow line drawn for a landmass with no biome. */
 const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
 const DEFAULT_SNOW_M = 2300;
@@ -79,6 +89,7 @@ const DEFAULT_SNOW_M = 2300;
  */
 const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
+${SHADOW_WGSL}
 
 struct View {
   from_eye: mat4x4f,
@@ -90,6 +101,10 @@ struct View {
   ground: vec4f,
   // The finest ring's corner from the eye, and its step: the lattice every ring's corner and step count in.
   lattice: vec4f,
+  // The biome's woods: their canopy's colour and cover; and the window's corner in world metres, and how strongly
+  // the woods gather in the groves.
+  woods: vec4f,
+  world: vec4f,
   rings: array<vec4f, ${CLIPMAP_LEVELS * 2}>,
 };
 
@@ -214,6 +229,53 @@ fn bed_colour(depth: f32, slope: f32, fresh: bool) -> vec3f {
   return mix(select(sea_floor, MUD, fresh), ROCK * 0.8, smoothstep(0.3, 0.6, slope));
 }
 
+// The scatter's grove field (nature's scatter.ts: hashOf, valueNoise, groveAt), to the bit in its hash, so the woods
+// seen from afar lie where the trees stand near.
+fn grove_hash(column: i32, row: i32, salt: i32) -> u32 {
+  var hash = 0x811c9dc5u;
+  let values = array<i32, 3>(column, row, salt);
+  for (var index = 0; index < 3; index++) {
+    hash = (hash ^ bitcast<u32>(values[index])) * 0x01000193u;
+    hash ^= hash >> 15u;
+    hash *= 0x2c1b3c6du;
+    hash ^= hash >> 12u;
+  }
+  hash = (hash ^ (hash >> 16u)) * 0x297a2d39u;
+  return hash ^ (hash >> 15u);
+}
+
+fn grove_noise(world: vec2f, cell: f32, salt: i32) -> f32 {
+  let grid = world / cell;
+  let base = floor(grid);
+  let share = smoothstep(vec2f(0.0), vec2f(1.0), grid - base);
+  let at = vec2i(base);
+  let corner_00 = f32(grove_hash(at.x, at.y, salt)) / 4294967296.0;
+  let corner_10 = f32(grove_hash(at.x + 1, at.y, salt)) / 4294967296.0;
+  let corner_01 = f32(grove_hash(at.x, at.y + 1, salt)) / 4294967296.0;
+  let corner_11 = f32(grove_hash(at.x + 1, at.y + 1, salt)) / 4294967296.0;
+  let top = mix(corner_00, corner_10, share.x);
+  return mix(top, mix(corner_01, corner_11, share.x), share.y);
+}
+
+fn grove_at(world: vec2f) -> f32 {
+  return 0.55 * grove_noise(world, 560.0, 17) + 0.3 * grove_noise(world, 230.0, 29) + 0.15 * grove_noise(world, 90.0, 41);
+}
+
+// The biome's woods on the land: the forest floor darker under the groves near, where the trees are drawn, and their
+// canopy's colour past where the far trees thin out (1 to 3 km); none on the beach, on ground too steep for trees, or
+// near the snow line. A grove's trees cover the ground thickly from afar, their crowns and sides together.
+fn wooded(colour: vec3f, world: vec2f, bed: f32, slope: f32, distance_to: f32) -> vec3f {
+  if (view.woods.w <= 0.0) { return colour; }
+  let in_grove = smoothstep(0.4, 0.6, grove_at(world));
+  let gather = view.world.z;
+  let density = (1.0 + gather * (2.0 * in_grove - 1.0)) / (1.0 + gather);
+  var cover = 1.0 - exp(-4.0 * view.woods.w * density);
+  cover *= smoothstep(2.0, 2.5, bed) * (1.0 - smoothstep(0.6, 0.75, slope));
+  cover *= 1.0 - smoothstep(view.ground.w - 300.0, view.ground.w - 100.0, bed);
+  let far = smoothstep(1000.0, 3000.0, distance_to);
+  return mix(colour * mix(1.0, 0.72, cover), mix(colour, view.woods.rgb, cover), far);
+}
+
 // Each pixel reads the ground under it, not the mesh: far off a ring's triangles are kilometres across, and only
 // place the pixel. Its light and colour come from the ground itself, and the water draws its edge against it too.
 @fragment
@@ -246,7 +308,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let light = caustics(local, view.eye.w) * fine * exp(-max(depth, 0.0) / 9.0) * smoothstep(0.0, 0.4, depth);
   wet += SUN_LIGHT * light * select(0.32, 0.12, fresh);
 
-  var dry = land_colour(bed, slope, ground.w);
+  var dry = wooded(land_colour(bed, slope, ground.w), view.world.xy + point, bed, slope, reach_to);
   let in_close = share > 0.5;
   dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
   let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);
@@ -255,7 +317,10 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   dry = mix(mix(mix(dry, ROAD, road), TOWN, 0.6 * town), PORT, port);
 
   var colour = mix(dry, wet, under);
-  colour *= AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0);
+  let direct = max(dot(normal, SUN), 0.0);
+  let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
+  let sun = select(1.0, sunlit(on_ground, normal), direct > 0.0);
+  colour *= AMBIENT + (1.0 - AMBIENT) * direct * sun;
   let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));
   colour = mix(colour, RING, select(0.0, ring, view.brush.z > 0.0));
 
@@ -293,6 +358,7 @@ export class TerrainView {
   private readonly cellM: number;
   private readonly ground: readonly [number, number, number];
   private readonly snowM: number;
+  private readonly woods: readonly number[];
   /** The cells for WGSL wide_ground: height, distance from the coast, height carried over it. */
   private readonly wide: GPUTexture;
   private readonly lakes: GPUTexture;
@@ -311,6 +377,10 @@ export class TerrainView {
     this.cellM = data.cellM;
     this.ground = data.ground ?? DEFAULT_GROUND;
     this.snowM = data.snowM ?? DEFAULT_SNOW_M;
+    const woods = data.woods;
+    this.woods = woods
+      ? [...woods.canopy, woods.cover, data.leftM ?? 0, data.topM ?? 0, woods.gather, 0]
+      : [0, 0, 0, 0, 0, 0, 0, 0];
     this.wide = this.texture(data.width, data.height, 'rgba32float');
     this.lakes = this.texture(data.width, data.height, 'rg32float');
     this.marks = this.texture(data.width, data.height, 'r8uint');
@@ -422,19 +492,21 @@ export class TerrainView {
     floats.set([...this.ground, this.snowM], 36);
     const finest = frame.rings[0];
     if (finest) floats.set([finest.corner[0] - eyeX, finest.corner[1] - eyeY, finest.spacing, 0], 40);
+    floats.set(this.woods, 44);
     for (const [index, ring] of frame.rings.entries()) {
       const [steps, origin] = [finest?.spacing ?? ring.spacing, finest?.corner ?? ring.corner];
       const lattice = [(ring.corner[0] - origin[0]) / steps, (ring.corner[1] - origin[1]) / steps];
-      floats.set([...lattice, ring.spacing / steps, 0], 44 + index * 8);
-      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 48 + index * 8);
+      floats.set([...lattice, ring.spacing / steps, 0], 52 + index * 8);
+      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 56 + index * 8);
     }
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, floats);
   }
 
-  /** Draws the terrain into a pass whose uniforms `prepare` wrote. */
-  drawInto(pass: GPURenderPassEncoder): void {
+  /** Draws the terrain into a pass whose uniforms `prepare` wrote, in the sun's shadows when a map is given. */
+  drawInto(pass: GPURenderPassEncoder, shadow?: ShadowMap): void {
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
+    pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.draw(CLIPMAP_QUADS * CLIPMAP_QUADS * 6, CLIPMAP_LEVELS);
   }
 }
