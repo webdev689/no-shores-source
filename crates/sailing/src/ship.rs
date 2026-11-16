@@ -69,7 +69,8 @@ fn toward_vector(current: [f64; 2], target: [f64; 2], most: f64) -> [f64; 2] {
 }
 
 /// Degrees between her forward and where the wind blows to: 0 running before it, 180 in its eye.
-fn off_run_deg(forward: [f64; 2], wind: [f64; 2]) -> f64 {
+#[must_use]
+pub fn off_run_deg(forward: [f64; 2], wind: [f64; 2]) -> f64 {
     let cross = forward[0] * wind[1] - forward[1] * wind[0];
     let dot = forward[0] * wind[0] + forward[1] * wind[1];
     libm::atan2(cross.abs(), dot).to_degrees()

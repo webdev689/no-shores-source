@@ -141,6 +141,16 @@ pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range:
     Lay { side, mouths, centre, dir, elevation, gun, shot, reach: max_range(gun.speed, above, high) }
 }
 
+/// `side` laid on a point in the world: its range along her fire, its height under her guns' middle.
+#[must_use]
+pub fn lay_on(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, target: [f64; 3]) -> Lay {
+    let square = lay(ship, pose, arms, side, shot, 0.0, None);
+    let range = (target[0] - square.centre[0]) * square.dir[0] + (target[1] - square.centre[1]) * square.dir[1];
+    let (low, high) = (square.gun.min_el_deg * DEGREE, square.gun.max_el_deg * DEGREE);
+    let elevation = elevation_for_range(range, square.gun.speed, square.centre[2] - target[2], low, high);
+    Lay { elevation, ..square }
+}
+
 /// The balls a laid side fires: one from each mouth, each `RIPPLE_S` after the one before and from where its port is
 /// by then, carried at the deck's velocity, scattered by its crew's skill and the volley's seed.
 #[must_use]
