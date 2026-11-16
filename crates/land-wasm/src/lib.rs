@@ -266,8 +266,13 @@ pub fn patch_view(request: &[u8]) -> Vec<u8> {
         let number = |key: &str| request[key].as_f64().ok_or(format!("the patch needs its {key}"));
         let (left, top, step) = (number("left")?, number("top")?, number("step")?);
         let (width, height) = (number("width")? as usize, number("height")? as usize);
-        if !(1..=1024).contains(&width) || !(1..=1024).contains(&height) || step <= 0.0 {
-            return Err("a patch is 1 to 1024 samples a side, a positive step apart".into());
+        let far = [left + step * width as f64, top + step * height as f64];
+        if !(1..=1024).contains(&width)
+            || !(1..=1024).contains(&height)
+            || step <= 0.0
+            || !far.iter().all(|corner| corner.is_finite())
+        {
+            return Err("a patch is 1 to 1024 samples a side, a positive step apart, within reach".into());
         }
         OPEN.with(|open| {
             let open = open.borrow();

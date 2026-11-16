@@ -192,3 +192,33 @@ fn a_river_s_banks_ease_back_to_the_land_with_no_wall_where_it_crosses_a_lake() 
     let jump = across.windows(2).map(|pair| (pair[1] - pair[0]).abs()).fold(0.0, f64::max);
     assert!(jump < 5.0, "the bank falls to the lake's bed without a wall: {jump} m in 10 cm");
 }
+
+#[test]
+fn a_gathered_river_lies_in_its_channel_and_ends_at_the_painted_coast() {
+    let text = r#"{ "continents": [{ "id": "wedge", "outline": [[200000, 300000], [400000, 300000], [200000, 500000]] }], "isles": [] }"#;
+    let layout = world::layout::parse(text).unwrap();
+    let landmass = crate::landmass::generate(&layout.continents[0], Edits::default()).unwrap();
+    let ground = &landmass.surface;
+    assert!(!ground.rivers.is_empty(), "the wedge gathers rivers");
+    let (mut walls, mut seaward) = (0, 0);
+    for course in &ground.rivers {
+        for point in course {
+            if ground.sides(point.x, point.y)[2] < -1.0 {
+                seaward += 1;
+            }
+            // Just past the channel's edge, either side across the course: water there, or ground up to the surface.
+            let diagonal = std::f64::consts::FRAC_1_SQRT_2;
+            for (east, south) in [(1.0, 0.0), (diagonal, diagonal), (0.0, 1.0), (-diagonal, diagonal)] {
+                let reach = point.width / 2.0 + 2.0;
+                for side in [1.0, -1.0] {
+                    let (x, y) = (point.x + side * reach * east, point.y + side * reach * south);
+                    if ground.water_at(x, y) == WaterAt::Dry && ground.height_at(x, y) < point.level - 0.5 {
+                        walls += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!(seaward, 0, "no course runs past the painted coast");
+    assert_eq!(walls, 0, "no river stands over dry ground beside its channel");
+}

@@ -268,12 +268,35 @@ impl Ground {
             let raw: Vec<[f64; 4]> = (0..river.points.len())
                 .map(|at| [river.points[at].0, river.points[at].1, river.flow[at], river.level[at]])
                 .collect();
+            // A course ends where the painted coast crosses it, not at the first sea cell's centre beyond.
+            let (mut points, mut inland): (Vec<[f64; 4]>, Option<f64>) = (Vec::new(), None);
+            for point in chaikin(&chaikin(&raw)) {
+                let coast = ground.sides(point[0], point[1])[2];
+                if coast <= 0.0 {
+                    if let (Some(before), Some(&last)) = (inland, points.last()) {
+                        let share = before / (before - coast);
+                        points.push(std::array::from_fn(|at| lerp(last[at], point[at], share)));
+                    }
+                    break;
+                }
+                inland = Some(coast);
+                points.push(point);
+            }
+            // A level gathered on the cells can float above the smooth ground down a steep reach: off a lake it is
+            // held to the ground, so the water lies in its channel, never over dry land.
             let mut surface = f64::MAX;
-            let course = chaikin(&chaikin(&raw)).into_iter().map(|[x, y, flow, level]| {
-                surface = surface.min(level - 0.5).max(0.0);
-                CoursePoint { x, y, level: surface, width: river_width_m(flow), depth: river_depth_m(flow) }
-            });
-            ground.rivers.push(course.collect());
+            let course: Vec<CoursePoint> = points
+                .iter()
+                .map(|&[x, y, flow, level]| {
+                    let floor = ground.padded(x, y);
+                    let cap = ground.lake_surface(x, y).filter(|&lake| lake > floor).unwrap_or(floor);
+                    surface = surface.min(level - 0.5).min(cap).max(0.0);
+                    CoursePoint { x, y, level: surface, width: river_width_m(flow), depth: river_depth_m(flow) }
+                })
+                .collect();
+            if course.len() >= 2 {
+                ground.rivers.push(course);
+            }
         }
         for road in &edits.roads {
             let points = densify(&to_metres(&road.points), COURSE_STEP_M);
@@ -437,7 +460,8 @@ impl Ground {
         if height < 0.0 { WaterAt::Sea } else { WaterAt::Dry }
     }
 
-    /// The surface of the lake reaching a point: the highest of the lake cells whose centre lies within a cell of it.
+    /// The surface of the lake reaching a point: the highest of the lake cells whose centre lies within a cell of it,
+    /// across and down.
     /// A lake's cells fill its hollow and the cells round them stand above it, so its shore is where the ground meets
     /// its surface, between the cells. A lake level of 0 is no lake.
     fn lake_surface(&self, x: f64, y: f64) -> Option<f64> {
@@ -452,7 +476,7 @@ impl Ground {
                 }
                 let (dx, dy) = (grid_x - column as f64, grid_y - row as f64);
                 let level = self.lake_level[row as usize * land.width + column as usize];
-                if level > 0.0 && dx * dx + dy * dy < 1.0 {
+                if level > 0.0 && dx.abs().max(dy.abs()) < 1.0 {
                     surface = Some(surface.map_or(level, |higher: f64| higher.max(level)));
                 }
             }
@@ -470,7 +494,12 @@ impl Ground {
         if let Some(inside) = river.filter(|&edge| edge < 0.0) {
             return Some(inside);
         }
-        self.lake_surface(x, y).map(|surface| self.height_at(x, y) - surface).or(river)
+        // Both near: the nearer edge of either water, so a lake a cell off never hides a river's bank.
+        let lake = self.lake_surface(x, y).map(|surface| self.height_at(x, y) - surface);
+        match (lake, river) {
+            (Some(lake), Some(river)) => Some(lake.min(river)),
+            (lake, river) => lake.or(river),
+        }
     }
 }
 

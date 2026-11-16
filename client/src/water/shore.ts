@@ -303,9 +303,10 @@ export function waterUnder(
     corners.reduce((sum, sample, index) => sum + (weights[index] ?? 0) * (values[sample * stride + offset] ?? 0), 0);
   const bed = splineAt(field.heights, field.width, field.height, gridX, gridY);
   const level = blend(field.levels, 2, 0);
-  if (level > FRESH_LEVEL_M) {
-    const surface = level - FRESH_SINK_M - Math.max(0, blend(field.levels, 2, 1));
-    return { kind: surface > bed ? 'fresh' : 'dry', surface, bed };
+  // As the GPU's still_at: fresh water dipping under the sea's level is the sea's.
+  const freshSurface = level - FRESH_SINK_M - Math.max(0, blend(field.levels, 2, 1));
+  if (level > FRESH_LEVEL_M && freshSurface > 0) {
+    return { kind: freshSurface > bed ? 'fresh' : 'dry', surface: freshSurface, bed };
   }
   const depth = Math.max(0, -bed);
   const sets = breakerSets(world.x - field.left, world.y - field.top, time);

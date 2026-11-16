@@ -70,6 +70,8 @@ export interface SceneFrame {
   readonly held: ReadonlySet<string>;
   readonly source: GroundSource | null;
   readonly editsVersion: number;
+  /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
+  readonly stroking: boolean;
 }
 
 interface CloseUp {
@@ -98,6 +100,8 @@ export class LandScene {
   private readonly water: WaterView;
   private terrain: { id: string; view: TerrainView } | null = null;
   private closeUp: CloseUp | null = null;
+  /** The edits version of the frame being drawn: a close-up made before it is stale. */
+  private version = 0;
   private patchPending = false;
   private body: Body | null = null;
   private footing: Footing | null = null;
@@ -125,6 +129,7 @@ export class LandScene {
     this.terrain?.view.destroy();
     this.terrain = null;
     this.shownClose = null;
+    [this.body, this.footing] = [null, null];
   }
 
   /** Lays changed cells on the 1 km terrain. */
@@ -137,10 +142,16 @@ export class LandScene {
     return this.body?.stroke === 'swim' || this.body?.stroke === 'dive' ? SWIMMER_LOWEST_PITCH : PITCH_LIMITS.lowest;
   }
 
+  /** The close-up, while it is of this landmass and made since its land last changed. */
+  private current(id: string): CloseUp | null {
+    return this.closeUp?.id === id && this.closeUp.version === this.version ? this.closeUp : null;
+  }
+
   /** The ground's height at a world point: exact where the close-up reaches, the 1 km land's elsewhere; the sea's
    *  still surface over the sea. */
   private groundAt(id: string, view: LandView, x: number, y: number): number {
-    const exact = this.closeUp?.id === id ? groundUnder(this.closeUp.patch, x, y) : null;
+    const close = this.current(id);
+    const exact = close ? groundUnder(close.patch, x, y) : null;
     return Math.max(0, exact ?? heightAt(view, x, y) ?? 0);
   }
 
@@ -160,6 +171,7 @@ export class LandScene {
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
     const time = now / 1000;
+    this.version = frame.editsVersion;
     const { view, id } = frame;
     let orbit = frame.walking ? this.walk(frame, seconds, time) : frame.orbit;
     if (!frame.walking) [this.body, this.footing] = [null, null];
@@ -174,10 +186,7 @@ export class LandScene {
     }
     const terrain = this.terrain.view;
     // The close-up shows while it is current: near enough, and made after the last change to the land.
-    const near =
-      this.closeUp?.id === id && orbit.distance < CLOSE_RANGE_M && this.closeUp.version === frame.editsVersion
-        ? this.closeUp
-        : null;
+    const near = orbit.distance < CLOSE_RANGE_M && !frame.stroking ? this.current(id) : null;
     if (near !== this.shownClose) {
       terrain.showCloseUp(near && closeUpData(near.patch, near.field.levels, view));
       this.shownClose = near;
@@ -237,6 +246,7 @@ export class LandScene {
     );
     copy.draw(3);
     copy.end();
+    const eyeWater = this.waterAt(id, view, camera.eye[0], camera.eye[1], time);
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(FIELD_OF_VIEW / 2) },
       size: [frame.size.width, frame.size.height],
@@ -248,7 +258,8 @@ export class LandScene {
       swell: view.swell,
       coarse: terrain.cells,
       patch: near?.water ?? null,
-      eyeWater: this.waterAt(id, view, camera.eye[0], camera.eye[1], time),
+      eyeWater,
+      eyeAboveM: Math.abs(camera.eye[2] / shown - (eyeWater?.surface ?? this.groundAt(id, view, ...eyeWorld))),
       focus: [orbit.targetX, orbit.targetY],
       drawn,
       target: this.gpu.context.getCurrentTexture().createView(),
@@ -267,7 +278,7 @@ export class LandScene {
   /** The water at a window point now, for the eye: its surface and whether it is fresh; null where none stands. */
   private waterAt(id: string, view: LandView, x: number, y: number, time: number) {
     const world = { x: x + view.leftM, y: y + view.topM };
-    const close = this.closeUp?.id === id ? this.closeUp : null;
+    const close = this.current(id);
     const water = close ? waterUnder(close.field, view.swell, world, time) : null;
     if (water) return water.kind === 'dry' ? null : { surface: water.surface, fresh: water.kind === 'fresh' };
     return (heightAt(view, world.x, world.y) ?? 0) < 0 ? { surface: 0, fresh: false } : null;
@@ -276,7 +287,7 @@ export class LandScene {
   /** The bed and the water's surface at a window point, for the walker. */
   private footingAt(id: string, view: LandView, x: number, y: number, time: number): Footing {
     const world = { x: x + view.leftM, y: y + view.topM };
-    const close = this.closeUp?.id === id ? this.closeUp : null;
+    const close = this.current(id);
     const water = close ? waterUnder(close.field, view.swell, world, time) : null;
     if (water) return { bed: water.bed, surface: water.kind === 'dry' ? null : water.surface };
     const bed = heightAt(view, world.x, world.y) ?? 0;
@@ -318,7 +329,7 @@ export class LandScene {
   /** Samples the exact ground round the camera's target when it is close, again once it moves or the land changes. */
   private keepCloseUp(frame: SceneFrame, orbit: Orbit): void {
     const { source, id, view } = frame;
-    if (!source || this.patchPending || orbit.distance >= CLOSE_RANGE_M || !source.isOpen(id)) return;
+    if (!source || this.patchPending || frame.stroking || orbit.distance >= CLOSE_RANGE_M || !source.isOpen(id)) return;
     const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
     const close = this.closeUp;
     const fresh =

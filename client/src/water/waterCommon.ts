@@ -1,4 +1,4 @@
-import { FRESH_LEVEL_M, FRESH_SINK_M, GRAVITY, SHORE, SLOW_CLOCK_S } from './shore.ts';
+import { FRESH_LEVEL_M, FRESH_SINK_M, SHORE } from './shore.ts';
 
 /** The most swell waves the GPU sums; crates/land/src/sea.rs makes ten. The wind's chop is twelve more. */
 export const MOST_WAVES = 12;
@@ -12,6 +12,8 @@ export const ANCHOR_M = 1024;
 /** The land crate's coast blend (ground.rs COAST_BLEND_M) and the floor it keeps either side (SHORE_FLOOR_M), metres. */
 export const COAST_BLEND_M = 1000;
 export const SHORE_FLOOR_M = 0.5;
+/** How far from the coast its distance is kept (relief.rs COAST_REACH_M), metres; further cells hold this. */
+export const COAST_REACH_M = 6000;
 
 /** The cells of a window, row by row: each one's height, distance from the painted coast and height carried over it. */
 export interface WideCells {
@@ -110,6 +112,7 @@ fn caustics(point: vec2f, time: f32) -> f32 {
 const FRESH_SINK = ${FRESH_SINK_M};
 const COAST_BLEND = ${COAST_BLEND_M.toFixed(1)};
 const SHORE_FLOOR = ${SHORE_FLOOR_M};
+const COAST_REACH = ${COAST_REACH_M.toFixed(1)};
 const FRESH_LEVEL = ${FRESH_LEVEL_M};
 
 // The value of a grid of samples at 'at', in samples from sample (0, 0), along Catmull-Rom splines through them (the
@@ -311,8 +314,6 @@ struct Frame {
 @group(0) @binding(8) var ripples: texture_2d<f32>;
 @group(0) @binding(9) var smooth_sampler: sampler;
 
-const GRAVITY = ${GRAVITY};
-const SLOW_CLOCK = ${SLOW_CLOCK_S}.0;
 const BREAK_PERIOD = ${SHORE.periodS}.0;
 const BREAK_HEIGHT = ${SHORE.heightM};
 const BREAK_FROM = ${SHORE.fromDepthM}.0;

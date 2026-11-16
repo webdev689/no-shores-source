@@ -1,5 +1,5 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
-import { stillLevels } from '../water/shore.ts';
+import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CLIPMAP_LEVELS, CLIPMAP_QUADS, type ClipLevel } from './clipmap.ts';
@@ -58,8 +58,6 @@ export interface TerrainFrame {
 }
 
 const UNIFORM_FLOATS = 44 + CLIPMAP_LEVELS * 8;
-/** The caustics' clock wraps here, seconds, as the water's does. */
-const SLOW_CLOCK_S = 3600;
 /** The low ground and snow line drawn for a landmass with no biome. */
 const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
 const DEFAULT_SNOW_M = 2300;
@@ -165,16 +163,20 @@ fn vertex_main(@builtin(vertex_index) index: u32, @builtin(instance_index) ring:
   // or it would stand over water the ground lies under. So a vertex inland, within a triangle's reach of the coast,
   // is lowered as far as that asks of the lowest the sea can be at its seaward neighbour, a pixel short of the line;
   // the pixel then draws the land and the water's edge from the ground itself.
+  // The coast's distance is held at COAST_REACH, so the rule fades out short of it: a ring coarser than that
+  // would otherwise take all its land for coast.
   let span = spacing * (1.0 + morph) * 1.4142;
   let coast = ground.ground.w - length(vec3f(offset, ground.ground.x * view.brush.w - view.eye.z)) * view.wide.z;
+  let held = 1.0 - smoothstep(0.6 * COAST_REACH, 0.9 * COAST_REACH, ground.ground.w);
   var bed = ground.ground.x;
-  if (coast < span && ground.ground.w > 0.0) {
+  if (coast < span && ground.ground.w > 0.0 && held > 0.0) {
     let seaward = -coast_meet(ground.sides.x, ground.sides.y, ground.ground.w - span);
-    bed = min(bed, coast * max(seaward, 0.0) / max(span - coast, 1e-3));
+    bed = mix(bed, min(bed, coast * max(seaward, 0.0) / max(span - coast, 1e-3)), held);
   }
-  // Round fresh water the same holds: a vertex within a step's rise of a lake's or a river's level sinks under it.
+  // Round fresh water the same holds: a vertex within a step's rise (4 m at most) of a lake's or a river's level
+  // sinks under it.
   let still = still_at(wide_lakes, wide_at(offset), close_levels, close_at(offset), share);
-  let rise = length(ground.ground.yz) * span;
+  let rise = min(length(ground.ground.yz) * span, 4.0);
   if (still.y > 0.5) {
     bed = min(bed, mix(still.z - FRESH_SINK, bed, smoothstep(1.0, 2.0, (bed - still.z) / max(rise, 1e-3))));
   }

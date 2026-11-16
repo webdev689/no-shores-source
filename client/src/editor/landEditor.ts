@@ -73,6 +73,8 @@ export async function startLandEditor(
   const scene = new LandScene(gpu, requestFrame, fail);
 
   const showSelected = (fit: boolean) => {
+    // A new view (another landmass, or the layout redrawn) makes any close-up of the old land stale.
+    editsVersion++;
     const now = landmass();
     if (!now?.view || !now.marks) return;
     relief.show(now.view, now.marks);
@@ -134,9 +136,12 @@ export async function startLandEditor(
     if (!session || !stroke) return;
     const point = [Math.round(x), Math.round(y)] as const;
     stroke = { ...stroke, last: point };
+    const id = selected;
     session
-      .dab(selected, stroke.brush, point, starts)
-      .then((patch) => refresh(patch.rect))
+      .dab(id, stroke.brush, point, starts)
+      .then((patch) => {
+        if (id === selected) refresh(patch.rect);
+      })
       .catch((error: unknown) => {
         // A stroke whose first dab is refused must not go on: its next dabs would join the stroke before it.
         if (starts) stroke = null;
@@ -349,6 +354,7 @@ export async function startLandEditor(
         held,
         source,
         editsVersion,
+        stroking: stroke !== null,
       });
       orbit = drawn.orbit;
       const flat = { width: canvas.clientWidth, height: canvas.clientHeight };

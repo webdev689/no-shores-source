@@ -94,7 +94,7 @@ and after every stroke, place change, undo or redo; the land's worker samples it
 so the page never waits.
 Except while walking, a 1.8 m figure stands at the target with a scale bar beside it.
 
-A stroke shows as it is drawn; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in
+A stroke shows as it is drawn, the close-up stepping aside until it ends; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in
 both views. The Problems list gives every rule the landmass's edits break.
 
 Each landmass's row says when it has unsaved shaping. This browser keeps each landmass's unsaved shaping, undo and

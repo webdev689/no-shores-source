@@ -125,3 +125,23 @@ test('a river running level with its plain keeps to its channel: its waterline i
   // Column 2 lies past the two samples the surface is carried: the land's own edge (21 m) runs on there.
   assert.equal(field.levels[(width + 2) * 2 + 1], 21);
 });
+
+test('where a river runs into the sea, its level carried over the sea is the sea, as the GPU draws it', () => {
+  // A river 0.3 m up in a channel along the west half; the seabed 2 m down along the east half.
+  const [width, height, step] = [21, 3, 4];
+  const heights = new Float32Array(width * height);
+  const water = new Float32Array(width * height);
+  const edges = new Float32Array(width * height).fill(FAR_FROM_FRESH_M);
+  for (let row = 0; row < height; row++) {
+    for (let column = 0; column < width; column++) {
+      const index = row * width + column;
+      if (column < 10) [heights[index], water[index], edges[index]] = [-0.5, 0.3, -1];
+      else heights[index] = -2;
+    }
+  }
+  const patch = { left: 0, top: 0, step, width, height, heights, water, edges, marks: new Uint8Array(width * height) };
+  const field = shoreField(patch);
+  assert.ok((field.levels[(width + 11) * 2] ?? 0) > 0, 'the river level is carried over the first sea samples');
+  assert.equal(waterUnder(field, undefined, { x: 11 * step + 1, y: step }, 0)?.kind, 'sea');
+  assert.equal(waterUnder(field, undefined, { x: 4 * step, y: step }, 0)?.kind, 'fresh');
+});

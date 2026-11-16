@@ -81,12 +81,13 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
 
 - The 1 km land is interpolated by Catmull-Rom, with a grain of 4 m at a 250 m scale on the land. The land and the
   seabed are each splined on their own side of the painted coast, and within 1 km of it they meet along it: the
-  coast is the painted line to the metre, its corners rounded, never the cells' steps. Land stands at least 0.5 m
-  up and the seabed 0.5 m down.
+  coast is the painted line to the metre, its corners rounded, never the cells' steps. Past that kilometre, land
+  stands at least 0.5 m up and the seabed 0.5 m down.
 - A lake's water reaches a cell past its cells, to where the ground meets its surface, so its shore is a curve.
 - A town's area is levelled to the mean of its ground, easing back to the land over 150 m past its edge.
 - A river's channel is a trough cut under its surface, levelling into banks that ease back to the land over 10 m,
-  down as well as up where the land lies under it; its surface never rises downstream. A river the water
+  down as well as up where the land lies under it; its surface never rises downstream. A gathered river's surface
+  never stands above the ground off a lake, and its course ends where the painted coast crosses it. A river the water
   gathered keeps the level the flood gave it, so it crosses a lake at the lake's surface. Hand-carved
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).

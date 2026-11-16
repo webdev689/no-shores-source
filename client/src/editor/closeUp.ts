@@ -11,7 +11,6 @@ export const PATCH_STEP_M = 4;
 /** The close-up is sampled again once the target moves this far from its centre. */
 export const REFRESH_M = 400;
 /** A walker's eyes, and the figure that shows a person's height, metres. */
-export const EYE_M = 1.7;
 export const FIGURE_M = 1.8;
 
 /** A walker's step: `held` keys (W A S D or arrows, Shift to run) move the target along the ground for `seconds`, at

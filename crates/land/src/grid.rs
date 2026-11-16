@@ -63,19 +63,6 @@ impl Grid {
         let bottom = self.get(i, j + 1) + (self.get(i + 1, j + 1) - self.get(i, j + 1)) * fraction_x;
         top + (bottom - top) * fraction_y
     }
-
-    /// Catmull-Rom between cell centres at a world point: slopes run smoothly across cells, for ground to stand on.
-    #[must_use]
-    pub fn cubic_at(&self, x: f64, y: f64) -> f64 {
-        let (grid_x, grid_y) = ((x - self.left_m) / self.cell_m - 0.5, (y - self.top_m) / self.cell_m - 0.5);
-        let (i, j) = (grid_x.floor(), grid_y.floor());
-        let (fraction_x, fraction_y) = (grid_x - i, grid_y - j);
-        let (i, j) = (i as isize, j as isize);
-        let row = |row: isize| {
-            catmull(self.get(i - 1, row), self.get(i, row), self.get(i + 1, row), self.get(i + 2, row), fraction_x)
-        };
-        catmull(row(j - 1), row(j), row(j + 1), row(j + 2), fraction_y)
-    }
 }
 
 /// Catmull-Rom through `start`..`end` at `fraction`, `previous` and `next` the points either side.
@@ -102,7 +89,6 @@ mod tests {
         }
         let (x, y) = grid.centre(2, 1);
         assert!((grid.at(x, y) - 6.0).abs() < 1e-9);
-        assert!((grid.cubic_at(x, y) - 6.0).abs() < 1e-9);
         assert!((grid.at(x + 50.0, y) - 6.5).abs() < 1e-9);
     }
 }

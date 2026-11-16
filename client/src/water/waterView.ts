@@ -46,6 +46,8 @@ export interface WaterScene {
   readonly patch: PatchWater | null;
   /** The water at the eye's point now: its surface in metres and whether it is fresh; null where there is none. */
   readonly eyeWater: { readonly surface: number; readonly fresh: boolean } | null;
+  /** How high the eye stands over the water or ground under it, metres: the water's rings grow from that. */
+  readonly eyeAboveM: number;
   /** Where the ripples follow, window metres. */
   readonly focus: readonly [number, number];
   /** The land drawn so far: its colour and depth (a float a pixel) to see through, and the multisampled colour and
@@ -66,7 +68,7 @@ export const SAMPLES = 4;
 const RINGS = 220;
 const SEGMENTS = 192;
 
-/** The wind's chop: eight short waves about the wind, each a whole number of waves along ANCHOR_M so the pattern never
+/** The wind's chop: twelve short waves about the wind, each a whole number of waves along ANCHOR_M so the pattern never
  *  jumps as the anchor moves. Each is (wavenumber east, south, frequency, phase). */
 function chopWaves(swell: Swell | undefined): Float32Array {
   const [windX, windY] = swell?.waves[0]?.direction ?? [0, -1];
@@ -221,7 +223,7 @@ export class WaterView {
     const patch = scene.patch;
     values.set(patch ? [patch.corner[0], patch.corner[1], patch.step, 1] : [0, 0, 1, 0], 40);
     values.set([scene.coarse.cellM, scene.eyeWater?.fresh ? 1 : 0, 0, 0], 44);
-    const inner = Math.max(0.3, Math.abs(eyeZ) * 0.04);
+    const inner = Math.max(0.3, scene.eyeAboveM * 0.04);
     values.set([inner, Math.max(far, inner * 10), RINGS, SEGMENTS], 48);
     const [rippleX, rippleY, rippleCell, rippleCells] = this.ripples.area;
     values.set([rippleX - eyeX, rippleY - eyeY, rippleCell, rippleCells], 52);

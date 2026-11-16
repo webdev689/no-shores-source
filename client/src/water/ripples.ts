@@ -143,15 +143,17 @@ export class RippleField {
       Math.round(x / RIPPLE_CELL_M) - RIPPLE_CELLS / 2,
       Math.round(y / RIPPLE_CELL_M) - RIPPLE_CELLS / 2,
     ];
+    this.owed = Math.min(this.owed + seconds * STEPS_A_SECOND, MOST_STEPS);
+    const steps = Math.floor(this.owed);
+    // The field moves, and its stirs land, only with a step: a frame between steps leaves it as it was.
+    if (steps === 0) return;
+    this.owed -= steps;
     const origin = this.origin ?? wanted;
     const far = Math.max(Math.abs(wanted[0] - origin[0]), Math.abs(wanted[1] - origin[1]));
     // Once the body strays FOLLOW_CELLS from the middle the field moves under it, each cell reading where its water
     // was; cells new to the field start still.
     let shift: [number, number] = far > FOLLOW_CELLS ? [wanted[0] - origin[0], wanted[1] - origin[1]] : [0, 0];
     this.origin = far > FOLLOW_CELLS ? wanted : origin;
-    this.owed = Math.min(this.owed + seconds * STEPS_A_SECOND, MOST_STEPS);
-    const steps = Math.floor(this.owed);
-    this.owed -= steps;
     const values = new ArrayBuffer(STEP_BYTES * MOST_STEPS);
     for (let index = 0; index < steps; index++) {
       const stirs = index === 0 ? this.stirs : [];
@@ -166,7 +168,7 @@ export class RippleField {
       this.lag = shift;
       shift = [0, 0];
     }
-    if (steps > 0) this.stirs = [];
+    this.stirs = [];
     this.device.queue.writeBuffer(this.uniforms, 0, values);
     for (let index = 0; index < steps; index++) {
       const turn = (this.newest + 1) % 3;
