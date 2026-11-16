@@ -60,7 +60,7 @@ fn backdrop_fragment(@builtin(position) position: vec4f) -> @location(0) vec4f {
     let colour = through_water(seen, eye_fresh(), eye_below(), min(far, 1e4)) + shafts(direction, min(far, 60.0), pixel);
     return vec4f(colour, 1.0);
   }
-  if (far >= 1e8) { return vec4f(sky(direction, frame.eye.w), 1.0); }
+  if (far >= 1e8) { return vec4f(sky(direction, frame.eye.w, 0.0), 1.0); }
   return vec4f(aerial(textureLoad(scene_colour, vec2i(pixel), 0).rgb, direction, far), 1.0);
 }
 
@@ -160,9 +160,14 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   var whitecap = 0.0;
   var breaker: Breaker;
   var drift = vec2f(0.0);
+  // How far apart a reflected pixel's rays fan, radians: the slopes of waves too small to draw (Cox and Munk's
+  // capillaries, in a moderate wind at sea), less on calmer fresh water.
+  var rough = 0.2;
   if (fresh) {
     let flow = river_flow(surface.offset);
-    let slope = chop_slope(local, flow, 0.3 + 0.35 * min(length(flow), 1.0), footprint);
+    let calm = 0.3 + 0.35 * min(length(flow), 1.0);
+    let slope = chop_slope(local, flow, calm, footprint);
+    rough = 0.2 * calm;
     normal = normalize(vec3f(-slope, 1.0));
     drift = flow * frame.eye.w * 0.75;
   } else {
@@ -198,7 +203,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     let up_through = refract(-to_eye, -normal, 1.33);
     var colour = underwater_light(eye_fresh(), 0.0) * 0.7;
     if (dot(up_through, up_through) > 0.0) {
-      let bright = sky(normalize(up_through), frame.eye.w);
+      let bright = sky(normalize(up_through), frame.eye.w, 0.0);
       let glance = pow(1.0 - max(dot(-normal, to_eye), 0.0), 5.0);
       colour = mix(bright * 1.25, colour, glance);
     }
@@ -228,7 +233,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let facing_eye = max(dot(normal, to_eye), 0.0);
   let shine = smoothstep(0.0, 0.35, through) * (0.02 + 0.98 * pow(1.0 - facing_eye, 5.0));
   let bounced = reflect(-to_eye, normal);
-  colour = mix(colour, sky(vec3f(bounced.xy, max(bounced.z, 0.03)), frame.eye.w), shine);
+  colour = mix(colour, sky(vec3f(bounced.xy, max(bounced.z, 0.03)), frame.eye.w, rough), shine);
   let half_way = normalize(to_eye + SUN);
   // Far off, where a pixel spans many small waves, the glints blur into the sun's glitter path.
   let sharpness = mix(900.0, 120.0, smoothstep(0.05, 2.0, footprint));
