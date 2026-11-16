@@ -135,8 +135,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const players = Array.from({ length: snapshot.playersLength() }, (unused, index) => {
       const seen = snapshot.players(index);
       if (!seen) throw new Error(`snapshot player ${index} is missing`);
-      const body = bodyOf(Array.from(whole(seen.bodyArray(), BODY_FLOATS, `player ${index}'s body`)));
       const fighter = whole(seen.fighterArray(), FIGHTER_FLOATS, `player ${index}'s fighter`);
+      // A fighter's first numbers are its body: the room sends them once.
+      const body = bodyOf(Array.from(fighter.subarray(0, BODY_FLOATS)));
       const look = { anim: seen.anim() ?? '', frame: seen.frame(), facing: seen.facing() };
       return { player: seen.player(), acknowledged: seen.acknowledged(), body, fighter, ...look };
     });

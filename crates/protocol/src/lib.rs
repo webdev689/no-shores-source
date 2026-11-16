@@ -125,12 +125,11 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .players
         .iter()
         .map(|seen| {
-            let body = Some(builder.create_vector(&seen.fighter.body.to_floats()));
             let fighter = Some(builder.create_vector(&seen.fighter.to_floats()));
             let anim = Some(builder.create_string(&seen.shown.anim));
             let (frame, facing) = (seen.shown.frame, seen.shown.facing);
             let (player, acknowledged) = (seen.player, seen.acknowledged);
-            let args = messages::SeenArgs { player, acknowledged, body, anim, frame, facing, fighter };
+            let args = messages::SeenArgs { player, acknowledged, anim, frame, facing, fighter };
             messages::Seen::create(&mut builder, &args)
         })
         .collect();

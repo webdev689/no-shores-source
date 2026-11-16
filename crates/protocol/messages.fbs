@@ -35,12 +35,12 @@ table Joined {
   dressed: [Dressed];
 }
 
-// One player as the room last stepped them: their body's 22 numbers, the number of their last input it took, what
-// their figure showed with it, and their whole fighter in combat's order (crates/combat/src/floats.rs).
+// One player as the room last stepped them: the number of their last input it took, what their figure showed with
+// it, and their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body.
 table Seen {
   player: uint;
   acknowledged: uint;
-  body: [double];
+  body: [double] (deprecated);
   anim: string;
   frame: ushort;
   facing: double;

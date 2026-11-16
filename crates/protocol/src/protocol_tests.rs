@@ -119,8 +119,12 @@ fn a_welcome_and_a_snapshot_read_back_to_the_bit() {
         .map(|seen| Fighter::from_floats(&seen.fighter().unwrap().iter().collect::<Vec<f64>>().try_into().unwrap()))
         .collect();
     assert_eq!(fighters, players.iter().map(|seen| seen.fighter).collect::<Vec<_>>());
-    let bodies: Vec<_> =
-        read.players().unwrap().iter().map(|seen| body_of(&seen.body().unwrap().iter().collect::<Vec<_>>())).collect();
+    let bodies: Vec<_> = read
+        .players()
+        .unwrap()
+        .iter()
+        .map(|seen| body_of(&seen.fighter().unwrap().iter().take(22).collect::<Vec<_>>()))
+        .collect();
     assert_eq!(bodies, players.iter().map(|seen| Some(seen.fighter.body)).collect::<Vec<_>>());
     let foe = read.foes().unwrap().get(0);
     let glance: [f64; combat::floats::GLANCE_FLOATS] =

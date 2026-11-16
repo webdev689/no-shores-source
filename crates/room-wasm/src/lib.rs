@@ -337,7 +337,7 @@ mod tests {
         players
             .iter()
             .map(|seen| {
-                let numbers: Vec<f64> = seen.body().unwrap().iter().collect();
+                let numbers: Vec<f64> = seen.fighter().unwrap().iter().take(22).collect();
                 (seen.player(), seen.acknowledged(), protocol::body_of(&numbers).unwrap())
             })
             .collect()
