@@ -1,3 +1,4 @@
+import type { SeenPlayer } from '../network/messages.ts';
 import type { Body } from '../rules/movementRules.ts';
 import type { Placed } from './figures.ts';
 
@@ -14,7 +15,13 @@ export function moveOf(body: Body): string {
   return Math.hypot(body.vx, body.vy) > RUNNING ? 'run' : 'walk';
 }
 
-/** Moves another player's figure to the body the room last saw. */
-export function showOther(placed: Placed, body: Body): void {
-  Object.assign(placed, { x: body.x, y: body.y, z: body.z, facing: body.facing, anim: moveOf(body) });
+/** Moves another player's figure to the body the room last saw. It shows the move their own screen showed with it,
+ *  facing as it faced, where the forge draws that move for this figure; else the move their body is in. */
+export function showOther(placed: Placed, seen: SeenPlayer, draws: (anim: string) => boolean): void {
+  const own = seen.anim !== '' && draws(seen.anim);
+  const { x, y, z } = seen.body;
+  const look = own
+    ? { anim: seen.anim, frame: seen.frame, facing: seen.facing }
+    : { anim: moveOf(seen.body), frame: null, facing: seen.body.facing };
+  Object.assign(placed, { x, y, z, ...look });
 }

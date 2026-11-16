@@ -44,19 +44,32 @@ pub fn open(bytes: &[u8]) -> bool {
 
 /// A player's input bytes, read and handed to the room: one of the answers above.
 pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
-    let Ok((sequence, controls)) = protocol::read_input(bytes) else { return NOT_AN_INPUT };
-    match with_room(|room| room.input(player, sequence, controls)) {
+    let Ok(input) = protocol::read_input(bytes) else { return NOT_AN_INPUT };
+    match with_room(|room| room.input(player, input)) {
         Some(Ok(())) => TAKEN,
         Some(Err(Refused::OutOfOrder { .. })) => OUT_OF_ORDER,
         Some(Err(Refused::TooManyWaiting)) => TOO_MANY_WAITING,
+        Some(Err(Refused::BadLook)) => NOT_AN_INPUT,
         Some(Err(Refused::NoSuchPlayer)) | None => NO_SUCH_PLAYER,
     }
 }
 
-/// Every player after the room's last tick, as a snapshot's bytes; empty with no room open.
+/// Every player after the room's last tick, and the dresses changed since the last snapshot, as a snapshot's bytes;
+/// empty with no room open.
 #[must_use]
 pub fn snapshot() -> Vec<u8> {
-    with_room(|room| protocol::snapshot_bytes(room.clock(), &room.seen().collect::<Vec<Seen>>())).unwrap_or_default()
+    with_room(|room| {
+        let changed = room.take_dress_changes();
+        let dressed: Vec<(PlayerId, &str)> = changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
+        protocol::snapshot_bytes(room.clock(), &room.seen().collect::<Vec<Seen>>(), &dressed)
+    })
+    .unwrap_or_default()
+}
+
+/// The welcome's bytes for a player: their number and every dress in the room so far.
+#[must_use]
+pub fn joined(player: PlayerId) -> Vec<u8> {
+    with_room(|room| protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>())).unwrap_or_default()
 }
 
 /// Hands bytes to JavaScript as one number: the address in the high 32 bits, the length in the low 32. WebAssembly's
@@ -109,7 +122,7 @@ pub extern "C" fn room_join() -> PlayerId {
 /// The welcome's bytes for a player.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_joined(player: PlayerId) -> u64 {
-    hand_over(protocol::joined_bytes(player))
+    hand_over(joined(player))
 }
 
 #[unsafe(no_mangle)]
@@ -160,10 +173,10 @@ mod tests {
         assert!(open(&bytes_of(&[0.0, 2.0, ledge[0], ledge[1], ledge[2], ledge[3], ledge[4]])));
         let (first, second) = (room_join(), room_join());
         let walk = [1.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0];
-        assert_eq!(input(first, &protocol::input_bytes(1, &walk)), TAKEN);
-        assert_eq!(input(first, &protocol::input_bytes(3, &walk)), OUT_OF_ORDER);
+        assert_eq!(input(first, &protocol::input_bytes(1, &walk, &room::Shown::default(), None)), TAKEN);
+        assert_eq!(input(first, &protocol::input_bytes(3, &walk, &room::Shown::default(), None)), OUT_OF_ORDER);
         assert_eq!(input(second, b"not an input"), NOT_AN_INPUT);
-        assert_eq!(input(99, &protocol::input_bytes(1, &walk)), NO_SUCH_PLAYER);
+        assert_eq!(input(99, &protocol::input_bytes(1, &walk, &room::Shown::default(), None)), NO_SUCH_PLAYER);
         room_tick();
         let course = [Block::from_floats(&ledge)];
         let walked = step_body(&standing(0.0, 2.0), &Controls::from_floats(&walk), &course, TICK_SECONDS);
