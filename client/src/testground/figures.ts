@@ -6,11 +6,13 @@ export const PX_PER_M = 62;
  *  turns past the back are the views on the other side, mirrored. */
 const VIEW_OF_TURN = [0, 1, 2, 3, 4, 3, 2, 1] as const;
 
-/** A figure placed on the ground: where it stands (x east, y south), the compass bearing it faces, and how it moves. */
+/** A figure placed on the ground: where it stands (x east, y south, z up), the compass bearing it faces, and how it
+ *  moves. */
 export interface Placed {
   readonly id: number;
   x: number;
   y: number;
+  z: number;
   facing: number;
   dress: Dress;
   anim: string;
@@ -49,6 +51,19 @@ export function groundPoint(
   if (direction[2] >= -1e-6) return null;
   const along = -origin[2] / direction[2];
   return { x: origin[0] + direction[0] * along, y: origin[1] + direction[1] * along };
+}
+
+/** How far a figure's card stands in front of its body's centre, toward the eye: a body's radius in the movement
+ *  rules. A card is flat, so standing at the centre, a wall the body touches or a lip it is going over would cut it. */
+const CARD_FORWARD_M = 0.35;
+
+/** Where a figure's card stands: its body's centre (x, y) moved toward the eye by the body's radius, never past it. */
+export function cardStand(x: number, y: number, eyeX: number, eyeY: number): { x: number; y: number } {
+  const [toEyeX, toEyeY] = [eyeX - x, eyeY - y];
+  const length = Math.hypot(toEyeX, toEyeY);
+  if (length < 1e-6) return { x, y };
+  const forward = Math.min(CARD_FORWARD_M, length) / length;
+  return { x: x + toEyeX * forward, y: y + toEyeY * forward };
 }
 
 /** Where the eye of an orbit stands: back from its target along the bearing it looks, raised by its pitch. */

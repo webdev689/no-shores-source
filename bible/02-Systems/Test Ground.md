@@ -6,6 +6,9 @@ code:
   - client/src/testground/testgroundMain.ts
   - client/src/testground/player.ts#updatePlayer
   - client/src/testground/player.ts#shownBody
+  - client/src/testground/others.ts#showOther
+  - client/src/testground/figures.ts#cardStand
+  - client/src/network/roomAddress.ts#roomAddress
   - client/src/testground/playerCamera.ts#scrolled
   - client/src/testground/playerMoves.ts#shownMove
   - client/src/testground/dressing.ts#figureOf
@@ -44,6 +47,16 @@ short of a wall.
 
 North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
 and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
+
+## Playing together
+
+With `?room=` and a room's name in the page's address (`?room=playtest`), the Test Ground joins that room on the
+deployed [[Server]]: everyone who uses the same name is in the same room. A name is letters, digits and hyphens, in
+any case. A whole address joins another server's room instead: locally, under `npm run server`,
+`?room=ws://127.0.0.1:8787/room/<name>`. The player plays as before, predicted here: each
+tick's controls also go to the room, and the room's word on the player's body corrects it. Every other player in the
+room stands where the room last saw them, playing the move their body is in, and the status line says which player
+this is.
 
 ## What the figure shows
 
@@ -110,7 +123,9 @@ A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are
 the other side's, mirrored. A mirrored view with nothing in hand wears each hip piece (a sword's or dagger's sheath, a
 Pistolet's) at the other hip first, so the mirror lays it back at its own; the forge draws a twin of each for that. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
-eye.
+eye. Its card stands a body's radius, 0.35 m, in front of the
+body's centre toward the eye, so a wall the body touches, or a lip it is going over, does not cut through the flat
+picture.
 
 ## Limits
 

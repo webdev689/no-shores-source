@@ -22,6 +22,7 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "sailing", workspace: &["land"], outside: &["libm"], door: false },
     CrateRule { name: "room", workspace: &["movement"], outside: &[], door: false },
     CrateRule { name: "protocol", workspace: &["movement", "room"], outside: &["flatbuffers"], door: true },
+    CrateRule { name: "room-wasm", workspace: &["movement", "protocol", "room"], outside: &[], door: true },
     CrateRule { name: "xtask", workspace: &["*"], outside: &["*"], door: false },
 ];
 

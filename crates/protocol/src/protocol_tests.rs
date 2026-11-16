@@ -1,13 +1,7 @@
 use super::*;
 use movement::{TICK_SECONDS, standing, step_body};
 
-fn input(sequence: u32, controls: &[f64]) -> Vec<u8> {
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let controls = Some(builder.create_vector(controls));
-    let input = messages::Input::create(&mut builder, &messages::InputArgs { sequence, controls });
-    builder.finish(input, None);
-    builder.finished_data().to_vec()
-}
+use super::input_bytes as input;
 
 /// The two players the client's test of the same bytes expects (messages.test.ts): one standing, one after half a
 /// second's walk at a bearing of 0.3.

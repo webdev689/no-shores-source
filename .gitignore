@@ -34,3 +34,5 @@ bible/.trash/
 
 # Worktrees the coding tools make for their helpers.
 .claude/worktrees/
+# Cloudflare's local runtime keeps its rooms' state and logs here while `npm run server` runs.
+.wrangler/

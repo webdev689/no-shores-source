@@ -25,16 +25,20 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
-- Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, and
-  agreeing to the bit with the crate run natively.
+- Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the
+  Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, agreeing to the bit
+  wherever it runs.
 - [[Sailing]], step 1 of the naval port, on branch `naval/sailing` until its PR merges: the `sailing` crate (Come
   Sail Away's helm under DFO's responsive helm, the swell's pose, grounding on the land), stepped through `land-wasm`,
   and the owner's Sloop put to sea and sailed in the World Editor, the water parting round her. Her model and mesh are
   on R2 (`content/ships/ships.json`).
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
-  ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room, its core: players' inputs in order, their bodies
-  stepped tick by tick, never faster than the room's clock; and the messages, their schema and the code `flatc` makes
-  from it, Google's `flatc` pinned by its checksum. Nothing hosts the room yet.
+  ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room and its messages, with Google's `flatc` installed
+  by the schema step itself. On its pull request: the room hosted by a Cloudflare Durable Object in `server/`, the
+  browser's connection and prediction, and the Test Ground played together (`?room=`). Run locally with
+  `npm run server`; two browsers saw each other, and the room agreed with each prediction to the bit. Deployed on
+  Cloudflare with the owner's yes: `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`, measured live at 60
+  ticks a second.
 
 ## Waiting on the owner
 
@@ -44,22 +48,18 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- Which of Cloudflare's runs the rooms ([[Servers on Cloudflare]]): Durable Objects, as Claude recommends, or
-  Containers.
 
 ## Next
 
+- Step 1 of [[Gameplay Starts With the Shared Rules]] is done once the thin server's pull request merges. Step 2,
+  sailing, has begun: [[Sailing]]'s first step is in its pull request. Next is the naval combat core, broadsides
+  between the Sloop and one captain ([[Pick - Sailing and Naval Combat]]); her six cannons need names in her `.blend`
+  first (`Cannon`), so the export can find her muzzles.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
-- The thin server, the rest of it: the room hosted on Cloudflare, ticking 60 times a second; each browser sending its
-  controls over WebSocket, predicting its own player and corrected by the room; and two browsers seeing each other on
-  the Test Ground ([[Gameplay Starts With the Shared Rules]]).
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The game itself: the client drawing the world from the land's door, and the server reading the same land crate.
-- Sailing's step 2, the naval combat core: broadsides between the Sloop and one captain
-  ([[Pick - Sailing and Naval Combat]]). The Sloop's six cannons need names in her `.blend` first (`Cannon`), so the
-  export can find her muzzles.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.

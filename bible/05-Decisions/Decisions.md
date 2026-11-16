@@ -47,6 +47,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Continents' Biomes]]
 - [[Gameplay Starts With the Shared Rules]]
 - [[Messages Are FlatBuffers]]
+- [[The Server's Shell Is in server]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

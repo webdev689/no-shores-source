@@ -6,13 +6,17 @@ import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
-import { startMovementRules } from '../rules/movementRules.ts';
+import { Prediction } from '../network/prediction.ts';
+import { roomAddress } from '../network/roomAddress.ts';
+import { RoomConnection } from '../network/roomConnection.ts';
+import { type MovementRules, startMovementRules } from '../rules/movementRules.ts';
 import { Cards } from './cards.ts';
 import { COURSE, START } from './course.ts';
 import type { Dress } from './dressing.ts';
-import { type Placed, eyeOf, frameAt, viewOf } from './figures.ts';
+import { type Placed, cardStand, eyeOf, frameAt, viewOf } from './figures.ts';
 import { Input } from './input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from './player.ts';
+import { RUNNING, showOther } from './others.ts';
 import { likelyMoves, shownMove } from './playerMoves.ts';
 import { startPanel } from './panel.ts';
 import { type CardAt, SceneView } from './sceneView.ts';
@@ -25,8 +29,7 @@ const PLAYER_ID = 1;
 const ACT_FRAME = 0.2;
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 const HIDE_FIGURE_M = 0.6;
-/** Faster than a walk on foot is running, and faster than a horse's walk a gallop. */
-const RUNNING = 5.5;
+/** Faster than a horse's walk is a gallop. */
 const GALLOP = 10;
 /** The weapon's button, untouched: what the first person's weapon gets while it may not swing. */
 const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
@@ -69,7 +72,7 @@ async function start(): Promise<void> {
   let nextId = PLAYER_ID;
   const figures: Placed[] = [];
   const place = (dress: Dress, x: number, y: number, facing: number): Placed => {
-    const placed: Placed = { id: nextId++, x, y, facing, dress, anim: 'idle', spin: false };
+    const placed: Placed = { id: nextId++, x, y, z: 0, facing, dress, anim: 'idle', spin: false };
     figures.push(placed);
     return placed;
   };
@@ -127,6 +130,51 @@ async function start(): Promise<void> {
     if (!input.locked) input.lock();
   });
 
+  // With ?room=<name> (or a whole ws:// address), the Test Ground joins that room: the player is predicted here and
+  // corrected by the room's word, each tick's controls go to the room, and every other player stands where the room
+  // last saw them.
+  let steps: MovementRules = movement;
+  const given = new URLSearchParams(location.search).get('room');
+  const roomUrl = given === null ? null : roomAddress(given);
+  if (given !== null && !roomUrl)
+    throw new Error(`"${given}" is not a room: a room's name is letters, digits and hyphens`);
+  if (roomUrl) {
+    const prediction = new Prediction();
+    const others = new Map<number, Placed>();
+    let own = 0;
+    const connection = await RoomConnection.open(roomUrl, (snapshot) => {
+      const present = new Set<number>();
+      for (const { player: number, acknowledged, body } of snapshot.players) {
+        present.add(number);
+        if (number === own) {
+          player = {
+            ...player,
+            body: prediction.corrected(body, acknowledged, (from, ask) => movement.step(from, ask)),
+          };
+          continue;
+        }
+        const placed = others.get(number) ?? place(plainDress('human', 0.6), body.x, body.y, body.facing);
+        others.set(number, placed);
+        showOther(placed, body);
+      }
+      for (const [number, placed] of others) {
+        if (present.has(number)) continue;
+        figures.splice(figures.indexOf(placed), 1);
+        others.delete(number);
+        if (chosen === placed) chosen = you;
+      }
+    });
+    own = connection.player;
+    steps = {
+      ...movement,
+      step: (body, controls) => {
+        connection.send(prediction.next(controls), controls);
+        return movement.step(body, controls);
+      },
+    };
+    status = `Click the view to play. In the room as player ${own}.`;
+  }
+
   let last = performance.now();
   let clock = 0;
   // How far the player has walked, for the first person's bob and stride; and the swings struck, each the other stroke.
@@ -140,7 +188,7 @@ async function start(): Promise<void> {
     const controls = input.frame();
     const wasDrawn = you.dress.outfit.drawn;
     if (controls.locked) {
-      player = updatePlayer({ ...player, drawn: wasDrawn }, controls, movement, seconds, firstPerson.swing !== null);
+      player = updatePlayer({ ...player, drawn: wasDrawn }, controls, steps, seconds, firstPerson.swing !== null);
       if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
     const body = shownBody(player);
@@ -220,7 +268,7 @@ async function start(): Promise<void> {
       const frames = forge.frames(youDress.body, shown.anim);
       const index = shown.frame ?? Math.floor(clock / Math.max(shown.frameSeconds, 0.01)) % frames;
       const card = forge.card(you.id, youDress, shown.anim, view, index, flip);
-      if (card) drawn.push({ card, x: body.x, y: body.y, z: body.z, flip });
+      if (card) drawn.push({ card, ...cardStand(body.x, body.y, eye.x, eye.y), z: body.z, flip });
     }
     for (const placed of figures) {
       if (placed === you) continue;
@@ -228,7 +276,7 @@ async function start(): Promise<void> {
       const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
       const index = frameAt(clock, forge.frames(placed.dress.body, placed.anim), fps);
       const card = forge.card(placed.id, placed.dress, placed.anim, view, index, flip);
-      if (card) drawn.push({ card, x: placed.x, y: placed.y, z: 0, flip });
+      if (card) drawn.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip });
     }
     const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
