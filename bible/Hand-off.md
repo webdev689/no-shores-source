@@ -16,14 +16,18 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
   shows it in 2D and 3D, close up at true scale, and on foot.
-- The [[Water]], on its pull request: the shared swell in the land crate, breakers that shoal and break on every
-  shore, a stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an
-  underwater view, in the World Editor's 3D view ([[The Water Is Stylised Realism]]).
+- The [[Water]], on its pull request, held there until the owner calls it perfect: the shared swell in the land
+  crate, breakers that shoal and break on every shore, a stylised-realism surface over the sea, lakes and rivers,
+  ripples, and wading, swimming and diving with an underwater view ([[The Water Is Stylised Realism]]). Its pass for
+  jaggies put the coast on its painted line, lakes and banks on the ground's own contours, and every edge of land
+  and water at each pixel, at any distance.
 - The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
 
 ## Waiting on the owner
+
+- The water's look, and whether its pull request may merge ("It doesnt come in until this is perfect").
 
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
