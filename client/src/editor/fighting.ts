@@ -57,7 +57,7 @@ export class Fighting {
   private loadSteps = 0;
   private readonly presses: string[] = [];
   private events: FightEvent[] = [];
-  /** The look held last while aiming: a release fires it, as the aim lets go the frame it is let go. */
+  /** The look held last while aiming: each release fires it, as the aim lets go the frame it is let go. */
   private lastLook: FightLook | null = null;
   private messages: { readonly text: string; readonly until: number }[] = [];
 
@@ -123,7 +123,6 @@ export class Fighting {
       brace: input.held.has('c'),
       load,
     };
-    if (this.fires > 0 && !input.look) this.lastLook = null;
     this.fires = Math.max(0, this.fires - 1);
     this.pending = true;
     this.source

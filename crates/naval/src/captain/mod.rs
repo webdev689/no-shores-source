@@ -243,6 +243,13 @@ impl Captain {
         numbers
     }
 
+    /// Whether she would take the player on, sparing aside: afloat, and provoked or of a mind to take him. Her hands
+    /// hold off mending his wreck while she lies near.
+    #[must_use]
+    pub fn would_take(&self, her: &Her, enemy: &Sighting) -> bool {
+        her.damage.fighting() && (self.provoked_at > self.clock - PROVOKED_S || self.takes_prize(her, enemy))
+    }
+
     /// The player struck her: she is hostile to him, whatever her temper, for a while.
     pub fn provoke(&mut self) {
         self.provoked_at = self.clock;
@@ -384,8 +391,9 @@ impl Captain {
     fn lookout(&self, her: &Her) -> land::Lookout {
         let own = pace(her.hull, her.wind, her.damage.way_share());
         let length = her.arms.hull[1][0] - her.arms.hull[0][0];
-        let radius =
-            (length * 0.5).max(own / (swing_rate(&Ship { rung: SAILS_SET, ..*her.ship }, her.hull) * DEG).max(1e-6));
+        // Her turning circle at her own pace: a ship lying still is about to gather way.
+        let paced = Ship { rung: SAILS_SET, ahead: own, abeam: 0.0, ..*her.ship };
+        let radius = (length * 0.5).max(own / (swing_rate(&paced, her.hull) * DEG).max(1e-6));
         let way = length_of(her.ship);
         land::lookout(her.arms.hull[1][0], (her.arms.hull[1][1] - her.arms.hull[0][1]) / 2.0, way, radius)
     }
@@ -424,6 +432,7 @@ impl Captain {
             place: [enemy.ship.x, enemy.ship.y],
             heading: Some(enemy.ship.heading),
             velocity: velocity_of(&enemy.ship),
+            smoothed: self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship)),
             level: enemy.level,
         };
         let aboard = Aboard { ship: her.ship, pose: her.pose, arms: her.arms, guns: her.guns, build: &self.build };

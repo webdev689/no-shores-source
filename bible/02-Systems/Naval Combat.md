@@ -50,8 +50,8 @@ Broadsides between the owner's Sloop and one pirate captain: DFO's naval combat,
   over 22 s at none, listing and trimming by her seed and settling slowly, then fast. The rest of the volley that made
   her strike cannot sink her. The player's Sloop is wrecked at none, never sunk: no sail sets, her oars pull 35%,
   her guns are silent. Fires (three at most) burn hull, canvas and men for 15 s. Bare poles leave 35% of her way.
-  Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. In quiet waters her
-  hands mend her to half, and a wreck floats again past 15%.
+  Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. Unhurt for 15 s,
+  with no ship within 700 m that would take her, her hands mend her to half, and a wreck floats again past 15%.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
 
 ## The captain

@@ -165,8 +165,13 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>) -> Value {
 fn begin(request: &[u8]) -> Result<Value, String> {
     let request: Value =
         serde_json::from_slice(request).map_err(|error| format!("a fight request is JSON: {error}"))?;
-    let numbers: Vec<f64> =
-        request["ship"].as_array().map(|list| list.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
+    // Every element a number: one that is not is refused, not dropped.
+    let numbers: Vec<f64> = request["ship"]
+        .as_array()
+        .ok_or("a fight's ship is a list of numbers")?
+        .iter()
+        .map(|value| value.as_f64().ok_or("a fight's ship is a list of numbers"))
+        .collect::<Result<_, _>>()?;
     let ship = ship_from(&numbers)?;
     let seed = request["seed"]
         .as_u64()

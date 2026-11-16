@@ -141,3 +141,36 @@ test('a release fires the lay the look last held, as the aim lets go', async () 
   await settle();
   assert.equal(asked[2]?.aim, null, 'no look held, none laid');
 });
+
+test('two releases queued behind one step both fire the lay the look held', async () => {
+  const asked: FightOrders[] = [];
+  const held: (() => void)[] = [];
+  const fights: FightSource = {
+    fightBegin: async () => VIEW,
+    fightStep: (_id, orders) => {
+      asked.push(orders);
+      return new Promise((resolve) => held.push(() => resolve(VIEW)));
+    },
+    fightEnd: async () => {},
+  };
+  const fighting = await begun(fights);
+  const look = { bearing: 90, range: 80 };
+  const letGo = async () => {
+    held.splice(0).forEach((resolve) => resolve());
+    await settle();
+  };
+  fighting.advance(0.1, { ...IDLE, look }, 1, failed);
+  fighting.advance(0.1, { ...IDLE, fire: true }, 1.1, failed);
+  fighting.advance(0.1, { ...IDLE, fire: true }, 1.2, failed);
+  await letGo();
+  fighting.advance(0.1, IDLE, 1.3, failed);
+  await letGo();
+  fighting.advance(0.1, IDLE, 1.4, failed);
+  assert.deepEqual(
+    asked.slice(1).map((orders) => [orders.fire, orders.aim]),
+    [
+      [true, look],
+      [true, look],
+    ],
+  );
+});

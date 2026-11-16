@@ -260,9 +260,12 @@ impl Damage {
                 // Her fires burn on as she goes down.
                 self.state = State::Sinking;
                 self.sink_t = 0.0;
-            } else if self.state == State::Afloat && (self.hull <= self.max_hull * STRUCK_AT || self.unmanned()) {
+            } else if self.state == State::Afloat && self.hull <= self.max_hull * STRUCK_AT {
                 self.state = State::Struck;
                 self.douse();
+            } else if self.state == State::Afloat && self.unmanned() {
+                // Nobody is left to fight her fires either.
+                self.state = State::Struck;
             }
         }
         (self.state != was).then_some(self.state)

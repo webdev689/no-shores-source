@@ -176,3 +176,75 @@ fn a_look_lays_its_range_out_from_her_middle() {
         lay(&fight.player.ship, &fight.player.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, 60.0 - 1.1093, None);
     assert!((laid - from_guns.elevation).abs() < 1e-3, "her guns stand about 1.1 m out from her middle");
 }
+
+#[test]
+fn the_lay_reads_on_target_only_where_its_balls_would_strike_her() {
+    let fight = alongside(50.0, Temper::Wary);
+    let on = |range_m: f64| fight.laid(&Aim { bearing_deg: 90.0, range_m }).is_some_and(|laid| fight.on_target(&laid));
+    assert!(on(50.0));
+    assert!(!on(44.0), "the balls splash short of her");
+    assert!(!on(30.0));
+}
+
+/// Deep water, but a headland of dry land from x = 100 to 220 m, 160 m from north to south.
+struct Headland;
+
+impl Waters for Headland {
+    fn at(&self, x: f64, y: f64, _time: f64) -> Spot {
+        if (100.0..=220.0).contains(&x) && y.abs() <= 80.0 {
+            Spot { bed: 5.0, surface: None }
+        } else {
+            Spot { bed: -40.0, surface: Some(0.0) }
+        }
+    }
+}
+
+#[test]
+fn a_captain_sails_round_land_that_lies_between_her_and_the_player() {
+    let mut fight = begun(1);
+    fight.captain.ship = Ship { heading: 1.5 * std::f64::consts::PI, ..sloop_at(400.0, 0.0) };
+    fight.her.temper = Temper::Bold;
+    let mut closest = f64::INFINITY;
+    // Head to wind she rows (her oars beat her canvas there), so give her five minutes.
+    for tick in 0..60 * 300 {
+        fight.step(&IDLE, &Headland, WIND, f64::from(tick) * TICK_SECONDS);
+        let ship = fight.captain.ship;
+        closest = closest.min((ship.x * ship.x + ship.y * ship.y).sqrt());
+    }
+    assert!(closest < 120.0, "she never came round the headland: {closest}");
+}
+
+#[test]
+fn a_wreck_does_not_mend_while_a_pirate_who_would_take_her_lies_near() {
+    let mut fight = alongside(60.0, Temper::Bold);
+    fight.player.damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+    run(&mut fight, &IDLE, 60 * 60);
+    let apart = (fight.captain.ship.x * fight.captain.ship.x + fight.captain.ship.y * fight.captain.ship.y).sqrt();
+    assert!(apart < HOSTILE_NEAR_M, "{apart}");
+    assert_eq!(fight.player.damage.hull, 0.0, "a bold pirate within 700 m would take her: her hands stand by");
+}
+
+#[test]
+fn a_captain_her_fires_made_strike_is_graced_against_the_volley_then_aloft() {
+    let mut fight = alongside(60.0, Temper::Wary);
+    fight.captain.damage.apply(Hurt { hull: 197.0, sail: 0.0, crew: 0.0, fire: true }, 0.0, 0.0);
+    for _ in 0..120 {
+        run(&mut fight, &IDLE, 1);
+        if fight.captain.damage.state == State::Struck {
+            break;
+        }
+    }
+    assert_eq!(fight.captain.damage.state, State::Struck);
+    let hit = ShotEvent::Hit {
+        shooter: PLAYER,
+        target: CAPTAIN,
+        zone: Zone::Holed,
+        point: [0.0; 3],
+        flight: 0.5,
+        gun: crate::guns::Gun { hull: 100.0, ..crate::guns::SWIVEL },
+        shot: Shot::Round,
+    };
+    let mut events = Vec::new();
+    fight.strike(&hit, &mut events);
+    assert_eq!((fight.captain.damage.state, fight.captain.damage.hull), (State::Struck, 1.0));
+}

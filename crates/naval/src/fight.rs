@@ -246,8 +246,13 @@ impl Fight {
                 let point = flight(*mouth, launch, time);
                 [point[0] - moving[0] * time, point[1] - moving[1] * time, point[2]]
             };
-            (0..80).any(|step| {
+            // Swept until it comes down to the water at her waterline: a ball stops there.
+            (0..80).take_while(|step| at(f64::from(*step) * 0.05)[2] >= self.captain.pose.heave).any(|step| {
                 let (from, to) = (f64::from(step) * 0.05, f64::from(step + 1) * 0.05);
+                let end = at(to);
+                let short = end[2] < self.captain.pose.heave;
+                let to =
+                    if short { to - 0.05 * (self.captain.pose.heave - end[2]) / (at(from)[2] - end[2]) } else { to };
                 crate::ballistics::segment_entry(at(from), at(to), &block, lay.gun.radius_m).is_some()
             })
         })
@@ -338,13 +343,25 @@ impl Fight {
         for (ship, vessel) in [(PLAYER, &mut self.player), (CAPTAIN, &mut self.captain)] {
             if let Some(state) = vessel.damage.step(seconds, self.clock) {
                 events.push(Event::State { ship, state });
+                if ship == CAPTAIN && state == State::Struck {
+                    self.struck_at = Some(self.clock);
+                }
             }
         }
         let apart = crate::captain::course::distance(
             [self.player.ship.x, self.player.ship.y],
             [self.captain.ship.x, self.captain.ship.y],
         );
-        let hostile_near = self.her.hostile() && self.captain.damage.fighting() && apart < HOSTILE_NEAR_M;
+        let her = Her {
+            ship: &self.captain.ship,
+            pose: &self.captain.pose,
+            damage: &self.captain.damage,
+            guns: &self.captain.guns,
+            arms: &SLOOP_ARMS,
+            hull: &SLOOP,
+            wind,
+        };
+        let hostile_near = self.her.would_take(&her, &self.sighting()) && apart < HOSTILE_NEAR_M;
         let wrecked = self.player.damage.state == State::Wrecked;
         self.player.damage.mend(seconds, self.clock, hostile_near, false);
         if wrecked && self.player.damage.state == State::Afloat {

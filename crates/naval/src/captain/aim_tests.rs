@@ -13,7 +13,7 @@ fn heading_north() -> Ship {
 
 /// A still target `range` metres east of her: abeam to starboard, lying north-south.
 fn target_east(range: f64) -> Mark {
-    Mark { place: [range, 0.0], heading: Some(0.0), velocity: [0.0, 0.0], level: 0.0 }
+    Mark { place: [range, 0.0], heading: Some(0.0), velocity: [0.0, 0.0], smoothed: [0.0, 0.0], level: 0.0 }
 }
 
 struct Deck {
@@ -123,4 +123,12 @@ fn a_lay_passes_where_its_middle_gun_comes_abreast_of_the_mark_within_her_height
 fn her_dead_zone_alongside_a_sloop_is_a_few_metres() {
     let zone = dead_zone(&SLOOP_ARMS);
     assert!((1.0..10.0).contains(&zone), "{zone}");
+}
+
+#[test]
+fn whether_a_mark_bears_soon_is_read_from_its_smoothed_way() {
+    // 20 degrees forward of her beam and still, but its way smoothed over the last second sweeps it aft fast.
+    let mark = Mark { place: [60.0, -21.84], smoothed: [0.0, 30.0], ..target_east(60.0) };
+    let mut deck = Deck::new();
+    assert_eq!(deck.step(0.0, &mark).run_out, Some(Side::Starboard));
 }

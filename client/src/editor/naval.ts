@@ -1,8 +1,7 @@
-import type { Gpu } from '../gpu.ts';
 import type { FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
-import { MarkView } from '../ships/markView.ts';
+import type { MarkView } from '../ships/markView.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
@@ -26,16 +25,21 @@ const FAREWELL_S = 4;
 
 /** A captain's fight round the Sloop in the World Editor: calling her and sending her off (F), stepping the fight in
  *  her helm's place, the aim's look and camera, and drawing her Sloop, the balls, the lay and the effects. */
+/** What draws the marks: the ship layer's mark view, or a test's. */
+export type MarkDrawer = Pick<MarkView, 'drawInto'>;
+
 export class Naval {
   private fight: Fighting | null = null;
   private calling = false;
+  /** Each call's own number: a captain answering a call since ended or made again is not taken up. */
+  private call = 0;
   private adopted: FightView | null = null;
   private readonly effects = new Effects(1);
-  private readonly marks: MarkView;
+  private readonly marks: MarkDrawer;
   private farewell: { readonly lines: string[]; readonly until: number } | null = null;
 
-  constructor(gpu: Gpu) {
-    this.marks = new MarkView(gpu);
+  constructor(marks: MarkDrawer) {
+    this.marks = marks;
   }
 
   /** Whether a fight is on: the fight steps her, not her own helm. */
@@ -56,19 +60,21 @@ export class Naval {
     }
     if (this.calling || !source) return;
     this.calling = true;
+    const call = ++this.call;
     const seed = crypto.getRandomValues(new Uint32Array(1))[0] ?? 1;
     // Her own helm stands while she is called: the fight begins from her numbers once her last step has answered.
     sailing
       .whenStill()
-      .then(() => (this.calling ? Fighting.begin(source, id, sailing.floats(), seed, time) : 'sent off'))
+      .then(() => (call === this.call ? Fighting.begin(source, id, sailing.floats(), seed, time) : 'sent off'))
       .then((fighting) => {
-        if (!this.calling) return;
+        if (call !== this.call) return;
         this.calling = false;
         if (fighting === 'sent off') return;
         if (typeof fighting === 'string') fail(new Error(fighting));
         else this.fight = fighting;
       })
       .catch((error: unknown) => {
+        if (call !== this.call) return;
         this.calling = false;
         fail(error);
       });
@@ -78,6 +84,7 @@ export class Naval {
   end(): void {
     const fighting = this.fight;
     [this.fight, this.calling, this.adopted] = [null, false, null];
+    this.call++;
     fighting?.end().catch(() => undefined);
   }
 

@@ -121,3 +121,13 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
         "a5c0d39eeb17893c 74506578b683e8a2 aeaf36b6ca60c8cc 9aff61ffcc9e671a 8cb013d3ab3702b7 7b58f4772709c29e 5615a0179dc1b60e 53b0562d4c9edb37 567b4bddda81f749"
     );
 }
+
+#[test]
+fn a_begin_whose_ship_holds_anything_but_numbers_is_refused() {
+    opened();
+    let junk =
+        answer(&fight_begin_json(br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0, "junk"], "seed": 1, "time": 0 }"#));
+    assert!(junk.get("error").is_some(), "{junk}");
+    let null = answer(&fight_begin_json(br#"{ "ship": [180000, 360000, 0, 0, 0, 0, null, 0], "seed": 1, "time": 0 }"#));
+    assert!(null.get("error").is_some(), "{null}");
+}

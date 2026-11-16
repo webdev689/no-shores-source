@@ -162,3 +162,20 @@ fn a_ball_still_aloft_after_9_seconds_is_gone() {
     assert!(matches!(events.last(), Some(ShotEvent::Gone { .. })));
     assert!(balls.is_empty());
 }
+
+#[test]
+fn a_ball_fired_from_under_a_crest_splashes_at_its_muzzle() {
+    struct Crest;
+    impl Waters for Crest {
+        fn at(&self, _x: f64, _y: f64, _time: f64) -> Spot {
+            Spot { bed: -40.0, surface: Some(1.0) }
+        }
+    }
+    let mut balls = vec![east_ball(0.5, 0.0, 0.0)];
+    let events = fly(&mut balls, &nobody(), &Crest);
+    let splash = events.iter().find_map(|event| match event {
+        ShotEvent::Splash { point, .. } => Some(*point),
+        _ => None,
+    });
+    assert_eq!(splash, Some([0.0, 0.0, 1.0]));
+}

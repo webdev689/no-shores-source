@@ -159,3 +159,39 @@ fn her_rung_is_the_one_whose_way_is_nearest_her_share_of_sail() {
     her.sails = 1.0;
     assert_eq!(her.helm(&torn.her(), 0.0, 0.0).climb, -1, "no canvas to set");
 }
+
+#[test]
+fn presented_she_keeps_station_on_six_tenths_of_her_sail_or_more() {
+    let deck = Deck::new();
+    let mut her = captain(Temper::Bold);
+    let plan = her.engage(&deck.her(), &player_at(60.0, 0.0), 60.0, &open);
+    assert!((PRESENT_SAILS..1.0).contains(&plan.sails), "{}", plan.sails);
+}
+
+#[test]
+fn inside_her_dead_zone_she_opens_the_range_hard() {
+    let deck = Deck::new();
+    let mut her = captain(Temper::Bold);
+    let plan = her.engage(&deck.her(), &player_at(1.5, 0.0), 1.5, &open);
+    let lead = lead_point([0.0, 0.0], [1.5, 0.0], [0.0, 2.5], crate::guns::SWIVEL.speed);
+    let wanted = wrap(heading_to([0.0, 0.0], lead) - (90.0 + 2.0 * RANGE_BEND_DEG) * DEG);
+    assert!((wrap(plan.want - wanted)).abs() < 1e-9, "{} {}", plan.want, wanted);
+}
+
+#[test]
+fn a_quarry_running_from_her_she_runs_down_and_sheers_out_to_its_beam() {
+    let deck = Deck::new();
+    let mut her = captain(Temper::Bold);
+    let running = Ship { ahead: 3.0, rung: 2, ..player_at(0.0, -60.0).ship };
+    let quarry = Sighting { ship: running, ..player_at(0.0, -60.0) };
+    let plan = her.engage(&deck.her(), &quarry, 60.0, &open);
+    assert!(plan.want > 0.3, "out to his starboard beam, not dead astern of him: {}", plan.want);
+}
+
+#[test]
+fn her_lookout_reckons_her_turning_circle_at_her_own_pace_even_lying_still() {
+    let mut deck = Deck::new();
+    deck.ship = Ship { ahead: 0.0, sail_way: 0.0, ..deck.ship };
+    let her = captain(Temper::Bold);
+    assert!(her.lookout(&deck.her()).near < 30.0, "{}", her.lookout(&deck.her()).near);
+}

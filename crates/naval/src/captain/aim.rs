@@ -31,12 +31,14 @@ pub const FIRE_EXTENT_SKILL: f64 = 0.65;
 /// Her crew's lay is long or short by up to half this share of the range, by their want of skill.
 pub const LAY_ERR: f64 = 0.9;
 
-/// Her mark as her guns see it: where it is, its heading if it has way, its velocity, and the water under it.
+/// Her mark as her guns see it: where it is, its heading if it has way, its velocity now and smoothed over the last
+/// second, and the water under it.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Mark {
     pub place: [f64; 2],
     pub heading: Option<f64>,
     pub velocity: [f64; 2],
+    pub smoothed: [f64; 2],
     pub level: f64,
 }
 
@@ -197,7 +199,9 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             if run.run_in[side.index()] > clock - RUN_IN_S {
                 continue;
             }
-            let soon = error <= window || bears_within(ship, lead, rel, want, window) <= RUN_OUT_S;
+            // How fast its bearing moves is read from its way smoothed, as DFO's is.
+            let swept = [mark.smoothed[0] - own[0], mark.smoothed[1] - own[1]];
+            let soon = error <= window || bears_within(ship, lead, swept, want, window) <= RUN_OUT_S;
             if loaded && range <= reach * RUN_OUT_REACH && error <= RUN_OUT_DEG && soon && strikes() {
                 run.out[side.index()] = Some(clock);
                 battery.run_out = Some(side);

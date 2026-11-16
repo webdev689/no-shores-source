@@ -174,3 +174,11 @@ fn hurt_she_lists_to_the_side_she_will_go_down_on() {
     let (_, _, roll) = founder(&damage, 1, 6.0);
     assert!((roll - want.to_radians()).abs() < 1e-5);
 }
+
+#[test]
+fn a_crew_struck_down_to_the_last_man_strikes_with_her_fires_still_burning() {
+    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    damage.apply(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0);
+    assert_eq!(damage.apply(hurt(0.0, 0.0, 10.0), 1.0, 0.0), Some(State::Struck));
+    assert_eq!(damage.fires(), 1, "nobody is left to fight them");
+}

@@ -2,6 +2,7 @@ import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { loadShip } from '../ships/shipMesh.ts';
+import { MarkView } from '../ships/markView.ts';
 import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
@@ -138,7 +139,7 @@ export class LandScene {
     this.fail = fail;
     this.water = new WaterView(gpu);
     this.harbour = new Harbour(() => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh)), fail);
-    this.naval = new Naval(gpu);
+    this.naval = new Naval(new MarkView(gpu));
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
