@@ -21,8 +21,7 @@ thread_local! {
 pub const TAKEN: i32 = 0;
 pub const NOT_AN_INPUT: i32 = 1;
 pub const OUT_OF_ORDER: i32 = 2;
-pub const TOO_MANY_WAITING: i32 = 3;
-pub const NO_SUCH_PLAYER: i32 = 4;
+pub const NO_SUCH_PLAYER: i32 = 3;
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
     bytes.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect()
@@ -108,7 +107,6 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     match with_room(|room| room.input(player, input)) {
         Some(Ok(())) => TAKEN,
         Some(Err(Refused::OutOfOrder { .. })) => OUT_OF_ORDER,
-        Some(Err(Refused::TooManyWaiting)) => TOO_MANY_WAITING,
         Some(Err(Refused::BadLook)) => NOT_AN_INPUT,
         Some(Err(Refused::NoSuchPlayer)) | None => NO_SUCH_PLAYER,
     }
@@ -185,10 +183,10 @@ pub extern "C" fn room_tick_seconds() -> f64 {
     movement::TICK_SECONDS
 }
 
-/// A new player's number, or 0 with no room open.
+/// A new player's number, or 0 with no room open or the room full.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join() -> PlayerId {
-    with_room(Room::join).unwrap_or(0)
+    with_room(Room::join).flatten().unwrap_or(0)
 }
 
 /// The welcome's bytes for a player.

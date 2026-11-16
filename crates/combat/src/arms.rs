@@ -89,7 +89,8 @@ pub fn swing_ticks(class: WeaponClass) -> (u32, u32) {
     (ticks(frame * HIT_FRAME), ticks(frame * STRIKE_FRAMES))
 }
 
-/// The six ways a blow comes, as DFO's first person draws them: the mouse's drag picks one.
+/// The six ways a blow comes, as DFO's first person draws them: a click rolls one, as Daggerfall Unity's click to
+/// attack does.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Stroke {
     Down = 1,
@@ -200,7 +201,8 @@ impl Arms {
             | u32::from(self.off_hand as u8) << 16
     }
 
-    /// The arms a number names; anything it does not name is bare hands.
+    /// The arms a number names; anything it does not name, or hands no one could hold (a shooting weapon beside a
+    /// blade in the same hand, a two-handed weapon with the left hand busy), is bare hands.
     #[must_use]
     pub fn from_code(code: u32) -> Self {
         let byte = |shift: u32| u8::try_from((code >> shift) & 0xff).unwrap_or_default();
@@ -224,7 +226,9 @@ impl Arms {
             .find(|hand| *hand as u8 == byte(16));
         match (melee, off_hand) {
             (Some(melee), Some(off_hand)) if code >> 24 == 0 && (byte(8) == 0 || ranged.is_some()) => {
-                Arms { melee, ranged, off_hand }
+                let held = (ranged.is_none() || melee == WeaponClass::Fists)
+                    && (!weapon(melee).two_handed || off_hand == OffHand::Empty);
+                if held { Arms { melee, ranged, off_hand } } else { BARE_HANDS }
             }
             _ => BARE_HANDS,
         }

@@ -11,8 +11,19 @@ pub type PlayerId = FighterId;
 
 /// How many ticks of inputs a player may run ahead of the room's clock, to ride out a network's jitter.
 pub const SLACK_TICKS: u64 = 6;
-/// How many inputs a player may have waiting; past that, more are refused.
+/// How many inputs a player may have waiting; past that, the oldest is let go (as taken), so a flood or a burst after a
+/// stall never refuses one and never breaks the order.
 pub const WAITING_LIMIT: usize = 30;
+/// How many of a player's inputs one tick may take: one is due, the rest catch up after a stall, no faster than this.
+pub const CATCH_UP: usize = 3;
+/// How far the room tick a player says it was seeing may move on from one input to the next.
+pub const SEEN_STEP: u64 = 4;
+/// How long after a player stands again the foes leave them be, unless they strike first.
+pub const GRACE: u64 = 180;
+/// How often a player's dress may change; a change sooner waits its turn.
+pub const DRESS_EVERY: u64 = 60;
+/// How many players a room holds.
+pub const PLAYERS_MOST: usize = 16;
 /// The longest move name and dress, in bytes, a player may send.
 pub const MOVE_LIMIT: usize = 40;
 pub const DRESS_LIMIT: usize = 4096;
@@ -31,7 +42,6 @@ pub enum Refused {
         expected: u32,
         got: u32,
     },
-    TooManyWaiting,
     /// A move name that is not lowercase letters, digits and underscores, or a move or dress past its limit.
     BadLook,
 }
@@ -61,13 +71,15 @@ pub struct Input {
 }
 
 impl Input {
-    /// Whether its look and dress are within what a room carries.
+    /// Whether its look and dress are within what a room carries, and every number in it is one.
     #[must_use]
     pub fn fits(&self) -> bool {
         let anim = &self.shown.anim;
         let named = anim.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_');
         let dress_fits = self.dress.as_ref().is_none_or(|dress| dress.len() <= DRESS_LIMIT);
-        named && anim.len() <= MOVE_LIMIT && dress_fits
+        let controls = self.intent.controls;
+        let numbers = [controls.forward, controls.sideways, controls.yaw, self.intent.combat.pitch, self.shown.facing];
+        named && anim.len() <= MOVE_LIMIT && dress_fits && numbers.iter().all(|number| number.is_finite())
     }
 }
 
@@ -89,6 +101,11 @@ pub struct Player {
     /// the tick that input was seeing.
     pub seen: u64,
     pub history: VecDeque<(u64, Fighter)>,
+    /// The room tick until which the foes leave the player be, having just stood again.
+    pub graced: u64,
+    /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
+    pub dress_next: Option<String>,
+    pub dressed_at: Option<u64>,
 }
 
 impl Player {
@@ -106,6 +123,9 @@ impl Player {
             waiting: VecDeque::new(),
             seen: joined,
             history: VecDeque::new(),
+            graced: 0,
+            dress_next: None,
+            dressed_at: None,
         }
     }
 

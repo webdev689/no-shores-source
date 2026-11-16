@@ -1,7 +1,10 @@
 //! A foe's telegraphed blows, as DFO's TELL draws them: each a shape on the ground its foe winds up to, marked so
 //! the player can read it, landing on whoever's feet stand in it when the wind-up ends. Iron ones cannot be guarded.
 
+use crate::sight::clear_line;
 use crate::ticks;
+use crate::tuning::{CHEST, STRIKE_HEIGHT};
+use movement::Block;
 
 /// The shapes. A lunge and a charge are lanes ahead; a sweep an arc; a slam a disc just ahead; a ring an annulus about
 /// the foe's feet, safe close in; a leap a disc where its target stood; an aimed shot a line its arrow flies along.
@@ -175,6 +178,18 @@ impl Telegraph {
             }
             Shape::Aimed => (-0.3..=self.ahead).contains(&along) && across <= shape.width,
         }
+    }
+
+    /// Whether its blow strikes a body standing at `feet`: inside its shape on the ground, within a blow's height of
+    /// its foe, and with no block between the body and where the blow comes from (a leap's landing, else its foe).
+    #[must_use]
+    pub fn strikes(&self, feet: [f64; 3], blocks: &[Block]) -> bool {
+        let leap = self.landing().filter(|_| self.shape == Shape::Leap);
+        let from = leap.unwrap_or([self.origin[0], self.origin[1]]);
+        let chest = |x: f64, y: f64, z: f64| [x, y, z + CHEST];
+        self.holds(feet[0], feet[1])
+            && (feet[2] - self.origin[2]).abs() <= STRIKE_HEIGHT
+            && clear_line(blocks, chest(from[0], from[1], self.origin[2]), chest(feet[0], feet[1], feet[2]))
     }
 
     /// Where its foe's feet go at the end of a charge or a leap: along its lane, or to its disc.

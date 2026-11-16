@@ -5,7 +5,7 @@
 use crate::arms::{Stroke, WeaponClass, stroke_shape, weapon};
 use crate::fighter::{Attack, Fighter, FighterId};
 use crate::sight::{apart, bearing, clear_line, off};
-use crate::tuning::{BODY_RADIUS, CLOSE_ARC, CLOSE_IN, STRIKE_HEIGHT};
+use crate::tuning::{BODY_RADIUS, CHEST, CLOSE_ARC, CLOSE_IN, STRIKE_HEIGHT};
 use movement::Block;
 
 /// The farthest a stroke of this weapon reaches, from the striker's feet to the middle of a body it strikes.
@@ -26,7 +26,7 @@ pub fn reaches(striker: &Fighter, attack: &Attack, feet: [f64; 3], blocks: &[Blo
     }
     let arc = if distance <= CLOSE_IN { CLOSE_ARC } else { shape.half_arc };
     let facing = off(striker.aim, bearing([body.x, body.y], [feet[0], feet[1]]));
-    let chest = |at: [f64; 3]| [at[0], at[1], at[2] + 1.1];
+    let chest = |at: [f64; 3]| [at[0], at[1], at[2] + CHEST];
     (distance < 1e-6 || facing <= arc) && clear_line(blocks, chest([body.x, body.y, body.z]), chest(feet))
 }
 

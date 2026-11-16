@@ -3,15 +3,15 @@
 //! name nothing read back as the plainest thing they could be.
 
 use crate::arms::{Arms, Stroke};
-use crate::fighter::{Action, Attack, Cause, CombatInput, Fighter, Held, Intent, Side, Swing, Weight};
+use crate::fighter::{Action, Attack, Cause, CombatInput, Fighter, Held, Intent, Kept, Side, Swing, Weight};
 use crate::shapes::{Shape, Telegraph};
 use movement::floats::{BODY_FLOATS, CONTROLS_FLOATS};
 use movement::{Body, Controls};
 
 /// The fight's own numbers after the body's: side, arms, weight, health and its most, stamina and its rest, poise,
 /// its most, its rest and its immunity, aim, target (id + 1, 0 none), the lock's away and unseen counts, the riposte's
-/// foe (id + 1) and ticks, counter, punished, missed parry, held buttons, blows, might; then the action's kind and
-/// its numbers.
+/// foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, and the presses kept, in one number),
+/// blows, might; then the action's kind and its numbers.
 pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS;
 const ACTION_NUMBERS: usize = 10;
 pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS;
@@ -41,6 +41,13 @@ fn id_or_none(number: f64) -> Option<u32> {
 
 fn none_or_id(id: Option<u32>) -> f64 {
     id.map_or(0.0, |id| f64::from(id) + 1.0)
+}
+
+/// The presses kept, from the buttons' number: four bits a press's ticks, then the stroke.
+fn kept_of(held: u32) -> Kept {
+    let nibble = |shift: u32| u8::try_from(held >> shift & 0xf).unwrap_or_default();
+    let stroke = u8::try_from(held >> 16 & 0x7).ok().and_then(Stroke::from_number);
+    Kept { attack: nibble(4), stroke, guard: nibble(8), dodge: nibble(12) }
 }
 
 /// An action's kind and numbers.
@@ -180,10 +187,14 @@ impl Fighter {
     pub fn to_floats(&self) -> [f64; FIGHTER_FLOATS] {
         let mut floats = [0.0; FIGHTER_FLOATS];
         floats[..BODY_FLOATS].copy_from_slice(&self.body.to_floats());
-        let held = u8::from(self.held.attack)
-            | u8::from(self.held.guard) << 1
-            | u8::from(self.held.dodge) << 2
-            | u8::from(self.held.shoot) << 3;
+        let held = u32::from(self.held.attack)
+            | u32::from(self.held.guard) << 1
+            | u32::from(self.held.dodge) << 2
+            | u32::from(self.held.shoot) << 3
+            | u32::from(self.kept.attack) << 4
+            | u32::from(self.kept.guard) << 8
+            | u32::from(self.kept.dodge) << 12
+            | u32::from(self.kept.stroke.map_or(0, |stroke| stroke as u8)) << 16;
         let riposte = self.riposte.map_or((0.0, 0.0), |(foe, left)| (f64::from(foe) + 1.0, f64::from(left)));
         let (kind, numbers) = action_floats(&self.action);
         let combat = [
@@ -251,6 +262,7 @@ impl Fighter {
             punished: count(at(18)),
             missed_parry: count(at(19)),
             held: Held { attack: held & 1 != 0, guard: held & 2 != 0, dodge: held & 4 != 0, shoot: held & 8 != 0 },
+            kept: kept_of(held),
             blows: count(at(21)),
             might: at(22),
         }

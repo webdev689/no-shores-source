@@ -163,9 +163,9 @@ impl Room {
         let feet = |fighter: &Fighter| [fighter.body.x, fighter.body.y, fighter.body.z];
         let verdict = match &pending.check {
             Check::Swing { striker, attack } if !reaches(striker, attack, feet(then), &self.blocks) => None,
-            Check::Shape { telegraph, .. } if !telegraph.holds(then.body.x, then.body.y) => {
+            Check::Shape { telegraph, .. } if !telegraph.strikes(feet(then), &self.blocks) => {
                 // Inside its shape a moment before it landed and out of it as it did: dodged perfectly.
-                let left_late = before.is_some_and(|before| telegraph.holds(before.body.x, before.body.y));
+                let left_late = before.is_some_and(|before| telegraph.strikes(feet(before), &self.blocks));
                 left_late.then_some(Verdict::Dodged { perfect: true })
             }
             _ => Some(judge(&pending.blow, then)),
@@ -177,7 +177,7 @@ impl Room {
     }
 
     /// Counts a telegraphed blow's judged defender; the last judged, a blow that found no one overreaches its foe.
-    fn group_judged(&mut self, pending: &Pending, verdict: Option<Verdict>) {
+    pub(crate) fn group_judged(&mut self, pending: &Pending, verdict: Option<Verdict>) {
         let Check::Shape { group, .. } = &pending.check else { return };
         let group = *group;
         let Some(entry) = self.groups.get_mut(&group) else { return };
@@ -225,6 +225,22 @@ impl Room {
                 }
                 Flight::Stopped { struck: None, .. } => {}
             }
+        }
+    }
+
+    /// A player's ball, flown at once among the foes as the player's screen showed them (`view`), and judged against
+    /// the foe it struck as `as_seen` has it.
+    pub(crate) fn shoot_seen(&mut self, shot: &combat::Shot, view: &[(FighterId, Fighter)]) {
+        let bodies: Vec<(FighterId, [f64; 3])> = view
+            .iter()
+            .filter(|(id, fighter)| self.foes.contains_key(id) && !fighter.dead())
+            .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
+            .collect();
+        if let Flight::Stopped { struck: Some(defender), .. } = fly(shot, &self.blocks, &bodies)
+            && let Some(then) = self.as_seen(defender, view)
+        {
+            let blow = combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]);
+            self.judge_now(&blow, How::Shot, defender, &then);
         }
     }
 

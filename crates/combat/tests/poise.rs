@@ -80,3 +80,24 @@ fn at_no_health_a_fighter_dies_and_lies_where_it_fell() {
     assert!(happenings.is_empty() && matches!(lying.action, Action::Dead { elapsed: 30 }));
     assert_eq!(dead.target, Some(2), "struck, its lock takes the striker");
 }
+
+#[test]
+fn poise_does_not_fill_while_no_stagger_can_begin_but_an_overreach_still_staggers() {
+    let attack =
+        Attack { stroke: Stroke::Down, elapsed: 24, strike: 24, end: 60, swing: Swing::Plain, left_hand: false };
+    let blow = swing_blow(1, &player_at(0.0, 2.0), &attack, 2);
+    let mut immune = foe_at(0.0, 0.0, 0.0);
+    immune.poise_immune = 100;
+    let struck = suffer(&immune, &blow, &Verdict::Hit { damage: 1.0, poise: 50.0 });
+    assert!(struck.poise.abs() < 1e-9, "nothing builds up to break it the moment it may: {}", struck.poise);
+    let mut overreached = immune;
+    overreached.action = Action::Overreach { left: 30 };
+    overreached.punished = 30;
+    let struck = suffer(&overreached, &blow, &Verdict::Hit { damage: 1.0, poise: 1.0 });
+    assert!(matches!(struck.action, Action::Staggered { cause: Cause::Poise, .. }), "{:?}", struck.action);
+    let mut filling = foe_at(0.0, 0.0, 0.0);
+    filling.poise_immune = 0;
+    filling.weight = Weight::Massive;
+    let full = suffer(&filling, &blow, &Verdict::Hit { damage: 1.0, poise: 500.0 });
+    assert!(full.poise <= full.poise_max, "never past its most");
+}

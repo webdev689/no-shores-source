@@ -9,7 +9,10 @@ mod players;
 
 pub use foes::{CLEAR_FOES, FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};
-pub use players::{DRESS_LIMIT, Input, MOVE_LIMIT, PlayerId, Refused, SLACK_TICKS, Shown, VIEW_LAG, WAITING_LIMIT};
+pub use players::{
+    CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, VIEW_LAG,
+    WAITING_LIMIT,
+};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
@@ -117,17 +120,26 @@ impl Room {
         id
     }
 
-    /// A new player, standing at the spawn with nothing drawn.
-    pub fn join(&mut self) -> PlayerId {
+    /// A new player, standing at the spawn with nothing drawn; none when the room is full.
+    pub fn join(&mut self) -> Option<PlayerId> {
+        if self.players.len() >= PLAYERS_MOST {
+            return None;
+        }
         let id = self.next_id();
         let fighter = player(standing(self.spawn.0, self.spawn.1), BARE_HANDS);
         self.players.insert(id, Player::new(fighter, self.clock));
-        id
+        Some(id)
     }
 
+    /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
         self.players.remove(&player);
-        self.pending.retain(|pending| pending.defender != player);
+        let (gone, kept): (Vec<Pending>, Vec<Pending>) =
+            std::mem::take(&mut self.pending).into_iter().partition(|pending| pending.defender == player);
+        self.pending = kept;
+        for pending in &gone {
+            self.group_judged(pending, None);
+        }
     }
 
     /// The player's input, which must follow their last. Its intent and look wait for the room's next tick; a new
@@ -138,18 +150,19 @@ impl Room {
         if input.sequence != expected {
             return Err(Refused::OutOfOrder { expected, got: input.sequence });
         }
-        if found.waiting.len() >= WAITING_LIMIT {
-            return Err(Refused::TooManyWaiting);
-        }
         if !input.fits() {
             return Err(Refused::BadLook);
+        }
+        if found.waiting.len() >= WAITING_LIMIT {
+            // Let go of the oldest as though taken: the order holds, and the player is never further behind than this.
+            found.waiting.pop_front();
+            found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
         if let Some(dress) = input.dress.take()
             && dress != found.dress
         {
-            found.dress = dress;
-            found.dress_changed = true;
+            found.dress_next = Some(dress);
         }
         // A player never begins a telegraphed blow.
         input.intent.combat.telegraph = None;
@@ -177,17 +190,20 @@ impl Room {
         }
     }
 
+    /// Each player's inputs step their fighter, as many as the clock allows and CATCH_UP at most; a player whose
+    /// inputs have stopped coming is stepped standing still once they fall a view's lag behind, so nothing they were
+    /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away.
     fn step_players(&mut self) {
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
-            while let Some((input, seen)) = self.next_input(id) {
+            self.dress_in_turn(id);
+            let mut taken = 0;
+            while taken < CATCH_UP {
+                let Some((input, seen)) = self.next_input(id) else { break };
+                taken += 1;
                 let view = self.view_at(seen);
                 let Some(found) = self.players.get_mut(&id) else { break };
-                let fighter = if found.fighter.dead() {
-                    found.fighter
-                } else {
-                    Fighter { arms: Arms::from_code(input.arms), ..found.fighter }
-                };
+                let fighter = found.fighter.holding(Arms::from_code(input.arms));
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks);
                 found.fighter = next;
                 found.shown = input.shown;
@@ -197,11 +213,48 @@ impl Room {
                 }
                 self.happened(id, &next, happening, &view);
             }
+            if taken == 0 {
+                self.stand_stalled(id);
+            }
+        }
+    }
+
+    /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim.
+    fn stand_stalled(&mut self, id: PlayerId) {
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&id) else { return };
+        if found.stepped + VIEW_LAG >= clock - found.joined {
+            return;
+        }
+        let standing = combat::Intent {
+            controls: movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() },
+            combat: combat::CombatInput::default(),
+        };
+        let view = self.fighters();
+        let Some(found) = self.players.get_mut(&id) else { return };
+        found.stepped += 1;
+        let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks);
+        found.fighter = next;
+        self.happened(id, &next, happening, &view);
+    }
+
+    /// A dress waiting its turn is taken at once the first time, then once DRESS_EVERY ticks have passed since the
+    /// last change.
+    fn dress_in_turn(&mut self, id: PlayerId) {
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&id) else { return };
+        if found.dressed_at.is_some_and(|at| clock < at + players::DRESS_EVERY) {
+            return;
+        }
+        if let Some(dress) = found.dress_next.take() {
+            found.dress = dress;
+            found.dress_changed = true;
+            found.dressed_at = Some(clock);
         }
     }
 
     /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never
-    /// behind the last, never further back than a view may lag).
+    /// behind the last nor more than SEEN_STEP past it, never further back than a view may lag).
     fn next_input(&mut self, id: PlayerId) -> Option<(Input, u64)> {
         let clock = self.clock;
         let found = self.players.get_mut(&id)?;
@@ -211,7 +264,12 @@ impl Room {
         let input = found.waiting.pop_front()?;
         found.stepped += 1;
         found.acknowledged = found.acknowledged.wrapping_add(1);
-        let seen = input.seen.min(clock).max(found.seen).max(clock.saturating_sub(VIEW_LAG));
+        let seen = input
+            .seen
+            .min(clock)
+            .min(found.seen + players::SEEN_STEP)
+            .max(found.seen)
+            .max(clock.saturating_sub(VIEW_LAG));
         Some((input, seen))
     }
 
@@ -224,6 +282,12 @@ impl Room {
         happening: Option<Happening>,
         view: &[(FighterId, Fighter)],
     ) {
+        if matches!(happening, Some(Happening::Swung(_) | Happening::Loosed(_)))
+            && let Some(found) = self.players.get_mut(&id)
+        {
+            // Striking first ends the grace a player stood again with.
+            found.graced = 0;
+        }
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
@@ -233,15 +297,20 @@ impl Room {
                     if self.players.contains_key(&defender) {
                         let check = Check::Swing { striker: Box::new(*fighter), attack };
                         self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
-                    } else if let Some((_, then)) = view.iter().find(|(other, _)| *other == defender) {
-                        let then = *then;
+                    } else if let Some(then) = self.as_seen(defender, view) {
                         self.judge_now(&blow, how, defender, &then);
                     }
                 }
             }
             Some(Happening::Loosed(shot)) => {
-                self.shots.push(Shot { owner: id, ..shot });
+                let shot = Shot { owner: id, ..shot };
                 self.loosed.push(id);
+                // A player's ball reaches its mark at once: judged among the foes as the player's screen showed them.
+                if self.players.contains_key(&id) && combat::shots::shot_numbers(shot.ranged).0 <= 0.0 {
+                    self.shoot_seen(&shot, view);
+                } else {
+                    self.shots.push(shot);
+                }
             }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
             _ => {}
@@ -257,6 +326,7 @@ impl Room {
                 && elapsed >= RESPAWN
             {
                 found.fighter = player(standing(spawn.0, spawn.1), found.fighter.arms);
+                found.graced = self.clock + GRACE;
                 raised.push(*id);
             }
         }
@@ -288,6 +358,13 @@ impl Room {
             .iter()
             .find(|(kept, _)| *kept == tick)
             .map_or_else(|| self.fighters(), |(_, fighters)| fighters.clone())
+    }
+
+    /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,
+    /// dodging and staggered as it is now, so a foe's answers count the same whatever the player's lag.
+    pub(crate) fn as_seen(&self, foe: FighterId, view: &[(FighterId, Fighter)]) -> Option<Fighter> {
+        let then = view.iter().find(|(other, _)| *other == foe).map(|(_, then)| then.body)?;
+        self.fighter(foe).map(|now| Fighter { body: then, ..*now })
     }
 
     pub(crate) fn fighter(&self, id: FighterId) -> Option<&Fighter> {
@@ -386,3 +463,7 @@ mod fight_tests;
 #[cfg(test)]
 #[path = "foe_tests.rs"]
 mod foe_tests;
+
+#[cfg(test)]
+#[path = "fair_tests.rs"]
+mod fair_tests;

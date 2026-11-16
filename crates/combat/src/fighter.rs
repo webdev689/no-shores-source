@@ -123,6 +123,16 @@ pub struct Held {
     pub shoot: bool,
 }
 
+/// Presses not yet acted on, each kept PRESS_KEPT ticks, so one made while the fighter is busy is acted on as soon
+/// as it can be: ticks left for the attack (and its stroke), the guard and the dodge.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Kept {
+    pub attack: u8,
+    pub stroke: Option<Stroke>,
+    pub guard: u8,
+    pub dodge: u8,
+}
+
 /// A fighter and everything a fight keeps for it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Fighter {
@@ -156,6 +166,7 @@ pub struct Fighter {
     /// Ticks since a parry window passed unused, while that still rushes the next press; 0 for none.
     pub missed_parry: u32,
     pub held: Held,
+    pub kept: Kept,
     /// The swings struck so far, so a pair's blows take turns between the hands.
     pub blows: u32,
     /// What its blows' damage is multiplied by: 1 for a player, its kind's for a foe.
@@ -169,8 +180,8 @@ pub struct Intent {
     pub combat: CombatInput,
 }
 
-/// The fight's buttons: the stroke a swing would take while the attack button is held (DFO picks it from the mouse's
-/// drag), the guard held, the dodge held, a shot held, the look's pitch for a shot, and for a foe a telegraphed blow
+/// The fight's buttons: the stroke a swing would take while the attack button is held (the player's page rolls it, as
+/// Daggerfall Unity's click to attack does), the guard held, the dodge held, a shot held, the look's pitch for a shot, and for a foe a telegraphed blow
 /// its brain begins.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct CombatInput {
@@ -209,6 +220,7 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         punished: 0,
         missed_parry: 0,
         held: Held::default(),
+        kept: Kept::default(),
         blows: 0,
         might: 1.0,
     }
@@ -248,6 +260,13 @@ impl Fighter {
         }
     }
 
+    /// The fighter holding `arms`, taken up only at rest (or dead): a weapon is never changed in the middle of a swing,
+    /// a guard, a draw or a reload.
+    #[must_use]
+    pub fn holding(&self, arms: Arms) -> Self {
+        if matches!(self.action, Action::Idle | Action::Dead { .. }) { Fighter { arms, ..*self } } else { *self }
+    }
+
     /// Whether it is staggered by anything: it takes more from every blow.
     #[must_use]
     pub fn staggered(&self) -> bool {
@@ -257,6 +276,6 @@ impl Fighter {
     /// Its chest, where blows and shots aim and a lock's mark stands.
     #[must_use]
     pub fn chest(&self) -> [f64; 3] {
-        [self.body.x, self.body.y, self.body.z + 1.1]
+        [self.body.x, self.body.y, self.body.z + crate::tuning::CHEST]
     }
 }

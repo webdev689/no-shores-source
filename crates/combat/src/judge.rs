@@ -129,21 +129,23 @@ pub fn judge(blow: &Blow, defender: &Fighter) -> Verdict {
             if blockable {
                 let stamina = blow.guard * share;
                 if stamina >= defender.stamina {
-                    return Verdict::GuardBroken { damage: taken(defender, blow.damage) * GUARD_BROKEN_TAKEN };
+                    return Verdict::GuardBroken { damage: taken(defender, blow) * GUARD_BROKEN_TAKEN };
                 }
                 return Verdict::Blocked { damage: blow.damage * chip, stamina };
             }
         }
     }
     let behind = off(defender.aim, toward) > BEHIND;
-    Verdict::Hit { damage: taken(defender, blow.damage), poise: blow.poise * if behind { POISE_BEHIND } else { 1.0 } }
+    Verdict::Hit { damage: taken(defender, blow), poise: blow.poise * if behind { POISE_BEHIND } else { 1.0 } }
 }
 
-/// A blow's damage as this fighter takes it: more while staggered or overreached.
-fn taken(defender: &Fighter, damage: f64) -> f64 {
-    let staggered = if defender.staggered() { STAGGER_TAKEN } else { 1.0 };
+/// A blow's damage as this fighter takes it: more while staggered (but a riposte, the stagger's own answer, does not
+/// count it twice) or overreached.
+fn taken(defender: &Fighter, blow: &Blow) -> f64 {
+    let riposte = matches!(blow.kind, BlowKind::Swing(_)) && !blow.parryable;
+    let staggered = if defender.staggered() && !riposte { STAGGER_TAKEN } else { 1.0 };
     let punished = if defender.punished > 0 { PUNISH_TAKEN } else { 1.0 };
-    damage * staggered * punished
+    blow.damage * staggered * punished
 }
 
 /// The defender after the verdict.
@@ -155,6 +157,8 @@ pub fn suffer(defender: &Fighter, blow: &Blow, verdict: &Verdict) -> Fighter {
     }
     match *verdict {
         Verdict::Parried => {
+            // The riposte is at the fighter it parried, so the lock takes that one.
+            next.target = Some(blow.striker);
             next.action = Action::Parry { elapsed: 0 };
             next.riposte = Some((blow.striker, PARRIED));
             next.missed_parry = 0;
@@ -185,17 +189,18 @@ pub fn suffer(defender: &Fighter, blow: &Blow, verdict: &Verdict) -> Fighter {
     next
 }
 
-/// A blow that landed: its poise fills the meter (not through an iron wind-up), and the fighter staggers when the meter
-/// is full or it was overreached, is knocked down by an iron slam, or as a player flinches.
+/// A blow that landed: its poise fills the meter (not through an iron wind-up, nor while no poise stagger can begin),
+/// and the fighter staggers when the meter is full or it was overreached (that opening was earned, immune or not), is
+/// knocked down by an iron slam, or as a player flinches.
 fn landed(next: &mut Fighter, blow: &Blow, damage: f64, poise: f64) {
     next.health -= damage;
     let iron_windup = matches!(next.action, Action::Telegraph(telegraph) if telegraph.iron);
-    if !iron_windup {
-        next.poise += poise;
+    if !iron_windup && next.poise_immune == 0 {
+        next.poise = (next.poise + poise).min(next.poise_max);
         next.poise_rest = 0;
     }
     let stagger = next.weight.stagger_ticks();
-    let may_stagger = next.poise_immune == 0 && !next.staggered();
+    let may_stagger = (next.poise_immune == 0 || next.punished > 0) && !next.staggered();
     if may_stagger && (next.punished > 0 || next.poise >= next.poise_max) && !iron_windup {
         next.action = Action::Staggered { left: stagger, cause: Cause::Poise };
         next.poise = 0.0;
@@ -208,18 +213,15 @@ fn landed(next: &mut Fighter, blow: &Blow, damage: f64, poise: f64) {
     }
 }
 
-/// A player flinches out of rest, a swing, a guard turned the wrong way, a draw or a reload; not out of a dodge's end
-/// or anything that already holds them.
+/// A player flinches out of rest, a swing's wind-up, a guard turned the wrong way or a draw; not out of a swing's
+/// follow-through (that would end it sooner), a reload (that would load it sooner), a flinch already under way (blow
+/// on blow would hold them for good), a dodge's end, or anything else that already holds them.
 fn flinches(action: &Action) -> bool {
-    matches!(
-        action,
-        Action::Idle
-            | Action::Attack(_)
-            | Action::Guard { .. }
-            | Action::Draw { .. }
-            | Action::Reload { .. }
-            | Action::Flinch { .. }
-    )
+    match action {
+        Action::Idle | Action::Guard { .. } | Action::Draw { .. } => true,
+        Action::Attack(attack) => attack.elapsed < attack.strike,
+        _ => false,
+    }
 }
 
 /// The striker after the verdict: parried, it staggers open to the riposte; landing or guarded, its lock takes the
@@ -229,8 +231,9 @@ pub fn answered(striker: &Fighter, defender: FighterId, verdict: &Verdict) -> Fi
     let mut next = *striker;
     match verdict {
         Verdict::Parried => next.action = Action::Staggered { left: PARRIED, cause: Cause::Parried },
+        // A sweep that lands on three leaves the lock where it was; a lock takes the one struck only if it had none.
         Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. } => {
-            next.target = Some(defender);
+            next.target = next.target.or(Some(defender));
         }
         Verdict::Dodged { .. } => {}
     }

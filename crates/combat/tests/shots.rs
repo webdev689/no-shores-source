@@ -116,3 +116,19 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
     let nonsense = Fighter::from_floats(&[f64::NAN; FIGHTER_FLOATS]);
     assert!(matches!(nonsense.action, Action::Idle) && nonsense.target.is_none());
 }
+
+#[test]
+fn a_shot_strikes_only_bodies_ahead_of_it_and_one_through_the_top_of_a_head() {
+    let north = loose(1, Ranged::Bow, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
+    let behind = [(2, [0.0, 2.0, 0.0])];
+    assert!(matches!(fly(&north, &[], &behind), Flight::Flying(_)), "a body behind the archer is not struck");
+    let ball = loose(1, Ranged::Thunderlock, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
+    let (behind_far, ahead) = ([(2, [0.0, 30.0, 0.0])], [(2, [0.0, -30.0, 0.0])]);
+    assert!(matches!(fly(&ball, &[], &behind_far), Flight::Stopped { struck: None, .. }));
+    assert!(matches!(fly(&ball, &[], &ahead), Flight::Stopped { struck: Some(2), .. }));
+    // An arrow coming down steeply over the body: above its head as it crosses into its round, inside it soon after.
+    let falling = combat::shots::Shot { at: [0.0, -0.6, 1.95], velocity: [0.0, 72.0, -39.0], ..north };
+    let Flight::Stopped { struck, at } = fly(&falling, &[], &[(2, [0.0, 0.0, 0.0])]) else { panic!("it stops") };
+    assert_eq!(struck, Some(2));
+    assert!((at[2] - 1.8).abs() < 0.05, "it meets the head's top: {at:?}");
+}

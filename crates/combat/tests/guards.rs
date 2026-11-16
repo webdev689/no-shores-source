@@ -91,13 +91,16 @@ fn a_parry_staggers_the_striker_open_to_a_riposte_that_strikes_harder_and_no_gua
     assert!((parrier.health - 100.0).abs() < 1e-9);
     let parried = answered(&foe, 1, &Verdict::Parried);
     assert!(matches!(parried.action, Action::Staggered { left: PARRIED, cause: Cause::Parried }));
-    // The parrier's next swing is the riposte: two and a half times, through any guard.
+    // The parrier's next swing is the riposte: twice as hard, through any guard.
     let (riposting, happenings) = run(parrier, common::swinging(0.0, Stroke::Up), 1, None);
     let Some((_, Happening::Swung(attack))) = happenings.first() else { panic!("a riposte begins at once") };
     assert_eq!(attack.swing, Swing::Riposte(2));
     assert_eq!(riposting.riposte, None);
     let riposte = swing_blow(1, &riposting, attack, 2);
-    assert!((riposte.damage - 14.0 * 2.5).abs() < 1e-9);
+    assert!((riposte.damage - 14.0 * 2.0).abs() < 1e-9);
+    // The parried striker is staggered, but the riposte, the stagger's own answer, does not take that twice.
+    let Verdict::Hit { damage, .. } = judge(&riposte, &parried) else { panic!("a riposte lands") };
+    assert!((damage - 28.0).abs() < 1e-9, "{damage}");
     assert!(!riposte.parryable && !riposte.blockable);
     assert!(swing_blow(1, &riposting, attack, 3).parryable, "only against the parried foe");
 }

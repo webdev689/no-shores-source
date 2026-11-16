@@ -5,7 +5,7 @@ import { startFightRules } from './fightRules.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS, fighterView } from './fighters.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
-const FIGHT_HASH = 'd465e15df2443144';
+const FIGHT_HASH = '9cd81176dbfb19c9';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(

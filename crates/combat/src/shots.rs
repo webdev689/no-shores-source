@@ -129,28 +129,36 @@ fn entry(block: &Block, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
     Some(enter)
 }
 
-/// How far along the segment (0 to 1) it enters the upright cylinder of a body standing at `feet`, if it does.
+/// How far along the segment (0 to 1) it first meets the upright cylinder of a body standing at `feet`, if it does:
+/// within the body's round and its height at once, and never behind where the segment starts. Numbers that are none
+/// meet nothing.
 fn cylinder_entry(feet: [f64; 3], from: [f64; 3], to: [f64; 3]) -> Option<f64> {
     let (start_x, start_y) = (from[0] - feet[0], from[1] - feet[1]);
     let (span_x, span_y) = (to[0] - from[0], to[1] - from[1]);
     let square = span_x * span_x + span_y * span_y;
     let inside = start_x * start_x + start_y * start_y - BODY_RADIUS * BODY_RADIUS;
-    let enter = if square < 1e-12 {
-        if inside > 0.0 {
-            return None;
-        }
-        0.0
+    // The shares of the segment within the body's round: where the line enters it and where it leaves.
+    let (enter, leave) = if square < 1e-12 {
+        (0.0, if inside > 0.0 { -1.0 } else { 1.0 })
     } else {
         let half = start_x * span_x + start_y * span_y;
         let reach = half * half - square * inside;
-        if reach < 0.0 {
+        if reach.is_nan() || reach < 0.0 {
             return None;
         }
-        ((-half - reach.sqrt()) / square).max(0.0)
+        let root = reach.sqrt();
+        (((-half - root) / square).max(0.0), ((-half + root) / square).min(1.0))
     };
-    if enter > 1.0 {
+    if enter.is_nan() || leave.is_nan() || enter > leave {
         return None;
     }
-    let height = from[2] + (to[2] - from[2]) * enter - feet[2];
-    (0.0..=BODY_HEIGHT).contains(&height).then_some(enter)
+    // Within the round, the first share where it is within the body's height too: a line falls or rises into it.
+    let height = |share: f64| from[2] + (to[2] - from[2]) * share - feet[2];
+    let (first, last) = (height(enter), height(leave));
+    if (0.0..=BODY_HEIGHT).contains(&first) {
+        return Some(enter);
+    }
+    let edge = if first > BODY_HEIGHT { BODY_HEIGHT } else { 0.0 };
+    let share = enter + (leave - enter) * (edge - first) / (last - first);
+    (enter..=leave).contains(&share).then_some(share)
 }

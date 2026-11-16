@@ -7,15 +7,17 @@ import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls 
 import { type FighterView, fighterView, glanceFrom, glanceView } from '../rules/fighters.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
- *  and its action's kind (12 for the dead). */
+ *  and its action's kind (0 at rest, 12 for the dead). */
 const ARMS_AT = 22 + 1;
 const BLOWS_AT = 22 + 21;
 const ACTION_AT = 22 + 23;
+const IDLE = 0;
 const DEAD = 12;
 
-/** The fighter holding these arms, as the room sets them from each input before it steps it: the dead hold theirs. */
+/** The fighter holding these arms, as the room sets them from each input before it steps it (combat's
+ *  `Fighter::holding`): taken up only at rest or dead, never in the middle of a swing, a guard, a draw or a reload. */
 function armed(fighter: Float64Array, arms: number): Float64Array {
-  if (fighter[ACTION_AT] === DEAD) return fighter;
+  if (fighter[ACTION_AT] !== IDLE && fighter[ACTION_AT] !== DEAD) return fighter;
   const holding = fighter.slice();
   holding[ARMS_AT] = arms;
   return holding;

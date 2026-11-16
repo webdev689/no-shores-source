@@ -74,10 +74,15 @@ fn a_swing_moves_slowly_and_turns_its_blow_after_the_lock_target_in_reach() {
     let (fighter, _) = run(player_at(0.0, 0.0), walking, 20, None);
     let walked = -fighter.body.y;
     assert!(walked > 0.4 && walked < 0.6, "a swing walks at a third of 4.43 m/s: {walked}");
-    // A foe 2 m due east, the look north: the wind-up turns the aim east, 9 degrees a tick.
-    let (turned, _) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Right), 12, Some([2.0, 0.0, 1.1]));
-    assert!((turned.aim - core::f64::consts::FRAC_PI_2).abs() < 1e-9, "aim {}", turned.aim);
+    // A foe 2 m away 60 degrees east of the look north: the wind-up turns the aim to it, 9 degrees a tick.
+    let sixty = core::f64::consts::FRAC_PI_3;
+    let off_look = [2.0 * libm::sin(sixty), -2.0 * libm::cos(sixty), 1.1];
+    let (turned, _) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Right), 12, Some(off_look));
+    assert!((turned.aim - sixty).abs() < 1e-9, "aim {}", turned.aim);
     assert!((turned.body.facing - turned.aim).abs() < 1e-9, "the body faces its swing");
+    // Due east, past the lock's arc of the look: the look was turned from it, so the swing keeps to the look.
+    let (looked, _) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Right), 12, Some([2.0, 0.0, 1.1]));
+    assert!(looked.aim.abs() < 1e-9, "aim {}", looked.aim);
     // Beyond its reach and the steer, the swing keeps to the look.
     let (kept, _) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Right), 12, Some([20.0, 0.0, 1.1]));
     assert!(kept.aim.abs() < 1e-9);
@@ -130,4 +135,20 @@ fn a_dodge_pressed_in_a_swings_wind_up_cancels_it() {
     assert!(matches!(dodged.action, Action::Dodge { .. }));
     assert_eq!(happenings, vec![(0, Happening::Dodged)]);
     let _ = SWORD;
+}
+
+#[test]
+fn an_arms_code_names_only_hands_someone_could_hold() {
+    use combat::arms::{Arms, Ranged, arms_of};
+    for (right, left) in
+        [("warhammer_iron", ""), ("sword_iron", "shield_kite_steel"), ("bow_short_iron", ""), ("", "dagger_iron_l")]
+    {
+        let arms = arms_of(right, left, true);
+        assert_eq!(Arms::from_code(arms.code()), arms, "{right} and {left} cross whole");
+    }
+    let forged =
+        |melee: WeaponClass, ranged: Option<Ranged>, off_hand: OffHand| Arms { melee, ranged, off_hand }.code();
+    let bare = Arms::from_code(0);
+    assert_eq!(Arms::from_code(forged(WeaponClass::Warhammer, None, OffHand::Shield)), bare, "two hands and a shield");
+    assert_eq!(Arms::from_code(forged(WeaponClass::Sword, Some(Ranged::Thunderlock), OffHand::Empty)), bare);
 }

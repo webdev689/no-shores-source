@@ -63,6 +63,7 @@ impl Room {
                     self.board.forget(foe);
                 }
                 self.foes.clear();
+                self.groups.clear();
                 self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
                 continue;
             }
@@ -92,12 +93,19 @@ impl Room {
     /// would.
     pub(crate) fn step_foes(&mut self) {
         let fighters = self.fighters();
+        // A player just stood again is left be until their grace ends or they strike.
+        let clock = self.clock;
+        let noticed: Vec<(FighterId, Fighter)> = fighters
+            .iter()
+            .filter(|(id, _)| self.players.get(id).is_none_or(|found| found.graced <= clock))
+            .copied()
+            .collect();
         let ids: Vec<FighterId> = self.foes.keys().copied().collect();
         let mut intents = Vec::with_capacity(ids.len());
         {
             let routes = MeshRoutes { mesh: &self.nav };
             let world =
-                World { tick: self.clock, seed: self.seed, fighters: &fighters, blocks: &self.blocks, routes: &routes };
+                World { tick: self.clock, seed: self.seed, fighters: &noticed, blocks: &self.blocks, routes: &routes };
             for id in &ids {
                 let Some(foe) = self.foes.get(id) else { continue };
                 intents.push((*id, think(*id, &foe.brain, &mut self.board, &world)));
@@ -127,7 +135,10 @@ impl Room {
     /// player near enough to stand in its shape, as each saw it, and found by no one, overreaches its foe.
     pub(crate) fn telegraph_lands(&mut self, id: FighterId, foe: &Fighter, telegraph: &Telegraph) {
         if telegraph.shape == Shape::Aimed {
-            let mut shot = loose(id, Ranged::Bow, foe.chest(), telegraph.bearing, 0.0, 1.0);
+            // Aimed up for the arrow's fall over the line's length, as a drawn shot is.
+            let flight = telegraph.ahead / (shot_numbers(Ranged::Bow).0 * AIMED_SPEED);
+            let pitch = libm::atan2(0.5 * combat::shots::FALL * flight * flight, telegraph.ahead.max(0.1));
+            let mut shot = loose(id, Ranged::Bow, foe.chest(), telegraph.bearing, pitch, 1.0);
             shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
             shot.damage = shot_numbers(Ranged::Bow).1 * AIMED_DAMAGE * foe.might;
             self.shots.push(shot);

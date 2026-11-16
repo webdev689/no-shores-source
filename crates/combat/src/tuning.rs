@@ -7,7 +7,7 @@ const DEGREES: f64 = core::f64::consts::PI / 180.0;
 /// Stamina: the pool, how long it rests after being spent before it comes back, and how fast.
 pub const STAMINA: f64 = 100.0;
 pub const STAMINA_REST: u32 = 30;
-pub const STAMINA_PER_TICK: f64 = 35.0 / 60.0;
+pub const STAMINA_PER_TICK: f64 = 45.0 / 60.0;
 /// Holding a guard, stamina comes back this much slower.
 pub const STAMINA_GUARDING: f64 = 0.4;
 
@@ -25,6 +25,10 @@ pub const POISE_REST: u32 = 120;
 pub const POISE_IMMUNE: u32 = 180;
 /// A staggered fighter takes this much more.
 pub const STAGGER_TAKEN: f64 = 1.25;
+
+/// A press is kept this many ticks: one made while the fighter is busy (a dodge in a swing's blow, a guard late in a
+/// wind-up) is acted on as soon as it can be.
+pub const PRESS_KEPT: u8 = 8;
 
 /// A swing: moving while it is struck, and how fast its aim turns after the soft lock's target.
 pub const ATTACK_PACE: f64 = 0.35;
@@ -53,7 +57,7 @@ pub const GUARD_BROKEN_TAKEN: f64 = 0.5;
 pub const PARRY_PLAYS: u32 = 18;
 pub const PARRIED: u32 = 54;
 /// A riposte strikes this much harder, and no guard stops it.
-pub const RIPOSTE_DAMAGE: f64 = 2.5;
+pub const RIPOSTE_DAMAGE: f64 = 2.0;
 
 /// The dodge: what it costs, its hop (rise in m/s and speed along the ground), how long it lasts, when blows pass
 /// through it, the first stretch of that which is a perfect dodge, and when a swing may follow it.
@@ -62,7 +66,7 @@ pub const DODGE_LIFT: f64 = 3.0;
 pub const DODGE_SPEED: f64 = 10.0;
 pub const DODGE_TICKS: u32 = 26;
 pub const DODGE_SAFE: (u32, u32) = (1, 18);
-pub const DODGE_PERFECT: u32 = 9;
+pub const DODGE_PERFECT: u32 = 12;
 pub const DODGE_ATTACK: u32 = 18;
 /// A perfect dodge's counter: how long it waits for a swing, and what that swing does; and the stamina it gives back.
 pub const COUNTER_TICKS: u32 = 48;
@@ -70,8 +74,9 @@ pub const COUNTER_DAMAGE: f64 = 1.5;
 pub const COUNTER_POISE: f64 = 2.0;
 pub const COUNTER_STAMINA: f64 = 15.0;
 
-/// A player struck and not guarding flinches this long.
+/// A player struck and not guarding flinches this long, and may dodge out of it this far in.
 pub const FLINCH: u32 = 15;
+pub const FLINCH_DODGE: u32 = 8;
 /// Knocked down by an iron slam.
 pub const KNOCKED_DOWN: u32 = 60;
 
@@ -83,15 +88,20 @@ pub const PUNISH_IRON: u32 = 18;
 /// The soft lock: how far it takes a target, how far it holds one, the arc it looks in, how far turned away it lets
 /// go, and for how long turned away or out of sight.
 pub const LOCK_RANGE: f64 = 9.0;
-pub const LOCK_BREAK: f64 = 14.0;
+pub const LOCK_BREAK: f64 = 15.0;
 pub const LOCK_ARC: f64 = 70.0 * DEGREES;
 pub const LOCK_AWAY: f64 = 110.0 * DEGREES;
 pub const LOCK_AWAY_TICKS: u32 = 30;
-pub const LOCK_UNSEEN_TICKS: u32 = 60;
+pub const LOCK_UNSEEN_TICKS: u32 = 90;
+/// A swing or a guard keeps its lock's target over a better one unless that one is better by this much (in the score
+/// `choose` ranks by), so the lock does not flick between two foes side by side.
+pub const LOCK_KEEP: f64 = 0.3;
 
 /// A body's radius and height, as blows and shots find it.
 pub const BODY_RADIUS: f64 = 0.35;
 pub const BODY_HEIGHT: f64 = 1.8;
+/// A chest stands this high over its feet: where blows, shots and sight are aimed.
+pub const CHEST: f64 = 1.1;
 /// A blow reaches a body within this much height of the striker's feet.
 pub const STRIKE_HEIGHT: f64 = 1.4;
 /// Close in, a blow reaches round to this off its aim whatever its stroke.

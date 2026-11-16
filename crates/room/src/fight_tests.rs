@@ -40,7 +40,7 @@ fn asking(sequence: u32, seen: u64, combat: CombatInput) -> Input {
 #[test]
 fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     let foe = stand_foe(&mut room);
     assert_eq!(combat::Arms::from_code(SWORD).melee, WeaponClass::Sword);
     let chop = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
@@ -60,7 +60,7 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
 #[test]
 fn a_blow_on_a_player_waits_for_their_view_and_is_judged_as_they_stood_then() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     let (foe, striker) = far_foe(&mut room);
     // The player's screen lags: every input sees the room 6 ticks behind its clock.
     let lag = 6;
@@ -98,7 +98,7 @@ fn a_blow_on_a_player_waits_for_their_view_and_is_judged_as_they_stood_then() {
 #[test]
 fn a_blow_waits_no_longer_than_a_view_may_lag() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     let (foe, striker) = far_foe(&mut room);
     let attack = combat::fighter::Attack {
         stroke: Stroke::Down,
@@ -120,7 +120,7 @@ fn a_blow_waits_no_longer_than_a_view_may_lag() {
 #[test]
 fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     let foe = stand_foe(&mut room);
     let mut archer = *room.fighter(player).unwrap();
     archer.arms =
@@ -143,7 +143,7 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
 #[test]
 fn a_dead_player_stands_again_at_the_spawn_whole() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     let mut dead = *room.fighter(player).unwrap();
     dead.health = 0.0;
     dead.action = Action::Dead { elapsed: 0 };

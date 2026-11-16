@@ -4,7 +4,7 @@
 
 use crate::fighter::{Fighter, FighterId};
 use crate::sight::{apart, bearing, clear_line, off};
-use crate::tuning::{LOCK_ARC, LOCK_AWAY, LOCK_AWAY_TICKS, LOCK_BREAK, LOCK_RANGE, LOCK_UNSEEN_TICKS};
+use crate::tuning::{LOCK_ARC, LOCK_AWAY, LOCK_AWAY_TICKS, LOCK_BREAK, LOCK_KEEP, LOCK_RANGE, LOCK_UNSEEN_TICKS};
 use movement::Block;
 
 /// Whether one fighter sees another's chest, nothing between.
@@ -13,8 +13,17 @@ pub fn sees(blocks: &[Block], from: &Fighter, to: &Fighter) -> bool {
     clear_line(blocks, from.chest(), to.chest())
 }
 
-/// The foe a fighter looking along `yaw` would take: alive, on another side, within range, in sight and within the
-/// lock's arc of the look; the one nearest the look and nearest by distance, by equal shares.
+/// How a foe ranks for a lock looking along `yaw` (lower is better), or none if it cannot be taken: alive, on
+/// another side, within range, in sight and within the lock's arc of the look. Nearness to the look and nearness by
+/// distance count by equal shares.
+fn score(me: &Fighter, yaw: f64, other: &Fighter, blocks: &[Block]) -> Option<f64> {
+    let (at, there) = ([me.body.x, me.body.y], [other.body.x, other.body.y]);
+    let (distance, turn) = (apart(at, there), off(yaw, bearing(at, there)));
+    let takes = other.side != me.side && !other.dead() && distance <= LOCK_RANGE && turn <= LOCK_ARC;
+    (takes && sees(blocks, me, other)).then_some(turn / LOCK_ARC + distance / LOCK_RANGE)
+}
+
+/// The foe a fighter looking along `yaw` would take: the best ranked, ties to the lower number.
 #[must_use]
 pub fn choose(
     me_id: FighterId,
@@ -23,17 +32,10 @@ pub fn choose(
     fighters: &[(FighterId, Fighter)],
     blocks: &[Block],
 ) -> Option<FighterId> {
-    let at = [me.body.x, me.body.y];
     fighters
         .iter()
-        .filter(|(id, other)| *id != me_id && other.side != me.side && !other.dead())
-        .filter_map(|(id, other)| {
-            let there = [other.body.x, other.body.y];
-            let distance = apart(at, there);
-            let turn = off(yaw, bearing(at, there));
-            (distance <= LOCK_RANGE && turn <= LOCK_ARC && sees(blocks, me, other))
-                .then_some((turn / LOCK_ARC + distance / LOCK_RANGE, *id))
-        })
+        .filter(|(id, _)| *id != me_id)
+        .filter_map(|(id, other)| score(me, yaw, other, blocks).map(|score| (score, *id)))
         .min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))
         .map(|(_, id)| id)
 }
@@ -61,19 +63,22 @@ fn let_go(me: &Fighter) -> Fighter {
     Fighter { target: None, lock_away: 0, lock_unseen: 0, ..*me }
 }
 
-/// The lock as a swing or a guard begins: a fighter with no target, or one off the lock's arc of its look, takes the
-/// foe it would choose now, if any.
+/// The lock as a swing or a guard begins: it takes the foe it would choose now, but keeps the one it holds while that
+/// one is still to be taken and no worse than LOCK_KEEP behind the best, so it does not flick between neighbours.
+/// Nothing to choose, it keeps what it holds.
 #[must_use]
 pub fn take(me_id: FighterId, me: &Fighter, yaw: f64, fighters: &[(FighterId, Fighter)], blocks: &[Block]) -> Fighter {
-    let keeps = me
-        .target
-        .and_then(|target| fighters.iter().find(|(id, _)| *id == target))
-        .is_some_and(|(_, other)| off(yaw, bearing([me.body.x, me.body.y], [other.body.x, other.body.y])) <= LOCK_ARC);
-    if keeps {
+    let Some(best) = choose(me_id, me, yaw, fighters, blocks) else { return *me };
+    let rank = |id: FighterId| {
+        fighters.iter().find(|(each, _)| *each == id).and_then(|(_, other)| score(me, yaw, other, blocks))
+    };
+    let kept = me.target.and_then(|held| rank(held).map(|held_rank| (held, held_rank)));
+    let target = match (kept, rank(best)) {
+        (Some((held, held_rank)), Some(best_rank)) if held_rank <= best_rank + LOCK_KEEP => held,
+        _ => best,
+    };
+    if me.target == Some(target) {
         return *me;
     }
-    match choose(me_id, me, yaw, fighters, blocks) {
-        Some(target) => Fighter { target: Some(target), lock_away: 0, lock_unseen: 0, ..*me },
-        None => *me,
-    }
+    Fighter { target: Some(target), lock_away: 0, lock_unseen: 0, ..*me }
 }

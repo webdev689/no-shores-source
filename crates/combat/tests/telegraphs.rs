@@ -95,3 +95,33 @@ fn a_missed_blow_leaves_its_foe_overreached_longer_for_iron_and_for_a_perfect_do
     let iron = Telegraph { iron: true, ..telegraph(Shape::Slam, 0.0, 0.0) };
     assert_eq!(overreached(&foe, &iron, false).punished, 72 + 18);
 }
+
+#[test]
+fn a_quick_charge_runs_its_lane_and_no_further() {
+    // Wound up 40 ticks, it turns after a target that walks off its line; it must still run 9 m from where it set off.
+    let mut foe = foe_at(0.0, 0.0, FRAC_PI_2);
+    let mut start = None;
+    for tick in 0..40 {
+        let target = [2.0 + f64::from(tick) * 0.2, f64::from(tick) * 0.1, 1.1];
+        let intent = telegraphing(order(Shape::Charge, 40, FRAC_PI_2, 0.0));
+        let around = combat::Surroundings { blocks: &[], target_at: Some(target) };
+        foe = combat::step_fighter(&foe, &intent, &around).0;
+        if let Action::Telegraph(telegraph) = foe.action
+            && f64::from(telegraph.elapsed) >= f64::from(telegraph.windup - telegraph.travel_ticks())
+        {
+            start.get_or_insert(telegraph.origin);
+        }
+    }
+    let start = start.expect("it set off");
+    let run = combat::sight::apart([foe.body.x, foe.body.y], [start[0], start[1]]);
+    assert!(run <= 9.0 + 1e-6, "ran {run} m");
+}
+
+#[test]
+fn a_shapes_blow_stops_at_a_wall_and_does_not_reach_a_body_high_above() {
+    let ring = Telegraph::begin(&order(Shape::Ring, 40, 0.0, 0.0), [0.0, 0.0, 0.0]);
+    assert!(ring.strikes([0.0, -3.0, 0.0], &[]));
+    let wall = [movement::Block { min_x: -1.0, min_y: -2.2, max_x: 1.0, max_y: -2.0, top: 3.0 }];
+    assert!(!ring.strikes([0.0, -3.0, 0.0], &wall), "behind a wall");
+    assert!(!ring.strikes([0.0, -3.0, 3.0], &[]), "up on a block three metres high");
+}

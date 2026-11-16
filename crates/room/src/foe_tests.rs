@@ -31,7 +31,7 @@ fn stand_still(room: &mut Room, player: PlayerId, first: u32, ticks: u32) -> Vec
 #[test]
 fn a_player_asks_for_foes_that_stand_before_them_and_sends_them_all_away() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     room.input(player, asking(&room, 1, Some(Kind::Swordsman as u8), Controls::default())).unwrap();
     room.tick();
     let spawned: Vec<FoeSeen> = room.foes_seen().collect();
@@ -62,7 +62,7 @@ fn a_player_asks_for_foes_that_stand_before_them_and_sends_them_all_away() {
 #[test]
 fn a_foe_fights_a_player_who_stands_still_until_they_fall_and_they_stand_again() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     room.input(player, asking(&room, 1, Some(Kind::Swordsman as u8), Controls::default())).unwrap();
     room.tick();
     let foe = room.foes_seen().next().unwrap().foe;
@@ -77,7 +77,7 @@ fn a_foe_fights_a_player_who_stands_still_until_they_fall_and_they_stand_again()
 #[test]
 fn a_telegraphed_blow_found_by_no_one_overreaches_its_foe_and_one_on_a_player_waits_for_their_view() {
     let mut room = room();
-    let player = room.join();
+    let player = room.join().expect("a room with space");
     room.input(player, asking(&room, 1, Some(Kind::Brute as u8), Controls::default())).unwrap();
     room.tick();
     let foe = room.foes_seen().next().unwrap().foe;
@@ -98,7 +98,7 @@ fn a_telegraphed_blow_found_by_no_one_overreaches_its_foe_and_one_on_a_player_wa
 fn the_same_inputs_play_the_same_fight() {
     let play = || {
         let mut room = room();
-        let player = room.join();
+        let player = room.join().expect("a room with space");
         for kind in [Kind::Skirmisher, Kind::Swordsman, Kind::Archer] {
             let sequence = room.players[&player].received + 1;
             room.input(player, asking(&room, sequence, Some(kind as u8), Controls::default())).unwrap();
