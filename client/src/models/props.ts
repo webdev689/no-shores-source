@@ -35,5 +35,5 @@ export function propModel(table: PropTable, id: number): ForgedModel | null {
     : { add: AGAINST_PLUS_Z.has(id) ? parts.mirror(fit.z0 + fit.z1) : parts, fit, doors: [] };
   const looks: readonly Picture[] = measure.looks.length ? measure.looks : [PLAIN_WOOD];
   PROP_FAMILIES[role](view.add, view.fit, looks, { ...measure, doors: view.doors }, id);
-  return withDoors(parts.model(), measure, fit);
+  return withDoors(parts.model(), { ...measure, looks }, fit);
 }

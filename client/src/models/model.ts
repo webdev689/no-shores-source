@@ -40,6 +40,8 @@ export type ModelDoor = {
 /** A picture: Daggerfall's texture archive and record, and its width and height in texels. */
 export type Picture = readonly [archive: number, record: number, width: number, height: number];
 
+import { cross, dot, minus } from './vector.ts';
+
 type Bucket = {
   archive: number;
   record: number;
@@ -92,14 +94,8 @@ export function meshBuilder(): MeshBuilder {
     return into;
   };
   /** Whether (b - a) x (c - a) of the corners points along `normal` (or across it). */
-  const facesNormal = (corners: readonly (readonly number[])[], normal: readonly number[]): boolean => {
-    const edgeA = [corners[1][0] - corners[0][0], corners[1][1] - corners[0][1], corners[1][2] - corners[0][2]],
-      edgeB = [corners[2][0] - corners[0][0], corners[2][1] - corners[0][1], corners[2][2] - corners[0][2]];
-    const crossX = edgeA[1] * edgeB[2] - edgeA[2] * edgeB[1],
-      crossY = edgeA[2] * edgeB[0] - edgeA[0] * edgeB[2],
-      crossZ = edgeA[0] * edgeB[1] - edgeA[1] * edgeB[0];
-    return crossX * normal[0] + crossY * normal[1] + crossZ * normal[2] >= 0;
-  };
+  const facesNormal = (corners: readonly (readonly number[])[], normal: readonly number[]): boolean =>
+    dot(cross(minus(corners[1], corners[0]), minus(corners[2], corners[0])), normal) >= 0;
   return {
     quad(picture, corners, normal, mapping) {
       const base = bucket(picture[0], picture[1]).positions.length / 3;

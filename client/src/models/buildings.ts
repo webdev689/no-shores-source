@@ -6,7 +6,7 @@ import type { BuildingMeasure, BuildingTable, MeasuredDoor } from './tables.ts';
 import { boxFrame, type Frame } from './frame.ts';
 import { partBuilder, type PartBuilder } from './parts.ts';
 import { withDoors } from './doors.ts';
-import { planOf, roofOf, seedOf, type Block, type Plan } from './buildingPlan.ts';
+import { openBeside, planOf, roofOf, seedOf, type Block, type Plan } from './buildingPlan.ts';
 import { randomFromSeed } from './random.ts';
 
 /** A flat roof's parapet: its height and its thickness (m). */
@@ -245,8 +245,7 @@ function parapet(add: PartBuilder, look: readonly number[], block: Block, blockA
   const [high, thick] = PARAPET_M;
   const top = Math.min(block.top + high, fit.y1);
   if (top - block.top < 0.05) return;
-  const edge = (cells: readonly (Block | null)[]): boolean =>
-    cells.every((cell) => !cell || cell.top < block.top - 0.05);
+  const edge = (cells: readonly (Block | null)[]): boolean => openBeside(block, cells);
   const columns = Array.from({ length: block.column1 - block.column0 }, (unused, k) => block.column0 + k),
     rows = Array.from({ length: block.row1 - block.row0 }, (unused, k) => block.row0 + k);
   if (edge(columns.map((column) => blockAt(column, block.row0 - 1))))
