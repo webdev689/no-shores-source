@@ -50,6 +50,26 @@ export interface Swell {
   readonly goneDepthM: number;
 }
 
+/** What the helm asks for a tick (crates/sailing/src/ship.rs Helm): the rudder from -1 (port) to 1 (starboard), the
+ *  oars pulling her sideways, and a rung up or down the ladder for the first tick. */
+export interface Helm {
+  readonly steer: number;
+  readonly crab: boolean;
+  readonly climb: -1 | 0 | 1;
+}
+
+/** How a ship lies: her waterline's height (metres), her bow's rise and her heel to starboard (radians), and whether
+ *  her keel touches the ground. */
+export interface Pose {
+  readonly heave: number;
+  readonly pitch: number;
+  readonly roll: number;
+  readonly aground: boolean;
+}
+
+/** A ship's numbers in the sailing crate's order: x, y, heading, ahead, abeam, turn, sail way, rung. */
+export type ShipFloats = Float64Array<ArrayBuffer>;
+
 /** The water at a point of the ground, and its surface. */
 export interface WaterAt {
   readonly kind: 'dry' | 'sea' | 'lake' | 'river';
@@ -112,6 +132,8 @@ export interface LandRules {
   sample(points: readonly (readonly [number, number])[], time?: number): GroundSample;
   /** The open landmass's exact ground over a grid, for a close look. */
   patch(left: number, top: number, step: number, width: number, height: number): GroundPatch;
+  /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
+  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
 }
 
 interface LandExports {
@@ -125,6 +147,7 @@ interface LandExports {
   land_write(): bigint;
   land_sample(address: number, length: number): bigint;
   land_patch(address: number, length: number): bigint;
+  land_sail(address: number, length: number): bigint;
 }
 
 interface ViewHeader {
@@ -221,8 +244,8 @@ function takeText(exports: LandExports, packed: bigint): string {
 export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
   const { instance } = await WebAssembly.instantiate(moduleBytes);
   const exports = instance.exports as unknown as LandExports;
-  const send = (entry: (address: number, length: number) => bigint, text: string): bigint => {
-    const bytes = new TextEncoder().encode(text);
+  const send = (entry: (address: number, length: number) => bigint, request: string | Uint8Array): bigint => {
+    const bytes = typeof request === 'string' ? new TextEncoder().encode(request) : request;
     const address = exports.reserve(bytes.length);
     new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
     try {
@@ -260,6 +283,20 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         const marks = new Uint8Array(exports.memory.buffer.slice(start + cells * 12, start + cells * 13));
         const [heights, water, edges] = [floats(start), floats(start + cells * 4), floats(start + cells * 8)];
         return { left, top, step, width, height, heights, water, edges, marks };
+      } finally {
+        exports.release(address, length);
+      }
+    },
+    sail: (ship, helm, time, ticks) => {
+      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks]);
+      const packed = send(exports.land_sail, new Uint8Array(request.buffer));
+      const address = Number(packed >> 32n);
+      const length = Number(packed & 0xffff_ffffn);
+      try {
+        const { start } = readHeader(exports, address);
+        const numbers = new Float64Array(exports.memory.buffer.slice(start, start + 12 * 8));
+        const [heave = 0, pitch = 0, roll = 0, aground = 0] = numbers.subarray(8);
+        return { ship: numbers.slice(0, 8), pose: { heave, pitch, roll, aground: aground !== 0 } };
       } finally {
         exports.release(address, length);
       }

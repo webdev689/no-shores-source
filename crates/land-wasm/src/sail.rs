@@ -1,0 +1,81 @@
+//! A ship sailed over the open landmass. The request is little-endian 64-bit numbers: a ship, her helm, the world's
+//! time at her first tick, and how many ticks to step. The answer is a header (`{}`, or `{ "error" }`) and then her
+//! numbers after the last tick and her pose then, as 64-bit numbers too. The Sloop sails in the steady wind.
+
+use super::{OPEN, error_view, view_bytes};
+use land::sea::Swell;
+use sailing::floats::{HELM_FLOATS, SHIP_FLOATS};
+use sailing::pose::pose_of;
+use sailing::ship::{Helm, SAILS_SET, Ship, step_ship};
+use sailing::waters::{LandWaters, steady_wind};
+use sailing::{SLOOP, TICK_SECONDS};
+use serde_json::json;
+
+/// A ship, her helm, the time and the ticks.
+pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 2;
+/// The most ticks one request may step: a second's.
+pub const MOST_TICKS: f64 = 60.0;
+
+fn is_whole(number: f64) -> bool {
+    number == number.trunc()
+}
+
+/// The request's numbers, each checked: finite, a whole rung on the ladder, a whole climb of one at most, a rudder
+/// within its throw, and a whole number of ticks up to a second's.
+fn read(request: &[u8]) -> Result<([f64; SHIP_FLOATS], [f64; HELM_FLOATS], f64, u32), String> {
+    if request.len() != REQUEST_FLOATS * 8 {
+        return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
+    }
+    let numbers: Vec<f64> =
+        request.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect();
+    if !numbers.iter().all(|number| number.is_finite()) {
+        return Err("a ship's numbers must be finite".into());
+    }
+    let ship: [f64; SHIP_FLOATS] = numbers[..SHIP_FLOATS].try_into().map_err(|_| "a ship is 8 numbers")?;
+    let helm: [f64; HELM_FLOATS] =
+        numbers[SHIP_FLOATS..SHIP_FLOATS + HELM_FLOATS].try_into().map_err(|_| "a helm is 3 numbers")?;
+    let (time, ticks) = (numbers[REQUEST_FLOATS - 2], numbers[REQUEST_FLOATS - 1]);
+    let rung = ship[SHIP_FLOATS - 1];
+    let [steer, crab, climb] = helm;
+    if !is_whole(rung) || !(-1.0..=f64::from(SAILS_SET)).contains(&rung) {
+        return Err("her rung is a whole number from -1 to 2".into());
+    }
+    if !(-1.0..=1.0).contains(&steer) || !(crab == 0.0 || crab == 1.0) || ![-1.0, 0.0, 1.0].contains(&climb) {
+        return Err("her helm steers from -1 to 1, crabs or not, and climbs one rung at most".into());
+    }
+    if !is_whole(ticks) || !(0.0..=MOST_TICKS).contains(&ticks) {
+        return Err(format!("a request steps a whole number of ticks, up to {MOST_TICKS}"));
+    }
+    Ok((ship, helm, time, ticks as u32))
+}
+
+/// Steps the ship the request holds over the open landmass and answers her and her pose.
+#[must_use]
+pub fn sail_bytes(request: &[u8]) -> Vec<u8> {
+    let sailed = read(request).and_then(|(ship, helm, time, ticks)| {
+        OPEN.with(|open| {
+            let open = open.borrow();
+            let landmass = open.as_ref().ok_or("no landmass is open")?;
+            let swell = Swell::default();
+            let waters = LandWaters { ground: &landmass.surface, swell: &swell };
+            let wind = steady_wind(&swell);
+            let (mut ship, helm) = (Ship::from_floats(&ship), Helm::from_floats(&helm));
+            for tick in 0..ticks {
+                // A rung's climb is a press: it acts on the first tick alone.
+                let helm = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };
+                let now = time + f64::from(tick) * TICK_SECONDS;
+                ship = step_ship(&ship, &helm, &SLOOP, wind, &waters, now, TICK_SECONDS);
+            }
+            let pose = pose_of(&ship, &SLOOP, &waters, time + f64::from(ticks) * TICK_SECONDS);
+            Ok(ship.to_floats().into_iter().chain(pose.to_floats()).collect::<Vec<f64>>())
+        })
+    });
+    match sailed {
+        Ok(numbers) => {
+            let mut bytes = view_bytes(&json!({}), None);
+            numbers.iter().for_each(|number| bytes.extend_from_slice(&number.to_le_bytes()));
+            bytes
+        }
+        Err(error) => error_view(&error),
+    }
+}

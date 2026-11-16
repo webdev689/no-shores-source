@@ -1,5 +1,5 @@
-import type { Brush, LandPatch, LandView } from '../rules/landRules.ts';
-import type { CloseGround, LandWorker } from './landClient.ts';
+import type { Brush, Helm, LandPatch, LandView, ShipFloats } from '../rules/landRules.ts';
+import type { CloseGround, LandWorker, Sailed } from './landClient.ts';
 import type { LandState } from './landPanel.ts';
 import { markCells, type Places } from './marks.ts';
 
@@ -230,6 +230,11 @@ export class LandSession {
    *  open. */
   ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null> {
     return this.then(async () => (this.openId === id ? this.worker.ground(left, top, step, size, size) : null));
+  }
+
+  /** A ship sailed over a landmass; null when another is open. */
+  sail(id: string, ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed | null> {
+    return this.then(async () => (this.openId === id ? this.worker.sail(ship, helm, time, ticks) : null));
   }
 
   /** Whether a landmass is the one open for strokes. */

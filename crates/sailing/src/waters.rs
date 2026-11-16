@@ -1,5 +1,6 @@
 //! Where a ship meets the water: the bed under a point and the water's surface over it at a moment.
 
+use crate::helm::WIND_RATED;
 use land::ground::{Ground, WaterAt};
 use land::sea::Swell;
 
@@ -32,4 +33,10 @@ impl Waters for LandWaters<'_> {
         };
         Spot { bed, surface }
     }
+}
+
+/// The one steady wind until weather drives it: where the swell runs, at a ship's rated wind (m/s, east and south).
+#[must_use]
+pub fn steady_wind(swell: &Swell) -> [f64; 2] {
+    [WIND_RATED * libm::sin(swell.bearing), -WIND_RATED * libm::cos(swell.bearing)]
 }

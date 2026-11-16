@@ -250,3 +250,12 @@ fn land_waters_read_the_sea_and_the_lakes() {
     assert_eq!(waters.at(lake.0, lake.1, time).surface, Some(10.0));
     assert_eq!(waters.at(dry.0, dry.1, time).surface, None);
 }
+
+#[test]
+fn the_steady_wind_blows_where_the_swell_runs_at_its_rating() {
+    use crate::waters::steady_wind;
+    use land::sea::Swell;
+    let east = steady_wind(&Swell { bearing: FRAC_PI_2, ..Swell::default() });
+    assert!((east[0] - 1.5).abs() < 1e-12 && east[1].abs() < 1e-12, "{east:?}");
+    assert_eq!(steady_wind(&Swell { bearing: 0.0, ..Swell::default() }), [0.0, -1.5], "north");
+}

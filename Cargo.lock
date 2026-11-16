@@ -38,6 +38,7 @@ name = "land-wasm"
 version = "0.0.0"
 dependencies = [
  "land",
+ "sailing",
  "serde_json",
  "world",
 ]
