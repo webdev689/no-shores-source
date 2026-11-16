@@ -10,6 +10,7 @@ format and the ship's frame are in the Sailing note.
 import argparse
 import json
 import os
+import re
 import struct
 import sys
 
@@ -22,6 +23,9 @@ from r2 import PUBLIC, published, put  # noqa: E402
 
 MANIFEST = os.path.join(os.path.dirname(TOOLS), 'content', 'ships', 'ships.json')
 EMPTY_SLOT_GREY = (0.8, 0.8, 0.8)
+GUN_NAME = re.compile(r'Cannon\.(Port|Starboard)\.(\d+)$')
+# How near the barrel's outboard end a vertex lies to be its mouth's rim, metres.
+MOUTH_M = 0.01
 
 
 def srgb(linear):
@@ -149,6 +153,96 @@ def waterline(faces, level):
     return size, middle
 
 
+def guns(objects, offset):
+    """Every gun (an object named Cannon.Port.<n> or Cannon.Starboard.<n>, numbered fore to aft): its side, its mouth
+    (the middle of the barrel's outboard end) and its bore (the barrel's direction), in the ship's frame moved by
+    `offset`. A barrel lies along its mesh's longest axis."""
+    found = []
+    for item in objects:
+        named = GUN_NAME.match(item.name)
+        if not named or item.type != 'MESH':
+            continue
+        matrix = item.matrix_world
+        turn = matrix.to_3x3().normalized()
+        corners = [matrix @ vertex.co for vertex in item.data.vertices]
+        middle_y = sum(corner.y for corner in corners) / len(corners)
+
+        def span(axis):
+            along = [corner.dot(turn.col[axis]) for corner in corners]
+            return max(along) - min(along)
+
+        bore = turn.col[max(range(3), key=span)]
+        if bore.y * middle_y < 0:
+            bore = -bore
+        end = max(corner.dot(bore) for corner in corners)
+        rim = [corner for corner in corners if corner.dot(bore) >= end - MOUTH_M]
+        mouth = [sum(corner[axis] for corner in rim) / len(rim) for axis in range(3)]
+        found.append({
+            'name': item.name,
+            'side': named.group(1).lower(),
+            'mouth_m': [round(value + shift, 4) for value, shift in zip((mouth[0], -mouth[1], mouth[2]), offset)],
+            'bore': [round(value, 4) for value in (bore.x, -bore.y, bore.z)],
+        })
+    found.sort(key=lambda gun: (gun['side'], int(GUN_NAME.match(gun['name']).group(2))))
+    for gun, ahead in zip(found, found[1:]):
+        if gun['side'] == ahead['side'] and gun['mouth_m'][0] <= ahead['mouth_m'][0]:
+            sys.exit(f"{gun['name']} is not ahead of {ahead['name']}: number a side's guns fore to aft")
+    return found
+
+
+def bounds(points):
+    """The box round some points: its low and high corners."""
+    return [[round(min(point[axis] for point in points), 4) for axis in range(3)],
+            [round(max(point[axis] for point in points), 4) for axis in range(3)]]
+
+
+def boxes(depsgraph, offset):
+    """What a ball can strike, in the ship's frame moved by `offset`: her hull (the box round every face in a named
+    material other than a sail) and her sails (a box round each connected piece of a material named sail). Faces in an
+    empty slot, her spars and rigging, take no balls."""
+    hidden = render_hidden(bpy.context.scene)
+    hull, pieces = [], []
+    for instance in depsgraph.object_instances:
+        item = instance.object
+        if item.type != 'MESH' or not rendered(instance, hidden) or GUN_NAME.match(item.original.name):
+            continue
+        mesh = item.to_mesh()
+        mesh.transform(instance.matrix_world.copy())
+        names = [slot.material.name.lower() if slot.material else None for slot in item.material_slots]
+        # The canvas's pieces: faces of a sail material joined through the vertices they share.
+        joined = {}
+
+        def root(vertex):
+            while joined.setdefault(vertex, vertex) != vertex:
+                vertex = joined[vertex]
+            return vertex
+
+        canvas = []
+        for polygon in mesh.polygons:
+            name = names[polygon.material_index] if names else None
+            corners = [mesh.vertices[index].co for index in polygon.vertices]
+            points = [(corner.x + offset[0], -corner.y + offset[1], corner.z + offset[2]) for corner in corners]
+            if name is None:
+                continue
+            if name.startswith('sail'):
+                first = root(polygon.vertices[0])
+                for index in polygon.vertices[1:]:
+                    joined[root(index)] = first
+                canvas.append((polygon.vertices[0], points))
+            else:
+                hull.extend(points)
+        by_piece = {}
+        for vertex, points in canvas:
+            by_piece.setdefault(root(vertex), []).extend(points)
+        pieces.extend(by_piece.values())
+        item.to_mesh_clear()
+    if not hull:
+        sys.exit('no face of the model is in a named material, so she has no hull to strike')
+    # Fore to aft, as the guns are numbered.
+    sails = sorted((bounds(points) for points in pieces), key=lambda box: -box[1][0])
+    return {'hull': bounds(hull), 'sails': sails}
+
+
 def moved(faces, offset):
     """The triangles with their corners moved by `offset` (x, y, z)."""
     def shifted(position):
@@ -182,7 +276,7 @@ def mesh_bytes(name, faces, size):
     return header, struct.pack('<I', len(text)) + text + bytes(vertices) + struct.pack(f'<{len(indices)}I', *indices)
 
 
-def publish(name, blend_path, mesh, size):
+def publish(name, blend_path, mesh, size, armed, struck):
     with open(blend_path, 'rb') as file:
         source = put(file.read(), 'sources', 'blend', 'application/octet-stream')
     shape = put(mesh, 'ships', 'mesh', 'application/octet-stream')
@@ -190,7 +284,7 @@ def publish(name, blend_path, mesh, size):
     if os.path.exists(MANIFEST):
         with open(MANIFEST) as file:
             manifest = json.load(file)
-    manifest['ships'][name] = {'mesh': shape, 'source': source, 'waterline': size}
+    manifest['ships'][name] = {'mesh': shape, 'source': source, 'waterline': size, 'guns': armed, 'boxes': struck}
     for key in (shape, source):
         published(manifest, key)
     os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
@@ -213,13 +307,18 @@ def main():
     if outward < 0.99:
         sys.exit(f'only {outward:.1%} of the faces are wound outward: recalculate the normals in Blender (Shift+N)')
     size, (middle_x, middle_y) = waterline(faces, args.waterline)
-    header, mesh = mesh_bytes(args.name, moved(faces, (-middle_x, -middle_y, -args.waterline)), size)
+    offset = (-middle_x, -middle_y, -args.waterline)
+    armed = guns(bpy.data.objects, offset)
+    struck = boxes(bpy.context.evaluated_depsgraph_get(), offset)
+    header, mesh = mesh_bytes(args.name, moved(faces, offset), size)
+    print(json.dumps(armed))
+    print(json.dumps(struck))
     print(json.dumps(header), f'{len(mesh) / 2 ** 20:.2f} MiB')
     if args.dry_run:
         with open(f'{args.name}.mesh', 'wb') as file:
             file.write(mesh)
         return
-    publish(args.name, args.blend, mesh, size)
+    publish(args.name, args.blend, mesh, size, armed, struck)
 
 
 if __name__ == '__main__':

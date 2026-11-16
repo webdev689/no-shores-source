@@ -362,3 +362,22 @@ fn land_waters_float_her_on_a_carved_river() {
     assert!(surface > spot.bed, "the river stands over its bed");
     assert_eq!(waters.at(20_000.0, 25_000.0, 7.0).surface, None, "the bank 5 km off is dry");
 }
+
+#[test]
+fn a_pull_on_her_sails_or_oars_holds_her_to_its_share_of_her_way() {
+    let mut ship = at_rest(0.0, 2);
+    let torn = Pull { sail: 0.35, oars: 1.0 };
+    for tick in 0..600 {
+        ship = step_pulled(&ship, &STILL, &SLOOP, EAST, &Flat, f64::from(tick) * TICK_SECONDS, TICK_SECONDS, torn);
+    }
+    assert!((ship.ahead - 0.35 * way_under_sail(90.0)).abs() < 1e-9, "{}", ship.ahead);
+    let mut rowed = at_rest(0.0, 1);
+    let wrecked = Pull { sail: 0.0, oars: 0.35 };
+    for tick in 0..600 {
+        rowed = step_pulled(&rowed, &STILL, &SLOOP, EAST, &Flat, f64::from(tick) * TICK_SECONDS, TICK_SECONDS, wrecked);
+    }
+    assert!((rowed.ahead - 0.35 * HANDLING.move_speed_oar).abs() < 1e-9, "{}", rowed.ahead);
+    let whole = Pull { sail: 1.0, oars: 1.0 };
+    let once = step_pulled(&full_way_north(), &STILL, &SLOOP, EAST, &Flat, 10.0, TICK_SECONDS, whole);
+    assert_eq!(once, step_ship(&full_way_north(), &STILL, &SLOOP, EAST, &Flat, 10.0, TICK_SECONDS));
+}

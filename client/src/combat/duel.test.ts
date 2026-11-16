@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { LocalRoom } from '../network/localRoom.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
-import { startFightRules } from '../rules/fightRules.ts';
+import { startCombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import { Fighting } from './fighting.ts';
 
@@ -28,7 +28,7 @@ const ANSWER_BEFORE = 5;
 function duel(answer: Answer): string[] {
   let fight: Fighting | null = null;
   const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
-  const rules = startFightRules(compiled);
+  const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
   fight = fighting;

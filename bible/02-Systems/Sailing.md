@@ -7,6 +7,7 @@ code:
   - crates/sailing/src/helm.rs#sail_power
   - crates/sailing/src/hull.rs#SLOOP
   - crates/sailing/src/ship.rs#step_ship
+  - crates/sailing/src/ship.rs#step_pulled
   - crates/sailing/src/pose.rs#pose_of
   - crates/sailing/src/waters.rs#LandWaters
   - crates/sailing/src/waters.rs#steady_wind
@@ -40,6 +41,8 @@ rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop
 - **Her pose.** She takes the mean of the water under her bow, stern, sides and middle as her height, and its slope
   along and across her as her pitch and roll. The swell replaces the mod's sine bob over a flat sea. She heels into a
   turn as the mod's boat did, once she makes a wake (0.5 m/s). On a lake or river she floats at its level.
+- **Her hurts.** A ship's damage holds back the way her sails and her oars may ask ([[Naval Combat]]): bare poles
+  leave her 35% of it, and a wreck's oars pull 35%. A sound ship's step is unchanged.
 - **The ground.** Her keel has three points: aft, amidships and forward. A point is aground where the water over the
   bed is shallower than her draught. A step grounds her if it puts a point aground that was afloat, or carries one
   already aground onto higher ground. Then she runs on unswung if only her swing grounds her, or swings clear if only
@@ -64,7 +67,8 @@ model whose faces are not wound outward. Her waterline is 0.4 m above the model'
 widest ([[The Sloop's Trim]]): 6.2 m long, 1.9 m across, her keel 0.6 m below it. The mesh lives on R2 under its hash
 ([[Generated Files Stay Out of Git]]); its key and her waterline are in `content/ships/ships.json`, and a test holds
 the rules' Sloop to that waterline. Her `.blend` is on R2 beside it ([[Ship Models Live on R2]]). Her
-cannons are the objects named `Cannon` in it, three a side, fore to aft.
+cannons are the objects named `Cannon` in it, three a side, fore to aft: the export reads each one's mouth and bore,
+and the boxes a ball can strike (her hull, and each sail's canvas), into `ships.json` for [[Naval Combat]].
 
 ## In the World Editor
 
@@ -76,7 +80,7 @@ wake in the ripples. Picking another landmass brings her in.
 
 ## Limits
 
-- One hull, the Sloop. The export does not read her cannons yet: naval combat will.
+- One hull, the Sloop.
 - The editor steps her; no room hosts a ship yet.
-- No current, collisions with other hulls, cargo, crew, or naval combat yet.
+- No current, collisions with other hulls, cargo or crew yet.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.

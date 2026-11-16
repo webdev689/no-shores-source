@@ -12,7 +12,9 @@ use land::sea::{Swell, sea_hash, sea_surface};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
+mod fight;
 mod sail;
+pub use fight::{end_fight, fight_begin_json, fight_step_json};
 pub use sail::sail_bytes;
 
 thread_local! {
@@ -143,6 +145,7 @@ pub fn open_view(request: &[u8]) -> Vec<u8> {
             let bytes = view_bytes(&header_of(&landmass), Some(&landmass));
             if keep {
                 OPEN.with(|open| *open.borrow_mut() = Some(landmass));
+                end_fight();
             }
             bytes
         }
@@ -413,6 +416,34 @@ pub unsafe extern "C" fn land_sail(address: *const u8, length: usize) -> u64 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let request = unsafe { std::slice::from_raw_parts(address, length) };
     hand_over(sail_bytes(request))
+}
+
+/// Begins a fight round the ship the request at `address`, `length` bytes long, holds.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_fight_begin(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(fight_begin_json(request).into_bytes())
+}
+
+/// Steps the fight by the orders the request at `address`, `length` bytes long, holds.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_fight_step(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(fight_step_json(request).into_bytes())
+}
+
+/// Ends the fight.
+#[unsafe(no_mangle)]
+pub extern "C" fn land_fight_end() {
+    end_fight();
 }
 
 /// The open landmass's edits file text.

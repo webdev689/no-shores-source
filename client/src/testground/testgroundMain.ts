@@ -17,7 +17,7 @@ import { LocalRoom } from '../network/localRoom.ts';
 import type { PlayerDress } from '../network/messages.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
-import { startFightRules } from '../rules/fightRules.ts';
+import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { Cards } from './cards.ts';
 import { COURSE, START } from './course.ts';
@@ -92,8 +92,8 @@ async function start(): Promise<void> {
   const roomModule = await WebAssembly.compile(
     await (await fetch(`${import.meta.env.BASE_URL}room.wasm`)).arrayBuffer(),
   );
-  const fightRules = startFightRules(roomModule);
-  fightRules.setCourse(COURSE);
+  const combatRules = startCombatRules(roomModule);
+  combatRules.setCourse(COURSE);
   const input = new Input(canvas);
   let status = 'Reading the forge…';
   let fps = 6;
@@ -210,7 +210,7 @@ async function start(): Promise<void> {
   const link = roomUrl
     ? await RoomConnection.open(roomUrl, received)
     : LocalRoom.open(roomModule, START, COURSE, received);
-  fight = new Fighting(fightRules, link);
+  fight = new Fighting(combatRules, link);
   takeDresses(link.dressed);
   const steps = fight.steps(movement);
   if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
@@ -278,7 +278,7 @@ async function start(): Promise<void> {
     const handsKey = `${outfit.right}|${outfit.left}|${outfit.drawn}`;
     if (handsKey !== armsKey) {
       armsKey = handsKey;
-      fight.arms = fightRules.armsCode(outfit.right, outfit.left, outfit.drawn);
+      fight.arms = combatRules.armsCode(outfit.right, outfit.left, outfit.drawn);
     }
     const speed = Math.hypot(body.vx, body.vy);
     if (body.moving && body.mode === 'ground') stride += speed * seconds;

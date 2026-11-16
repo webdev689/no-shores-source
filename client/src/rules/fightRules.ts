@@ -1,89 +1,115 @@
-import type { Block } from './movementRules.ts';
+import type { Helm, ShipFloats } from './landRules.ts';
 
-/** How many numbers a fighter, an intent and a glance are, as the combat crate lays them out. */
-export interface FightSizes {
-  readonly fighter: number;
-  readonly intent: number;
-  readonly glance: number;
+/** A gun's load (crates/naval/src/guns.rs Shot). */
+export type ShotName = 'round' | 'grape' | 'chain' | 'heated';
+/** The loads in the order a gunner steps through them. */
+export const SHOT_CYCLE: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
+export type SideName = 'port' | 'starboard';
+export type ShipState = 'afloat' | 'struck' | 'sinking' | 'sunk' | 'wrecked';
+export type CaptainMode = 'cruise' | 'engage' | 'flee' | 'struck' | 'sinking';
+export type Point = readonly [number, number, number];
+
+/** The player's look: its bearing off her bow (degrees, to starboard) and how far out it meets the water (metres). */
+export interface FightLook {
+  readonly bearing: number;
+  readonly range: number;
 }
 
-/** A fighter the player sees, as a number and a glance, for predicting their own fighter among them. */
-export interface Glanced {
-  readonly id: number;
-  readonly glance: Float64Array;
+/** What the player orders for a step (crates/naval/src/fight.rs Orders): her helm, the look she lays, a release,
+ *  the brace and a load; the climb, release and load act on the first tick alone. */
+export interface FightOrders {
+  readonly helm: Helm;
+  readonly aim: FightLook | null;
+  readonly fire: boolean;
+  readonly brace: boolean;
+  readonly load: ShotName | null;
 }
 
-/** The combat crate's player tick and arms, running in WebAssembly: the same tick, to the bit, the room takes. */
-export interface FightRules {
-  readonly sizes: FightSizes;
-  /** Keeps these blocks as the course every later prediction moves on. */
-  setCourse(blocks: readonly Block[]): void;
-  /** The player's fighter one tick on under an intent, among the fighters they see. */
-  predict(fighter: Float64Array, intent: Float64Array, id: number, view: readonly Glanced[]): Float64Array;
-  /** What hands holding these forge layers fight with, as combat's arms code. */
-  armsCode(right: string | null, left: string | null, drawn: boolean): number;
-  /** The farthest a stroke (1 to 6) of the melee weapon in this arms code reaches, feet to a body's middle. */
-  strokeReach(arms: number, stroke: number): number;
+/** A ship in the fight: her numbers and pose, her hurts and her guns (port, then starboard). */
+export interface FightVessel {
+  readonly ship: readonly number[];
+  readonly pose: readonly number[];
+  readonly hull: number;
+  readonly max_hull: number;
+  readonly sail: number;
+  readonly max_sail: number;
+  readonly crew: number;
+  readonly max_crew: number;
+  readonly state: ShipState;
+  readonly fires: number;
+  readonly guns: {
+    readonly left: readonly [number, number];
+    readonly progress: readonly [number, number];
+    readonly load: ShotName;
+    readonly braced: boolean;
+  };
 }
 
-interface FightExports {
-  readonly memory: WebAssembly.Memory;
-  reserve(length: number): number;
-  release(address: number, length: number): void;
-  fighter_course(address: number, length: number): number;
-  fighter_predict(address: number, length: number): bigint;
-  fighter_arms(address: number, length: number): number;
-  fighter_sizes(): number;
-  fighter_reach(arms: number, stroke: number): number;
+export interface FightCaptain extends FightVessel {
+  readonly name: string;
+  readonly mode: CaptainMode;
+  readonly hostile: boolean;
+  readonly run_out: readonly SideName[];
 }
 
-/** Starts the fight's rules from the compiled `room-wasm` module. */
-export function startFightRules(module: WebAssembly.Module): FightRules {
-  const exports = new WebAssembly.Instance(module, {}).exports as unknown as FightExports;
-  const lend = <T>(bytes: Uint8Array, use: (address: number) => T): T => {
-    const address = exports.reserve(bytes.length);
-    new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
-    try {
-      return use(address);
-    } finally {
-      exports.release(address, bytes.length);
+export type FightEvent =
+  | { readonly kind: 'muzzle'; readonly ship: number; readonly point: Point; readonly launch: Point }
+  | {
+      readonly kind: 'hit';
+      readonly ship: number;
+      readonly by: number;
+      readonly zone: 'hull' | 'holed' | 'rig';
+      readonly point: Point;
     }
-  };
-  const take = (packed: bigint): Uint8Array => {
-    const [address, length] = [Number(packed >> 32n), Number(packed & 0xffff_ffffn)];
-    const bytes = new Uint8Array(exports.memory.buffer, address, length).slice();
-    exports.release(address, length);
-    return bytes;
-  };
-  const packed = exports.fighter_sizes();
-  const sizes: FightSizes = { fighter: packed & 0xff, intent: (packed >> 8) & 0xff, glance: (packed >> 16) & 0xff };
-  const floatBytes = (floats: Float64Array) => new Uint8Array(floats.buffer, floats.byteOffset, floats.byteLength);
-  return {
-    sizes,
-    setCourse: (blocks) => {
-      const floats = new Float64Array(
-        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
-      );
-      lend(floatBytes(floats), (address) => exports.fighter_course(address, floats.byteLength));
-    },
-    predict: (fighter, intent, id, view) => {
-      const floats = new Float64Array(sizes.fighter + sizes.intent + 1 + view.length * (sizes.glance + 1));
-      floats.set(fighter, 0);
-      floats.set(intent, sizes.fighter);
-      floats[sizes.fighter + sizes.intent] = id;
-      view.forEach((each, index) => {
-        const start = sizes.fighter + sizes.intent + 1 + index * (sizes.glance + 1);
-        floats[start] = each.id;
-        floats.set(each.glance, start + 1);
-      });
-      const bytes = take(lend(floatBytes(floats), (address) => exports.fighter_predict(address, floats.byteLength)));
-      if (bytes.length !== sizes.fighter * 8) return fighter;
-      return new Float64Array(bytes.buffer, bytes.byteOffset, sizes.fighter).slice();
-    },
-    armsCode: (right, left, drawn) => {
-      const text = new TextEncoder().encode(`${right ?? ''}\n${left ?? ''}\n${drawn ? 'drawn' : 'worn'}`);
-      return lend(text, (address) => exports.fighter_arms(address, text.length));
-    },
-    strokeReach: (arms, stroke) => exports.fighter_reach(arms, stroke),
-  };
+  | { readonly kind: 'splash'; readonly point: Point }
+  | { readonly kind: 'land'; readonly point: Point }
+  | { readonly kind: 'run-out'; readonly side: SideName }
+  | { readonly kind: 'state'; readonly ship: number; readonly state: ShipState }
+  | {
+      readonly kind: 'refused';
+      readonly why: 'no-guns' | 'silent' | 'braced' | 'reloading';
+      readonly side?: SideName;
+      readonly left?: number;
+    }
+  | { readonly kind: 'no-sail'; readonly wrecked: boolean }
+  | { readonly kind: 'load'; readonly shot: ShotName };
+
+/** The side the look lays: each gun's unscattered launch (its mouth, then its velocity), and whether it would
+ *  strike her. */
+export interface FightLay {
+  readonly side: SideName;
+  readonly launches: readonly (readonly number[])[];
+  readonly elevation: number;
+  readonly reach: number;
+  readonly on_target: boolean;
+}
+
+/** The fight as the rules answer it (crates/land-wasm/src/fight.rs). Ships are numbered 0 the player, 1 the captain;
+ *  each ball aloft is its place and radius. */
+export interface FightView {
+  readonly clock: number;
+  readonly player: FightVessel;
+  readonly captain: FightCaptain;
+  readonly balls: readonly (readonly [number, number, number, number])[];
+  readonly lay: FightLay | null;
+  readonly events: readonly FightEvent[];
+  readonly over: 'sunk' | 'gone' | null;
+  readonly fingerprint: string;
+}
+
+/** A fight's begin request. */
+export function beginRequest(ship: ShipFloats, seed: number, time: number): string {
+  return JSON.stringify({ ship: [...ship], seed, time });
+}
+
+/** A fight's step request. */
+export function stepRequest(orders: FightOrders, time: number, ticks: number): string {
+  return JSON.stringify({ ...orders, time, ticks });
+}
+
+/** A fight's answer, or the rules' refusal as an error. */
+export function readFight(text: string): FightView {
+  const answer = JSON.parse(text) as FightView & { readonly error?: string };
+  if (answer.error !== undefined) throw new Error(answer.error);
+  return answer;
 }

@@ -6,7 +6,7 @@ import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { readFromRoom } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
-import { startFightRules } from '../rules/fightRules.ts';
+import { startCombatRules } from '../rules/combatRules.ts';
 import { GLANCE_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
 import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
@@ -35,7 +35,7 @@ const SCRIPT: readonly [number, Partial<Controls>, Partial<FightButtons>][] = [
 test('the page predicts its own fighter exactly as its room steps it, through swings, guards and dodges', () => {
   let fight: Fighting | null = null;
   const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
-  const rules = startFightRules(compiled);
+  const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
   fight = fighting;
@@ -66,7 +66,7 @@ test('the page predicts its own fighter exactly as its room steps it, through sw
 test('every foe asked for comes, one with each input, even two asked for within one tick', () => {
   let fight: Fighting | null = null;
   const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
-  const rules = startFightRules(compiled);
+  const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
   fight = fighting;
@@ -88,7 +88,7 @@ const UNPRESSED: FightButtons = { swing: false, shoot: false, guard: false, dodg
 function fightIn(right: string) {
   let fight: Fighting | null = null;
   const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
-  const rules = startFightRules(compiled);
+  const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
   fight = fighting;
@@ -153,7 +153,7 @@ test('a dress too long for the room is never sent: the room takes every input, a
       fight?.receive(message);
     },
   };
-  const rules = startFightRules(compiled);
+  const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, link);
   fight = fighting;
@@ -179,7 +179,7 @@ test('a swing rolls among the strokes that reach its target, and among all six w
 });
 
 test('a foe’s two glances are as many ticks apart as the snapshots that brought them', () => {
-  const rules = startFightRules(compiled);
+  const rules = startCombatRules(compiled);
   const link: RoomLink = { player: 1, dressed: [], lost: null, send: () => undefined, pump: () => undefined };
   const fighting = new Fighting(rules, link);
   const glance = (east: number) => Object.assign(new Float64Array(GLANCE_FLOATS), { 0: east });

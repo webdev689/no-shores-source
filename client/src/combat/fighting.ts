@@ -2,7 +2,7 @@ import type { Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messag
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
-import type { FightRules, Glanced } from '../rules/fightRules.ts';
+import type { CombatRules, Glanced } from '../rules/combatRules.ts';
 import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
 import { type FighterView, fighterView, glanceFrom, glanceView } from '../rules/fighters.ts';
 
@@ -100,7 +100,7 @@ interface Asked {
  * and the foes, other players, shots and events of its snapshots kept for drawing.
  */
 export class Fighting {
-  private readonly rules: FightRules;
+  private readonly rules: CombatRules;
   private readonly link: RoomLink;
   private readonly random: () => number;
   private readonly prediction = new Prediction<Asked>();
@@ -126,7 +126,7 @@ export class Fighting {
   events: FightEvent[] = [];
   shots: readonly FlyingShot[] = [];
 
-  constructor(rules: FightRules, link: RoomLink, random: () => number = Math.random) {
+  constructor(rules: CombatRules, link: RoomLink, random: () => number = Math.random) {
     this.rules = rules;
     this.link = link;
     this.random = random;

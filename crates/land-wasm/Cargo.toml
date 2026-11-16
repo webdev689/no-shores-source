@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 land = { path = "../land" }
+naval = { path = "../naval" }
 sailing = { path = "../sailing" }
 world = { path = "../world" }
 serde_json.workspace = true

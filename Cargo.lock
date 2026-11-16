@@ -55,6 +55,7 @@ name = "land-wasm"
 version = "0.0.0"
 dependencies = [
  "land",
+ "naval",
  "sailing",
  "serde_json",
  "world",
@@ -84,6 +85,14 @@ name = "movement-wasm"
 version = "0.0.0"
 dependencies = [
  "movement",
+]
+
+[[package]]
+name = "naval"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "sailing",
 ]
 
 [[package]]

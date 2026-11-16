@@ -1,6 +1,6 @@
 //! The fight agrees to the bit wherever it runs: this scripted fight of a player against a still foe, through swings,
 //! a guard, a dodge and a draw, is fingerprinted here, natively, and by the client's test of the same fight through
-//! WebAssembly (client/src/rules/fightRules.test.ts lists the same course and script).
+//! WebAssembly (client/src/rules/combatRules.test.ts lists the same course and script).
 
 use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Side, Weight, fighter};
