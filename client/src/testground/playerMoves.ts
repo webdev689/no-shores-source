@@ -18,11 +18,13 @@ export interface Doing {
   readonly right: string | null;
   readonly left: string | null;
   /** The blow being struck or the shot fired: its direction (null for a shot), whether it is the second stroke of the
-   *  swing, its progress 0..1, and whether a shot's weapon is reloading. */
+   *  swing, its progress 0..1, how far through the swing its blow lands (DFO's swing law's by default), and whether a
+   *  shot's weapon is reloading. */
   readonly blow: {
     readonly direction: Direction | null;
     readonly second: boolean;
     readonly progress: number;
+    readonly lands?: number;
     readonly reload?: boolean;
   } | null;
   /** A cast's progress 0..1, or null. */
@@ -119,6 +121,17 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
   right: 'swing2h',
 };
 
+/** How far through a swing its blow lands by DFO's swing law: as the third of five strike frames begins. */
+export const BLOW_LANDS = 2 / 5;
+
+/** The frame (whole part) of a stroke `span` frames long at `progress` through its swing: the frames run through the
+ *  wind-up to land the last on the blow (`lands` through the swing), held through the follow-through, so the figure
+ *  strikes as fast as the blow comes and shows itself open while it recovers. */
+export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): number {
+  if (span <= 1 || progress >= lands) return span - 1;
+  return (Math.max(0, progress) / Math.max(lands, 1e-6)) * (span - 1);
+}
+
 /**
  * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall the
  * mantle, vault, hang, shimmy or climb (frame by progress, or looping once a second); in the air the jump, its frame
@@ -159,7 +172,8 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     const strokes = frames(anim) >= 6 && (blow.direction !== null || anim === 'braceshot') ? 2 : 1;
     const span = frames(anim) / strokes;
     const first = blow.second && strokes === 2 ? span : 0;
-    return { anim, frame: first + Math.min(span - 1, Math.floor(blow.progress * span)), frameSeconds: 0 };
+    const through = blow.direction === null ? blow.progress * span : strokeFrame(blow.progress, blow.lands, span);
+    return { anim, frame: first + Math.min(span - 1, Math.floor(through)), frameSeconds: 0 };
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
   if (doing.running && doing.moving) {

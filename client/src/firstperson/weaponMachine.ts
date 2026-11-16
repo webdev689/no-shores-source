@@ -125,6 +125,12 @@ export class WeaponMachine {
     this.clock = 0;
   }
 
+  /** How far through a strike its blow lands: on the hit frame, of five frames or of bare hands' left strike's eight. */
+  get lands(): number {
+    const length = this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT.length : STRIKE_FRAMES;
+    return HIT_FRAME / length;
+  }
+
   /** Holds the weapon at rest in a pose a fight asks for, one of its own strokes' frames, or lets it back to rest. */
   pose(shown: { readonly record: number; readonly frame: number } | null): void {
     if (this.phase !== 'idle' || this.kind === 'bow') return;

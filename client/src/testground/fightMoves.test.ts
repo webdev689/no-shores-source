@@ -56,7 +56,7 @@ test('a fighter’s action holds its figure to the forge’s own moves', () => {
     dress,
     1 / 60,
   );
-  assert.deepEqual(swinging.blow, { direction: 'up', second: true, progress: 0.5 });
+  assert.deepEqual(swinging.blow, { direction: 'up', second: true, progress: 0.5, lands: 0.4 });
 });
 
 test('a dodge shows the jump only in the air, rising, at the top and falling by the body; landed, the figure stands', () => {

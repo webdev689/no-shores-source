@@ -21,12 +21,13 @@ export interface HandsEvents {
   readonly hand: Hand | null;
 }
 
-/** The blow or shot under way: its direction (null for a bow, a gun or a crossbow), how far through it, the hand that
- *  threw it, whether the two hands take turns, as a pair does, and whether a gun or crossbow is reloading after its
- *  shot (its progress then runs through the reload). */
+/** The blow or shot under way: its direction (null for a bow, a gun or a crossbow), how far through it and how far
+ *  through it the blow lands, the hand that threw it, whether the two hands take turns, as a pair does, and whether a
+ *  gun or crossbow is reloading after its shot (its progress then runs through the reload). */
 export interface Swing {
   readonly direction: Direction | null;
   readonly progress: number;
+  readonly lands: number;
   readonly hand: Hand;
   readonly paired: boolean;
   readonly reload: boolean;
@@ -117,7 +118,15 @@ export class Hands {
     const progress = arm?.melee?.progress ?? arm?.shot?.progress ?? arm?.shot?.reloading ?? null;
     if (!arm || progress === null) return null;
     const reload = !!arm.shot && !arm.shot.firing;
-    return { direction: arm.melee?.striking ?? null, progress, hand: arm.hand, paired: !!this.plan?.pair, reload };
+    const lands = arm.melee?.lands ?? 1;
+    return {
+      direction: arm.melee?.striking ?? null,
+      progress,
+      lands,
+      hand: arm.hand,
+      paired: !!this.plan?.pair,
+      reload,
+    };
   }
 
   /** Holds every weapon at rest in a pose a fight asks for (a guard, a parry's deflect), or back at rest. */

@@ -58,6 +58,7 @@ export function foeDoing(view: FighterView, before: FighterView | null, dress: D
           direction: STROKE_DIRECTIONS[action.stroke - 1] ?? 'down',
           second: action.leftHand || action.stroke % 2 === 0,
           progress: Math.min(1, action.elapsed / Math.max(1, action.end)),
+          lands: action.strike / Math.max(1, action.end),
         }
       : null;
   return {

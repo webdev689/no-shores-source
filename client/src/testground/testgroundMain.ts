@@ -340,6 +340,7 @@ async function start(): Promise<void> {
           // A pair's blows are its two hands' strokes; one weapon's alternate.
           second: swing.paired ? swing.hand === 'left' : strokes % 2 === 0,
           progress: swing.progress,
+          lands: swing.lands,
         },
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },

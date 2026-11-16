@@ -66,7 +66,7 @@ room's word for it, so playing alone and online are the same game.
   when knocked down; hurt while staggered or flinching; the jump's rising, top and falling frames through a dodge's
   hop (the run where the forge does not draw what it holds in the jump, a shield); the parry's deflect, or a shield's
   block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
-  wind-up and held at its end when it overreaches. A foe's swings are its stroke's frames, by its weapon.
+  wind-up and held at its end when it overreaches. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
   drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
   edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
@@ -107,7 +107,9 @@ The player's figure shows the move the forge draws for what the body does:
 - **In the air:** the jump's rising, top or falling frame.
 - **Mounted:** the horse's rest, walk or gallop.
 - **Acting:** the cast. A swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
+  to 5. The stroke's frames run through the swing's wind-up so its last lands with the blow, two fifths of the way
+  through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the follow-through: the figure strikes
+  as fast as its blow comes and shows itself open while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
   right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
   move whole, a brace's right then left, then its reload where the forge draws one.
 - **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each
