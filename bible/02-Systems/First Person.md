@@ -39,13 +39,20 @@ The two-handers are the staff, the warhammer, the battleaxe, the bows and the Th
 ### Swinging
 
 A click swings once. Holding the button swings again as each blow ends. Each blow takes one of six directions at
-random: down, down and left, left, right, down and right, or up. A strike is five frames, and the blow lands as the
+random: down, down and left, left, right, down and right, or up. In the [[Test Ground]] the [[Combat]] rules decide
+when a swing begins and the direction is chosen before it, so the first person swings as the rules do; a swing the
+rules refuse (no stamina, a stagger) is not drawn. A strike is five frames, and the blow lands as the
 third begins. A frame lasts 0.199 s for a sword, DFO's swing law at an average Speed. A dagger and bare hands come
 round quicker; a mace, a flail and the two-handed weapons slower. Bare hands' strike to the left goes up and back down
 over eight frames.
 
 A bow draws while the button is held and stays drawn at its fourth frame. Letting go looses it: the arrow leaves on
 the sixth frame, a frame every 0.0625 s. The bow then reloads for about half a second.
+
+### Guarding
+
+While the guard is held, a weapon stands upright across the middle of the view, its left stroke's third frame held; a
+parry's deflect plays its right stroke's second to fourth frames over the deflect. A shield is raised whole for both.
 
 ### A pair
 
@@ -152,7 +159,6 @@ rein, not its fist up.
 - No weapon shows wear, no gun's flash lights the room, and no enchanted weapon shimmers.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
   feeling its weapon heavier.
-- The state can raise a shield for a block, but no control asks for one.
 - The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.
 - The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.

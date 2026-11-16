@@ -1,5 +1,5 @@
 import type { FlyingShot } from '../network/messages.ts';
-import type { Action, Shape } from './fighter.ts';
+import type { Action, Shape } from '../rules/fighters.ts';
 
 /** A telegraphed blow's mark: its shape where it stands, how far its wind-up has run, and whether it is iron. */
 export type TelegraphMark = Extract<Action, { kind: 'telegraph' }>;

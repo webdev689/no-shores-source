@@ -2,7 +2,7 @@ import { button, make } from '../editor/dom.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
-import { CLEAR_FOES, FOE_KINDS } from '../combat/foeKinds.ts';
+import { CLEAR_FOES, FOE_KINDS } from './foeKinds.ts';
 import type { Placed } from './figures.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'

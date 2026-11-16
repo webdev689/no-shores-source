@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
-import { fighterView, glanceView } from '../combat/fighter.ts';
+import { fighterView, glanceView } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
 

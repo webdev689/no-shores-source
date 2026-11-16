@@ -1,7 +1,7 @@
 import * as flatbuffers from 'flatbuffers';
 import { FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
-import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../combat/fighter.ts';
+import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */

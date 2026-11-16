@@ -1,4 +1,4 @@
-import { BODY_FLOATS, type Mode } from '../rules/movementRules.ts';
+import { BODY_FLOATS, type Mode } from './movementRules.ts';
 
 /** A foe's telegraphed blow's shapes, by the combat crate's numbers 1 to 7. */
 export const SHAPES = ['lunge', 'sweep', 'slam', 'ring', 'charge', 'leap', 'aimed'] as const;

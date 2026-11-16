@@ -4,7 +4,7 @@ import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { FightRules, Glanced } from '../rules/fightRules.ts';
 import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
-import { type FighterView, fighterView, glanceFrom, glanceView } from './fighter.ts';
+import { type FighterView, fighterView, glanceFrom, glanceView } from '../rules/fighters.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
  *  and its action's kind (12 for the dead). */

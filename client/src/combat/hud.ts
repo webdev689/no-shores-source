@@ -1,5 +1,5 @@
 import type { FightEvent } from '../network/messages.ts';
-import type { FighterView } from './fighter.ts';
+import type { FighterView } from '../rules/fighters.ts';
 
 /** A foe as the display marks it: its number, its kind's name and its glance. */
 export interface MarkedFoe {

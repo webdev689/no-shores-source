@@ -17,12 +17,13 @@ decision, made in the same change as its entry here.
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU, runs the frame loop |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up |
-| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
+| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb, the foes' dresses and the moves a fight holds a figure to |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
-| `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room, and the prediction it corrects |
-| `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] and [[Movement]], loaded as WebAssembly, for any page that needs them |
+| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display, and the ground's marks for telegraphed blows and shots |
+| `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
+| `client/src/rules/` | The rules layer: the Rust rules, the [[Land]], [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
@@ -59,8 +60,8 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
 Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `editor`
-(imports `rules` and `water`), `testground` (imports `rules`, `network`, `forge`, `firstperson`, and the editor's
-camera and panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork
+(imports `rules` and `water`), `combat` (imports `rules` and `network`), `testground` (imports `rules`, `network`, `forge`,
+`firstperson`, `combat`, and the editor's camera and panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork
 any layer may import.
 
 ## The Rust crates
