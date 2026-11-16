@@ -1,11 +1,12 @@
 //! The ground anywhere on a landmass, to the metre: what the server judges a body against and every client draws.
 //! The 1 km land is interpolated smoothly and given a fine grain; a town's area is levelled to its ground's mean; a
-//! river's channel is cut under its surface with banks above it; a road's bed is eased to its level. World 2.0's
-//! laws, in exact maths only, so every machine finds the same height at the same point.
+//! river's channel is cut under its surface, its banks easing from its surface back to the land; a road's bed is eased
+//! to its level. World 2.0's laws, in exact maths only, so every machine finds the same height at the same point.
 
 use crate::edits::Edits;
-use crate::exact::{fbm, lerp, seed_of, smooth};
-use crate::grid::Grid;
+use crate::exact::{clamp, fbm, lerp, seed_of, smooth};
+use crate::grid::{D8_X, D8_Y, Grid, catmull};
+use crate::relief::{COAST_REACH_M, LAND_FLOOR_M, SEA_CEILING_M};
 use crate::water::{River, river_depth_m, river_width_m};
 use std::collections::BTreeMap;
 use world::geometry::Point;
@@ -22,6 +23,13 @@ pub const GRAIN_M: f64 = 4.0;
 pub const GRAIN_SCALE_M: f64 = 250.0;
 /// The side of the index's buckets, metres.
 const BUCKET_M: f64 = 2000.0;
+/// Within this many metres of the painted coast the land and the sea meet along it, not along the cells.
+pub const COAST_BLEND_M: f64 = 1000.0;
+/// The least the land stands above the sea, and the seabed under it, metres: met softly, so a spline sagging between
+/// cells never floods the land or lifts the seabed dry.
+pub const SHORE_FLOOR_M: f64 = 0.5;
+/// How many rings of cells each side's heights are carried over the coast: enough for every cell a blended point reads.
+const CARRY_RINGS: u8 = 6;
 
 /// One point of a course: where it is, its level (a river's surface, a road's bed), and its width and depth.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -61,6 +69,10 @@ pub struct Ground {
     pub rivers: Vec<Vec<CoursePoint>>,
     pub roads: Vec<Vec<CoursePoint>>,
     pub towns: Vec<TownPad>,
+    /// Each cell centre's distance from the painted coast, metres, positive on land (relief.rs `coast_signed_m`).
+    pub coast: Grid,
+    /// Each cell's height carried over the coast from the other side: a land cell's seabed, a sea cell's land.
+    pub across: Grid,
     seed: u32,
     index: CourseIndex,
 }
@@ -100,12 +112,12 @@ pub fn chaikin<const N: usize>(points: &[[f64; N]]) -> Vec<[f64; N]> {
 }
 
 /// The nearest point of a segment to (x, y): its distance and the share of the way along it.
-fn near_segment(from: &CoursePoint, to: &CoursePoint, x: f64, y: f64) -> (f64, f64) {
-    let (span_x, span_y) = (to.x - from.x, to.y - from.y);
+pub(crate) fn near_segment(from: (f64, f64), to: (f64, f64), x: f64, y: f64) -> (f64, f64) {
+    let (span_x, span_y) = (to.0 - from.0, to.1 - from.1);
     let length = span_x * span_x + span_y * span_y;
     let along =
-        if length > 0.0 { (((x - from.x) * span_x + (y - from.y) * span_y) / length).clamp(0.0, 1.0) } else { 0.0 };
-    let (dx, dy) = (x - from.x - span_x * along, y - from.y - span_y * along);
+        if length > 0.0 { (((x - from.0) * span_x + (y - from.1) * span_y) / length).clamp(0.0, 1.0) } else { 0.0 };
+    let (dx, dy) = (x - from.0 - span_x * along, y - from.1 - span_y * along);
     ((dx * dx + dy * dy).sqrt(), along)
 }
 
@@ -117,16 +129,73 @@ fn in_ring(ring: &[(f64, f64)], x: f64, y: f64) -> (bool, f64) {
         if (from_y > y) != (to_y > y) && x < from_x + (y - from_y) / (to_y - from_y) * (to_x - from_x) {
             inside = !inside;
         }
-        let start = CoursePoint { x: from_x, y: from_y, level: 0.0, width: 0.0, depth: 0.0 };
-        let end = CoursePoint { x: to_x, ..start };
-        let end = CoursePoint { y: to_y, ..end };
-        nearest = nearest.min(near_segment(&start, &end, x, y).0);
+        nearest = nearest.min(near_segment((from_x, from_y), (to_x, to_y), x, y).0);
     }
     (inside, nearest)
 }
 
 fn bucket(x: f64, y: f64) -> (i64, i64) {
     ((x / BUCKET_M).floor() as i64, (y / BUCKET_M).floor() as i64)
+}
+
+/// Each side's heights carried over the coast into the other side's cells, ring by ring (a cell takes the mean of its
+/// neighbours a ring nearer its side), so each side runs on past the coast with no step at it. A cell further than
+/// CARRY_RINGS from the side, or past the coast's reach, holds the side's least height.
+fn carried(land: &Grid, coast: &Grid) -> Grid {
+    let mut across = land.like(0.0);
+    let (width, height) = (land.width as isize, land.height as isize);
+    for land_side in [true, false] {
+        let own = |value: f64| (value > 0.0) == land_side;
+        let mut side = land.data.clone();
+        let mut ring: Vec<u8> = land.data.iter().map(|&value| if own(value) { 0 } else { u8::MAX }).collect();
+        for step in 1..=CARRY_RINGS {
+            for index in 0..side.len() {
+                if ring[index] != u8::MAX || coast.data[index].abs() >= COAST_REACH_M {
+                    continue;
+                }
+                let (i, j) = ((index % land.width) as isize, (index / land.width) as isize);
+                let (mut sum, mut count) = (0.0, 0.0);
+                for (dx, dy) in D8_X.iter().zip(D8_Y) {
+                    let (column, row) = (i + dx, j + dy);
+                    if column < 0 || row < 0 || column >= width || row >= height {
+                        continue;
+                    }
+                    let other = (row * width + column) as usize;
+                    if ring[other] < step {
+                        sum += side[other];
+                        count += 1.0;
+                    }
+                }
+                if count > 0.0 {
+                    side[index] = sum / count;
+                    ring[index] = step;
+                }
+            }
+        }
+        let least = if land_side { LAND_FLOOR_M } else { SEA_CEILING_M };
+        for index in 0..side.len() {
+            if !own(land.data[index]) {
+                across.data[index] = if ring[index] == u8::MAX { least } else { side[index] };
+            }
+        }
+    }
+    across
+}
+
+/// A height kept softly at SHORE_FLOOR_M or more: unchanged from twice that up, eased onto it below.
+fn above_floor(value: f64) -> f64 {
+    let share = clamp(0.5 + 0.5 * (value - SHORE_FLOOR_M) / SHORE_FLOOR_M, 0.0, 1.0);
+    lerp(SHORE_FLOOR_M, value, share) + SHORE_FLOOR_M * share * (1.0 - share)
+}
+
+/// The land and the sea met along the painted coast, `distance` metres inland of it (negative at sea): the land's
+/// height inland past COAST_BLEND_M, the sea's as far out, 0 on the coast, and never the wrong side of 0 between.
+#[must_use]
+pub fn coast_meet(land: f64, sea: f64, distance: f64) -> f64 {
+    let (land, sea) = (above_floor(land), -above_floor(-sea));
+    let near = smooth(0.0, COAST_BLEND_M, distance.abs());
+    let side = 2.0 * smooth(-COAST_BLEND_M, COAST_BLEND_M, distance) - 1.0;
+    0.5 * (land * (near + side) + sea * (near - side))
 }
 
 fn to_metres(points: &[Point]) -> Vec<(f64, f64)> {
@@ -147,15 +216,17 @@ fn held_surface(points: &[(f64, f64)], height: impl Fn(f64, f64) -> f64) -> Vec<
 
 impl Ground {
     /// The ground of a landmass: its land (the 1 km grid with the owner's strokes), its lakes, the rivers the water
-    /// gathered into, and the places in its edits.
+    /// gathered into, and the places in its edits. `coast` holds each cell's distance from the painted coast.
     #[must_use]
-    pub fn new(land: &Grid, lake_level: &[f64], rivers: &[River], edits: &Edits, seed: u32) -> Self {
+    pub fn new(land: &Grid, coast: &Grid, lake_level: &[f64], rivers: &[River], edits: &Edits, seed: u32) -> Self {
         let mut ground = Self {
             land: land.clone(),
             lake_level: lake_level.to_vec(),
             rivers: Vec::new(),
             roads: Vec::new(),
             towns: Vec::new(),
+            coast: coast.clone(),
+            across: carried(land, coast),
             seed: seed_of(seed, "grain"),
             index: BTreeMap::new(),
         };
@@ -197,12 +268,35 @@ impl Ground {
             let raw: Vec<[f64; 4]> = (0..river.points.len())
                 .map(|at| [river.points[at].0, river.points[at].1, river.flow[at], river.level[at]])
                 .collect();
+            // A course ends where the painted coast crosses it, not at the first sea cell's centre beyond.
+            let (mut points, mut inland): (Vec<[f64; 4]>, Option<f64>) = (Vec::new(), None);
+            for point in chaikin(&chaikin(&raw)) {
+                let coast = ground.sides(point[0], point[1])[2];
+                if coast <= 0.0 {
+                    if let (Some(before), Some(&last)) = (inland, points.last()) {
+                        let share = before / (before - coast);
+                        points.push(std::array::from_fn(|at| lerp(last[at], point[at], share)));
+                    }
+                    break;
+                }
+                inland = Some(coast);
+                points.push(point);
+            }
+            // A level gathered on the cells can float above the smooth ground down a steep reach: off a lake it is
+            // held to the ground, so the water lies in its channel, never over dry land.
             let mut surface = f64::MAX;
-            let course = chaikin(&chaikin(&raw)).into_iter().map(|[x, y, flow, level]| {
-                surface = surface.min(level - 0.5).max(0.0);
-                CoursePoint { x, y, level: surface, width: river_width_m(flow), depth: river_depth_m(flow) }
-            });
-            ground.rivers.push(course.collect());
+            let course: Vec<CoursePoint> = points
+                .iter()
+                .map(|&[x, y, flow, level]| {
+                    let floor = ground.padded(x, y);
+                    let cap = ground.lake_surface(x, y).filter(|&lake| lake > floor).unwrap_or(floor);
+                    surface = surface.min(level - 0.5).min(cap).max(0.0);
+                    CoursePoint { x, y, level: surface, width: river_width_m(flow), depth: river_depth_m(flow) }
+                })
+                .collect();
+            if course.len() >= 2 {
+                ground.rivers.push(course);
+            }
         }
         for road in &edits.roads {
             let points = densify(&to_metres(&road.points), COURSE_STEP_M);
@@ -237,9 +331,33 @@ impl Ground {
         }
     }
 
-    /// The land alone: the grid interpolated smoothly, with its grain on the land.
+    /// The land and the sea either side of the coast, and the coast's distance, splined through the cells the way the
+    /// grid's cubic is: each side reads the other's cells as their carried heights, so neither steps at the coast.
+    fn sides(&self, x: f64, y: f64) -> [f64; 3] {
+        let grid = &self.land;
+        let (grid_x, grid_y) = ((x - grid.left_m) / grid.cell_m - 0.5, (y - grid.top_m) / grid.cell_m - 0.5);
+        let (i, j) = (grid_x.floor(), grid_y.floor());
+        let (fraction_x, fraction_y) = (grid_x - i, grid_y - j);
+        let (i, j) = (i as isize, j as isize);
+        let cell = |column: isize, row: isize| {
+            let (height, across, coast) =
+                (grid.get(column, row), self.across.get(column, row), self.coast.get(column, row));
+            if height > 0.0 { [height, across, coast] } else { [across, height, coast] }
+        };
+        let row = |row: isize| {
+            let cells = [cell(i - 1, row), cell(i, row), cell(i + 1, row), cell(i + 2, row)];
+            std::array::from_fn::<f64, 3, _>(|at| {
+                catmull(cells[0][at], cells[1][at], cells[2][at], cells[3][at], fraction_x)
+            })
+        };
+        let rows = [row(j - 1), row(j), row(j + 1), row(j + 2)];
+        std::array::from_fn(|at| catmull(rows[0][at], rows[1][at], rows[2][at], rows[3][at], fraction_y))
+    }
+
+    /// The land alone: the land and the sea met along the painted coast, with its grain on the land.
     fn base(&self, x: f64, y: f64) -> f64 {
-        let height = self.land.cubic_at(x, y);
+        let [land, sea, coast] = self.sides(x, y);
+        let height = coast_meet(land, sea, coast);
         let grain = GRAIN_M * fbm(self.seed, x / GRAIN_SCALE_M, y / GRAIN_SCALE_M, 3);
         height + grain * smooth(2.0, 30.0, height)
     }
@@ -270,7 +388,7 @@ impl Ground {
             }
             let course = if roads { &self.roads[number] } else { &self.rivers[number] };
             let (from, to) = (&course[segment], &course[segment + 1]);
-            let (distance, along) = near_segment(from, to, x, y);
+            let (distance, along) = near_segment((from.x, from.y), (to.x, to.y), x, y);
             let point = CoursePoint {
                 x,
                 y,
@@ -295,11 +413,13 @@ impl Ground {
         if let Some((river, distance)) = self.nearest(x, y, false) {
             let half = river.width / 2.0;
             if distance < half {
-                let from_middle = distance / half;
-                return ground.min(river.level - river.depth * (1.0 - from_middle * from_middle));
+                // A trough levelling into its banks at the edge, so the channel meets them without a crease.
+                let across = 1.0 - (distance / half) * (distance / half);
+                return ground.min(river.level - river.depth * across * across);
             }
-            let top = ground.max(river.level);
-            return river.level + (top - river.level) * smooth(half, half + BANK_M, distance);
+            // From the channel's edge (its surface, or the land where that lies lower, as in a lake it crosses) to the land.
+            let edge = ground.min(river.level);
+            return edge + (ground - edge) * smooth(half, half + BANK_M, distance);
         }
         if let Some((road, distance)) = self.nearest(x, y, true) {
             let half = road.width / 2.0;
@@ -332,14 +452,54 @@ impl Ground {
             return WaterAt::River { surface: river.level };
         }
         let height = self.height_at(x, y);
-        let (i, j) = ((x - self.land.left_m) / self.land.cell_m, (y - self.land.top_m) / self.land.cell_m);
-        if self.land.covers(x, y) {
-            let surface = self.lake_level[j as usize * self.land.width + i as usize];
-            if surface > height {
-                return WaterAt::Lake { surface };
-            }
+        if let Some(surface) = self.lake_surface(x, y)
+            && surface > height
+        {
+            return WaterAt::Lake { surface };
         }
         if height < 0.0 { WaterAt::Sea } else { WaterAt::Dry }
+    }
+
+    /// The surface of the lake reaching a point: the highest of the lake cells whose centre lies within a cell of it,
+    /// across and down.
+    /// A lake's cells fill its hollow and the cells round them stand above it, so its shore is where the ground meets
+    /// its surface, between the cells. A lake level of 0 is no lake.
+    fn lake_surface(&self, x: f64, y: f64) -> Option<f64> {
+        let land = &self.land;
+        let (grid_x, grid_y) = ((x - land.left_m) / land.cell_m - 0.5, (y - land.top_m) / land.cell_m - 0.5);
+        let (i, j) = (grid_x.round() as isize, grid_y.round() as isize);
+        let mut surface: Option<f64> = None;
+        for row in j - 1..=j + 1 {
+            for column in i - 1..=i + 1 {
+                if column < 0 || row < 0 || column as usize >= land.width || row as usize >= land.height {
+                    continue;
+                }
+                let (dx, dy) = (grid_x - column as f64, grid_y - row as f64);
+                let level = self.lake_level[row as usize * land.width + column as usize];
+                if level > 0.0 && dx.abs().max(dy.abs()) < 1.0 {
+                    surface = Some(surface.map_or(level, |higher: f64| higher.max(level)));
+                }
+            }
+        }
+        surface
+    }
+
+    /// How far past fresh water's edge a point lies, metres, negative inside it: a lake's depth under its surface (or
+    /// height above it on its shore), or the distance beyond a river's channel within its banks' reach. None where no
+    /// fresh water is near. Drawn water follows this, so its edge is smooth wherever the ground is sampled.
+    #[must_use]
+    pub fn fresh_edge(&self, x: f64, y: f64) -> Option<f64> {
+        // In the order water_at finds water: a river's channel, then a lake, then a river's banks.
+        let river = self.nearest(x, y, false).map(|(river, distance)| distance - river.width / 2.0);
+        if let Some(inside) = river.filter(|&edge| edge < 0.0) {
+            return Some(inside);
+        }
+        // Both near: the nearer edge of either water, so a lake a cell off never hides a river's bank.
+        let lake = self.lake_surface(x, y).map(|surface| self.height_at(x, y) - surface);
+        match (lake, river) {
+            (Some(lake), Some(river)) => Some(lake.min(river)),
+            (lake, river) => lake.or(river),
+        }
     }
 }
 

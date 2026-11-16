@@ -35,6 +35,11 @@ test('a continent opens as its window, with land inside the coast and sea around
   assert.deepEqual([view.leftM, view.topM, view.width, view.height], [160_000, 260_000, 200, 200]);
   assert.equal(view.heights.length, 200 * 200);
   assert.equal(view.lakes.length, 200 * 200);
+  const cell = (values: Float32Array, i: number, j: number) => values[j * view.width + i] ?? Number.NaN;
+  assert.ok(cell(view.coast, 100, 100) > 5000 && cell(view.coast, 5, 5) < -5000, 'far inland, far out');
+  assert.ok(Math.abs(cell(view.coast, 40, 100) - 500) < 1e-3, 'the west coast runs half a cell west of cell 40');
+  assert.ok(cell(view.across, 39, 100) >= 1, "a sea cell by the coast carries the land's height");
+  assert.ok(cell(view.across, 40, 100) <= -2, "a land cell by the coast carries the seabed's");
   const heightOf = (i: number, j: number) => view.heights[j * view.width + i] ?? Number.NaN;
   assert.ok(heightOf(100, 100) >= 1, 'the middle is land');
   assert.ok(heightOf(5, 5) <= -2, 'the margin is sea');
@@ -114,6 +119,25 @@ test('a patch gives the exact ground over a grid, with water and marks', async (
   assert.equal(patch.marks[0], 0, 'beside it');
   const sampled = rules.sample([[259_000, 359_980]]);
   assert.equal(patch.heights[0], Math.fround(sampled.heights[0] ?? 0), 'the same ground the runtime samples');
+  assert.equal(patch.edges[0], 1e6, 'no fresh water near');
+});
+
+test('a patch across a river says how far each sample lies past its edge', async () => {
+  const rules = await land();
+  const river = {
+    id: 'river-1',
+    width_m: 40,
+    depth_m: 4,
+    points: [
+      [260_000, 330_000],
+      [260_000, 400_000],
+    ],
+  };
+  rules.open(square(200_000, 300_000, 120_000), 'square', JSON.stringify({ strokes: [], rivers: [river] }));
+  const patch = rules.patch(259_950, 360_000, 5, 21, 1);
+  assert.ok(Math.abs((patch.edges[10] ?? 0) + 20) < 1e-3, `mid-channel: ${patch.edges[10]}`);
+  assert.ok(Math.abs((patch.edges[15] ?? 0) - 5) < 1e-3, `on the bank: ${patch.edges[15]}`);
+  assert.equal(patch.edges[0], 1e6, 'past the banks');
 });
 
 test('a preview leaves the landmass open for strokes alone', async () => {
@@ -186,4 +210,23 @@ test('the sampled ground agrees to the bit with the native build (crates/land/te
   assert.equal(sample.sampleHash, '1316e7b1b67f5f55');
   assert.equal(sample.water[10]?.kind, 'river', 'the carved river holds water');
   assert.ok((sample.heights[10] ?? 0) < (sample.water[10]?.surface ?? 0), 'its bed lies under its surface');
+});
+
+test('the sea over the square agrees to the bit with the native build (crates/land/tests/agree.rs holds the same)', async () => {
+  const rules = await land();
+  const view = rules.open(square(200_000, 300_000, 120_000), 'square', null);
+  assert.equal(view.swell?.waves.length, 10);
+  assert.ok((view.swell?.fullDepthM ?? 0) > (view.swell?.goneDepthM ?? 0));
+  const points = Array.from(
+    { length: 60 },
+    (_value, step) => [162_000.5 + 550.25 * step, 262_000.75 + 3_300.5 * step] as const,
+  );
+  const sample = rules.sample(points, 1234.567);
+  assert.ok(
+    sample.water.every((water) => water.kind === 'sea'),
+    'the margin is sea, not a lake at 0 m',
+  );
+  assert.ok(sample.sea.every((height) => typeof height === 'number' && Math.abs(height) < 4));
+  assert.equal(sample.seaHash, 'b6ceaaa9dd1a37f4');
+  assert.equal(rules.sample([[260_000, 360_000]]).sea[0], null, 'no sea on land');
 });

@@ -1,4 +1,5 @@
 import { type LandRules, startLand } from '../rules/landRules.ts';
+import { shoreField } from '../water/shore.ts';
 import type { LandAnswer, LandRequest } from './landClient.ts';
 
 /** The worker's own scope: the DOM library types the page's, so the two calls it needs are named here. */
@@ -22,7 +23,11 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
   }
   if (request.kind === 'ground') {
     const ground = rules.patch(request.left, request.top, request.step, request.width, request.height);
-    scope.postMessage({ ticket, ground }, [ground.heights.buffer, ground.water.buffer, ground.marks.buffer]);
+    const shore = shoreField(ground);
+    const moved = [ground.heights, ground.water, ground.edges, ground.marks, shore.levels, shore.shore].map(
+      (values) => values.buffer,
+    );
+    scope.postMessage({ ticket, ground, shore }, moved);
     return;
   }
   if (request.kind === 'write') {
@@ -35,7 +40,7 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
       : request.kind === 'settle'
         ? rules.settle()
         : rules.setEdits(request.editsText);
-  scope.postMessage({ ticket, view }, [view.heights.buffer, view.lakes.buffer]);
+  scope.postMessage({ ticket, view }, [view.heights.buffer, view.lakes.buffer, view.coast.buffer, view.across.buffer]);
 }
 
 scope.addEventListener('message', (event) => {

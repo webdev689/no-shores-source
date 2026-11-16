@@ -18,6 +18,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
   shows it in 2D and 3D, close up at true scale, and on foot.
+- The [[Water]], on `main`: the shared swell in the land crate, breakers that shoal and break on every shore, a
+  stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an underwater
+  view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
+  the ground's own contours, and every edge of land and water at each pixel, at any distance.
 - The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 122,537 renders on R2 (the token is a network
   secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
@@ -25,8 +29,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   agreeing to the bit with the crate run natively.
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
   ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room, its core: players' inputs in order, their bodies
-  stepped tick by tick, never faster than the room's clock. On its pull request: the messages, their schema and the
-  code `flatc` makes from it, Google's `flatc` pinned by its checksum. Nothing hosts the room yet.
+  stepped tick by tick, never faster than the room's clock; and the messages, their schema and the code `flatc` makes
+  from it, Google's `flatc` pinned by its checksum. Nothing hosts the room yet.
 
 ## Waiting on the owner
 
@@ -38,11 +42,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- The thin server, the rest of it: the room hosted on Cloudflare, ticking 60 times a second; each browser sending its controls over WebSocket, predicting its own player
-  and corrected by the room; and two browsers seeing each other on the Test Ground
-  ([[Gameplay Starts With the Shared Rules]]).
-- Swimming, which the water's pull request has in TypeScript, moves into the `movement` crate once both are merged,
-  so a body on foot meets the water by the same rules everywhere.
+- The water's open ends ([[Water]]): a body for the walker, the weather driving the swell, and the breakers and
+  ripples for ships once ships sail.
+- The thin server, the rest of it: the room hosted on Cloudflare, ticking 60 times a second; each browser sending its
+  controls over WebSocket, predicting its own player and corrected by the room; and two browsers seeing each other on
+  the Test Ground ([[Gameplay Starts With the Shared Rules]]).
+- Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
+  the same rules everywhere.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The game itself: the client drawing the world from the land's door, and the server reading the same land crate.

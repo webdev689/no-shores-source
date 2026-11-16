@@ -5,6 +5,7 @@
 
 use crate::exact::{clamp, fbm, ridged, seed_of, smooth};
 use crate::grid::Grid;
+use crate::ground::near_segment;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::Point;
 
@@ -15,6 +16,8 @@ pub const MARGIN_M: i64 = 40_000;
 /// The lowest land and the highest seabed, metres: the painted coast stays the coast.
 pub const LAND_FLOOR_M: f64 = 1.0;
 pub const SEA_CEILING_M: f64 = -2.0;
+/// How far from the painted coast a cell's distance to it is kept, metres; further cells hold this.
+pub const COAST_REACH_M: f64 = 6000.0;
 
 /// The climate a landmass is generated in: its biome's (biome.rs), or `PLACEHOLDER` for a landmass with none.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -126,6 +129,41 @@ pub fn coast_distance_km(window: &Grid, land: &[bool]) -> Vec<f64> {
     distance
 }
 
+/// Each cell centre's distance from the painted coast, metres, positive on land and negative at sea, held within
+/// COAST_REACH_M: the line the ground's coast runs along between the cells (ground.rs).
+#[must_use]
+pub fn coast_signed_m(window: &Grid, outline: &[Point], land: &[bool]) -> Grid {
+    let mut distance = window.like(COAST_REACH_M);
+    let cell = |metres: f64, origin: f64, size: usize| {
+        (((metres - origin) / window.cell_m - 0.5).floor().max(0.0) as usize).min(size - 1)
+    };
+    for (index, from) in outline.iter().enumerate() {
+        let to = outline[(index + 1) % outline.len()];
+        let (from, to) = ((from.x as f64, from.y as f64), (to.x as f64, to.y as f64));
+        let (first_i, last_i) = (
+            cell(from.0.min(to.0) - COAST_REACH_M, window.left_m, window.width),
+            cell(from.0.max(to.0) + COAST_REACH_M, window.left_m, window.width),
+        );
+        let (first_j, last_j) = (
+            cell(from.1.min(to.1) - COAST_REACH_M, window.top_m, window.height),
+            cell(from.1.max(to.1) + COAST_REACH_M, window.top_m, window.height),
+        );
+        for j in first_j..=last_j {
+            for i in first_i..=last_i {
+                let (x, y) = window.centre(i, j);
+                let nearest = &mut distance.data[j * window.width + i];
+                *nearest = nearest.min(near_segment(from, to, x, y).0);
+            }
+        }
+    }
+    for (value, &inside) in distance.data.iter_mut().zip(land) {
+        if !inside {
+            *value = -*value;
+        }
+    }
+    distance
+}
+
 /// The relief the generator lays down, metres, and where the land is being raised (0..1) so erosion keeps its tops.
 #[must_use]
 pub fn relief(window: &Grid, land: &[bool], coast_km: &[f64], seed: u32, climate: Climate) -> (Grid, Grid) {
@@ -195,5 +233,24 @@ mod tests {
         let inland = mean((0..land.len()).filter(|&cell| land[cell] && coast[cell] > 100.0).collect());
         let shore = mean((0..land.len()).filter(|&cell| land[cell] && coast[cell] < 5.0).collect());
         assert!(inland > shore + 200.0, "inland {inland}, shore {shore}");
+    }
+
+    #[test]
+    fn each_cell_knows_its_distance_from_the_painted_coast_and_its_side() {
+        let outline = vec![Point::new(100_000, 200_000), Point::new(140_000, 200_000), Point::new(100_000, 240_000)];
+        let grid = window(&outline);
+        let land = land_mask(&grid, &outline);
+        let coast = coast_signed_m(&grid, &outline, &land);
+        for (index, &value) in coast.data.iter().enumerate() {
+            assert_eq!(value.is_sign_positive(), land[index], "cell {index}");
+            assert!(value.abs() <= COAST_REACH_M);
+        }
+        // The diagonal coast is x + y = 340 km: the centre (120.5, 219.5) km lies on it, (121.5, 219.5) beyond it.
+        let at =
+            |x: f64, y: f64| coast.get(((x - grid.left_m) / 1000.0) as isize, ((y - grid.top_m) / 1000.0) as isize);
+        assert!(at(120_500.0, 219_500.0).abs() < 1e-9);
+        assert!((at(121_500.0, 219_500.0) + 1000.0 / std::f64::consts::SQRT_2).abs() < 1e-9);
+        assert!((at(103_500.0, 204_500.0) - 3_500.0).abs() < 1e-9, "the west coast is nearest");
+        assert_eq!(at(60_500.0, 160_500.0), -COAST_REACH_M, "far out at sea");
     }
 }

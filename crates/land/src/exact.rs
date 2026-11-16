@@ -105,9 +105,65 @@ pub fn ridged(seed: u32, x: f64, y: f64, octaves: u32) -> f64 {
     sum / norm
 }
 
+/// fdlibm's kernels for sine and cosine on a quarter turn about zero, and the quarter turn split in two so the
+/// reduction keeps its precision. Written as bits, so the constants are exactly fdlibm's.
+const SINE: [f64; 6] = [
+    f64::from_bits(0xBFC5_5555_5555_5549),
+    f64::from_bits(0x3F81_1111_1110_F8A6),
+    f64::from_bits(0xBF2A_01A0_19C1_61D5),
+    f64::from_bits(0x3EC7_1DE3_57B1_FE7D),
+    f64::from_bits(0xBE5A_E5E6_8A2B_9CEB),
+    f64::from_bits(0x3DE5_D93A_5ACF_D57C),
+];
+const COSINE: [f64; 6] = [
+    f64::from_bits(0x3FA5_5555_5555_554C),
+    f64::from_bits(0xBF56_C16C_16C1_5177),
+    f64::from_bits(0x3EFA_01A0_19CB_1590),
+    f64::from_bits(0xBE92_7E4F_809C_52AD),
+    f64::from_bits(0x3E21_EE9E_BDB4_B1C4),
+    f64::from_bits(0xBDA8_FAE9_BE88_38D4),
+];
+const QUARTER_HIGH: f64 = f64::from_bits(0x3FF9_21FB_5440_0000);
+const QUARTER_LOW: f64 = f64::from_bits(0x3DD0_B461_1A62_6331);
+
+/// Sine and cosine of an angle in radians, to within an ulp or two, from + - * / alone: the platform's own may round
+/// its own way.
+#[must_use]
+pub fn sin_cos(angle: f64) -> (f64, f64) {
+    let quarters = (angle * std::f64::consts::FRAC_2_PI).round();
+    let rest = (angle - quarters * QUARTER_HIGH) - quarters * QUARTER_LOW;
+    let square = rest * rest;
+    let sine_tail = SINE[1] + square * (SINE[2] + square * (SINE[3] + square * (SINE[4] + square * SINE[5])));
+    let sine = rest + square * rest * (SINE[0] + square * sine_tail);
+    let cosine_tail = COSINE[0]
+        + square
+            * (COSINE[1] + square * (COSINE[2] + square * (COSINE[3] + square * (COSINE[4] + square * COSINE[5]))));
+    let cosine = 1.0 - 0.5 * square + square * square * cosine_tail;
+    match (quarters as i64).rem_euclid(4) {
+        0 => (sine, cosine),
+        1 => (cosine, -sine),
+        2 => (-sine, -cosine),
+        _ => (-cosine, sine),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[expect(clippy::disallowed_methods, reason = "the test holds the exact sine to the platform's")]
+    fn sine_and_cosine_match_the_platform_to_an_ulp_or_two() {
+        for step in -20_000..20_000 {
+            let angle = f64::from(step) * 0.013_7 + f64::from(step % 7) * 1e-3;
+            let (sine, cosine) = sin_cos(angle);
+            assert!((sine - angle.sin()).abs() <= 4.0 * f64::EPSILON, "sin {angle}: {sine} {}", angle.sin());
+            assert!((cosine - angle.cos()).abs() <= 4.0 * f64::EPSILON, "cos {angle}: {cosine} {}", angle.cos());
+        }
+        let far = 3_456_789.123;
+        assert!((sin_cos(far).0 - far.sin()).abs() < 1e-9);
+        assert_eq!(sin_cos(0.0), (0.0, 1.0));
+    }
 
     #[test]
     fn noise_is_bounded_and_repeats_for_the_same_seed() {

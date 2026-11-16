@@ -68,19 +68,33 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Save | On the site, downloads `<landmass>.json`; under `npm run dev`, writes `content/world/land/<landmass>.json` |
 | 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
 | Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar. Within 3 km heights are true to scale; they ease to the chosen height by 30 km |
-| Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift`), drag to look round. `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
+| Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift` on land), drag to look round. In water the walker wades, then swims; `C` dives and `Space` rises ([[Water]]). `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
 | In 2D: drag, wheel | Shapes with a brush (or pans with Look, or with the right button), and zooms |
 | In 3D: left-drag, right-drag, middle-drag, wheel | Left-drag shapes with a brush (or orbits with Look); right-drag orbits (or pans with Look); middle-drag pans along the ground; the wheel zooms, 3 m to 5,000 km from the target |
 
 The cursor's readout gives where it points and the height of the 1 km cell there, or the sea's depth, in either
-view. Walking, it gives where the walker stands and the ground's height there, exact inside the close-up.
+view. Walking, it gives where the walker stands and the ground's height there, exact inside the close-up, or how deep
+the water is when they wade, swim or dive.
+
+The 3D view draws the [[Water]] over the land, under a sky with clouds, and so draws every frame while it shows.
+
+The 3D view draws the land as rings of mesh round the camera, each twice as coarse as the one inside it, from a
+quarter metre a step near a walker. They are snapped to the world, so the land never slides as the camera moves, and
+each ring's edge eases onto the next ring's grid. Every ring's vertices lie on one lattice, so a vertex two rings
+share is the same point to the bit and they meet without a crack. Each pixel reads the ground under it along the
+same Catmull-Rom splines the land crate uses, for its light, its colour and the water's edge; the mesh only places
+it. Near water the mesh lies a little under the ground, so a coarse triangle never hides the water, and the coast
+reaches the sea's level on its painted line. Every pixel is sampled four times. The 2D map reads the land along the
+same splines and softens every edge across a pixel.
 
 Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled
-every 8 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports
-and the coast. It is sampled again once the target moves 400 m, and after every stroke, place change, undo or redo.
+every 4 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports
+and the coast. It eases into the 1 km land over its outer 96 m. It is sampled again once the target moves 400 m,
+and after every stroke, place change, undo or redo; the land's worker samples it and works out the breakers over it,
+so the page never waits.
 Except while walking, a 1.8 m figure stands at the target with a scale bar beside it.
 
-A stroke shows as it is drawn; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in
+A stroke shows as it is drawn, the close-up stepping aside until it ends; the rivers and lakes follow when it ends. Places are drawn on the 2D map and shown in
 both views. The Problems list gives every rule the landmass's edits break.
 
 Each landmass's row says when it has unsaved shaping. This browser keeps each landmass's unsaved shaping, undo and

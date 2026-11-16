@@ -124,7 +124,11 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   const solid = button('3D view (V)', () => handlers.view('3d'));
   const walk = button('Walk (G)', () => handlers.walk());
   views.append(flat, solid, walk);
-  const walkHint = make('p', 'Walking: W A S D to move, Shift to run, drag to look round, G to stop.', 'hint');
+  const walkHint = make(
+    'p',
+    'Walking: W A S D to move, Shift to run, C to dive, Space to rise, drag to look round, G to stop.',
+    'hint',
+  );
   root.append(views, walkHint);
 
   const exaggerationLabel = make('label', '', 'brush');

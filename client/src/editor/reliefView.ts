@@ -1,5 +1,7 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import type { LandView } from '../rules/landRules.ts';
+import { stillLevels } from '../water/shore.ts';
+import { SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import type { Camera } from './camera.ts';
 import type { CellRect } from './landMask.ts';
 
@@ -21,6 +23,8 @@ export interface ReliefScene {
 /** One full-screen pass over a landmass's window: the seabed by depth, the land by height under a hillshade, lakes,
  *  each cell's mark (rivers, roads, towns, ports), the frame's edge and the brush. */
 const SHADER = /* wgsl */ `
+${SHARED_WGSL}
+
 struct View {
   centre: vec2f,
   viewport: vec2f,
@@ -55,10 +59,6 @@ fn vertex_main(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
 }
 
-fn height_at(cell: vec2i) -> f32 {
-  let size = vec2i(textureDimensions(heights));
-  return textureLoad(heights, clamp(cell, vec2i(0), size - 1), 0).r;
-}
 
 // The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w).
 fn land_colour(height: f32) -> vec3f {
@@ -83,28 +83,27 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
   }
   let local = world - view.origin;
   if (any(local < vec2f(0.0)) || any(local >= view.window_size)) { return vec4f(OPEN_SEA, 1.0); }
-  let cell = vec2i(floor(local / view.cell_m));
-  let height = height_at(cell);
-  var colour: vec3f;
-  if (height < 0.0) {
-    colour = mix(SHALLOW, OPEN_SEA, smoothstep(0.0, 300.0, -height));
-  } else {
-    let east = height_at(cell + vec2i(1, 0)) - height_at(cell - vec2i(1, 0));
-    let south = height_at(cell + vec2i(0, 1)) - height_at(cell - vec2i(0, 1));
-    let normal = normalize(vec3f(-east, -south, 4.0 * view.cell_m));
-    let shade = clamp(dot(normal, normalize(vec3f(-1.0, -1.0, 1.2))), 0.0, 1.0);
-    colour = land_colour(height) * (0.45 + 0.75 * shade);
-    let lake = textureLoad(lakes, cell, 0).r;
-    if (lake > height) { colour = LAKE; }
-    let mark = textureLoad(marks, cell, 0).r;
-    if (mark == 1u || mark == 2u) { colour = mix(colour, RIVER, 0.85); }
-    if (mark == 3u) { colour = ROAD; }
-    if (mark == 4u) { colour = mix(colour, TOWN, 0.6); }
-    if (mark == 5u) { colour = PORT; }
-  }
-  if (view.brush_radius > 0.0 && abs(distance(world, view.brush) - view.brush_radius) < step) {
-    colour = vec3f(1.0);
-  }
+  // The cells are read along the same splines the 3D view draws, and every edge (the coast, a lake's shore, a mark,
+  // the brush) is softened across a pixel, so nothing shows the cells' squares.
+  let at = local / view.cell_m - 0.5;
+  let ground = wide_ground(heights, at).ground;
+  let height = ground.x;
+  let pixel_m = max(step, 1e-3);
+  // How much the height changes across one pixel: the edges soften over that, not over a cell.
+  let across = max(length(ground.yz) / view.cell_m * pixel_m, 1e-3);
+  let sea = mix(SHALLOW, OPEN_SEA, smoothstep(0.0, 300.0, -height));
+  let normal = normalize(vec3f(-0.5 * ground.yz / view.cell_m, 1.0));
+  let shade = clamp(dot(normal, normalize(vec3f(-1.0, -1.0, 1.2))), 0.0, 1.0);
+  var land = land_colour(max(height, 0.0)) * (0.45 + 0.75 * shade);
+  // A lake's surface dips under its shore as far as the shore runs past it (shore.ts stillLevels).
+  let still = grid_at(lakes, at).rg;
+  let lake = still.x - max(still.y, 0.0) - height;
+  land = mix(land, LAKE, smoothstep(-0.5, 0.5, lake / across) * select(0.0, 1.0, still.x > 0.0));
+  land = mix(land, RIVER, 0.85 * marked(marks, at, 1u, 2u));
+  land = mix(mix(mix(land, ROAD, marked(marks, at, 3u, 3u)), TOWN, 0.6 * marked(marks, at, 4u, 4u)), PORT, marked(marks, at, 5u, 5u));
+  var colour = mix(sea, land, smoothstep(-0.5, 0.5, height / across));
+  let ring = 1.0 - smoothstep(0.0, pixel_m * 1.2, abs(distance(world, view.brush) - view.brush_radius));
+  colour = mix(colour, vec3f(1.0), select(0.0, ring, view.brush_radius > 0.0));
   return vec4f(colour, 1.0);
 }
 `;
@@ -132,6 +131,8 @@ export class ReliefView {
   private textures: { heights: GPUTexture; lakes: GPUTexture; marks: GPUTexture } | null = null;
   private bindGroup: GPUBindGroup | null = null;
   private land: LandView | null = null;
+  /** The lakes' still water (shore.ts stillLevels), made again when the whole window is sent. */
+  private banked: Float32Array | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -155,8 +156,8 @@ export class ReliefView {
     const usage = TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination;
     const size = [land.width, land.height];
     this.textures = {
-      heights: device.createTexture({ size, format: 'r32float', usage }),
-      lakes: device.createTexture({ size, format: 'r32float', usage }),
+      heights: device.createTexture({ size, format: 'rgba32float', usage }),
+      lakes: device.createTexture({ size, format: 'rg32float', usage }),
       marks: device.createTexture({ size, format: 'r8uint', usage }),
     };
     this.bindGroup = device.createBindGroup({
@@ -180,21 +181,27 @@ export class ReliefView {
     const width = right - left;
     const height = bottom - top;
     if (width <= 0 || height <= 0) return;
-    const rows = (source: Float32Array | Uint8Array, bytes: number) => {
-      const out = source instanceof Float32Array ? new Float32Array(width * height) : new Uint8Array(width * height);
+    const rows = (source: Float32Array | Uint8Array, per: number) => {
+      const size = width * height * per;
+      const out = source instanceof Float32Array ? new Float32Array(size) : new Uint8Array(size);
       for (let row = 0; row < height; row++) {
-        const from = (top + row) * land.width + left;
-        out.set(source.subarray(from, from + width), row * width);
+        const from = ((top + row) * land.width + left) * per;
+        out.set(source.subarray(from, from + width * per), row * width * per);
       }
-      return { out, bytesPerRow: width * bytes };
+      return { out, bytesPerRow: width * per * source.BYTES_PER_ELEMENT };
     };
     const { queue } = this.gpu.device;
-    for (const [texture, source, bytes] of [
-      [this.textures.heights, land.heights, 4],
-      [this.textures.lakes, land.lakes, 4],
+    const texels = wideTexels(land, { left, top, right, bottom });
+    queue.writeTexture({ texture: this.textures.heights, origin: [left, top] }, texels, { bytesPerRow: width * 16 }, [
+      width,
+      height,
+    ]);
+    if (!rect || !this.banked) this.banked = stillLevels(land.heights, land.lakes, null, land.width, land.height, 1);
+    for (const [texture, source, per] of [
+      [this.textures.lakes, this.banked, 2],
       [this.textures.marks, marks, 1],
     ] as const) {
-      const { out, bytesPerRow } = rows(source, bytes);
+      const { out, bytesPerRow } = rows(source, per);
       queue.writeTexture({ texture, origin: [left, top] }, out, { bytesPerRow, rowsPerImage: height }, [width, height]);
     }
   }

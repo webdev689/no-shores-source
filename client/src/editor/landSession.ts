@@ -1,5 +1,5 @@
-import type { Brush, GroundPatch, LandPatch, LandView } from '../rules/landRules.ts';
-import type { LandWorker } from './landClient.ts';
+import type { Brush, LandPatch, LandView } from '../rules/landRules.ts';
+import type { CloseGround, LandWorker } from './landClient.ts';
 import type { LandState } from './landPanel.ts';
 import { markCells, type Places } from './marks.ts';
 
@@ -226,8 +226,9 @@ export class LandSession {
     });
   }
 
-  /** The open landmass's exact ground over a grid, for the close-up view; null when another is open. */
-  ground(id: string, left: number, top: number, step: number, size: number): Promise<GroundPatch | null> {
+  /** The open landmass's exact ground over a grid and its breakers' field, for the close-up; null when another is
+   *  open. */
+  ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null> {
     return this.then(async () => (this.openId === id ? this.worker.ground(left, top, step, size, size) : null));
   }
 

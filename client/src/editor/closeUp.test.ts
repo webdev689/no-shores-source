@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { groundUnder, patchData, patchHole, shownExaggeration, toScreen, walkStep } from './closeUp.ts';
+import { closeUpData, groundUnder, shownExaggeration, toScreen, walkStep } from './closeUp.ts';
 
 const patch = {
   left: 101_000,
   top: 202_000,
   step: 8,
-  width: 3,
+  width: 5,
   height: 3,
-  heights: Float32Array.of(10, 20, 30, 10, 20, 30, 10, 20, 30),
-  water: new Float32Array(9),
-  marks: new Uint8Array(9),
+  heights: Float32Array.of(10, 20, 30, 40, 50, 10, 20, 30, 40, 50, 10, 20, 30, 40, 50),
+  water: new Float32Array(15),
+  edges: new Float32Array(15),
+  marks: new Uint8Array(15),
 };
 
 test('heights are true to scale close up and eased to the chosen exaggeration far off', () => {
@@ -20,13 +21,11 @@ test('heights are true to scale close up and eased to the chosen exaggeration fa
   assert.ok(middle > 1 && middle < 4);
 });
 
-test('a patch sits in its window, its samples at the vertices, and the ground reads between them', () => {
-  const data = patchData(patch, { leftM: 100_000, topM: 200_000, ground: [0.2, 0.4, 0.6], snowM: 615 });
-  assert.equal(data.originX, 996, 'sample 0 at 1,000 m east of the window, half a step back');
-  assert.equal(data.originY, 1996);
-  assert.deepEqual(patchHole(data), [1008, 2008, 1008, 2008]);
-  assert.deepEqual([data.ground, data.snowM], [[0.2, 0.4, 0.6], 615], 'the close-up wears the landmass’s biome');
-  assert.equal(groundUnder(patch, 101_004, 202_000), 15);
+test('a patch sits in its window, and the ground reads between its samples along the drawn splines', () => {
+  const data = closeUpData(patch, new Float32Array(30), { leftM: 100_000, topM: 200_000 });
+  assert.deepEqual(data.corner, [1000, 2000], 'sample 0 at 1,000 m east and 2,000 m south of the window');
+  assert.equal(data.step, 8);
+  assert.equal(groundUnder(patch, 101_012, 202_004), 25, 'a straight slope stays straight between samples');
   assert.equal(groundUnder(patch, 99_000, 202_000), null);
 });
 
