@@ -1,7 +1,7 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { type Orbit, viewProjection } from '../editor/orbit.ts';
 import { PX_PER_M } from './figures.ts';
-import type { Block } from './motor.ts';
+import type { Block } from '../rules/movementRules.ts';
 
 /** A figure's picture as the scene draws it: its texture, its size in pixels, and its feet on it. */
 export interface Card {

@@ -12,7 +12,7 @@
     "build": "vite build",
     "prebuild": "npm run -s wasm",
     "preview": "vite preview",
-    "wasm": "cargo build -q -p world-wasm -p land-wasm --target wasm32-unknown-unknown --release && node -e \"const fs=require('node:fs');fs.mkdirSync('client/public',{recursive:true});for(const name of ['world','land'])fs.copyFileSync('target/wasm32-unknown-unknown/release/'+name+'_wasm.wasm','client/public/'+name+'.wasm')\"",
+    "wasm": "cargo build -q -p world-wasm -p land-wasm -p movement-wasm --target wasm32-unknown-unknown --release && node -e \"const fs=require('node:fs');fs.mkdirSync('client/public',{recursive:true});for(const name of ['world','land','movement'])fs.copyFileSync('target/wasm32-unknown-unknown/release/'+name+'_wasm.wasm','client/public/'+name+'.wasm')\"",
     "test": "node --test \"client/**/*.test.ts\"",
     "lint": "eslint .",
     "format": "prettier --write .",

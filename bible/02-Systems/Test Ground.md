@@ -5,7 +5,7 @@ code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
   - client/src/testground/player.ts#updatePlayer
-  - client/src/testground/motor.ts#stepBody
+  - client/src/testground/player.ts#shownBody
   - client/src/testground/playerCamera.ts#scrolled
   - client/src/testground/playerMoves.ts#shownMove
   - client/src/testground/dressing.ts#figureOf
@@ -22,7 +22,7 @@ it ([[The Player Plays as in DFO]]). It is published with the site at
 
 ## Playing
 
-Click the view to play; Escape frees the mouse. The controls are DFO's:
+Click the view to play; Escape frees the mouse. The body moves by the [[Movement]] rules, and the controls are DFO's:
 
 | Control | Does |
 |---|---|

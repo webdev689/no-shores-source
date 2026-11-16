@@ -1,0 +1,13 @@
+[package]
+name = "movement"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "How a body moves: walking, running, crouching, jumping, climbing, hanging, mantling and vaulting, the same on the server and in every browser."
+
+[dependencies]
+libm.workspace = true
+
+[lints]
+workspace = true

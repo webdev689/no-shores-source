@@ -27,7 +27,7 @@ code:
 
 - **Rust 1.97.0**, pinned in `rust-toolchain.toml` with `rustfmt`, `clippy` and the `wasm32-unknown-unknown` target.
 - **Edition 2024**, one workspace. Every crate takes the workspace's lints. Unsafe code is denied everywhere except
-  the door crates `world-wasm` and `land-wasm`, which allow it to hand memory to JavaScript. Clippy warnings are
+  the door crates `world-wasm`, `land-wasm` and `movement-wasm`, which allow it to hand memory to JavaScript. Clippy warnings are
   errors.
 - **Build profiles**: debug builds optimise dependencies fully and our own crates lightly, so they run at a usable
   speed and still rebuild quickly.
@@ -53,5 +53,5 @@ Only for the [[Sprite Forge]], which runs inside Blender: `pip install bpy==5.2.
 | `cargo xtask check` | Everything CI runs, both languages |
 | `cargo xtask repo` | Only the repo checks, in about a second |
 | `npm run dev` | The client in a browser, reloading as you edit; the [[World Editor]] at `/editor/` |
-| `npm run wasm` | Builds the world rules and the land as WebAssembly into `client/public/` (not in git); `dev` and `build` run it first |
+| `npm run wasm` | Builds the world rules, the land and movement as WebAssembly into `client/public/` (not in git); `dev` and `build` run it first |
 | `npm test`, `cargo test` | One side's tests |

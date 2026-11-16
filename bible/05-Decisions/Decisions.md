@@ -44,6 +44,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Overlook Is a Shared World After Destiny 1]]
 - [[Each Continent Is One Biome]]
 - [[The Continents' Biomes]]
+- [[Gameplay Starts With the Shared Rules]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
