@@ -2,6 +2,7 @@ use super::*;
 use ::foes::Kind;
 use combat::shapes::{Shape, Telegraph, TelegraphOrder};
 use combat::{CombatInput, Intent};
+use core::f64::consts::{FRAC_PI_2, PI};
 use movement::Controls;
 
 fn room() -> Room {
@@ -37,15 +38,23 @@ fn a_player_asks_for_foes_that_stand_before_them_and_sends_them_all_away() {
     assert_eq!(spawned.len(), 1);
     let foe = spawned[0];
     assert_eq!(foe.kind, Kind::Swordsman as u8);
-    // The player faces south when they join: the foe stands 5 m south, facing them.
-    assert!((foe.fighter.body.y - 5.0).abs() < 0.5 && foe.fighter.body.x.abs() < 0.5, "{:?}", foe.fighter.body);
+    // The player looks north, though their body, never walked, faces south: the foe stands 5 m north, facing them.
+    assert!((foe.fighter.body.y + 5.0).abs() < 0.5 && foe.fighter.body.x.abs() < 0.5, "{:?}", foe.fighter.body);
+    assert!((foe.fighter.body.facing - PI).abs() < 1e-9, "it faces the player");
     assert!(room.take_events().iter().any(|event| event.kind == EventKind::Spawned && event.defender == foe.foe));
-    for sequence in 2..=20 {
+    room.input(player, asking(&room, 2, Some(CLEAR_FOES), Controls::default())).unwrap();
+    room.tick();
+    let east = Controls { yaw: FRAC_PI_2, ..Controls::default() };
+    room.input(player, asking(&room, 3, Some(Kind::Swordsman as u8), east)).unwrap();
+    room.tick();
+    let foe = room.foes_seen().next().unwrap();
+    assert!((foe.fighter.body.x - 5.0).abs() < 0.5 && foe.fighter.body.y.abs() < 0.5, "{:?}", foe.fighter.body);
+    for sequence in 4..=22 {
         room.input(player, asking(&room, sequence, Some(Kind::Brute as u8), Controls::default())).unwrap();
         room.tick();
     }
     assert_eq!(room.foes_seen().count(), FOES_MOST, "never more than the most");
-    room.input(player, asking(&room, 21, Some(CLEAR_FOES), Controls::default())).unwrap();
+    room.input(player, asking(&room, 23, Some(CLEAR_FOES), Controls::default())).unwrap();
     room.tick();
     assert_eq!(room.foes_seen().count(), 0);
 }

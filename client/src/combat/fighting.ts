@@ -63,7 +63,7 @@ export class Fighting {
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
   private dodgeQueued = false;
-  private spawnQueued = 0;
+  private readonly spawnsQueued: number[] = [];
   private sentDress = '';
   /** The stroke the next swing takes, 1 to 6: chosen at random, as DFO's first person chooses, and again once used. */
   stroke = 1 + Math.floor(Math.random() * 6);
@@ -97,9 +97,10 @@ export class Fighting {
     this.dodgeQueued ||= buttons.dodge;
   }
 
-  /** Asks the room to stand a foe of this kind before the player, with the next input (or every foe sent away). */
+  /** Asks the room to stand a foe of this kind before the player (or to send every foe away): one ask an input, in the
+   *  order asked. */
   ask(kind: number): void {
-    this.spawnQueued = kind;
+    this.spawnsQueued.push(kind);
   }
 
   /** The movement rules as the page's tick loop steps them, but each tick's body the fighter's: its intent sent to the
@@ -125,9 +126,8 @@ export class Fighting {
     const view = this.view;
     const arms = this.arms;
     const sequence = this.prediction.next({ intent, view, arms });
-    const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnQueued };
+    const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnsQueued.shift() ?? 0 };
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
-    this.spawnQueued = 0;
     const before = this.fighter[BLOWS_AT] ?? 0;
     this.fighter = this.rules.predict(armed(this.fighter, arms), intent, this.player, view);
     if ((this.fighter[BLOWS_AT] ?? 0) !== before) {

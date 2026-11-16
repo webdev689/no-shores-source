@@ -77,7 +77,8 @@ impl Room {
     }
 
     fn stand_foe(&mut self, kind: Kind, player: &Fighter, asker: PlayerId) {
-        let (sin, cos) = (libm::sin(player.body.facing), libm::cos(player.body.facing));
+        // Along the player's aim, which follows their look: a body standing still keeps the way it last walked.
+        let (sin, cos) = (libm::sin(player.aim), libm::cos(player.aim));
         let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
         let spot = self.nav.nearest_point(ahead).unwrap_or(ahead);
         let facing = combat::sight::bearing([spot[0], spot[1]], [player.body.x, player.body.y]);

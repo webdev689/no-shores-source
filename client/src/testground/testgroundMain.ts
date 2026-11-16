@@ -107,6 +107,8 @@ async function start(): Promise<void> {
   const you = place(plainDress('human', 0.3), START.x, START.y, 0);
   let chosen: Placed = you;
   let cards: Cards | null = null;
+  // Declared before the panel: a foe asked for while the forge loads is not asked for.
+  let fight: Fighting | null = null;
   const showPanel = startPanel(element<HTMLElement>('#panel'), {
     add: () => {
       const ahead = 3;
@@ -153,7 +155,6 @@ async function start(): Promise<void> {
   const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
   const forge = new Cards(scene, store, looks, colours, dyes);
   cards = forge;
-  let fight: Fighting | null = null;
   // The first person swings in the direction the fight's rules began the swing with.
   const strokeShare = () => {
     const action = fight?.own?.action;

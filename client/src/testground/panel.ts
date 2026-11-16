@@ -108,7 +108,11 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
       list.append(pick);
     }
     const chosen = state.chosen;
-    const foes = FOE_KINDS.map((kind) => button(`A ${kind.name.toLowerCase()}`, () => handlers.fight(kind.number)));
+    const foes = FOE_KINDS.map((kind) =>
+      button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () =>
+        handlers.fight(kind.number),
+      ),
+    );
     body.replaceChildren(
       make('h2', 'Foes'),
       ...foes,

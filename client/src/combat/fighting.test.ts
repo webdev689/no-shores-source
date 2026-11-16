@@ -59,3 +59,21 @@ test('the page predicts its own fighter exactly as its room steps it, through sw
   assert.equal(swings, 2, 'holding the button for 70 ticks swings twice');
   assert.ok(body.x !== 0 && Number.isFinite(body.y));
 });
+
+test('every foe asked for comes, one with each input, even two asked for within one tick', () => {
+  let fight: Fighting | null = null;
+  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
+  const rules = startFightRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, room);
+  fight = fighting;
+  const steps = fighting.steps(movement);
+  const held = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+  fighting.ask(1);
+  fighting.ask(3);
+  for (let tick = 0; tick < 4; tick += 1) {
+    steps.step({} as Body, held);
+    room.pump(TICK);
+  }
+  assert.deepEqual([...fighting.foes.values()].map((foe) => foe.kind).sort(), [1, 3]);
+});
