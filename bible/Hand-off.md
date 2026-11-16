@@ -24,23 +24,22 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, and
   agreeing to the bit with the crate run natively.
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
-  ([[Messages Are FlatBuffers]]). The [[Server]]'s room, its core, on its pull request: players' inputs in order,
-  their bodies stepped tick by tick, never faster than the room's clock. Nothing hosts it yet.
+  ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room, its core: players' inputs in order, their bodies
+  stepped tick by tick, never faster than the room's clock. On its pull request: the messages, their schema and the
+  code `flatc` makes from it, Google's `flatc` pinned by its checksum. Nothing hosts the room yet.
 
 ## Waiting on the owner
 
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- Where `flatc` comes from ([[Messages Are FlatBuffers]]): Google's release, pinned by its checksum, or a build of
-  it. Running a downloaded `flatc` here was refused by the session's permission check.
 - Which of Cloudflare's runs the rooms ([[Servers on Cloudflare]]): Durable Objects, as Claude recommends, or
   Containers.
 
 ## Next
 
-- The thin server, the rest of it: the messages' schema and the code `flatc` makes from it; the room hosted on
-  Cloudflare, ticking 60 times a second; each browser sending its controls over WebSocket, predicting its own player
+- A cloud session needs `flatc`: run `bash tools/install-flatc.sh` once ([[Toolchain]]).
+- The thin server, the rest of it: the room hosted on Cloudflare, ticking 60 times a second; each browser sending its controls over WebSocket, predicting its own player
   and corrected by the room; and two browsers seeing each other on the Test Ground
   ([[Gameplay Starts With the Shared Rules]]).
 - Swimming, which the water's pull request has in TypeScript, moves into the `movement` crate once both are merged,

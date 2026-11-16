@@ -30,6 +30,8 @@ jobs:
           cache: npm
       - name: Install the TypeScript tools
         run: npm ci
+      - name: Install flatc, Google's release at the pinned version
+        run: bash tools/install-flatc.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: cargo xtask check
         run: cargo xtask check
 

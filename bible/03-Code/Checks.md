@@ -10,14 +10,16 @@ code:
 `main`, and on `main` publishes the client to GitHub Pages once it passes. It stops at the first failing step, in the
 order a failure is cheapest to read:
 
-1. **format**: rustfmt, then Prettier.
-2. **lints**: clippy on every crate and target, then ESLint; warnings are errors. Clippy also refuses clocks and
+1. **messages**: the Rust and the TypeScript for every network message, made from the schema with `flatc`
+   (`npm run schema`), into `generated/`; it stops if `flatc` is missing or not the pinned version.
+2. **format**: rustfmt, then Prettier.
+3. **lints**: clippy on every crate and target, then ESLint; warnings are errors. Clippy also refuses clocks and
    every float method the platform may round its own way, such as `sin`, `exp` and `powf` ([[Agree to the Bit]]).
-3. **types**: TypeScript, strict, for the client and for the tests.
-4. **tests**: `cargo test`, then the world rules, the land and movement built as WebAssembly (`npm run wasm`), then
+4. **types**: TypeScript, strict, for the client and for the tests.
+5. **tests**: `cargo test`, then the world rules, the land and movement built as WebAssembly (`npm run wasm`), then
    `node --test`, whose bridge tests load them.
-5. **build**: the client, with Vite.
-6. **repo checks**, each a pure function with tests beside it:
+6. **build**: the client, with Vite.
+7. **repo checks**, each a pure function with tests beside it:
 
 | Check | Holds | Rule |
 |---|---|---|

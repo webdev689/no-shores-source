@@ -14,6 +14,8 @@ serde_json = { version = "1.0.154", features = ["float_roundtrip"] }
 # Sines and arctangents in pure Rust, compiled into the rules, so every machine rounds them alike. Without its
 # default `arch` feature it takes the same software path on every target.
 libm = { version = "0.2.16", default-features = false }
+# The runtime for the code flatc makes from the messages' schema, at the same version as the pinned flatc.
+flatbuffers = "=25.12.19"
 
 [workspace.lints.rust]
 unsafe_code = "deny"

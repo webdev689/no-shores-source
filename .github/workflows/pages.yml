@@ -26,6 +26,8 @@ jobs:
           cache: npm
       - name: Install the TypeScript tools
         run: npm ci
+      - name: Install flatc, Google's release at the pinned version
+        run: bash tools/install-flatc.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - id: pages
         uses: actions/configure-pages@v5
       - name: Build the client

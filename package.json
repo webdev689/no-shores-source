@@ -8,10 +8,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "predev": "npm run -s wasm",
+    "predev": "npm run -s schema && npm run -s wasm",
     "build": "vite build",
-    "prebuild": "npm run -s wasm",
+    "prebuild": "npm run -s schema && npm run -s wasm",
     "preview": "vite preview",
+    "schema": "node tools/schema.mjs",
     "wasm": "cargo build -q -p world-wasm -p land-wasm -p movement-wasm --target wasm32-unknown-unknown --release && node -e \"const fs=require('node:fs');fs.mkdirSync('client/public',{recursive:true});for(const name of ['world','land','movement'])fs.copyFileSync('target/wasm32-unknown-unknown/release/'+name+'_wasm.wasm','client/public/'+name+'.wasm')\"",
     "test": "node --test \"client/**/*.test.ts\"",
     "lint": "eslint .",
@@ -26,5 +27,8 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.2",
     "vite": "^8.3.8"
+  },
+  "dependencies": {
+    "flatbuffers": "^25.9.23"
   }
 }

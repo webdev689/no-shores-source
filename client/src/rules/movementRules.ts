@@ -89,6 +89,9 @@ interface Tuning {
 
 const flag = (value: boolean): number => (value ? 1 : 0);
 
+/** How many numbers a body is. */
+export const BODY_FLOATS = 22;
+
 /** A body's numbers in the movement crate's order: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded;
  *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving. */
 export function floatsOf(body: Body): number[] {
@@ -115,8 +118,19 @@ export function floatsOf(body: Body): number[] {
   ];
 }
 
+/** The controls' numbers in the movement crate's order: forward, sideways, yaw, run, jump, crouch, mounted. */
+export const floatsOfControls = (controls: Controls): number[] => [
+  controls.forward,
+  controls.sideways,
+  controls.yaw,
+  flag(controls.run),
+  flag(controls.jump),
+  flag(controls.crouch),
+  flag(controls.mounted),
+];
+
 /** The body the numbers hold, in the same order. */
-function bodyOf(floats: readonly number[]): Body {
+export function bodyOf(floats: readonly number[]): Body {
   const number = (index: number) => floats[index] ?? 0;
   return {
     x: number(0),
@@ -186,16 +200,7 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
       exports.release(address, floats.length * 8);
     },
     step: (body, controls) => {
-      write([
-        ...floatsOf(body),
-        controls.forward,
-        controls.sideways,
-        controls.yaw,
-        flag(controls.run),
-        flag(controls.jump),
-        flag(controls.crouch),
-        flag(controls.mounted),
-      ]);
+      write([...floatsOf(body), ...floatsOfControls(controls)]);
       exports.movement_step(exchange, tuning.step_floats * 8);
       return readBody();
     },

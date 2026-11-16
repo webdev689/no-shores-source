@@ -1,0 +1,37 @@
+// Every message between a browser and a room, defined once: flatc makes the Rust and the TypeScript from this file.
+// A body and controls cross as the movement crate's numbers, in its order (crates/movement/src/floats.rs), the same
+// order the browser's WebAssembly door uses.
+
+namespace overlook.wire;
+
+// A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted. Numbered 1, 2, 3 and so on.
+table Input {
+  sequence: uint;
+  controls: [double];
+}
+
+// The room's welcome: the joining player's number.
+table Joined {
+  player: uint;
+}
+
+// One player as the room last stepped them: their body's 22 numbers and the number of their last input it took.
+table Seen {
+  player: uint;
+  acknowledged: uint;
+  body: [double];
+}
+
+// Every player in the room after one of its ticks.
+table Snapshot {
+  tick: ulong;
+  players: [Seen];
+}
+
+// What a room sends: exactly one of these is present.
+table FromRoom {
+  joined: Joined;
+  snapshot: Snapshot;
+}
+
+root_type FromRoom;
