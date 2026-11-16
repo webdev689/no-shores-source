@@ -301,6 +301,10 @@ struct Frame {
   local: vec4f,
   waves: array<vec4f, ${MOST_WAVES * 2}>,
   chop: array<vec4f, ${CHOP_WAVES}>,
+  // A ship's footprint: her middle from the eye, and the sine and cosine of her heading; her fitted half length and
+  // half beam, her way, and whether she is there.
+  hull_place: vec4f,
+  hull_size: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> frame: Frame;

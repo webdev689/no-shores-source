@@ -22,6 +22,7 @@ decision, made in the same change as its entry here.
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
 | `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display, and the ground's marks for telegraphed blows and shots |
+| `client/src/ships/` | The ships layer: a ship's mesh read from R2 and drawn at her pose on the water ([[Sailing]]) |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]], [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
@@ -35,14 +36,17 @@ decision, made in the same change as its entry here.
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks, and the paths across it |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |
 | `crates/foes` | [[Foes]]: the kinds of foe and the brain each fights with: turns at a target, the ring, telegraphed blows and answers to blows |
+| `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
-| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, and `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too |
+| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, and `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
+| `tools/r2.py` | R2 access for the publishers: objects named by their hash, uploaded once and checked when fetched |
+| `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh and publishes both to R2 ([[Sailing]]) |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
 | `bible/` | This vault |
@@ -60,9 +64,10 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
-Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `editor`
-(imports `rules` and `water`), `combat` (imports `rules` and `network`), `testground` (imports `rules`, `network`, `forge`,
-`firstperson`, `combat`, and the editor's camera and panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork
+Declared so far: `rules` and `forge` (each imports nothing), `network` and `water` (each imports `rules`), `ships`
+(imports `rules`, and the water's sun and samples), `editor` (imports `rules`, `water` and `ships`), `combat` (imports
+`rules` and `network`), `testground` (imports `rules`, `network`, `forge`, `firstperson`, `combat`, and the editor's
+camera and panel helpers) and `firstperson` (imports `forge`). The code `flatc` makes, in `generated/`, is groundwork
 any layer may import.
 
 ## The Rust crates
@@ -73,14 +78,14 @@ and outside crates it may use (`CRATES`, [[Checks]]):
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
   predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
-  `combat`, which may use `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; and `foes`, which may
-  use `combat`, `movement` and `libm`.
+  `sailing`, which may use `land` and `libm`; `combat`, which may use `movement` and `libm`; `navmesh`, which may use
+  `movement` and `libm`; and `foes`, which may use `combat`, `movement` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `movement`,
   `navmesh` and `libm`; its messages are `protocol`, which may use `combat`, `movement`, `room` and `flatbuffers`; and
   `room-wasm` puts them behind a WebAssembly door for the Cloudflare shell in `server/`, and for a browser playing
   alone.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
-  `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land and movement behind WebAssembly
-  doors for the browser; `room-wasm`, which puts the room behind one for its Cloudflare host; and `protocol`, whose
-  code from `flatc` reads a message's bytes in place.
+  `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land (and a ship sailing over it) and
+  movement behind WebAssembly doors for the browser; `room-wasm`, which puts the room behind one for its Cloudflare
+  host; and `protocol`, whose code from `flatc` reads a message's bytes in place.

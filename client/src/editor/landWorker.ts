@@ -30,6 +30,11 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     scope.postMessage({ ticket, ground, shore }, moved);
     return;
   }
+  if (request.kind === 'sail') {
+    const sailed = rules.sail(request.ship, request.helm, request.time, request.ticks);
+    scope.postMessage({ ticket, sailed }, [sailed.ship.buffer]);
+    return;
+  }
   if (request.kind === 'write') {
     scope.postMessage({ ticket, written: rules.write() }, []);
     return;

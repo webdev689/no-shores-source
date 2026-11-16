@@ -1,3 +1,4 @@
+import { HULL_WGSL } from './hullMask.ts';
 import { SHARED_WGSL, WATER_WGSL } from './waterCommon.ts';
 
 /**
@@ -10,6 +11,7 @@ import { SHARED_WGSL, WATER_WGSL } from './waterCommon.ts';
 export const WATER_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${WATER_WGSL}
+${HULL_WGSL}
 
 fn eye_fresh() -> bool {
   return frame.coarse_area.y > 0.5;
@@ -149,7 +151,9 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let level = still.x;
   let depth = level - ground.x;
   let thin = level + top - surface.rest - ground.x;
-  let cover = wet_share(thin, length(ground.yz) * footprint, still, share);
+  // No water inside a ship's waterline: under her deck it is hidden anyway, and in her open hull it is not. Her
+  // footprint is tested where the water is drawn, a metre or two from its rest place once the swell carries it.
+  let cover = wet_share(thin, length(ground.yz) * footprint, still, share) * (1.0 - hull_inside(surface.drawn.xy, footprint));
 
   var normal = vec3f(0.0, 0.0, 1.0);
   var crest = 0.0;
@@ -183,7 +187,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let edge = (1.0 - smoothstep(0.0, select(0.14, 0.06, fresh), thin)) * select(0.95, 0.5, fresh)
     * (1.0 - smoothstep(1.0, 6.0, footprint));
   let splashed = smoothstep(0.012, 0.04, abs(ripple.x)) * 0.6;
-  let amount = clamp(max(max(whitecap * 0.85, max(breaking, lingering)), max(edge, splashed)), 0.0, 1.0);
+  let bow_wave = hull_foam(surface.drawn.xy);
+  let amount = clamp(max(max(whitecap * 0.85, max(breaking, lingering)), max(max(edge, splashed), bow_wave)), 0.0, 1.0);
   // Too far off to hold its lace, foam is drawn as the share of the surface it would cover.
   let foam = mix(foam_cover(local, drift, amount, footprint), amount * 0.55, smoothstep(0.4, 3.0, footprint));
 
