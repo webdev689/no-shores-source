@@ -3,6 +3,7 @@
 //! forged models, its wall and harbour, its landmark, and its social space. Only the social space is walked; the rest
 //! is seen. See the Cities note in the bible.
 
+pub mod collision;
 pub mod districts;
 pub mod footprint;
 pub mod grid;
