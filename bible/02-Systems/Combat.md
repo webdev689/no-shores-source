@@ -84,7 +84,8 @@ the fighter's look has stayed more than 110 degrees away for half a second. The 
 
 ## Foes' telegraphed blows
 
-A foe may wind up a telegraphed blow, as DFO's TELL draws them: a shape on the ground it stands still through, landing
+A foe may wind up a telegraphed blow, as DFO's TELL draws them (which foe, when and which shape is its brain's:
+[[Foes]]): a shape on the ground it stands still through, landing
 on whoever's feet stand in it when the wind-up ends. A lunge and a charge are lanes ahead, a sweep an arc, a slam a
 disc just ahead, a ring an annulus safe at the foe's feet, a leap a disc where its target stood, and an aimed shot the
 line its arrow flies. A lunge and a charge turn after their target through the first half of the wind-up. A charge
