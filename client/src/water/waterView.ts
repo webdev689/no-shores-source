@@ -72,8 +72,10 @@ function chopWaves(swell: Swell | undefined): Float32Array {
   const [windX, windY] = swell?.waves[0]?.direction ?? [0, -1];
   const out = new Float32Array(CHOP_WAVES * 4);
   for (let index = 0; index < CHOP_WAVES; index++) {
-    const length = 0.3 * 1.47 ** index;
-    const spread = (((index * 2.39996 + 0.4) % (2 * Math.PI)) - Math.PI) * 0.55;
+    // Lengths and courses are nudged off any even step (golden-ratio turns), so the waves never lock into a grid.
+    const turn = (index * 0.618_034) % 1;
+    const length = 0.25 * 1.36 ** index * (0.86 + 0.28 * turn);
+    const spread = (turn * 2 - 1) * 0.6;
     const way = [
       windX * Math.cos(spread) - windY * Math.sin(spread),
       windX * Math.sin(spread) + windY * Math.cos(spread),

@@ -88,15 +88,17 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
   let ground = spline_at(heights, at);
   let height = ground.x;
   let pixel_m = max(step, 1e-3);
+  // How much the height changes across one pixel: the edges soften over that, not over a cell.
+  let across = max(length(ground.yz) / view.cell_m * pixel_m, 1e-3);
   let sea = mix(SHALLOW, OPEN_SEA, smoothstep(0.0, 300.0, -height));
   let normal = normalize(vec3f(-0.5 * ground.yz / view.cell_m, 1.0));
   let shade = clamp(dot(normal, normalize(vec3f(-1.0, -1.0, 1.2))), 0.0, 1.0);
   var land = land_colour(max(height, 0.0)) * (0.45 + 0.75 * shade);
   let lake = grid_at(lakes, at).r - height;
-  land = mix(land, LAKE, smoothstep(-0.5, 0.5, lake / max(fwidth(lake), 1e-3)) * select(0.0, 1.0, grid_at(lakes, at).r > 0.0));
+  land = mix(land, LAKE, smoothstep(-0.5, 0.5, lake / across) * select(0.0, 1.0, grid_at(lakes, at).r > 0.0));
   land = mix(land, RIVER, 0.85 * marked(marks, at, 1u, 2u));
   land = mix(mix(mix(land, ROAD, marked(marks, at, 3u, 3u)), TOWN, 0.6 * marked(marks, at, 4u, 4u)), PORT, marked(marks, at, 5u, 5u));
-  var colour = mix(sea, land, smoothstep(-0.5, 0.5, height / max(fwidth(height), 1e-3)));
+  var colour = mix(sea, land, smoothstep(-0.5, 0.5, height / across));
   let ring = 1.0 - smoothstep(0.0, pixel_m * 1.2, abs(distance(world, view.brush) - view.brush_radius));
   colour = mix(colour, vec3f(1.0), select(0.0, ring, view.brush_radius > 0.0));
   return vec4f(colour, 1.0);

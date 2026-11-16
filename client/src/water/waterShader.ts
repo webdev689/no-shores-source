@@ -130,12 +130,14 @@ fn river_flow(offset: vec2f) -> vec2f {
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   let pixel = surface.clip.xy;
   let local = surface.offset + frame.local.xy;
-  let footprint = max(length(fwidth(surface.offset)), 0.01);
+  let distance_to = length(surface.drawn);
+  let to_eye = -surface.drawn / max(distance_to, 1e-4);
+  // A pixel's footprint on the water, metres: its angle times the distance, stretched as the view grazes. Smooth
+  // from triangle to triangle, unlike the mesh's own derivatives, so nothing fades in facets.
+  let footprint = max(distance_to * 2.0 * frame.forward.w / frame.view.y / max(abs(to_eye.z), 0.02), 0.01);
   let fresh = surface.fresh == 1u;
   let depth = surface.still.x - surface.still.y;
   let top = (surface.drawn.z + frame.eye.z) / frame.depth_terms.w;
-  let distance_to = length(surface.drawn);
-  let to_eye = -surface.drawn / max(distance_to, 1e-4);
 
   var normal = vec3f(0.0, 0.0, 1.0);
   var crest = 0.0;

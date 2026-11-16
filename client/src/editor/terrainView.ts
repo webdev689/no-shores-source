@@ -48,8 +48,9 @@ export interface TerrainFrame {
   readonly eye: readonly [number, number, number];
   readonly time: number;
   readonly rings: readonly ClipLevel[];
-  /** The farthest the camera draws, metres. */
+  /** The farthest the camera draws, metres, and the angle one pixel spans, radians. */
   readonly far: number;
+  readonly pixelAngle: number;
 }
 
 const UNIFORM_FLOATS = 40 + CLIPMAP_LEVELS * 8;
@@ -181,7 +182,12 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let local = surface.offset + view.local.xy;
   let from_brush = distance(point, view.brush.xy);
   let ring_width = max(fwidth(from_brush), 1e-3);
-  let fine = 1.0 - smoothstep(0.06, 0.3, length(fwidth(local)));
+  // The caustics fade where a pixel spans too much bed to hold them: its angle times the distance, stretched as the
+  // view grazes; smooth from triangle to triangle, unlike the mesh's own derivatives.
+  let from_eye = vec3f(surface.offset, surface.bed * view.brush.w - view.eye.z);
+  let reach_to = length(from_eye);
+  let footprint = reach_to * view.wide.z / max(abs(from_eye.z) / max(reach_to, 1e-4), 0.02);
+  let fine = 1.0 - smoothstep(0.06, 0.3, footprint);
   let depth = surface.still.x - surface.bed;
   // The bed's colour turns to the land's across a pixel, not at a hard line.
   let under = smoothstep(-0.5, 0.5, depth / max(fwidth(depth), 1e-3));
@@ -360,7 +366,7 @@ export class TerrainView {
     const fromClose = close ? [eyeX - close.corner[0], eyeY - close.corner[1]] : [0, 0];
     floats.set([eyeX - anchor[0], eyeY - anchor[1], ...fromClose], 24);
     floats.set([close?.step ?? 1, close ? 1 : 0, this.width * this.cellM, this.height * this.cellM], 28);
-    floats.set([this.cellM, frame.far, 0, 0], 32);
+    floats.set([this.cellM, frame.far, frame.pixelAngle, 0], 32);
     floats.set([...this.ground, this.snowM], 36);
     for (const [index, ring] of frame.rings.entries()) {
       floats.set([ring.corner[0] - eyeX, ring.corner[1] - eyeY, ring.spacing, 0], 40 + index * 8);

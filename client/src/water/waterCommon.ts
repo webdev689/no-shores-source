@@ -1,8 +1,8 @@
 import { FRESH_LEVEL_M, FRESH_SINK_M, GRAVITY, SHORE, SLOW_CLOCK_S } from './shore.ts';
 
-/** The most swell waves the GPU sums; crates/land/src/sea.rs makes ten. The wind's chop is eight more. */
+/** The most swell waves the GPU sums; crates/land/src/sea.rs makes ten. The wind's chop is twelve more. */
 export const MOST_WAVES = 12;
-export const CHOP_WAVES = 8;
+export const CHOP_WAVES = 12;
 /**
  * Noise is read at points measured from an anchor, a whole number of ANCHOR_M from the window's corner, near the
  * eye: GPU floats hold centimetres there. The noise repeats every 256 cells and every noise scale is a whole number
@@ -364,7 +364,9 @@ fn chop_slope(local: vec2f, flow: vec2f, calm: f32, footprint: f32) -> vec2f {
     let number = length(wave.xy);
     let fade = smoothstep(footprint * 1.5, footprint * 4.0, TAU / number);
     let angle = dot(wave.xy, local - flow * time) - wave.z * time + wave.w;
-    slope += wave.xy / number * cos(angle) * 0.05 * fade * calm;
+    // Strengths from 0.55 to 1.15 of the mean, so no two waves cross evenly into a grid.
+    let strength = 0.55 + 0.6 * fract(f32(index) * 0.754877 + 0.31);
+    slope += wave.xy / number * cos(angle) * 0.042 * strength * fade * calm;
   }
   return slope;
 }
