@@ -13,6 +13,8 @@ code:
   - crates/land/src/ground.rs#height_at
   - crates/land/src/ground_window.rs#window
   - crates/land-wasm/src/lib.rs#land_open
+  - crates/land-wasm/src/settled.rs#land_window
+  - crates/land-wasm/src/settled.rs#land_city_plan
   - client/src/rules/landRules.ts#startLand
 ---
 # Land
@@ -122,6 +124,9 @@ layers do not hold the same cells is refused. A test cuts a 2 km window
 at a river's mouth on the rainforest continent, with a town, a road and a carved river added, and checks 4,300 points
 in it to the bit: it keeps 36 cells and saves to about 80 KB.
 
+The bake cuts each node's window with its city settled on the land, over the section's bounds and 100 m past them
+([[Server]]). A node's window keeps 16 to 36 cells; the 99 of them save to about 0.44 MB in all.
+
 ## Agreeing to the bit
 
 The land crate uses only exact maths ([[Agree to the Bit]]): its noise is hashed gradient noise made of + - * / and
@@ -137,7 +142,10 @@ sea's swell ([[Water]]) over the land's margin at a moment of world time.
 responsive while a continent generates: about 1.5 s for 200,000 km² and 4 s for 500,000 km² on one core.
 
 One landmass at a time is open for shaping. The editor also generates the others as previews (`keep: false`), which
-leave the open one alone. The door answers for the open landmass:
+leave the open one alone. The open landmass has its city settled on it, as the bake settles it: planned with the RMB
+index's blocks when the caller passes the index's text, else with none, which gives the same terraces and walls. The
+city is settled again whenever the ground is laid again (new edits, or the water run after a stroke), and a city that
+cannot be planned is listed among the landmass's problems. The door answers for the open landmass:
 
 - `land_patch`: the ground over a grid of up to 1,024 samples a side. Each sample has its height, its water's
   surface, how far past fresh water's edge it lies (beyond a river's channel, or above a lake's surface), and a mark
@@ -145,6 +153,11 @@ leave the open one alone. The door answers for the open landmass:
 - `land_sample`: the ground at a list of points. Each point has its height, its water (dry, sea, lake or river) with
   the water's surface, and the sea's swell over it at a given moment ([[Water]]). The answer also holds fingerprints
   of the heights and of the sea. The game will call it.
+- `land_window`: the ground over a rect, cut as a node's window, as JSON: every number the same, to the bit, as the
+  window the bake writes for the rect a node's room names. The movement door stands a predicted body on it
+  ([[Movement]]).
+- `land_boxes`: the boxes of the city a body runs into within a rect, west, north, east, south and top.
+- `land_city_plan`: the city's plan as JSON, for the drawing, or null for a landmass with no city.
 
 Each landmass's view also carries the sea's swell, its waves, for the browser to draw; and each cell's distance from
 the painted coast and its height carried over the coast, so the browser draws the coast as the ground has it.
@@ -157,6 +170,6 @@ the painted coast and its height carried over the coast, so the browser draws th
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
   band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 4 m.
 - A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.
-- No room reads a window yet.
+- A preview (`keep: false`) has no city settled on it.
 - A window keeps every course that reaches it whole, so a long river crossing it is carried end to end. Outside its
   rect a window still answers, but not as the whole ground would.

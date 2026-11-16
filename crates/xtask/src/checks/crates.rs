@@ -16,14 +16,21 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "world", workspace: &[], outside: &["serde", "serde_json"], door: false },
     CrateRule { name: "world-wasm", workspace: &["world"], outside: &["serde_json"], door: true },
     CrateRule { name: "land", workspace: &["world"], outside: &["serde", "serde_json"], door: false },
-    CrateRule { name: "land-wasm", workspace: &["land", "world"], outside: &["serde_json"], door: true },
+    CrateRule { name: "land-wasm", workspace: &["city", "land", "world"], outside: &["serde_json"], door: true },
     CrateRule { name: "city", workspace: &["land", "world"], outside: &["serde", "serde_json", "libm"], door: false },
     CrateRule { name: "movement", workspace: &[], outside: &["libm"], door: false },
-    CrateRule { name: "movement-wasm", workspace: &["movement"], outside: &[], door: true },
+    CrateRule { name: "movement-wasm", workspace: &["land", "movement"], outside: &["serde_json"], door: true },
     CrateRule { name: "reach", workspace: &[], outside: &[], door: false },
-    CrateRule { name: "room", workspace: &["movement"], outside: &[], door: false },
+    CrateRule { name: "room", workspace: &["land", "movement", "reach", "world"], outside: &["libm"], door: false },
     CrateRule { name: "protocol", workspace: &["movement", "room"], outside: &["flatbuffers"], door: true },
-    CrateRule { name: "room-wasm", workspace: &["movement", "protocol", "room"], outside: &[], door: true },
+    CrateRule {
+        name: "room-wasm",
+        workspace: &["land", "movement", "protocol", "room", "world"],
+        outside: &["serde", "serde_json"],
+        door: true,
+    },
+    // A tool run at build time: it bakes what the rooms read, so it may use the rules that make the land.
+    CrateRule { name: "bake", workspace: &["city", "land", "world"], outside: &["serde", "serde_json"], door: false },
     CrateRule { name: "xtask", workspace: &["*"], outside: &["*"], door: false },
 ];
 

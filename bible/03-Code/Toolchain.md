@@ -48,6 +48,9 @@ code:
 
 - **`wrangler`**, Cloudflare's tool, with Cloudflare's Workers types for the shell's TypeScript, which
   `server/tsconfig.json` checks. Its usage reports are off (`send_metrics`).
+- **`npm run bake`** cuts each node's window of the land into `generated/nodes/` (not in git), with the `bake` crate
+  built for release: about 8 s once it is built. The Worker serves those files to its rooms as static assets, so
+  `server`, `server:bundle` and `server:deploy` each run it first ([[Server]]).
 - **`npm run server`** runs the rooms locally on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **`npm run server:bundle`** bundles the Worker as a deploy would, into `target/server/`, without deploying.
   `cargo xtask check` runs it last.
@@ -78,5 +81,6 @@ Only for the [[Sprite Forge]], which runs inside Blender: `pip install bpy==5.2.
 | `npm run dev` | The client in a browser, reloading as you edit; the [[World Editor]] at `/editor/` |
 | `npm run schema` | Makes the messages' Rust and TypeScript into `generated/messages/` (not in git), installing the pinned `flatc` first if it is not there |
 | `npm run wasm` | Builds the world rules, the land and movement as WebAssembly into `client/public/` (not in git), and the room for the server; `dev` and `build` run it first |
-| `npm run server` | Runs the server's rooms locally, at `ws://127.0.0.1:8787/room/<name>` |
+| `npm run bake` | Cuts each node's window of the land, its section and its boxes into `generated/nodes/` (not in git), for the server's rooms |
+| `npm run server` | Runs the server's rooms locally, at `ws://127.0.0.1:8787/room/<name>`, after the messages, the WebAssembly and the bake |
 | `npm test`, `cargo test` | One side's tests |

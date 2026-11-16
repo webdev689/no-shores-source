@@ -3,6 +3,17 @@
 version = 4
 
 [[package]]
+name = "bake"
+version = "0.0.0"
+dependencies = [
+ "city",
+ "land",
+ "serde",
+ "serde_json",
+ "world",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -48,6 +59,7 @@ dependencies = [
 name = "land-wasm"
 version = "0.0.0"
 dependencies = [
+ "city",
  "land",
  "serde_json",
  "world",
@@ -76,7 +88,9 @@ dependencies = [
 name = "movement-wasm"
 version = "0.0.0"
 dependencies = [
+ "land",
  "movement",
+ "serde_json",
 ]
 
 [[package]]
@@ -117,16 +131,29 @@ dependencies = [
 name = "room"
 version = "0.0.0"
 dependencies = [
+ "bake",
+ "city",
+ "land",
+ "libm",
  "movement",
+ "reach",
+ "serde_json",
+ "world",
 ]
 
 [[package]]
 name = "room-wasm"
 version = "0.0.0"
 dependencies = [
+ "bake",
+ "city",
+ "land",
  "movement",
  "protocol",
  "room",
+ "serde",
+ "serde_json",
+ "world",
 ]
 
 [[package]]
