@@ -10,6 +10,8 @@ use movement::floats::{BLOCK_FLOATS, BODY_FLOATS, CONTROLS_FLOATS};
 use movement::{Block, Body, Controls, TICK_SECONDS, TUNING, Terrain, standing, step_body};
 use std::cell::RefCell;
 
+pub mod reach_door;
+
 /// The numbers one step reads: a body, then its controls. The next body is written over the first of them.
 pub const STEP_FLOATS: usize = BODY_FLOATS + CONTROLS_FLOATS;
 
@@ -146,6 +148,36 @@ pub unsafe extern "C" fn movement_set_course(address: *const u8, length: usize) 
 pub unsafe extern "C" fn movement_set_ground(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the section written at `address`, `length` bytes of JSON; 1 if it was one, 0 cleared.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_set_section(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(reach_door::set_section(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// One tick of a body at (x, y) against the kept section, as `reach_door::packed` numbers it.
+#[unsafe(no_mangle)]
+pub extern "C" fn movement_reach_tick(x: f64, y: f64) -> u32 {
+    reach_door::tick(x, y)
+}
+
+/// Respawns a body that died at (x, y) once allowed, writing the spawn's two numbers at `address`; 1 if it did.
+///
+/// # Safety
+/// `address` must point at 16 writable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_respawn(x: f64, y: f64, address: *mut u8) -> u32 {
+    let Some([east, south]) = reach_door::respawn(x, y) else { return 0 };
+    // SAFETY: the caller reserved 16 bytes at `address`, which nothing else views.
+    let out = unsafe { std::slice::from_raw_parts_mut(address, 16) };
+    out[..8].copy_from_slice(&east.to_le_bytes());
+    out[8..].copy_from_slice(&south.to_le_bytes());
+    1
 }
 
 /// The `length` bytes at `address` as one step's numbers, or nothing when they are too few.

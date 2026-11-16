@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 land = { path = "../land" }
 movement = { path = "../movement" }
+reach = { path = "../reach" }
 serde_json.workspace = true
 
 [lints]

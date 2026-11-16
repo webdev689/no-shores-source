@@ -67,10 +67,32 @@ export interface MovementRules {
    *  the bit as the node's room; null, or anything that is not a window, is open ground at 0 m. Answers whether a
    *  window was set. */
   setGround(windowJson: string | null): boolean;
+  /** Judges every later `reachTick` against a node's section (its ring and spawns, world metres), by the room's own
+   *  reach rules, the body standing inside; null clears it. */
+  setSection(section: { readonly ring: readonly Point[]; readonly spawns: readonly Point[] } | null): void;
+  /** One tick of the body at (x, y) against the section: inside, warned with the ticks left, or dead for so many. */
+  reachTick(x: number, y: number): Reach;
+  /** Respawns a body that died at (x, y), once allowed: the spawn it stands at, or null while too soon. */
+  respawn(x: number, y: number): Point | null;
   /** The body one tick on under these controls. */
   step(body: Body, controls: Controls): Body;
   /** Where the eye is over the feet: standing, crouched, or easing between. */
   eyeHeight(body: Body): number;
+}
+
+type Point = readonly [number, number];
+
+/** A body's standing with its section, as the reach rules judge it. */
+export type Reach =
+  | { readonly kind: 'inside' }
+  | { readonly kind: 'warned'; readonly ticksLeft: number }
+  | { readonly kind: 'dead'; readonly ticks: number };
+
+/** A standing from the door's one number: its kind in the top two bits, its ticks below. */
+export function reachOf(packed: number): Reach {
+  const [kind, ticks] = [packed >>> 30, packed & 0x3fffffff];
+  if (kind === 1) return { kind: 'warned', ticksLeft: ticks };
+  return kind === 2 ? { kind: 'dead', ticks } : { kind: 'inside' };
 }
 
 interface MovementExports {
@@ -82,6 +104,9 @@ interface MovementExports {
   movement_set_ground(address: number, length: number): number;
   movement_standing(address: number, length: number): void;
   movement_step(address: number, length: number): void;
+  movement_set_section(address: number, length: number): number;
+  movement_reach_tick(x: number, y: number): number;
+  movement_respawn(x: number, y: number, address: number): number;
 }
 
 interface Tuning {
@@ -212,6 +237,24 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
         return exports.movement_set_ground(address, bytes.length) === 1;
       } finally {
         exports.release(address, bytes.length);
+      }
+    },
+    setSection: (section) => {
+      const bytes = new TextEncoder().encode(section ? JSON.stringify(section) : 'null');
+      const address = exports.reserve(bytes.length);
+      new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
+      exports.movement_set_section(address, bytes.length);
+      exports.release(address, bytes.length);
+    },
+    reachTick: (x, y) => reachOf(exports.movement_reach_tick(x, y)),
+    respawn: (x, y) => {
+      const address = exports.reserve(16);
+      try {
+        if (exports.movement_respawn(x, y, address) !== 1) return null;
+        const numbers = new DataView(exports.memory.buffer, address, 16);
+        return [numbers.getFloat64(0, true), numbers.getFloat64(8, true)];
+      } finally {
+        exports.release(address, 16);
       }
     },
     step: (body, controls) => {
