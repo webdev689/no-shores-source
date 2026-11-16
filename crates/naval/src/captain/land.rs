@@ -100,6 +100,12 @@ impl Avoid {
         error
     }
 
+    /// Every number the swing holds, in a fixed order.
+    #[must_use]
+    pub fn numbers(&self) -> [f64; 5] {
+        [self.at, self.swing, self.about.unwrap_or(-9.0), self.clear_for, self.turn_side]
+    }
+
     /// Whether she has come about, boxed in: she shortens sail.
     #[must_use]
     pub fn boxed(&self) -> bool {

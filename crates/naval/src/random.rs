@@ -12,6 +12,12 @@ impl Mulberry32 {
         Self { state: seed }
     }
 
+    /// Where the stream stands: what a fight's fingerprint takes of it.
+    #[must_use]
+    pub fn state(&self) -> u32 {
+        self.state
+    }
+
     /// The next draw, in [0, 1).
     pub fn draw(&mut self) -> f64 {
         self.state = self.state.wrapping_add(0x6d2b_79f5);

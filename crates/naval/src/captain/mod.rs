@@ -202,6 +202,47 @@ impl Captain {
         }
     }
 
+    /// Whether she has the player as her enemy.
+    #[must_use]
+    pub fn hostile(&self) -> bool {
+        self.target
+    }
+
+    /// Every number she holds, in a fixed order.
+    #[must_use]
+    pub fn numbers(&self) -> Vec<f64> {
+        let flag = |on: bool| f64::from(u8::from(on));
+        let mode = [Mode::Cruise, Mode::Engage, Mode::Flee, Mode::Struck, Mode::Sinking]
+            .iter()
+            .position(|mode| *mode == self.mode);
+        let mut numbers = vec![
+            mode.unwrap_or(0) as f64,
+            flag(self.temper == Temper::Bold),
+            f64::from(self.seed),
+            self.cruise,
+            self.sails,
+            self.dead_zone,
+            self.clock,
+            self.provoked_at,
+            self.spared_until,
+            flag(self.target),
+            self.wreck_since.unwrap_or(-1.0),
+            self.want_prev.unwrap_or(-9.0),
+            self.want_rate,
+        ];
+        numbers.extend(self.enemy_vel.unwrap_or([0.0; 2]));
+        numbers.extend(self.run.numbers());
+        numbers.extend(self.avoid.numbers());
+        if let Some(present) = self.present {
+            numbers.extend([present.side.sign(), present.at, flag(present.lays)]);
+        }
+        if let Some(chase) = &self.chase {
+            numbers.push(chase.since);
+            numbers.extend(chase.marks.iter().flatten());
+        }
+        numbers
+    }
+
     /// The player struck her: she is hostile to him, whatever her temper, for a while.
     pub fn provoke(&mut self) {
         self.provoked_at = self.clock;

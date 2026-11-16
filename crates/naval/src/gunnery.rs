@@ -99,6 +99,13 @@ impl Guns {
         true
     }
 
+    /// Every number the guns hold, in a fixed order.
+    #[must_use]
+    pub fn numbers(&self) -> [f64; 6] {
+        let load = Shot::CYCLE.iter().position(|shot| *shot == self.load).unwrap_or(0) as f64;
+        [self.clocks[0], self.clocks[1], self.lengths[0], self.lengths[1], load, f64::from(u8::from(self.braced))]
+    }
+
     /// The clocks run, unless her crew is braced.
     pub fn step(&mut self, seconds: f64) {
         if self.braced {

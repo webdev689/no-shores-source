@@ -147,6 +147,12 @@ impl RunOut {
         self.out[side.index()]
     }
 
+    /// Every number the tells hold, in a fixed order.
+    #[must_use]
+    pub fn numbers(&self) -> [f64; 4] {
+        [self.out[0].unwrap_or(-1.0), self.out[1].unwrap_or(-1.0), self.run_in[0], self.run_in[1]]
+    }
+
     /// Both sides run in: a ship that no longer fights.
     pub fn clear(&mut self) {
         self.out = [None; 2];

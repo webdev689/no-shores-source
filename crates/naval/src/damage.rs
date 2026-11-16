@@ -191,6 +191,23 @@ impl Damage {
         self.fires.iter().fold(0.0, |most, fire| fire.left.max(most))
     }
 
+    /// Every number she holds, in a fixed order.
+    #[must_use]
+    pub fn numbers(&self) -> Vec<f64> {
+        let state = match self.state {
+            State::Afloat => 0.0,
+            State::Struck => 1.0,
+            State::Sinking => 2.0,
+            State::Sunk => 3.0,
+            State::Wrecked => 4.0,
+        };
+        let mut numbers =
+            vec![self.hull, self.sail, self.crew, self.crew_burn, self.wound, state, self.sink_t, self.last_hit_at];
+        numbers.push(self.list_deg);
+        numbers.extend(self.fires.iter().flat_map(|fire| [fire.bite, fire.left]));
+        numbers
+    }
+
     fn unmanned(&self) -> bool {
         self.max_crew > 0.0 && self.crew <= 0.0
     }

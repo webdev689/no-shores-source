@@ -7,6 +7,7 @@ pub mod arms;
 pub mod ballistics;
 pub mod captain;
 pub mod damage;
+pub mod fight;
 pub mod gunnery;
 pub mod guns;
 pub mod random;
