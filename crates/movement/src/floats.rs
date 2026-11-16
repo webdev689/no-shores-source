@@ -22,8 +22,7 @@ impl Mode {
     /// The mode's number, its place in the list a browser keeps too.
     #[must_use]
     pub fn number(self) -> f64 {
-        let place = MODES.iter().position(|mode| *mode == self).unwrap_or_default();
-        f64::from(u8::try_from(place).unwrap_or_default())
+        f64::from(self as u8)
     }
 
     /// The mode a number names; anything else is the ground.

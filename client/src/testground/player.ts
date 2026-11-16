@@ -105,7 +105,7 @@ export function updatePlayer(
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
   const acting = swinging || cast !== null;
   const facing = acting ? yaw : body.mode !== 'ground' ? body.facing : body.moving ? body.facing : player.facing;
-  const blend = Math.min(1, carry / movement.tickSeconds);
+  const blend = carry / movement.tickSeconds;
   return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, cast, act, facing };
 }
 

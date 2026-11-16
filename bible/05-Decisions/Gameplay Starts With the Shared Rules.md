@@ -23,8 +23,7 @@ status: in force
   predicted in the browser ([[Server-Authoritative Multiplayer]], [[Clients Predict With the Shared Rules]]). The
   first rules to move are the Test Ground's movement ([[Movement]]), then a thin server that two browsers share.
 - Second comes sailing, where DFO's sailing and combat systems come over
-  ([[Naval, Living World, Professions and Synth Come Over Leaner]]). Which of their rows come is decided then, on the
-  [[Pick List]].
+  ([[Naval, Living World, Professions and Synth Come Over Leaner]]).
 
 ## Still open
 

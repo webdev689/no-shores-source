@@ -70,7 +70,7 @@ function fingerprint(bodies: readonly Body[]): string {
   return hash.toString(16).padStart(16, '0');
 }
 
-test('the scripted run through WebAssembly moves to the same fingerprint as the server’s', async () => {
+test('the scripted run through WebAssembly moves to the same fingerprint as the crate run natively', async () => {
   assert.equal(fingerprint(await runScript()), RUN_HASH);
 });
 

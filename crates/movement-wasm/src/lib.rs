@@ -46,8 +46,10 @@ pub fn step(bytes: &mut [u8; STEP_FLOATS * 8]) {
 
 /// Writes a body standing at the (x, y) the first two numbers in `bytes` hold, over them.
 pub fn stand(bytes: &mut [u8; STEP_FLOATS * 8]) {
-    let place: Vec<f64> = floats_of(&bytes[..16]).collect();
-    let (x, y) = (place[0], place[1]);
+    let (x, y) = {
+        let mut place = floats_of(&bytes[..16]);
+        (place.next().unwrap_or_default(), place.next().unwrap_or_default())
+    };
     for (chunk, value) in bytes.chunks_exact_mut(8).zip(standing(x, y).to_floats()) {
         chunk.copy_from_slice(&value.to_le_bytes());
     }
@@ -103,25 +105,38 @@ pub unsafe extern "C" fn movement_set_course(address: *const u8, length: usize) 
     set_course(unsafe { std::slice::from_raw_parts(address, length) })
 }
 
-/// Steps the body written at `address` one tick, writing the next body over it.
+/// The `length` bytes at `address` as one step's numbers, or nothing when they are too few.
 ///
 /// # Safety
-/// `address` must point at `STEP_FLOATS * 8` bytes from `reserve`, readable and writable.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn movement_step(address: *mut u8) {
-    // SAFETY: the caller reserved at least STEP_FLOATS * 8 bytes at `address` and holds no other view of them now.
-    let bytes = unsafe { &mut *address.cast::<[u8; STEP_FLOATS * 8]>() };
-    step(bytes);
+/// `address` must point at `length` bytes from `reserve`, readable and writable, with no other view of them held.
+unsafe fn step_bytes<'memory>(address: *mut u8, length: usize) -> Option<&'memory mut [u8; STEP_FLOATS * 8]> {
+    // SAFETY: the caller reserved `length` bytes at `address`; only the first STEP_FLOATS * 8 of them are viewed.
+    (length >= STEP_FLOATS * 8).then(|| unsafe { &mut *address.cast::<[u8; STEP_FLOATS * 8]>() })
 }
 
-/// Writes a body standing at the (x, y) written at `address` over them.
+/// Steps the body written at `address` one tick, writing the next body over it. Fewer than a step's bytes are left
+/// alone.
 ///
 /// # Safety
-/// `address` must point at `STEP_FLOATS * 8` bytes from `reserve`, readable and writable.
+/// `address` must point at `length` bytes from `reserve`, readable and writable.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn movement_standing(address: *mut u8) {
-    // SAFETY: the caller reserved at least STEP_FLOATS * 8 bytes at `address` and holds no other view of them now.
-    stand(unsafe { &mut *address.cast::<[u8; STEP_FLOATS * 8]>() });
+pub unsafe extern "C" fn movement_step(address: *mut u8, length: usize) {
+    // SAFETY: the caller's promise, passed on.
+    if let Some(bytes) = unsafe { step_bytes(address, length) } {
+        step(bytes);
+    }
+}
+
+/// Writes a body standing at the (x, y) written at `address` over them. Fewer than a step's bytes are left alone.
+///
+/// # Safety
+/// `address` must point at `length` bytes from `reserve`, readable and writable.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_standing(address: *mut u8, length: usize) {
+    // SAFETY: the caller's promise, passed on.
+    if let Some(bytes) = unsafe { step_bytes(address, length) } {
+        stand(bytes);
+    }
 }
 
 #[cfg(test)]

@@ -20,10 +20,10 @@ impl Block {
 
 /// The ground under a point: the highest block top at or below `z` plus a step, or the open ground at 0.
 #[must_use]
-pub fn ground_at(blocks: &[Block], x: f64, y: f64, z: f64, margin: f64) -> f64 {
+pub fn ground_at(blocks: &[Block], x: f64, y: f64, z: f64) -> f64 {
     blocks
         .iter()
-        .filter(|block| block.holds(x, y, margin) && block.top <= z + TUNING.step)
+        .filter(|block| block.holds(x, y, 0.0) && block.top <= z + TUNING.step)
         .fold(0.0, |ground, block| if block.top > ground { block.top } else { ground })
 }
 

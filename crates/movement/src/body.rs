@@ -75,12 +75,12 @@ pub struct Controls {
 /// How the body is held: on its feet, in the air, hanging from a lip, on a wall, or mantling or vaulting over one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
-    Ground,
-    Air,
-    Hang,
-    Climb,
-    Mantle,
-    Vault,
+    Ground = 0,
+    Air = 1,
+    Hang = 2,
+    Climb = 3,
+    Mantle = 4,
+    Vault = 5,
 }
 
 /// A mantle's or a vault's start and end (x, y, z), its progress 0..1, and how long it takes.
@@ -134,10 +134,4 @@ pub const fn standing(x: f64, y: f64) -> Body {
         lip: 0.0,
         moving: false,
     }
-}
-
-/// Where the eye is over the feet: standing, crouched, or easing between.
-#[must_use]
-pub fn eye_height(body: &Body) -> f64 {
-    TUNING.eye + (TUNING.crouched_eye - TUNING.eye) * body.crouch
 }

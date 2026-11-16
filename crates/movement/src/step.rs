@@ -58,6 +58,10 @@ fn vaults(rise: f64, ahead: &WallAhead) -> bool {
 /// falling; grabbing a lip on a jump to hang, mantle or vault; shimmying along a lip; climbing a wall too high to grab.
 #[must_use]
 pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64) -> Body {
+    // The controls come from a player's machine: held to their range here, a body never takes a NaN from them.
+    let unit = |value: f64| if value.is_finite() { value.clamp(-1.0, 1.0) } else { 0.0 };
+    let yaw = if controls.yaw.is_finite() { controls.yaw } else { 0.0 };
+    let controls = &Controls { forward: unit(controls.forward), sideways: unit(controls.sideways), yaw, ..*controls };
     let (sin, cos) = (libm::sin(controls.yaw), libm::cos(controls.yaw));
     let wish_x = sin * controls.forward + cos * controls.sideways;
     let wish_y = -cos * controls.forward + sin * controls.sideways;
@@ -135,7 +139,7 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish
     {
         let rise = ahead.block.top - z;
         // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
-        let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, x, y, body.z, 0.0);
+        let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, x, y, body.z);
         if rise <= TUNING.vault || low_lip {
             return go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead));
         }
@@ -151,7 +155,7 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish
             ..moved
         };
     }
-    let ground = ground_at(blocks, x, y, body.z, 0.0);
+    let ground = ground_at(blocks, x, y, body.z);
     if z <= ground {
         return Body { z: ground, vz: 0.0, mode: Mode::Ground, grounded: 0.0, crouch, moving: false, ..moved };
     }
@@ -167,7 +171,7 @@ fn on_ground(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, w
     let pace = pace_of(crouched, controls);
     let scale = if wish.length > 0.0 { pace * seconds / wish.length.max(1.0) } else { 0.0 };
     let (x, y) = slide(blocks, body, wish.x * scale, wish.y * scale);
-    let ground = ground_at(blocks, x, y, body.z, 0.0);
+    let ground = ground_at(blocks, x, y, body.z);
     let (moved_x, moved_y) = (x - body.x, y - body.y);
     let moving = (moved_x * moved_x + moved_y * moved_y).sqrt() > 1e-6;
     let (vx, vy) = (moved_x / seconds.max(1e-6), moved_y / seconds.max(1e-6));

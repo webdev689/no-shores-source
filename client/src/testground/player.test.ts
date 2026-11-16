@@ -74,6 +74,12 @@ test('the body moves only in whole ticks, and a jump pressed between ticks is ke
   assert.equal(jumped.queued.jump, false);
 });
 
+test('a crouch pressed in a frame of two ticks toggles once, on the first', () => {
+  const crouched = updatePlayer(start(), frame([], ['crouch']), movement, 2 * TICK);
+  assert.equal(crouched.body.crouched, true);
+  assert.equal(crouched.queued.crouch, false);
+});
+
 test('between ticks the body is drawn eased from the tick before toward the last', () => {
   const walked = updatePlayer(start(), frame(['forward']), movement, TICK);
   const halfway = updatePlayer(walked, frame(['forward']), movement, TICK / 2);

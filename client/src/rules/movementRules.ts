@@ -75,8 +75,8 @@ interface MovementExports {
   release(address: number, length: number): void;
   movement_tuning(): bigint;
   movement_set_course(address: number, length: number): number;
-  movement_standing(address: number): void;
-  movement_step(address: number): void;
+  movement_standing(address: number, length: number): void;
+  movement_step(address: number, length: number): void;
 }
 
 interface Tuning {
@@ -174,7 +174,7 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
     tickSeconds: tuning.tick_seconds,
     standing: (x, y) => {
       write([x, y]);
-      exports.movement_standing(exchange);
+      exports.movement_standing(exchange, tuning.step_floats * 8);
       return readBody();
     },
     setCourse: (blocks) => {
@@ -196,7 +196,7 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
         flag(controls.crouch),
         flag(controls.mounted),
       ]);
-      exports.movement_step(exchange);
+      exports.movement_step(exchange, tuning.step_floats * 8);
       return readBody();
     },
     eyeHeight: (body) => tuning.eye + (tuning.crouched_eye - tuning.eye) * body.crouch,

@@ -41,6 +41,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   so a body on foot meets the water by the same rules everywhere.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
-- Then sailing, bringing over DFO's sailing and combat systems; which rows come is chosen on the [[Pick List]] then.
+- The game itself: the client drawing the world from the land's door, and the server reading the same land crate.
+- Then sailing, bringing over DFO's sailing and combat systems, each pick approved by the owner first
+  ([[Porting from DFO]]).
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.
