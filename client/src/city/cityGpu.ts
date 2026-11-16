@@ -1,11 +1,12 @@
 // The city's pipelines, made once a GPU and format: the models (and solids), the masses and the plates, all drawn
 // into the scene's pass (4x MSAA, depth reversed) and sharing one bind group layout.
-import { type Gpu, SHADER_STAGE } from '../gpu.ts';
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { MASS_SHADER, MODEL_SHADER, PLATE_SHADER } from './cityShaders.ts';
 
-/** WebGPU's buffer usages the city needs beyond the groundwork's list, by the specification's values. */
-export const CITY_BUFFER_USAGE = { copyDestination: 0x08, index: 0x10, vertex: 0x20, uniform: 0x40, storage: 0x80 };
+/** WebGPU's buffer usages: the groundwork's, and the index and storage usages it does not name, by the
+ *  specification's values. */
+export const CITY_BUFFER_USAGE = { ...BUFFER_USAGE, index: 0x10, storage: 0x80 } as const;
 
 export type CityPipelines = {
   readonly layout: GPUBindGroupLayout;

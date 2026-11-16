@@ -25,8 +25,13 @@ import { meshSolid } from './solidMesh.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
 export const CHUNK_CELLS = 4;
-/** The highest a block's building stands over its cell, for a chunk's bounds. */
+/** The highest a block's building stands over its cell, and the most one reaches past its cell's edge, for a
+ *  chunk's bounds. */
 const TALLEST_M = 60;
+const OVERHANG_M = 20;
+/** A retaining wall's thickness, as the planner lays it. */
+const RETAINING_THICK_M = 1.5;
+const TERRACE_WALL_M = 16;
 
 export type CityTables = {
   readonly buildings: BuildingTable;
@@ -54,6 +59,8 @@ export type Chunk = {
 
 export type CityData = {
   readonly origin: readonly [number, number];
+  /** The grid's north-west corner from the city's middle, and its cells a side. */
+  readonly grid: readonly [number, number];
   readonly side: number;
   readonly book: PictureBook;
   /** Each cell's middle from the city's origin and its level, four floats a cell. */
@@ -96,7 +103,8 @@ export function buildCity(
   }
 
   const placedPieces: Placed[] = [];
-  const groundRecords = new Set<number>([3]);
+  // grass and stone too: the lawns and kerbs laid where no block stands
+  const groundRecords = new Set<number>([2, 3]);
   for (const [index, cell] of levelled) {
     const block = cell.use === 'block' && cell.block ? blocks.get(cell.block) : undefined;
     if (!block) continue;
@@ -160,26 +168,36 @@ export function buildCity(
   const { masses, massRanges, hullRanges, tops } = buildingMassesOf(plan, placedPieces, tables, book, chunkCount);
 
   const chunkMeshes = Array.from({ length: chunkCount }, emptyMesh);
-  const solidTops = new Float32Array(chunkCount).fill(-Infinity);
-  const solidBottoms = new Float32Array(chunkCount).fill(Infinity);
-  const reachOf = new Float32Array(chunkCount);
+  // each chunk's solids' box, west, north, bottom, then east, south, top, from the city's middle: a solid past the
+  // grid's edge is kept with the edge chunk, so the chunk's box must reach it
+  const solidBoxes = Array.from({ length: chunkCount }, () => [
+    Infinity,
+    Infinity,
+    Infinity,
+    -Infinity,
+    -Infinity,
+    -Infinity,
+  ]);
   const solids: Solid[] = [...plan.landmark, ...plan.works, ...plan.social.solids];
   for (const solid of solids) {
     const chunk = chunkOf(
       Math.floor((solid.at[0] - plan.grid.west) / CELL_M),
       Math.floor((solid.at[1] - plan.grid.north) / CELL_M),
     );
-    const layer = book.materials[solid.material];
+    const layer = retaining(solid) ? book.terrace : book.materials[solid.material];
     const picture = book.pictures[layer] ?? { width: 64, height: 64 };
     meshSolid(solid, origin, { layer, width: picture.width, height: picture.height }, chunkMeshes[chunk]);
     const reach = Math.hypot(solid.size[0], solid.size[1]) / 2 + (solid.lean || solid.roll ? solid.size[2] : 0);
-    reachOf[chunk] = Math.max(reachOf[chunk], reach);
-    solidTops[chunk] = Math.max(solidTops[chunk], solid.at[2] + solid.size[2]);
-    solidBottoms[chunk] = Math.min(solidBottoms[chunk], solid.at[2]);
+    const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
+    const box = solidBoxes[chunk];
+    const reached = [east - reach, south - reach, solid.at[2] - reach, east + reach, south + reach];
+    for (let axis = 0; axis < 3; axis++) box[axis] = Math.min(box[axis], reached[axis]);
+    box[3] = Math.max(box[3], reached[3]);
+    box[4] = Math.max(box[4], reached[4]);
+    box[5] = Math.max(box[5], solid.at[2] + solid.size[2] + reach);
   }
-  const stone = book.materials.stone;
-  const stonePicture = book.pictures[stone] ?? { width: 64, height: 128 };
-  plateSkirts(plan, stone, stonePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
+  const terracePicture = book.pictures[book.terrace] ?? { width: 64, height: 128 };
+  plateSkirts(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
   const allSolids = emptyMesh();
   const solidRanges: Range[] = chunkMeshes.map((mesh) => {
     const first = allSolids.indices.length;
@@ -203,18 +221,22 @@ export function buildCity(
         lowest = Math.min(lowest, cell.level);
         highest = Math.max(highest, cell.level);
       }
-    const reach = reachOf[chunk];
     const hasSolids = solidRanges[chunk].count > 0;
     if (!members.length && !hasSolids) continue;
-    const bottom = Math.min(members.length ? lowest - 30 : Infinity, hasSolids ? solidBottoms[chunk] : Infinity);
-    const top = Math.max(
-      members.length ? highest + TALLEST_M : -Infinity,
-      tops[chunk],
-      hasSolids ? solidTops[chunk] : -Infinity,
-    );
+    const box = solidBoxes[chunk];
+    const [cellLow, cellHigh] = members.length
+      ? [
+          [west - OVERHANG_M, north - OVERHANG_M, lowest - 30],
+          [west + span + OVERHANG_M, north + span + OVERHANG_M, Math.max(highest + TALLEST_M, tops[chunk])],
+        ]
+      : [
+          [Infinity, Infinity, Infinity],
+          [-Infinity, -Infinity, -Infinity],
+        ];
+    const [bottom, top] = [Math.min(cellLow[2], box[2]), Math.max(cellHigh[2], box[5])];
     chunks.push({
-      low: [west - reach, north - reach, bottom],
-      high: [west + span + reach, north + span + reach, top],
+      low: [Math.min(cellLow[0], box[0]), Math.min(cellLow[1], box[1]), bottom],
+      high: [Math.max(cellHigh[0], box[3]), Math.max(cellHigh[1], box[4]), top],
       middlesLow: [west + CELL_M / 2, north + CELL_M / 2, members.length ? lowest : bottom],
       middlesHigh: [west + span - CELL_M / 2, north + span - CELL_M / 2, members.length ? highest : top],
       cells: members.filter((member) => near.has(member)),
@@ -226,6 +248,7 @@ export function buildCity(
 
   return {
     origin,
+    grid: [plan.grid.west - origin[0], plan.grid.north - origin[1]],
     side,
     book,
     cells,
@@ -237,6 +260,21 @@ export function buildCity(
     plates: groundPlates(plan, blocks, book.ground, book.materials.paving),
     cleared: clearedGround(plan),
   };
+}
+
+/** Whether a solid is a terrace's retaining wall: a stone block a cell long and 1.2 m thick, square to the grid, as
+ *  the planner lays one along a terrace's edge, no taller than a terrace steps. The landmark's platform, far taller,
+ *  keeps the city's stone. */
+export function retaining(solid: Solid): boolean {
+  const [long, thick] = [Math.max(solid.size[0], solid.size[1]), Math.min(solid.size[0], solid.size[1])];
+  return (
+    solid.shape === 'block' &&
+    solid.material === 'stone' &&
+    solid.turn === 0 &&
+    Math.abs(long - CELL_M) < 0.01 &&
+    thick <= RETAINING_THICK_M &&
+    solid.size[2] <= TERRACE_WALL_M
+  );
 }
 
 /** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in

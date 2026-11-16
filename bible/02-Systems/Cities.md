@@ -94,11 +94,11 @@ against ([[Server]]).
 
 ## How it is drawn
 
-`CityView` is a drawer the game's scene draws into its own pass. When a continent opens, the game hands it the
-plan, the continent's climate (`cityClimate` of its biome), the RMB blocks the plan names and the forged tables
-(`setCity`); each frame the scene calls `drawInto`; nature asks `cleared(x, y)`, true on the pads and under every
-solid's footprint, the quays and piers among them. Every position is measured from the city's middle, so the
-GPU's floats keep their precision 3 km out.
+`CityView` is a drawer for the game's scene, drawn into the scene's own pass. It is handed a plan, the continent's
+climate (`cityClimate` of its biome), the RMB blocks the plan names and the forged tables (`setCity`); `drawInto`
+draws a frame; `cleared(x, y)` is true on the pads and under every solid's footprint, the quays and piers among
+them, for nature to keep off. Every position is measured from the city's middle, so the GPU's floats keep their
+precision 3 km out.
 
 | Biome | Climate set |
 |---|---|
@@ -117,53 +117,60 @@ tiers, and a 4 x 4 dither pattern gives each pixel to exactly one, so nothing po
 | Masses | 2,600 m (band from 2,200 m) | Each building's masses over 1.5 m high and 6 m² (`buildingMasses`): walls in its wall picture, a gabled, hipped or flat roof in its roof picture. Props are left out; a prop standing for a building is a flat box |
 | Hulls | the horizon | One box a building round its masses, walled to its largest's eaves and roofed as it is |
 
-The landmark, the works and the plaza's solids are drawn at every distance, meshed from their specs. A block's
-model stands at its cell's corner plus its placement, at the cell's level, turned by its yaw ([[RMB Blocks]]).
+The landmark, the works and the plaza's solids are drawn at every distance, meshed from their specs, their
+pictures laid at 24 texels a metre, coarser than the forged models' 40, so their courses read as ashlar from the
+plaza and across the city. A block's model stands at its cell's corner plus its placement, at the cell's level,
+turned by its yaw ([[RMB Blocks]]).
 
 **The ground.** Every levelled cell has a plate at its level at every distance, so the 1 km land's smoothing never
 shows a terrace floating or buried. A block's cell wears its ground tiles in the climate's terrain set, turned as
-Daggerfall Unity turns them. An avenue is a kerbed road 25.6 m wide toward each paved cell beside it, lawns either
-side; the landmark's own ground is lawns between paved walks, kerbed where it meets ground that is not paved. A
-plate's open sides hang a skirt in the stone picture, 30 m down or to the lower plate beside it. The whole city is
+Daggerfall Unity turns them. An avenue is a road 38.4 m wide toward each paved cell beside it, lawns either side,
+with no kerb or border, so a run of avenues reads as one road; the landmark's own ground is paved. The terraces'
+retaining walls and a plate's skirts, 30 m down its open sides or to the lower plate beside it, are rubble near the
+ground's colour, so the walls between the terraces read as terracing, not as a grid. The whole city is
 drawn nearer in depth than it stands (not on screen) by 5 cm and 1.2 % of the distance, above the sea only, since
 the 1 km land stands up to about 20 m off a terrace's level; a plate is drawn 3 cm under its level, so a floor laid
 at that level shows over it.
 
 **The pictures.** One texture array of at most 252 layers, each picture resampled to 128 texels square, sampled
-nearest up close and mipmapped far off. The ground's tiles and the solids' pictures come first, then the forged
-models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
+nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
+warmer, a factor a channel, as its own layer. The ground's tiles and the solids' pictures come first, then the
+forged models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
 painted, and what is painted is kept for the next city. Gold, iron and bone are plain colours; the glow is lit warm
 and unshaded. Faces are lit as the land is, with a little light thrown back onto walls from the ground.
 
 | Material | Temperate | Desert | Mountain | Swamp |
 |---|---|---|---|---|
-| Stone | sandstone blocks (9.1) | sandstone blocks (9.1) | grey blocks (109.1) | mossy rubble (409.1) |
-| Trim | pale marble (341.1) | white marble (41.2) | white marble (141.1) | sandstone rubble (417.1) |
-| Roof | red tiles (369.2) | terracotta (69.0) | slate (469.2) | mossy thatch (469.3) |
+| Stone | pale limestone ashlar (109.1, lightened, warmed) | sandstone ashlar (9.1) | grey granite (109.1, lightened) | mossy grey blocks (458.1) |
+| Trim | carved frieze (161.1, pale) | banded sandstone (42.1) | carved frieze (161.1, grey) | carved frieze (161.1, green-grey) |
+| Roof | red tiles (369.2) | terracotta (69.0) | slate (469.2, lightened) | mossy thatch (469.3) |
 | Timber | boards (364.1) | plain boards (67.0) | plain boards (67.0) | dark boards (426.1) |
 | Plaster | sandstone plaster (312.1) | white plaster (38.1) | sandstone plaster (126.1) | plaster with vines (442.1) |
-| Paving | pale marble (341.1) | sandstone flags (17.1) | pale marble (341.1) | square flags (324.1) |
+| Paving | crazy-paved flags (324.2, warmed) | sandstone cobbles (17.1) | square flags (323.2) | crazy-paved flags (324.2) |
+| Terrace walls | brown rubble (335.1) | sandstone rubble (17.1) | dark rubble (112.1) | mossy rubble (409.1) |
 
-Winter takes each picture's snowed turn where its set has one.
+Winter takes each picture's snowed turn where its set has one, unlightened.
 
 **What it costs.** Cells are grouped by 4 x 4 into chunks, culled against the view; consecutive chunks are one draw
-call. Overlook builds in about 1 s and paints its 154 pictures in about 5 s on three workers. In headless
+call. Overlook builds in about 1 s and paints its 157 pictures in about 5 s on three workers. In headless
 SwiftShader at 1280 x 720:
 
 | From | Triangles | Draw calls |
 |---|---|---|
-| The plaza, at eye height | 55,622 | 120 |
-| The Beacon, 280 m off | 425,918 | 90 |
-| The sea, 3 km off the harbour | 412,104 | 3 |
-| 400 m up, 8 km out | 412,104 | 3 |
+| The plaza, at eye height by its parapet | 60,274 | 138 |
+| The platform's edge, looking along the coast | 222,367 | 172 |
+| The Beacon, 280 m off | 462,486 | 153 |
+| The sea, 3 km off the harbour | 413,188 | 3 |
+| 400 m up, 8 km out | 415,338 | 3 |
 
 ## Limits
 
 - Only the social space is walked; the city's blocks stand no colliders.
 - Streets are the RMB blocks' own; an avenue is an open paved cell, not a street drawn through the blocks.
 - A leaning or rolled solid's box holds the whole of it, so a body meets it early.
-- The plaza looks out over the landmark's level ground, more than 100 m of it to the seaward side, which hides the
-  lower city from eye height.
+- Nothing in the game draws `CityView` yet; it was looked at on a page of its own.
+- From eye height by the plaza's parapet, the rest of the plaza's levelled cell beyond it and the retaining wall's
+  1 m lip at that cell's edge hide the city within about a kilometre; the harbour and the sea show.
 - Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.
 - The depth pull lets the city show through land within its share of the distance in front of it.
 - Rimeholt's city is under snow while its tundra below the snow line is not.

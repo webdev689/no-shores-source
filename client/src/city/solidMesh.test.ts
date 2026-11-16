@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { cross, dot, emptyMesh, type MeshData, minus } from './mesh.ts';
 import type { Solid, SolidShape } from './plan.ts';
-import { meshSolid, solidTurn } from './solidMesh.ts';
+import { meshSolid, SOLID_TEXELS_PER_METRE, solidTurn } from './solidMesh.ts';
 
 const SURFACE = { layer: 7, width: 64, height: 128 };
 
@@ -93,9 +93,10 @@ test('a leaning solid tips its top toward its own +y, as far as its lean', () =>
   assert.ok(enclosure(mesh).volume > 0);
 });
 
-test("a solid wears its picture at the forged models' forty texels a metre", () => {
-  const mesh = meshed(solidOf({ shape: 'block' }, [3.2, 3.2, 6.4]));
+test('a solid wears its picture coarser than a forged model, at twenty-four texels a metre', () => {
+  const mesh = meshed(solidOf({ shape: 'block' }, [3.2, 3.2, (2 * 128) / 24]));
   const downs = mesh.uvs.filter((unused, k) => k % 2 === 1);
-  assert.ok(Math.abs(Math.min(...downs) + 2) < 1e-9, 'a 6.4 m wall spans two 128-texel pictures');
+  assert.equal(SOLID_TEXELS_PER_METRE, 24);
+  assert.ok(Math.abs(Math.min(...downs) + 2) < 1e-9, 'a wall of 256 texels spans two 128-texel pictures');
   assert.ok(mesh.layers.every((layer) => layer === 7));
 });

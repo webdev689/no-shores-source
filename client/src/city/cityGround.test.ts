@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import { parseBlockFile, type RmbBlock, TILES } from './blocks.ts';
-import { buildCity, runs } from './cityBuild.ts';
+import { buildCity, retaining, runs } from './cityBuild.ts';
 import { clearedGround, groundPlates, PAVED_TILE, plateSkirts, sideOf } from './cityGround.ts';
 import { emptyMesh } from './mesh.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
@@ -119,6 +119,19 @@ test("each levelled cell gets a plate at its level, its tiles its block's or pav
   assert.deepEqual(tile(1, 2, 1), [102, 0], "an avenue's sides are lawns");
 });
 
+test("an avenue on the grid's west edge runs no road off it, whatever stands at the east end of the row above", () => {
+  const plan = madePlan();
+  const east: PlanCell = { column: 4, row: 1, ground: 'level', level: 24, use: 'landmark' };
+  const plates = groundPlates(
+    { ...plan, cells: [...plan.cells, east] },
+    blocksOf(),
+    Array.from({ length: 56 }, (unused, record) => 100 + record),
+    7,
+  );
+  const slot = (2 * TILES + TILES / 2) * plates.width * 2;
+  assert.deepEqual([plates.tiles[slot], plates.tiles[slot + 1]], [102, 0], "the west edge of the road's row is lawn");
+});
+
 test("a plate's skirt hangs only on the sides with nothing as high beside it", () => {
   const plan = madePlan();
   const skirts = emptyMesh();
@@ -166,4 +179,21 @@ test('ranges laid end to end join into one draw', () => {
       { first: 9, count: 1 },
     ],
   );
+});
+
+test("a terrace's retaining wall is told from the landmark's platform and the harbour's works", () => {
+  const wall = (size: [number, number, number], material: Solid['material'] = 'stone'): Solid => ({
+    shape: 'block',
+    at: [0, 0, 0],
+    size,
+    turn: 0,
+    lean: 0,
+    roll: 0,
+    material,
+  });
+  assert.ok(retaining(wall([CELL_M, 1.2, 9])));
+  assert.ok(retaining(wall([1.2, CELL_M, 4])));
+  assert.ok(!retaining(wall([CELL_M, 1.2, 52])), 'the platform under the plaza');
+  assert.ok(!retaining(wall([10, 180, 7], 'timber')), 'a pier');
+  assert.ok(!retaining(wall([6, 29, 18])), 'a length of the city wall');
 });

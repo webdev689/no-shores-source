@@ -1,51 +1,33 @@
 // The city's ground: a plate at each levelled cell's level, dressed in its block's ground tiles (an avenue as a
-// kerbed road between lawns, the landmark's ground as a paved garden), with a skirt down its open sides, so the
-// land's 1 km smoothing never shows a terrace floating or buried. And what of the land the city keeps clear: its
-// pads and every solid's footprint.
+// road between lawns, the landmark's ground paved), with a skirt down its open sides, so the land's 1 km smoothing
+// never shows a terrace floating or buried. And what of the land the city keeps clear: its pads and every solid's
+// footprint.
 import { groundTiles, type RmbBlock, TILES } from './blocks.ts';
 import { addPolygon, type MeshData } from './mesh.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
-import { TEXELS_PER_METRE } from '../models/parts.ts';
+import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
 
 /** How far a plate's skirt reaches under it where nothing built stands beside it. */
 const SKIRT_M = 30;
 /** A tile's turns that mark it paved: laid in the paving picture over the whole plate. */
 export const PAVED_TILE = 4;
-/** The terrain set's stone tile, which kerbs a paved cell, and its grass. */
-const KERB = { record: 3, turns: 0 };
+/** The terrain set's grass, where an avenue's road leaves its cell's sides. */
 const LAWN = { record: 2, turns: 0 };
 
 type Tile = { record: number; turns: number };
 type Sides = { north: boolean; south: boolean; west: boolean; east: boolean };
 
-/** The landmark's own ground laid out as a formal garden: paved walks round each cell and across its middle,
- *  lawns between, kerbed where the paving meets ground that is not paved, so a forecourt hundreds of metres wide
- *  reads at its size and not as one slab. Undefined is paving. */
-function landmarkTile(row: number, column: number, sides: Sides): Tile | undefined {
-  const edge =
-    (row === 0 && !sides.north) ||
-    (row === TILES - 1 && !sides.south) ||
-    (column === 0 && !sides.west) ||
-    (column === TILES - 1 && !sides.east);
-  if (edge) return KERB;
-  const walk = (place: number): boolean =>
-    place === 0 || place === TILES - 1 || place === TILES / 2 - 1 || place === TILES / 2;
-  return walk(row) || walk(column) ? undefined : LAWN;
-}
-
-/** An avenue's cell: a paved road 25.6 m wide through its middle toward each paved cell beside it, kerbed, with
- *  lawns either side; paved whole where nothing paved stands beside it. Undefined is paving. */
+/** An avenue's cell: a paved road 38.4 m wide through its middle toward each paved cell beside it, grass either
+ *  side, with no kerb or border, so a run of avenues reads as one road and not as a grid of squares; paved whole
+ *  where nothing paved stands beside it. Undefined is paving. */
 function avenueTile(row: number, column: number, sides: Sides): Tile | undefined {
   if (!sides.north && !sides.south && !sides.west && !sides.east) return undefined;
-  const along = (low: number, high: number): boolean => {
-    const [inColumns, inRows] = [column >= low && column <= high, row >= low && row <= high];
-    return (
-      (inColumns && ((sides.north && row <= high) || (sides.south && row >= low))) ||
-      (inRows && ((sides.west && column <= high) || (sides.east && column >= low)))
-    );
-  };
-  if (along(TILES / 2 - 2, TILES / 2 + 1)) return undefined;
-  return along(TILES / 2 - 3, TILES / 2 + 2) ? KERB : LAWN;
+  const [low, high] = [TILES / 2 - 3, TILES / 2 + 2];
+  const [inColumns, inRows] = [column >= low && column <= high, row >= low && row <= high];
+  const road =
+    (inColumns && ((sides.north && row <= high) || (sides.south && row >= low))) ||
+    (inRows && ((sides.west && column <= high) || (sides.east && column >= low)));
+  return road ? undefined : LAWN;
 }
 
 /** The cells a plan's grid holds along each side. */
@@ -79,6 +61,7 @@ export function groundPlates(
   const levelled = [...byPlace.values()];
   const tops = new Float32Array(levelled.length * 18);
   const paved = (column: number, row: number): boolean => {
+    if (column < 0 || row < 0 || column >= side || row >= side) return false;
     const use = byPlace.get(cellIndex(side, column, row))?.use;
     return use === 'avenue' || use === 'landmark';
   };
@@ -106,7 +89,7 @@ export function groundPlates(
           : cell.use === 'avenue'
             ? avenueTile(row, column, sides)
             : cell.use === 'landmark'
-              ? landmarkTile(row, column, sides)
+              ? undefined
               : LAWN;
         const slot = ((cell.row * TILES + row) * width + cell.column * TILES + column) * 2;
         tiles[slot] = tile ? (groundLayers[tile.record] ?? 0) : paving;
@@ -125,7 +108,7 @@ export function plateSkirts(
 ): void {
   const side = sideOf(plan);
   const levelled = levelledCells(plan);
-  const [scaleU, scaleV] = [TEXELS_PER_METRE / picture.width, TEXELS_PER_METRE / picture.height];
+  const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / picture.width, SOLID_TEXELS_PER_METRE / picture.height];
   const sides = [
     { step: [0, -1], from: [0, 0], to: [1, 0], out: [0, -1, 0] },
     { step: [1, 0], from: [1, 0], to: [1, 1], out: [1, 0, 0] },

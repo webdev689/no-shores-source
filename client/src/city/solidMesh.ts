@@ -1,9 +1,12 @@
 // The city's own solids (its landmark, wall, towers, quays and terraces) meshed from their specs: each shape built
 // in its own frame (x across, y along, z up from the middle of its base), rolled about its own y, leaned toward its
 // own +y, turned clockwise from north, and stood at its place. Every face is wound out of the solid.
-import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { addPolygon, cross, dot, type MeshData, minus, normalised, type Vector } from './mesh.ts';
 import type { Solid } from './plan.ts';
+
+/** Texels a metre a solid's picture is laid at: coarser than the forged models' forty, so a landmark's or a wall's
+ *  courses read as monumental ashlar from the plaza and across the city, not as a fine grain. */
+export const SOLID_TEXELS_PER_METRE = 24;
 
 /** The picture a solid wears: its layer and its size in texels, which sets how its UVs tile. */
 export type Surface = { readonly layer: number; readonly width: number; readonly height: number };
@@ -18,7 +21,7 @@ const ROUND_SIDES_MIN = 3;
 
 /** UVs for a flat face: u along its level edge, v down its slope; a face looking up or down is laid on x and y. */
 function planarUvs(corners: readonly Vector[], normal: Vector, surface: Surface): Uv[] {
-  const [scaleU, scaleV] = [TEXELS_PER_METRE / surface.width, TEXELS_PER_METRE / surface.height];
+  const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / surface.width, SOLID_TEXELS_PER_METRE / surface.height];
   if (Math.abs(normal[2]) > 0.95) return corners.map((corner) => [corner[0] * scaleU, corner[1] * scaleV]);
   const along = normalised([-normal[1], normal[0], 0]);
   const upward = normalised(cross(normal, along));
@@ -133,7 +136,7 @@ function column(half: [number, number], height: number, sides: number, top: numb
     return [half[0] * share * Math.cos(angle), half[1] * share * Math.sin(angle), up];
   };
   const perimeter = Math.PI * (half[0] + half[1]);
-  const [scaleU, scaleV] = [TEXELS_PER_METRE / surface.width, TEXELS_PER_METRE / surface.height];
+  const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / surface.width, SOLID_TEXELS_PER_METRE / surface.height];
   const slope = ((1 - top) * (half[0] + half[1])) / 2 / Math.max(height, 1e-6);
   const normalAt = (turn: number): Vector => normalised([Math.cos(turn), Math.sin(turn), slope]);
   const faces: Face[] = [];
@@ -204,7 +207,7 @@ function dome(half: [number, number], height: number, sides: number, surface: Su
   };
   const perimeter = Math.PI * (half[0] + half[1]);
   const arc = ((Math.PI / 4) * (half[0] + half[1] + 2 * height)) / 2;
-  const [scaleU, scaleV] = [TEXELS_PER_METRE / surface.width, TEXELS_PER_METRE / surface.height];
+  const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / surface.width, SOLID_TEXELS_PER_METRE / surface.height];
   const uvAt = (ring: number, step: number): Uv => [
     (step / count) * perimeter * scaleU,
     -(ring / rings) * arc * scaleV,
@@ -414,7 +417,7 @@ function arch(half: [number, number], height: number, opening: number, surface: 
       ),
     );
   }
-  const scaleU = TEXELS_PER_METRE / surface.width;
+  const scaleU = SOLID_TEXELS_PER_METRE / surface.width;
   for (let k = 0; k + 1 < turns.length; k++) {
     const [a, b] = [inner(turns[k]), inner(turns[k + 1])];
     const inward = (turn: number): Vector => normalised([-Math.cos(turn) / radius, 0, -Math.sin(turn) / rise]);

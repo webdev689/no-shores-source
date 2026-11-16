@@ -7,6 +7,7 @@ import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
 import { PAVED_TILE } from './cityGround.ts';
+import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
 
 /** How much nearer in depth (not on screen) the city is drawn than it stands: a few centimetres, and a share of the
  *  distance, so its terraces win over the land's coarser rings and its pads' own ground. */
@@ -34,6 +35,7 @@ struct View {
 const AMBIENT = 0.35;
 const BOUNCE = 0.15;
 const TEXELS = ${TEXELS_PER_METRE.toFixed(1)};
+const SOLID_TEXELS = ${SOLID_TEXELS_PER_METRE.toFixed(1)};
 const LAST_PICTURE = ${PICTURE_LAYERS - 1}u;
 const GOLD = ${COLOUR_LAYERS.gold}u;
 const IRON = ${COLOUR_LAYERS.iron}u;
@@ -244,9 +246,9 @@ fn plate_fragment(plate: Plate) -> @location(0) vec4f {
     case 3u: { uv = vec2f(inside.y, 1.0 - inside.x); }
     default: {}
   }
-  // paving is laid at the forged models' texels a metre over the whole plate, not once a tile
+  // paving is laid as the solids' paving is, over the whole plate, not once a tile
   let paved = data.g == PAVED;
-  let scale = select(vec2f(1.0), ${TILE_M} * TEXELS / sizes[min(data.r, LAST_PICTURE)].xy, paved);
+  let scale = select(vec2f(1.0), ${TILE_M} * SOLID_TEXELS / sizes[min(data.r, LAST_PICTURE)].xy, paved);
   uv = select(uv, plate.ground * scale, paved);
   let albedo = textureSampleGrad(pictures, picture_sampler, uv, data.r, along * scale, down * scale).rgb;
   return vec4f(lit(data.r, albedo, vec3f(0.0, 0.0, 1.0)), 1.0);

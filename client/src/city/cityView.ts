@@ -48,6 +48,8 @@ type Drawn = {
   readonly plates: GPUBuffer;
   readonly plateVertices: number;
   near: GPUBuffer | null;
+  nearKey: string;
+  nearDraws: [model: number, first: number, count: number][];
 };
 
 export class CityView implements CityDrawer {
@@ -155,6 +157,8 @@ export class CityView implements CityDrawer {
       plates: buffer(data.plates.tops, CITY_BUFFER_USAGE.vertex),
       plateVertices: data.plates.tops.length / 3,
       near: null,
+      nearKey: '',
+      nearDraws: [],
     };
   }
 
@@ -178,11 +182,10 @@ export class CityView implements CityDrawer {
     if (!drawn) return;
     const { data } = drawn;
     const eye: [number, number, number] = [shot.eye[0] - data.origin[0], shot.eye[1] - data.origin[1], shot.eye[2]];
-    const grid = -(data.side / 2) * 102.4;
     const uniforms = new Float32Array(VIEW_BYTES / 4);
     uniforms.set(fromEye, 0);
     uniforms.set([...eye, time], 16);
-    uniforms.set([grid, grid, data.plates.width, 0], 20);
+    uniforms.set([...data.grid, data.plates.width, 0], 20);
     this.gpu.device.queue.writeBuffer(drawn.view, 0, uniforms);
     const planes = viewPlanes(fromEye);
     const seenChunks: Chunk[] = [];
@@ -256,41 +259,46 @@ export class CityView implements CityDrawer {
   /** The near cells' models, an instanced draw a model, their instances written afresh each frame. */
   private drawNear(pass: GPURenderPassEncoder, drawn: Drawn, cells: readonly number[], frame: CityFrame): void {
     const { data } = drawn;
-    const byModel = new Map<number, number[]>();
-    let count = 0;
-    for (const cell of cells)
-      for (const instance of data.near.get(cell) ?? []) {
-        const list = byModel.get(instance.model) ?? [];
-        list.push(cell, ...instance.at);
-        byModel.set(instance.model, list);
-        count++;
+    const key = cells.join(',');
+    // the instances are written again only when the near cells change, which they do a cell at a time
+    if (key !== drawn.nearKey) {
+      drawn.nearKey = key;
+      const counts = new Map<number, number>();
+      for (const cell of cells)
+        for (const instance of data.near.get(cell) ?? [])
+          counts.set(instance.model, (counts.get(instance.model) ?? 0) + 1);
+      const starts = new Map<number, number>();
+      let total = 0;
+      drawn.nearDraws = [];
+      for (const [model, count] of counts) {
+        starts.set(model, total);
+        drawn.nearDraws.push([model, total, count]);
+        total += count;
       }
-    if (!count) return;
-    const bytes = new ArrayBuffer(count * 24);
-    const [floats, whole] = [new Float32Array(bytes), new Uint32Array(bytes)];
-    const draws: [model: number, first: number, count: number][] = [];
-    let next = 0;
-    for (const [model, list] of byModel) {
-      const first = next;
-      for (let k = 0; k < list.length; k += 5) {
-        floats.set(list.slice(k + 1, k + 5), next * 6);
-        whole.set([list[k], TIER_WHOLE], next * 6 + 4);
-        next++;
+      const bytes = new ArrayBuffer(Math.max(total, 1) * 24);
+      const [floats, whole] = [new Float32Array(bytes), new Uint32Array(bytes)];
+      for (const cell of cells)
+        for (const instance of data.near.get(cell) ?? []) {
+          const slot = starts.get(instance.model) ?? 0;
+          starts.set(instance.model, slot + 1);
+          floats.set(instance.at, slot * 6);
+          whole[slot * 6 + 4] = cell;
+          whole[slot * 6 + 5] = TIER_WHOLE;
+        }
+      if (!drawn.near || drawn.near.size < bytes.byteLength) {
+        drawn.near?.destroy();
+        drawn.near = this.gpu.device.createBuffer({
+          size: Math.max(bytes.byteLength * 2, 1 << 16),
+          usage: CITY_BUFFER_USAGE.vertex | CITY_BUFFER_USAGE.copyDestination,
+        });
       }
-      draws.push([model, first, next - first]);
+      this.gpu.device.queue.writeBuffer(drawn.near, 0, bytes);
     }
-    if (!drawn.near || drawn.near.size < bytes.byteLength) {
-      drawn.near?.destroy();
-      drawn.near = this.gpu.device.createBuffer({
-        size: Math.max(bytes.byteLength * 2, 1 << 16),
-        usage: CITY_BUFFER_USAGE.vertex | CITY_BUFFER_USAGE.copyDestination,
-      });
-    }
-    this.gpu.device.queue.writeBuffer(drawn.near, 0, bytes);
+    if (!drawn.near || !drawn.nearDraws.length) return;
     pass.setVertexBuffer(0, drawn.modelVertices);
     pass.setVertexBuffer(1, drawn.near);
     pass.setIndexBuffer(drawn.modelIndices, 'uint32');
-    for (const [model, first, instances] of draws) {
+    for (const [model, first, instances] of drawn.nearDraws) {
       const entry = data.models.entries[model];
       if (!entry.indexCount) continue;
       pass.drawIndexed(entry.indexCount, instances, entry.firstIndex, entry.baseVertex, first);

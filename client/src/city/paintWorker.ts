@@ -8,6 +8,8 @@ export type PaintJob = {
   readonly archive: number;
   readonly record: number;
   readonly uses: readonly PictureUse[];
+  /** A factor each channel is painted at, or none. */
+  readonly tint: readonly [number, number, number] | null;
 };
 
 /** A painted layer's levels, or none where nothing could be painted. */
@@ -19,10 +21,14 @@ const scope = globalThis as unknown as {
 };
 
 scope.addEventListener('message', (event) => {
-  const { layer, archive, record, uses } = event.data;
+  const { layer, archive, record, uses, tint } = event.data;
   const started = performance.now();
   const named = new Set(uses);
   const picture = paintPicture(archive, record, 0, new Map([[`${archive}.${record}`, named]]));
+  if (picture && tint)
+    for (let texel = 0; texel < picture.rgba.length; texel += 4)
+      for (let channel = 0; channel < 3; channel++)
+        picture.rgba[texel + channel] = Math.min(255, Math.round(picture.rgba[texel + channel] * tint[channel]));
   const levels = picture ? levelsOf(resampled(picture.rgba, picture.width, picture.height)) : null;
   scope.postMessage(
     { layer, levels, milliseconds: performance.now() - started },
