@@ -12,6 +12,8 @@ const view = {
   cellM: 1000,
   heights: new Float32Array(400),
   lakes: new Float32Array(400),
+  coast: new Float32Array(400),
+  across: new Float32Array(400),
   rivers: [{ points: [[500, 500] as const, [1500, 500] as const], flow: [1, 1] }],
   groundHash: '',
   problems: [],

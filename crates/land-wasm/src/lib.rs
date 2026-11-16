@@ -1,5 +1,6 @@
 //! The land for the browser. JavaScript writes a request into memory this module reserves and reads back a view of a
-//! landmass: a JSON header, then its ground and lake surfaces as little-endian 32-bit floats, one a cell. The land
+//! landmass: a JSON header, then its ground, lake surfaces, distances from the coast and heights carried over the
+//! coast as little-endian 32-bit floats, one a cell. The land
 //! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
@@ -22,15 +23,18 @@ pub fn view_bytes(header: &Value, landmass: Option<&Landmass>) -> Vec<u8> {
         text.push(b' ');
     }
     let cells = landmass.map_or(0, |landmass| landmass.ground.data.len());
-    let mut out = Vec::with_capacity(4 + text.len() + 8 * cells);
+    let mut out = Vec::with_capacity(4 + text.len() + 16 * cells);
     out.extend_from_slice(&u32::try_from(text.len()).unwrap_or(u32::MAX).to_le_bytes());
     out.extend_from_slice(&text);
     if let Some(landmass) = landmass {
         for &value in &landmass.ground.data {
             out.extend_from_slice(&(value as f32).to_le_bytes());
         }
-        for &value in &landmass.water.lake_level {
-            out.extend_from_slice(&(value as f32).to_le_bytes());
+        let surface = &landmass.surface;
+        for values in [&landmass.water.lake_level, &surface.coast.data, &surface.across.data] {
+            for &value in values {
+                out.extend_from_slice(&(value as f32).to_le_bytes());
+            }
         }
     }
     out
@@ -411,7 +415,7 @@ mod tests {
     }
 
     #[test]
-    fn a_continent_opens_as_a_header_and_two_floats_a_cell() {
+    fn a_continent_opens_as_a_header_and_four_floats_a_cell() {
         let request = br#"{ "id": "small", "edits": null, "layout": { "continents": [{ "id": "small", "outline": [[100000, 100000], [300000, 100000], [300000, 260000], [100000, 260000]] }], "isles": [] } }"#;
         let bytes = open_view(request);
         let found = header(&bytes);
@@ -419,7 +423,11 @@ mod tests {
         let cells = found["width"].as_u64().unwrap() * found["height"].as_u64().unwrap();
         let header_length = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
         assert_eq!(header_length % 4, 0);
-        assert_eq!(bytes.len(), 4 + header_length + 8 * cells as usize);
+        assert_eq!(
+            bytes.len(),
+            4 + header_length + 16 * cells as usize,
+            "height, lake, coast distance, carried height"
+        );
     }
 
     #[test]

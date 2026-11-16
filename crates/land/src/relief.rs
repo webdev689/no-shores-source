@@ -5,6 +5,7 @@
 
 use crate::exact::{clamp, fbm, ridged, seed_of, smooth};
 use crate::grid::Grid;
+use crate::ground::near_segment;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::Point;
 
@@ -15,12 +16,8 @@ pub const MARGIN_M: i64 = 40_000;
 /// The lowest land and the highest seabed, metres: the painted coast stays the coast.
 pub const LAND_FLOOR_M: f64 = 1.0;
 pub const SEA_CEILING_M: f64 = -2.0;
-
-/// Within COAST_BAND_M of the painted coast, the ground eases onto a slope through the coast itself, COAST_SLOPE a
-/// kilometre either side: whole by COAST_HELD_M from it, gone by COAST_BAND_M.
-pub const COAST_BAND_M: f64 = 1200.0;
-pub const COAST_HELD_M: f64 = 600.0;
-pub const COAST_SLOPE_M_PER_KM: f64 = 16.0;
+/// How far from the painted coast a cell's distance to it is kept, metres; further cells hold this.
+pub const COAST_REACH_M: f64 = 6000.0;
 
 /// The climate a landmass is generated in: its biome's (biome.rs), or `PLACEHOLDER` for a landmass with none.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -132,6 +129,41 @@ pub fn coast_distance_km(window: &Grid, land: &[bool]) -> Vec<f64> {
     distance
 }
 
+/// Each cell centre's distance from the painted coast, metres, positive on land and negative at sea, held within
+/// COAST_REACH_M: the line the ground's coast runs along between the cells (ground.rs).
+#[must_use]
+pub fn coast_signed_m(window: &Grid, outline: &[Point], land: &[bool]) -> Grid {
+    let mut distance = window.like(COAST_REACH_M);
+    let cell = |metres: f64, origin: f64, size: usize| {
+        (((metres - origin) / window.cell_m - 0.5).floor().max(0.0) as usize).min(size - 1)
+    };
+    for (index, from) in outline.iter().enumerate() {
+        let to = outline[(index + 1) % outline.len()];
+        let (from, to) = ((from.x as f64, from.y as f64), (to.x as f64, to.y as f64));
+        let (first_i, last_i) = (
+            cell(from.0.min(to.0) - COAST_REACH_M, window.left_m, window.width),
+            cell(from.0.max(to.0) + COAST_REACH_M, window.left_m, window.width),
+        );
+        let (first_j, last_j) = (
+            cell(from.1.min(to.1) - COAST_REACH_M, window.top_m, window.height),
+            cell(from.1.max(to.1) + COAST_REACH_M, window.top_m, window.height),
+        );
+        for j in first_j..=last_j {
+            for i in first_i..=last_i {
+                let (x, y) = window.centre(i, j);
+                let nearest = &mut distance.data[j * window.width + i];
+                *nearest = nearest.min(near_segment(from, to, x, y).0);
+            }
+        }
+    }
+    for (value, &inside) in distance.data.iter_mut().zip(land) {
+        if !inside {
+            *value = -*value;
+        }
+    }
+    distance
+}
+
 /// The relief the generator lays down, metres, and where the land is being raised (0..1) so erosion keeps its tops.
 #[must_use]
 pub fn relief(window: &Grid, land: &[bool], coast_km: &[f64], seed: u32, climate: Climate) -> (Grid, Grid) {
@@ -163,44 +195,6 @@ pub fn relief(window: &Grid, land: &[bool], coast_km: &[f64], seed: u32, climate
     (elevation, uplift)
 }
 
-/// Eases the ground near the coast onto a slope through the painted outline, so the coastline the ground draws between
-/// its cells follows the outline, not the cells' squares. A cell keeps its side: land LAND_FLOOR_M or more, the seabed
-/// SEA_CEILING_M or less.
-pub fn ease_to_outline(ground: &mut Grid, land: &[bool], outline: &[Point]) {
-    let mut nearest = vec![f64::MAX; land.len()];
-    for (index, from) in outline.iter().enumerate() {
-        let to = outline[(index + 1) % outline.len()];
-        let (from_x, from_y, to_x, to_y) = (from.x as f64, from.y as f64, to.x as f64, to.y as f64);
-        let column =
-            |x: f64| ((x - ground.left_m) / ground.cell_m).floor().clamp(0.0, (ground.width - 1) as f64) as usize;
-        let row = |y: f64| ((y - ground.top_m) / ground.cell_m).floor().clamp(0.0, (ground.height - 1) as f64) as usize;
-        let (span_x, span_y) = (to_x - from_x, to_y - from_y);
-        let length = span_x * span_x + span_y * span_y;
-        for j in row(from_y.min(to_y) - COAST_BAND_M)..=row(from_y.max(to_y) + COAST_BAND_M) {
-            for i in column(from_x.min(to_x) - COAST_BAND_M)..=column(from_x.max(to_x) + COAST_BAND_M) {
-                let (x, y) = ground.centre(i, j);
-                let along = if length > 0.0 {
-                    clamp(((x - from_x) * span_x + (y - from_y) * span_y) / length, 0.0, 1.0)
-                } else {
-                    0.0
-                };
-                let (dx, dy) = (x - from_x - span_x * along, y - from_y - span_y * along);
-                let cell = j * ground.width + i;
-                nearest[cell] = nearest[cell].min((dx * dx + dy * dy).sqrt());
-            }
-        }
-    }
-    for (cell, &distance) in nearest.iter().enumerate() {
-        if distance >= COAST_BAND_M {
-            continue;
-        }
-        let slope = COAST_SLOPE_M_PER_KM * distance / 1000.0;
-        let toward = if land[cell] { slope.max(LAND_FLOOR_M) } else { (-slope).min(SEA_CEILING_M) };
-        let share = 1.0 - smooth(COAST_HELD_M, COAST_BAND_M, distance);
-        ground.data[cell] += (toward - ground.data[cell]) * share;
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -212,29 +206,6 @@ mod tests {
             Point::new(west + side, north + side),
             Point::new(west, north + side),
         ]
-    }
-
-    #[test]
-    fn a_diagonal_coast_is_drawn_along_its_line_not_in_steps() {
-        let text = r#"{ "continents": [{ "id": "wedge", "outline": [[200000, 300000], [400000, 300000], [200000, 500000]] }], "isles": [] }"#;
-        let layout = world::layout::parse(text).unwrap();
-        let landmass = crate::landmass::generate(&layout.continents[0], crate::edits::Edits::default()).unwrap();
-        let ground = &landmass.surface;
-        // Along the diagonal coast x + y = 700 km, find where the ground crosses 0 on lines across it.
-        let mut worst: f64 = 0.0;
-        for step in 0..60 {
-            let along = 250_000.0 + 1_637.0 * f64::from(step);
-            let (coast_x, coast_y) = (along, 700_000.0 - along);
-            let at = |offset: f64| ground.height_at(coast_x + offset, coast_y + offset);
-            let (mut inside, mut outside) = (-3000.0, 3000.0);
-            assert!(at(inside) > 0.0 && at(outside) < 0.0);
-            for _ in 0..40 {
-                let middle = 0.5 * (inside + outside);
-                if at(middle) > 0.0 { inside = middle } else { outside = middle }
-            }
-            worst = worst.max((inside * std::f64::consts::SQRT_2).abs());
-        }
-        assert!(worst < 100.0, "the coast strays {worst:.0} m from its line, not the cells' half-kilometre steps");
     }
 
     #[test]
@@ -262,5 +233,24 @@ mod tests {
         let inland = mean((0..land.len()).filter(|&cell| land[cell] && coast[cell] > 100.0).collect());
         let shore = mean((0..land.len()).filter(|&cell| land[cell] && coast[cell] < 5.0).collect());
         assert!(inland > shore + 200.0, "inland {inland}, shore {shore}");
+    }
+
+    #[test]
+    fn each_cell_knows_its_distance_from_the_painted_coast_and_its_side() {
+        let outline = vec![Point::new(100_000, 200_000), Point::new(140_000, 200_000), Point::new(100_000, 240_000)];
+        let grid = window(&outline);
+        let land = land_mask(&grid, &outline);
+        let coast = coast_signed_m(&grid, &outline, &land);
+        for (index, &value) in coast.data.iter().enumerate() {
+            assert_eq!(value.is_sign_positive(), land[index], "cell {index}");
+            assert!(value.abs() <= COAST_REACH_M);
+        }
+        // The diagonal coast is x + y = 340 km: the centre (120.5, 219.5) km lies on it, (121.5, 219.5) beyond it.
+        let at =
+            |x: f64, y: f64| coast.get(((x - grid.left_m) / 1000.0) as isize, ((y - grid.top_m) / 1000.0) as isize);
+        assert!(at(120_500.0, 219_500.0).abs() < 1e-9);
+        assert!((at(121_500.0, 219_500.0) + 1000.0 / std::f64::consts::SQRT_2).abs() < 1e-9);
+        assert!((at(103_500.0, 204_500.0) - 3_500.0).abs() < 1e-9, "the west coast is nearest");
+        assert_eq!(at(60_500.0, 160_500.0), -COAST_REACH_M, "far out at sea");
     }
 }

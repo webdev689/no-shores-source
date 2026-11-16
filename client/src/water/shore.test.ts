@@ -122,4 +122,6 @@ test('a river running level with its plain keeps to its channel: its waterline i
   assert.equal(kindAt(40 + 10.5), 'fresh', 'just inside its edge, between samples');
   assert.equal(kindAt(40 + 11.6), 'dry', 'just past its edge, though the plain lies under its level');
   assert.equal(kindAt(40 - 11.6), 'dry');
+  // Column 2 lies past the two samples the surface is carried: the land's own edge (21 m) runs on there.
+  assert.equal(field.levels[(width + 2) * 2 + 1], 21);
 });

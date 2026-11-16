@@ -52,13 +52,6 @@ impl Grid {
         (self.left_m + (i as f64 + 0.5) * self.cell_m, self.top_m + (j as f64 + 0.5) * self.cell_m)
     }
 
-    /// Whether a world point lies inside the window.
-    #[must_use]
-    pub fn covers(&self, x: f64, y: f64) -> bool {
-        let (i, j) = ((x - self.left_m) / self.cell_m, (y - self.top_m) / self.cell_m);
-        i >= 0.0 && j >= 0.0 && i < self.width as f64 && j < self.height as f64
-    }
-
     /// Bilinear between cell centres at a world point.
     #[must_use]
     pub fn at(&self, x: f64, y: f64) -> f64 {
@@ -111,6 +104,5 @@ mod tests {
         assert!((grid.at(x, y) - 6.0).abs() < 1e-9);
         assert!((grid.cubic_at(x, y) - 6.0).abs() < 1e-9);
         assert!((grid.at(x + 50.0, y) - 6.5).abs() < 1e-9);
-        assert!(grid.covers(1000.0, 2000.0) && !grid.covers(1400.0, 2000.0));
     }
 }

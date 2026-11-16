@@ -1,6 +1,7 @@
 use super::*;
 use crate::edits::Edits;
 use crate::places::{CarvedRiver, Road, Town};
+use crate::relief::COAST_REACH_M;
 
 /// A gentle slope 40 km across, all land, rising east: 100 m at the west edge, 500 m at the east.
 fn slope() -> Grid {
@@ -17,7 +18,7 @@ fn points(list: &[[i64; 2]]) -> Vec<Point> {
 
 fn ground_with(edits: &Edits) -> Ground {
     let land = slope();
-    Ground::new(&land, &vec![0.0; land.data.len()], &[], edits, 1)
+    Ground::new(&land, &land.like(COAST_REACH_M), &vec![0.0; land.data.len()], &[], edits, 1)
 }
 
 #[test]
@@ -102,10 +103,92 @@ fn a_gathered_river_through_a_lake_keeps_its_level_beyond_it() {
         }
     }
     let gathered = crate::water::water(&land, &mask, 800.0);
-    let ground = Ground::new(&land, &gathered.lake_level, &gathered.rivers, &Edits::default(), 1);
+    // The sea's column is the west kilometre: the coast runs down x = 1 km.
+    let coast = Grid { data: (0..1800).map(|index| ((index % 60) as f64 - 0.5) * 1000.0).collect(), ..land.like(0.0) };
+    let ground = Ground::new(&land, &coast, &gathered.lake_level, &gathered.rivers, &Edits::default(), 1);
     for i in [5, 12, 20, 26] {
         let (x, y) = land.centre(i, 15);
         let below = land.data[15 * 60 + i] - ground.height_at(x, y);
         assert!(below < 6.0, "the channel {} km from the sea is {below} m under the land", i);
     }
+}
+
+#[test]
+fn a_diagonal_coast_runs_along_its_painted_line_not_the_cells_steps() {
+    let text = r#"{ "continents": [{ "id": "wedge", "outline": [[200000, 300000], [400000, 300000], [200000, 500000]] }], "isles": [] }"#;
+    let layout = world::layout::parse(text).unwrap();
+    let landmass = crate::landmass::generate(&layout.continents[0], Edits::default()).unwrap();
+    let ground = &landmass.surface;
+    // Lines across the diagonal coast x + y = 700 km, `offset` metres along (1, 1) from it: inland is negative.
+    let (mut worst, mut lines) = (0.0_f64, 0);
+    for step in 0..120 {
+        let along = 250_000.0 + 818.5 * f64::from(step);
+        let at = |offset: f64| (along + offset, 700_000.0 - along + offset);
+        let fresh = (-160..=160).any(|tick| {
+            let (x, y) = at(f64::from(tick) * 10.0);
+            ground.fresh_edge(x, y).is_some()
+        });
+        if fresh {
+            continue;
+        }
+        lines += 1;
+        for tick in -60..=60 {
+            let offset = f64::from(tick) * 25.0 + 0.5;
+            let (x, y) = at(offset);
+            assert_eq!(ground.height_at(x, y) < 0.0, offset > 0.0, "{along} m along, {offset} m across");
+        }
+        let (mut inside, mut outside) = (-1000.0, 1000.0);
+        for _ in 0..50 {
+            let middle = 0.5 * (inside + outside);
+            if ground.height_at(at(middle).0, at(middle).1) > 0.0 { inside = middle } else { outside = middle }
+        }
+        worst = worst.max((inside * std::f64::consts::SQRT_2).abs());
+    }
+    assert!(lines > 80, "most lines are clear of rivers: {lines}");
+    assert!(worst < 1.0, "the coast strays {worst:.2} m from its painted line");
+}
+
+#[test]
+fn a_lake_s_shore_is_where_the_ground_meets_its_surface_not_a_cell_s_side() {
+    // A hollow on a plateau: its middle 2 m under the spill, a shallow ring round it, a rim above the lake's level.
+    let mut land = Grid::new(9, 9, 0.0, 0.0, 1000.0);
+    for (index, value) in land.data.iter_mut().enumerate() {
+        let (i, j) = ((index % 9) as i64 - 4, (index / 9) as i64 - 4);
+        *value = [8.0, 9.8, 10.1, 11.5, 12.5][i.abs().max(j.abs()) as usize];
+    }
+    let lake_level: Vec<f64> = land.data.iter().map(|&height| if height < 10.0 { 10.0 } else { 0.0 }).collect();
+    let ground = Ground::new(&land, &land.like(COAST_REACH_M), &lake_level, &[], &Edits::default(), 1);
+    let mut shore = 0.0;
+    for step in 0..400 {
+        let x = 4_500.0 + f64::from(step) * 5.0;
+        let (height, water) = (ground.height_at(x, 4_500.0), ground.water_at(x, 4_500.0));
+        assert_eq!(water == (WaterAt::Lake { surface: 10.0 }), height < 10.0, "{x} m: {height} m");
+        if height < 10.0 {
+            shore = x - 4_500.0;
+        }
+    }
+    assert!(shore > 1_500.0 && shore < 2_000.0, "the shore lies past the lake's cells, short of the rim: {shore} m");
+}
+
+#[test]
+fn a_river_s_banks_ease_back_to_the_land_with_no_wall_where_it_crosses_a_lake() {
+    // The valley of the gathered-river test, its pit 200 m deep: the river crosses the pit at the lake's level.
+    let mut land = Grid::new(60, 30, 0.0, 0.0, 1000.0);
+    let mask: Vec<bool> = (0..1800).map(|index| index % 60 != 0).collect();
+    for (index, value) in land.data.iter_mut().enumerate() {
+        let (i, j) = (index % 60, index / 60);
+        *value = if i == 0 { -5.0 } else { 10.0 * i as f64 + (j as f64 - 15.0).abs() * 30.0 };
+        if (29..=31).contains(&i) && j == 15 {
+            *value -= 200.0;
+        }
+    }
+    let gathered = crate::water::water(&land, &mask, 800.0);
+    let coast = Grid { data: (0..1800).map(|index| ((index % 60) as f64 - 0.5) * 1000.0).collect(), ..land.like(0.0) };
+    let ground = Ground::new(&land, &coast, &gathered.lake_level, &gathered.rivers, &Edits::default(), 1);
+    let (x, y) = land.centre(30, 15);
+    let (river, _) = ground.nearest(x, y, false).expect("the river crosses the pit");
+    assert!(river.level > ground.height_at(x, y + 40.0) + 50.0, "the lake's bed lies far under the river's level");
+    let across: Vec<f64> = (0..600).map(|step| ground.height_at(x, y + f64::from(step) * 0.1)).collect();
+    let jump = across.windows(2).map(|pair| (pair[1] - pair[0]).abs()).fold(0.0, f64::max);
+    assert!(jump < 5.0, "the bank falls to the lake's bed without a wall: {jump} m in 10 cm");
 }

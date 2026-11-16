@@ -66,8 +66,10 @@ struct Surface {
   @builtin(position) clip: vec4f,
   @location(0) offset: vec2f,
   @location(1) drawn: vec3f,
-  @location(2) still: vec2f,
-  @location(3) @interpolate(flat) fresh: u32,
+  // The still water's level at the vertex, before the waves.
+  @location(2) rest: f32,
+  // 1 at fresh water's vertices, 0 at the sea's: blended across a triangle, so no vertex decides a whole one.
+  @location(3) fresh: f32,
 };
 
 const CORNERS = array<vec2u, 6>(vec2u(0u, 0u), vec2u(1u, 0u), vec2u(0u, 1u), vec2u(0u, 1u), vec2u(1u, 0u), vec2u(1u, 1u));
@@ -105,8 +107,8 @@ fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
   var surface: Surface;
   surface.offset = offset;
   surface.drawn = vec3f(offset + shift, (water.level + height) * frame.depth_terms.w - frame.eye.z);
-  surface.still = vec2f(water.level, water.bed);
-  surface.fresh = u32(water.fresh);
+  surface.rest = water.level;
+  surface.fresh = select(0.0, 1.0, water.fresh);
   surface.clip = frame.from_eye * vec4f(surface.drawn, 1.0);
   return surface;
 }
@@ -135,9 +137,19 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   // A pixel's footprint on the water, metres: its angle times the distance, stretched as the view grazes. Smooth
   // from triangle to triangle, unlike the mesh's own derivatives, so nothing fades in facets.
   let footprint = max(distance_to * 2.0 * frame.forward.w / frame.view.y / max(abs(to_eye.z), 0.02), 0.01);
-  let fresh = surface.fresh == 1u;
-  let depth = surface.still.x - surface.still.y;
+  let fresh = surface.fresh > 0.5;
   let top = (surface.drawn.z + frame.eye.z) / frame.depth_terms.w;
+  // The ground and the still water at the pixel, not the mesh's: the water's edge is where its surface (the still
+  // water and the waves on it) meets the ground there, faded across a pixel's rise, however coarse the mesh.
+  let here = wide_at(surface.offset);
+  let close = close_at(surface.offset);
+  let share = close_share(patch_heights, close, frame.patch_area.w > 0.5);
+  let ground = ground_at(coarse_heights, here, frame.coarse_area.x, patch_heights, close, frame.patch_area.z, share).ground;
+  let still = still_at(coarse_lakes, here, patch_levels, close, share);
+  let level = still.x;
+  let depth = level - ground.x;
+  let thin = level + top - surface.rest - ground.x;
+  let cover = wet_share(thin, length(ground.yz) * footprint, still, share);
 
   var normal = vec3f(0.0, 0.0, 1.0);
   var crest = 0.0;
@@ -168,16 +180,16 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   // the water thins onto the land.
   let breaking = breaker.broken * max(smoothstep(1.0 - breaker.face, 1.0, breaker.phase) * 0.9, exp(-breaker.phase * 6.0));
   let lingering = breaker.broken * 0.24;
-  let thin = top - surface.still.y;
   let edge = (1.0 - smoothstep(0.0, select(0.14, 0.06, fresh), thin)) * select(0.95, 0.5, fresh)
     * (1.0 - smoothstep(1.0, 6.0, footprint));
   let splashed = smoothstep(0.012, 0.04, abs(ripple.x)) * 0.6;
   let amount = clamp(max(max(whitecap * 0.85, max(breaking, lingering)), max(edge, splashed)), 0.0, 1.0);
   // Too far off to hold its lace, foam is drawn as the share of the surface it would cover.
-  let foam = mix(foam_cover(local, drift, amount), amount * 0.55, smoothstep(0.4, 3.0, footprint));
+  let foam = mix(foam_cover(local, drift, amount, footprint), amount * 0.55, smoothstep(0.4, 3.0, footprint));
 
-  if (!facing) {
-    // Seen from below: the sky through the window straight above, the deep reflected beyond it.
+  // Seen from below (only from under the water: above it, a face turned away is a steep triangle where the water's
+  // mesh drops from a lake's level, drawn as any other): the sky through the window above, the deep beyond it.
+  if (!facing && eye_below() > 0.0) {
     let up_through = refract(-to_eye, -normal, 1.33);
     var colour = underwater_light(eye_fresh(), 0.0) * 0.7;
     if (dot(up_through, up_through) > 0.0) {
@@ -190,13 +202,14 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     return vec4f(colour, 1.0);
   }
 
-  // From above: the land behind, bent by the surface and tinted by the water it is seen through.
+  // From above: the land behind, bent by the surface and tinted by the water it is seen through. The water is seen
+  // through as far as the ray runs down to the ground under the pixel, so no mesh's own error ever tints it.
   let water_distance = distance_to;
+  let through = clamp(max(thin, 0.0) / max(abs(to_eye.z), 0.05), 0.0, 1e4);
   // The bend is metres on the bed under the surface, so a pixel far off (spanning many metres) moves little.
-  let bend = normal.xy * min(scene_distance(pixel) - water_distance, 3.0) * 0.5 / footprint;
+  let bend = normal.xy * min(through, 3.0) * 0.5 / footprint;
   var look = clamp(pixel + clamp(bend, vec2f(-60.0), vec2f(60.0)), vec2f(0.0), frame.view.xy - 1.0);
   if (scene_distance(look) < water_distance) { look = pixel; }
-  let through = clamp(scene_distance(look) - water_distance, 0.0, 1e4);
   let behind = textureSampleLevel(scene_colour, smooth_sampler, look / frame.view.xy, 0.0).rgb;
   let kept = exp(-select(SEA_ABSORB, FRESH_ABSORB, fresh) * through);
   let body = select(SEA_BODY, FRESH_BODY, fresh) * (0.6 + 0.6 * SUN.z);
@@ -219,6 +232,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
 
   let foam_light = FOAM * (0.62 + 0.38 * max(dot(normal, SUN), 0.0)) + ZENITH * 0.06;
   colour = mix(colour, foam_light, foam);
-  return vec4f(aerial(colour, -to_eye, distance_to), 1.0);
+  // Past its edge the water gives way to what the backdrop drew there.
+  let land = aerial(textureLoad(scene_colour, vec2i(pixel), 0).rgb, normalize(ray_through(pixel)), scene_distance(pixel));
+  return vec4f(mix(land, aerial(colour, -to_eye, distance_to), cover), 1.0);
 }
 `;

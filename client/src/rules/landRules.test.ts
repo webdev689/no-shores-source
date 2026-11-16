@@ -35,6 +35,11 @@ test('a continent opens as its window, with land inside the coast and sea around
   assert.deepEqual([view.leftM, view.topM, view.width, view.height], [160_000, 260_000, 200, 200]);
   assert.equal(view.heights.length, 200 * 200);
   assert.equal(view.lakes.length, 200 * 200);
+  const cell = (values: Float32Array, i: number, j: number) => values[j * view.width + i] ?? Number.NaN;
+  assert.ok(cell(view.coast, 100, 100) > 5000 && cell(view.coast, 5, 5) < -5000, 'far inland, far out');
+  assert.ok(Math.abs(cell(view.coast, 40, 100) - 500) < 1e-3, 'the west coast runs half a cell west of cell 40');
+  assert.ok(cell(view.across, 39, 100) >= 1, "a sea cell by the coast carries the land's height");
+  assert.ok(cell(view.across, 40, 100) <= -2, "a land cell by the coast carries the seabed's");
   const heightOf = (i: number, j: number) => view.heights[j * view.width + i] ?? Number.NaN;
   assert.ok(heightOf(100, 100) >= 1, 'the middle is land');
   assert.ok(heightOf(5, 5) <= -2, 'the margin is sea');
@@ -43,7 +48,7 @@ test('a continent opens as its window, with land inside the coast and sea around
 
 test('the land agrees to the bit with the native build (crates/land/tests/agree.rs holds the same fingerprint)', async () => {
   const view = (await land()).open(square(200_000, 300_000, 120_000), 'square', null);
-  assert.equal(view.groundHash, '2e9a3eef586ebf0d');
+  assert.equal(view.groundHash, '2723ccc818961ecb');
 });
 
 test('a continent of a biome opens with its ground colour and snow line; one with none, without', async () => {

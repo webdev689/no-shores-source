@@ -39,23 +39,25 @@ a headland.
 
 A breaker rises from 12 m deep, grows as it shoals, steepens its face and breaks once its height nears four fifths of
 the depth. Every 9 s one rolls in, in sets. Spent, it runs up the beach as swash and draws back; the sand below its
-reach is darker.
+reach is darker, as wet as the bed it runs on into. The beach is the low, gentle ground along the painted coast.
 
 ## The surface
 
 A disc of rings round the eye, finer near it, carries the swell and the breakers; waves too short for its rings or a
-pixel fade out. The land is drawn first, with its seabed, then the water over it:
+pixel fade out. The land is drawn first, with its seabed, then the water over it. The water's edge is drawn at each
+pixel, where its surface meets the ground there, so it is the land's own line however coarse the meshes far off:
 
 - **Depth.** The seabed is seen through the water, bent by the surface and tinted by the water it is seen through:
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
 - **Light.** The sky and its clouds reflect, more at a glancing angle; the sun glints, its glitter blurring far off;
   a crest glows green where the sun shines through it. Caustics dance on the bed.
 - **Foam.** Foam is a lace of bubble walls. It covers crests that fold, a breaker's face and the surf behind it, the
-  swash's edge and a splash. Far off it shows as the share of the surface it covers.
+  swash's edge and a splash. Each scale of lace gives way to its share as it shrinks toward a pixel.
 - **Fresh water.** A lake lies still under a light chop; a river's chop runs downstream at a pace set by its fall.
-  Its surface is carried two samples past its water, and dips under the land as far as the land's door says a point
-  lies past its edge, so the waterline runs along a river's channel or a lake's shore however the samples fall, even
-  where the plain lies level with the river. It is drawn 5 cm under its level, so a bank at the level shows dry.
+  Near the camera its edge is the land door's own (how far past fresh water a point lies), so the waterline runs
+  along a river's channel or a lake's shore however the samples fall, even where the plain lies level with the river.
+  It is drawn 5 cm under its level, so a bank at the level shows dry. Where its level would dip under the sea's, it
+  is the sea's.
 
 ## In the water
 

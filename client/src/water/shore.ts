@@ -209,16 +209,16 @@ export function shoreField(patch: GroundPatch): ShoreField {
     const capped = Math.abs(value) >= LONGEST_TRAVEL_S - 1;
     shore.set([value, capped ? 0 : east, capped ? 0 : south, isSea[sample] ?? 0], sample * 4);
   }
-  const levels = stillLevels(heights, water, patch.edges, width, height);
+  const levels = stillLevels(heights, water, patch.edges, width, height, 2);
   return { left: patch.left, top: patch.top, step, width, height, heights, levels, shore };
 }
 
 /**
- * Each sample's still water as two floats: fresh water's surface, carried two samples past its wet samples (0, the
+ * Each sample's still water as two floats: fresh water's surface, carried `rings` samples past its wet samples (0, the
  * sea's level under all land, elsewhere), and how far past the water's edge the sample lies, metres. `edges` are the
  * land's own (rivers and lakes alike); without them a sample's edge is its height above the carried surface, a lake's
  * shore. Drawn, the surface dips under the land as far as the edge runs past it, so the waterline lies on the edge
- * itself, smooth wherever the samples fall.
+ * itself, smooth wherever the samples fall. A lake's 1 km cells carry it one ring, as far as the land's lakes reach.
  */
 export function stillLevels(
   heights: Float32Array,
@@ -226,9 +226,10 @@ export function stillLevels(
   edges: Float32Array | null,
   width: number,
   height: number,
+  rings: number,
 ): Float32Array {
   let levels = Float32Array.from(water, (surface) => Math.max(0, surface));
-  for (let pass = 0; pass < 2; pass++) {
+  for (let pass = 0; pass < rings; pass++) {
     const next = levels.slice();
     for (let sample = 0; sample < levels.length; sample++) {
       if ((levels[sample] ?? 0) > 0) continue;
@@ -243,7 +244,8 @@ export function stillLevels(
   }
   const out = new Float32Array(levels.length * 2);
   for (const [sample, level] of levels.entries()) {
-    const edge = level > 0 ? (edges?.[sample] ?? (heights[sample] ?? 0) - level) : FAR_FROM_FRESH_M;
+    // The land's own edge wherever it gives one, carried or not, so the edge runs on smoothly past the carried level.
+    const edge = edges?.[sample] ?? (level > 0 ? (heights[sample] ?? 0) - level : FAR_FROM_FRESH_M);
     out.set([level, edge], sample * 2);
   }
   return out;

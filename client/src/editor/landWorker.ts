@@ -40,7 +40,7 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
       : request.kind === 'settle'
         ? rules.settle()
         : rules.setEdits(request.editsText);
-  scope.postMessage({ ticket, view }, [view.heights.buffer, view.lakes.buffer]);
+  scope.postMessage({ ticket, view }, [view.heights.buffer, view.lakes.buffer, view.coast.buffer, view.across.buffer]);
 }
 
 scope.addEventListener('message', (event) => {

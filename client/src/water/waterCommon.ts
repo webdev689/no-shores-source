@@ -9,6 +9,37 @@ export const CHOP_WAVES = 12;
  * of quarters, so moving the anchor never moves the pattern.
  */
 export const ANCHOR_M = 1024;
+/** The land crate's coast blend (ground.rs COAST_BLEND_M) and the floor it keeps either side (SHORE_FLOOR_M), metres. */
+export const COAST_BLEND_M = 1000;
+export const SHORE_FLOOR_M = 0.5;
+
+/** The cells of a window, row by row: each one's height, distance from the painted coast and height carried over it. */
+export interface WideCells {
+  readonly width: number;
+  readonly heights: Float32Array;
+  readonly coast: Float32Array;
+  readonly across: Float32Array;
+}
+
+/** The texels of the 1 km land's texture (rgba32float, read by WGSL wide_ground) for a rectangle of cells, row by
+ *  row: height, distance from the coast, height carried over the coast, 0. */
+export function wideTexels(
+  cells: WideCells,
+  rect: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number },
+): Float32Array {
+  const { left, top, right, bottom } = rect;
+  const width = right - left;
+  const out = new Float32Array(width * (bottom - top) * 4);
+  for (let row = top; row < bottom; row++) {
+    for (let column = left; column < right; column++) {
+      const [from, to] = [row * cells.width + column, ((row - top) * width + column - left) * 4];
+      out[to] = cells.heights[from] ?? 0;
+      out[to + 1] = cells.coast[from] ?? 0;
+      out[to + 2] = cells.across[from] ?? 0;
+    }
+  }
+  return out;
+}
 
 /**
  * Noise, the sky and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise (the
@@ -77,6 +108,8 @@ fn caustics(point: vec2f, time: f32) -> f32 {
 }
 
 const FRESH_SINK = ${FRESH_SINK_M};
+const COAST_BLEND = ${COAST_BLEND_M.toFixed(1)};
+const SHORE_FLOOR = ${SHORE_FLOOR_M};
 const FRESH_LEVEL = ${FRESH_LEVEL_M};
 
 // The value of a grid of samples at 'at', in samples from sample (0, 0), along Catmull-Rom splines through them (the
@@ -99,6 +132,65 @@ fn spline_at(grid: texture_2d<f32>, at: vec2f) -> vec3f {
   return out;
 }
 
+// A height and its slope kept softly at SHORE_FLOOR or more: unchanged from twice that up, eased onto it below.
+fn above_floor(value: vec3f) -> vec3f {
+  let share = clamp(0.5 + 0.5 * (value.x - SHORE_FLOOR) / SHORE_FLOOR, 0.0, 1.0);
+  return vec3f(mix(SHORE_FLOOR, value.x, share) + SHORE_FLOOR * share * (1.0 - share), value.yz * share);
+}
+
+// The 1 km land at 'at': height, slope a cell and distance from the painted coast, as the land crate's ground has it
+// (ground.rs coast_meet): each cell holds its height, its distance from the painted coast (metres, positive on land)
+// and its height carried over the coast from the other side. The land and the sea are splined apart, neither stepping
+// at the coast, and met along the painted line, so the coast follows the line between the cells, never their squares.
+struct Wide {
+  // Height, slope a cell (a metre from ground_at) and metres from the painted coast.
+  ground: vec4f,
+  // The land's and the sea's own heights here, which the coast meets (coast_meet).
+  sides: vec2f,
+};
+
+// The land and the sea met along the painted coast, 'distance' metres inland of it: ground.rs coast_meet.
+fn coast_meet(land: f32, sea: f32, distance: f32) -> f32 {
+  let near = smoothstep(0.0, COAST_BLEND, abs(distance));
+  let side = 2.0 * smoothstep(-COAST_BLEND, COAST_BLEND, distance) - 1.0;
+  return 0.5 * (land * (near + side) + sea * (near - side));
+}
+
+fn wide_ground(grid: texture_2d<f32>, at: vec2f) -> Wide {
+  let last = vec2i(textureDimensions(grid)) - 1;
+  let base = floor(at);
+  let t = at - base;
+  let t2 = t * t;
+  let t3 = t2 * t;
+  var weights = array<vec2f, 4>(-0.5 * t3 + t2 - 0.5 * t, 1.5 * t3 - 2.5 * t2 + 1.0, -1.5 * t3 + 2.0 * t2 + 0.5 * t, 0.5 * t3 - 0.5 * t2);
+  var slopes = array<vec2f, 4>(-1.5 * t2 + 2.0 * t - 0.5, 4.5 * t2 - 5.0 * t, -4.5 * t2 + 4.0 * t + 0.5, 1.5 * t2 - t);
+  var land = vec3f(0.0);
+  var sea = vec3f(0.0);
+  var coast = vec3f(0.0);
+  for (var row = 0; row < 4; row++) {
+    for (var column = 0; column < 4; column++) {
+      let cell = textureLoad(grid, clamp(vec2i(base) + vec2i(column - 1, row - 1), vec2i(0), last), 0).rgb;
+      let weight = vec3f(weights[column].x * weights[row].y, slopes[column].x * weights[row].y, weights[column].x * slopes[row].y);
+      let on_land = cell.r > 0.0;
+      land += select(cell.b, cell.r, on_land) * weight;
+      sea += select(cell.r, cell.b, on_land) * weight;
+      coast += cell.g * weight;
+    }
+  }
+  land = above_floor(land);
+  sea = -above_floor(-sea);
+  let near_at = clamp(abs(coast.x) / COAST_BLEND, 0.0, 1.0);
+  let near = near_at * near_at * (3.0 - 2.0 * near_at);
+  let near_slope = 6.0 * near_at * (1.0 - near_at) / COAST_BLEND * sign(coast.x);
+  let side_at = clamp(0.5 + 0.5 * coast.x / COAST_BLEND, 0.0, 1.0);
+  let side = 2.0 * side_at * side_at * (3.0 - 2.0 * side_at) - 1.0;
+  let side_slope = 6.0 * side_at * (1.0 - side_at) / COAST_BLEND;
+  let height = 0.5 * (land.x * (near + side) + sea.x * (near - side));
+  let along = 0.5 * (land.x * (near_slope + side_slope) + sea.x * (near_slope - side_slope));
+  let slope = 0.5 * (land.yz * (near + side) + sea.yz * (near - side)) + along * coast.yz;
+  return Wide(vec4f(height, slope, coast.x), vec2f(land.x, sea.x));
+}
+
 // How much of a point is the close-up's: 1 inside it, easing to 0 across its outer 24 samples (0 with none shown).
 fn close_share(close: texture_2d<f32>, close_at: vec2f, shown: bool) -> f32 {
   let size = vec2f(textureDimensions(close)) - 1.0;
@@ -106,12 +198,15 @@ fn close_share(close: texture_2d<f32>, close_at: vec2f, shown: bool) -> f32 {
   return select(0.0, smoothstep(1.0, 24.0, inside), shown);
 }
 
-// The ground at a point, height and slope a metre: the close-up's spline eased into the 1 km land's by 'share', so
-// the two never meet in a step. 'wide_at' and 'close_at' are the point in each grid's samples.
-fn ground_at(wide: texture_2d<f32>, wide_at: vec2f, cell: f32, close: texture_2d<f32>, close_at: vec2f, step: f32, share: f32) -> vec3f {
-  let far = spline_at(wide, wide_at) * vec3f(1.0, 1.0 / cell, 1.0 / cell);
+// The ground at a point: height, slope a metre and distance from the painted coast. The close-up's spline is eased
+// into the 1 km land's by 'share', so the two never meet in a step. 'wide_at' and 'close_at' are the point in each
+// grid's samples.
+fn ground_at(wide: texture_2d<f32>, wide_at: vec2f, cell: f32, close: texture_2d<f32>, close_at: vec2f, step: f32, share: f32) -> Wide {
+  var far = wide_ground(wide, wide_at);
+  far.ground *= vec4f(1.0, 1.0 / cell, 1.0 / cell, 1.0);
   if (share <= 0.0) { return far; }
-  return mix(far, spline_at(close, close_at) * vec3f(1.0, 1.0 / step, 1.0 / step), share);
+  let near = spline_at(close, close_at) * vec3f(1.0, 1.0 / step, 1.0 / step);
+  return Wide(vec4f(mix(far.ground.xyz, near, share), far.ground.w), far.sides);
 }
 
 // The value a grid holds at 'at', in samples from sample (0, 0), between its four nearest.
@@ -129,10 +224,26 @@ fn grid_at(grid: texture_2d<f32>, at: vec2f) -> vec4f {
 // The still water at a point: its level and 1 where it is fresh. The levels hold shore.ts's stillLevels (a surface
 // and the edge, metres past it); past the edge the surface dips under the land as far as the edge runs, so the
 // waterline lies on the edge between the samples. Fresh water is drawn FRESH_SINK under its own level; the sea at 0.
-fn still_at(wide_levels: texture_2d<f32>, wide_at: vec2f, close_levels: texture_2d<f32>, close_at: vec2f, share: f32) -> vec2f {
+// Where the dip takes fresh water under the sea's level, the point is the sea's: dry land hides either, and a dip
+// running far past a lake never drags the sea beside it under its bed. Also the level before the dip (z), where
+// the water's mesh lies, its edge drawn by the pixel; and how far past the edge the point lies (w).
+fn still_at(wide_levels: texture_2d<f32>, wide_at: vec2f, close_levels: texture_2d<f32>, close_at: vec2f, share: f32) -> vec4f {
   let still = mix(grid_at(wide_levels, wide_at).rg, grid_at(close_levels, close_at).rg, share);
-  let fresh = still.x > FRESH_LEVEL;
-  return vec2f(select(0.0, still.x - FRESH_SINK - max(still.y, 0.0), fresh), select(0.0, 1.0, fresh));
+  let surface = still.x - FRESH_SINK - max(still.y, 0.0);
+  let fresh = still.x > FRESH_LEVEL && surface > 0.0;
+  return vec4f(select(0.0, surface, fresh), select(0.0, 1.0, fresh), select(0.0, still.x - FRESH_SINK, fresh), still.y);
+}
+
+// How much of a pixel is under still water: across a pixel's rise of the ground ('across', metres) where the water
+// stands 'over' it; in the close-up, fresh water's own edge (the land's, to the metre) rather than the ground's
+// crossing of its level, which a river's sharp channel would set wavering between the samples.
+// The edge is taken FRESH_SINK in, where the water is drawn, and no further out than 10 m, so where it runs off to
+// "far from fresh water" its change across a pixel stays a step's, not a leap's.
+fn wet_share(over: f32, across: f32, still: vec4f, share: f32) -> f32 {
+  let by_ground = smoothstep(-0.5, 0.5, over / max(across, 0.02));
+  let edge = min(still.w, 10.0) + FRESH_SINK;
+  let by_edge = smoothstep(-0.5, 0.5, -edge / max(fwidth(edge), 1e-3));
+  return mix(by_ground, by_edge, share * still.y);
 }
 
 // How much of the four samples round 'at' carry a mark (marks.ts), between 'first' and 'last' kinds: a soft edge
@@ -241,12 +352,13 @@ struct Water {
   fresh: bool,
 };
 
-// The bed and the water's still level at a point, read as the land's own drawing reads them.
+// The bed and the water's still level at a point, read as the land's own drawing reads them: fresh water's level
+// before its dip, as its mesh lies flat and its edge is drawn by the pixel.
 fn water_at(offset: vec2f) -> Water {
   let share = close_share(patch_heights, close_at(offset), frame.patch_area.w > 0.5);
   let ground = ground_at(coarse_heights, wide_at(offset), frame.coarse_area.x, patch_heights, close_at(offset), frame.patch_area.z, share);
   let still = still_at(coarse_lakes, wide_at(offset), patch_levels, close_at(offset), share);
-  return Water(ground.x, still.x, still.y > 0.0);
+  return Water(ground.ground.x, still.z, still.y > 0.0);
 }
 
 fn reach(depth: f32) -> f32 {
@@ -377,14 +489,16 @@ fn chop_slope(local: vec2f, flow: vec2f, calm: f32, footprint: f32) -> vec2f {
 
 // Foam's lace: high inside the bubbles' cells, low along their walls, drifting with 'drift'. Where 'amount' is small
 // only the walls show; where it is 1 the foam is solid.
-fn foam_cover(local: vec2f, drift: vec2f, amount: f32) -> f32 {
+fn foam_cover(local: vec2f, drift: vec2f, amount: f32, footprint: f32) -> f32 {
   let time = frame.eye.w;
   let warp = (vec2f(value_noise(local * 0.25), value_noise(local * 0.25 + vec2f(31.0, 17.0))) - 0.5) * 3.2
     + (vec2f(value_noise(local * 1.0), value_noise(local * 1.0 + vec2f(5.0, 9.0))) - 0.5) * 0.9;
   let large = cells(local * 0.75 + drift + warp, time * 0.35);
   let small = cells(local * 2.5 - drift * 1.6 + warp * 2.0 + vec2f(13.0, 7.0), time * 0.6);
-  let walls = smoothstep(0.0, 0.55, large.y - large.x);
-  let froth = smoothstep(0.0, 0.3, small.y - small.x);
+  // Each scale of lace gives way to its mean as a pixel's footprint nears its cells (1.3 m, 0.4 m), so cells smaller
+  // than a pixel never sparkle.
+  let walls = mix(smoothstep(0.0, 0.55, large.y - large.x), 0.6, smoothstep(0.3, 0.9, footprint));
+  let froth = mix(smoothstep(0.0, 0.3, small.y - small.x), 0.75, smoothstep(0.08, 0.3, footprint));
   let patches = value_noise(local * 0.5 + drift * 0.6 + warp * 0.5);
   let pattern = walls * 0.42 + froth * 0.26 + patches * 0.32;
   // The lace's edge is at least a pixel wide, so it never flickers where its cells grow small on screen.

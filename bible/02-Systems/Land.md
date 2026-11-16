@@ -31,13 +31,9 @@ the server and in every browser. The owner decided the generator makes the land 
   it, lakes that keep what they are given, and slopes that slide past their talus. It runs 40 steps of 2,000 years on
   a 2 km grid, and what it changed is laid back on the 1 km land, so valleys follow the water and the land keeps its
   grain.
-- **The coastline.** After erosion, the ground within 1.2 km of the painted coast eases onto a slope of 16 m a
-  kilometre through the painted line itself, so the coastline between the cells follows the outline, within about
-  70 m, rather than the cells' half-kilometre steps. Each cell keeps its side of the coast; the owner's strokes come
-  after it.
 - **Water.** A priority flood fills every hollow to its spill and finds each cell's way down. A river starts where
-  the water a cell gathers reaches 1 m³/s, and runs to the sea or into a larger river. A lake stands wherever a
-  hollow holds water 0.5 m deep.
+  the water a cell gathers reaches 1 m³/s, and runs to the sea or into a larger river. A lake fills a hollow that
+  holds water 0.5 m deep anywhere, out to its rim.
 - **Climate.** Each continent is generated in its biome's climate ([[The Continents' Biomes]]): its rain drives
   erosion and the rivers, its ruggedness the hills' grain, and its range height the mountains. The numbers are World
   2.0's profiles', with the range height doubled: World 2.0 adds it to Daggerfall's own relief, which this land has no
@@ -83,9 +79,14 @@ holds at most 200,000 dabs, a place at most 10,000 points, and a course at most 
 What the server judges a body against and every client draws. `Ground::height_at` gives the ground at any point to
 the metre, and `water_at` what water stands there: sea, a lake, a river, or none.
 
-- The 1 km land is interpolated by Catmull-Rom, with a grain of 4 m at a 250 m scale on the land.
+- The 1 km land is interpolated by Catmull-Rom, with a grain of 4 m at a 250 m scale on the land. The land and the
+  seabed are each splined on their own side of the painted coast, and within 1 km of it they meet along it: the
+  coast is the painted line to the metre, its corners rounded, never the cells' steps. Land stands at least 0.5 m
+  up and the seabed 0.5 m down.
+- A lake's water reaches a cell past its cells, to where the ground meets its surface, so its shore is a curve.
 - A town's area is levelled to the mean of its ground, easing back to the land over 150 m past its edge.
-- A river's channel is cut under its surface with 10 m banks; its surface never rises downstream. A river the water
+- A river's channel is a trough cut under its surface, levelling into banks that ease back to the land over 10 m,
+  down as well as up where the land lies under it; its surface never rises downstream. A river the water
   gathered keeps the level the flood gave it, so it crosses a lake at the lake's surface. Hand-carved
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).
@@ -117,7 +118,8 @@ leave the open one alone. The door answers for the open landmass:
   the water's surface, and the sea's swell over it at a given moment ([[Water]]). The answer also holds fingerprints
   of the heights and of the sea. The game will call it.
 
-Each landmass's view also carries the sea's swell: its waves, for the browser to draw.
+Each landmass's view also carries the sea's swell, its waves, for the browser to draw; and each cell's distance from
+the painted coast and its height carried over the coast, so the browser draws the coast as the ground has it.
 
 ## Limits
 
@@ -125,5 +127,5 @@ Each landmass's view also carries the sea's swell: its waves, for the browser to
 - A hand-carved river is cut where the ground is sampled; the 1 km land under it, and the rivers the water gathers,
   do not follow it.
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
-  band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 8 m.
+  band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 4 m.
 - A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.

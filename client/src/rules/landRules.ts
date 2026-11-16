@@ -16,6 +16,10 @@ export interface LandView {
   readonly heights: Float32Array;
   /** A lake's surface in metres, 0 where none stands. */
   readonly lakes: Float32Array;
+  /** Each cell centre's distance from the painted coast, metres, positive on land; held within a few kilometres. */
+  readonly coast: Float32Array;
+  /** Each cell's height carried over the coast from the other side: a land cell's seabed, a sea cell's land. */
+  readonly across: Float32Array;
   readonly rivers: readonly RiverCourse[];
   /** A fingerprint of every ground height's bits, the same as the server's for the same land. */
   readonly groundHash: string;
@@ -149,7 +153,7 @@ function readHeader(exports: LandExports, address: number): { header: ViewHeader
   return { header, start: address + 4 + headerLength };
 }
 
-/** Reads a view the module handed over (a header, then two floats a cell) and gives the memory back. */
+/** Reads a view the module handed over (a header, then four floats a cell) and gives the memory back. */
 function takeView(exports: LandExports, packed: bigint): LandView {
   const address = Number(packed >> 32n);
   const length = Number(packed & 0xffff_ffffn);
@@ -167,6 +171,8 @@ function takeView(exports: LandExports, packed: bigint): LandView {
       cellM: header.cell_m ?? 0,
       heights: new Float32Array(exports.memory.buffer.slice(start, start + cells * 4)),
       lakes: new Float32Array(exports.memory.buffer.slice(start + cells * 4, start + cells * 8)),
+      coast: new Float32Array(exports.memory.buffer.slice(start + cells * 8, start + cells * 12)),
+      across: new Float32Array(exports.memory.buffer.slice(start + cells * 12, start + cells * 16)),
       rivers: header.rivers ?? [],
       groundHash: header.ground_hash ?? '',
       problems: header.problems ?? [],

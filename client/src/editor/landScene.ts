@@ -190,7 +190,14 @@ export class LandScene {
     const rings = clipmapLevels(camera.eye[0], camera.eye[1], finestSpacing(above));
     const pixelAngle = (2 * Math.tan(FIELD_OF_VIEW / 2)) / frame.size.height;
     terrain.prepare(
-      { fromEye, eye: camera.eye, time, rings, far: camera.far, pixelAngle },
+      {
+        fromEye,
+        eye: camera.eye,
+        time,
+        rings,
+        far: camera.far,
+        pixelAngle,
+      },
       { exaggeration: shown, brush: frame.brush },
     );
 

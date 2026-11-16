@@ -42,7 +42,7 @@ export interface WaterScene {
   /** The window's north-west corner in the world, metres. */
   readonly world: readonly [number, number];
   readonly swell: Swell | undefined;
-  readonly coarse: { readonly heights: GPUTexture; readonly lakes: GPUTexture; readonly cellM: number };
+  readonly coarse: { readonly wide: GPUTexture; readonly lakes: GPUTexture; readonly cellM: number };
   readonly patch: PatchWater | null;
   /** The water at the eye's point now: its surface in metres and whether it is fresh; null where there is none. */
   readonly eyeWater: { readonly surface: number; readonly fresh: boolean } | null;
@@ -176,7 +176,7 @@ export class WaterView {
         { binding: 0, resource: { buffer: this.uniforms } },
         { binding: 1, resource: scene.drawn.colour.createView() },
         { binding: 2, resource: scene.drawn.depth.createView() },
-        { binding: 3, resource: scene.coarse.heights.createView() },
+        { binding: 3, resource: scene.coarse.wide.createView() },
         { binding: 4, resource: scene.coarse.lakes.createView() },
         { binding: 5, resource: (patch?.heights ?? this.empty.flat).createView() },
         { binding: 6, resource: (patch?.levels ?? this.empty.flat).createView() },

@@ -5,7 +5,7 @@
 use land::landmass::{generate, ground_hash};
 
 /// Both tests hold this value; a change to the generator changes it in both, on purpose.
-pub const SQUARE_GROUND_HASH: &str = "2e9a3eef586ebf0d";
+pub const SQUARE_GROUND_HASH: &str = "2723ccc818961ecb";
 
 #[test]
 fn the_square_generates_to_its_fingerprint() {

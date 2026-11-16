@@ -80,10 +80,12 @@ The 3D view draws the [[Water]] over the land, under a sky with clouds, and so d
 
 The 3D view draws the land as rings of mesh round the camera, each twice as coarse as the one inside it, from a
 quarter metre a step near a walker. They are snapped to the world, so the land never slides as the camera moves, and
-each ring's edge eases onto the next ring's grid, so they meet without a crack. Heights are read along the same
-Catmull-Rom splines the land crate uses, so a coast or a bank is a smooth curve wherever the mesh falls. Every pixel
-is sampled four times, so no edge of the land or the water is stepped. The 2D map reads the land along the same
-splines and softens every edge across a pixel.
+each ring's edge eases onto the next ring's grid. Every ring's vertices lie on one lattice, so a vertex two rings
+share is the same point to the bit and they meet without a crack. Each pixel reads the ground under it along the
+same Catmull-Rom splines the land crate uses, for its light, its colour and the water's edge; the mesh only places
+it. Near water the mesh lies a little under the ground, so a coarse triangle never hides the water, and the coast
+reaches the sea's level on its painted line. Every pixel is sampled four times. The 2D map reads the land along the
+same splines and softens every edge across a pixel.
 
 Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled
 every 4 m, with river channels at their width and depth and water at its level, road beds, levelled towns, ports
