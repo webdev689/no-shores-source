@@ -1,4 +1,5 @@
 import type { Brush, GroundPatch, LandPatch, LandView } from '../rules/landRules.ts';
+import type { Block } from '../rules/movementRules.ts';
 import type { ShoreField } from '../water/shore.ts';
 
 /** What the page asks the land worker. */
@@ -9,7 +10,11 @@ export type LandRequest =
       readonly id: string;
       readonly editsText: string | null;
       readonly keep: boolean;
+      readonly rmbText?: string | null;
     }
+  | { readonly kind: 'city' }
+  | { readonly kind: 'window'; readonly rect: readonly [number, number, number, number] }
+  | { readonly kind: 'boxes'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'dab'; readonly brush: Brush; readonly point: readonly [number, number]; readonly starts: boolean }
   | { readonly kind: 'settle' }
   | { readonly kind: 'setEdits'; readonly editsText: string }
@@ -36,13 +41,28 @@ export interface LandAnswer {
   readonly patch?: LandPatch;
   readonly written?: { readonly id: string; readonly text: string };
   readonly ground?: GroundPatch;
+  /** A city's plan or a window of the ground, as JSON; null for a landmass with no city. */
+  readonly text?: string | null;
+  readonly boxes?: readonly Block[];
   readonly shore?: ShoreField;
   readonly error?: string;
 }
 
 /** The land, worked in a worker so the page stays responsive while a continent takes seconds. */
 export interface LandWorker {
-  open(layoutText: string, id: string, editsText: string | null, keep: boolean): Promise<LandView>;
+  /** Opens a landmass; kept, its city is settled on it, its blocks named from the RMB index's text if given. */
+  open(
+    layoutText: string,
+    id: string,
+    editsText: string | null,
+    keep: boolean,
+    rmbText?: string | null,
+  ): Promise<LandView>;
+  /** The open landmass's city plan as JSON, or null with none. */
+  cityPlan(): Promise<string | null>;
+  /** The open landmass's exact ground over a rect (west, north, east, south) as JSON, and the city's boxes there. */
+  window(rect: readonly [number, number, number, number]): Promise<string>;
+  boxes(rect: readonly [number, number, number, number]): Promise<readonly Block[]>;
   dab(brush: Brush, point: readonly [number, number], starts: boolean): Promise<LandPatch>;
   settle(): Promise<LandView>;
   setEdits(editsText: string): Promise<LandView>;
@@ -77,7 +97,15 @@ export function startLandWorker(): LandWorker {
     return answer.view;
   };
   return {
-    open: (layoutText, id, editsText, keep) => view({ kind: 'open', layoutText, id, editsText, keep }),
+    open: (layoutText, id, editsText, keep, rmbText) =>
+      view({ kind: 'open', layoutText, id, editsText, keep, rmbText }),
+    cityPlan: async () => (await ask({ kind: 'city' })).text ?? null,
+    window: async (rect) => {
+      const { text } = await ask({ kind: 'window', rect });
+      if (typeof text !== 'string') throw new Error('the land worker answered no window');
+      return text;
+    },
+    boxes: async (rect) => (await ask({ kind: 'boxes', rect })).boxes ?? [],
     dab: async (brush, point, starts) => {
       const { patch } = await ask({ kind: 'dab', brush, point, starts });
       if (!patch) throw new Error('the land worker answered no patch');

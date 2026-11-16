@@ -30,13 +30,25 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     scope.postMessage({ ticket, ground, shore }, moved);
     return;
   }
+  if (request.kind === 'city') {
+    scope.postMessage({ ticket, text: rules.cityPlan() }, []);
+    return;
+  }
+  if (request.kind === 'window') {
+    scope.postMessage({ ticket, text: rules.window(...request.rect) }, []);
+    return;
+  }
+  if (request.kind === 'boxes') {
+    scope.postMessage({ ticket, boxes: rules.boxes(...request.rect) }, []);
+    return;
+  }
   if (request.kind === 'write') {
     scope.postMessage({ ticket, written: rules.write() }, []);
     return;
   }
   const view =
     request.kind === 'open'
-      ? rules.open(request.layoutText, request.id, request.editsText, request.keep)
+      ? rules.open(request.layoutText, request.id, request.editsText, request.keep, request.rmbText)
       : request.kind === 'settle'
         ? rules.settle()
         : rules.setEdits(request.editsText);
