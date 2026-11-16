@@ -7,6 +7,7 @@ code:
   - client/src/testground/player.ts#updatePlayer
   - client/src/testground/player.ts#shownBody
   - client/src/testground/others.ts#showOther
+  - client/src/testground/figures.ts#cardStand
   - client/src/network/roomAddress.ts#roomAddress
   - client/src/testground/playerCamera.ts#scrolled
   - client/src/testground/playerMoves.ts#shownMove
@@ -122,7 +123,9 @@ A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are
 the other side's, mirrored. A mirrored view with nothing in hand wears each hip piece (a sword's or dagger's sheath, a
 Pistolet's) at the other hip first, so the mirror lays it back at its own; the forge draws a twin of each for that. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
-eye.
+eye. Its card stands a body's radius, 0.35 m, in front of the
+body's centre toward the eye, so a wall the body touches, or a lip it is going over, does not cut through the flat
+picture.
 
 ## Limits
 

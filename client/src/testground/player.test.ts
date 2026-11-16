@@ -2,16 +2,19 @@ import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startMovementRules } from '../rules/movementRules.ts';
+import { COURSE } from './course.ts';
+import { cardStand, eyeOf } from './figures.ts';
 import type { Action, InputFrame } from './input.ts';
-import { newPlayer, shownBody, updatePlayer } from './player.ts';
+import { newPlayer, playerCamera, shownBody, updatePlayer } from './player.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/movement_wasm.wasm', import.meta.url);
-const movement = await startMovementRules(
-  await readFile(MODULE).catch(() => {
-    throw new Error('movement_wasm.wasm is not built: run `npm run wasm` first');
-  }),
-);
+const moduleBytes = await readFile(MODULE).catch(() => {
+  throw new Error('movement_wasm.wasm is not built: run `npm run wasm` first');
+});
+const movement = await startMovementRules(moduleBytes);
 movement.setCourse([]);
+const onCourse = await startMovementRules(moduleBytes);
+onCourse.setCourse(COURSE);
 const TICK = movement.tickSeconds;
 
 /** A frame with these actions held, and those pressed this frame. */
@@ -86,4 +89,24 @@ test('between ticks the body is drawn eased from the tick before toward the last
   assert.equal(halfway.body, walked.body);
   const shown = shownBody(halfway);
   assert.ok(Math.abs(shown.y - (halfway.previous.y + halfway.body.y) / 2) < 1e-12);
+});
+
+test('going over a lip, the body’s centre passes behind the wall’s face, but its card stays in front', () => {
+  // The course's ledge: x 0 to 6, its face at y -1, its lip 2.3 m up. The player walks north at it, jumps and goes over.
+  const ledge = { face: -1, lip: 2.3 };
+  let player = newPlayer(onCourse, 3, 1);
+  let [centreBehind, cardBehind, wentOver] = [false, false, false];
+  for (let tick = 0; tick < 240; tick++) {
+    const atWall = player.body.mode === 'ground' && player.body.y < ledge.face + 0.4;
+    player = updatePlayer(player, frame(['forward'], atWall ? ['jump'] : []), onCourse, TICK);
+    const body = shownBody(player);
+    if (player.body.mode !== 'mantle' || body.z >= ledge.lip) continue;
+    wentOver = true;
+    const eye = eyeOf(playerCamera(player, onCourse, COURSE));
+    centreBehind ||= body.y < ledge.face;
+    cardBehind ||= cardStand(body.x, body.y, eye.x, eye.y).y < ledge.face;
+  }
+  assert.ok(wentOver, 'the player went over the lip');
+  assert.ok(centreBehind, 'the body’s centre passed behind the face below the lip');
+  assert.equal(cardBehind, false);
 });
