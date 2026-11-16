@@ -21,10 +21,7 @@ const plan: CityPlan = {
       [940, 1112],
       [980, 1112],
     ],
-    solids: [],
   },
-  landmark: [],
-  works: [],
   pads: [{ bounds: [870, 1100, 1130, 1220], level: 75 }],
 };
 

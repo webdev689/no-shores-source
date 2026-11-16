@@ -27,6 +27,9 @@ export interface FootContext {
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 /** How far over the ground the third-person camera is held. */
 const CAMERA_CLEARANCE_M = 0.3;
+/** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
+ *  arrival looks out over the City. */
+const OVER_THE_PARAPET = 0.3;
 /** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
 const OTHERS_FPS = 6;
 /** Other players' figures are numbered from here, clear of the player's own. */
@@ -105,7 +108,8 @@ export class Foot {
     let boxes = await standOn(context, rect);
     movement.setSection(rooms ? null : { ring: node.ring, spawns: node.spawns });
     const [x, y] = node.spawns[0] ?? node.centre;
-    walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
+    const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
+    walker.player = node.kind === 'social' ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
     const placed: Placed[] = [];
     let nextId = FIRST_OTHER_ID;
     const others: Others = {

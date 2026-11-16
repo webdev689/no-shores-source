@@ -47,7 +47,8 @@ The veil lifts once the place is ready and the exact ground round the player has
 The page reads the world (`loadWorld`: the layout and every continent's edits file) and opens Saltmere, continent 1,
 in the [[Land]]'s worker, kept, with the RMB index's blocks, so its city is settled on it as the bake settles it
 ([[Cities]]). Overlook's plan comes from that worker; its social space is the node `overlook-social`, the plaza beside
-the Beacon. The player stands at its first spawn facing out from the landmark, over the city to the sea.
+the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet, facing out from the landmark and
+looking 17° down over the parapet onto the city, the harbour and the sea.
 
 ## On foot
 
@@ -125,3 +126,5 @@ its continent's climate once the forged models' tables and the RMB blocks its pl
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
 - Offline, the edge is judged in the browser; online, the room judges it and the browser predicts nothing of it.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
+- The water is handed no hull masks for the game's ships, so they part no water and raise no bow foam, as the
+  World Editor's Sloop does ([[Sailing]]).

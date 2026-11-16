@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Helm, ShipFloats } from '../rules/landRules.ts';
-import type { Sailed } from './landClient.ts';
+import type { Sailed } from '../terrain/landClient.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
 interface Asked {

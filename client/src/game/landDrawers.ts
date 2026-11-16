@@ -79,12 +79,15 @@ export function landDrawers(
 ): LandDrawers {
   const plan = landmass.drawnPlan;
   const city = plan ? new CityView(gpu) : null;
+  let released = false;
   if (plan && city) {
     const names = plan.cells.flatMap((cell) => (cell.use === 'block' && cell.block ? [cell.block] : []));
     assets
       .then(async (loaded) => {
         if (!loaded) return;
-        city.setCity(plan, cityClimate(biome ?? undefined), await blocksOf(base, loaded, names), loaded.tables);
+        const blocks = await blocksOf(base, loaded, names);
+        // A landmass let go while its blocks came is drawn no more: its city is never built.
+        if (!released) city.setCity(plan, cityClimate(biome ?? undefined), blocks, loaded.tables);
       })
       .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
   }
@@ -112,6 +115,7 @@ export function landDrawers(
     city,
     nature: natureDrawer,
     release: () => {
+      released = true;
       city?.clear();
       nature?.destroy();
     },
