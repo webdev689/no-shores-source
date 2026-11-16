@@ -36,7 +36,7 @@ fn each_input_steps_the_body_once_as_the_movement_rules_do_and_is_acknowledged()
         let controls = Controls { jump: sequence == 20, ..WALK };
         room.input(player, input(sequence, controls)).unwrap();
         room.tick();
-        expected = step_body(&expected, &controls, &room.blocks, TICK_SECONDS);
+        expected = step_body(&expected, &controls, &room.blocks, &Flat, TICK_SECONDS);
         assert_eq!(
             seen(&room, player),
             Seen { player, body: expected, shown: Shown::default(), acknowledged: sequence }

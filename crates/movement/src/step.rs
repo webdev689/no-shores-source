@@ -2,6 +2,7 @@
 
 use crate::blocks::{Block, WallAhead, ground_at, slide, wall_ahead};
 use crate::body::{Body, Controls, Mode, Over, TUNING};
+use crate::terrain::Terrain;
 use std::f64::consts::PI;
 
 /// Where the player's controls point the body on the ground, in metres east and south per unit, and how long that is.
@@ -54,10 +55,11 @@ fn vaults(rise: f64, ahead: &WallAhead) -> bool {
     rise <= TUNING.vault && ahead.depth <= TUNING.vault_depth
 }
 
-/// One step of the body for `seconds`: walking, running and crouching on the ground and up steps; jumping and
-/// falling; grabbing a lip on a jump to hang, mantle or vault; shimmying along a lip; climbing a wall too high to grab.
+/// One step of the body for `seconds` among `blocks` standing on `terrain`: walking, running and crouching on the
+/// ground, up steps and slopes; jumping and falling; grabbing a lip on a jump to hang, mantle or vault; shimmying
+/// along a lip; climbing a wall too high to grab.
 #[must_use]
-pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64) -> Body {
+pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64) -> Body {
     // The controls come from a player's machine: held to their range here, a body never takes a NaN from them.
     let unit = |value: f64| if value.is_finite() { value.clamp(-1.0, 1.0) } else { 0.0 };
     let yaw = if controls.yaw.is_finite() { controls.yaw } else { 0.0 };
@@ -68,9 +70,9 @@ pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], seconds: f6
     let wish = Wish { x: wish_x, y: wish_y, length: (wish_x * wish_x + wish_y * wish_y).sqrt() };
     match body.mode {
         Mode::Mantle | Mode::Vault => going_over(body, seconds),
-        Mode::Hang | Mode::Climb => on_wall(body, controls, blocks, seconds),
-        Mode::Air => in_air(body, controls, blocks, seconds, wish),
-        Mode::Ground => on_ground(body, controls, blocks, seconds, wish),
+        Mode::Hang | Mode::Climb => on_wall(body, controls, blocks, terrain, seconds),
+        Mode::Air => in_air(body, controls, blocks, terrain, seconds, wish),
+        Mode::Ground => on_ground(body, controls, blocks, terrain, seconds, wish),
     }
 }
 
@@ -90,7 +92,7 @@ fn going_over(body: &Body, seconds: f64) -> Body {
 
 /// Hanging from a lip or climbing a wall: crouch lets go, forward at the lip goes over, sideways moves along it, and on
 /// the wall forward climbs and a jump kicks off.
-fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64) -> Body {
+fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64) -> Body {
     if controls.crouch {
         return Body { mode: Mode::Air, vz: 0.0, moving: false, ..*body };
     }
@@ -114,7 +116,7 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64) -> 
     let (x, y) = if wall_ahead(blocks, &moved, body.facing).is_some() { (moved.x, moved.y) } else { (body.x, body.y) };
     let mut z = body.z;
     if climbing {
-        z = (z + controls.forward * TUNING.climb * seconds).max(0.0);
+        z = (z + controls.forward * TUNING.climb * seconds).max(terrain.height_at(x, y));
     }
     let mode = if climbing && ahead.block.top - z <= TUNING.hang { Mode::Hang } else { body.mode };
     if mode == Mode::Hang {
@@ -126,10 +128,10 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64) -> 
 
 /// In the air: falling under gravity, exactly for a constant pull so a jump's apex does not hang on the tick, and
 /// catching a lip in reach when pressed into a wall.
-fn in_air(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish: Wish) -> Body {
+fn in_air(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64, wish: Wish) -> Body {
     let fall_speed = body.vz - TUNING.gravity * seconds;
     let z = body.z + body.vz * seconds - 0.5 * TUNING.gravity * seconds * seconds;
-    let (x, y) = slide(blocks, body, body.vx * seconds, body.vy * seconds);
+    let (x, y) = slide(blocks, terrain, body, body.vx * seconds, body.vy * seconds);
     let crouch = ease(body.crouch, if body.crouched { 1.0 } else { 0.0 }, seconds);
     let moved = Body { x, y, z, ..*body };
     if wish.length > 0.0
@@ -139,7 +141,7 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish
     {
         let rise = ahead.block.top - z;
         // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
-        let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, x, y, body.z);
+        let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, terrain, x, y, body.z);
         if rise <= TUNING.vault || low_lip {
             return go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead));
         }
@@ -155,7 +157,7 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish
             ..moved
         };
     }
-    let ground = ground_at(blocks, x, y, body.z);
+    let ground = ground_at(blocks, terrain, x, y, body.z);
     if z <= ground {
         return Body { z: ground, vz: 0.0, mode: Mode::Ground, grounded: 0.0, crouch, moving: false, ..moved };
     }
@@ -164,14 +166,21 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish
 
 /// On the ground: walking, running or crouching where the controls point, up steps and off edges; jumping, or going
 /// over a lip in reach; and taking hold of a wall too high to grab.
-fn on_ground(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish: Wish) -> Body {
+fn on_ground(
+    body: &Body,
+    controls: &Controls,
+    blocks: &[Block],
+    terrain: &dyn Terrain,
+    seconds: f64,
+    wish: Wish,
+) -> Body {
     let crouched = if controls.crouch { !body.crouched } else { body.crouched };
     let crouch = ease(body.crouch, if crouched { 1.0 } else { 0.0 }, seconds);
     let facing = if wish.length > 0.0 { libm::atan2(wish.x, -wish.y) } else { body.facing };
     let pace = pace_of(crouched, controls);
     let scale = if wish.length > 0.0 { pace * seconds / wish.length.max(1.0) } else { 0.0 };
-    let (x, y) = slide(blocks, body, wish.x * scale, wish.y * scale);
-    let ground = ground_at(blocks, x, y, body.z);
+    let (x, y) = slide(blocks, terrain, body, wish.x * scale, wish.y * scale);
+    let ground = ground_at(blocks, terrain, x, y, body.z);
     let (moved_x, moved_y) = (x - body.x, y - body.y);
     let moving = (moved_x * moved_x + moved_y * moved_y).sqrt() > 1e-6;
     let (vx, vy) = (moved_x / seconds.max(1e-6), moved_y / seconds.max(1e-6));

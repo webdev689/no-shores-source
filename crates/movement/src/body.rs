@@ -33,6 +33,8 @@ pub struct Tuning {
     pub hang: f64,
     pub shimmy: f64,
     pub climb: f64,
+    /// The steepest terrain walked up, in metres of rise a metre across: about 50°. Overlook's own, not DFO's.
+    pub slope: f64,
 }
 
 pub const TUNING: Tuning = Tuning {
@@ -57,6 +59,7 @@ pub const TUNING: Tuning = Tuning {
     hang: 1.8,
     shimmy: 1.0,
     climb: 1.0,
+    slope: 1.19,
 };
 
 /// What the player asks of the body this tick: movement relative to where it looks (-1..1), the look's bearing in

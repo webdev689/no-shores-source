@@ -1,0 +1,16 @@
+[package]
+name = "reach"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Where a body may go: a node's section of the land, the warning past its edge, death beyond it, and the respawn."
+
+[dependencies]
+
+# Only to test that a tick here is movement's tick; the rules themselves use no other crate.
+[dev-dependencies]
+movement = { path = "../movement" }
+
+[lints]
+workspace = true

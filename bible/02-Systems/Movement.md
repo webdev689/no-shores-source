@@ -6,6 +6,7 @@ code:
   - crates/movement/src/body.rs#TUNING
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
+  - crates/movement/src/terrain.rs#Terrain
   - crates/movement/src/floats.rs#fingerprint
   - crates/movement-wasm/src/lib.rs#movement_step
   - client/src/rules/movementRules.ts#startMovementRules
@@ -30,6 +31,15 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 - **Blocks.** A course is a list of blocks, each a footprint and a top. The body, a circle of 0.35 m radius, stands
   on the highest top within a step (0.5 m) of its feet, slides along a block's sides, and is stopped by one
   taller than a step.
+- **Terrain.** The blocks stand on a terrain: any ground known by its height at a point (`Terrain`), so the rules
+  need nothing of the crate that makes it. A room will hand them the [[Land]]'s window round its node; for now the
+  rooms and the [[Test Ground]] use `Flat`, open ground at 0 m. The ground under the feet is the higher of the
+  terrain and the highest block top within a step. The feet follow the terrain up and down while a tick's drop is
+  no more than a step; past that the body falls, and a fall lands on the terrain. A move whose path rises more
+  steeply than the slope limit, or more than a step above the feet, is tried an axis at a time, as against a
+  block's side, so the body slides along the rise. Walked slantwise, a slope too steep to walk straight up is
+  climbed as steeply as the path rises. The rise is the terrain's own, so a block sunk into a slope is walked onto
+  and off again. Climbing down a wall stops at the terrain.
 - **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
   order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;
   it leaves alone memory too short for a step.
@@ -53,6 +63,9 @@ Shimmying and climbing go at 1 m/s. Riding goes at 6 m/s and galloping at 12, un
 its own. A mantle or vault takes (0.25 + 0.22 × rise) × 1.05 seconds, DFO's time at
 middling skill. The eye stands 1.7 m over the feet, 0.8 m crouched.
 
+The slope limit is Overlook's own: terrain rising 1.19 m a metre, about 50°, is the steepest walked up, Claude's
+choice ([[The World Is Claude's to Mold]]). The pace is the same up a slope as on the flat.
+
 ## Agreement
 
 A scripted run over a small course, through every mode, is fingerprinted: FNV-1a over every number of the body at
@@ -61,6 +74,10 @@ WebAssembly, and both hold the same value.
 
 ## Limits
 
-- The ground is the course's blocks on open ground at 0 m; bodies do not stand on the [[Land]] yet.
+- The rooms and the Test Ground stand bodies on `Flat`; none stands on the [[Land]] yet.
+- A body that lands on terrain steeper than the slope limit stands there and does not slide down, so a jump can
+  gain height up a slope too steep to walk.
+- A body slides along a rise too steep for its path an axis at a time, as along a block, not along the rise's own
+  contour.
 - Whether the body is mounted is the client's to say; the rules take it as a control.
 - A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time.
