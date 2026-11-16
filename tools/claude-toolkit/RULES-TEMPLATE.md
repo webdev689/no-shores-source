@@ -35,7 +35,7 @@ TOOLS
 - superpowers: brainstorming, writing-plans, using-git-worktrees, subagent-driven-development, test-driven-development,
   verification-before-completion, systematic-debugging; requesting-code-review for the final review.
 - ponytail: the smallest complete change; a ponytail review before each merge and on the final diff.
-- Caveman: on for sub-agents and workers only. Replies to me stay in full sentences.
+- Terse voice: the kit's sub-agent hook makes sub-agents and workers terse. Replies to me stay in full sentences.
 - rtk: compacts git status, git log and ls only; reads, greps, diffs and test runs stay exact. If an output looks cut,
   re-run it as `rtk bypass <command>`. Write `git --no-pager log ...` when you need the log exact.
 - MarkItDown: convert files I upload (PDF, Word, Excel, PowerPoint) with `markitdown <file>` before reading them.

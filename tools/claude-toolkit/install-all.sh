@@ -23,7 +23,7 @@ claude plugin install claude-code-setup@anthropic-plugin-directory
 # claude-mem keeps its store in ~/.claude-mem, which dies with the container: restore the project's saved copy first
 # (a session saves it at the end with claude-mem-save.sh).
 [ -f "$SHARED_DIR/claude-mem/claude-mem.tgz" ] && [ ! -f ~/.claude-mem/claude-mem.db ] && tar xzf "$SHARED_DIR/claude-mem/claude-mem.tgz" -C ~
-npx -y claude-mem install </dev/null
+npx -y claude-mem install --provider claude </dev/null   # without a provider an agent shell only saves setup for later
 # claude-mem's file-read gate denies a full-file Read of any file it has notes on and points to its own smart_outline:
 # that clashes with exact reads and with Serena for symbols. Off; its search/memory stay on.
 python3 -c "
@@ -81,7 +81,8 @@ if [ -n "${REPO_URL:-}" ]; then
   [ -d "$serena_proj/.git" ] || git clone -q "$REPO_URL" "$serena_proj"
 fi
 if [ -n "$serena_proj" ] && [ -d "$serena_proj/.git" ]; then
-  [ -f "$serena_proj/.serena/project.yml" ] || yes n | serena project create "$serena_proj"   # main language inferred; "n" answers the extra-server prompts, which abort without a terminal
+  # "n" answers the extra-server prompts, which abort without a terminal.
+  [ -f "$serena_proj/.serena/project.yml" ] || yes n | serena project create $(bash "$KIT_DIR/serena-languages.sh" "$serena_proj") "$serena_proj"
   grep -qx '.serena/' "$serena_proj/.git/info/exclude" || echo '.serena/' >> "$serena_proj/.git/info/exclude"   # never committed
   serena_where="--project $serena_proj"
 else
