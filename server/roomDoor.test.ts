@@ -13,16 +13,19 @@ const compiled = new WebAssembly.Module(
   }),
 );
 const walk = { forward: 1, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+const walking = { anim: 'walk', frame: 2, facing: 0 };
 
 test('a room welcomes players, takes the inputs a browser writes in order, and its snapshots read back in the browser', () => {
   const room = startRoomDoor(compiled);
   assert.equal(room.tickSeconds, 1 / 60);
   assert.equal(room.open(course.start, course.blocks), true);
   const [first, second] = [room.join(), room.join()];
-  assert.deepEqual(readFromRoom(room.joined(first)), { kind: 'joined', player: first });
-  for (let sequence = 1; sequence <= 30; sequence++)
-    assert.equal(room.input(first, inputBytes(sequence, walk)), 'taken');
-  assert.equal(room.input(first, inputBytes(40, walk)), 'out of order');
+  assert.deepEqual(readFromRoom(room.joined(first)), { kind: 'joined', player: first, dressed: [] });
+  assert.equal(room.input(first, inputBytes(1, walk, walking, '{"body":"male"}')), 'taken');
+  for (let sequence = 2; sequence <= 30; sequence++)
+    assert.equal(room.input(first, inputBytes(sequence, walk, walking)), 'taken');
+  assert.equal(room.input(first, inputBytes(40, walk, walking)), 'out of order');
+  assert.equal(room.input(second, inputBytes(1, walk, { ...walking, anim: 'Not A Move' })), 'not an input');
   assert.equal(room.input(second, new Uint8Array([1, 2, 3])), 'not an input');
   for (let tick = 0; tick < 30; tick++) room.tick();
   const snapshot = readFromRoom(room.snapshot());
@@ -32,6 +35,17 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.equal(walker?.acknowledged, 30);
   assert.ok(Math.abs((walker?.body.y ?? 0) - (course.start.y - 4.43 / 2)) < 0.01, `walked half a second north`);
   assert.deepEqual([stander?.player, stander?.acknowledged, stander?.body.y], [second, 0, course.start.y]);
+  // The walker's look came with its last input, and its dress once, to everyone and to whoever joins after.
+  assert.deepEqual([walker?.anim, walker?.frame], ['walk', 2]);
+  assert.deepEqual(snapshot.dressed, [{ player: first, dress: '{"body":"male"}' }]);
+  room.tick();
+  assert.deepEqual((readFromRoom(room.snapshot()) as { dressed: unknown }).dressed, []);
+  const third = room.join();
+  assert.deepEqual(readFromRoom(room.joined(third)), {
+    kind: 'joined',
+    player: third,
+    dressed: [{ player: first, dress: '{"body":"male"}' }],
+  });
 });
 
 test('a player who leaves is no longer seen, and each room is a room of its own', () => {

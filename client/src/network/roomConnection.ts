@@ -1,5 +1,5 @@
 import type { Controls } from '../rules/movementRules.ts';
-import { type FromRoomMessage, inputBytes, readFromRoom } from './messages.ts';
+import { type FromRoomMessage, type Look, type PlayerDress, inputBytes, readFromRoom } from './messages.ts';
 
 /** A room's snapshot, as the connection hands it on. */
 export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
@@ -7,12 +7,14 @@ export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
 /** A browser's WebSocket to one room: it joins, sends the player's input for each tick, and hands on every snapshot. */
 export class RoomConnection {
   private readonly socket: WebSocket;
-  /** The player's number in the room, from its welcome. */
+  /** The player's number in the room, and every dress in it when they joined, from its welcome. */
   readonly player: number;
+  readonly dressed: readonly PlayerDress[];
 
-  private constructor(socket: WebSocket, player: number) {
+  private constructor(socket: WebSocket, player: number, dressed: readonly PlayerDress[]) {
     this.socket = socket;
     this.player = player;
+    this.dressed = dressed;
   }
 
   /** Joins the room at `url` (`ws://…/room/<name>`); resolves once the room has welcomed the player. */
@@ -24,14 +26,15 @@ export class RoomConnection {
       socket.addEventListener('message', (event: MessageEvent<unknown>) => {
         if (!(event.data instanceof ArrayBuffer)) return;
         const message = readFromRoom(new Uint8Array(event.data));
-        if (message?.kind === 'joined') resolve(new RoomConnection(socket, message.player));
+        if (message?.kind === 'joined') resolve(new RoomConnection(socket, message.player, message.dressed));
         else if (message?.kind === 'snapshot') snapshot(message);
       });
     });
   }
 
-  /** Sends one tick's controls, numbered `sequence`; while the socket is not open, nothing is sent. */
-  send(sequence: number, controls: Controls): void {
-    if (this.socket.readyState === WebSocket.OPEN) this.socket.send(inputBytes(sequence, controls));
+  /** Sends one tick's controls, numbered `sequence`, with what the player's figure shows and their dress when it
+   *  changed; while the socket is not open, nothing is sent. */
+  send(sequence: number, controls: Controls, look: Look, dress?: string): void {
+    if (this.socket.readyState === WebSocket.OPEN) this.socket.send(inputBytes(sequence, controls, look, dress));
   }
 }

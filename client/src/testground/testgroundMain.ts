@@ -6,13 +6,14 @@ import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
+import type { Look, PlayerDress } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { type MovementRules, startMovementRules } from '../rules/movementRules.ts';
 import { Cards } from './cards.ts';
 import { COURSE, START } from './course.ts';
-import type { Dress } from './dressing.ts';
+import { type Dress, dressFrom } from './dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from './figures.ts';
 import { Input } from './input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from './player.ts';
@@ -72,7 +73,7 @@ async function start(): Promise<void> {
   let nextId = PLAYER_ID;
   const figures: Placed[] = [];
   const place = (dress: Dress, x: number, y: number, facing: number): Placed => {
-    const placed: Placed = { id: nextId++, x, y, z: 0, facing, dress, anim: 'idle', spin: false };
+    const placed: Placed = { id: nextId++, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
     figures.push(placed);
     return placed;
   };
@@ -134,6 +135,10 @@ async function start(): Promise<void> {
   // corrected by the room's word, each tick's controls go to the room, and every other player stands where the room
   // last saw them.
   let steps: MovementRules = movement;
+  // What the player's own figure showed last frame, and its dress, sent with each tick's controls.
+  let look: Look = { anim: 'idle', frame: 0, facing: 0 };
+  let lookDress = JSON.stringify(you.dress);
+  let sentDress = '';
   const given = new URLSearchParams(location.search).get('room');
   const roomUrl = given === null ? null : roomAddress(given);
   if (given !== null && !roomUrl)
@@ -141,10 +146,23 @@ async function start(): Promise<void> {
   if (roomUrl) {
     const prediction = new Prediction();
     const others = new Map<number, Placed>();
+    const dresses = new Map<number, Dress>();
+    // Another player's dress is used only when it is one: a broken or hostile one keeps the dress they had.
+    const takeDresses = (dressed: readonly PlayerDress[]) => {
+      for (const { player: number, dress } of dressed) {
+        const taken = dressFrom(dress);
+        if (!taken) continue;
+        dresses.set(number, taken);
+        const placed = others.get(number);
+        if (placed) placed.dress = taken;
+      }
+    };
     let own = 0;
     const connection = await RoomConnection.open(roomUrl, (snapshot) => {
+      takeDresses(snapshot.dressed);
       const present = new Set<number>();
-      for (const { player: number, acknowledged, body } of snapshot.players) {
+      for (const seen of snapshot.players) {
+        const { player: number, acknowledged, body } = seen;
         present.add(number);
         if (number === own) {
           player = {
@@ -153,9 +171,10 @@ async function start(): Promise<void> {
           };
           continue;
         }
-        const placed = others.get(number) ?? place(plainDress('human', 0.6), body.x, body.y, body.facing);
+        const dress = dresses.get(number) ?? plainDress('human', 0.6);
+        const placed = others.get(number) ?? place(dress, body.x, body.y, body.facing);
         others.set(number, placed);
-        showOther(placed, body);
+        showOther(placed, seen, (anim) => forge.draws(placed.dress.body, anim, null));
       }
       for (const [number, placed] of others) {
         if (present.has(number)) continue;
@@ -165,10 +184,13 @@ async function start(): Promise<void> {
       }
     });
     own = connection.player;
+    takeDresses(connection.dressed);
     steps = {
       ...movement,
       step: (body, controls) => {
-        connection.send(prediction.next(controls), controls);
+        const dress = lookDress === sentDress ? undefined : lookDress;
+        sentDress = lookDress;
+        connection.send(prediction.next(controls), controls, look, dress);
         return movement.step(body, controls);
       },
     };
@@ -263,10 +285,12 @@ async function start(): Promise<void> {
       likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, held) => forge.draws(youDress.body, anim, held)),
     );
     forge.pump();
+    const frames = forge.frames(youDress.body, shown.anim);
+    const index = shown.frame ?? Math.floor(clock / Math.max(shown.frameSeconds, 0.01)) % frames;
+    look = { anim: shown.anim, frame: index, facing: player.facing };
+    lookDress = JSON.stringify(youDress);
     if (player.view.shown > HIDE_FIGURE_M) {
       const { view, flip } = viewOf(player.facing, body.x, body.y, eye.x, eye.y);
-      const frames = forge.frames(youDress.body, shown.anim);
-      const index = shown.frame ?? Math.floor(clock / Math.max(shown.frameSeconds, 0.01)) % frames;
       const card = forge.card(you.id, youDress, shown.anim, view, index, flip);
       if (card) drawn.push({ card, ...cardStand(body.x, body.y, eye.x, eye.y), z: body.z, flip });
     }
@@ -274,8 +298,10 @@ async function start(): Promise<void> {
       if (placed === you) continue;
       if (placed.spin) placed.facing = (placed.facing + SPIN * seconds) % (2 * Math.PI);
       const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
-      const index = frameAt(clock, forge.frames(placed.dress.body, placed.anim), fps);
-      const card = forge.card(placed.id, placed.dress, placed.anim, view, index, flip);
+      const moveFrames = forge.frames(placed.dress.body, placed.anim);
+      const shownFrame =
+        placed.frame === null ? frameAt(clock, moveFrames, fps) : Math.min(placed.frame, moveFrames - 1);
+      const card = forge.card(placed.id, placed.dress, placed.anim, view, shownFrame, flip);
       if (card) drawn.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip });
     }
     const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;

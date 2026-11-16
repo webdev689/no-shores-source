@@ -30,11 +30,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   wherever it runs.
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
   ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room and its messages, with Google's `flatc` installed
-  by the schema step itself. On its pull request: the room hosted by a Cloudflare Durable Object in `server/`, the
-  browser's connection and prediction, and the Test Ground played together (`?room=`). Run locally with
-  `npm run server`; two browsers saw each other, and the room agreed with each prediction to the bit. Deployed on
-  Cloudflare with the owner's yes: `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`, measured live at 60
-  ticks a second.
+  by the schema step itself; the room hosted by a Cloudflare Durable Object in `server/`; the browser's connection and
+  prediction; and the Test Ground played together (`?room=<name>`). Deployed with the owner's yes:
+  `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`, measured live at 60 ticks a second, the room agreeing
+  with each prediction to the bit.
+- On its pull request: other players shown in their own dress, with their weapon drawn, swings, casts, panel moves and
+  horse. Tested on Cloudflare's local runtime; the deployed rooms need deploying again, with the owner's yes, before
+  it works online.
 
 ## Waiting on the owner
 
@@ -44,7 +46,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- Step 1 of [[Gameplay Starts With the Shared Rules]] is done once the thin server's pull request merges. Step 2 is
+- Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2 is
   sailing, with DFO's sailing and combat systems: which of their rows come is the owner's to approve first
   ([[Porting from DFO]]).
 - The water's open ends ([[Water]]): a body for the walker, the weather driving the swell, and the breakers and
