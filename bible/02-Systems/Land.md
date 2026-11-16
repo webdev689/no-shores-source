@@ -9,6 +9,7 @@ code:
   - crates/land/src/landmass.rs#generate
   - crates/land/src/edits.rs#dab
   - crates/land/src/places.rs#check_places
+  - crates/land/src/sites.rs#check_sites
   - crates/land/src/ground.rs#height_at
   - crates/land/src/ground_window.rs#window
   - crates/land-wasm/src/lib.rs#land_open
@@ -67,9 +68,15 @@ The same file holds the places the owner draws, each with an id that never chang
 | A road | Its course and its width (2 to 30 m) | All of it on the land |
 | A town | Its area, a ring of points | A ring that never crosses itself, on the land, overlapping no other town |
 | A port | One point | On the land within 3 km of the coast |
+| The port city, one at most | Its name, the middle its landmark stands at, and its motif | Its middle on the land within 3 km of the coast; a name of 1 to 48 characters; a motif of lowercase letters and hyphens |
+| A node | Its kind (social, patrol, mission, dungeon or boss), its name, its section (a ring of points) and its spawns | A ring that never crosses itself, on the land along every edge, holding 0.01 to 9 km²; a name of 1 to 48 characters; at least one spawn, every one inside its section; an id that does not end `-social` |
+
+The city and the nodes are the places a player reaches ([[World Map]]): a node is one section of the land, and its
+spawns are where a player lands and respawns. A city's own social space takes the city's id and `-social`, which is
+why no node may. The city's wall stands 3,456 m from its middle ([[The World as Claude Shapes It]]).
 
 A place's id is lowercase letters, digits and hyphens, and no other place in the file has it. The World Editor
-names new places `river-N`, `road-N`, `town-N` and `port-N`. It snaps a road's points to ports, other roads' points
+names new places `river-N`, `road-N`, `town-N`, `port-N` and `node-N`. It snaps a road's points to ports, other roads' points
 and town edges, so roads meet what they lead to exactly. A road's ends are not required to meet anything.
 
 A road or a town is on the land along every edge, not only at its points, so a road never crosses a bay. A file
