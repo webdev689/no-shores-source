@@ -35,6 +35,19 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     scope.postMessage({ ticket, sailed }, [sailed.ship.buffer]);
     return;
   }
+  if (request.kind === 'fight-begin' || request.kind === 'fight-step') {
+    const fight =
+      request.kind === 'fight-begin'
+        ? rules.fightBegin(request.ship, request.seed, request.time)
+        : rules.fightStep(request.orders, request.time, request.ticks);
+    scope.postMessage({ ticket, fight }, []);
+    return;
+  }
+  if (request.kind === 'fight-end') {
+    rules.fightEnd();
+    scope.postMessage({ ticket }, []);
+    return;
+  }
   if (request.kind === 'write') {
     scope.postMessage({ ticket, written: rules.write() }, []);
     return;

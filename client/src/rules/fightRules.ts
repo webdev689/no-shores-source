@@ -1,0 +1,115 @@
+import type { Helm, ShipFloats } from './landRules.ts';
+
+/** A gun's load (crates/naval/src/guns.rs Shot). */
+export type ShotName = 'round' | 'grape' | 'chain' | 'heated';
+/** The loads in the order a gunner steps through them. */
+export const SHOT_CYCLE: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
+export type SideName = 'port' | 'starboard';
+export type ShipState = 'afloat' | 'struck' | 'sinking' | 'sunk' | 'wrecked';
+export type CaptainMode = 'cruise' | 'engage' | 'flee' | 'struck' | 'sinking';
+export type Point = readonly [number, number, number];
+
+/** The player's look: its bearing off her bow (degrees, to starboard) and how far out it meets the water (metres). */
+export interface FightLook {
+  readonly bearing: number;
+  readonly range: number;
+}
+
+/** What the player orders for a step (crates/naval/src/fight.rs Orders): her helm, the look she lays, a release,
+ *  the brace and a load; the climb, release and load act on the first tick alone. */
+export interface FightOrders {
+  readonly helm: Helm;
+  readonly aim: FightLook | null;
+  readonly fire: boolean;
+  readonly brace: boolean;
+  readonly load: ShotName | null;
+}
+
+/** A ship in the fight: her numbers and pose, her hurts and her guns (port, then starboard). */
+export interface FightVessel {
+  readonly ship: readonly number[];
+  readonly pose: readonly number[];
+  readonly hull: number;
+  readonly max_hull: number;
+  readonly sail: number;
+  readonly max_sail: number;
+  readonly crew: number;
+  readonly max_crew: number;
+  readonly state: ShipState;
+  readonly fires: number;
+  readonly guns: {
+    readonly left: readonly [number, number];
+    readonly progress: readonly [number, number];
+    readonly load: ShotName;
+    readonly braced: boolean;
+  };
+}
+
+export interface FightCaptain extends FightVessel {
+  readonly name: string;
+  readonly mode: CaptainMode;
+  readonly hostile: boolean;
+  readonly run_out: readonly SideName[];
+}
+
+export type FightEvent =
+  | { readonly kind: 'muzzle'; readonly ship: number; readonly point: Point; readonly launch: Point }
+  | {
+      readonly kind: 'hit';
+      readonly ship: number;
+      readonly by: number;
+      readonly zone: 'hull' | 'holed' | 'rig';
+      readonly point: Point;
+    }
+  | { readonly kind: 'splash'; readonly point: Point }
+  | { readonly kind: 'land'; readonly point: Point }
+  | { readonly kind: 'run-out'; readonly side: SideName }
+  | { readonly kind: 'state'; readonly ship: number; readonly state: ShipState }
+  | {
+      readonly kind: 'refused';
+      readonly why: 'no-guns' | 'silent' | 'braced' | 'reloading';
+      readonly side?: SideName;
+      readonly left?: number;
+    }
+  | { readonly kind: 'no-sail'; readonly wrecked: boolean }
+  | { readonly kind: 'load'; readonly shot: ShotName };
+
+/** The side the look lays: each gun's unscattered launch (its mouth, then its velocity), and whether it would
+ *  strike her. */
+export interface FightLay {
+  readonly side: SideName;
+  readonly launches: readonly (readonly number[])[];
+  readonly elevation: number;
+  readonly reach: number;
+  readonly on_target: boolean;
+}
+
+/** The fight as the rules answer it (crates/land-wasm/src/fight.rs). Ships are numbered 0 the player, 1 the captain;
+ *  each ball aloft is its place and radius. */
+export interface FightView {
+  readonly clock: number;
+  readonly player: FightVessel;
+  readonly captain: FightCaptain;
+  readonly balls: readonly (readonly [number, number, number, number])[];
+  readonly lay: FightLay | null;
+  readonly events: readonly FightEvent[];
+  readonly over: 'sunk' | 'gone' | null;
+  readonly fingerprint: string;
+}
+
+/** A fight's begin request. */
+export function beginRequest(ship: ShipFloats, seed: number, time: number): string {
+  return JSON.stringify({ ship: [...ship], seed, time });
+}
+
+/** A fight's step request. */
+export function stepRequest(orders: FightOrders, time: number, ticks: number): string {
+  return JSON.stringify({ ...orders, time, ticks });
+}
+
+/** A fight's answer, or the rules' refusal as an error. */
+export function readFight(text: string): FightView {
+  const answer = JSON.parse(text) as FightView & { readonly error?: string };
+  if (answer.error !== undefined) throw new Error(answer.error);
+  return answer;
+}
