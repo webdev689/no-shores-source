@@ -30,6 +30,7 @@ decision, made in the same change as its entry here.
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
+| `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
@@ -66,10 +67,11 @@ and outside crates it may use (`CRATES`, [[Checks]]):
 
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
   predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
-  `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; and `movement`, which may use only `libm`.
+  `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`; and
+  `sailing`, which may use `land` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client. Its core is `room`, which may use only `movement`; its messages are
   `protocol`, which may use `movement`, `room` and `flatbuffers`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
-  `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land and movement behind WebAssembly
-  doors for the browser, and `protocol`, whose code from `flatc` reads a message's bytes in place.
+  `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land (and a ship sailing over it) and
+  movement behind WebAssembly doors for the browser, and `protocol`, whose code from `flatc` reads a message's bytes in place.

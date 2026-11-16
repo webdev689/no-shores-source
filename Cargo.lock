@@ -112,6 +112,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sailing"
+version = "0.0.0"
+dependencies = [
+ "land",
+ "libm",
+]
+
+[[package]]
 name = "semver"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
