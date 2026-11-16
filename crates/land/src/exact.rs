@@ -1,6 +1,16 @@
 //! Exact maths for the land: hashing, noise and smooth steps built from + - * / and square root alone, so the
 //! server and a browser agree on every height to the bit (the Agree to the Bit rule).
 
+/// FNV-1a (64-bit) over numbers' bits, in order: the same numbers give the same fingerprint on every machine, so the
+/// server and a browser can be held to the same bits.
+#[must_use]
+pub fn fingerprint(numbers: impl IntoIterator<Item = f64>) -> u64 {
+    numbers.into_iter().fold(0xcbf2_9ce4_8422_2325, |hash: u64, number| {
+        let bytes = number.to_bits().to_le_bytes();
+        bytes.iter().fold(hash, |hash, &byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
+    })
+}
+
 /// Mixes whole numbers into one 32-bit hash.
 #[must_use]
 pub fn hash32(numbers: &[i64]) -> u32 {
@@ -150,6 +160,12 @@ pub fn sin_cos(angle: f64) -> (f64, f64) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_fingerprint_tells_one_bit_apart() {
+        assert_eq!(fingerprint([1.0, 2.0, 3.0]), fingerprint(vec![1.0, 2.0, 3.0]));
+        assert_ne!(fingerprint([1.0, 2.0, 3.0]), fingerprint([1.0, 2.0, f64::from_bits(3.0_f64.to_bits() + 1)]));
+    }
 
     #[test]
     #[expect(clippy::disallowed_methods, reason = "the test holds the exact sine to the platform's")]

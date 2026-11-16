@@ -1,4 +1,5 @@
-import type { Brush, GroundPatch, LandPatch, LandView } from '../rules/landRules.ts';
+import type { FightOrders, FightView } from '../rules/fightRules.ts';
+import type { Brush, GroundPatch, Helm, LandPatch, LandView, Pose, ShipFloats } from '../rules/landRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { ShoreField } from '../water/shore.ts';
 
@@ -26,7 +27,23 @@ export type LandRequest =
       readonly step: number;
       readonly width: number;
       readonly height: number;
-    };
+    }
+  | {
+      readonly kind: 'sail';
+      readonly ship: ShipFloats;
+      readonly helm: Helm;
+      readonly time: number;
+      readonly ticks: number;
+    }
+  | { readonly kind: 'fight-begin'; readonly ship: ShipFloats; readonly seed: number; readonly time: number }
+  | { readonly kind: 'fight-step'; readonly orders: FightOrders; readonly time: number; readonly ticks: number }
+  | { readonly kind: 'fight-end' };
+
+/** A ship after her ticks, and how she lies. */
+export interface Sailed {
+  readonly ship: ShipFloats;
+  readonly pose: Pose;
+}
 
 /** The exact ground round a point, and the breakers' field over it. */
 export interface CloseGround {
@@ -45,6 +62,8 @@ export interface LandAnswer {
   readonly text?: string | null;
   readonly boxes?: readonly Block[];
   readonly shore?: ShoreField;
+  readonly sailed?: Sailed;
+  readonly fight?: FightView;
   readonly error?: string;
 }
 
@@ -69,6 +88,12 @@ export interface LandWorker {
   write(): Promise<{ readonly id: string; readonly text: string }>;
   /** The exact ground over a grid, and the breakers' field over it (worked here too: it takes a while). */
   ground(left: number, top: number, step: number, width: number, height: number): Promise<CloseGround>;
+  /** A ship sailed over the open landmass. */
+  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed>;
+  /** A fight begun round the ship over the open landmass, stepped by the player's orders, and ended. */
+  fightBegin(ship: ShipFloats, seed: number, time: number): Promise<FightView>;
+  fightStep(orders: FightOrders, time: number, ticks: number): Promise<FightView>;
+  fightEnd(): Promise<void>;
 }
 
 export function startLandWorker(): LandWorker {
@@ -91,6 +116,10 @@ export function startLandWorker(): LandWorker {
       waiting.set(ticket, { resolve, reject });
       worker.postMessage({ ticket, request });
     });
+  const fought = (answer: LandAnswer) => {
+    if (!answer.fight) throw new Error('the land worker answered no fight');
+    return answer.fight;
+  };
   const view = async (request: LandRequest) => {
     const answer = await ask(request);
     if (!answer.view) throw new Error('the land worker answered no view');
@@ -117,6 +146,16 @@ export function startLandWorker(): LandWorker {
       const { ground, shore } = await ask({ kind: 'ground', left, top, step, width, height });
       if (!ground || !shore) throw new Error('the land worker answered no ground');
       return { patch: ground, field: shore };
+    },
+    fightBegin: async (ship, seed, time) => fought(await ask({ kind: 'fight-begin', ship, seed, time })),
+    fightStep: async (orders, time, ticks) => fought(await ask({ kind: 'fight-step', orders, time, ticks })),
+    fightEnd: async () => {
+      await ask({ kind: 'fight-end' });
+    },
+    sail: async (ship, helm, time, ticks) => {
+      const { sailed } = await ask({ kind: 'sail', ship, helm, time, ticks });
+      if (!sailed) throw new Error('the land worker answered no ship');
+      return sailed;
     },
     write: async () => {
       const { written } = await ask({ kind: 'write' });

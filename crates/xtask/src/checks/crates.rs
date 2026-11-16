@@ -16,7 +16,12 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "world", workspace: &[], outside: &["serde", "serde_json"], door: false },
     CrateRule { name: "world-wasm", workspace: &["world"], outside: &["serde_json"], door: true },
     CrateRule { name: "land", workspace: &["world"], outside: &["serde", "serde_json"], door: false },
-    CrateRule { name: "land-wasm", workspace: &["city", "land", "world"], outside: &["serde_json"], door: true },
+    CrateRule {
+        name: "land-wasm",
+        workspace: &["city", "land", "naval", "sailing", "world"],
+        outside: &["serde_json"],
+        door: true,
+    },
     CrateRule { name: "city", workspace: &["land", "world"], outside: &["serde", "serde_json", "libm"], door: false },
     CrateRule { name: "movement", workspace: &[], outside: &["libm"], door: false },
     CrateRule {
@@ -25,6 +30,8 @@ pub const CRATES: &[CrateRule] = &[
         outside: &["serde_json"],
         door: true,
     },
+    CrateRule { name: "sailing", workspace: &["land"], outside: &["libm"], door: false },
+    CrateRule { name: "naval", workspace: &["sailing"], outside: &["libm"], door: false },
     CrateRule { name: "reach", workspace: &[], outside: &[], door: false },
     CrateRule { name: "room", workspace: &["land", "movement", "reach", "world"], outside: &["libm"], door: false },
     CrateRule { name: "protocol", workspace: &["movement", "room"], outside: &["flatbuffers"], door: true },

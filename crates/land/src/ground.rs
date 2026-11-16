@@ -4,7 +4,7 @@
 //! to its level. World 2.0's laws, in exact maths only, so every machine finds the same height at the same point.
 
 use crate::edits::Edits;
-use crate::exact::{clamp, fbm, lerp, seed_of, smooth};
+use crate::exact::{clamp, fbm, fingerprint, lerp, seed_of, smooth};
 use crate::grid::{D8_X, D8_Y, Grid, catmull};
 use crate::pads::Pads;
 use crate::relief::{COAST_REACH_M, LAND_FLOOR_M, SEA_CEILING_M};
@@ -518,10 +518,7 @@ impl Ground {
 /// A fingerprint of the ground's heights at the given points (FNV-1a over their bits): the same on every machine.
 #[must_use]
 pub fn sample_hash(ground: &Ground, points: &[(f64, f64)]) -> u64 {
-    points.iter().fold(0xcbf2_9ce4_8422_2325, |hash: u64, &(x, y)| {
-        let bits = ground.height_at(x, y).to_bits().to_le_bytes();
-        bits.iter().fold(hash, |hash, &byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
-    })
+    fingerprint(points.iter().map(|&(x, y)| ground.height_at(x, y)))
 }
 
 #[path = "ground_window.rs"]

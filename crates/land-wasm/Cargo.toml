@@ -4,7 +4,7 @@ version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
-description = "The land for the browser: the land crate behind a small WebAssembly door, its heights handed over as bytes, its city settled on it."
+description = "The land for the browser: the land crate behind a small WebAssembly door, its heights handed over as bytes, its city settled on it, and a ship sailed over it."
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -12,6 +12,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 city = { path = "../city" }
 land = { path = "../land" }
+naval = { path = "../naval" }
+sailing = { path = "../sailing" }
 world = { path = "../world" }
 serde_json.workspace = true
 

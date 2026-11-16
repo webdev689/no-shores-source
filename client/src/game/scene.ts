@@ -219,6 +219,7 @@ export class GameScene {
       eyeWater,
       eyeAboveM: Math.abs(shot.eye[2] - (eyeWater?.surface ?? ground)),
       focus: [local.eye[0], local.eye[1]],
+      hulls: [],
       drawn: targets,
       target,
     });

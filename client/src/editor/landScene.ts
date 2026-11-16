@@ -1,5 +1,9 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
+import type { HullMask } from '../water/hullMask.ts';
+import { loadShip } from '../ships/shipMesh.ts';
+import { MarkView } from '../ships/markView.ts';
+import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
@@ -19,9 +23,13 @@ import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
 import { type TerrainData, type TerrainOptions, TerrainView } from '../terrain/terrainView.ts';
+import type { FightSource } from './fighting.ts';
+import { Harbour } from './harbour.ts';
+import { Naval } from './naval.ts';
+import type { SailSource } from './sailing.ts';
 
-/** Where the close-up's exact ground comes from. */
-export interface GroundSource {
+/** Where the close-up's exact ground comes from, and where a ship is sailed and fought. */
+export interface GroundSource extends SailSource, FightSource {
   ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null>;
   isOpen(id: string): boolean;
 }
@@ -67,7 +75,16 @@ export interface SceneFrame {
   readonly exaggeration: number;
   readonly brush: TerrainOptions['brush'];
   readonly walking: boolean;
+  /** The Sloop is asked for: she is put to sea at the camera's target and sailed. */
+  readonly sailing: boolean;
   readonly held: ReadonlySet<string>;
+  /** Keys pressed (not repeats) since the last frame; the scene takes them. */
+  readonly pressed: string[];
+  /** The right mouse is held: the look lays her guns. */
+  readonly aiming: boolean;
+  /** Releases of the guns, and steps of the load (the wheel while aiming), since the last frame. */
+  readonly fires: number;
+  readonly loadSteps: number;
   readonly source: GroundSource | null;
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
@@ -110,12 +127,19 @@ export class LandScene {
   private shownClose: CloseUp | null = null;
   private readonly depthCopy: GPURenderPipeline;
   private lastFrame = performance.now();
+  /** The Sloop and her model; and whether she may still sail (the rules have not refused her). */
+  private readonly harbour: Harbour<ShipView>;
+  private mayStillSail = true;
+  /** A captain's fight round the Sloop. */
+  private readonly naval: Naval;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
     this.gpu = gpu;
     this.redraw = redraw;
     this.fail = fail;
     this.water = new WaterView(gpu);
+    this.harbour = new Harbour(() => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh)), fail);
+    this.naval = new Naval(new MarkView(gpu));
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -130,6 +154,16 @@ export class LandScene {
     this.terrain = null;
     this.shownClose = null;
     [this.body, this.footing] = [null, null];
+    this.harbour.leave();
+    this.naval.end();
+  }
+
+  private get sailing() {
+    return this.harbour.sailing;
+  }
+
+  private get ship() {
+    return this.harbour.view;
   }
 
   /** Lays changed cells on the 1 km terrain. */
@@ -155,10 +189,12 @@ export class LandScene {
     return Math.max(0, exact ?? heightAt(view, x, y) ?? 0);
   }
 
-  /** What the walker is doing and where, for the panel. */
+  /** What the walker or the Sloop is doing and where, for the panel. */
   describe(view: LandView, orbit: Orbit): string {
     const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
-    const where = `${STROKE_WORDS[this.body?.stroke ?? 'walk']} at ${(x / 1000).toFixed(3)} km east, ${(y / 1000).toFixed(3)} km south`;
+    const place = `${(x / 1000).toFixed(3)} km east, ${(y / 1000).toFixed(3)} km south`;
+    if (this.sailing) return `Sailing at ${place}. ${this.sailing.describe()}`;
+    const where = `${STROKE_WORDS[this.body?.stroke ?? 'walk']} at ${place}`;
     const { bed, surface } = this.footing ?? { bed: 0, surface: null };
     if (surface === null || surface <= bed) return `${where}, on ground at ${bed.toFixed(1)} m`;
     return `${where}, in ${(surface - bed).toFixed(1)} m of water`;
@@ -166,7 +202,7 @@ export class LandScene {
 
   /** Steps the walker, keeps the close-up, and draws the land, then the water. Answers the camera as drawn and, for
    *  the scale cues, the ground at its target when the close-up shows. */
-  draw(frame: SceneFrame): { orbit: Orbit; feet: readonly [number, number, number] | null } {
+  draw(frame: SceneFrame): { orbit: Orbit; feet: readonly [number, number, number] | null; sailing: boolean } {
     const now = performance.now();
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
@@ -175,10 +211,16 @@ export class LandScene {
     const { view, id } = frame;
     let orbit = frame.walking ? this.walk(frame, seconds, time) : frame.orbit;
     if (!frame.walking) [this.body, this.footing] = [null, null];
+    if (frame.sailing) orbit = this.sail(frame, seconds, time);
+    else {
+      this.mayStillSail = true;
+      this.harbour.leave();
+      this.naval.end();
+    }
     this.keepCloseUp(frame, orbit);
     const shown = shownExaggeration(frame.exaggeration, orbit.distance);
     const ground = this.groundAt(id, view, orbit.targetX + view.leftM, orbit.targetY + view.topM);
-    orbit = { ...orbit, targetZ: (this.body?.eye ?? ground) * shown };
+    orbit = { ...orbit, targetZ: (this.body?.eye ?? this.sailing?.lookAtM() ?? ground) * shown };
 
     if (this.terrain?.id !== id) {
       this.reset();
@@ -191,7 +233,11 @@ export class LandScene {
       terrain.showCloseUp(near && closeUpData(near.patch, near.field.levels, view));
       this.shownClose = near;
     }
-    const seen = this.clearOfBed(orbit);
+    const sailing = this.sailing;
+    const seen =
+      frame.aiming && sailing && this.naval.fighting
+        ? this.naval.aimCamera(orbit, sailing, view, shown)
+        : this.clearOfBed(orbit);
     const camera = cameraOf(seen);
     const fromEye = viewProjection(seen, frame.size.width / frame.size.height, true);
     const eyeWorld = [camera.eye[0] + view.leftM, camera.eye[1] + view.topM] as const;
@@ -230,6 +276,9 @@ export class LandScene {
       },
     });
     terrain.drawInto(pass);
+    if (this.sailing && this.ship)
+      this.ship.drawInto(pass, this.sailing.place(view, shown), { fromEye, eye: camera.eye });
+    this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, this.ship, time);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -261,11 +310,64 @@ export class LandScene {
       eyeWater,
       eyeAboveM: Math.abs(camera.eye[2] / shown - (eyeWater?.surface ?? this.groundAt(id, view, ...eyeWorld))),
       focus: [orbit.targetX, orbit.targetY],
+      hulls: this.hulls(view),
       drawn,
       target: this.gpu.context.getCurrentTexture().createView(),
     });
     this.gpu.device.queue.submit([encoder.finish()]);
-    return { orbit, feet: near && !frame.walking ? [orbit.targetX, orbit.targetY, ground * shown] : null };
+    const feet =
+      near && !frame.walking && !this.sailing ? ([orbit.targetX, orbit.targetY, ground * shown] as const) : null;
+    return { orbit, feet, sailing: frame.sailing && this.mayStillSail };
+  }
+
+  /** The Sloop: put to sea at the camera's target, then stepped by the rules with the keys' helm, her wake stirring
+   *  the water. Answers the camera's orbit, on her once she sails. */
+  private sail(frame: SceneFrame, seconds: number, time: number): Orbit {
+    const { source, id, view, orbit } = frame;
+    const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
+    this.mayStillSail = this.harbour.board(source, id, x, y, orbit.yaw, time);
+    const sailing = this.sailing;
+    if (!sailing) {
+      frame.pressed.length = 0;
+      return orbit;
+    }
+    for (const key of frame.pressed.splice(0)) {
+      if (key === 'f') this.naval.toggle(source, id, sailing, time, this.fail);
+      else sailing.press(key);
+    }
+    if (this.naval.busy) {
+      const look = frame.aiming ? this.naval.look(orbit, sailing, view) : null;
+      const input = {
+        held: frame.held,
+        // A rung press waits with her helm until the fight that takes it is on.
+        press: this.naval.fighting ? sailing.takePress() : undefined,
+        look,
+        fire: frame.fires > 0,
+        loadSteps: frame.loadSteps,
+      };
+      for (const splash of this.naval.step(seconds, input, time, sailing, view, this.fail))
+        this.water.stir(splash.x, splash.y, splash.radiusM, splash.strength);
+    } else sailing.advance(seconds, frame.held, time, this.fail);
+    const waterline = this.ship?.waterline;
+    for (const stir of waterline ? sailing.wake(view, waterline) : []) {
+      this.water.stir(stir.x, stir.y, stir.radiusM, stir.strength);
+    }
+    // Aiming may look over the horizon; the camera round her stays above it.
+    const round = sailing.orbit(orbit, view);
+    return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
+  }
+
+  /** The ships' footprints on the water: hers, and a captain's while she floats. */
+  private hulls(view: LandView): HullMask[] {
+    const waterline = this.ship?.waterline;
+    if (!waterline || !this.sailing) return [];
+    const captain = this.naval.hull(view, waterline);
+    return [this.sailing.hull(view, waterline), ...(captain ? [captain] : [])];
+  }
+
+  /** The fight's lines for the panel, if one is on. */
+  fightLines(): string[] {
+    return this.naval.lines(performance.now() / 1000);
   }
 
   /** The camera a diver looks up from: behind them, but brought in so it never sinks into the bed. */

@@ -61,6 +61,8 @@ version = "0.0.0"
 dependencies = [
  "city",
  "land",
+ "naval",
+ "sailing",
  "serde_json",
  "world",
 ]
@@ -92,6 +94,14 @@ dependencies = [
  "movement",
  "reach",
  "serde_json",
+]
+
+[[package]]
+name = "naval"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "sailing",
 ]
 
 [[package]]
@@ -164,6 +174,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
+]
+
+[[package]]
+name = "sailing"
+version = "0.0.0"
+dependencies = [
+ "land",
+ "libm",
 ]
 
 [[package]]

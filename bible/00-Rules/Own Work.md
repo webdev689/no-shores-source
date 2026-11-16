@@ -9,8 +9,9 @@ models, words or data, and nothing of Bethesda's.
 
 The exceptions are the sprite forge, its renders and the CC0 motion in nine of its moves, which the owner brought
 over exactly ([[DFO's Sprite Forge Comes Over Exactly]]); Daggerfall's palette and dye colours, read into a table
-([[The Player Plays as in DFO]]); and the forged models, procedural textures and RMB town blocks of DFO's branch
-`ccr-cab30c1a-oddrwb`, with the Daggerfall measures, texture archives and palette they are built on
+([[The Player Plays as in DFO]]); Come Sail Away's sailing as DFO ported it ([[Come Sail Away's Sailing Comes Over]]);
+and the forged models, procedural textures and RMB town blocks of DFO's branch `ccr-cab30c1a-oddrwb`, with the
+Daggerfall measures, texture archives and palette they are built on
 ([[Every Island Is Seen Whole and Reached by Nodes]]).
 
 **Why.** DFO Online ported other authors' mods and later spent months replacing them with its own work, and one ship

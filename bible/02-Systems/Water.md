@@ -10,6 +10,7 @@ code:
   - client/src/water/waterView.ts#WaterView
   - client/src/water/waterShader.ts#WATER_SHADER
   - client/src/editor/landScene.ts#LandScene
+  - client/src/water/hullMask.ts#hullInside
 ---
 # Water
 
@@ -51,6 +52,9 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
 - **Light.** The sky and its clouds reflect, more at a glancing angle; the sun glints, its glitter blurring far off;
   a crest glows green where the sun shines through it. Caustics dance on the bed.
+- **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea, less
+  on calm fresh water. So the reflected clouds lose their fine detail and keep their mean cover. Looking down, their
+  shapes still show; near the horizon they smear into a lighter sky.
 - **Foam.** Foam is a lace of bubble walls. It covers crests that fold, a breaker's face and the surf behind it, the
   swash's edge and a splash. Each scale of lace gives way to its share as it shrinks toward a pixel.
 - **Fresh water.** A lake lies still under a light chop; a river's chop runs downstream at a pace set by its fall.
@@ -68,6 +72,13 @@ diver drifts back up. Each stride or stroke pushes the water once; stepping in, 
 The pushes are ripples: a damped wave field 32 m square round the walker, stepped 60 times a second on the GPU at a
 ripple's own pace. The field follows the walker; its ripples fade at its edge.
 
+## A ship on it
+
+A ship drawn with the land hides the water behind her and is seen through it below her waterline. Her footprint (an
+ellipse a hair inside her waterline) holds no water, so none shows in her open hull or over her gunwale. A band of
+foam rings her footprint once she makes way, most at her bow, whole at 2 m/s. Above a wake's way (0.5 m/s) she stirs
+the ripples at her bow and both quarters each half metre she runs, and the field follows her ([[Sailing]]).
+
 ## Underwater
 
 With the eye below its water, the land is seen through it. The water swallows red first, so the view turns blue-green
@@ -80,3 +91,4 @@ deep. A diver's camera comes in close rather than sink into the bed.
 - The breakers and the ripples are drawn in the browser only; the server has the swell alone.
 - One swell for the whole world, until the weather drives it ([[World Map]]).
 - The walker has no body yet: the ripples and splashes come from the point the camera follows.
+- One ship's footprint at a time, an ellipse, not her hull's own line.
