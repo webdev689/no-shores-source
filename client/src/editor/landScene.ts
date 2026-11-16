@@ -1,5 +1,7 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
+import { loadShip } from '../ships/shipMesh.ts';
+import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
@@ -18,10 +20,11 @@ import type { CloseGround } from './landClient.ts';
 import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
+import { Sailing, type SailSource } from './sailing.ts';
 import { type TerrainData, type TerrainOptions, TerrainView } from './terrainView.ts';
 
-/** Where the close-up's exact ground comes from. */
-export interface GroundSource {
+/** Where the close-up's exact ground comes from, and where a ship is sailed. */
+export interface GroundSource extends SailSource {
   ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null>;
   isOpen(id: string): boolean;
 }
@@ -67,7 +70,11 @@ export interface SceneFrame {
   readonly exaggeration: number;
   readonly brush: TerrainOptions['brush'];
   readonly walking: boolean;
+  /** The Sloop is asked for: she is put to sea at the camera's target and sailed. */
+  readonly sailing: boolean;
   readonly held: ReadonlySet<string>;
+  /** Keys pressed (not repeats) since the last frame; the scene takes them. */
+  readonly pressed: string[];
   readonly source: GroundSource | null;
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
@@ -110,6 +117,11 @@ export class LandScene {
   private shownClose: CloseUp | null = null;
   private readonly depthCopy: GPURenderPipeline;
   private lastFrame = performance.now();
+  private sailing: Sailing | null = null;
+  /** Putting her to sea is with the rules, or they refused it: no more is asked until the owner asks again. */
+  private sailAsked: 'no' | 'asking' | 'refused' = 'no';
+  private ship: ShipView | null = null;
+  private shipLoading = false;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
     this.gpu = gpu;
@@ -155,10 +167,12 @@ export class LandScene {
     return Math.max(0, exact ?? heightAt(view, x, y) ?? 0);
   }
 
-  /** What the walker is doing and where, for the panel. */
+  /** What the walker or the Sloop is doing and where, for the panel. */
   describe(view: LandView, orbit: Orbit): string {
     const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
-    const where = `${STROKE_WORDS[this.body?.stroke ?? 'walk']} at ${(x / 1000).toFixed(3)} km east, ${(y / 1000).toFixed(3)} km south`;
+    const place = `${(x / 1000).toFixed(3)} km east, ${(y / 1000).toFixed(3)} km south`;
+    if (this.sailing) return `Sailing at ${place}. ${this.sailing.describe()}`;
+    const where = `${STROKE_WORDS[this.body?.stroke ?? 'walk']} at ${place}`;
     const { bed, surface } = this.footing ?? { bed: 0, surface: null };
     if (surface === null || surface <= bed) return `${where}, on ground at ${bed.toFixed(1)} m`;
     return `${where}, in ${(surface - bed).toFixed(1)} m of water`;
@@ -166,7 +180,7 @@ export class LandScene {
 
   /** Steps the walker, keeps the close-up, and draws the land, then the water. Answers the camera as drawn and, for
    *  the scale cues, the ground at its target when the close-up shows. */
-  draw(frame: SceneFrame): { orbit: Orbit; feet: readonly [number, number, number] | null } {
+  draw(frame: SceneFrame): { orbit: Orbit; feet: readonly [number, number, number] | null; sailing: boolean } {
     const now = performance.now();
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
@@ -175,10 +189,12 @@ export class LandScene {
     const { view, id } = frame;
     let orbit = frame.walking ? this.walk(frame, seconds, time) : frame.orbit;
     if (!frame.walking) [this.body, this.footing] = [null, null];
+    if (frame.sailing) orbit = this.sail(frame, seconds, time);
+    else [this.sailing, this.sailAsked] = [null, 'no'];
     this.keepCloseUp(frame, orbit);
     const shown = shownExaggeration(frame.exaggeration, orbit.distance);
     const ground = this.groundAt(id, view, orbit.targetX + view.leftM, orbit.targetY + view.topM);
-    orbit = { ...orbit, targetZ: (this.body?.eye ?? ground) * shown };
+    orbit = { ...orbit, targetZ: (this.body?.eye ?? this.sailing?.lookAtM() ?? ground) * shown };
 
     if (this.terrain?.id !== id) {
       this.reset();
@@ -230,6 +246,8 @@ export class LandScene {
       },
     });
     terrain.drawInto(pass);
+    if (this.sailing && this.ship)
+      this.ship.drawInto(pass, this.sailing.place(view, shown), { fromEye, eye: camera.eye });
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -265,7 +283,50 @@ export class LandScene {
       target: this.gpu.context.getCurrentTexture().createView(),
     });
     this.gpu.device.queue.submit([encoder.finish()]);
-    return { orbit, feet: near && !frame.walking ? [orbit.targetX, orbit.targetY, ground * shown] : null };
+    const feet =
+      near && !frame.walking && !this.sailing ? ([orbit.targetX, orbit.targetY, ground * shown] as const) : null;
+    return { orbit, feet, sailing: frame.sailing && this.sailAsked !== 'refused' };
+  }
+
+  /** The Sloop: put to sea at the camera's target once asked, then stepped by the rules with the keys' helm; her mesh
+   *  fetched the first time. Answers the camera's orbit, on her once she sails. */
+  private sail(frame: SceneFrame, seconds: number, time: number): Orbit {
+    const { source, id, view, orbit } = frame;
+    if (!this.ship && !this.shipLoading) {
+      this.shipLoading = true;
+      loadShip('sloop')
+        .then((mesh) => {
+          this.ship = new ShipView(this.gpu, mesh);
+        })
+        .catch((error: unknown) => {
+          this.shipLoading = false;
+          this.fail(error);
+        });
+    }
+    if (!this.sailing) {
+      if (source && this.sailAsked === 'no') {
+        this.sailAsked = 'asking';
+        const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
+        Sailing.putToSea(source, id, x, y, orbit.yaw, time)
+          .then((answer) => {
+            if (this.sailAsked !== 'asking') return;
+            if (typeof answer !== 'string') [this.sailing, this.sailAsked] = [answer, 'no'];
+            else {
+              this.sailAsked = 'refused';
+              this.fail(new Error(answer));
+            }
+          })
+          .catch((error: unknown) => {
+            this.sailAsked = 'refused';
+            this.fail(error);
+          });
+      }
+      frame.pressed.length = 0;
+      return orbit;
+    }
+    for (const key of frame.pressed.splice(0)) this.sailing.press(key);
+    this.sailing.advance(seconds, frame.held, time, this.fail);
+    return this.sailing.orbit(orbit, view);
   }
 
   /** The camera a diver looks up from: behind them, but brought in so it never sinks into the bed. */
