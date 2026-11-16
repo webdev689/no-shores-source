@@ -33,6 +33,7 @@ decision, made in the same change as its entry here.
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
+| `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick |
@@ -72,8 +73,8 @@ and outside crates it may use (`CRATES`, [[Checks]]):
 
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
   predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
-  `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`; and
-  `sailing`, which may use `land` and `libm`.
+  `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
+  `sailing`, which may use `land` and `libm`; and `naval`, which may use `sailing` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client. Its core is `room`, which may use only `movement`; its messages are
   `protocol`, which may use `movement`, `room` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door

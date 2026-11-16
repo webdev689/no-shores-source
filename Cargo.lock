@@ -70,6 +70,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "naval"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "sailing",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
