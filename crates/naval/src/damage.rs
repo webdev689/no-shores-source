@@ -1,0 +1,343 @@
+//! A ship's hurts, as DFO's: her hull, canvas and men, the harm one ball does by where it strikes, fire, striking,
+//! sinking (the player's boat is wrecked, never sunk), her way falling with her canvas, and her hands mending her in
+//! quiet waters.
+
+use crate::arms::Build;
+use crate::guns::Gun;
+
+/// A captain strikes at this share of her hull left.
+pub const STRUCK_AT: f64 = 0.25;
+/// Seconds from going down to gone.
+pub const SINK_SECONDS: f64 = 22.0;
+/// Going down she lists and trims this far (degrees), and her highest spar ends this far under the water (metres).
+pub const SINK_LIST_DEG: f64 = 32.0;
+pub const SINK_PITCH_DEG: f64 = 20.0;
+pub const SINK_CLEAR_M: f64 = 2.0;
+/// A hull hit within this height over the water holes her, and does this much more harm.
+pub const WATERLINE_BAND_M: f64 = 1.1;
+pub const HOLED_BONUS: f64 = 0.4;
+/// A fire: hull a second, how long, how many burn at once, canvas a second, and the seconds of burning that are a
+/// man's worth of harm.
+pub const FIRE_HP: f64 = 1.4;
+pub const FIRE_SECONDS: f64 = 15.0;
+pub const FIRE_STACK: usize = 3;
+pub const FIRE_SAIL: f64 = 0.5;
+pub const FIRE_CREW_S: f64 = 10.0;
+/// A braced crew takes this share of a ball's harm to hull and canvas.
+pub const BRACE_TAKEN: f64 = 0.5;
+/// A wrecked boat's oars pull this share of their way; bare poles leave this share of her way.
+pub const WRECKED_OARS: f64 = 0.35;
+pub const BARE_POLES: f64 = 0.35;
+/// A captain's men stand this many blows a man; a player's crew twice as many.
+pub const SHIP_TOUGHNESS: f64 = 1.6;
+pub const PLAYER_CREW_TOUGHNESS: f64 = 3.2;
+/// Mending at sea: quiet this long first (seconds), this share of the whole a second (half that single-handed), to
+/// this share of the whole; a wreck floats again past this share of her hull.
+pub const FIELD_QUIET_S: f64 = 15.0;
+pub const FIELD_MEND_PER_S: f64 = 0.004;
+pub const FIELD_MEND_ALONE: f64 = 0.5;
+pub const FIELD_MEND_CAP: f64 = 0.5;
+pub const FIELD_REFLOAT: f64 = 0.15;
+/// Under this share of her hull she lists, to this many degrees at none, taken on over these seconds.
+pub const DAMAGE_LIST_FROM: f64 = 0.4;
+pub const DAMAGE_LIST_MAX_DEG: f64 = 8.0;
+pub const DAMAGE_LIST_EASE_S: f64 = 2.5;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum State {
+    Afloat,
+    Struck,
+    Sinking,
+    Sunk,
+    Wrecked,
+}
+
+/// Where a ball struck: her hull above the waterline band, within it, or her canvas.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Zone {
+    Hull,
+    Holed,
+    Rig,
+}
+
+/// The zone of a hull hit this high over the water under it.
+#[must_use]
+pub fn zone_at(over_water: f64) -> Zone {
+    if over_water <= WATERLINE_BAND_M { Zone::Holed } else { Zone::Hull }
+}
+
+/// A blow: hull and canvas points and men lost, and whether it sets her alight.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Hurt {
+    pub hull: f64,
+    pub sail: f64,
+    pub crew: f64,
+    pub fire: bool,
+}
+
+/// A browser's Math.round, for positive numbers: half up.
+fn rounded(value: f64) -> f64 {
+    (value + 0.5).floor()
+}
+
+/// Men a ball takes: its men over her toughness, the roll deciding the part man.
+fn men(count: f64, roll: f64, tough: f64) -> f64 {
+    if count > 0.0 { (count / tough + roll.clamp(0.0, 0.999_999)).floor() } else { 0.0 }
+}
+
+/// One ball's harm, as the gun is loaded (grape's reach already in its men), by zone; `roll` is the ball's own draw
+/// (each ball does 85 to 115%), `tough` the struck crew's toughness. Its fire is rolled by whoever applies it.
+#[must_use]
+pub fn shot_harm(gun: &Gun, zone: Zone, braced: bool, roll: f64, tough: f64) -> Hurt {
+    let taken = if braced { BRACE_TAKEN } else { 1.0 };
+    let spread = 0.85 + 0.3 * roll.clamp(0.0, 1.0);
+    if zone == Zone::Rig {
+        let sail = rounded((gun.sail * 2.0).max(gun.hull * 0.5) * taken * spread);
+        return Hurt { hull: 0.0, sail, crew: men(if gun.crew > 0.0 { 1.0 } else { 0.0 }, roll, tough), fire: false };
+    }
+    let holed = if zone == Zone::Holed { 1.0 + HOLED_BONUS } else { 1.0 };
+    Hurt {
+        hull: rounded(gun.hull * holed * taken * spread),
+        sail: rounded(gun.sail * 0.25 * taken * spread),
+        crew: men(gun.crew, roll, tough),
+        fire: false,
+    }
+}
+
+/// A fire aboard: hull a second, and seconds left.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Fire {
+    bite: f64,
+    left: f64,
+}
+
+/// What a ship has left and her state. `last_hit_at` is when a ball or a fire last hurt her (seconds of the fight);
+/// `list_deg` the list her hurts give her.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Damage {
+    pub max_hull: f64,
+    pub hull: f64,
+    pub max_sail: f64,
+    pub sail: f64,
+    pub max_crew: f64,
+    pub crew: f64,
+    fires: Vec<Fire>,
+    crew_burn: f64,
+    wound: f64,
+    pub state: State,
+    pub sink_t: f64,
+    pub last_hit_at: f64,
+    pub list_deg: f64,
+    player: bool,
+}
+
+impl Damage {
+    #[must_use]
+    pub fn new(build: &Build, player: bool) -> Self {
+        Self {
+            max_hull: build.hull.max(1.0),
+            hull: build.hull.max(1.0),
+            max_sail: build.sail.max(0.0),
+            sail: build.sail.max(0.0),
+            max_crew: build.crew.max(0.0),
+            crew: build.crew.max(0.0),
+            fires: Vec::new(),
+            crew_burn: 0.0,
+            wound: 0.0,
+            state: State::Afloat,
+            sink_t: 0.0,
+            last_hit_at: f64::NEG_INFINITY,
+            list_deg: 0.0,
+            player,
+        }
+    }
+
+    #[must_use]
+    pub fn hull_share(&self) -> f64 {
+        self.hull / self.max_hull
+    }
+
+    #[must_use]
+    pub fn sail_share(&self) -> f64 {
+        if self.max_sail > 0.0 { self.sail / self.max_sail } else { 1.0 }
+    }
+
+    #[must_use]
+    pub fn crew_share(&self) -> f64 {
+        if self.max_crew > 0.0 { self.crew / self.max_crew } else { 1.0 }
+    }
+
+    /// The share of her best way her canvas leaves her.
+    #[must_use]
+    pub fn way_share(&self) -> f64 {
+        if self.max_sail > 0.0 { BARE_POLES + (1.0 - BARE_POLES) * self.sail / self.max_sail } else { 1.0 }
+    }
+
+    /// Whether she still fights: afloat.
+    #[must_use]
+    pub fn fighting(&self) -> bool {
+        self.state == State::Afloat
+    }
+
+    /// How many fires burn aboard.
+    #[must_use]
+    pub fn fires(&self) -> usize {
+        self.fires.len()
+    }
+
+    /// The seconds the longest fire aboard has left.
+    #[must_use]
+    pub fn fire_left(&self) -> f64 {
+        self.fires.iter().fold(0.0, |most, fire| fire.left.max(most))
+    }
+
+    fn unmanned(&self) -> bool {
+        self.max_crew > 0.0 && self.crew <= 0.0
+    }
+
+    /// A fire set, three at most: past that it takes the place of the one with the least harm left, if it has more.
+    fn ignite(&mut self) {
+        let fire = Fire { bite: FIRE_HP, left: FIRE_SECONDS };
+        if self.fires.len() < FIRE_STACK {
+            self.fires.push(fire);
+            return;
+        }
+        let harm = |fire: &Fire| fire.bite * fire.left;
+        let least = (1..self.fires.len())
+            .fold(0, |low, at| if harm(&self.fires[at]) < harm(&self.fires[low]) { at } else { low });
+        if harm(&self.fires[least]) < harm(&fire) {
+            self.fires[least] = fire;
+        }
+    }
+
+    fn douse(&mut self) {
+        self.fires.clear();
+        self.crew_burn = 0.0;
+    }
+
+    /// A blow at `now`: her hull not taken under `floor` (the rest of a volley that made her strike). Answers the
+    /// state it brought, if it changed.
+    pub fn apply(&mut self, hurt: Hurt, now: f64, floor: f64) -> Option<State> {
+        if self.state == State::Sunk {
+            return None;
+        }
+        self.last_hit_at = now;
+        self.hull = self.hull.min(floor).max(self.hull - hurt.hull.trunc().max(0.0));
+        self.sail = (self.sail - hurt.sail.trunc().max(0.0)).max(0.0);
+        self.crew = (self.crew - hurt.crew.trunc().max(0.0)).max(0.0);
+        if hurt.fire && !(floor > 0.0 && self.state == State::Struck) {
+            self.ignite();
+        }
+        self.settle()
+    }
+
+    /// The state her numbers call for, if it changed.
+    fn settle(&mut self) -> Option<State> {
+        let was = self.state;
+        if self.player {
+            if self.hull <= 0.0 {
+                self.state = State::Wrecked;
+            }
+        } else if matches!(self.state, State::Afloat | State::Struck) {
+            if self.hull <= 0.0 {
+                // Her fires burn on as she goes down.
+                self.state = State::Sinking;
+                self.sink_t = 0.0;
+            } else if self.state == State::Afloat && (self.hull <= self.max_hull * STRUCK_AT || self.unmanned()) {
+                self.state = State::Struck;
+                self.douse();
+            }
+        }
+        (self.state != was).then_some(self.state)
+    }
+
+    /// One step at `now`: her list follows her hurts, each fire burns her timbers, canvas and men, and a sinking ship
+    /// goes down. Answers the state it brought, if it changed.
+    pub fn step(&mut self, seconds: f64, now: f64) -> Option<State> {
+        let seconds = seconds.max(0.0);
+        let want = DAMAGE_LIST_MAX_DEG * ((DAMAGE_LIST_FROM - self.hull_share()) / DAMAGE_LIST_FROM).clamp(0.0, 1.0);
+        self.list_deg += (want - self.list_deg) * (1.0 - libm::exp(-seconds / DAMAGE_LIST_EASE_S));
+        if !self.fires.is_empty() && !matches!(self.state, State::Sinking | State::Sunk) {
+            self.last_hit_at = now;
+            for fire in &mut self.fires {
+                let burn = fire.left.min(seconds);
+                fire.left -= burn;
+                self.hull = (self.hull - fire.bite * burn).max(0.0);
+                self.sail = (self.sail - FIRE_SAIL * burn).max(0.0);
+                self.crew_burn += burn;
+            }
+            self.fires.retain(|fire| fire.left > 1e-9);
+            let tough = if self.player { PLAYER_CREW_TOUGHNESS } else { SHIP_TOUGHNESS };
+            while self.crew_burn >= FIRE_CREW_S {
+                self.crew_burn -= FIRE_CREW_S;
+                self.wound += 1.0 / tough;
+            }
+            while self.wound >= 1.0 - 1e-9 {
+                self.wound = (self.wound - 1.0).max(0.0);
+                self.crew = (self.crew - 1.0).max(0.0);
+            }
+            if self.fires.is_empty() {
+                self.crew_burn = 0.0;
+            }
+            if let Some(change) = self.settle() {
+                return Some(change);
+            }
+        }
+        if self.state == State::Sinking {
+            self.sink_t += seconds;
+            if self.sink_t >= SINK_SECONDS {
+                self.state = State::Sunk;
+                return Some(State::Sunk);
+            }
+        }
+        None
+    }
+
+    /// Her hands mend her hull and canvas at `now` if nothing has hurt her for a while and no hostile ship is near: up
+    /// to half of each, a wreck afloat again past a share of her hull. Answers whether they mended anything.
+    pub fn mend(&mut self, seconds: f64, now: f64, hostile_near: bool, crewed: bool) -> bool {
+        if now - self.last_hit_at < FIELD_QUIET_S || hostile_near {
+            return false;
+        }
+        let rate = FIELD_MEND_PER_S * if crewed { self.crew_share().clamp(0.0, 1.0) } else { FIELD_MEND_ALONE };
+        let part =
+            |have: f64, whole: f64| (whole * FIELD_MEND_CAP - have).min(whole * rate * seconds.max(0.0)).max(0.0);
+        let (hull, sail) =
+            (part(self.hull, self.max_hull), if self.max_sail > 0.0 { part(self.sail, self.max_sail) } else { 0.0 });
+        if hull <= 0.0 && sail <= 0.0 {
+            return false;
+        }
+        self.hull = (self.hull + hull).min(self.max_hull);
+        self.sail = (self.sail + sail).min(self.max_sail);
+        if self.hull > 0.0 {
+            self.douse();
+        }
+        if self.state == State::Wrecked && self.hull > self.max_hull * FIELD_REFLOAT {
+            self.state = State::Afloat;
+        }
+        if self.state == State::Struck && self.hull > self.max_hull * STRUCK_AT && !self.unmanned() {
+            self.state = State::Afloat;
+        }
+        true
+    }
+}
+
+/// What her hurts and her going down do to her pose: how far she has settled (metres), her trim (radians, bow up) and
+/// her list (radians, to starboard). She goes down to the side and end her seed says, listing first by her hurts; she
+/// settles slowly, then plunges, until her highest spar is `under` metres down.
+#[must_use]
+pub fn founder(damage: &Damage, seed: u32, under: f64) -> (f64, f64, f64) {
+    let share = match damage.state {
+        State::Sinking => (damage.sink_t / SINK_SECONDS).clamp(0.0, 1.0),
+        State::Sunk => 1.0,
+        _ => 0.0,
+    };
+    let side = if seed & 1 == 1 { 1.0 } else { -1.0 };
+    let end = if seed & 2 == 2 { -1.0 } else { 1.0 };
+    let list = side * (SINK_LIST_DEG * share).max(damage.list_deg);
+    (under.max(0.0) * share * share, (end * SINK_PITCH_DEG * share).to_radians(), list.to_radians())
+}
+
+#[cfg(test)]
+#[path = "damage_tests.rs"]
+mod tests;

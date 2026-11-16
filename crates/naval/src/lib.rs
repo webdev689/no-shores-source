@@ -5,6 +5,7 @@
 
 pub mod arms;
 pub mod ballistics;
+pub mod damage;
 pub mod gunnery;
 pub mod guns;
 pub mod random;
