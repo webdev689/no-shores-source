@@ -266,14 +266,23 @@ fn marked(marks: texture_2d<u32>, at: vec2f, first: u32, last: u32) -> f32 {
   return smoothstep(0.3, 0.7, cover);
 }
 
-fn sky(direction: vec3f, slow_time: f32) -> vec3f {
+// The sky along 'direction'. 'blur' is how far apart, in radians, the rays a pixel gathers are: a reflection off
+// waves too small to draw gathers a cone of them, so the clouds' detail finer than that averages out.
+fn sky(direction: vec3f, slow_time: f32, blur: f32) -> vec3f {
   let up = direction.z;
   var colour = mix(HORIZON, ZENITH, sqrt(clamp(up, 0.0, 1.0)));
   colour = mix(colour, HORIZON * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
   if (up > 0.0) {
     let plane = direction.xy / (up + 0.08) * 0.9 + vec2f(slow_time * 0.004, slow_time * 0.0013);
-    let puff = value_noise(plane) * 0.55 + value_noise(plane * 2.3) * 0.3 + value_noise(plane * 5.1) * 0.15;
-    let cover = smoothstep(0.52, 0.78, puff) * smoothstep(0.0, 0.25, up);
+    // How far the blur moves a point on the clouds' plane, furthest near the horizon, and each octave's share kept.
+    let reach = blur * 0.9 / ((up + 0.08) * (up + 0.08));
+    let keep = vec3f(1.0) - smoothstep(vec3f(0.25), vec3f(1.0), reach * vec3f(1.0, 2.3, 5.1));
+    let weights = vec3f(0.55, 0.3, 0.15) * keep;
+    let octaves = vec3f(value_noise(plane), value_noise(plane * 2.3), value_noise(plane * 5.1)) - 0.5;
+    let puff = 0.5 + dot(weights, octaves);
+    // The detail averaged away softens the clouds' edge, so however blurred they keep their mean cover (a sixth).
+    let lost = length(vec3f(0.55, 0.3, 0.15) - weights) * 0.27;
+    let cover = smoothstep(0.52 - lost, 0.78 + lost, puff) * smoothstep(0.0, 0.25, up);
     colour = mix(colour, vec3f(0.97, 0.97, 0.99) * (0.86 + 0.14 * puff), cover * 0.9);
   }
   let toward = max(dot(direction, SUN), 0.0);
@@ -528,7 +537,7 @@ fn scene_distance(pixel: vec2f) -> f32 {
 
 fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
   let haze = 1.0 - exp(-distance_to / frame.view.z);
-  return mix(colour, sky(vec3f(direction.xy, max(direction.z, 0.02)), frame.eye.w) * 0.95, haze);
+  return mix(colour, sky(vec3f(direction.xy, max(direction.z, 0.02)), frame.eye.w, 0.0) * 0.95, haze);
 }
 
 // Light seen through 'distance_to' metres of water 'below' metres under its surface: the light the water scatters
