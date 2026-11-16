@@ -92,7 +92,7 @@ fn a_voyage_steps_to_its_pinned_fingerprint() {
     }
     assert_eq!(ship[7], 1.0, "she ends on her oars");
     assert!(ship[1] < 360_000.0 - 10.0, "she sailed north: {ship:?}");
-    assert_eq!(format!("{:016x}", sailing::floats::fingerprint(&sailed)), "d37511220c2dc5b3");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "11236b8f0201ff37");
 }
 
 #[test]
@@ -147,6 +147,52 @@ fn numbers_no_ship_could_have_are_refused_before_they_reach_the_rules() {
     assert!(with(3, 1e200) && with(4, -1e200), "a way no hull makes");
     assert!(with(5, 1e9), "a swing no rudder gives");
     assert!(with(6, -1.0) && with(6, 1e200), "a canvas share of way no hull makes");
+    assert!(with(3, 11.0) && with(5, 46.0), "faster or swinging harder than any hull with any helm");
+    let at_time = |time: f64| header(&sail_bytes(&sail_request(&ship, &[0.0; 3], time, 1.0))).get("error").is_some();
+    assert!(at_time(1e18) && at_time(-1e18), "a time past the world's");
+    assert!(!at_time(1e9));
     let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[1.0, 0.0, 0.0], 0.0, 60.0)));
     assert!(answer.iter().all(|number| number.is_finite()), "{answer:?}");
+}
+
+#[test]
+fn the_sloop_sails_on_the_waterline_her_export_measured() {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/ships/ships.json");
+    let ships: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let waterline = &ships["ships"]["sloop"]["waterline"];
+    let measured = |key: &str| waterline[key].as_f64().unwrap();
+    let hull = sailing::SLOOP;
+    assert_eq!(
+        [hull.half_length_m * 2.0, hull.half_beam_m * 2.0, hull.draught_m],
+        [measured("length_m"), measured("beam_m"), measured("draught_m")],
+        "re-exported at another waterline, the rules' Sloop must follow"
+    );
+}
+
+/// A voyage onto the square's west shore and off it, the browser's test sails too: under sail for two minutes until
+/// she takes the ground, her sails struck, then her oars astern.
+fn shore_voyage() -> Vec<[f64; 4]> {
+    let mut legs = vec![[0.0, 0.0, 0.0, 60.0]; 120];
+    legs.extend([[0.0, 0.0, -1.0, 60.0], [0.0, 0.0, -1.0, 60.0], [0.0, 0.0, -1.0, 60.0]]);
+    legs.extend(vec![[0.0, 0.0, 0.0, 60.0]; 20]);
+    legs
+}
+
+#[test]
+fn a_voyage_onto_the_shore_and_off_it_steps_to_its_pinned_fingerprint() {
+    assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
+    let mut ship = vec![199_750.0, 360_000.0, std::f64::consts::FRAC_PI_2, 0.0, 0.0, 0.0, 0.0, 2.0];
+    let (mut time, mut sailed, mut touched, mut furthest) = (0.0, Vec::new(), false, 0.0_f64);
+    for [steer, crab, climb, ticks] in shore_voyage() {
+        let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[steer, crab, climb], time, ticks)));
+        assert_eq!(answer.len(), 12, "{answer:?}");
+        ship = answer[..8].to_vec();
+        touched |= answer[11] == 1.0;
+        furthest = furthest.max(ship[0]);
+        sailed.extend(answer);
+        time += ticks / 60.0;
+    }
+    assert!(touched, "she took the ground: furthest east {furthest}");
+    assert!(ship[0] < furthest - 5.0, "her oars took her off: {} from {furthest}", ship[0]);
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "122ff88449682473");
 }

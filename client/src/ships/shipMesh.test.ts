@@ -45,3 +45,18 @@ test('a mesh whose header claims more than its bytes hold, or a corner past its 
   assert.throws(() => readShipMesh(meshFile(4, [0, 1, 4])), /corner/);
   assert.throws(() => readShipMesh(new ArrayBuffer(2)), /bytes/);
 });
+
+test('a mesh without a waterline, or with counts that are not whole, is refused', () => {
+  const header = (fields: Record<string, unknown>) => {
+    const text = new TextEncoder().encode(JSON.stringify(fields).padEnd(64, ' '));
+    const bytes = new ArrayBuffer(4 + text.length);
+    new DataView(bytes).setUint32(0, text.length, true);
+    new Uint8Array(bytes, 4).set(text);
+    return bytes;
+  };
+  assert.throws(() => readShipMesh(header({ name: 'none', vertices: 0, indices: 0 })), /waterline/);
+  const flat = { length_m: 0, beam_m: 2, draught_m: 0.5 };
+  assert.throws(() => readShipMesh(header({ name: 'flat', vertices: 0, indices: 0, waterline: flat })), /waterline/);
+  const half = { name: 'half', vertices: 0.5, indices: 0, waterline: WATERLINE };
+  assert.throws(() => readShipMesh(header(half)), /whole/);
+});

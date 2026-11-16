@@ -37,10 +37,12 @@ decision, made in the same change as its entry here.
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
-| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, and `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too |
+| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, and `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
+| `tools/r2.py` | R2 access for the publishers: objects named by their hash, uploaded once and checked when fetched |
+| `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh and publishes both to R2 ([[Sailing]]) |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
 | `bible/` | This vault |

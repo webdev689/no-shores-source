@@ -251,7 +251,8 @@ export function stillLevels(
   return out;
 }
 
-const smoothstep = (low: number, high: number, value: number) => {
+/** WGSL's smoothstep, for the TypeScript that mirrors the water's shaders. */
+export const smoothstep = (low: number, high: number, value: number) => {
   const fraction = Math.min(1, Math.max(0, (value - low) / (high - low)));
   return fraction * fraction * (3 - 2 * fraction);
 };

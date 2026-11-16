@@ -26,13 +26,22 @@ interface MeshHeader {
   readonly waterline?: { readonly length_m: number; readonly beam_m: number; readonly draught_m: number };
 }
 
-/** Reads a mesh file (tools/ships/export_ship.py): its header's length, the header, then vertices and indices. */
+/** Reads a mesh file (tools/ships/export_ship.py): its header's length, the header, then vertices and indices,
+ *  three a face, in the model's own corner order (front faces counter-clockwise on screen, as the Sailing note says). */
 export function readShipMesh(bytes: ArrayBuffer): ShipMesh {
   if (bytes.byteLength < 4) throw new Error('a ship mesh is too few bytes to hold its header');
   const headerLength = new DataView(bytes).getUint32(0, true);
   const header = JSON.parse(new TextDecoder().decode(new Uint8Array(bytes, 4, headerLength))) as MeshHeader;
   const vertexCount = header.vertices ?? 0;
   const indexCount = header.indices ?? 0;
+  if (!Number.isInteger(vertexCount) || !Number.isInteger(indexCount) || vertexCount < 0 || indexCount < 0) {
+    throw new Error('a ship mesh counts its vertices and corners in whole numbers');
+  }
+  const waterline = header.waterline;
+  // Her footprint on the water divides by her waterline's size: a mesh without one would spoil every water pixel.
+  if (!waterline || !(waterline.length_m > 0) || !(waterline.beam_m > 0) || !(waterline.draught_m >= 0)) {
+    throw new Error("a ship mesh's header needs her waterline: its length, beam and draught");
+  }
   const start = 4 + headerLength;
   const end = start + vertexCount * VERTEX_BYTES;
   if (bytes.byteLength !== end + indexCount * 4) {
@@ -42,7 +51,6 @@ export function readShipMesh(bytes: ArrayBuffer): ShipMesh {
   }
   const indices = new Uint32Array(bytes.slice(end));
   if (indices.some((index) => index >= vertexCount)) throw new Error('a corner of the ship mesh names no vertex');
-  const waterline = header.waterline ?? { length_m: 0, beam_m: 0, draught_m: 0 };
   return {
     name: header.name ?? '',
     vertexCount,

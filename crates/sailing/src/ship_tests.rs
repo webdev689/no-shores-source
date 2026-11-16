@@ -268,3 +268,97 @@ fn the_steady_wind_blows_where_the_swell_runs_at_its_rating() {
     assert!((east[0] - 1.5).abs() < 1e-12 && east[1].abs() < 1e-12, "{east:?}");
     assert_eq!(steady_wind(&Swell { bearing: 0.0, ..Swell::default() }), [0.0, -1.5], "north");
 }
+
+/// A shoal 0.3 m deep west of x = 0, deep water east of it.
+struct Bank;
+impl Waters for Bank {
+    fn at(&self, x: f64, _y: f64, _time: f64) -> Spot {
+        Spot { bed: if x < 0.0 { -0.3 } else { -20.0 }, surface: Some(0.0) }
+    }
+}
+
+fn step(ship: Ship, helm: Helm, hull: &Hull, waters: &impl Waters) -> Ship {
+    step_ship(&ship, &helm, hull, EAST, waters, 0.0, TICK_SECONDS)
+}
+
+#[test]
+fn a_ship_on_dry_land_cannot_row_further_up_it_but_may_row_off_it() {
+    let beached = Ship { x: 200.0, ..at_rest(FRAC_PI_2, 1) };
+    assert_eq!(sail(beached, STILL, EAST, &Shelf, 600).x, 200.0, "the land rises east: she is held");
+    let astern = sail(Ship { rung: -1, ..beached }, STILL, EAST, &Shelf, 600);
+    assert!(astern.x < 190.0, "backing west, the land falls away: {}", astern.x);
+}
+
+#[test]
+fn a_swing_that_would_ground_her_stern_does_not_cost_her_way() {
+    let ship = Ship { x: 0.01, heading: 0.003, ahead: 2.0, turn: 20.0, ..at_rest(0.0, 1) };
+    let next = step(ship, Helm { steer: 1.0, ..STILL }, &SLOOP, &Bank);
+    assert_eq!([next.ahead, next.heading, next.turn], [2.0, 0.003, 0.0], "she runs on, unswung");
+    assert!(next.y < ship.y);
+}
+
+#[test]
+fn struck_sails_slow_her_at_the_coast_times_her_gain() {
+    let mut ship = full_way_north();
+    for _ in 0..2 {
+        ship = sail(ship, Helm { climb: -1, ..STILL }, EAST, &Flat, 1);
+    }
+    assert_eq!(ship.rung, 0);
+    let next = step(ship, STILL, &SLOOP, &Flat);
+    let rate = (ship.ahead - next.ahead) / TICK_SECONDS;
+    assert!((rate - 0.2 * 3.0 * SLOOP.gain).abs() < 1e-9, "all her way is her canvas's: {rate}");
+}
+
+#[test]
+fn her_canvas_share_of_way_follows_her_way() {
+    let ship = full_way_north();
+    assert!((ship.sail_way - ship.ahead).abs() < 1e-12, "{} of {}", ship.sail_way, ship.ahead);
+    let struck =
+        sail(sail(ship, Helm { climb: -1, ..STILL }, EAST, &Flat, 1), Helm { climb: -1, ..STILL }, EAST, &Flat, 60);
+    assert!((struck.sail_way - struck.ahead).abs() < 1e-12 && struck.ahead < ship.ahead, "{struck:?}");
+}
+
+#[test]
+fn a_hair_of_port_helm_at_north_keeps_her_heading_within_a_turn() {
+    let next = step(at_rest(0.0, 1), Helm { steer: -1e-16, ..STILL }, &SLOOP, &Flat);
+    assert!((0.0..TAU).contains(&next.heading), "{}", next.heading);
+}
+
+#[test]
+fn a_hull_of_high_gain_runs_down_to_her_oars_at_her_faster_coast() {
+    let galley = Hull { gain: 2.071, ..SLOOP };
+    let ship = Ship { ahead: 3.0, sail_way: 3.0, ..at_rest(0.0, 1) };
+    let rate = (ship.ahead - step(ship, STILL, &galley, &Flat).ahead) / TICK_SECONDS;
+    assert!((rate - 0.2 * 3.0 * 2.071).abs() < 1e-9, "{rate}");
+}
+
+#[test]
+fn let_go_her_oars_helm_eases_her_swing_at_the_sails_rate() {
+    let ship = Ship { turn: 20.0, ..at_rest(0.0, 1) };
+    let next = step(ship, STILL, &SLOOP, &Flat);
+    assert!((next.turn - (20.0 - 5.0 * 2.4 / 60.0)).abs() < 1e-12, "{}", next.turn);
+}
+
+#[test]
+fn land_waters_float_her_on_a_carved_river() {
+    use land::grid::Grid;
+    use land::ground::{Ground, WaterAt};
+    use land::relief::COAST_REACH_M;
+    use land::sea::Swell;
+    // A slope 40 km across, all land, and a river carved across it 40 m wide and 4 m deep.
+    let mut slope = Grid::new(40, 40, 0.0, 0.0, 1000.0);
+    for (index, value) in slope.data.iter_mut().enumerate() {
+        *value = 100.0 + 10.0 * (index % 40) as f64;
+    }
+    let river = r#"{ "strokes": [], "rivers": [{ "id": "river-1", "width_m": 40, "depth_m": 4,
+        "points": [[30000, 20000], [5000, 20000]] }] }"#;
+    let edits = land::edits::parse(river).unwrap();
+    let ground = Ground::new(&slope, &slope.like(COAST_REACH_M), &vec![0.0; slope.data.len()], &[], &edits, 1);
+    let swell = Swell::default();
+    let waters = LandWaters { ground: &ground, swell: &swell };
+    let WaterAt::River { surface } = ground.water_at(20_000.0, 20_000.0) else { panic!("water in the channel") };
+    let spot = waters.at(20_000.0, 20_000.0, 7.0);
+    assert_eq!(spot, Spot { bed: ground.height_at(20_000.0, 20_000.0), surface: Some(surface) });
+    assert!(surface > spot.bed, "the river stands over its bed");
+    assert_eq!(waters.at(20_000.0, 25_000.0, 7.0).surface, None, "the bank 5 km off is dry");
+}

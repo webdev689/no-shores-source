@@ -1,3 +1,6 @@
+import { headingFrame } from '../rules/landRules.ts';
+import { smoothstep } from './shore.ts';
+
 /**
  * A ship's footprint on the water: no water inside her waterline, and her bow wave's foam round it. The TypeScript
  * mirrors the WGSL the water's surface runs (HULL_WGSL), so tests can hold the shapes.
@@ -23,18 +26,14 @@ export const HULL_FOAM_WAY = 2;
  *  (negative inside), to first order. Mirrors WGSL hull_edge. */
 function hullEdge(mask: HullMask, point: readonly [number, number]): { along: number; outside: number } {
   const [east, south] = [point[0] - mask.x, point[1] - mask.y];
-  const along = east * Math.sin(mask.heading) - south * Math.cos(mask.heading);
-  const across = east * Math.cos(mask.heading) + south * Math.sin(mask.heading);
+  const { forward, starboard } = headingFrame(mask.heading);
+  const along = east * forward[0] + south * forward[1];
+  const across = east * starboard[0] + south * starboard[1];
   const [length, beam] = [mask.halfLength * HULL_FIT, mask.halfBeam * HULL_FIT];
   const reach = Math.hypot(along / length, across / beam);
   const rise = Math.hypot(along / (length * length), across / (beam * beam));
   return { along, outside: rise > 1e-6 ? ((reach - 1) * reach) / rise : -beam };
 }
-
-const smoothstep = (low: number, high: number, value: number) => {
-  const share = Math.min(1, Math.max(0, (value - low) / (high - low)));
-  return share * share * (3 - 2 * share);
-};
 
 /** How much of a point is inside her footprint (1 within, 0 past its edge, eased over a pixel's footprint). Mirrors
  *  WGSL hull_inside. */
@@ -76,6 +75,6 @@ fn hull_foam(offset: vec2f) -> f32 {
   let edge = hull_edge(offset);
   let band = smoothstep(-0.05, 0.0, edge.y) * (1.0 - smoothstep(0.0, ${HULL_FOAM_M}, edge.y));
   let bow = 0.25 + 0.75 * clamp(edge.x / (frame.hull_size.x / ${HULL_FIT}) / 2.0 + 0.5, 0.0, 1.0);
-  return band * bow * min(1.0, frame.hull_size.z / ${HULL_FOAM_WAY}.0);
+  return band * bow * min(1.0, frame.hull_size.z / ${HULL_FOAM_WAY.toFixed(1)});
 }
 `;

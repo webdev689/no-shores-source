@@ -70,6 +70,16 @@ export interface Pose {
 /** A ship's numbers in the sailing crate's order: x, y, heading, ahead, abeam, turn, sail way, rung. */
 export type ShipFloats = Float64Array<ArrayBuffer>;
 
+/** A ship's forward and starboard directions (east, south) at `heading`, radians clockwise from north, as the sailing
+ *  crate's frame has them. */
+export function headingFrame(heading: number): {
+  readonly forward: [number, number];
+  readonly starboard: [number, number];
+} {
+  const [sine, cosine] = [Math.sin(heading), Math.cos(heading)];
+  return { forward: [sine, -cosine], starboard: [cosine, sine] };
+}
+
 /** The water at a point of the ground, and its surface. */
 export interface WaterAt {
   readonly kind: 'dry' | 'sea' | 'lake' | 'river';

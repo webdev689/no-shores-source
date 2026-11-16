@@ -16,33 +16,30 @@ use std::f64::consts::TAU;
 pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 2;
 /// The most ticks one request may step: a second's.
 pub const MOST_TICKS: f64 = 60.0;
-/// What no ship's numbers pass: a place a million kilometres out, a way (or her canvas's share of it) of 100 m/s, a
-/// swing of a turn a second.
+/// What no ship's numbers pass: a place a million kilometres out; a way (or her canvas's share of it) of 10 m/s, twice
+/// what any rig makes in the strongest sea wind; a swing of 45 degrees a second, twice her oars'; a world time past
+/// 30 years, where the swell's phases lose their bits.
 const MOST_PLACE_M: f64 = 1e9;
-const MOST_WAY: f64 = 100.0;
-const MOST_TURN_DEG: f64 = 360.0;
+const MOST_WAY: f64 = 10.0;
+const MOST_TURN_DEG: f64 = 45.0;
+const MOST_TIME_S: f64 = 1e9;
 
 fn is_whole(number: f64) -> bool {
     number == number.trunc()
 }
 
-/// The request's numbers, each checked: finite, a whole rung on the ladder, a whole climb of one at most, a rudder
-/// within its throw, and a whole number of ticks up to a second's.
-fn read(request: &[u8]) -> Result<([f64; SHIP_FLOATS], [f64; HELM_FLOATS], f64, u32), String> {
-    if request.len() != REQUEST_FLOATS * 8 {
-        return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
-    }
+/// The request's ship, helm, time and ticks, each number checked: finite, a place, heading, way and swing a ship
+/// could have, a whole rung on the ladder, a whole climb of one at most, a rudder within its throw, a time within the
+/// world's, and a whole number of ticks up to a second's.
+fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32), String> {
     let numbers: Vec<f64> =
         request.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect();
-    if !numbers.iter().all(|number| number.is_finite()) {
-        return Err("a ship's numbers must be finite".into());
+    let [x, y, heading, ahead, abeam, turn, sail_way, rung, steer, crab, climb, time, ticks] = numbers[..] else {
+        return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
+    };
+    if request.len() != REQUEST_FLOATS * 8 || !numbers.iter().all(|number| number.is_finite()) {
+        return Err(format!("a sail request is {REQUEST_FLOATS} finite numbers"));
     }
-    let ship: [f64; SHIP_FLOATS] = numbers[..SHIP_FLOATS].try_into().map_err(|_| "a ship is 8 numbers")?;
-    let helm: [f64; HELM_FLOATS] =
-        numbers[SHIP_FLOATS..SHIP_FLOATS + HELM_FLOATS].try_into().map_err(|_| "a helm is 3 numbers")?;
-    let (time, ticks) = (numbers[REQUEST_FLOATS - 2], numbers[REQUEST_FLOATS - 1]);
-    let [x, y, heading, ahead, abeam, turn, sail_way, rung] = ship;
-    let [steer, crab, climb] = helm;
     let placed = x.abs() <= MOST_PLACE_M && y.abs() <= MOST_PLACE_M && (0.0..TAU).contains(&heading);
     let moving = ahead.abs() <= MOST_WAY && abeam.abs() <= MOST_WAY && turn.abs() <= MOST_TURN_DEG;
     if !placed || !moving || !(0.0..=MOST_WAY).contains(&sail_way) {
@@ -57,7 +54,11 @@ fn read(request: &[u8]) -> Result<([f64; SHIP_FLOATS], [f64; HELM_FLOATS], f64, 
     if !is_whole(ticks) || !(0.0..=MOST_TICKS).contains(&ticks) {
         return Err(format!("a request steps a whole number of ticks, up to {MOST_TICKS}"));
     }
-    Ok((ship, helm, time, ticks as u32))
+    if time.abs() > MOST_TIME_S {
+        return Err("the time is past the world's".into());
+    }
+    let ship = Ship { x, y, heading, ahead, abeam, turn, sail_way, rung: rung as i8 };
+    Ok((ship, Helm { steer, crab: crab == 1.0, climb: climb as i8 }, time, ticks as u32))
 }
 
 /// Steps the ship the request holds over the open landmass and answers her and her pose.
@@ -70,7 +71,7 @@ pub fn sail_bytes(request: &[u8]) -> Vec<u8> {
             let swell = Swell::default();
             let waters = LandWaters { ground: &landmass.surface, swell: &swell };
             let wind = steady_wind(&swell);
-            let (mut ship, helm) = (Ship::from_floats(&ship), Helm::from_floats(&helm));
+            let mut ship = ship;
             for tick in 0..ticks {
                 // A rung's climb is a press: it acts on the first tick alone.
                 let helm = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };

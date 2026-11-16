@@ -1,4 +1,5 @@
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
+import { headingFrame } from '../rules/landRules.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
@@ -20,11 +21,18 @@ export interface ShipCamera {
   readonly eye: readonly [number, number, number];
 }
 
+/** Her faces seen from outside reach the screen counter-clockwise, as the land's and the water's do: the export keeps
+ *  each face's corners in the model's own order, and the world (east, south, up) is mirrored as her frame is. */
+export const FRONT_FACE: GPUFrontFace = 'ccw';
+
 /** The matrix (column-major, 4 × 4) that turns her own frame (x to her bow, y to starboard, z up) into the world's
  *  (east, south, up): her roll, then her pitch, then her heading. */
 export function shipTurn(heading: number, pitch: number, roll: number): Float32Array<ArrayBuffer> {
-  const forward = [Math.sin(heading), -Math.cos(heading), 0];
-  const starboard = [Math.cos(heading), Math.sin(heading), 0];
+  const flat = headingFrame(heading);
+  const [forward, starboard] = [
+    [...flat.forward, 0],
+    [...flat.starboard, 0],
+  ];
   const up = [0, 0, 1];
   const [sinPitch, cosPitch, sinRoll, cosRoll] = [Math.sin(pitch), Math.cos(pitch), Math.sin(roll), Math.cos(roll)];
   const along = (ahead: number, aside: number, above: number) =>
@@ -110,7 +118,7 @@ export class ShipView {
         ],
       },
       fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
-      primitive: { topology: 'triangle-list' },
+      primitive: { topology: 'triangle-list', frontFace: FRONT_FACE },
       depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
       multisample: { count: SAMPLES },
     });
@@ -147,9 +155,5 @@ export class ShipView {
     pass.setVertexBuffer(0, this.vertices);
     pass.setIndexBuffer(this.indices, 'uint32');
     pass.drawIndexed(this.indexCount);
-  }
-
-  destroy(): void {
-    for (const buffer of [this.vertices, this.indices, this.uniforms]) buffer.destroy();
   }
 }

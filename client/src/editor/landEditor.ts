@@ -280,6 +280,7 @@ export async function startLandEditor(
     select: (id) => {
       selected = id;
       status = '';
+      sailing = false;
       showSelected(true);
       open(id, true);
     },
@@ -372,6 +373,8 @@ export async function startLandEditor(
         stroking: stroke !== null,
       });
       orbit = drawn.orbit;
+      // A refused Sail stands the camera back off, as bringing her in does.
+      if (sailing && !drawn.sailing) orbit = { ...orbit, distance: 600, pitch: 0.5 };
       sailing = drawn.sailing;
       const flat = { width: canvas.clientWidth, height: canvas.clientHeight };
       const shownHeight = shownExaggeration(exaggeration, orbit.distance);

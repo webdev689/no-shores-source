@@ -27,6 +27,9 @@ def fetch(method, url, data=None, kind='application/octet-stream', signed=False)
             return answer.status, answer.read()
     except urllib.error.HTTPError as error:
         return error.code, error.read()
+    except urllib.error.URLError as error:
+        # No answer at all (no network, a bad host): status 0, and the reason, for the caller's refusal.
+        return 0, str(error.reason).encode()
 
 
 def put(data, folder, extension, kind):

@@ -41,7 +41,7 @@ pub struct Hull {
 pub const SLOOP: Hull = Hull {
     name: "sloop",
     half_length_m: 6.2258 / 2.0,
-    half_beam_m: 1.856 / 2.0,
+    half_beam_m: 1.8561 / 2.0,
     draught_m: 0.6,
     gain: 1.159,
     sails: &[

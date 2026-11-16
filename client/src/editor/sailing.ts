@@ -1,4 +1,4 @@
-import type { Helm, LandView, Pose, ShipFloats } from '../rules/landRules.ts';
+import { type Helm, headingFrame, type LandView, type Pose, type ShipFloats } from '../rules/landRules.ts';
 import { helmOf, isRungKey, RUNG_WORDS } from '../ships/helmKeys.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
@@ -8,8 +8,9 @@ import type { Orbit } from './orbit.ts';
 
 /** The rules' tick, seconds (crates/sailing TICK_SECONDS). */
 export const TICK_SECONDS = 1 / 60;
-/** The most ticks a frame steps: the scene's own longest frame, so a hidden tab does not sail on for minutes. */
-export const MOST_TICKS_A_FRAME = 6;
+/** The most ticks one step asks, the rules' own cap: a second's. Time spent waiting on the rules (behind a close-up
+ *  being made) is caught up in the next step, up to this; the scene caps a frame at a tenth of a second. */
+export const MOST_TICKS = 60;
 /** Her deck and a little over, metres above her waterline: where the camera looks at her. */
 const LOOK_AT_M = 1.5;
 /** Come Sail Away's wake threshold (a quarter of its sailing speed), m/s, and how far she runs between stirrings of
@@ -74,10 +75,10 @@ export class Sailing {
     if (isRungKey(key)) this.presses.push(key);
   }
 
-  /** Owes her `seconds` more and, unless a step is with the rules, sends the whole ticks owed (six at most), the last
+  /** Owes her `seconds` more and, unless a step is with the rules, sends the whole ticks owed (a second's at most), the last
    *  ending at `time`, with the helm the keys held and the next press ask. */
   advance(seconds: number, held: ReadonlySet<string>, time: number, fail: (error: unknown) => void): void {
-    this.owed = Math.min(this.owed + seconds, MOST_TICKS_A_FRAME * TICK_SECONDS);
+    this.owed = Math.min(this.owed + seconds, MOST_TICKS * TICK_SECONDS);
     if (this.pending) return;
     // A hair over, so six ticks' worth of float seconds is six ticks.
     const ticks = Math.floor(this.owed / TICK_SECONDS + 1e-6);
@@ -109,16 +110,14 @@ export class Sailing {
     this.travelled -= whole * WAKE_STEP_M;
   }
 
-  /** The stirrings owed, taken: each at her bow and her two quarters, deeper the faster she runs. */
+  /** Her bow and quarters stir the water, once a frame at most, when she has run half a metre since: deeper the faster
+   *  she runs. */
   wake(view: LandView, waterline: Waterline): readonly Stir[] {
-    const count = this.stirrings;
+    const owed = this.stirrings > 0;
     this.stirrings = 0;
-    if (count === 0) return [];
+    if (!owed) return [];
     const { x, y, heading } = this.place(view, 1);
-    const [forward, starboard] = [
-      [Math.sin(heading), -Math.cos(heading)],
-      [Math.cos(heading), Math.sin(heading)],
-    ] as const;
+    const { forward, starboard } = headingFrame(heading);
     const [halfLength, halfBeam] = [waterline.lengthM / 2, waterline.beamM / 2];
     const strength = -0.02 * Math.min(this.way() / 2, 1.5);
     const stirAt = (along: number, across: number, radiusM: number, share: number): Stir => ({
@@ -132,7 +131,7 @@ export class Sailing {
       stirAt(-0.7 * halfLength, -halfBeam, 0.4, 0.5),
       stirAt(-0.7 * halfLength, halfBeam, 0.4, 0.5),
     ];
-    return Array.from({ length: count }, () => once).flat();
+    return once;
   }
 
   /** Her footprint on the water, for the water's surface. */

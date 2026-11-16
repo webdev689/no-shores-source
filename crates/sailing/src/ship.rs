@@ -4,7 +4,7 @@
 
 use crate::Hull;
 use crate::helm::{COAST, HANDLING, PACE, SAIL_ACCEL, TURN_ACCEL_SAIL, canvas, point_of_sail, sea_wind, steerage};
-use crate::pose::{frame, keel_aground};
+use crate::pose::{frame, keel_spots, shallower};
 use crate::waters::Waters;
 use std::f64::consts::TAU;
 
@@ -159,15 +159,22 @@ pub fn step_ship(
         sail_way,
         rung,
     };
-    let before = keel_aground(ship, hull, waters, time);
+    // A keel point grounds where it was afloat, or where it was aground already and the bed rises under it.
+    let before = keel_spots(ship, hull, waters, time);
     let grounds = |candidate: &Ship| {
-        keel_aground(candidate, hull, waters, time).iter().zip(before).any(|(&now, then)| now && !then)
+        keel_spots(candidate, hull, waters, time).iter().zip(&before).any(|(now, then)| {
+            shallower(now, hull.draught_m) && (!shallower(then, hull.draught_m) || now.bed > then.bed)
+        })
     };
     if !grounds(&moved) {
         return moved;
     }
-    // She takes the ground and loses her way, but her helm may still swing her clear: the mod refused only a turn
-    // into what she touched.
+    // She runs on unswung where only her swing would ground her, or swings clear where only her way would: the mod
+    // refused only the part that ran into what she touched. Both grounding, she is held and loses her way.
+    let unswung = Ship { heading: ship.heading, turn: 0.0, ..moved };
+    if !grounds(&unswung) {
+        return unswung;
+    }
     let swung = Ship { heading: moved.heading, ahead: 0.0, abeam: 0.0, turn, sail_way: 0.0, rung, ..*ship };
     if grounds(&swung) { Ship { ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung, ..*ship } } else { swung }
 }

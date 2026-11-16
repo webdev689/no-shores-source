@@ -11,6 +11,8 @@ export class Harbour<View> {
   private afloat: Sailing | null = null;
   /** The rules are asked to put her to sea, or refused: no more is asked until she is brought in. */
   private asked: 'no' | 'asking' | 'refused' = 'no';
+  /** Each Sail's own number: an answer for one since brought in is dropped. */
+  private voyage = 0;
 
   constructor(load: () => Promise<View>, fail: (error: unknown) => void) {
     this.load = load;
@@ -42,9 +44,10 @@ export class Harbour<View> {
     }
     if (!this.afloat && source && this.asked === 'no') {
       this.asked = 'asking';
+      const voyage = this.voyage;
       Sailing.putToSea(source, id, x, y, heading, time)
         .then((answer) => {
-          if (this.asked !== 'asking') return;
+          if (voyage !== this.voyage) return;
           if (typeof answer !== 'string') [this.afloat, this.asked] = [answer, 'no'];
           else {
             this.asked = 'refused';
@@ -52,6 +55,7 @@ export class Harbour<View> {
           }
         })
         .catch((error: unknown) => {
+          if (voyage !== this.voyage) return;
           this.asked = 'refused';
           this.fail(error);
         });
@@ -62,6 +66,7 @@ export class Harbour<View> {
   /** Brings her in: the next Sail puts her to sea afresh, and fetches again a model that failed. */
   leave(): void {
     [this.afloat, this.asked] = [null, 'no'];
+    this.voyage++;
     if (this.fetching === 'failed') this.fetching = 'no';
   }
 }

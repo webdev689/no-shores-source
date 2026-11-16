@@ -36,13 +36,31 @@ test('putting to sea where the door answers her aground is refused with a reason
   assert.deepEqual([...(asked[0]?.ship ?? [])], [1000, 2000, 0.5, 0, 0, 0, 0, 0]);
 });
 
-test('a long frame steps at most six ticks, ending at the time asked', async () => {
+test('a long wait is caught up a second at most, ending at the time asked', async () => {
   const { source, asked } = fakeDoor();
   const sailing = await Sailing.putToSea(source, 'square', 0, 0, 0, 0);
   assert.ok(sailing instanceof Sailing);
   sailing.advance(5, new Set(), 100, ignore);
-  assert.equal(asked[1]?.ticks, 6);
-  assert.ok(Math.abs((asked[1]?.time ?? 0) - (100 - 6 / 60)) < 1e-9);
+  assert.equal(asked[1]?.ticks, 60);
+  assert.ok(Math.abs((asked[1]?.time ?? 0) - (100 - 60 / 60)) < 1e-9);
+});
+
+test('time spent waiting on the rules is caught up, not lost', async () => {
+  const { source, asked, letGo } = fakeDoor(false, true);
+  const pending = Sailing.putToSea(source, 'square', 0, 0, 0, 0);
+  letGo();
+  const sailing = await pending;
+  assert.ok(sailing instanceof Sailing);
+  sailing.advance(0.05, new Set(), 1, ignore);
+  for (let frame = 0; frame < 6; frame++) sailing.advance(0.1, new Set(), 1 + 0.1 * (frame + 1), ignore);
+  letGo();
+  await settle();
+  sailing.advance(0.05, new Set(), 1.65, ignore);
+  assert.deepEqual(
+    asked.slice(1).map((ask) => ask.ticks),
+    [3, 39],
+    'the 0.6 s the first step waited, and this frame',
+  );
 });
 
 test('a frame shorter than a tick waits, and its time is kept for the next', async () => {
@@ -73,7 +91,7 @@ test('while one step is with the door, no other is asked, and a press waits for 
   assert.equal(asked[2]?.helm.climb, 0, 'the press went with the first step');
 });
 
-test('under way she stirs the water at her bow and quarters each half metre, and none at rest', async () => {
+test('under way she stirs the water at her bow and quarters once she has run half a metre, and none at rest', async () => {
   const moving: SailSource = {
     sail: async (_id, ship, _helm, _time, ticks) => {
       const next = new Float64Array(ship);
@@ -90,7 +108,7 @@ test('under way she stirs the water at her bow and quarters each half metre, and
   sailing.advance(3 / 60, new Set(), 1, ignore);
   await settle();
   const stirs = sailing.wake(view, waterline);
-  assert.equal(stirs.length, 6, 'she ran 1.2 m: two stirrings of bow and quarters');
+  assert.equal(stirs.length, 3, 'she ran 1.2 m: her bow and quarters stir once a frame at most');
   const [bow] = stirs;
   assert.ok(
     bow && Math.abs(bow.x - 100) < 1e-9 && bow.y < 100 - 1.2 - 2,
@@ -105,4 +123,40 @@ test('she is put to sea heading where the camera looks, as a heading within a tu
   const { source, asked } = fakeDoor();
   await Sailing.putToSea(source, 'square', 0, 0, -0.5, 0);
   assert.ok(Math.abs((asked[0]?.ship[2] ?? 0) - (2 * Math.PI - 0.5)) < 1e-12);
+});
+
+test("her faces seen from outside reach the screen wound as her pipeline's front faces", async () => {
+  const { FRONT_FACE, shipTurn } = await import('../ships/shipView.ts');
+  const { viewProjection } = await import('./orbit.ts');
+  // A face on her starboard side as the export writes it: the model's corners in their own order, its y mirrored
+  // from port to starboard, so in her frame (b-a)x(c-a) points in while the face looks out to starboard.
+  const corners = [
+    [0, 1, 0],
+    [1, 1, 0],
+    [0, 1, 1],
+  ] as const;
+  for (const heading of [0, 0.7, 2.5, 4.4]) {
+    const turn = shipTurn(heading, 0.05, -0.03);
+    // The camera stands off her starboard side and looks at her.
+    const orbit = { targetX: 0, targetY: 0, targetZ: 0, yaw: heading - Math.PI / 2, pitch: 0.3, distance: 20 };
+    const matrix = viewProjection(orbit, 1.6);
+    const screen = corners.map((corner) => {
+      const world = [0, 1, 2].map((row) =>
+        [0, 1, 2].reduce((sum, column) => sum + (turn[column * 4 + row] ?? 0) * corner[column], 0),
+      );
+      const clip = [0, 1, 3].map(
+        (row) =>
+          [0, 1, 2].reduce((sum, column) => sum + (matrix[column * 4 + row] ?? 0) * (world[column] ?? 0), 0) +
+          (matrix[12 + row] ?? 0),
+      );
+      return [(clip[0] ?? 0) / (clip[2] ?? 1), (clip[1] ?? 0) / (clip[2] ?? 1)] as const;
+    });
+    const [first, second, third] = screen;
+    const area =
+      first && second && third
+        ? (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0])
+        : 0;
+    // WebGPU's 'ccw' fronts run counter-clockwise on screen (positive area, y up); 'cw' fronts the other way.
+    assert.equal(area > 0 ? 'ccw' : 'cw', FRONT_FACE, `heading ${heading}: area ${area}`);
+  }
 });

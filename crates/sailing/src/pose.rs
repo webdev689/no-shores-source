@@ -4,7 +4,7 @@
 use crate::Hull;
 use crate::helm::HANDLING;
 use crate::ship::{Ship, length};
-use crate::waters::Waters;
+use crate::waters::{Spot, Waters};
 
 /// Her waterline's middle above still water (metres), her bow's rise and her heel to starboard (radians), and
 /// whether her keel touches the ground anywhere (within a hand of it, so a ship the ground has stopped says so).
@@ -38,20 +38,19 @@ fn level_at(waters: &impl Waters, (x, y): (f64, f64), time: f64) -> f64 {
 /// How near her draught the water under her keel may come before she is said to touch the ground, metres.
 const TOUCH_M: f64 = 0.05;
 
-/// The water over the bed under her keel's points aft, amidships and forward, metres; none where it is dry.
-fn keel_depths(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> [Option<f64>; 3] {
+/// The bed and the water under her keel's points aft, amidships and forward.
+#[must_use]
+pub fn keel_spots(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> [Spot; 3] {
     [-0.8, 0.0, 0.8].map(|share| {
         let (x, y) = place(ship, share * hull.half_length_m, 0.0);
-        let spot = waters.at(x, y, time);
-        spot.surface.map(|surface| surface - spot.bed)
+        waters.at(x, y, time)
     })
 }
 
-/// Her keel's points aft, amidships and forward, each aground where the water over the bed is shallower than her
-/// draught (or there is none).
+/// Whether the water over the bed at a spot is shallower than `depth` metres (or there is none).
 #[must_use]
-pub fn keel_aground(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> [bool; 3] {
-    keel_depths(ship, hull, waters, time).map(|depth| depth.is_none_or(|depth| depth < hull.draught_m))
+pub fn shallower(spot: &Spot, depth: f64) -> bool {
+    spot.surface.is_none_or(|surface| surface - spot.bed < depth)
 }
 
 /// Come Sail Away's heel in a turn, radians: into it, by her swing and her way, once she makes a wake.
@@ -77,8 +76,6 @@ pub fn pose_of(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> Pos
         heave,
         pitch: libm::atan2(bow - stern, 2.0 * half_length),
         roll: libm::atan2(port - starboard, 2.0 * half_beam) + turn_heel(ship),
-        aground: keel_depths(ship, hull, waters, time)
-            .iter()
-            .any(|depth| depth.is_none_or(|depth| depth < hull.draught_m + TOUCH_M)),
+        aground: keel_spots(ship, hull, waters, time).iter().any(|spot| shallower(spot, hull.draught_m + TOUCH_M)),
     }
 }
