@@ -89,6 +89,7 @@ dependencies = [
 name = "protocol"
 version = "0.0.0"
 dependencies = [
+ "combat",
  "flatbuffers",
  "movement",
  "room",
@@ -107,6 +108,7 @@ dependencies = [
 name = "room"
 version = "0.0.0"
 dependencies = [
+ "combat",
  "movement",
 ]
 
@@ -114,6 +116,7 @@ dependencies = [
 name = "room-wasm"
 version = "0.0.0"
 dependencies = [
+ "combat",
  "movement",
  "protocol",
  "room",

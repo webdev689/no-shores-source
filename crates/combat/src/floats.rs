@@ -17,6 +17,10 @@ const ACTION_NUMBERS: usize = 10;
 pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS;
 /// An intent's numbers: the controls', then the stroke held (0 none), guard, dodge, shoot, pitch.
 pub const INTENT_FLOATS: usize = CONTROLS_FLOATS + 5;
+/// A glance at a fighter, all another browser needs to draw it and mark it: x, y, z, facing, the body's mode,
+/// crouched, aim, side, arms, weight, health and its most, stamina, poise and its most, target (id + 1), then the
+/// action's kind and numbers.
+pub const GLANCE_FLOATS: usize = 17 + ACTION_NUMBERS;
 
 fn flag(value: bool) -> f64 {
     if value { 1.0 } else { 0.0 }
@@ -250,6 +254,83 @@ impl Fighter {
             blows: count(at(21)),
             might: at(22),
         }
+    }
+}
+
+impl Fighter {
+    #[must_use]
+    pub fn glance(&self) -> [f64; GLANCE_FLOATS] {
+        let mut floats = [0.0; GLANCE_FLOATS];
+        let body = &self.body;
+        let (kind, numbers) = action_floats(&self.action);
+        let fields = [
+            body.x,
+            body.y,
+            body.z,
+            body.facing,
+            body.mode.number(),
+            flag(body.crouched),
+            self.aim,
+            f64::from(self.side as u8),
+            f64::from(self.arms.code()),
+            f64::from(self.weight as u8),
+            self.health,
+            self.health_max,
+            self.stamina,
+            self.poise,
+            self.poise_max,
+            none_or_id(self.target),
+            kind,
+        ];
+        floats[..fields.len()].copy_from_slice(&fields);
+        floats[fields.len()..].copy_from_slice(&numbers);
+        floats
+    }
+
+    /// A fighter from a glance: what the glance holds, the rest as a fresh fighter's.
+    #[must_use]
+    pub fn from_glance(floats: &[f64; GLANCE_FLOATS]) -> Self {
+        let mut full = [0.0; FIGHTER_FLOATS];
+        let at = |index: usize| floats.get(index).copied().unwrap_or_default();
+        let body = movement::Body {
+            x: at(0),
+            y: at(1),
+            z: at(2),
+            facing: at(3),
+            mode: movement::Mode::from_number(at(4)),
+            crouched: at(5) != 0.0,
+            ..movement::standing(at(0), at(1))
+        };
+        full[..BODY_FLOATS].copy_from_slice(&body.to_floats());
+        let combat = [
+            at(7),
+            at(8),
+            at(9),
+            at(10),
+            at(11),
+            at(12),
+            0.0,
+            at(13),
+            at(14),
+            0.0,
+            0.0,
+            at(6),
+            at(15),
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            at(16),
+        ];
+        full[BODY_FLOATS..BODY_FLOATS + combat.len()].copy_from_slice(&combat);
+        full[BODY_FLOATS + combat.len()..].copy_from_slice(&floats[17..]);
+        Fighter::from_floats(&full)
     }
 }
 

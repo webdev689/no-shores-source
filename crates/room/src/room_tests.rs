@@ -1,11 +1,13 @@
 use super::*;
+use combat::Intent;
+use movement::{Controls, TICK_SECONDS, step_body};
 
 const WALK: Controls =
     Controls { forward: 1.0, sideways: 0.0, yaw: 0.3, run: false, jump: false, crouch: false, mounted: false };
 
 /// An input with these controls and no look.
 fn input(sequence: u32, controls: Controls) -> Input {
-    Input { sequence, controls, ..Input::default() }
+    Input { sequence, intent: Intent { controls, ..Intent::default() }, ..Input::default() }
 }
 
 fn room() -> Room {
@@ -21,7 +23,7 @@ fn players_join_with_numbers_of_their_own_standing_at_the_spawn_and_leave() {
     let mut room = room();
     let (first, second) = (room.join(), room.join());
     assert_ne!(first, second);
-    assert_eq!(seen(&room, first).body, standing(0.0, 2.0));
+    assert_eq!(seen(&room, first).fighter.body, standing(0.0, 2.0));
     room.leave(first);
     assert_eq!(room.seen().map(|each| each.player).collect::<Vec<_>>(), vec![second]);
     assert_eq!(room.input(first, input(1, WALK)), Err(Refused::NoSuchPlayer));
@@ -37,10 +39,8 @@ fn each_input_steps_the_body_once_as_the_movement_rules_do_and_is_acknowledged()
         room.input(player, input(sequence, controls)).unwrap();
         room.tick();
         expected = step_body(&expected, &controls, &room.blocks, TICK_SECONDS);
-        assert_eq!(
-            seen(&room, player),
-            Seen { player, body: expected, shown: Shown::default(), acknowledged: sequence }
-        );
+        let now = seen(&room, player);
+        assert_eq!((now.fighter.body, now.shown, now.acknowledged), (expected, Shown::default(), sequence));
     }
 }
 
@@ -89,8 +89,8 @@ fn a_player_who_sends_nothing_stays_where_they_were_while_the_clock_runs() {
         room.tick();
     }
     assert_eq!(room.clock(), 10);
-    assert_eq!(seen(&room, idle).body, standing(0.0, 2.0));
-    assert_ne!(seen(&room, walker).body, standing(0.0, 2.0));
+    assert_eq!(seen(&room, idle).fighter.body, standing(0.0, 2.0));
+    assert_ne!(seen(&room, walker).fighter.body, standing(0.0, 2.0));
 }
 
 #[test]

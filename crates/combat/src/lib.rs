@@ -16,6 +16,7 @@ pub mod sight;
 pub mod step;
 pub mod strike;
 pub mod tuning;
+pub mod turn;
 
 pub use arms::{Arms, OffHand, Ranged, Stroke, WeaponClass, arms_of};
 pub use fighter::{Action, CombatInput, Fighter, FighterId, Intent, Side, Weight, fighter};
@@ -23,6 +24,7 @@ pub use judge::{Blow, BlowKind, Verdict, judge};
 pub use shapes::{Shape, Telegraph, TelegraphOrder};
 pub use shots::Shot;
 pub use step::{Happening, Surroundings, step_fighter};
+pub use turn::player_tick;
 
 /// Whole ticks in `seconds`, to the nearest.
 #[must_use]

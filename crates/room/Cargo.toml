@@ -7,6 +7,7 @@ publish.workspace = true
 description = "A shared space on the server: its players, each player's inputs taken in order, and their bodies stepped tick by tick, never faster than the room's clock."
 
 [dependencies]
+combat = { path = "../combat" }
 movement = { path = "../movement" }
 
 [lints]
