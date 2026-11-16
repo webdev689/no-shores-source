@@ -34,3 +34,4 @@ The scope in full is in [[Overlook Is a Shared World After Destiny 1]].
 - [[The World Map]]
 - [[Quests Are Rebuilt, DFU's as Reference]]
 - [[Naval, Living World, Professions and Synth Come Over Leaner]]
+- [[Gameplay Starts With the Shared Rules]]

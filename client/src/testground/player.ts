@@ -1,12 +1,19 @@
 import type { Orbit } from '../editor/orbit.ts';
+import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import type { InputFrame } from './input.ts';
-import { type Block, type Body, eyeHeight, stepBody, standing } from './motor.ts';
 import { cameraOrbit, eased, FIRST_PERSON, scrolled, toggled, type ViewMode } from './playerCamera.ts';
 
 /** The player: their body, where they look, how the camera is held, whether they ride, their weapon out or away, and
  *  the cast or chosen move playing. The first person's weapon swings; this only readies it. */
 export interface Player {
   readonly body: Body;
+  /** The body a tick before, which the drawing eases from, and how far it has eased toward `body` (0..1). */
+  readonly previous: Body;
+  readonly blend: number;
+  /** Seconds since the last tick, toward the next. */
+  readonly carry: number;
+  /** A jump or a crouch pressed since the last tick, kept for the next so a press between ticks is never lost. */
+  readonly queued: { readonly jump: boolean; readonly crouch: boolean };
   readonly yaw: number;
   readonly pitch: number;
   readonly view: ViewMode;
@@ -28,28 +35,36 @@ const PITCH_LIMIT = 1.4;
 /** A rider's eye is this much higher than on foot. */
 const SADDLE = 0.9;
 
-export const newPlayer = (x: number, y: number): Player => ({
-  body: standing(x, y),
-  yaw: 0,
-  pitch: 0.1,
-  view: { ...scrolled(FIRST_PERSON, 1), shown: 2 },
-  mounted: false,
-  drawn: false,
-  cast: null,
-  act: null,
-  facing: 0,
-});
+export function newPlayer(movement: MovementRules, x: number, y: number): Player {
+  const body = movement.standing(x, y);
+  return {
+    body,
+    previous: body,
+    blend: 1,
+    carry: 0,
+    queued: { jump: false, crouch: false },
+    yaw: 0,
+    pitch: 0.1,
+    view: { ...scrolled(FIRST_PERSON, 1), shown: 2 },
+    mounted: false,
+    drawn: false,
+    cast: null,
+    act: null,
+    facing: 0,
+  };
+}
 
 /**
  * One frame of the player with DFO's controls: the mouse (with the pointer locked) and the arrow and look keys turn
  * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon, and a right click
  * readies it too; Q casts; comma mounts or dismounts; the wheel and Mouse4 move between first and third person.
+ * The body moves in whole ticks of the movement rules; the view turns every frame.
  * `swinging` says a swing is under way, which turns the figure to the view.
  */
 export function updatePlayer(
   player: Player,
   input: InputFrame,
-  blocks: readonly Block[],
+  movement: MovementRules,
   seconds: number,
   swinging = false,
 ): Player {
@@ -75,29 +90,41 @@ export function updatePlayer(
 
   const forward = (input.held('forward') ? 1 : 0) - (input.held('back') ? 1 : 0);
   const sideways = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
-  const body = stepBody(
-    player.body,
-    {
-      forward,
-      sideways,
-      yaw,
-      run: input.held('run'),
-      jump: input.pressed('jump'),
-      crouch: input.pressed('crouch'),
-      mounted,
-    },
-    blocks,
-    seconds,
-  );
+  let queued = {
+    jump: player.queued.jump || input.pressed('jump'),
+    crouch: player.queued.crouch || input.pressed('crouch'),
+  };
+  let { body, previous } = player;
+  let carry = player.carry + seconds;
+  while (carry >= movement.tickSeconds) {
+    carry -= movement.tickSeconds;
+    previous = body;
+    body = movement.step(body, { forward, sideways, yaw, run: input.held('run'), ...queued, mounted });
+    queued = { jump: false, crouch: false };
+  }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
   const acting = swinging || cast !== null;
   const facing = acting ? yaw : body.mode !== 'ground' ? body.facing : body.moving ? body.facing : player.facing;
-  return { body, yaw, pitch, view, mounted, drawn, cast, act, facing };
+  const blend = Math.min(1, carry / movement.tickSeconds);
+  return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, cast, act, facing };
+}
+
+/** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate. */
+export function shownBody(player: Player): Body {
+  const { body, previous, blend } = player;
+  const between = (from: number, to: number) => from + (to - from) * blend;
+  return {
+    ...body,
+    x: between(previous.x, body.x),
+    y: between(previous.y, body.y),
+    z: between(previous.z, body.z),
+    crouch: between(previous.crouch, body.crouch),
+  };
 }
 
 /** The camera the scene draws the player's frame from. */
-export function playerCamera(player: Player, blocks: readonly Block[]): Orbit {
-  const { body } = player;
-  const head = [body.x, body.y, body.z + eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
+export function playerCamera(player: Player, movement: MovementRules, blocks: readonly Block[]): Orbit {
+  const body = shownBody(player);
+  const head = [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
   return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks);
 }

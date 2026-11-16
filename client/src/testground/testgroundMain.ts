@@ -6,12 +6,13 @@ import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
+import { startMovementRules } from '../rules/movementRules.ts';
 import { Cards } from './cards.ts';
 import { COURSE, START } from './course.ts';
 import type { Dress } from './dressing.ts';
 import { type Placed, eyeOf, frameAt, viewOf } from './figures.ts';
 import { Input } from './input.ts';
-import { CAST_SECONDS, newPlayer, playerCamera, updatePlayer } from './player.ts';
+import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from './player.ts';
 import { likelyMoves, shownMove } from './playerMoves.ts';
 import { startPanel } from './panel.ts';
 import { type CardAt, SceneView } from './sceneView.ts';
@@ -56,10 +57,15 @@ async function start(): Promise<void> {
   const gpu = await startGpu(canvas);
   const scene = new SceneView(gpu);
   scene.setBlocks(COURSE);
+  // The body moves by the Rust movement rules, run in WebAssembly.
+  const movement = await startMovementRules(
+    await (await fetch(`${import.meta.env.BASE_URL}movement.wasm`)).arrayBuffer(),
+  );
+  movement.setCourse(COURSE);
   const input = new Input(canvas);
   let status = 'Reading the forge…';
   let fps = 6;
-  let player = newPlayer(START.x, START.y);
+  let player = newPlayer(movement, START.x, START.y);
   let nextId = PLAYER_ID;
   const figures: Placed[] = [];
   const place = (dress: Dress, x: number, y: number, facing: number): Placed => {
@@ -134,14 +140,14 @@ async function start(): Promise<void> {
     const controls = input.frame();
     const wasDrawn = you.dress.outfit.drawn;
     if (controls.locked) {
-      player = updatePlayer({ ...player, drawn: wasDrawn }, controls, COURSE, seconds, firstPerson.swing !== null);
+      player = updatePlayer({ ...player, drawn: wasDrawn }, controls, movement, seconds, firstPerson.swing !== null);
       if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
-    const { body } = player;
+    const body = shownBody(player);
     Object.assign(you, { x: body.x, y: body.y, facing: player.facing });
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
-    const camera = playerCamera(player, COURSE);
+    const camera = playerCamera(player, movement, COURSE);
     const eye = eyeOf(camera);
 
     const drawn: CardAt[] = [];

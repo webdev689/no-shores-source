@@ -1,0 +1,204 @@
+//! One step of a body: the rules for each way it can be held.
+
+use crate::blocks::{Block, WallAhead, ground_at, slide, wall_ahead};
+use crate::body::{Body, Controls, Mode, Over, TUNING};
+use std::f64::consts::PI;
+
+/// Where the player's controls point the body on the ground, in metres east and south per unit, and how long that is.
+#[derive(Clone, Copy, Debug)]
+struct Wish {
+    x: f64,
+    y: f64,
+    length: f64,
+}
+
+fn ease(current: f64, target: f64, seconds: f64) -> f64 {
+    current + (target - current) * (seconds / TUNING.crouch_seconds).min(1.0)
+}
+
+/// The speed the body moves at on the ground.
+fn pace_of(crouched: bool, controls: &Controls) -> f64 {
+    if controls.mounted {
+        if controls.run { TUNING.ride_gallop } else { TUNING.ride_walk }
+    } else if crouched {
+        TUNING.crouch
+    } else if controls.run {
+        TUNING.run
+    } else {
+        TUNING.walk
+    }
+}
+
+/// Starts a mantle up onto a lip, or a vault over a low, thin block: the body goes over it in time with its rise.
+fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool) -> Body {
+    let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
+    let rise = ahead.block.top - body.z;
+    let reach_over = if vault { ahead.depth + TUNING.radius * 2.0 + 0.2 } else { TUNING.radius + 0.3 };
+    let to = [body.x + dir_x * reach_over, body.y + dir_y * reach_over, if vault { body.z } else { ahead.block.top }];
+    // DFO's mantle time at middling skill: (0.25 + 0.22 rise)(1.3 - 0.5 skill).
+    let seconds = (0.25 + 0.22 * rise.max(0.0)) * 1.05;
+    Body {
+        mode: if vault { Mode::Vault } else { Mode::Mantle },
+        over: Some(Over { from: [body.x, body.y, body.z], to, progress: 0.0, seconds }),
+        vx: 0.0,
+        vy: 0.0,
+        vz: 0.0,
+        lip: ahead.block.top,
+        facing: bearing,
+        ..*body
+    }
+}
+
+/// Whether a lip `rise` over the feet, on a block `depth` deep, is vaulted rather than mantled.
+fn vaults(rise: f64, ahead: &WallAhead) -> bool {
+    rise <= TUNING.vault && ahead.depth <= TUNING.vault_depth
+}
+
+/// One step of the body for `seconds`: walking, running and crouching on the ground and up steps; jumping and
+/// falling; grabbing a lip on a jump to hang, mantle or vault; shimmying along a lip; climbing a wall too high to grab.
+#[must_use]
+pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64) -> Body {
+    let (sin, cos) = (libm::sin(controls.yaw), libm::cos(controls.yaw));
+    let wish_x = sin * controls.forward + cos * controls.sideways;
+    let wish_y = -cos * controls.forward + sin * controls.sideways;
+    let wish = Wish { x: wish_x, y: wish_y, length: (wish_x * wish_x + wish_y * wish_y).sqrt() };
+    match body.mode {
+        Mode::Mantle | Mode::Vault => going_over(body, seconds),
+        Mode::Hang | Mode::Climb => on_wall(body, controls, blocks, seconds),
+        Mode::Air => in_air(body, controls, blocks, seconds, wish),
+        Mode::Ground => on_ground(body, controls, blocks, seconds, wish),
+    }
+}
+
+/// Mantling or vaulting: along the way at its pace, rising first and then going over, so it never cuts the lip.
+fn going_over(body: &Body, seconds: f64) -> Body {
+    let Some(over) = body.over else { return Body { mode: Mode::Ground, ..*body } };
+    let progress = (over.progress + seconds / over.seconds).min(1.0);
+    let along = |axis: usize| over.from[axis] + (over.to[axis] - over.from[axis]) * progress;
+    let z = if body.mode == Mode::Vault {
+        over.from[2] + libm::sin(progress * PI) * (body.lip - over.from[2] + 0.2)
+    } else {
+        over.from[2] + (over.to[2] - over.from[2]) * (progress * 1.6).min(1.0)
+    };
+    let next = Body { x: along(0), y: along(1), z, over: Some(Over { progress, ..over }), moving: true, ..*body };
+    if progress >= 1.0 { Body { mode: Mode::Ground, over: None, z: over.to[2], grounded: 0.0, ..next } } else { next }
+}
+
+/// Hanging from a lip or climbing a wall: crouch lets go, forward at the lip goes over, sideways moves along it, and on
+/// the wall forward climbs and a jump kicks off.
+fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64) -> Body {
+    if controls.crouch {
+        return Body { mode: Mode::Air, vz: 0.0, moving: false, ..*body };
+    }
+    let Some(ahead) = wall_ahead(blocks, body, body.facing) else {
+        return Body { mode: Mode::Air, moving: false, ..*body };
+    };
+    let lip_above = ahead.block.top - body.z;
+    let climbing = body.mode == Mode::Climb;
+    if controls.jump && climbing {
+        let (back_x, back_y) = (-libm::sin(body.facing) * 3.0, libm::cos(body.facing) * 3.0);
+        return Body { mode: Mode::Air, vx: back_x, vy: back_y, vz: TUNING.jump, moving: false, ..*body };
+    }
+    if controls.forward > 0.0 && lip_above <= TUNING.hang + 0.01 {
+        return go_over(body, &ahead, body.facing, false);
+    }
+    let (along_x, along_y) = (libm::cos(body.facing), libm::sin(body.facing));
+    let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
+    let along = controls.sideways * pace * seconds;
+    let moved = Body { x: body.x + along_x * along, y: body.y + along_y * along, ..*body };
+    // Off the end of the block, there is nothing to hold.
+    let (x, y) = if wall_ahead(blocks, &moved, body.facing).is_some() { (moved.x, moved.y) } else { (body.x, body.y) };
+    let mut z = body.z;
+    if climbing {
+        z = (z + controls.forward * TUNING.climb * seconds).max(0.0);
+    }
+    let mode = if climbing && ahead.block.top - z <= TUNING.hang { Mode::Hang } else { body.mode };
+    if mode == Mode::Hang {
+        z = ahead.block.top - TUNING.hang;
+    }
+    let moving = along != 0.0 || (climbing && controls.forward != 0.0);
+    Body { x, y, z, mode, lip: ahead.block.top, moving, vx: 0.0, vy: 0.0, vz: 0.0, ..*body }
+}
+
+/// In the air: falling under gravity, exactly for a constant pull so a jump's apex does not hang on the tick, and
+/// catching a lip in reach when pressed into a wall.
+fn in_air(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish: Wish) -> Body {
+    let fall_speed = body.vz - TUNING.gravity * seconds;
+    let z = body.z + body.vz * seconds - 0.5 * TUNING.gravity * seconds * seconds;
+    let (x, y) = slide(blocks, body, body.vx * seconds, body.vy * seconds);
+    let crouch = ease(body.crouch, if body.crouched { 1.0 } else { 0.0 }, seconds);
+    let moved = Body { x, y, z, ..*body };
+    if wish.length > 0.0
+        && controls.forward > 0.0
+        && let Some(ahead) = wall_ahead(blocks, &moved, controls.yaw)
+        && ahead.block.top - z <= TUNING.reach + TUNING.reach_in_air
+    {
+        let rise = ahead.block.top - z;
+        // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
+        let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, x, y, body.z, 0.0);
+        if rise <= TUNING.vault || low_lip {
+            return go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead));
+        }
+        return Body {
+            z: ahead.block.top - TUNING.hang,
+            mode: Mode::Hang,
+            lip: ahead.block.top,
+            facing: controls.yaw,
+            vx: 0.0,
+            vy: 0.0,
+            vz: 0.0,
+            moving: false,
+            ..moved
+        };
+    }
+    let ground = ground_at(blocks, x, y, body.z, 0.0);
+    if z <= ground {
+        return Body { z: ground, vz: 0.0, mode: Mode::Ground, grounded: 0.0, crouch, moving: false, ..moved };
+    }
+    Body { vz: fall_speed, crouch, moving: false, ..moved }
+}
+
+/// On the ground: walking, running or crouching where the controls point, up steps and off edges; jumping, or going
+/// over a lip in reach; and taking hold of a wall too high to grab.
+fn on_ground(body: &Body, controls: &Controls, blocks: &[Block], seconds: f64, wish: Wish) -> Body {
+    let crouched = if controls.crouch { !body.crouched } else { body.crouched };
+    let crouch = ease(body.crouch, if crouched { 1.0 } else { 0.0 }, seconds);
+    let facing = if wish.length > 0.0 { libm::atan2(wish.x, -wish.y) } else { body.facing };
+    let pace = pace_of(crouched, controls);
+    let scale = if wish.length > 0.0 { pace * seconds / wish.length.max(1.0) } else { 0.0 };
+    let (x, y) = slide(blocks, body, wish.x * scale, wish.y * scale);
+    let ground = ground_at(blocks, x, y, body.z, 0.0);
+    let (moved_x, moved_y) = (x - body.x, y - body.y);
+    let moving = (moved_x * moved_x + moved_y * moved_y).sqrt() > 1e-6;
+    let (vx, vy) = (moved_x / seconds.max(1e-6), moved_y / seconds.max(1e-6));
+    let grounded = body.grounded + seconds;
+    let next = Body { x, y, vx, vy, z: ground, crouched, crouch, grounded, facing, moving, ..*body };
+    if ground < body.z - TUNING.step {
+        return Body { z: body.z, mode: Mode::Air, vz: 0.0, grounded: 0.0, ..next };
+    }
+    if controls.jump && grounded >= TUNING.grounded_to_jump && !controls.mounted {
+        let ahead = if controls.forward > 0.0 { wall_ahead(blocks, &next, controls.yaw) } else { None };
+        // A lip in reach from the ground is vaulted if low and thin, else mantled; a higher one is caught in the air.
+        if let Some(ahead) = ahead.filter(|ahead| ahead.block.top - next.z <= TUNING.reach) {
+            return go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead));
+        }
+        let lift = TUNING.jump * if crouched { TUNING.crouched_jump } else { 1.0 };
+        return Body {
+            mode: Mode::Air,
+            vz: lift,
+            vx: vx * 1.05,
+            vy: vy * 1.05,
+            crouched: false,
+            grounded: 0.0,
+            ..next
+        };
+    }
+    // Pressing into a wall too high to grab, the body takes hold of it and climbs.
+    let wall = if controls.forward > 0.0 && !controls.mounted { wall_ahead(blocks, &next, controls.yaw) } else { None };
+    match wall {
+        Some(wall) if wall.block.top - next.z > TUNING.reach && !moving => {
+            Body { mode: Mode::Climb, facing: controls.yaw, lip: wall.block.top, crouched: false, ..next }
+        }
+        _ => next,
+    }
+}

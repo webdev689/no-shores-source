@@ -1,4 +1,4 @@
-import type { Block } from './motor.ts';
+import type { Block } from '../rules/movementRules.ts';
 
 /** The player starts here, facing the course to the north. */
 export const START = { x: 0, y: 10 } as const;

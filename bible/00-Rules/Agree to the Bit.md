@@ -13,5 +13,5 @@ unseeded randomness and no iteration over unordered maps in a result.
 DFO Online had to hand-write its own arctangent and ban `Math.sin` to make browsers agree. Here it holds by
 construction: one crate, compiled for each target.
 
-**Checked by.** Clippy's list of disallowed methods, across the workspace, and the [[Land]]'s fingerprint test, which
-runs the same land natively and as WebAssembly and compares the bits.
+**Checked by.** Clippy's list of disallowed methods, across the workspace, and the fingerprint tests of the [[Land]]
+and of [[Movement]], which run the same land and the same moves natively and as WebAssembly and compare the bits.
