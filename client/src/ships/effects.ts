@@ -99,8 +99,8 @@ export class Effects {
             out[1] * (0.6 + index * 0.35) + this.spread(0.2),
             0.4,
           ],
-          radius: 0.2,
-          grow: 0.55,
+          radius: 0.35,
+          grow: 0.8,
           falls: false,
           colour: SMOKE,
           life: 2.5,
@@ -108,10 +108,10 @@ export class Effects {
       } else if (event.kind === 'splash') {
         const spot = toWindow(event.point);
         splashes.push({ x: spot[0], y: spot[1], radiusM: 1.2, strength: -0.05 });
-        this.add(7, spot, now, () => ({
-          velocity: [this.spread(1.4), this.spread(1.4), 4 + this.draw() * 3],
-          radius: 0.12,
-          grow: 0.1,
+        this.add(9, spot, now, () => ({
+          velocity: [this.spread(1.4), this.spread(1.4), 5 + this.draw() * 3],
+          radius: 0.22,
+          grow: 0.15,
           falls: true,
           colour: SPRAY,
           life: 1.2,
