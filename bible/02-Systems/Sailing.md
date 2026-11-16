@@ -63,7 +63,8 @@ model's corner order and reaches the screen counter-clockwise, as the land's and
 model whose faces are not wound outward. Her waterline is 0.4 m above the model's z = 0 (her keel reaches 0.2 m below
 it), where her beam nears its widest: 6.2 m long, 1.9 m across, her keel 0.6 m below it. The mesh lives on R2 under
 its hash ([[Generated Files Stay Out of Git]]); its key and her waterline are in `content/ships/ships.json`, and a
-test holds the rules' Sloop to that waterline. Her `.blend` is on R2 beside it, being over git's 1 MB limit.
+test holds the rules' Sloop to that waterline. Her `.blend` is on R2 beside it ([[Ship Models Live on R2]]). Her
+cannons are the objects named `Cannon` in it, three a side, fore to aft.
 
 ## In the World Editor
 
@@ -75,7 +76,7 @@ wake in the ripples. Picking another landmass brings her in.
 
 ## Limits
 
-- One hull, the Sloop. Her cannons are not yet named for the exporter.
+- One hull, the Sloop. The export does not read her cannons yet: naval combat will.
 - The editor steps her; no room hosts a ship yet.
 - No current, collisions with other hulls, cargo, crew, or naval combat yet.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.

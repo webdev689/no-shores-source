@@ -47,8 +47,6 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - Whether the Sloop sits right: her waterline is taken 0.4 m above her model's z = 0, where her beam nears its widest
   ([[Sailing]]). And what the small cube at her bow is.
-- Where the Sloop's `.blend` lives: on R2 beside her mesh, since it is over git's 1 MB limit, though the rule keeps
-  sources in git ([[Generated Files Stay Out of Git]]).
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
@@ -57,8 +55,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, has begun: [[Sailing]]'s first step
   is in its pull request. Next is the naval combat core, broadsides between the Sloop and one captain
-  ([[Pick - Sailing and Naval Combat]]); her six cannons need names in her `.blend` first (`Cannon`), so the export
-  can find her muzzles.
+  ([[Pick - Sailing and Naval Combat]]); her six cannons are named in her model (`Cannon`,
+  [[Ship Models Live on R2]]), for the export to read her muzzles.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.

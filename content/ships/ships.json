@@ -3,7 +3,7 @@
   "ships": {
     "sloop": {
       "mesh": "ships/292d90562ec88cbec3fc289da03cc37866226eef0185d54ae8df9a76c013f11e.mesh",
-      "source": "sources/27aeefb509011fe605f0be7f7b9694c84ffa0b17b49e16994bb1be7dfbb0d44f.blend",
+      "source": "sources/d6f9093188019beb445d87a51ef5de3fd263f572ff247be95bb95e1c2600271c.blend",
       "waterline": {
         "level_m": 0.4,
         "length_m": 6.2258,
