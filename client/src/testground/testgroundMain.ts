@@ -7,6 +7,7 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { Prediction } from '../network/prediction.ts';
+import { roomAddress } from '../network/roomAddress.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { type MovementRules, startMovementRules } from '../rules/movementRules.ts';
 import { Cards } from './cards.ts';
@@ -129,10 +130,14 @@ async function start(): Promise<void> {
     if (!input.locked) input.lock();
   });
 
-  // With ?room=ws://…/room/<name>, the Test Ground joins that room: the player is predicted here and corrected by the
-  // room's word, each tick's controls go to the room, and every other player stands where the room last saw them.
+  // With ?room=<name> (or a whole ws:// address), the Test Ground joins that room: the player is predicted here and
+  // corrected by the room's word, each tick's controls go to the room, and every other player stands where the room
+  // last saw them.
   let steps: MovementRules = movement;
-  const roomUrl = new URLSearchParams(location.search).get('room');
+  const given = new URLSearchParams(location.search).get('room');
+  const roomUrl = given === null ? null : roomAddress(given);
+  if (given !== null && !roomUrl)
+    throw new Error(`"${given}" is not a room: a room's name is letters, digits and hyphens`);
   if (roomUrl) {
     const prediction = new Prediction();
     const others = new Map<number, Placed>();
