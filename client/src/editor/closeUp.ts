@@ -57,21 +57,35 @@ export function groundUnder(patch: GroundPatch, x: number, y: number): number | 
   return splineAt(patch.heights, patch.width, patch.height, gridX, gridY);
 }
 
+/** Puts points in the window's metres (z up) on the screen through one camera, or null behind it. */
+export function screenProjector(
+  orbit: Orbit,
+  size: { readonly width: number; readonly height: number },
+): (point: readonly [number, number, number]) => { x: number; y: number } | null {
+  const matrix = viewProjection(orbit, size.width / size.height);
+  return ([x, y, z]) => {
+    const row = (index: number) =>
+      (matrix[index] ?? 0) * x +
+      (matrix[index + 4] ?? 0) * y +
+      (matrix[index + 8] ?? 0) * z +
+      (matrix[index + 12] ?? 0);
+    const clipW = row(3);
+    if (clipW <= 0) return null;
+    return { x: ((row(0) / clipW + 1) / 2) * size.width, y: ((1 - row(1) / clipW) / 2) * size.height };
+  };
+}
+
 /** A point in the window's metres (z up) on the screen, or null behind the camera. */
 export function toScreen(
   orbit: Orbit,
   size: { readonly width: number; readonly height: number },
-  [x, y, z]: readonly [number, number, number],
+  point: readonly [number, number, number],
 ): { x: number; y: number } | null {
-  const matrix = viewProjection(orbit, size.width / size.height);
-  const row = (index: number) =>
-    (matrix[index] ?? 0) * x + (matrix[index + 4] ?? 0) * y + (matrix[index + 8] ?? 0) * z + (matrix[index + 12] ?? 0);
-  const clipW = row(3);
-  if (clipW <= 0) return null;
-  return { x: ((row(0) / clipW + 1) / 2) * size.width, y: ((1 - row(1) / clipW) / 2) * size.height };
+  return screenProjector(orbit, size)(point);
 }
 
-/** Draws a person's height at the target and a scale bar beside it over the 3D view, so the ground's size reads. */
+/** Draws a person's height at the target and a scale bar beside it over the 3D view, so the ground's size reads.
+ *  Adds to what the overlay holds. */
 export function drawScaleCues(
   svg: SVGSVGElement,
   orbit: Orbit,
@@ -79,7 +93,6 @@ export function drawScaleCues(
   feet: readonly [number, number, number],
   exaggeration: number,
 ): void {
-  svg.replaceChildren();
   const draw = (name: string, attributes: Record<string, string | number>, text = '') => {
     const node = document.createElementNS('http://www.w3.org/2000/svg', name);
     for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
