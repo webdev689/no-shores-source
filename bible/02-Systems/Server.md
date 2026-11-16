@@ -36,7 +36,8 @@ host, and the browser's side; the [[Test Ground]] plays in a room. It is deploye
   and the room tick their screen last showed. It steps that player's fighter once by combat's player tick, among the
   fighters as that screen showed them, exactly as the browser that predicted it did, so a prediction can only differ
   where the server knows more ([[Clients Predict With the Shared Rules]]).
-- **Foes:** a player may ask for a foe before them (the [[Test Ground]]'s panel); the room stands it, at most twelve.
+- **Foes:** a player may ask for a foe (the [[Test Ground]]'s panel), one with each input; the room stands it 5 m
+  along the player's aim, which follows their look, on its navmesh, facing them, and holds at most twelve.
   Each tick every foe thinks over the room as it stands and steps by the same rules ([[Foes]]), routing on a
   [[Navmesh]] the room bakes from its course when it opens.
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe as the player's
@@ -111,6 +112,8 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 ## Limits
 
 - Deploys are by hand, with the owner's yes; the rooms' code can lag `main` until the next deploy.
+- A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
+  account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
 - Any page can join a room, under any name; no one signs in.
 - A snapshot sends every player's whole fighter and look and every foe's glance every tick: fine for a few players and
   foes, heavy for many.

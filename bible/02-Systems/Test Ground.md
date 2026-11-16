@@ -57,7 +57,8 @@ The Test Ground plays the [[Combat]] rules in a room, always: alone, the room cr
 WebAssembly; with `?room=`, a server's. The page predicts the player's fighter by the room's own rules and takes the
 room's word for it, so playing alone and online are the same game.
 
-- **Foes.** The panel stands a foe of each kind 5 m before the player, at most twelve, or sends every foe away. Each
+- **Foes.** The panel stands a foe of each kind 5 m ahead of where the player looks, facing them, at most twelve, or
+  sends every foe away; a foe asked for while the forge still loads is not asked for. Each
   fights by its brain ([[Foes]]) and is dressed by its kind: the skirmisher in leather with a pair of daggers, the
   swordsman in mail with a sword and kite shield, the brute in iron plate with a warhammer, the archer in leather with
   a short bow, and the captain in ebony plate with an ebony sword.

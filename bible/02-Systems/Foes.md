@@ -1,6 +1,6 @@
 ---
 type: system
-status: building
+status: live
 code:
   - crates/foes/src/lib.rs#think
   - crates/foes/src/brain.rs#notice
@@ -14,6 +14,8 @@ code:
   - crates/foes/src/shoot.rs#ranged
   - crates/foes/src/steer.rs#controls
   - crates/foes/src/tuning.rs#MELEE_TOKENS
+  - crates/room/src/foes.rs#step_foes
+  - crates/room/src/foes.rs#tell_brains
 ---
 # Foes
 
@@ -25,7 +27,7 @@ built upon so foes use the guard, the parry and the dodge of [[Combat]] too
 
 - **One crate for every machine.** The `foes` crate stands on the `combat` crate's rules. Each tick the room hands a
   foe's brain what it knows (the room's tick and seed, every fighter, the course's blocks, and routes, which the room's
-  navmesh gives), and the brain asks its fighter for controls and buttons, as a player's keys would, telegraphed blows
+  [[Navmesh]] gives), and the brain asks its fighter for controls and buttons, as a player's keys would, telegraphed blows
   included; the combat rules carry them out. What the room saw happen (a swing begun, a shot loosed, a blow landed on
   it or by it, its telegraphed blow's landing) it tells the brain, which notes it for its next thought. The foes of a
   room share a board of turns. Chance comes from a hash of the room's seed, the tick, the foe and what is being

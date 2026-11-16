@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: live
 code:
   - crates/navmesh/src/lib.rs#NavMesh
   - crates/navmesh/src/lib.rs#AGENT
@@ -20,7 +20,8 @@ code:
 
 Where a foe can walk, and the way there. A room bakes its course into a navmesh once, when it starts; foes then ask
 it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
-steps and numbers. Foes will use it; no foe does yet.
+steps and numbers. Each room bakes one over its course and 30 m of open ground about it, and its [[Foes]] find
+their way by it.
 
 ## How it works
 
@@ -67,4 +68,5 @@ over the [[Test Ground]]'s course by its fingerprint.
 - Courses are blocks and ramps on open ground at 0 m; the [[Land]] is not baked yet.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
-- The grid's cells stay 0.25 m however large the room: a large open field bakes slowly.
+- The grid's cells stay 0.25 m however large the room: a large open field bakes slowly. The [[Test Ground]]'s
+  course bakes in 0.3 to 0.7 s (tested offline, in Node's WebAssembly), once as its room opens.

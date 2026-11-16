@@ -1,6 +1,6 @@
 ---
 type: system
-status: building
+status: live
 code:
   - crates/combat/src/step.rs#step_fighter
   - crates/combat/src/judge.rs#judge
