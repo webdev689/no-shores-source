@@ -45,14 +45,15 @@ fn copy_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
 }
 
-// The nearest of the pixel's samples (depth is reversed: nearer is larger), so the water never sees past a near edge.
+// The mean of the pixel's samples: the depth at its centre on a slope. The nearest sample would sit far in front of
+// it where the view grazes the ground, a pixel spanning hundreds of metres there.
 @fragment
 fn copy_fragment(@builtin(position) position: vec4f) -> @location(0) vec4f {
-  var nearest = 0.0;
+  var sum = 0.0;
   for (var sample = 0; sample < ${SAMPLES}; sample++) {
-    nearest = max(nearest, textureLoad(depths, vec2i(position.xy), sample));
+    sum += textureLoad(depths, vec2i(position.xy), sample);
   }
-  return vec4f(nearest, 0.0, 0.0, 1.0);
+  return vec4f(sum / ${SAMPLES}.0, 0.0, 0.0, 1.0);
 }
 `;
 

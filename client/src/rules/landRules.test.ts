@@ -43,7 +43,7 @@ test('a continent opens as its window, with land inside the coast and sea around
 
 test('the land agrees to the bit with the native build (crates/land/tests/agree.rs holds the same fingerprint)', async () => {
   const view = (await land()).open(square(200_000, 300_000, 120_000), 'square', null);
-  assert.equal(view.groundHash, '2723ccc818961ecb');
+  assert.equal(view.groundHash, '2e9a3eef586ebf0d');
 });
 
 test('a continent of a biome opens with its ground colour and snow line; one with none, without', async () => {

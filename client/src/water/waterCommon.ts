@@ -43,7 +43,11 @@ fn value_noise(point: vec2f) -> f32 {
   return mix(top, bottom, ease.y);
 }
 
-fn cells(point: vec2f, time: f32) -> vec2f {
+fn cells(unbent: vec2f, time: f32) -> vec2f {
+  // Bent by noise at the cells' own scale, so their walls are curves and never meet in straight-edged shards.
+  let bend = vec2f(value_noise(unbent + vec2f(17.0, 3.0)), value_noise(unbent + vec2f(41.0, 29.0))) - 0.5;
+  let finer = vec2f(value_noise(unbent * 2.0 + vec2f(7.0, 11.0)), value_noise(unbent * 2.0 + vec2f(23.0, 5.0))) - 0.5;
+  let point = unbent + bend * 0.75 + finer * 0.3;
   let base = floor(point);
   let fraction = point - base;
   var nearest = vec2f(8.0);

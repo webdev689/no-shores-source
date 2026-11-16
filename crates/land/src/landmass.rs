@@ -8,7 +8,7 @@ use crate::erosion::erode_coarse;
 use crate::exact::seed_of;
 use crate::grid::Grid;
 use crate::ground::Ground;
-use crate::relief::{Climate, PLACEHOLDER, coast_distance_km, land_mask, relief, window};
+use crate::relief::{Climate, PLACEHOLDER, coast_distance_km, ease_to_outline, land_mask, relief, window};
 use crate::water::{Water, water};
 use world::geometry::Point;
 use world::layout::Continent;
@@ -117,7 +117,8 @@ pub fn generate(continent: &Continent, edits: Edits) -> Result<Landmass, String>
     let coast = coast_distance_km(&grid, &land);
     let seed = seed_of(WORLD_SEED, &continent.id);
     let (elevation, uplift) = relief(&grid, &land, &coast, seed, climate);
-    let generated = erode_coarse(&elevation, &uplift, &land, climate.rain_mm, EROSION_STEPS, EROSION_FACTOR);
+    let mut generated = erode_coarse(&elevation, &uplift, &land, climate.rain_mm, EROSION_STEPS, EROSION_FACTOR);
+    ease_to_outline(&mut generated, &land, &continent.outline);
     let water = Water { rivers: Vec::new(), lake_level: vec![0.0; generated.data.len()] };
     let surface = Ground::new(&generated, &water.lake_level, &[], &Edits::default(), seed);
     let mut landmass = Landmass {

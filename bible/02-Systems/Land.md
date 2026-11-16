@@ -31,6 +31,10 @@ the server and in every browser. The owner decided the generator makes the land 
   it, lakes that keep what they are given, and slopes that slide past their talus. It runs 40 steps of 2,000 years on
   a 2 km grid, and what it changed is laid back on the 1 km land, so valleys follow the water and the land keeps its
   grain.
+- **The coastline.** After erosion, the ground within 1.2 km of the painted coast eases onto a slope of 16 m a
+  kilometre through the painted line itself, so the coastline between the cells follows the outline, within about
+  70 m, rather than the cells' half-kilometre steps. Each cell keeps its side of the coast; the owner's strokes come
+  after it.
 - **Water.** A priority flood fills every hollow to its spill and finds each cell's way down. A river starts where
   the water a cell gathers reaches 1 m³/s, and runs to the sea or into a larger river. A lake stands wherever a
   hollow holds water 0.5 m deep.

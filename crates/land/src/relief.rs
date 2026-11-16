@@ -16,6 +16,12 @@ pub const MARGIN_M: i64 = 40_000;
 pub const LAND_FLOOR_M: f64 = 1.0;
 pub const SEA_CEILING_M: f64 = -2.0;
 
+/// Within COAST_BAND_M of the painted coast, the ground eases onto a slope through the coast itself, COAST_SLOPE a
+/// kilometre either side: whole by COAST_HELD_M from it, gone by COAST_BAND_M.
+pub const COAST_BAND_M: f64 = 1200.0;
+pub const COAST_HELD_M: f64 = 600.0;
+pub const COAST_SLOPE_M_PER_KM: f64 = 16.0;
+
 /// The climate a landmass is generated in: its biome's (biome.rs), or `PLACEHOLDER` for a landmass with none.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Climate {
@@ -157,6 +163,44 @@ pub fn relief(window: &Grid, land: &[bool], coast_km: &[f64], seed: u32, climate
     (elevation, uplift)
 }
 
+/// Eases the ground near the coast onto a slope through the painted outline, so the coastline the ground draws between
+/// its cells follows the outline, not the cells' squares. A cell keeps its side: land LAND_FLOOR_M or more, the seabed
+/// SEA_CEILING_M or less.
+pub fn ease_to_outline(ground: &mut Grid, land: &[bool], outline: &[Point]) {
+    let mut nearest = vec![f64::MAX; land.len()];
+    for (index, from) in outline.iter().enumerate() {
+        let to = outline[(index + 1) % outline.len()];
+        let (from_x, from_y, to_x, to_y) = (from.x as f64, from.y as f64, to.x as f64, to.y as f64);
+        let column =
+            |x: f64| ((x - ground.left_m) / ground.cell_m).floor().clamp(0.0, (ground.width - 1) as f64) as usize;
+        let row = |y: f64| ((y - ground.top_m) / ground.cell_m).floor().clamp(0.0, (ground.height - 1) as f64) as usize;
+        let (span_x, span_y) = (to_x - from_x, to_y - from_y);
+        let length = span_x * span_x + span_y * span_y;
+        for j in row(from_y.min(to_y) - COAST_BAND_M)..=row(from_y.max(to_y) + COAST_BAND_M) {
+            for i in column(from_x.min(to_x) - COAST_BAND_M)..=column(from_x.max(to_x) + COAST_BAND_M) {
+                let (x, y) = ground.centre(i, j);
+                let along = if length > 0.0 {
+                    clamp(((x - from_x) * span_x + (y - from_y) * span_y) / length, 0.0, 1.0)
+                } else {
+                    0.0
+                };
+                let (dx, dy) = (x - from_x - span_x * along, y - from_y - span_y * along);
+                let cell = j * ground.width + i;
+                nearest[cell] = nearest[cell].min((dx * dx + dy * dy).sqrt());
+            }
+        }
+    }
+    for (cell, &distance) in nearest.iter().enumerate() {
+        if distance >= COAST_BAND_M {
+            continue;
+        }
+        let slope = COAST_SLOPE_M_PER_KM * distance / 1000.0;
+        let toward = if land[cell] { slope.max(LAND_FLOOR_M) } else { (-slope).min(SEA_CEILING_M) };
+        let share = 1.0 - smooth(COAST_HELD_M, COAST_BAND_M, distance);
+        ground.data[cell] += (toward - ground.data[cell]) * share;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,6 +212,29 @@ mod tests {
             Point::new(west + side, north + side),
             Point::new(west, north + side),
         ]
+    }
+
+    #[test]
+    fn a_diagonal_coast_is_drawn_along_its_line_not_in_steps() {
+        let text = r#"{ "continents": [{ "id": "wedge", "outline": [[200000, 300000], [400000, 300000], [200000, 500000]] }], "isles": [] }"#;
+        let layout = world::layout::parse(text).unwrap();
+        let landmass = crate::landmass::generate(&layout.continents[0], crate::edits::Edits::default()).unwrap();
+        let ground = &landmass.surface;
+        // Along the diagonal coast x + y = 700 km, find where the ground crosses 0 on lines across it.
+        let mut worst: f64 = 0.0;
+        for step in 0..60 {
+            let along = 250_000.0 + 1_637.0 * f64::from(step);
+            let (coast_x, coast_y) = (along, 700_000.0 - along);
+            let at = |offset: f64| ground.height_at(coast_x + offset, coast_y + offset);
+            let (mut inside, mut outside) = (-3000.0, 3000.0);
+            assert!(at(inside) > 0.0 && at(outside) < 0.0);
+            for _ in 0..40 {
+                let middle = 0.5 * (inside + outside);
+                if at(middle) > 0.0 { inside = middle } else { outside = middle }
+            }
+            worst = worst.max((inside * std::f64::consts::SQRT_2).abs());
+        }
+        assert!(worst < 100.0, "the coast strays {worst:.0} m from its line, not the cells' half-kilometre steps");
     }
 
     #[test]
