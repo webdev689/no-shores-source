@@ -64,6 +64,35 @@ export interface Dress {
   readonly outfit: Outfit;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+/** A name a dress may hold: short text. Names the forge does not draw are left for it to pass over. */
+const isName = (value: unknown): value is string => typeof value === 'string' && value.length <= 64;
+
+/** The dress another player's browser sent, as text, if it is one: each field of a dress's shape, its names short, so
+ *  a broken or hostile one never reaches the forge. */
+export function dressFrom(text: string): Dress | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!isRecord(value) || !isName(value['body']) || typeof value['tone'] !== 'number') return null;
+  if (typeof value['race'] !== 'string' || !Object.hasOwn(RACES, value['race'])) return null;
+  const outfit = value['outfit'];
+  if (!isRecord(outfit)) return null;
+  const { armour, garments, dyes, right, left, drawn, hair } = outfit;
+  const pieces = ARMOUR_PIECES as readonly string[];
+  if (!isRecord(armour) || !Object.entries(armour).every(([piece, set]) => pieces.includes(piece) && isName(set)))
+    return null;
+  if (!Array.isArray(garments) || garments.length > 40 || !garments.every(isName)) return null;
+  if (!isRecord(dyes) || !Object.entries(dyes).every(([garment, dye]) => isName(garment) && isName(dye))) return null;
+  if (!(right === null || isName(right)) || !(left === null || isName(left)) || typeof drawn !== 'boolean') return null;
+  if (!(hair === null || (isRecord(hair) && isName(hair['style']) && isName(hair['colour'])))) return null;
+  return value as unknown as Dress;
+}
+
 /** The forge figure a dress stacks in a move: the race's own body or the human tone, and its outfit's layers and hair,
  *  what is in hand worn for a move the forge does not draw it in. */
 export function figureOf(dress: Dress, drawn: ForgeBody['layers'], anim?: string): Figure {

@@ -44,13 +44,19 @@ it ([[Messages Are FlatBuffers]]). A body and controls cross as the movement cra
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser | Its number and one tick's controls |
-| Joined | The room | The joining player's number |
-| Snapshot | The room | The room's tick, and every player: their number, their body, and the number of their last input taken |
+| Input | A browser | Its number, one tick's controls, the look of the player's figure on their own screen (its move, frame and facing), and their dress when it changed |
+| Joined | The room | The joining player's number, and every dress in the room |
+| Snapshot | The room | The room's tick; every player: their number, their body, the number of their last input taken and the look that came with it; and the dresses that changed since the last snapshot |
 
 The server reads an input only after FlatBuffers' verifier passes its bytes, so bytes that are not an input, or
 controls that are not 7 numbers, are refused. The browser reads a message the room sent, and takes one it cannot read
 as nothing.
+
+Looks and dresses are each player's own word, passed on and decided nothing about: a look goes out with the tick that
+takes its input, a dress once each time it changes, and every dress to whoever joins. The room refuses a move name
+that is not lowercase letters, digits and underscores or is over 40 bytes, and a dress over 4 KB. A browser takes
+another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
+figure; otherwise it shows the move their body is in.
 
 ## The host
 
@@ -88,6 +94,7 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 
 - Deploys are by hand, with the owner's yes; the rooms' code can lag `main` until the next deploy.
 - Any page can join a room, under any name; no one signs in.
-- A snapshot sends every player's whole body every tick: fine for a few players, heavy for many.
+- A snapshot sends every player's whole body and look every tick: fine for a few players, heavy for many.
+- A dress travels with a player's inputs, which flow only while they play: until then, others see a plain figure.
 - A player who sends nothing stands still in time: their body waits, mid-jump if need be, until their inputs come.
 - Every player joins at the same spot, and bodies pass through each other.

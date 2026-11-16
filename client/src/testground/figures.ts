@@ -16,6 +16,8 @@ export interface Placed {
   facing: number;
   dress: Dress;
   anim: string;
+  /** The move's frame to show, or null to play it round. */
+  frame: number | null;
   spin: boolean;
 }
 

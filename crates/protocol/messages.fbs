@@ -5,27 +5,45 @@
 namespace overlook.wire;
 
 // A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted. Numbered 1, 2, 3 and so on.
+// With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
+// their dress, as the browser writes it, only when it changed. New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
+  anim: string;
+  frame: ushort;
+  facing: double;
+  dress: string;
 }
 
-// The room's welcome: the joining player's number.
+// A player's dress, passed on as their browser wrote it.
+table Dressed {
+  player: uint;
+  dress: string;
+}
+
+// The room's welcome: the joining player's number, and everyone's dress so far.
 table Joined {
   player: uint;
+  dressed: [Dressed];
 }
 
-// One player as the room last stepped them: their body's 22 numbers and the number of their last input it took.
+// One player as the room last stepped them: their body's 22 numbers, the number of their last input it took, and
+// what their figure showed with it.
 table Seen {
   player: uint;
   acknowledged: uint;
   body: [double];
+  anim: string;
+  frame: ushort;
+  facing: double;
 }
 
-// Every player in the room after one of its ticks.
+// Every player in the room after one of its ticks, and the dresses that changed since the last snapshot.
 table Snapshot {
   tick: ulong;
   players: [Seen];
+  dressed: [Dressed];
 }
 
 // What a room sends: exactly one of these is present.
