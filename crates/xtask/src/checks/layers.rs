@@ -39,6 +39,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "firstperson", may_import: &["forge"] },
     Layer { name: "overworld", may_import: &[] },
     Layer { name: "textures", may_import: &[] },
+    Layer { name: "models", may_import: &[] },
 ];
 
 /// The file that wires the layers together. The other files beside it (the GPU, the canvas size) are groundwork
