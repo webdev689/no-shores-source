@@ -27,6 +27,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "foes"
+version = "0.0.0"
+dependencies = [
+ "combat",
+ "libm",
+ "movement",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"

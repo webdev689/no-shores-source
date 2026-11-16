@@ -34,6 +34,7 @@ decision, made in the same change as its entry here.
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks, and the paths across it |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |
+| `crates/foes` | [[Foes]]: the kinds of foe and the brain each fights with: turns at a target, the ring, telegraphed blows and answers to blows |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick |
@@ -72,11 +73,13 @@ and outside crates it may use (`CRATES`, [[Checks]]):
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
   predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
-  `combat`, which may use `movement` and `libm`; and `navmesh`, which may use `movement` and `libm`.
+  `combat`, which may use `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; and `foes`, which may
+  use `combat`, `movement` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use only `movement`; its messages are
-  `protocol`, which may use `movement`, `room` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door
-  for the Cloudflare shell in `server/`.
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `movement`,
+  `navmesh` and `libm`; its messages are `protocol`, which may use `combat`, `movement`, `room` and `flatbuffers`; and
+  `room-wasm` puts them behind a WebAssembly door for the Cloudflare shell in `server/`, and for a browser playing
+  alone.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
   `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land and movement behind WebAssembly
   doors for the browser; `room-wasm`, which puts the room behind one for its Cloudflare host; and `protocol`, whose
