@@ -18,7 +18,8 @@ order a failure is cheapest to read:
 4. **types**: TypeScript, strict, for the client, the server's shell and the tests.
 5. **tests**: `cargo test`, then the world rules, the land and movement built as WebAssembly (`npm run wasm`), then
    `node --test`, whose bridge tests load them.
-6. **build**: the client, with Vite; then the server's Cloudflare Worker bundled as a deploy would, without deploying.
+6. **build**: the client, with Vite; then the bake cuts every node's window of the land (`npm run bake`), and the
+   server's Cloudflare Worker is bundled with them as a deploy would, without deploying.
 7. **repo checks**, each a pure function with tests beside it:
 
 | Check | Holds | Rule |

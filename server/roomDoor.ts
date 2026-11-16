@@ -7,10 +7,18 @@ export interface CourseBlock {
   readonly top: number;
 }
 
-/** What became of a player's input: the room took it, or why not. */
-export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'too many waiting' | 'no such player';
+/** What became of a player's input: the room took it, or why not. At sea, `too many waiting` is a second course in
+ *  one tick, and `refused` a course the sea's law will not sail: across land, at a pace off the steps, or too long. */
+export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'too many waiting' | 'no such player' | 'refused';
 
-const ANSWERS: readonly InputAnswer[] = ['taken', 'not an input', 'out of order', 'too many waiting', 'no such player'];
+const ANSWERS: readonly InputAnswer[] = [
+  'taken',
+  'not an input',
+  'out of order',
+  'too many waiting',
+  'no such player',
+  'refused',
+];
 
 /** One room, running in the `room-wasm` module: the room crate and its messages. */
 export interface RoomDoor {
@@ -18,14 +26,19 @@ export interface RoomDoor {
   readonly tickSeconds: number;
   /** Opens the room on a course, its players standing at the spawn when they join; false if the course is not one. */
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
+  /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
+  openNode(nodeText: string): boolean;
+  /** Opens the sea round the continents of a layout file's text; false if the text is not a layout. */
+  openSea(layoutText: string): boolean;
   /** A new player's number. */
   join(): number;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
+  /** A player's input on land, or their ship's course at sea. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
-  /** Every player after the last tick, as a snapshot's bytes. */
+  /** Every player, or every ship, after the last tick, as a snapshot's bytes. */
   snapshot(): Uint8Array;
 }
 
@@ -35,6 +48,8 @@ interface RoomExports {
   release(address: number, length: number): void;
   room_tick_seconds(): number;
   room_open(address: number, length: number): number;
+  room_open_node(address: number, length: number): number;
+  room_open_sea(address: number, length: number): number;
   room_join(): number;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -63,6 +78,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     exports.release(address, length);
     return bytes;
   };
+  const openWith = (entry: (address: number, length: number) => number, text: string): boolean => {
+    const bytes = new TextEncoder().encode(text);
+    return lend(bytes, (address) => entry(address, bytes.length)) === 1;
+  };
   return {
     tickSeconds: exports.room_tick_seconds(),
     open: (spawn, blocks) => {
@@ -74,6 +93,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const bytes = new Uint8Array(new Float64Array(numbers).buffer);
       return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;
     },
+    openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
+    openSea: (layoutText) => openWith(exports.room_open_sea, layoutText),
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),

@@ -9,6 +9,8 @@ code:
   - crates/movement/src/terrain.rs#Terrain
   - crates/movement/src/floats.rs#fingerprint
   - crates/movement-wasm/src/lib.rs#movement_step
+  - crates/movement-wasm/src/lib.rs#set_ground
+  - crates/room/src/lib.rs#standing_on
   - client/src/rules/movementRules.ts#startMovementRules
   - client/src/testground/player.ts#updatePlayer
 ---
@@ -32,8 +34,10 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   on the highest top within a step (0.5 m) of its feet, slides along a block's sides, and is stopped by one
   taller than a step.
 - **Terrain.** The blocks stand on a terrain: any ground known by its height at a point (`Terrain`), so the rules
-  need nothing of the crate that makes it. A room will hand them the [[Land]]'s window round its node; for now the
-  rooms and the [[Test Ground]] use `Flat`, open ground at 0 m. The ground under the feet is the higher of the
+  need nothing of the crate that makes it. A node's room stands its bodies on the [[Land]]'s window round its node,
+  and its city's boxes as blocks ([[Server]]); the [[Test Ground]] and its rooms use open ground at 0 m. A body that
+  joins or respawns in a node's room stands on the ground at its spawn, or on a block's top within a step of it.
+  The ground under the feet is the higher of the
   terrain and the highest block top within a step. The feet follow the terrain up and down while a tick's drop is
   no more than a step; past that the body falls, and a fall lands on the terrain. A move whose path rises more
   steeply than the slope limit, or more than a step above the feet, is tried an axis at a time, as against a
@@ -43,6 +47,10 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 - **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
   order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;
   it leaves alone memory too short for a step.
+- **Predicting on the land.** The door also keeps a window of the land, handed over as the JSON the land's door cuts
+  (`setGround`): every later step stands on it, the same ground to the bit as the node's room, and a body asked to
+  stand does so on its ground. Anything that is not a window is open ground at 0 m again. `standOnNode` sets a
+  node's window and its city's boxes together, for the browser that predicts a node's room ([[Server]]).
 
 ## How the body is held
 
@@ -72,9 +80,15 @@ A scripted run over a small course, through every mode, is fingerprinted: FNV-1a
 every tick. `crates/movement/tests/agree.rs` takes it natively and `client/src/rules/movementRules.test.ts` through
 WebAssembly, and both hold the same value.
 
+Two runs over real nodes' windows are fingerprinted the same way: across Mistfall's social space on the rainforest
+continent, into its parapet, over it and along the terrace beyond, then over a patrol area's open land. The room's
+side (`crates/room/tests/agree_node.rs`) takes the windows and boxes the bake cuts and steps them natively; the
+browser's (`client/src/rules/nodeWindow.test.ts`) generates the continent and settles its city in the land's door,
+cuts the same windows there, and steps them through the movement door. Both hold the same value.
+
 ## Limits
 
-- The rooms and the Test Ground stand bodies on `Flat`; none stands on the [[Land]] yet.
+- The Test Ground stands bodies on open ground at 0 m; only a node's room stands them on the [[Land]].
 - A body that lands on terrain steeper than the slope limit stands there and does not slide down, so a jump can
   gain height up a slope too steep to walk.
 - A body slides along a rise too steep for its path an axis at a time, as along a block, not along the rise's own

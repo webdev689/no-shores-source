@@ -18,9 +18,11 @@ export class Prediction {
   }
 
   /** The body the room saw after the player's input `acknowledged`, with every input it has not taken yet stepped on
-   *  top by the same rules. While the room agrees, this is the body the browser already predicted, to the bit. */
-  corrected(body: Body, acknowledged: number, step: (body: Body, controls: Controls) => Body): Body {
+   *  top by the same rules, on the same course and ground the movement rules hold (a node's window once it is set).
+   *  While the room agrees, this is the body the browser already predicted, to the bit. A body the room says is
+   *  `still`, as a dead one is, stays where the room saw it: the room takes its inputs without moving it. */
+  corrected(body: Body, acknowledged: number, step: (body: Body, controls: Controls) => Body, still = false): Body {
     this.waiting = this.waiting.filter((input) => input.sequence > acknowledged);
-    return this.waiting.reduce((stepped, input) => step(stepped, input.controls), body);
+    return still ? body : this.waiting.reduce((stepped, input) => step(stepped, input.controls), body);
   }
 }

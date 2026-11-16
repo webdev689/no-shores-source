@@ -8,6 +8,7 @@ code:
   - crates/reach/src/lib.rs#distance_outside
   - crates/reach/src/lib.rs#respawn_point
   - crates/reach/src/lib.rs#WARNING_TICKS
+  - crates/room/src/lib.rs#tick
 ---
 # Reach
 
@@ -19,8 +20,8 @@ dies and is asked to respawn. The times and distances are Claude's choices ([[Th
 ## How it works
 
 - **One crate for every machine.** The `reach` crate holds the rules and uses no other crate. Its maths is + - * /,
-  square root and comparisons, which every machine rounds alike ([[Agree to the Bit]]), so the [[Server]] and a
-  browser predicting it judge a body the same.
+  square root and comparisons, which every machine rounds alike ([[Agree to the Bit]]), so any machine that judges a
+  body judges it as the [[Server]] does.
 - **A section** is a ring of points on the land in metres, x east and y south, its last point not repeating its
   first, and its spawns. A body stands inside it by the even-odd rule; a point on the ring is inside. A ring of
   fewer than three points holds nothing.
@@ -38,8 +39,16 @@ dies and is asked to respawn. The times and distances are Claude's choices ([[Th
   spawn nearest where it died; of two as near, the first listed.
 - **How far past.** The distance past the edge is to the ring's nearest edge, on the map.
 
+## Who judges
+
+The node's room, alone ([[Server]]). After each of its ticks it judges every player's body where its inputs left it,
+once a tick, whether or not that player sent any. A dead body is still: the room takes its inputs without moving it.
+An input asking to respawn is granted only once the standing offers it, and stands the body on the ground at the
+nearest spawn. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
+the browser shows what the room says; it does not judge.
+
 ## Limits
 
-- No room judges its bodies by a section yet, and the browser shows no warning or count.
+- The browser shows no warning or count yet; the standing reaches it in every snapshot.
 - The distance past the edge is measured on the map, not along the ground.
 - A section is one ring, with no holes; a ring is not checked for crossing itself.

@@ -11,4 +11,7 @@
     "bindings": [{ "name": "ROOMS", "class_name": "RoomHost" }],
   },
   "migrations": [{ "tag": "rooms", "new_sqlite_classes": ["RoomHost"] }],
+  // The bake's node files, which `npm run bake` writes before the Worker runs or is bundled. Each node's room reads
+  // only its own; every request goes to the Worker first, so none is served to a browser.
+  "assets": { "directory": "../generated/nodes", "binding": "NODES", "run_worker_first": true },
 }

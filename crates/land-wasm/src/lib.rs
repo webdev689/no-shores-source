@@ -1,8 +1,11 @@
 //! The land for the browser. JavaScript writes a request into memory this module reserves and reads back a view of a
 //! landmass: a JSON header, then its ground, lake surfaces, distances from the coast and heights carried over the
 //! coast as little-endian 32-bit floats, one a cell. The land
-//! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live.
+//! stays in the land crate; the open landmass stays here between calls, so the owner's strokes land on it live, with
+//! its city settled on it.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
+
+pub mod settled;
 
 use land::edits::{self, CellRect, Edits, Stroke};
 use land::ground::{WaterAt, sample_hash};
@@ -113,15 +116,19 @@ fn with_open(change: impl FnOnce(&mut Landmass) -> Result<(), String>) -> Vec<u8
     OPEN.with(|open| match open.borrow_mut().as_mut() {
         None => error_view("no landmass is open"),
         Some(landmass) => match change(landmass) {
-            Ok(()) => view_bytes(&header_of(landmass), Some(landmass)),
+            Ok(()) => {
+                settled::settle(landmass);
+                view_bytes(&settled::header_with_city(landmass), Some(landmass))
+            }
             Err(error) => error_view(&error),
         },
     })
 }
 
 /// Opens one continent of a layout: `{ "layout": <layout file>, "id": <continent id>, "edits": <edits file or null>,
-/// "keep": bool }`. Generates its land with the edits on it and answers its view, or a header holding only `error`.
-/// Only a kept landmass stays open for strokes; one not kept is a preview and leaves the open one alone.
+/// "keep": bool, "rmb": <the RMB index or null> }`. Generates its land with the edits on it and answers its view, or a
+/// header holding only `error`. Only a kept landmass stays open for strokes, its city settled on it with the RMB
+/// index's blocks, or none; one not kept is a preview and leaves the open one alone.
 #[must_use]
 pub fn open_view(request: &[u8]) -> Vec<u8> {
     let opened = read(request).and_then(|request| {
@@ -130,16 +137,18 @@ pub fn open_view(request: &[u8]) -> Vec<u8> {
         let id = request["id"].as_str().unwrap_or_default();
         let edits = edits_from(&request["edits"])?;
         let keep = request["keep"].as_bool().unwrap_or(true);
+        let blocks = settled::blocks_from(&request)?;
         let continent = layout.continents.iter().find(|continent| continent.id == id);
         let continent = continent.ok_or_else(|| format!("the layout has no continent \"{id}\""))?;
-        generate(continent, edits).map(|landmass| (landmass, keep))
+        generate(continent, edits).map(|landmass| (landmass, keep, blocks))
     });
     match opened {
-        Ok((landmass, keep)) => {
-            let bytes = view_bytes(&header_of(&landmass), Some(&landmass));
-            if keep {
-                OPEN.with(|open| *open.borrow_mut() = Some(landmass));
-            }
+        Ok((landmass, false, _)) => view_bytes(&header_of(&landmass), Some(&landmass)),
+        Ok((mut landmass, true, blocks)) => {
+            settled::keep_blocks(blocks);
+            settled::settle(&mut landmass);
+            let bytes = view_bytes(&settled::header_with_city(&landmass), Some(&landmass));
+            OPEN.with(|open| *open.borrow_mut() = Some(landmass));
             bytes
         }
         Err(error) => error_view(&error),

@@ -10,9 +10,18 @@ description = "The room for its Cloudflare host: the room and its messages behin
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+land = { path = "../land" }
 movement = { path = "../movement" }
 protocol = { path = "../protocol" }
 room = { path = "../room" }
+world = { path = "../world" }
+serde.workspace = true
+serde_json.workspace = true
+
+# Only to test that a node's file the bake writes is the file the room reads.
+[dev-dependencies]
+bake = { path = "../bake" }
+city = { path = "../city" }
 
 [lints]
 workspace = true

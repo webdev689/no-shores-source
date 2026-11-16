@@ -2,23 +2,24 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
-import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
-import { inputBytes, readFromRoom } from './messages.ts';
+import { courseBytes, inputBytes, readFromRoom } from './messages.ts';
 
 const target = (path: string) => new URL(`../../../target/${path}`, import.meta.url);
 const built = (path: string, how: string) =>
   readFile(target(path)).catch(() => {
     throw new Error(`${path} is not built: ${how}`);
   });
+const written = async (name: string) => new Uint8Array(await built(`protocol/${name}`, 'run `cargo test -p protocol`'));
 
 test('a welcome and a snapshot the server wrote read back to the bit', async () => {
-  // protocol_tests.rs writes these two messages: one player standing, one after half a second's walk, swinging, and
-  // the first's dress.
+  // protocol_tests.rs writes these messages: a welcome into Overlook's social space; one player standing inside, one
+  // after half a second's walk, swinging and warned; and the first's dress.
   const dressed = [{ player: 7, dress: '{"body":"male"}' }];
-  const joined = readFromRoom(new Uint8Array(await built('protocol/joined.bin', 'run `cargo test -p protocol`')));
-  assert.deepEqual(joined, { kind: 'joined', player: 7, dressed });
-  const snapshot = readFromRoom(new Uint8Array(await built('protocol/snapshot.bin', 'run `cargo test -p protocol`')));
+  const node = { id: 'overlook-social', bounds: [2_808_986, 1_201_139, 2_809_442, 1_201_455.5] };
+  assert.deepEqual(readFromRoom(await written('joined.bin')), { kind: 'joined', player: 7, dressed, node });
+  const snapshot = readFromRoom(await written('snapshot.bin'));
   assert.equal(snapshot?.kind, 'snapshot');
   if (snapshot?.kind !== 'snapshot') return;
   const rules = await startMovementRules(
@@ -30,33 +31,60 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   for (let tick = 0; tick < 30; tick++) walked = rules.step(walked, walk);
   assert.equal(snapshot.tick, 1234n);
   assert.deepEqual(
-    snapshot.players.map(({ player, acknowledged, body, anim, frame, facing }) => [
+    snapshot.players.map(({ player, acknowledged, body, anim, frame, facing, standing }) => [
       player,
       acknowledged,
       floatsOf(body),
       anim,
       frame,
       facing,
+      standing,
     ]),
     [
-      [7, 0, floatsOf(rules.standing(1.5, -2.25)), '', 0, 0],
-      [9, 30, floatsOf(walked), 'attack_sword', 4, 0.75],
+      [7, 0, floatsOf(rules.standing(1.5, -2.25)), '', 0, 0, { kind: 'inside' }],
+      [9, 30, floatsOf(walked), 'attack_sword', 4, 0.75, { kind: 'warned', ticks: 432 }],
     ],
   );
-  assert.deepEqual(snapshot.dressed, dressed);
+  assert.deepEqual([snapshot.dressed, snapshot.ships], [dressed, []]);
 });
 
-test('an input is its number, its seven controls in the movement crate’s order, its look, and a dress if given', () => {
+test('the sea’s snapshot the server wrote reads back as its ships', async () => {
+  const sea = readFromRoom(await written('sea.bin'));
+  assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.players, sea.ships] : null, [
+    77n,
+    [],
+    [
+      { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 10 },
+      { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
+    ],
+  ]);
+});
+
+test('an input is its number, its seven controls in the movement crate’s order, its look, a dress if given and a respawn', () => {
   const controls = { forward: 1, sideways: -0.5, yaw: 0.3, run: true, jump: false, crouch: true, mounted: false };
   const look = { anim: 'ride_gallop', frame: 3, facing: -1.5 };
-  const input = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(42, controls, look, '{"body":"female"}')));
+  const bytes = inputBytes(42, controls, look, '{"body":"female"}', true);
+  const input = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
   assert.equal(input.sequence(), 42);
   assert.deepEqual(Array.from(input.controlsArray() ?? []), [1, -0.5, 0.3, 1, 0, 1, 0]);
   assert.deepEqual(
-    [input.anim(), input.frame(), input.facing(), input.dress()],
-    ['ride_gallop', 3, -1.5, '{"body":"female"}'],
+    [input.anim(), input.frame(), input.facing(), input.dress(), input.respawn()],
+    ['ride_gallop', 3, -1.5, '{"body":"female"}', true],
   );
-  assert.equal(Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, controls, look))).dress(), null);
+  const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, controls, look)));
+  assert.deepEqual([plain.dress(), plain.respawn()], [null, false]);
+});
+
+test('a course is its points, x then y, and its pace', () => {
+  const bytes = courseBytes(
+    [
+      [50_000, 150_000.5],
+      [51_000, 149_000],
+    ],
+    20,
+  );
+  const course = Course.getRootAsCourse(new flatbuffers.ByteBuffer(bytes));
+  assert.deepEqual([Array.from(course.pointsArray() ?? []), course.pace()], [[50_000, 150_000.5, 51_000, 149_000], 20]);
 });
 
 test('bytes that hold no message read as nothing', () => {

@@ -4,6 +4,7 @@ code:
   - crates/xtask/src/checks/layout.rs#TOP_LEVEL
   - crates/xtask/src/checks/layers.rs#LAYERS
   - crates/xtask/src/checks/crates.rs#CRATES
+  - crates/bake/src/main.rs
   - client/src/main.ts
 ---
 # Code Map
@@ -35,8 +36,10 @@ decision, made in the same change as its entry here.
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out |
-| `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick |
+| `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick on its ground and judged against its section; and the sea, its ships sailing their courses |
+| `crates/bake` | The bake (`npm run bake`): each node's section, window of the ground and boxes, cut at build time for its room ([[Server]]) |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
+| `generated/` | What the tools make, never in git ([[Generated Files Stay Out of Git]]): `generated/messages/`, the messages' code `flatc` makes, and `generated/nodes/`, the bake's file for each node and their index, which the server's rooms read |
 | `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, and `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
@@ -73,10 +76,13 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`; and
   `reach`, which uses no other crate.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use only `movement`; its messages are
-  `protocol`, which may use `movement`, `room` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door
-  for the Cloudflare shell in `server/`.
+  own platform crates, never on the client. Its core is `room`, which may use `movement`, `reach`, `land`, `world`
+  and `libm`; its messages are `protocol`, which may use `movement`, `room` and `flatbuffers`; and `room-wasm` puts
+  them behind a WebAssembly door for the Cloudflare shell in `server/`, reading a node's baked file and the layout
+  with `land`, `world`, `serde` and `serde_json`.
+- **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
+  `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
-  `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land and movement behind WebAssembly
-  doors for the browser; `room-wasm`, which puts the room behind one for its Cloudflare host; and `protocol`, whose
-  code from `flatc` reads a message's bytes in place.
+  `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land with its city (`city`), and
+  movement on a window of the land behind WebAssembly doors for the browser; `room-wasm`, which puts the room behind
+  one for its Cloudflare host; and `protocol`, whose code from `flatc` reads a message's bytes in place.

@@ -59,10 +59,14 @@ export interface Body {
 export interface MovementRules {
   /** One tick, in seconds: every step moves a body by exactly this. */
   readonly tickSeconds: number;
-  /** A body standing on open ground at (x, y). */
+  /** A body standing at (x, y): at 0 m, or on the ground of a window of the land once one is set. */
   standing(x: number, y: number): Body;
   /** Keeps these blocks as the course every later step moves on. */
   setCourse(blocks: readonly Block[]): void;
+  /** Stands every later step on a node's window of the land, from its JSON (the land's `window`), the same ground to
+   *  the bit as the node's room; null, or anything that is not a window, is open ground at 0 m. Answers whether a
+   *  window was set. */
+  setGround(windowJson: string | null): boolean;
   /** The body one tick on under these controls. */
   step(body: Body, controls: Controls): Body;
   /** Where the eye is over the feet: standing, crouched, or easing between. */
@@ -75,6 +79,7 @@ interface MovementExports {
   release(address: number, length: number): void;
   movement_tuning(): bigint;
   movement_set_course(address: number, length: number): number;
+  movement_set_ground(address: number, length: number): number;
   movement_standing(address: number, length: number): void;
   movement_step(address: number, length: number): void;
 }
@@ -198,6 +203,16 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
       floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));
       exports.movement_set_course(address, floats.length * 8);
       exports.release(address, floats.length * 8);
+    },
+    setGround: (windowJson) => {
+      const bytes = new TextEncoder().encode(windowJson ?? '');
+      const address = exports.reserve(bytes.length);
+      new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
+      try {
+        return exports.movement_set_ground(address, bytes.length) === 1;
+      } finally {
+        exports.release(address, bytes.length);
+      }
     },
     step: (body, controls) => {
       write([...floatsOf(body), ...floatsOfControls(controls)]);
