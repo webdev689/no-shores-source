@@ -20,7 +20,7 @@ code:
 
 The authority every player's game answers to ([[Server-Authoritative Multiplayer]]), on Cloudflare
 ([[Servers on Cloudflare]]). Each shared space is one room. Built so far: the room, its messages, its Cloudflare
-host, and the browser's side; the [[Test Ground]] plays in a room. It runs locally; it is not deployed.
+host, and the browser's side; the [[Test Ground]] plays in a room. It is deployed on Cloudflare.
 
 ## The room
 
@@ -76,14 +76,17 @@ so every decision is Rust and the shell only carries bytes and time.
 
 ## Running it
 
-`npm run server` runs the rooms locally with Cloudflare's `wrangler`, at `ws://127.0.0.1:8787/room/<name>`. Measured
-there with two browsers in one room: 60.5 ticks a second; snapshots 17.4 ms apart at the median, 45 ms at the 99th
-in a hundred, and every snapshot of a player matching that player's inputs replayed by the movement rules, to the
-bit.
+- **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`.
+  `npm run server:deploy` deploys it, with the owner's yes each time ([[Ask Before Deploying]]); CI does not.
+- **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
+
+Measured on the deployed rooms with two browsers in one room: 60.0 ticks a second; snapshots 16.2 ms apart at the
+median, 59 ms at the 99th in a hundred and 84 ms at the most; the room taking a player's input about 4 ticks after it
+was sent; and every snapshot of a player matching that player's inputs replayed by the movement rules, to the bit.
 
 ## Limits
 
-- Not deployed: going live on Cloudflare waits for the owner's yes ([[Ask Before Deploying]]).
+- Deploys are by hand, with the owner's yes; the rooms' code can lag `main` until the next deploy.
 - Any page can join a room, under any name; no one signs in.
 - A snapshot sends every player's whole body every tick: fine for a few players, heavy for many.
 - A player who sends nothing stands still in time: their body waits, mid-jump if need be, until their inputs come.

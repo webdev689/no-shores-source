@@ -4,6 +4,9 @@
   "main": "worker.ts",
   "compatibility_date": "2026-11-01",
   "send_metrics": false,
+  // Players reach the rooms at the account's workers.dev address; each version's own preview address is not used.
+  "workers_dev": true,
+  "preview_urls": false,
   "durable_objects": {
     "bindings": [{ "name": "ROOMS", "class_name": "RoomHost" }],
   },

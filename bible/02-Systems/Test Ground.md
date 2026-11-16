@@ -48,8 +48,9 @@ and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks h
 
 ## Playing together
 
-With `?room=` and a room's address in the page's address (`?room=ws://127.0.0.1:8787/room/test` under
-`npm run server`), the Test Ground joins that room on the [[Server]]. The player plays as before, predicted here: each
+With `?room=` and a room's address in the page's address, the Test Ground joins that room on the [[Server]]: on the
+published site, `?room=wss://overlook-rooms.mackcothran.workers.dev/room/<name>`; locally, under `npm run server`,
+`?room=ws://127.0.0.1:8787/room/<name>`. The player plays as before, predicted here: each
 tick's controls also go to the room, and the room's word on the player's body corrects it. Every other player in the
 room stands where the room last saw them, playing the move their body is in, and the status line says which player
 this is.

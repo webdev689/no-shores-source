@@ -50,7 +50,10 @@ code:
   `server/tsconfig.json` checks. Its usage reports are off (`send_metrics`).
 - **`npm run server`** runs the rooms locally on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **`npm run server:bundle`** bundles the Worker as a deploy would, into `target/server/`, without deploying.
-  `cargo xtask check` runs it last. Deploying waits for the owner's yes ([[Ask Before Deploying]]).
+  `cargo xtask check` runs it last.
+- **`npm run server:deploy`** deploys it, with the owner's yes each time ([[Ask Before Deploying]]). It needs
+  `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token; in a cloud session the token is a network secret the proxy adds, so
+  `CLOUDFLARE_API_TOKEN` holds a placeholder.
 
 ## The toolkit
 

@@ -28,7 +28,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room and its messages, with Google's `flatc` installed
   by the schema step itself. On its pull request: the room hosted by a Cloudflare Durable Object in `server/`, the
   browser's connection and prediction, and the Test Ground played together (`?room=`). Run locally with
-  `npm run server`; two browsers saw each other, and the room agreed with each prediction to the bit. Not deployed.
+  `npm run server`; two browsers saw each other, and the room agreed with each prediction to the bit. Deployed on
+  Cloudflare with the owner's yes: `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`, measured live at 60
+  ticks a second.
 
 ## Waiting on the owner
 
@@ -38,13 +40,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- With the thin server merged and deployed, step 1 of [[Gameplay Starts With the Shared Rules]] is done.
+- Step 1 of [[Gameplay Starts With the Shared Rules]] is done once the thin server's pull request merges. Step 2 is
+  sailing, with DFO's sailing and combat systems: which of their rows come is the owner's to approve first
+  ([[Porting from DFO]]).
 - Swimming, which the water's pull request has in TypeScript, moves into the `movement` crate once both are merged,
   so a body on foot meets the water by the same rules everywhere.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The game itself: the client drawing the world from the land's door, and the server reading the same land crate.
-- Then sailing, bringing over DFO's sailing and combat systems, each pick approved by the owner first
-  ([[Porting from DFO]]).
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.
