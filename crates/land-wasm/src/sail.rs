@@ -28,17 +28,14 @@ fn is_whole(number: f64) -> bool {
     number == number.trunc()
 }
 
-/// The request's ship, helm, time and ticks, each number checked: finite, a place, heading, way and swing a ship
-/// could have, a whole rung on the ladder, a whole climb of one at most, a rudder within its throw, a time within the
-/// world's, and a whole number of ticks up to a second's.
-fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32), String> {
-    let numbers: Vec<f64> =
-        request.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect();
-    let [x, y, heading, ahead, abeam, turn, sail_way, rung, steer, crab, climb, time, ticks] = numbers[..] else {
-        return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
+/// A ship's eight numbers, checked: finite, a place, heading, way and swing a ship could have, and a whole rung on the
+/// ladder.
+pub(crate) fn ship_from(numbers: &[f64]) -> Result<Ship, String> {
+    let [x, y, heading, ahead, abeam, turn, sail_way, rung] = numbers[..] else {
+        return Err(format!("a ship is {SHIP_FLOATS} numbers"));
     };
-    if request.len() != REQUEST_FLOATS * 8 || !numbers.iter().all(|number| number.is_finite()) {
-        return Err(format!("a sail request is {REQUEST_FLOATS} finite numbers"));
+    if !numbers.iter().all(|number| number.is_finite()) {
+        return Err(format!("a ship is {SHIP_FLOATS} finite numbers"));
     }
     let placed = x.abs() <= MOST_PLACE_M && y.abs() <= MOST_PLACE_M && (0.0..TAU).contains(&heading);
     let moving = ahead.abs() <= MOST_WAY && abeam.abs() <= MOST_WAY && turn.abs() <= MOST_TURN_DEG;
@@ -48,17 +45,45 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32), String> {
     if !is_whole(rung) || !(-1.0..=f64::from(SAILS_SET)).contains(&rung) {
         return Err("her rung is a whole number from -1 to 2".into());
     }
+    Ok(Ship { x, y, heading, ahead, abeam, turn, sail_way, rung: rung as i8 })
+}
+
+/// A helm's numbers, checked: a rudder within its throw, a crab or none, and a whole climb of one rung at most.
+pub(crate) fn helm_from(steer: f64, crab: f64, climb: f64) -> Result<Helm, String> {
     if !(-1.0..=1.0).contains(&steer) || !(crab == 0.0 || crab == 1.0) || ![-1.0, 0.0, 1.0].contains(&climb) {
         return Err("her helm steers from -1 to 1, crabs or not, and climbs one rung at most".into());
     }
-    if !is_whole(ticks) || !(0.0..=MOST_TICKS).contains(&ticks) {
+    Ok(Helm { steer, crab: crab == 1.0, climb: climb as i8 })
+}
+
+/// A step's time and ticks, checked: a time within the world's, and a whole number of ticks up to a second's.
+pub(crate) fn ticks_from(time: f64, ticks: f64) -> Result<(f64, u32), String> {
+    if !time.is_finite() || !ticks.is_finite() || !is_whole(ticks) || !(0.0..=MOST_TICKS).contains(&ticks) {
         return Err(format!("a request steps a whole number of ticks, up to {MOST_TICKS}"));
     }
     if time.abs() > MOST_TIME_S {
         return Err("the time is past the world's".into());
     }
-    let ship = Ship { x, y, heading, ahead, abeam, turn, sail_way, rung: rung as i8 };
-    Ok((ship, Helm { steer, crab: crab == 1.0, climb: climb as i8 }, time, ticks as u32))
+    Ok((time, ticks as u32))
+}
+
+/// The request's ship, helm, time and ticks, each number checked.
+fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32), String> {
+    let numbers: Vec<f64> =
+        request.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect();
+    if request.len() != REQUEST_FLOATS * 8 || numbers.len() != REQUEST_FLOATS {
+        return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
+    }
+    if !numbers.iter().all(|number| number.is_finite()) {
+        return Err(format!("a sail request is {REQUEST_FLOATS} finite numbers"));
+    }
+    let ship = ship_from(&numbers[..SHIP_FLOATS])?;
+    let [steer, crab, climb, time, ticks] = numbers[SHIP_FLOATS..] else {
+        return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
+    };
+    let helm = helm_from(steer, crab, climb)?;
+    let (time, ticks) = ticks_from(time, ticks)?;
+    Ok((ship, helm, time, ticks))
 }
 
 /// Steps the ship the request holds over the open landmass and answers her and her pose.
