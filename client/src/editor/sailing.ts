@@ -42,6 +42,8 @@ export class Sailing {
   private pose: Pose;
   private owed = 0;
   private pending = false;
+  /** The step with the rules, answered or not. */
+  private inFlight: Promise<void> = Promise.resolve();
   private readonly presses: string[] = [];
   private travelled = 0;
   private stirrings = 0;
@@ -86,7 +88,7 @@ export class Sailing {
     this.owed = Math.max(0, this.owed - ticks * TICK_SECONDS);
     this.pending = true;
     const helm = helmOf(held, this.presses.shift());
-    this.source
+    this.inFlight = this.source
       .sail(this.id, this.ship, helm, time - ticks * TICK_SECONDS, ticks)
       .then((sailed) => {
         this.pending = false;
@@ -99,6 +101,11 @@ export class Sailing {
         this.pending = false;
         fail(error);
       });
+  }
+
+  /** Settles once no step is with the rules: a fight begins from her numbers as they are then. */
+  whenStill(): Promise<void> {
+    return this.inFlight;
   }
 
   /** Her numbers, for a fight to begin from. */

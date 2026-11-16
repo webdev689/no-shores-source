@@ -334,11 +334,12 @@ export class LandScene {
       if (key === 'f') this.naval.toggle(source, id, sailing, time, this.fail);
       else sailing.press(key);
     }
-    if (this.naval.fighting) {
+    if (this.naval.busy) {
       const look = frame.aiming ? this.naval.look(orbit, sailing, view) : null;
       const input = {
         held: frame.held,
-        press: sailing.takePress(),
+        // A rung press waits with her helm until the fight that takes it is on.
+        press: this.naval.fighting ? sailing.takePress() : undefined,
         look,
         fire: frame.fires > 0,
         loadSteps: frame.loadSteps,

@@ -160,3 +160,23 @@ test("her faces seen from outside reach the screen wound as her pipeline's front
     assert.equal(area > 0 ? 'ccw' : 'cw', FRONT_FACE, `heading ${heading}: area ${area}`);
   }
 });
+
+test('her helm is still once the step with the door has answered, and at once when none is', async () => {
+  const { source, letGo } = fakeDoor(false, true);
+  const pending = Sailing.putToSea(source, 'square', 0, 0, 0, 0);
+  letGo();
+  const sailing = await pending;
+  assert.ok(sailing instanceof Sailing);
+  let still = false;
+  await sailing.whenStill();
+  sailing.advance(0.05, new Set(), 1, ignore);
+  void sailing.whenStill().then(() => {
+    still = true;
+  });
+  await settle();
+  assert.equal(still, false, 'a step is with the door');
+  letGo();
+  await settle();
+  await settle();
+  assert.equal(still, true);
+});

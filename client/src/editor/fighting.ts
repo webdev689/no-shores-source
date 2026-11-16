@@ -57,6 +57,8 @@ export class Fighting {
   private loadSteps = 0;
   private readonly presses: string[] = [];
   private events: FightEvent[] = [];
+  /** The look held last while aiming: a release fires it, as the aim lets go the frame it is let go. */
+  private lastLook: FightLook | null = null;
   private messages: { readonly text: string; readonly until: number }[] = [];
 
   private constructor(source: FightSource, id: string, answer: FightView, now: number) {
@@ -103,6 +105,7 @@ export class Fighting {
   advance(seconds: number, input: FightInput, time: number, fail: (error: unknown) => void): void {
     if (input.press) this.presses.push(input.press);
     if (input.fire) this.fires++;
+    if (input.look) this.lastLook = input.look;
     this.loadSteps += input.loadSteps;
     this.owed = Math.min(this.owed + seconds, MOST_TICKS * TICK_SECONDS);
     if (this.pending || this.answer.over) return;
@@ -115,11 +118,12 @@ export class Fighting {
     this.loadSteps -= step;
     const orders: FightOrders = {
       helm: helmOf(input.held, this.presses.shift()),
-      aim: input.look,
+      aim: input.look ?? (this.fires > 0 ? this.lastLook : null),
       fire: this.fires > 0,
       brace: input.held.has('c'),
       load,
     };
+    if (this.fires > 0 && !input.look) this.lastLook = null;
     this.fires = Math.max(0, this.fires - 1);
     this.pending = true;
     this.source

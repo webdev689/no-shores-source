@@ -43,6 +43,11 @@ export class Naval {
     return this.fight !== null;
   }
 
+  /** Whether a fight is on or being called: either way her own helm stands. */
+  get busy(): boolean {
+    return this.fight !== null || this.calling;
+  }
+
   /** F: calls a pirate captain round her, or sends the one called off. */
   toggle(source: FightSource | null, id: string, sailing: Sailing, time: number, fail: (error: unknown) => void): void {
     if (this.fight) {
@@ -52,10 +57,14 @@ export class Naval {
     if (this.calling || !source) return;
     this.calling = true;
     const seed = crypto.getRandomValues(new Uint32Array(1))[0] ?? 1;
-    Fighting.begin(source, id, sailing.floats(), seed, time)
+    // Her own helm stands while she is called: the fight begins from her numbers once her last step has answered.
+    sailing
+      .whenStill()
+      .then(() => (this.calling ? Fighting.begin(source, id, sailing.floats(), seed, time) : 'sent off'))
       .then((fighting) => {
         if (!this.calling) return;
         this.calling = false;
+        if (fighting === 'sent off') return;
         if (typeof fighting === 'string') fail(new Error(fighting));
         else this.fight = fighting;
       })

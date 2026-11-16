@@ -226,7 +226,7 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       if (view.fight.join('\n') !== shownFight) {
         shownFight = view.fight.join('\n');
         fight.replaceChildren(
-          ...view.fight.map((line) => make('p', line, line.startsWith('BROADSIDE') ? 'warning' : 'cursor')),
+          ...view.fight.map((line) => make('p', line, line.startsWith('BROADSIDE') ? 'warning' : 'told')),
         );
       }
       status.textContent = view.status;

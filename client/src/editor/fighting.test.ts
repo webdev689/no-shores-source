@@ -127,3 +127,17 @@ test('DFO says a struck captain surrenders and a wrecked Sloop is crippled', () 
   );
   assert.equal(wordsFor({ kind: 'run-out', side: 'port' }, 'Pirate Sloop'), null);
 });
+
+test('a release fires the lay the look last held, as the aim lets go', async () => {
+  const { fights, asked } = source();
+  const fighting = await begun(fights);
+  const look = { bearing: -90, range: 70 };
+  fighting.advance(0.1, { ...IDLE, look }, 1, failed);
+  await settle();
+  fighting.advance(0.1, { ...IDLE, fire: true }, 1.1, failed);
+  await settle();
+  assert.deepEqual([asked[1]?.fire, asked[1]?.aim], [true, look]);
+  fighting.advance(0.1, IDLE, 1.2, failed);
+  await settle();
+  assert.equal(asked[2]?.aim, null, 'no look held, none laid');
+});

@@ -475,6 +475,10 @@ export async function startLandEditor(
     if (dragging) dragging = { ...dragging, x: event.offsetX, y: event.offsetY };
     requestFrame();
   });
+  // A left press while the right is held is a chord: pointer events tell it only as a move, mouse events as a press.
+  canvas.addEventListener('mousedown', (event) => {
+    if (sailing && event.button === 0) aim.down(0);
+  });
   canvas.addEventListener('pointerup', (event) => {
     dragging = null;
     aim.up(event.button);
