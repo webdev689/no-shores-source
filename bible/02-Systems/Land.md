@@ -10,6 +10,7 @@ code:
   - crates/land/src/edits.rs#dab
   - crates/land/src/places.rs#check_places
   - crates/land/src/ground.rs#height_at
+  - crates/land/src/ground_window.rs#window
   - crates/land-wasm/src/lib.rs#land_open
   - client/src/rules/landRules.ts#startLand
 ---
@@ -95,6 +96,25 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
 
 The land's WebAssembly door gives the browser the same answers.
 
+## A node's window
+
+A node's room is to stand bodies on the real ground ([[Reach]], [[Movement]]), but generating a continent's land
+takes more memory than a Cloudflare room's 128 MB. So the land crate cuts a small window of the ground round the
+node at build time, for the room, and every browser predicting with it, to read.
+
+`Ground::window` takes a rect, west to east and north to south, and keeps:
+
+- the 1 km cells any point in it reads: from the cell before the one its spline starts in to two after, of the land,
+  the coast's distance, the heights carried over the coast and the lakes' levels. A cut grid keeps the whole grid's
+  corner and its cells' numbers (`first_column`, `first_row`), so a point finds its cell by the same sums;
+- each river and road with a segment within its reach of the rect, whole, and each town within 150 m of it.
+
+Inside the rect, the window's `height_at` and `water_at` give the same bits as the whole ground's. A ground saves to
+JSON and loads to the same bits; its course index is not saved but built again on load, and a saved ground whose
+layers do not hold the same cells is refused. A test cuts a 2 km window
+at a river's mouth on the rainforest continent, with a town, a road and a carved river added, and checks 4,300 points
+in it to the bit: it keeps 36 cells and saves to about 80 KB.
+
 ## Agreeing to the bit
 
 The land crate uses only exact maths ([[Agree to the Bit]]): its noise is hashed gradient noise made of + - * / and
@@ -130,3 +150,6 @@ the painted coast and its height carried over the coast, so the browser draws th
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
   band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 4 m.
 - A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.
+- No room reads a window yet.
+- A window keeps every course that reaches it whole, so a long river crossing it is carried end to end. Outside its
+  rect a window still answers, but not as the whole ground would.

@@ -4,7 +4,7 @@
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use movement::floats::{BLOCK_FLOATS, BODY_FLOATS, CONTROLS_FLOATS};
-use movement::{Block, Body, Controls, TICK_SECONDS, TUNING, standing, step_body};
+use movement::{Block, Body, Controls, Flat, TICK_SECONDS, TUNING, standing, step_body};
 use std::cell::RefCell;
 
 /// The numbers one step reads: a body, then its controls. The next body is written over the first of them.
@@ -38,7 +38,7 @@ pub fn step(bytes: &mut [u8; STEP_FLOATS * 8]) {
     let (body_floats, controls_floats) = floats.split_at(BODY_FLOATS);
     let body = Body::from_floats(body_floats.try_into().unwrap_or(&[0.0; BODY_FLOATS]));
     let controls = Controls::from_floats(controls_floats.try_into().unwrap_or(&[0.0; CONTROLS_FLOATS]));
-    let next = COURSE.with(|course| step_body(&body, &controls, &course.borrow(), TICK_SECONDS));
+    let next = COURSE.with(|course| step_body(&body, &controls, &course.borrow(), &Flat, TICK_SECONDS));
     for (chunk, value) in bytes.chunks_exact_mut(8).zip(next.to_floats()) {
         chunk.copy_from_slice(&value.to_le_bytes());
     }
@@ -160,7 +160,7 @@ mod tests {
             numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 0.3, 1.0, 0.0, 0.0, 0.0]);
             let mut bytes: [u8; STEP_FLOATS * 8] = bytes_of(&numbers).try_into().unwrap();
             step(&mut bytes);
-            let expected = step_body(&body, &controls, &[ledge], TICK_SECONDS);
+            let expected = step_body(&body, &controls, &[ledge], &Flat, TICK_SECONDS);
             let stepped: Vec<f64> = floats_of(&bytes[..BODY_FLOATS * 8]).collect();
             assert_eq!(Body::from_floats(stepped.as_slice().try_into().unwrap()), expected);
             body = expected;

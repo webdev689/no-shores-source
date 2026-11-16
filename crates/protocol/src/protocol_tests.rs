@@ -1,5 +1,5 @@
 use super::*;
-use movement::{TICK_SECONDS, standing, step_body};
+use movement::{Flat, TICK_SECONDS, standing, step_body};
 
 /// An input with these controls and no look.
 fn input(sequence: u32, controls: &[f64]) -> Vec<u8> {
@@ -10,7 +10,7 @@ fn input(sequence: u32, controls: &[f64]) -> Vec<u8> {
 /// second's walk at a bearing of 0.3, swinging; and the dress the first sent.
 pub fn players() -> Vec<Seen> {
     let walk = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
-    let walked = (0..30).fold(standing(1.5, -2.25), |body, _| step_body(&body, &walk, &[], TICK_SECONDS));
+    let walked = (0..30).fold(standing(1.5, -2.25), |body, _| step_body(&body, &walk, &[], &Flat, TICK_SECONDS));
     let swinging = Shown { anim: "attack_sword".to_owned(), frame: 4, facing: 0.75 };
     vec![
         Seen { player: 7, acknowledged: 0, body: standing(1.5, -2.25), shown: Shown::default() },

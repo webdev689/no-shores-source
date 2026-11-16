@@ -2,7 +2,7 @@
 //! the movement rules, one input a tick and never faster than the room's own clock. It has no network and no clock:
 //! whatever hosts the room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
 
-use movement::{Block, Body, Controls, TICK_SECONDS, standing, step_body};
+use movement::{Block, Body, Controls, Flat, TICK_SECONDS, standing, step_body};
 use std::collections::{BTreeMap, VecDeque};
 
 /// A player's number in a room, never reused while the room lives.
@@ -154,7 +154,7 @@ impl Room {
             let allowed = self.clock - player.joined + SLACK_TICKS;
             while player.stepped < allowed {
                 let Some((controls, shown)) = player.waiting.pop_front() else { break };
-                player.body = step_body(&player.body, &controls, &self.blocks, TICK_SECONDS);
+                player.body = step_body(&player.body, &controls, &self.blocks, &Flat, TICK_SECONDS);
                 player.shown = shown;
                 player.stepped += 1;
                 player.acknowledged = player.acknowledged.wrapping_add(1);

@@ -154,7 +154,7 @@ pub extern "C" fn room_snapshot() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use movement::{Controls, TICK_SECONDS, standing, step_body};
+    use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
 
     fn bytes_of(floats: &[f64]) -> Vec<u8> {
         floats.iter().flat_map(|value| value.to_le_bytes()).collect()
@@ -179,7 +179,7 @@ mod tests {
         assert_eq!(input(99, &protocol::input_bytes(1, &walk, &room::Shown::default(), None)), NO_SUCH_PLAYER);
         room_tick();
         let course = [Block::from_floats(&ledge)];
-        let walked = step_body(&standing(0.0, 2.0), &Controls::from_floats(&walk), &course, TICK_SECONDS);
+        let walked = step_body(&standing(0.0, 2.0), &Controls::from_floats(&walk), &course, &Flat, TICK_SECONDS);
         let bytes = snapshot();
         let message = players_in(&bytes);
         assert_eq!(message, vec![(first, 1, walked), (second, 0, standing(0.0, 2.0))]);
