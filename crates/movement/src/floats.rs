@@ -91,6 +91,12 @@ impl Body {
 
 impl Controls {
     #[must_use]
+    pub fn to_floats(&self) -> [f64; CONTROLS_FLOATS] {
+        let (run, jump, crouch, mounted) = (flag(self.run), flag(self.jump), flag(self.crouch), flag(self.mounted));
+        [self.forward, self.sideways, self.yaw, run, jump, crouch, mounted]
+    }
+
+    #[must_use]
     pub fn from_floats(floats: &[f64; CONTROLS_FLOATS]) -> Self {
         Controls {
             forward: floats[0],
