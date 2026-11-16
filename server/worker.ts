@@ -15,6 +15,10 @@ interface Attachment {
   readonly player: number;
 }
 
+/** The most players a room holds: a guard against one client opening sockets without end, since every snapshot
+ *  carries every player to every socket. */
+const MAX_PLAYERS = 64;
+
 /** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens. */
 function roomName(request: Request): string | null {
   return /^\/room\/([a-z0-9-]{1,40})$/.exec(new URL(request.url).pathname)?.[1] ?? null;
@@ -43,6 +47,7 @@ export class RoomHost extends DurableObject<Env> {
       this.opened = null;
       return new Response('No such room', { status: 404 });
     }
+    if (this.ctx.getWebSockets().length >= MAX_PLAYERS) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     const player = this.room.join();
     this.ctx.acceptWebSocket(server);
@@ -66,7 +71,10 @@ export class RoomHost extends DurableObject<Env> {
     const answer = typeof message === 'string' ? 'not an input' : this.room.input(player, new Uint8Array(message));
     // A flood is only dropped, and a course the sea will not sail only refused; anything else wrong means the browser
     // is not speaking the protocol, so it goes.
-    if (answer !== 'taken' && answer !== 'too many waiting' && answer !== 'refused') socket.close(1008, answer);
+    if (answer !== 'taken' && answer !== 'too many waiting' && answer !== 'refused') {
+      socket.close(1008, answer);
+      this.left(socket);
+    }
   }
 
   override webSocketClose(socket: WebSocket): void {
@@ -99,7 +107,13 @@ export class RoomHost extends DurableObject<Env> {
         this.ticks++;
       }
       const snapshot = this.room.snapshot();
-      for (const socket of this.ctx.getWebSockets()) socket.send(snapshot);
+      for (const socket of this.ctx.getWebSockets()) {
+        try {
+          socket.send(snapshot);
+        } catch {
+          // A socket the room has closed is listed until the browser answers; the others still get the tick.
+        }
+      }
     }, tickMs);
   }
 }

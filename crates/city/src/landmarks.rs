@@ -109,12 +109,14 @@ fn beacon(site: &Site) -> Landmark {
 }
 
 /// Cairnwatch's Span: an aqueduct straight through the city along the coast, its arches 60 m over the highest ground
-/// they cross, and a cistern keep at its head.
+/// they cross, and a cistern keep at its head. It runs square to the world, beside the plaza's long side as the plaza
+/// stands (`social::plaza_bounds`), so on a coast that runs aslant it never crosses the plaza.
 fn span(site: &Site, ground: &Ground) -> Landmark {
     const BAY_M: f64 = 48.0;
     const BAYS: i32 = 50;
-    let turn = turn_toward(site.along);
-    let at = |bay: f64| ahead(site.centre, site.along, (bay - f64::from(BAYS) / 2.0) * BAY_M);
+    let along = if site.seaward[0].abs() >= site.seaward[1].abs() { [0.0, 1.0] } else { [1.0, 0.0] };
+    let turn = turn_toward(along);
+    let at = |bay: f64| ahead(site.centre, along, (bay - f64::from(BAYS) / 2.0) * BAY_M);
     let heights: Vec<f64> =
         (0..=BAYS).map(|pier| ground.height_at(at(f64::from(pier))[0], at(f64::from(pier))[1])).collect();
     let deck = heights.iter().copied().fold(site.level, f64::max) + 60.0;
@@ -135,7 +137,7 @@ fn span(site: &Site, ground: &Ground) -> Landmark {
         solids.push(arch.turned(turn + std::f64::consts::FRAC_PI_2));
         solids.push(block(middle, deck, [12.0, BAY_M, 4.0], Material::Trim).turned(turn));
     }
-    let head = ahead(at(0.0), site.along, -50.0);
+    let head = ahead(at(0.0), along, -50.0);
     let head_ground = ground.height_at(head[0], head[1]);
     solids.push(block(head, head_ground, [72.0, 72.0, deck - head_ground + 8.0], Material::Stone).turned(turn));
     for corner in 0..4 {

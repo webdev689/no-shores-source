@@ -20,7 +20,7 @@ import {
 import { forgedModel, type ModelBuffers, modelBuffers, type ModelKey, modelKeyOf } from './cityModels.ts';
 import { appendMesh, emptyMesh, type MeshData } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
-import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid } from './plan.ts';
+import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach } from './plan.ts';
 import { meshSolid } from './solidMesh.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
@@ -187,7 +187,7 @@ export function buildCity(
     const layer = retaining(solid) ? book.terrace : book.materials[solid.material];
     const picture = book.pictures[layer] ?? { width: 64, height: 64 };
     meshSolid(solid, origin, { layer, width: picture.width, height: picture.height }, chunkMeshes[chunk]);
-    const reach = Math.hypot(solid.size[0], solid.size[1]) / 2 + (solid.lean || solid.roll ? solid.size[2] : 0);
+    const reach = solidReach(solid);
     const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
     const box = solidBoxes[chunk];
     const reached = [east - reach, south - reach, solid.at[2] - reach, east + reach, south + reach];

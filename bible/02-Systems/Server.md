@@ -46,7 +46,9 @@ on Cloudflare.
   a prediction can only differ where the server knows more ([[Clients Predict With the Shared Rules]]).
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
   ticks since they joined, plus a slack of 6 ticks for the network's jitter, so no one moves faster than real time.
-  More than 30 waiting inputs are refused.
+  At most 2 inputs step a body in one tick, so a backlog after a stall drains at twice real time, and a player who
+  sends nothing banks at most 60 ticks: one who waits gains a second at most. More than 30 waiting inputs are
+  dropped, and counted, so the player's next input still follows on. An input is acknowledged by its own number.
 - **The section:** after each tick a node's room judges every body against the node's section ([[Reach]]): inside,
   warned with a count, or dead. A dead body is still: its inputs are taken without moving it. An input that asks to
   respawn, once the section allows it, stands the body on the ground at the spawn nearest where it died. A room with
@@ -122,10 +124,11 @@ so every decision is Rust and the shell only carries bytes and time.
   browser.
 - A WebSocket joins the room and is welcomed with the player's number; each binary message is one of their inputs,
   or at sea their course. A flood is dropped and a course the sea will not sail is refused; anything else refused
-  closes the socket, since that browser is not keeping to the messages.
+  closes the socket and the player leaves the room, since that browser is not keeping to the messages. A room holds
+  at most 64 players; one more is turned away (503).
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
-  sends every player the snapshot after each tick. When the last player leaves it stops, and the room goes with the
-  object.
+  sends every player the snapshot after each tick; a socket closing as it is sent to is passed over, so the rest
+  still get the tick. When the last player leaves it stops, and the room goes with the object.
 
 ## The browser's side
 

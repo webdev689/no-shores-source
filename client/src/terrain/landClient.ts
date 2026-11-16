@@ -100,6 +100,8 @@ export function startLandWorker(): LandWorker {
   const worker = new Worker(new URL('./landWorker.ts', import.meta.url), { type: 'module' });
   const waiting = new Map<number, { resolve(answer: LandAnswer): void; reject(error: Error): void }>();
   let nextTicket = 0;
+  // A worker that failed answers nothing more; every later ask is refused at once with why.
+  let failed: Error | null = null;
   worker.addEventListener('message', (event: MessageEvent<LandAnswer>) => {
     const caller = waiting.get(event.data.ticket);
     waiting.delete(event.data.ticket);
@@ -107,11 +109,16 @@ export function startLandWorker(): LandWorker {
     else caller?.reject(new Error(event.data.error));
   });
   worker.addEventListener('error', (event) => {
-    for (const caller of waiting.values()) caller.reject(new Error(event.message || 'the land worker stopped'));
+    failed = new Error(event.message || 'the land worker stopped');
+    for (const caller of waiting.values()) caller.reject(failed);
     waiting.clear();
   });
   const ask = (request: LandRequest) =>
     new Promise<LandAnswer>((resolve, reject) => {
+      if (failed) {
+        reject(failed);
+        return;
+      }
       const ticket = nextTicket++;
       waiting.set(ticket, { resolve, reject });
       worker.postMessage({ ticket, request });

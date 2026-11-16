@@ -56,6 +56,11 @@ export class RoomConnection {
     if (this.socket.readyState === WebSocket.OPEN) this.socket.send(courseBytes(points, pace));
   }
 
+  /** Whether the socket is open: a room that dropped the player, or a network that dropped the room, closes it. */
+  get open(): boolean {
+    return this.socket.readyState === WebSocket.OPEN;
+  }
+
   /** Leaves the room: the socket closes, and the room lets the player go. */
   close(): void {
     this.socket.close();

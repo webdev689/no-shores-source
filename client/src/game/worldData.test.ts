@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { ringMiddle, sitesOf } from './worldData.ts';
+import { arrivalAt, ringMiddle, sitesOf, type WorldData } from './worldData.ts';
 
 const saltmere = readFileSync(new URL('../../../content/world/land/continent-1.json', import.meta.url), 'utf8');
 
@@ -36,4 +36,20 @@ test("a ring's middle is the mean of its points", () => {
     ]),
     [5, 10],
   );
+});
+
+test('a player arrives at any node by its id, a social space by its city, and nowhere for an id the world lacks', () => {
+  const { city, nodes } = sitesOf('continent-1', saltmere);
+  const world: WorldData = { layoutText: '{}', continents: [], cities: city ? [city] : [], nodes };
+  assert.deepEqual(arrivalAt(world, 'overlook-social'), {
+    continent: 'continent-1',
+    node: 'overlook-social',
+    name: 'Overlook',
+  });
+  assert.deepEqual(arrivalAt(world, 'saltgrass-downs'), {
+    continent: 'continent-1',
+    node: 'saltgrass-downs',
+    name: 'The Saltgrass Downs',
+  });
+  assert.equal(arrivalAt(world, 'nowhere'), null);
 });

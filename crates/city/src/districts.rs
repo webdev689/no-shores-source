@@ -121,7 +121,7 @@ pub fn fill(grid: &Grid, footings: &[Footing], uses: &mut [Use], footprint: &Foo
     }
     for &(at, point, _) in &open {
         // The borders wander, as World 2.0's do, so no district is a straight-edged cell of the plan.
-        let warp = |salt: u32| 0.4 * radius / 6.0 * noise2(seed + salt, point[0] / 900.0, point[1] / 900.0);
+        let warp = |salt: u32| 0.4 * radius / 6.0 * noise2(seed.wrapping_add(salt), point[0] / 900.0, point[1] / 900.0);
         let (warped_x, warped_y) = (point[0] + warp(3), point[1] + warp(4));
         let district = seeds
             .iter()

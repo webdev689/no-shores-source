@@ -4,7 +4,7 @@
 // footprint.
 import { groundTiles, type RmbBlock, TILES } from './blocks.ts';
 import { addPolygon, type MeshData } from './mesh.ts';
-import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
+import { CELL_M, type CityPlan, type PlanCell, type Solid, solidReach } from './plan.ts';
 import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
 
 /** How far a plate's skirt reaches under it where nothing built stands beside it. */
@@ -173,10 +173,7 @@ export function clearedGround(plan: CityPlan): (x: number, y: number) => boolean
         add(bucket(column, row));
   };
   rects.forEach((rect, k) => spread(rect, (entry) => entry.rects.push(k)));
-  const reaches = solids.map((solid) => {
-    const reach = Math.hypot(solid.size[0], solid.size[1]) / 2 + (solid.lean || solid.roll ? solid.size[2] : 0);
-    return reach;
-  });
+  const reaches = solids.map(solidReach);
   solids.forEach((solid, k) =>
     spread(
       [solid.at[0] - reaches[k], solid.at[1] - reaches[k], solid.at[0] + reaches[k], solid.at[1] + reaches[k]],

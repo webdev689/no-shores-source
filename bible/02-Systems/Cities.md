@@ -12,6 +12,7 @@ code:
   - crates/city/src/landmarks.rs#landmark
   - crates/city/src/landmarks_inland.rs#sun_dome
   - crates/city/src/social.rs#plaza
+  - crates/city/src/courtyard.rs#courtyard
   - crates/city/src/collision.rs#boxes_within
   - crates/land/src/pads.rs#Pads
   - crates/land/src/sites.rs#City
@@ -43,7 +44,7 @@ A continent's edits file names its city: an id, a name, the landmark's site with
 | Continent | City | Motif | Its landmark |
 |---|---|---|---|
 | 1, Saltmere | Overlook | `beacon` | A round lighthouse-citadel on a stepped base, its fire about 300 m over the headland |
-| 2 | Cairnwatch | `span` | An aqueduct straight through the city along the coast, its arches 60 m over the highest ground, a cistern keep at its head |
+| 2 | Cairnwatch | `span` | An aqueduct straight through the city along the coast, square to the world beside the plaza's long side, its arches 60 m over the highest ground, a cistern keep at its head |
 | 3 | Elmhaven | `great-hall` | A timber hall of six roofed tiers and a gilded spire |
 | 4 | Sunspire | `sun-dome` | A ziggurat of five tiers, a golden dome and a needle spire 340 m up |
 | 5 | Goldreach | `granary-ring` | Nine round towers, walled between, round a round keep with a tall conical roof |
@@ -75,11 +76,15 @@ city stands on it:
    and a gatehouse at each gate; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
    stands apart from the ground or terrace beyond it.
 8. **The landmark**, of the motif's solids.
-9. **The social space**: a plaza of 260 × 120 m on the landmark's seaward side, walled with a parapet 1.1 m high on
-   its open sides. Its section is its own edge, so its floor is walked right to the parapet and only climbing over
-   it warns; its four spawns stand 40 m apart, 4 m inside the seaward parapet, looking down over the city. Lanterns
-   stand on that parapet midway between the spawns, every 40 m, and in its middle a stepped plinth bears an obelisk
-   18 m high capped in gold, as the Tower's courtyard has its marks to find the way by. Its node is
+9. **The social space**: a plaza of 260 × 120 m on the landmark's seaward side, walled all round with a parapet
+   1.1 m high, the landward side too, since past the landmark's base the ground may be a terrace far below. Its
+   section is its own edge, so its floor is walked right to the parapet and only climbing over it warns; its four
+   spawns stand 40 m apart, 4 m inside the seaward parapet, looking down over the city. It is laid out as the Tower's
+   courtyard (`courtyard`): on the landward side a portico up three steps (a podium, six columns, an entablature and
+   a pediment) before a great timber door in an arch, and either side of it an arcade with a lamp in each alcove; in
+   the middle a stepped plinth with an obelisk 18 m high capped in gold, a brazier either side and two toward the
+   ends; lanterns on the seaward parapet and stone benches facing the sea, midway between the spawns; and bands of
+   stone in the paving, a processional way, a border and a ring round the plinth. Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep
@@ -95,7 +100,9 @@ same to the bit wherever it is sampled, and a window cut round the social space 
 The landmark and the works are solids: blocks, columns, domes, pyramids, gables and arches, each with its place,
 size, turn, lean and roll, dressed in a material the browser pictures from the city's climate. `boxes_within` gives
 every solid reaching into a rectangle as a box square to the world, which is what a node's room stands bodies
-against ([[Server]]).
+against ([[Server]]). A box stands from the ground up, so a solid whose underside is 2.5 m or more over the plaza's
+floor (a roof, a lintel, a hung lamp) is overhead and left out: a body walks under it. A leaning or rolled solid's box
+reaches round its base and as far as its top swings out.
 
 ## How it is drawn
 
@@ -172,7 +179,7 @@ SwiftShader at 1280 x 720:
 
 - Only the social space is walked; the city's blocks stand no colliders.
 - Streets are the RMB blocks' own; an avenue is an open paved cell, not a street drawn through the blocks.
-- A leaning or rolled solid's box holds the whole of it, so a body meets it early.
+- A leaning or rolled solid's box is square round all of it, so a body meets it a little early.
 - The parapet hides the city just below it from back on the plaza: from a spawn, 4 m in, the city shows from about
   250 m out, and all of it only from the parapet itself.
 - Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.

@@ -28,10 +28,10 @@ import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
-import { loadWorld, type NodeInfo } from './worldData.ts';
+import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 
-/** Where every player arrives: Overlook's social space, on Saltmere. */
-const FIRST_CONTINENT = 'continent-1';
+/** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
+ *  look round the world. */
 const FIRST_NODE = 'overlook-social';
 /** The islands' names the owner has given, by continent. */
 const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
@@ -105,7 +105,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
   const drawersOn = (opened: Landmass) => landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets);
-  let landmass = await openLandmass(land, world, rmbText, FIRST_CONTINENT);
+  const asked = new URLSearchParams(location.search).get('at');
+  const start = (asked === null ? null : arrivalAt(world, asked)) ?? arrivalAt(world, FIRST_NODE);
+  if (!start) throw new Error('the world has no Overlook to arrive at');
+  if (start.node !== FIRST_NODE) {
+    flow = arriving(start.node, start.name);
+    if (flow.mode === 'loading') hud.veil(flow.words);
+  }
+  let landmass = await openLandmass(land, world, rmbText, start.continent);
   let drawers = drawersOn(landmass);
   scene.setLand(landmass.view, terrainOf(landmass.view));
 
@@ -139,21 +146,32 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   /** Travels through the veil: the flow moves into its loading, `work` readies the place, and the veil lifts once
    *  its ground is in. A failure stays on the veil, in words. */
-  const travel = (happening: Happening, work: () => Promise<void>) => {
-    const after = next(flow, happening);
-    if (after === flow || after.mode !== 'loading') return;
-    flow = after;
+  /** A way that failed, tried again with Enter. */
+  let retry: (() => void) | null = null;
+  /** Runs `work` behind the veil showing `words`; the veil lifts once it is done and the ground has come. A failure
+   *  stays on the veil, and Enter tries it again. */
+  const behindVeil = (words: string, work: () => Promise<void>) => {
+    retry = null;
     [ready, waited] = [false, 0];
-    hud.veil(after.words);
-    hud.menu(null);
-    document.exitPointerLock();
+    hud.veil(words);
     work()
       .then(() => {
         ready = true;
       })
       .catch((error: unknown) => {
-        hud.veil(`${after.words} failed: ${error instanceof Error ? error.message : String(error)}`);
+        const why = error instanceof Error ? error.message : String(error);
+        hud.veil(`${words} failed: ${why}. Press Enter to try again.`);
+        retry = () => behindVeil(words, work);
       });
+  };
+
+  const travel = (happening: Happening, work: () => Promise<void>) => {
+    const after = next(flow, happening);
+    if (after === flow || after.mode !== 'loading') return;
+    flow = after;
+    hud.menu(null);
+    document.exitPointerLock();
+    behindVeil(after.words, work);
   };
 
   const goFoot = async (node: NodeInfo, facing: number) => {
@@ -185,15 +203,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (rooms) await sea.enterRoom(rooms('sea'));
   };
 
-  const firstNode = landmass.nodes.find((node) => node.id === FIRST_NODE) ?? landmass.nodes[0];
-  if (!firstNode) throw new Error('Saltmere has no place to arrive at');
-  goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null))
-    .then(() => {
-      ready = true;
-    })
-    .catch((error: unknown) => {
-      hud.veil(`Arriving failed: ${error instanceof Error ? error.message : String(error)}`);
-    });
+  const firstNode = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
+  if (!firstNode) throw new Error(`${start.name} has no place to arrive at`);
+  if (flow.mode === 'loading')
+    behindVeil(flow.words, () => goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)));
 
   const landAt = (id: string) => {
     const landing = sea?.landingOf(id);
@@ -251,7 +264,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat) return;
-    if (key === 'm') change({ kind: 'menu' });
+    if (key === 'enter' && retry) retry();
+    else if (key === 'm') change({ kind: 'menu' });
     else if (key === 'escape' && flow.mode === 'landing') {
       sea?.backToSea();
       change({ kind: 'back' });
@@ -308,8 +322,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     hud.hints(shown.standing.kind === 'dead' ? HINTS.dead : HINTS.foot);
     hud.marks([]);
     hud.seaBar(null);
-    const player = here.roomPlayer;
-    hud.note(player === null ? '' : `In the room as player ${player}`);
+    hud.note(here.roomNote);
     return scene.closeReady(body.x, body.y);
   };
 
@@ -366,7 +379,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
 
   const frame = (now: number) => {
-    const seconds = Math.min(0.1, (now - last) / 1000);
+    const elapsed = (now - last) / 1000;
+    const seconds = Math.min(0.1, elapsed);
     last = now;
     clock += seconds;
     const controls = input.frame();
@@ -376,7 +390,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     if (flow.mode === 'loading' && ready) {
-      waited += seconds;
+      // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
+      waited += elapsed;
       if (settled || waited > GROUND_WAIT_S) {
         flow = next(flow, { kind: 'loaded' });
         hud.veil(null);

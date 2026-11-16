@@ -19,6 +19,11 @@ pub type PlayerId = u32;
 pub const SLACK_TICKS: u64 = 6;
 /// How many inputs a player may have waiting; past that, more are refused.
 pub const WAITING_LIMIT: usize = 30;
+/// The most steps a player takes in one tick: a backlog after a stall drains at twice real time, never faster.
+pub const STEPS_A_TICK: u64 = 2;
+/// The most ticks of steps a player may hold in hand: one who sends nothing for a while banks no more than this, so
+/// none moves faster than real time for more than a moment.
+pub const BANK_TICKS: u64 = 60;
 /// The longest move name and dress, in bytes, a player may send.
 pub const MOVE_LIMIT: usize = 40;
 pub const DRESS_LIMIT: usize = 4096;
@@ -82,6 +87,7 @@ pub fn standing_on(floor: &Floor, blocks: &[Block], x: f64, y: f64) -> Body {
 
 #[derive(Debug)]
 struct Waiting {
+    sequence: u32,
     controls: Controls,
     shown: Shown,
     respawn: bool,
@@ -194,6 +200,8 @@ impl Room {
             return Err(Refused::OutOfOrder { expected, got: input.sequence });
         }
         if found.waiting.len() >= WAITING_LIMIT {
+            // Dropped, but counted, so the next input still follows it and the player stays.
+            found.received = input.sequence;
             return Err(Refused::TooManyWaiting);
         }
         let named =
@@ -203,7 +211,9 @@ impl Room {
             return Err(Refused::BadLook);
         }
         found.received = input.sequence;
-        found.waiting.push_back(Waiting { controls: input.controls, shown: input.shown, respawn: input.respawn });
+        let waiting =
+            Waiting { sequence: input.sequence, controls: input.controls, shown: input.shown, respawn: input.respawn };
+        found.waiting.push_back(waiting);
         if let Some(dress) = input.dress
             && dress != found.dress
         {
@@ -214,14 +224,17 @@ impl Room {
     }
 
     /// One tick of the room's clock. Each player's waiting inputs step their body in order, one step each, as many as
-    /// the clock allows: no more than the ticks since they joined, and the slack. A dead body is still: its inputs are
+    /// the clock allows: no more than the ticks since they joined and the slack, no more than `STEPS_A_TICK` at once,
+    /// and with no more than `BANK_TICKS` saved up from ticks they sent nothing. A dead body is still: its inputs are
     /// taken without moving it, and one asking to respawn, once the section allows, stands it at the spawn nearest
     /// where it died. Then each body is judged against the section.
     pub fn tick(&mut self) {
         self.clock += 1;
         let Room { blocks, floor, section, clock, players, .. } = self;
         for player in players.values_mut() {
-            let allowed = *clock - player.joined + SLACK_TICKS;
+            let owed = *clock - player.joined + SLACK_TICKS;
+            player.stepped = player.stepped.max(owed.saturating_sub(BANK_TICKS));
+            let allowed = owed.min(player.stepped + STEPS_A_TICK);
             while player.stepped < allowed {
                 let Some(input) = player.waiting.pop_front() else { break };
                 if let Standing::Dead { .. } = player.standing {
@@ -236,7 +249,7 @@ impl Room {
                 }
                 player.shown = input.shown;
                 player.stepped += 1;
-                player.acknowledged = player.acknowledged.wrapping_add(1);
+                player.acknowledged = input.sequence;
             }
             if let Some(section) = section {
                 player.standing = player.standing.tick(section, player.body.x, player.body.y);

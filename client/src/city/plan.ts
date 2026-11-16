@@ -89,3 +89,10 @@ export function cityClimate(biome: string | undefined): CityClimate {
 export function cellCorner(plan: CityPlan, cell: { column: number; row: number }): [number, number] {
   return [plan.grid.west + cell.column * CELL_M, plan.grid.north + cell.row * CELL_M];
 }
+
+/** How far a solid reaches from the middle of its base across the ground: round its base, and as far as its top
+ *  swings out where it leans or rolls (the city crate's `Solid::bounds`). */
+export function solidReach(solid: Solid): number {
+  const swing = Math.max(Math.abs(Math.sin(solid.lean)), Math.abs(Math.sin(solid.roll)));
+  return Math.hypot(solid.size[0], solid.size[1]) / 2 + solid.size[2] * swing;
+}

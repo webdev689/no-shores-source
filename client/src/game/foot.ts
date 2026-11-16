@@ -135,12 +135,19 @@ export class Foot {
       room?.close();
       throw error;
     }
+    if (room && node.spawns.length > 1) {
+      // The room stands each player who joins at the next of the node's spawns in turn; the player starts there too.
+      const [spawnX, spawnY] = node.spawns[(room.player - 1) % node.spawns.length] ?? [x, y];
+      const standing = movement.standing(spawnX, spawnY);
+      walker.player = { ...walker.player, body: standing, previous: standing };
+    }
     return new Foot(context, node, boxes, room, placed);
   }
 
-  /** The player's number in the node's room, or null offline. */
-  get roomPlayer(): number | null {
-    return this.room?.player ?? null;
+  /** A line on the room the player plays in: their number in it, word that it was lost, or nothing offline. */
+  get roomNote(): string {
+    if (!this.room) return '';
+    return this.room.connected ? `In the room as player ${this.room.player}` : 'The room was lost: playing on alone';
   }
 
   /** One frame on foot: the player plays (with nothing pressed while `paused`), the camera follows, and every figure

@@ -112,7 +112,12 @@ impl Sea {
 
     /// Whether a point lies on a continent, or a leg between two meets a coast.
     fn on_land(&self, point: Point) -> bool {
-        self.coasts.iter().any(|coast| ring_contains(&coast.ring, point))
+        self.coasts
+            .iter()
+            .filter(|coast| {
+                coast.west <= point.x && coast.east >= point.x && coast.north <= point.y && coast.south >= point.y
+            })
+            .any(|coast| ring_contains(&coast.ring, point))
     }
 
     fn leg_meets_land(&self, from: Point, to: Point) -> bool {

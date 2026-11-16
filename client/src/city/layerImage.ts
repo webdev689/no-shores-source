@@ -42,11 +42,9 @@ export function plainLevels(colour: readonly [number, number, number], size = LA
   const levels: LayerLevels = [];
   for (let side = size; side >= 1; side /= 2) {
     const level = new Uint8Array(side * side * 4);
-    for (let texel = 0; texel < side * side; texel++)
-      level.set(
-        [Math.round(colour[0] * 255), Math.round(colour[1] * 255), Math.round(colour[2] * 255), 255],
-        texel * 4,
-      );
+    level.set([Math.round(colour[0] * 255), Math.round(colour[1] * 255), Math.round(colour[2] * 255), 255]);
+    // The first texel doubled over and over: a whole layer in a few copies, not a write a texel.
+    for (let filled = 4; filled < level.length; filled *= 2) level.copyWithin(filled, 0, filled);
     levels.push(level);
   }
   return levels;

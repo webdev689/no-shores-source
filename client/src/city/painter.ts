@@ -7,8 +7,10 @@ import type { PaintJob, Painted } from './paintWorker.ts';
 
 /** Workers painting at once: the painting is the slow part, and a few cores spare it the most. */
 const MOST_WORKERS = 4;
+/** A picture whose worker fails this many times keeps its guessed colour. */
+const MOST_TRIES = 2;
 
-const kept = new Map<string, LayerLevels | null>();
+const kept = new Map<string, LayerLevels>();
 const keyOf = (picture: {
   archive: number;
   record: number;
@@ -27,10 +29,16 @@ export class CityPainter {
   private readonly workers: Worker[] = [];
   private readonly queue: PaintJob[];
   private readonly working = new Map<Worker, PaintJob>();
+  private readonly tries = new Map<number, number>();
+  private readonly book: PictureBook;
+  private readonly onPainted: () => void;
+  private readonly started = performance.now();
   private stopped = false;
 
   constructor(gpu: Gpu, book: PictureBook, onPainted: () => void) {
     this.gpu = gpu;
+    this.book = book;
+    this.onPainted = onPainted;
     const layers = Math.max(1, book.pictures.length);
     this.texture = gpu.device.createTexture({
       size: [LAYER_SIZE, LAYER_SIZE, layers],
@@ -40,12 +48,11 @@ export class CityPainter {
     });
     this.view = this.texture.createView({ dimension: '2d-array' });
     this.progress = { painted: 0, total: book.pictures.length, slowestMs: 0, totalMs: 0, doneAt: 0 };
-    const started = performance.now();
     this.queue = [];
     book.pictures.forEach((picture, layer) => {
       const known = kept.get(keyOf(picture));
-      if (known !== undefined) {
-        this.upload(layer, known ?? plainLevels(picture.guess));
+      if (known) {
+        this.upload(layer, known);
         this.progress.painted++;
       } else {
         this.upload(layer, plainLevels(picture.guess));
@@ -58,33 +65,48 @@ export class CityPainter {
         });
       }
     });
-    if (!this.queue.length) this.progress.doneAt = performance.now() - started;
+    if (!this.queue.length) this.progress.doneAt = performance.now() - this.started;
     const count = Math.min(MOST_WORKERS, Math.max(1, (navigator.hardwareConcurrency || 2) - 1), this.queue.length);
-    for (let k = 0; k < count; k++) {
-      const worker = new Worker(new URL('./paintWorker.ts', import.meta.url), { type: 'module' });
-      const finished = (layer: number, levels: LayerLevels | null, milliseconds: number): void => {
-        if (this.stopped) return;
-        kept.set(keyOf(book.pictures[layer]), levels);
-        if (levels) this.upload(layer, levels);
-        this.progress.painted++;
-        this.progress.totalMs += milliseconds;
-        this.progress.slowestMs = Math.max(this.progress.slowestMs, milliseconds);
-        if (this.progress.painted === this.progress.total) this.progress.doneAt = performance.now() - started;
-        onPainted();
-        this.next(worker);
-      };
-      worker.addEventListener('message', (event: MessageEvent<Painted>) =>
-        finished(event.data.layer, event.data.levels, event.data.milliseconds),
-      );
-      // a picture that cannot be painted keeps its guessed colour, and the worker goes on to the next
-      worker.addEventListener('error', (event) => {
-        event.preventDefault();
-        const job = this.working.get(worker);
-        if (job) finished(job.layer, null, 0);
-      });
-      this.workers.push(worker);
+    for (let k = 0; k < count; k++) this.startWorker();
+  }
+
+  private startWorker(): void {
+    const worker = new Worker(new URL('./paintWorker.ts', import.meta.url), { type: 'module' });
+    worker.addEventListener('message', (event: MessageEvent<Painted>) => {
+      this.finished(event.data.layer, event.data.levels, event.data.milliseconds);
       this.next(worker);
+    });
+    // A worker that fails (to load, or on a picture) is replaced and its picture tried again; a picture that fails
+    // every time keeps its guessed colour, for this city only, so a later one may yet paint it.
+    worker.addEventListener('error', (event) => {
+      event.preventDefault();
+      const job = this.working.get(worker);
+      this.working.delete(worker);
+      worker.terminate();
+      if (this.stopped) return;
+      if (job) {
+        const tries = (this.tries.get(job.layer) ?? 0) + 1;
+        this.tries.set(job.layer, tries);
+        if (tries < MOST_TRIES) this.queue.unshift(job);
+        else this.finished(job.layer, null, 0);
+      }
+      if (this.queue.length) this.startWorker();
+    });
+    this.workers.push(worker);
+    this.next(worker);
+  }
+
+  private finished(layer: number, levels: LayerLevels | null, milliseconds: number): void {
+    if (this.stopped) return;
+    if (levels) {
+      kept.set(keyOf(this.book.pictures[layer]), levels);
+      this.upload(layer, levels);
     }
+    this.progress.painted++;
+    this.progress.totalMs += milliseconds;
+    this.progress.slowestMs = Math.max(this.progress.slowestMs, milliseconds);
+    if (this.progress.painted === this.progress.total) this.progress.doneAt = performance.now() - this.started;
+    this.onPainted();
   }
 
   /** Stops painting and frees the array. */

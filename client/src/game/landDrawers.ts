@@ -78,6 +78,7 @@ export function landDrawers(
   assets: Promise<CityAssets | null>,
 ): LandDrawers {
   const plan = landmass.drawnPlan;
+  let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
   const city = plan ? new CityView(gpu) : null;
   let released = false;
   if (plan && city) {
@@ -87,13 +88,16 @@ export function landDrawers(
         if (!loaded) return;
         const blocks = await blocksOf(base, loaded, names);
         // A landmass let go while its blocks came is drawn no more: its city is never built.
-        if (!released) city.setCity(plan, cityClimate(biome ?? undefined), blocks, loaded.tables);
+        if (released) return;
+        city.setCity(plan, cityClimate(biome ?? undefined), blocks, loaded.tables);
+        // The nature already scattered knew only the pads; it is scattered again round the city's solids too.
+        version += 1;
       })
       .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
   }
-  const cleared = (x: number, y: number) => (city ? city.cleared(x, y) : landmass.cleared(x, y));
+  // The pads are kept clear from the first frame; the city's solids too once it is built.
+  const cleared = (x: number, y: number) => landmass.cleared(x, y) || (city?.cleared(x, y) ?? false);
   const nature = biome ? new NatureView(gpu) : null;
-  let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
   const natureDrawer: Drawer | null = nature && {
     drawInto: (pass, fromEye, shot, time) => {
       const now = scene.closePatch();

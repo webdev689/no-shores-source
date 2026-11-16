@@ -68,7 +68,7 @@ impl Solid {
     }
 
     /// The solid's footprint and height as a box square to the world: west, north, east, south, bottom, top. A
-    /// leaning or rolled solid's box holds the whole of it.
+    /// leaning or rolled solid's box holds the whole of it: round its base, as far as its top swings out.
     #[must_use]
     pub fn bounds(&self) -> [f64; 6] {
         let (sine, cosine) = sin_cos(self.turn);
@@ -76,7 +76,8 @@ impl Solid {
         let mut reach_east = half_width * cosine.abs() + half_depth * sine.abs();
         let mut reach_south = half_width * sine.abs() + half_depth * cosine.abs();
         if self.lean != 0.0 || self.roll != 0.0 {
-            let tallest = self.size[2] + half_width.max(half_depth);
+            let swing = sin_cos(self.lean).0.abs().max(sin_cos(self.roll).0.abs());
+            let tallest = self.size[2] * swing + half_width.max(half_depth) * core::f64::consts::SQRT_2;
             reach_east = reach_east.max(tallest);
             reach_south = reach_south.max(tallest);
         }
@@ -94,6 +95,15 @@ impl Solid {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_leaning_solid_reaches_only_as_far_as_its_top_swings() {
+        let lean = 5.0 * core::f64::consts::PI / 180.0;
+        let shaft = Solid { lean, ..Solid::upright(Shape::Block, [0.0; 3], [20.0, 20.0, 190.0], Material::Stone) };
+        let [west, _, east, _, _, top] = shaft.bounds();
+        assert!(east > 190.0 * libm::sin(lean) && east < 35.0, "{east}");
+        assert!((west + east).abs() < 1e-9 && (top - 190.0).abs() < 1e-9);
+    }
 
     #[test]
     fn a_turned_block_bounds_its_corners() {

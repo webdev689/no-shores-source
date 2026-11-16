@@ -1,6 +1,16 @@
 import { button, make } from '../editor/dom.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 
+/** A button of the heads-up display: let go of once pressed, so Space or Enter, which the game itself answers, never
+ *  press it again. */
+function hudButton(text: string, run: () => void): HTMLButtonElement {
+  const node = button(text, () => {
+    node.blur();
+    run();
+  });
+  return node;
+}
+
 /** A mark on the screen: a node or a port, where it stands in CSS pixels, its size there, and what it says. */
 export interface ScreenMark {
   readonly id: string;
@@ -70,20 +80,20 @@ export class Hud {
     const place = make('div', '', 'place');
     place.append(this.placeTitle, this.placeKind);
     this.warning.append(make('div', 'Return to the area', 'warning-words'), this.count);
-    this.respawn = button('Respawn', () => this.respawnWanted());
+    this.respawn = hudButton('Respawn', () => this.respawnWanted());
     this.death.append(
       make('div', 'You died', 'death-words'),
       make('div', 'You strayed too far from the area.', 'death-why'),
       this.respawn,
     );
     this.veilNode.append(this.veilText);
-    this.landings = button('View landings  L', () => this.landingsWanted());
+    this.landings = hudButton('View landings  L', () => this.landingsWanted());
     this.landings.classList.add('landings');
     this.sea.append(
       make('span', 'Pace', 'pace-label'),
-      button('−  [', () => this.paceWanted(-1)),
+      hudButton('−  [', () => this.paceWanted(-1)),
       this.paceValue,
-      button(']  +', () => this.paceWanted(1)),
+      hudButton(']  +', () => this.paceWanted(1)),
       this.landings,
     );
     root.append(
@@ -199,7 +209,7 @@ export class Hud {
     if (!content) return;
     this.menuNode.replaceChildren(
       make('div', content.title, 'menu-title'),
-      ...content.choices.map((choice) => button(choice.label, choice.run)),
+      ...content.choices.map((choice) => hudButton(choice.label, choice.run)),
     );
   }
 

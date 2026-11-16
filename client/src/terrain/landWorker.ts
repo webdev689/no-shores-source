@@ -12,7 +12,10 @@ const scope = globalThis as unknown as {
 };
 
 const land = fetch(`${import.meta.env.BASE_URL}land.wasm`)
-  .then((answer) => answer.arrayBuffer())
+  .then((answer) => {
+    if (!answer.ok) throw new Error(`land.wasm: ${answer.status}`);
+    return answer.arrayBuffer();
+  })
   .then(startLand);
 
 function answer(rules: LandRules, ticket: number, request: LandRequest): void {

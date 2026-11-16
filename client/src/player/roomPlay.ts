@@ -53,6 +53,11 @@ export class RoomPlay {
     return room;
   }
 
+  /** Whether the room still hears the player. */
+  get connected(): boolean {
+    return this.connection?.open ?? false;
+  }
+
   /** The player's number in the room. */
   get player(): number {
     return this.own;
@@ -71,7 +76,10 @@ export class RoomPlay {
       step: (body, controls) => {
         const dress = walker.lookDress === this.sentDress ? undefined : walker.lookDress;
         this.sentDress = walker.lookDress;
-        this.connection?.send(this.prediction.next(controls), controls, walker.look, dress, this.respawnAsked);
+        // Once the room is lost nothing is numbered for it, so nothing waits on its word for ever.
+        if (this.connection?.open) {
+          this.connection.send(this.prediction.next(controls), controls, walker.look, dress, this.respawnAsked);
+        }
         this.respawnAsked = false;
         return this.standing.kind === 'dead' ? body : movement.step(body, controls);
       },

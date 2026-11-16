@@ -91,3 +91,12 @@ export async function loadWorld(base: string): Promise<WorldData> {
   }
   return { layoutText, continents, cities, nodes };
 }
+
+/** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is
+ *  `<city id>-social`, named for its city. Null for an id the world does not hold. */
+export function arrivalAt(world: WorldData, id: string): { continent: string; node: string; name: string } | null {
+  const node = world.nodes.find((each) => each.id === id);
+  if (node) return { continent: node.continent, node: node.id, name: node.name };
+  const city = world.cities.find((each) => `${each.id}-social` === id);
+  return city ? { continent: city.continent, node: id, name: city.name } : null;
+}

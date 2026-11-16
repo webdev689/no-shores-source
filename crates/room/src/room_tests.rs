@@ -68,11 +68,44 @@ fn no_player_moves_faster_than_the_rooms_clock() {
         room.input(player, input(sequence, WALK)).unwrap();
     }
     room.tick();
-    assert_eq!(u64::from(seen(&room, player).acknowledged), 1 + SLACK_TICKS);
+    assert_eq!(u64::from(seen(&room, player).acknowledged), STEPS_A_TICK);
     for _ in 0..13 {
         room.tick();
     }
     assert_eq!(seen(&room, player).acknowledged, 20);
+}
+
+#[test]
+fn a_player_who_waits_banks_no_more_than_a_second_and_spends_it_at_twice_real_time() {
+    let mut room = room();
+    let player = room.join();
+    for _ in 0..600 {
+        room.tick();
+    }
+    let mut sent = 0;
+    for _ in 0..100 {
+        while room.input(player, input(sent + 1, WALK)).is_ok() {
+            sent += 1;
+        }
+        let before = seen(&room, player).acknowledged;
+        room.tick();
+        assert!(u64::from(seen(&room, player).acknowledged - before) <= STEPS_A_TICK);
+    }
+    let stepped = u64::from(seen(&room, player).acknowledged);
+    assert!(stepped <= 100 + BANK_TICKS + SLACK_TICKS, "{stepped} steps in 100 ticks after waiting 600");
+}
+
+#[test]
+fn an_input_dropped_past_the_waiting_limit_leaves_the_next_in_order() {
+    let mut room = room();
+    let player = room.join();
+    let limit = u32::try_from(WAITING_LIMIT).unwrap();
+    for sequence in 1..=limit {
+        room.input(player, input(sequence, WALK)).unwrap();
+    }
+    assert_eq!(room.input(player, input(limit + 1, WALK)), Err(Refused::TooManyWaiting));
+    room.tick();
+    assert_eq!(room.input(player, input(limit + 2, WALK)), Ok(()));
 }
 
 #[test]

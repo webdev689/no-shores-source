@@ -40,7 +40,8 @@ it answers. `game.ts` wires the rest and keeps the flow; each mode is its own mo
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
 
-The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s.
+The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
+A way that fails stays on the veil, saying why, and Enter tries it again.
 
 ## Arriving
 
@@ -49,6 +50,9 @@ in the [[Land]]'s worker, kept, with the RMB index's blocks, so its city is sett
 ([[Cities]]). Overlook's plan comes from that worker; its social space is the node `overlook-social`, the plaza beside
 the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet, facing out from the landmark and
 looking 17° down over the parapet onto the city, the harbour and the sea.
+
+With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
+is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook.
 
 ## On foot
 
@@ -101,10 +105,12 @@ Enter, lands there: the player stands at its first spawn, facing inland from the
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, which judges the edge. Each tick's controls go to
+- **On foot** the player joins the node's room, `node-<node id>`, and starts at the spawn the room stands them at,
+  each joiner at the next of the node's spawns in turn. The room judges the edge. Each tick's controls go to
   it with the figure's look, the dress when it changed and a respawn when asked; the player is predicted on the same
   ground and corrected by each snapshot, held still while the room says they are dead. The warning, the count and
   death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
+  A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies; each voyage's course and pace go
   to it, and every other player's ship is drawn where the room moved it, each in a paint of its own.
 

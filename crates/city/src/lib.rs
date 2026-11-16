@@ -4,6 +4,7 @@
 //! is seen. See the Cities note in the bible.
 
 pub mod collision;
+pub mod courtyard;
 pub mod districts;
 pub mod footprint;
 pub mod grid;
