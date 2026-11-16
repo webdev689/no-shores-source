@@ -45,20 +45,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   and horse, checked live with two browsers on the deployed rooms.
 - On `main`: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
-- On branch `ccr-23284246-hmc57z` until its pull request merges: the fight
+- On `main` and deployed: the fight
   ([[Combat Is Soulframe's, With DFO's Enhanced AI]]). [[Combat]]: DFO's swings and strokes, Soulframe's guard, parry,
   riposte, dodge with its perfect stretch and counter, stamina, poise and the soft lock, foes' telegraphed blows and
   shots in flight, in the Rust `combat` crate. [[Foes]]: DFO's Enhanced AI in the `foes` crate, five kinds, built upon
   to guard, parry and dodge. The [[Navmesh]], DFO's, in Rust. The [[Server]]'s rooms run them all, judging each blow
   as its defender saw it; the [[Test Ground]] fights them alone or together, predicted to the bit. Then audited end to
   end (the rules, the foes against DFO's source, the room and its host, the browser) and every finding fixed with a
-  test; the timings set against shipped games and a person's reaction ([[Combat]], "Why these numbers"). Tested
-  offline, in a headless browser and on a local server; not deployed.
+  test; the timings set against shipped games and a person's reaction ([[Combat]], "Why these numbers"); third-person
+  attacks strike as fast as their blow lands. Deployed with the owner's yes, and tested live: two browsers on the
+  published Test Ground fought one brute together in a deployed room.
 
 ## Waiting on the owner
-
-- A yes to merge the fight's pull request, and to deploy `overlook-rooms` right after: the published Test Ground and
-  the deployed rooms must speak the same messages, so `?room=` play breaks between the merge and the deploy.
 
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
