@@ -67,6 +67,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Gear as Claude Shapes It]]
 - [[Accounts Start as Guests, on Cloudflare D1]]
 - [[Clothing Is Armour, With a Wardrobe Later]]
+- [[The Accounts Deploy on Each Merge, and the Owner Adds Their Keys]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
