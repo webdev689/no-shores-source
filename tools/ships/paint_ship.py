@@ -7,7 +7,7 @@ other named slot is her hull, or her deck where the face looks up; a cannon is i
 material is spar. Her UVs are metres in Blender's frame, each face projected on the axis it faces most, so a picture
 of the game's painter repeats over her at its own scale: hull and deck along her length, a spar along its own. With
 --pictures (the bytes `node tools/ships/ship_pictures.ts` writes), each part's material shows its picture, packed in
-the model. Run it once on a model whose faces are in other materials; then edit the parts and UVs in Blender.
+the model. Run on a model painted before, it keeps her parts and lays her UVs and pictures again.
 """
 import argparse
 import re
@@ -47,12 +47,18 @@ def picture_materials(pictures):
         if pictures is None:
             continue
         width, height, rgba = pictures[index]
-        image = bpy.data.images.new(f'{name}.picture', width, height, alpha=False)
+        # A model painted before keeps its picture and nodes: they take the pictures anew.
+        image = bpy.data.images.get(f'{name}.picture')
+        if image is None or tuple(image.size) != (width, height):
+            image = bpy.data.images.new(f'{name}.picture', width, height, alpha=False)
         # The painter's rows run top first, Blender's bottom first.
         rows = [rgba[row * width * 4:(row + 1) * width * 4] for row in range(height)][::-1]
         image.pixels = [byte / 255 for row in rows for byte in row]
         image.pack()
         nodes, links = material.node_tree.nodes, material.node_tree.links
+        if any(node.type == 'TEX_IMAGE' for node in nodes):
+            next(node for node in nodes if node.type == 'TEX_IMAGE').image = image
+            continue
         shader = next(node for node in nodes if node.type == 'BSDF_PRINCIPLED')
         texture = nodes.new('ShaderNodeTexImage')
         texture.image = image

@@ -24,6 +24,10 @@ Of the token that publishes her to R2: "brother it's in the repo"
 
 And after: "We need to bring the animated sails over from dfo also"
 
+> Where the pirates and their sea fights are decided, the server being the sole authority: in the sea room, which
+> builds the land a fight needs and runs in the page when playing alone; or in the page for now: "In the sea room
+> (Recommended)"
+
 ## What it settles
 
 - **Her model.** The Sloop's `.blend` is UV-mapped and her faces sorted into her parts (hull, deck, wood, canvas,
@@ -35,5 +39,7 @@ And after: "We need to bring the animated sails over from dfo also"
 - **AI ships.** Pirates only, from DFO's director, trimmed: they come over the horizon round a player at sea and go
   when far off; DFO's captain, already ported ([[Naval Combat]]), decides whom each fights
   ([[Pick - Sailing and Naval Combat]]).
+- **Where it is decided.** The sea room runs the pirates and each fight, online on the server and in the page when
+  playing alone, as the rules on foot do.
 - **The encounter.** Once a pirate that means to fight comes within sight, the Overworld pans down to the Sloop at
   true scale and the fight begins; when it ends, the view pans back up.
