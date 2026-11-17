@@ -10,6 +10,7 @@ description = "The room for its Cloudflare host: the room and its messages behin
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+gear = { path = "../gear" }
 combat = { path = "../combat" }
 land = { path = "../land" }
 movement = { path = "../movement" }

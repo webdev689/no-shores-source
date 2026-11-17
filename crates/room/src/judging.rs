@@ -10,6 +10,7 @@ use combat::shapes::{LATE, Telegraph};
 use combat::shots::{Flight, fly, line_of};
 use combat::strike::reaches;
 use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
+use gear::Slot;
 
 /// What a client is told of the fight: a blow and what it came to, a stagger, a death, a player standing again, a
 /// foe's feint, a foe arriving.
@@ -93,20 +94,30 @@ pub fn how_of_swing(attack: &Attack, defender: FighterId) -> How {
 }
 
 impl Room {
-    /// Judges a blow against `then`, the defender as its striker saw it, and settles it now.
-    pub(crate) fn judge_now(&mut self, blow: &Blow, how: How, defender: FighterId, then: &Fighter) {
+    /// Judges a blow against `then`, the defender as its striker saw it, and settles it now. `hand` is the striking
+    /// player's hand, if a player struck.
+    pub(crate) fn judge_now(&mut self, blow: &Blow, how: How, defender: FighterId, then: &Fighter, hand: Option<Slot>) {
         let verdict = judge(blow, then);
-        self.settle(blow, how, defender, verdict);
+        self.settle(blow, how, defender, verdict, hand);
     }
 
-    /// Does what a verdict does to the defender and its striker as they are now, and tells it.
-    pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict) {
+    /// Does what a verdict does to the defender and its striker as they are now, and tells it. A player's blow that
+    /// lands on a foe shares its kill, which pays everyone who shares it.
+    pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict, hand: Option<Slot>) {
         let Some(before) = self.fighter(defender).copied() else { return };
         if before.dead() {
             return;
         }
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
+        if let Some(hand) = hand
+            && matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. })
+        {
+            self.mark_struck(blow.striker, defender, hand);
+        }
+        if after.dead() && self.foes.contains_key(&defender) {
+            self.pay_kill(defender);
+        }
         if let Some(striker) = self.fighter(blow.striker).copied().filter(|striker| !striker.dead()) {
             self.set_fighter(blow.striker, answered(&striker, defender, &verdict));
         }
@@ -188,7 +199,7 @@ impl Room {
             _ => Some(judge(&pending.blow, then)),
         };
         if let Some(verdict) = verdict {
-            self.settle(&pending.blow, pending.how, pending.defender, verdict);
+            self.settle(&pending.blow, pending.how, pending.defender, verdict, None);
         }
         self.group_judged(pending, verdict);
     }
@@ -243,7 +254,7 @@ impl Room {
             match flight {
                 Flight::Flying(next) => self.shots.push(next),
                 Flight::Stopped { struck: Some(defender), .. } => {
-                    let blow = combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]);
+                    let blow = self.empower(combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]), defender, false);
                     self.blow_lands(&blow, How::Shot, defender, Check::Shot);
                 }
                 Flight::Stopped { struck: None, .. } => {}
@@ -266,8 +277,8 @@ impl Room {
         if let Some(defender) = struck
             && let Some(then) = self.as_seen(defender, view)
         {
-            let blow = combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]);
-            self.judge_now(&blow, How::Shot, defender, &then);
+            let blow = self.empower(combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]), defender, false);
+            self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::MainHand));
         }
         stop
     }
@@ -277,7 +288,7 @@ impl Room {
         if self.players.contains_key(&defender) {
             self.pending.push(Pending { blow: *blow, how, defender, tick: self.clock, check });
         } else if let Some(then) = self.fighter(defender).copied() {
-            self.judge_now(blow, how, defender, &then);
+            self.judge_now(blow, how, defender, &then, Some(Slot::MainHand));
         }
     }
 }

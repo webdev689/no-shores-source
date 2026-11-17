@@ -43,6 +43,9 @@ built upon so foes use the guard, the parry and the dodge of [[Combat]] too
 | Archer | `bow_short_iron` | 50 | 18 | light | 1.0 | 18 | - / - / 25% | aimed shot |
 | Captain | `sword_ebony` | 400 | 120 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
+  A foe may have a level: its health is its kind's times 1.07 for each, and its blows on a player and theirs on it
+  are made with the power of [[Gear]]. A foe of level 0 has none, and fights by these numbers alone.
+
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s. The captain is the boss: elite, it
   throws its blade's whole set, feints and chains, and has a second phase.
 - **Senses.** A foe notices a fighter of another side within 14 m (a shooter 51.2 m), within 90 degrees of where it

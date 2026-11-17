@@ -28,7 +28,7 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 - **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer or
   staff, fists with nothing drawn, or a bow, crossbow, pistolet or thunderlock. The left hand holds a shield, a second
   blade (the pair's blows take turns between the hands), a torch, or nothing; a two-handed weapon leaves it empty.
-  Metals do not change a fight yet.
+  In a room a player holds only what their [[Gear]] puts in their hands. Metals do not change a fight.
 
 | Weapon | Reach (m) | Damage | Weight | Stamina | Blow lands / swing ends (ticks) |
 |---|---|---|---|---|---|
@@ -171,7 +171,7 @@ human limits ([[Foes]]).
 
 ## Limits
 
-- No gear power yet: every sword strikes alike whatever its metal.
+- Gear's power scales a blow's damage in the rooms ([[Gear]]), but its perks change nothing the fight's rules do yet.
 - Running costs no stamina.
 - Casting does no harm yet.
 - A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).

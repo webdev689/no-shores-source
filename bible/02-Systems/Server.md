@@ -61,8 +61,10 @@ on Cloudflare.
   exactly as the browser that predicted it did, so a prediction can only differ where the server knows more
   ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
   swing, a guard, a draw or a reload.
-- **Foes:** a player may ask for a foe (the [[Test Ground]]'s panel), one with each input; the room stands it 5 m
-  along the player's aim, which follows their look, on its navmesh, facing them, and holds at most twelve.
+- **Foes:** a player may ask for a foe and its level (the [[Test Ground]]'s panel), one with each input; the room
+  stands it 5 m along the player's aim, which follows their look, on its navmesh, facing them, and holds at most
+  twelve. A foe of level 0 has none and fights by combat's own numbers; one with a level has its kind's health grown
+  for it ([[Gear]]).
   Each tick every foe thinks over the room as it stands and steps by the same rules ([[Foes]]), routing on a
   [[Navmesh]] the room bakes from its blocks when it opens.
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
@@ -74,6 +76,16 @@ on Cloudflare.
   blow that finds no one overreaches its foe once every player near it has been judged.
 - **Shots** fly a tick at a time and strike the first body of the other side on their line; arrows and bolts fly in
   the room's own time.
+- **Gear** ([[Gear]]): each player holds their gear while they are in the room, the starting kit as they join, and
+  only what it puts in their hands (or a torch beside a one-handed weapon): any other arms asked for are bare hands.
+  Every blow is made with its power: a player's on a foe by the Attack of the hand that struck and their levels, a
+  foe's on a player by the player's Defense and their levels. A foe's kill pays every player whose blow landed on it
+  in its last ten seconds, each their own XP and Aurem and perhaps a Vestige, which lies where the foe fell for them
+  alone for two minutes and is picked up by walking within 1.5 m.
+- **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
+  them. A social space's room answers a social space's asks (identifying a Vestige, the vault) anywhere in it; the
+  Test Ground's course within 4 m of its stall. A resource node is gathered within 2.5 m, and is spent for that player
+  until they leave. Only the Test Ground's room hands out gear to try the loop with.
 - **The dead** stand again, whole, after four seconds, at the spawn nearest where they fell, and the foes leave them be
   for three more unless they strike first; a dead foe is gone after ten.
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
@@ -164,11 +176,11 @@ an older reader skips them.
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
+| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for and its level, whether they ask to respawn, and an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; and each player's fight as the naval crate's numbers; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind, a glance at its fighter and its level; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; and each player's fight as the naval crate's numbers; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
 starboard), crab and climb; whether a look is laid, its bearing off her bow (degrees) and range (metres); whether it
@@ -192,6 +204,8 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, and each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules); their Vestiges and those lying for them; the resource nodes they have spent; whether they stand where a social space's asks are answered; and the answer to their last ask |
+
 ## The host
 
 A Cloudflare Worker, in `server/` ([[The Server's Shell Is in server]]), sends `/room/<name>` to one Durable Object for
@@ -201,7 +215,7 @@ so every decision is Rust and the shell only carries bytes and time.
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
   continents; `node-<id>` is that node's room, from its baked file; `fleet-<name>` a fleet's place on the open sea;
   any other name is the Test Ground's course,
-  `content/testground/course.json`, which the client reads too. A node with no baked file answers 404.
+  `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
@@ -216,7 +230,7 @@ so every decision is Rust and the shell only carries bytes and time.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
   room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
-  sends every player the snapshot after each tick; a socket closing as it is sent to is passed over, so the rest
+  sends every player the snapshot after each tick, and their own gear when it changed; a socket closing as it is sent to is passed over, so the rest
   still get the tick. When the last player leaves it stops, and the room goes with the object.
 
 ## The browser's side
@@ -256,6 +270,8 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 - A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
 - Any page can join a room, under any name; no one signs in.
+- A player's gear lives only while they stay in one room: each room starts them from the starting kit, and none is
+  kept when they leave, until there are accounts ([[Accounts Start as Guests, on Cloudflare D1]]).
 - A full sea of sockets each asking for the costliest course it may holds about a third of the sea's time: 40
   snapshots a second against 57, with 63 such sockets on the local runtime (tested offline).
 - A snapshot sends every player's whole fighter and look and every foe's glance every tick: fine for a few players and

@@ -116,7 +116,8 @@ its nodes, and a node's card listing its costs as held against needed.
   - **Armour:** head, torso, arms and legs.
   - **The cloak** is cosmetic and adds to its faction's reputation while worn.
   - **Clothing** is no longer single found items. It comes in sets of clothing pieces, earned or bought, and a toggle
-    shows the armour or takes it off over the clothing.
+    shows the armour or takes it off over the clothing. Replaced: every piece of clothing is armour, with a wardrobe
+    later ([[Clothing Is Armour, With a Wardrobe Later]]).
 - **Nodes.** Each item has nodes that are levelled up to raise its power, at a cost, and that carry its perks. An item
   unlocks its nodes as it earns XP. Armour earns XP too: this replaces "Armor does not have XP" in
   [[Overlook Is a Shared World After Destiny 1]].

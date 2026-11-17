@@ -18,13 +18,26 @@
         margin: 0;
         height: 100vh;
         display: grid;
-        grid-template-columns: 320px 1fr;
+        grid-template-columns: 320px 1fr 360px;
       }
-      #panel {
+      #panel,
+      #gear-panel {
         overflow-y: auto;
         padding: 12px 14px;
         background: #14181d;
         border-right: 1px solid #2a3038;
+      }
+      #gear-panel {
+        border-right: none;
+        border-left: 1px solid #2a3038;
+      }
+      .kit-item {
+        margin: 8px 0;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #222a33;
+      }
+      .kit-item > span {
+        font-weight: 600;
       }
       h1 {
         font-size: 16px;
@@ -307,6 +320,7 @@
       <canvas id="ground"></canvas>
       <div id="hud"></div>
     </main>
+    <aside id="gear-panel"></aside>
     <script type="module" src="/src/testground/testgroundMain.ts"></script>
   </body>
 </html>

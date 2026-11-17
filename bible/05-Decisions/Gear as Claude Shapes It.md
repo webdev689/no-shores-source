@@ -155,7 +155,7 @@ yet.
 | Hands | A dagger, sword, mace or flail goes in either hand; an axe, warhammer, staff, bow, crossbow or thunderlock takes both, so the off hand is emptied; a shield goes in the off hand only | Combat's two-handed weapons, and a bow, crossbow or long gun needs both hands |
 | The starting kit | A level 1 Normal sword, and Normal armour of level 1 for each slot | Destiny 1 starts a Guardian in its plainest gear |
 | The cloak | Its slot holds one; until there are factions, cloaks belong to none | The owner: factions come later |
-| Clothing | A set is a list of garments, each dyed. A player owns sets, wears one, and shows their armour or takes it off over the clothing; the armour still gives all its power | The owner: sets, with armour toggled on and off |
+| Clothing | Every garment is armour of its piece, the everyday ones Normal and Magic, the heavier sets Rare and above; no toggle | The owner: clothing is armour, with a wardrobe later ([[Clothing Is Armour, With a Wardrobe Later]]) |
 
 ### Names
 

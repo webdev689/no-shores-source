@@ -19,13 +19,17 @@ import { IMPACT_SPARKS, Tracers, figureMuzzle, othersArrows, screenMuzzle } from
 import { Hud } from '../combat/hud.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
-import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
+import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { TestgroundBlood } from './blood.ts';
 import { type CardAt, Cards } from '../player/cards.ts';
-import { COURSE, START } from './course.ts';
-import { type Dress, plainDress } from '../player/dressing.ts';
+import { COURSE, RESOURCE_NODES, STALL, START } from './course.ts';
+import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
+import { startGearPanel } from './gearPanel.ts';
+import type { GearState } from '../network/gearMessages.ts';
+import { gearHands, worn } from '../player/gear.ts';
+import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
@@ -129,8 +133,11 @@ async function start(): Promise<void> {
       const seconds = (cards?.frames(you.dress.body, anim) ?? 1) * ACT_FRAME;
       player = { ...player, act: { anim, elapsed: 0, seconds } };
     },
-    fight: (kind) => fight?.ask(kind),
+    fight: (kind, level) => fight?.askFoe(kind, level),
   });
+  // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
+  let gear: GearState | null = null;
+  const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => fight?.askGear(ask));
   const panelState = (looks: ForgeLooks, hair: HairColours, line: string) => ({
     looks,
     hair,
@@ -177,10 +184,15 @@ async function start(): Promise<void> {
     fight?.receive(snapshot);
     otherPlayers.seen(snapshot.players, fight?.player ?? null, forge);
   };
+  const gearReceived = (message: GearMessage) => {
+    gear = message;
+  };
   const link = roomUrl
-    ? await RoomConnection.open(roomUrl, received)
-    : LocalRoom.open(roomModule, START, COURSE, received);
+    ? await RoomConnection.open(roomUrl, received, gearReceived)
+    : LocalRoom.open(roomModule, START, COURSE, received, gearReceived, { stall: STALL, nodes: RESOURCE_NODES });
   fight = new Fighting(combatRules, link);
+  // The room in the page runs one tick at once, so the player's fighter and gear are known before they first play.
+  if (!roomUrl) link.pump(movement.tickSeconds);
   otherPlayers.takeDresses(link.dressed);
   const steps = fight.steps(movement);
   if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
@@ -195,6 +207,7 @@ async function start(): Promise<void> {
   const otherGlides = new Glides();
   let foeId = -1;
   let armsKey = '';
+  let gearHandsKey = '';
 
   let last = performance.now();
   let clock = 0;
@@ -207,6 +220,14 @@ async function start(): Promise<void> {
     last = now;
     clock += seconds;
     const controls = input.frame();
+    // The hands hold what the gear wears: the room takes no other arms.
+    const handsWorn = gear && JSON.stringify([you.dress.body, worn(gear, 0), worn(gear, 1)].map((each) => each ?? 0));
+    const bodyLayers = looks.bodies[you.dress.body]?.layers;
+    if (gear && handsWorn && handsWorn !== gearHandsKey && bodyLayers) {
+      gearHandsKey = handsWorn;
+      const hands = gearHands(gear, wardrobeOf(you.dress.body, bodyLayers));
+      you.dress = { ...you.dress, outfit: { ...you.dress.outfit, ...hands } };
+    }
     const wasDrawn = you.dress.outfit.drawn;
     // The fight's buttons for this frame's ticks: a swing or a shot only with the weapon already out, on foot, the
     // hands free; a guard on foot; a dodge whenever pressed (the rules refuse one in the air or the saddle).
@@ -251,7 +272,13 @@ async function start(): Promise<void> {
       );
       if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
-    // Alone, the room in the page waits while the pointer is free: Escape pauses the fight.
+    // Alone, the room in the page waits while the pointer is free: Escape pauses the fight. An ask made from the
+    // panel meanwhile still goes, carried by a tick of the player standing still.
+    if (!controls.locked && fight.asking) {
+      const still = { forward: 0, sideways: 0, yaw: player.yaw, run: false, jump: false, crouch: false };
+      player = { ...player, body: steps.step(player.body, { ...still, mounted: player.mounted }) };
+      if (!roomUrl) fight.pump(movement.tickSeconds);
+    }
     if (roomUrl || controls.locked) fight.pump(seconds);
     const own = fight.own;
     const events = fight.takeEvents();
@@ -406,7 +433,10 @@ async function start(): Promise<void> {
     tracers.seen(fight.takeShots(), fight.player);
     for (const impact of tracers.update(seconds, COURSE, bodies)) sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     const traced = tracers.mesh(cameraOf(camera).eye, fight.shots, fight.player);
-    scene.setMarks(marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, traced));
+    const rings = gearRings(STALL, RESOURCE_NODES, gear, clock);
+    scene.setMarks(
+      marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, [...traced, ...rings]),
+    );
     blood.frame(seconds, events, fight, camera, canvas.width / Math.max(1, canvas.height));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
       if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
@@ -420,7 +450,8 @@ async function start(): Promise<void> {
     const foesMarked = [...fight.foes.values()].map((kept) => {
       const figure = foeFigures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
-      return { id: kept.id, name: foeKind(kept.kind)?.name ?? 'Foe', view };
+      const name = foeKind(kept.kind)?.name ?? 'Foe';
+      return { id: kept.id, name: kept.level > 0 ? `${name} ${kept.level}` : name, view };
     });
     const matrix = viewProjection(camera, canvas.width / Math.max(1, canvas.height));
     hud.update(
@@ -453,6 +484,8 @@ async function start(): Promise<void> {
     const failure = forge.failure ? ` A strip did not load: ${forge.failure}` : '';
     const line = controls.locked ? 'Playing: Escape frees the mouse.' : status;
     showPanel(panelState(looks, hair, line + composing + failure));
+    const atStall = Math.hypot(player.body.x - STALL.x, player.body.y - STALL.y) <= STALL_REACH;
+    showGear({ gear, atStall, nodesInReach: nodesInReach(player.body, RESOURCE_NODES, gear) });
     requestAnimationFrame(frame);
   };
 

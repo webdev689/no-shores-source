@@ -4,13 +4,29 @@
 
 namespace overlook.wire;
 
+// A player's ask of their gear, carried by one input: what (as the room numbers it), and what it names: an item or a
+// Vestige by the player's own number for it, a slot, a node's column and place in it, and for the Test Ground's
+// grants a rarity, a level, a count, a kind of item and a named item's id.
+table Ask {
+  kind: ubyte;
+  item: uint;
+  slot: ubyte;
+  column: ubyte;
+  node: ubyte;
+  rarity: ubyte;
+  level: ubyte;
+  count: uint;
+  item_kind: ubyte;
+  named: string;
+}
+
 // A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted. Numbered 1, 2, 3 and so on.
 // With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
 // their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
 // 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
 // combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
-// (0 none; 255 sends every foe away), and whether they ask to respawn, dead past a node's section. New fields go at
-// the end, so old readers skip them.
+// (0 none; 255 sends every foe away), whether they ask to respawn, dead past a node's section, an ask of their gear,
+// and the level of the foe asked for (0, the player's own). New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -23,6 +39,8 @@ table Input {
   seen: ulong;
   spawn: ubyte;
   respawn: bool;
+  ask: Ask;
+  spawn_level: ubyte;
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
@@ -84,11 +102,13 @@ table Seen {
   standing_ticks: uint;
 }
 
-// A foe as the room last stepped it: its number, its kind, and a glance at its fighter (combat's glance order).
+// A foe as the room last stepped it: its number, its kind, a glance at its fighter (combat's glance order), and its
+// level.
 table Foe {
   id: uint;
   kind: ubyte;
   glance: [double];
+  level: ubyte;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -212,10 +232,93 @@ table Snapshot {
   fight_clock: double;
 }
 
+// One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the
+// traits it offers by id, the XP that unlocks it, and what a node of it costs in Aurem, fragments, Essence and the
+// item's island resource.
+table GearColumn {
+  kind: ubyte;
+  traits: [string];
+  xp: uint;
+  aurem: uint;
+  fragments: ushort;
+  essence: ushort;
+  resource: ushort;
+}
+
+// An item a player holds, as their own gear message tells them: their number for it, its kind and rarity (the gear
+// crate's numbers), its level, the named item it is (empty for a rolled one) or a rolled one's name among its kind's,
+// its island resource (255 for none), whether a Breach's, its XP and the most it earns, the nodes bought (a bit each)
+// and the one chosen in each column (255 none), the slot it is carried with, where it is (0 carried, 1 the vault, 2
+// and on worn in the slot that many less 2), its Attack, Defense and Prestige, and its columns.
+table GearItem {
+  id: uint;
+  kind: ubyte;
+  rarity: ubyte;
+  level: ubyte;
+  named: string;
+  name: ubyte;
+  resource: ubyte;
+  breach: bool;
+  xp: uint;
+  xp_most: uint;
+  bought: uint;
+  chosen: [ubyte];
+  bucket: ubyte;
+  at: ubyte;
+  attack: uint;
+  defense: uint;
+  prestige: uint;
+  columns: [GearColumn];
+}
+
+// A Vestige a player holds: their number for it, its colour, the slot it holds an item for, that item's level, and
+// whether it is in the vault.
+table GearVestige {
+  id: uint;
+  rarity: ubyte;
+  slot: ubyte;
+  level: ubyte;
+  vaulted: bool;
+}
+
+// A Vestige lying on the ground for this player alone: their number for it, its colour, its slot, and where it lies
+// (x, y, z).
+table GearDrop {
+  id: uint;
+  rarity: ubyte;
+  slot: ubyte;
+  at: [double];
+}
+
+// A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
+// then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
+// the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent;
+// whether they stand where a social space's asks are answered; and the answer to their last ask (0 done, then the
+// gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
+// answered.
+table Gear {
+  xp: ulong;
+  level: ubyte;
+  prestige: uint;
+  defense: uint;
+  aurem: uint;
+  stocks: [ushort];
+  resources: [ushort];
+  items: [GearItem];
+  vestiges: [GearVestige];
+  drops: [GearDrop];
+  spent: [ubyte];
+  social: bool;
+  answer: ubyte;
+  identified: uint;
+  answered: uint;
+}
+
 // What a room sends: exactly one of these is present.
 table FromRoom {
   joined: Joined;
   snapshot: Snapshot;
+  gear: Gear;
 }
 
 root_type FromRoom;

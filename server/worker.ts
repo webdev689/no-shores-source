@@ -75,7 +75,8 @@ export class RoomHost extends DurableObject<Env> {
     if (name === 'sea') return this.room.openSea(JSON.stringify(layout));
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
-    if (node === undefined) return this.room.open(course.start, course.blocks);
+    if (node === undefined)
+      return this.room.open(course.start, course.blocks) && this.room.furnish(course.stall, course.resources);
     const file = await this.env.NODES.fetch(`https://nodes/${node}.json`);
     return file.ok && this.room.openNode(await file.text());
   }
@@ -148,8 +149,12 @@ export class RoomHost extends DurableObject<Env> {
       }
       const snapshot = this.guarded(() => this.room.snapshot(), new Uint8Array());
       for (const socket of this.open()) {
+        const held = this.players.get(socket);
+        // Each player's own gear goes to them alone, when it changed.
+        const gear = held ? this.guarded(() => this.room.gear(held.player), new Uint8Array()) : new Uint8Array();
         try {
           socket.send(snapshot);
+          if (gear.length > 0) socket.send(gear);
         } catch {
           // A socket that closed between the check and the send misses this snapshot; the rest still get theirs.
         }

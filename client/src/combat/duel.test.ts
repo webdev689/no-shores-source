@@ -6,7 +6,9 @@ import { LocalRoom } from '../network/localRoom.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import { Fighting } from './fighting.ts';
+import { KIND, wear } from './wornForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -27,14 +29,31 @@ const ANSWER_BEFORE = 5;
  *  they see coming, and striking back once one is parried; every event the room told the page, in words. */
 function duel(answer: Answer): string[] {
   let fight: Fighting | null = null;
-  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
+  let gear: GearState | null = null;
+  const room = LocalRoom.open(
+    compiled,
+    course.start,
+    course.blocks,
+    (snapshot: Snapshot) => fight?.receive(snapshot),
+    (message) => {
+      gear = message;
+    },
+  );
   const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
   fight = fighting;
   fighting.arms = rules.armsCode('sword_steel', 'shield_kite_steel', true);
   const steps = fighting.steps({ tickSeconds: TICK } as unknown as MovementRules);
-  fighting.ask(SWORDSMAN);
+  const still = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+  const idle = () => {
+    fighting.press({ swing: false, shoot: false, guard: false, dodge: false, pitch: 0 });
+    steps.step({} as never, still);
+    room.pump(TICK);
+  };
+  // The sword is the starting kit's; the shield is handed out and worn, as the room takes arms from gear alone.
+  wear(fighting, () => gear, idle, [KIND.shield]);
+  fighting.askFoe(SWORDSMAN);
   const told: string[] = [];
   let answeredAt = -Infinity;
   let guarding = 0;

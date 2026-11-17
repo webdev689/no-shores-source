@@ -10,7 +10,9 @@ import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type CombatRules, type Fired, startCombatRules } from '../rules/combatRules.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
+import { KIND, wear } from './wornForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -73,8 +75,8 @@ test('every foe asked for comes, one with each input, even two asked for within 
   fight = fighting;
   const steps = fighting.steps(movement);
   const held = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
-  fighting.ask(1);
-  fighting.ask(3);
+  fighting.askFoe(1);
+  fighting.askFoe(3);
   for (let tick = 0; tick < 4; tick += 1) {
     steps.step({} as Body, held);
     room.pump(TICK);
@@ -88,7 +90,16 @@ const UNPRESSED: FightButtons = { swing: false, shoot: false, guard: false, dodg
 /** A fight in a room in the page, its player holding `right`, and a tick that steps it with these buttons pressed. */
 function fightIn(right: string) {
   let fight: Fighting | null = null;
-  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
+  let gear: GearState | null = null;
+  const room = LocalRoom.open(
+    compiled,
+    course.start,
+    course.blocks,
+    (snapshot: Snapshot) => fight?.receive(snapshot),
+    (message) => {
+      gear = message;
+    },
+  );
   const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
@@ -101,6 +112,9 @@ function fightIn(right: string) {
     steps.step({} as Body, STILL);
     room.pump(TICK);
   };
+  // A weapon the starting kit lacks is handed out and worn first: the room takes arms from gear alone.
+  const kind = right.startsWith('bow') ? KIND.bow : right.startsWith('pistolet') ? KIND.pistolet : null;
+  if (kind !== null) wear(fighting, () => gear, tick, [kind]);
   return { fighting, tick };
 }
 
@@ -264,7 +278,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     tick,
     players: [],
     dressed: [],
-    foes: [{ id: 7, kind: 2, glance: glance(east) }],
+    foes: [{ id: 7, kind: 2, glance: glance(east), level: 0 }],
     events: [],
     shots: [],
     ships: [],

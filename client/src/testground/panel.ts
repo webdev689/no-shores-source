@@ -29,8 +29,8 @@ export interface PanelHandlers {
   fps(value: number): void;
   /** Plays a move once on the player. */
   act(anim: string): void;
-  /** Stands a foe of this kind before the player, or sends every foe away. */
-  fight(kind: number): void;
+  /** Stands a foe of this kind and level (0, a foe of none) before the player, or sends every foe away. */
+  fight(kind: number, level: number): void;
 }
 
 /** DFO's controls, as the hint lists them. */
@@ -47,6 +47,7 @@ const CONTROLS = [
 /** The Test Ground's panel: the figures, and the chosen one's move, facing and dress. */
 export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: PanelState) => void {
   const garmentFilter = { text: '' };
+  const foeLevel = { value: 0 };
   let shown = '';
   const status = make('p', '', 'status');
   const body = make('div');
@@ -115,13 +116,19 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
     const chosen = state.chosen;
     const foes = FOE_KINDS.map((kind) =>
       button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () =>
-        handlers.fight(kind.number),
+        handlers.fight(kind.number, foeLevel.value),
       ),
     );
+    const level = make('input');
+    Object.assign(level, { type: 'number', min: '0', max: '30', value: String(foeLevel.value) });
+    level.addEventListener('change', () => {
+      foeLevel.value = Math.min(30, Math.max(0, Math.round(Number(level.value) || 0)));
+    });
     body.replaceChildren(
       make('h2', 'Foes'),
+      labelled('Level (0: none)', level),
       ...foes,
-      button('Send every foe away', () => handlers.fight(CLEAR_FOES)),
+      button('Send every foe away', () => handlers.fight(CLEAR_FOES, 0)),
       make('h2', 'Figures'),
       list,
       button('Add a figure ahead', handlers.add),

@@ -4,19 +4,23 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
 
+pub mod asks;
 pub mod fleet;
 mod foes;
 mod judging;
 pub mod pirates;
 mod players;
+mod power;
 pub mod sea;
 
+pub use asks::{Asked, Grant, ResourceNode};
 pub use foes::{CLEAR_FOES, FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};
 pub use players::{
     CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, VIEW_LAG,
     WAITING_LIMIT,
 };
+pub use power::{Drop, allowed_arms, gear_arms};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
@@ -67,12 +71,15 @@ pub struct Seen {
     pub acknowledged: u32,
 }
 
-/// A foe as the room keeps it: its fighter, its kind's number and its brain.
+/// A foe as the room keeps it: its fighter, its kind's number, its brain, its level (0 for none: it fights by combat's
+/// own numbers), and the players whose blows landed on it, with the tick and hand of each one's last.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Foe {
     pub fighter: Fighter,
     pub kind: u8,
     pub brain: ::foes::Brain,
+    pub level: u8,
+    pub struck_by: BTreeMap<PlayerId, (u64, gear::Slot)>,
 }
 
 /// A foe as the room last stepped it.
@@ -81,6 +88,7 @@ pub struct FoeSeen {
     pub foe: FighterId,
     pub kind: u8,
     pub fighter: Fighter,
+    pub level: u8,
 }
 
 /// One shared space: its floor and course, where players stand, its section if it is a node's, its clock in ticks, its
@@ -105,8 +113,8 @@ pub struct Room {
     /// the foes' brains.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
     pub(crate) ended_telegraphs: Vec<(FighterId, bool, bool)>,
-    /// Foes the players asked to stand before them: (player, kind).
-    pub(crate) spawns: Vec<(PlayerId, u8)>,
+    /// Foes the players asked to stand before them: (player, kind, level).
+    pub(crate) spawns: Vec<(PlayerId, u8, u8)>,
     /// Swings begun this tick, for the foes' brains to see.
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
@@ -120,6 +128,12 @@ pub struct Room {
     pub(crate) seed: u64,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
     past: VecDeque<(u64, Vec<(FighterId, Fighter)>)>,
+    /// Whether the room is a social space's, where its asks are answered anywhere; the Test Ground's stall, where
+    /// they are answered within reach; its resource nodes; and the Vestiges lying for its players.
+    pub social: bool,
+    pub(crate) stall: Option<[f64; 2]>,
+    pub(crate) resource_nodes: Vec<ResourceNode>,
+    pub(crate) drops: Vec<Drop>,
 }
 
 impl Room {
@@ -168,6 +182,10 @@ impl Room {
             nav,
             seed: SEED,
             past: VecDeque::new(),
+            social: false,
+            stall: None,
+            resource_nodes: Vec::new(),
+            drops: Vec::new(),
         }
     }
 
@@ -205,6 +223,7 @@ impl Room {
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
         self.players.remove(&player);
+        self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
             std::mem::take(&mut self.pending).into_iter().partition(|pending| pending.defender == player);
         self.pending = kept;
@@ -255,6 +274,7 @@ impl Room {
         self.judge_waiting();
         self.tell_brains();
         self.raise_the_dead();
+        self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {
             self.past.pop_front();
@@ -272,8 +292,11 @@ impl Room {
             self.dress_in_turn(id);
             let mut taken = 0;
             while taken < CATCH_UP {
-                let Some((input, seen)) = self.next_input(id) else { break };
+                let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
+                if let Some(asked) = input.ask.take() {
+                    self.answer(id, asked);
+                }
                 let view = self.view_at(seen);
                 let Some(found) = self.players.get_mut(&id) else { break };
                 if let Standing::Dead { .. } = found.standing {
@@ -291,13 +314,13 @@ impl Room {
                     }
                     continue;
                 }
-                let fighter = found.fighter.holding(Arms::from_code(input.arms));
+                let fighter = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
                 found.fighter = next;
                 found.shown = input.shown;
                 found.remember(seen);
                 if let Some(kind) = input.spawn.filter(|_| self.section.is_none()) {
-                    self.spawns.push((id, kind));
+                    self.spawns.push((id, kind, input.spawn_level));
                 }
                 self.happened(id, &next, happening, &view);
             }
@@ -389,13 +412,14 @@ impl Room {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
                 for defender in struck(id, fighter, &attack, view, &self.blocks) {
-                    let blow = swing_blow(id, fighter, &attack, defender);
+                    let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender, attack.left_hand);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {
                         let check = Check::Swing { striker: Box::new(*fighter), attack };
                         self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
                     } else if let Some(then) = self.as_seen(defender, view) {
-                        self.judge_now(&blow, how, defender, &then);
+                        let hand = if attack.left_hand { gear::Slot::OffHand } else { gear::Slot::MainHand };
+                        self.judge_now(&blow, how, defender, &then, Some(hand));
                     }
                 }
             }
@@ -496,7 +520,12 @@ impl Room {
 
     /// Every foe as the room last stepped it, in the order of their numbers.
     pub fn foes_seen(&self) -> impl Iterator<Item = FoeSeen> + '_ {
-        self.foes.iter().map(|(&foe, found)| FoeSeen { foe, kind: found.kind, fighter: found.fighter })
+        self.foes.iter().map(|(&foe, found)| FoeSeen {
+            foe,
+            kind: found.kind,
+            fighter: found.fighter,
+            level: found.level,
+        })
     }
 
     /// The shots in flight.
@@ -514,25 +543,6 @@ impl Room {
     /// What happened in the fight since this was last asked, to send to everyone once.
     pub fn take_events(&mut self) -> Vec<Event> {
         std::mem::take(&mut self.events)
-    }
-
-    /// Every player's dress, for one who joins; players who have sent none are left out.
-    pub fn dresses(&self) -> impl Iterator<Item = (PlayerId, &str)> + '_ {
-        self.players
-            .iter()
-            .filter(|(_, found)| !found.dress.is_empty())
-            .map(|(&player, found)| (player, found.dress.as_str()))
-    }
-
-    /// The dresses that changed since this was last asked, to send to everyone once.
-    pub fn take_dress_changes(&mut self) -> Vec<(PlayerId, String)> {
-        let changed = self.players.iter_mut().filter(|(_, found)| found.dress_changed);
-        changed
-            .map(|(&player, found)| {
-                found.dress_changed = false;
-                (player, found.dress.clone())
-            })
-            .collect()
     }
 
     #[must_use]
@@ -582,3 +592,7 @@ mod fair_tests;
 #[cfg(test)]
 #[path = "node_tests.rs"]
 mod node_tests;
+
+#[cfg(test)]
+#[path = "gear_tests.rs"]
+mod gear_tests;

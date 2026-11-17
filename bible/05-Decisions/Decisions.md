@@ -15,7 +15,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[WebGPU Only]]
 - [[Browser and Desktop From the Start]]
 - [[Servers on Cloudflare]]
-- [[PostgreSQL]]
 - [[WebSocket, Then WebTransport]]
 - [[Clients Predict With the Shared Rules]]
 - [[One Schema for Every Message]]
@@ -66,6 +65,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Rooms Deploy on Each Merge]]
 - [[Gear and Power Follow Destiny 1 Vanilla]]
 - [[Gear as Claude Shapes It]]
+- [[Accounts Start as Guests, on Cloudflare D1]]
+- [[Clothing Is Armour, With a Wardrobe Later]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -78,3 +79,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
+- [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]

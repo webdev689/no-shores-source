@@ -1,4 +1,5 @@
 import type { Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messages.ts';
+import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
@@ -29,11 +30,12 @@ export function strokesReaching(apart: number | null, reach: (stroke: number) =>
   return reaching.length > 0 ? reaching : [...STROKES];
 }
 
-/** A foe as the page keeps it: its kind, the room's glance at it now and at the snapshot before, and the room ticks
- *  between the two. */
+/** A foe as the page keeps it: its kind and level (0 for none), the room's glance at it now and at the snapshot
+ *  before, and the room ticks between the two. */
 export interface KeptFoe {
   readonly id: number;
   readonly kind: number;
+  readonly level: number;
   readonly view: FighterView;
   readonly before: FighterView | null;
   readonly ticks: number;
@@ -107,7 +109,8 @@ export class Fighting {
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
   private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
-  private readonly spawnsQueued: number[] = [];
+  private readonly spawnsQueued: { readonly kind: number; readonly level: number }[] = [];
+  private readonly gearQueued: GearAsk[] = [];
   private sentDress = '';
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
    *  Daggerfall Unity's click chooses among all six, and again once used. */
@@ -158,10 +161,20 @@ export class Fighting {
     if (buttons.dodge) this.latches.dodge.press();
   }
 
-  /** Asks the room to stand a foe of this kind before the player (or to send every foe away): one ask an input, in the
-   *  order asked. */
-  ask(kind: number): void {
-    this.spawnsQueued.push(kind);
+  /** Asks the room to stand a foe of this kind and level before the player (level 0, a foe of none; or to send every
+   *  foe away): one ask an input, in the order asked. */
+  askFoe(kind: number, level = 0): void {
+    this.spawnsQueued.push({ kind, level });
+  }
+
+  /** Asks something of the player's gear: one ask an input, in the order asked. */
+  askGear(ask: GearAsk): void {
+    this.gearQueued.push(ask);
+  }
+
+  /** Whether an ask of a foe or of the gear waits for an input to carry it. */
+  get asking(): boolean {
+    return this.spawnsQueued.length > 0 || this.gearQueued.length > 0;
   }
 
   /** The movement rules as the page's tick loop steps them, but each tick's body the fighter's: its intent sent to the
@@ -227,7 +240,17 @@ export class Fighting {
     const arms = this.arms;
     const asked: Asked = { intent, view, arms, fired: null };
     const sequence = this.prediction.next(asked);
-    const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnsQueued.shift() ?? 0 };
+    const spawned = this.spawnsQueued.shift();
+    const gear = this.gearQueued.shift();
+    const parts = {
+      intent,
+      look: this.look,
+      arms,
+      seen: this.seen,
+      spawn: spawned?.kind ?? 0,
+      spawnLevel: spawned?.level ?? 0,
+      ...(gear === undefined ? {} : { ask: gear }),
+    };
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
@@ -270,7 +293,8 @@ export class Fighting {
       present.add(foe.id);
       const kept = this.foes.get(foe.id);
       const glanced = glanceView(foe.glance);
-      this.foes.set(foe.id, { id: foe.id, kind: foe.kind, view: glanced, before: kept?.view ?? null, ticks });
+      const before = kept?.view ?? null;
+      this.foes.set(foe.id, { id: foe.id, kind: foe.kind, level: foe.level, view: glanced, before, ticks });
       view.push({ id: foe.id, glance: foe.glance });
     }
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);

@@ -3,6 +3,7 @@ use combat::arms::{OffHand, Stroke, WeaponClass};
 use combat::{CombatInput, Intent};
 use judging::{Check, How};
 use movement::Controls;
+use std::collections::BTreeMap;
 
 const SWORD: u32 = 2;
 
@@ -14,7 +15,7 @@ fn room() -> Room {
 fn stand(room: &mut Room, kind: ::foes::Kind, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
     let (fighter, brain) = ::foes::spawn(kind, x, y, core::f64::consts::PI);
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
+    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level: 0, struck_by: BTreeMap::new() });
     id
 }
 
@@ -122,6 +123,7 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
     let mut room = room();
     let player = room.join().expect("a room with space");
     let foe = stand_foe(&mut room);
+    crate::power::hold(&mut room, player, gear::Kind::Pistolet);
     let mut archer = *room.fighter(player).unwrap();
     archer.arms =
         combat::Arms { melee: WeaponClass::Fists, ranged: Some(combat::Ranged::Pistolet), off_hand: OffHand::Empty };

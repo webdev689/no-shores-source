@@ -60,7 +60,8 @@ The Test Ground plays the [[Combat]] rules in a room, always: alone, the room cr
 WebAssembly; with `?room=`, a server's. The page predicts the player's fighter by the room's own rules and takes the
 room's word for it, so playing alone and online are the same game.
 
-- **Foes.** The panel stands a foe of each kind 5 m ahead of where the player looks, facing them, at most twelve, or
+- **Foes.** The panel stands a foe of each kind 5 m ahead of where the player looks, facing them, at the level it
+  names (0 for none, which fights by combat's own numbers; a levelled foe's name shows its level), at most twelve, or
   sends every foe away; a foe asked for while the forge still loads is not asked for. Each
   fights by its brain ([[Foes]]) and is dressed by its kind: the skirmisher in leather with a pair of daggers, the
   swordsman in mail with a sword and kite shield, the brute in iron plate with a warhammer, the archer in leather with
@@ -106,6 +107,29 @@ room's word for it, so playing alone and online are the same game.
 - **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
   pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
   takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
+
+## Gear
+
+The [[Gear]] panel, at the right, shows the player's gear as the room holds it: their level, Prestige, Defense, XP,
+Aurem and every material; what they wear and carry, each item's Attack, Defense or Prestige, level and XP; each
+item's nodes, column by column, bought and chosen, with what a node costs or the XP it waits on; their Vestiges, those
+lying for them on the ground, and the vault; and the answer to their last ask.
+
+- **Asks.** Its buttons wear an item (a blade or mace in the off hand too), take one off, buy a node or choose among
+  those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to
+  an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes, carried
+  by a tick of the player standing still.
+- **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
+  the vault is reached, as in a social space.
+- **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
+  Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
+- **Vestiges** a kill leaves lie where the foe fell, ringed in their colour on the ground, and are picked up by walking
+  over them.
+- **The hands** hold what the gear wears: the room takes no other arms, so the dress panel's hands give way to it.
+- **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
+  item of any kind, rarity and level, any named item, 50 of every material, and XP.
+
+The room in the page runs one tick as the page opens, so the gear is there before the player first plays.
 
 ## Playing together
 

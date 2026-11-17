@@ -56,7 +56,7 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
 impl Room {
     /// Stands each foe the players asked for before them, or sends every foe away.
     pub(crate) fn spawn_asked(&mut self) {
-        for (asker, number) in std::mem::take(&mut self.spawns) {
+        for (asker, number, level) in std::mem::take(&mut self.spawns) {
             if number == CLEAR_FOES {
                 let gone: Vec<FighterId> = self.foes.keys().copied().collect();
                 for foe in gone {
@@ -73,19 +73,24 @@ impl Room {
             if self.foes.len() >= FOES_MOST {
                 continue;
             }
-            self.stand_foe(kind, &player, asker);
+            self.stand_foe(kind, &player, asker, level);
         }
     }
 
-    fn stand_foe(&mut self, kind: Kind, player: &Fighter, asker: PlayerId) {
+    /// Stands a foe before a player, its health its kind's at its level.
+    fn stand_foe(&mut self, kind: Kind, player: &Fighter, asker: PlayerId, level: u8) {
         // Along the player's aim, which follows their look: a body standing still keeps the way it last walked.
         let (sin, cos) = (libm::sin(player.aim), libm::cos(player.aim));
         let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
         let spot = self.nav.nearest_point(ahead).unwrap_or(ahead);
         let facing = combat::sight::bearing([spot[0], spot[1]], [player.body.x, player.body.y]);
-        let (fighter, brain) = spawn(kind, spot[0], spot[1], facing);
+        let (mut fighter, brain) = spawn(kind, spot[0], spot[1], facing);
+        let times = gear::power::foe_health_times(level);
+        fighter.health *= times;
+        fighter.health_max *= times;
         let id = self.next_id();
-        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
+        let struck_by = std::collections::BTreeMap::new();
+        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by });
         self.tell(EventKind::Spawned, None, asker, id, 0.0);
     }
 
@@ -174,6 +179,7 @@ impl Room {
         let how = if telegraph.iron { How::Iron } else { How::Telegraph };
         for defender in near {
             let check = Check::Shape { telegraph: *telegraph, group };
+            let blow = self.empower(blow, defender, false);
             self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
         }
     }

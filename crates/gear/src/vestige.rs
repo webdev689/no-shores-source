@@ -2,7 +2,7 @@
 //! item for; and, once identified in a social space, the colour it opens to (at, above or below its own) and the item
 //! that comes out: a named Legendary or Atheric of its slot, or a lesser item of its kind with rolled traits.
 
-use crate::catalogue::catalogue;
+use crate::catalogue::{NamedDef, catalogue};
 use crate::dice::{Dice, Purpose};
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::{Kind, Slot};
@@ -52,21 +52,37 @@ pub fn opens_to(colour: Rarity, dice: &Dice) -> Rarity {
 /// evenly, at level 20; or a lesser item of a kind the slot takes, its name and traits rolled.
 #[must_use]
 pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, dice: &Dice) -> Option<Item> {
-    let content = catalogue();
     if rarity.named() {
-        let pool: Vec<_> = content.vestige_pool(rarity, slot).collect();
-        let named = pool.get(dice.pick(Purpose::Which, 0, pool.len()))?;
-        let mut item = Item::new(id, named.kind, rarity, NAMED_LEVEL, slot);
-        item.named = Some(named.id.clone());
-        item.layout.clone_from(&named.layout);
-        item.resource =
-            named.resource.as_deref().and_then(|resource| content.resource_index(resource)).map(|index| index as u8);
-        item.breach = named.breach;
-        return Some(item);
+        let pool: Vec<&NamedDef> = catalogue().vestige_pool(rarity, slot).collect();
+        return pool.get(dice.pick(Purpose::Which, 0, pool.len())).map(|named| named_item(id, named, slot));
     }
     let kinds: Vec<Kind> = slot.kinds().collect();
     let kind = *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?;
-    let mut item = Item::new(id, kind, rarity, level, slot);
+    Some(rolled(id, kind, rarity, slot, level, dice))
+}
+
+/// A named item from the catalogue, carried with `bucket`'s items: a cloak at level 1, anything else at 20, its traits
+/// copied so it stays what it was.
+#[must_use]
+pub fn named_item(id: u32, named: &NamedDef, bucket: Slot) -> Item {
+    let level = if named.kind == Kind::Cloak { 1 } else { NAMED_LEVEL };
+    let mut item = Item::new(id, named.kind, named.rarity, level, bucket);
+    item.named = Some(named.id.clone());
+    item.layout.clone_from(&named.layout);
+    item.resource = named
+        .resource
+        .as_deref()
+        .and_then(|resource| catalogue().resource_index(resource))
+        .and_then(|index| u8::try_from(index).ok());
+    item.breach = named.breach;
+    item
+}
+
+/// A lesser item of a kind, its name and its traits rolled from the kind's pools, never one trait twice.
+#[must_use]
+pub fn rolled(id: u32, kind: Kind, rarity: Rarity, bucket: Slot, level: u8, dice: &Dice) -> Item {
+    let content = catalogue();
+    let mut item = Item::new(id, kind, rarity, level, bucket);
     let names = content.names_of(kind, rarity);
     item.name = u8::try_from(dice.pick(Purpose::Name, 0, names.len())).unwrap_or_default();
     let mut used: Vec<&str> = Vec::new();
@@ -88,5 +104,5 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, dice: &Dice) -> Opti
         }
         item.layout.push(offered);
     }
-    Some(item)
+    item
 }

@@ -15,6 +15,12 @@ code:
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
   - crates/gear/src/catalogue.rs#catalogue
+  - crates/room/src/power.rs#empower
+  - crates/room/src/power.rs#pay_kill
+  - crates/room/src/asks.rs#answer
+  - crates/protocol/src/gear_wire.rs#gear_bytes
+  - client/src/player/gear.ts#gearHands
+  - client/src/testground/gearPanel.ts#startGearPanel
 ---
 # Gear
 
@@ -65,10 +71,27 @@ number is one of [[Gear as Claude Shapes It]].
 - **Chance** comes from a hash of the room's seed, its tick, the player and what the roll is for, so the same seed
   gives the same loot.
 
+## In the rooms
+
+- **Each player's gear** is held by the room they are in ([[Server]]), the starting kit as they join, and sent to
+  them alone whenever it changes, every column of every item spelled out so the browser draws it without the rules.
+- **Hands.** A player holds only what their gear puts in their hands, or a torch beside a one-handed weapon; the
+  browser draws the hands from the gear worn, in a metal its rarity likes.
+- **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the hand that
+  struck it (a shot is the main hand's), a foe's on a player by the player's Defense, each by the two levels. A foe
+  of level 0 fights by combat's own numbers.
+- **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds, and lays each one's
+  Vestige where it fell, seen by them alone, for two minutes.
+- **Asks** ride the player's inputs and are answered in turn. A city's social space answers identifying and the vault
+  anywhere in it; the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
+
 ## Limits
 
-- Nothing plays the rules yet: the rooms do not hold a player's gear, and no screen shows it.
 - Perks are named and chosen but change no fight until the combat rules read them.
-- A player's gear is not kept between sessions until there are accounts ([[PostgreSQL]]).
-- No Breach items exist yet, nor does anything give clothing sets; cloaks belong to no faction.
+- The Test Ground's panel is the only screen; the Enhanced Plus screens come next.
+- Gear lives only while a player stays in one room, until there are accounts ([[Accounts Start as Guests, on Cloudflare D1]]).
+- The hands are drawn in a metal the rarity likes, not each item's own look; armour, clothing sets and the cloak do
+  not dress the figure yet.
+- No Breach items exist yet, and no clothing is armour yet ([[Clothing Is Armour, With a Wardrobe Later]]); cloaks
+  belong to no faction.
 - The traits' and items' words are English only.

@@ -47,7 +47,7 @@ pub fn foes() -> Vec<FoeSeen> {
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
-    vec![FoeSeen { foe: 12, kind: 3, fighter: brute }]
+    vec![FoeSeen { foe: 12, kind: 3, fighter: brute, level: 7 }]
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -156,6 +156,8 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         seen: 977,
         spawn: Some(3),
         respawn: true,
+        ask: Some(room::Asked::Gear(gear::Ask::Feed { item: 4 })),
+        spawn_level: 12,
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();

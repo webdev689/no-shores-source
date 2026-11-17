@@ -2,6 +2,8 @@ import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, r
 
 /** A room's snapshot, as a link hands it on. */
 export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
+/** The player's own gear, as a link hands it on whenever it changes. */
+export type GearMessage = Extract<FromRoomMessage, { kind: 'gear' }>;
 
 /** A browser's way into a room, wherever the room runs: the player's number and the dresses at their welcome, why the
  *  link was lost (null while it holds), their inputs sent, and the room's clock let run (a room in the page ticks
@@ -37,8 +39,12 @@ export class RoomConnection implements RoomLink {
   }
 
   /** Joins the room at `url` (`ws://…/room/<name>`); resolves once the room has welcomed the player, and fails if it
-   *  closes first (a full room says so). */
-  static open(url: string, snapshot: (snapshot: Snapshot) => void): Promise<RoomConnection> {
+   *  closes first (a full room says so). Each snapshot goes to `snapshot`, and the player's own gear to `gear`. */
+  static open(
+    url: string,
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+  ): Promise<RoomConnection> {
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(url);
       socket.binaryType = 'arraybuffer';
@@ -51,6 +57,7 @@ export class RoomConnection implements RoomLink {
         const message = readFromRoom(new Uint8Array(event.data));
         if (message?.kind === 'joined') resolve(new RoomConnection(socket, message));
         else if (message?.kind === 'snapshot') snapshot(message);
+        else if (message?.kind === 'gear') gear(message);
       });
     });
   }

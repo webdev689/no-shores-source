@@ -2,8 +2,11 @@
 //! of the room it was seeing, and a foe to stand before it), the checks an input must pass, and what the room keeps of
 //! each to judge blows on it as it saw them.
 
+use crate::Room;
+use crate::asks::Asked;
 use combat::Fighter;
 use combat::fighter::FighterId;
+use gear::Character;
 use reach::Standing;
 use std::collections::VecDeque;
 
@@ -59,8 +62,8 @@ pub struct Shown {
 /// One input from a player: its number; one tick's intent (movement and the fight's buttons); what their figure
 /// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
 /// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; and a foe's kind to stand
-/// before them, if they asked for one (the Test Ground's panel); and whether they ask to respawn, dead past a node's
-/// section.
+/// before them, if they asked for one (the Test Ground's panel), and its level (0 for none: it fights by combat's own
+/// numbers); whether they ask to respawn, dead past a node's section; and an ask of their gear.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -71,6 +74,8 @@ pub struct Input {
     pub seen: u64,
     pub spawn: Option<u8>,
     pub respawn: bool,
+    pub ask: Option<Asked>,
+    pub spawn_level: u8,
 }
 
 impl Input {
@@ -112,6 +117,16 @@ pub struct Player {
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
     pub dress_next: Option<String>,
     pub dressed_at: Option<u64>,
+    /// Their gear, and whether it changed since it was last sent to them.
+    pub character: Character,
+    pub gear_changed: bool,
+    /// The answer to their last ask (0 done, else why not), the item a Vestige last opened to, and how many asks
+    /// have been answered.
+    pub answer: u8,
+    pub identified: u32,
+    pub answered: u32,
+    /// The room's resource nodes they have gathered from, spent for them until they leave.
+    pub spent: Vec<u8>,
 }
 
 impl Player {
@@ -133,6 +148,12 @@ impl Player {
             graced: 0,
             dress_next: None,
             dressed_at: None,
+            character: Character::starting(),
+            gear_changed: true,
+            answer: 0,
+            identified: 0,
+            answered: 0,
+            spent: Vec::new(),
         }
     }
 
@@ -150,5 +171,43 @@ impl Player {
     #[must_use]
     pub fn as_it_saw(&self, tick: u64) -> Option<&Fighter> {
         self.history.iter().find(|(seen, _)| *seen >= tick).map(|(_, fighter)| fighter)
+    }
+}
+
+impl Room {
+    /// Every player's dress, for one who joins; players who have sent none are left out.
+    pub fn dresses(&self) -> impl Iterator<Item = (PlayerId, &str)> + '_ {
+        self.players
+            .iter()
+            .filter(|(_, found)| !found.dress.is_empty())
+            .map(|(&player, found)| (player, found.dress.as_str()))
+    }
+
+    /// The dresses that changed since this was last asked, to send to everyone once.
+    pub fn take_dress_changes(&mut self) -> Vec<(PlayerId, String)> {
+        let changed = self.players.iter_mut().filter(|(_, found)| found.dress_changed);
+        changed
+            .map(|(&player, found)| {
+                found.dress_changed = false;
+                (player, found.dress.clone())
+            })
+            .collect()
+    }
+
+    /// Whether a player's gear changed since this was last asked, so it should be sent to them alone.
+    pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
+        self.players.get_mut(&player).is_some_and(|found| std::mem::take(&mut found.gear_changed))
+    }
+
+    /// Whether a player stands where a social space's asks are answered.
+    #[must_use]
+    pub fn social_for(&self, player: PlayerId) -> bool {
+        self.here(player).social
+    }
+
+    /// A player as the room keeps them.
+    #[must_use]
+    pub fn player(&self, player: PlayerId) -> Option<&Player> {
+        self.players.get(&player)
     }
 }

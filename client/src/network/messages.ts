@@ -3,6 +3,7 @@ import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
 import { type FleetPart, fleetOf, point, whole } from './fleetMessages.ts';
+import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
@@ -74,6 +75,8 @@ export interface SeenFoe {
   readonly id: number;
   readonly kind: number;
   readonly glance: Float64Array;
+  /** Its level; 0 for a foe of none, which fights by combat's own numbers. */
+  readonly level: number;
 }
 
 /** Something that happened in the fight, as the room numbers it. */
@@ -119,11 +122,13 @@ export type FromRoomMessage =
       readonly ships: readonly SeenShip[];
       readonly pirates: readonly SeenPirate[];
       readonly fights: readonly SeenSeaFight[];
-    } & FleetPart);
+    } & FleetPart)
+  | ({ readonly kind: 'gear' } & GearState);
 
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
  *  shows, their dress when it changed, what their hands hold, the room tick their screen showed, a foe's kind to stand
- *  before them (0 for none), and whether they ask to respawn, dead past a node's section. */
+ *  before them (0 for none) and its level (0 for none), whether they ask to respawn, dead past a node's section, and an
+ *  ask of their gear. */
 export interface InputParts {
   readonly intent: Float64Array;
   readonly look: Look;
@@ -131,7 +136,9 @@ export interface InputParts {
   readonly arms: number;
   readonly seen: bigint;
   readonly spawn: number;
+  readonly spawnLevel?: number;
   readonly respawn?: boolean;
+  readonly ask?: GearAsk;
 }
 
 /** One tick's input as its bytes, as the schema defines them. */
@@ -142,6 +149,7 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
   const combat = Input.createCombatVector(builder, numbers.slice(CONTROLS_FLOATS));
   const anim = builder.createString(parts.look.anim);
   const dressed = parts.dress === undefined ? 0 : builder.createString(parts.dress);
+  const ask = parts.ask === undefined ? 0 : askOffset(builder, parts.ask);
   Input.startInput(builder);
   Input.addSequence(builder, sequence);
   Input.addControls(builder, controls);
@@ -154,6 +162,8 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
   Input.addSeen(builder, parts.seen);
   Input.addSpawn(builder, parts.spawn);
   Input.addRespawn(builder, parts.respawn ?? false);
+  if (ask) Input.addAsk(builder, ask);
+  Input.addSpawnLevel(builder, parts.spawnLevel ?? 0);
   builder.finish(Input.endInput(builder));
   return builder.asUint8Array().slice();
 }
@@ -202,6 +212,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const node = id !== null && bounds.length === 4 ? { id, bounds: [west, north, east, south] as const } : null;
       return { kind: 'joined', player: joined.player(), dressed, node };
     }
+    const gear = message.gear();
+    if (gear) return { kind: 'gear', ...gearOf(gear) };
     const snapshot = message.snapshot();
     if (!snapshot) return null;
     const players = Array.from({ length: snapshot.playersLength() }, (unused, index) => {
@@ -217,7 +229,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const foes = Array.from({ length: snapshot.foesLength() }, (unused, index) => {
       const foe = snapshot.foes(index);
       if (!foe) throw new Error(`snapshot foe ${index} is missing`);
-      return { id: foe.id(), kind: foe.kind(), glance: whole(foe.glanceArray(), GLANCE_FLOATS, `foe ${index}`) };
+      const glance = whole(foe.glanceArray(), GLANCE_FLOATS, `foe ${index}`);
+      return { id: foe.id(), kind: foe.kind(), glance, level: foe.level() };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);

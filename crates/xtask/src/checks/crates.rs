@@ -39,19 +39,19 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "gear", workspace: &[], outside: &["serde", "serde_json", "libm"], door: false },
     CrateRule {
         name: "room",
-        workspace: &["combat", "foes", "land", "movement", "naval", "navmesh", "reach", "sailing", "world"],
+        workspace: &["combat", "foes", "gear", "land", "movement", "naval", "navmesh", "reach", "sailing", "world"],
         outside: &["libm"],
         door: false,
     },
     CrateRule {
         name: "protocol",
-        workspace: &["combat", "movement", "naval", "room", "sailing"],
+        workspace: &["combat", "gear", "movement", "naval", "room", "sailing"],
         outside: &["flatbuffers"],
         door: true,
     },
     CrateRule {
         name: "room-wasm",
-        workspace: &["combat", "land", "movement", "naval", "protocol", "room", "sailing", "world"],
+        workspace: &["combat", "gear", "land", "movement", "naval", "protocol", "room", "sailing", "world"],
         outside: &["serde", "serde_json"],
         door: true,
     },

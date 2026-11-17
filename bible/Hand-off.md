@@ -121,13 +121,15 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Next
 
 - **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
-  choices in [[Gear as Claude Shapes It]]). Its rules are the `gear` crate ([[Gear]]), on their pull request. Then, one
-  pull request each: gear in the rooms (a character for each player, asks and their own gear in the messages, damage
-  by Attack, level and Defense, foes given levels, kills paying XP, Aurem and Vestiges, arms taken from the gear worn,
-  and a Vestige stall, vault and resource nodes in the [[Test Ground]]); perks in the combat rules; the screens in
-  #59's Enhanced Plus kit (character, inventory, an item's nodes, the stall); and gear dressing the figure, with
-  clothing sets and the armour toggle. Keeping a player's gear between rooms and sessions waits on accounts and
-  [[PostgreSQL]], whose sign-in and host are the owner's to choose.
+  choices in [[Gear as Claude Shapes It]]). Its rules are the `gear` crate ([[Gear]]), on pull request #60, and gear in
+  the rooms with it: each player's gear held by their room and sent to them, asks in their inputs, blows by Attack,
+  level and Defense, foes with levels, kills paying XP, Aurem and Vestiges, arms from the gear worn, and the
+  [[Test Ground]]'s gear panel, stall, vault and resource nodes. Next, one pull request each: perks in the combat
+  rules; accounts on Cloudflare D1, guests first, with a username and password or Discord
+  ([[Accounts Start as Guests, on Cloudflare D1]]), so gear is kept across rooms and sessions; the screens in #59's
+  Enhanced Plus kit, built on its branch until it merges (character, inventory, an item's nodes, the stall); gear
+  dressing the figure, every garment armour ([[Clothing Is Armour, With a Wardrobe Later]]); and the loop in the game
+  itself: fighting on foot, levelled foes, the stall and vault in Overlook, and resource nodes in patrol areas.
 - A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
   larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
   wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare

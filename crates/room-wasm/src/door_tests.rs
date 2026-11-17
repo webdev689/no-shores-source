@@ -179,3 +179,21 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword.code());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\nworn"), combat::arms::BARE_HANDS.code());
 }
+
+#[test]
+fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
+    let mut numbers = vec![7.0, 15.0];
+    numbers.extend([-6.0, 14.0, 0.0, -9.0, 17.0, 1.0]);
+    assert!(open(&bytes_of(&[0.0, 10.0])));
+    assert!(furnish(&bytes_of(&numbers)));
+    assert!(!furnish(&bytes_of(&[7.0, 15.0, 1.0])), "a node is three numbers");
+    let (first, second) = (room_join(), room_join());
+    assert!(!gear(first).is_empty(), "sent once on joining");
+    assert!(gear(first).is_empty(), "and not again until it changes");
+    let bytes = gear(second);
+    let message = messages::root_as_from_room(&bytes).unwrap();
+    assert_eq!(message.gear().unwrap().items().unwrap().len(), 5, "the second player's own starting kit");
+    assert!(open_sea(include_bytes!("../../../content/world/layout.json")));
+    assert!(gear(first).is_empty(), "the sea keeps no gear");
+    assert!(!furnish(&bytes_of(&[7.0, 15.0])));
+}

@@ -6,6 +6,7 @@ import course from '../content/testground/course.json' with { type: 'json' };
 // check its bodies with the browser's own steps.
 import { type Look, type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
+import { ASKS } from '../client/src/network/gearMessages.ts';
 import { startFleetRules } from '../client/src/rules/fleetRules.ts';
 import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
@@ -251,4 +252,35 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   room.tick();
   const called = read();
   assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round her');
+});
+
+test('the Test Ground’s room lays out its stall and nodes, and sends each player their own gear when it changes', () => {
+  const room = startRoomDoor(compiled);
+  assert.equal(room.furnish(course.stall, course.resources), false, 'nothing to lay out before a room opens');
+  assert.equal(room.open(course.start, course.blocks), true);
+  assert.equal(room.furnish(course.stall, course.resources), true);
+  const [first, second] = [room.join(), room.join()];
+  room.tick();
+  const gear = readFromRoom(room.gear(first));
+  assert.equal(gear?.kind, 'gear', 'sent once on joining');
+  if (gear?.kind !== 'gear') return;
+  assert.equal(gear.items.length, 5, 'the starting kit');
+  assert.equal(room.gear(first).length, 0, 'and not again until it changes');
+  const grant = inputBytes(1, {
+    intent: walk.map(() => 0),
+    look: walking,
+    arms: 0,
+    seen: 0n,
+    spawn: 0,
+    ask: { kind: ASKS.grantNamed, named: 'lanternfall' },
+  });
+  assert.equal(room.input(first, grant), 'taken');
+  room.tick();
+  const granted = readFromRoom(room.gear(first));
+  assert.ok(granted?.kind === 'gear' && granted.items.some((item) => item.named === 'lanternfall'));
+  assert.equal(readFromRoom(room.gear(second))?.kind, 'gear', 'the second player’s own first gear');
+  assert.equal(room.gear(second).length, 0, 'the first player’s ask is not theirs');
+  const sea = startRoomDoor(compiled);
+  assert.equal(sea.openFleet(), true);
+  assert.equal(sea.furnish(course.stall, course.resources), false, 'a fleet keeps no gear');
 });

@@ -29,6 +29,7 @@ pub mod wire {
 use wire::overlook::wire as messages;
 
 pub mod fleet;
+pub mod gear_wire;
 
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
 /// aim's mark (x, y, z, none as NaN).
@@ -57,7 +58,8 @@ pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let dress = input.dress().map(str::to_owned);
     let spawn = Some(input.spawn()).filter(|kind| *kind != 0);
     let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
-    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn })
+    let ask = input.ask().and_then(|ask| gear_wire::asked_of(&ask));
+    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn, ask, spawn_level: input.spawn_level() })
 }
 
 /// An input as its bytes: what a browser sends, written from Rust for tests.
@@ -70,6 +72,7 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
     let combat = Some(builder.create_vector(combat));
     let anim = Some(builder.create_string(&input.shown.anim));
     let dress = input.dress.as_ref().map(|dress| builder.create_string(dress));
+    let ask = input.ask.as_ref().map(|asked| gear_wire::ask_offset(&mut builder, asked));
     let args = messages::InputArgs {
         sequence: input.sequence,
         controls,
@@ -82,6 +85,8 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
         seen: input.seen,
         spawn: input.spawn.unwrap_or_default(),
         respawn: input.respawn,
+        ask,
+        spawn_level: input.spawn_level,
     };
     let message = messages::Input::create(&mut builder, &args);
     builder.finish(message, None);
@@ -162,8 +167,10 @@ pub fn joined_bytes(player: u32, dressed: &[(PlayerId, &str)], node: Option<(&st
     let bounds = node.map(|(_, bounds)| builder.create_vector(&bounds));
     let node = node.map(|(id, _)| builder.create_string(id));
     let joined = messages::Joined::create(&mut builder, &messages::JoinedArgs { player, dressed, node, bounds });
-    let message =
-        messages::FromRoom::create(&mut builder, &messages::FromRoomArgs { joined: Some(joined), snapshot: None });
+    let message = messages::FromRoom::create(
+        &mut builder,
+        &messages::FromRoomArgs { joined: Some(joined), ..Default::default() },
+    );
     builder.finish(message, None);
     builder.finished_data().to_vec()
 }
@@ -230,7 +237,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .iter()
         .map(|foe| {
             let glance = Some(builder.create_vector(&foe.fighter.glance()));
-            messages::Foe::create(&mut builder, &messages::FoeArgs { id: foe.foe, kind: foe.kind, glance })
+            let args = messages::FoeArgs { id: foe.foe, kind: foe.kind, glance, level: foe.level };
+            messages::Foe::create(&mut builder, &args)
         })
         .collect();
     let foes = Some(builder.create_vector(&foes));
@@ -310,8 +318,10 @@ fn finish_snapshot<'builder>(
     args: &messages::SnapshotArgs<'builder>,
 ) -> Vec<u8> {
     let snapshot = messages::Snapshot::create(&mut builder, args);
-    let message =
-        messages::FromRoom::create(&mut builder, &messages::FromRoomArgs { joined: None, snapshot: Some(snapshot) });
+    let message = messages::FromRoom::create(
+        &mut builder,
+        &messages::FromRoomArgs { snapshot: Some(snapshot), ..Default::default() },
+    );
     builder.finish(message, None);
     builder.finished_data().to_vec()
 }

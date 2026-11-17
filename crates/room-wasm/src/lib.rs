@@ -90,7 +90,9 @@ pub fn open_node(text: &[u8]) -> bool {
     }
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
-    let room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
+    let mut room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
+    // A city's social space answers a social space's asks anywhere in it.
+    room.social = node.id.ends_with("-social");
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
     true
 }
@@ -264,6 +266,49 @@ pub fn snapshot() -> Vec<u8> {
     .unwrap_or_default()
 }
 
+/// Lays out a course's stall and resource nodes: the stall's x and y (not numbers for none), then each node's x, y
+/// and resource, little-endian floats. Answers whether a room on land is open and the numbers made a layout.
+pub fn furnish(bytes: &[u8]) -> bool {
+    let floats = floats_of(bytes);
+    let Some((stall, nodes)) = floats.split_first_chunk::<2>() else { return false };
+    if !nodes.len().is_multiple_of(3) || nodes.iter().any(|number| !number.is_finite()) {
+        return false;
+    }
+    let stall = stall.iter().all(|number| number.is_finite()).then_some(*stall);
+    let nodes = nodes.chunks_exact(3).map(|node| room::ResourceNode {
+        x: node[0],
+        y: node[1],
+        resource: u8::try_from(node[2] as u32).unwrap_or_default(),
+    });
+    let nodes = nodes.collect();
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => {
+            room.furnish(stall, nodes);
+            true
+        }
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    })
+    .unwrap_or(false)
+}
+
+/// A player's own gear, as its bytes, when it changed since it was last asked; empty when it did not, or in a room
+/// that keeps no gear.
+#[must_use]
+pub fn gear(player: PlayerId) -> Vec<u8> {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => {
+            if room.take_gear_change(player) {
+                protocol::gear_wire::gear_bytes(room, player)
+            } else {
+                None
+            }
+        }
+        Opened::Sea(_) | Opened::Fleet(_) => None,
+    })
+    .flatten()
+    .unwrap_or_default()
+}
+
 /// The welcome's bytes for a player: their number, every dress in the room so far, and a node's id and rect.
 #[must_use]
 pub fn joined(player: PlayerId) -> Vec<u8> {
@@ -395,6 +440,22 @@ pub extern "C" fn room_tick() {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot() -> u64 {
     hand_over(snapshot())
+}
+
+/// A player's own gear's bytes, empty when it has not changed.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_gear(player: PlayerId) -> u64 {
+    hand_over(gear(player))
+}
+
+/// Lays out the course's stall and resource nodes written at `address`; 1 if laid, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_furnish(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(furnish(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Keeps the course written at `address` for predicting; 1 if it was one, 0 if not.

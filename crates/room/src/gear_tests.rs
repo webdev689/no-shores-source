@@ -1,0 +1,220 @@
+//! Gear in the room: blows by power and level, foes at their level, kills paid and Vestiges laid and picked up, asks
+//! answered where the player stands, and arms taken from the gear worn.
+
+use super::*;
+use crate::asks::{NOT_THE_TEST_GROUND, OUT_OF_REACH, answer_code};
+use combat::arms::{OffHand, Stroke, WeaponClass};
+use combat::{CombatInput, Intent};
+use gear::{Ask, Rarity, Refusal, Slot, Vestige};
+use movement::Controls;
+use std::collections::BTreeMap;
+
+const SWORD: u32 = 2;
+
+fn room() -> Room {
+    Room::new(Vec::new(), (0.0, 0.0))
+}
+
+fn stand(room: &mut Room, kind: ::foes::Kind, level: u8, y: f64) -> FighterId {
+    let id = room.next_id();
+    let (mut fighter, brain) = ::foes::spawn(kind, 0.0, y, core::f64::consts::PI);
+    fighter.health *= gear::power::foe_health_times(level);
+    fighter.health_max = fighter.health;
+    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by: BTreeMap::new() });
+    id
+}
+
+fn asking(sequence: u32, room: &Room, combat: CombatInput) -> Input {
+    let controls = Controls { yaw: 0.0, ..Controls::default() };
+    Input { sequence, intent: Intent { controls, combat }, arms: SWORD, seen: room.clock(), ..Input::default() }
+}
+
+/// The player chops once and waits for it to land; the events it set off.
+fn chop(room: &mut Room, player: PlayerId, from: u32) -> Vec<Event> {
+    let chop = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
+    for sequence in from..from + 30 {
+        let held = if sequence == from { chop } else { CombatInput::default() };
+        room.input(player, asking(sequence, room, held)).unwrap();
+        room.tick();
+    }
+    room.take_events()
+}
+
+fn ask(room: &mut Room, player: PlayerId, sequence: u32, asked: Asked) -> u8 {
+    room.input(player, Input { ask: Some(asked), ..asking(sequence, room, CombatInput::default()) }).unwrap();
+    room.tick();
+    room.player(player).expect("in the room").answer
+}
+
+fn move_to(room: &mut Room, player: PlayerId, x: f64, y: f64) {
+    let mut fighter = *room.fighter(player).expect("in the room");
+    fighter.body.x = x;
+    fighter.body.y = y;
+    room.set_fighter(player, fighter);
+}
+
+#[test]
+fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let level_one = stand(&mut room, ::foes::Kind::Brute, 1, -1.5);
+    let events = chop(&mut room, player, 1);
+    let hit =
+        events.iter().find(|event| event.kind == EventKind::Hit && event.striker == player).expect("the chop lands");
+    // A level 1 player's Normal sword of level 1 has 10 Attack: two thirds of a level's rise.
+    let times = gear::power::by_player(10, 1, 1);
+    assert!((hit.amount - 14.0 * 1.15 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 1.15 * times);
+    assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::MainHand));
+    let level_five = stand(&mut room, ::foes::Kind::Brute, 5, -40.0);
+    let striker = *room.fighter(player).expect("in");
+    let attack = combat::fighter::Attack {
+        stroke: Stroke::Down,
+        elapsed: 0,
+        strike: 24,
+        end: 60,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    };
+    let blow = combat::judge::swing_blow(player, &striker, &attack, level_five);
+    assert_eq!(room.empower(blow, level_five, false).damage, 0.0, "four levels below, a player strikes for nothing");
+    let foe_blow = combat::judge::swing_blow(level_five, room.fighter(level_five).expect("standing"), &attack, player);
+    let struck = room.empower(foe_blow, player, false).damage;
+    let times = gear::power::on_player(room.player(player).expect("in").character.defense(), 1, 5);
+    assert!((struck - foe_blow.damage * times).abs() < 1e-9 && times > 2.0, "and the foe strikes them twice as hard");
+}
+
+#[test]
+fn a_foe_asked_for_stands_at_its_level_with_its_health_grown() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let asked = Input { spawn: Some(1), spawn_level: 10, ..asking(1, &room, CombatInput::default()) };
+    room.input(player, asked).unwrap();
+    room.tick();
+    let foe = room.foes_seen().next().expect("a skirmisher stood");
+    assert_eq!(foe.level, 10);
+    assert!((foe.fighter.health - 45.0 * gear::power::foe_health_times(10)).abs() < 1e-9);
+    let plain = Input { spawn: Some(1), ..asking(2, &room, CombatInput::default()) };
+    room.input(player, plain).unwrap();
+    room.tick();
+    let unlevelled = room.foes_seen().find(|seen| seen.level == 0).expect("a foe of no level");
+    assert_eq!(unlevelled.fighter.health, 45.0, "a foe of no level is combat's own");
+}
+
+#[test]
+fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let onlooker = room.join().expect("a room with space");
+    let brute = stand(&mut room, ::foes::Kind::Brute, 0, -1.5);
+    let mut weak = *room.fighter(brute).expect("standing");
+    weak.health = 1.0;
+    room.set_fighter(brute, weak);
+    let events = chop(&mut room, player, 1);
+    assert!(events.iter().any(|event| event.kind == EventKind::Killed && event.defender == brute));
+    let paid = &room.player(player).expect("in").character;
+    assert_eq!((paid.xp, paid.materials.aurem), (90, 7), "a brute's worth at level 0: 180 and 15, halved");
+    assert_eq!(room.player(onlooker).expect("in").character.xp, 0, "striking nothing earns nothing");
+    let sword = paid.worn(Slot::MainHand).expect("the sword");
+    assert_eq!(sword.xp, 90, "the weapon that struck earns it");
+
+    let captain = stand(&mut room, ::foes::Kind::Captain, 0, -8.0);
+    room.mark_struck(player, captain, Slot::MainHand);
+    room.pay_kill(captain);
+    let lying: Vec<Drop> = room.drops_for(player).copied().collect();
+    assert_eq!(lying.len(), 1, "a captain always leaves a Vestige");
+    assert_eq!(room.drops_for(onlooker).count(), 0);
+    room.tick();
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0, "it lies 8 m away");
+    move_to(&mut room, player, 0.0, -7.0);
+    room.tick();
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 1, "walked over, it is taken");
+    assert_eq!(room.drops_for(player).count(), 0);
+}
+
+#[test]
+fn a_vestige_left_lying_is_gone_after_two_minutes() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let captain = stand(&mut room, ::foes::Kind::Captain, 0, -30.0);
+    room.mark_struck(player, captain, Slot::MainHand);
+    room.pay_kill(captain);
+    for _ in 0..crate::power::DROP_TICKS {
+        room.tick();
+    }
+    assert_eq!(room.drops_for(player).count(), 0);
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0);
+}
+
+#[test]
+fn asks_are_answered_where_the_player_stands() {
+    let mut room = room();
+    room.furnish(Some([20.0, 0.0]), vec![ResourceNode { x: 0.0, y: 10.0, resource: 0 }]);
+    let player = room.join().expect("a room with space");
+    let vestige = Vestige { id: 500, rarity: Rarity::Magic, slot: Slot::Legs, level: 3 };
+    room.players.get_mut(&player).expect("in").character.pick_up(vestige);
+    let identify = Asked::Gear(Ask::Identify { vestige: 500 });
+    assert_eq!(ask(&mut room, player, 1, identify.clone()), answer_code(Err(Refusal::NotHere)));
+    move_to(&mut room, player, 18.0, 0.0);
+    assert_eq!(ask(&mut room, player, 2, identify), 0, "within reach of the stall");
+    let found = room.player(player).expect("in");
+    let made = found.character.item(found.identified).expect("what the Vestige opened to");
+    assert_eq!((made.kind, made.level), (gear::Kind::Legs, 3));
+
+    assert_eq!(ask(&mut room, player, 3, Asked::Gather { node: 0 }), OUT_OF_REACH, "the node is 20 m off");
+    move_to(&mut room, player, 1.0, 9.0);
+    assert_eq!(ask(&mut room, player, 4, Asked::Gather { node: 0 }), 0);
+    assert_eq!(room.player(player).expect("in").character.materials.resource(0), 3);
+    assert_eq!(ask(&mut room, player, 5, Asked::Gather { node: 0 }), OUT_OF_REACH, "spent until they leave");
+    assert_eq!(room.player(player).expect("in").answered, 5);
+}
+
+#[test]
+fn the_test_ground_alone_grants_gear() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let grant = Asked::Grant(Grant::Named("harbourwarden".to_owned()));
+    assert_eq!(ask(&mut room, player, 1, grant.clone()), 0);
+    let held = &room.player(player).expect("in").character;
+    let named = held.items.values().find(|(item, _)| item.named.as_deref() == Some("harbourwarden"));
+    assert!(named.is_some_and(|(item, _)| item.rarity == Rarity::Legendary && item.attack() == Some(248)));
+    assert_eq!(ask(&mut room, player, 2, Asked::Grant(Grant::Xp(190_000))), 0);
+    assert_eq!(room.player(player).expect("in").character.level(), 20);
+    room.section = Some(Section { ring: vec![[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0]], spawns: vec![[0.0, 0.0]] });
+    assert_eq!(ask(&mut room, player, 3, grant), NOT_THE_TEST_GROUND, "a node's room hands nothing out");
+}
+
+#[test]
+fn a_player_holds_only_what_their_gear_puts_in_their_hands() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let warhammer = combat::arms::Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
+    let input = Input { arms: warhammer.code(), ..asking(1, &room, CombatInput::default()) };
+    room.input(player, input).unwrap();
+    room.tick();
+    assert_eq!(room.fighter(player).expect("in").arms, combat::arms::BARE_HANDS, "no warhammer is worn");
+    let torch = combat::arms::Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Torch };
+    room.input(player, Input { arms: torch.code(), ..asking(2, &room, CombatInput::default()) }).unwrap();
+    room.tick();
+    assert_eq!(room.fighter(player).expect("in").arms, torch, "a torch beside the sword worn");
+    crate::power::hold(&mut room, player, gear::Kind::Warhammer);
+    let both = combat::arms::Arms { melee: WeaponClass::Warhammer, ..torch };
+    room.input(player, Input { arms: both.code(), ..asking(3, &room, CombatInput::default()) }).unwrap();
+    for _ in 0..3 {
+        room.tick();
+    }
+    assert_eq!(room.fighter(player).expect("in").arms, combat::arms::BARE_HANDS, "no hand is left for a torch");
+}
+
+#[test]
+fn a_players_gear_is_theirs_to_be_sent_whenever_it_changes() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    assert!(room.take_gear_change(player), "sent once on joining");
+    assert!(!room.take_gear_change(player));
+    room.input(player, asking(1, &room, CombatInput::default())).unwrap();
+    room.tick();
+    assert!(!room.take_gear_change(player), "an input that asks nothing changes nothing");
+    ask(&mut room, player, 2, Asked::Gear(Ask::TakeOff { slot: Slot::Head }));
+    assert!(room.take_gear_change(player));
+    assert!(room.player(player).is_some_and(|found| found.character.worn(Slot::Head).is_none()));
+}
