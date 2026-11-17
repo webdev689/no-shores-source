@@ -11,7 +11,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 - **More organisation, less bloat.** Whatever comes from DFO Online comes over better organised and smaller.
 - **Done means `cargo xtask check` passes.** Run it before every push (after `npm ci` once). CI runs the same.
 - **Ask before merging or deploying.** A pull request for each change; merge into `main`, deploy or release only
-  after the owner says yes, every time.
+  after the owner says yes, every time. A merge deploys the page and the rooms, so its yes covers them.
 - **Follow the rules** in `bible/00-Rules/Rules.md`. A new rule or check needs the owner's agreement.
 - **Verify before claiming.** Before saying something is not in the source, check the file it would be in; until
   then call the claim "unchecked". Say "tested offline" or "tested live"; never call something fixed without the

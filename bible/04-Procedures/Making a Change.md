@@ -11,7 +11,8 @@ type: procedure
 6. **Open a pull request.** Its description says what changed, why, and how it was tested. History goes here, not
    in the code or the bible.
 7. **Ask the owner**, then squash-merge once CI is green on the branch's latest commit, and delete the branch. Every
-   merge into `main` and every deploy waits for the owner's yes ([[Ask Before Deploying]]).
+   merge into `main` and every deploy waits for the owner's yes ([[Ask Before Deploying]]); a merge deploys the page
+   and the rooms, so its yes covers them ([[The Rooms Deploy on Each Merge]]).
 
 ## Done means
 

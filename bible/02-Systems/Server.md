@@ -212,7 +212,7 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
-  room is gone rejoins.
+  room is gone learns so by its socket closing.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
   room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
@@ -238,9 +238,10 @@ so every decision is Rust and the shell only carries bytes and time.
 ## Running it
 
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`.
-  The `rooms` workflow deploys it from `main` when run by hand, with the owner's yes each time
-  ([[Ask Before Deploying]]), using the repository's `CLOUDFLARE_TOKEN` secret; `npm run server:deploy` does the
-  same from a machine that holds the token itself.
+  CI deploys it after each merge into `main`, once the same commit has passed the check, as it publishes the page
+  ([[The Rooms Deploy on Each Merge]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret, and
+  only while that commit is still `main`'s head. Without the secret it warns and deploys nothing. It runs by hand
+  from `main` too, and `npm run server:deploy` does the same from a machine that holds the token itself.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground played alone runs the same room in its own WebAssembly, ticked by the page.
 
@@ -250,8 +251,8 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 
 ## Limits
 
-- Deploys are by hand, with the owner's yes; the rooms' code can lag `main` until the next deploy, and a deployed
-  node's window can lag the edits files until then.
+- Each deploy starts every room afresh: whoever is in one is dropped, as when any room is lost, and joins again only by
+  coming back to it. A deployed node's window can lag the edits files until the next merge.
 - A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
 - Any page can join a room, under any name; no one signs in.
