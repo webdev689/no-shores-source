@@ -42,6 +42,9 @@ function seeded(seed: number): () => number {
   };
 }
 
+/** How long a hand stands at a spot, seconds. */
+const pause = (draw: () => number) => PAUSE_S[0] + draw() * (PAUSE_S[1] - PAUSE_S[0]);
+
 /** Whether a hand may walk straight from one spot to another: every point between on the deck, with no step up or
  *  down past the deck's own. */
 export function clearLeg(deck: Deck, from: readonly [number, number], to: readonly [number, number]): boolean {
@@ -64,13 +67,14 @@ interface Walking {
   facing: number;
   target: readonly [number, number, number] | null;
   waiting: number;
+  /** The hand's own numbers, so no hand's draws wait on another's, however the seconds are cut. */
+  readonly draw: () => number;
 }
 
 /** The stand-in crew on a deck, stepped by the seconds that pass. */
 export class Crew {
   private readonly deck: Deck;
   private readonly spots: readonly (readonly [number, number, number])[];
-  private readonly draw: () => number;
   private readonly walking: Walking[];
 
   constructor(deck: Deck, seed: number) {
@@ -79,19 +83,15 @@ export class Crew {
     this.spots = deckCells(deck)
       .filter((cell) => Math.hypot(cell.x - helmX, cell.y - helmY) > WHEEL_CLEAR_M)
       .map((cell) => [cell.x, cell.y, cell.z] as const);
-    this.draw = seeded(seed);
-    this.walking = LOOKS.slice(0, STAND_INS).map(() => {
-      const [x = 0, y = 0, z = 0] = this.pick() ?? [0, 0, 0];
-      return { x, y, z, facing: this.draw() * 2 * Math.PI, target: null, waiting: this.pause() };
+    this.walking = LOOKS.slice(0, STAND_INS).map((_look, index) => {
+      const draw = seeded(seed * STAND_INS + index);
+      const [x = 0, y = 0, z = 0] = this.pick(draw) ?? [0, 0, 0];
+      return { x, y, z, facing: draw() * 2 * Math.PI, target: null, waiting: pause(draw), draw };
     });
   }
 
-  private pause(): number {
-    return PAUSE_S[0] + this.draw() * (PAUSE_S[1] - PAUSE_S[0]);
-  }
-
-  private pick(): readonly [number, number, number] | null {
-    return this.spots[Math.floor(this.draw() * this.spots.length)] ?? null;
+  private pick(draw: () => number): readonly [number, number, number] | null {
+    return this.spots[Math.floor(draw() * this.spots.length)] ?? null;
   }
 
   /** The crew `seconds` on: a hand at a spot waits, then sets off for another the deck leaves a clear way to. */
@@ -106,10 +106,10 @@ export class Crew {
           if (hand.waiting > 0) break;
           // A few tries for a spot with a clear way there; none, and the hand stays put a while longer.
           for (let tries = 0; tries < 12 && !hand.target; tries++) {
-            const spot = this.pick();
+            const spot = this.pick(hand.draw);
             if (spot && clearLeg(this.deck, [hand.x, hand.y], [spot[0], spot[1]])) hand.target = spot;
           }
-          if (!hand.target) hand.waiting = this.pause();
+          if (!hand.target) hand.waiting = pause(hand.draw);
           continue;
         }
         const [toX, toY, toZ] = hand.target;
@@ -122,7 +122,7 @@ export class Crew {
           hand.y += ((toY - hand.y) * walked) / away;
         }
         if (walked >= away) {
-          [hand.x, hand.y, hand.z, hand.target, hand.waiting] = [toX, toY, toZ, null, this.pause()];
+          [hand.x, hand.y, hand.z, hand.target, hand.waiting] = [toX, toY, toZ, null, pause(hand.draw)];
         } else {
           hand.z = cellHeight(this.deck, hand.x, hand.y) ?? hand.z;
           break;

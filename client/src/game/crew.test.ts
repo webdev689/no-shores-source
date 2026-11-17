@@ -27,11 +27,13 @@ test('the stand-in hands walk her deck from spot to spot, always on it and clear
 });
 
 test('the same seed walks the same crew, however the seconds are cut', () => {
-  const [byTicks, bySeconds] = [new Crew(SLOOP_DECK, 3), new Crew(SLOOP_DECK, 3)];
-  for (let tick = 0; tick < 600; tick++) byTicks.step(1 / 60);
-  for (let second = 0; second < 10; second++) bySeconds.step(1);
   const where = (crew: Crew) => crew.hands.map((hand) => [hand.x.toFixed(6), hand.y.toFixed(6)]);
-  assert.deepEqual(where(byTicks), where(bySeconds));
+  for (const seed of [3, 7, 11, 19]) {
+    const [byTicks, bySeconds] = [new Crew(SLOOP_DECK, seed), new Crew(SLOOP_DECK, seed)];
+    for (let tick = 0; tick < 1800; tick++) byTicks.step(1 / 60);
+    for (let second = 0; second < 30; second++) bySeconds.step(1);
+    assert.deepEqual(where(byTicks), where(bySeconds), `seed ${seed}`);
+  }
 });
 
 test("a leg is clear only where every point of it is deck, without a step past the planks' own", () => {
