@@ -33,6 +33,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Locked On, the Figure Faces Its Foe]]
 - [[Struck Figures Flash, and DFO's Blood Comes Over]]
 - [[Ranged Weapons Aim and Fire]]
+- [[Aiming Sits Behind the Shoulder and Zooms the View]]
 - [[Come Sail Away's Sailing Comes Over]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]

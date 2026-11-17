@@ -54,6 +54,9 @@ const jumpFrame = (rising: number) => (rising > 1.5 ? 0 : rising < -1.5 ? 2 : 1)
 
 /** How long a walking frame lasts; a run's is half, a crouch's double, a ride's a quarter of a run's. */
 const WALK_FRAME = 0.25;
+/** Each gun's shot's frame where it is aimed, before it fires (the forge's gunplay.py): a long gun's and a pistol's
+ *  second, a brace's first, the right pistol up. */
+const AIMED_FRAME: Readonly<Record<string, number>> = { gunshot: 1, pistolshot: 1, braceshot: 0 };
 
 /** Whether the forge draws a held layer (null: the body alone) in a move. */
 export type Draws = (anim: string, held: string | null) => boolean;
@@ -189,8 +192,8 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
  * down; hurt while staggered or flinching (its bow's or staff's own); the jump's frames through a dodge's hop in the air, by its rise and fall, or the
  * run where the forge does not draw what it holds in the jump; the parry through a deflect, a shield's block; the
  * guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its wind-up
- * and held at its end when it overreaches; and a ranged weapon aimed: the bow drawn, a gun or a crossbow raised as the
- * first frame of its shot.
+ * and held at its end when it overreaches; and a ranged weapon aimed: the bow drawn, a gun held at its shot's aimed
+ * frame (`AIMED_FRAME`), a crossbow raised as the first frame of its shot.
  */
 function fightMove(
   doing: Doing,
@@ -233,9 +236,10 @@ function fightMove(
       return still(fight.stroke, fight.progress < 0.8 ? 0 : 1);
     case 'overreach':
       return still(fight.stroke, 2);
-    case 'draw':
-      return right?.startsWith('bow')
-        ? byProgress('bow', fight.progress * 0.5)
-        : still(kitOf(right, left, draws).attack);
+    case 'draw': {
+      if (right?.startsWith('bow')) return byProgress('bow', fight.progress * 0.5);
+      const shot = kitOf(right, left, draws).attack;
+      return still(shot, AIMED_FRAME[shot] ?? 0);
+    }
   }
 }
