@@ -9,7 +9,8 @@ SHA256=50c1915deeeb714f2a05c8ec795bd1af898d251a62e2774067703b29188efc90
 target=${1:-$HOME/.local/bin}
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-curl -sSLf -o "$work/flatc.zip" \
+# GitHub's release downloads fail now and then for a moment; the checksum below still refuses anything else.
+curl -sSLf --retry 4 --retry-all-errors --retry-delay 3 -o "$work/flatc.zip" \
   "https://github.com/google/flatbuffers/releases/download/v$VERSION/Linux.flatc.binary.clang++-18.zip"
 echo "$SHA256  $work/flatc.zip" | sha256sum -c --quiet -
 mkdir -p "$target"

@@ -19,6 +19,7 @@ code:
   - client/src/game/seaLaw.ts#continentToOpen
   - client/src/game/meshes.ts#shipMesh
   - client/src/game/rooms.ts#roomsFrom
+  - client/src/heldmap/heldMap.ts#HeldMap
 ---
 # Game
 
@@ -38,7 +39,7 @@ it answers. `game.ts` wires the rest and keeps the flow; each mode is its own mo
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
 | On foot | M, then Return to ship | The veil, "Returning to your ship", then at sea |
-| At sea | L, or View landings, within reach of a coast | Over the island's side |
+| At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
 
@@ -87,19 +88,24 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
-  `[` and `]` or the bar's buttons, ×60 to start. A click on a mark sails for it. A route that cannot be planned
-  says why.
-- **Marks** stand over the island's nodes within 120 km of the ship, by kind, with their names and distances, and
-  over its port at any distance. Each is held at the picture's edge when off it, its arrow pointing the way. Two
-  marks within 30 px of each other show the nearer.
+  `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
+  planned says why.
+- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]) holds Map (N), which takes the
+  view down to the helm and raises the [[Held Map]], where a destination is set; Stop while under way and Resume
+  voyage once stopped short (both Space); and the pace dial. A stopped voyage keeps its destination: resuming
+  plans the way there again from wherever the ship lies, after going ashore and coming back too.
+- **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
+  ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
 ## Landings
 
-Within 30 km of the open landmass's coast, L or View landings flies the view up over the island's side the ship lies
-off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s; the ship heaves to. The side's nodes, its city's social space
-among them, are marked by kind with names and distances from the ship. A click chooses one; a second click on it, or
+Within 30 km of the open landmass's coast the ship is offered a landfall (`landfallOf`): within 20 km of its port's
+harbour, to dock there ("Dock at Overlook"); anywhere else, to go ashore. Either one, by Enter, L or the offer's own
+button, flies the view up over the island's side the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s;
+the ship heaves to, its voyage kept to be resumed. The side's nodes are marked by kind with names and distances from
+the ship; docking keeps the city's social space among them. A click chooses one; a second click on it, or
 Enter, lands there: the player stands at its first spawn, facing inland from the ship, or at a social space out from
 its landmark over the city, as on arriving. Escape flies back down.
 

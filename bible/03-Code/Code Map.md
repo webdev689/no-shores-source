@@ -32,6 +32,7 @@ decision, made in the same change as its entry here.
 | `client/src/ships/` | The ships layer: a ship's mesh read from R2 and drawn at her pose on the water ([[Sailing]]), and a fight's balls and effects drawn as small spheres ([[Naval Combat]]) |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] (with its door's sailing and naval fights), [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
+| `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, panned, zoomed and clicked for a destination ([[Held Map]]) |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
@@ -85,7 +86,8 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 `ships` (imports `rules`, and the water's sun and samples), `editor` (imports `rules`, `water`, `terrain` and
 `ships`), `combat` (imports `rules` and `network`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
 the editor's camera), `testground` (imports what `player` does, `player` itself, `combat` and the editor's panel
-helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`) and `game`
+helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap`
+(imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers) and `game`
 (imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
 
 ## The Rust crates

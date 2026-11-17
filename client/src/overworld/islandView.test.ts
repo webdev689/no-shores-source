@@ -4,6 +4,7 @@ import type { HeightAt, Point2, Vec3 } from './ground.ts';
 import { eyeFor, poseOf, projectPoint, TILT, type Rig } from './overworldCamera.ts';
 import {
   coastDistance,
+  coastPoint,
   flyRig,
   frameSide,
   gridCentre,
@@ -135,4 +136,16 @@ test('a side framed over a slope that steepens the view still holds every node i
     assert.ok(shown.front, `${each.id} in front`);
     assert.ok(Math.abs(shown.x - 750) <= 600 + 1e-6 && Math.abs(shown.y - 500) <= 400 + 1e-6, `${each.id} framed`);
   }
+});
+
+test("the coast's nearest point lies on the edge nearest a point, square to it, or at a corner", () => {
+  const square: Point2[] = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  assert.deepEqual(coastPoint([50, 40], square), [50, 0], 'inside, nearest the north edge');
+  assert.deepEqual(coastPoint([130, 50], square), [100, 50], 'off the east edge');
+  assert.deepEqual(coastPoint([120, 130], square), [100, 100], 'off a corner');
 });

@@ -1,7 +1,9 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 
-/** A picture on the screen: its texture and its rectangle on the 320 by 200 design screen, mirrored or not. */
+/** A picture on the screen: its texture and its rectangle on the 320 by 200 design screen, mirrored or not. `part`
+ *  draws only that share of the picture across (one frame of a strip); `reach` runs the rectangle that many times the
+ *  picture's height down it, its last row carried down past its foot. */
 export interface ScreenQuad {
   readonly texture: GPUTexture;
   readonly x: number;
@@ -9,12 +11,15 @@ export interface ScreenQuad {
   readonly width: number;
   readonly height: number;
   readonly flip: boolean;
+  readonly part?: readonly [left: number, right: number];
+  readonly reach?: number;
 }
 
 const QUAD_BYTES = 32;
 
 const SHADER = /* wgsl */ `
-struct Quad { corners: vec4f, flip: vec4f }
+// The corners in clip space; whether it is mirrored, the share of the picture across it draws, and how far down.
+struct Quad { corners: vec4f, drawn: vec4f }
 @group(0) @binding(0) var<uniform> quad: Quad;
 @group(0) @binding(1) var picture: texture_2d<f32>;
 
@@ -31,9 +36,12 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
 
 @fragment fn quadFragment(in: Out) -> @location(0) vec4f {
   let size = vec2f(textureDimensions(picture));
-  var at = in.corner;
-  if (quad.flip.x > 0.5) { at.x = 1.0 - at.x; }
-  let texel = textureLoad(picture, vec2i(min(at * size, size - 1.0)), 0);
+  var across = in.corner.x;
+  if (quad.drawn.x > 0.5) { across = 1.0 - across; }
+  let at = vec2f(mix(quad.drawn.y, quad.drawn.z, across), min(in.corner.y * quad.drawn.w, 1.0));
+  // Within the part's own last column, so a frame never shows its neighbour's edge.
+  let last = vec2f(round(quad.drawn.z * size.x) - 1.0, size.y - 1.0);
+  let texel = textureLoad(picture, vec2i(min(at * size, last)), 0);
   if (texel.a < 0.5) { discard; }
   return vec4f(texel.rgb, 1.0);
 }
@@ -129,9 +137,9 @@ export class FirstPersonView {
         clipX(quad.x + quad.width),
         clipY(quad.y + quad.height),
         quad.flip ? 1 : 0,
-        0,
-        0,
-        0,
+        quad.part?.[0] ?? 0,
+        quad.part?.[1] ?? 1,
+        quad.reach ?? 1,
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, values);
       pass.setBindGroup(0, group);
