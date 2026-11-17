@@ -173,9 +173,9 @@ fn model_vertex(vertex: Vertex) -> Surface {
 }
 `;
 
-/** A building's masses or hull, each an instance of one shape: four walls and a roof of two slopes and two ends. */
-export const MASS_SHADER = /* wgsl */ `
-${COMMON}
+/** A building's mass or hull as one shape, shared by the masses' pass and their shadow's: its corners, and where
+ *  each of its 42 vertices stands from the city's middle. */
+const MASS_SHAPE = /* wgsl */ `
 struct Mass {
   // the middle of its base from the city's middle, and its ridge's turn
   @location(0) place: vec4f,
@@ -205,13 +205,37 @@ fn corner_at(spec: vec4f, size: vec4f, inset: f32) -> vec3f {
   return vec3f(spec.x * size.x + spec.w * inset, spec.y * size.y, height);
 }
 
+// A vertex's face (the walls, the slopes, then the ends) and its corner of that face.
+fn face_of(index: u32) -> vec2u {
+  return select(vec2u(6u + (index - 36u) / 3u, (index - 36u) % 3u), vec2u(index / 6u, QUAD[index % 6u]), index < 36u);
+}
+
+// How far a hipped roof's ridge draws in from each end: not at all on a gabled one.
+fn inset_of(mass: Mass) -> f32 {
+  return select(0.0, min(mass.size.y, mass.size.x), (mass.about.w & 1u) != 0u);
+}
+
+// A corner along the ridge, across it and up from the base, where it stands from the city's middle.
+fn mass_placed(mass: Mass, here: vec3f) -> vec3f {
+  let cosine = cos(mass.place.w);
+  let sine = sin(mass.place.w);
+  return vec3f(mass.place.xy + here.x * vec2f(cosine, sine) + here.y * vec2f(-sine, cosine), mass.place.z + here.z);
+}
+`;
+
+/** A building's masses or hull, each an instance of one shape: four walls and a roof of two slopes and two ends. */
+export const MASS_SHADER = /* wgsl */ `
+${COMMON}
+${MASS_SHAPE}
+
 @vertex
 fn mass_vertex(@builtin(vertex_index) index: u32, mass: Mass) -> Surface {
   var surface: Surface;
-  let face = select(6u + (index - 36u) / 3u, index / 6u, index < 36u);
-  let corner = select((index - 36u) % 3u, QUAD[index % 6u], index < 36u);
+  let at = face_of(index);
+  let face = at.x;
+  let corner = at.y;
   let hip = (mass.about.w & 1u) != 0u;
-  let inset = select(0.0, min(mass.size.y, mass.size.x), hip);
+  let inset = inset_of(mass);
   let first = corner_at(CORNERS[face * 4u], mass.size, inset);
   let here = corner_at(CORNERS[face * 4u + corner], mass.size, inset);
   let across = cross(corner_at(CORNERS[face * 4u + 1u], mass.size, inset) - first, corner_at(CORNERS[face * 4u + 2u], mass.size, inset) - first);
@@ -227,7 +251,7 @@ fn mass_vertex(@builtin(vertex_index) index: u32, mass: Mass) -> Surface {
   surface.uv = vec2f(along, -up) * TEXELS / size;
   let cosine = cos(mass.place.w);
   let sine = sin(mass.place.w);
-  let point = vec3f(mass.place.xy + here.x * vec2f(cosine, sine) + here.y * vec2f(-sine, cosine), mass.place.z + here.z);
+  let point = mass_placed(mass, here);
   surface.clip = clip_of(point);
   surface.from_eye = point - view.eye.xyz;
   surface.normal = vec3f(normal.x * cosine - normal.y * sine, normal.x * sine + normal.y * cosine, normal.z);
@@ -289,5 +313,19 @@ ${MODEL_PLACE}
 @vertex
 fn model_cast(vertex: Vertex) -> @builtin(position) vec4f {
   return shadow.from_eye * vec4f(placed(vertex) - view.eye.xyz, 1.0);
+}
+`;
+
+/** The masses' and hulls' depth along the sun, for the far shadow map: stood up as they are drawn. */
+export const MASS_CAST_SHADER = /* wgsl */ `
+${VIEW}
+${SHADOW_CAST_WGSL}
+${MASS_SHAPE}
+
+@vertex
+fn mass_cast(@builtin(vertex_index) index: u32, mass: Mass) -> @builtin(position) vec4f {
+  let at = face_of(index);
+  let here = corner_at(CORNERS[at.x * 4u + at.y], mass.size, inset_of(mass));
+  return shadow.from_eye * vec4f(mass_placed(mass, here) - view.eye.xyz, 1.0);
 }
 `;

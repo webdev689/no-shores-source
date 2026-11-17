@@ -1,5 +1,5 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
-import { ShadowMap, shadowLayouts } from '../shadow.ts';
+import { NEAR, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SLOW_CLOCK_S } from '../water/shore.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { runsInView, tilesCasting, tilesInView } from './cull.ts';
@@ -184,7 +184,13 @@ export class NatureView {
     this.casts = [];
     if (shadow?.active) {
       if (this.casting.length !== packed.tiles.length / 4) this.casting = new Uint8Array(packed.tiles.length / 4);
-      tilesCasting(packed, anchorFromEye, frame.exaggeration, (low, high) => shadow.reaches(low, high), this.casting);
+      tilesCasting(
+        packed,
+        anchorFromEye,
+        frame.exaggeration,
+        (low, high) => shadow.reaches(low, high, NEAR),
+        this.casting,
+      );
       for (const group of packed.groups) {
         const part = group.far ? undefined : parts[group.form]?.[0];
         if (!part) continue;
@@ -197,10 +203,11 @@ export class NatureView {
     return waiting;
   }
 
-  /** Draws the near plants `update` found casting into the sun's shadow map. */
+  /** Draws the near plants `update` found casting into the sun's near shadow map; past it their contact shades stand
+   *  in, so they cast nothing into the far one. */
   castInto(pass: GPURenderPassEncoder, shadow: ShadowMap): void {
     const { meshes, bind } = this;
-    if (!meshes || !bind || this.casts.length === 0) return;
+    if (!meshes || !bind || this.casts.length === 0 || shadow.cascade !== NEAR) return;
     pass.setPipeline(this.pipelines.cast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.cast));
     pass.setVertexBuffer(0, meshes.vertices);

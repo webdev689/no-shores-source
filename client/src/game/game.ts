@@ -318,7 +318,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       drawers.city,
       drawers.nature,
       { drawInto: (pass, fromEye, shot) => meshes.drawInto(pass, fromEye, shot.eye, placings) },
-      { drawInto: (pass, fromEye, shot) => figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures) },
+      {
+        castInto: (pass, fromEye, shot, _time, shadow) =>
+          figureView.castInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
+        drawInto: (pass, fromEye, shot, _time, shadow) =>
+          figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
+      },
     ];
     return found.filter((drawer): drawer is Drawer => drawer !== null);
   };

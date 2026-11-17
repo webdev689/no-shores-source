@@ -3,7 +3,7 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { shadowLayouts } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { MASS_SHADER, MODEL_CAST_SHADER, MODEL_SHADER, PLATE_SHADER } from './cityShaders.ts';
+import { MASS_CAST_SHADER, MASS_SHADER, MODEL_CAST_SHADER, MODEL_SHADER, PLATE_SHADER } from './cityShaders.ts';
 
 /** WebGPU's buffer usages: the groundwork's, and the index and storage usages it does not name, by the
  *  specification's values. */
@@ -14,8 +14,10 @@ export type CityPipelines = {
   readonly models: GPURenderPipeline;
   readonly masses: GPURenderPipeline;
   readonly plates: GPURenderPipeline;
-  /** The models' and solids' depth along the sun, into the shadow map. */
+  /** The models' and solids' depth along the sun, into the shadow maps. */
   readonly modelsCast: GPURenderPipeline;
+  /** The masses' and hulls' depth along the sun, into the far shadow map. */
+  readonly massesCast: GPURenderPipeline;
 };
 
 const made = new WeakMap<GPUDevice, Map<GPUTextureFormat, CityPipelines>>();
@@ -70,7 +72,22 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
       ],
     },
   ];
+  const massBuffers: GPUVertexBufferLayout[] = [
+    {
+      arrayStride: 48,
+      stepMode: 'instance',
+      attributes: [
+        { shaderLocation: 0, offset: 0, format: 'float32x4' },
+        { shaderLocation: 1, offset: 16, format: 'float32x4' },
+        { shaderLocation: 2, offset: 32, format: 'uint32x4' },
+      ],
+    },
+  ];
   const massModule = device.createShaderModule({ code: MASS_SHADER });
+  const massCastModule = device.createShaderModule({ code: MASS_CAST_SHADER });
+  // Both faces cast, so a thin wall or a roof seen edge-on to the sun still throws its shadow.
+  const castPrimitive: GPUPrimitiveState = { topology: 'triangle-list', cullMode: 'none' };
+  const castDepth: GPUDepthStencilState = { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' };
   const plateModule = device.createShaderModule({ code: PLATE_SHADER });
   const pipelines: CityPipelines = {
     layout,
@@ -84,21 +101,7 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
     }),
     masses: device.createRenderPipeline({
       layout: pipelineLayout,
-      vertex: {
-        module: massModule,
-        entryPoint: 'mass_vertex',
-        buffers: [
-          {
-            arrayStride: 48,
-            stepMode: 'instance',
-            attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x4' },
-              { shaderLocation: 1, offset: 16, format: 'float32x4' },
-              { shaderLocation: 2, offset: 32, format: 'uint32x4' },
-            ],
-          },
-        ],
-      },
+      vertex: { module: massModule, entryPoint: 'mass_vertex', buffers: massBuffers },
       fragment: { module: massModule, entryPoint: 'surface_fragment', targets },
       primitive,
       depthStencil,
@@ -116,12 +119,17 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
       depthStencil,
       multisample,
     }),
-    // Both faces cast, so a thin wall or a roof seen edge-on to the sun still throws its shadow.
     modelsCast: device.createRenderPipeline({
       layout: castLayout,
       vertex: { module: castModule, entryPoint: 'model_cast', buffers: modelBuffers },
-      primitive: { topology: 'triangle-list', cullMode: 'none' },
-      depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
+      primitive: castPrimitive,
+      depthStencil: castDepth,
+    }),
+    massesCast: device.createRenderPipeline({
+      layout: castLayout,
+      vertex: { module: massCastModule, entryPoint: 'mass_cast', buffers: massBuffers },
+      primitive: castPrimitive,
+      depthStencil: castDepth,
     }),
   };
   byFormat.set(format, pipelines);

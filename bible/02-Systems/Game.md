@@ -12,6 +12,7 @@ code:
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
   - client/src/shadow.ts#ShadowMap
+  - client/src/game/figureView.ts#FigureView
   - client/src/game/hud.ts#Hud
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
@@ -127,11 +128,26 @@ its continent's climate once the forged models' tables and the RMB blocks its pl
 (`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture.
 The land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
 
-**The sun's shadows.** Before the pass, what casts draws its depth along the sun into one map (`shadow.ts`, 2048
-texels a side over a square 300 m across, centred 75 m ahead of the camera and snapped to its texels so the edges
-hold still): the city's solids and near models, and the near plants, those behind the camera too. The land, the city
-and the plants are then lit through it, softened over eight taps and faded out toward the square's rim. From more
-than 400 m over the ground, at sea or over an island's side, no shadows are drawn.
+**The sun's shadows.** Before the pass, what casts draws its depth along the sun into two maps (`shadow.ts`), 2048
+texels a side each, every square ahead of the camera and snapped to its own texels so the edges hold still:
+
+| Map | Its square | A texel | What casts into it |
+|---|---|---|---|
+| Near | 300 m across, centred 75 m ahead | 0.15 m | The city's solids and near models, the near plants and the figures |
+| Far | 2.4 km across, centred 900 m ahead | 1.2 m | The city's solids, its whole cells' models, and its masses and hulls in the tiers they are drawn in |
+
+What casts is found by whether, seen along the sun, its box overlaps a square, those behind the camera and far below
+the eye too, so the city under the plaza casts. The land, the city, the plants and the figures are then lit through
+both, softened over eight taps: the near map's sharp shadows hold inside its square and give way to the far map's
+toward its rim, and those fade out toward the far square's own, about 2 km ahead. So from the plaza the city below is
+shadowed as far as its masses stand. From more than 400 m over the ground, at sea or over an island's side, no
+shadows are drawn.
+
+**The figures' shadows.** A figure's card casts turned square to the sun about its feet, its clear texels cut away,
+the picture kept the way round the eye sees it; it is drawn into the near map only. The card the eye sees is lit
+through the maps, each of its points asked of them from past that turned card, so a figure is darkened in another's
+shadow or a wall's and never by its own. Its contact shade stays under its feet where its own shadow is drawn, and
+past the near square leans the way the sun throws one, standing in for it.
 
 At sea each ship's footprint is handed to the water, which keeps out of her hull and foams round her bow under way.
 In death the world drains to grey, and comes back in colour on respawn or on leaving.
@@ -144,4 +160,7 @@ In death the world drains to grey, and comes back in colour on respawn or on lea
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
 - Offline, the edge is judged in the browser; online, the room judges it and the browser predicts nothing of it.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
-- The figures cast no shadows: they are cards that turn to the eye.
+- A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
+  of the side facing the sun.
+- Past the far square, about 2 km ahead of the camera, nothing is shadowed; the plants cast into the near square
+  only.
