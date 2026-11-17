@@ -1,6 +1,7 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
 import type { Voyage } from '../overworld/voyage.ts';
+import { deckToWorld, SLOOP_DECK } from '../ships/deck.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
  *  shore to water `depthM` deep, then `clearM` on, within `farthestM` of the harbour. */
@@ -25,9 +26,9 @@ export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Poi
   return through;
 }
 
-/** The helm, behind the Sloop's wheel on her quarterdeck: how far aft of her middle and how high over the water the
+/** The helm's view, behind the Sloop's wheel on her quarterdeck (her deck's helm spot): how high over the water the
  *  eye stands there at her true scale, and how far down it looks. */
-export const HELM = { aftM: 2.7, eyeM: 2.5, pitch: 0.1 } as const;
+export const HELM = { eyeM: 2.5, pitch: 0.1 } as const;
 
 /** The scale ships are drawn at: the Overworld's, shrinking to true scale as the view comes down to the helm
  *  (`helmShare` 0 the sea's view, 1 at the helm), so at the wheel the Sloop and every ship round her are their own
@@ -42,11 +43,8 @@ export function helmEye(
   scale: number,
   heave: number,
 ): readonly [number, number, number] {
-  return [
-    ship.x - Math.sin(ship.heading) * HELM.aftM * scale,
-    ship.y + Math.cos(ship.heading) * HELM.aftM * scale,
-    HELM.eyeM * scale + heave,
-  ];
+  const [helmX, helmY] = SLOOP_DECK.helm;
+  return deckToWorld({ ...ship, scale, heave }, helmX, helmY, HELM.eyeM);
 }
 
 /** A port's icon stands over its harbour at sea within this of it, metres: twice a landing's reach, so a port is seen

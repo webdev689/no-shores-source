@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { voyageOf } from '../overworld/voyage.ts';
+import { SLOOP_DECK } from '../ships/deck.ts';
 import {
   continentToOpen,
   courseAhead,
@@ -106,11 +107,12 @@ test("ships are drawn at the Overworld's scale on the sea's view and shrink to t
 test('at the helm the eye stands behind the wheel of the Sloop as she is drawn, riding the swell with her', () => {
   const heading = Math.PI / 2;
   const ship = { x: 1000, y: 2000, heading };
+  const aft = SLOOP_DECK.helm[1];
   const [x, y, z] = helmEye(ship, 1, 0.25);
-  assert.ok(Math.abs(x - (1000 - HELM.aftM)) < 1e-9, 'aft of her middle, against her heading east');
+  assert.ok(Math.abs(x - (1000 - aft)) < 1e-9, 'aft of her middle at her helm spot, against her heading east');
   assert.ok(Math.abs(y - 2000) < 1e-9);
   assert.equal(z, HELM.eyeM + 0.25);
   const [drawnX, , drawnZ] = helmEye(ship, 12, 0);
-  assert.ok(Math.abs(drawnX - (1000 - HELM.aftM * 12)) < 1e-9, 'on the larger Sloop, its helm further aft');
+  assert.ok(Math.abs(drawnX - (1000 - aft * 12)) < 1e-9, 'on the larger Sloop, its helm further aft');
   assert.equal(drawnZ, HELM.eyeM * 12);
 });

@@ -24,6 +24,13 @@ code:
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/export_ship.py#main
   - tools/ships/paint_ship.py#main
+  - tools/ships/deck.py#deck_of
+  - crates/room/src/deck.rs#Aboard
+  - crates/room-wasm/src/deck_door.rs#sloop_deck
+  - client/src/ships/deck.ts#SLOOP_DECK
+  - client/src/game/aboard.ts#Aboard
+  - client/src/game/deckWalk.ts#DeckWalk
+  - client/src/game/crew.ts#Crew
 ---
 # Sailing
 
@@ -117,11 +124,33 @@ or more: the room steps her by her orders, a tick at a time, and the browser pre
 `room-wasm`, correcting her by each snapshot. The water then rolls by the room's clock, so every ship the room shows
 rides the wave drawn under her ([[Naval Combat]]).
 
+## Her deck
+
+A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
+
+- **The grid.** `tools/ships/deck.py` measures it from her published mesh, and the export writes it with her: a grid
+  of 10 cm cells in the walk's frame (x to her starboard, y to her stern, the origin amidships), each holding the
+  height over her waterline of the highest of her hull's and deck's upward faces there, in centimetres. A cell where
+  a spar or a gun stands in the room a body takes (from 0.25 m to 1.8 m over the planks), where the floor lies under
+  0.6 m (her bilge through an opening), or that is off her deck holds none. Each cell is then let down to within 8
+  cm of every neighbour, nothing raised, so a dip in her planks or a raised part of her deck has a way in and out a
+  body walks (a slope under 1.19). The grid is kept round the deck with a cell to spare, each row on a line of the
+  manifest. The spot behind her wheel, 2.7 m aft of her middle, is her
+  helm's.
+- **The ground it makes.** The movement crate stands a body on the grid as a terrain ([[Movement]]): between cell
+  centres the ground blends, and a cell with none, or the grid's end, is a wall no step or slope takes. A wall of the
+  ground is never climbed, as a block's is, so a body never leaves her deck.
+- **Her own frame.** A body on deck moves in her frame, so her way, her heading and the swell never move it; the game
+  lays it into the world as she lies, at her drawn size.
+
 ## Limits
 
 - One hull, the Sloop.
+- A walker on deck stands on her heights, not her shape: no stairs below, no rigging to climb, and a body's edge
+  may brush a rail it stands within a cell of.
 - Her helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
 - Alone, the editor steps her; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
   in the sea room's fights, the room steps her by her orders.
-- No current, cargo or crew yet. Hulls are kept apart only in a fight ([[Naval Combat]]), as every fleet room is.
+- No current or cargo yet, and no crew but the stand-ins aboard ([[Game]]). Hulls are kept apart only in a fight
+  ([[Naval Combat]]), as every fleet room is.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.

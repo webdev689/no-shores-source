@@ -32,8 +32,11 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **The palette** names each tone for what it is: the stone from lit to dark, the brass from lit to dark, the grounds
   and the words.
 - **Where it is worn.** The [[Game]]'s heads-up display lays the kit's sheet once. The sea bar is a window, its groups
-  (Navigation and Pace) parted by a rail; the dock or landing offer and Respawn are primaries; the status line is a
-  chip; the menu is a window under a header.
+  (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
+  the status line is a chip; the menu is a window under a header.
+- **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
+  still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
+  shows changes.
 
 ## Limits
 

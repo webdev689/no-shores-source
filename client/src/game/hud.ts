@@ -2,6 +2,7 @@ import { button, make } from '../editor/dom.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
+import type { ShipPanel } from './shipPanel.ts';
 
 /** A button of the heads-up display, in the role it plays: let go of once pressed, so Space or Enter, which the game
  *  itself answers, never press it again. */
@@ -81,12 +82,19 @@ export class Hud {
   private readonly paceValue = make('span', '', 'pace');
   private readonly voyage: HTMLButtonElement;
   private readonly landfall: HTMLButtonElement;
+  private readonly leave: HTMLButtonElement;
+  private readonly wheel: HTMLButtonElement;
+  private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
+  private panelShown = '';
   private respawnWanted: () => void = () => undefined;
   private markChosen: (id: string) => void = () => undefined;
   private paceWanted: (direction: number) => void = () => undefined;
   private voyageWanted: () => void = () => undefined;
   private mapWanted: () => void = () => undefined;
   private landfallWanted: () => void = () => undefined;
+  private manageWanted: () => void = () => undefined;
+  private leaveWanted: () => void = () => undefined;
+  private wheelWanted: () => void = () => undefined;
 
   constructor(root: HTMLElement) {
     root.classList.add('hud');
@@ -104,6 +112,9 @@ export class Hud {
     this.voyage = hudButton('', () => this.voyageWanted());
     this.landfall = hudButton('', () => this.landfallWanted(), 'primary');
     this.landfall.classList.add('landfall');
+    this.leave = hudButton('Leave the helm  H', () => this.leaveWanted());
+    this.wheel = hudButton('Take the helm  E', () => this.wheelWanted(), 'primary');
+    this.wheel.classList.add('landfall');
     const groups = [
       seaGroup(
         'Navigation',
@@ -115,6 +126,11 @@ export class Hud {
         hudButton('−  [', () => this.paceWanted(-1)),
         this.paceValue,
         hudButton(']  +', () => this.paceWanted(1)),
+      ),
+      seaGroup(
+        'Ship',
+        hudButton('Manage  B', () => this.manageWanted()),
+        this.leave,
       ),
     ];
     // Each group after the first stands behind an engraved rail.
@@ -129,6 +145,8 @@ export class Hud {
       this.status,
       this.sea,
       this.landfall,
+      this.wheel,
+      this.panel,
       this.menuNode,
       this.death,
       this.veilNode,
@@ -136,6 +154,8 @@ export class Hud {
     this.reach({ kind: 'inside' });
     this.menu(null);
     this.seaBar(null);
+    this.shipPanel(null);
+    this.wheelOffer(false);
     this.note('');
   }
 
@@ -246,11 +266,14 @@ export class Hud {
       readonly sailing: boolean;
       readonly resumable: boolean;
       readonly landfall: Landfall;
+      /** Whether the helm may be left: the ship is in the sea room. */
+      readonly canLeave: boolean;
     } | null,
   ): void {
     this.sea.hidden = state === null;
     this.landfall.hidden = !state?.landfall;
     if (!state) return;
+    this.leave.disabled = !state.canLeave;
     const pace = `×${state.pace}`;
     if (this.paceValue.textContent !== pace) this.paceValue.textContent = pace;
     this.voyage.hidden = !state.sailing && !state.resumable;
@@ -273,6 +296,48 @@ export class Hud {
   /** What Stop and Resume voyage do. */
   onVoyage(toggle: () => void): void {
     this.voyageWanted = toggle;
+  }
+
+  /** Manage's panel over her deck: her name, and each part of it, those still to come marked Later; null hides it. */
+  shipPanel(panel: ShipPanel | null): void {
+    this.panel.hidden = panel === null;
+    const shown = JSON.stringify(panel);
+    if (!panel || shown === this.panelShown) return;
+    this.panelShown = shown;
+    const parts = panel.parts.map((part) => {
+      const node = make('div', '', 'ship-part');
+      node.append(make('div', part.heading, `ship-part-heading ${ROLES.rule}`));
+      if (part.later) node.append(make('span', 'Later', `ship-later ${ROLES.chip}`));
+      for (const [label, value] of part.rows) {
+        const row = make('div', '', 'ship-row');
+        row.append(make('span', label, 'ship-label'), make('span', value, 'ship-value'));
+        node.append(row);
+      }
+      return node;
+    });
+    const footer = make('div', '', `ship-footer ${ROLES.footer}`);
+    footer.append(hudButton('Back to the sea  B', () => this.manageWanted()));
+    this.panel.replaceChildren(make('div', panel.title, `ship-title ${ROLES.header}`), ...parts, footer);
+  }
+
+  /** Offers the helm at her wheel, or takes the offer away. */
+  wheelOffer(shown: boolean): void {
+    this.wheel.hidden = !shown;
+  }
+
+  /** What Manage, and the panel's way back, do. */
+  onManage(toggle: () => void): void {
+    this.manageWanted = toggle;
+  }
+
+  /** What Leave the helm does. */
+  onLeaveHelm(leave: () => void): void {
+    this.leaveWanted = leave;
+  }
+
+  /** What the offer of the helm at her wheel does. */
+  onTakeHelm(take: () => void): void {
+    this.wheelWanted = take;
   }
 
   /** What the offer to dock or go ashore does. */
