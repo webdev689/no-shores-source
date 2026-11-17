@@ -54,6 +54,11 @@ const UNDER_WAY = 4;
 const FIRST_TILT = (30 * Math.PI) / 180;
 /** Seconds the view takes to fall back from an island's side to the ship. */
 const FLY_BACK_SECONDS = 1.4;
+/** The helm, on the stern castle: how far aft of the ship's middle and how high over the water the eye stands there,
+ *  metres before the ship is drawn larger, and how far down it looks. */
+const HELM = { aftM: 11.5, eyeM: 6.1, pitch: 0.1 } as const;
+/** Seconds the view takes to come down to the helm, or go back up from it. */
+const HELM_SECONDS = 1.1;
 /** The player's own ship's paint: a deep sea blue. */
 const OWN_PAINT = [0.13, 0.36, 0.58] as const;
 /** A mark stands this far over the ground it marks, metres. */
@@ -77,7 +82,9 @@ type SeaView =
       readonly seconds: number;
       readonly then: 'landing' | 'sail';
     }
-  | { readonly kind: 'landing' };
+  | { readonly kind: 'landing' }
+  /** Coming down to the helm, there, or going back up: `at` how far down, 0 the sea's view, 1 the helm. */
+  | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' };
 
 /** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
 export interface SeaFrame {
@@ -184,6 +191,49 @@ export class Sea {
     const offCoast = nearestIsland(this.position, [this.landmass.outline]) !== null;
     const { plan } = this.landmass;
     return landfallOf(this.position, offCoast, plan?.harbour ? { name: plan.name, harbour: plan.harbour } : null);
+  }
+
+  /** Where the ship lies and heads, as the held map shows it. */
+  get heading(): number {
+    return this.ship.heading;
+  }
+
+  /** The voyage's course still ahead, from the ship; none at rest. */
+  get course(): Point2[] {
+    return this.voyage ? [this.position, ...courseAhead(this.voyage, this.travelled)] : [];
+  }
+
+  /** A course from the ship to a point, as the held map inks it before setting sail, or why there is none. */
+  planTo(
+    point: Point2,
+  ): { readonly ok: true; readonly points: Point2[] } | { readonly ok: false; readonly why: string } {
+    const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    return route.ok ? { ok: true, points: route.points } : { ok: false, why: REFUSED[route.reason] };
+  }
+
+  /** Takes the view down to the ship's helm, in first person, where the held map is raised. */
+  toHelm(): void {
+    if (this.view.kind === 'sail') this.view = { kind: 'helm', at: 0, going: 'down' };
+  }
+
+  /** Takes the view back up from the helm to the sea's. */
+  fromHelm(): void {
+    if (this.view.kind === 'helm') this.view = { ...this.view, going: 'up' };
+  }
+
+  /** The ids of the landings marked over the island's side in view: the player has seen them. */
+  get landings(): string[] {
+    return this.side.map((mark) => mark.id);
+  }
+
+  /** Whether the view is at the helm, or on its way down or up. */
+  get helmView(): boolean {
+    return this.view.kind === 'helm';
+  }
+
+  /** Whether the view stands at the helm. */
+  get atHelm(): boolean {
+    return this.view.kind === 'helm' && this.view.going === 'down' && this.view.at >= 1;
   }
 
   /** Whether a voyage stopped short of its destination can be resumed. */
@@ -347,8 +397,9 @@ export class Sea {
     const look = lookOf(pose.forward);
     const fromShip = Math.hypot(pose.eye[0] - this.ship.x, pose.eye[1] - this.ship.y, pose.eye[2]);
     const lens = horizonOf({ fogEndM: 28_000, nearM: 2, farM: 60_000 }, 1, fromShip);
+    const seaShot: Shot = { eye: pose.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
     return {
-      shot: { eye: pose.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM },
+      shot: this.view.kind === 'helm' ? this.helmShot(dt, time, seaShot) : seaShot,
       ships: this.ships(time),
       hulls: this.hulls(),
       marks: this.marks(pose, viewport),
@@ -358,6 +409,32 @@ export class Sea {
       resumable: this.resumable,
       pace: this.pace,
       overSide: this.view.kind === 'landing',
+    };
+  }
+
+  /** The view coming down to the helm, there, or going back up, eased between the sea's shot and the helm's. */
+  private helmShot(dt: number, time: number, sea: Shot): Shot {
+    if (this.view.kind !== 'helm') return sea;
+    const step = (this.view.going === 'down' ? dt : -dt) / HELM_SECONDS;
+    const down = Math.min(1, Math.max(0, this.view.at + step));
+    this.view = down <= 0 && this.view.going === 'up' ? { kind: 'sail' } : { ...this.view, at: down };
+    const eased = down * down * (3 - 2 * down);
+    const { heading } = this.ship;
+    // The eye rides the swell with the ship, as she is drawn.
+    const eye = [
+      this.ship.x - Math.sin(heading) * HELM.aftM * SHIP_SCALE,
+      this.ship.y + Math.cos(heading) * HELM.aftM * SHIP_SCALE,
+      HELM.eyeM * SHIP_SCALE + 0.35 * Math.sin(time * 0.9) - 0.4,
+    ] as const;
+    const turn = Math.atan2(Math.sin(heading - sea.yaw), Math.cos(heading - sea.yaw));
+    const mix = (from: number, to: number) => from + (to - from) * eased;
+    return {
+      eye: [mix(sea.eye[0], eye[0]), mix(sea.eye[1], eye[1]), mix(sea.eye[2], eye[2])],
+      yaw: sea.yaw + turn * eased,
+      pitch: mix(sea.pitch, HELM.pitch),
+      fov: FIELD_OF_VIEW,
+      near: eased > 0.5 ? 0.3 : sea.near,
+      far: sea.far,
     };
   }
 

@@ -5,8 +5,20 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
+import { coastField } from '../heldmap/coastField.ts';
+import { HeldMap, type MapPlace } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
+import {
+  CHART_CELL_M,
+  CHART_COLUMNS,
+  CHART_ROWS,
+  chartAround,
+  type Discovery,
+  discoveryText,
+  readDiscovery,
+  sightIslands,
+} from '../overworld/discovery.ts';
 import { wheelNotches } from '../overworld/overworldInput.ts';
 import { type CardAt, Cards } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
@@ -29,7 +41,7 @@ import { arrivalFacing, bearingTo } from './nodes.ts';
 import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
-import { continentToOpen, offshore } from './seaLaw.ts';
+import { continentToOpen, offshore, PORT_SEEN_M } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
@@ -43,6 +55,9 @@ const REGION = 'The Pale Expanse';
 const GROUND_WAIT_S = 20;
 /** How often the sea looks for another continent's coast nearby, seconds. */
 const CHART_EVERY_S = 1;
+/** Where this browser keeps what the player has discovered, and how often it is kept once it changes, seconds. */
+const DISCOVERY_KEY = 'overlook-discovery';
+const KEEP_DISCOVERY_EVERY_S = 5;
 
 const HINTS = {
   foot: [
@@ -51,12 +66,16 @@ const HINTS = {
     'Wheel: third person · M menu',
   ],
   dead: ['Enter or Respawn: back at the nearest spawn'],
-  sea: ['Click the sea to sail · Drag to look · Wheel zoom', '[ ] pace · Space stop or resume · M menu'],
+  sea: ['Click the sea to sail · Drag to look · Wheel zoom', 'N map · [ ] pace · Space stop or resume · M menu'],
+  map: ['Drag to pan · Wheel to zoom · Click a port or the sea', 'Enter set sail · Esc put the map away'],
   landing: ['Click a mark to choose it', 'Click it again or Enter to land · Esc back to sea'],
 } as const;
 
 /** The forge's figures and the first person's hands, read from the forge's published renders. */
-async function openForge(gpu: Gpu, figures: FigureView): Promise<{ forge: Cards; firstPerson: FirstPerson }> {
+async function openForge(
+  gpu: Gpu,
+  figures: FigureView,
+): Promise<{ forge: Cards; firstPerson: FirstPerson; store: ForgeStore }> {
   const store = await ForgeStore.open();
   const [looks, skins, hair, dyes] = await Promise.all([
     store.table<ForgeLooks>('looks'),
@@ -65,7 +84,11 @@ async function openForge(gpu: Gpu, figures: FigureView): Promise<{ forge: Cards;
     store.table<DyeTable>('dyes'),
   ]);
   const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
-  return { forge: new Cards(figures, store, looks, colours, dyes), firstPerson: await FirstPerson.open(gpu, store) };
+  return {
+    forge: new Cards(figures, store, looks, colours, dyes),
+    firstPerson: await FirstPerson.open(gpu, store),
+    store,
+  };
 }
 
 /** The words under a place's name: its kind, and its island's name where it has one. */
@@ -79,6 +102,15 @@ function placeWords(node: NodeInfo): string {
  * an island's side and lands at a node, each through a veil while the place loads. This wires the pieces and keeps
  * the flow; each mode is its own module.
  */
+/** What the player has discovered, as this browser kept it; nothing where it keeps nothing. */
+function keptDiscovery(): Discovery {
+  try {
+    return readDiscovery(localStorage.getItem(DISCOVERY_KEY));
+  } catch {
+    return readDiscovery(null);
+  }
+}
+
 export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement): Promise<void> {
   const hud = new Hud(hudRoot);
   let flow: Flow = arriving(FIRST_NODE, 'Overlook');
@@ -90,7 +122,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const figureView = new FigureView(gpu);
   const meshes = new MeshView(gpu);
   const ship = meshes.mesh(shipMesh());
-  const [world, rmbText, movement, { forge, firstPerson }] = await Promise.all([
+  const [world, rmbText, movement, { forge, firstPerson, store }] = await Promise.all([
     loadWorld(base),
     fetch(`${base}world/rmb/index.json`)
       .then((answer) => (answer.ok ? answer.text() : null))
@@ -114,6 +146,34 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     flow = arriving(start.node, start.name);
     if (flow.mode === 'loading') hud.veil(flow.words);
   }
+  const discovery = keptDiscovery();
+  /** Marks something discovered; what changed is kept every few seconds and as the page goes. */
+  let discoveryChanged = false;
+  const discover = (changed: boolean) => {
+    discoveryChanged ||= changed;
+  };
+  const keepDiscovery = () => {
+    if (!discoveryChanged) return;
+    discoveryChanged = false;
+    try {
+      localStorage.setItem(DISCOVERY_KEY, discoveryText(discovery));
+    } catch {
+      // A browser that keeps nothing still plays; the map forgets on the next visit.
+    }
+  };
+  setInterval(keepDiscovery, KEEP_DISCOVERY_EVERY_S * 1000);
+  addEventListener('pagehide', keepDiscovery);
+  /** The player arrives knowing the island they stand on, its port, the place and the waters round its city. */
+  const arrivedOn = world.cities.find((city) => city.continent === start.continent);
+  discover(!discovery.islands.has(start.continent) || !discovery.nodes.has(start.node));
+  discovery.islands.add(start.continent);
+  discovery.nodes.add(start.node);
+  if (arrivedOn) {
+    discover(!discovery.ports.has(arrivedOn.id));
+    discovery.ports.add(arrivedOn.id);
+    discover(chartAround(discovery, arrivedOn.centre));
+  }
+
   let landmass = await openLandmass(land, world, rmbText, start.continent);
   let drawers = drawersOn(landmass);
   /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
@@ -224,6 +284,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     behindVeil(flow.words, () => goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)));
 
   const landAt = (id: string) => {
+    discover(!discovery.nodes.has(id));
+    discovery.nodes.add(id);
     const landing = sea?.landingOf(id);
     const node = landmass.nodes.find((each) => each.id === id);
     if (!landing || !node || !sea) return;
@@ -257,7 +319,55 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // While another landmass opens, the worker's landmass is not the one the landings would be on.
     if (flow.mode !== 'sea' || !sea || charting) return;
     if (flow.menu) change({ kind: 'back' });
-    if (sea.goAshore()) change({ kind: 'view-landings' });
+    if (!sea.goAshore()) return;
+    change({ kind: 'view-landings' });
+    for (const id of sea.landings) {
+      discover(!discovery.nodes.has(id));
+      discovery.nodes.add(id);
+    }
+  };
+
+  /** The held map, made when it is first asked for, since its coasts are worked out then. */
+  let heldMap: HeldMap | null = null;
+  /** The map is wanted: it is raised once the view stands at the helm. */
+  let mapWanted = false;
+  const knownIslands = () =>
+    continents.reduce(
+      (bits, continent, index) => (discovery.islands.has(continent.id) ? bits | (1 << index) : bits),
+      0,
+    );
+  /** What the map shows of the places discovered: each port, at its city, and the nodes seen or landed at. */
+  const mapPlaces = (): MapPlace[] => [
+    ...world.cities
+      .filter((city) => discovery.ports.has(city.id))
+      .map((city) => ({ id: `${city.id}-port`, name: city.name, kind: 'port', at: city.centre })),
+    ...world.nodes
+      .filter((node) => discovery.nodes.has(node.id))
+      .map((node) => ({ id: node.id, name: node.name, kind: node.kind, at: node.centre })),
+  ];
+  const mapOf = (): HeldMap => {
+    if (heldMap) return heldMap;
+    const field = coastField(
+      continents.map((each) => each.outline),
+      CHART_COLUMNS,
+      CHART_ROWS,
+      CHART_CELL_M,
+    );
+    const made = new HeldMap(gpu, field, store, (to) => sea?.planTo(to) ?? { ok: false, why: 'No ship.' }, hudRoot);
+    // Lowered, the view goes back up; a destination set, the ship sets sail as it does.
+    made.onLowered((sail) => {
+      sea?.fromHelm();
+      if (sail) sea?.sailTo(sail);
+    });
+    heldMap = made;
+    return made;
+  };
+
+  /** Takes the view down to the ship's helm, where the map is raised. */
+  const openMap = () => {
+    if (flow.mode !== 'sea' || flow.menu || !sea || heldMap?.shown || sea.helmView) return;
+    sea.toHelm();
+    mapWanted = true;
   };
 
   /** Stops the voyage under way, or resumes the one stopped. */
@@ -285,10 +395,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onRespawn(respawn);
   hud.onPace((direction) => sea?.stepPace(direction));
   hud.onVoyage(stopOrResume);
+  hud.onMap(openMap);
   hud.onLandfall(goAshore);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat) return;
+    if (heldMap?.shown) {
+      if (key === 'escape') heldMap.escape();
+      else if (key === 'enter') heldMap.setSail();
+      return;
+    }
     if (key === 'enter' && retry) retry();
     else if (key === 'm') change({ kind: 'menu' });
     else if (key === 'escape' && flow.mode === 'landing') {
@@ -297,6 +413,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     } else if (key === 'escape') change({ kind: 'back' });
     else if (key === 'l' || (key === 'enter' && flow.mode === 'sea' && !flow.menu)) goAshore();
     else if (key === ' ' && flow.mode === 'sea') stopOrResume();
+    else if (key === 'n') openMap();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
     else if (key === 'enter' && flow.mode === 'foot') respawn();
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
@@ -305,22 +422,30 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
   });
   const atSea = () => flow.mode === 'sea' && !flow.menu;
+  /** While the map is up, the pointer and the wheel are the map's. */
+  const mapUp = () => heldMap?.shown ?? false;
   canvas.addEventListener('pointerdown', (event) => {
     if (!atSea()) return;
     // Held to the canvas, so a press let go over a mark or the bar still ends here.
     canvas.setPointerCapture(event.pointerId);
-    sea?.pointerDown(event.offsetX, event.offsetY);
+    if (mapUp()) heldMap?.pointerDown(event.offsetX, event.offsetY);
+    else sea?.pointerDown(event.offsetX, event.offsetY);
   });
   canvas.addEventListener('pointermove', (event) => {
-    if (atSea()) sea?.pointerMove(event.offsetX, event.offsetY);
+    if (!atSea()) return;
+    if (mapUp()) heldMap?.pointerMove(event.offsetX, event.offsetY);
+    else sea?.pointerMove(event.offsetX, event.offsetY);
   });
   canvas.addEventListener('pointerup', (event) => {
-    if (atSea()) sea?.pointerUp(event.offsetX, event.offsetY);
+    if (atSea() && mapUp()) heldMap?.pointerUp(event.offsetX, event.offsetY);
+    else if (atSea()) sea?.pointerUp(event.offsetX, event.offsetY);
     else sea?.pointerCancel();
   });
   canvas.addEventListener('pointercancel', () => sea?.pointerCancel());
   canvas.addEventListener('wheel', (event) => {
-    if (atSea()) sea?.zoom(wheelNotches(event.deltaY, event.deltaMode, canvas.clientHeight));
+    if (!atSea()) return;
+    if (mapUp()) heldMap?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
+    else sea?.zoom(wheelNotches(event.deltaY, event.deltaMode, canvas.clientHeight));
   });
 
   /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides. */
@@ -371,14 +496,44 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const tilt = held('lookDown') - held('lookUp');
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const shown = here.frame(seconds, clock, viewport, turn, tilt);
-    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, []), { hulls: shown.hulls });
+    if (flow.mode === 'sea') {
+      // What a lookout sees is discovered: the sea round the ship, an island's coast, a port's icon.
+      const ship = here.position;
+      discover(chartAround(discovery, ship));
+      discover(sightIslands(discovery, ship, continents).length > 0);
+      for (const city of world.cities)
+        if (
+          !discovery.ports.has(city.id) &&
+          Math.hypot(city.centre[0] - ship[0], city.centre[1] - ship[1]) <= PORT_SEEN_M
+        ) {
+          discovery.ports.add(city.id);
+          discover(true);
+        }
+    }
+    if (mapWanted && here.atHelm) {
+      mapWanted = false;
+      mapOf().open(viewport, here.position, dress.outfit.armour.gauntlets ?? null, discovery.charted);
+    }
+    const mapFrame = heldMap?.frame(seconds, viewport, canvas.width / Math.max(1, canvas.clientWidth), {
+      ship: here.position,
+      heading: here.heading,
+      places: mapPlaces(),
+      knownIslands: knownIslands(),
+      course: here.course,
+    });
+    const after = mapFrame
+      ? (encoder: GPUCommandEncoder, view: GPUTextureView) => heldMap?.draw(encoder, view, mapFrame)
+      : undefined;
+    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, []), { hulls: shown.hulls, after });
     showStanding({ kind: 'inside' });
     const island = ISLANDS[landmass.id];
+    const atHelm = here.helmView;
     if (flow.mode === 'landing') hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
+    else if (atHelm) hud.place('At the helm', REGION);
     else hud.place('At sea', shown.landfall && island ? `Off ${island}` : REGION);
-    hud.hints(flow.mode === 'landing' ? HINTS.landing : HINTS.sea);
+    hud.hints(flow.mode === 'landing' ? HINTS.landing : atHelm ? HINTS.map : HINTS.sea);
     hud.marks(shown.marks);
-    hud.seaBar(flow.mode === 'sea' && !flow.menu ? shown : null);
+    hud.seaBar(flow.mode === 'sea' && !flow.menu && !atHelm ? shown : null);
     hud.note(charting ? 'Charting the coast ahead…' : shown.note);
     sinceChart += seconds;
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.

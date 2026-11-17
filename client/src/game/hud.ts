@@ -76,6 +76,7 @@ export class Hud {
   private markChosen: (id: string) => void = () => undefined;
   private paceWanted: (direction: number) => void = () => undefined;
   private voyageWanted: () => void = () => undefined;
+  private mapWanted: () => void = () => undefined;
   private landfallWanted: () => void = () => undefined;
 
   constructor(root: HTMLElement) {
@@ -95,6 +96,7 @@ export class Hud {
     this.landfall.classList.add('landfall');
     this.sea.append(
       make('span', 'Navigation', 'pace-label'),
+      hudButton('Map  N', () => this.mapWanted()),
       this.voyage,
       make('span', 'Pace', 'pace-label'),
       hudButton('−  [', () => this.paceWanted(-1)),
@@ -219,8 +221,8 @@ export class Hud {
     );
   }
 
-  /** The navigation panel at sea: stopping or resuming the voyage and the pace dial; over it, the offer to dock or go
-   *  ashore while one is open. Null hides both. */
+  /** The navigation panel at sea: the map, stopping or resuming the voyage and the pace dial; over it, the offer to
+   *  dock or go ashore while one is open. Null hides both. */
   seaBar(
     state: {
       readonly pace: number;
@@ -244,6 +246,11 @@ export class Hud {
   /** What the pace buttons do: -1 slower, +1 faster. */
   onPace(step: (direction: number) => void): void {
     this.paceWanted = step;
+  }
+
+  /** What Map does. */
+  onMap(open: () => void): void {
+    this.mapWanted = open;
   }
 
   /** What Stop and Resume voyage do. */

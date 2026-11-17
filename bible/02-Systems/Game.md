@@ -19,6 +19,7 @@ code:
   - client/src/game/seaLaw.ts#continentToOpen
   - client/src/game/meshes.ts#shipMesh
   - client/src/game/rooms.ts#roomsFrom
+  - client/src/heldmap/heldMap.ts#HeldMap
 ---
 # Game
 
@@ -89,8 +90,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
   planned says why.
-- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]) holds Stop while under way and
-  Resume voyage once stopped short (both Space), and the pace dial. A stopped voyage keeps its destination: resuming
+- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]) holds Map (N), which takes the
+  view down to the helm and raises the [[Held Map]], where a destination is set; Stop while under way and Resume
+  voyage once stopped short (both Space); and the pace dial. A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
