@@ -1,0 +1,92 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { voyageOf } from '../overworld/voyage.ts';
+import {
+  continentToOpen,
+  courseAhead,
+  declutter,
+  namesShown,
+  OFFSHORE,
+  offshore,
+  paintOf,
+  timeText,
+} from './seaLaw.ts';
+
+/** Land west of x = 1000, the sea shelving away east of it: 1 m down a metre. */
+const shore = (x: number) => (x < 1000 ? 10 : 1000 - x);
+
+test('a ship lies off the harbour, out past the shore to deep water and a stretch beyond', () => {
+  const [x, y] = offshore((east) => shore(east), [0, 500], [900, 500]);
+  assert.equal(y, 500);
+  const deep = 1000 + OFFSHORE.depthM;
+  assert.ok(x >= deep + OFFSHORE.clearM && x <= deep + OFFSHORE.clearM + OFFSHORE.stepM, `${x}`);
+});
+
+test('with no water that way, the ship lies at the harbour itself', () => {
+  assert.deepEqual(
+    offshore(() => 50, [0, 0], [100, 0]),
+    [100, 0],
+  );
+});
+
+const square = (west: number, north: number, side: number) =>
+  [
+    [west, north],
+    [west + side, north],
+    [west + side, north + side],
+    [west, north + side],
+  ] as const;
+
+test("another continent opens once the ship is nearer its coast than the open one's, within reach", () => {
+  const continents = [
+    { id: 'home', outline: square(0, 0, 100_000) },
+    { id: 'far', outline: square(300_000, 0, 100_000) },
+  ];
+  assert.equal(continentToOpen([150_000, 50_000], continents, 'home'), null, 'still nearer home');
+  assert.equal(continentToOpen([260_000, 50_000], continents, 'home'), 'far');
+  assert.equal(continentToOpen([260_000, 50_000], continents, 'far'), null, 'already open');
+  assert.equal(continentToOpen([260_000, 50_000], continents, 'home', 10_000), null, 'out of reach');
+});
+
+test('the course still ahead is the route points past where the ship has come', () => {
+  const voyage = voyageOf([
+    [0, 0],
+    [100, 0],
+    [100, 100],
+  ]);
+  assert.deepEqual(courseAhead(voyage, 50), [
+    [100, 0],
+    [100, 100],
+  ]);
+  assert.deepEqual(courseAhead(voyage, 200), []);
+});
+
+test("each other player's ship takes a paint by their number, the same number the same paint", () => {
+  assert.deepEqual(paintOf(3), paintOf(3));
+  assert.notDeepEqual(paintOf(1), paintOf(2));
+  assert.deepEqual(paintOf(-1), paintOf(5), 'a number off the list still has one');
+});
+
+test('time left reads in seconds, then minutes', () => {
+  assert.equal(timeText(42.4), '42 s');
+  assert.equal(timeText(0.2), '1 s');
+  assert.equal(timeText(150), '3 min');
+});
+
+test('marks piled on one spot show the nearest, laid last; marks apart all show, farthest first', () => {
+  const placed = [
+    { id: 'far', x: 100, y: 100 },
+    { id: 'apart', x: 300, y: 100 },
+    { id: 'near', x: 110, y: 104 },
+  ];
+  assert.deepEqual(
+    declutter(placed, 30).map((mark) => mark.id),
+    ['apart', 'near'],
+  );
+});
+
+test("a name that would print over a nearer mark's is left off; names apart all show", () => {
+  const markAt = (id: string, x: number, y: number) => ({ id, name: 'Overlook', x, y, sizePx: 28 });
+  const shown = namesShown([markAt('far', 100, 100), markAt('apart', 400, 100), markAt('near', 140, 104)]);
+  assert.deepEqual([...shown].sort(), ['apart', 'near']);
+});

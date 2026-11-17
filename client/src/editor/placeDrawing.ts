@@ -3,10 +3,10 @@ import type { Places } from './marks.ts';
 
 export type Spot = readonly [number, number];
 /** The lists of an edits file that hold places. */
-export type PlaceList = 'rivers' | 'roads' | 'towns' | 'ports';
+export type PlaceList = 'rivers' | 'roads' | 'towns' | 'ports' | 'nodes';
 
 /** The next free id of a kind: one past the highest number its places use, as `road-4`. */
-export function nextId(places: Places, kind: 'river' | 'road' | 'town' | 'port'): string {
+export function nextId(places: Places, kind: 'river' | 'road' | 'town' | 'port' | 'node'): string {
   const used = (places[`${kind}s`] ?? []).map(({ id }) => Number(id?.match(new RegExp(`^${kind}-(\\d+)$`))?.[1] ?? 0));
   return `${kind}-${Math.max(0, ...used) + 1}`;
 }
@@ -49,28 +49,45 @@ export function snapPoint(places: Places, spot: Spot, reachM: number): Spot {
   return whole(best.at);
 }
 
-/** The place under a spot, within `reachM` of a course or a port, or inside a town: the one to remove. */
+/** The place under a spot: the nearest port, course or area's edge within `reachM`; else the smallest area holding
+ *  it, a node before a town. So a road or port inside a node or a town can still be clicked. */
 export function placeAt(places: Places, spot: Spot, reachM: number): { list: PlaceList; id: string } | null {
-  const found: { list: PlaceList; id: string; distance: number }[] = [];
+  const near: { list: PlaceList; id: string; distance: number }[] = [];
   const consider = (list: PlaceList, id: string | undefined, distance: number) => {
-    if (id !== undefined && distance <= reachM) found.push({ list, id, distance });
+    if (id !== undefined && distance <= reachM) near.push({ list, id, distance });
   };
   for (const port of places.ports ?? [])
     consider('ports', port.id, Math.hypot(spot[0] - port.at[0], spot[1] - port.at[1]));
   for (const road of places.roads ?? []) consider('roads', road.id, nearestOnLine(road.points, spot).distance);
   for (const river of places.rivers ?? []) consider('rivers', river.id, nearestOnLine(river.points, spot).distance);
-  for (const town of places.towns ?? []) {
-    const inside = insideRing(town.outline, spot);
-    consider('towns', town.id, inside ? 0 : nearestOnLine(town.outline, spot, true).distance);
-  }
-  const nearest = found.reduce<(typeof found)[number] | null>(
+  const areas = [
+    ...(places.nodes ?? []).map(({ id, ring }) => ({ list: 'nodes' as const, id, ring })),
+    ...(places.towns ?? []).map(({ id, outline }) => ({ list: 'towns' as const, id, ring: outline })),
+  ];
+  for (const { list, id, ring } of areas) consider(list, id, nearestOnLine(ring, spot, true).distance);
+  const nearest = near.reduce<(typeof near)[number] | null>(
     (best, next) => (!best || next.distance < best.distance ? next : best),
     null,
   );
-  return nearest ? { list: nearest.list, id: nearest.id } : null;
+  if (nearest) return { list: nearest.list, id: nearest.id };
+  const holding = areas.filter(({ ring }) => insideRing(ring, spot));
+  // The sort is stable, so a node and a town of the same area keep the node first.
+  const smallest = holding.sort((first, second) => ringArea(first.ring) - ringArea(second.ring))[0];
+  return smallest?.id !== undefined ? { list: smallest.list, id: smallest.id } : null;
 }
 
-function insideRing(ring: readonly Spot[], [x, y]: Spot): boolean {
+/** A ring's area, square metres. */
+export function ringArea(ring: readonly Spot[]): number {
+  let doubled = 0;
+  ring.forEach(([x, y], index) => {
+    const [nextX, nextY] = ring[(index + 1) % ring.length] ?? [x, y];
+    doubled += x * nextY - nextX * y;
+  });
+  return Math.abs(doubled) / 2;
+}
+
+/** Whether a spot lies inside a ring, by the crossings of a line east from it. */
+export function insideRing(ring: readonly Spot[], [x, y]: Spot): boolean {
   let inside = false;
   ring.forEach(([fromX, fromY], index) => {
     const [toX, toY] = ring[(index + 1) % ring.length] ?? [fromX, fromY];
@@ -80,22 +97,23 @@ function insideRing(ring: readonly Spot[], [x, y]: Spot): boolean {
 }
 
 /** Draws the place being drawn over the 2D map: its points so far, a line on to the cursor, and a closing line for
- *  a town. Nothing when there is no draft. */
+ *  an area. Adds to what the overlay holds; nothing when there is no draft. */
 export function drawDraft(
   svg: SVGSVGElement,
   view: { readonly camera: Camera; readonly width: number; readonly height: number },
-  draft: { readonly kind: 'river' | 'road' | 'town'; readonly points: readonly Spot[] } | null,
+  draft: { readonly kind: 'river' | 'road' | 'town' | 'node'; readonly points: readonly Spot[] } | null,
   cursor: Spot | null,
+  nodeColour = '#5cc96b',
 ): void {
-  svg.replaceChildren();
   if (!draft || draft.points.length === 0) return;
-  const colour = { river: '#5aa6ff', road: '#e0b070', town: '#ff8a6a' }[draft.kind];
+  const colour = { river: '#5aa6ff', road: '#e0b070', town: '#ff8a6a', node: nodeColour }[draft.kind];
+  const area = draft.kind === 'town' || draft.kind === 'node';
   const screen = [...draft.points, ...(cursor ? [cursor] : [])].map(([x, y]) =>
     worldToScreen(view.camera, view.width, view.height, x, y),
   );
-  const line = document.createElementNS('http://www.w3.org/2000/svg', draft.kind === 'town' ? 'polygon' : 'polyline');
+  const line = document.createElementNS('http://www.w3.org/2000/svg', area ? 'polygon' : 'polyline');
   line.setAttribute('points', screen.map(({ x, y }) => `${x},${y}`).join(' '));
-  line.setAttribute('fill', draft.kind === 'town' ? `${colour}33` : 'none');
+  line.setAttribute('fill', area ? `${colour}33` : 'none');
   line.setAttribute('stroke', colour);
   line.setAttribute('stroke-width', '2');
   svg.append(line);

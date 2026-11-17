@@ -104,7 +104,7 @@ fn a_quick_charge_runs_its_lane_and_no_further() {
     for tick in 0..40 {
         let target = [2.0 + f64::from(tick) * 0.2, f64::from(tick) * 0.1, 1.1];
         let intent = telegraphing(order(Shape::Charge, 40, FRAC_PI_2, 0.0));
-        let around = combat::Surroundings { blocks: &[], target_at: Some(target) };
+        let around = combat::Surroundings { blocks: &[], terrain: &movement::Flat, target_at: Some(target) };
         foe = combat::step_fighter(&foe, &intent, &around).0;
         if let Action::Telegraph(telegraph) = foe.action
             && f64::from(telegraph.elapsed) >= f64::from(telegraph.windup - telegraph.travel_ticks())

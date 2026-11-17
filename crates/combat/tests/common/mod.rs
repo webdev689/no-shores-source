@@ -71,7 +71,8 @@ pub fn run_on(
 ) -> (Fighter, Vec<(u32, combat::Happening)>) {
     let mut happenings = Vec::new();
     for tick in 0..ticks {
-        let (next, happening) = step_fighter(&fighter, &intent, &Surroundings { blocks, target_at });
+        let (next, happening) =
+            step_fighter(&fighter, &intent, &Surroundings { blocks, terrain: &movement::Flat, target_at });
         fighter = next;
         if let Some(happening) = happening {
             happenings.push((tick, happening));

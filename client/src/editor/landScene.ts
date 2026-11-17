@@ -7,7 +7,7 @@ import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
-import { clipmapLevels, finestSpacing } from './clipmap.ts';
+import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import {
   CLOSE_RANGE_M,
   closeUpData,
@@ -18,15 +18,15 @@ import {
   shownExaggeration,
   walkStep,
 } from './closeUp.ts';
-import type { CloseGround } from './landClient.ts';
+import type { CloseGround } from '../terrain/landClient.ts';
 import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
+import { type TerrainData, type TerrainOptions, TerrainView } from '../terrain/terrainView.ts';
 import type { FightSource } from './fighting.ts';
 import { Harbour } from './harbour.ts';
 import { Naval } from './naval.ts';
 import type { SailSource } from './sailing.ts';
-import { type TerrainData, type TerrainOptions, TerrainView } from './terrainView.ts';
 
 /** Where the close-up's exact ground comes from, and where a ship is sailed and fought. */
 export interface GroundSource extends SailSource, FightSource {

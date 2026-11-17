@@ -7,6 +7,7 @@ use crate::exact::smooth;
 use crate::grid::Grid;
 use crate::places::{CarvedRiver, Port, RIVER_DEPTH_M, RIVER_WIDTH_M, ROAD_WIDTH_M, Road, Town, check_places};
 use crate::relief::{LAND_FLOOR_M, SEA_CEILING_M};
+use crate::sites::{City, Node, check_sites, site_ids};
 use serde::{Deserialize, Serialize};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::Point;
@@ -36,6 +37,10 @@ pub struct Edits {
     pub towns: Vec<Town>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ports: Vec<Port>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<City>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub nodes: Vec<Node>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,7 +101,26 @@ pub fn write(edits: &Edits) -> Result<String, serde_json::Error> {
 #[must_use]
 pub fn check_on(edits: &Edits, coast: &[Point]) -> Vec<Problem> {
     let mut problems = check(edits);
-    let places = check_places(coast, &edits.rivers, &edits.roads, &edits.towns, &edits.ports);
+    let mut places = check_places(coast, &edits.rivers, &edits.roads, &edits.towns, &edits.ports);
+    places.extend(check_sites(coast, edits.city.as_ref(), &edits.nodes));
+    let drawn: Vec<&String> = edits
+        .rivers
+        .iter()
+        .map(|river| &river.id)
+        .chain(edits.roads.iter().map(|road| &road.id))
+        .chain(edits.towns.iter().map(|town| &town.id))
+        .chain(edits.ports.iter().map(|port| &port.id))
+        .collect();
+    let mut seen: Vec<&String> = Vec::new();
+    for id in site_ids(edits.city.as_ref(), &edits.nodes) {
+        if drawn.contains(&id) || seen.contains(&id) {
+            places.push((id.clone(), "another place has this id".into()));
+        }
+        if id.is_empty() || !id.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
+            places.push((id.clone(), "an id is lowercase letters, digits and hyphens".into()));
+        }
+        seen.push(id);
+    }
     problems.extend(places.into_iter().map(|(subject, message)| Problem { subject, message }));
     problems
 }

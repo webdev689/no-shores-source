@@ -14,7 +14,7 @@ import {
   zoomOrbit,
   type Orbit,
 } from './orbit.ts';
-import type { TerrainData } from './terrainView.ts';
+import type { TerrainData } from '../terrain/terrainView.ts';
 
 const lookingNorth: Orbit = { targetX: 100_000, targetY: 100_000, targetZ: 0, yaw: 0, pitch: 0.6, distance: 50_000 };
 const lookingEast: Orbit = { ...lookingNorth, yaw: Math.PI / 2 };

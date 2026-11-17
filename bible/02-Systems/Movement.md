@@ -6,10 +6,13 @@ code:
   - crates/movement/src/body.rs#TUNING
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
+  - crates/movement/src/terrain.rs#Terrain
   - crates/movement/src/floats.rs#fingerprint
   - crates/movement-wasm/src/lib.rs#movement_step
+  - crates/movement-wasm/src/lib.rs#set_ground
+  - crates/room/src/lib.rs#standing_on
   - client/src/rules/movementRules.ts#startMovementRules
-  - client/src/testground/player.ts#updatePlayer
+  - client/src/player/player.ts#updatePlayer
 ---
 # Movement
 
@@ -30,9 +33,24 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 - **Blocks.** A course is a list of blocks, each a footprint and a top. The body, a circle of 0.35 m radius, stands
   on the highest top within a step (0.5 m) of its feet, slides along a block's sides, and is stopped by one
   taller than a step.
+- **Terrain.** The blocks stand on a terrain: any ground known by its height at a point (`Terrain`), so the rules
+  need nothing of the crate that makes it. A node's room stands its bodies on the [[Land]]'s window round its node,
+  and its city's boxes as blocks ([[Server]]); the [[Test Ground]] and its rooms use open ground at 0 m. A body that
+  joins or respawns in a node's room stands on the ground at its spawn, or on a block's top within a step of it.
+  The ground under the feet is the higher of the
+  terrain and the highest block top within a step. The feet follow the terrain up and down while a tick's drop is
+  no more than a step; past that the body falls, and a fall lands on the terrain. A move whose path rises more
+  steeply than the slope limit, or more than a step above the feet, is tried an axis at a time, as against a
+  block's side, so the body slides along the rise. Walked slantwise, a slope too steep to walk straight up is
+  climbed as steeply as the path rises. The rise is the terrain's own, so a block sunk into a slope is walked onto
+  and off again. Climbing down a wall stops at the terrain.
 - **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
   order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;
   it leaves alone memory too short for a step.
+- **Predicting on the land.** The door also keeps a window of the land, handed over as the JSON the land's door cuts
+  (`setGround`): every later step stands on it, the same ground to the bit as the node's room, and a body asked to
+  stand does so on its ground. Anything that is not a window is open ground at 0 m again. `standOnNode` sets a
+  node's window and its city's boxes together, for the browser that predicts a node's room ([[Server]]).
 
 ## How the body is held
 
@@ -53,14 +71,28 @@ Shimmying and climbing go at 1 m/s. Riding goes at 6 m/s and galloping at 12, un
 its own. A mantle or vault takes (0.25 + 0.22 × rise) × 1.05 seconds, DFO's time at
 middling skill. The eye stands 1.7 m over the feet, 0.8 m crouched.
 
+The slope limit is Overlook's own: terrain rising 1.19 m a metre, about 50°, is the steepest walked up, Claude's
+choice ([[The World Is Claude's to Mold]]). The pace is the same up a slope as on the flat.
+
 ## Agreement
 
 A scripted run over a small course, through every mode, is fingerprinted: FNV-1a over every number of the body at
 every tick. `crates/movement/tests/agree.rs` takes it natively and `client/src/rules/movementRules.test.ts` through
 WebAssembly, and both hold the same value.
 
+Two runs over real nodes' windows are fingerprinted the same way: across Mistfall's social space on the rainforest
+continent, into its parapet, over it and along the terrace beyond, then over a patrol area's open land. The room's
+side (`crates/room/tests/agree_node.rs`) takes the windows and boxes the bake cuts and steps them natively; the
+browser's (`client/src/rules/nodeWindow.test.ts`) generates the continent and settles its city in the land's door,
+cuts the same windows there, and steps them through the movement door. Both hold the same value.
+
 ## Limits
 
-- The ground is the course's blocks on open ground at 0 m; bodies do not stand on the [[Land]] yet.
+- The Test Ground stands bodies on open ground at 0 m; a node's room, and the [[Game]] on foot in a node, stand them
+  on the [[Land]].
+- A body that lands on terrain steeper than the slope limit stands there and does not slide down, so a jump can
+  gain height up a slope too steep to walk.
+- A body slides along a rise too steep for its path an axis at a time, as along a block, not along the rise's own
+  contour.
 - Whether the body is mounted is the client's to say; the rules take it as a control.
 - A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time.

@@ -1,16 +1,29 @@
 import { button, make } from './dom.ts';
+import { buildSitePanel, type SitePanelHandlers, type SitePanelView } from './sitePanel.ts';
 
 /** How far along a landmass's land is. */
 export type LandState = 'waiting' | 'generating' | 'ready' | 'failed';
 
-/** What a press on the land does: look around, shape the ground with a brush, or draw and remove places. */
+/** What a press on the land does: look around, shape the ground with a brush, or draw, place and remove places. */
 export type LandTool =
-  'look' | 'raise' | 'lower' | 'smooth' | 'flatten' | 'river' | 'road' | 'town' | 'port' | 'remove';
+  | 'look'
+  | 'raise'
+  | 'lower'
+  | 'smooth'
+  | 'flatten'
+  | 'river'
+  | 'road'
+  | 'town'
+  | 'port'
+  | 'remove'
+  | 'node'
+  | 'spawn'
+  | 'city';
 
 /** The brushes that shape the ground. */
 export const BRUSHES: readonly LandTool[] = ['raise', 'lower', 'smooth', 'flatten'];
 /** The tools that draw a course or an area point by point. */
-export const DRAWN: readonly LandTool[] = ['river', 'road', 'town'];
+export const DRAWN: readonly LandTool[] = ['river', 'road', 'town', 'node'];
 
 /** The tools in their keys' order: 1 to 9, then 0. */
 export const LAND_TOOLS: readonly (readonly [LandTool, string])[] = [
@@ -26,17 +39,27 @@ export const LAND_TOOLS: readonly (readonly [LandTool, string])[] = [
   ['remove', 'Remove'],
 ];
 
+/** The tools for the port city and the nodes, with their keys. */
+export const SITE_TOOLS: readonly (readonly [LandTool, string, string])[] = [
+  ['node', 'Node', 'n'],
+  ['spawn', 'Spawn', 'x'],
+  ['city', 'City', 'h'],
+];
+
 /** What each place tool asks for, in a line. */
 const TOOL_HINTS: Partial<Record<LandTool, string>> = {
   river: 'Click from the source down to the mouth; double-click or Enter to finish, Esc to cancel.',
   road: 'Click along the road; its points snap to ports, towns and other roads. Double-click or Enter to finish.',
   town: 'Click round the town’s edge; double-click or Enter to close it.',
   port: 'Click on the land by the coast.',
-  remove: 'Click a river, road, town or port to remove it.',
+  remove: 'Click a river, road, town, port, node or spawn to remove it.',
+  node: 'Click round the node’s section; double-click or Enter to close it. A spawn is set at its middle.',
+  spawn: 'Click inside a node to add a spawn; Backspace takes the last spawn of the node under the cursor.',
+  city: 'Click on the land by the coast to move the port city there.',
 };
 
 /** Everything the Land panel shows. */
-export interface LandPanelView {
+export interface LandPanelView extends SitePanelView {
   readonly landmasses: readonly { readonly id: string; readonly state: LandState; readonly unsaved: boolean }[];
   readonly selected: string;
   readonly tool: LandTool;
@@ -56,7 +79,7 @@ export interface LandPanelView {
 }
 
 /** What the Land panel's controls ask for. */
-export interface LandPanelHandlers {
+export interface LandPanelHandlers extends SitePanelHandlers {
   select(id: string): void;
   view(view: '2d' | '3d'): void;
   walk(): void;
@@ -99,6 +122,13 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
     return [tool, node] as const;
   });
   root.append(tools);
+  const siteTools = make('div', '', 'row');
+  for (const [tool, text, key] of SITE_TOOLS) {
+    const node = button(`${text} (${key.toUpperCase()})`, () => handlers.tool(tool));
+    siteTools.append(node);
+    toolButtons.push([tool, node]);
+  }
+  root.append(siteTools);
   const slider = (label: string, min: number, max: number, onInput: (value: number) => void) => {
     const row = make('label', '', 'brush');
     const input = make('input');
@@ -113,6 +143,8 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   const strength = slider('Strength ', 1, 500, (value) => handlers.strength(value));
   const width = slider('Width ', 2, 300, (value) => handlers.width(value));
   const depth = slider('Depth ', 1, 30, (value) => handlers.depth(value));
+  const siteFields = make('div');
+  root.append(siteFields);
   const hint = make('p', '', 'hint');
   root.append(hint);
   const history = make('div', '', 'row');
@@ -158,6 +190,9 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   root.append(make('h2', 'Landmasses'));
   const list = make('ol', '', 'slots');
   root.append(list);
+  const siteList = make('div');
+  root.append(siteList);
+  const sites = buildSitePanel(siteFields, siteList, handlers);
   root.append(make('h2', 'Problems'));
   const problems = make('ul', '', 'problems');
   root.append(problems);
@@ -177,6 +212,8 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
         rows = new Map(
           view.landmasses.map(({ id }) => {
             const row = make('li');
+            // These rows carry no swatch: the name takes the list's first column whole.
+            row.style.gridTemplateColumns = '1fr auto';
             const name = make('span', id, 'name');
             name.dataset['id'] = id;
             const state = make('span', '', 'area');
@@ -222,6 +259,7 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       exaggerationLabel.hidden = view.view !== '3d';
       exaggeration.value = String(view.exaggeration);
       exaggerationText.textContent = ` ${view.exaggeration}× in 3D`;
+      sites.update(view);
       cursor.textContent = view.cursor;
       if (view.fight.join('\n') !== shownFight) {
         shownFight = view.fight.join('\n');

@@ -3,7 +3,7 @@ use combat::arms::{Arms, OffHand, Ranged, Stroke, WeaponClass};
 use combat::fighter::{Action, Side, Weight, fighter, player};
 use combat::shots::loose;
 use combat::{CombatInput, Fighter};
-use movement::{Controls, TICK_SECONDS, standing, step_body};
+use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
 use room::{EventKind, How};
 
 /// An input with these controls and nothing else.
@@ -11,11 +11,12 @@ fn input(sequence: u32, controls: Controls) -> Input {
     Input { sequence, intent: Intent { controls, ..Intent::default() }, ..Input::default() }
 }
 
-/// The two players the client's test of the same bytes expects (messages.test.ts): one standing, one after half a
-/// second's walk at a bearing of 0.3, swinging a sword at its target, foe 12; and the dress the first sent.
+/// The two players the client's test of the same bytes expects (messages.test.ts): one standing inside, one after half
+/// a second's walk at a bearing of 0.3, swinging a sword at its target, foe 12, warned with 432 ticks left; and the
+/// dress the first sent.
 pub fn players() -> Vec<Seen> {
     let walk = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
-    let walked = (0..30).fold(standing(1.5, -2.25), |body, _| step_body(&body, &walk, &[], TICK_SECONDS));
+    let walked = (0..30).fold(standing(1.5, -2.25), |body, _| step_body(&body, &walk, &[], &Flat, TICK_SECONDS));
     let swinging = Shown { anim: "attack_sword".to_owned(), frame: 4, facing: 0.75 };
     let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Empty };
     let mut fighting = player(walked, sword);
@@ -26,9 +27,16 @@ pub fn players() -> Vec<Seen> {
             player: 7,
             acknowledged: 0,
             fighter: player(standing(1.5, -2.25), combat::arms::BARE_HANDS),
+            standing: Standing::Inside,
             shown: Shown::default(),
         },
-        Seen { player: 9, acknowledged: 30, fighter: fighting, shown: swinging },
+        Seen {
+            player: 9,
+            acknowledged: 30,
+            fighter: fighting,
+            standing: Standing::Warned { ticks_left: 432 },
+            shown: swinging,
+        },
     ]
 }
 
@@ -52,6 +60,13 @@ fn shots() -> Vec<Shot> {
 }
 
 const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
+/// The node and rect the client's test expects in the welcome.
+const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
+/// The ships the client's test expects in the sea's snapshot.
+const SHIPS: [(PlayerId, Ship); 2] = [
+    (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 10 }),
+    (4, Ship { x: 61_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0 }),
+];
 
 fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
@@ -69,7 +84,7 @@ fn dressed_in(
 }
 
 #[test]
-fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_and_ask() {
+fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn() {
     let shown = Shown { anim: "ride_gallop".to_owned(), frame: 3, facing: -1.5 };
     let controls = Controls { forward: 1.0, sideways: -0.5, yaw: 0.3, run: true, crouch: true, ..Controls::default() };
     let combat =
@@ -82,10 +97,12 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_and_ask() {
         arms: Arms { melee: WeaponClass::Dagger, ranged: None, off_hand: OffHand::Shield }.code(),
         seen: 977,
         spawn: Some(3),
+        respawn: true,
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
-    assert_eq!((plain.dress, plain.spawn, plain.intent.combat), (None, None, CombatInput::default()));
+    let asked = (plain.dress, plain.spawn, plain.intent.combat, plain.respawn);
+    assert_eq!(asked, (None, None, CombatInput::default(), false));
 }
 
 #[test]
@@ -102,11 +119,36 @@ fn bytes_that_are_not_an_input_and_numbers_of_the_wrong_count_are_refused() {
 }
 
 #[test]
-fn a_welcome_and_a_snapshot_read_back_to_the_bit() {
-    let welcome = joined_bytes(7, &DRESSED);
-    let joined = flatbuffers::root::<messages::FromRoom>(&welcome).unwrap();
-    assert_eq!(joined.joined().map(|joined| joined.player()), Some(7));
-    assert_eq!(dressed_in(joined.joined().unwrap().dressed()), vec![(7, DRESSED[0].1.to_owned())]);
+fn a_course_reads_back_as_its_points_and_pace_and_odd_numbers_are_refused() {
+    let points = [[50_000.0, 150_000.5], [51_000.0, 149_000.0]];
+    assert_eq!(read_course(&course_bytes(&points, 20)), Ok((points.to_vec(), 20)));
+    assert_eq!(read_course(&course_bytes(&[], 5)), Ok((Vec::new(), 5)));
+    assert!(read_course(&[1, 2, 3]).is_err());
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let odd = Some(builder.create_vector(&[1.0, 2.0, 3.0]));
+    let course = messages::Course::create(&mut builder, &messages::CourseArgs { points: odd, pace: 5 });
+    builder.finish(course, None);
+    assert_eq!(read_course(builder.finished_data()), Err("a course's points are pairs, not 3 numbers".to_owned()));
+}
+
+#[test]
+fn every_standing_crosses_and_comes_back() {
+    for standing in [Standing::Inside, Standing::Warned { ticks_left: 599 }, Standing::Dead { ticks: 241 }] {
+        let (kind, ticks) = standing_parts(standing);
+        assert_eq!(standing_of(kind, ticks), standing);
+    }
+}
+
+#[test]
+fn a_welcome_and_snapshots_read_back_to_the_bit() {
+    let welcome = joined_bytes(7, &DRESSED, Some(NODE));
+    let joined = flatbuffers::root::<messages::FromRoom>(&welcome).unwrap().joined().unwrap();
+    assert_eq!((joined.player(), joined.node()), (7, Some(NODE.0)));
+    assert_eq!(joined.bounds().unwrap().iter().collect::<Vec<_>>(), NODE.1);
+    assert_eq!(dressed_in(joined.dressed()), vec![(7, DRESSED[0].1.to_owned())]);
+    let plain = joined_bytes(7, &[], None);
+    let plain = flatbuffers::root::<messages::FromRoom>(&plain).unwrap().joined().unwrap();
+    assert_eq!((plain.node(), plain.bounds().is_none()), (None, true));
 
     let (players, foes, shots) = (players(), foes(), shots());
     let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots));
@@ -126,6 +168,9 @@ fn a_welcome_and_a_snapshot_read_back_to_the_bit() {
         .map(|seen| body_of(&seen.fighter().unwrap().iter().take(22).collect::<Vec<_>>()))
         .collect();
     assert_eq!(bodies, players.iter().map(|seen| Some(seen.fighter.body)).collect::<Vec<_>>());
+    let standings: Vec<Standing> =
+        read.players().unwrap().iter().map(|seen| standing_of(seen.standing(), seen.standing_ticks())).collect();
+    assert_eq!(standings, players.iter().map(|seen| seen.standing).collect::<Vec<_>>());
     let foe = read.foes().unwrap().get(0);
     let glance: [f64; combat::floats::GLANCE_FLOATS] =
         foe.glance().unwrap().iter().collect::<Vec<_>>().try_into().unwrap();
@@ -136,6 +181,17 @@ fn a_welcome_and_a_snapshot_read_back_to_the_bit() {
     let flying = read.shots().unwrap().get(0);
     assert_eq!((flying.owner(), flying.ranged()), (12, 1));
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());
+    assert!(read.ships().is_none());
+
+    let bytes = sea_snapshot_bytes(77, &SHIPS);
+    let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
+    let ships: Vec<(PlayerId, Ship)> = sea
+        .ships()
+        .unwrap()
+        .iter()
+        .map(|ship| (ship.player(), Ship { x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() }))
+        .collect();
+    assert_eq!((sea.tick(), ships), (77, SHIPS.to_vec()));
 }
 
 /// The client's test reads these bytes to check that what the server writes, the browser reads to the bit.
@@ -144,6 +200,7 @@ fn the_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
     let (players, foes, shots) = (players(), foes(), shots());
-    std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED)).unwrap();
+    std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE))).unwrap();
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot_bytes(&snapshot(&players, &foes, &shots))).unwrap();
+    std::fs::write(format!("{folder}/sea.bin"), sea_snapshot_bytes(77, &SHIPS)).unwrap();
 }

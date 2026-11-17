@@ -24,7 +24,7 @@ Most "Cut" rows are ours apart from one of these. Replacing each once frees many
 
 | Seam | Where it reaches in DFO | What replaces it | Decided |
 |---|---|---|---|
-| Daggerfall's texture key (`archive_record`) and palette snap | Every material, tile array and sprite batch; our own art filed under made-up archive numbers | Our own asset and material IDs | [[Our Own Keys for Materials, Places and Items]] |
+| Daggerfall's texture key (`archive_record`) and palette snap | Every material, tile array and sprite batch; our own art filed under made-up archive numbers | Our own asset and material IDs | [[Our Own Keys for Materials, Places and Items]]; for the forged world, [[Every Island Is Seen Whole and Reached by Nodes]] |
 | Place identity: map ID, building key, map pixel | The wire, the relay, homes, halls, raids and 64 of 215 migrations | Stable place IDs of our own | [[Our Own Keys for Materials, Places and Items]] |
 | Daggerfall Unity's item templates and enchantments | 100 systems files; the account service judges every item by them | Our own item table | [[Our Own Keys for Materials, Places and Items]] |
 | Daggerfall Unity's stats, skills, races and armour | 124 systems files | Our own stat and skill model | [[Our Own Keys for Materials, Places and Items]] |

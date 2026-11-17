@@ -9,8 +9,12 @@ code:
   - crates/land/src/landmass.rs#generate
   - crates/land/src/edits.rs#dab
   - crates/land/src/places.rs#check_places
+  - crates/land/src/sites.rs#check_sites
   - crates/land/src/ground.rs#height_at
+  - crates/land/src/ground_window.rs#window
   - crates/land-wasm/src/lib.rs#land_open
+  - crates/land-wasm/src/settled.rs#land_window
+  - crates/land-wasm/src/settled.rs#land_city_plan
   - client/src/rules/landRules.ts#startLand
 ---
 # Land
@@ -66,9 +70,15 @@ The same file holds the places the owner draws, each with an id that never chang
 | A road | Its course and its width (2 to 30 m) | All of it on the land |
 | A town | Its area, a ring of points | A ring that never crosses itself, on the land, overlapping no other town |
 | A port | One point | On the land within 3 km of the coast |
+| The port city, one at most | Its name, the middle its landmark stands at, and its motif | Its middle on the land within 3 km of the coast; a name of 1 to 48 characters; a motif of lowercase letters and hyphens |
+| A node | Its kind (social, patrol, mission, dungeon or boss), its name, its section (a ring of points) and its spawns | A ring that never crosses itself, on the land along every edge, holding 0.01 to 9 km²; a name of 1 to 48 characters; at least one spawn, every one inside its section; an id that does not end `-social` |
+
+The city and the nodes are the places a player reaches ([[World Map]]): a node is one section of the land, and its
+spawns are where a player lands and respawns. A city's own social space takes the city's id and `-social`, which is
+why no node may. The city's wall stands 3,456 m from its middle ([[The World as Claude Shapes It]]).
 
 A place's id is lowercase letters, digits and hyphens, and no other place in the file has it. The World Editor
-names new places `river-N`, `road-N`, `town-N` and `port-N`. It snaps a road's points to ports, other roads' points
+names new places `river-N`, `road-N`, `town-N`, `port-N` and `node-N`. It snaps a road's points to ports, other roads' points
 and town edges, so roads meet what they lead to exactly. A road's ends are not required to meet anything.
 
 A road or a town is on the land along every edge, not only at its points, so a road never crosses a bay. A file
@@ -95,6 +105,28 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
 
 The land's WebAssembly door gives the browser the same answers.
 
+## A node's window
+
+A node's room is to stand bodies on the real ground ([[Reach]], [[Movement]]), but generating a continent's land
+takes more memory than a Cloudflare room's 128 MB. So the land crate cuts a small window of the ground round the
+node at build time, for the room, and every browser predicting with it, to read.
+
+`Ground::window` takes a rect, west to east and north to south, and keeps:
+
+- the 1 km cells any point in it reads: from the cell before the one its spline starts in to two after, of the land,
+  the coast's distance, the heights carried over the coast and the lakes' levels. A cut grid keeps the whole grid's
+  corner and its cells' numbers (`first_column`, `first_row`), so a point finds its cell by the same sums;
+- each river and road with a segment within its reach of the rect, whole, and each town within 150 m of it.
+
+Inside the rect, the window's `height_at` and `water_at` give the same bits as the whole ground's. A ground saves to
+JSON and loads to the same bits; its course index is not saved but built again on load, and a saved ground whose
+layers do not hold the same cells is refused. A test cuts a 2 km window
+at a river's mouth on the rainforest continent, with a town, a road and a carved river added, and checks 4,300 points
+in it to the bit: it keeps 36 cells and saves to about 80 KB.
+
+The bake cuts each node's window with its city settled on the land, over the section's bounds and 100 m past them
+([[Server]]). A node's window keeps 16 to 36 cells; the 99 of them save to about 0.44 MB in all.
+
 ## Agreeing to the bit
 
 The land crate uses only exact maths ([[Agree to the Bit]]): its noise is hashed gradient noise made of + - * / and
@@ -110,7 +142,10 @@ sea's swell ([[Water]]) over the land's margin at a moment of world time.
 responsive while a continent generates: about 1.5 s for 200,000 km² and 4 s for 500,000 km² on one core.
 
 One landmass at a time is open for shaping. The editor also generates the others as previews (`keep: false`), which
-leave the open one alone. The door answers for the open landmass:
+leave the open one alone. The open landmass has its city settled on it, as the bake settles it: planned with the RMB
+index's blocks when the caller passes the index's text, else with none, which gives the same terraces and walls. The
+city is settled again whenever the ground is laid again (new edits, or the water run after a stroke), and a city that
+cannot be planned is listed among the landmass's problems. The door answers for the open landmass:
 
 - `land_patch`: the ground over a grid of up to 1,024 samples a side. Each sample has its height, its water's
   surface, how far past fresh water's edge it lies (beyond a river's channel, or above a lake's surface), and a mark
@@ -118,6 +153,11 @@ leave the open one alone. The door answers for the open landmass:
 - `land_sample`: the ground at a list of points. Each point has its height, its water (dry, sea, lake or river) with
   the water's surface, and the sea's swell over it at a given moment ([[Water]]). The answer also holds fingerprints
   of the heights and of the sea. The game will call it.
+- `land_window`: the ground over a rect, cut as a node's window, as JSON: every number the same, to the bit, as the
+  window the bake writes for the rect a node's room names. The movement door stands a predicted body on it
+  ([[Movement]]).
+- `land_boxes`: the boxes of the city a body runs into within a rect, west, north, east, south and top.
+- `land_city_plan`: the city's plan as JSON, for the drawing, or null for a landmass with no city.
 
 Each landmass's view also carries the sea's swell, its waves, for the browser to draw; and each cell's distance from
 the painted coast and its height carried over the coast, so the browser draws the coast as the ground has it.
@@ -130,3 +170,6 @@ the painted coast and its height carried over the coast, so the browser draws th
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
   band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 4 m.
 - A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.
+- A preview (`keep: false`) has no city settled on it.
+- A window keeps every course that reaches it whole, so a long river crossing it is carried end to end. Outside its
+  rect a window still answers, but not as the whole ground would.

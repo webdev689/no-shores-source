@@ -3,8 +3,8 @@ import { CLOTHING_DYES } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type Outfit } from '../forge/outfit.ts';
 import type { HairColours } from '../forge/skins.ts';
-import { type Dress, type Race, PLAIN_DYE, RACES, lookOutfit, wardrobeOf } from './dressing.ts';
-import type { Placed } from './figures.ts';
+import { type Dress, type Race, PLAIN_DYE, RACES, lookOutfit, wardrobeOf } from '../player/dressing.ts';
+import type { Placed } from '../player/figures.ts';
 
 const pairs = (keys: readonly string[]) => keys.map((key) => [key, key] as const);
 
