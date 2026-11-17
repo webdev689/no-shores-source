@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { cellHeight, deckCells, deckFloats, deckOf, deckToWorld, SLOOP_DECK, worldToDeck } from './deck.ts';
+
+test("the Sloop's deck reads from the manifest, and behind her wheel is deck", () => {
+  const [x, y] = SLOOP_DECK.helm;
+  const height = cellHeight(SLOOP_DECK, x, y);
+  assert.ok(height !== null && height > 0.5 && height < 1.2, `her planks over her waterline: ${height}`);
+  assert.equal(cellHeight(SLOOP_DECK, 5, 0), null, 'off her side is no deck');
+  assert.ok(deckCells(SLOOP_DECK).length > 500, 'room to walk');
+});
+
+test('a deck crosses to the movement crate as its shape and then its heights, none as NaN', () => {
+  const deck = deckOf({
+    cell_m: 0.5,
+    west_m: -1,
+    north_m: -2,
+    columns: 2,
+    rows: 1,
+    heights_cm: [[80, null]],
+    helm: [0, 1],
+  });
+  const floats = deckFloats(deck);
+  assert.deepEqual(floats.slice(0, 6), [-1, -2, 0.5, 2, 1, 0.8]);
+  assert.ok(Number.isNaN(floats[6]));
+  assert.throws(() =>
+    deckOf({ ...{ cell_m: 0.5, west_m: 0, north_m: 0, helm: [0, 0] }, columns: 2, rows: 1, heights_cm: [[80]] }),
+  );
+});
+
+test('a point on her deck lies in the world by her heading, her drawn size and the swell under her', () => {
+  const lying = { x: 1000, y: 2000, heading: Math.PI / 2, scale: 2, heave: 0.25 };
+  const [x, y, z] = deckToWorld(lying, 0, -1, 0.8);
+  assert.ok(
+    Math.abs(x - 1002) < 1e-9 && Math.abs(y - 2000) < 1e-9,
+    'a metre toward her bow, heading east, twice her size',
+  );
+  assert.equal(z, 1.6 + 0.25);
+  const [starboardX, starboardY] = deckToWorld({ ...lying, heading: 0, scale: 1 }, 1, 0, 0);
+  assert.ok(
+    Math.abs(starboardX - 1001) < 1e-9 && Math.abs(starboardY - 2000) < 1e-9,
+    'heading north, her starboard is east',
+  );
+});
+
+test('a point in the world comes back to the same spot on her deck', () => {
+  const lying = { x: 500, y: -300, heading: 2.1, scale: 3, heave: -0.2 };
+  const [x, y, z] = deckToWorld(lying, 0.4, -1.7, 0.9);
+  const back = worldToDeck(lying, x, y, z);
+  [0.4, -1.7, 0.9].forEach((value, axis) => assert.ok(Math.abs((back[axis] ?? 0) - value) < 1e-9));
+});
