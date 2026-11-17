@@ -11,7 +11,7 @@ use naval::ballistics::{flight, launch_velocity};
 use naval::captain::Mode;
 use naval::captain::course::velocity_of;
 use naval::damage::{State, Zone};
-use naval::fight::{Aim, End, Event, Fight, Orders, Refusal, Vessel};
+use naval::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use naval::gunnery::zone_radius;
 use naval::guns::Shot;
 use naval::shots::ShotEvent;
@@ -88,6 +88,7 @@ fn vessel_json(vessel: &Vessel) -> Value {
 }
 
 fn event_json(event: &Event) -> Option<Value> {
+    // The editor's fight has one player, so what happens to her ship goes without its number.
     Some(match *event {
         Event::Shot(ShotEvent::Muzzle { shooter, point, launch }) => {
             json!({ "kind": "muzzle", "ship": shooter, "point": point, "launch": launch })
@@ -98,26 +99,27 @@ fn event_json(event: &Event) -> Option<Value> {
         Event::Shot(ShotEvent::Splash { point, .. }) => json!({ "kind": "splash", "point": point }),
         Event::Shot(ShotEvent::Land { point, .. }) => json!({ "kind": "land", "point": point }),
         Event::Shot(ShotEvent::Gone { .. }) => return None,
-        Event::RunOut { side } => json!({ "kind": "run-out", "side": side_name(side) }),
+        Event::RunOut { side, .. } => json!({ "kind": "run-out", "side": side_name(side) }),
         Event::State { ship, state } => json!({ "kind": "state", "ship": ship, "state": state_name(state) }),
-        Event::Refused(Refusal::NoGuns) => json!({ "kind": "refused", "why": "no-guns" }),
-        Event::Refused(Refusal::Silent) => json!({ "kind": "refused", "why": "silent" }),
-        Event::Refused(Refusal::Braced) => json!({ "kind": "refused", "why": "braced" }),
-        Event::Refused(Refusal::Reloading { side, left }) => {
+        Event::Refused { refusal: Refusal::NoGuns, .. } => json!({ "kind": "refused", "why": "no-guns" }),
+        Event::Refused { refusal: Refusal::Silent, .. } => json!({ "kind": "refused", "why": "silent" }),
+        Event::Refused { refusal: Refusal::Braced, .. } => json!({ "kind": "refused", "why": "braced" }),
+        Event::Refused { refusal: Refusal::Reloading { side, left }, .. } => {
             json!({ "kind": "refused", "why": "reloading", "side": side_name(side), "left": left })
         }
-        Event::NoSail { wrecked } => json!({ "kind": "no-sail", "wrecked": wrecked }),
-        Event::Load { shot } => json!({ "kind": "load", "shot": shot.name() }),
+        Event::NoSail { wrecked, .. } => json!({ "kind": "no-sail", "wrecked": wrecked }),
+        Event::Load { shot, .. } => json!({ "kind": "load", "shot": shot.name() }),
+        Event::Gone { .. } => return None,
     })
 }
 
 /// The lay the player's look holds: each gun's unscattered launch and where it stops (or null, still aloft), the
 /// landing zone's radius at their mean range on the water, and whether any would strike her; or no side.
 fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
-    let Some(laid) = aim.and_then(|aim| fight.laid(aim)) else {
+    let Some(laid) = aim.and_then(|aim| fight.laid(PLAYER, aim)) else {
         return Value::Null;
     };
-    let ends = fight.ends(&laid, waters, time);
+    let ends = fight.ends(PLAYER, &laid, waters, time);
     let splashes: Vec<f64> = ends
         .iter()
         .flatten()
@@ -128,7 +130,7 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
         })
         .collect();
     let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
-    let way = velocity_of(&fight.player.ship);
+    let way = fight.vessel(PLAYER).map_or([0.0; 2], |player| velocity_of(&player.ship));
     let launch = launch_velocity(laid.dir, laid.elevation, laid.gun.speed, [way[0], way[1], 0.0]);
     let launches: Vec<[f64; 6]> =
         laid.mouths.iter().map(|mouth| [mouth[0], mouth[1], mouth[2], launch[0], launch[1], launch[2]]).collect();
@@ -145,8 +147,19 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
     })
 }
 
+/// The editor's fight's two ships: her Sloop and the captain's, with the captain's mind.
+fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &naval::captain::Captain), String> {
+    let player = fight.vessel(PLAYER).ok_or("the fight has no player's ship")?;
+    let captain = fight.vessel(CAPTAIN).ok_or("the fight has no captain")?;
+    let Sailor::Captain(command) = &captain.sailor else { return Err("a captain sails the captain's ship".into()) };
+    Ok((player, captain, &command.her))
+}
+
 /// The fight as the browser shows it, its lay over `waters` at `time`.
 fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
+    let Ok((player, captain_ship, her)) = the_two(fight) else {
+        return json!({ "error": "the fight has lost its ships" });
+    };
     let balls: Vec<[f64; 4]> = fight
         .balls
         .iter()
@@ -156,25 +169,21 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters
             [at[0], at[1], at[2], ball.gun.radius_m]
         })
         .collect();
-    let mut captain = vessel_json(&fight.captain);
+    let mut captain = vessel_json(captain_ship);
     captain["name"] = json!(PIRATE_SLOOP.name);
-    captain["mode"] = json!(mode_name(fight.her.mode));
-    captain["hostile"] = json!(fight.her.hostile());
+    captain["mode"] = json!(mode_name(her.mode));
+    captain["hostile"] = json!(her.hostile_to(PLAYER));
     captain["run_out"] = json!(
-        Side::BOTH
-            .iter()
-            .filter(|side| fight.her.run.out(**side).is_some())
-            .map(|side| side.name())
-            .collect::<Vec<_>>()
+        Side::BOTH.iter().filter(|side| her.run.out(**side).is_some()).map(|side| side.name()).collect::<Vec<_>>()
     );
     json!({
         "clock": fight.clock,
-        "player": vessel_json(&fight.player),
+        "player": vessel_json(player),
         "captain": captain,
         "balls": balls,
         "lay": lay_json(fight, aim, waters, time),
         "events": events.iter().filter_map(event_json).collect::<Vec<_>>(),
-        "over": fight.over.map(|end| match end { End::Sunk => "sunk", End::Gone => "gone" }),
+        "over": fight.over().map(|end| match end { End::Sunk => "sunk", End::Gone => "gone" }),
         "fingerprint": format!("{:016x}", fingerprint(fight.numbers())),
     })
 }
@@ -260,13 +269,17 @@ fn step(request: &[u8]) -> Result<Value, String> {
             let fight = slot.as_mut().ok_or("no fight is on")?;
             let mut events = Vec::new();
             for tick in 0..ticks {
+                // A fight over is stepped no more.
+                if fight.over().is_some() {
+                    break;
+                }
                 // A climb, a load and a release are presses: they act on the first tick alone.
                 let now = if tick == 0 {
                     orders
                 } else {
                     Orders { helm: sailing::ship::Helm { climb: 0, ..orders.helm }, fire: false, load: None, ..orders }
                 };
-                events.extend(fight.step(&now, &waters, wind, time + f64::from(tick) * TICK_SECONDS));
+                events.extend(fight.step(&[(PLAYER, now)], &waters, wind, time + f64::from(tick) * TICK_SECONDS));
             }
             Ok(view(fight, &events, orders.aim.as_ref(), &waters, time + f64::from(ticks) * TICK_SECONDS))
         })

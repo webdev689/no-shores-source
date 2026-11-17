@@ -170,7 +170,7 @@ impl Damage {
     /// The share of her best way her canvas leaves her.
     #[must_use]
     pub fn way_share(&self) -> f64 {
-        if self.max_sail > 0.0 { BARE_POLES + (1.0 - BARE_POLES) * self.sail / self.max_sail } else { 1.0 }
+        way_share_of(self.sail, self.max_sail)
     }
 
     /// Whether she still fights: afloat.
@@ -340,6 +340,12 @@ impl Damage {
         }
         true
     }
+}
+
+/// The share of her best way `sail` of her `max_sail` canvas leaves her: bare poles leave her some.
+#[must_use]
+pub fn way_share_of(sail: f64, max_sail: f64) -> f64 {
+    if max_sail > 0.0 { BARE_POLES + (1.0 - BARE_POLES) * sail / max_sail } else { 1.0 }
 }
 
 /// What her hurts and her going down do to her pose: how far she has settled (metres), her trim (radians, bow up) and

@@ -48,8 +48,8 @@ fn running_she_takes_the_best_wind_within_sixty_degrees_of_dead_away() {
 #[test]
 fn a_hull_on_a_collision_course_bends_her_away() {
     // Head on: both heading at each other 60 m apart, each at 2 m/s.
-    let bent = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, ([0.0, -60.0], [0.0, 2.0]), 4.5);
+    let bent = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, &[([0.0, -60.0], [0.0, 2.0])], 4.5);
     assert!(bent > 0.0, "she turns to starboard for a hull ahead");
-    let clear = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, ([200.0, -60.0], [0.0, 2.0]), 4.5);
+    let clear = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, &[([200.0, -60.0], [0.0, 2.0])], 4.5);
     assert!(near(clear, 0.0));
 }

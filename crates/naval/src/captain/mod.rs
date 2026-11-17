@@ -13,19 +13,25 @@ use crate::arms::{Arms, Build, Side};
 use crate::damage::{Damage, State};
 use crate::gunnery::{Guns, lay};
 use crate::random::Mulberry32;
+use crate::shots::ShipId;
 use aim::{Aboard, Battery, Mark, RunOut, captain_guns, fire_window};
-use course::{DEG, distance, flee_course, heading_to, intercept, lead_point, traffic_course, velocity_of, wrap};
+use course::{
+    DEG, Traffic, distance, flee_course, heading_to, intercept, lead_point, traffic_course, velocity_of, wrap,
+};
 use land::{Avoid, NAV_EVERY_S, avoid_land, course_clear};
 use odds::{Power, odds};
 use sailing::Hull;
 use sailing::helm::{HANDLING, PACE, canvas, point_of_sail, sea_wind, steerage};
 use sailing::pose::{Pose, frame};
 use sailing::ship::{Helm, SAILS_SET, Ship, length, off_run_deg};
+use std::collections::BTreeMap;
 
 /// Who she sees (metres) and keeps on fighting out to this many times as far; whom she runs from within.
 pub const ENGAGE_RANGE: f64 = 750.0;
 pub const DISENGAGE: f64 = 1.35;
 pub const FLEE_RANGE: f64 = 320.0;
+/// The ship she fights is reckoned this much nearer than it is, so she holds it against one a little nearer.
+pub const HELD_NEARER: f64 = 0.8;
 /// A blow makes her hostile this long; one she gives up on is spared this long (seconds).
 pub const PROVOKED_S: f64 = 300.0;
 pub const SPARE_S: f64 = 300.0;
@@ -108,9 +114,10 @@ struct Chase {
     marks: Vec<[f64; 2]>,
 }
 
-/// The player's Sloop as she sees her.
+/// A player's ship as she sees her: her number, where she is and how she lies, her hurts and her power.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sighting {
+    pub id: ShipId,
     pub ship: Ship,
     pub level: f64,
     pub hull_share: f64,
@@ -138,8 +145,8 @@ struct Plan {
     track: bool,
 }
 
-/// A captain: her class, temper, seed and the course she cruises, her standing with the player, and her memory of
-/// the fight.
+/// A captain: her class, temper, seed and the course she cruises, her standing with each player's ship (who
+/// struck her, whom she spares, whom she fights), and her memory of the ship she marks.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Captain {
     pub build: Build,
@@ -151,9 +158,11 @@ pub struct Captain {
     pub run: RunOut,
     pub dead_zone: f64,
     clock: f64,
-    provoked_at: f64,
-    spared_until: f64,
-    target: bool,
+    provoked: BTreeMap<ShipId, f64>,
+    spared: BTreeMap<ShipId, f64>,
+    target: Option<ShipId>,
+    /// The ship her chase, her wreck's watch, her mark's velocity and her side presented are about.
+    marked: Option<ShipId>,
     chase: Option<Chase>,
     wreck_since: Option<f64>,
     enemy_vel: Option<[f64; 2]>,
@@ -189,9 +198,10 @@ impl Captain {
             run: RunOut::new(),
             dead_zone: aim::dead_zone(arms),
             clock: 0.0,
-            provoked_at: f64::NEG_INFINITY,
-            spared_until: f64::NEG_INFINITY,
-            target: false,
+            provoked: BTreeMap::new(),
+            spared: BTreeMap::new(),
+            target: None,
+            marked: None,
             chase: None,
             wreck_since: None,
             enemy_vel: None,
@@ -202,10 +212,35 @@ impl Captain {
         }
     }
 
-    /// Whether she has the player as her enemy.
+    /// The ship she has as her enemy, if any.
     #[must_use]
-    pub fn hostile(&self) -> bool {
+    pub fn target(&self) -> Option<ShipId> {
         self.target
+    }
+
+    /// Whether she has this ship as her enemy.
+    #[must_use]
+    pub fn hostile_to(&self, ship: ShipId) -> bool {
+        self.target == Some(ship)
+    }
+
+    /// Whether this ship struck her lately.
+    fn provoked_by(&self, ship: ShipId) -> bool {
+        self.provoked.get(&ship).is_some_and(|at| *at > self.clock - PROVOKED_S)
+    }
+
+    /// Whether she spares this ship for now.
+    fn spares(&self, ship: ShipId) -> bool {
+        self.spared.get(&ship).is_some_and(|until| *until > self.clock)
+    }
+
+    /// A ship that has left the fight: she forgets it.
+    pub fn forget(&mut self, ship: ShipId) {
+        self.provoked.remove(&ship);
+        self.spared.remove(&ship);
+        if self.target == Some(ship) {
+            self.target = None;
+        }
     }
 
     /// Every number she holds, in a fixed order.
@@ -215,6 +250,7 @@ impl Captain {
         let mode = [Mode::Cruise, Mode::Engage, Mode::Flee, Mode::Struck, Mode::Sinking]
             .iter()
             .position(|mode| *mode == self.mode);
+        let ship = |ship: Option<ShipId>| ship.map_or(-1.0, f64::from);
         let mut numbers = vec![
             mode.unwrap_or(0) as f64,
             flag(self.temper == Temper::Bold),
@@ -223,13 +259,16 @@ impl Captain {
             self.sails,
             self.dead_zone,
             self.clock,
-            self.provoked_at,
-            self.spared_until,
-            flag(self.target),
+            ship(self.target),
+            ship(self.marked),
             self.wreck_since.unwrap_or(-1.0),
             self.want_prev.unwrap_or(-9.0),
             self.want_rate,
         ];
+        for standing in [&self.provoked, &self.spared] {
+            numbers.push(standing.len() as f64);
+            numbers.extend(standing.iter().flat_map(|(ship, at)| [f64::from(*ship), *at]));
+        }
         numbers.extend(self.enemy_vel.unwrap_or([0.0; 2]));
         numbers.extend(self.run.numbers());
         numbers.extend(self.avoid.numbers());
@@ -243,20 +282,20 @@ impl Captain {
         numbers
     }
 
-    /// Whether she would take the player on, sparing aside: afloat, and provoked or of a mind to take him. Her hands
-    /// hold off mending his wreck while she lies near.
+    /// Whether she would take this ship on, sparing aside: afloat, and provoked or of a mind to take her. Her hands
+    /// hold off mending her wreck while she lies near.
     #[must_use]
     pub fn would_take(&self, her: &Her, enemy: &Sighting) -> bool {
-        her.damage.fighting() && (self.provoked_at > self.clock - PROVOKED_S || self.takes_prize(her, enemy))
+        her.damage.fighting() && (self.provoked_by(enemy.id) || self.takes_prize(her, enemy))
     }
 
-    /// The player struck her: she is hostile to him, whatever her temper, for a while.
-    pub fn provoke(&mut self) {
-        self.provoked_at = self.clock;
+    /// A ship struck her: she is hostile to it, whatever her temper, for a while.
+    pub fn provoke(&mut self, by: ShipId) {
+        self.provoked.insert(by, self.clock);
     }
 
-    /// Whether she takes the player on: always if bold; if wary, only a wreck, a hull nearly gone, or one she
-    /// outguns well.
+    /// Whether she takes a ship on: always if bold; if wary, only a wreck, a hull nearly gone, or one she outguns
+    /// well.
     fn takes_prize(&self, her: &Her, enemy: &Sighting) -> bool {
         if self.temper == Temper::Bold || enemy.wrecked || enemy.hull_share < GRAPPLE_HULL {
             return true;
@@ -270,7 +309,7 @@ impl Captain {
 
     /// A chase marked: she gives it up, sparing her quarry, after `CHASE_GIVE_UP_S` without closing while still out
     /// of the fight's range.
-    fn chase_on(&mut self, apart: f64) -> bool {
+    fn chase_on(&mut self, apart: f64, quarry: ShipId) -> bool {
         let clock = self.clock;
         let chase = self.chase.get_or_insert_with(|| Chase { since: clock, marks: Vec::new() });
         if chase.marks.last().is_none_or(|mark| clock - mark[0] >= CHASE_MARK_S) {
@@ -285,15 +324,15 @@ impl Captain {
             chase.since = clock;
         }
         if clock - chase.since > CHASE_GIVE_UP_S && apart > fighting_range {
-            self.spared_until = clock + SPARE_S;
+            self.spared.insert(quarry, clock + SPARE_S);
             self.chase = None;
             return false;
         }
         true
     }
 
-    /// A wrecked player she will not board is left, and spared, after `WRECK_SPARE_S`.
-    fn wreck_on(&mut self, wrecked: bool) -> bool {
+    /// A wreck she will not board is left, and spared, after `WRECK_SPARE_S`.
+    fn wreck_on(&mut self, wrecked: bool, wreck: ShipId) -> bool {
         if !wrecked {
             self.wreck_since = None;
             return true;
@@ -302,9 +341,51 @@ impl Captain {
         if self.clock - since < WRECK_SPARE_S {
             return true;
         }
-        self.spared_until = self.clock + SPARE_S;
+        self.spared.insert(wreck, self.clock + SPARE_S);
         self.wreck_since = None;
         false
+    }
+
+    /// Her enemy among the ships she sees, and how far off: the nearest she would fight and does not spare, within
+    /// her sight (farther for the one she fights), the one she fights reckoned nearer.
+    fn choose<'seen>(&self, her: &Her, sightings: &'seen [Sighting]) -> Option<(&'seen Sighting, f64)> {
+        let me = [her.ship.x, her.ship.y];
+        let mut chosen: Option<(&Sighting, f64)> = None;
+        let mut best = f64::INFINITY;
+        for sighting in sightings {
+            let apart = distance(me, [sighting.ship.x, sighting.ship.y]);
+            let held = self.target == Some(sighting.id) && self.mode == Mode::Engage;
+            let sight = ENGAGE_RANGE * if held { DISENGAGE } else { 1.0 };
+            let hostile = self.provoked_by(sighting.id) || self.takes_prize(her, sighting);
+            if apart < sight && hostile && !self.spares(sighting.id) {
+                let rank = if held { apart * HELD_NEARER } else { apart };
+                if rank < best {
+                    (chosen, best) = (Some((sighting, apart)), rank);
+                }
+            }
+        }
+        chosen
+    }
+
+    /// The nearest ship within `FLEE_RANGE` that struck her lately: a threat she may run from.
+    fn threat<'seen>(&self, her: &Her, sightings: &'seen [Sighting]) -> Option<&'seen Sighting> {
+        let me = [her.ship.x, her.ship.y];
+        let apart = |sighting: &Sighting| distance(me, [sighting.ship.x, sighting.ship.y]);
+        sightings.iter().filter(|sighting| self.provoked_by(sighting.id) && apart(sighting) < FLEE_RANGE).fold(
+            None,
+            |nearest: Option<&Sighting>, sighting| match nearest {
+                Some(held) if apart(held) <= apart(sighting) => Some(held),
+                _ => Some(sighting),
+            },
+        )
+    }
+
+    /// Marks a new ship: what she remembered of another (its chase, its wreck, its way, her side to it) is let go.
+    fn mark(&mut self, ship: ShipId) {
+        if self.marked.is_some_and(|marked| marked != ship) {
+            (self.chase, self.wreck_since, self.enemy_vel, self.present) = (None, None, None, None);
+        }
+        self.marked = Some(ship);
     }
 
     /// The rate her wanted heading turns at, smoothed; a jump resets it.
@@ -324,49 +405,65 @@ impl Captain {
         self.want_rate
     }
 
-    /// Her helm for a step of `seconds` against the player, over water `is_water` says she can float in.
-    pub fn steer(&mut self, her: &Her, enemy: &Sighting, seconds: f64, is_water: &impl Fn(f64, f64) -> bool) -> Helm {
+    /// Her helm for a step of `seconds` among the players' ships she sees and the hulls about her (`traffic`, each
+    /// where it is and its way), over water `is_water` says she can float in.
+    pub fn steer(
+        &mut self,
+        her: &Her,
+        (sightings, traffic): (&[Sighting], &[Traffic]),
+        seconds: f64,
+        is_water: &impl Fn(f64, f64) -> bool,
+    ) -> Helm {
         self.clock += seconds;
+        let clock = self.clock;
+        self.provoked.retain(|_, at| *at > clock - PROVOKED_S);
+        self.spared.retain(|_, until| *until > clock);
         if !her.damage.fighting() {
             self.run.clear();
-            (self.present, self.chase, self.target) = (None, None, false);
+            (self.present, self.chase, self.target) = (None, None, None);
             self.mode =
                 if matches!(her.damage.state, State::Sinking | State::Sunk) { Mode::Sinking } else { Mode::Struck };
             self.sails = (self.sails - 0.5 * seconds).max(0.0);
             return self.helm(her, her.ship.heading, 0.0);
         }
-        let (me, them) = ([her.ship.x, her.ship.y], [enemy.ship.x, enemy.ship.y]);
-        let apart = distance(me, them);
-        let provoked = self.provoked_at > self.clock - PROVOKED_S;
-        let sight = ENGAGE_RANGE * if self.mode == Mode::Engage { DISENGAGE } else { 1.0 };
-        let hostile = provoked || self.takes_prize(her, enemy);
-        let mut seen = apart < sight && hostile && self.spared_until <= self.clock;
-        seen = seen && self.chase_on(apart);
+        let me = [her.ship.x, her.ship.y];
+        let chosen = self.choose(her, sightings);
+        if let Some((enemy, _)) = chosen {
+            self.mark(enemy.id);
+        }
+        let apart = chosen.map_or(f64::INFINITY, |(_, apart)| apart);
+        let mut seen = chosen.is_some_and(|(enemy, apart)| self.chase_on(apart, enemy.id));
         if !seen {
             (self.chase, self.wreck_since) = (None, None);
         }
-        seen = seen && self.wreck_on(enemy.wrecked);
-        let threat = apart < FLEE_RANGE && provoked;
-        let outgunned = threat && odds(&enemy.power, &self.power(her), her.arms) > 1.0;
-        let runs = (her.damage.hull_share() < PIRATE_RUNS_AT && (threat || seen))
+        seen = seen && chosen.is_some_and(|(enemy, _)| self.wreck_on(enemy.wrecked, enemy.id));
+        let threat = self.threat(her, sightings);
+        let outgunned = threat.is_some_and(|threat| odds(&threat.power, &self.power(her), her.arms) > 1.0);
+        let runs = (her.damage.hull_share() < PIRATE_RUNS_AT && (threat.is_some() || seen))
             || (self.temper == Temper::Wary && outgunned);
-        self.target = seen;
-        let plan = if runs {
-            self.mode = Mode::Flee;
-            Plan { want: flee_course(me, them, her.wind), sails: 1.0, track: false }
-        } else if seen {
-            self.mode = Mode::Engage;
-            self.follow(enemy, seconds);
-            self.engage(her, enemy, apart, is_water)
-        } else {
-            self.mode = Mode::Cruise;
-            Plan { want: self.cruise, sails: 1.0, track: false }
+        let enemy = chosen.filter(|_| seen).map(|(enemy, _)| enemy);
+        self.target = enemy.map(|enemy| enemy.id);
+        let from = threat.or(enemy).map(|from| [from.ship.x, from.ship.y]);
+        let plan = match (runs, from, enemy) {
+            (true, Some(from), _) => {
+                self.mode = Mode::Flee;
+                Plan { want: flee_course(me, from, her.wind), sails: 1.0, track: false }
+            }
+            (false, _, Some(enemy)) => {
+                self.mode = Mode::Engage;
+                self.follow(enemy, seconds);
+                self.engage(her, enemy, apart, is_water)
+            }
+            _ => {
+                self.mode = Mode::Cruise;
+                Plan { want: self.cruise, sails: 1.0, track: false }
+            }
         };
         // Both hulls' pass reaches: half of half her beam and half her length, each.
         let [low, high] = her.arms.hull;
         let passing = 2.0 * 0.5 * ((high[1] - low[1]) / 2.0 + (high[0] - low[0]) / 2.0);
-        let traffic = (me, her.ship.heading, velocity_of(her.ship));
-        let want = traffic_course(traffic, plan.want, (them, velocity_of(&enemy.ship)), passing);
+        let own = (me, her.ship.heading, velocity_of(her.ship));
+        let want = traffic_course(own, plan.want, traffic, passing);
         let look = self.lookout(her);
         let want = avoid_land(&mut self.avoid, (self.clock, me, her.ship.heading), want, &look, is_water);
         let asked = if self.avoid.boxed() { plan.sails.min(BOXED_SAILS) } else { plan.sails };
@@ -422,9 +519,14 @@ impl Captain {
         }
     }
 
-    /// Her guns after her step: against the player while she has him as her enemy and he is not a wreck.
-    pub fn aim(&mut self, her: &Her, enemy: &Sighting, draws: &mut Mulberry32) -> Battery {
-        if !self.target || enemy.wrecked || !her.damage.fighting() {
+    /// Her guns after her step: against her enemy (`enemy`, the ship she has as her target, as she sees it now)
+    /// while she is not a wreck.
+    pub fn aim(&mut self, her: &Her, enemy: Option<&Sighting>, draws: &mut Mulberry32) -> Battery {
+        let Some(enemy) = enemy.filter(|enemy| self.target == Some(enemy.id) && !enemy.wrecked) else {
+            self.run.clear();
+            return Battery { run_out: None, fire: None };
+        };
+        if !her.damage.fighting() {
             self.run.clear();
             return Battery { run_out: None, fire: None };
         }

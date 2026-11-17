@@ -13,23 +13,36 @@ pub const BALL_LIFE_S: f64 = 9.0;
 pub const BALL_STEP_S: f64 = 0.1;
 pub const GROUND_STEP_M: f64 = 4.0;
 
-/// A ship as a ball meets her: her hull's box, her sails' boxes, and whether she is still there to strike.
+/// A ship's number in a fight, never shared while she is in it.
+pub type ShipId = u32;
+
+/// Whom a ship sails for: the players, or the pirates. A ball strikes only a ship that flies another flag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Flag {
+    Player,
+    Pirate,
+}
+
+/// A ship as a ball meets her: her number and flag, her hull's box, her sails' boxes, and whether she is still there
+/// to strike.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Target {
+    pub id: ShipId,
+    pub flag: Flag,
     pub hull: Block,
     pub rig: Vec<Block>,
     pub alive: bool,
 }
 
 /// What became of a ball: it left its gun, struck a ship, fell into the water or onto the ground, or flew out of
-/// reckoning. Ships are numbered as the targets are.
+/// reckoning. Ships are named by their numbers.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ShotEvent {
-    Muzzle { shooter: usize, point: [f64; 3], launch: [f64; 3] },
-    Hit { shooter: usize, target: usize, zone: Zone, point: [f64; 3], flight: f64, gun: Gun, shot: Shot },
-    Splash { shooter: usize, point: [f64; 3] },
-    Land { shooter: usize, point: [f64; 3] },
-    Gone { shooter: usize },
+    Muzzle { shooter: ShipId, point: [f64; 3], launch: [f64; 3] },
+    Hit { shooter: ShipId, target: ShipId, zone: Zone, point: [f64; 3], flight: f64, gun: Gun, shot: Shot },
+    Splash { shooter: ShipId, point: [f64; 3] },
+    Land { shooter: ShipId, point: [f64; 3] },
+    Gone { shooter: ShipId },
 }
 
 /// What stops a ball at a point: the water's surface, or the ground where there is none; and whether it is water.
@@ -72,22 +85,25 @@ fn under_along(start: [f64; 3], end: [f64; 3], waters: &impl Waters, time: f64) 
 fn fly_piece(
     ball: &mut Ball,
     (start, end, to): ([f64; 3], [f64; 3], f64),
-    targets: &[Target; 2],
+    targets: &[Target],
     waters: &impl Waters,
     time: f64,
     events: &mut Vec<ShotEvent>,
 ) -> Option<f64> {
     let radius = ball.gun.radius_m;
-    let in_play = |at: usize| at != ball.shooter && targets[at].alive;
-    let ship = (0..2)
+    let in_play = |at: usize| {
+        let target = &targets[at];
+        target.id != ball.shooter && target.flag != ball.flag && target.alive
+    };
+    let ship = (0..targets.len())
         .filter(|at| in_play(*at))
         .filter_map(|at| segment_entry(start, end, &targets[at].hull, radius).map(|share| (share, at)))
         .min_by(|one, other| one.0.total_cmp(&other.0));
     let under = under_along(start, end, waters, time);
     let first = ship.map_or(f64::INFINITY, |(share, _)| share).min(under.map_or(f64::INFINITY, |(share, _)| share));
     let flight_at = |share: f64| ball.flown + (to - ball.flown) * share;
-    let mut torn: Vec<(f64, usize)> = (0..2)
-        .filter(|at| in_play(*at) && !ball.rigged[*at])
+    let mut torn: Vec<(f64, usize)> = (0..targets.len())
+        .filter(|at| in_play(*at) && !ball.rigged.contains(&targets[*at].id))
         .filter_map(|at| {
             let entries = targets[at].rig.iter().filter_map(|sail| segment_entry(start, end, sail, radius));
             entries.filter(|share| *share <= first).min_by(f64::total_cmp).map(|share| (share, at))
@@ -95,12 +111,12 @@ fn fly_piece(
         .collect();
     torn.sort_by(|one, other| one.0.total_cmp(&other.0));
     for (share, at) in torn {
-        ball.rigged[at] = true;
+        ball.rigged.push(targets[at].id);
         let point = between(start, end, share);
         let (shooter, gun, shot) = (ball.shooter, ball.gun, ball.shot);
         events.push(ShotEvent::Hit {
             shooter,
-            target: at,
+            target: targets[at].id,
             zone: Zone::Rig,
             point,
             flight: flight_at(share),
@@ -113,7 +129,8 @@ fn fly_piece(
     }
     let shooter = ball.shooter;
     match (ship, under) {
-        (Some((share, target)), _) if share == first => {
+        (Some((share, at)), _) if share == first => {
+            let target = targets[at].id;
             let point = between(start, end, share);
             let zone = zone_at(point[2] - floor_at(waters, point, time).0);
             let (gun, shot) = (ball.gun, ball.shot);
@@ -135,7 +152,7 @@ fn fly_piece(
 pub fn step_balls(
     balls: &mut Vec<Ball>,
     clock: f64,
-    targets: &[Target; 2],
+    targets: &[Target],
     waters: &impl Waters,
     time: f64,
 ) -> Vec<ShotEvent> {
@@ -166,8 +183,8 @@ pub fn step_balls(
     events
 }
 
-/// Where a ball stops: seconds after it left its gun, the point, whether in the water, and where it first met
-/// the ship it was laid on (her canvas or her hull), if it did.
+/// Where a ball stops: seconds after it left its gun, the point, whether in the water, and where it first met a
+/// ship of another flag (her canvas or her hull), if it did.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Stop {
     pub time: f64,
@@ -181,8 +198,7 @@ pub struct Stop {
 /// stands then, `time` the world's as it leaves. None if it is still aloft after `BALL_LIFE_S`.
 pub fn stop_of(
     mut ball: Ball,
-    targets: impl Fn(f64) -> [Target; 2],
-    laid_on: usize,
+    targets: impl Fn(f64) -> Vec<Target>,
     (waters, time, piece_s): (&impl Waters, f64, f64),
 ) -> Option<Stop> {
     let mut events = Vec::new();
@@ -190,8 +206,9 @@ pub fn stop_of(
         let (from, to) = (ball.flown, ball.flown + piece_s.clamp(1e-3, BALL_STEP_S));
         let piece = (flight(ball.start, ball.launch, from), flight(ball.start, ball.launch, to), to);
         if let Some(share) = fly_piece(&mut ball, piece, &targets(to), waters, time + to, &mut events) {
+            // A ball strikes only another flag's ships, so its first strike is on one.
             let strike = events.iter().find_map(|event| match *event {
-                ShotEvent::Hit { target, point, .. } if target == laid_on => Some(point),
+                ShotEvent::Hit { point, .. } => Some(point),
                 _ => None,
             });
             let (point, water) = match events.last() {

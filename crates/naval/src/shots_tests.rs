@@ -28,12 +28,19 @@ fn east_ball(height: f64, elevation: f64, born: f64) -> Ball {
         launch: launch_velocity([1.0, 0.0], elevation, SWIVEL.speed, [0.0; 3]),
         born,
         shooter: 0,
+        flag: Flag::Player,
         gun: SWIVEL,
         shot: Shot::Round,
         flown: 0.0,
         fired: false,
-        rigged: [false; 2],
+        rigged: Vec::new(),
     }
+}
+
+/// Ship `id` with her hull and canvas: the shooter's own (0) flies the players' flag, any other the pirates'.
+fn ship(id: ShipId, hull: Block, rig: Vec<Block>) -> Target {
+    let flag = if id == 0 { Flag::Player } else { Flag::Pirate };
+    Target { id, flag, hull, rig, alive: true }
 }
 
 fn upright(centre: [f64; 3], half: [f64; 3]) -> Block {
@@ -41,12 +48,12 @@ fn upright(centre: [f64; 3], half: [f64; 3]) -> Block {
 }
 
 fn nobody() -> [Target; 2] {
-    let far = Target { hull: upright([1e6, 0.0, 0.0], [1.0; 3]), rig: Vec::new(), alive: true };
-    [far.clone(), far]
+    let far = upright([1e6, 0.0, 0.0], [1.0; 3]);
+    [ship(0, far, Vec::new()), ship(1, far, Vec::new())]
 }
 
 /// Steps until the balls are spent, a second's ticks at a time; answers every event.
-fn fly(balls: &mut Vec<Ball>, targets: &[Target; 2], waters: &impl Waters) -> Vec<ShotEvent> {
+fn fly(balls: &mut Vec<Ball>, targets: &[Target], waters: &impl Waters) -> Vec<ShotEvent> {
     let mut events = Vec::new();
     for tick in 1..=700 {
         let clock = f64::from(tick) * TICK_SECONDS;
@@ -108,7 +115,7 @@ fn rising_ground_stops_a_ball_as_land() {
 
 #[test]
 fn a_ball_strikes_the_hull_in_its_way_holed_low_and_above_the_band_high() {
-    let hull = |z: f64| Target { hull: upright([15.0, 0.0, z], [1.0, 2.0, 1.0]), rig: Vec::new(), alive: true };
+    let hull = |z: f64| ship(1, upright([15.0, 0.0, z], [1.0, 2.0, 1.0]), Vec::new());
     let mut balls = vec![east_ball(1.1, 0.0, 0.0)];
     let events = fly(&mut balls, &[nobody()[0].clone(), hull(0.5)], &Sea);
     let hit = events.iter().find_map(|event| match event {
@@ -126,22 +133,40 @@ fn a_ball_strikes_the_hull_in_its_way_holed_low_and_above_the_band_high() {
 
 #[test]
 fn a_ball_never_meets_its_own_ship_nor_a_ship_gone_down() {
-    let own = Target { hull: upright([10.0, 0.0, 1.0], [5.0, 5.0, 5.0]), rig: Vec::new(), alive: true };
+    let own = ship(0, upright([10.0, 0.0, 1.0], [5.0, 5.0, 5.0]), Vec::new());
     let mut balls = vec![east_ball(1.1, 0.0, 0.0)];
     let events = fly(&mut balls, &[own.clone(), nobody()[1].clone()], &Sea);
     assert!(!events.iter().any(|event| matches!(event, ShotEvent::Hit { .. })));
     let mut again = vec![east_ball(1.1, 0.0, 0.0)];
-    let events = fly(&mut again, &[nobody()[0].clone(), Target { alive: false, ..own }], &Sea);
+    let gone = Target { id: 1, flag: Flag::Pirate, alive: false, ..own };
+    let events = fly(&mut again, &[nobody()[0].clone(), gone], &Sea);
     assert!(!events.iter().any(|event| matches!(event, ShotEvent::Hit { .. })));
 }
 
 #[test]
+fn a_ball_flies_through_a_ship_of_its_own_flag_into_the_other_flag_beyond() {
+    let friend =
+        Target { id: 2, flag: Flag::Player, ..ship(2, upright([10.0, 0.0, 1.0], [1.0, 2.0, 1.0]), Vec::new()) };
+    let pirate = ship(1, upright([20.0, 0.0, 0.5], [1.0, 2.0, 1.0]), Vec::new());
+    let mut balls = vec![east_ball(1.1, 0.0, 0.0)];
+    let events = fly(&mut balls, &[nobody()[0].clone(), pirate, friend], &Sea);
+    let struck: Vec<ShipId> = events
+        .iter()
+        .filter_map(|event| match event {
+            ShotEvent::Hit { target, .. } => Some(*target),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(struck, [1], "another player's ship is no mark for a player's ball");
+}
+
+#[test]
 fn a_ball_tears_through_canvas_once_and_flies_on_into_the_hull() {
-    let target = Target {
-        hull: upright([20.0, 0.0, 0.5], [1.0, 2.0, 1.0]),
-        rig: vec![upright([10.0, 0.0, 1.0], [0.01, 3.0, 3.0]), upright([12.0, 0.0, 1.0], [0.01, 3.0, 3.0])],
-        alive: true,
-    };
+    let target = ship(
+        1,
+        upright([20.0, 0.0, 0.5], [1.0, 2.0, 1.0]),
+        vec![upright([10.0, 0.0, 1.0], [0.01, 3.0, 3.0]), upright([12.0, 0.0, 1.0], [0.01, 3.0, 3.0])],
+    );
     let mut balls = vec![east_ball(1.1, 0.0, 0.0)];
     let events = fly(&mut balls, &[nobody()[0].clone(), target], &Sea);
     let zones: Vec<Zone> = events
