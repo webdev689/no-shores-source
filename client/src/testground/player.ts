@@ -59,7 +59,8 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
  * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon, and a right click
  * readies it too; Q casts; comma mounts or dismounts; the wheel and Mouse4 move between first and third person.
  * The body moves in whole ticks of the movement rules; the view turns every frame.
- * `swinging` says a swing is under way, which turns the figure to the view.
+ * `swinging` says a swing is under way, which turns the figure to the view; `toward` is the bearing to the soft lock's
+ * target, which a figure on foot faces however it walks.
  */
 export function updatePlayer(
   player: Player,
@@ -67,6 +68,7 @@ export function updatePlayer(
   movement: MovementRules,
   seconds: number,
   swinging = false,
+  toward: number | null = null,
 ): Player {
   const turn = (input.held('turnRight') ? 1 : 0) - (input.held('turnLeft') ? 1 : 0);
   const look = (input.held('lookDown') ? 1 : 0) - (input.held('lookUp') ? 1 : 0);
@@ -103,8 +105,11 @@ export function updatePlayer(
     queued = { jump: false, crouch: false };
   }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
+  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back.
   const acting = swinging || cast !== null;
-  const facing = acting ? yaw : body.mode !== 'ground' ? body.facing : body.moving ? body.facing : player.facing;
+  const locked = toward !== null && !mounted && body.mode === 'ground';
+  const walked = body.moving ? body.facing : player.facing;
+  const facing = acting ? yaw : locked ? toward : body.mode !== 'ground' ? body.facing : walked;
   const blend = carry / movement.tickSeconds;
   return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, cast, act, facing };
 }

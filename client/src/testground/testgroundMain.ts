@@ -12,6 +12,7 @@ import { foeKind } from './foeKinds.ts';
 import { Glides } from './glide.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
+import { Flashes } from '../combat/flashes.ts';
 import { Hud } from '../combat/hud.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import type { PlayerDress } from '../network/messages.ts';
@@ -215,6 +216,7 @@ async function start(): Promise<void> {
   const steps = fight.steps(movement);
   if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
   const hud = new Hud(element<HTMLElement>('#hud'));
+  const flashes = new Flashes();
   /** The foes' figures, by the room's number for each, apart from the panel's figures; they and other players are
    *  drawn gliding between the room's snapshots. */
   const foeFigures = new Map<number, Placed>();
@@ -254,12 +256,23 @@ async function start(): Promise<void> {
       guardPressed: guards && controls.pressed('guard'),
     });
     if (controls.locked) {
-      player = updatePlayer({ ...player, drawn: wasDrawn }, controls, steps, seconds, firstPerson.swing !== null);
+      const foe = fight.targetAt;
+      const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
+      player = updatePlayer(
+        { ...player, drawn: wasDrawn },
+        controls,
+        steps,
+        seconds,
+        firstPerson.swing !== null,
+        toward,
+      );
       if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
     // Alone, the room in the page waits while the pointer is free: Escape pauses the fight.
     if (roomUrl || controls.locked) fight.pump(seconds);
     const own = fight.own;
+    const events = fight.takeEvents();
+    flashes.update(events, seconds);
     const frameTicks = seconds / movement.tickSeconds;
     const body = shownBody(player);
     // Fighting, the figure faces where its arms point.
@@ -363,7 +376,8 @@ async function start(): Promise<void> {
     if (player.view.shown > HIDE_FIGURE_M) {
       const { view, flip } = viewOf(you.facing, body.x, body.y, eye.x, eye.y);
       const card = forge.card(you.id, youDress, shown.anim, view, index, flip);
-      if (card) drawn.push({ card, ...cardStand(body.x, body.y, eye.x, eye.y), z: body.z, flip });
+      const flash = { share: flashes.shareOf(fight.player), red: true };
+      if (card) drawn.push({ card, ...cardStand(body.x, body.y, eye.x, eye.y), z: body.z, flip, flash });
     }
     for (const [number, placed] of others) {
       const body = fight.others.get(number)?.body;
@@ -376,6 +390,7 @@ async function start(): Promise<void> {
         );
     }
     otherGlides.keep(new Set(others.keys()));
+    const numberOf = new Map([...others].map(([number, placed]) => [placed, number]));
     for (const placed of figures) {
       if (placed === you) continue;
       if (placed.spin) placed.facing = (placed.facing + SPIN * seconds) % (2 * Math.PI);
@@ -384,7 +399,8 @@ async function start(): Promise<void> {
       const shownFrame =
         placed.frame === null ? frameAt(clock, moveFrames, fps) : Math.min(placed.frame, moveFrames - 1);
       const card = forge.card(placed.id, placed.dress, placed.anim, view, shownFrame, flip);
-      if (card) drawn.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip });
+      const flash = { share: flashes.shareOf(numberOf.get(placed) ?? -1), red: false };
+      if (card) drawn.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip, flash });
     }
     drawn.push(...drawFoes(eye, frameTicks));
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
@@ -415,7 +431,7 @@ async function start(): Promise<void> {
         matrix,
         width: canvas.clientWidth,
         height: canvas.clientHeight,
-        events: fight.takeEvents(),
+        events,
         player: fight.player,
         firstPerson: inFirstPerson,
         pressed: (armed && !shooter && controls.pressed('swing')) || (controls.locked && controls.pressed('dodge')),
@@ -473,7 +489,8 @@ async function start(): Promise<void> {
       forge.warm(kind.dress, ['idle', 'walk', 'run', 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death', 'jump']);
       const { view: side, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
       const card = forge.card(placed.id, kind.dress, move.anim, side, frameShown, flip);
-      if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip });
+      const flash = { share: flashes.shareOf(kept.id), red: false };
+      if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip, flash });
     }
     for (const id of foeFigures.keys()) if (!fight.foes.has(id)) foeFigures.delete(id);
     foeGlides.keep(new Set(fight.foes.keys()));

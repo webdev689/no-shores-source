@@ -62,6 +62,26 @@ export function threatens(view: FighterView, player: number): boolean {
   return view.target === player && (kind === 'attack' || kind === 'telegraph' || kind === 'draw');
 }
 
+/** A press of the guard parries a blow landing within this many ticks of it (crates/combat/src/tuning.rs). */
+const PARRY_WINDOW = 12;
+
+/** The parry ring over a foe at a blow the player can parry: the share of its wind-up still to come (1 as it begins,
+ *  0 as it lands) and whether a press now would parry it. An iron blow must be dodged, so it shows no ring to time;
+ *  a shot is never parried. Null for none. */
+export function parryCue(view: FighterView, player: number): { share: number; now: boolean } | 'iron' | null {
+  const { action } = view;
+  if (view.target !== player) return null;
+  if (action.kind === 'telegraph' && action.iron) return 'iron';
+  const [left, lead] =
+    action.kind === 'attack'
+      ? [action.strike - action.elapsed, action.strike]
+      : action.kind === 'telegraph' && action.shape !== 'aimed'
+        ? [action.windup - action.elapsed, action.windup]
+        : [0, 0];
+  if (left <= 0 || lead <= 0) return null;
+  return { share: left / lead, now: left < PARRY_WINDOW };
+}
+
 /** Where on the screen's edge an arrow points to a point off the screen, and its angle (0 to the right, a quarter turn
  *  down), from the point's clip coordinates (x, y up, w); null for a point on the screen. A point behind the camera
  *  points the way it lies to either side, or down when it is straight behind. `inset` keeps the arrow off the edge. */

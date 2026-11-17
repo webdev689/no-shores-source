@@ -168,11 +168,16 @@ export class Fighting {
     return { ...movement, step: (body, controls) => this.tick(body, controls) };
   }
 
+  /** Where the soft lock's target stands, as last seen; null with no lock. */
+  get targetAt(): { readonly x: number; readonly y: number } | null {
+    const target = this.own?.target ?? null;
+    return (target === null ? undefined : (this.foes.get(target)?.view ?? this.others.get(target)?.body)) ?? null;
+  }
+
   /** The strokes that reach the soft lock's target from where the player stands now (all six with none). */
   private reaching(): number[] {
     const own = this.own;
-    const target = own?.target ?? null;
-    const there = target === null ? undefined : (this.foes.get(target)?.view ?? this.others.get(target)?.body);
+    const there = this.targetAt;
     const apart = own && there ? Math.hypot(there.x - own.x, there.y - own.y) : null;
     return strokesReaching(apart, (stroke) => this.rules.strokeReach(this.arms, stroke));
   }

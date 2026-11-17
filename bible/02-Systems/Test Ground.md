@@ -76,8 +76,11 @@ room's word for it, so playing alone and online are the same game.
   health bar over each struck foe within 16 m; words on a dark chip over whoever was struck for each blow and what it
   came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
   gold or green when it is good for the player and red when bad; in first person, words about the player under the
-  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; a red
-  edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
+  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over
+  a foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold
+  once a press of the guard would parry it ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
+  a red mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
+  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
   with `?room=`, that the link to the room was lost and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
@@ -122,8 +125,9 @@ weapon keeps its own moves and the left hand's thing is worn.
 In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
 Walking frames last 0.25 s, running 0.125 s and crouching 0.5 s. A swing lasts 1 s. On a wall or a ledge the weapon is
-worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. Swinging or casting,
-it turns to face where the camera looks.
+worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While the soft lock
+holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
+([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks.
 
 ## Dressing
 
