@@ -71,11 +71,6 @@ export class HeldMap {
   private readonly layer = make('div', '', 'held-map');
   private readonly ship = make('div', '', 'held-ship');
   private readonly card = make('div', '', 'held-card');
-  private readonly hint = make(
-    'div',
-    'Drag to pan · Wheel to zoom · Click a port or the sea · Esc to put it away',
-    'held-hint',
-  );
   private readonly labels = new Map<string, HTMLElement>();
   private phase: Phase = { kind: 'closed' };
   private mapView: View = { left: 0, top: 0, scale: 1 };
@@ -91,7 +86,7 @@ export class HeldMap {
     this.view = new HeldMapView(gpu, field);
     this.store = store;
     this.plan = plan;
-    this.layer.append(this.ship, this.card, this.hint);
+    this.layer.append(this.ship, this.card);
     this.layer.hidden = true;
     root.append(this.layer);
   }
@@ -199,7 +194,8 @@ export class HeldMap {
     scene: HeldMapScene,
   ): HeldMapFrame | null {
     this.clock += dt;
-    const lift = this.advance(dt);
+    // The rise waits for the art, the first time it is asked for.
+    const lift = this.advance(this.view.ready ? dt : 0);
     if (lift === null || !this.view.ready) {
       this.layer.hidden = lift === null;
       return null;
@@ -301,7 +297,6 @@ export class HeldMap {
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
     this.ship.hidden = !onSheet(shipX, shipY);
     this.ship.style.transform = `translate(${this.ink.x + shipX}px, ${this.ink.y + shipY + drop}px) rotate(${scene.heading}rad)`;
-    this.hint.style.transform = `translate(${this.ink.x}px, ${this.ink.y + this.ink.height + drop + 8}px)`;
     this.layoutCard(drop);
   }
 
