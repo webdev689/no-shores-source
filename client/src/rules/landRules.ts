@@ -1,4 +1,5 @@
 import { beginRequest, type FightOrders, type FightView, readFight, stepRequest } from './fightRules.ts';
+import type { Block } from './movementRules.ts';
 
 /** A river as the land generates it: its course through cell centres, source first, with the flow at each point. */
 export interface RiverCourse {
@@ -130,8 +131,9 @@ export interface GroundPatch {
 /** The land crate, running in WebAssembly. Each call throws with the reason when it cannot answer. */
 export interface LandRules {
   /** Generates one continent of a layout with its edits file's text on it (null for none). Kept, it stays open for
-   *  strokes; not kept, it is a preview and the open one stays open. */
-  open(layoutText: string, id: string, editsText: string | null, keep?: boolean): LandView;
+   *  strokes, its city settled on it with the blocks of the RMB index's text (none for null); not kept, it is a
+   *  preview and the open one stays open. */
+  open(layoutText: string, id: string, editsText: string | null, keep?: boolean, rmbText?: string | null): LandView;
   /** One dab on the open landmass; `starts` begins a new stroke. */
   dab(brush: Brush, point: readonly [number, number], starts: boolean): LandPatch;
   /** The open landmass with its water run again. */
@@ -144,6 +146,13 @@ export interface LandRules {
   sample(points: readonly (readonly [number, number])[], time?: number): GroundSample;
   /** The open landmass's exact ground over a grid, for a close look. */
   patch(left: number, top: number, step: number, width: number, height: number): GroundPatch;
+  /** The open landmass's ground over a rect (west, north, east, south, metres) cut as a node's window, as JSON: the
+   *  same window, to the bit, a node's room stands its bodies on, for the movement rules to stand the player on. */
+  window(west: number, north: number, east: number, south: number): string;
+  /** The boxes of the open landmass's city a body runs into within a rect, as the movement rules take blocks. */
+  boxes(west: number, north: number, east: number, south: number): Block[];
+  /** The open landmass's city's plan, as JSON, for the drawing; null with no city. */
+  cityPlan(): string | null;
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
   /** A fight begun round the ship: a pirate captain put to sea, every chance drawn from `seed`. */
@@ -165,6 +174,9 @@ interface LandExports {
   land_write(): bigint;
   land_sample(address: number, length: number): bigint;
   land_patch(address: number, length: number): bigint;
+  land_window(address: number, length: number): bigint;
+  land_boxes(address: number, length: number): bigint;
+  land_city_plan(): bigint;
   land_sail(address: number, length: number): bigint;
   land_fight_begin(address: number, length: number): bigint;
   land_fight_step(address: number, length: number): bigint;
@@ -276,8 +288,9 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     }
   };
   return {
-    open: (layoutText, id, editsText, keep = true) => {
-      const request = `{"id":${JSON.stringify(id)},"keep":${keep},"edits":${editsText ?? 'null'},"layout":${layoutText}}`;
+    open: (layoutText, id, editsText, keep = true, rmbText = null) => {
+      const named = `{"id":${JSON.stringify(id)},"keep":${keep},"edits":${editsText ?? 'null'}`;
+      const request = `${named},"rmb":${rmbText ?? 'null'},"layout":${layoutText}}`;
       return takeView(exports, send(exports.land_open, request));
     },
     dab: (brush, point, starts) =>
@@ -346,6 +359,23 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         sampleHash: answer.sample_hash ?? '',
         seaHash: answer.sea_hash ?? '',
       };
+    },
+    window: (west, north, east, south) => {
+      const text = takeText(exports, send(exports.land_window, JSON.stringify({ west, north, east, south })));
+      // A window is a ground, whose first field is its land; anything else is the reason it was refused.
+      if (text.startsWith('{"error"')) throw new Error((JSON.parse(text) as { error: string }).error);
+      return text;
+    },
+    boxes: (west, north, east, south) => {
+      const answer = JSON.parse(
+        takeText(exports, send(exports.land_boxes, JSON.stringify({ west, north, east, south }))),
+      ) as { boxes?: [number, number, number, number, number][]; error?: string };
+      if (answer.error !== undefined) throw new Error(answer.error);
+      return (answer.boxes ?? []).map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top }));
+    },
+    cityPlan: () => {
+      const text = takeText(exports, exports.land_city_plan());
+      return text === 'null' ? null : text;
     },
   };
 }

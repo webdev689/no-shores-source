@@ -5,8 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 
 const WORLD_DIR = fileURLToPath(new URL('./content/world/', import.meta.url));
+const FORGED_DIR = fileURLToPath(new URL('./content/forged/', import.meta.url));
 /** The authored world files the editors read and save: the layout, and one edits file a landmass. */
 const WORLD_FILE = /^\/(layout|land\/[a-z0-9-]+)\.json$/;
+/** The tables the game only reads: Daggerfall's RMB town blocks, and the forged models' measures. */
+const READ_ONLY_FILE = /^\/(rmb\/[a-z]+|forged\/[a-z]+)\.json$/;
 
 async function bodyOf(request: IncomingMessage): Promise<string> {
   const parts: Buffer[] = [];
@@ -15,14 +18,31 @@ async function bodyOf(request: IncomingMessage): Promise<string> {
 }
 
 /**
- * The World Editor reads content/world/ under `world/`: the layout and each landmass's edits file. The dev server
- * also saves them on PUT; a build copies them in, so the published editor opens what is on `main`.
+ * The World Editor and the game read content/world/ under `world/`: the layout and each landmass's edits file, which
+ * the dev server also saves on PUT, and the RMB blocks and the forged models' tables, which are only read. A build
+ * copies them all in, so the published pages open what is on `main`.
  */
 function worldFiles(): Plugin {
   return {
     name: 'world-files',
     configureServer(server) {
       server.middlewares.use('/world', (request: IncomingMessage, response: ServerResponse, next: () => void) => {
+        const read = READ_ONLY_FILE.exec(request.url ?? '')?.[1];
+        if (read && request.method === 'GET') {
+          const from = read.startsWith('forged/')
+            ? `${FORGED_DIR}${read.slice('forged/'.length)}`
+            : `${WORLD_DIR}${read}`;
+          readFile(`${from}.json`)
+            .then((text) => {
+              response.setHeader('content-type', 'application/json');
+              response.end(text);
+            })
+            .catch(() => {
+              response.statusCode = 404;
+              response.end();
+            });
+          return;
+        }
         const name = WORLD_FILE.exec(request.url ?? '')?.[1];
         if (!name) {
           next();
@@ -54,15 +74,23 @@ function worldFiles(): Plugin {
       });
     },
     async generateBundle() {
-      const land = await readdir(`${WORLD_DIR}land`).catch(() => []);
+      const listed = async (folder: string) =>
+        (await readdir(`${WORLD_DIR}${folder}`).catch(() => [])).filter((file) => file.endsWith('.json'));
       for (const name of [
         'layout.json',
-        ...land.filter((file) => file.endsWith('.json')).map((file) => `land/${file}`),
+        ...(await listed('land')).map((file) => `land/${file}`),
+        ...(await listed('rmb')).map((file) => `rmb/${file}`),
       ])
         this.emitFile({
           type: 'asset',
           fileName: `world/${name}`,
           source: await readFile(`${WORLD_DIR}${name}`, 'utf8'),
+        });
+      for (const file of (await readdir(FORGED_DIR).catch(() => [])).filter((name) => name.endsWith('.json')))
+        this.emitFile({
+          type: 'asset',
+          fileName: `world/forged/${file}`,
+          source: await readFile(`${FORGED_DIR}${file}`, 'utf8'),
         });
     },
   };

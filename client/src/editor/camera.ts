@@ -24,7 +24,7 @@ export function worldToScreen(camera: Camera, width: number, height: number, wor
   };
 }
 
-/** Zooms by `factor` while the world point under the cursor stays under it. */
+/** Zooms by `factor`, within `limits`, while the world point under the cursor stays under it. */
 export function zoomAt(
   camera: Camera,
   width: number,
@@ -32,8 +32,9 @@ export function zoomAt(
   pixelX: number,
   pixelY: number,
   factor: number,
+  limits: { readonly closest: number; readonly farthest: number } = ZOOM_LIMITS,
 ): Camera {
-  const metresPerPixel = Math.min(ZOOM_LIMITS.farthest, Math.max(ZOOM_LIMITS.closest, camera.metresPerPixel * factor));
+  const metresPerPixel = Math.min(limits.farthest, Math.max(limits.closest, camera.metresPerPixel * factor));
   const anchor = screenToWorld(camera, width, height, pixelX, pixelY);
   return {
     metresPerPixel,

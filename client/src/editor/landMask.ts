@@ -1,3 +1,7 @@
+import type { CellRect } from '../terrain/terrainView.ts';
+
+export type { CellRect };
+
 /** One cell of the painted land is a square kilometre. */
 export const CELL_M = 1_000;
 
@@ -37,12 +41,6 @@ export function eachCellInRing(
 }
 
 /** A rectangle of cells, inclusive of `left`/`top`, exclusive of `right`/`bottom`. */
-export interface CellRect {
-  readonly left: number;
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
-}
 
 /** One connected piece of a continent's land: its label, its size in cells, and a point on it in metres. */
 export interface Piece {

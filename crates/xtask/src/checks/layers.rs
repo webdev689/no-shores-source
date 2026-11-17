@@ -12,13 +12,41 @@ pub struct Layer {
 pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "network", may_import: &["rules"] },
-    Layer { name: "editor", may_import: &["rules", "water", "ships"] },
+    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships"] },
+    Layer { name: "terrain", may_import: &["rules", "water"] },
+    Layer {
+        name: "game",
+        may_import: &[
+            "rules",
+            "network",
+            "water",
+            "terrain",
+            "editor",
+            "overworld",
+            "models",
+            "textures",
+            "city",
+            "nature",
+            "forge",
+            "firstperson",
+            "player",
+        ],
+    },
     Layer { name: "water", may_import: &["rules"] },
     Layer { name: "ships", may_import: &["rules", "water"] },
     Layer { name: "forge", may_import: &[] },
-    Layer { name: "testground", may_import: &["rules", "network", "forge", "editor", "firstperson", "combat"] },
+    Layer { name: "player", may_import: &["rules", "network", "forge", "editor", "firstperson"] },
+    Layer {
+        name: "testground",
+        may_import: &["rules", "network", "forge", "editor", "firstperson", "player", "combat"],
+    },
     Layer { name: "combat", may_import: &["rules", "network"] },
     Layer { name: "firstperson", may_import: &["forge"] },
+    Layer { name: "overworld", may_import: &[] },
+    Layer { name: "textures", may_import: &[] },
+    Layer { name: "models", may_import: &[] },
+    Layer { name: "nature", may_import: &["rules", "water"] },
+    Layer { name: "city", may_import: &["models", "textures", "rules", "water"] },
 ];
 
 /// The file that wires the layers together. The other files beside it (the GPU, the canvas size) are groundwork

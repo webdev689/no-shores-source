@@ -32,7 +32,8 @@ fn holding_the_button_swings_again_as_each_blow_ends_and_a_tap_swings_once() {
     let mut swings = 0;
     for tick in 0..130 {
         let intent = if tick == 0 { swinging(0.0, Stroke::Left) } else { idle(0.0) };
-        let (next, happening) = step_fighter(&fighter, &intent, &Surroundings { blocks: &[], target_at: None });
+        let (next, happening) =
+            step_fighter(&fighter, &intent, &Surroundings { blocks: &[], terrain: &movement::Flat, target_at: None });
         fighter = next;
         swings += usize::from(matches!(happening, Some(Happening::Swung(_))));
     }

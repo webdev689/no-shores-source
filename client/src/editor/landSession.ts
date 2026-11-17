@@ -1,6 +1,6 @@
 import type { FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Brush, Helm, LandPatch, LandView, ShipFloats } from '../rules/landRules.ts';
-import type { CloseGround, LandWorker, Sailed } from './landClient.ts';
+import type { CloseGround, LandWorker, Sailed } from '../terrain/landClient.ts';
 import type { LandState } from './landPanel.ts';
 import { markCells, type Places } from './marks.ts';
 
@@ -29,13 +29,15 @@ export interface Landmass {
   at: number;
 }
 
-function editsOf(landmass: Landmass): Places {
+function placesOf(text: string): Places {
   try {
-    return JSON.parse(landmass.history[landmass.at] ?? EMPTY_EDITS) as Places;
+    return JSON.parse(text) as Places;
   } catch {
     return {};
   }
 }
+
+const editsOf = (landmass: Landmass): Places => placesOf(landmass.history[landmass.at] ?? EMPTY_EDITS);
 
 /** The landmasses of one layout, each generated in the worker; one at a time is open for strokes. */
 export class LandSession {
@@ -48,6 +50,8 @@ export class LandSession {
   private closed = false;
   private queue: Promise<unknown> = Promise.resolve();
   private readonly opening = new Map<string, Promise<Landmass | null>>();
+  /** The places last read, by the text they were read from: every frame draws them, and a file can be large. */
+  private read = { text: '', places: {} as Places };
 
   constructor(worker: LandWorker, layoutText: string) {
     this.worker = worker;
@@ -77,10 +81,13 @@ export class LandSession {
     landmass.marks = markCells(view, editsOf(landmass));
   }
 
-  /** The open landmass's places, as its edits stand now. */
+  /** A landmass's places, as its edits stand now. */
   places(id: string): Places {
     const landmass = this.landmasses.get(id);
-    return landmass ? editsOf(landmass) : {};
+    const text = landmass?.history[landmass.at];
+    if (text === undefined) return {};
+    if (text !== this.read.text) this.read = { text, places: placesOf(text) };
+    return this.read.places;
   }
 
   /** Changes the open landmass's edits by hand (adding or removing a place): the ground is laid again under them, the
@@ -93,7 +100,8 @@ export class LandSession {
       mutate(edits);
       const view = await this.worker.setEdits(JSON.stringify(edits));
       const { text } = await this.worker.write();
-      this.record(landmass, id, text);
+      // A change that changed nothing is no undo step.
+      if (text !== landmass.history[landmass.at]) this.record(landmass, id, text);
       this.show(landmass, view);
       return landmass;
     });

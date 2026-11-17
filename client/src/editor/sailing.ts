@@ -3,7 +3,7 @@ import { helmOf, isRungKey, RUNG_WORDS } from '../ships/helmKeys.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import type { Sailed } from './landClient.ts';
+import type { Sailed } from '../terrain/landClient.ts';
 import type { Orbit } from './orbit.ts';
 
 /** The rules' tick, seconds (crates/sailing TICK_SECONDS). */

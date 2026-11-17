@@ -6,8 +6,10 @@
 use crate::edits::Edits;
 use crate::exact::{clamp, fbm, fingerprint, lerp, seed_of, smooth};
 use crate::grid::{D8_X, D8_Y, Grid, catmull};
+use crate::pads::Pads;
 use crate::relief::{COAST_REACH_M, LAND_FLOOR_M, SEA_CEILING_M};
 use crate::water::{River, river_depth_m, river_width_m};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use world::geometry::Point;
 
@@ -32,7 +34,7 @@ pub const SHORE_FLOOR_M: f64 = 0.5;
 const CARRY_RINGS: u8 = 6;
 
 /// One point of a course: where it is, its level (a river's surface, a road's bed), and its width and depth.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct CoursePoint {
     pub x: f64,
     pub y: f64,
@@ -51,7 +53,7 @@ pub enum WaterAt {
 }
 
 /// A town's area, its bounds (west, north, east, south) and the level its ground is set to.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TownPad {
     pub outline: Vec<(f64, f64)>,
     pub bounds: (f64, f64, f64, f64),
@@ -61,8 +63,10 @@ pub struct TownPad {
 /// Which courses pass near a bucket of the world: (is a road, which course, which segment).
 type CourseIndex = BTreeMap<(i64, i64), Vec<(bool, usize, usize)>>;
 
-/// A landmass's ground with its places on it, indexed so a point finds the courses near it quickly.
-#[derive(Debug, Clone, PartialEq)]
+/// A landmass's ground with its places on it, indexed so a point finds the courses near it quickly. It is saved
+/// without its index, which is built again on load; one whose layers do not hold the same cells is refused.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(try_from = "window::SavedGround")]
 pub struct Ground {
     pub land: Grid,
     pub lake_level: Vec<f64>,
@@ -73,7 +77,10 @@ pub struct Ground {
     pub coast: Grid,
     /// Each cell's height carried over the coast from the other side: a land cell's seabed, a sea cell's land.
     pub across: Grid,
+    /// The levels a city sets its terraces to, over everything else where they lie.
+    pub pads: Pads,
     seed: u32,
+    #[serde(skip)]
     index: CourseIndex,
 }
 
@@ -228,6 +235,7 @@ impl Ground {
             coast: coast.clone(),
             across: carried(land, coast),
             seed: seed_of(seed, "grain"),
+            pads: Pads::default(),
             index: BTreeMap::new(),
         };
         for town in &edits.towns {
@@ -409,6 +417,9 @@ impl Ground {
     /// The ground's height at a world point, metres: what a body stands on.
     #[must_use]
     pub fn height_at(&self, x: f64, y: f64) -> f64 {
+        if let Some(level) = self.pads.level_at(x, y) {
+            return level;
+        }
         let ground = self.padded(x, y);
         if let Some((river, distance)) = self.nearest(x, y, false) {
             let half = river.width / 2.0;
@@ -446,6 +457,9 @@ impl Ground {
     /// What water stands at a world point.
     #[must_use]
     pub fn water_at(&self, x: f64, y: f64) -> WaterAt {
+        if self.pads.level_at(x, y).is_some() {
+            return WaterAt::Dry;
+        }
         if let Some((river, distance)) = self.nearest(x, y, false)
             && distance < river.width / 2.0
         {
@@ -471,11 +485,9 @@ impl Ground {
         let mut surface: Option<f64> = None;
         for row in j - 1..=j + 1 {
             for column in i - 1..=i + 1 {
-                if column < 0 || row < 0 || column as usize >= land.width || row as usize >= land.height {
-                    continue;
-                }
+                let Some(at) = land.index_of(column, row) else { continue };
                 let (dx, dy) = (grid_x - column as f64, grid_y - row as f64);
-                let level = self.lake_level[row as usize * land.width + column as usize];
+                let level = self.lake_level[at];
                 if level > 0.0 && dx.abs().max(dy.abs()) < 1.0 {
                     surface = Some(surface.map_or(level, |higher: f64| higher.max(level)));
                 }
@@ -508,6 +520,9 @@ impl Ground {
 pub fn sample_hash(ground: &Ground, points: &[(f64, f64)]) -> u64 {
     fingerprint(points.iter().map(|&(x, y)| ground.height_at(x, y)))
 }
+
+#[path = "ground_window.rs"]
+mod window;
 
 #[cfg(test)]
 #[path = "ground_tests.rs"]

@@ -4,14 +4,22 @@ version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
-description = "A shared space on the server: its players, each player's inputs taken in order, and their bodies stepped tick by tick, never faster than the room's clock."
+description = "A shared space on the server: its players, each player's inputs taken in order, their bodies stepped tick by tick on its ground and judged against its section, and the sea's ships sailing their courses."
 
 [dependencies]
 combat = { path = "../combat" }
 foes = { path = "../foes" }
+land = { path = "../land" }
 libm.workspace = true
 movement = { path = "../movement" }
 navmesh = { path = "../navmesh" }
+reach = { path = "../reach" }
+world = { path = "../world" }
+
+[dev-dependencies]
+bake = { path = "../bake" }
+city = { path = "../city" }
+serde_json.workspace = true
 
 [lints]
 workspace = true

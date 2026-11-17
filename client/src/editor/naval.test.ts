@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { FightCaptain, FightLay, FightVessel, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { FightSource } from './fighting.ts';
-import type { Sailed } from './landClient.ts';
+import type { Sailed } from '../terrain/landClient.ts';
 import { Naval } from './naval.ts';
 import type { Orbit } from './orbit.ts';
 import { Sailing, type SailSource } from './sailing.ts';

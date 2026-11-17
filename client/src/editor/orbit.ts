@@ -1,4 +1,4 @@
-import type { TerrainData } from './terrainView.ts';
+import type { TerrainData } from '../terrain/terrainView.ts';
 
 /**
  * A camera circling a point on the terrain. World axes: x east, y south (metres from the landmass window's north-west

@@ -1,7 +1,7 @@
 //! The body's moves, as the player plays them: paces, the jump, steps and walls, vaults and mantles, hanging and
 //! climbing. Each runs at the server's tick.
 
-use movement::{Block, Body, Controls, Mode, TICK_SECONDS, TUNING, standing, step_body};
+use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, TUNING, standing, step_body};
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
 
 const STILL: Controls =
@@ -19,7 +19,7 @@ fn run(body: Body, held: Controls, seconds: f64, blocks: &[Block], first: Option
     let ticks = (seconds / TICK_SECONDS).round() as usize;
     (0..ticks).fold(body, |now, tick| {
         let controls = if tick == 0 { first.unwrap_or(held) } else { held };
-        step_body(&now, &controls, blocks, TICK_SECONDS)
+        step_body(&now, &controls, blocks, &Flat, TICK_SECONDS)
     })
 }
 
@@ -40,12 +40,12 @@ fn hanging_from(ledge: Block) -> Body {
         controls.jump = true;
     });
     let mut body = run(standing(0.0, 0.0), holding(FORWARD), 0.3, &[ledge], None);
-    body = step_body(&body, &jumping, &[ledge], TICK_SECONDS);
+    body = step_body(&body, &jumping, &[ledge], &Flat, TICK_SECONDS);
     for _ in 0..60 {
         if body.mode != Mode::Air {
             break;
         }
-        body = step_body(&body, &holding(FORWARD), &[ledge], TICK_SECONDS);
+        body = step_body(&body, &holding(FORWARD), &[ledge], &Flat, TICK_SECONDS);
     }
     body
 }
@@ -76,14 +76,14 @@ fn the_body_walks_runs_and_crouches_at_dfos_paces_forward_being_where_it_looks()
 
 #[test]
 fn a_jump_rises_about_half_a_metre_and_lands_again() {
-    let mut body = step_body(&standing(0.0, 0.0), &holding(|controls| controls.jump = true), &[], TICK_SECONDS);
+    let mut body = step_body(&standing(0.0, 0.0), &holding(|controls| controls.jump = true), &[], &Flat, TICK_SECONDS);
     assert_eq!(body.mode, Mode::Air);
     let mut highest: f64 = 0.0;
     for _ in 0..120 {
         if body.mode != Mode::Air {
             break;
         }
-        body = step_body(&body, &STILL, &[], TICK_SECONDS);
+        body = step_body(&body, &STILL, &[], &Flat, TICK_SECONDS);
         highest = highest.max(body.z);
     }
     close(highest, TUNING.jump * TUNING.jump / (2.0 * TUNING.gravity), 0.03);
@@ -166,7 +166,7 @@ fn mounted_the_body_rides_at_the_horses_paces_and_does_not_jump() {
     close(run(standing(0.0, 0.0), riding, 1.0, &[], None).y, -TUNING.ride_walk, 0.01);
     let galloping = Controls { run: true, ..riding };
     close(run(standing(0.0, 0.0), galloping, 1.0, &[], None).y, -TUNING.ride_gallop, 0.01);
-    let jumped = step_body(&standing(0.0, 0.0), &Controls { jump: true, ..riding }, &[], TICK_SECONDS);
+    let jumped = step_body(&standing(0.0, 0.0), &Controls { jump: true, ..riding }, &[], &Flat, TICK_SECONDS);
     assert_eq!(jumped.mode, Mode::Ground);
     // Crouching does not slow the horse, and a rider does not climb.
     let crouching = Controls { crouch: true, ..riding };
@@ -177,9 +177,10 @@ fn mounted_the_body_rides_at_the_horses_paces_and_does_not_jump() {
 
 #[test]
 fn a_crouched_jump_leaves_at_four_fifths_of_the_speed_and_stands_the_body_up() {
-    let crouched = step_body(&standing(0.0, 0.0), &holding(|controls| controls.crouch = true), &[], TICK_SECONDS);
+    let crouched =
+        step_body(&standing(0.0, 0.0), &holding(|controls| controls.crouch = true), &[], &Flat, TICK_SECONDS);
     assert!(crouched.crouched);
-    let jumped = step_body(&crouched, &holding(|controls| controls.jump = true), &[], TICK_SECONDS);
+    let jumped = step_body(&crouched, &holding(|controls| controls.jump = true), &[], &Flat, TICK_SECONDS);
     assert_eq!(jumped.mode, Mode::Air);
     close(jumped.vz, TUNING.jump * TUNING.crouched_jump, 1e-9);
     assert!(!jumped.crouched);
@@ -189,15 +190,15 @@ fn a_crouched_jump_leaves_at_four_fifths_of_the_speed_and_stands_the_body_up() {
 fn a_jump_waits_until_the_feet_have_settled() {
     let jumping = holding(|controls| controls.jump = true);
     let landed = Body { grounded: 0.0, ..standing(0.0, 0.0) };
-    assert_eq!(step_body(&landed, &jumping, &[], TICK_SECONDS).mode, Mode::Ground);
+    assert_eq!(step_body(&landed, &jumping, &[], &Flat, TICK_SECONDS).mode, Mode::Ground);
     let settled = run(landed, STILL, TUNING.grounded_to_jump, &[], None);
-    assert_eq!(step_body(&settled, &jumping, &[], TICK_SECONDS).mode, Mode::Air);
+    assert_eq!(step_body(&settled, &jumping, &[], &Flat, TICK_SECONDS).mode, Mode::Air);
     // Landing from a jump starts the wait again, so jumps cannot be chained without a pause.
-    let mut body = step_body(&settled, &jumping, &[], TICK_SECONDS);
+    let mut body = step_body(&settled, &jumping, &[], &Flat, TICK_SECONDS);
     while body.mode == Mode::Air {
-        body = step_body(&body, &STILL, &[], TICK_SECONDS);
+        body = step_body(&body, &STILL, &[], &Flat, TICK_SECONDS);
     }
-    assert_eq!(step_body(&body, &jumping, &[], TICK_SECONDS).mode, Mode::Ground);
+    assert_eq!(step_body(&body, &jumping, &[], &Flat, TICK_SECONDS).mode, Mode::Ground);
 }
 
 #[test]
@@ -205,12 +206,12 @@ fn on_a_wall_a_jump_kicks_off_away_from_it_but_from_a_lip_it_does_nothing() {
     let tower = block(-5.0, -4.0, 5.0, -1.0, 4.0);
     let jumping = holding(|controls| controls.jump = true);
     let climbing = run(standing(0.0, 0.0), holding(FORWARD), 0.5, &[tower], None);
-    let kicked = step_body(&climbing, &jumping, &[tower], TICK_SECONDS);
+    let kicked = step_body(&climbing, &jumping, &[tower], &Flat, TICK_SECONDS);
     assert_eq!(kicked.mode, Mode::Air);
     assert!(kicked.vy > 0.0, "it kicks off south, away from the wall, not at {}", kicked.vy);
     let ledge = Block { top: 2.3, ..tower };
     let hanging = hanging_from(ledge);
-    assert_eq!(step_body(&hanging, &jumping, &[ledge], TICK_SECONDS).mode, Mode::Hang);
+    assert_eq!(step_body(&hanging, &jumping, &[ledge], &Flat, TICK_SECONDS).mode, Mode::Hang);
 }
 
 #[test]
@@ -241,7 +242,7 @@ fn walking_into_a_corner_the_body_stops_at_its_face() {
         controls.forward = 1.0;
         controls.yaw = FRAC_PI_4;
     });
-    let stepped = step_body(&standing(0.1, -0.62), &northeast, &[wall], TICK_SECONDS);
+    let stepped = step_body(&standing(0.1, -0.62), &northeast, &[wall], &Flat, TICK_SECONDS);
     assert!(stepped.x > 0.1, "it moves east along the face");
     close(stepped.y, -0.62, 1e-12);
 }

@@ -103,7 +103,7 @@ fn the_guard_faces_the_lock_only_while_the_look_is_toward_it() {
     };
     let east = Some([3.0, 0.0, 1.1]);
     let step = |fighter: &combat::Fighter, yaw: f64| {
-        step_fighter(fighter, &guard(yaw), &Surroundings { blocks: &[], target_at: east }).0
+        step_fighter(fighter, &guard(yaw), &Surroundings { blocks: &[], terrain: &movement::Flat, target_at: east }).0
     };
     // Looking north-east, within the lock's arc of the foe due east: the guard turns to it.
     let toward = (0..10).fold(player_at(0.0, 0.0), |fighter, _| step(&fighter, PI / 4.0));

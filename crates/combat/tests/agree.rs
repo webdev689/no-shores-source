@@ -51,7 +51,7 @@ pub fn run_script() -> Vec<Fighter> {
                 pitch: 0.1,
                 telegraph: None,
             };
-            player = player_tick(1, &player, &Intent { controls, combat }, &view, &COURSE).0;
+            player = player_tick(1, &player, &Intent { controls, combat }, &view, &COURSE, &movement::Flat).0;
             fighters.push(player);
         }
     }
