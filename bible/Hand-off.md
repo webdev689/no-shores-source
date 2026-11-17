@@ -103,14 +103,14 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
-  writes the stored token over the upload token Cloudflare hands back, so they deploy from the `rooms` workflow, run by
-  hand on `main` with the owner's yes.
+  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
+  `main` ([[The Rooms Deploy on Each Merge]]); the `rooms` workflow can still be run by hand.
+- Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
+  does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
+  owner's to say.
 - #50's open choices: where another player's colour goes on the Sloop, her 75 m drawn size at sea.
-- #48, #50 and #51 are merged. The intent carries the aim and its events the stroke, so the page and the rooms deploy
-  together, with the owner's yes. Walking or sprinting that does not happen on demand was not reproduced playing
-  alone; when it happens is the owner's to say.
-- Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
-  the token. The deployed rooms keep the speed hack and the two socket faults until that deploy, and have no pirates.
+- #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
+  playing alone; when it happens is the owner's to say.
 - Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
   unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
   renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
@@ -125,16 +125,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   Manage, the view over her deck with her panel and stand-in hands; and Leave the helm, the player walking her deck
   ([[Sailing]], "Her deck") with the sea room the authority on every step ([[Server]], "The sea"). Waiting on the
   owner: the keys (B, H, E), the stand-ins' number and dress, Manage's view, and what a walker who goes overboard
-  should meet, since the deck keeps them aboard for now.
-- A whole-repo audit's findings are all fixed, with the owner's yes: the smaller with #51, then the five larger (a
-  flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's wrap on
-  foot, and the session kit's unpinned downloads). The rooms take them when next deployed.
+  should meet, since the deck keeps them aboard for now. It changes the sea room's wire, so its merge sends the page
+  and the rooms out together.
+- A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
+  larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
+  wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare
+  runtime; a cloud session's proxy cannot open a WebSocket, so none was tested live in a deployed room.
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
   [[Naval Combat]] are on `main`, with the sea's pirates and fights, and ramming and the fleet room. The rest of
   the pick's step 3 is boarding, crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's
   hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
   crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
-  which boarding needs, is for the `movement` crate.
+  which boarding needs, is the `movement` crate's grid of heights, walked on the player's own Sloop.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
