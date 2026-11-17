@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { voyageOf } from '../overworld/voyage.ts';
-import { SLOOP_DECK } from '../ships/deck.ts';
+import { cellHeight, SLOOP_DECK } from '../ships/deck.ts';
 import {
   continentToOpen,
   courseAhead,
@@ -14,6 +14,7 @@ import {
   namesShown,
   OFFSHORE,
   offshore,
+  STANDING_EYE_M,
   timeText,
 } from './seaLaw.ts';
 
@@ -112,6 +113,7 @@ test('at the helm the eye stands behind the wheel of the Sloop as she is drawn, 
   assert.ok(Math.abs(x - (1000 - aft)) < 1e-9, 'aft of her middle at her helm spot, against her heading east');
   assert.ok(Math.abs(y - 2000) < 1e-9);
   assert.equal(z, HELM.eyeM + 0.25);
+  assert.equal(HELM.eyeM, (cellHeight(SLOOP_DECK, ...SLOOP_DECK.helm) ?? NaN) + STANDING_EYE_M, 'a standing eye');
   const [drawnX, , drawnZ] = helmEye(ship, 12, 0);
   assert.ok(Math.abs(drawnX - (1000 - aft * 12)) < 1e-9, 'on the larger Sloop, its helm further aft');
   assert.equal(drawnZ, HELM.eyeM * 12);

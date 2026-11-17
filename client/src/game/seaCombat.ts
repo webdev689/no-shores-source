@@ -20,7 +20,7 @@ import type { SeaRoom } from './seaRoom.ts';
 const PAN_S = 1.5;
 /** The fight's camera: the World Editor's while sailing, its distance behind her and pitch below the horizon, looking
  *  at a point this far over her waterline. */
-const ORBIT = { distance: 25, pitch: 0.3, lookOverM: 2 } as const;
+const ORBIT = { distance: 75, pitch: 0.3, lookOverM: 6 } as const;
 /** How fast a drag turns the camera, radians a pixel, and how far up and down it may look. */
 const DRAG_TURN = 0.005;
 const PITCH = [0.05, 1.2] as const;

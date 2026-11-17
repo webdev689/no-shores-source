@@ -86,7 +86,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 - **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures, riding a little on the swell, her sails
   set while she is under way and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is
-  not to scale: a ship is drawn 75 m long (twelve times the Sloop), so one reads from the raised view. Every other
+  not to scale: a ship is drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other
   player's ship is the Sloop too. At the helm every ship is her true size ([[Held Map]]).
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
@@ -100,8 +100,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   voyage once stopped short (both Space); the pace dial; and Manage (B) and Leave the helm (H)
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too.
-- **Manage** pans the view down over 1.4 s to the Sloop at her true size, from her starboard quarter 13 m off,
-  looking 0.5 radians down at her middle; a drag turns it round her, the wheel brings it from 6 m to 26 m. The player
+- **Manage** pans the view down over 1.4 s to the Sloop at her true size, from her starboard quarter 39 m off,
+  looking 0.5 radians down at her middle; a drag turns it round her, the wheel brings it from 18 m to 78 m. The player
   stands at her wheel, three stand-in hands go about her deck, and a panel of the [[Interface]] shows her: her hull
   and canvas whole (the naval rules' build, read through the room's own module), her guns a side and their loads,
   her length, beam and draught; her heading, pace and voyage; and Cargo and Crew, marked Later. B, or the panel's

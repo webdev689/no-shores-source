@@ -65,6 +65,7 @@ decision, made in the same change as its entry here.
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
 | `tools/r2.py` | R2 access for the publishers: objects named by their hash, uploaded once and checked when fetched |
+| `tools/ships/shape_ship.py` | Shapes the owner's Sloop before she is painted: her size, and the gap and steps down from her quarterdeck ([[Sailing]]) |
 | `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh, with her guns and the boxes a ball can strike, and publishes both to R2 ([[Sailing]], [[Naval Combat]]) |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |

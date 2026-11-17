@@ -108,7 +108,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
   does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
   owner's to say.
-- #50's open choices: where another player's colour goes on the Sloop, her 75 m drawn size at sea.
+- #50's open choice: where another player's colour goes on the Sloop. Her drawn size at sea, 75 m, is settled
+  ([[The Sloop Is About 18 m Long]]).
 - #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
   playing alone; when it happens is the owner's to say.
 - Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
@@ -123,10 +124,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]), all three parts in review in
   one pull request: the [[Interface]]'s Enhanced Plus kit and the sea bar in it; the Sloop at true scale at the helm;
   Manage, the view over her deck with her panel and stand-in hands; and Leave the helm, the player walking her deck
-  ([[Sailing]], "Her deck") with the sea room the authority on every step ([[Server]], "The sea"). Waiting on the
-  owner: the keys (B, H, E), the stand-ins' number and dress, Manage's view, and what a walker who goes overboard
-  should meet, since the deck keeps them aboard for now. It changes the sea room's wire, so its merge sends the page
-  and the rooms out together.
+  ([[Sailing]], "Her deck") with the sea room the authority on every step ([[Server]], "The sea"). The same pull
+  request makes the Sloop about 18 m long, her quarterdeck opened with steps down ([[The Sloop Is About 18 m Long]]);
+  her model on R2 is the one the `ships` workflow shaped and published. Waiting on the owner: the keys (B, H, E), the
+  stand-ins' number and dress, Manage's view, and what a walker who goes overboard should meet, since the deck keeps
+  them aboard for now. It changes the sea room's wire, so its merge sends the page and the rooms out together.
 - A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
   larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
   wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare

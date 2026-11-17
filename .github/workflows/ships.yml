@@ -2,7 +2,8 @@ name: ships
 
 # Paints the Sloop's model with the game's pictures and publishes it and her mesh to R2 with the repository's
 # Cloudflare token, whenever the ship tools change. R2's objects are named by their hashes, so a run changes nothing
-# already published; the log ends with her manifest entry, which a commit then takes into content/ships/ships.json.
+# already published; the log ends with her manifest entry on one line, her deck left out, which a commit then takes
+# into content/ships/ships.json, and `tools/ships/deck.py sloop` measures her deck from her published mesh.
 on:
   push:
     paths: [tools/ships/**, .github/workflows/ships.yml]
@@ -47,4 +48,4 @@ jobs:
           python -I tools/ships/paint_ship.py -- "$RUNNER_TEMP/shaped.blend" "$RUNNER_TEMP/Sloop.blend" \
             --pictures "$RUNNER_TEMP/pictures.bin"
           python -I tools/ships/export_ship.py "$RUNNER_TEMP/Sloop.blend" sloop --waterline 1.2
-          node -p "JSON.stringify(require('./content/ships/ships.json').ships.sloop, null, 2)"
+          node -p "const { deck, ...entry } = require('./content/ships/ships.json').ships.sloop; JSON.stringify(entry)"

@@ -54,7 +54,7 @@ test("the walk on deck the page predicts is the sea room's, to the bit, step by 
   }
 });
 
-test('the helm is taken again only at her wheel, and then the room has no one on deck', () => {
+test('a player off the helm walks down her steps to her deck, and takes the helm again only at her wheel', () => {
   const { room, last } = atSea();
   room.send(helmBytes(true));
   let sequence = 1;
@@ -66,14 +66,17 @@ test('the helm is taken again only at her wheel, and then the room has no one on
     }
   };
   const onDeck = () => last()?.players.find((player) => player.player === room.player);
-  // To port, then forward along her port side, past her wheel, which stands just forward of the helm's spot.
+  const [, helmY] = SLOOP_DECK.helm;
+  // To port, then forward off her quarterdeck through the gap at its corner and down her steps to her deck.
   walk(20, -Math.PI / 2);
-  walk(30, 0);
-  assert.ok((onDeck()?.body.y ?? 9) < 1.5, `well forward of her wheel: ${onDeck()?.body.y}`);
+  walk(60, 0);
+  const below = onDeck()?.body;
+  assert.ok(below && helmY - below.y > 4 && below.z < 1.85, `down on her deck: ${JSON.stringify(below)}`);
   room.send(helmBytes(false));
   room.pump(rules.tickSeconds);
   assert.ok(onDeck(), 'away from her wheel, still on deck');
-  walk(30, Math.PI);
+  // Back up her steps, and across to the spot behind her wheel.
+  walk(60, Math.PI);
   walk(20, Math.PI / 2);
   room.send(helmBytes(false));
   room.pump(rules.tickSeconds);

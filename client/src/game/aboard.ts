@@ -20,9 +20,9 @@ import { IDLE } from './foot.ts';
 const PAN_S = 1.4;
 /** Manage's view over her deck: how far from her middle, metres, how far down it looks, and where from, radians off
  *  her heading (her starboard quarter, looking forward); and how near and far the wheel takes it. */
-const MANAGE = { distanceM: 13, pitch: 0.5, turn: -0.6, nearestM: 6, farthestM: 26 } as const;
-/** Her middle, which Manage looks at: on her centre line a little aft, a metre over her waterline. */
-const MIDDLE = [0, 0.4, 1] as const;
+const MANAGE = { distanceM: 39, pitch: 0.5, turn: -0.6, nearestM: 18, farthestM: 78 } as const;
+/** Her middle, which Manage looks at: on her centre line a little aft, a metre over her deck. */
+const MIDDLE = [0, 1.2, 3] as const;
 /** Figures are drawn once the view is this far down, where she is near enough her true size. */
 const FIGURES_FROM = 0.97;
 /** How near the spot behind her wheel the player stands to take the helm, metres: the sea room's own reach

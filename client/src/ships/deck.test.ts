@@ -5,9 +5,34 @@ import { cellHeight, deckCells, deckFloats, deckOf, deckToWorld, SLOOP_DECK, wor
 test("the Sloop's deck reads from the manifest, and behind her wheel is deck", () => {
   const [x, y] = SLOOP_DECK.helm;
   const height = cellHeight(SLOOP_DECK, x, y);
-  assert.ok(height !== null && height > 0.5 && height < 1.2, `her planks over her waterline: ${height}`);
+  assert.ok(height !== null && height > 1.5 && height < 3.6, `her planks over her waterline: ${height}`);
   assert.equal(cellHeight(SLOOP_DECK, 5, 0), null, 'off her side is no deck');
   assert.ok(deckCells(SLOOP_DECK).length > 500, 'room to walk');
+});
+
+test('from the spot behind her wheel a walker reaches all her deck, down from her quarterdeck', () => {
+  const { columns, rows, heights } = SLOOP_DECK;
+  const [x, y] = SLOOP_DECK.helm;
+  const start =
+    Math.floor((y - SLOOP_DECK.north) / SLOOP_DECK.cell) * columns +
+    Math.floor((x - SLOOP_DECK.west) / SLOOP_DECK.cell);
+  const reached = new Set([start]);
+  for (const cell of reached) {
+    const [row, column] = [Math.floor(cell / columns), cell % columns];
+    const near = [
+      row > 0 && cell - columns,
+      row < rows - 1 && cell + columns,
+      column > 0 && cell - 1,
+      column < columns - 1 && cell + 1,
+    ];
+    for (const next of near) if (next !== false && (heights[next] ?? null) !== null) reached.add(next);
+  }
+  const standing = heights.filter((height) => height !== null).length;
+  assert.ok(reached.size > 0.97 * standing, `${reached.size} of ${standing} cells`);
+  assert.ok(
+    [...reached].some((cell) => (heights[cell] ?? 9) < 1.85),
+    'her main deck among them',
+  );
 });
 
 test('a deck crosses to the movement crate as its shape and then its heights, none as NaN', () => {

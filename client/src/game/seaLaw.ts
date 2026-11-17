@@ -1,7 +1,7 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
 import type { Voyage } from '../overworld/voyage.ts';
-import { deckToWorld, SLOOP_DECK } from '../ships/deck.ts';
+import { cellHeight, deckToWorld, SLOOP_DECK } from '../ships/deck.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
  *  shore to water `depthM` deep, then `clearM` on, within `farthestM` of the harbour. */
@@ -26,9 +26,15 @@ export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Poi
   return through;
 }
 
+/** A standing body's eye over its feet, metres (crates/movement/src/body.rs `TUNING.eye`). */
+export const STANDING_EYE_M = 1.7;
+
 /** The helm's view, behind the Sloop's wheel on her quarterdeck (her deck's helm spot): how high over the water the
- *  eye stands there at her true scale, and how far down it looks. */
-export const HELM = { eyeM: 2.5, pitch: 0.1 } as const;
+ *  eye stands there at her true scale, a standing eye over her deck, and how far down it looks. */
+export const HELM = {
+  eyeM: (cellHeight(SLOOP_DECK, ...SLOOP_DECK.helm) ?? 0) + STANDING_EYE_M,
+  pitch: 0.1,
+} as const;
 
 /** The scale ships are drawn at: the Overworld's, shrinking to true scale as the view comes down to the helm
  *  (`helmShare` 0 the sea's view, 1 at the helm), so at the wheel the Sloop and every ship round her are their own

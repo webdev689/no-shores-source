@@ -92,7 +92,7 @@ fn a_voyage_steps_to_its_pinned_fingerprint() {
     }
     assert_eq!(ship[7], 1.0, "she ends on her oars");
     assert!(ship[1] < 360_000.0 - 10.0, "she sailed north: {ship:?}");
-    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "11236b8f0201ff37");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "94b2fdc71ffa3fa3");
 }
 
 #[test]
@@ -212,5 +212,5 @@ fn a_voyage_onto_the_shore_and_off_it_steps_to_its_pinned_fingerprint() {
     }
     assert!(touched, "she took the ground: furthest east {furthest}");
     assert!(ship[0] < furthest - 5.0, "her oars took her off: {} from {furthest}", ship[0]);
-    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "122ff88449682473");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "47228ab3b66e850c");
 }

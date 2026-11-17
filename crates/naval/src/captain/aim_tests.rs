@@ -114,9 +114,10 @@ fn a_lay_passes_where_its_middle_gun_comes_abreast_of_the_mark_within_her_height
         crate::guns::Shot::Round,
         [60.0, 0.0, SLOOP_ARMS.hull[1][2] * AIM_FREEBOARD],
     );
-    assert!(lay_passes(&lay, [0.0; 3], [60.0, 0.0], [0.0, 1.1]));
-    assert!(!lay_passes(&lay, [0.0; 3], [60.0, 0.0], [3.0, 4.0]));
-    assert!(!lay_passes(&lay, [0.0; 3], [-60.0, 0.0], [0.0, 1.1]), "behind her guns");
+    let top = SLOOP_ARMS.hull[1][2];
+    assert!(lay_passes(&lay, [0.0; 3], [60.0, 0.0], [0.0, top]));
+    assert!(!lay_passes(&lay, [0.0; 3], [60.0, 0.0], [top + 2.0, top + 3.0]));
+    assert!(!lay_passes(&lay, [0.0; 3], [-60.0, 0.0], [0.0, top]), "behind her guns");
 }
 
 #[test]

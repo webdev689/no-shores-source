@@ -338,7 +338,7 @@ export async function startLandEditor(
       const sail = () => {
         status = '';
         sailing = true;
-        orbit = { ...orbit, distance: 25, pitch: 0.3 };
+        orbit = { ...orbit, distance: 75, pitch: 0.3 };
         requestFrame();
       };
       status = 'Joining the fleet…';
@@ -346,7 +346,7 @@ export async function startLandEditor(
       return;
     }
     sailing = !sailing;
-    orbit = sailing ? { ...orbit, distance: 25, pitch: 0.3 } : { ...orbit, distance: 600, pitch: 0.5 };
+    orbit = sailing ? { ...orbit, distance: 75, pitch: 0.3 } : { ...orbit, distance: 600, pitch: 0.5 };
     requestFrame();
   }
 

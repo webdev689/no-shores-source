@@ -85,7 +85,7 @@ mod tests {
         let [x, y] = deck.helm;
         assert!(deck.heights.stands_at(x, y), "behind her wheel is deck");
         let height = deck.heights.height_at(x, y);
-        assert!(height > 0.5 && height < 1.2, "her planks stand over her waterline: {height}");
+        assert!(height > 1.5 && height < 3.6, "her planks stand over her waterline: {height}");
         assert!(!deck.heights.stands_at(5.0, 0.0), "off her side is no deck");
     }
 
