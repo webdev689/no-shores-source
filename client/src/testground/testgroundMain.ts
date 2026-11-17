@@ -340,7 +340,6 @@ async function start(): Promise<void> {
       yaw: player.yaw,
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
-      aim: player.aim,
     });
     const swing = firstPerson.swing;
     // A swing begins where there was none, or where the last one ended and the next began within the frame.
@@ -370,8 +369,8 @@ async function start(): Promise<void> {
         },
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
-        // A bow's draw plays with the first person's.
-        fight: ownFight?.kind === 'draw' ? null : ownFight,
+        // A bow's draw plays with the first person's, and a shot's frames over a gun's aim pose.
+        fight: ownFight?.kind === 'draw' && (outfit.right?.startsWith('bow') || swing) ? null : ownFight,
       },
       (anim) => forge.frames(youDress.body, anim),
       (anim, held) => forge.draws(youDress.body, anim, held),

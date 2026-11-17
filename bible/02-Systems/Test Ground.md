@@ -47,8 +47,9 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 
 Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than
 0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second and stops
-short of a wall. Aiming a ranged weapon, it eases over the right shoulder, 0.55 m out, 1.3 m back and 0.1 m up from
-the head, and zooms in 1.4 times; in first person the view zooms in 1.6 times ([[Ranged Weapons Aim and Fire]]).
+short of a wall. Aiming a ranged weapon, it eases behind the right shoulder, 0.65 m out, 1.8 m back and 0.25 m up from
+the head, and zooms in 1.15 times; in first person the view zooms in 1.6 times and the hands keep still
+([[Aiming Sits Behind the Shoulder and Zooms the View]]).
 
 North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
 and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
@@ -68,7 +69,7 @@ room's word for it, so playing alone and online are the same game.
   when knocked down; hurt while staggered or flinching; the jump's rising, top and falling frames through a dodge's
   hop (the run where the forge does not draw what it holds in the jump, a shield); the parry's deflect, or a shield's
   block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
-  wind-up and held at its end when it overreaches. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
+  wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame, before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
   drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
   edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins

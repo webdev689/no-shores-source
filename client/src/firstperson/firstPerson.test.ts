@@ -58,21 +58,15 @@ const standing: FirstPersonState = {
 const wholeFrames = (path: string) =>
   /WEAPON\d\d\.CIF_\d+-\d+(_[A-Za-z]+)?\.png$/.test(path) || path.startsWith('@art');
 
-test('aiming slides a lone gun from its corner until its muzzle at rest lies just right of and below the crosshair', async () => {
+test('a lone gun stays by its corner however it is aimed, so its muzzle, where a tracer starts, is where it is drawn', async () => {
   const { frame, person } = firstPerson(() => true);
   const pistolet = { ...standing, right: 'pistolet' };
   await frame(0.016, pistolet);
   const [ownX = 0, ownY = 0] = person.muzzle ?? [];
-  assert.ok(ownX > 300 && ownY > 200, `at rest it sits by the corner: ${ownX}, ${ownY}`);
-  await frame(0.016, { ...pistolet, aim: 1 });
-  // The muzzle reported is the firing frame's, kicked 10 right and 11 up of the resting one laid at (165, 107).
-  assert.deepEqual(person.muzzle, [175, 96]);
-  await frame(0.016, { ...pistolet, aim: 0.5 });
-  const [halfX = 0] = person.muzzle ?? [];
-  assert.ok(Math.abs(halfX - (ownX + 175) / 2) < 1e-9, 'halfway raised, halfway there');
+  assert.ok(ownX > 300 && ownY > 200, `it sits by the corner: ${ownX}, ${ownY}`);
   // Read between this frame's step and its draw, as a shot let go this frame reads it: where it will be drawn.
-  person.update(0.016, still, { ...pistolet, aim: 1 });
-  assert.deepEqual(person.muzzle, [175, 96]);
+  person.update(0.016, still, pistolet);
+  assert.deepEqual(person.muzzle, [ownX, ownY]);
   person.update(0.016, still, { ...pistolet, drawn: false });
   assert.equal(person.muzzle, null, 'put away, none');
 });

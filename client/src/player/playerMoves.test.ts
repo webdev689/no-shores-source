@@ -159,3 +159,12 @@ test('running with a gun or a crossbow drawn plays its own run; put away, the pl
   assert.equal(shownMove({ ...running, right: 'crossbow_iron', drawn: false }, frames, everything).anim, 'run');
   assert.ok(likelyMoves('crossbow_iron', null, everything).includes('xbowrun'));
 });
+
+test('a gun aimed holds its shot at the frame it is aimed, before it fires; a bow is drawn through its draw', () => {
+  const aimed = (right: string, left: string | null = null) =>
+    shownMove({ ...doing, right, left, fight: { kind: 'draw', progress: 0.5 } }, frames, everything);
+  assert.deepEqual(aimed('thunderlock_iron'), { anim: 'gunshot', frame: 1, frameSeconds: 0 });
+  assert.deepEqual(aimed('pistolet_iron'), { anim: 'pistolshot', frame: 1, frameSeconds: 0 });
+  assert.deepEqual(aimed('pistolet_iron', 'pistolet_iron_l'), { anim: 'braceshot', frame: 0, frameSeconds: 0 });
+  assert.equal(aimed('bow_long_elven').anim, 'bow');
+});
