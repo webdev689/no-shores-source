@@ -18,7 +18,7 @@ code:
 # Blood
 
 Blood that a blow leaves where it lands and that stays: DFO's blood marks, brought over exactly as DFO has them, its
-numbers, orderings and colours unchanged ([[Pick - Blood]]). It is drawn in the [[Test Ground]]'s fight.
+numbers, orderings and colours unchanged ([[Struck Figures Flash, and DFO's Blood Comes Over]], [[Pick - Blood]]). It is drawn in the [[Test Ground]]'s fight.
 
 ## How it works
 

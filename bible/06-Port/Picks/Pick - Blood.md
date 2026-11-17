@@ -19,7 +19,7 @@ dfo_commit: 1c0fd681
 DFO's blood marks: the sprays a blow leaves on floors and walls, the drops flying to them, wounded bodies' trails,
 corpses' pools, bloody prints, an explosive death's chunks, and every mark drying. The owner chose "Exactly as DFO
 has it": its numbers, orderings and colours come over unchanged, though they were read off DaggerBlood and its red is
-taken from Daggerfall's blood texture.
+taken from Daggerfall's blood texture ([[Struck Figures Flash, and DFO's Blood Comes Over]]).
 
 ## What comes over
 
