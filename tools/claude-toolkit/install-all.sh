@@ -13,9 +13,16 @@ export no_proxy="${no_proxy:+$no_proxy,}localhost,127.0.0.1" NO_PROXY="${NO_PROX
 set -x
 # The cloud Setup script runs with a bare PATH: make claude, node and ~/.local/bin tools (uv, serena, rtk) findable
 export PATH="$HOME/.local/bin:/opt/claude-code/bin:/opt/node22/bin:$PATH"
+# Every tool below is pinned (a commit's full hash, a version, or an archive's SHA-256): this script runs in every session
+# that holds the owner's keys, so what it runs is what was read when it was pinned. Bump a pin on purpose, after reading
+# what changed.
+clone_at() { git init -q "$3" && git -C "$3" fetch -q --depth 1 "$1" "$2" && git -C "$3" checkout -q FETCH_HEAD; }   # url, commit, dir
 command -v claude >/dev/null || npm install -g -q @anthropic-ai/claude-code
 claude plugin install superpowers@anthropic-plugin-directory
-claude plugin marketplace add DietrichGebert/ponytail
+ponytail_at='DietrichGebert/ponytail#96608e078b2d5ea607c5c3b8b5a54d1c1fba6846'
+# A container that added it unpinned must drop that entry first: the CLI refuses a second source under one name.
+claude plugin marketplace add "$ponytail_at" 2>/dev/null ||
+  { claude plugin marketplace remove ponytail >/dev/null 2>&1; claude plugin marketplace add "$ponytail_at"; }
 claude plugin install ponytail@ponytail
 # claude-code-setup (Anthropic, official directory): one read-only skill, claude-automation-recommender, that scans a
 # repo and recommends hooks, skills, MCP servers and subagents. No hooks, MCP servers or settings of its own.
@@ -23,7 +30,7 @@ claude plugin install claude-code-setup@anthropic-plugin-directory
 # claude-mem keeps its store in ~/.claude-mem, which dies with the container: restore the project's saved copy first
 # (a session saves it at the end with claude-mem-save.sh).
 [ -f "$SHARED_DIR/claude-mem/claude-mem.tgz" ] && [ ! -f ~/.claude-mem/claude-mem.db ] && tar xzf "$SHARED_DIR/claude-mem/claude-mem.tgz" -C ~
-npx -y claude-mem install --provider claude </dev/null   # without a provider an agent shell only saves setup for later
+npx -y claude-mem@15.19.0 install --provider claude </dev/null   # without a provider an agent shell only saves setup for later
 # claude-mem's file-read gate denies a full-file Read of any file it has notes on and points to its own smart_outline:
 # that clashes with exact reads and with Serena for symbols. Off; its search/memory stay on.
 python3 -c "
@@ -34,19 +41,19 @@ s['CLAUDE_MEM_FILE_READ_GATE_ENABLED'] = 'false'; json.dump(s, open(p, 'w'), ind
 "
 # impeccable: `npx impeccable install` downloads from impeccable.style, which this workspace's network blocks.
 # Install its skill from GitHub instead; its engine comes from the npm registry on first use.
-tmp=$(mktemp -d) && git clone -q --depth 1 https://github.com/pbakaus/impeccable "$tmp/impeccable" \
+tmp=$(mktemp -d) && clone_at https://github.com/pbakaus/impeccable d41d9860b0094dcb68030657da63461212835aaa "$tmp/impeccable" \
   && mkdir -p ~/.claude/skills && rm -rf ~/.claude/skills/impeccable \
   && cp -r "$tmp/impeccable/.claude/skills/impeccable" ~/.claude/skills/ && rm -rf "$tmp"
 sh ~/.claude/skills/impeccable/scripts/impeccable telemetry off >/dev/null 2>&1 || true   # no usage beacon
 # headroom-ai needs a newer PyYAML than Debian's, which pip cannot uninstall
-pip install --break-system-packages -q --ignore-installed PyYAML
-pip install --break-system-packages -q "headroom-ai[mcp,proxy]" &&   # [mcp] pins mcp<2; mcp 2.x breaks headroom mcp serve
+pip install --break-system-packages -q --ignore-installed PyYAML==6.0.3
+pip install --break-system-packages -q "headroom-ai[mcp,proxy]==0.44.0" &&   # [mcp] pins mcp<2; mcp 2.x breaks headroom mcp serve
  headroom mcp install --agent claude
 # headroom_compress only shrinks output when Headroom's local proxy runs (else it stores the text uncompressed, "router:noop").
 # 127.0.0.1 only, upload beacon off. JSON/structured output compresses; plain-text compression needs huggingface.co (blocked).
 curl -s --noproxy '*' --max-time 2 http://127.0.0.1:8787/health >/dev/null || \
   (HEADROOM_BEACON=off nohup headroom proxy --host 127.0.0.1 --port 8787 --no-subscription-tracking >/tmp/headroom-proxy.log 2>&1 &)
-pip install --break-system-packages -q graphifyy && graphify install --platform claude
+pip install --break-system-packages -q graphifyy==0.9.111 && graphify install --platform claude
 # user scope: without --scope it landed in local scope for the cwd only, invisible to threads in the local clone and workers
 python3 -c "
 import json, os
@@ -63,7 +70,10 @@ else
   echo "skillsmp: no SKILLSMP_API_KEY set; registered without auth (it will answer 401)"
   claude mcp add --scope user --transport http skillsmp https://skillsmp.com/mcp
 fi
-git config --global --add safe.directory '*'      # the shared folder's repo is owned by another user id
+# The shared folder's repo is owned by another user id: that one repo is trusted, never every one on the machine.
+if [ -n "${REPO_DIR:-}" ] && ! git config --global --get-all safe.directory | grep -qxF "$REPO_DIR"; then
+  git config --global --add safe.directory "$REPO_DIR"
+fi
 # Left over from older setups: the markitdown MCP server (it needed mcp 2.x in its own env, and timed out at
 # session start; the CLI below is what the rules use), the full caveman plugin (made the main session terse) and its marketplace.
 claude mcp remove -s user markitdown >/dev/null 2>&1 || true
@@ -72,7 +82,7 @@ claude plugin uninstall caveman@caveman >/dev/null 2>&1 || true; claude plugin m
 # --- Serena, Caveman, rtk, MarkItDown ---
 # Serena: symbol-level code navigation/editing over language servers (find_symbol, find_referencing_symbols,
 # replace_symbol_body). MCP server, loads next session. Pinned to the local clone of the shared repo when there is one, else the session cwd.
-uv tool install -q git+https://github.com/oraios/serena
+uv tool install -q git+https://github.com/oraios/serena@0cef825f802d5323f8cb4bda3a5af52bf704770f
 # Work happens in a local clone (REPO_DIR, default ~/<repo name>); Serena and graphify are pinned there.
 # Set REPO_URL to have it cloned here; with neither set, Serena follows the folder the session starts in.
 serena_proj=${REPO_DIR:-}
@@ -108,7 +118,7 @@ claude mcp remove -s user serena >/dev/null 2>&1 || true
 claude mcp add --scope user serena -- serena start-mcp-server --context=claude-code $serena_where --open-web-dashboard false --agent-interface tools
 # Caveman (JuliusBrussee/caveman): terse voice for SUB-AGENTS only, via our own SubagentStart hook.
 # The main session stays in normal prose (the owner reads it), so the full caveman plugin (which turns the main session terse) is not installed.
-tmp=$(mktemp -d) && git clone -q --depth 1 https://github.com/JuliusBrussee/caveman "$tmp/caveman" \
+tmp=$(mktemp -d) && clone_at https://github.com/JuliusBrussee/caveman 9b243662ff98d392bc0a95b865a554583d71be75 "$tmp/caveman" \
   && mkdir -p ~/.claude/caveman ~/.claude/hooks && cp "$tmp/caveman/skills/caveman/SKILL.md" ~/.claude/caveman/ && rm -rf "$tmp"
 cat > ~/.claude/hooks/caveman-subagent.py <<'EOF'
 import json, os, re, sys
@@ -121,10 +131,17 @@ note = ('\n\nScope: you are a sub-agent. Your report goes to the main Claude, ne
 print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SubagentStart', 'additionalContext': 'CAVEMAN MODE ACTIVE (sub-agent only)\n\n' + body + note}}))
 EOF
 # rtk (rtk-ai/rtk, Apache-2.0 edition): PreToolUse hook that compacts noisy Bash output (git status/log, ls, find).
-# GitHub's /releases/latest page is blocked here, so pin the newest tag. Code reads, greps and diffs stay exact (config below);
-# test and build commands (test runners, build scripts) are never rewritten.
-rtk_v=$(git ls-remote --tags --refs https://github.com/rtk-ai/rtk 'v*' | awk -F/ '{print $3}' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
-curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | RTK_VERSION=$rtk_v RTK_EDITION=oss sh \
+# Code reads, greps and diffs stay exact (config below); test and build commands are never rewritten. Its v1.2.0 archive
+# is checked here against the hash its release listed when pinned, not against a list the same release could replace.
+case "$(uname -m)" in
+  x86_64) rtk_target=x86_64; rtk_sum=a28407dc13038bdc9c2a1f5a047b0c636e0c1d495b15523576e2adb992a06a17 ;;
+  aarch64) rtk_target=aarch64; rtk_sum=9786c61dbbea704e1468ee7060930d3b45b67f79ba2babfb73463e85340628d9 ;;
+  *) rtk_target=unknown; rtk_sum=none ;;
+esac
+tmp=$(mktemp -d) && curl -fsSL -o "$tmp/rtk.tgz" \
+  "https://github.com/rtk-ai/rtk/releases/download/v1.2.0/rtk-oss-$rtk_target-unknown-linux-musl.tar.gz" \
+  && echo "$rtk_sum  $tmp/rtk.tgz" | sha256sum -c --quiet - && tar -xzf "$tmp/rtk.tgz" -C "$tmp" rtk \
+  && mkdir -p ~/.local/bin && install -m 755 "$tmp/rtk" ~/.local/bin/rtk && rm -rf "$tmp" \
   && rtk init -g --auto-patch
 mkdir -p ~/.config/rtk && cat > ~/.config/rtk/config.toml <<'EOF'
 # Code reads, searches and diffs pass through untouched; only status/log/ls noise is compacted.
@@ -178,11 +195,11 @@ for k, v in (('MCP_TIMEOUT', '120000'), ('RTK_SUPPRESS_HOOK_WARNING', '1')):
     s.setdefault('env', {}).setdefault(k, v)
 json.dump(s, open(p, 'w'), indent=2)
 EOF
-# task-observer (rebelytics, pinned 56e8907): logs task friction and tool clashes to
+# task-observer (rebelytics, pinned 56e89071): logs task friction and tool clashes to
 # $SHARED_DIR/task-observer for review. Workers get TASK_OBSERVER_ROLE=worker from run-worker.sh.
 bash "$KIT_DIR/task-observer/install.sh"
 # MarkItDown: turn uploaded PDF/Word/Excel/PowerPoint files into Markdown: `markitdown file.xlsx > file.md`
-pip install --break-system-packages -q "markitdown[pdf,docx,xlsx,pptx]"
+pip install --break-system-packages -q "markitdown[pdf,docx,xlsx,pptx]==0.1.7"
 # Context7 (Upstash): current docs for libraries/tools (Playwright, npm packages). Needs mcp.context7.com allowed in the
 # cloud environment's network settings; skipped quietly until then.
 if [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 https://mcp.context7.com/mcp)" != "000" ]; then

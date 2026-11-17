@@ -10,6 +10,10 @@ import type { FightEvent, FightOrders, FightView } from '../rules/fightRules.ts'
 /** A room link that may be closed: a server's socket is; the room in the page has nothing to close. */
 type Closable = RoomLink & { close?(): void };
 
+/** The ticks between the courses the page sends: the sea takes one each half second (crates/room/src/sea.rs,
+ *  `COURSE_EVERY_TICKS`), and a quarter second more keeps the network's jitter from bringing two closer than that. */
+const COURSE_EVERY_TICKS = 45;
+
 export class SeaRoom {
   readonly own: number;
   private readonly link: Closable;
@@ -19,6 +23,11 @@ export class SeaRoom {
   /** The player's own fight as the room last showed it, and its events since they were last taken. */
   private fight: FightView | null = null;
   private events: FightEvent[] = [];
+  /** The room's tick by its last snapshot (none before the first), the tick the last course was sent at, and a course
+   *  waiting to be sent. */
+  private tick: number | null = null;
+  private courseSentAt: number | null = null;
+  private waitingCourse: ReturnType<typeof courseBytes> | null = null;
 
   private constructor(link: Closable) {
     this.link = link;
@@ -34,11 +43,15 @@ export class SeaRoom {
     let room: SeaRoom | null = null;
     const link = await open((snapshot) => room?.take(snapshot));
     room = new SeaRoom(link);
-    link.send(courseBytes([start], pace));
+    room.course([start], pace);
     return room;
   }
 
   private take(snapshot: Snapshot): void {
+    // A course sent before the room's first word is reckoned from it: the room took it no later.
+    if (this.tick === null && this.courseSentAt !== null) this.courseSentAt = Number(snapshot.tick);
+    this.tick = Number(snapshot.tick);
+    this.sendCourse();
     this.ships = snapshot.ships;
     this.pirates = snapshot.pirates;
     const own = snapshot.fights.find((fight) => fight.player === this.own);
@@ -73,9 +86,20 @@ export class SeaRoom {
     return this.fight !== null && this.fight.over === null;
   }
 
-  /** Sets the ship's course: the points ahead, at a pace; none brings it to rest. */
+  /** Sets the ship's course: the points ahead, at a pace; none brings it to rest. One set sooner after the last than
+   *  the sea takes waits for a later snapshot, and a newer course takes its place. */
   course(points: readonly Point2[], pace: Pace): void {
-    this.link.send(courseBytes(points, pace));
+    this.waitingCourse = courseBytes(points, pace);
+    this.sendCourse();
+  }
+
+  private sendCourse(): void {
+    const waiting = this.waitingCourse;
+    if (!waiting) return;
+    const sent = this.courseSentAt;
+    if (sent !== null && (this.tick === null || this.tick < sent + COURSE_EVERY_TICKS)) return;
+    this.link.send(waiting);
+    [this.waitingCourse, this.courseSentAt] = [null, this.tick ?? 0];
   }
 
   /** The player's orders in their fight. */

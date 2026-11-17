@@ -43,3 +43,12 @@ jobs:
       pages: write
       id-token: write
     uses: ./.github/workflows/pages.yml
+
+  # Deploys the rooms from main, once this same commit has passed the check: the owner's yes to a merge covers it.
+  rooms:
+    needs: check
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rooms.yml
+    secrets: inherit

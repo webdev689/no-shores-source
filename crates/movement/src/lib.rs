@@ -11,5 +11,5 @@ pub mod terrain;
 
 pub use blocks::Block;
 pub use body::{Body, Controls, Mode, Over, TICK_SECONDS, TUNING, standing};
-pub use step::step_body;
+pub use step::{step_body, wrap};
 pub use terrain::{Flat, Terrain};

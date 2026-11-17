@@ -1,40 +1,63 @@
 name: rooms
 
-# Deploys the rooms to Cloudflare (`npm run server:deploy`) with the repository's Cloudflare token: only from main and
-# only when run by hand, after the owner's yes. It first builds what the Worker bundles: the messages' code and the
-# rooms' WebAssembly.
+# Deploys the rooms to Cloudflare (`npm run server:deploy`, which builds what the Worker bundles first) with the
+# repository's Cloudflare token. ci.yml calls it from main once the same commit has passed the check, as it publishes
+# the page; it also runs by hand from main, to deploy again.
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: rooms
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  # Merges are checked side by side, so an older one can finish last: it deploys only while it is still main's head.
+  # Without the token, nothing deploys and main stays green, with a warning to add it.
+  ready:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.ready.outputs.deploy }}
+    steps:
+      - id: ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAS_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN != '' }}
+        run: |
+          head=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::warning::the repository has no CLOUDFLARE_TOKEN secret, so the rooms were not deployed"
+            echo "deploy=no" >> "$GITHUB_OUTPUT"
+          elif [ "$head" != "${{ github.sha }}" ]; then
+            echo "main has moved past this commit; its own run deploys the rooms"
+            echo "deploy=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+  # One deploy at a time; a newer merge's deploy replaces one waiting.
+  deploy:
+    needs: ready
+    if: needs.ready.outputs.deploy == 'yes'
+    runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: rooms
+      cancel-in-progress: false
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install the pinned toolchain
         run: rustup toolchain install
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
-      - name: Check the token is set
-        run: test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::the repository has no CLOUDFLARE_TOKEN secret"; exit 1; }
       - name: Install the TypeScript tools
         run: npm ci
-      - name: Build the messages and the rooms' WebAssembly
-        run: npm run -s schema && npm run -s wasm
       - name: Deploy the rooms
         run: npm run -s server:deploy
