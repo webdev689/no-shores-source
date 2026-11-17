@@ -95,11 +95,13 @@ export const NAVAL_KINDS = [
   'no-sail',
   'load',
   'gone',
+  'ram',
 ] as const;
 export type NavalKind = (typeof NAVAL_KINDS)[number];
 
-/** Something that happened in a fleet room's fight (messages.fbs Naval): what, the ship it happened to, who fired a
- *  ball that struck, a number saying more, the side still loading, a point, a ball's launch, and seconds left. */
+/** Something that happened in a fleet room's fight (messages.fbs Naval): what, the ship it happened to, who struck
+ *  her with a ball or a stem, a number saying more, the side still loading, a point, a ball's launch, and the seconds
+ *  that side has left (or the hull a ram took). */
 export interface NavalEvent {
   readonly tick: bigint;
   readonly kind: NavalKind;

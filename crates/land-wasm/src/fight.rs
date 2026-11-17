@@ -108,6 +108,9 @@ fn event_json(event: &Event) -> Option<Value> {
         Event::NoSail { wrecked, .. } => json!({ "kind": "no-sail", "wrecked": wrecked }),
         Event::Load { shot, .. } => json!({ "kind": "load", "shot": shot.name() }),
         Event::Gone { .. } => return None,
+        Event::Ram { ship, by, point, dealt } => {
+            json!({ "kind": "ram", "ship": ship, "by": by, "point": point, "dealt": dealt })
+        }
     })
 }
 

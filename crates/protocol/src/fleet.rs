@@ -139,6 +139,7 @@ pub const REFUSED: u8 = 7;
 pub const NO_SAIL: u8 = 8;
 pub const LOAD: u8 = 9;
 pub const GONE: u8 = 10;
+pub const RAM: u8 = 11;
 
 /// An event's numbers as the messages carry them: kind, ship, who fired, detail, side, point, launch, seconds left.
 type NavalParts = (u8, ShipId, ShipId, u8, u8, [f64; 3], [f64; 3], f64);
@@ -167,6 +168,7 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
         Event::NoSail { ship, wrecked } => (NO_SAIL, ship, 0, u8::from(wrecked), 0, none, none, 0.0),
         Event::Load { ship, shot } => (LOAD, ship, 0, load_code(Some(shot)), 0, none, none, 0.0),
         Event::Gone { ship, end } => (GONE, ship, 0, u8::from(end == End::Gone), 0, none, none, 0.0),
+        Event::Ram { ship, by, point, dealt } => (RAM, ship, by, 0, 0, point, none, dealt),
     })
 }
 

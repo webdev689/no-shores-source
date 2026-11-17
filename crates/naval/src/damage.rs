@@ -76,12 +76,12 @@ pub struct Hurt {
 }
 
 /// A browser's Math.round, for positive numbers: half up.
-fn rounded(value: f64) -> f64 {
+pub(crate) fn rounded(value: f64) -> f64 {
     (value + 0.5).floor()
 }
 
 /// Men a ball takes: its men over her toughness, the roll deciding the part man.
-fn men(count: f64, roll: f64, tough: f64) -> f64 {
+pub(crate) fn men(count: f64, roll: f64, tough: f64) -> f64 {
     if count > 0.0 { (count / tough + roll.clamp(0.0, 0.999_999)).floor() } else { 0.0 }
 }
 

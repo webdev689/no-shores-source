@@ -1,0 +1,257 @@
+import { type FleetOrders, type NavalEvent, type SeenVessel, ordersBytes } from '../network/fleetMessages.ts';
+import { Prediction } from '../network/prediction.ts';
+import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
+import type { FightEvent, ShipState, ShotName } from '../rules/fightRules.ts';
+import type { FleetLay, FleetLook, FleetRules, LaySighted } from '../rules/fleetRules.ts';
+import type { Helm, Pose, ShipFloats } from '../rules/landRules.ts';
+
+/** The rooms' tick, seconds (crates/sailing TICK_SECONDS). */
+const TICK_SECONDS = 1 / 60;
+/** The most ticks the page catches up at once, and the most it reckons past the last snapshot (seconds). */
+const MOST_OWED_TICKS = 15;
+const MOST_AHEAD_S = 0.25;
+/** A ball's fall, m/s², as the naval crate's ballistics. */
+const GRAVITY = 9.81;
+const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
+const ZONES = ['hull', 'holed', 'rig'] as const;
+const SIDES = ['port', 'starboard'] as const;
+const STATES = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'] as const;
+/** A ship whose hurts are not known yet: sound, her canvas whole. */
+const SOUND = { wrecked: false, sail: 1, maxSail: 0 } as const;
+/** The ship numbers the editor's fight words know: hers 0, a captain's 1, another player's 2. */
+const OWN = 0;
+const CAPTAIN = 1;
+const OTHER = 2;
+
+/** A tick's worth of what the player does at sea in a fleet (the editor's `FleetInput`). */
+export interface SessionInput {
+  readonly steer: number;
+  readonly crab: boolean;
+  readonly climbs: readonly number[];
+  readonly look: FleetLook | null;
+  readonly fire: boolean;
+  readonly brace: boolean;
+  readonly loadSteps: number;
+  readonly call: 'none' | 'captain' | 'send off';
+}
+
+/**
+ * A player's Sloop in a fleet room: put to sea where she lies, her orders sent a tick at a time as the page's clock
+ * owes them, and her ship predicted by the room's own rules and corrected by each snapshot. It keeps what the room
+ * last showed: every other ship, the balls aloft, and what happened.
+ */
+export class FleetSession {
+  private readonly link: RoomLink;
+  private readonly rules: FleetRules;
+  private readonly prediction = new Prediction<FleetOrders>();
+  private start: readonly [number, number, number] | null;
+  private ship: ShipFloats;
+  private pose: Pose = { heave: 0, pitch: 0, roll: 0, aground: false };
+  private owed = 0;
+  private fires = 0;
+  private loadSteps = 0;
+  private climbs: number[] = [];
+  private calls: SessionInput['call'][] = [];
+  private lastLook: FleetLook | null = null;
+  private latest: Snapshot | null = null;
+  private receivedAt = 0;
+  private events: FightEvent[] = [];
+
+  constructor(link: RoomLink, rules: FleetRules, start: readonly [number, number, number]) {
+    this.link = link;
+    this.rules = rules;
+    this.start = start;
+    this.ship = new Float64Array([start[0], start[1], start[2], 0, 0, 0, 0, 0]);
+  }
+
+  /** Her number in the room: her ship's. */
+  get id(): number {
+    return this.link.player;
+  }
+
+  /** Why the room was lost, or null while it holds. */
+  get lost(): string | null {
+    return this.link.lost;
+  }
+
+  /** Her ship as predicted, and her pose. */
+  shipFloats(): ShipFloats {
+    return this.ship;
+  }
+
+  shipPose(): Pose {
+    return this.pose;
+  }
+
+  /** The room's clock at `now` (page seconds): its last snapshot's tick, and the time since, a little at most. */
+  roomTime(now: number): number {
+    const tick = this.latest ? Number(this.latest.tick) : 0;
+    return tick * TICK_SECONDS + Math.min(Math.max(0, now - this.receivedAt), MOST_AHEAD_S);
+  }
+
+  /** The room's word on her own ship, once it has her at sea. */
+  own(): SeenVessel | null {
+    return this.latest?.vessels.find((vessel) => vessel.id === this.id) ?? null;
+  }
+
+  private hurts(): { readonly wrecked: boolean; readonly sail: number; readonly maxSail: number } {
+    const own = this.own();
+    if (!own) return SOUND;
+    return { wrecked: own.state === 'wrecked', sail: own.hurts.sail, maxSail: own.hurts.maxSail };
+  }
+
+  /** Every other ship in the room as it last showed her. */
+  others(): readonly SeenVessel[] {
+    return this.latest?.vessels.filter((vessel) => vessel.id !== this.id) ?? [];
+  }
+
+  /** Her ship stepped by one set of orders, by the room's rules. */
+  private stepped(ship: ArrayLike<number>, orders: FleetOrders, time: number): ShipFloats {
+    const helm: Helm = { steer: orders.steer, crab: orders.crab, climb: orders.climb as Helm['climb'] };
+    return new Float64Array(this.rules.predict(ship, this.hurts(), time, [helm])?.ship ?? Array.from(ship));
+  }
+
+  private poseAt(ship: ArrayLike<number>, time: number): Pose {
+    return this.rules.predict(ship, this.hurts(), time, [])?.pose ?? this.pose;
+  }
+
+  /** A snapshot from the room: her ship set to its word with her orders it has not taken stepped on top, and what
+   *  happened kept for the effects and the panel. */
+  receive(snapshot: Snapshot, now: number): void {
+    this.latest = snapshot;
+    this.receivedAt = now;
+    const own = this.own();
+    const time = this.roomTime(now);
+    if (own) {
+      this.start = null;
+      const ship = this.prediction.corrected<ShipFloats>(
+        new Float64Array(own.ship),
+        own.acknowledged,
+        (state, orders) => this.stepped(state, orders, time),
+      );
+      [this.ship, this.pose] = [ship, this.poseAt(ship, time)];
+    }
+    for (const event of snapshot.naval) {
+      const said = this.fightEvent(event);
+      if (said) this.events.push(said);
+    }
+  }
+
+  /** Owes the room `seconds` more and sends a tick's orders for each whole tick owed: her rudder as held, her look
+   *  while aiming, and the presses (a rung, a release, a load, a call) on the first tick that takes them. */
+  advance(seconds: number, input: SessionInput, now: number): void {
+    this.climbs.push(...input.climbs);
+    if (input.fire) this.fires++;
+    if (input.look) this.lastLook = input.look;
+    if (input.call !== 'none') this.calls.push(input.call);
+    this.loadSteps += input.loadSteps;
+    this.owed = Math.min(this.owed + seconds, MOST_OWED_TICKS * TICK_SECONDS);
+    const time = this.roomTime(now);
+    while (this.owed + 1e-9 >= TICK_SECONDS) {
+      this.owed -= TICK_SECONDS;
+      const firing = this.fires > 0;
+      this.fires = Math.max(0, this.fires - 1);
+      const step = Math.sign(this.loadSteps);
+      this.loadSteps -= step;
+      const loaded = this.own()?.load ?? 1;
+      const orders: FleetOrders = {
+        steer: input.steer,
+        crab: input.crab,
+        climb: this.climbs.shift() ?? 0,
+        look: input.look ?? (firing ? this.lastLook : null),
+        fire: firing,
+        brace: input.brace,
+        load: step === 0 ? 0 : ((loaded - 1 + step + LOADS.length) % LOADS.length) + 1,
+        putToSea: this.start,
+        call: this.calls.shift() ?? 'none',
+      };
+      const sequence = this.prediction.next(orders);
+      this.link.send(ordersBytes(sequence, orders));
+      this.ship = this.stepped(this.ship, orders, time);
+    }
+    this.pose = this.poseAt(this.ship, time);
+  }
+
+  /** The balls aloft at `now`, each where its closed form has it, with its radius. */
+  balls(now: number): (readonly [number, number, number, number])[] {
+    const snapshot = this.latest;
+    if (!snapshot) return [];
+    const clock = snapshot.fightClock + Math.min(Math.max(0, now - this.receivedAt), MOST_AHEAD_S);
+    return snapshot.balls
+      .map((ball) => ({ ball, flown: clock - ball.born }))
+      .filter(({ flown }) => flown >= 0)
+      .map(({ ball, flown }) => {
+        const [x, y, z] = ball.start;
+        const [east, south, up] = ball.launch;
+        return [x + east * flown, y + south * flown, z + up * flown - 0.5 * GRAVITY * flown * flown, ball.radius];
+      });
+  }
+
+  /** Her look's lay among the ships she sees, as the room would lay it now. */
+  lay(look: FleetLook, now: number): FleetLay | null {
+    const load = this.own()?.load ?? 1;
+    const sighted = (vessel: SeenVessel): LaySighted => ({
+      id: vessel.id,
+      pirate: vessel.captain,
+      ship: vessel.ship,
+      pose: vessel.pose,
+      afloat: vessel.state !== 'sunk',
+    });
+    const { heave, pitch, roll, aground } = this.pose;
+    const own: LaySighted = {
+      id: this.id,
+      pirate: false,
+      ship: this.ship,
+      pose: [heave, pitch, roll, aground ? 1 : 0],
+      afloat: true,
+    };
+    return this.rules.lay(own, load, look, this.roomTime(now), this.others().map(sighted));
+  }
+
+  /** A ship's number as the editor's fight words know it. */
+  private known(id: number): number {
+    if (id === this.id) return OWN;
+    return this.latest?.vessels.find((vessel) => vessel.id === id)?.captain ? CAPTAIN : OTHER;
+  }
+
+  /** An event of the room's fight as the editor's fight shows one; what was another player's own (her guns' refusals,
+   *  her sails, her loads) is hers to see. */
+  private fightEvent(event: NavalEvent): FightEvent | null {
+    const ship = this.known(event.ship);
+    const mine = ship === OWN;
+    switch (event.kind) {
+      case 'muzzle':
+        return { kind: 'muzzle', ship, point: event.point, launch: event.launch };
+      case 'hit':
+        return { kind: 'hit', ship, by: this.known(event.by), zone: ZONES[event.detail] ?? 'hull', point: event.point };
+      case 'splash':
+      case 'land':
+        return { kind: event.kind, point: event.point };
+      case 'state':
+        return { kind: 'state', ship, state: (STATES[event.detail] ?? 'afloat') as ShipState };
+      case 'refused': {
+        const why = (['no-guns', 'silent', 'braced', 'reloading'] as const)[event.detail] ?? 'no-guns';
+        return mine ? { kind: 'refused', why, side: SIDES[event.side] ?? 'port', left: event.left } : null;
+      }
+      case 'no-sail':
+        return mine ? { kind: 'no-sail', wrecked: event.detail === 1 } : null;
+      case 'load':
+        return mine ? { kind: 'load', shot: LOADS[event.detail - 1] ?? 'round' } : null;
+      case 'run-out':
+        return { kind: 'run-out', side: SIDES[event.detail] ?? 'port' };
+      case 'ram':
+        return { kind: 'ram', ship, by: this.known(event.by), point: event.point, dealt: event.left };
+      case 'gone':
+        return { kind: 'gone', ship, sunk: event.detail === 0 };
+      default:
+        return null;
+    }
+  }
+
+  /** The events since last taken, for the effects and the panel. */
+  takeEvents(): FightEvent[] {
+    const taken = this.events;
+    this.events = [];
+    return taken;
+  }
+}

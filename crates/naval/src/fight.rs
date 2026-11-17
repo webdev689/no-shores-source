@@ -143,6 +143,13 @@ pub enum Event {
         ship: ShipId,
         end: End,
     },
+    /// A player's stem rammed a ship (`ship`, rammed `by`): where it struck, and the hull it took from her.
+    Ram {
+        ship: ShipId,
+        by: ShipId,
+        point: [f64; 3],
+        dealt: f64,
+    },
 }
 
 /// How a captain left the fight.
@@ -152,13 +159,15 @@ pub enum End {
     Gone,
 }
 
-/// The fight: its clock (seconds), its stream of chances, its ships by number, and the balls aloft.
+/// The fight: its clock (seconds), its stream of chances, its ships by number, the balls aloft, and each player's
+/// stem as the ram's law keeps it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fight {
     pub clock: f64,
     draws: Mulberry32,
     pub ships: BTreeMap<ShipId, Vessel>,
     pub balls: Vec<Ball>,
+    stems: BTreeMap<ShipId, ram::Stem>,
 }
 
 /// What a player's hurts leave her helm: whether she is a wreck, the canvas she has left, and the share of her way it
@@ -270,7 +279,8 @@ impl Fight {
     /// An empty fight whose every chance is drawn from `seed`.
     #[must_use]
     pub fn new(seed: u32) -> Self {
-        Self { clock: 0.0, draws: Mulberry32::new(seed), ships: BTreeMap::new(), balls: Vec::new() }
+        let ships = BTreeMap::new();
+        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls: Vec::new(), stems: BTreeMap::new() }
     }
 
     /// A player's Sloop and one pirate captain's put to sea on the ring round her, where the water floats her,
@@ -325,6 +335,7 @@ impl Fight {
     /// A ship leaves the fight: the captains forget her; balls she fired fly on.
     pub fn leave(&mut self, id: ShipId) {
         self.ships.remove(&id);
+        self.stems.remove(&id);
         for vessel in self.ships.values_mut() {
             if let Sailor::Captain(command) = &mut vessel.sailor {
                 command.her.forget(id);
@@ -377,6 +388,10 @@ impl Fight {
             numbers.push(ball.rigged.len() as f64);
             numbers.extend(ball.rigged.iter().map(|ship| f64::from(*ship)));
         }
+        for (id, stem) in &self.stems {
+            numbers.push(f64::from(*id));
+            numbers.extend(stem.numbers());
+        }
         numbers
     }
 
@@ -401,6 +416,8 @@ impl Fight {
     }
 }
 
+#[path = "fight_ram.rs"]
+mod ram;
 #[path = "fight_step.rs"]
 mod step;
 
@@ -411,3 +428,7 @@ mod tests;
 #[cfg(test)]
 #[path = "fight_fleet_tests.rs"]
 mod fleet_tests;
+
+#[cfg(test)]
+#[path = "fight_ram_tests.rs"]
+mod ram_tests;

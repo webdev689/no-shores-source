@@ -29,6 +29,8 @@ impl Fight {
         for id in self.ids(true) {
             self.sail_captain(id, waters, wind, time);
         }
+        self.keep_apart(waters, time);
+        self.rams(&mut events);
         for vessel in self.ships.values_mut().filter(|vessel| vessel.in_fight()) {
             vessel.guns.step(seconds);
         }

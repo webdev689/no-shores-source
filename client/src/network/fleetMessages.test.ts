@@ -43,8 +43,11 @@ test('a fleet snapshot the server wrote reads back as its ships and what happene
       [10n, 'no-sail', 4, 1],
       [10n, 'load', 3, 2],
       [11n, 'gone', 9, 0],
+      [12n, 'ram', 9, 0],
     ],
   );
+  const ram = fleet.naval[9];
+  assert.deepEqual([ram?.by, ram?.point, ram?.left], [4, [7, 8, 1], 27], 'a ram: who rammed, where, and what it took');
   const [muzzle, hit] = fleet.naval;
   assert.deepEqual([muzzle?.point, muzzle?.launch, hit?.by], [[1, 2, 3], [50, 2, 4], 3]);
   assert.deepEqual([fleet.naval[5]?.side, fleet.naval[5]?.left], [0, 2.5]);

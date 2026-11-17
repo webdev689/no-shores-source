@@ -93,6 +93,7 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
         (10, Event::NoSail { ship: 4, wrecked: true }),
         (10, Event::Load { ship: 3, shot: Shot::Grape }),
         (11, Event::Gone { ship: 9, end: naval::fight::End::Sunk }),
+        (12, Event::Ram { ship: 9, by: 4, point: [7.0, 8.0, 1.0], dealt: 27.0 }),
     ];
     (fight, events)
 }
@@ -127,7 +128,8 @@ fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
             (10, REFUSED, 4, 3),
             (10, NO_SAIL, 4, 1),
             (10, LOAD, 3, 2),
-            (11, GONE, 9, 0)
+            (11, GONE, 9, 0),
+            (12, RAM, 9, 0)
         ],
         "a ball flown out of reckoning is not told"
     );

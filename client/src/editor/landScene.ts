@@ -23,7 +23,12 @@ import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
 import { type TerrainData, type TerrainOptions, TerrainView } from '../terrain/terrainView.ts';
+import { helmOf, isRungKey } from '../ships/helmKeys.ts';
+import type { Afloat } from './afloat.ts';
 import type { FightSource } from './fighting.ts';
+import type { FleetCall } from './fleetLink.ts';
+import type { FleetSloop } from './fleetPlay.ts';
+import { FleetScene } from './fleetScene.ts';
 import { Harbour } from './harbour.ts';
 import { Naval } from './naval.ts';
 import type { SailSource } from './sailing.ts';
@@ -86,6 +91,8 @@ export interface SceneFrame {
   readonly fires: number;
   readonly loadSteps: number;
   readonly source: GroundSource | null;
+  /** Online: the Sloop's session in a fleet room, which sails her; the water then rolls by the room's clock. */
+  readonly fleet: FleetSloop | null;
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
   readonly stroking: boolean;
@@ -130,8 +137,10 @@ export class LandScene {
   /** The Sloop and her model; and whether she may still sail (the rules have not refused her). */
   private readonly harbour: Harbour<ShipView>;
   private mayStillSail = true;
-  /** A captain's fight round the Sloop. */
+  /** A captain's fight round the Sloop; or, online, the fleet she sails in. */
+  private readonly marks: MarkView;
   private readonly naval: Naval;
+  private fleet: FleetScene | null = null;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
     this.gpu = gpu;
@@ -139,7 +148,8 @@ export class LandScene {
     this.fail = fail;
     this.water = new WaterView(gpu);
     this.harbour = new Harbour(() => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh)), fail);
-    this.naval = new Naval(new MarkView(gpu));
+    this.marks = new MarkView(gpu);
+    this.naval = new Naval(this.marks);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -156,10 +166,12 @@ export class LandScene {
     [this.body, this.footing] = [null, null];
     this.harbour.leave();
     this.naval.end();
+    this.fleet = null;
   }
 
-  private get sailing() {
-    return this.harbour.sailing;
+  /** The Sloop afloat: her fleet session's, online, or the editor's own. */
+  private get sailing(): Afloat | null {
+    return this.fleet?.play ?? this.harbour.sailing;
   }
 
   private get ship() {
@@ -206,12 +218,17 @@ export class LandScene {
     const now = performance.now();
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
-    const time = now / 1000;
+    const online = frame.sailing ? frame.fleet : null;
+    if (online !== (this.fleet?.play ?? null)) this.fleet = online ? new FleetScene(online, this.marks) : null;
+    const fleet = this.fleet;
+    // Online, the ships ride the room's swell, so the water rolls by its clock.
+    const time = fleet ? fleet.play.roomTime(now / 1000) : now / 1000;
     this.version = frame.editsVersion;
     const { view, id } = frame;
     let orbit = frame.walking ? this.walk(frame, seconds, time) : frame.orbit;
     if (!frame.walking) [this.body, this.footing] = [null, null];
-    if (frame.sailing) orbit = this.sail(frame, seconds, time);
+    if (frame.sailing)
+      orbit = fleet ? this.sailOnline(fleet, frame, seconds, now / 1000) : this.sail(frame, seconds, time);
     else {
       this.mayStillSail = true;
       this.harbour.leave();
@@ -233,11 +250,13 @@ export class LandScene {
       terrain.showCloseUp(near && closeUpData(near.patch, near.field.levels, view));
       this.shownClose = near;
     }
-    const sailing = this.sailing;
+    const own = this.harbour.sailing;
     const seen =
-      frame.aiming && sailing && this.naval.fighting
-        ? this.naval.aimCamera(orbit, sailing, view, shown)
-        : this.clearOfBed(orbit);
+      frame.aiming && fleet
+        ? fleet.aimCamera(orbit, view, shown)
+        : frame.aiming && own && this.naval.fighting
+          ? this.naval.aimCamera(orbit, own, view, shown)
+          : this.clearOfBed(orbit);
     const camera = cameraOf(seen);
     const fromEye = viewProjection(seen, frame.size.width / frame.size.height, true);
     const eyeWorld = [camera.eye[0] + view.leftM, camera.eye[1] + view.topM] as const;
@@ -278,7 +297,8 @@ export class LandScene {
     terrain.drawInto(pass);
     if (this.sailing && this.ship)
       this.ship.drawInto(pass, this.sailing.place(view, shown), { fromEye, eye: camera.eye });
-    this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, this.ship, time);
+    if (fleet) fleet.draw(pass, view, shown, { fromEye, eye: camera.eye }, this.ship, now / 1000);
+    else this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, this.ship, time);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -326,7 +346,7 @@ export class LandScene {
     const { source, id, view, orbit } = frame;
     const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
     this.mayStillSail = this.harbour.board(source, id, x, y, orbit.yaw, time);
-    const sailing = this.sailing;
+    const sailing = this.harbour.sailing;
     if (!sailing) {
       frame.pressed.length = 0;
       return orbit;
@@ -357,17 +377,44 @@ export class LandScene {
     return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
   }
 
-  /** The ships' footprints on the water: hers, and a captain's while she floats. */
+  /** The Sloop in a fleet room: her orders from the keys (F calls a captain, X sends them all off), her look while
+   *  aiming, the fleet's effects on the water, and her wake. Answers the camera's orbit, on her. */
+  private sailOnline(fleet: FleetScene, frame: SceneFrame, seconds: number, now: number): Orbit {
+    const { view, orbit } = frame;
+    this.harbour.fetchModel();
+    const climbs: number[] = [];
+    let call: FleetCall = 'none';
+    for (const key of frame.pressed.splice(0)) {
+      if (key === 'f') call = 'captain';
+      else if (key === 'x') call = 'send off';
+      else if (isRungKey(key)) climbs.push(helmOf(new Set(), key).climb);
+    }
+    const look = frame.aiming ? fleet.look(orbit, view) : null;
+    const { steer, crab } = helmOf(frame.held, undefined);
+    const brace = frame.held.has('c');
+    const input = { steer, crab, climbs, look, fire: frame.fires > 0, brace, loadSteps: frame.loadSteps, call };
+    for (const splash of fleet.step(seconds, input, now, view))
+      this.water.stir(splash.x, splash.y, splash.radiusM, splash.strength);
+    const waterline = this.ship?.waterline;
+    for (const stir of waterline ? fleet.play.wake(view, waterline) : []) {
+      this.water.stir(stir.x, stir.y, stir.radiusM, stir.strength);
+    }
+    const round = fleet.play.orbit(orbit, view);
+    return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
+  }
+
+  /** The ships' footprints on the water: hers, and a captain's while she floats, or every ship of her fleet. */
   private hulls(view: LandView): HullMask[] {
     const waterline = this.ship?.waterline;
     if (!waterline || !this.sailing) return [];
-    const captain = this.naval.hull(view, waterline);
-    return [this.sailing.hull(view, waterline), ...(captain ? [captain] : [])];
+    const others = this.fleet ? this.fleet.hulls(view, waterline) : [this.naval.hull(view, waterline)];
+    return [this.sailing.hull(view, waterline), ...others.filter((hull) => hull !== null)];
   }
 
-  /** The fight's lines for the panel, if one is on. */
+  /** The fight's lines for the panel, if one is on, or the fleet's. */
   fightLines(): string[] {
-    return this.naval.lines(performance.now() / 1000);
+    const now = performance.now() / 1000;
+    return this.fleet ? this.fleet.lines(now) : this.naval.lines(now);
   }
 
   /** The camera a diver looks up from: behind them, but brought in so it never sinks into the bed. */

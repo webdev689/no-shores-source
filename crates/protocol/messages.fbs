@@ -157,11 +157,12 @@ table Ball {
 
 // Something that happened in a fleet room's fight, with its tick: what (1 a ball leaves its gun, 2 a ball strikes a
 // ship, 3 splashes, 4 lands, 5 a captain runs out a side, 6 a ship's state changes, 7 a player's guns refuse, 8 her
-// sails will not set, 9 she takes a load, 10 a captain leaves the fight); the ship it happened to (for a ball, the one
-// that fired it, for a strike the one struck) and, for a strike, who fired; a number saying more (a strike's zone, 0
-// hull, 1 holed, 2 canvas; a side, 0 port, 1 starboard; a state as Vessel numbers it; why guns refuse, 0 no side
-// bears, 1 silent, 2 braced, 3 loading; a load as Orders numbers it; 1 for a wreck's sails; how a captain left, 0 sunk,
-// 1 sailed off); the side still loading; a point, and a ball's launch; and the seconds that side has left to load.
+// sails will not set, 9 she takes a load, 10 a captain leaves the fight, 11 a player's stem rams a ship); the ship it
+// happened to (for a ball, the one that fired it, for a strike or a ram the one struck) and, for a strike or a ram,
+// who struck; a number saying more (a strike's zone, 0 hull, 1 holed, 2 canvas; a side, 0 port, 1 starboard; a state
+// as Vessel numbers it; why guns refuse, 0 no side bears, 1 silent, 2 braced, 3 loading; a load as Orders numbers it;
+// 1 for a wreck's sails; how a captain left, 0 sunk, 1 sailed off); the side still loading; a point, and a ball's
+// launch; and the seconds that side has left to load, or the hull a ram took.
 table Naval {
   tick: ulong;
   kind: ubyte;

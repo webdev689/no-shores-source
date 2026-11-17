@@ -11,5 +11,6 @@ pub mod fight;
 pub mod gunnery;
 pub mod guns;
 pub mod laying;
+pub mod ram;
 pub mod random;
 pub mod shots;
