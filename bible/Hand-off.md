@@ -87,10 +87,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- The Cloudflare token. No cloud environment holds it (a session on the unrestricted Default sent none) and the
-  repository has no `CLOUDFLARE_API_TOKEN` Actions secret. Saved as that secret, the `ships` workflow publishes the
-  Sloop's painted model and mesh, and #50 can take her new keys; the rooms' deploy needs it too.
-- #50, once her mesh is published: to test and say yes to merging and publishing. Its open choices: where another
+- The Cloudflare token: the owner gave it in the chat, so it should be rotated, and the new one saved as the
+  repository's Actions secret `CLOUDFLARE_API_TOKEN` (no environment or secret holds it), for the `ships` workflow and
+  the rooms' deploy.
+- #50, her painted model and mesh published to R2: to test and say yes to merging and publishing. Its open choices: where another
   player's colour goes on the Sloop, her 75 m drawn size at sea.
 - Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
   the token. The deployed rooms keep the speed hack and the two socket faults until that deploy, and have no pirates.
