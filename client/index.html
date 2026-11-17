@@ -169,9 +169,16 @@
         font-size: 18px;
         font-weight: 600;
       }
-      .sea-bar .landings {
-        margin-left: 10px;
+      #hud .landfall {
+        position: absolute;
+        left: 50%;
+        bottom: 82px;
+        transform: translateX(-50%);
+        padding: 10px 18px;
+        font-size: 16px;
+        background: var(--panel);
         border-color: var(--gold);
+        text-shadow: none;
       }
       .menu {
         position: absolute;
@@ -202,6 +209,75 @@
       .marks {
         position: absolute;
         inset: 0;
+      }
+      /* The held map's names, the ship and the card, laid over the parchment the GPU draws: written in its ink. */
+      .held-map {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        --map-ink: #3a2816;
+        --map-route: #781c14;
+      }
+      .held-map > * {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .held-mark {
+        padding: 0 0 0 9px;
+        margin-top: -8px;
+        font:
+          italic 14px Georgia,
+          serif;
+        color: var(--map-ink);
+        white-space: nowrap;
+        text-shadow:
+          0 0 3px rgba(238, 222, 190, 0.95),
+          0 0 1px rgba(238, 222, 190, 1);
+      }
+      .held-mark::before {
+        content: '';
+        position: absolute;
+        left: -4px;
+        top: 4px;
+        width: 6px;
+        height: 6px;
+        border: 1.5px solid var(--map-ink);
+        border-radius: 50%;
+      }
+      .held-mark.port {
+        font-style: normal;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      .held-mark.port::before {
+        background: var(--map-ink);
+      }
+      .held-mark.chosen {
+        color: var(--map-route);
+      }
+      .held-ship {
+        width: 0;
+        height: 0;
+        margin: -9px 0 0 -6px;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 16px solid var(--map-route);
+        transform-origin: 6px 9px;
+      }
+      .held-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 8px 14px;
+        background: var(--panel);
+        border: 1px solid var(--gold);
+        border-radius: 4px;
+        white-space: nowrap;
+        text-shadow: none;
+      }
+      .held-card button {
+        pointer-events: auto;
       }
       .mark {
         --size: 28px;

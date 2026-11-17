@@ -5,6 +5,8 @@ import {
   continentToOpen,
   courseAhead,
   declutter,
+  DOCK_REACH_M,
+  landfallOf,
   namesShown,
   OFFSHORE,
   offshore,
@@ -89,4 +91,12 @@ test("a name that would print over a nearer mark's is left off; names apart all 
   const markAt = (id: string, x: number, y: number) => ({ id, name: 'Overlook', x, y, sizePx: 28 });
   const shown = namesShown([markAt('far', 100, 100), markAt('apart', 400, 100), markAt('near', 140, 104)]);
   assert.deepEqual([...shown].sort(), ['apart', 'near']);
+});
+
+test('off a coast the ship docks within reach of its harbour and goes ashore elsewhere; out of reach, neither', () => {
+  const port = { name: 'Overlook', harbour: [0, 0] as const };
+  assert.deepEqual(landfallOf([DOCK_REACH_M - 1, 0], true, port), { kind: 'dock', port: 'Overlook' });
+  assert.deepEqual(landfallOf([DOCK_REACH_M + 1, 0], true, port), { kind: 'ashore' });
+  assert.deepEqual(landfallOf([100, 0], true, null), { kind: 'ashore' });
+  assert.equal(landfallOf([100, 0], false, port), null);
 });

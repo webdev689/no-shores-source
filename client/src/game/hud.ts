@@ -1,5 +1,6 @@
 import { button, make } from '../editor/dom.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
+import type { Landfall } from './seaLaw.ts';
 
 /** A button of the heads-up display: let go of once pressed, so Space or Enter, which the game itself answers, never
  *  press it again. */
@@ -69,11 +70,14 @@ export class Hud {
   private readonly status = make('div', '', 'status');
   private readonly sea = make('div', '', 'sea-bar');
   private readonly paceValue = make('span', '', 'pace');
-  private readonly landings: HTMLButtonElement;
+  private readonly voyage: HTMLButtonElement;
+  private readonly landfall: HTMLButtonElement;
   private respawnWanted: () => void = () => undefined;
   private markChosen: (id: string) => void = () => undefined;
   private paceWanted: (direction: number) => void = () => undefined;
-  private landingsWanted: () => void = () => undefined;
+  private voyageWanted: () => void = () => undefined;
+  private mapWanted: () => void = () => undefined;
+  private landfallWanted: () => void = () => undefined;
 
   constructor(root: HTMLElement) {
     root.classList.add('hud');
@@ -87,14 +91,17 @@ export class Hud {
       this.respawn,
     );
     this.veilNode.append(this.veilText);
-    this.landings = hudButton('View landings  L', () => this.landingsWanted());
-    this.landings.classList.add('landings');
+    this.voyage = hudButton('', () => this.voyageWanted());
+    this.landfall = hudButton('', () => this.landfallWanted());
+    this.landfall.classList.add('landfall');
     this.sea.append(
+      make('span', 'Navigation', 'pace-label'),
+      hudButton('Map  N', () => this.mapWanted()),
+      this.voyage,
       make('span', 'Pace', 'pace-label'),
       hudButton('−  [', () => this.paceWanted(-1)),
       this.paceValue,
       hudButton(']  +', () => this.paceWanted(1)),
-      this.landings,
     );
     root.append(
       this.shade,
@@ -104,6 +111,7 @@ export class Hud {
       this.hintList,
       this.status,
       this.sea,
+      this.landfall,
       this.menuNode,
       this.death,
       this.veilNode,
@@ -213,13 +221,26 @@ export class Hud {
     );
   }
 
-  /** The sea's bar: the pace dial, and View landings while an island's side is in reach; null hides it. */
-  seaBar(state: { readonly pace: number; readonly canLand: boolean } | null): void {
+  /** The navigation panel at sea: the map, stopping or resuming the voyage and the pace dial; over it, the offer to
+   *  dock or go ashore while one is open. Null hides both. */
+  seaBar(
+    state: {
+      readonly pace: number;
+      readonly sailing: boolean;
+      readonly resumable: boolean;
+      readonly landfall: Landfall;
+    } | null,
+  ): void {
     this.sea.hidden = state === null;
+    this.landfall.hidden = !state?.landfall;
     if (!state) return;
     const pace = `×${state.pace}`;
     if (this.paceValue.textContent !== pace) this.paceValue.textContent = pace;
-    this.landings.hidden = !state.canLand;
+    this.voyage.hidden = !state.sailing && !state.resumable;
+    const voyage = state.sailing ? 'Stop  Space' : 'Resume voyage  Space';
+    if (this.voyage.textContent !== voyage) this.voyage.textContent = voyage;
+    const offer = state.landfall?.kind === 'dock' ? `Dock at ${state.landfall.port}  Enter` : 'Go ashore  Enter';
+    if (state.landfall && this.landfall.textContent !== offer) this.landfall.textContent = offer;
   }
 
   /** What the pace buttons do: -1 slower, +1 faster. */
@@ -227,8 +248,18 @@ export class Hud {
     this.paceWanted = step;
   }
 
-  /** What View landings does. */
-  onLandings(view: () => void): void {
-    this.landingsWanted = view;
+  /** What Map does. */
+  onMap(open: () => void): void {
+    this.mapWanted = open;
+  }
+
+  /** What Stop and Resume voyage do. */
+  onVoyage(toggle: () => void): void {
+    this.voyageWanted = toggle;
+  }
+
+  /** What the offer to dock or go ashore does. */
+  onLandfall(take: () => void): void {
+    this.landfallWanted = take;
   }
 }

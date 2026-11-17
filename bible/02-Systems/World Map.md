@@ -64,7 +64,8 @@ varied across the continent into other biomes. Which biome each continent is: [[
   each first.
 - **Fog of war.** Each player's map starts dark and clears where they have been. The server keeps each character's
   charted ground and the isles they have found, and tells a client about an isle only once that player has found it
-  or is close enough to see it, so a hidden isle cannot be read out of the client.
+  or is close enough to see it, so a hidden isle cannot be read out of the client. For now the [[Held Map]] keeps what
+  a player has discovered in their browser, and the client holds every continent's outline.
 - **Discoveries** are rolled by the server in the open sea between landmasses: a place and a seed. Every client near
   one generates the same island from the seed, as DFO's spawned dungeons are shared. The server lets one go a while
   after the last player leaves.

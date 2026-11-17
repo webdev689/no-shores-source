@@ -36,5 +36,5 @@ export const TEXTURE_USAGE = {
   storageBinding: 0x08,
   renderAttachment: 0x10,
 } as const;
-export const BUFFER_USAGE = { copyDestination: 0x08, index: 0x10, vertex: 0x20, uniform: 0x40 } as const;
+export const BUFFER_USAGE = { copyDestination: 0x08, index: 0x10, vertex: 0x20, uniform: 0x40, storage: 0x80 } as const;
 export const SHADER_STAGE = { vertex: 0x1, fragment: 0x2, compute: 0x4 } as const;
