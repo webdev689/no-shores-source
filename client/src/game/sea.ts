@@ -26,13 +26,19 @@ import { distanceText } from './hudLaw.ts';
 import type { Landmass } from './landmass.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Mesh, Placing } from './meshView.ts';
-import { courseAhead, declutter, namesShown, paintOf, timeText } from './seaLaw.ts';
+import {
+  courseAhead,
+  declutter,
+  type Landfall,
+  landfallOf,
+  namesShown,
+  paintOf,
+  PORT_SEEN_M,
+  timeText,
+} from './seaLaw.ts';
 
 /** The world's frame, metres: every voyage between landmasses is planned over it. */
 const FRAME = { leftM: 0, topM: 0, widthM: 4_915_200, heightM: 3_072_000 } as const;
-/** At sea, the island's marks within this of the ship are shown (the island view's own reach), and its port at any
- *  distance; each is held at the picture's edge when off it, so the way to every one is always in sight. */
-const MARK_REACH_M = SIDE.reachM;
 /** How far in from the picture's top and foot a held mark stands, clear of the place's name and, at sea, the sea's
  *  bar. */
 const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } as const;
@@ -81,7 +87,11 @@ export interface SeaFrame {
   readonly hulls: readonly HullMask[];
   readonly marks: readonly ScreenMark[];
   readonly note: string;
-  readonly canLand: boolean;
+  /** What the ship is offered off the island's coast: to dock, to go ashore, or nothing. */
+  readonly landfall: Landfall;
+  /** Under way on a voyage; or stopped short of one, which can be resumed. */
+  readonly sailing: boolean;
+  readonly resumable: boolean;
   readonly pace: Pace;
   /** Whether the view stands over an island's side, its landings marked. */
   readonly overSide: boolean;
@@ -89,8 +99,9 @@ export interface SeaFrame {
 
 /**
  * The player's ship on the Overworld's sea: DFO's raised camera over it, voyages planned round the land and sailed
- * at the pace dial, the island's nodes and port marked, and the bird's-eye view of the island's side it lies off,
- * where a landing is chosen. Online, its course goes to the sea room and every other ship there is shown.
+ * at the pace dial, stopped and resumed, a port's icon over it once the ship is near, and the bird's-eye view of the
+ * island's side it lies off, where a landing is chosen. Online, its course goes to the sea room and every other ship
+ * there is shown.
  */
 export class Sea {
   private landmass: Landmass;
@@ -98,6 +109,8 @@ export class Sea {
   private readonly shipMesh: Mesh;
   private ship: { x: number; y: number; heading: number };
   private voyage: Voyage | null = null;
+  /** Where the last voyage set out for, kept while it is stopped short, so it can be resumed. */
+  private destination: Point2 | null = null;
   private travelled = 0;
   private pace: Pace = PACE_DEFAULT;
   private camera: OverworldCamera;
@@ -165,9 +178,29 @@ export class Sea {
     this.room = null;
   }
 
-  /** Whether the ship lies within the island view's reach of the open landmass's coast. */
-  get canLand(): boolean {
-    return this.view.kind === 'sail' && nearestIsland(this.position, [this.landmass.outline]) !== null;
+  /** What the ship is offered off the open landmass's coast: to dock at its port, to go ashore, or nothing. */
+  get landfall(): Landfall {
+    if (this.view.kind !== 'sail') return null;
+    const offCoast = nearestIsland(this.position, [this.landmass.outline]) !== null;
+    const { plan } = this.landmass;
+    return landfallOf(this.position, offCoast, plan?.harbour ? { name: plan.name, harbour: plan.harbour } : null);
+  }
+
+  /** Whether a voyage stopped short of its destination can be resumed. */
+  get resumable(): boolean {
+    return this.view.kind === 'sail' && !this.voyage && this.destination !== null;
+  }
+
+  /** Stops the ship where it is; the voyage's destination is kept, to be resumed. */
+  stop(): void {
+    if (!this.voyage) return;
+    this.voyage = null;
+    this.room?.course([], this.pace);
+  }
+
+  /** Sets sail again for the destination of the voyage last stopped, from wherever the ship lies now. */
+  resume(): void {
+    if (this.resumable && this.destination) this.sailTo(this.destination);
   }
 
   /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
@@ -180,6 +213,7 @@ export class Sea {
     }
     this.said = '';
     this.voyage = voyageOf(route.points);
+    this.destination = point;
     this.travelled = 0;
     this.room?.course(courseAhead(this.voyage, 0), this.pace);
   }
@@ -209,12 +243,16 @@ export class Sea {
     if (mark) this.sailTo([mark.at[0], mark.at[1]]);
   }
 
-  /** Flies the view up over the island's side the ship lies off, its nodes marked; false out of reach. The ship
-   *  heaves to while its captain looks. */
-  viewLandings(): boolean {
-    if (!this.canLand) return false;
+  /** Docks or goes ashore as the landfall offers: flies the view up over the island's side the ship lies off, its
+   *  nodes marked, the city's social space among them when docking; false with nothing offered. The ship heaves to
+   *  while its captain looks, and its voyage can be resumed on coming back to sea. */
+  goAshore(): boolean {
+    const landfall = this.landfall;
+    if (!landfall) return false;
     const nodes = this.islandMarks.filter((mark) => mark.kind !== 'port');
-    this.side = sideNodes(this.position, ringCentre(this.landmass.outline), nodes);
+    const side = sideNodes(this.position, ringCentre(this.landmass.outline), nodes);
+    const social = nodes.find((mark) => mark.kind === 'social');
+    this.side = landfall.kind === 'dock' && social && !side.includes(social) ? [social, ...side] : side;
     this.sideRig = frameSide(
       this.position,
       this.side,
@@ -286,7 +324,7 @@ export class Sea {
       const fix = sail(this.voyage, this.travelled, dt, this.pace);
       this.ship = { x: fix.position[0], y: fix.position[1], heading: fix.heading ?? this.ship.heading };
       this.travelled = fix.travelledM;
-      if (fix.arrived) this.voyage = null;
+      if (fix.arrived) [this.voyage, this.destination] = [null, null];
     }
     if (this.view.kind === 'sail') this.camera = keyTurn(this.camera, turn, tilt, dt);
     const { heightAt } = this.landmass;
@@ -315,7 +353,9 @@ export class Sea {
       hulls: this.hulls(),
       marks: this.marks(pose, viewport),
       note: this.note(),
-      canLand: this.canLand,
+      landfall: this.landfall,
+      sailing: this.voyage !== null,
+      resumable: this.resumable,
       pace: this.pace,
       overSide: this.view.kind === 'landing',
     };
@@ -326,7 +366,7 @@ export class Sea {
     const away = (mark: Mark) => Math.hypot(mark.at[0] - ship[0], mark.at[1] - ship[1]);
     const shown =
       this.view.kind === 'sail'
-        ? this.islandMarks.filter((mark) => mark.kind === 'port' || away(mark) <= MARK_REACH_M)
+        ? this.islandMarks.filter((mark) => mark.kind === 'port' && away(mark) <= PORT_SEEN_M)
         : this.view.kind === 'landing'
           ? this.side
           : [];
@@ -391,7 +431,7 @@ export class Sea {
       const left = timeText(secondsLeft(this.voyage, this.travelled, this.pace));
       return `Sailing · ${distanceText(remaining)} to go · ${left}${room}`;
     }
-    return (this.said || 'At anchor') + room;
+    return (this.said || (this.destination ? 'Hove to' : 'At anchor')) + room;
   }
 }
 

@@ -51,7 +51,7 @@ const HINTS = {
     'Wheel: third person · M menu',
   ],
   dead: ['Enter or Respawn: back at the nearest spawn'],
-  sea: ['Click the sea to sail · Drag to look · Wheel zoom', '[ ] pace · L view landings · M menu'],
+  sea: ['Click the sea to sail · Drag to look · Wheel zoom', '[ ] pace · Space stop or resume · M menu'],
   landing: ['Click a mark to choose it', 'Click it again or Enter to land · Esc back to sea'],
 } as const;
 
@@ -239,8 +239,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       const home = { label: 'Return to ship', run: () => travel({ kind: 'return-to-ship' }, goSea) };
       hud.menu({ title: foot.node.name, choices: [resume, home] });
     } else if (flow.mode === 'sea' && flow.menu) {
-      const landings = { label: 'View landings', run: () => viewLandings() };
-      hud.menu({ title: 'At sea', choices: sea?.canLand ? [resume, landings] : [resume] });
+      const landfall = sea?.landfall;
+      const label = landfall?.kind === 'dock' ? `Dock at ${landfall.port}` : 'Go ashore';
+      hud.menu({ title: 'At sea', choices: landfall ? [resume, { label, run: () => goAshore() }] : [resume] });
     } else hud.menu(null);
   };
 
@@ -251,11 +252,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     syncMenu();
   };
 
-  const viewLandings = () => {
+  /** Docks or goes ashore as the sea offers: the view flies up over the island's side to choose a landing. */
+  const goAshore = () => {
     // While another landmass opens, the worker's landmass is not the one the landings would be on.
     if (flow.mode !== 'sea' || !sea || charting) return;
     if (flow.menu) change({ kind: 'back' });
-    if (sea.viewLandings()) change({ kind: 'view-landings' });
+    if (sea.goAshore()) change({ kind: 'view-landings' });
+  };
+
+  /** Stops the voyage under way, or resumes the one stopped. */
+  const stopOrResume = () => {
+    if (flow.mode !== 'sea' || flow.menu || !sea) return;
+    if (sea.resumable) sea.resume();
+    else sea.stop();
   };
 
   const choose = (id: string) => {
@@ -275,7 +284,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onMark(choose);
   hud.onRespawn(respawn);
   hud.onPace((direction) => sea?.stepPace(direction));
-  hud.onLandings(viewLandings);
+  hud.onVoyage(stopOrResume);
+  hud.onLandfall(goAshore);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat) return;
@@ -285,7 +295,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea?.backToSea();
       change({ kind: 'back' });
     } else if (key === 'escape') change({ kind: 'back' });
-    else if (key === 'l') viewLandings();
+    else if (key === 'l' || (key === 'enter' && flow.mode === 'sea' && !flow.menu)) goAshore();
+    else if (key === ' ' && flow.mode === 'sea') stopOrResume();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
     else if (key === 'enter' && flow.mode === 'foot') respawn();
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
@@ -364,10 +375,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     showStanding({ kind: 'inside' });
     const island = ISLANDS[landmass.id];
     if (flow.mode === 'landing') hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
-    else hud.place('At sea', shown.canLand && island ? `Off ${island}` : REGION);
+    else hud.place('At sea', shown.landfall && island ? `Off ${island}` : REGION);
     hud.hints(flow.mode === 'landing' ? HINTS.landing : HINTS.sea);
     hud.marks(shown.marks);
-    hud.seaBar(flow.mode === 'sea' ? { pace: shown.pace, canLand: shown.canLand } : null);
+    hud.seaBar(flow.mode === 'sea' && !flow.menu ? shown : null);
     hud.note(charting ? 'Charting the coast ahead…' : shown.note);
     sinceChart += seconds;
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
