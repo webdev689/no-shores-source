@@ -25,7 +25,7 @@ UPWARD = 0.5
 # The grid's cell, metres.
 CELL_M = 0.1
 # A floor lower than this over her waterline is no deck (her bilge seen through an opening).
-LOWEST_DECK_M = 0.6
+LOWEST_DECK_M = 1.8
 # The room a body takes over its feet: a spar or gun in it, from just above the planks to over a head, keeps it off.
 CLEAR_FROM_M = 0.25
 CLEAR_TO_M = 1.8
@@ -34,7 +34,7 @@ CLEAR_TO_M = 1.8
 RISE_CM = 8
 # Behind her wheel, where the helm's view stands (client/src/game/seaLaw.ts helmEye) and a player leaving the helm
 # steps onto her deck: metres aft of her middle.
-HELM_AFT_M = 2.7
+HELM_AFT_M = 8.1
 
 
 def mesh_triangles(data):
