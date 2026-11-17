@@ -68,7 +68,7 @@ fn under_along(start: [f64; 3], end: [f64; 3], waters: &impl Waters, time: f64) 
 }
 
 /// One piece of a ball's flight, `start` to `end` (its flight `to` seconds there): the canvas it tears on the way,
-/// then what stops it. True when it is spent.
+/// then what stops it. The share of the way it is spent at, if it is.
 fn fly_piece(
     ball: &mut Ball,
     (start, end, to): ([f64; 3], [f64; 3], f64),
@@ -76,7 +76,7 @@ fn fly_piece(
     waters: &impl Waters,
     time: f64,
     events: &mut Vec<ShotEvent>,
-) -> bool {
+) -> Option<f64> {
     let radius = ball.gun.radius_m;
     let in_play = |at: usize| at != ball.shooter && targets[at].alive;
     let ship = (0..2)
@@ -109,7 +109,7 @@ fn fly_piece(
         });
     }
     if first == f64::INFINITY {
-        return false;
+        return None;
     }
     let shooter = ball.shooter;
     match (ship, under) {
@@ -127,7 +127,7 @@ fn fly_piece(
         (_, Some((share, false))) => events.push(ShotEvent::Land { shooter, point: between(start, end, share) }),
         (_, None) => {}
     }
-    true
+    Some(first)
 }
 
 /// Steps every ball to `clock` (seconds of the fight; `time` the world's): a ball whose time has come leaves its
@@ -156,7 +156,7 @@ pub fn step_balls(
         while ball.flown < age {
             let to = (ball.flown + BALL_STEP_S).min(age);
             let piece = (flight(ball.start, ball.launch, ball.flown), flight(ball.start, ball.launch, to), to);
-            if fly_piece(ball, piece, targets, waters, time, &mut events) {
+            if fly_piece(ball, piece, targets, waters, time, &mut events).is_some() {
                 return false;
             }
             ball.flown = to;
@@ -164,6 +164,46 @@ pub fn step_balls(
         true
     });
     events
+}
+
+/// Where a ball stops: seconds after it left its gun, the point, whether in the water, and where it first met
+/// the ship it was laid on (her canvas or her hull), if it did.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Stop {
+    pub time: f64,
+    pub point: [f64; 3],
+    pub water: bool,
+    pub strike: Option<[f64; 3]>,
+}
+
+/// Where `ball`, flown alone by the same law in pieces of `piece_s` (a fight's tick, as its balls are stepped), stops:
+/// the ships where `targets` has them each piece's end (seconds after it leaves its gun), the water at `time`. None
+/// if it is still aloft after `BALL_LIFE_S`.
+pub fn stop_of(
+    mut ball: Ball,
+    targets: impl Fn(f64) -> [Target; 2],
+    laid_on: usize,
+    (waters, time, piece_s): (&impl Waters, f64, f64),
+) -> Option<Stop> {
+    let mut events = Vec::new();
+    while ball.flown < BALL_LIFE_S {
+        let (from, to) = (ball.flown, ball.flown + piece_s.clamp(1e-3, BALL_STEP_S));
+        let piece = (flight(ball.start, ball.launch, from), flight(ball.start, ball.launch, to), to);
+        if let Some(share) = fly_piece(&mut ball, piece, &targets(to), waters, time, &mut events) {
+            let strike = events.iter().find_map(|event| match *event {
+                ShotEvent::Hit { target, point, .. } if target == laid_on => Some(point),
+                _ => None,
+            });
+            let (point, water) = match events.last() {
+                Some(ShotEvent::Splash { point, .. }) => (*point, true),
+                Some(ShotEvent::Hit { point, .. } | ShotEvent::Land { point, .. }) => (*point, false),
+                _ => (between(piece.0, piece.1, share), false),
+            };
+            return Some(Stop { time: from + (to - from) * share, point, water, strike });
+        }
+        ball.flown = to;
+    }
+    None
 }
 
 #[cfg(test)]

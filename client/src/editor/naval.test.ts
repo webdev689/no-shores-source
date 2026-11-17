@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
+import type { FightCaptain, FightLay, FightVessel, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { FightSource } from './fighting.ts';
 import type { Sailed } from './landClient.ts';
 import { Naval } from './naval.ts';
+import type { Orbit } from './orbit.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
 const vessel: FightVessel = {
@@ -139,4 +140,48 @@ test('a fight that is over hands her the last answer, ends, and keeps its lines 
   assert.deepEqual([naval.fighting, asked.ends], [false, 1]);
   assert.deepEqual([...sailing.floats()], [9, 9, 0, 0, 0, 0, 0, 1]);
   assert.ok(naval.lines(2).length > 0 && naval.lines(10).length === 0);
+});
+
+test("the look's ray runs from the aim eye along the camera's look", async () => {
+  const naval = new Naval(drawer);
+  const sailing = await sloop();
+  const orbit = { yaw: Math.PI / 2, pitch: 0.2 } as Orbit;
+  const look = naval.look(orbit, sailing, WINDOW);
+  const [x = 0, y = 0, z = 0, east = 0, south = 0, up = 0] = look.ray ?? [];
+  assert.ok(look.bearing > 89 && look.bearing < 91, 'over her starboard side');
+  assert.ok(x > 5 && Math.abs(y - 3) < 1e-9 && z > 5, 'the starboard aim eye');
+  assert.ok(Math.abs(east - Math.cos(0.2)) < 1e-9 && Math.abs(south) < 1e-9 && Math.abs(up + Math.sin(0.2)) < 1e-9);
+});
+
+test('each arc ends where its gun stops: a strike mark on her, a zone where it splashes', () => {
+  const lay: FightLay = {
+    side: 'starboard',
+    launches: [
+      [0, 0, 5, 10, 0, 0],
+      [0, 2, 5, 20, 0, 0],
+    ],
+    elevation: 0,
+    reach: 300,
+    ends: [
+      { time: 0.5, point: [5, 0, 3.77], water: false, strike: [5, 0, 3.77] },
+      { time: 1, point: [20, 2, 0.1], water: true, strike: null },
+    ],
+    radius: 2,
+    on_target: true,
+  };
+  const marks = Naval.arcs({ ...VIEW, lay }, WINDOW, 1);
+  const dots = marks.filter((mark) => mark.radius < 0.1 && mark.z !== 0.1);
+  assert.ok(
+    dots.filter((dot) => dot.y === 0).every((dot) => dot.x <= 5 + 1e-9),
+    'the first arc stops on her side',
+  );
+  assert.ok(
+    dots.filter((dot) => dot.y === 2).every((dot) => dot.x <= 20 + 1e-9),
+    'the second at its splash',
+  );
+  const strikes = marks.filter((mark) => mark.radius >= 0.1 && mark.x === 5 && mark.z === 3.77);
+  assert.equal(strikes.length, 1, 'a strike mark where it meets her');
+  const zone = marks.filter((mark) => Math.abs(Math.hypot(mark.x - 20, mark.y - 2) - 2) < 1e-9 && mark.z === 0.1);
+  assert.ok(zone.length >= 12, 'a ring of the zone radius round the splash');
+  assert.ok(!marks.some((mark) => mark.z === 3.77 && mark.radius < 0.1), 'no zone on her side');
 });

@@ -10,8 +10,9 @@ dfo_paths:
   - src/systems/helmWay.js
   - src/systems/seaHelm.js
   - src/systems/naval/
+  - src/scenes/naval/navalHost.js
   - src/world/ships/ownBoats/
-dfo_commit: ce0bb33c20 (main); fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit) for ownBoats and sailAssist
+dfo_commit: ce0bb33c20 (main); fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit) for ownBoats and sailAssist; 1c0fd681 for the aim
 ---
 # Pick - Sailing and Naval Combat
 

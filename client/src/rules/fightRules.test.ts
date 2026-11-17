@@ -84,3 +84,11 @@ test('the fight door refuses a step with no fight and a look past its reach', as
   rules.fightEnd();
   assert.throws(() => rules.fightStep(ordersOf([]), 1000, 1), /no fight/);
 });
+
+test('the fight door refuses a look whose ray is not numbers', async () => {
+  const rules = await openSquare();
+  rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000);
+  const looked = (ray: readonly number[]) => ({ ...ordersOf([]), aim: { bearing: 90, range: 80, ray } });
+  assert.equal(rules.fightStep(looked([5, 3, 6, 1, 0, -0.1]), 1000, 1).lay?.side, 'starboard');
+  assert.throws(() => rules.fightStep(looked([5, 3, 6, 1, 0, Number.NaN]), 1000, 1), /ray/);
+});
