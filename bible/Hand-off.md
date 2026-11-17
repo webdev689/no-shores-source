@@ -93,10 +93,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- The Cloudflare token: the owner gave it in the chat, so it should be rotated, and the new one saved as the
-  repository's Actions secret `CLOUDFLARE_API_TOKEN` (no environment or secret holds it), for the `ships` workflow and
-  the rooms' deploy.
-- #50, her painted model and mesh published to R2: to test and say yes to merging and publishing. Its open choices: where another
+- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
+  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms: its proxy writes
+  the stored token over the upload token Cloudflare hands back.
+- #50 is merged and published. Its open choices: where another
   player's colour goes on the Sloop, her 75 m drawn size at sea.
 - #48 is merged. Its intent carries the aim and its events the stroke, so the page and the rooms deploy
   together, with the owner's yes. Walking or sprinting that does not happen on demand was not reproduced

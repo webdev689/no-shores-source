@@ -1,0 +1,40 @@
+name: rooms
+
+# Deploys the rooms to Cloudflare (`npm run server:deploy`) with the repository's Cloudflare token: only from main and
+# only when run by hand, after the owner's yes. It first builds what the Worker bundles: the messages' code and the
+# rooms' WebAssembly.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rooms
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check the token is set
+        run: test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::the repository has no CLOUDFLARE_TOKEN secret"; exit 1; }
+      - name: Install the TypeScript tools
+        run: npm ci
+      - name: Build the messages and the rooms' WebAssembly
+        run: npm run -s schema && npm run -s wasm
+      - name: Deploy the rooms
+        run: npm run -s server:deploy
