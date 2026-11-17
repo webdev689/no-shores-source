@@ -158,6 +158,9 @@ pub fn lay_on(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, tar
     Lay { elevation, ..square }
 }
 
+/// The balls a laid side fires: one from each mouth, each `RIPPLE_S` after the one before and from where its port is
+/// by then, carried at the deck's velocity, scattered by its crew's skill and the volley's seed.
+#[must_use]
 pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, shooter: usize) -> Vec<Ball> {
     let mut draws = Mulberry32::new(seed);
     let widen = widening(skill);

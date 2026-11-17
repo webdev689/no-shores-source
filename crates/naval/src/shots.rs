@@ -177,8 +177,8 @@ pub struct Stop {
 }
 
 /// Where `ball`, flown alone by the same law in pieces of `piece_s` (a fight's tick, as its balls are stepped), stops:
-/// the ships where `targets` has them each piece's end (seconds after it leaves its gun), the water at `time`. None
-/// if it is still aloft after `BALL_LIFE_S`.
+/// the ships where `targets` has them each piece's end (seconds after it leaves its gun), the water as the swell
+/// stands then, `time` the world's as it leaves. None if it is still aloft after `BALL_LIFE_S`.
 pub fn stop_of(
     mut ball: Ball,
     targets: impl Fn(f64) -> [Target; 2],
@@ -189,7 +189,7 @@ pub fn stop_of(
     while ball.flown < BALL_LIFE_S {
         let (from, to) = (ball.flown, ball.flown + piece_s.clamp(1e-3, BALL_STEP_S));
         let piece = (flight(ball.start, ball.launch, from), flight(ball.start, ball.launch, to), to);
-        if let Some(share) = fly_piece(&mut ball, piece, &targets(to), waters, time, &mut events) {
+        if let Some(share) = fly_piece(&mut ball, piece, &targets(to), waters, time + to, &mut events) {
             let strike = events.iter().find_map(|event| match *event {
                 ShotEvent::Hit { target, point, .. } if target == laid_on => Some(point),
                 _ => None,
