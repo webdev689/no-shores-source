@@ -1,9 +1,9 @@
 // A painted picture made ready for its layer: resampled to the array's square texel for texel (nearest, so a
 // picture keeps its hard edges up close), then halved down to one texel, each level the mean of the four below it.
+import type { LayerLevels } from '../textures/levels.ts';
 import { LAYER_SIZE } from './pictures.ts';
 
-/** A picture's levels from LAYER_SIZE square down to 1, each RGBA with its top row first. */
-export type LayerLevels = Uint8Array[];
+export { type LayerLevels, levelsOf } from '../textures/levels.ts';
 
 /** Resamples an RGBA picture (top row first) to `size` square by nearest texel. */
 export function resampled(rgba: Uint8Array, width: number, height: number, size = LAYER_SIZE): Uint8Array {
@@ -16,25 +16,6 @@ export function resampled(rgba: Uint8Array, width: number, height: number, size 
     }
   }
   return out;
-}
-
-/** Every level of a square picture: itself, then each half the size, down to one texel. */
-export function levelsOf(square: Uint8Array, size = LAYER_SIZE): LayerLevels {
-  const levels: LayerLevels = [square];
-  for (let side = size / 2; side >= 1; side /= 2) {
-    const above = levels[levels.length - 1];
-    const level = new Uint8Array(side * side * 4);
-    for (let y = 0; y < side; y++)
-      for (let x = 0; x < side; x++)
-        for (let channel = 0; channel < 4; channel++) {
-          const texel = (row: number, column: number): number => above[(row * side * 2 + column) * 4 + channel];
-          const sum =
-            texel(2 * y, 2 * x) + texel(2 * y, 2 * x + 1) + texel(2 * y + 1, 2 * x) + texel(2 * y + 1, 2 * x + 1);
-          level[(y * side + x) * 4 + channel] = Math.round(sum / 4);
-        }
-    levels.push(level);
-  }
-  return levels;
 }
 
 /** Levels of one colour throughout, for a layer not painted yet. */

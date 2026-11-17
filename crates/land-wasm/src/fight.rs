@@ -6,13 +6,11 @@ use super::OPEN;
 use super::sail::{helm_from, ship_from, ticks_from};
 use land::exact::fingerprint;
 use land::sea::Swell;
-use naval::arms::{LARGE_BOAT, PIRATE_SLOOP, Side};
+use naval::arms::{PIRATE_SLOOP, Side};
 use naval::ballistics::flight;
 use naval::captain::Mode;
-use naval::captain::course::velocity_of;
 use naval::damage::{State, Zone};
-use naval::fight::{Aim, End, Event, Fight, Orders, PLAYER, Refusal, Vessel};
-use naval::gunnery::{aimed, zone_radius};
+use naval::fight::{Aim, End, Event, Fight, Orders, Refusal, Vessel};
 use naval::guns::Shot;
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
@@ -111,42 +109,21 @@ fn event_json(event: &Event) -> Option<Value> {
     })
 }
 
-/// The lay the player's look holds: each gun's unscattered launch and where it stops (or null, still aloft), the
-/// landing zone's radius at their mean range on the water, and whether any would strike her; or no side.
+/// The lay the player's look holds (the naval crate's `ShownLay`), or no side.
 fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
-    let Some(laid) = aim.and_then(|aim| fight.laid(aim)) else {
+    let Some(shown) = aim.and_then(|aim| fight.shown_lay(aim, waters, time)) else {
         return Value::Null;
     };
-    let ends = fight.ends(&laid, waters, time);
-    let splashes: Vec<f64> = ends
-        .iter()
-        .flatten()
-        .filter(|stop| stop.water)
-        .map(|stop| {
-            let (east, south) = (stop.point[0] - laid.centre[0], stop.point[1] - laid.centre[1]);
-            (east * east + south * south).sqrt()
-        })
-        .collect();
-    let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
-    let way = velocity_of(&fight.player.ship);
-    // Each gun's ball as it leaves, a ripple after the one before and carried on by her way meanwhile, as `ends` flies
-    // it: so each arc ends on its own stop.
-    let launches: Vec<[f64; 6]> = (0..laid.mouths.len())
-        .map(|index| {
-            let ball = aimed(&laid, index, [way[0], way[1], 0.0], 0.0, PLAYER);
-            [ball.start[0], ball.start[1], ball.start[2], ball.launch[0], ball.launch[1], ball.launch[2]]
-        })
-        .collect();
     json!({
-        "side": side_name(laid.side),
-        "launches": launches,
-        "elevation": laid.elevation,
-        "reach": laid.reach,
-        "ends": ends.iter().map(|end| end.map(|stop| json!({
+        "side": side_name(shown.side),
+        "launches": shown.launches,
+        "elevation": shown.elevation,
+        "reach": shown.reach,
+        "ends": shown.ends.iter().map(|end| end.map(|stop| json!({
             "time": stop.time, "point": stop.point, "water": stop.water, "strike": stop.strike,
         }))).collect::<Vec<_>>(),
-        "radius": zone_radius(&laid.gun, LARGE_BOAT.skill, range),
-        "on_target": ends.iter().flatten().any(|stop| stop.strike.is_some()),
+        "radius": shown.radius,
+        "on_target": shown.on_target,
     })
 }
 

@@ -32,6 +32,8 @@ export interface SailSource {
 }
 
 const STILL: Helm = { steer: 0, crab: false, climb: 0 };
+/** The helm's rung with her sails set. */
+export const SAILS_RUNG = 2;
 
 /** The Sloop under the owner's hand in the World Editor: her numbers as the rules last answered them, the ticks the
  *  page owes her, and the rung presses waiting for a step. One step is with the rules at a time. */
@@ -180,7 +182,7 @@ export class Sailing {
   }
 
   /** Where she is drawn in the window, her height scaled as the land is drawn. */
-  place(view: LandView, exaggeration: number): ShipPlace {
+  place(view: Pick<LandView, 'leftM' | 'topM'>, exaggeration: number): ShipPlace {
     return {
       x: (this.ship[0] ?? 0) - view.leftM,
       y: (this.ship[1] ?? 0) - view.topM,
@@ -189,6 +191,11 @@ export class Sailing {
       pitch: this.pose.pitch,
       roll: this.pose.roll,
     };
+  }
+
+  /** Whether her sails are set: the helm's top rung (crates/sailing/src/ship.rs). */
+  get sailsSet(): boolean {
+    return this.ship[7] === SAILS_RUNG;
   }
 
   /** What the panel says of her: her rung, her way, and the ground if she has taken it. */

@@ -7,6 +7,9 @@ use combat::floats::INTENT_FLOATS;
 use combat::{Intent, Shot};
 use movement::Body;
 use movement::floats::CONTROLS_FLOATS;
+use naval::fight::Orders;
+use naval::wire::{orders_from, orders_numbers};
+use room::pirates::Pirate;
 use room::sea::Ship;
 use room::{Event, FoeSeen, Input, PlayerId, Seen, Shown, Standing};
 
@@ -94,13 +97,41 @@ pub fn read_course(bytes: &[u8]) -> Result<(Vec<[f64; 2]>, u16), String> {
     Ok((numbers.chunks_exact(2).map(|pair| [pair[0], pair[1]]).collect(), course.pace()))
 }
 
+/// What a ship's message asks of the sea room: a course, or, in a fight, her orders.
+#[derive(Clone, Debug, PartialEq)]
+pub enum SeaInput {
+    Course(Vec<[f64; 2]>, u16),
+    Orders(Orders),
+}
+
+/// What a message to the sea room asks, or why it does not read: orders when it carries them, else a course. The
+/// bytes come from a player's machine, so the verifier passes them first.
+pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
+    let course = flatbuffers::root::<messages::Course>(bytes).map_err(|error| error.to_string())?;
+    if let Some(orders) = course.orders() {
+        return orders_from(&orders.iter().collect::<Vec<_>>()).map(SeaInput::Orders);
+    }
+    read_course(bytes).map(|(points, pace)| SeaInput::Course(points, pace))
+}
+
+/// Orders as their bytes: what a browser sends the sea room in a fight, written from Rust for tests.
+#[must_use]
+pub fn orders_bytes(orders: &Orders) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let orders = Some(builder.create_vector(&orders_numbers(orders)));
+    let args = messages::CourseArgs { orders, ..messages::CourseArgs::default() };
+    let course = messages::Course::create(&mut builder, &args);
+    builder.finish(course, None);
+    builder.finished_data().to_vec()
+}
+
 /// A course as its bytes: what a browser sends the sea room, written from Rust for tests.
 #[must_use]
 pub fn course_bytes(points: &[[f64; 2]], pace: u16) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let numbers: Vec<f64> = points.iter().flatten().copied().collect();
     let points = Some(builder.create_vector(&numbers));
-    let course = messages::Course::create(&mut builder, &messages::CourseArgs { points, pace });
+    let course = messages::Course::create(&mut builder, &messages::CourseArgs { points, pace, orders: None });
     builder.finish(course, None);
     builder.finished_data().to_vec()
 }
@@ -231,13 +262,20 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .collect();
     let shots = Some(builder.create_vector(&shots));
     let tick = snapshot.tick;
-    let args = messages::SnapshotArgs { tick, players, dressed, foes, events, shots, ships: None };
+    let args =
+        messages::SnapshotArgs { tick, players, dressed, foes, events, shots, ..messages::SnapshotArgs::default() };
     finish_snapshot(builder, &args)
 }
 
-/// Every ship at sea after the sea room's tick `tick`.
+/// Everything at sea after the sea room's tick `tick`: every ship, every pirate, and each player's fight as the naval
+/// crate's numbers (`naval::wire::view_numbers`).
 #[must_use]
-pub fn sea_snapshot_bytes(tick: u64, ships: &[(PlayerId, Ship)]) -> Vec<u8> {
+pub fn sea_snapshot_bytes(
+    tick: u64,
+    ships: &[(PlayerId, Ship)],
+    pirates: &[Pirate],
+    fights: &[(PlayerId, Vec<f64>)],
+) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let each: Vec<_> = ships
         .iter()
@@ -246,7 +284,22 @@ pub fn sea_snapshot_bytes(tick: u64, ships: &[(PlayerId, Ship)]) -> Vec<u8> {
         })
         .collect();
     let ships = Some(builder.create_vector(&each));
-    let args = messages::SnapshotArgs { tick, ships, ..messages::SnapshotArgs::default() };
+    let each: Vec<_> = pirates
+        .iter()
+        .map(|&Pirate { id, x, y, heading, .. }| {
+            messages::Pirate::create(&mut builder, &messages::PirateArgs { id, x, y, heading })
+        })
+        .collect();
+    let pirates = Some(builder.create_vector(&each));
+    let each: Vec<_> = fights
+        .iter()
+        .map(|(player, numbers)| {
+            let view = Some(builder.create_vector(numbers));
+            messages::SeaFight::create(&mut builder, &messages::SeaFightArgs { player: *player, view })
+        })
+        .collect();
+    let fights = Some(builder.create_vector(&each));
+    let args = messages::SnapshotArgs { tick, ships, pirates, fights, ..messages::SnapshotArgs::default() };
     finish_snapshot(builder, &args)
 }
 

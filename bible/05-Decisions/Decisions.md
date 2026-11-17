@@ -60,6 +60,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The World Is Claude's to Mold]]
 - [[The World as Claude Shapes It]]
 - [[Combat Is Soulframe's, With DFO's Enhanced AI]]
+- [[The Sea Is Navigated From the Helm With the Held Map]]
+- [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -27,9 +27,11 @@ table Input {
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
 // of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest.
+// In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points.
 table Course {
   points: [double];
   pace: ushort;
+  orders: [double];
 }
 
 // A player's dress, passed on as their browser wrote it.
@@ -103,8 +105,23 @@ table Ship {
   pace: ushort;
 }
 
+// A pirate at sea: her number, where she is, and her heading in radians clockwise from north.
+table Pirate {
+  id: uint;
+  x: double;
+  y: double;
+  heading: double;
+}
+
+// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs).
+table SeaFight {
+  player: uint;
+  view: [double];
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
-// happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea.
+// happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
+// pirate, and each player's fight.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -113,6 +130,8 @@ table Snapshot {
   events: [Event];
   shots: [Flying];
   ships: [Ship];
+  pirates: [Pirate];
+  fights: [SeaFight];
 }
 
 // What a room sends: exactly one of these is present.

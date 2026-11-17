@@ -2,13 +2,15 @@
 
     <python with bpy> tools/ships/export_ship.py /path/to/Ship.blend <name> --waterline <metres> [--dry-run]
 
-bpy is Blender as a Python module: make a Python 3.13 venv and `pip install bpy==5.3.0`. With --dry-run it writes
-`<name>.mesh` into the working folder (so run it from one outside the repo) and uploads nothing; without, it uploads
-the .blend and the mesh under their hashes and names both, with her waterline, in content/ships/ships.json. The
-format and the ship's frame are in the Sailing note.
+bpy is Blender as a Python module: make a Python 3.13 venv and `pip install bpy==5.3.0`. The model's faces are in the
+part materials tools/ships/paint_ship.py sorts them into, with UVs in metres. With --dry-run it writes `<name>.mesh`
+into the working folder (so run it from one outside the repo) and uploads nothing; without, it uploads the .blend and
+the mesh under their hashes and names both, with her waterline, guns, boxes and sails, in content/ships/ships.json.
+The format and the ship's frame are in the Sailing note.
 """
 import argparse
 import json
+import math
 import os
 import re
 import struct
@@ -22,31 +24,15 @@ sys.path.insert(0, TOOLS)
 from r2 import PUBLIC, published, put  # noqa: E402
 
 MANIFEST = os.path.join(os.path.dirname(TOOLS), 'content', 'ships', 'ships.json')
-EMPTY_SLOT_GREY = (0.8, 0.8, 0.8)
+# The parts the game paints, numbered as her mesh numbers them (client/src/textures/shipPictures.ts).
+PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
+# The parts a ball strikes as her hull; her spars and guns take none.
+HULL_PARTS = ('hull', 'deck')
+# A sail's outline turns at a corner by more than this, degrees: her model's canvas edges bend a little between them.
+CORNER_TURN_DEG = 20
 GUN_NAME = re.compile(r'Cannon\.(Port|Starboard)\.(\d+)$')
 # How near the barrel's outboard end a vertex lies to be its mouth's rim, metres.
 MOUTH_M = 0.01
-
-
-def srgb(linear):
-    """A linear colour channel (Blender's) as the sRGB byte the canvas shows."""
-    value = max(0.0, min(1.0, linear))
-    shown = value * 12.92 if value <= 0.0031308 else 1.055 * value ** (1 / 2.4) - 0.055
-    return round(shown * 255)
-
-
-def colour_of(material):
-    """A material's base colour: its Principled BSDF's, else its viewport colour; an empty slot is plain grey."""
-    if material is None:
-        return EMPTY_SLOT_GREY
-    if material.node_tree is not None:
-        for node in material.node_tree.nodes:
-            if node.type == 'BSDF_PRINCIPLED':
-                base = node.inputs['Base Color']
-                if base.is_linked:
-                    print(f"warning: {material.name}'s base colour comes from a node; its own value is used")
-                return tuple(base.default_value[:3])
-    return tuple(material.diffuse_color[:3])
 
 
 def snorm8(value):
@@ -75,9 +61,20 @@ def rendered(instance, hidden):
     return all(not owner.hide_render for owner in owners) and all(shown)
 
 
+def part_names(item):
+    """Each material slot's part, refusing a slot that is not one of the parts."""
+    names = [slot.material.name if slot.material else None for slot in item.material_slots]
+    for name in names:
+        if name not in PARTS:
+            sys.exit(f'{item.name} has a face in {name!r}, no part: run tools/ships/paint_ship.py on the model first')
+    if not names:
+        sys.exit(f'{item.name} has no material: run tools/ships/paint_ship.py on the model first')
+    return names
+
+
 def triangles(depsgraph):
-    """Every rendered mesh's triangles, collection instances among them, in the ship's frame: three (position, normal,
-    colour) corners each."""
+    """Every rendered mesh's triangles but her canvas's (the game sets her sails), collection instances among them, in
+    the ship's frame: three (position, normal, uv, part) corners each."""
     hidden = render_hidden(bpy.context.scene)
     for instance in depsgraph.object_instances:
         item = instance.object
@@ -90,17 +87,22 @@ def triangles(depsgraph):
         mirrored = matrix.determinant() < 0
         inward = -1 if mirrored else 1
         mesh.calc_loop_triangles()
-        slots = [slot.material for slot in item.material_slots] or [None]
-        colours = [srgb_triple(colour_of(material)) for material in slots]
+        names = part_names(item)
+        uvs = mesh.uv_layers.active
+        if uvs is None:
+            sys.exit(f'{item.name} has no UVs: run tools/ships/paint_ship.py on the model first')
         for triangle in mesh.loop_triangles:
-            colour = colours[min(triangle.material_index, len(colours) - 1)]
+            part = PARTS.index(names[min(triangle.material_index, len(names) - 1)])
+            if PARTS[part] == 'sail':
+                continue
             corners = []
             for loop_index in triangle.loops:
                 position = mesh.vertices[mesh.loops[loop_index].vertex_index].co
                 normal = mesh.corner_normals[loop_index].vector * inward
+                uv = tuple(uvs.data[loop_index].uv)
                 # Blender's y is to port when x is forward; the ship's is to starboard. The world the game draws in
                 # (east, south, up) is mirrored the same way, so each face keeps its corners' order.
-                corners.append(((position.x, -position.y, position.z), (normal.x, -normal.y, normal.z), colour))
+                corners.append(((position.x, -position.y, position.z), (normal.x, -normal.y, normal.z), uv, part))
             yield corners[::-1] if mirrored else corners
         item.to_mesh_clear()
 
@@ -110,7 +112,7 @@ def wound_outward(faces):
     ship's frame is the model's mirrored, so here such a face's corners run the other way about its normal."""
     outward = 0
     for corners in faces:
-        (first, normal_a, _), (second, normal_b, _), (third, normal_c, _) = corners
+        (first, normal_a, *_), (second, normal_b, *_), (third, normal_c, *_) = corners
         along = [second[axis] - first[axis] for axis in range(3)]
         across = [third[axis] - first[axis] for axis in range(3)]
         turn = [
@@ -123,17 +125,13 @@ def wound_outward(faces):
     return outward / max(len(faces), 1)
 
 
-def srgb_triple(colour):
-    return tuple(srgb(channel) for channel in colour)
-
-
 def waterline(faces, level):
     """Where the triangles cross z = `level`: her length and beam there and her draught below it, metres (with the
     level itself), and the middle of that waterline (x, y), which becomes her origin."""
     crossings = []
     lowest = level
     for corners in faces:
-        for index, (start, _, _) in enumerate(corners):
+        for index, (start, *_) in enumerate(corners):
             end = corners[(index + 1) % 3][0]
             lowest = min(lowest, start[2])
             if (start[2] <= level <= end[2] or end[2] <= level <= start[2]) and start[2] != end[2]:
@@ -197,9 +195,8 @@ def bounds(points):
 
 
 def boxes(depsgraph, offset):
-    """What a ball can strike, in the ship's frame moved by `offset`: her hull (the box round every face in a named
-    material other than a sail) and her sails (a box round each connected piece of a material named sail). Faces in an
-    empty slot, her spars and rigging, take no balls."""
+    """What a ball can strike, in the ship's frame moved by `offset`: her hull (the box round every face of her hull and
+    deck) and her sails (a box round each connected piece of her canvas). Her spars and guns take no balls."""
     hidden = render_hidden(bpy.context.scene)
     hull, pieces = [], []
     for instance in depsgraph.object_instances:
@@ -208,7 +205,7 @@ def boxes(depsgraph, offset):
             continue
         mesh = item.to_mesh()
         mesh.transform(instance.matrix_world.copy())
-        names = [slot.material.name.lower() if slot.material else None for slot in item.material_slots]
+        names = part_names(item)
         # The canvas's pieces: faces of a sail material joined through the vertices they share.
         joined = {}
 
@@ -219,17 +216,15 @@ def boxes(depsgraph, offset):
 
         canvas = []
         for polygon in mesh.polygons:
-            name = names[polygon.material_index] if names else None
+            name = names[min(polygon.material_index, len(names) - 1)]
             corners = [mesh.vertices[index].co for index in polygon.vertices]
             points = [(corner.x + offset[0], -corner.y + offset[1], corner.z + offset[2]) for corner in corners]
-            if name is None:
-                continue
-            if name.startswith('sail'):
+            if name == 'sail':
                 first = root(polygon.vertices[0])
                 for index in polygon.vertices[1:]:
                     joined[root(index)] = first
                 canvas.append((polygon.vertices[0], points))
-            else:
+            elif name in HULL_PARTS:
                 hull.extend(points)
         by_piece = {}
         for vertex, points in canvas:
@@ -237,10 +232,94 @@ def boxes(depsgraph, offset):
         pieces.extend(by_piece.values())
         item.to_mesh_clear()
     if not hull:
-        sys.exit('no face of the model is in a named material, so she has no hull to strike')
+        sys.exit('no face of the model is her hull or deck, so she has no hull to strike')
     # Fore to aft, as the guns are numbered.
     sails = sorted((bounds(points) for points in pieces), key=lambda box: -box[1][0])
     return {'hull': bounds(hull), 'sails': sails}
+
+
+def outline_corners(polygons):
+    """A piece of canvas's corners, in order round it: the points where its outline (the edges one face alone has)
+    turns by more than CORNER_TURN_DEG."""
+    edges = {}
+    for polygon in polygons:
+        for start, end in zip(polygon, polygon[1:] + polygon[:1]):
+            key = (min(start, end), max(start, end))
+            edges[key] = edges.get(key, 0) + 1
+    following = {}
+    for start, end in (key for key, count in edges.items() if count == 1):
+        following.setdefault(start, []).append(end)
+        following.setdefault(end, []).append(start)
+    first = next(iter(following))
+    ring, previous = [first], None
+    while True:
+        here = ring[-1]
+        step = next((other for other in following[here] if other != previous), None)
+        if step is None or step == first:
+            break
+        ring.append(step)
+        previous = here
+    corners = []
+    for index, point in enumerate(ring):
+        before, after = ring[index - 1], ring[(index + 1) % len(ring)]
+        incoming = [point[axis] - before[axis] for axis in range(3)]
+        outgoing = [after[axis] - point[axis] for axis in range(3)]
+        dot = sum(a * b for a, b in zip(incoming, outgoing))
+        size = math.hypot(*incoming) * math.hypot(*outgoing)
+        if size and math.degrees(math.acos(max(-1.0, min(1.0, dot / size)))) > CORNER_TURN_DEG:
+            corners.append(point)
+    return corners
+
+
+def sails(depsgraph, offset):
+    """Her sails' corners, in the ship's frame moved by `offset`, fore to aft: a staysail's three (its head the
+    highest, its tack the foremost of the others, its clew the last) and a gaff sail's four (its luff the two nearest
+    the bow, its tack and throat, the foot's after end its clew, the head's its peak). The game builds each canvas on
+    them (client/src/ships/sails.ts)."""
+    hidden = render_hidden(bpy.context.scene)
+    found = []
+    for instance in depsgraph.object_instances:
+        item = instance.object
+        if item.type != 'MESH' or not rendered(instance, hidden):
+            continue
+        mesh = item.to_mesh()
+        mesh.transform(instance.matrix_world.copy())
+        names = part_names(item)
+        canvas = [polygon for polygon in mesh.polygons if names[min(polygon.material_index, len(names) - 1)] == 'sail']
+        pieces = {}
+        joined = {}
+
+        def root(vertex):
+            while joined.setdefault(vertex, vertex) != vertex:
+                vertex = joined[vertex]
+            return vertex
+
+        for polygon in canvas:
+            for index in polygon.vertices[1:]:
+                joined[root(index)] = root(polygon.vertices[0])
+        for polygon in canvas:
+            pieces.setdefault(root(polygon.vertices[0]), []).append(
+                [tuple(round(value, 4) for value in (corner.x + offset[0], -corner.y + offset[1], corner.z + offset[2]))
+                 for corner in (mesh.vertices[index].co for index in polygon.vertices)]
+            )
+        for polygons in pieces.values():
+            corners = outline_corners(polygons)
+            point = lambda corner: [round(value, 4) for value in corner]  # noqa: E731
+            if len(corners) == 3:
+                head = max(corners, key=lambda corner: corner[2])
+                tack, clew = sorted((corner for corner in corners if corner is not head), key=lambda corner: -corner[0])
+                found.append({'kind': 'stay', 'tack': point(tack), 'clew': point(clew), 'head': point(head)})
+            elif len(corners) == 4:
+                luff = sorted(corners, key=lambda corner: -corner[0])[:2]
+                leech = [corner for corner in corners if corner not in luff]
+                tack, throat = sorted(luff, key=lambda corner: corner[2])
+                clew, peak = sorted(leech, key=lambda corner: corner[2])
+                found.append({'kind': 'gaff', 'tack': point(tack), 'clew': point(clew), 'throat': point(throat),
+                              'peak': point(peak)})
+            else:
+                sys.exit(f'a sail of {len(corners)} corners is neither a staysail (3) nor a gaff sail (4)')
+        item.to_mesh_clear()
+    return sorted(found, key=lambda sail: -max(sail[corner][0] for corner in sail if corner != 'kind'))
 
 
 def moved(faces, offset):
@@ -248,7 +327,7 @@ def moved(faces, offset):
     def shifted(position):
         return tuple(axis + shift for axis, shift in zip(position, offset))
 
-    return [[(shifted(position), normal, colour) for position, normal, colour in corners] for corners in faces]
+    return [[(shifted(position), *rest) for position, *rest in corners] for corners in faces]
 
 
 def mesh_bytes(name, faces, size):
@@ -256,8 +335,8 @@ def mesh_bytes(name, faces, size):
     index_of, vertices, indices = {}, bytearray(), []
     low, high = [float('inf')] * 3, [float('-inf')] * 3
     for corners in faces:
-        for position, normal, colour in corners:
-            packed = struct.pack('<3f4b4B', *position, *(snorm8(value) for value in normal), 0, *colour, 255)
+        for position, normal, uv, part in corners:
+            packed = struct.pack('<3f4b2f4B', *position, *(snorm8(value) for value in normal), 0, *uv, part, 0, 0, 0)
             if packed not in index_of:
                 index_of[packed] = len(index_of)
                 vertices += packed
@@ -276,7 +355,7 @@ def mesh_bytes(name, faces, size):
     return header, struct.pack('<I', len(text)) + text + bytes(vertices) + struct.pack(f'<{len(indices)}I', *indices)
 
 
-def publish(name, blend_path, mesh, size, armed, struck):
+def publish(name, blend_path, mesh, size, armed, struck, rigged):
     with open(blend_path, 'rb') as file:
         source = put(file.read(), 'sources', 'blend', 'application/octet-stream')
     shape = put(mesh, 'ships', 'mesh', 'application/octet-stream')
@@ -284,7 +363,9 @@ def publish(name, blend_path, mesh, size, armed, struck):
     if os.path.exists(MANIFEST):
         with open(MANIFEST) as file:
             manifest = json.load(file)
-    manifest['ships'][name] = {'mesh': shape, 'source': source, 'waterline': size, 'guns': armed, 'boxes': struck}
+    manifest['ships'][name] = {
+        'mesh': shape, 'source': source, 'waterline': size, 'guns': armed, 'boxes': struck, 'sails': rigged,
+    }
     for key in (shape, source):
         published(manifest, key)
     os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
@@ -310,15 +391,17 @@ def main():
     offset = (-middle_x, -middle_y, -args.waterline)
     armed = guns(bpy.data.objects, offset)
     struck = boxes(bpy.context.evaluated_depsgraph_get(), offset)
+    rigged = sails(bpy.context.evaluated_depsgraph_get(), offset)
     header, mesh = mesh_bytes(args.name, moved(faces, offset), size)
     print(json.dumps(armed))
     print(json.dumps(struck))
+    print(json.dumps(rigged))
     print(json.dumps(header), f'{len(mesh) / 2 ** 20:.2f} MiB')
     if args.dry_run:
         with open(f'{args.name}.mesh', 'wb') as file:
             file.write(mesh)
         return
-    publish(args.name, args.blend, mesh, size, armed, struck)
+    publish(args.name, args.blend, mesh, size, armed, struck, rigged)
 
 
 if __name__ == '__main__':

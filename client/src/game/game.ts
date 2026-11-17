@@ -19,6 +19,11 @@ import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
+import { LocalRoom } from '../network/localRoom.ts';
+import { RoomConnection } from '../network/roomConnection.ts';
+import { MarkView } from '../ships/markView.ts';
+import { loadShip, shipSails } from '../ships/shipMesh.ts';
+import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -27,18 +32,19 @@ import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
-import { shipMesh } from './meshes.ts';
-import { MeshView, type Placing } from './meshView.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
-import { Sea } from './sea.ts';
+import { Sea, type SeaShip } from './sea.ts';
+import { fightControls } from './seaCombat.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
 const FIRST_NODE = 'overlook-social';
+/** The most ships drawn at sea in a frame: the player's and those near it. */
+const SEA_SHIPS = 16;
 /** The islands' names the owner has given, by continent. */
 const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 /** The region every island lies in. */
@@ -56,6 +62,10 @@ const HINTS = {
   ],
   dead: ['Enter or Respawn: back at the nearest spawn'],
   sea: ['Click the sea to sail · Drag to look · Wheel zoom', 'N map · [ ] pace · Space stop or resume · M menu'],
+  fight: [
+    'A D steer · W S sails · Drag to look',
+    'Hold right button: aim, let go: fire · Click: hold fire · C brace · Wheel shot',
+  ],
   map: ['Drag to pan · Wheel to zoom · Click a port or the sea', 'Enter set sail · Esc put the map away'],
   landing: ['Click a mark to choose it', 'Click it again or Enter to land · Esc back to sea'],
 } as const;
@@ -97,12 +107,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   if (flow.mode === 'loading') hud.veil(flow.words);
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
+  // The sea room's own module, for playing alone; fetched now, compiled once.
+  const roomModule = fetch(`${base}room.wasm`)
+    .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
+    .then((bytes) => WebAssembly.compile(bytes));
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const meshes = new MeshView(gpu);
-  const ship = meshes.mesh(shipMesh());
-  const [world, rmbText, movement, { forge, firstPerson, store }] = await Promise.all([
+  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
     fetch(`${base}world/rmb/index.json`)
       .then((answer) => (answer.ok ? answer.text() : null))
@@ -114,6 +126,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       })
       .then(startMovementRules),
     openForge(gpu, figureView),
+    loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'), SEA_SHIPS)),
   ]);
   const { continents } = world;
   const cityAssets = loadCityAssets(base);
@@ -224,7 +237,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea = new Sea(
         landmass,
         continents.map((each) => each.outline),
-        ship,
+        { waterline: sloop.waterline, sails: sloop.sails, marks: new MarkView(gpu) },
         anchorage,
         heading,
       );
@@ -232,7 +245,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
     mapOf();
-    if (rooms) await sea.enterRoom(rooms('sea'));
+    // Online the server's sea room; playing alone, the same room in the page.
+    await sea.enterRoom(
+      rooms
+        ? (snapshot) => RoomConnection.open(rooms('sea'), snapshot)
+        : async (snapshot) => LocalRoom.openSea(await roomModule, world.layoutText, snapshot),
+    );
   };
 
   const firstNode = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
@@ -391,6 +409,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     forgetPresses();
   });
   canvas.addEventListener('pointercancel', forgetPresses);
+  fightControls(canvas, () => sea?.fight ?? null);
   canvas.addEventListener('wheel', (event) => {
     if (!atSea()) return;
     if (mapUp()) heldMap?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
@@ -398,11 +417,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   });
 
   /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides. */
-  const standing = (placings: readonly Placing[], figures: readonly CardAt[]): Drawer[] => {
+  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[]): Drawer[] => {
     const found: (Drawer | null)[] = [
       drawers.city,
       drawers.nature,
-      { drawInto: (pass, fromEye, shot) => meshes.drawInto(pass, fromEye, shot.eye, placings) },
+      {
+        drawInto: (pass, fromEye, shot, time) => {
+          const camera = { fromEye, eye: shot.eye };
+          ships.forEach((ship, slot) => sloop.drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig));
+          sea?.fight?.draw(pass, camera, time);
+        },
+      },
       {
         castInto: (pass, fromEye, shot, _time, shadow) =>
           figureView.castInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
@@ -444,7 +469,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const turn = held('turnRight') - held('turnLeft');
     const tilt = held('lookDown') - held('lookUp');
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const shown = here.frame(seconds, clock, viewport, turn, tilt);
+    const shown = here.frame(seconds, clock, viewport, turn, tilt, scene.land?.swell?.bearing ?? 0);
     // What a lookout sees is discovered as the ship sails.
     if (flow.mode === 'sea') discovered.lookout(here.position);
     if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
@@ -471,7 +496,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.mode === 'landing') hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
     else if (atHelm) hud.place('At the helm', REGION);
     else hud.place('At sea', shown.landfall && island ? `Off ${island}` : REGION);
-    hud.hints(flow.mode === 'landing' ? HINTS.landing : atHelm ? HINTS.map : HINTS.sea);
+    const fighting = here.fight;
+    hud.hints(
+      fighting
+        ? [...fighting.lines(clock), ...HINTS.fight]
+        : flow.mode === 'landing'
+          ? HINTS.landing
+          : atHelm
+            ? HINTS.map
+            : HINTS.sea,
+    );
     hud.marks(shown.marks);
     hud.seaBar(flow.mode === 'sea' && !flow.menu && !atHelm ? shown : null);
     hud.note(charting ? 'Charting the coast ahead…' : shown.note);

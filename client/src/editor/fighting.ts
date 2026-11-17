@@ -86,6 +86,11 @@ export class Fighting {
     return new Fighting(source, id, answer, time);
   }
 
+  /** A fight begun elsewhere (the sea room's), its first view `answer`; `source` steps it. */
+  static joined(source: FightSource, id: string, answer: FightView, now: number): Fighting {
+    return new Fighting(source, id, answer, now);
+  }
+
   get view(): FightView {
     return this.answer;
   }

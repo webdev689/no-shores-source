@@ -10,7 +10,11 @@ description = "Every network message between a browser and a room: the Rust flat
 combat = { path = "../combat" }
 flatbuffers.workspace = true
 movement = { path = "../movement" }
+naval = { path = "../naval" }
 room = { path = "../room" }
+
+[dev-dependencies]
+sailing = { path = "../sailing" }
 
 [lints]
 workspace = true

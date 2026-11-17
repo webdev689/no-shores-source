@@ -80,7 +80,7 @@ pub fn header_of(landmass: &Landmass) -> Value {
 }
 
 /// The swell's waves as the client draws them: each one's way, wavenumber, frequency, height, sideways carry and
-/// phase, and the depths over which the swell fades.
+/// phase, the depths over which the swell fades, and the bearing it and the wind run toward.
 #[must_use]
 pub fn swell_of(swell: &Swell) -> Value {
     let waves: Vec<Value> = swell
@@ -91,7 +91,8 @@ pub fn swell_of(swell: &Swell) -> Value {
                 "amplitude": wave.amplitude, "shift": wave.shift, "phase": wave.phase })
         })
         .collect();
-    json!({ "waves": waves, "full_depth_m": land::sea::FULL_DEPTH_M, "gone_depth_m": land::sea::GONE_DEPTH_M })
+    json!({ "waves": waves, "full_depth_m": land::sea::FULL_DEPTH_M, "gone_depth_m": land::sea::GONE_DEPTH_M,
+        "bearing": swell.bearing })
 }
 
 fn read(request: &[u8]) -> Result<Value, String> {

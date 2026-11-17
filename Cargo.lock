@@ -146,7 +146,9 @@ dependencies = [
  "combat",
  "flatbuffers",
  "movement",
+ "naval",
  "room",
+ "sailing",
 ]
 
 [[package]]
@@ -176,8 +178,10 @@ dependencies = [
  "land",
  "libm",
  "movement",
+ "naval",
  "navmesh",
  "reach",
+ "sailing",
  "serde_json",
  "world",
 ]
@@ -191,6 +195,7 @@ dependencies = [
  "combat",
  "land",
  "movement",
+ "naval",
  "protocol",
  "room",
  "serde",
