@@ -3,6 +3,7 @@
 import {
   type CaptainMode,
   type FightCaptain,
+  type FightEnd,
   type FightEvent,
   type FightLay,
   type FightOrders,
@@ -23,10 +24,13 @@ const WHYS = ['no-guns', 'silent', 'braced', 'reloading'] as const;
 const OVER = [null, 'sunk', 'gone'] as const;
 const SHIP_NUMBERS = 8;
 const POSE_NUMBERS = 4;
+/** A look's ray: the aim eye (east, south, up), then the way it looks. */
+const RAY_NUMBERS = 6;
 
-/** A fight's orders as the room takes them: the helm, the look, the fire, the brace and a load. */
+/** A fight's orders as the room takes them: the helm, the look and its ray, the fire, the brace and a load. */
 export function ordersNumbers(orders: FightOrders): number[] {
   const { helm, aim, load } = orders;
+  const ray = aim?.ray?.length === RAY_NUMBERS ? aim.ray : null;
   return [
     helm.steer,
     helm.crab ? 1 : 0,
@@ -34,6 +38,8 @@ export function ordersNumbers(orders: FightOrders): number[] {
     aim ? 1 : 0,
     aim?.bearing ?? 0,
     aim?.range ?? 0,
+    ray ? 1 : 0,
+    ...(ray ?? Array<number>(RAY_NUMBERS).fill(0)),
     orders.fire ? 1 : 0,
     orders.brace ? 1 : 0,
     load === null ? 0 : SHOT_CYCLE.indexOf(load) + 1,
@@ -81,11 +87,18 @@ export function fightViewOf(numbers: ArrayLike<number>): FightView {
   const runOut = SIDES.filter(() => next() === 1);
   const captain: FightCaptain = { ...her, name: 'Pirate Sloop', mode, hostile, run_out: runOut };
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
+  // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.
+  const stop = (): FightEnd | null => {
+    const [stops, time, where, water, struck, strike] = [next() === 1, next(), point(), next() === 1, next(), point()];
+    return stops ? { time, point: where, water, strike: struck === 1 ? strike : null } : null;
+  };
   let lay: FightLay | null = null;
   if (next() === 1) {
-    const [side, elevation, reach] = [named(SIDES), next(), next()];
+    const [side, elevation, reach, radius] = [named(SIDES), next(), next(), next()];
     const onTarget = next() === 1;
-    lay = { side, elevation, reach, on_target: onTarget, launches: Array.from({ length: next() }, () => many(6)) };
+    const guns = Array.from({ length: next() }, () => ({ launch: many(6), end: stop() }));
+    const [launches, ends] = [guns.map((gun) => gun.launch), guns.map((gun) => gun.end)];
+    lay = { side, elevation, reach, ends, radius, on_target: onTarget, launches };
   }
   const events = Array.from({ length: next() }, (): FightEvent => {
     switch (next()) {

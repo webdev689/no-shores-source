@@ -3,17 +3,19 @@
 //! (client/src/network/seaFight.ts). The Server note in the bible lists the order.
 
 use crate::arms::Side;
-use crate::ballistics::{flight, launch_velocity};
+use crate::ballistics::flight;
 use crate::captain::Mode;
-use crate::captain::course::velocity_of;
 use crate::damage::{State, Zone};
 use crate::fight::{Aim, End, Event, Fight, Orders, Refusal, Vessel};
 use crate::guns::Shot;
 use crate::shots::ShotEvent;
+use crate::shots::Stop;
 use sailing::ship::Helm;
+use sailing::waters::Waters;
 
-pub const ORDERS: usize = 9;
+pub const ORDERS: usize = 16;
 pub const VESSEL_NUMBERS: usize = 26;
+pub const STOP_NUMBERS: usize = 10;
 /// The farthest a look may lay, metres: past every gun's reach.
 const MOST_RANGE_M: f64 = 1e5;
 
@@ -29,7 +31,8 @@ pub fn orders_from(numbers: &[f64]) -> Result<Orders, String> {
     if numbers.iter().any(|number| !number.is_finite()) {
         return Err("orders are finite numbers".into());
     }
-    let [steer, crab, climb, laid, bearing_deg, range_m, fire, brace, load] = numbers;
+    let [steer, crab, climb, laid, bearing_deg, range_m, rayed, eye @ .., fire, brace, load] = numbers;
+    let [eye_x, eye_y, eye_z, east, south, up] = eye;
     let flag = |value: f64, name: &str| match value {
         0.0 => Ok(false),
         1.0 => Ok(true),
@@ -42,7 +45,8 @@ pub fn orders_from(numbers: &[f64]) -> Result<Orders, String> {
         if !(-180.0..=180.0).contains(&bearing_deg) || !(0.0..=MOST_RANGE_M).contains(&range_m) {
             return Err("a look bears within 180 degrees of her bow and lays within 100 km".into());
         }
-        Some(Aim { bearing_deg, range_m })
+        let ray = flag(rayed, "a ray")?.then_some([[eye_x, eye_y, eye_z], [east, south, up]]);
+        Some(Aim { bearing_deg, range_m, ray })
     } else {
         None
     };
@@ -69,10 +73,17 @@ fn shot_number(shot: Shot) -> f64 {
 #[must_use]
 pub fn orders_numbers(orders: &Orders) -> Vec<f64> {
     let flag = |on: bool| f64::from(u8::from(on));
-    let [laid, bearing, range] = orders.aim.map_or([0.0, 0.0, 0.0], |aim| [1.0, aim.bearing_deg, aim.range_m]);
+    let mut numbers = vec![orders.helm.steer, flag(orders.helm.crab), f64::from(orders.helm.climb)];
+    match orders.aim {
+        None => numbers.extend([0.0; 10]),
+        Some(aim) => {
+            numbers.extend([1.0, aim.bearing_deg, aim.range_m, flag(aim.ray.is_some())]);
+            numbers.extend(aim.ray.unwrap_or_default().as_flattened());
+        }
+    }
     let load = orders.load.map_or(0.0, |shot| shot_number(shot) + 1.0);
-    let Helm { steer, crab, climb } = orders.helm;
-    vec![steer, flag(crab), f64::from(climb), laid, bearing, range, flag(orders.fire), flag(orders.brace), load]
+    numbers.extend([flag(orders.fire), flag(orders.brace), load]);
+    numbers
 }
 
 fn side_number(side: Side) -> f64 {
@@ -131,9 +142,19 @@ fn event_numbers(event: &Event) -> Option<Vec<f64>> {
     })
 }
 
-/// The fight as the browser shows it, after a tick whose events are `events`, its lay the look `aim` holds.
+/// Where a gun's ball stops, `STOP_NUMBERS`: whether it does (0 still aloft, else 1), seconds after it left its gun,
+/// its point, whether in the water, and whether it strikes her (0 or 1) and where.
+fn stop_numbers(stop: Option<&Stop>) -> [f64; STOP_NUMBERS] {
+    let Some(stop) = stop else { return [0.0; STOP_NUMBERS] };
+    let ([x, y, z], [strike_x, strike_y, strike_z]) = (stop.point, stop.strike.unwrap_or_default());
+    let (water, struck) = (f64::from(u8::from(stop.water)), f64::from(u8::from(stop.strike.is_some())));
+    [1.0, stop.time, x, y, z, water, struck, strike_x, strike_y, strike_z]
+}
+
+/// The fight as the browser shows it, after a tick whose events are `events`, its lay the look `aim` holds over
+/// `waters` at `time`.
 #[must_use]
-pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>) -> Vec<f64> {
+pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Vec<f64> {
     let over = match fight.over {
         None => 0.0,
         Some(End::Sunk) => 1.0,
@@ -157,16 +178,15 @@ pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>) -> Vec<f
         let at = flight(ball.start, ball.launch, fight.clock - ball.born);
         numbers.extend([at[0], at[1], at[2], ball.gun.radius_m]);
     }
-    match aim.and_then(|aim| fight.laid(aim)) {
+    match aim.and_then(|aim| fight.shown_lay(aim, waters, time)) {
         None => numbers.push(0.0),
-        Some(laid) => {
-            let way = velocity_of(&fight.player.ship);
-            let launch = launch_velocity(laid.dir, laid.elevation, laid.gun.speed, [way[0], way[1], 0.0]);
-            let on_target = f64::from(u8::from(fight.on_target(&laid)));
-            numbers.extend([1.0, side_number(laid.side), laid.elevation, laid.reach, on_target]);
-            numbers.push(laid.mouths.len() as f64);
-            for mouth in &laid.mouths {
-                numbers.extend(mouth.iter().chain(launch.iter()));
+        Some(shown) => {
+            let on_target = f64::from(u8::from(shown.on_target));
+            numbers.extend([1.0, side_number(shown.side), shown.elevation, shown.reach, shown.radius, on_target]);
+            numbers.push(shown.launches.len() as f64);
+            for (launch, stop) in shown.launches.iter().zip(&shown.ends) {
+                numbers.extend(launch);
+                numbers.extend(stop_numbers(stop.as_ref()));
             }
         }
     }

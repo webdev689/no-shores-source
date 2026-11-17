@@ -83,7 +83,10 @@ on Cloudflare.
   An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn nearest where
   it died. A room with no section never judges.
 - **What it sees:** every player's fighter, where they stand with the section, and the number of their last input it
-  took; every foe; the shots in flight; and what happened in the fight since it was last asked: hits, blocks, parries,
+  took; every foe; the shots in flight, each with the ticks it has flown, and every gun's ball fired since it was last
+  asked as its whole line from where it left to where it stopped, so every screen draws its tracer however many ticks
+  the room ran first; and what happened in the fight since it was last asked (a swing's blows with their stroke): hits,
+  blocks, parries,
   guard breaks, dodges, staggers, deaths, players standing again, feints, foes arriving. The same on every machine.
 
 ## The sea
@@ -129,19 +132,21 @@ an older reader skips them.
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser, on land | Its number, one tick's controls and the fight's buttons, the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
+| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`) |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; and each player's fight as the naval crate's numbers |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; and each player's fight as the naval crate's numbers |
 
-A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, nine: the helm's steer (-1 port to 1
-starboard), crab and climb; whether a look is laid, its bearing off her bow (degrees) and range (metres); the fire, the
-brace, and a load (0 none, else 1 and its place among round, grape, chain and heated). The view: the clock and its end
-(0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, 26 numbers (her own 8, her pose's 4, hull, canvas
-and men with their most, her state, her fires, each side's seconds left and progress, her load and brace); the
+A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
+starboard), crab and climb; whether a look is laid, its bearing off her bow (degrees) and range (metres); whether it
+has a ray, and the ray's eye (east, south, up) and the way it looks, so a look on her lays on her; the fire, the
+brace, and a load (0 none, else 1 and its place among round, grape, chain and heated). The view: the clock and its
+end (0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, 26 numbers (her own 8, her pose's 4, hull,
+canvas and men with their most, her state, her fires, each side's seconds left and progress, her load and brace); the
 captain's mode, whether she is hostile and her sides run out; the balls aloft, a count and four each; the lay, 0 or 1
-and its side, elevation, reach, whether on target, and a count of six each; and the events, a count and each one's
-kind and numbers.
+and its side, elevation, reach, landing zone's radius, whether on target, and a count of sixteen each: the gun's
+launch (six), then where its ball stops (whether it does, its time, point, whether in the water, and whether and
+where it strikes her); and the events, a count and each one's kind and numbers.
 
 The server reads an input or a course only after FlatBuffers' verifier passes its bytes, so bytes that are not one,
 controls that are not 7 numbers, or a course's numbers that are not pairs, are refused. The browser reads a message

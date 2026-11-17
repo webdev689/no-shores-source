@@ -1,4 +1,4 @@
-import type { FightView } from '../rules/fightRules.ts';
+import type { FightLook, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
 import type { MarkView } from '../ships/markView.ts';
@@ -20,6 +20,11 @@ const DECK_M = 1.2;
 /** A ball is drawn this many times its size, to be seen; the lay's arcs a dot every this many seconds of flight. */
 const BALL_DRAWN = 2;
 const ARC_STEP_S = 0.1;
+/** An arc whose ball is still aloft past its life is drawn this far (seconds); a strike's mark is this big and a
+ *  landing zone's ring this many dots (metres, dots). */
+const ARC_LONGEST_S = 4;
+const STRIKE_M = 0.25;
+const ZONE_DOTS = 24;
 const BALL = [0.12, 0.12, 0.12] as const;
 const ARC = [0.95, 0.95, 0.85] as const;
 const ON_TARGET = [0.95, 0.2, 0.15] as const;
@@ -146,11 +151,13 @@ export class Naval {
   }
 
   /** The look the camera lays while aiming: its bearing off her bow and its range out along her fire. */
-  look(orbit: Orbit, sailing: FightingShip, view: Window): { readonly bearing: number; readonly range: number } {
+  look(orbit: Orbit, sailing: FightingShip, view: Window): FightLook {
     const lying = Naval.lying(sailing, view);
     const bearing = lookBearing(orbit.yaw, lying.heading);
     const eye = aimEye(lying, bearing >= 0 ? 1 : -1);
-    return { bearing, range: Math.max(0, lookRange(lying, eye, orbit.yaw, -orbit.pitch)) };
+    const flat = Math.cos(orbit.pitch);
+    const way = [Math.sin(orbit.yaw) * flat, -Math.cos(orbit.yaw) * flat, -Math.sin(orbit.pitch)];
+    return { bearing, range: Math.max(0, lookRange(lying, eye, orbit.yaw, -orbit.pitch)), ray: [...eye, ...way] };
   }
 
   /** The camera while aiming: at DFO's aim eye on the side looked at, looking along the orbit's yaw and pitch. */
@@ -224,24 +231,32 @@ export class Naval {
     this.marks.drawInto(pass, marks, camera);
   }
 
-  /** The lay's arcs: each gun's unscattered flight in dots until it comes down to her waterline, red on target. */
-  private static arcs(answer: FightView, view: Window, shown: number): Mark[] {
+  /** The lay's arcs, red on target: each gun's unscattered flight in dots up to where the rules say it stops, a mark
+   *  where it strikes her, and the landing zone's ring where it splashes. */
+  static arcs(answer: FightView, view: Window, shown: number): Mark[] {
     const lay = answer.lay;
     if (!lay) return [];
-    const [level = 0] = answer.player.pose;
     const colour = lay.on_target ? ON_TARGET : ARC;
-    return lay.launches.flatMap(([x = 0, y = 0, z = 0, east = 0, south = 0, up = 0]) => {
+    const placed = (x: number, y: number, z: number, radius: number, tint: Mark['colour']): Mark => ({
+      x: x - view.leftM,
+      y: y - view.topM,
+      z: z * shown,
+      radius,
+      colour: tint,
+    });
+    return lay.launches.flatMap(([x = 0, y = 0, z = 0, east = 0, south = 0, up = 0], index) => {
+      const end = lay.ends[index] ?? null;
       const dots: Mark[] = [];
-      for (let time = ARC_STEP_S; time < 4; time += ARC_STEP_S) {
-        const height = z + up * time - (9.81 * time * time) / 2;
-        if (height < level) break;
-        dots.push({
-          x: x + east * time - view.leftM,
-          y: y + south * time - view.topM,
-          z: height * shown,
-          radius: 0.07,
-          colour,
-        });
+      for (let time = ARC_STEP_S; time < (end?.time ?? ARC_LONGEST_S); time += ARC_STEP_S)
+        dots.push(placed(x + east * time, y + south * time, z + up * time - (9.81 * time * time) / 2, 0.07, colour));
+      if (end?.strike) dots.push(placed(...end.strike, STRIKE_M, ON_TARGET));
+      if (end?.water) {
+        const [endX, endY, endZ] = end.point;
+        for (let step = 0; step < ZONE_DOTS; step++) {
+          const turn = (step / ZONE_DOTS) * 2 * Math.PI;
+          const ring = [endX + Math.cos(turn) * lay.radius, endY + Math.sin(turn) * lay.radius] as const;
+          dots.push(placed(ring[0], ring[1], endZ, 0.07, colour));
+        }
       }
       return dots;
     });

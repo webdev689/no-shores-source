@@ -39,6 +39,23 @@ test('a figure snapshotted every third tick glides on every frame, at 144 frames
   assert.ok(moved.filter((step) => step > 0).length > 130, 'moving on almost every frame');
 });
 
+test('at 60 frames a second drifting against 60 ticks, the figure moves on every frame at its own pace', () => {
+  const glide = new Glide([0, 0, 0], 0);
+  const places: number[] = [];
+  // Each frame lasts a shade over a tick, give or take a tenth, so some frames take no new snapshot and some two.
+  let time = 0;
+  for (let frame = 0; frame < 600; frame += 1) {
+    const lasts = 1.002 + 0.1 * Math.sin(frame * 1.7);
+    time += lasts;
+    const tick = Math.floor(time);
+    places.push(glide.follow([tick * 0.05, 0, 0], tick, lasts)[0]);
+  }
+  const moved = steps(places).slice(60);
+  const pace = 0.05;
+  assert.ok(Math.min(...moved) > pace * 0.5, `never stalls: slowest step ${Math.min(...moved) / pace} of the pace`);
+  assert.ok(Math.max(...moved) < pace * 1.5, `never lurches: fastest step ${Math.max(...moved) / pace} of the pace`);
+});
+
 test('snapshots come late and early: the figure never jumps further than its pace allows', () => {
   const arrivals = [1, 2, 6, 6.2, 6.4, 7, 8, 13, 13.1, 14, 15, 16];
   const moved = steps(drawn(arrivals, 2));

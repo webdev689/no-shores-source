@@ -102,7 +102,7 @@ pub enum Action {
     Overreach {
         left: u32,
     },
-    /// A bow drawn: ticks since the draw began.
+    /// A bow, a crossbow or a gun raised to aim: ticks since it was raised, which a bow's draw charges by.
     Draw {
         elapsed: u32,
     },
@@ -181,8 +181,9 @@ pub struct Intent {
 }
 
 /// The fight's buttons: the stroke a swing would take while the attack button is held (the player's page rolls it, as
-/// Daggerfall Unity's click to attack does), the guard held, the dodge held, a shot held, the look's pitch for a shot, and for a foe a telegraphed blow
-/// its brain begins.
+/// Daggerfall Unity's click to attack does), the guard held, the dodge held, the shot's trigger held, the look's pitch
+/// for a shot, a ranged weapon held up to aim, the point an aimed shot is laid on (the crosshair's; along the look if
+/// none), and for a foe a telegraphed blow its brain begins.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct CombatInput {
     pub attack: Option<Stroke>,
@@ -190,6 +191,8 @@ pub struct CombatInput {
     pub dodge: bool,
     pub shoot: bool,
     pub pitch: f64,
+    pub aim: bool,
+    pub mark: Option<[f64; 3]>,
     pub telegraph: Option<TelegraphOrder>,
 }
 

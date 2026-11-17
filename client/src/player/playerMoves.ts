@@ -189,7 +189,8 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
  * down; hurt while staggered or flinching (its bow's or staff's own); the jump's frames through a dodge's hop in the air, by its rise and fall, or the
  * run where the forge does not draw what it holds in the jump; the parry through a deflect, a shield's block; the
  * guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its wind-up
- * and held at its end when it overreaches; and the bow drawn.
+ * and held at its end when it overreaches; and a ranged weapon aimed: the bow drawn, a gun or a crossbow raised as the
+ * first frame of its shot.
  */
 function fightMove(
   doing: Doing,
@@ -233,6 +234,8 @@ function fightMove(
     case 'overreach':
       return still(fight.stroke, 2);
     case 'draw':
-      return byProgress('bow', fight.progress * 0.5);
+      return right?.startsWith('bow')
+        ? byProgress('bow', fight.progress * 0.5)
+        : still(kitOf(right, left, draws).attack);
   }
 }

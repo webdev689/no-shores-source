@@ -163,11 +163,9 @@ pub fn lay_on(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, tar
 #[must_use]
 pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, shooter: usize) -> Vec<Ball> {
     let mut draws = Mulberry32::new(seed);
-    let widen = (1.5 - skill).clamp(0.4, 1.5);
-    lay.mouths
-        .iter()
-        .enumerate()
-        .map(|(index, mouth)| {
+    let widen = widening(skill);
+    (0..lay.mouths.len())
+        .map(|index| {
             let (dir, elevation) = scatter(
                 lay.dir,
                 lay.elevation,
@@ -175,20 +173,42 @@ pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, sho
                 lay.gun.pitch_spread_deg * widen,
                 &mut draws,
             );
-            let delay = index as f64 * RIPPLE_S;
-            Ball {
-                start: [0, 1, 2].map(|axis| mouth[axis] + carry[axis] * delay),
-                launch: launch_velocity(dir, elevation, lay.gun.speed, carry),
-                born: clock + delay,
-                shooter,
-                gun: lay.gun,
-                shot: lay.shot,
-                flown: 0.0,
-                fired: false,
-                rigged: [false; 2],
-            }
+            aimed(&Lay { dir, elevation, ..*lay }, index, carry, clock, shooter)
         })
         .collect()
+}
+
+/// Gun `index`'s ball as the lay lies, unscattered (the aim's): `RIPPLE_S` a gun after the first and from where its
+/// port is by then.
+#[must_use]
+pub fn aimed(lay: &Lay, index: usize, carry: [f64; 3], clock: f64, shooter: usize) -> Ball {
+    let delay = index as f64 * RIPPLE_S;
+    let mouth = lay.mouths[index];
+    Ball {
+        start: [0, 1, 2].map(|axis| mouth[axis] + carry[axis] * delay),
+        launch: launch_velocity(lay.dir, lay.elevation, lay.gun.speed, carry),
+        born: clock + delay,
+        shooter,
+        gun: lay.gun,
+        shot: lay.shot,
+        flown: 0.0,
+        fired: false,
+        rigged: [false; 2],
+    }
+}
+
+/// How much wider than its gun's own spread a crew of `skill` throws.
+#[must_use]
+pub fn widening(skill: f64) -> f64 {
+    (1.5 - skill).clamp(0.4, 1.5)
+}
+
+/// The landing zone's radius `range` metres out, DFO's: half the width a crew of `skill` scatters the gun's yaw
+/// across there (at least 2 m wide), and never under 1.6 m.
+#[must_use]
+pub fn zone_radius(gun: &Gun, skill: f64, range: f64) -> f64 {
+    let width = (2.0 * range * libm::tan(gun.yaw_spread_deg * widening(skill) * DEGREE)).max(2.0);
+    (width / 2.0).max(1.6)
 }
 
 #[cfg(test)]

@@ -50,12 +50,44 @@ fn a_fight_begins_with_a_captain_on_the_ring_round_the_sloop() {
     assert_eq!(begun["over"], Value::Null);
 }
 
+/// Each arc of a lay, flown from its launch for its end's time, comes down on its end.
+fn arcs_end_on_their_stops(lay: &Value) {
+    let (launches, ends) = (lay["launches"].as_array().cloned(), lay["ends"].as_array().cloned());
+    let (launches, ends) = (launches.unwrap_or_default(), ends.unwrap_or_default());
+    assert!(!launches.is_empty() && launches.len() == ends.len());
+    let number = |value: &Value, index: usize| value[index].as_f64().unwrap_or(f64::NAN);
+    for (launch, end) in launches.iter().zip(&ends) {
+        let (start, velocity) =
+            ([0, 1, 2].map(|axis| number(launch, axis)), [3, 4, 5].map(|axis| number(launch, axis)));
+        let came = naval::ballistics::flight(start, velocity, end["time"].as_f64().unwrap_or(0.0));
+        let point = [0, 1, 2].map(|axis| number(&end["point"], axis));
+        let off = (0..3).map(|axis| (came[axis] - point[axis]) * (came[axis] - point[axis])).sum::<f64>().sqrt();
+        assert!(off < 0.01, "an arc ends {off} m from its stop");
+    }
+}
+
+#[test]
+fn under_way_each_guns_arc_starts_where_its_ball_leaves_a_ripple_later_and_ends_on_its_stop() {
+    opened();
+    let begun = answer(&fight_begin_json(
+        r#"{ "ship": [180000, 360000, 0, 5, 0, 0, 5, 2], "seed": 7, "time": 1000 }"#.as_bytes(),
+    ));
+    assert!(begun.get("error").is_none(), "{begun}");
+    let looked = answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
+    arcs_end_on_their_stops(&looked["lay"]);
+}
+
 #[test]
 fn a_step_answers_the_lay_its_look_holds_and_the_refusals_of_its_fire() {
     begun(7);
     let looked = answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 1.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
     assert_eq!(looked["lay"]["side"], "starboard");
     assert_eq!(looked["lay"]["launches"].as_array().map(Vec::len), Some(3));
+    let ends = looked["lay"]["ends"].as_array().cloned().unwrap_or_default();
+    assert_eq!(ends.len(), 3, "each gun's end");
+    assert!(ends.iter().all(|end| end["time"].as_f64().is_some_and(|time| time > 0.0) && end["water"] == true));
+    arcs_end_on_their_stops(&looked["lay"]);
+    assert!(looked["lay"]["radius"].as_f64().is_some_and(|radius| radius >= 1.6));
     let again = answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 1.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
     let refused: Vec<&Value> =
         again["events"].as_array().into_iter().flatten().filter(|event| event["kind"] == "refused").collect();
@@ -130,4 +162,18 @@ fn a_begin_whose_ship_holds_anything_but_numbers_is_refused() {
     assert!(junk.get("error").is_some(), "{junk}");
     let null = answer(&fight_begin_json(br#"{ "ship": [180000, 360000, 0, 0, 0, 0, null, 0], "seed": 1, "time": 0 }"#));
     assert!(null.get("error").is_some(), "{null}");
+}
+
+#[test]
+fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
+    begun(7);
+    let with_ray = |ray: &str| {
+        let request = step_request([0.0, 0.0, 90.0, 80.0, 0.0, 0.0, 0.0, 1.0], 1000.0)
+            .replace(r#""range": 80 }"#, &format!(r#""range": 80, "ray": {ray} }}"#));
+        answer(&fight_step_json(request.as_bytes()))
+    };
+    assert_eq!(with_ray("[5, 3, 6, 1, 0, -0.1]")["lay"]["side"], "starboard", "{}", with_ray("[5, 3, 6, 1, 0, -0.1]"));
+    for bad in [r#"[5, 3, 6, 1, 0, "down"]"#, "[5, 3, 6, 1, 0, null]", "[5, 3, 6, 1, 0]", r#""up""#] {
+        assert!(with_ray(bad).get("error").is_some(), "{bad}");
+    }
 }

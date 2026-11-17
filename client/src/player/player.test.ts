@@ -39,6 +39,16 @@ test('a right click readies a weapon that is away; swinging turns the figure to 
   assert.equal(turned.facing, 1);
 });
 
+test('locked on, a figure on foot faces its foe as it walks away from it; mounted it faces where it rides', () => {
+  const toward = 0.5;
+  const backing = updatePlayer(start(), frame(['back']), movement, TICK, false, toward);
+  assert.ok(backing.body.moving);
+  assert.equal(backing.facing, toward);
+  const mounted = updatePlayer(start(), frame([], ['mount']), movement, TICK);
+  const riding = updatePlayer(mounted, frame(['back']), movement, TICK, false, toward);
+  assert.notEqual(riding.facing, toward);
+});
+
 test('Z puts the weapon away and readies it; the wheel and Mouse4 move between first and third person', () => {
   const player = start();
   assert.equal(player.view.firstPerson, false);

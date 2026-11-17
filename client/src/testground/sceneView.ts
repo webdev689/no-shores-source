@@ -114,7 +114,8 @@ struct CardOut { @builtin(position) position: vec4f, @location(0) corner: vec2f 
   if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
   let texel = textureLoad(picture, vec2i(min(at * size, size - 1.0)), 0);
   if (texel.a < 0.5) { discard; }
-  return vec4f(texel.rgb, 1.0);
+  let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
+  return vec4f(mix(texel.rgb, flash, card.root.z), 1.0);
 }
 `;
 
@@ -133,6 +134,8 @@ export class SceneView implements CardMaker {
   private markCount = 0;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
   private depth: GPUTexture | null = null;
+  /** Draws into the scene's pass after the ground and blocks and before the cards, as blood does. */
+  underCards: ((pass: GPURenderPassEncoder) => void) | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -397,15 +400,16 @@ export class SceneView implements CardMaker {
       pass.setVertexBuffer(0, this.blockVertices.buffer);
       pass.draw(this.blockVertices.count);
     }
+    this.underCards?.(pass);
     pass.setPipeline(this.cards);
     pass.setBindGroup(0, this.sceneGroup);
-    drawn.forEach(({ card, x, y, z, flip }, index) => {
+    drawn.forEach(({ card, x, y, z, flip, flash }, index) => {
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
         ...[x, y, z, flip ? 1 : 0],
         ...[...right, card.width / PX_PER_M, card.height / PX_PER_M],
-        ...[rootX, card.root[1] / PX_PER_M, 0, 0],
+        ...[rootX, card.root[1] / PX_PER_M, flash?.share ?? 0, flash?.red ? 1 : 0],
       ]);
       device.queue.writeBuffer(buffer, 0, cardValues);
       pass.setBindGroup(1, group);

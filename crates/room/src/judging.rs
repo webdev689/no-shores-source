@@ -7,9 +7,9 @@ use crate::Room;
 use combat::fighter::{Action, Attack, FighterId};
 use combat::judge::{answered, overreached, suffer};
 use combat::shapes::{LATE, Telegraph};
-use combat::shots::{Flight, fly};
+use combat::shots::{Flight, fly, line_of};
 use combat::strike::reaches;
-use combat::{Blow, BlowKind, Fighter, Verdict, judge, ticks};
+use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 
 /// What a client is told of the fight: a blow and what it came to, a stagger, a death, a player standing again, a
 /// foe's feint, a foe arriving.
@@ -48,6 +48,8 @@ pub struct Event {
     pub striker: FighterId,
     pub defender: FighterId,
     pub amount: f64,
+    /// The stroke a swing came by, so a screen throws its blood the way the blade went; none for anything else.
+    pub stroke: Option<Stroke>,
 }
 
 /// What a waiting blow must still ask of its defender when it is judged: a swing whether it reaches them, a
@@ -116,11 +118,26 @@ impl Room {
             Verdict::Dodged { perfect: false } => (EventKind::Dodged, 0.0),
             Verdict::Hit { damage, .. } => (EventKind::Hit, damage),
         };
-        self.tell(kind, Some(how), blow.striker, defender, amount);
+        let stroke = match blow.kind {
+            BlowKind::Swing(stroke) => Some(stroke),
+            _ => None,
+        };
+        let mut tell = |kind, amount| {
+            self.events.push(Event {
+                tick: self.clock,
+                kind,
+                how: Some(how),
+                striker: blow.striker,
+                defender,
+                amount,
+                stroke,
+            });
+        };
+        tell(kind, amount);
         if after.dead() {
-            self.tell(EventKind::Killed, Some(how), blow.striker, defender, 0.0);
+            tell(EventKind::Killed, 0.0);
         } else if matches!(after.action, Action::Staggered { .. }) && !before.staggered() {
-            self.tell(EventKind::Staggered, Some(how), blow.striker, defender, 0.0);
+            tell(EventKind::Staggered, 0.0);
         }
         self.verdicts.push((blow.striker, defender, verdict));
     }
@@ -133,7 +150,7 @@ impl Room {
         defender: FighterId,
         amount: f64,
     ) {
-        self.events.push(Event { tick: self.clock, kind, how, striker, defender, amount });
+        self.events.push(Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None });
     }
 
     /// Judges every waiting blow whose defender's view has reached it, or that has waited as long as a blow may.
@@ -217,7 +234,13 @@ impl Room {
                 .filter(|(_, fighter)| fighter.side != side && !fighter.dead())
                 .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
                 .collect();
-            match fly(&shot, &self.blocks, &bodies) {
+            let flight = fly(&shot, &self.blocks, &bodies);
+            if let Flight::Stopped { at, .. } = flight
+                && combat::shots::shot_numbers(shot.ranged).0 <= 0.0
+            {
+                self.lines.push(line_of(&shot, at));
+            }
+            match flight {
                 Flight::Flying(next) => self.shots.push(next),
                 Flight::Stopped { struck: Some(defender), .. } => {
                     let blow = combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]);
@@ -229,19 +252,24 @@ impl Room {
     }
 
     /// A player's ball, flown at once among the foes as the player's screen showed them (`view`), and judged against
-    /// the foe it struck as `as_seen` has it.
-    pub(crate) fn shoot_seen(&mut self, shot: &combat::Shot, view: &[(FighterId, Fighter)]) {
+    /// the foe it struck as `as_seen` has it. Answers where it stopped.
+    pub(crate) fn shoot_seen(&mut self, shot: &combat::Shot, view: &[(FighterId, Fighter)]) -> [f64; 3] {
         let bodies: Vec<(FighterId, [f64; 3])> = view
             .iter()
             .filter(|(id, fighter)| self.foes.contains_key(id) && !fighter.dead())
             .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
             .collect();
-        if let Flight::Stopped { struck: Some(defender), .. } = fly(shot, &self.blocks, &bodies)
+        let (stop, struck) = match fly(shot, &self.blocks, &bodies) {
+            Flight::Stopped { at, struck } => (at, struck),
+            Flight::Flying(next) => (next.at, None),
+        };
+        if let Some(defender) = struck
             && let Some(then) = self.as_seen(defender, view)
         {
             let blow = combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]);
             self.judge_now(&blow, How::Shot, defender, &then);
         }
+        stop
     }
 
     /// A blow reaching a defender: a foe is judged at once as it stands, a player waits for their view.

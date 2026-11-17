@@ -17,6 +17,7 @@ code:
   - client/src/forge/compose.ts#composeFrame
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
+  - client/src/testground/blood.ts#TestgroundBlood
 ---
 # Test Ground
 
@@ -37,8 +38,8 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Into a wall too high to grab | Climb it; at the lip, hang |
 | Hanging: `A` `D`, `W` | Shimmy along the lip; climb over it |
 | `Z` | Ready the weapon or put it away |
-| Right click, held | Swing; holding swings again. A swing readies a weapon put away. A bow draws while held and looses when let go; a gun or a crossbow fires |
-| Left click or `F`, held | Guard; pressed just as a blow lands, parry |
+| Right click, held | Swing; holding swings again. A swing readies a weapon put away. With a bow, a crossbow or a gun drawn: aim, over the shoulder or down the weapon's side, a bow charging |
+| Left click or `F`, held | Guard; pressed just as a blow lands, parry. With a bow, a crossbow or a gun drawn: fire, a quick shot at the locked foe, or the aimed shot onto the crosshair; holding fires again as it reloads |
 | `V` or Mouse5 | Dodge the way you move, or straight back |
 | `Q` | Cast |
 | `,` | Mount or dismount: 6 m/s, galloping at 12 with `Shift` |
@@ -46,7 +47,8 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 
 Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than
 0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second and stops
-short of a wall.
+short of a wall. Aiming a ranged weapon, it eases over the right shoulder, 0.55 m out, 1.3 m back and 0.1 m up from
+the head, and zooms in 1.4 times; in first person the view zooms in 1.6 times ([[Ranged Weapons Aim and Fire]]).
 
 North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
 and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
@@ -71,19 +73,38 @@ room's word for it, so playing alone and online are the same game.
   drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
   edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
   one. Arrows and bolts are drawn in flight.
+- **Tracers.** Every shot draws a tracer, a hot core in a wider glow. A ball's head races from the muzzle to where it
+  stopped at 350 m/s, a 6 m streak behind it and the line faint behind that, then fades over 0.3 s; a flash marks the
+  muzzle. An arrow or a bolt trails the last 0.3 s of its falling flight. The player's own shots draw at once from the
+  weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
+  true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
+  comes. Others' come from the room's word, each ball's line from the one snapshot that carries it. Where a shot comes
+  to rest it throws six sparks back the way it came.
+- **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
+  throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
+  `?blood=off` draws none.
+- **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
+  the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
+- **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
+  view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
 - **The display.** Health, stamina and poise at the bottom left, the stamina flashing when a swing or a dodge is
   pressed with none; the soft lock's target marked at its chest, with its name, health and poise at the top; a small
   health bar over each struck foe within 16 m; words on a dark chip over whoever was struck for each blow and what it
   came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
   gold or green when it is good for the player and red when bad; in first person, words about the player under the
-  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; a red
-  edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
+  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over
+  a foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold
+  once a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in
+  hand, or hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
+  a red mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
+  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
   with `?room=`, that the link to the room was lost and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
   rolled among those that reach the locked foe. Alone, Escape pauses the fight.
-- **Others.** Foes and other players are drawn gliding between the room's snapshots, so they move smoothly however the
-  snapshots come and whatever the screen's rate.
+- **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
+  pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
+  takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
 
 ## Playing together
 
@@ -122,8 +143,9 @@ weapon keeps its own moves and the left hand's thing is worn.
 In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
 Walking frames last 0.25 s, running 0.125 s and crouching 0.5 s. A swing lasts 1 s. On a wall or a ledge the weapon is
-worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. Swinging or casting,
-it turns to face where the camera looks.
+worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While the soft lock
+holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
+([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks.
 
 ## Dressing
 

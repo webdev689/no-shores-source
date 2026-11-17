@@ -99,3 +99,10 @@ fn her_muzzles_ride_her_heel() {
     assert!(leaning.mouths[0][2] < upright.mouths[0][2], "her starboard ports go down");
     assert!(near(leaning.dir[0], 1.0), "the lay stays the upright hull's");
 }
+
+#[test]
+fn the_landing_zone_is_as_wide_as_the_crew_scatters_the_gun() {
+    assert_eq!(zone_radius(&SWIVEL, 0.6, 10.0), 1.6, "never under 1.6 m");
+    let wide = 200.0 * libm::tan(1.3 * 0.9 * DEGREE);
+    assert!((zone_radius(&SWIVEL, 0.6, 200.0) - wide).abs() < 1e-9);
+}

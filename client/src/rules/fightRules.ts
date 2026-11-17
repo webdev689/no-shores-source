@@ -9,10 +9,12 @@ export type ShipState = 'afloat' | 'struck' | 'sinking' | 'sunk' | 'wrecked';
 export type CaptainMode = 'cruise' | 'engage' | 'flee' | 'struck' | 'sinking';
 export type Point = readonly [number, number, number];
 
-/** The player's look: its bearing off her bow (degrees, to starboard) and how far out it meets the water (metres). */
+/** The player's look: its bearing off her bow (degrees, to starboard), how far out it meets the water (metres), and
+ *  its ray: the aim eye (east, south, up) then the way it looks. A ray that meets the captain lays on her. */
 export interface FightLook {
   readonly bearing: number;
   readonly range: number;
+  readonly ray?: readonly number[];
 }
 
 /** What the player orders for a step (crates/naval/src/fight.rs Orders): her helm, the look she lays, a release,
@@ -74,13 +76,24 @@ export type FightEvent =
   | { readonly kind: 'no-sail'; readonly wrecked: boolean }
   | { readonly kind: 'load'; readonly shot: ShotName };
 
-/** The side the look lays: each gun's unscattered launch (its mouth, then its velocity), and whether it would
- *  strike her. */
+/** Where a gun's unscattered ball stops (crates/naval/src/shots.rs Stop): seconds after it leaves its gun, the
+ *  point, whether in the water, and where it first meets her, if it does. */
+export interface FightEnd {
+  readonly time: number;
+  readonly point: Point;
+  readonly water: boolean;
+  readonly strike: Point | null;
+}
+
+/** The side the look lays: each gun's unscattered launch (its mouth, then its velocity) and where it stops (null:
+ *  still aloft), the landing zone's radius (metres), and whether any would strike her. */
 export interface FightLay {
   readonly side: SideName;
   readonly launches: readonly (readonly number[])[];
   readonly elevation: number;
   readonly reach: number;
+  readonly ends: readonly (FightEnd | null)[];
+  readonly radius: number;
   readonly on_target: boolean;
 }
 

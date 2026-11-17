@@ -38,6 +38,7 @@ const CONTROLS = [
   'Into a wall too high to grab: climb. Hanging: A D shimmy, W climbs over.',
   'Z readies or puts away the weapon; right click swings, holding swings again. Q casts. Comma mounts.',
   'Left click or F guards; pressed just as a blow lands, it parries. V or Mouse5 dodges the way you move.',
+  'A bow, crossbow or gun: left click fires at the locked foe; hold right click to aim (a bow charges), left click fires.',
   'The wheel moves between first and third person; Mouse4 switches straight.',
 ];
 
@@ -91,9 +92,10 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
 
   return (state: PanelState) => {
     status.textContent = state.status;
-    // Rebuilt only when the figures or the chosen one change, so typing in a field keeps its focus.
+    // Rebuilt only when the figures, the chosen one or the forge's looks (once they load) change, so typing in a
+    // field keeps its focus.
     const figures = state.figures.map((each) => [each.id, each.anim, each.dress]);
-    const key = JSON.stringify([figures, state.chosen?.id]);
+    const key = JSON.stringify([figures, state.chosen?.id, Object.keys(state.looks.bodies).length]);
     if (key === shown) return;
     shown = key;
     const speed = make('input');

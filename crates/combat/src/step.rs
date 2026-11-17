@@ -2,15 +2,15 @@
 //! swing, guard, dodge, shot or telegraphed blow begun, its body moved by the movement rules as that allows, and its
 //! aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
-use crate::arms::{Ranged, swing_ticks, weapon};
+use crate::arms::{swing_ticks, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Side, Swing};
 use crate::shapes::Telegraph;
-use crate::shots::{DRAW_FULL, DRAW_LEAST, DRAW_POWER_LEAST, Shot, loose, shot_numbers};
-use crate::sight::{bearing, off, turned, wrap};
+use crate::shots::{DRAW_FULL, Shot, aimed_power, loose, shot_numbers, toward};
+use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::tuning::{
-    AIM_TURN, ATTACK_PACE, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH, FLINCH_DODGE,
-    GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, PARRY_WINDOW, POISE_REST, PRESS_KEPT, STAMINA,
-    STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH,
+    AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
+    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, PARRY_WINDOW, POISE_REST, PRESS_KEPT,
+    STAMINA, STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH,
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, slide};
@@ -61,9 +61,10 @@ pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_
         return (next, None);
     }
     rest(&mut next);
-    let happening = act(&mut next, intent, around);
+    let pulled = input.shoot && !fighter.held.shoot;
+    let happening = act(&mut next, intent, around, pulled);
     move_body(&mut next, intent.controls, around);
-    aim(&mut next, intent.controls.yaw, around);
+    aim(&mut next, intent, around);
     (next, happening)
 }
 
@@ -76,9 +77,10 @@ pub fn clean(intent: &Intent, aim: f64) -> Intent {
     let yaw = if controls.yaw.is_finite() { wrap(controls.yaw) } else { aim };
     let pitch = intent.combat.pitch;
     let pitch = if pitch.is_finite() { pitch.clamp(-FRAC_PI_2, FRAC_PI_2) } else { 0.0 };
+    let mark = intent.combat.mark.filter(|mark| mark.iter().all(|value| value.is_finite()));
     Intent {
         controls: Controls { yaw, forward: unit(controls.forward), sideways: unit(controls.sideways), ..controls },
-        combat: CombatInput { pitch, ..intent.combat },
+        combat: CombatInput { pitch, mark, ..intent.combat },
     }
 }
 
@@ -129,8 +131,14 @@ fn spend(next: &mut Fighter, stamina: f64) {
     next.stamina_rest = 0;
 }
 
-/// What the fighter is doing, carried on a tick or ended, and anything new it begins.
-fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option<Happening> {
+/// Whether a fighter can raise a guard: never with a bow, a crossbow or a gun in hand.
+fn guards(fighter: &Fighter) -> bool {
+    fighter.arms.ranged.is_none()
+}
+
+/// What the fighter is doing, carried on a tick or ended, and anything new it begins; `pulled` a fresh pull of the
+/// shot's trigger.
+fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>, pulled: bool) -> Option<Happening> {
     let input = &intent.combat;
     let countdown = |left: u32| left.saturating_sub(1);
     let dodges = |next: &Fighter| next.kept.dodge > 0 && can_dodge(next, intent.controls, around);
@@ -143,7 +151,7 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option
                 return Some(dodge(next, intent.controls, around));
             }
             // Once the blow has landed, the guard cuts the follow-through short, as the dodge does.
-            if elapsed > attack.strike && (input.guard || next.kept.guard > 0) {
+            if elapsed > attack.strike && (input.guard || next.kept.guard > 0) && guards(next) {
                 return Some(raise_guard(next));
             }
             if elapsed >= attack.end {
@@ -234,7 +242,7 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option
             if dodges(next) {
                 return Some(dodge(next, intent.controls, around));
             }
-            draw(next, elapsed, intent)
+            draw(next, elapsed, intent, pulled)
         }
         Action::Dead { .. } => None,
     }
@@ -251,8 +259,9 @@ fn touching_down(body: &Body, around: &Surroundings<'_>) -> bool {
     body.mode == Mode::Air && body.vz <= 0.0 && body.z - ground <= LANDED
 }
 
-/// From rest, in this order: a dodge pressed, a foe's telegraphed blow, a swing pressed, a guard pressed or held, a
-/// shot, and a swing while the button is held. The newest press wins over a button only held.
+/// From rest, in this order: a dodge pressed, a foe's telegraphed blow, a swing pressed, a guard pressed or held (never
+/// with a ranged weapon), a ranged weapon raised to aim, a quick shot, and a swing while the button is held. The
+/// newest press wins over a button only held.
 fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option<Happening> {
     let input = &intent.combat;
     if next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
@@ -267,19 +276,23 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     if next.kept.attack > 0 {
         return swing(next, intent);
     }
-    if input.guard || next.kept.guard > 0 {
+    if (input.guard || next.kept.guard > 0) && guards(next) {
         return Some(raise_guard(next));
     }
-    // The shot's button shoots; the swing's swings the melee hand, a bow's holder's fists.
+    if next.arms.ranged.is_some() && input.aim {
+        next.action = Action::Draw { elapsed: 0 };
+        next.aim = aimed_bearing(next, intent);
+        return None;
+    }
+    // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
+    // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
+    // swings a ranged holder's fists.
     if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot) {
-        if ranged == Ranged::Bow {
-            next.action = Action::Draw { elapsed: 0 };
-            return None;
-        }
-        let shot = loose(0, ranged, next.chest(), intent.controls.yaw, input.pitch, 1.0);
-        next.action = Action::Reload { left: shot_numbers(ranged).3 };
-        next.aim = intent.controls.yaw;
-        return Some(Happening::Loosed(shot));
+        let (chest, yaw) = (next.chest(), intent.controls.yaw);
+        let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
+        let (heading, pitch) =
+            around.target_at.filter(ahead).map_or((yaw, input.pitch), |target| toward(ranged, chest, target));
+        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, 1.0)));
     }
     swing(next, intent)
 }
@@ -381,20 +394,39 @@ fn wind_up(next: &mut Fighter, telegraph: Telegraph, around: &Surroundings<'_>) 
     None
 }
 
-/// A bow drawn while the button is held, loosed when it is let go: too soon and nothing leaves.
-fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent) -> Option<Happening> {
-    if intent.combat.shoot {
-        next.action = Action::Draw { elapsed: (elapsed + 1).min(DRAW_FULL) };
-        return None;
-    }
-    if elapsed < DRAW_LEAST {
+/// The bearing a weapon aimed points along: at the aim's mark, or along the look without one or with one inside the
+/// fighter's own round across the ground (straight below or above, it has no bearing of its own).
+fn aimed_bearing(next: &Fighter, intent: &Intent) -> f64 {
+    let at = [next.body.x, next.body.y];
+    let mark = intent.combat.mark.map(|mark| [mark[0], mark[1]]).filter(|mark| apart(at, *mark) >= BODY_RADIUS);
+    mark.map_or(intent.controls.yaw, |mark| bearing(at, mark))
+}
+
+/// A ranged weapon held up to aim while the aim is held, a bow charging: a pull of the trigger fires the aimed shot
+/// onto the aim's mark (an arrow laid high enough for its fall) or along the look, at the power its aiming has
+/// reached (a foe's at a quick shot's); letting the aim go lowers it unfired.
+fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Option<Happening> {
+    let input = &intent.combat;
+    let Some(ranged) = next.arms.ranged.filter(|_| input.aim) else {
         next.action = Action::Idle;
         return None;
+    };
+    if pulled {
+        let (chest, heading) = (next.chest(), aimed_bearing(next, intent));
+        let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
+        // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone.
+        let power = if next.side == Side::Foes { 1.0 } else { aimed_power(ranged, elapsed) };
+        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, power)));
     }
-    let power = (f64::from(elapsed) / f64::from(DRAW_FULL)).clamp(DRAW_POWER_LEAST, 1.0);
-    let shot = loose(0, Ranged::Bow, next.chest(), intent.controls.yaw, intent.combat.pitch, power);
-    next.action = Action::Reload { left: shot_numbers(Ranged::Bow).3 };
-    Some(Happening::Loosed(shot))
+    next.action = Action::Draw { elapsed: (elapsed + 1).min(DRAW_FULL) };
+    None
+}
+
+/// A shot leaving: the weapon reloads, its arms pointing the way the shot flies.
+fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
+    next.action = Action::Reload { left: shot_numbers(shot.ranged).3 };
+    next.aim = crate::sight::bearing([0.0, 0.0], [shot.velocity[0], shot.velocity[1]]);
+    Happening::Loosed(shot)
 }
 
 /// Controls that hold the body still where it stands, but let it fall.
@@ -450,10 +482,11 @@ fn travel(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_>) -> Opti
     Some(Body { x, y, z: ground + rise, vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
 }
 
-/// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach and a
-/// guard turns to face it; a blow, once it lands, is locked where it was.
-fn aim(next: &mut Fighter, yaw: f64, around: &Surroundings<'_>) {
-    let body = next.body;
+/// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach, a
+/// guard turns to face it, and a weapon aimed points along its aim; a blow, once it lands, is locked where it was,
+/// and a shot's weapon stays pointed where it fired while it reloads.
+fn aim(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) {
+    let (yaw, body) = (intent.controls.yaw, next.body);
     // The lock steers a swing or a guard only at a target the look is toward: turned to face another, the guard
     // follows the look.
     let target = around
@@ -474,7 +507,8 @@ fn aim(next: &mut Fighter, yaw: f64, around: &Surroundings<'_>) {
         Action::Guard { .. } | Action::Parry { .. } => {
             turned(next.aim, target.map_or(yaw, |(toward, _)| toward), GUARD_TURN)
         }
-        Action::Idle | Action::Flinch { .. } | Action::Reload { .. } | Action::Draw { .. } => yaw,
+        Action::Draw { .. } => aimed_bearing(next, intent),
+        Action::Idle | Action::Flinch { .. } => yaw,
         _ => next.aim,
     };
 }

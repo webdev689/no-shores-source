@@ -9,6 +9,7 @@ use crate::pirates::{Pirate, Pirates};
 use land::sea::{FULL_DEPTH_M, Swell};
 use movement::TICK_SECONDS;
 use naval::fight::{Event, Fight, Orders};
+use naval::wire::view_numbers;
 use sailing::ship::{Helm, SAILS_SET};
 use sailing::waters::{Spot, Waters, steady_wind};
 use std::collections::{BTreeMap, VecDeque};
@@ -299,6 +300,16 @@ impl Sea {
     /// Each player's fight, in the order of their number.
     pub fn fights(&self) -> impl Iterator<Item = (PlayerId, &SeaFight)> + '_ {
         self.fights.iter().map(|(player, fought)| (*player, fought))
+    }
+
+    /// Each player's fight as their browser shows it (the naval crate's numbers), its lay over the fight's waters
+    /// now, in the order of their number.
+    pub fn fight_views(&self) -> impl Iterator<Item = (PlayerId, Vec<f64>)> + '_ {
+        let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
+        let time = self.clock as f64 * TICK_SECONDS;
+        self.fights.iter().map(move |(player, fought)| {
+            (*player, view_numbers(&fought.fight, &fought.events, fought.orders.aim.as_ref(), &waters, time))
+        })
     }
 }
 

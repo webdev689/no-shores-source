@@ -10,7 +10,6 @@ use combat::floats::{FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS};
 use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
-use naval::wire::view_numbers;
 use protocol::SeaInput;
 use room::sea::{CourseRefused, Sea};
 use room::{Floor, FoeSeen, PlayerId, Refused, Room, Section, Seen};
@@ -116,7 +115,8 @@ pub fn set_course(bytes: &[u8]) -> bool {
 
 /// One tick of a player's fighter as a course's room would take it, on open ground, from its numbers: the fighter,
 /// the intent, the player's number, then every fighter it sees as a number and a glance. Answers the next fighter's
-/// numbers, or none when the numbers are not that.
+/// numbers, then, if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its
+/// whole line to where it stops among those seen, in a tick); or none when the numbers are not that.
 #[must_use]
 pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let floats = floats_of(bytes);
@@ -135,9 +135,31 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
         .collect();
     let fighter = Fighter::from_floats(fighter);
     let intent = combat::Intent::from_floats(intent);
-    let (next, _) = COURSE
-        .with(|course| combat::player_tick(whole(*id), &fighter, &intent, &view, &course.borrow(), &movement::Flat));
-    next.to_floats().iter().flat_map(|value| value.to_le_bytes()).collect()
+    let (next, shot) = COURSE.with(|course| {
+        let blocks = course.borrow();
+        let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &movement::Flat);
+        let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
+        if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
+            return (next, Some(shot));
+        }
+        let bodies: Vec<(u32, [f64; 3])> = view
+            .iter()
+            .filter(|(_, other)| other.side != fighter.side && !other.dead())
+            .map(|(other, seen)| (*other, [seen.body.x, seen.body.y, seen.body.z]))
+            .collect();
+        let stop = match combat::shots::fly(&shot, &blocks, &bodies) {
+            combat::shots::Flight::Stopped { at, .. } => at,
+            combat::shots::Flight::Flying(flown) => flown.at,
+        };
+        (next, Some(combat::shots::line_of(&shot, stop)))
+    });
+    let mut floats = next.to_floats().to_vec();
+    if let Some(shot) = shot {
+        floats.push(f64::from(shot.ranged as u8));
+        floats.extend(shot.at);
+        floats.extend(shot.velocity);
+    }
+    floats.iter().flat_map(|value| value.to_le_bytes()).collect()
 }
 
 /// A fighter's number from a float, 0 for anything that is not one.
@@ -185,7 +207,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
 }
 
 /// Every player and foe after the room's last tick, the dresses changed and what happened in the fight since the last
-/// snapshot, and the shots in flight, as a snapshot's bytes; at sea, every ship. Empty with no room open.
+/// snapshot, and the shots in flight with the balls just fired, as a snapshot's bytes; at sea, every ship. Empty with no room open.
 #[must_use]
 pub fn snapshot() -> Vec<u8> {
     with_open(|opened| match opened {
@@ -197,23 +219,20 @@ pub fn snapshot() -> Vec<u8> {
             let players: Vec<Seen> = room.seen().collect();
             let foes: Vec<FoeSeen> = room.foes_seen().collect();
             let tick = room.clock();
+            let lines = room.take_lines();
+            let shots: Vec<combat::Shot> = room.shots().iter().chain(&lines).copied().collect();
             let snapshot = protocol::Snapshot {
                 tick,
                 players: &players,
                 dressed: &dressed,
                 foes: &foes,
                 events: &events,
-                shots: room.shots(),
+                shots: &shots,
             };
             protocol::snapshot_bytes(&snapshot)
         }
         Opened::Sea(sea) => {
-            let fights: Vec<(u32, Vec<f64>)> = sea
-                .fights()
-                .map(|(player, fought)| {
-                    (player, view_numbers(&fought.fight, &fought.events, fought.orders.aim.as_ref()))
-                })
-                .collect();
+            let fights: Vec<(u32, Vec<f64>)> = sea.fight_views().collect();
             protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>(), sea.pirates(), &fights)
         }
     })

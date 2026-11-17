@@ -51,8 +51,24 @@ pub fn foes() -> Vec<FoeSeen> {
 }
 
 pub const EVENTS: [Event; 2] = [
-    Event { tick: 1233, kind: EventKind::Parried, how: Some(How::Swing), striker: 12, defender: 9, amount: 0.0 },
-    Event { tick: 1234, kind: EventKind::Hit, how: Some(How::Riposte), striker: 9, defender: 12, amount: 35.0 },
+    Event {
+        tick: 1233,
+        kind: EventKind::Parried,
+        how: Some(How::Swing),
+        striker: 12,
+        defender: 9,
+        amount: 0.0,
+        stroke: None,
+    },
+    Event {
+        tick: 1234,
+        kind: EventKind::Hit,
+        how: Some(How::Riposte),
+        striker: 9,
+        defender: 12,
+        amount: 35.0,
+        stroke: Some(Stroke::Left),
+    },
 ];
 
 fn shots() -> Vec<Shot> {
@@ -88,9 +104,9 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
         rung: 2,
     };
     let fight = naval::fight::Fight::meet(at(0.0, 0.0, 0.0), at(0.0, -700.0, 3.0), 7, &Open, 0.0);
-    let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0 };
+    let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let events = [naval::fight::Event::RunOut { side: naval::arms::Side::Port }];
-    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim)))]
+    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0))]
 }
 
 const SHIPS: [(PlayerId, Ship); 2] = [
@@ -117,8 +133,16 @@ fn dressed_in(
 fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn() {
     let shown = Shown { anim: "ride_gallop".to_owned(), frame: 3, facing: -1.5 };
     let controls = Controls { forward: 1.0, sideways: -0.5, yaw: 0.3, run: true, crouch: true, ..Controls::default() };
-    let combat =
-        CombatInput { attack: Some(Stroke::Up), guard: true, dodge: false, shoot: true, pitch: -0.2, telegraph: None };
+    let combat = CombatInput {
+        attack: Some(Stroke::Up),
+        guard: true,
+        dodge: false,
+        shoot: true,
+        pitch: -0.2,
+        aim: true,
+        mark: Some([1.0, -2.0, 1.5]),
+        telegraph: None,
+    };
     let sent = Input {
         sequence: 42,
         intent: Intent { controls, combat },
@@ -133,6 +157,12 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
     let asked = (plain.dress, plain.spawn, plain.intent.combat, plain.respawn);
     assert_eq!(asked, (None, None, CombatInput::default(), false));
+    // An input with no fight's numbers at all asks nothing in the fight, and lays no aim's mark at the world's origin.
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let controls = Some(builder.create_vector(&[0.0; CONTROLS_FLOATS]));
+    let bare = messages::Input::create(&mut builder, &messages::InputArgs { controls, ..Default::default() });
+    builder.finish(bare, None);
+    assert_eq!(read_input(builder.finished_data()).unwrap().intent.combat, CombatInput::default());
 }
 
 #[test]
