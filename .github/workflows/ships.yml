@@ -35,15 +35,16 @@ jobs:
       - name: Install Blender's module and the TypeScript tools
         if: steps.token.outputs.set == 'true'
         run: pip install bpy==5.3.0 && npm ci
-      # She stands three times her model as the owner made it (The Sloop Is About 18 m Long), so her waterline, 0.4 m
-      # up that model, is 1.2 m up her.
+      # She stands three times her model as the owner made it, her quarterdeck opened with steps down (The Sloop Is
+      # About 18 m Long), so her waterline, 0.4 m up that model, is 1.2 m up her.
       - name: Paint and publish the Sloop
         if: steps.token.outputs.set == 'true'
         run: |
           source=$(node -p "const m = require('./content/ships/ships.json'); m.base + m.ships.sloop.source")
           curl -sSfo "$RUNNER_TEMP/sloop.blend" "$source"
           node tools/ships/ship_pictures.ts "$RUNNER_TEMP/pictures.bin"
-          python -I tools/ships/paint_ship.py -- "$RUNNER_TEMP/sloop.blend" "$RUNNER_TEMP/Sloop.blend" \
-            --pictures "$RUNNER_TEMP/pictures.bin" --scale 3
+          python -I tools/ships/shape_ship.py -- "$RUNNER_TEMP/sloop.blend" "$RUNNER_TEMP/shaped.blend" --scale 3
+          python -I tools/ships/paint_ship.py -- "$RUNNER_TEMP/shaped.blend" "$RUNNER_TEMP/Sloop.blend" \
+            --pictures "$RUNNER_TEMP/pictures.bin"
           python -I tools/ships/export_ship.py "$RUNNER_TEMP/Sloop.blend" sloop --waterline 1.2
           node -p "JSON.stringify(require('./content/ships/ships.json').ships.sloop, null, 2)"

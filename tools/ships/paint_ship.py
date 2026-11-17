@@ -1,12 +1,13 @@
-"""UV-maps a ship's model in metres, sorts her faces into the parts the game paints, and saves the model anew.
+"""UV-maps a ship's model in metres and sorts her faces into the parts the game paints, then saves the model anew.
 
-    <python with bpy> tools/ships/paint_ship.py Ship.blend Painted.blend [--pictures <file>] [--scale <times>]
+    <python with bpy> tools/ships/paint_ship.py /path/to/Ship.blend /path/to/Painted.blend [--pictures <file>]
 
-Each face goes to a part: `sail` stays canvas, an empty slot or an object with no material is spar (a cannon iron),
-any other slot hull, or deck where the face looks up. Her UVs are metres, each face laid flat on the axis it faces most
-(a spar along its own), so the painter's pictures repeat at their own scale; --pictures packs each part's in. A model
-painted before is painted again so. --scale first brings her to that many times the owner's model about her origin;
-the model keeps the scale it is at, so a run on one already there leaves her size alone.
+Each face goes to a part material: `sail` stays canvas; an empty slot is her spars (mast, bowsprit, pins, wheel); any
+other named slot is her hull, or her deck where the face looks up; a cannon is iron, and any other object without a
+material is spar. Her UVs are metres in Blender's frame, each face projected on the axis it faces most, so a picture
+of the game's painter repeats over her at its own scale: hull and deck along her length, a spar along its own. With
+--pictures (the bytes `node tools/ships/ship_pictures.ts` writes), each part's material shows its picture, packed in
+the model. Run on a model painted before, it keeps her parts and lays her UVs and pictures again.
 """
 import argparse
 import re
@@ -15,7 +16,6 @@ import sys
 
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
 import bmesh
-from mathutils import Matrix
 
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
 GUN_NAME = re.compile(r'Cannon\.(Port|Starboard)\.(\d+)$')
@@ -24,8 +24,6 @@ DECK_UP = 0.7
 # The game lays a picture at 40 texels a metre, as the forged models do; its pictures are 64 texels a side.
 TEXELS_PER_METRE = 40
 PICTURE_TEXELS = 64
-# The scene's own record of how many times the owner's model she stands, kept in the saved model.
-SCALE_KEY = 'overlook_scale'
 
 
 def part_of(material, face_up):
@@ -168,28 +166,13 @@ def paint(item, materials):
     print(item.name, {name: count for name, count in counts.items() if count})
 
 
-def size(times):
-    """Brings the model to `times` the owner's model, about her origin, from the scale it is at."""
-    scene = bpy.context.scene
-    grow = times / scene.get(SCALE_KEY, 1.0)
-    if abs(grow - 1.0) > 1e-9:
-        for item in bpy.data.objects:
-            if item.parent is None:
-                item.matrix_world = Matrix.Scale(grow, 4) @ item.matrix_world
-    scene[SCALE_KEY] = times
-    print(f'{times} times the owner\'s model')
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('blend', help='the model, an absolute path')
     parser.add_argument('out', help='where to save the painted model, an absolute path')
     parser.add_argument('--pictures', help="the parts' pictures, from tools/ships/ship_pictures.ts")
-    parser.add_argument('--scale', type=float, help="how many times the owner's model she stands")
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else None)
     bpy.ops.wm.open_mainfile(filepath=args.blend)
-    if args.scale:
-        size(args.scale)
     materials = picture_materials(read_pictures(args.pictures) if args.pictures else None)
     for item in bpy.data.objects:
         if item.type == 'MESH':
