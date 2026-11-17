@@ -74,6 +74,8 @@ room's word for it, so playing alone and online are the same game.
   one. Arrows and bolts are drawn in flight.
 - **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, away from its
   striker; a wounded body drips a trail, and a dead one lies in a spreading pool. `?blood=off` draws none.
+- **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
+  the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
 - **The display.** Health, stamina and poise at the bottom left, the stamina flashing when a swing or a dodge is
   pressed with none; the soft lock's target marked at its chest, with its name, health and poise at the top; a small
   health bar over each struck foe within 16 m; words on a dark chip over whoever was struck for each blow and what it

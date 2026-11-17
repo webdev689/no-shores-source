@@ -13,6 +13,7 @@ import { Glides } from './glide.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { Flashes } from '../combat/flashes.ts';
+import { Sparks } from '../combat/sparks.ts';
 import { Hud } from '../combat/hud.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import type { PlayerDress } from '../network/messages.ts';
@@ -205,6 +206,7 @@ async function start(): Promise<void> {
   if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
   const hud = new Hud(element<HTMLElement>('#hud'));
   const flashes = new Flashes();
+  const sparks = new Sparks();
   /** The foes' figures, by the room's number for each, apart from the panel's figures; they and other players are
    *  drawn gliding between the room's snapshots. */
   const foeFigures = new Map<number, Placed>();
@@ -261,6 +263,11 @@ async function start(): Promise<void> {
     const own = fight.own;
     const events = fight.takeEvents();
     flashes.update(events, seconds);
+    sparks.update(seconds);
+    sparks.struck(events, (id) => {
+      const fighter = id === fight.player ? fight.own : (fight.foes.get(id)?.view ?? fight.others.get(id)?.body);
+      return fighter ? [fighter.x, fighter.y, fighter.z] : null;
+    });
     const frameTicks = seconds / movement.tickSeconds;
     const body = shownBody(player);
     // Fighting, the figure faces where its arms point.
@@ -394,9 +401,8 @@ async function start(): Promise<void> {
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
-    scene.setMarks(marksMesh(telegraphs, fight.shots));
+    scene.setMarks(marksMesh(telegraphs, fight.shots, sparks.flying));
     const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;
-    const events = fight.takeEvents();
     blood.frame(seconds, events, fight, camera, canvas.width / Math.max(1, canvas.height));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
       if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
