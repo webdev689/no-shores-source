@@ -97,11 +97,6 @@ function placeWords(node: NodeInfo): string {
   return island ? `${KIND_WORDS[node.kind]} · ${island}` : KIND_WORDS[node.kind];
 }
 
-/**
- * The game: the player arrives in Overlook's social space, plays on foot, returns to their ship, sails the sea, views
- * an island's side and lands at a node, each through a veil while the place loads. This wires the pieces and keeps
- * the flow; each mode is its own module.
- */
 /** What the player has discovered, as this browser kept it; nothing where it keeps nothing. */
 function keptDiscovery(): Discovery {
   try {
@@ -111,6 +106,11 @@ function keptDiscovery(): Discovery {
   }
 }
 
+/**
+ * The game: the player arrives in Overlook's social space, plays on foot, returns to their ship, sails the sea, views
+ * an island's side and lands at a node, each through a veil while the place loads. This wires the pieces and keeps
+ * the flow; each mode is its own module.
+ */
 export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement): Promise<void> {
   const hud = new Hud(hudRoot);
   let flow: Flow = arriving(FIRST_NODE, 'Overlook');
@@ -275,6 +275,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       );
     }
     sea.cameAboard();
+    // The held map's coasts are worked out behind the veil, not on its first raising.
+    mapOf();
     if (rooms) await sea.enterRoom(rooms('sea'));
   };
 
@@ -365,9 +367,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   /** Takes the view down to the ship's helm, where the map is raised. */
   const openMap = () => {
-    if (flow.mode !== 'sea' || flow.menu || !sea || heldMap?.shown || sea.helmView) return;
-    sea.toHelm();
-    mapWanted = true;
+    if (flow.mode !== 'sea' || flow.menu || !sea || heldMap?.shown) return;
+    mapWanted = sea.toHelm();
   };
 
   /** Stops the voyage under way, or resumes the one stopped. */
@@ -436,12 +437,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (mapUp()) heldMap?.pointerMove(event.offsetX, event.offsetY);
     else sea?.pointerMove(event.offsetX, event.offsetY);
   });
+  /** A press is let go by whichever took it; neither keeps one after, where the map rose or fell in between. */
+  const forgetPresses = () => {
+    sea?.pointerCancel();
+    heldMap?.pointerCancel();
+  };
   canvas.addEventListener('pointerup', (event) => {
     if (atSea() && mapUp()) heldMap?.pointerUp(event.offsetX, event.offsetY);
     else if (atSea()) sea?.pointerUp(event.offsetX, event.offsetY);
-    else sea?.pointerCancel();
+    forgetPresses();
   });
-  canvas.addEventListener('pointercancel', () => sea?.pointerCancel());
+  canvas.addEventListener('pointercancel', forgetPresses);
   canvas.addEventListener('wheel', (event) => {
     if (!atSea()) return;
     if (mapUp()) heldMap?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
@@ -510,7 +516,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
           discover(true);
         }
     }
-    if (mapWanted && here.atHelm) {
+    if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
       mapWanted = false;
       mapOf().open(viewport, here.position, dress.outfit.armour.gauntlets ?? null, discovery.charted);
     }

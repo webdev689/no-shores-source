@@ -212,8 +212,10 @@ export class Sea {
   }
 
   /** Takes the view down to the ship's helm, in first person, where the held map is raised. */
-  toHelm(): void {
-    if (this.view.kind === 'sail') this.view = { kind: 'helm', at: 0, going: 'down' };
+  toHelm(): boolean {
+    if (this.view.kind !== 'sail') return false;
+    this.view = { kind: 'helm', at: 0, going: 'down' };
+    return true;
   }
 
   /** Takes the view back up from the helm to the sea's. */

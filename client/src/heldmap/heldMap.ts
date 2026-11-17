@@ -13,6 +13,7 @@ import {
   PAN_PX,
   raised,
   type Rect,
+  routeOf,
   stageOf,
   toInk,
   toWorld,
@@ -127,15 +128,29 @@ export class HeldMap {
     this.phase = { kind: 'closing', t: 0, from, sail };
   }
 
+  /** Reads the art for a set of gauntlets. Art that will not come lets the map go, and is asked for again the next
+   *  time the map is raised. */
   private load(gauntlets: string | null): void {
     this.gauntlets = gauntlets;
+    const failed = (why: unknown) => {
+      console.error('the held map could not be read:', why);
+      this.gauntlets = undefined;
+      this.close();
+    };
     void Promise.all([this.store.strip(SHEET_PATH), this.store.strip(handsPath(gauntlets))])
       .then(async ([sheet, hands]) => {
         // A set the forge drew no hands for holds the map in bare hands.
         const held = hands ?? (gauntlets ? await this.store.strip(handsPath(null)) : null);
-        if (sheet && held && this.gauntlets === gauntlets) this.view.setPictures(sheet, held, HANDS_FRAMES);
+        if (this.gauntlets !== gauntlets) return;
+        if (sheet && held) this.view.setPictures(sheet, held, HANDS_FRAMES);
+        else failed('the forge has no held-map art');
       })
-      .catch((error: unknown) => console.error('the held map could not be read:', error));
+      .catch(failed);
+  }
+
+  /** A press that ends anywhere else is forgotten. */
+  pointerCancel(): void {
+    this.press = null;
   }
 
   pointerDown(x: number, y: number): void {
@@ -194,12 +209,11 @@ export class HeldMap {
     scene: HeldMapScene,
   ): HeldMapFrame | null {
     this.clock += dt;
-    // The rise waits for the art, the first time it is asked for.
-    const lift = this.advance(this.view.ready ? dt : 0);
-    if (lift === null || !this.view.ready) {
-      this.layer.hidden = lift === null;
-      return null;
-    }
+    // The rise waits for the art the first time it is asked for; lowering never waits.
+    const waiting = !this.view.ready && this.phase.kind === 'opening';
+    const lift = this.advance(waiting ? 0 : dt);
+    this.layer.hidden = lift === null || !this.view.ready;
+    if (lift === null || !this.view.ready) return null;
     const stage = stageOf(viewport);
     if (stage.ink.width !== this.ink.width || stage.ink.height !== this.ink.height)
       this.mapView = zoomAt(this.mapView, 0, 0, 1, stage.ink, WORLD);
@@ -219,7 +233,7 @@ export class HeldMap {
       view: { left: this.mapView.left, top: this.mapView.top, scale: this.mapView.scale * dpr },
       handsFrame: this.fidget(),
       knownIslands: scene.knownIslands,
-      route: this.route(this.choice?.course.ok ? this.choice.course.points : scene.course),
+      route: routeOf(this.choice?.course.ok ? this.choice.course.points : scene.course, ROUTE_POINTS),
     };
   }
 
@@ -253,20 +267,6 @@ export class HeldMap {
     const into = this.clock % FIDGET.every;
     const frame = Math.floor(into / FIDGET.frameS);
     return frame < HANDS_FRAMES ? frame : 0;
-  }
-
-  /** A route's points with how far along it each lies, four floats a point, at most the view's share. */
-  private route(points: readonly Point2[]): Float32Array {
-    const step = Math.max(1, Math.ceil(points.length / ROUTE_POINTS));
-    const kept = points.filter((unused, index) => index % step === 0 || index === points.length - 1);
-    const out = new Float32Array(kept.length * 4);
-    let along = 0;
-    kept.forEach((point, index) => {
-      const before = kept[index - 1];
-      if (before) along += Math.hypot(point[0] - before[0], point[1] - before[1]);
-      out.set([point[0], point[1], along, 0], index * 4);
-    });
-    return out;
   }
 
   /** The names, the ship's arrow and the card laid over the parchment, `drop` pixels down its lowering. */

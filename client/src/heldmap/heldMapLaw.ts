@@ -148,3 +148,18 @@ export function nearestMark<T extends { readonly x: number; readonly y: number }
   }
   return best?.mark ?? null;
 }
+
+/** A route as the map inks it: every step-th point and the last, at most `most`, each with how far along the route it
+ *  lies, four floats a point (east, south, metres along, 0). */
+export function routeOf(points: readonly (readonly [number, number])[], most: number): Float32Array {
+  const step = Math.max(1, Math.ceil((points.length - 1) / (most - 1)));
+  const kept = points.filter((unused, index) => index % step === 0 || index === points.length - 1);
+  const out = new Float32Array(kept.length * 4);
+  let along = 0;
+  kept.forEach((point, index) => {
+    const before = kept[index - 1];
+    if (before) along += Math.hypot(point[0] - before[0], point[1] - before[1]);
+    out.set([point[0], point[1], along, 0], index * 4);
+  });
+  return out;
+}

@@ -5,8 +5,8 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { CoastField } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
 
-/** The most points of a route the map inks. */
-export const ROUTE_POINTS = 512;
+/** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
+export const ROUTE_POINTS = 128;
 
 const PICTURE_SHADER = /* wgsl */ `
 struct Quad {

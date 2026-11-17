@@ -54,12 +54,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   and nature; and the [[Game]] page that plays it from arriving in Overlook to landing at another node. Its AAA pass
   is on the same pull request: the sun's shadows round the eye, the Tower's courtyard on every plaza, landmarks
   dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found. Then the
-  shadows across the view ([[Game]]): a far map 2.4 km across where the city's solids, models, masses and hulls cast,
-  so the city below the plaza is shadowed; and the figures cast, each card turned to the sun, and are lit through
-  both maps. The owner's first test on the published site froze the whole browser after a while: the game queued GPU
-  work without waiting for it, and the far map cast every whole model. The game now keeps at most one frame waiting on
-  the GPU, and the far map casts each building's masses (shadows 302k triangles a frame from the plaza, against 448k
-  for the view; tested offline). The owner is to test again.
+  shadows across the view ([[Game]]): a far map 2.4 km across where the city's solids and its buildings' masses or
+  hulls cast, so the city below the plaza is shadowed; and the figures cast, each card turned to the sun, and are lit
+  through both maps. The owner's first test froze the whole browser after a while; the game now keeps at most one
+  frame waiting on the GPU, and the far map casts masses, not models (302k shadow triangles a frame from the plaza,
+  against 448k for the view; tested offline). The owner was "very very impressed" and called it the base to build on.
+- The sea navigated from the helm, on its pull request from this branch (#49), as the owner decided it
+  ([[The Sea Is Navigated From the Helm With the Held Map]]): no nodes marked at sea, a port's icon within 60 km;
+  off a coast the offer to dock (within 20 km of the harbour) or go ashore, either flying into the side's overview;
+  the navigation panel (Map, Stop and Resume voyage, the pace dial), a stopped voyage resumable from anywhere; and the
+  [[Held Map]], DFO's ported ([[Pick - Held Map]]): the view down to the helm in first person, the owner's
+  parchment raised in the gauntlets worn, the discovered world inked on it by the GPU, a click setting the
+  destination. Discovery is kept in the browser. Tested offline in headless Chromium end to end: the map raised, a
+  point of the sea chosen, Set sail, the ship under way.
 - On `main`: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
 - On `main` and deployed: the fight
@@ -75,6 +82,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- The sea's navigation and the held map (#49), to test and say yes to merging and publishing.
 - Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
   the Cloudflare token. The deployed rooms keep the speed hack and the two socket faults until that deploy.
 - Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys and the R2
@@ -105,5 +113,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Browser QA of the game: headless WebGPU loses its device when it presents to a canvas, so a driver hands the game an
   offscreen texture, paces its frames by the GPU and reads the picture back; the forge's renders allow CORS only from
   `http://localhost:5173`. The driver is not kept in the repo yet (task-observer observation 1).
+- The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
+  map, the charted sea's wash laid while the map is up.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.

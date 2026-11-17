@@ -31,7 +31,7 @@ war, and a click on it sets the ship's destination.
   a little past the screen's, so the gauntlets run off it.
 - **The ink** is drawn on the GPU a pixel at a time over the parchment, which is the land and the unknown. From the
   continents' outlines, once, a coast field over the world's 1,024 × 640 cells of 4.8 km (`coastField`, about a
-  third of a second): each cell's exact distance to the nearest coast within 60 km, negative on land, and whose coast
+  third of a second, behind the veil on first going to sea): each cell's exact distance to the nearest coast within 60 km, negative on land, and whose coast
   it is. A discovered island's coast is drawn as a pen does, a soft wash on the sea's side and then the line, with
   engraved lines following it out to sea and fading; the charted sea carries a faint wash, its edge soft.
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle, in the ink, as page
@@ -67,4 +67,6 @@ The player starts with the island they arrive on, its port, the place they arriv
 - A route is planned on every continent's outline, so it keeps clear of an island the player has not found.
 - The coast field is a cell's middle every 4.8 km, interpolated: a headland narrower than a few kilometres is drawn
   softened.
+- The charted sea's wash is laid when the map is raised: what the ship charts while it is up shows the next time.
+- The route is inked through at most 128 of its points.
 - Quests are not tracked on the map yet.

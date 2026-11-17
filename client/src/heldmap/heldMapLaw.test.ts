@@ -5,6 +5,7 @@ import {
   leastScale,
   nearestMark,
   raised,
+  routeOf,
   SCALE_MOST,
   SHEET,
   stageOf,
@@ -100,4 +101,15 @@ test('a click picks the nearest mark within reach, and nothing out of it', () =>
   ];
   assert.equal(nearestMark(marks, 108, 101)?.id, 'b');
   assert.equal(nearestMark(marks, 100, 130), null);
+});
+
+test('a long route is thinned to the most the map inks, keeping its end, each point with how far along it lies', () => {
+  for (const length of [2, 128, 129, 1024, 1025]) {
+    const points = Array.from({ length }, (unused, index) => [index * 10, 0] as const);
+    const route = routeOf(points, 128);
+    const count = route.length / 4;
+    assert.ok(count <= 128, `${length}: ${count}`);
+    assert.equal(route[(count - 1) * 4], (length - 1) * 10, `${length}: the destination kept`);
+    assert.equal(route[(count - 1) * 4 + 2], (length - 1) * 10, `${length}: its distance along`);
+  }
 });
