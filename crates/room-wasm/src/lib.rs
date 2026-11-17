@@ -11,12 +11,14 @@ use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
 use protocol::SeaInput;
+use room::deck::WalkRefused;
 use room::fleet::Fleet;
-use room::sea::{CourseRefused, Sea};
+use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::{Floor, FoeSeen, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
 use std::cell::RefCell;
 
+mod deck_door;
 mod fleet_door;
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
@@ -100,7 +102,7 @@ pub fn open_sea(text: &[u8]) -> bool {
     let Some(layout) = std::str::from_utf8(text).ok().and_then(|text| world::layout::parse(text).ok()) else {
         return false;
     };
-    keep(Opened::Sea(Box::new(Sea::new(&layout))));
+    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone()))));
     true
 }
 
@@ -188,7 +190,8 @@ pub fn arms_code(text: &[u8]) -> u32 {
     combat::arms_of(right, left, lines.next() == Some("drawn")).code()
 }
 
-/// A player's input bytes, read and handed to the room: an input on land, a course at sea. One of the answers above.
+/// A player's input bytes, read and handed to the room: an input on land; at sea a course, orders, a step on deck or
+/// the helm. One of the answers above.
 pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     let answer = with_open(|opened| match opened {
         Opened::Land { room, .. } => match protocol::read_input(bytes) {
@@ -205,6 +208,23 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
+                Ok(SeaInput::Walk(sequence, controls)) => {
+                    return match sea.walk(player, sequence, controls) {
+                        Ok(()) => TAKEN,
+                        Err(WalkRefused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                        Err(WalkRefused::BadControls) => NOT_AN_INPUT,
+                        Err(WalkRefused::NotAboard) => REFUSED,
+                    };
+                }
+                Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
+                    let asked =
+                        if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };
+                    return match asked {
+                        Ok(()) => TAKEN,
+                        Err(HelmRefused::NoSuchPlayer) => NO_SUCH_PLAYER,
+                        Err(_) => REFUSED,
+                    };
+                }
             };
             match asked {
                 Ok(()) => TAKEN,
@@ -253,7 +273,9 @@ pub fn snapshot() -> Vec<u8> {
         }
         Opened::Sea(sea) => {
             let fights: Vec<(u32, Vec<f64>)> = sea.fight_views().collect();
-            protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>(), sea.pirates(), &fights)
+            let aboard: Vec<(u32, u32, movement::Body)> =
+                sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
+            protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>(), sea.pirates(), &fights, &aboard)
         }
         Opened::Fleet(fleet) => {
             let happened = fleet.take_events();
@@ -395,6 +417,12 @@ pub extern "C" fn room_tick() {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot() -> u64 {
     hand_over(snapshot())
+}
+
+/// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).
+#[unsafe(no_mangle)]
+pub extern "C" fn room_sloop() -> u64 {
+    hand_over(deck_door::sloop_build_json().into_bytes())
 }
 
 /// Keeps the course written at `address` for predicting; 1 if it was one, 0 if not.

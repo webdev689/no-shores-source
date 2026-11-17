@@ -38,12 +38,16 @@ export interface RoomDoor {
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
-  /** A player's input on land, their ship's course at sea, or their ship's orders in a fleet. */
+  /** A player's input on land; at sea their ship's course or orders, a step of their walk on deck or the helm; or
+   *  their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
   /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
    *  bytes. */
   snapshot(): Uint8Array;
+  /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
+   *  and the loads her guns take. */
+  sloop(): string;
 }
 
 interface RoomExports {
@@ -61,6 +65,7 @@ interface RoomExports {
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
   room_snapshot(): bigint;
+  room_sloop(): bigint;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -108,5 +113,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
     snapshot: () => take(exports.room_snapshot()),
+    sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
   };
 }

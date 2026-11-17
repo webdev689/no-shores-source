@@ -10,7 +10,7 @@ fn sailed(fight: &Fight, id: naval::shots::ShipId) -> sailing::ship::Ship {
 /// One square continent, 100 km a side, its north-west corner 100 km from the frame's.
 fn sea() -> Sea {
     let text = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    Sea::new(&world::layout::parse(text).unwrap())
+    Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck())
 }
 
 fn ship(sea: &Sea, player: PlayerId) -> Ship {
@@ -187,4 +187,55 @@ fn a_wary_pirate_or_one_out_of_sight_begins_no_fight() {
     sea.pirates.sailing[0] = Pirate { bold: false, y: 50_000.0 - 500.0, ..sea.pirates.sailing[0] };
     sea.tick();
     assert_eq!(sea.fights().count(), 0);
+}
+
+#[test]
+fn a_player_leaves_the_helm_only_at_sea_and_out_of_a_fight_and_walks_while_her_helmsman_keeps_her_course() {
+    let mut sea = sea();
+    let player = sea.join();
+    assert_eq!(sea.leave_helm(player), Err(HelmRefused::NotAtSea));
+    sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10).unwrap();
+    assert_eq!(sea.leave_helm(player), Ok(()));
+    assert_eq!(sea.leave_helm(player), Err(HelmRefused::AlreadyThere));
+    assert_eq!(next_course(&mut sea, player, &[[60_000.0, 150_000.0]], 10), Err(CourseRefused::OffTheHelm));
+    let before = ship(&sea, player);
+    let forward = Controls { forward: 1.0, ..Controls::default() };
+    for sequence in 1..=30 {
+        sea.walk(player, sequence, forward).unwrap();
+        sea.tick();
+    }
+    assert!(ship(&sea, player).y < before.y - 50.0, "under way, she sails on under her helmsman");
+    let (_, walking) = sea.aboard().next().expect("the player on deck");
+    assert_eq!(walking.acknowledged, 30);
+    assert!(walking.body.y < 2.7 - 1.0, "they walked forward from the wheel, in her frame: {}", walking.body.y);
+    assert_eq!(sea.take_helm(player), Err(HelmRefused::NotAtTheWheel));
+    let back = Controls { forward: -1.0, ..Controls::default() };
+    for sequence in 31..=60 {
+        sea.walk(player, sequence, back).unwrap();
+        sea.tick();
+    }
+    assert_eq!(sea.take_helm(player), Ok(()), "back at the wheel");
+    assert_eq!(sea.walk(player, 61, forward), Err(WalkRefused::NotAboard));
+    assert_eq!(sea.aboard().count(), 0);
+}
+
+#[test]
+fn a_fight_calls_a_player_off_the_helm_back_to_it_and_one_in_a_fight_keeps_it() {
+    let (mut sea, player) = met_at_sea(700.0);
+    sea.leave_helm(player).unwrap();
+    sea.tick();
+    assert_eq!(sea.fights().count(), 1, "a bold pirate in sight begins the fight");
+    assert_eq!(sea.aboard().count(), 0, "all hands: the player is back at the helm");
+    assert_eq!(sea.leave_helm(player), Err(HelmRefused::Fighting));
+}
+
+#[test]
+fn a_player_who_leaves_the_room_leaves_her_deck_too() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 150_000.0]], 10).unwrap();
+    sea.leave_helm(player).unwrap();
+    sea.leave(player);
+    assert_eq!(sea.aboard().count(), 0);
+    assert_eq!(sea.take_helm(player), Err(HelmRefused::NoSuchPlayer));
 }

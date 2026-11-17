@@ -190,7 +190,8 @@ fn a_course_reads_back_as_its_points_and_pace_and_odd_numbers_are_refused() {
     assert!(read_course(&[1, 2, 3]).is_err());
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let odd = Some(builder.create_vector(&[1.0, 2.0, 3.0]));
-    let course = messages::Course::create(&mut builder, &messages::CourseArgs { points: odd, pace: 5, orders: None });
+    let course =
+        messages::Course::create(&mut builder, &messages::CourseArgs { points: odd, pace: 5, ..Default::default() });
     builder.finish(course, None);
     assert_eq!(read_course(builder.finished_data()), Err("a course's points are pairs, not 3 numbers".to_owned()));
 }
@@ -247,7 +248,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());
     assert!(read.ships().is_none());
 
-    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen());
+    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     let ships: Vec<(PlayerId, Ship)> = sea
         .ships()
@@ -260,6 +261,31 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.player(), fight.view().unwrap().iter().collect::<Vec<_>>()), (2, fights_seen()[0].1.clone()));
+    let walker = sea.players().unwrap().get(0);
+    let body = body_of(&walker.fighter().unwrap().iter().collect::<Vec<_>>());
+    assert_eq!((walker.player(), walker.acknowledged(), body), (3, 41, Some(aboard_seen()[0].2)));
+}
+
+/// A player off the helm on their deck, in their ship's frame: their number, their last step taken, their body.
+fn aboard_seen() -> Vec<(PlayerId, u32, Body)> {
+    vec![(3, 41, Body { z: 0.8, facing: 0.5, ..standing(0.25, 2.5) })]
+}
+
+#[test]
+fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
+    let controls = Controls { forward: 1.0, sideways: -0.5, yaw: 0.25, run: true, ..Controls::default() };
+    assert_eq!(read_sea_input(&walk_bytes(12, &controls)), Ok(SeaInput::Walk(12, controls)));
+    assert_eq!(read_sea_input(&helm_bytes(true)), Ok(SeaInput::LeaveHelm));
+    assert_eq!(read_sea_input(&helm_bytes(false)), Ok(SeaInput::TakeHelm));
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let walk = Some(builder.create_vector(&[1.0, 0.0]));
+    let short = messages::Course::create(&mut builder, &messages::CourseArgs { walk, ..Default::default() });
+    builder.finish(short, None);
+    assert!(read_sea_input(builder.finished_data()).is_err(), "a step's controls are all its numbers");
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let odd = messages::Course::create(&mut builder, &messages::CourseArgs { helm: 3, ..Default::default() });
+    builder.finish(odd, None);
+    assert!(read_sea_input(builder.finished_data()).is_err(), "the helm is left or taken, nothing else");
 }
 
 #[test]
@@ -283,5 +309,6 @@ fn the_bytes_for_the_clients_test_are_written() {
     let (players, foes, shots) = (players(), foes(), shots());
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE))).unwrap();
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot_bytes(&snapshot(&players, &foes, &shots))).unwrap();
-    std::fs::write(format!("{folder}/sea.bin"), sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen())).unwrap();
+    let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
+    std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }
