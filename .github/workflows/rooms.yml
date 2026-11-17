@@ -34,7 +34,5 @@ jobs:
         run: test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::the repository has no CLOUDFLARE_TOKEN secret"; exit 1; }
       - name: Install the TypeScript tools
         run: npm ci
-      - name: Build the messages and the rooms' WebAssembly
-        run: npm run -s schema && npm run -s wasm
       - name: Deploy the rooms
         run: npm run -s server:deploy

@@ -131,9 +131,11 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     assert_eq!(input(first, &protocol::course_bytes(&[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10)), TAKEN);
     assert_eq!(input(second, &protocol::course_bytes(&[[50_000.0, 150_000.0], [250_000.0, 150_000.0]], 10)), REFUSED);
     let off_the_steps = protocol::course_bytes(&[[50_000.0, 150_000.0]], 3);
-    assert_eq!(input(second, &off_the_steps), TOO_SOON, "one course a tick, dropped as a flood");
+    assert_eq!(input(second, &off_the_steps), TOO_SOON, "one course each half second, dropped as a flood");
     assert_eq!(input(second, b"no course"), NOT_AN_INPUT);
-    room_tick();
+    for _ in 0..room::sea::COURSE_EVERY_TICKS {
+        room_tick();
+    }
     assert_eq!(input(second, &off_the_steps), REFUSED);
     let bytes = snapshot();
     let ships: Vec<(u32, Ship)> = messages::root_as_from_room(&bytes)

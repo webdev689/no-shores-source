@@ -23,6 +23,9 @@ pub const SHIP_SPEED_M_S: f64 = 12.0;
 pub const PACES: [u16; 7] = [5, 10, 20, 30, 40, 60, 100];
 /// The most points one course may hold.
 pub const COURSE_LIMIT: usize = 64;
+/// The fewest ticks between a player's courses: half a second, so even a full sea of sockets asking for the costliest
+/// courses holds a third of the room's time at most. A browser sends its latest course once the wait is over.
+pub const COURSE_EVERY_TICKS: u64 = 30;
 
 /// Why a course was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -35,7 +38,8 @@ pub enum CourseRefused {
     BadCourse,
     /// A point on a continent, or a leg that meets a coast.
     CrossesLand,
-    /// A second course in one tick: a player sets at most one a tick, so no one can flood the room with work.
+    /// A course within `COURSE_EVERY_TICKS` of the player's last: judging one against the coasts takes up to a few
+    /// milliseconds, so no one may ask it often enough to hold the sea's ticks back.
     TooSoon,
     /// A course, or orders, out of turn: a ship in a fight takes orders and no course, and one out of a fight the
     /// reverse.
@@ -175,9 +179,10 @@ impl Sea {
             return Err(CourseRefused::Fighting);
         }
         let berth = self.berths.get_mut(&player).ok_or(CourseRefused::NoSuchPlayer)?;
-        if berth.set_at.replace(clock) == Some(clock) {
+        if berth.set_at.is_some_and(|at| clock < at + COURSE_EVERY_TICKS) {
             return Err(CourseRefused::TooSoon);
         }
+        berth.set_at = Some(clock);
         let at_sea = berth.sailing.as_ref().map(|sailing| sailing.ship);
         let whole_points: Option<Vec<Point>> = points.iter().map(whole).collect();
         let whole_points = whole_points.filter(|found| found.len() <= COURSE_LIMIT).ok_or(CourseRefused::BadCourse)?;
@@ -327,14 +332,30 @@ fn on_land(coasts: &[Coast], point: Point) -> bool {
         .any(|coast| ring_contains(&coast.ring, point))
 }
 
-/// Whether a leg between two points meets a coast.
+/// Whether a leg between two points meets a coast. A leg that never enters a coast's box, though its own box overlaps
+/// it (a long leg passing a continent's corner), is told so by the box's four sides, not the coast's thousands.
 fn leg_meets_land(coasts: &[Coast], from: Point, to: Point) -> bool {
     let (west, east) = (from.x.min(to.x), from.x.max(to.x));
     let (north, south) = (from.y.min(to.y), from.y.max(to.y));
     coasts
         .iter()
         .filter(|coast| coast.west <= east && coast.east >= west && coast.north <= south && coast.south >= north)
+        .filter(|coast| leg_enters_box(coast, from, to))
         .any(|coast| edges(&coast.ring).any(|edge| segments_meet((from, to), edge)))
+}
+
+/// Whether a leg has an end inside a coast's box, or crosses one of its sides.
+fn leg_enters_box(coast: &Coast, from: Point, to: Point) -> bool {
+    let inside = |point: Point| {
+        coast.west <= point.x && point.x <= coast.east && coast.north <= point.y && point.y <= coast.south
+    };
+    let corners = [
+        Point::new(coast.west, coast.north),
+        Point::new(coast.east, coast.north),
+        Point::new(coast.east, coast.south),
+        Point::new(coast.west, coast.south),
+    ];
+    inside(from) || inside(to) || edges(&corners).any(|side| segments_meet((from, to), side))
 }
 
 /// Moves a ship `distance` metres along its course.

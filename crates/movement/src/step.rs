@@ -55,14 +55,23 @@ fn vaults(rise: f64, ahead: &WallAhead) -> bool {
     rise <= TUNING.vault && ahead.depth <= TUNING.vault_depth
 }
 
+/// An angle wrapped into (-PI, PI].
+#[must_use]
+pub fn wrap(angle: f64) -> f64 {
+    let turns = libm::floor((angle + PI) / (2.0 * PI));
+    let wrapped = angle - turns * 2.0 * PI;
+    if wrapped <= -PI { wrapped + 2.0 * PI } else { wrapped }
+}
+
 /// One step of the body for `seconds` among `blocks` standing on `terrain`: walking, running and crouching on the
 /// ground, up steps and slopes; jumping and falling; grabbing a lip on a jump to hang, mantle or vault; shimmying
 /// along a lip; climbing a wall too high to grab.
 #[must_use]
 pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64) -> Body {
-    // The controls come from a player's machine: held to their range here, a body never takes a NaN from them.
+    // The controls come from a player's machine: held to their range here, a body never takes a NaN from them, and a
+    // look turned past half a turn is wrapped, as the fight's rules wrap it, so a browser's step and a room's agree.
     let unit = |value: f64| if value.is_finite() { value.clamp(-1.0, 1.0) } else { 0.0 };
-    let yaw = if controls.yaw.is_finite() { controls.yaw } else { 0.0 };
+    let yaw = if controls.yaw.is_finite() { wrap(controls.yaw) } else { 0.0 };
     let controls = &Controls { forward: unit(controls.forward), sideways: unit(controls.sideways), yaw, ..*controls };
     let (sin, cos) = (libm::sin(controls.yaw), libm::cos(controls.yaw));
     let wish_x = sin * controls.forward + cos * controls.sideways;

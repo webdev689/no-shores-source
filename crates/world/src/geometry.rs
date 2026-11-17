@@ -68,6 +68,14 @@ fn on_segment(from: Point, to: Point, point: Point) -> bool {
 pub fn segments_meet(first: (Point, Point), second: (Point, Point)) -> bool {
     let (start, end) = first;
     let (other_start, other_end) = second;
+    // Segments whose boxes are apart share no point: most pairs are told so before any product is taken.
+    if start.x.max(end.x) < other_start.x.min(other_end.x)
+        || other_start.x.max(other_end.x) < start.x.min(end.x)
+        || start.y.max(end.y) < other_start.y.min(other_end.y)
+        || other_start.y.max(other_end.y) < start.y.min(end.y)
+    {
+        return false;
+    }
     let side_other_start = cross(start, end, other_start).signum();
     let side_other_end = cross(start, end, other_end).signum();
     let side_start = cross(other_start, other_end, start).signum();

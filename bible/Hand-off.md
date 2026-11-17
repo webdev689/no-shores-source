@@ -120,10 +120,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- A whole-repo audit found five things to fix before the next deploy, each waiting on the owner's word: one socket's
-  flood of inputs stalls a room; costly courses can stall the shared sea; `npm run server:deploy` builds neither the
-  wasm nor the schema; on foot in a node the browser predicts with an unwrapped look, so it and the room part in the
-  last bits; and the session toolkit installs unpinned code. Its smaller findings are fixed (#51).
+- A whole-repo audit's findings are all fixed, with the owner's yes: the smaller with #51, then the five larger (a
+  flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's wrap on
+  foot, and the session kit's unpinned downloads). The rooms take them when next deployed.
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
   [[Naval Combat]] are on `main`, with the sea's pirates and fights, and ramming and the fleet room. The rest of
   the pick's step 3 is boarding, crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's

@@ -27,8 +27,9 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   ([[Clients Predict With the Shared Rules]]). Its sines, cosines and arctangents come from `libm`, a pure-Rust maths
   library compiled into it, so every machine rounds them alike ([[Agree to the Bit]]).
 - **Ticks.** A body moves in whole ticks of 1/60 s. Each tick takes the body and the player's controls: forward and
-  sideways (held to -1 to 1), the look's bearing, run, mounted, and jump and crouch pressed. A control that is not a
-  number counts as none, so a body never takes one in. A press between two ticks is kept for the next. The view turns
+  sideways (held to -1 to 1), the look's bearing (wrapped within half a turn either way, as the fight's rules take it,
+  so a browser's step and a room's agree), run, mounted, and jump and crouch pressed. A control that is not a number
+  counts as none, so a body never takes one in. A press between two ticks is kept for the next. The view turns
   every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
 - **Blocks.** A course is a list of blocks, each a footprint and a top. The body, a circle of 0.35 m radius, stands
   on the highest top within a step (0.5 m) of its feet, slides along a block's sides, and is stopped by one

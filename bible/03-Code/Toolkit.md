@@ -15,6 +15,9 @@ when to install it and what each session does at its start and end; this note sa
 
 - Call its scripts as `bash x.sh` or `python3 x.py`.
 - After any change to the kit, run `bash tools/claude-toolkit/check-tools.sh --worker` and expect no FAIL line.
+- Everything the install fetches is pinned: a commit's full hash, a version, or rtk's archive by its SHA-256. A
+  session holds the owner's keys, so what it runs is what was read when it was pinned. Bump a pin on purpose, after
+  reading what changed. Git trusts only `REPO_DIR` when another user owns it, never every repository.
 - Plugins and MCP servers the install adds load in the next session. In the session that ran the install, use a
   skill by reading its `SKILL.md` (`find ~/.claude/plugins/cache -path '*skills/<name>/SKILL.md'`), and hand Serena
   and claude-mem work to a worker.

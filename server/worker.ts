@@ -2,6 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import course from '../content/testground/course.json' with { type: 'json' };
 import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
+import { type Count, counted } from './budget.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
@@ -12,11 +13,6 @@ interface Env {
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
-
-/** Who a WebSocket belongs to, kept on the socket so it outlives the object's sleep. */
-interface Attachment {
-  readonly player: number;
-}
 
 /** The most sockets a room holds: a guard against one client opening sockets without end, since every snapshot
  *  carries every player to every socket. A room on land holds fewer players than this; the sea counts on it. */
@@ -32,14 +28,16 @@ function roomName(request: Request): string | null {
  * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land, `fleet-<name>` a fleet's
  * place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
  * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
- * room in step with the clock and sends every player the snapshot after each tick.
+ * room in step with the clock and sends every player the snapshot after each tick. Its sockets live and die with it:
+ * the room is kept only in its memory, so a socket must never outlast it.
  */
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);
   private opened: Promise<boolean> | null = null;
   private ticking: ReturnType<typeof setInterval> | null = null;
-  /** Players this object has let go of, whose sockets may still be closing. */
-  private readonly gone = new Set<number>();
+  /** Each player's socket, by its player's number, and their messages in the second they last sent in (`budget.ts`);
+   *  a player let go of is gone from it, though their socket may still be closing. */
+  private readonly players = new Map<WebSocket, { readonly player: number; count: Count | undefined }>();
   private started = 0;
   private ticks = 0;
 
@@ -52,7 +50,7 @@ export class RoomHost extends DurableObject<Env> {
       this.opened = null;
       return new Response('No such room', { status: 404 });
     }
-    if (this.ctx.getWebSockets().length >= MAX_PLAYERS) return new Response('The room is full', { status: 503 });
+    if (this.players.size >= MAX_PLAYERS) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     const player = this.guarded(() => this.room.join(), 0);
     if (player === 0) {
@@ -61,8 +59,12 @@ export class RoomHost extends DurableObject<Env> {
       server.close(1013, 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
-    this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ player } satisfies Attachment);
+    server.binaryType = 'arraybuffer';
+    server.accept();
+    this.players.set(server, { player, count: undefined });
+    server.addEventListener('message', (event) => this.message(server, event.data));
+    server.addEventListener('close', () => this.left(server));
+    server.addEventListener('error', () => this.left(server));
     server.send(this.room.joined(player));
     this.startTicking();
     return new Response(null, { status: 101, webSocket: client });
@@ -78,8 +80,14 @@ export class RoomHost extends DurableObject<Env> {
     return file.ok && this.room.openNode(await file.text());
   }
 
-  override webSocketMessage(socket: WebSocket, message: string | ArrayBuffer): void {
-    const { player } = socket.deserializeAttachment() as Attachment;
+  private message(socket: WebSocket, message: string | ArrayBuffer): void {
+    const held = this.players.get(socket);
+    // A flood still arriving when its socket was let go of costs nothing more.
+    if (!held) return;
+    const { player } = held;
+    const { count, within } = counted(held.count, Date.now());
+    held.count = count;
+    if (!within) return this.dismiss(socket, 1008, 'too many messages');
     if (typeof message !== 'string' && message.byteLength > MESSAGE_MOST)
       return this.dismiss(socket, 1009, 'too large');
     const answer =
@@ -91,14 +99,6 @@ export class RoomHost extends DurableObject<Env> {
     if (answer !== 'taken' && answer !== 'too soon' && answer !== 'refused') this.dismiss(socket, 1008, answer);
   }
 
-  override webSocketClose(socket: WebSocket): void {
-    this.left(socket);
-  }
-
-  override webSocketError(socket: WebSocket): void {
-    this.left(socket);
-  }
-
   /** Closes a socket and takes its player out at once, so no snapshot is sent to it while it closes. */
   private dismiss(socket: WebSocket, code: number, reason: string): void {
     this.left(socket);
@@ -106,10 +106,10 @@ export class RoomHost extends DurableObject<Env> {
   }
 
   private left(socket: WebSocket): void {
-    const { player } = socket.deserializeAttachment() as Attachment;
-    if (this.gone.has(player)) return;
-    this.gone.add(player);
-    this.guarded(() => this.room.leave(player), undefined);
+    const held = this.players.get(socket);
+    if (!held) return;
+    this.players.delete(socket);
+    this.guarded(() => this.room.leave(held.player), undefined);
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
       clearInterval(this.ticking);
@@ -119,10 +119,7 @@ export class RoomHost extends DurableObject<Env> {
 
   /** The sockets still open, and not one this object has already let go of. */
   private open(): WebSocket[] {
-    return this.ctx.getWebSockets().filter((socket) => {
-      const { player } = socket.deserializeAttachment() as Attachment;
-      return socket.readyState === WebSocket.OPEN && !this.gone.has(player);
-    });
+    return [...this.players.keys()].filter((socket) => socket.readyState === WebSocket.OPEN);
   }
 
   /** A call into the room; if the room's WebAssembly traps, it cannot be trusted again: every player is told and the
@@ -131,7 +128,7 @@ export class RoomHost extends DurableObject<Env> {
     try {
       return call();
     } catch {
-      for (const socket of this.ctx.getWebSockets()) socket.close(1011, 'the room failed');
+      for (const socket of this.players.keys()) socket.close(1011, 'the room failed');
       this.ctx.abort('the room trapped');
       return fallback;
     }

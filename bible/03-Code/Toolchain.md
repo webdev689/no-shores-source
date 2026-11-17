@@ -50,13 +50,15 @@ code:
   `server/tsconfig.json` checks. Its usage reports are off (`send_metrics`).
 - **`npm run bake`** cuts each node's window of the land into `generated/nodes/` (not in git), with the `bake` crate
   built for release: about 8 s once it is built. The Worker serves those files to its rooms as static assets, so
-  `server`, `server:bundle` and `server:deploy` each run it first ([[Server]]).
+  `server`, `server:bundle` and `server:deploy` each run it first ([[Server]]), after building the messages' code and
+  the rooms' WebAssembly, so none bundles a room older than its sources.
 - **`npm run server`** runs the rooms locally on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **`npm run server:bundle`** bundles the Worker as a deploy would, into `target/server/`, without deploying.
   `cargo xtask check` runs it last.
 - **`npm run server:deploy`** deploys it, with the owner's yes each time ([[Ask Before Deploying]]). It needs
-  `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token; in a cloud session the token is a network secret the proxy adds, so
-  `CLOUDFLARE_API_TOKEN` holds a placeholder.
+  `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token held where it runs: the `rooms` workflow runs it with the
+  repository's secret. A cloud session cannot, since its proxy writes its own token over the one Cloudflare hands
+  back for the upload.
 
 ## The toolkit
 

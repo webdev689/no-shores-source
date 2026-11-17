@@ -23,9 +23,9 @@ fn ticks(sea: &mut Sea, count: usize) {
     }
 }
 
-/// Sets a course on the next tick, so each try is the player's one course of its tick.
+/// Sets a course once the wait since the player's last is over.
 fn next_course(sea: &mut Sea, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
-    sea.tick();
+    ticks(sea, COURSE_EVERY_TICKS as usize);
     sea.course(player, points, pace)
 }
 
@@ -84,13 +84,16 @@ fn a_pace_off_the_steps_a_point_off_the_frame_and_too_long_a_course_are_refused(
 }
 
 #[test]
-fn a_player_sets_one_course_a_tick() {
+fn a_player_sets_one_course_each_half_second() {
     let mut sea = sea();
     let player = sea.join();
     let refused = [[50_000.0, 150_000.0], [250_000.0, 150_000.0]];
     assert_eq!(sea.course(player, &refused, 10), Err(CourseRefused::CrossesLand));
     assert_eq!(sea.course(player, &[[50_000.0, 150_000.0]], 10), Err(CourseRefused::TooSoon), "even after a refusal");
-    assert_eq!(next_course(&mut sea, player, &[[50_000.0, 150_000.0]], 10), Ok(()));
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize - 1);
+    assert_eq!(sea.course(player, &[[50_000.0, 150_000.0]], 10), Err(CourseRefused::TooSoon), "a tick short");
+    sea.tick();
+    assert_eq!(sea.course(player, &[[50_000.0, 150_000.0]], 10), Ok(()));
 }
 
 #[test]
@@ -98,7 +101,7 @@ fn a_new_course_starts_from_where_the_ship_is_to_the_nearest_metre() {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 150_000.0], [50_700.0, 140_000.0]], 5).unwrap();
-    ticks(&mut sea, 7);
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize + 7);
     let between = ship(&sea, player);
     assert!(between.x.fract() != 0.0 && between.y.fract() != 0.0, "mid-metre at {between:?}");
     sea.course(player, &[[40_000.0, between.y.round()]], 5).unwrap();
@@ -115,14 +118,14 @@ fn an_empty_course_brings_a_ship_to_rest_and_one_who_leaves_takes_their_ship() {
     let (first, second) = (sea.join(), sea.join());
     sea.course(first, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 60).unwrap();
     sea.course(second, &[[60_000.0, 150_000.0], [60_000.0, 50_000.0]], 5).unwrap();
-    ticks(&mut sea, 10);
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
     sea.course(first, &[], 5).unwrap();
     let stopped = ship(&sea, first);
     ticks(&mut sea, 10);
     assert_eq!(ship(&sea, first), Ship { pace: 0, ..stopped });
     sea.leave(second);
     assert_eq!(sea.ships().map(|(player, _)| player).collect::<Vec<_>>(), vec![first]);
-    assert_eq!(sea.clock(), 20);
+    assert_eq!(sea.clock(), COURSE_EVERY_TICKS + 10);
 }
 
 /// A player at rest at sea far off the square continent, a bold pirate `out` metres north of them.

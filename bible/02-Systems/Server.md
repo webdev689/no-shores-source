@@ -101,7 +101,9 @@ The room named `sea` holds every player's ship. A player sets their ship's cours
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s.
 A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
 nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest. A player sets
-one course a tick; a second in the same tick is dropped.
+one course each half second, and one sooner is dropped: judging a course against the coasts takes up to a few
+milliseconds, which no player may ask for every tick. The browser keeps its latest course and sends it once the sea
+will take it, by the room's own tick.
 
 - Each tick, each ship sails its pace's distance along its course, turning onto each leg as it comes to it, and comes
   to rest at the course's end. Its heading is the bearing of the leg it sails, clockwise from north.
@@ -204,9 +206,13 @@ so every decision is Rust and the shell only carries bytes and time.
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
 - A WebSocket joins the room and is welcomed with the player's number; each binary message is one of their inputs,
-  at sea their course, or in a fleet their ship's orders. A second course in a tick is dropped and a course the sea
-  will not sail is refused; any other input refused, or a message over 8 KB, closes the socket, since that browser is
-  not keeping to the messages. Its player leaves at once, and no snapshot is sent to a socket that is closing.
+  at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
+  the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
+  second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
+  leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
+  unread.
+- Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
+  room is gone rejoins.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
   room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
@@ -249,6 +255,8 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 - A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
 - Any page can join a room, under any name; no one signs in.
+- A full sea of sockets each asking for the costliest course it may holds about a third of the sea's time: 40
+  snapshots a second against 57, with 63 such sockets on the local runtime (tested offline).
 - A snapshot sends every player's whole fighter and look and every foe's glance every tick: fine for a few players and
   foes, heavy for many.
 - A player's view may lag 24 ticks at most; a screen further behind is judged as it stands. A player could hold a

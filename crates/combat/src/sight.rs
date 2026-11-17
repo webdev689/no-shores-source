@@ -1,21 +1,13 @@
 //! Bearings between points, the turn between two bearings, and whether a straight line passes clear of the course's
 //! blocks: what a lock, a blow, a shot and a foe's eyes all ask.
 
-use core::f64::consts::PI;
 use movement::Block;
+pub use movement::wrap;
 
 /// The bearing from one point to another on the ground, clockwise from north.
 #[must_use]
 pub fn bearing(from: [f64; 2], to: [f64; 2]) -> f64 {
     libm::atan2(to[0] - from[0], -(to[1] - from[1]))
-}
-
-/// An angle wrapped into (-PI, PI].
-#[must_use]
-pub fn wrap(angle: f64) -> f64 {
-    let turns = libm::floor((angle + PI) / (2.0 * PI));
-    let wrapped = angle - turns * 2.0 * PI;
-    if wrapped <= -PI { wrapped + 2.0 * PI } else { wrapped }
 }
 
 /// How far apart two bearings are, 0 to PI.
