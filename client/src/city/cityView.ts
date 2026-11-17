@@ -32,6 +32,8 @@ type Selection = { readonly chunks: Chunk[]; readonly cells: number[] };
 
 /** Which of a frame's selections: what the view sees, and what may cast into the near square and into the far one. */
 type Holding = 'view' | 'near' | 'far';
+/** The selections whose near cells draw their models: the far square casts buildings by their masses. */
+type Modelled = Exclude<Holding, 'far'>;
 
 /** What a frame draws, worked out once for its shadows' passes and its own. */
 type Seen = { readonly fromEye: Float32Array } & Record<Holding, Selection>;
@@ -60,7 +62,7 @@ type Drawn = {
   readonly masses: GPUBuffer;
   readonly plates: GPUBuffer;
   readonly plateVertices: number;
-  readonly instances: Record<Holding, Instances>;
+  readonly instances: Record<Modelled, Instances>;
 };
 
 export class CityView implements CityDrawer {
@@ -171,7 +173,6 @@ export class CityView implements CityDrawer {
       instances: {
         view: { buffer: null, key: '', draws: [] },
         near: { buffer: null, key: '', draws: [] },
-        far: { buffer: null, key: '', draws: [] },
       },
     };
   }
@@ -237,15 +238,17 @@ export class CityView implements CityDrawer {
         const half = 51.2 + 10;
         const cellLow: Box = [offset[0] - half, offset[1] - half, offset[2] - 5];
         const cellHigh: Box = [offset[0] + half, offset[1] + half, offset[2] + 70];
-        for (const [holding, test] of wanting) if (test(cellLow, cellHigh)) seen[holding].cells.push(cell);
+        for (const [holding, test] of wanting)
+          if (holding !== 'far' && test(cellLow, cellHigh)) seen[holding].cells.push(cell);
       }
     }
     this.seen = seen;
     return seen;
   }
 
-  /** The masses and hulls of some chunks, by the tiers the eye's distance draws them in. */
-  private massRuns(chunks: readonly Chunk[], eye: readonly [number, number, number]): Range[] {
+  /** The masses and hulls of some chunks, by the tiers the eye's distance draws them in; `standIn` takes the masses
+   *  for the whole tier too, as the far shadow casts it. */
+  private massRuns(chunks: readonly Chunk[], eye: readonly [number, number, number], standIn = false): Range[] {
     const masses: Range[] = [];
     const hulls: Range[] = [];
     for (const chunk of chunks) {
@@ -254,26 +257,26 @@ export class CityView implements CityDrawer {
         [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
       );
       const tiers = tiersReached(middles.nearest, middles.farthest);
-      if (tiers.has('masses')) masses.push(chunk.masses);
+      if (tiers.has('masses') || (standIn && tiers.has('whole'))) masses.push(chunk.masses);
       if (tiers.has('hulls')) hulls.push(chunk.hulls);
     }
     return [...runs(masses), ...runs(hulls)];
   }
 
-  /** Draws into the cascade being drawn what may cast there: into both, the solids and the near cells' models; into
-   *  the far one, the masses and hulls too, in the tiers they are drawn in, so a far shadow keeps the shape seen. */
+  /** Draws into the cascade being drawn what may cast there: the solids into both; into the near one the near cells'
+   *  models, and into the far one each building's masses, or its hull past where the masses are drawn. A mass is a
+   *  few boxes where a model is hundreds of triangles, and at the far map's 1.2 m texels the two throw one shadow. */
   castInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow: ShadowMap): void {
     const drawn = this.drawn;
     const seen = this.select(fromEye, shot, time, shadow);
     if (!drawn || !seen) return;
     const far = shadow.cascade === FAR;
-    const holding: Holding = far ? 'far' : 'near';
-    const { chunks, cells } = seen[holding];
+    const { chunks, cells } = seen[far ? 'far' : 'near'];
     const cast = this.pipelines.modelsCast;
     pass.setPipeline(cast);
     pass.setBindGroup(0, drawn.group);
     pass.setBindGroup(1, shadow.casterGroup(cast));
-    this.drawNear(pass, drawn, holding, cells);
+    if (!far) this.drawNear(pass, drawn, 'near', cells);
     pass.setVertexBuffer(0, drawn.solidVertices);
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
@@ -284,7 +287,7 @@ export class CityView implements CityDrawer {
     pass.setPipeline(this.pipelines.massesCast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.massesCast));
     pass.setVertexBuffer(0, drawn.masses);
-    for (const run of this.massRuns(chunks, eye)) pass.draw(42, run.count, 0, run.first);
+    for (const run of this.massRuns(chunks, eye, true)) pass.draw(42, run.count, 0, run.first);
   }
 
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow?: ShadowMap): void {
@@ -333,7 +336,7 @@ export class CityView implements CityDrawer {
   private drawNear(
     pass: GPURenderPassEncoder,
     drawn: Drawn,
-    holding: Holding,
+    holding: Modelled,
     cells: readonly number[],
   ): { draws: number; triangles: number } {
     const { data } = drawn;
