@@ -89,9 +89,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Waiting on the owner
 
 - Pull request #48, to review and merge. Its intent carries the aim and its events the stroke, so the page and the
-  rooms deploy together, with the owner's yes. Foe archers' aimed arrows now strike 27, not 18: the owner may want
-  them tuned. Walking or sprinting that does not happen on demand was not reproduced playing alone; when it happens is
-  the owner's to say.
+  rooms deploy together, with the owner's yes. Walking or sprinting that does not happen on demand was not reproduced
+  playing alone; when it happens is the owner's to say.
 - The sea's navigation and the held map (#49), to test and say yes to merging and publishing.
 - Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
   the Cloudflare token. The deployed rooms keep the speed hack and the two socket faults until that deploy.

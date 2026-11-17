@@ -65,6 +65,16 @@ fn an_aimed_bow_charges_to_half_again_over_a_second_and_fires_on_a_pull() {
 }
 
 #[test]
+fn a_foe_archers_drawn_arrow_strikes_as_a_quick_shot() {
+    let mut foe = foe_at(0.0, 0.0, 0.0);
+    foe.arms = archer().arms;
+    let (drawn, _) = run(foe, asking(0.0, AIMING), 61, None);
+    assert!(matches!(drawn.action, Action::Draw { elapsed } if elapsed == DRAW_FULL), "{:?}", drawn.action);
+    let (_, happenings) = run(drawn, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
+    assert!((only_shot(&happenings).1.damage - 18.0).abs() < 1e-9, "a quick shot's 18, never half again");
+}
+
+#[test]
 fn an_aimed_gun_or_crossbow_hits_half_again_at_once_onto_the_aims_mark() {
     for (ranged, damage) in [(Ranged::Pistolet, 30.0), (Ranged::Crossbow, 26.0)] {
         let mark = Some([20.0, 0.0, combat::tuning::CHEST]);

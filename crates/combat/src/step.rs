@@ -404,7 +404,7 @@ fn aimed_bearing(next: &Fighter, intent: &Intent) -> f64 {
 
 /// A ranged weapon held up to aim while the aim is held, a bow charging: a pull of the trigger fires the aimed shot
 /// onto the aim's mark (an arrow laid high enough for its fall) or along the look, at the power its aiming has
-/// reached; letting the aim go lowers it unfired.
+/// reached (a foe's at a quick shot's); letting the aim go lowers it unfired.
 fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Option<Happening> {
     let input = &intent.combat;
     let Some(ranged) = next.arms.ranged.filter(|_| input.aim) else {
@@ -414,7 +414,9 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
     if pulled {
         let (chest, heading) = (next.chest(), aimed_bearing(next, intent));
         let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
-        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, aimed_power(ranged, elapsed))));
+        // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone.
+        let power = if next.side == Side::Foes { 1.0 } else { aimed_power(ranged, elapsed) };
+        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, power)));
     }
     next.action = Action::Draw { elapsed: (elapsed + 1).min(DRAW_FULL) };
     None
