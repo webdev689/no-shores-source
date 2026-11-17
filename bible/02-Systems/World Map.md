@@ -69,6 +69,14 @@ varied across the continent into other biomes. Which biome each continent is: [[
   one generates the same island from the seed, as DFO's spawned dungeons are shared. The server lets one go a while
   after the last player leaves.
 
+## Seen whole, reached by nodes
+
+The player reaches an island only at its nodes ([[Every Island Is Seen Whole and Reached by Nodes]]). From the
+Overworld's bird's-eye view of the side of an island, they choose a node (a mission, a dungeon, a social space, a
+patrol area, a world boss) and are taken there. A node is one section of the land, and its edge warns the player to
+go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less detail with
+distance, never reached. Each island has one major port city; Saltmere's is Overlook.
+
 ## Weather and travel
 
 - The weather is one field over the whole map, computed from world time and position by the shared Rust rules, so the

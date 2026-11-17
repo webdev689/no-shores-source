@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { splineAt } from './spline.ts';
+import { heldSplineAt, splineAt } from './spline.ts';
 
 test('the spline passes through every sample, keeps a slope straight and curves smoothly between bumps', () => {
   const [width, height] = [5, 4];
@@ -15,4 +15,17 @@ test('the spline passes through every sample, keeps a slope straight and curves 
   const rising = splineAt(bump, width, height, 1.75, 1);
   assert.ok(rising > 7.5 && rising < 10, `${rising}`);
   assert.ok(splineAt(bump, width, height, 2.25, 1) === rising, 'the bump is symmetric');
+});
+
+test("held, the spline keeps a pad's step level to its edge and never stands a ridge over it", () => {
+  const [width, height] = [6, 3];
+  const step = Float32Array.from({ length: width * height }, (_value, index) => (index % width < 3 ? 87 : 46.75));
+  assert.ok(splineAt(step, width, height, 1.5, 1) > 87.5, 'the bare cubic overshoots the pad');
+  for (let across = 0; across <= width - 1; across += 0.125) {
+    const held = heldSplineAt(step, width, height, across, 1);
+    assert.ok(held <= 87 && held >= 46.75, `${across}: ${held}`);
+    if (across <= 2) assert.equal(held, 87, `${across} is on the pad`);
+  }
+  const ramp = Float32Array.from({ length: width * height }, (_value, index) => (index % width) * 3);
+  assert.equal(heldSplineAt(ramp, width, height, 2.4, 1.5), splineAt(ramp, width, height, 2.4, 1.5));
 });

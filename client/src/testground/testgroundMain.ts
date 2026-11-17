@@ -20,17 +20,17 @@ import { roomAddress } from '../network/roomAddress.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
-import { Cards } from './cards.ts';
+import { type CardAt, Cards } from '../player/cards.ts';
 import { COURSE, START } from './course.ts';
-import { type Dress, dressFrom } from './dressing.ts';
-import { type Placed, cardStand, eyeOf, frameAt, viewOf } from './figures.ts';
+import { type Dress, dressFrom, plainDress } from '../player/dressing.ts';
+import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { viewProjection } from '../editor/orbit.ts';
-import { Input } from './input.ts';
-import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from './player.ts';
-import { RUNNING, showOther } from './others.ts';
-import { likelyMoves, shownMove } from './playerMoves.ts';
+import { Input } from '../player/input.ts';
+import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from '../player/player.ts';
+import { RUNNING, showOther } from '../player/others.ts';
+import { likelyMoves, shownMove } from '../player/playerMoves.ts';
 import { startPanel } from './panel.ts';
-import { type CardAt, SceneView } from './sceneView.ts';
+import { SceneView } from './sceneView.ts';
 
 /** How fast a figure set turning round turns, in radians a second: a full turn in 8 seconds. */
 const SPIN = (2 * Math.PI) / 8;
@@ -63,21 +63,6 @@ function element<T extends Element>(selector: string): T {
   if (!found) throw new Error(`the page has no ${selector}`);
   return found;
 }
-
-const plainDress = (race: Dress['race'], tone: number): Dress => ({
-  body: 'male',
-  race,
-  tone,
-  outfit: {
-    armour: {},
-    garments: ['shirt_long_v', 'breeches', 'boots'],
-    dyes: { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' },
-    right: 'sword_iron',
-    left: null,
-    drawn: false,
-    hair: { style: 'crop', colour: 'brown' },
-  },
-});
 
 async function start(): Promise<void> {
   const canvas = element<HTMLCanvasElement>('#ground');

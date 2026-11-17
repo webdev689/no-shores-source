@@ -16,7 +16,8 @@ use movement::Controls;
 fn script(mut fighter: Fighter, intents: &[Intent]) -> (Fighter, Vec<(usize, Happening)>) {
     let mut happenings = Vec::new();
     for (tick, intent) in intents.iter().enumerate() {
-        let (next, happening) = step_fighter(&fighter, intent, &Surroundings { blocks: &[], target_at: None });
+        let (next, happening) =
+            step_fighter(&fighter, intent, &Surroundings { blocks: &[], terrain: &movement::Flat, target_at: None });
         fighter = next;
         happenings.extend(happening.map(|happening| (tick, happening)));
     }

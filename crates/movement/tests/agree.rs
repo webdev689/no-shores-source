@@ -3,7 +3,7 @@
 //! (movementRules.test.ts lists the same course and script).
 
 use movement::floats::fingerprint;
-use movement::{Block, Body, Controls, Mode, TICK_SECONDS, standing, step_body};
+use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, standing, step_body};
 use std::f64::consts::{FRAC_PI_2, PI};
 
 /// Both tests hold this value; a change to the moves changes it in both, on purpose.
@@ -48,7 +48,7 @@ fn run_script() -> Vec<Body> {
             let first = tick == 0;
             let controls =
                 Controls { forward, sideways, yaw, run, jump: jump && first, crouch: crouch && first, mounted };
-            body = step_body(&body, &controls, &COURSE, TICK_SECONDS);
+            body = step_body(&body, &controls, &COURSE, &Flat, TICK_SECONDS);
             bodies.push(body);
         }
     }

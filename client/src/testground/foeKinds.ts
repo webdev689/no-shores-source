@@ -1,4 +1,4 @@
-import type { Dress } from './dressing.ts';
+import type { Dress } from '../player/dressing.ts';
 
 /** A kind of foe, as the foes crate numbers them, and the dress its figure wears: its weapons are the ones its rules
  *  fight with. */

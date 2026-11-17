@@ -1,5 +1,5 @@
-import type { Dress } from './dressing.ts';
-import type { Direction, Doing, Fight } from './playerMoves.ts';
+import type { Dress } from '../player/dressing.ts';
+import type { Direction, Doing, Fight } from '../player/playerMoves.ts';
 import { type FighterView, type Shape, actionProgress } from '../rules/fighters.ts';
 
 /** The combat crate's strokes 1 to 6 as the first person's directions. */

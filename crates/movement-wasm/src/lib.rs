@@ -1,17 +1,33 @@
-//! Movement for the browser. JavaScript hands over the course's blocks once, then steps a body one tick at a time: it
-//! writes the body's and the controls' numbers into memory this module reserved for it, and reads the next body's
-//! numbers back from the same place, little-endian 64-bit floats in the movement crate's order. The rules stay there.
+//! Movement for the browser. JavaScript hands over the course's blocks once, and a node's window of the land to stand
+//! them on if it has one, then steps a body one tick at a time: it writes the body's and the controls' numbers into
+//! memory this module reserved for it, and reads the next body's numbers back from the same place, little-endian
+//! 64-bit floats in the movement crate's order. The rules stay there.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
+use land::ground::Ground;
+use movement::blocks::ground_at;
 use movement::floats::{BLOCK_FLOATS, BODY_FLOATS, CONTROLS_FLOATS};
-use movement::{Block, Body, Controls, TICK_SECONDS, TUNING, standing, step_body};
+use movement::{Block, Body, Controls, TICK_SECONDS, TUNING, Terrain, standing, step_body};
 use std::cell::RefCell;
+
+pub mod reach_door;
 
 /// The numbers one step reads: a body, then its controls. The next body is written over the first of them.
 pub const STEP_FLOATS: usize = BODY_FLOATS + CONTROLS_FLOATS;
 
 thread_local! {
     static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    static LAND: RefCell<OnLand> = const { RefCell::new(OnLand(None)) };
+}
+
+/// The terrain under the course: a window of the land once one is set, else open ground at 0 m, as the room's.
+#[derive(Debug)]
+pub struct OnLand(pub Option<Ground>);
+
+impl Terrain for OnLand {
+    fn height_at(&self, x: f64, y: f64) -> f64 {
+        self.0.as_ref().map_or(0.0, |ground| ground.height_at(x, y))
+    }
 }
 
 /// The numbers in little-endian bytes.
@@ -31,6 +47,15 @@ pub fn set_course(bytes: &[u8]) -> usize {
     kept
 }
 
+/// Keeps the window of the land a node's room stands its bodies on, from its JSON, for every step after: the same
+/// ground, to the bit, as the room's. Text that is not a window leaves open ground; answers whether it was one.
+pub fn set_ground(text: &[u8]) -> bool {
+    let ground = serde_json::from_slice::<Ground>(text).ok();
+    let kept = ground.is_some();
+    LAND.with(|land| *land.borrow_mut() = OnLand(ground));
+    kept
+}
+
 /// Steps the body in `bytes` by one tick under its controls on the kept course, and writes the next body over it.
 pub fn step(bytes: &mut [u8; STEP_FLOATS * 8]) {
     let mut floats = [0.0; STEP_FLOATS];
@@ -38,19 +63,29 @@ pub fn step(bytes: &mut [u8; STEP_FLOATS * 8]) {
     let (body_floats, controls_floats) = floats.split_at(BODY_FLOATS);
     let body = Body::from_floats(body_floats.try_into().unwrap_or(&[0.0; BODY_FLOATS]));
     let controls = Controls::from_floats(controls_floats.try_into().unwrap_or(&[0.0; CONTROLS_FLOATS]));
-    let next = COURSE.with(|course| step_body(&body, &controls, &course.borrow(), TICK_SECONDS));
+    let next = COURSE
+        .with(|course| LAND.with(|land| step_body(&body, &controls, &course.borrow(), &*land.borrow(), TICK_SECONDS)));
     for (chunk, value) in bytes.chunks_exact_mut(8).zip(next.to_floats()) {
         chunk.copy_from_slice(&value.to_le_bytes());
     }
 }
 
-/// Writes a body standing at the (x, y) the first two numbers in `bytes` hold, over them.
+/// Writes a body standing at the (x, y) the first two numbers in `bytes` hold, over them: at 0 m, or on a kept window
+/// of the land, on its ground or a block's top within a step of it, as a node's room stands a body.
 pub fn stand(bytes: &mut [u8; STEP_FLOATS * 8]) {
     let (x, y) = {
         let mut place = floats_of(&bytes[..16]);
         (place.next().unwrap_or_default(), place.next().unwrap_or_default())
     };
-    for (chunk, value) in bytes.chunks_exact_mut(8).zip(standing(x, y).to_floats()) {
+    let body = LAND.with(|land| {
+        let land = land.borrow();
+        let on_land = |ground: &Ground| {
+            let floor = COURSE.with(|course| ground_at(&course.borrow(), &*land, x, y, ground.height_at(x, y)));
+            Body { z: floor, ..standing(x, y) }
+        };
+        land.0.as_ref().map_or_else(|| standing(x, y), on_land)
+    });
+    for (chunk, value) in bytes.chunks_exact_mut(8).zip(body.to_floats()) {
         chunk.copy_from_slice(&value.to_le_bytes());
     }
 }
@@ -105,6 +140,46 @@ pub unsafe extern "C" fn movement_set_course(address: *const u8, length: usize) 
     set_course(unsafe { std::slice::from_raw_parts(address, length) })
 }
 
+/// Keeps the window of the land written at `address`, `length` bytes of JSON; 1 if it was one, 0 for open ground.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_set_ground(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the section written at `address`, `length` bytes of JSON; 1 if it was one, 0 cleared.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_set_section(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(reach_door::set_section(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// One tick of a body at (x, y) against the kept section, as `reach_door::packed` numbers it.
+#[unsafe(no_mangle)]
+pub extern "C" fn movement_reach_tick(x: f64, y: f64) -> u32 {
+    reach_door::tick(x, y)
+}
+
+/// Respawns a body that died at (x, y) once allowed, writing the spawn's two numbers at `address`; 1 if it did.
+///
+/// # Safety
+/// `address` must point at 16 writable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_respawn(x: f64, y: f64, address: *mut u8) -> u32 {
+    let Some([east, south]) = reach_door::respawn(x, y) else { return 0 };
+    // SAFETY: the caller reserved 16 bytes at `address`, which nothing else views.
+    let out = unsafe { std::slice::from_raw_parts_mut(address, 16) };
+    out[..8].copy_from_slice(&east.to_le_bytes());
+    out[8..].copy_from_slice(&south.to_le_bytes());
+    1
+}
+
 /// The `length` bytes at `address` as one step's numbers, or nothing when they are too few.
 ///
 /// # Safety
@@ -142,7 +217,7 @@ pub unsafe extern "C" fn movement_standing(address: *mut u8, length: usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use movement::Mode;
+    use movement::{Flat, Mode};
 
     fn bytes_of(floats: &[f64]) -> Vec<u8> {
         floats.iter().flat_map(|value| value.to_le_bytes()).collect()
@@ -160,7 +235,7 @@ mod tests {
             numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 0.3, 1.0, 0.0, 0.0, 0.0]);
             let mut bytes: [u8; STEP_FLOATS * 8] = bytes_of(&numbers).try_into().unwrap();
             step(&mut bytes);
-            let expected = step_body(&body, &controls, &[ledge], TICK_SECONDS);
+            let expected = step_body(&body, &controls, &[ledge], &Flat, TICK_SECONDS);
             let stepped: Vec<f64> = floats_of(&bytes[..BODY_FLOATS * 8]).collect();
             assert_eq!(Body::from_floats(stepped.as_slice().try_into().unwrap()), expected);
             body = expected;
@@ -176,6 +251,49 @@ mod tests {
         stand(&mut bytes);
         let stood: Vec<f64> = floats_of(&bytes[..BODY_FLOATS * 8]).collect();
         assert_eq!(Body::from_floats(stood.as_slice().try_into().unwrap()), standing(3.5, -2.25));
+    }
+
+    /// Land 10 m up with a grain, round a terrace 20 m square at 12 m: a window as a node's room is handed one.
+    const WINDOW: &str = r#"{ "land": { "width": 2, "height": 2, "left_m": -1000.0, "top_m": -1000.0, "cell_m": 1000.0,
+        "first_column": 0, "first_row": 0, "data": [10, 10, 10, 10] }, "lake_level": [0, 0, 0, 0],
+        "rivers": [], "roads": [], "towns": [],
+        "coast": { "width": 2, "height": 2, "left_m": -1000.0, "top_m": -1000.0, "cell_m": 1000.0, "first_column": 0,
+            "first_row": 0, "data": [5000, 5000, 5000, 5000] },
+        "across": { "width": 2, "height": 2, "left_m": -1000.0, "top_m": -1000.0, "cell_m": 1000.0, "first_column": 0,
+            "first_row": 0, "data": [-50, -50, -50, -50] },
+        "pads": [{ "bounds": [-10.0, -10.0, 10.0, 10.0], "level": 12.0 }], "seed": 7 }"#;
+
+    fn stood_at(x: f64, y: f64) -> Body {
+        let mut bytes = [0_u8; STEP_FLOATS * 8];
+        bytes[..16].copy_from_slice(&bytes_of(&[x, y]));
+        stand(&mut bytes);
+        let stood: Vec<f64> = floats_of(&bytes[..BODY_FLOATS * 8]).collect();
+        Body::from_floats(stood.as_slice().try_into().unwrap())
+    }
+
+    #[test]
+    fn on_a_window_of_the_land_a_body_stands_and_walks_on_its_ground() {
+        set_course(&[]);
+        assert!(set_ground(WINDOW.as_bytes()));
+        let ground: Ground = serde_json::from_str(WINDOW).unwrap();
+        assert_eq!(stood_at(0.0, 0.0).z, 12.0, "on the terrace");
+        let mut body = stood_at(30.0, -40.0);
+        assert_eq!(body.z.to_bits(), ground.height_at(30.0, -40.0).to_bits());
+        let controls = Controls { forward: 1.0, yaw: 2.0, ..Controls::default() };
+        for _ in 0..60 {
+            let mut numbers = [0.0; STEP_FLOATS];
+            numbers[..BODY_FLOATS].copy_from_slice(&body.to_floats());
+            numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0]);
+            let mut bytes: [u8; STEP_FLOATS * 8] = bytes_of(&numbers).try_into().unwrap();
+            step(&mut bytes);
+            let expected = step_body(&body, &controls, &[], &OnLand(Some(ground.clone())), TICK_SECONDS);
+            let stepped: Vec<f64> = floats_of(&bytes[..BODY_FLOATS * 8]).collect();
+            body = Body::from_floats(stepped.as_slice().try_into().unwrap());
+            assert_eq!(body, expected);
+            assert_eq!(body.z.to_bits(), ground.height_at(body.x, body.y).to_bits(), "feet on the ground");
+        }
+        assert!(!set_ground(b"not a window"), "anything else is open ground");
+        assert_eq!(stood_at(30.0, -40.0), standing(30.0, -40.0));
     }
 
     #[test]

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { fightOf, foeDoing } from './fightMoves.ts';
 import { FOE_KINDS } from './foeKinds.ts';
-import { shownMove } from './playerMoves.ts';
+import { shownMove } from '../player/playerMoves.ts';
 
 const standing: FighterView = {
   x: 0,

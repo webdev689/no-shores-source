@@ -1,6 +1,6 @@
 // Every message between a browser and a room, defined once: flatc makes the Rust and the TypeScript from this file.
 // A body and controls cross as the movement crate's numbers, in its order (crates/movement/src/floats.rs), the same
-// order the browser's WebAssembly door uses.
+// order the browser's WebAssembly door uses. New fields go at the end of their table, so old readers skip them.
 
 namespace overlook.wire;
 
@@ -8,8 +8,9 @@ namespace overlook.wire;
 // With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
 // their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
 // 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
-// combat's arms code, the room tick of the last snapshot the screen showed, and a foe's kind to stand before the player
-// (0 none; 255 sends every foe away). New fields go at the end, so old readers skip them.
+// combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
+// (0 none; 255 sends every foe away), and whether they ask to respawn, dead past a node's section. New fields go at
+// the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -21,6 +22,14 @@ table Input {
   arms: uint;
   seen: ulong;
   spawn: ubyte;
+  respawn: bool;
+}
+
+// A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
+// of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest.
+table Course {
+  points: [double];
+  pace: ushort;
 }
 
 // A player's dress, passed on as their browser wrote it.
@@ -29,14 +38,19 @@ table Dressed {
   dress: string;
 }
 
-// The room's welcome: the joining player's number, and everyone's dress so far.
+// The room's welcome: the joining player's number, everyone's dress so far, and in a node's room the node's id and
+// the rect its ground is cut to (west, north, east, south), for the browser to cut the same.
 table Joined {
   player: uint;
   dressed: [Dressed];
+  node: string;
+  bounds: [double];
 }
 
 // One player as the room last stepped them: the number of their last input it took, what their figure showed with
-// it, and their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body.
+// it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body, and
+// where they stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks
+// left, 2 dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable.
 table Seen {
   player: uint;
   acknowledged: uint;
@@ -45,6 +59,8 @@ table Seen {
   frame: ushort;
   facing: double;
   fighter: [double];
+  standing: ubyte;
+  standing_ticks: uint;
 }
 
 // A foe as the room last stepped it: its number, its kind, and a glance at its fighter (combat's glance order).
@@ -73,8 +89,18 @@ table Flying {
   velocity: [double];
 }
 
+// One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and its pace, 0
+// at rest.
+table Ship {
+  player: uint;
+  x: double;
+  y: double;
+  heading: double;
+  pace: ushort;
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
-// happened in the fight since the last snapshot, and the shots in flight.
+// happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -82,6 +108,7 @@ table Snapshot {
   foes: [Foe];
   events: [Event];
   shots: [Flying];
+  ships: [Ship];
 }
 
 // What a room sends: exactly one of these is present.

@@ -4,15 +4,15 @@ status: live
 code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
-  - client/src/testground/player.ts#updatePlayer
-  - client/src/testground/player.ts#shownBody
-  - client/src/testground/others.ts#showOther
-  - client/src/testground/figures.ts#cardStand
+  - client/src/player/player.ts#updatePlayer
+  - client/src/player/player.ts#shownBody
+  - client/src/player/others.ts#showOther
+  - client/src/player/figures.ts#cardStand
   - client/src/network/roomAddress.ts#roomAddress
-  - client/src/testground/dressing.ts#dressFrom
-  - client/src/testground/playerCamera.ts#scrolled
-  - client/src/testground/playerMoves.ts#shownMove
-  - client/src/testground/dressing.ts#figureOf
+  - client/src/player/dressing.ts#dressFrom
+  - client/src/player/playerCamera.ts#scrolled
+  - client/src/player/playerMoves.ts#shownMove
+  - client/src/player/dressing.ts#figureOf
   - client/src/forge/outfit.ts#outfitLayers
   - client/src/forge/compose.ts#composeFrame
   - client/src/forge/dyes.ts#PaletteSnap
@@ -21,7 +21,7 @@ code:
 # Test Ground
 
 An open stretch of ground for playing a [[Sprite Forge]] figure with every move the forge draws, as the player plays
-it ([[The Player Plays as in DFO]]). It is published with the site at
+it ([[The Player Plays as in DFO]]), the same [[Player]] the [[Game]] plays. It is published with the site at
 `https://lattymoy.github.io/overlook-source/testground/`. Under `npm run dev`, open `/testground/`.
 
 ## Playing

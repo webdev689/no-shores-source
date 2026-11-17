@@ -1,27 +1,9 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
-import { PX_PER_M } from './figures.ts';
+import type { Card, CardAt, CardMaker } from '../player/cards.ts';
+import { PX_PER_M } from '../player/figures.ts';
 import type { Block } from '../rules/movementRules.ts';
-
-/** A figure's picture as the scene draws it: its texture, its size in pixels, and its feet on it. */
-export interface Card {
-  readonly texture: GPUTexture;
-  readonly width: number;
-  readonly height: number;
-  readonly root: readonly [number, number];
-}
-
-/** One card to draw: where its feet stand, which way the eye's right lies along the ground, whether mirrored, and how
- *  strongly it flashes, struck (white, or red for the player's own). */
-export interface CardAt {
-  readonly card: Card;
-  readonly x: number;
-  readonly y: number;
-  readonly z: number;
-  readonly flip: boolean;
-  readonly flash?: { readonly share: number; readonly red: boolean };
-}
 
 const SKY = [0.55, 0.66, 0.78] as const;
 /** The ground's tiles a side. A ground of a few large triangles reaching behind the eye is interpolated wrongly near
@@ -138,7 +120,7 @@ struct CardOut { @builtin(position) position: vec4f, @location(0) corner: vec2f 
 `;
 
 /** The Test Ground drawn with WebGPU: the open ground with a metre grid, and each figure's card standing on it. */
-export class SceneView {
+export class SceneView implements CardMaker {
   private readonly gpu: Gpu;
   private readonly sceneBuffer: GPUBuffer;
   private readonly sceneGroup: GPUBindGroup;

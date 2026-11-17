@@ -1,11 +1,13 @@
 //! A shared space on the server: its players and foes, every one a fighter by the combat rules. Each player's inputs
 //! are taken in order and step their fighter one input a tick, never faster than the room's own clock; foes think and
-//! step each tick; blows are judged as their defenders saw them. It has no network and no clock: whatever hosts the
-//! room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
+//! step each tick; blows are judged as their defenders saw them. A node's room stands its fighters on the node's window
+//! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
+//! the room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
 
 mod foes;
 mod judging;
 mod players;
+pub mod sea;
 
 pub use foes::{CLEAR_FOES, FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};
@@ -21,16 +23,44 @@ use combat::strike::struck;
 use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
 use judging::{Check, Group, Pending, how_of_swing};
-use movement::{Block, standing};
+use land::ground::Ground;
+use movement::blocks::ground_at;
+use movement::{Block, Body, Terrain, standing};
 use players::Player;
+use reach::respawn_point;
+pub use reach::{Section, Standing};
 use std::collections::{BTreeMap, VecDeque};
 
-/// A player as the room last stepped them: their fighter, what their figure showed with it, and the number of their
-/// last input it took.
+/// The ground a room's fighters stand on: open ground at 0 m, or a node's window of the land.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Floor {
+    Flat,
+    Land(Box<Ground>),
+}
+
+impl Terrain for Floor {
+    fn height_at(&self, x: f64, y: f64) -> f64 {
+        match self {
+            Floor::Flat => 0.0,
+            Floor::Land(ground) => ground.height_at(x, y),
+        }
+    }
+}
+
+/// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within
+/// a step of it.
+#[must_use]
+pub fn standing_on(floor: &Floor, blocks: &[Block], x: f64, y: f64) -> Body {
+    Body { z: ground_at(blocks, floor, x, y, floor.height_at(x, y)), ..standing(x, y) }
+}
+
+/// A player as the room last stepped them: their fighter, where it stands with the room's section, what their figure
+/// showed with it, and the number of their last input it took.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Seen {
     pub player: PlayerId,
     pub fighter: Fighter,
+    pub standing: Standing,
     pub shown: Shown,
     pub acknowledged: u32,
 }
@@ -51,12 +81,15 @@ pub struct FoeSeen {
     pub fighter: Fighter,
 }
 
-/// One shared space: its course, its clock in ticks, its players and foes in the order of their numbers, shots in
-/// flight, the blows waiting on their defenders' views, and what happened since it was last asked.
+/// One shared space: its floor and course, where players stand, its section if it is a node's, its clock in ticks, its
+/// players and foes in the order of their numbers, shots in flight, the blows waiting on their defenders' views, and
+/// what happened since it was last asked.
 #[derive(Debug)]
 pub struct Room {
     pub(crate) blocks: Vec<Block>,
-    spawn: (f64, f64),
+    pub(crate) floor: Floor,
+    spawn_points: Vec<(f64, f64)>,
+    section: Option<Section>,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     pub(crate) players: BTreeMap<PlayerId, Player>,
@@ -85,14 +118,32 @@ pub struct Room {
 }
 
 impl Room {
-    /// An empty room on a course of blocks, where players stand at `spawn` (x, y) when they join. Its navmesh is
-    /// baked over the course and open ground around it.
+    /// An empty room on a course of blocks on open ground, where players stand at `spawn` (x, y) when they join. Its
+    /// navmesh is baked over the course and open ground around it.
     #[must_use]
     pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        let nav = navmesh::NavMesh::bake(&blocks, ground_around(&blocks, spawn), &navmesh::AGENT);
+        Self::on(Floor::Flat, blocks, vec![spawn], None)
+    }
+
+    /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
+    /// turn and come back to.
+    #[must_use]
+    pub fn node(floor: Floor, blocks: Vec<Block>, section: Section) -> Self {
+        let spawns = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
+        Self::on(floor, blocks, spawns, Some(section))
+    }
+
+    fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
+        let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
+        // A node's room stands no foes yet, so it bakes no navmesh over its city's boxes, which would cost more memory
+        // than a room has: an empty one round its first spawn.
+        let walked: &[Block] = if section.is_some() { &[] } else { &blocks };
+        let nav = navmesh::NavMesh::bake(walked, ground_around(walked, first), &navmesh::AGENT);
         Room {
             blocks,
-            spawn,
+            floor,
+            spawn_points,
+            section,
             clock: 0,
             next_fighter: 1,
             players: BTreeMap::new(),
@@ -120,13 +171,27 @@ impl Room {
         id
     }
 
-    /// A new player, standing at the spawn with nothing drawn; none when the room is full.
+    /// A body standing at a spawn: on the ground in a node's room, at 0 m on a course.
+    fn stand(&self, (x, y): (f64, f64)) -> Body {
+        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { standing(x, y) }
+    }
+
+    /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
+    fn stand_again(&self, x: f64, y: f64) -> Body {
+        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
+        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
+        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
+    }
+
+    /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
     pub fn join(&mut self) -> Option<PlayerId> {
         if self.players.len() >= PLAYERS_MOST {
             return None;
         }
         let id = self.next_id();
-        let fighter = player(standing(self.spawn.0, self.spawn.1), BARE_HANDS);
+        let turn = (id as usize).saturating_sub(1) % self.spawn_points.len().max(1);
+        let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
+        let fighter = player(self.stand(spawn), BARE_HANDS);
         self.players.insert(id, Player::new(fighter, self.clock));
         Some(id)
     }
@@ -192,7 +257,9 @@ impl Room {
 
     /// Each player's inputs step their fighter, as many as the clock allows and CATCH_UP at most; a player whose
     /// inputs have stopped coming is stepped standing still once they fall a view's lag behind, so nothing they were
-    /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away.
+    /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away. A body the section
+    /// killed lies still: its inputs are taken without moving it, and one asking to respawn, once the section allows,
+    /// stands it at the spawn nearest where it fell. Then each player is judged against the section.
     fn step_players(&mut self) {
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
@@ -203,18 +270,37 @@ impl Room {
                 taken += 1;
                 let view = self.view_at(seen);
                 let Some(found) = self.players.get_mut(&id) else { break };
+                if let Standing::Dead { .. } = found.standing {
+                    found.shown = input.shown;
+                    found.remember(seen);
+                    if input.respawn && found.standing.may_respawn() {
+                        let fallen = found.fighter;
+                        let body = self.stand_again(fallen.body.x, fallen.body.y);
+                        let graced = self.clock + GRACE;
+                        if let Some(found) = self.players.get_mut(&id) {
+                            found.fighter = player(body, fallen.arms);
+                            found.standing = Standing::Inside;
+                            found.graced = graced;
+                        }
+                    }
+                    continue;
+                }
                 let fighter = found.fighter.holding(Arms::from_code(input.arms));
-                let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks);
+                let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
                 found.fighter = next;
                 found.shown = input.shown;
                 found.remember(seen);
-                if let Some(kind) = input.spawn {
+                if let Some(kind) = input.spawn.filter(|_| self.section.is_none()) {
                     self.spawns.push((id, kind));
                 }
                 self.happened(id, &next, happening, &view);
             }
             if taken == 0 {
                 self.stand_stalled(id);
+            }
+            if let (Some(section), Some(found)) = (&self.section, self.players.get_mut(&id)) {
+                let body = found.fighter.body;
+                found.standing = found.standing.tick(section, body.x, body.y);
             }
         }
     }
@@ -223,7 +309,7 @@ impl Room {
     fn stand_stalled(&mut self, id: PlayerId) {
         let clock = self.clock;
         let Some(found) = self.players.get_mut(&id) else { return };
-        if found.stepped + VIEW_LAG >= clock - found.joined {
+        if found.stepped + VIEW_LAG >= clock - found.joined || matches!(found.standing, Standing::Dead { .. }) {
             return;
         }
         let standing = combat::Intent {
@@ -233,7 +319,7 @@ impl Room {
         let view = self.fighters();
         let Some(found) = self.players.get_mut(&id) else { return };
         found.stepped += 1;
-        let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks);
+        let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
         found.fighter = next;
         self.happened(id, &next, happening, &view);
     }
@@ -317,17 +403,23 @@ impl Room {
         }
     }
 
-    /// A player dead long enough stands again at the spawn, whole; a foe dead long enough is gone.
+    /// A player dead long enough stands again at the spawn nearest where they fell, whole; a foe dead long enough is
+    /// gone.
     fn raise_the_dead(&mut self) {
-        let spawn = self.spawn;
         let mut raised = Vec::new();
-        for (id, found) in &mut self.players {
-            if let Action::Dead { elapsed } = found.fighter.action
-                && elapsed >= RESPAWN
-            {
-                found.fighter = player(standing(spawn.0, spawn.1), found.fighter.arms);
-                found.graced = self.clock + GRACE;
-                raised.push(*id);
+        let fallen: Vec<(PlayerId, Fighter)> = self
+            .players
+            .iter()
+            .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
+            .map(|(id, found)| (*id, found.fighter))
+            .collect();
+        for (id, fighter) in fallen {
+            let body = self.stand_again(fighter.body.x, fighter.body.y);
+            let graced = self.clock + GRACE;
+            if let Some(found) = self.players.get_mut(&id) {
+                found.fighter = player(body, fighter.arms);
+                found.graced = graced;
+                raised.push(id);
             }
         }
         for id in raised {
@@ -384,6 +476,7 @@ impl Room {
         self.players.iter().map(|(&player, found)| Seen {
             player,
             fighter: found.fighter,
+            standing: found.standing,
             shown: found.shown.clone(),
             acknowledged: found.acknowledged,
         })
@@ -467,3 +560,7 @@ mod foe_tests;
 #[cfg(test)]
 #[path = "fair_tests.rs"]
 mod fair_tests;
+
+#[cfg(test)]
+#[path = "node_tests.rs"]
+mod node_tests;

@@ -14,17 +14,25 @@ use crate::tuning::{
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, slide};
-use movement::{Block, Body, Controls, Mode, TICK_SECONDS, step_body};
+use movement::{Block, Body, Controls, Mode, TICK_SECONDS, Terrain, step_body};
 
 /// A falling hop this near the ground has come down: its last tick, whatever the sums' last bits.
 const LANDED: f64 = 1e-6;
 
-/// What a fighter's tick reads beyond itself: the course, and where its soft lock's target's chest stands as this
-/// fighter's own view has it.
-#[derive(Clone, Copy, Debug)]
+/// What a fighter's tick reads beyond itself: the course and the ground it stands on (open ground, or a node's window
+/// of the land), and where its soft lock's target's chest stands as this fighter's own view has it.
+#[derive(Clone, Copy)]
 pub struct Surroundings<'a> {
     pub blocks: &'a [Block],
+    pub terrain: &'a dyn Terrain,
     pub target_at: Option<[f64; 3]>,
+}
+
+impl core::fmt::Debug for Surroundings<'_> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let surroundings = &mut formatter.debug_struct("Surroundings");
+        surroundings.field("blocks", &self.blocks).field("target_at", &self.target_at).finish_non_exhaustive()
+    }
 }
 
 /// What a fighter's tick set off, for the host to answer: a swing begun, its blow landing, a telegraphed blow landing
@@ -49,12 +57,12 @@ pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_
     let mut next = Fighter { held: now, kept: kept(fighter, input, now), ..*fighter };
     if let Action::Dead { elapsed } = fighter.action {
         next.action = Action::Dead { elapsed: elapsed.saturating_add(1) };
-        next.body = step_body(&fighter.body, &still(intent.controls), around.blocks, TICK_SECONDS);
+        next.body = step_body(&fighter.body, &still(intent.controls), around.blocks, around.terrain, TICK_SECONDS);
         return (next, None);
     }
     rest(&mut next);
     let happening = act(&mut next, intent, around);
-    move_body(&mut next, intent.controls, around.blocks);
+    move_body(&mut next, intent.controls, around);
     aim(&mut next, intent.controls.yaw, around);
     (next, happening)
 }
@@ -125,7 +133,7 @@ fn spend(next: &mut Fighter, stamina: f64) {
 fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option<Happening> {
     let input = &intent.combat;
     let countdown = |left: u32| left.saturating_sub(1);
-    let dodges = |next: &Fighter| next.kept.dodge > 0 && can_dodge(next, intent.controls, around.blocks);
+    let dodges = |next: &Fighter| next.kept.dodge > 0 && can_dodge(next, intent.controls, around);
     match next.action {
         Action::Idle => begin(next, intent, around),
         Action::Attack(attack) => {
@@ -191,7 +199,7 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option
             let elapsed = elapsed + 1;
             let wants = input.attack.is_some() || input.guard || next.kept != Kept::default();
             let free = elapsed >= DODGE_TICKS || (elapsed >= DODGE_ATTACK && wants);
-            if free && landed(&next.body, around.blocks) {
+            if free && landed(&next.body, around) {
                 next.action = Action::Idle;
                 return begin(next, intent, around);
             }
@@ -233,20 +241,21 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option
 }
 
 /// Whether a dodge's hop has come down: out of the air, or touching down.
-fn landed(body: &Body, blocks: &[Block]) -> bool {
-    body.mode != Mode::Air || touching_down(body, blocks)
+fn landed(body: &Body, around: &Surroundings<'_>) -> bool {
+    body.mode != Mode::Air || touching_down(body, around)
 }
 
 /// In the air, falling, and within a hair of the ground: a hop's last tick, whatever the sums' last bits.
-fn touching_down(body: &Body, blocks: &[Block]) -> bool {
-    body.mode == Mode::Air && body.vz <= 0.0 && body.z - ground_at(blocks, body.x, body.y, body.z) <= LANDED
+fn touching_down(body: &Body, around: &Surroundings<'_>) -> bool {
+    let ground = ground_at(around.blocks, around.terrain, body.x, body.y, body.z);
+    body.mode == Mode::Air && body.vz <= 0.0 && body.z - ground <= LANDED
 }
 
 /// From rest, in this order: a dodge pressed, a foe's telegraphed blow, a swing pressed, a guard pressed or held, a
 /// shot, and a swing while the button is held. The newest press wins over a button only held.
 fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option<Happening> {
     let input = &intent.combat;
-    if next.kept.dodge > 0 && can_dodge(next, intent.controls, around.blocks) {
+    if next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
         return Some(dodge(next, intent.controls, around));
     }
     if let Some(order) = input.telegraph.filter(|_| next.side == Side::Foes) {
@@ -309,8 +318,8 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
     Some(Happening::Swung(attack))
 }
 
-fn can_dodge(next: &Fighter, controls: Controls, blocks: &[Block]) -> bool {
-    let footed = next.body.mode == Mode::Ground || touching_down(&next.body, blocks);
+fn can_dodge(next: &Fighter, controls: Controls, around: &Surroundings<'_>) -> bool {
+    let footed = next.body.mode == Mode::Ground || touching_down(&next.body, around);
     footed && !controls.mounted && next.stamina > 0.0
 }
 
@@ -400,14 +409,14 @@ fn slowed(controls: Controls, share: f64) -> Controls {
 
 /// The body moved as the action allows: freely at rest, slowly swinging or guarding, not at all when struck, and a
 /// charge or a leap carried to its landing at the end of its wind-up.
-fn move_body(next: &mut Fighter, controls: Controls, blocks: &[Block]) {
+fn move_body(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) {
     let allowed = match next.action {
         Action::Idle | Action::Reload { .. } => controls,
         Action::Attack(_) => slowed(controls, ATTACK_PACE),
         Action::Guard { .. } | Action::Parry { .. } => slowed(controls, GUARD_PACE),
         Action::Draw { .. } => slowed(controls, 0.5),
         Action::Telegraph(telegraph) => {
-            if let Some(body) = travel(&next.body, &telegraph, blocks) {
+            if let Some(body) = travel(&next.body, &telegraph, around) {
                 next.body = body;
                 return;
             }
@@ -415,7 +424,7 @@ fn move_body(next: &mut Fighter, controls: Controls, blocks: &[Block]) {
         }
         _ => still(controls),
     };
-    let body = step_body(&next.body, &allowed, blocks, TICK_SECONDS);
+    let body = step_body(&next.body, &allowed, around.blocks, around.terrain, TICK_SECONDS);
     let fighting = matches!(
         next.action,
         Action::Attack(_) | Action::Guard { .. } | Action::Parry { .. } | Action::Draw { .. } | Action::Telegraph(_)
@@ -424,7 +433,7 @@ fn move_body(next: &mut Fighter, controls: Controls, blocks: &[Block]) {
 }
 
 /// A charge crosses its lane and a leap flies to its disc in the last ticks of the wind-up.
-fn travel(body: &Body, telegraph: &Telegraph, blocks: &[Block]) -> Option<Body> {
+fn travel(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_>) -> Option<Body> {
     let landing = telegraph.landing()?;
     let travel = telegraph.travel_ticks();
     let begun = telegraph.windup.saturating_sub(travel);
@@ -433,8 +442,8 @@ fn travel(body: &Body, telegraph: &Telegraph, blocks: &[Block]) -> Option<Body> 
     }
     let left = f64::from(telegraph.windup.saturating_sub(telegraph.elapsed).max(1));
     let (step_x, step_y) = ((landing[0] - body.x) / left, (landing[1] - body.y) / left);
-    let (x, y) = slide(blocks, body, step_x, step_y);
-    let ground = ground_at(blocks, x, y, body.z);
+    let (x, y) = slide(around.blocks, around.terrain, body, step_x, step_y);
+    let ground = ground_at(around.blocks, around.terrain, x, y, body.z);
     let share = f64::from(telegraph.elapsed - begun + 1) / f64::from(travel);
     let rise = if telegraph.shape == crate::shapes::Shape::Leap { 4.8 * share * (1.0 - share) } else { 0.0 };
     let facing = telegraph.bearing;

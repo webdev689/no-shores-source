@@ -1,0 +1,17 @@
+[package]
+name = "bake"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "What the rooms read, made at build time: each node's section and spawns, the window of the ground round it, and the boxes a body runs into there."
+
+[dependencies]
+city = { path = "../city" }
+land = { path = "../land" }
+world = { path = "../world" }
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

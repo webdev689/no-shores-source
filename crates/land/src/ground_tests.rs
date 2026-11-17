@@ -222,3 +222,19 @@ fn a_gathered_river_lies_in_its_channel_and_ends_at_the_painted_coast() {
     assert_eq!(seaward, 0, "no course runs past the painted coast");
     assert_eq!(walls, 0, "no river stands over dry ground beside its channel");
 }
+
+#[test]
+fn a_city_s_pads_level_the_ground_dry_and_hold_through_a_window_and_its_saved_form() {
+    use crate::pads::{Pad, Pads};
+    let mut ground = ground_with(&Edits::default());
+    let natural = ground.height_at(5_000.0, 5_000.0);
+    ground.pads = Pads::from(vec![Pad { bounds: [4_900.0, 4_900.0, 5_100.0, 5_100.0], level: natural + 7.25 }]);
+    assert_eq!(ground.height_at(5_000.0, 5_000.0), natural + 7.25);
+    assert_eq!(ground.water_at(5_000.0, 5_000.0), WaterAt::Dry);
+    assert_ne!(ground.height_at(5_200.0, 5_000.0), natural + 7.25);
+    let window = ground.window(4_800.0, 4_800.0, 5_200.0, 5_200.0);
+    let back: Ground = serde_json::from_str(&serde_json::to_string(&window).unwrap()).unwrap();
+    for (x, y) in [(5_000.0, 5_000.0), (5_150.0, 5_050.0), (4_850.0, 4_950.0)] {
+        assert_eq!(back.height_at(x, y).to_bits(), ground.height_at(x, y).to_bits());
+    }
+}
