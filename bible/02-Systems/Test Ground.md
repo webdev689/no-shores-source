@@ -85,8 +85,9 @@ room's word for it, so playing alone and online are the same game.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
   rolled among those that reach the locked foe. Alone, Escape pauses the fight.
-- **Others.** Foes and other players are drawn gliding between the room's snapshots, so they move smoothly however the
-  snapshots come and whatever the screen's rate.
+- **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
+  pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
+  takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
 
 ## Playing together
 
