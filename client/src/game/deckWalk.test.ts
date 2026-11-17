@@ -6,6 +6,7 @@ import { courseBytes, helmBytes, walkBytes } from '../network/messages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import { type Body, type Controls, floatsOf, floatsOfControls, startMovementRules } from '../rules/movementRules.ts';
 import { deckFloats, SLOOP_DECK } from '../ships/deck.ts';
+import { STANDING_EYE_M } from './seaLaw.ts';
 
 const built = (name: string) =>
   readFile(new URL(`../../../target/wasm32-unknown-unknown/release/${name}`, import.meta.url)).catch(() => {
@@ -18,7 +19,7 @@ const layoutText = await readFile(new URL('../../../content/world/layout.json', 
 /** The sea in the page, the player's ship at sea well clear of every coast, and the latest snapshot it handed on. */
 function atSea(): { room: LocalRoom; last: () => Snapshot | null } {
   let last: Snapshot | null = null;
-  const room = LocalRoom.openSea(roomModule, layoutText, (snapshot) => (last = snapshot));
+  const room = LocalRoom.openSea(roomModule, layoutText, (snapshot) => (last = snapshot), 7);
   const layout = JSON.parse(layoutText) as { continents: { outline: [number, number][] }[] };
   const west = Math.min(...layout.continents.flatMap((continent) => continent.outline.map(([x]) => x)));
   room.send(courseBytes([[west - 5000, 1_500_000]], 10));
@@ -81,4 +82,8 @@ test('a player off the helm walks down her steps to her deck, and takes the helm
   room.send(helmBytes(false));
   room.pump(rules.tickSeconds);
   assert.equal(onDeck(), undefined, 'back at the helm');
+});
+
+test("the helm's eye stands a standing body's eye over her deck, as the movement crate stands one", () => {
+  assert.equal(rules.eyeHeight(rules.standing(...SLOOP_DECK.helm)), STANDING_EYE_M);
 });

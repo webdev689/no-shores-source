@@ -1,6 +1,6 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
-import type { Voyage } from '../overworld/voyage.ts';
+import { alongNear, type Pace, SHIP_SPEED, sailSpeed, type Voyage } from '../overworld/voyage.ts';
 import { cellHeight, deckToWorld, SLOOP_DECK } from '../ships/deck.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
@@ -151,3 +151,28 @@ export function timeText(seconds: number): string {
   if (seconds < 60) return `${Math.max(1, Math.round(seconds))} s`;
   return `${Math.round(seconds / 60)} min`;
 }
+
+/** How fast the page draws its ship toward where the room has her, a share a second, and how far along her voyage it
+ *  looks for that place either side of its own, metres. */
+const FOLLOW = { perSecond: 4, windowM: 3_000 } as const;
+
+/** The room's word on the player's ship: where it has her and the pace it sailed her at, held down near a pirate. */
+export interface RoomWord {
+  readonly x: number;
+  readonly y: number;
+  readonly pace: number;
+}
+
+/** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
+ *  it has her, the room being the law; at the dial's pace while it has not taken her course yet (`room` null). */
+export function followed(voyage: Voyage, travelledM: number, dt: number, dial: Pace, room: RoomWord | null): number {
+  const seconds = Math.max(0, dt);
+  if (!room) return travelledM + sailSpeed(dial) * seconds;
+  const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
+  const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
+  return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);
+}
+
+/** What the voyage's line adds while the room holds her under the dial's pace: a pirate near. */
+export const heldNote = (dial: Pace, room: RoomWord | null): string =>
+  room && room.pace > 0 && room.pace < dial ? ` · Held to ×${room.pace}: a pirate near` : '';

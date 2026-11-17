@@ -113,7 +113,9 @@ will take it, by the room's own tick.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - Pirates sail among the ships, and a bold one that meets a player fights them in the room, by the player's orders
   ([[Naval Combat]], "At sea"). While a player fights, the room takes their orders and no course, and their ship is
-  where the fight has her, at rest on the room's word.
+  where the fight has her, at rest on the room's word. A ship sails at her pace held down as a pirate comes near, and
+  the snapshot's pace for her is the one she sailed at. The sea opens on a seed for its pirates, from the runtime's
+  random numbers (`room_open_sea`'s third number).
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused

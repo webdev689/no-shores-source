@@ -114,8 +114,8 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
 }
 
 const SHIPS: [(PlayerId, Ship); 2] = [
-    (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 10 }),
-    (4, Ship { x: 61_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0 }),
+    (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 10, rate: 10 }),
+    (4, Ship { x: 61_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0, rate: 0 }),
 ];
 
 fn snapshot<'snapshot>(
@@ -254,7 +254,12 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
         .ships()
         .unwrap()
         .iter()
-        .map(|ship| (ship.player(), Ship { x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() }))
+        .map(|ship| {
+            (
+                ship.player(),
+                Ship { x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace(), rate: ship.pace() },
+            )
+        })
         .collect();
     assert_eq!((sea.tick(), ships), (77, SHIPS.to_vec()));
     let pirate = sea.pirates().unwrap().get(0);

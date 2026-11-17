@@ -33,6 +33,7 @@ code:
   - crates/naval/src/fight.rs#meet
   - crates/naval/src/wire.rs#view_numbers
   - crates/room/src/pirates.rs#Pirates
+  - crates/room/src/threat.rs#held_pace
   - client/src/game/seaCombat.ts#SeaCombat
 ---
 # Naval Combat
@@ -158,10 +159,20 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]).
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s. While
   fewer than two pirates sail within 1.9 km of them, a roll brings a ship 0.8 of the time, and she is a pirate 0.3 of
-  that (DFO's open sea: 30 of its factions' 100); no other ship sails yet.
+  that (DFO's open sea: 30 of its factions' 100); no other ship sails yet. The rolls wait real seconds, and are drawn
+  from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its own), so
+  each sea sends its pirates in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Where.** On the ring 650 to 1000 m round their ship, no nearer than 450 m to any player, where open water lies
   between, heading across their waters on a slant; she sails on at 2.4 m/s, going about at land, and goes once no
   player is within 1.9 km. Her seed is her temper: one in four is bold.
+- **Her clock.** As DFO's sea keeps the world's time, she sails on the clock of the player nearest her: their
+  voyage's pace (144 m/s at ×60), the world's own while they lie at rest, and real time where another player sails
+  within 1.2 km of that one, a shared sea.
+- **The voyage held.** As DFO holds a fast journey, a voyage eases down as a pirate comes near along its way: its pace
+  is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12 m/s
+  and her 2.4, down DFO's ladder (by fives, then ones), never under ×5. Within 700 m of a pirate of either temper it is
+  held to ×1, the world's own time (`threat.rs`). The room sails each ship at that pace and sends it as her pace; the
+  page sails its own at the room's pace, drawn to where the room has her, and the voyage's line says it is held.
 - **The meeting.** A bold pirate within 750 m of a player who is not fighting meets them: she leaves the sea and the
   fight begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it
   each tick by the player's orders on the fight of many ships, so her stem may ram the pirate, on waters made from the coasts (open sea, the swell on it, dry land on them), until
@@ -190,8 +201,10 @@ browser predicts its own ship through `room-wasm` by the same steps.
 
 - Captains are Pirate Sloops: no other factions or classes, and no ambient traffic; at sea, pirates alone.
 - Players' balls do not strike other players' ships, and players do not ram one another.
-- At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port), no notoriety and no slowing near
-  enemies; a fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
+- At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port) and no notoriety. A voyage near a
+  pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
+  come over. A fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
+- Only a bold pirate takes a player on; DFO's wary captains also fall on a ship they outgun.
 - Her canvas is always drawn, so her sails always take balls; it does not come down as her sail share falls.
 - She cruises on her course until she sees a player's ship; DFO's captains wander between waypoints.
 - No boarding, crew, sounds, flotsam or magazine blast yet: the rest of step 3 of the pick.

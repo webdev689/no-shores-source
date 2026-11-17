@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Point2 } from './ground.ts';
 import {
+  alongNear,
   clampPace,
   PACE_DEFAULT,
   PACE_STEPS,
@@ -9,8 +10,8 @@ import {
   sail,
   sailSpeed,
   secondsLeft,
-  shipAt,
   SHIP_SPEED,
+  shipAt,
   stepPace,
   TURN_CHORD_M,
   voyageOf,
@@ -89,4 +90,16 @@ test('a voyage with no length has arrived and has no heading of its own', () => 
     assert.equal(fix.arrived, true);
     assert.equal(fix.heading, null);
   }
+});
+
+test('a point is found along the voyage where the nearest leg passes it, looking only near where asked', () => {
+  const voyage = voyageOf([
+    [0, 0],
+    [0, -1_000],
+    [1_000, -1_000],
+  ]);
+  assert.equal(alongNear(voyage, [5, -500], 400, 3_000), 500);
+  assert.equal(alongNear(voyage, [600, -990], 1_500, 3_000), 1_600, 'on the second leg');
+  assert.equal(alongNear(voyage, [600, -990], 100, 200), 990, 'only the legs near where it looks: the first');
+  assert.equal(alongNear(voyageOf([]), [0, 0], 0, 100), null);
 });

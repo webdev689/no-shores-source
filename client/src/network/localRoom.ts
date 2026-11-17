@@ -32,10 +32,15 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
-   *  joined, their ship not yet at sea. */
-  static openSea(module: WebAssembly.Module, layoutText: string, snapshot: (snapshot: Snapshot) => void): LocalRoom {
+   *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default. */
+  static openSea(
+    module: WebAssembly.Module,
+    layoutText: string,
+    snapshot: (snapshot: Snapshot) => void,
+    seed = Math.floor(Math.random() * 2 ** 32),
+  ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openSea(layoutText)) throw new Error('the world’s layout is not one the sea can open round');
+    if (!door.openSea(layoutText, seed)) throw new Error('the world’s layout is not one the sea can open round');
     return new LocalRoom(door, snapshot);
   }
 

@@ -9,6 +9,7 @@
 use crate::PlayerId;
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates};
+use crate::threat::held_pace;
 use land::sea::{FULL_DEPTH_M, Swell};
 use movement::{Controls, TICK_SECONDS};
 use naval::fight::{Event, Fight, Orders, PLAYER};
@@ -65,14 +66,15 @@ pub enum HelmRefused {
     NotAtTheWheel,
 }
 
-/// A ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and its pace, 0
-/// once it has come to the end of its course.
+/// A ship as the sea room last moved it: where it is, its heading in radians clockwise from north, its pace, 0 once it
+/// has come to the end of its course, and the pace it sailed at in its last tick, held down near a pirate (`threat`).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ship {
     pub x: f64,
     pub y: f64,
     pub heading: f64,
     pub pace: u16,
+    pub rate: u16,
 }
 
 /// A continent's coast, with its bounds to pass over it quickly.
@@ -151,9 +153,9 @@ fn whole(&[x, y]: &[f64; 2]) -> Option<Point> {
 }
 
 impl Sea {
-    /// An empty sea round the layout's continents, every ship with `deck`.
+    /// An empty sea round the layout's continents, every ship with `deck`, its pirates' chances drawn from `seed`.
     #[must_use]
-    pub fn new(layout: &Layout, deck: Deck) -> Self {
+    pub fn new(layout: &Layout, deck: Deck, seed: u32) -> Self {
         let coasts = layout
             .continents
             .iter()
@@ -174,7 +176,7 @@ impl Sea {
             clock: 0,
             next_player: 1,
             berths: BTreeMap::new(),
-            pirates: Pirates::default(),
+            pirates: Pirates::new(seed),
             fights: BTreeMap::new(),
         }
     }
@@ -256,7 +258,7 @@ impl Sea {
         if whole_points.is_empty() {
             let Some(sailing) = berth.sailing.as_mut() else { return Err(CourseRefused::BadCourse) };
             sailing.course.clear();
-            sailing.ship.pace = 0;
+            (sailing.ship.pace, sailing.ship.rate) = (0, 0);
             return Ok(());
         }
         if !PACES.contains(&pace) {
@@ -275,7 +277,7 @@ impl Sea {
         }
         let course: VecDeque<[f64; 2]> = whole_points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
         let heading = at_sea.map_or(0.0, |ship| ship.heading);
-        let ship = Ship { x: start.x as f64, y: start.y as f64, heading, pace };
+        let ship = Ship { x: start.x as f64, y: start.y as f64, heading, pace, rate: 0 };
         if let Some(berth) = self.berths.get_mut(&player) {
             berth.sailing = Some(Sailing { ship, course });
         }
@@ -302,11 +304,16 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         self.fights.retain(|_, fought| fought.fight.over().is_none());
+        let pirates: Vec<[f64; 2]> = self.pirates.sailing.iter().map(|pirate| [pirate.x, pirate.y]).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
-            if !self.fights.contains_key(player) {
-                sail(sailing, f64::from(sailing.ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS);
-            }
+            let ship = sailing.ship;
+            sailing.ship.rate = if self.fights.contains_key(player) {
+                0
+            } else {
+                held_pace(ship.pace, [ship.x, ship.y], ship.heading, pirates.iter().copied())
+            };
+            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS);
         }
         let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
         let wind = steady_wind(&self.swell);
@@ -317,12 +324,17 @@ impl Sea {
             fought.orders = Orders { helm, fire: false, load: None, ..fought.orders };
             let berth = self.berths.get_mut(player).and_then(|berth| berth.sailing.as_mut());
             if let (Some(sailing), Some(ship)) = (berth, fought.fight.vessel(PLAYER).map(|vessel| vessel.ship)) {
-                sailing.ship = Ship { x: ship.x, y: ship.y, heading: ship.heading, pace: 0 };
+                sailing.ship = Ship { x: ship.x, y: ship.y, heading: ship.heading, pace: 0, rate: 0 };
                 sailing.course.clear();
             }
         }
-        let ships: Vec<(PlayerId, [f64; 2], bool)> =
-            self.ships().map(|(player, ship)| (player, [ship.x, ship.y], self.fights.contains_key(&player))).collect();
+        // Each player's waters run at the pace they sail, the world's own time at rest.
+        let ships: Vec<(PlayerId, [f64; 2], bool, f64)> = self
+            .ships()
+            .map(|(player, ship)| {
+                (player, [ship.x, ship.y], self.fights.contains_key(&player), f64::from(ship.rate.max(1)))
+            })
+            .collect();
         let coasts = &self.coasts;
         let met = self.pirates.tick(TICK_SECONDS, &ships, |from, to| {
             let ends = [from, to].map(|[x, y]| whole(&[x, y]));
@@ -336,7 +348,7 @@ impl Sea {
                 continue;
             };
             sailing.course.clear();
-            sailing.ship.pace = 0;
+            (sailing.ship.pace, sailing.ship.rate) = (0, 0);
             let at = |x: f64, y: f64, heading: f64, rung: i8| sailing::ship::Ship {
                 x,
                 y,
@@ -435,7 +447,7 @@ fn sail(sailing: &mut Sailing, distance: f64) {
     let mut left = distance;
     while left > 0.0 {
         let Some(&[to_x, to_y]) = sailing.course.front() else {
-            sailing.ship.pace = 0;
+            (sailing.ship.pace, sailing.ship.rate) = (0, 0);
             return;
         };
         let (along_x, along_y) = (to_x - sailing.ship.x, to_y - sailing.ship.y);
@@ -454,7 +466,7 @@ fn sail(sailing: &mut Sailing, distance: f64) {
         }
     }
     if sailing.course.is_empty() {
-        sailing.ship.pace = 0;
+        (sailing.ship.pace, sailing.ship.rate) = (0, 0);
     }
 }
 

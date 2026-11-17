@@ -178,7 +178,7 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
     [200_000, 200_000],
     [100_000, 200_000],
   ];
-  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] })), true);
+  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 7), true);
   const [first, second] = [room.join(), room.join()];
   const north: [number, number][] = [
     [50_000, 150_000],

@@ -119,8 +119,8 @@ table Flying {
   age: ushort;
 }
 
-// One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and its pace, 0
-// at rest.
+// One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
+// sailed at, held down near a pirate, 0 at rest.
 table Ship {
   player: uint;
   x: double;

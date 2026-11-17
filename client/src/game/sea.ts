@@ -11,6 +11,7 @@ import {
   poseOf,
   type Rig,
   shotOf,
+  smooth01,
   stepCamera,
   type Viewport,
 } from '../overworld/overworldCamera.ts';
@@ -18,8 +19,8 @@ import { dragCamera, keyTurn, type Press, pressAt, pressMove, zoomCamera } from 
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
 import { pickAt } from '../overworld/overworldPick.ts';
 import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
-import { PACE_DEFAULT, type Pace, sail, secondsLeft, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';
-import { lookOf, type Shot } from './camera.ts';
+import { PACE_DEFAULT, type Pace, secondsLeft, shipAt, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';
+import { lookOf, panShot, type Shot } from './camera.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
 import type { Landmass } from './landmass.ts';
@@ -34,6 +35,8 @@ import { SeaRoom } from './seaRoom.ts';
 import {
   courseAhead,
   declutter,
+  followed,
+  heldNote,
   HELM,
   helmEye,
   type Landfall,
@@ -324,6 +327,8 @@ export class Sea {
 
   /** One step of the pace dial: -1 slower, +1 faster. */
   stepPace(direction: number): void {
+    // Off the helm the room takes no course, so the dial waits for the player's return to it.
+    if (this.aboard.walking) return;
     this.pace = stepPace(this.pace, direction);
     if (this.voyage) this.room?.course(courseAhead(this.voyage, this.travelled), this.pace);
   }
@@ -406,7 +411,7 @@ export class Sea {
 
   /** The wheel's notches, positive in, zoom the camera over the ship. */
   zoom(notches: number): void {
-    if (this.aboard.managing) this.aboard.zoom(notches);
+    if (this.aboard.active) this.aboard.zoom(notches);
     else if (this.view.kind === 'sail') this.camera = zoomCamera(this.camera, notches, ceilingFor(null));
   }
 
@@ -429,7 +434,10 @@ export class Sea {
     this.meet(time);
     this.aboard.step(dt, time, controls, paused, this.room);
     if (this.voyage && !this.combat) {
-      const fix = sail(this.voyage, this.travelled, dt, this.pace);
+      const fix = shipAt(
+        this.voyage,
+        followed(this.voyage, this.travelled, dt, this.pace, this.room?.settledShip ?? null),
+      );
       this.ship = { x: fix.position[0], y: fix.position[1], heading: fix.heading ?? this.ship.heading };
       this.travelled = fix.travelledM;
       if (fix.arrived) [this.voyage, this.destination] = [null, null];
@@ -516,21 +524,12 @@ export class Sea {
     const step = (this.view.going === 'down' ? dt : -dt) / HELM_SECONDS;
     const down = Math.min(1, Math.max(0, this.view.at + step));
     this.view = down <= 0 && this.view.going === 'up' ? { kind: 'sail' } : { ...this.view, at: down };
-    const eased = down * down * (3 - 2 * down);
+    const eased = smooth01(down);
     this.helmShare = eased;
-    const { heading } = this.ship;
     // The eye rides the swell with the ship, at the helm of the Sloop as she is drawn while she shrinks to her size.
     const eye = helmEye(this.ship, shownScale(this.scale, eased), 0.35 * Math.sin(time * 0.9) - 0.4);
-    const turn = Math.atan2(Math.sin(heading - sea.yaw), Math.cos(heading - sea.yaw));
-    const mix = (from: number, to: number) => from + (to - from) * eased;
-    return {
-      eye: [mix(sea.eye[0], eye[0]), mix(sea.eye[1], eye[1]), mix(sea.eye[2], eye[2])],
-      yaw: sea.yaw + turn * eased,
-      pitch: mix(sea.pitch, HELM.pitch),
-      fov: FIELD_OF_VIEW,
-      near: eased > 0.5 ? 0.3 : sea.near,
-      far: sea.far,
-    };
+    const helm = { eye, yaw: this.ship.heading, pitch: HELM.pitch, fov: FIELD_OF_VIEW, near: 0.3, far: sea.far };
+    return panShot(sea, helm, eased);
   }
 
   private marks(pose: CameraPose, viewport: Viewport): ScreenMark[] {
@@ -570,7 +569,7 @@ export class Sea {
     if (this.voyage) {
       const remaining = this.voyage.lengthM - this.travelled;
       const left = timeText(secondsLeft(this.voyage, this.travelled, this.pace));
-      return `Sailing · ${distanceText(remaining)} to go · ${left}`;
+      return `Sailing · ${distanceText(remaining)} to go · ${left}${heldNote(this.pace, this.room?.settledShip ?? null)}`;
     }
     return this.said || (this.destination ? 'Hove to' : 'At anchor');
   }

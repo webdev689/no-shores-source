@@ -337,8 +337,8 @@ pub fn sea_snapshot_bytes(
     let players = Some(builder.create_vector(&each));
     let each: Vec<_> = ships
         .iter()
-        .map(|&(player, Ship { x, y, heading, pace })| {
-            messages::Ship::create(&mut builder, &messages::ShipArgs { player, x, y, heading, pace })
+        .map(|&(player, Ship { x, y, heading, rate, .. })| {
+            messages::Ship::create(&mut builder, &messages::ShipArgs { player, x, y, heading, pace: rate })
         })
         .collect();
     let ships = Some(builder.create_vector(&each));

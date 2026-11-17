@@ -91,6 +91,24 @@ export function shipAt(voyage: Voyage, travelledM: number): ShipFix {
   };
 }
 
+/** How far along the voyage its nearest point to `point` lies, looking within `windowM` either side of `nearM`; null
+ *  where no leg lies there. */
+export function alongNear(voyage: Voyage, point: Point2, nearM: number, windowM: number): number | null {
+  const { points, along } = voyage;
+  let best: { readonly along: number; readonly apart: number } | null = null;
+  for (let leg = 1; leg < points.length; leg++) {
+    const [from, to, start, end] = [points[leg - 1], points[leg], along[leg - 1], along[leg]];
+    if (!from || !to || start === undefined || end === undefined) continue;
+    if (end < nearM - windowM || start > nearM + windowM) continue;
+    const [east, south, length] = [to[0] - from[0], to[1] - from[1], end - start];
+    const reach = length > 0 ? ((point[0] - from[0]) * east + (point[1] - from[1]) * south) / (length * length) : 0;
+    const share = Math.max(0, Math.min(1, reach));
+    const apart = Math.hypot(from[0] + east * share - point[0], from[1] + south * share - point[1]);
+    if (!best || apart < best.apart) best = { along: start + share * length, apart };
+  }
+  return best?.along ?? null;
+}
+
 /** The ship after `dt` more seconds at a pace, from `travelledM` along. */
 export const sail = (voyage: Voyage, travelledM: number, dt: number, pace: number): ShipFix =>
   shipAt(voyage, travelledM + sailSpeed(pace) * Math.max(0, dt));

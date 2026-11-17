@@ -11,6 +11,7 @@ mod judging;
 pub mod pirates;
 mod players;
 pub mod sea;
+pub mod threat;
 
 pub use foes::{CLEAR_FOES, FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};

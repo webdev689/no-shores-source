@@ -72,7 +72,8 @@ export class RoomHost extends DurableObject<Env> {
 
   /** Opens the room its name says, once: a node's from its baked file, which only that node's room reads. */
   private async openRoom(name: string): Promise<boolean> {
-    if (name === 'sea') return this.room.openSea(JSON.stringify(layout));
+    if (name === 'sea')
+      return this.room.openSea(JSON.stringify(layout), crypto.getRandomValues(new Uint32Array(1))[0] ?? 0);
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
     if (node === undefined) return this.room.open(course.start, course.blocks);

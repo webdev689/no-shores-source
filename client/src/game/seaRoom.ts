@@ -81,6 +81,14 @@ export class SeaRoom {
     return this.ships.find((ship) => ship.player === this.own) ?? null;
   }
 
+  /** The room's word on the player's ship once it has taken the last course sent (none waits, and a snapshot came
+   *  since); null before. */
+  get settledShip(): SeenShip | null {
+    const sent = this.courseSentAt;
+    if (this.waitingCourse || sent === null || this.tick === null || this.tick <= sent) return null;
+    return this.ownShip;
+  }
+
   /** The player's fight as the room last showed it, its events those since they were last taken; null out of one. */
   takeFight(): FightView | null {
     if (!this.fight) return null;

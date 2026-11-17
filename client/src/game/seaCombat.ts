@@ -5,7 +5,7 @@ import { type FightInput, type FightSource, Fighting } from '../editor/fighting.
 import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
 import { cameraOf, type Orbit } from '../editor/orbit.ts';
 import { SAILS_RUNG } from '../editor/sailing.ts';
-import { FIELD_OF_VIEW } from '../overworld/overworldCamera.ts';
+import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { FightView } from '../rules/fightRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
@@ -13,7 +13,7 @@ import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import type { Shot } from './camera.ts';
+import { panShot, type Shot } from './camera.ts';
 import type { SeaRoom } from './seaRoom.ts';
 
 /** Seconds the view takes to come down to the fight, or go back up. */
@@ -28,8 +28,6 @@ const PITCH = [0.05, 1.2] as const;
 const CAPTAIN_SHADE = 0.55;
 /** The way a ship's foam shows round her bow, m/s: a Sloop's whole. */
 const UNDER_WAY = 2;
-
-const eased = (share: number) => share * share * (3 - 2 * share);
 
 /** The player's Sloop as the fight steers her: where it last left her. */
 class Fought {
@@ -173,17 +171,7 @@ export class SeaCombat {
       near: 0.3,
       far: seaShot.far,
     };
-    const share = eased(this.down);
-    const mix = (from: number, to: number) => from + (to - from) * share;
-    const turn = Math.atan2(Math.sin(fightShot.yaw - seaShot.yaw), Math.cos(fightShot.yaw - seaShot.yaw));
-    return {
-      eye: [0, 1, 2].map((axis) => mix(seaShot.eye[axis] ?? 0, fightShot.eye[axis] ?? 0)) as [number, number, number],
-      yaw: seaShot.yaw + turn * share,
-      pitch: mix(seaShot.pitch, fightShot.pitch),
-      fov: FIELD_OF_VIEW,
-      near: share > 0.5 ? fightShot.near : seaShot.near,
-      far: seaShot.far,
-    };
+    return panShot(seaShot, fightShot, smooth01(this.down));
   }
 
   /** Both Sloops at true scale, the captain's darker, each with her sails as her rung sets them. */

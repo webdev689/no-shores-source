@@ -97,12 +97,13 @@ pub fn open_node(text: &[u8]) -> bool {
     true
 }
 
-/// Opens the sea round the continents of a layout file's text; answers whether the text was a layout.
-pub fn open_sea(text: &[u8]) -> bool {
+/// Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; answers whether
+/// the text was a layout.
+pub fn open_sea(text: &[u8], seed: u32) -> bool {
     let Some(layout) = std::str::from_utf8(text).ok().and_then(|text| world::layout::parse(text).ok()) else {
         return false;
     };
-    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone()))));
+    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone(), seed))));
     true
 }
 
@@ -344,14 +345,15 @@ pub unsafe extern "C" fn room_open_node(address: *const u8, length: usize) -> u3
     u32::from(open_node(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
-/// Opens the sea round the layout file's text written at `address`, `length` bytes long; 1 if it opened, 0 if not.
+/// Opens the sea round the layout file's text written at `address`, `length` bytes long, its pirates drawn from
+/// `seed`; 1 if it opened, 0 if not.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn room_open_sea(address: *const u8, length: usize) -> u32 {
+pub unsafe extern "C" fn room_open_sea(address: *const u8, length: usize, seed: u32) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    u32::from(open_sea(unsafe { std::slice::from_raw_parts(address, length) }))
+    u32::from(open_sea(unsafe { std::slice::from_raw_parts(address, length) }, seed))
 }
 
 /// Opens a fleet room on the open sea; always 1.
