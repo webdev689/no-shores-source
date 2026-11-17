@@ -126,9 +126,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   Manage, the view over her deck with her panel and stand-in hands; and Leave the helm, the player walking her deck
   ([[Sailing]], "Her deck") with the sea room the authority on every step ([[Server]], "The sea"). The same pull
   request makes the Sloop about 18 m long, her quarterdeck opened with steps down ([[The Sloop Is About 18 m Long]]);
-  her model on R2 is the one the `ships` workflow shaped and published. Waiting on the owner: the keys (B, H, E), the
-  stand-ins' number and dress, Manage's view, and what a walker who goes overboard should meet, since the deck keeps
-  them aboard for now. It changes the sea room's wire, so its merge sends the page and the rooms out together.
+  her model on R2 is the one the `ships` workflow shaped and published. It also makes pirates met at sea
+  ([[Pirates Must Be Met at Sea]]): they sail on the voyage's clock and hold a voyage as they come near, each sea on a
+  seed of its own ([[Naval Combat]], "At sea"). Waiting on the owner: the keys (B, H, E), the stand-ins' number and
+  dress, Manage's view, what a walker who goes overboard should meet (the deck keeps them aboard for now), and whether
+  DFO's Travel Options encounter (a journey stopped near an enemy) or wary pirates falling on a ship they outgun should
+  come over. It changes the sea room's wire, so its merge sends the page and the rooms out together.
 - A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
   larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
   wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare
