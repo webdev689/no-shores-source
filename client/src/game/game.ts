@@ -161,6 +161,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
+  /** The held map, made when it is first asked for, since its coasts are worked out then. */
+  let heldMap: HeldMap | null = null;
   let foot: Foot | null = null;
   let sea: Sea | null = null;
   let ready = false;
@@ -294,8 +296,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     discovered.nodes(sea.landings);
   };
 
-  /** The held map, made when it is first asked for, since its coasts are worked out then. */
-  let heldMap: HeldMap | null = null;
   /** The map is wanted: it is raised once the view stands at the helm. */
   let mapWanted = false;
   const mapOf = (): HeldMap => {
