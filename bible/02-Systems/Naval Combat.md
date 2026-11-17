@@ -9,8 +9,10 @@ code:
   - crates/naval/src/random.rs#Mulberry32
   - crates/naval/src/arms.rs#SLOOP_ARMS
   - crates/naval/src/gunnery.rs#volley
+  - crates/naval/src/gunnery.rs#zone_radius
   - crates/naval/src/damage.rs#shot_harm
   - crates/naval/src/shots.rs#step_balls
+  - crates/naval/src/shots.rs#stop_of
   - crates/naval/src/captain/mod.rs#Captain
   - crates/naval/src/captain/engage.rs#engage
   - crates/naval/src/captain/aim.rs#captain_guns
@@ -33,8 +35,9 @@ Broadsides between the owner's Sloop and one pirate captain: DFO's naval combat,
 - **A ball** is a point under gravity alone (9.81 m/s², no drag), leaving its gun at the gun's speed plus the deck's
   way. Its flight is a closed form of its launch, swept as a segment from where it was to where it is, so no step bends
   a shot or tunnels one through a hull.
-- **A gun is laid, not pointed.** A broadside fires square to the hull; the gunner sets only the range, and the low arc
-  that lands there is found within the carriage. Each gun's mouth rides her heel; the lay stays her upright hull's.
+- **A gun is laid, not pointed.** A broadside fires square to the hull ([[Ship Guns Keep Square Broadsides]]); the
+  gunner sets only the range, and the low arc that lands there is found within the carriage. Each gun's mouth rides
+  her heel; the lay stays her upright hull's.
 - **The guns** are DFO's swivel, three a side: 55 m/s, -10 to 14 degrees, 149 m at most from her deck. A broadside
   ripples 0.09 s a gun, each ball from where its port is by then, scattered by the volley's seed (more for a poorer
   gunner). No battery bears within 35 degrees of her bow or 40 of her stern. Each side reloads on its own clock: 5.6 s
@@ -42,6 +45,15 @@ Broadsides between the owner's Sloop and one pirate captain: DFO's naval combat,
 - **The loads** are round, grape, chain and heated shot, with DFO's factors over round shot: grape is slower and wider
   and kills men (less as its flight lengthens), chain tears canvas, heated shot sets her alight. A loaded side drawn
   for a new load takes half its reload; one loading keeps its progress.
+- **A look on her** lays for the point it meets (DFO's `lookOnShip`): the look's ray from the aim eye is tested
+  against her hull's box and her sails' boxes out to the laid gun's longest throw and 60 m, the nearest entry taken.
+  The side is laid on that point, its range out along the fire and its own height. A look on her canvas lays chain
+  for that very point and every other load for her hull's middle. The point is led along the fire by her way over the
+  ball's flight there. A look that meets no part of her lays for the water's range. A release fires that same lay.
+- **The aim shows each gun's end**: its ball, unscattered, flown by the same law a fired ball flies by (in the fight's
+  ticks) with her where her way will have carried her by then, to where it stops. The lay is on target only when one
+  of those balls meets her, canvas or hull. Its landing zone's radius is DFO's: half the width the crew scatters the
+  gun's yaw across at the splashes' mean range (at least 2 m wide), and never under 1.6 m.
 - **What stops a ball** is the first hull, water or ground it meets. A ball tears through any canvas it crosses
   (once a ship) and flies on. The water is the swell's surface under it, and the ground the land's, sampled every 4 m.
 - **The harm** of a ball is DFO's: by where it struck (holed within 1.1 m of the water under it, 40% more; the hull
@@ -80,12 +92,14 @@ While sailing, `F` calls a pirate captain onto the ring 650 to 1000 m round the 
 heading across her waters on a slant; `F` again sends her off. The fight then steps the Sloop in her helm's place.
 Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the look's
 bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
-lookReach). Letting go fires the lay held; a left click holds fire, the wheel changes shot, and `C` braces.
+lookReach), unless the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a left click holds fire, the wheel changes shot, and `C` braces.
 
 Her Sloop is drawn darker from the same model, and the water cuts her footprint as it does the player's. The balls,
-the lay's arcs (red on target), and each event's flash and smoke, spray and ripples, splinters, dust, and fire aboard
+the lay's arcs, and each event's flash and smoke, spray and ripples, splinters, dust, and fire aboard
 are small lit spheres. The panel shows both ships' hull, canvas and men, the guns' reload and load, DFO's messages,
-and "BROADSIDE! Brace (C)." while her guns stand run out.
+and "BROADSIDE! Brace (C)." while her guns stand run out. Each arc of the lay runs only to where its ball stops: a
+larger red mark where it strikes her, and a ring of the landing zone's radius where it splashes. The arcs are red, and
+the panel reads "Laying the ... guns: on target.", only when an unscattered ball strikes her.
 
 ## One crate, every machine
 
@@ -98,6 +112,5 @@ through WebAssembly ([[Agree to the Bit]]).
 
 - One captain, a Pirate Sloop: no other factions or classes, and no ambient traffic.
 - Her canvas is always drawn, so her sails always take balls; it does not come down as her sail share falls.
-- A look lays for the water's range, not for a point on her hull.
 - She cruises on her course until she sees the player; DFO's captains wander between waypoints.
 - No boarding, ramming, crew, sounds, flotsam or magazine blast yet: step 3 of the pick.

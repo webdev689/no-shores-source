@@ -60,7 +60,7 @@ fn with_no_water_to_float_her_no_captain_comes() {
 
 #[test]
 fn a_fight_is_the_same_every_time_it_is_fought() {
-    let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 60.0 }), fire: true, ..IDLE };
+    let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 60.0, ray: None }), fire: true, ..IDLE };
     let fought = || {
         let mut fight = alongside(60.0, Temper::Bold);
         run(&mut fight, &IDLE, 60);
@@ -78,7 +78,7 @@ fn a_fight_is_the_same_every_time_it_is_fought() {
 #[test]
 fn a_broadside_laid_on_her_strikes_her() {
     let mut fight = alongside(50.0, Temper::Wary);
-    let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 50.0 }), fire: true, ..IDLE };
+    let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 50.0, ray: None }), fire: true, ..IDLE };
     let mut events = run(&mut fight, &fire, 1);
     events.extend(run(&mut fight, &IDLE, 120));
     let muzzles =
@@ -94,7 +94,8 @@ fn a_broadside_laid_on_her_strikes_her() {
 #[test]
 fn a_release_the_guns_cannot_answer_is_refused_with_its_reason() {
     let mut fight = alongside(50.0, Temper::Wary);
-    let fire = |bearing_deg: f64| Orders { aim: Some(Aim { bearing_deg, range_m: 50.0 }), fire: true, ..IDLE };
+    let fire =
+        |bearing_deg: f64| Orders { aim: Some(Aim { bearing_deg, range_m: 50.0, ray: None }), fire: true, ..IDLE };
     let refusals = |events: Vec<Event>| {
         events
             .into_iter()
@@ -171,7 +172,7 @@ fn the_rest_of_the_volley_that_made_her_strike_cannot_sink_her() {
 #[test]
 fn a_look_lays_its_range_out_from_her_middle() {
     let fight = alongside(500.0, Temper::Wary);
-    let laid = fight.laid(&Aim { bearing_deg: 90.0, range_m: 60.0 }).map_or(f64::NAN, |lay| lay.elevation);
+    let laid = fight.laid(&Aim { bearing_deg: 90.0, range_m: 60.0, ray: None }).map_or(f64::NAN, |lay| lay.elevation);
     let from_guns =
         lay(&fight.player.ship, &fight.player.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, 60.0 - 1.1093, None);
     assert!((laid - from_guns.elevation).abs() < 1e-3, "her guns stand about 1.1 m out from her middle");
@@ -180,10 +181,79 @@ fn a_look_lays_its_range_out_from_her_middle() {
 #[test]
 fn the_lay_reads_on_target_only_where_its_balls_would_strike_her() {
     let fight = alongside(50.0, Temper::Wary);
-    let on = |range_m: f64| fight.laid(&Aim { bearing_deg: 90.0, range_m }).is_some_and(|laid| fight.on_target(&laid));
+    let on = |range_m: f64| {
+        let laid = fight.laid(&Aim { bearing_deg: 90.0, range_m, ray: None });
+        laid.is_some_and(|laid| fight.ends(&laid, &Open, 0.0).iter().flatten().any(|stop| stop.strike.is_some()))
+    };
     assert!(on(50.0));
     assert!(!on(44.0), "the balls splash short of her");
     assert!(!on(30.0));
+}
+
+/// A look from the player's starboard aim eye toward `at`, its water range far past her.
+fn looked(fight: &Fight, at: [f64; 3]) -> Aim {
+    let eye = [5.1, 3.0, fight.player.pose.heave + 5.5];
+    Aim { bearing_deg: 90.0, range_m: 300.0, ray: Some([eye, [0, 1, 2].map(|axis| at[axis] - eye[axis])]) }
+}
+
+#[test]
+fn a_look_on_her_hull_lays_on_that_point_and_its_unscattered_volley_strikes_her() {
+    let fight = alongside(50.0, Temper::Wary);
+    let hull = target_of(&fight.captain).hull;
+    let aim = looked(&fight, hull.centre);
+    let [eye, look] = aim.ray.unwrap_or_default();
+    let length = (look[0] * look[0] + look[1] * look[1] + look[2] * look[2]).sqrt();
+    let far = [0, 1, 2].map(|axis| eye[axis] + look[axis] / length * 400.0);
+    let share = crate::ballistics::segment_entry(eye, far, &hull, 0.0).unwrap_or(f64::NAN);
+    let met = [0, 1, 2].map(|axis| eye[axis] + (far[axis] - eye[axis]) * share);
+    let player = &fight.player;
+    let on = lay_on(&player.ship, &player.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, met);
+    let laid = fight.laid(&aim);
+    assert_eq!(laid, Some(on), "laid for the point the look meets on her side, not the water's 300 m");
+    let ends = laid.map(|laid| fight.ends(&laid, &Open, 0.0)).unwrap_or_default();
+    assert_eq!(ends.len(), 3);
+    assert!(ends.iter().all(|end| end.is_some_and(|stop| stop.strike.is_some() && !stop.water)), "{ends:?}");
+}
+
+#[test]
+fn a_look_past_her_lays_for_the_water() {
+    let fight = alongside(50.0, Temper::Wary);
+    let aim = looked(&fight, [50.0, -60.0, 0.0]);
+    assert_eq!(fight.laid(&aim), fight.laid(&Aim { ray: None, ..aim }));
+}
+
+#[test]
+fn each_gun_ends_where_an_unscattered_ball_fired_by_the_fight_stops() {
+    let fight = alongside(50.0, Temper::Wary);
+    for range_m in [50.0, 30.0] {
+        let Some(laid) = fight.laid(&Aim { bearing_deg: 90.0, range_m, ray: None }) else {
+            panic!("the starboard side bears");
+        };
+        let ends = fight.ends(&laid, &Open, 0.0);
+        let carry = carry_of(&fight.player.ship);
+        let mut balls: Vec<Ball> =
+            (0..3).map(|index| crate::gunnery::aimed(&laid, index, carry, 0.0, PLAYER)).collect();
+        let targets = [target_of(&fight.player), target_of(&fight.captain)];
+        let mut stops = Vec::new();
+        for tick in 1..=600 {
+            for event in step_balls(&mut balls, f64::from(tick) * TICK_SECONDS, &targets, &Open, 0.0) {
+                match event {
+                    ShotEvent::Hit { zone, point, .. } if zone != Zone::Rig => stops.push((point, false)),
+                    ShotEvent::Splash { point, .. } => stops.push((point, true)),
+                    _ => {}
+                }
+            }
+        }
+        assert_eq!(stops.len(), 3, "{range_m}: {stops:?}");
+        for (end, (point, water)) in ends.iter().zip(stops) {
+            let Some(end) = end else { panic!("{range_m}: every ball stops") };
+            let apart = (0..3)
+                .map(|axis| (end.point[axis] - point[axis]) * (end.point[axis] - point[axis]))
+                .sum::<f64>()
+                .sqrt();
+            assert!(apart < 0.1 && end.water == water, "{range_m}: {end:?} against {point:?}");
+        }
+    }
 }
 
 /// Deep water, but a headland of dry land from x = 100 to 220 m, 160 m from north to south.

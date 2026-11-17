@@ -6,16 +6,17 @@ use super::OPEN;
 use super::sail::{helm_from, ship_from, ticks_from};
 use land::exact::fingerprint;
 use land::sea::Swell;
-use naval::arms::{PIRATE_SLOOP, Side};
+use naval::arms::{LARGE_BOAT, PIRATE_SLOOP, Side};
 use naval::ballistics::{flight, launch_velocity};
 use naval::captain::Mode;
 use naval::captain::course::velocity_of;
 use naval::damage::{State, Zone};
 use naval::fight::{Aim, End, Event, Fight, Orders, Refusal, Vessel};
+use naval::gunnery::zone_radius;
 use naval::guns::Shot;
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
-use sailing::waters::{LandWaters, steady_wind};
+use sailing::waters::{LandWaters, Waters, steady_wind};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
@@ -110,11 +111,23 @@ fn event_json(event: &Event) -> Option<Value> {
     })
 }
 
-/// The lay the player's look holds: each gun's unscattered launch, and whether it would strike her; or no side.
-fn lay_json(fight: &Fight, aim: Option<&Aim>) -> Value {
+/// The lay the player's look holds: each gun's unscattered launch and where it stops (or null, still aloft), the
+/// landing zone's radius at their mean range on the water, and whether any would strike her; or no side.
+fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
     let Some(laid) = aim.and_then(|aim| fight.laid(aim)) else {
         return Value::Null;
     };
+    let ends = fight.ends(&laid, waters, time);
+    let splashes: Vec<f64> = ends
+        .iter()
+        .flatten()
+        .filter(|stop| stop.water)
+        .map(|stop| {
+            let (east, south) = (stop.point[0] - laid.centre[0], stop.point[1] - laid.centre[1]);
+            (east * east + south * south).sqrt()
+        })
+        .collect();
+    let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
     let way = velocity_of(&fight.player.ship);
     let launch = launch_velocity(laid.dir, laid.elevation, laid.gun.speed, [way[0], way[1], 0.0]);
     let launches: Vec<[f64; 6]> =
@@ -124,12 +137,16 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>) -> Value {
         "launches": launches,
         "elevation": laid.elevation,
         "reach": laid.reach,
-        "on_target": fight.on_target(&laid),
+        "ends": ends.iter().map(|end| end.map(|stop| json!({
+            "time": stop.time, "point": stop.point, "water": stop.water, "strike": stop.strike,
+        }))).collect::<Vec<_>>(),
+        "radius": zone_radius(&laid.gun, LARGE_BOAT.skill, range),
+        "on_target": ends.iter().flatten().any(|stop| stop.strike.is_some()),
     })
 }
 
-/// The fight as the browser shows it.
-fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>) -> Value {
+/// The fight as the browser shows it, its lay over `waters` at `time`.
+fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
     let balls: Vec<[f64; 4]> = fight
         .balls
         .iter()
@@ -155,7 +172,7 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>) -> Value {
         "player": vessel_json(&fight.player),
         "captain": captain,
         "balls": balls,
-        "lay": lay_json(fight, aim),
+        "lay": lay_json(fight, aim, waters, time),
         "events": events.iter().filter_map(event_json).collect::<Vec<_>>(),
         "over": fight.over.map(|end| match end { End::Sunk => "sunk", End::Gone => "gone" }),
         "fingerprint": format!("{:016x}", fingerprint(fight.numbers())),
@@ -184,10 +201,18 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         let swell = Swell::default();
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
         let fight = Fight::begin(ship, seed, &waters, time)?;
-        let answer = view(&fight, &[], None);
+        let answer = view(&fight, &[], None, &waters, time);
         FIGHT.with(|slot| *slot.borrow_mut() = Some(fight));
         Ok(answer)
     })
+}
+
+/// A look's ray: six finite numbers, the aim eye (east, south, up) and then the way it looks.
+fn ray_of(ray: &Value) -> Result<[[f64; 3]; 2], String> {
+    const REFUSED: &str = "a look's ray is six finite numbers: its eye, then its way";
+    let numbers = ray.as_array().filter(|numbers| numbers.len() == 6).ok_or(REFUSED)?;
+    let number = |at: usize| numbers[at].as_f64().filter(|number| number.is_finite()).ok_or(REFUSED);
+    Ok([[number(0)?, number(1)?, number(2)?], [number(3)?, number(4)?, number(5)?]])
 }
 
 /// The orders a step request holds, each checked.
@@ -203,7 +228,11 @@ fn orders_of(request: &Value) -> Result<(Orders, f64, u32), String> {
             if !(-180.0..=180.0).contains(&bearing_deg) || !(0.0..=MOST_RANGE_M).contains(&range_m) {
                 return Err("a look bears within 180 degrees of her bow and lays within 100 km".into());
             }
-            Some(Aim { bearing_deg, range_m })
+            let ray = match &aim["ray"] {
+                Value::Null => None,
+                ray => Some(ray_of(ray)?),
+            };
+            Some(Aim { bearing_deg, range_m, ray })
         }
     };
     let load = match &request["load"] {
@@ -239,7 +268,7 @@ fn step(request: &[u8]) -> Result<Value, String> {
                 };
                 events.extend(fight.step(&now, &waters, wind, time + f64::from(tick) * TICK_SECONDS));
             }
-            Ok(view(fight, &events, orders.aim.as_ref()))
+            Ok(view(fight, &events, orders.aim.as_ref(), &waters, time + f64::from(ticks) * TICK_SECONDS))
         })
     })
 }
