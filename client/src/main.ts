@@ -1,8 +1,10 @@
 import { canvasSize } from './canvasSize.ts';
+import { startGame } from './game/game.ts';
 import { GpuUnavailable, startGpu } from './gpu.ts';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
-if (!canvas) throw new Error('index.html has no <canvas id="game">');
+const hud = document.querySelector<HTMLElement>('#hud');
+if (!canvas || !hud) throw new Error('index.html has no <canvas id="game"> and <div id="hud">');
 
 /** Keeps the drawing buffer at the canvas's displayed size in device pixels, so nothing is blurred or stretched. */
 function fitCanvas(target: HTMLCanvasElement): void {
@@ -16,27 +18,15 @@ function fitCanvas(target: HTMLCanvasElement): void {
 new ResizeObserver(() => fitCanvas(canvas)).observe(canvas);
 fitCanvas(canvas);
 
+/** Tells the player plainly why the game could not start. */
+function stopped(message: string): void {
+  document.body.textContent = message;
+  document.body.style.cssText = 'color:#ddd;background:#000;font:16px system-ui;padding:24px';
+}
+
 try {
-  const gpu = await startGpu(canvas);
-  const frame = (): void => {
-    const encoder = gpu.device.createCommandEncoder();
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [
-        {
-          view: gpu.context.getCurrentTexture().createView(),
-          clearValue: { r: 0, g: 0, b: 0, a: 1 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
-    });
-    pass.end();
-    gpu.device.queue.submit([encoder.finish()]);
-    requestAnimationFrame(frame);
-  };
-  requestAnimationFrame(frame);
+  await startGame(await startGpu(canvas), canvas, hud);
 } catch (error) {
-  if (!(error instanceof GpuUnavailable)) throw error;
-  document.body.textContent = error.message;
-  document.body.style.cssText = 'color:#ddd;font:16px system-ui;padding:24px';
+  if (error instanceof GpuUnavailable) stopped(error.message);
+  else stopped(`The game could not start: ${error instanceof Error ? error.message : String(error)}`);
 }

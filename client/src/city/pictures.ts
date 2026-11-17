@@ -1,0 +1,217 @@
+// Which pictures a city wears and where each sits in its one texture array: the forged models' pictures turned to the
+// city's climate, the ground's tiles of its terrain set, and the pictures chosen for its solids' materials. The most
+// used come first, so a city that needs more than the array holds loses only its rarest.
+import { climateArchive, pictureSize, type Climate, type PictureUse, type Season } from '../textures/picture.ts';
+import type { CityClimate, SolidMaterial } from './plan.ts';
+
+/** Layers the array holds for pictures; the four above them are the plain colours. WebGPU's default limit is 256. */
+export const PICTURE_LAYERS = 252;
+/** The solids' plain colours, drawn by code rather than a picture: gold, iron, bone, and the glow of a fire. */
+export const COLOUR_LAYERS = { gold: 252, iron: 253, bone: 254, glow: 255 } as const;
+/** Every picture is resampled to this square, so one array holds them all. */
+export const LAYER_SIZE = 128;
+
+type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS>;
+type Tint = readonly [number, number, number];
+type Choice = readonly [archive: number, record: number, use: PictureUse, tint?: Tint];
+
+/**
+ * The pictures each climate's solids wear, from the textures' own sets, some lightened or warmed (`tint`, a factor
+ * a channel) since Daggerfall's stone is dark: pale limestone ashlar, sandstone, grey granite or mossy grey for
+ * stone; a carved frieze or a banded course for trim; the roof set's tiles, terracotta, slate or thatch; boards for
+ * timber; a plastered wall; and flagstones or sandstone cobbles for paving. Winter takes each set's snowed turn, as
+ * it is painted, untinted.
+ */
+const MATERIALS: Readonly<Record<Climate, Readonly<Record<Pictured, Choice>>>> = {
+  temperate: {
+    stone: [109, 1, 'wall', [2.2, 2.05, 1.75]],
+    trim: [161, 1, 'wall', [2.3, 2.2, 1.95]],
+    roof: [369, 2, 'roof', [1.4, 1.5, 1.5]],
+    timber: [364, 1, 'wall'],
+    plaster: [312, 1, 'wall'],
+    paving: [324, 2, 'slope', [1.85, 1.75, 1.55]],
+  },
+  desert: {
+    stone: [9, 1, 'wall', [1.12, 1.12, 1.1]],
+    trim: [42, 1, 'wall'],
+    roof: [69, 0, 'roof', [1.3, 1.25, 1.2]],
+    timber: [67, 0, 'prop'],
+    plaster: [38, 1, 'wall'],
+    paving: [17, 1, 'wall', [1.25, 1.2, 1.15]],
+  },
+  mountain: {
+    stone: [109, 1, 'wall', [1.4, 1.4, 1.36]],
+    trim: [161, 1, 'wall', [1.6, 1.6, 1.5]],
+    roof: [469, 2, 'roof', [2.5, 2.5, 2.6]],
+    timber: [67, 0, 'prop'],
+    plaster: [126, 1, 'wall'],
+    paving: [323, 2, 'floor', [1.5, 1.5, 1.45]],
+  },
+  swamp: {
+    stone: [458, 1, 'wall', [1.35, 1.38, 1.3]],
+    trim: [161, 1, 'wall', [1.4, 1.55, 1.35]],
+    roof: [469, 3, 'roof'],
+    timber: [426, 1, 'wall'],
+    plaster: [442, 1, 'wall'],
+    paving: [324, 2, 'slope', [1.4, 1.42, 1.35]],
+  },
+};
+
+/** The terraces' retaining walls and the plates' skirts: rubble near the ground's own colour, so the many walls
+ *  between the terraces read as terracing and not as a grid drawn over the city. */
+const TERRACES: Readonly<Record<Climate, Choice>> = {
+  temperate: [335, 1, 'wall', [1.35, 1.35, 1.3]],
+  desert: [17, 1, 'wall'],
+  mountain: [112, 1, 'wall', [1.25, 1.25, 1.2]],
+  swamp: [409, 1, 'wall', [1.2, 1.2, 1.15]],
+};
+
+const CLIMATE_OF_BASE: readonly [number, Climate][] = [
+  [400, 'swamp'],
+  [300, 'temperate'],
+  [100, 'mountain'],
+  [0, 'desert'],
+];
+
+/** A chosen picture in a season: its own climate's snowed turn in winter, where its set has one. */
+function inSeason(archive: number, record: number, season: Season): number {
+  const own = CLIMATE_OF_BASE.find(([base]) => archive >= base)?.[1] ?? 'temperate';
+  return archive >= 500 ? archive : climateArchive(archive, record, own, season);
+}
+
+/** The terrain set a climate's ground tiles come from. */
+export const terrainArchive = ({ climate, season }: CityClimate): number => climateArchive(302, 0, climate, season);
+
+/** One layer's picture: where it is filed, its own size, what it is named for, the factor each channel is
+ *  painted at (a solid's lightened stone), and the colour drawn until painted. */
+export type BookPicture = {
+  readonly archive: number;
+  readonly record: number;
+  readonly width: number;
+  readonly height: number;
+  readonly uses: readonly PictureUse[];
+  readonly tint: Tint | null;
+  readonly guess: readonly [number, number, number];
+};
+
+export type PictureBook = {
+  readonly pictures: readonly BookPicture[];
+  /** A forged model's picture's layer, turned to the city's climate first. */
+  layerOf(archive: number, record: number): number;
+  /** A solid material's layer, or its plain colour's. */
+  readonly materials: Readonly<Record<SolidMaterial, number>>;
+  /** The layer of the terraces' retaining walls and the plates' skirts. */
+  readonly terrace: number;
+  /** Each ground record's layer. */
+  readonly ground: readonly number[];
+};
+
+/** The colours drawn before a picture is painted: by what it is named for, the ground's by its class. */
+function guessOf(
+  archive: number,
+  record: number,
+  uses: readonly PictureUse[],
+  terrain: number,
+): [number, number, number] {
+  if (archive === terrain) {
+    const classes: [number, number, number][] = [
+      [0.25, 0.38, 0.5],
+      [0.46, 0.37, 0.25],
+      [0.3, 0.4, 0.19],
+      [0.46, 0.45, 0.43],
+    ];
+    return classes[record] ?? [0.4, 0.38, 0.24];
+  }
+  const snowy = archive % 100 === 70 || archive % 100 === 10;
+  if (uses.includes('roof')) return snowy ? [0.84, 0.86, 0.9] : [0.44, 0.28, 0.21];
+  if (uses.includes('window')) return [0.24, 0.24, 0.27];
+  if (uses.includes('door') || uses.includes('prop')) return [0.4, 0.3, 0.2];
+  return [0.6, 0.56, 0.5];
+}
+
+/** A picture wanted by the city, how much of the city wears it, and what it is named for. */
+export type PictureWant = {
+  readonly archive: number;
+  readonly record: number;
+  weight: number;
+  uses: Set<PictureUse>;
+  readonly tint?: Tint | null;
+};
+
+/**
+ * The city's pictures, in one array of at most PICTURE_LAYERS layers. `wants` are the models' pictures as their
+ * tables file them, with how much the city wears each; `usesOf` says what a turned picture is named for. The ground
+ * and the solids' pictures come first, then the rest by how much the city wears them.
+ */
+export function pictureBook(
+  climate: CityClimate,
+  wants: Iterable<PictureWant>,
+  groundRecords: Iterable<number>,
+  usesOf: (archive: number, record: number) => readonly PictureUse[],
+): PictureBook {
+  const terrain = terrainArchive(climate);
+  const turned = new Map<string, PictureWant>();
+  const want = (
+    archive: number,
+    record: number,
+    weight: number,
+    uses: readonly PictureUse[],
+    tint: Tint | null = null,
+  ): string => {
+    const key = tint ? `${archive}.${record}*${tint.join(',')}` : `${archive}.${record}`;
+    const found = turned.get(key) ?? { archive, record, weight: 0, uses: new Set<PictureUse>(), tint };
+    found.weight += weight;
+    for (const use of uses) found.uses.add(use);
+    turned.set(key, found);
+    return key;
+  };
+  const first = Number.MAX_SAFE_INTEGER;
+  const groundKeys = new Map<number, string>();
+  for (const record of groundRecords) groundKeys.set(record, want(terrain, record, first, []));
+  const materialKeys = new Map<Pictured, string>();
+  const chosen = ([archive, record, use, tint]: Choice): string => {
+    const turnedArchive = inSeason(archive, record, climate.season);
+    return want(turnedArchive, record, first / 2, [use], turnedArchive === archive ? (tint ?? null) : null);
+  };
+  for (const [material, choice] of Object.entries(MATERIALS[climate.climate]) as [Pictured, Choice][])
+    materialKeys.set(material, chosen(choice));
+  const terraceKey = chosen(TERRACES[climate.climate]);
+  const turnOf = (archive: number, record: number): string =>
+    `${climateArchive(archive, record, climate.climate, climate.season)}.${record}`;
+  for (const each of wants) {
+    const [archive, record] = turnOf(each.archive, each.record).split('.').map(Number);
+    want(archive, record, each.weight, [...each.uses, ...usesOf(archive, record)]);
+  }
+  const ordered = [...turned.entries()]
+    .filter(([, each]) => pictureSize(each.archive, each.record))
+    .sort((a, b) => b[1].weight - a[1].weight || a[1].archive - b[1].archive || a[1].record - b[1].record)
+    .slice(0, PICTURE_LAYERS);
+  const layers = new Map(ordered.map(([key], layer) => [key, layer]));
+  const pictures = ordered.map(([, each]): BookPicture => {
+    const size = pictureSize(each.archive, each.record);
+    const uses = [...each.uses].sort();
+    const tint = each.tint ?? null;
+    const guess = guessOf(each.archive, each.record, uses, terrain);
+    return {
+      archive: each.archive,
+      record: each.record,
+      width: size?.width ?? LAYER_SIZE,
+      height: size?.height ?? LAYER_SIZE,
+      uses,
+      tint,
+      guess: tint
+        ? ([0, 1, 2].map((channel) => Math.min(1, guess[channel] * tint[channel])) as [number, number, number])
+        : guess,
+    };
+  });
+  const layerAt = (key: string | undefined): number => (key === undefined ? 0 : (layers.get(key) ?? 0));
+  const materials = { ...COLOUR_LAYERS } as Record<SolidMaterial, number>;
+  for (const [material, key] of materialKeys) materials[material] = layerAt(key);
+  return {
+    pictures,
+    layerOf: (archive, record) => layerAt(turnOf(archive, record)),
+    materials,
+    terrace: layerAt(terraceKey),
+    ground: Array.from({ length: 56 }, (unused, record) => layerAt(groundKeys.get(record) ?? groundKeys.get(2))),
+  };
+}

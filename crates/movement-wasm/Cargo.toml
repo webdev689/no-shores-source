@@ -4,13 +4,16 @@ version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
-description = "Movement for the browser: the movement crate behind a small WebAssembly door, a body stepped one tick at a time."
+description = "Movement for the browser: the movement crate behind a small WebAssembly door, a body stepped one tick at a time on a course and a window of the land."
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+land = { path = "../land" }
 movement = { path = "../movement" }
+reach = { path = "../reach" }
+serde_json.workspace = true
 
 [lints]
 workspace = true

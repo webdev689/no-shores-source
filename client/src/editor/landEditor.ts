@@ -1,19 +1,22 @@
 import { canvasSize } from '../canvasSize.ts';
 import { startGpu } from '../gpu.ts';
 import type { Brush } from '../rules/landRules.ts';
-import { type Camera, pan, screenToWorld, zoomAt } from './camera.ts';
+import { type Camera, pan, screenToWorld, worldToScreen, zoomAt } from './camera.ts';
 import { downloadJson } from './dom.ts';
-import { startLandWorker } from './landClient.ts';
+import { startLandWorker } from '../terrain/landClient.ts';
 import { drawScaleCues, shownExaggeration } from './closeUp.ts';
 import { AIM_HIGHEST_LOOK, AimInput } from './aimInput.ts';
-import { BRUSHES, buildLandPanel, DRAWN, LAND_TOOLS, type LandTool } from './landPanel.ts';
+import { BRUSHES, buildLandPanel, LAND_TOOLS, type LandTool, SITE_TOOLS } from './landPanel.ts';
 import { LandSession } from './landSession.ts';
 import type { CellRect } from './landMask.ts';
 import { LandScene } from './landScene.ts';
 import { fitOrbit, type Orbit, panOrbit, pickTerrain, rayAt, rotateOrbit, zoomOrbit } from './orbit.ts';
-import { drawDraft, nextId, placeAt, snapPoint, type Spot } from './placeDrawing.ts';
+import { drawDraft, snapPoint, type Spot } from './placeDrawing.ts';
+import { PlaceTools } from './placeTools.ts';
 import { fitWindow, heightAt, ReliefView } from './reliefView.ts';
-import type { TerrainData } from './terrainView.ts';
+import { drawSites, groundProjector, siteMarks } from './siteDrawing.ts';
+import { NODE_COLOURS, siteFocus } from './sites.ts';
+import type { TerrainData } from '../terrain/terrainView.ts';
 
 /** The Land mode: the land the generator makes from the painted coasts, shaped by the owner's brushes. */
 export interface LandEditor {
@@ -25,7 +28,8 @@ export interface LandEditor {
 const DEFAULT_STRENGTH: Partial<Record<LandTool, number>> = { raise: 40, lower: 40, smooth: 50, flatten: 50 };
 /** How near, in screen pixels, a click finds a place to remove or a road's point snaps. */
 const REACH_PX = 12;
-type Drawn = 'river' | 'road' | 'town';
+/** The 2D map zooms closer than the coasts' map, so a node a few hundred metres across can be drawn. */
+const ZOOM = { closest: 1, farthest: 20_000 } as const;
 
 export async function startLandEditor(
   canvas: HTMLCanvasElement,
@@ -50,7 +54,6 @@ export async function startLandEditor(
   let pointer = { x: 0, y: 0, inside: false };
   let dragging: { x: number; y: number; button: number } | null = null;
   let stroke: { brush: Brush; last: readonly [number, number] } | null = null;
-  let draft: { kind: Drawn; points: Spot[] } | null = null;
   let editsVersion = 0;
   let walking = false;
   let sailing = false;
@@ -59,8 +62,6 @@ export async function startLandEditor(
   const lowestLook = () => (aim.aiming ? AIM_HIGHEST_LOOK : walking ? scene.lowestPitch : undefined);
   const held = new Set<string>();
   const pressed: string[] = [];
-  const placeWidth = { river: 40, road: 8 };
-  let riverDepth = 4;
   let status = '';
   let active = false;
   let frameQueued = false;
@@ -213,44 +214,26 @@ export async function startLandEditor(
       .catch(fail);
   };
 
-  /** A press with a place tool: a point of the course or area being drawn, a port, or the place to remove. */
-  const placeAtPress = (x: number, y: number) => {
-    if (!session) return;
-    const places = session.places(selected);
-    const reach = REACH_PX * camera.metresPerPixel;
-    if (DRAWN.includes(tool)) {
-      const kind = tool as Drawn;
-      const spot = kind === 'road' ? snapPoint(places, [x, y], reach) : ([Math.round(x), Math.round(y)] as const);
-      draft = draft?.kind === kind ? { kind, points: [...draft.points, spot] } : { kind, points: [spot] };
-    } else if (tool === 'port') {
-      const spot = [Math.round(x), Math.round(y)];
-      // The id is taken from the edits as they stand when the change runs, so quick clicks never share one.
-      changePlaces((edits) => (edits['ports'] = [...(edits['ports'] ?? []), { id: nextId(edits, 'port'), at: spot }]));
-    } else if (tool === 'remove') {
-      const found = placeAt(places, [x, y], reach);
-      const keep = (place: unknown) => (place as { id?: string }).id !== found?.id;
-      if (found) changePlaces((edits) => (edits[found.list] = (edits[found.list] ?? []).filter(keep)));
-    }
-  };
+  const tools = new PlaceTools({
+    places: () => session?.places(selected) ?? {},
+    change: changePlaces,
+    say: (text) => (status = text),
+  });
 
-  /** Ends the drawing: a course needs two points, a town three; repeated points (a double-click's) count once. */
-  const finishDraft = () => {
-    if (!draft || !session) return;
-    const drawn = draft.points;
-    const points = drawn.filter((spot, index) => index === 0 || spot.join() !== drawn[index - 1]?.join());
-    const { kind } = draft;
-    draft = null;
-    if (points.length < (kind === 'town' ? 3 : 2)) return;
-    const shape =
-      kind === 'town'
-        ? { outline: points }
-        : kind === 'road'
-          ? { width_m: placeWidth.road, points }
-          : { width_m: placeWidth.river, depth_m: riverDepth, points };
-    changePlaces((edits) => {
-      const place = { id: nextId(edits, kind), ...shape };
-      edits[`${kind}s`] = [...(edits[`${kind}s`] ?? []), place];
-    });
+  /** Shows a city or a node in both views, and chooses it for its tool's fields. */
+  const chooseSite = (id: string) => {
+    const places = session?.places(selected) ?? {};
+    const focus = siteFocus(places, id);
+    const view = shown();
+    if (!focus) return;
+    tool = places.city?.id === id ? 'city' : 'node';
+    tools.draft = null;
+    if (tool === 'node') tools.choose(id);
+    const across = Math.max(1, Math.min(canvas.clientWidth, canvas.clientHeight));
+    camera = { centreX: focus.x, centreY: focus.y, metresPerPixel: Math.max(ZOOM.closest, focus.acrossM / across) };
+    if (view)
+      orbit = { ...orbit, targetX: focus.x - view.leftM, targetY: focus.y - view.topM, distance: focus.acrossM };
+    requestFrame();
   };
 
   const step = (direction: -1 | 1) => {
@@ -301,7 +284,7 @@ export async function startLandEditor(
     },
     tool: (next) => {
       tool = next;
-      draft = null;
+      tools.draft = null;
       requestFrame();
     },
     radius: (kilometres) => {
@@ -313,13 +296,18 @@ export async function startLandEditor(
       requestFrame();
     },
     width: (metres) => {
-      if (tool === 'road' || tool === 'river') placeWidth[tool] = metres;
+      if (tool === 'road' || tool === 'river') tools.width[tool] = metres;
       requestFrame();
     },
     depth: (metres) => {
-      riverDepth = metres;
+      tools.depth = metres;
       requestFrame();
     },
+    nodeKind: (kind) => tools.setNode({ kind }),
+    nodeName: (name) => tools.setNode({ name }),
+    cityName: (name) => tools.setCity({ name }),
+    cityMotif: (motif) => tools.setCity({ motif }),
+    chooseSite,
     undo: () => step(-1),
     redo: () => step(1),
     save: () => void save().catch(fail),
@@ -354,6 +342,8 @@ export async function startLandEditor(
     const view = shown();
     const brushShown = world && BRUSHES.includes(tool) ? { ...world, radiusM: radiusKm * 1000 } : null;
     const data = viewMode === '3d' ? terrainData() : null;
+    const places = session?.places(selected) ?? {};
+    overlay.replaceChildren();
     if (data && view) {
       const brush = brushShown && {
         x: brushShown.x - view.leftM,
@@ -384,8 +374,8 @@ export async function startLandEditor(
       sailing = drawn.sailing;
       const flat = { width: canvas.clientWidth, height: canvas.clientHeight };
       const shownHeight = shownExaggeration(exaggeration, orbit.distance);
+      drawSites(overlay, siteMarks(places, groundProjector(view, orbit, flat, shownHeight)));
       if (drawn.feet) drawScaleCues(overlay, orbit, flat, drawn.feet, shownHeight);
-      else overlay.replaceChildren();
       // The water moves, so the 3D view draws every frame.
       requestFrame();
     } else {
@@ -402,15 +392,21 @@ export async function startLandEditor(
         size.width,
         size.height,
       );
+      const { clientWidth, clientHeight } = canvas;
+      drawSites(
+        overlay,
+        siteMarks(places, (x, y) => worldToScreen(camera, clientWidth, clientHeight, x, y)),
+      );
     }
     const reach = REACH_PX * camera.metresPerPixel;
     const cursorSpot: Spot | null = !world
       ? null
-      : draft?.kind === 'road' && session
-        ? snapPoint(session.places(selected), [world.x, world.y], reach)
+      : tools.draft?.kind === 'road'
+        ? snapPoint(places, [world.x, world.y], reach)
         : [world.x, world.y];
     const flat = { camera, width: canvas.clientWidth, height: canvas.clientHeight };
-    if (viewMode === '2d') drawDraft(overlay, flat, draft, cursorSpot);
+    if (viewMode === '2d') drawDraft(overlay, flat, tools.draft, cursorSpot, NODE_COLOURS[tools.nodeKind]);
+    const nodeFields = tools.nodeFields();
     const ground = view && world ? heightAt(view, world.x, world.y) : null;
     const where = world
       ? `${Math.round(world.x / 1000).toLocaleString('en-US')} km east, ${Math.round(world.y / 1000).toLocaleString('en-US')} km south`
@@ -425,8 +421,16 @@ export async function startLandEditor(
       tool,
       radiusKm,
       strength: strength[tool] ?? 0,
-      widthM: tool === 'road' ? placeWidth.road : placeWidth.river,
-      depthM: riverDepth,
+      widthM: tool === 'road' ? tools.width.road : tools.width.river,
+      depthM: tools.depth,
+      nodeKind: nodeFields.kind,
+      nodeName: nodeFields.name,
+      chosen: nodeFields.chosen,
+      city: places.city ?? null,
+      sites: [
+        ...(places.city ? [{ id: places.city.id, name: places.city.name, kind: 'city' as const }] : []),
+        ...(places.nodes ?? []).map(({ id, name, kind }) => ({ id, name, kind })),
+      ],
       problems: (view?.problems ?? []).map(({ subject, message }) => `${subject}: ${message}`),
       view: viewMode,
       walking,
@@ -448,6 +452,8 @@ export async function startLandEditor(
 
   canvas.addEventListener('contextmenu', (event) => event.preventDefault());
   canvas.addEventListener('pointerdown', (event) => {
+    // A field being typed in reports its value now, before the press can start another node.
+    if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
     canvas.setPointerCapture(event.pointerId);
     dragging = { x: event.offsetX, y: event.offsetY, button: event.button };
     if (sailing && aim.down(event.button)) return;
@@ -455,7 +461,7 @@ export async function startLandEditor(
     if (world && BRUSHES.includes(tool)) startStroke(world.x, world.y);
     else if (world && tool !== 'look') {
       if (viewMode === '3d') status = 'Draw places on the 2D map: press V.';
-      else placeAtPress(world.x, world.y);
+      else tools.press(tool, [world.x, world.y], REACH_PX * camera.metresPerPixel);
       requestFrame();
     }
   });
@@ -485,7 +491,7 @@ export async function startLandEditor(
     endStroke();
   });
   canvas.addEventListener('dblclick', () => {
-    finishDraft();
+    tools.finish();
     requestFrame();
   });
   canvas.addEventListener('pointerleave', () => {
@@ -499,14 +505,15 @@ export async function startLandEditor(
       if (sailing && aim.wheel(event.deltaY, performance.now() / 1000)) return;
       const factor = Math.exp(event.deltaY * 0.0015);
       if (viewMode === '3d') orbit = zoomOrbit(orbit, factor);
-      else camera = zoomAt(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY, factor);
+      else camera = zoomAt(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY, factor, ZOOM);
       requestFrame();
     },
     { passive: false },
   );
   window.addEventListener('keydown', (event) => {
-    if (!active || event.target instanceof HTMLInputElement) return;
+    if (!active || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
     const key = event.key.toLowerCase();
+    const siteTool = event.ctrlKey || event.metaKey ? undefined : SITE_TOOLS.find(([, , letter]) => letter === key);
     const moving = ['w', 'a', 's', 'd', 'shift', 'c', 'f', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
     if ((walking || sailing) && moving.includes(key)) {
       event.preventDefault();
@@ -517,19 +524,21 @@ export async function startLandEditor(
     }
     if (key === 'g') toggleWalk();
     else if (key === 'b') toggleSail();
-    else if (key === 'enter') finishDraft();
-    else if (key === 'escape') draft = null;
-    else if (key === 'backspace' && draft) draft = { ...draft, points: draft.points.slice(0, -1) };
-    else if ((event.ctrlKey || event.metaKey) && key === 'z') step(event.shiftKey ? 1 : -1);
+    else if (key === 'enter') tools.finish();
+    else if (key === 'escape') tools.draft = null;
+    else if (key === 'backspace') {
+      const world = pointer.inside && viewMode === '2d' ? worldAt(pointer.x, pointer.y) : null;
+      tools.back(tool, world && [world.x, world.y]);
+    } else if ((event.ctrlKey || event.metaKey) && key === 'z') step(event.shiftKey ? 1 : -1);
     else if ((event.ctrlKey || event.metaKey) && key === 'y') step(1);
     else if (key === 'v') {
       viewMode = viewMode === '2d' ? '3d' : '2d';
       [walking, sailing] = [false, false];
     } else if (key === '[') radiusKm = Math.max(1, radiusKm - 5);
     else if (key === ']') radiusKm = Math.min(200, radiusKm + 5);
-    else if (/^[0-9]$/.test(key)) {
-      tool = LAND_TOOLS[(Number(key) + 9) % 10]?.[0] ?? tool;
-      draft = null;
+    else if (/^[0-9]$/.test(key) || siteTool) {
+      tool = siteTool?.[0] ?? LAND_TOOLS[(Number(key) + 9) % 10]?.[0] ?? tool;
+      tools.draft = null;
     }
     requestFrame();
   });

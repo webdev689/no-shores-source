@@ -1,5 +1,6 @@
 import type { LandView } from '../rules/landRules.ts';
 import { eachCellInRing } from './landMask.ts';
+import type { City, Node } from './sites.ts';
 
 /** What a cell of a landmass's map is marked with, drawn over its ground in both views. */
 export const MARK = { none: 0, river: 1, carvedRiver: 2, road: 3, town: 4, port: 5 } as const;
@@ -12,6 +13,8 @@ export interface Places {
   readonly roads?: readonly { readonly id?: string; readonly points: Points }[];
   readonly towns?: readonly { readonly id?: string; readonly outline: Points }[];
   readonly ports?: readonly { readonly id?: string; readonly at: readonly [number, number] }[];
+  readonly city?: City;
+  readonly nodes?: readonly Node[];
 }
 
 /** Each cell's mark: the rivers the water gathered, then the places drawn, the later over the earlier. */

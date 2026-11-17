@@ -1,0 +1,349 @@
+// Everything a city's drawing needs, worked out once when the city is set: its pictures, the models its blocks stand
+// and where, every building's masses and hull, its solids and ground, grouped by chunks of cells so the view culls
+// and picks tiers a chunk at a time. All positions are metres from the city's middle, so the GPU's floats keep
+// their precision.
+import { buildingMasses, type Mass } from '../models/buildingPlan.ts';
+import type { BuildingTable, KitTable, PropTable } from '../models/tables.ts';
+import { type ForgedTables, pictureUses, type PictureUse } from '../textures/picture.ts';
+import { type RmbBlock, groundTiles, placed } from './blocks.ts';
+import { cellIndex, clearedGround, groundPlates, levelledCells, plateSkirts, sideOf } from './cityGround.ts';
+import {
+  boxMass,
+  hullOf,
+  keptMasses,
+  MASS_FLOATS,
+  MASS_TIER_HULLS,
+  MASS_TIER_MASSES,
+  massShape,
+  writeMass,
+} from './cityMasses.ts';
+import { forgedModel, type ModelBuffers, modelBuffers, type ModelKey, modelKeyOf } from './cityModels.ts';
+import { appendMesh, emptyMesh, type MeshData } from './mesh.ts';
+import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
+import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach } from './plan.ts';
+import { meshSolid } from './solidMesh.ts';
+
+/** Cells a side of a chunk: about 400 m, a few hundred buildings. */
+export const CHUNK_CELLS = 4;
+/** The highest a block's building stands over its cell, and the most one reaches past its cell's edge, for a
+ *  chunk's bounds. */
+const TALLEST_M = 60;
+const OVERHANG_M = 20;
+/** A retaining wall's thickness, as the planner lays it. */
+const RETAINING_THICK_M = 1.5;
+const TERRACE_WALL_M = 16;
+
+export type CityTables = {
+  readonly buildings: BuildingTable;
+  readonly props: PropTable;
+  readonly roomkit?: KitTable;
+};
+
+/** A model standing in a near cell: the model's place in the buffers, its origin from the city's middle, its yaw. */
+export type NearInstance = { readonly model: number; readonly at: readonly [number, number, number, number] };
+
+export type Range = { first: number; count: number };
+
+export type Chunk = {
+  /** The box everything in the chunk stands in, from the city's middle. */
+  readonly low: [number, number, number];
+  readonly high: [number, number, number];
+  /** The box its cells' middles span, which the tiers are chosen by. */
+  readonly middlesLow: [number, number, number];
+  readonly middlesHigh: [number, number, number];
+  readonly cells: number[];
+  readonly masses: Range;
+  readonly hulls: Range;
+  readonly solids: Range;
+};
+
+export type CityData = {
+  readonly origin: readonly [number, number];
+  /** The grid's north-west corner from the city's middle, and its cells a side. */
+  readonly grid: readonly [number, number];
+  readonly side: number;
+  readonly book: PictureBook;
+  /** Each cell's middle from the city's origin and its level, four floats a cell. */
+  readonly cells: Float32Array;
+  readonly models: ModelBuffers;
+  readonly near: ReadonlyMap<number, readonly NearInstance[]>;
+  readonly masses: ArrayBuffer;
+  readonly chunks: readonly Chunk[];
+  readonly solids: MeshData;
+  readonly plates: { readonly tops: Float32Array; readonly tiles: Uint8Array; readonly width: number };
+  readonly cleared: (x: number, y: number) => boolean;
+};
+
+type Placed = {
+  cell: number;
+  chunk: number;
+  key: ModelKey;
+  at: [number, number, number, number];
+  row: readonly number[];
+};
+
+/** Works out a city's drawing from its plan, climate, blocks and the forged tables. */
+export function buildCity(
+  plan: CityPlan,
+  climate: CityClimate,
+  blocks: ReadonlyMap<string, RmbBlock>,
+  tables: CityTables,
+): CityData {
+  const origin = plan.centre;
+  const side = sideOf(plan);
+  const chunkSide = Math.ceil(side / CHUNK_CELLS);
+  const chunkOf = (column: number, row: number): number =>
+    Math.floor(Math.min(Math.max(row, 0), side - 1) / CHUNK_CELLS) * chunkSide +
+    Math.floor(Math.min(Math.max(column, 0), side - 1) / CHUNK_CELLS);
+  const levelled = levelledCells(plan);
+  const cells = new Float32Array(side * side * 4);
+  for (const [index, cell] of levelled) {
+    const [west, north] = cellCorner(plan, cell);
+    cells.set([west + CELL_M / 2 - origin[0], north + CELL_M / 2 - origin[1], cell.level, 1], index * 4);
+  }
+
+  const placedPieces: Placed[] = [];
+  // grass and stone too: the lawns and kerbs laid where no block stands
+  const groundRecords = new Set<number>([2, 3]);
+  for (const [index, cell] of levelled) {
+    const block = cell.use === 'block' && cell.block ? blocks.get(cell.block) : undefined;
+    if (!block) continue;
+    for (const tile of groundTiles(block)) groundRecords.add(tile.record);
+    const corner = cellCorner(plan, cell);
+    const chunk = chunkOf(cell.column, cell.row);
+    for (const [rows, kind] of [
+      [block.buildings, 'building'],
+      [block.props, 'prop'],
+    ] as const)
+      for (const row of rows) {
+        const place = placed(corner, cell.level, row);
+        placedPieces.push({
+          cell: index,
+          chunk,
+          key: modelKeyOf(tables, row[0], kind),
+          at: [place.east - origin[0], place.south - origin[1], place.up, place.yaw],
+          row,
+        });
+      }
+  }
+
+  const keys = [...new Set(placedPieces.map((piece) => piece.key))].sort();
+  const modelIndex = new Map(keys.map((key, k) => [key, k]));
+  const models = keys.map((key) => forgedModel(tables, key));
+  const wants = new Map<string, PictureWant>();
+  for (const piece of placedPieces) {
+    const model = models[modelIndex.get(piece.key) ?? 0];
+    for (const part of model?.parts ?? []) {
+      const key = `${part.archive}.${part.record}`;
+      const found = wants.get(key) ?? {
+        archive: part.archive,
+        record: part.record,
+        weight: 0,
+        uses: new Set<PictureUse>(),
+      };
+      found.weight += part.count / 3;
+      wants.set(key, found);
+    }
+  }
+  // the models' tables mark a missing door picture null where the textures' type leaves it out; pictureUses skips both
+  const forged = {
+    buildings: tables.buildings,
+    props: tables.props,
+    roomkit: tables.roomkit ?? {},
+  } as unknown as ForgedTables;
+  const uses = pictureUses(forged);
+  const book = pictureBook(climate, wants.values(), groundRecords, (archive, record) => [
+    ...(uses.get(`${archive}.${record}`) ?? []),
+  ]);
+
+  const near = new Map<number, NearInstance[]>();
+  for (const piece of placedPieces) {
+    const list = near.get(piece.cell) ?? [];
+    list.push({ model: modelIndex.get(piece.key) ?? 0, at: piece.at });
+    near.set(piece.cell, list);
+  }
+  for (const list of near.values()) list.sort((a, b) => a.model - b.model);
+
+  const chunkCount = chunkSide * chunkSide;
+  const { masses, massRanges, hullRanges, tops } = buildingMassesOf(plan, placedPieces, tables, book, chunkCount);
+
+  const chunkMeshes = Array.from({ length: chunkCount }, emptyMesh);
+  // each chunk's solids' box, west, north, bottom, then east, south, top, from the city's middle: a solid past the
+  // grid's edge is kept with the edge chunk, so the chunk's box must reach it
+  const solidBoxes = Array.from({ length: chunkCount }, () => [
+    Infinity,
+    Infinity,
+    Infinity,
+    -Infinity,
+    -Infinity,
+    -Infinity,
+  ]);
+  const solids: Solid[] = [...plan.landmark, ...plan.works, ...plan.social.solids];
+  for (const solid of solids) {
+    const chunk = chunkOf(
+      Math.floor((solid.at[0] - plan.grid.west) / CELL_M),
+      Math.floor((solid.at[1] - plan.grid.north) / CELL_M),
+    );
+    const layer = retaining(solid) ? book.terrace : book.materials[solid.material];
+    const picture = book.pictures[layer] ?? { width: 64, height: 64 };
+    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height }, chunkMeshes[chunk]);
+    const reach = solidReach(solid);
+    const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
+    const box = solidBoxes[chunk];
+    const reached = [east - reach, south - reach, solid.at[2] - reach, east + reach, south + reach];
+    for (let axis = 0; axis < 3; axis++) box[axis] = Math.min(box[axis], reached[axis]);
+    box[3] = Math.max(box[3], reached[3]);
+    box[4] = Math.max(box[4], reached[4]);
+    box[5] = Math.max(box[5], solid.at[2] + solid.size[2] + reach);
+  }
+  const terracePicture = book.pictures[book.terrace] ?? { width: 64, height: 128 };
+  plateSkirts(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
+  const allSolids = emptyMesh();
+  const solidRanges: Range[] = chunkMeshes.map((mesh) => {
+    const first = allSolids.indices.length;
+    appendMesh(allSolids, mesh);
+    return { first, count: mesh.indices.length };
+  });
+
+  const chunks: Chunk[] = [];
+  for (let chunk = 0; chunk < chunkCount; chunk++) {
+    const [chunkColumn, chunkRow] = [chunk % chunkSide, Math.floor(chunk / chunkSide)];
+    const west = plan.grid.west + chunkColumn * CHUNK_CELLS * CELL_M - origin[0];
+    const north = plan.grid.north + chunkRow * CHUNK_CELLS * CELL_M - origin[1];
+    const span = CHUNK_CELLS * CELL_M;
+    const members: number[] = [];
+    let [lowest, highest] = [Infinity, -Infinity];
+    for (let row = chunkRow * CHUNK_CELLS; row < Math.min(side, (chunkRow + 1) * CHUNK_CELLS); row++)
+      for (let column = chunkColumn * CHUNK_CELLS; column < Math.min(side, (chunkColumn + 1) * CHUNK_CELLS); column++) {
+        const cell = levelled.get(cellIndex(side, column, row));
+        if (!cell) continue;
+        members.push(cellIndex(side, column, row));
+        lowest = Math.min(lowest, cell.level);
+        highest = Math.max(highest, cell.level);
+      }
+    const hasSolids = solidRanges[chunk].count > 0;
+    if (!members.length && !hasSolids) continue;
+    const box = solidBoxes[chunk];
+    const [cellLow, cellHigh] = members.length
+      ? [
+          [west - OVERHANG_M, north - OVERHANG_M, lowest - 30],
+          [west + span + OVERHANG_M, north + span + OVERHANG_M, Math.max(highest + TALLEST_M, tops[chunk])],
+        ]
+      : [
+          [Infinity, Infinity, Infinity],
+          [-Infinity, -Infinity, -Infinity],
+        ];
+    const [bottom, top] = [Math.min(cellLow[2], box[2]), Math.max(cellHigh[2], box[5])];
+    chunks.push({
+      low: [Math.min(cellLow[0], box[0]), Math.min(cellLow[1], box[1]), bottom],
+      high: [Math.max(cellHigh[0], box[3]), Math.max(cellHigh[1], box[4]), top],
+      middlesLow: [west + CELL_M / 2, north + CELL_M / 2, members.length ? lowest : bottom],
+      middlesHigh: [west + span - CELL_M / 2, north + span - CELL_M / 2, members.length ? highest : top],
+      cells: members.filter((member) => near.has(member)),
+      masses: massRanges[chunk],
+      hulls: hullRanges[chunk],
+      solids: solidRanges[chunk],
+    });
+  }
+
+  return {
+    origin,
+    grid: [plan.grid.west - origin[0], plan.grid.north - origin[1]],
+    side,
+    book,
+    cells,
+    models: modelBuffers(models, book.layerOf),
+    near,
+    masses,
+    chunks,
+    solids: allSolids,
+    plates: groundPlates(plan, blocks, book.ground, book.materials.paving),
+    cleared: clearedGround(plan),
+  };
+}
+
+/** Whether a solid is a terrace's retaining wall: a stone block a cell long and 1.2 m thick, square to the grid, as
+ *  the planner lays one along a terrace's edge, no taller than a terrace steps. The landmark's platform, far taller,
+ *  keeps the city's stone. */
+export function retaining(solid: Solid): boolean {
+  const [long, thick] = [Math.max(solid.size[0], solid.size[1]), Math.min(solid.size[0], solid.size[1])];
+  return (
+    solid.shape === 'block' &&
+    solid.material === 'stone' &&
+    solid.turn === 0 &&
+    Math.abs(long - CELL_M) < 0.01 &&
+    thick <= RETAINING_THICK_M &&
+    solid.size[2] <= TERRACE_WALL_M
+  );
+}
+
+/** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in
+ *  chunk order, then all the hulls. */
+function buildingMassesOf(
+  plan: CityPlan,
+  pieces: readonly Placed[],
+  tables: CityTables,
+  book: PictureBook,
+  chunkCount: number,
+): { masses: ArrayBuffer; massRanges: Range[]; hullRanges: Range[]; tops: Float32Array } {
+  const known = new Map<number, { kept: Mass[]; hull: Mass | null; wall: number; roof: number }>();
+  const shapesOf = (id: number) => {
+    const found = known.get(id);
+    if (found) return found;
+    const measure = tables.buildings[id];
+    const prop = tables.props[id];
+    const all = measure ? buildingMasses(tables.buildings, id) : prop ? [boxMass(prop)] : [];
+    const wallLook = measure?.walls[0] ?? measure?.looks[0] ?? prop?.looks[0];
+    const roofLook = measure?.roofs[0] ?? measure?.walls[1] ?? wallLook;
+    const wall = wallLook ? book.layerOf(wallLook[0], wallLook[1]) : 0;
+    const roof = roofLook ? book.layerOf(roofLook[0], roofLook[1]) : wall;
+    const made = { kept: all.length ? keptMasses(all) : [], hull: hullOf(all), wall, roof };
+    known.set(id, made);
+    return made;
+  };
+  const byChunk: { masses: [Mass, Placed][]; hulls: [Mass, Placed][] }[] = Array.from({ length: chunkCount }, () => ({
+    masses: [],
+    hulls: [],
+  }));
+  const tops = new Float32Array(chunkCount).fill(-Infinity);
+  for (const piece of pieces) {
+    if (!piece.key.startsWith('building:') && !(piece.row.length === 7 && tables.props[piece.row[0]])) continue;
+    const shapes = shapesOf(piece.row[0]);
+    for (const mass of shapes.kept) byChunk[piece.chunk].masses.push([mass, piece]);
+    if (shapes.hull) byChunk[piece.chunk].hulls.push([shapes.hull, piece]);
+  }
+  const total = byChunk.reduce((sum, chunk) => sum + chunk.masses.length + chunk.hulls.length, 0);
+  const masses = new ArrayBuffer(total * MASS_FLOATS * 4);
+  const [floats, whole] = [new Float32Array(masses), new Uint32Array(masses)];
+  let next = 0;
+  const lay = (list: [Mass, Placed][], tier: number, chunk: number): Range => {
+    const first = next;
+    for (const [mass, piece] of list) {
+      const place = {
+        east: piece.at[0] + plan.centre[0],
+        south: piece.at[1] + plan.centre[1],
+        up: piece.at[2],
+        yaw: piece.at[3],
+      };
+      const shape = massShape(mass, place, plan.centre);
+      tops[chunk] = Math.max(tops[chunk], shape.base + shape.wall + shape.rise);
+      writeMass(floats, whole, next++, shape, shapesOf(piece.row[0]), piece.cell, tier);
+    }
+    return { first, count: next - first };
+  };
+  const massRanges = byChunk.map((chunk, k) => lay(chunk.masses, MASS_TIER_MASSES, k));
+  const hullRanges = byChunk.map((chunk, k) => lay(chunk.hulls, MASS_TIER_HULLS, k));
+  return { masses, massRanges, hullRanges, tops };
+}
+
+/** Ranges laid end to end in one buffer, joined where one starts as the last ends, so a run of chunks is one draw. */
+export function runs(ranges: readonly Range[]): Range[] {
+  const joined: Range[] = [];
+  for (const range of ranges) {
+    if (!range.count) continue;
+    const last = joined[joined.length - 1];
+    if (last && last.first + last.count === range.first) last.count += range.count;
+    else joined.push({ first: range.first, count: range.count });
+  }
+  return joined;
+}

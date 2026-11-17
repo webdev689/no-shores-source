@@ -4,6 +4,7 @@
 
 use combat::Fighter;
 use combat::fighter::FighterId;
+use reach::Standing;
 use std::collections::VecDeque;
 
 /// A player's number in a room, never reused while the room lives: one count with the foes'.
@@ -58,7 +59,8 @@ pub struct Shown {
 /// One input from a player: its number; one tick's intent (movement and the fight's buttons); what their figure
 /// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
 /// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; and a foe's kind to stand
-/// before them, if they asked for one (the Test Ground's panel).
+/// before them, if they asked for one (the Test Ground's panel); and whether they ask to respawn, dead past a node's
+/// section.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -68,6 +70,7 @@ pub struct Input {
     pub arms: u32,
     pub seen: u64,
     pub spawn: Option<u8>,
+    pub respawn: bool,
 }
 
 impl Input {
@@ -87,6 +90,8 @@ impl Input {
 #[derive(Debug)]
 pub struct Player {
     pub fighter: Fighter,
+    /// Where the player stands with the room's section: always inside a room with none.
+    pub standing: Standing,
     pub shown: Shown,
     pub dress: String,
     pub dress_changed: bool,
@@ -113,6 +118,7 @@ impl Player {
     pub fn new(fighter: Fighter, joined: u64) -> Self {
         Player {
             fighter,
+            standing: Standing::Inside,
             shown: Shown::default(),
             dress: String::new(),
             dress_changed: false,

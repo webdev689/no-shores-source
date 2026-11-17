@@ -191,6 +191,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     foes: [{ id: 7, kind: 2, glance: glance(east) }],
     events: [],
     shots: [],
+    ships: [],
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));

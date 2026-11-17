@@ -87,3 +87,27 @@ test('a body stands facing south, its eye at a standing height', async () => {
   assert.equal(rules.eyeHeight(body), 1.7);
   assert.equal(rules.tickSeconds, 1 / 60);
 });
+
+test("a body walking out of its section is warned, dies, and respawns by the room's reach rules", async () => {
+  const reach = await movement();
+  reach.setSection({
+    ring: [
+      [0, 0],
+      [100, 0],
+      [100, 100],
+      [0, 100],
+    ],
+    spawns: [
+      [10, 10],
+      [90, 90],
+    ],
+  });
+  assert.deepEqual(reach.reachTick(50, 50), { kind: 'inside' });
+  assert.deepEqual(reach.reachTick(120, 50), { kind: 'warned', ticksLeft: 599 });
+  assert.deepEqual(reach.reachTick(170, 50), { kind: 'dead', ticks: 0 });
+  assert.equal(reach.respawn(95, 95), null);
+  for (let tick = 0; tick < 240; tick++) reach.reachTick(170, 50);
+  assert.deepEqual(reach.respawn(95, 95), [90, 90]);
+  assert.deepEqual(reach.reachTick(90, 90), { kind: 'inside' });
+  reach.setSection(null);
+});

@@ -118,7 +118,11 @@ impl Room {
                 .map(|(_, other)| other.chest());
             let Some(foe) = self.foes.get_mut(&id) else { continue };
             let fighter = Fighter { target, might: brain.might(), ..foe.fighter };
-            let (next, happening) = step_fighter(&fighter, &intent, &Surroundings { blocks: &self.blocks, target_at });
+            let (next, happening) = step_fighter(
+                &fighter,
+                &intent,
+                &Surroundings { blocks: &self.blocks, terrain: &self.floor, target_at },
+            );
             foe.fighter = next;
             foe.brain = brain;
             if next.dead() {

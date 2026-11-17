@@ -51,6 +51,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Messages Are FlatBuffers]]
 - [[The Server's Shell Is in server]]
 - [[The Audit Branch's Forge Renders Come Over]]
+- [[Every Island Is Seen Whole and Reached by Nodes]]
+- [[The World Is Claude's to Mold]]
+- [[The World as Claude Shapes It]]
 - [[Combat Is Soulframe's, With DFO's Enhanced AI]]
 
 - [[Overlook Is Our Own Game]]

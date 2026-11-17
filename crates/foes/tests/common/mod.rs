@@ -156,7 +156,11 @@ impl Room {
             let target_at = target
                 .and_then(|target| before.iter().find(|(other, _)| *other == target))
                 .map(|(_, other)| other.chest());
-            let (next, happening) = step_fighter(fighter, &intent, &Surroundings { blocks: &self.blocks, target_at });
+            let (next, happening) = step_fighter(
+                fighter,
+                &intent,
+                &Surroundings { blocks: &self.blocks, terrain: &movement::Flat, target_at },
+            );
             *fighter = next;
             if let Some(happening) = happening {
                 happened.push((*id, happening));
