@@ -15,10 +15,10 @@ export const CAMERA = { back: 2, up: 0.5, notch: 0.2, nearest: 0.8, farthest: 10
 
 export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back, shown: 0 };
 
-/** Aiming a ranged weapon: in third person the camera stands over the right shoulder, this far
- *  out, back and up from the head (metres), zoomed in this much; in first person the view zooms in this much. It
- *  eases there and back about as fast as the camera eases. */
-export const AIM = { shoulder: 0.55, back: 1.3, up: 0.1, thirdZoom: 1.4, firstZoom: 1.6, ease: 12 } as const;
+/** Aiming a ranged weapon: in third person the camera stands behind the right shoulder, offset from the middle, this
+ *  far out, back and up from the head (metres), zoomed in a little; in first person the view zooms in this much, the
+ *  hands still. It eases there and back about as fast as the camera eases. */
+export const AIM = { shoulder: 0.65, back: 1.8, up: 0.25, thirdZoom: 1.15, firstZoom: 1.6, ease: 12 } as const;
 
 /** How far into its aiming view a camera is, 0 to 1, eased toward aiming or not over `seconds`. */
 export function aimEased(share: number, aiming: boolean, seconds: number): number {
