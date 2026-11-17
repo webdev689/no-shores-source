@@ -114,8 +114,7 @@ fn event_json(event: &Event) -> Option<Value> {
     })
 }
 
-/// The lay the player's look holds: each gun's unscattered launch and where it stops (or null, still aloft), the
-/// landing zone's radius at their mean range on the water, and whether any would strike her; or no side.
+/// The lay the player's look holds (the naval crate's `Preview`), or no side.
 fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
     let Some(shown) = aim.and_then(|aim| fight.preview(PLAYER, aim, waters, time)) else {
         return Value::Null;

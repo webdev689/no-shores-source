@@ -79,6 +79,40 @@ const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
 /// The ships the client's test expects in the sea's snapshot.
+const PIRATES: [Pirate; 1] = [Pirate { id: 4, seed: 9, x: 1_000.5, y: 2_000.25, heading: 1.5, bold: true }];
+
+/// Deep, still water everywhere.
+struct Open;
+
+impl sailing::waters::Waters for Open {
+    fn at(&self, _x: f64, _y: f64, _time: f64) -> sailing::waters::Spot {
+        sailing::waters::Spot { bed: -50.0, surface: Some(0.0) }
+    }
+}
+
+/// A fight as a snapshot carries it: its player, and its view with the player's look laid to starboard, the captain's
+/// port guns run out and the player's stem ramming her (the client's test reads it back).
+fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
+    let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
+        x,
+        y,
+        heading,
+        ahead: 0.0,
+        abeam: 0.0,
+        turn: 0.0,
+        sail_way: 0.0,
+        rung: 2,
+    };
+    let fight = naval::fight::Fight::meet(at(0.0, 0.0, 0.0), at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
+    let (player, captain) = (naval::fight::PLAYER, naval::fight::CAPTAIN);
+    let events = [
+        naval::fight::Event::RunOut { ship: captain, side: naval::arms::Side::Port },
+        naval::fight::Event::Ram { ship: captain, by: player, point: [1.0, 2.0, 3.0], dealt: 4.5 },
+    ];
+    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0))]
+}
+
 const SHIPS: [(PlayerId, Ship); 2] = [
     (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 10 }),
     (4, Ship { x: 61_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0 }),
@@ -156,7 +190,7 @@ fn a_course_reads_back_as_its_points_and_pace_and_odd_numbers_are_refused() {
     assert!(read_course(&[1, 2, 3]).is_err());
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let odd = Some(builder.create_vector(&[1.0, 2.0, 3.0]));
-    let course = messages::Course::create(&mut builder, &messages::CourseArgs { points: odd, pace: 5 });
+    let course = messages::Course::create(&mut builder, &messages::CourseArgs { points: odd, pace: 5, orders: None });
     builder.finish(course, None);
     assert_eq!(read_course(builder.finished_data()), Err("a course's points are pairs, not 3 numbers".to_owned()));
 }
@@ -213,7 +247,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());
     assert!(read.ships().is_none());
 
-    let bytes = sea_snapshot_bytes(77, &SHIPS);
+    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     let ships: Vec<(PlayerId, Ship)> = sea
         .ships()
@@ -222,6 +256,23 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
         .map(|ship| (ship.player(), Ship { x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() }))
         .collect();
     assert_eq!((sea.tick(), ships), (77, SHIPS.to_vec()));
+    let pirate = sea.pirates().unwrap().get(0);
+    assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
+    let fight = sea.fights().unwrap().get(0);
+    assert_eq!((fight.player(), fight.view().unwrap().iter().collect::<Vec<_>>()), (2, fights_seen()[0].1.clone()));
+}
+
+#[test]
+fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
+    let orders = Orders {
+        helm: sailing::ship::Helm { steer: 0.5, crab: false, climb: -1 },
+        aim: None,
+        fire: true,
+        brace: false,
+        load: None,
+    };
+    assert_eq!(read_sea_input(&orders_bytes(&orders)), Ok(SeaInput::Orders(orders)));
+    assert_eq!(read_sea_input(&course_bytes(&[[1.0, 2.0]], 5)), Ok(SeaInput::Course(vec![[1.0, 2.0]], 5)));
 }
 
 /// The client's test reads these bytes to check that what the server writes, the browser reads to the bit.
@@ -232,5 +283,5 @@ fn the_bytes_for_the_clients_test_are_written() {
     let (players, foes, shots) = (players(), foes(), shots());
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE))).unwrap();
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot_bytes(&snapshot(&players, &foes, &shots))).unwrap();
-    std::fs::write(format!("{folder}/sea.bin"), sea_snapshot_bytes(77, &SHIPS)).unwrap();
+    std::fs::write(format!("{folder}/sea.bin"), sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen())).unwrap();
 }

@@ -47,6 +47,21 @@ export interface SeenShip {
   readonly pace: number;
 }
 
+/** A pirate at sea: her number, where she is, and her heading in radians clockwise from north. */
+export interface SeenPirate {
+  readonly id: number;
+  readonly x: number;
+  readonly y: number;
+  readonly heading: number;
+}
+
+/** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), which
+ *  `fightViewOf` reads. */
+export interface SeenSeaFight {
+  readonly player: number;
+  readonly view: Float64Array;
+}
+
 /** A node's room's word on where its player is: the node's id, and the rect (west, north, east, south) its window of
  *  the ground is cut to, for the browser to cut the same. */
 export interface JoinedNode {
@@ -102,6 +117,8 @@ export type FromRoomMessage =
       readonly events: readonly FightEvent[];
       readonly shots: readonly FlyingShot[];
       readonly ships: readonly SeenShip[];
+      readonly pirates: readonly SeenPirate[];
+      readonly fights: readonly SeenSeaFight[];
     } & FleetPart);
 
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
@@ -146,7 +163,15 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
 export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, pace));
+  builder.finish(Course.createCourse(builder, numbers, pace, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** A fighting ship's orders as their bytes: the naval crate's numbers (`ordersNumbers`), in a course's message. */
+export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(128);
+  const numbers = Course.createOrdersVector(builder, [...orders]);
+  builder.finish(Course.createCourse(builder, 0, 0, numbers));
   return builder.asUint8Array().slice();
 }
 
@@ -221,6 +246,16 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       if (!ship) throw new Error(`snapshot ship ${index} does not read`);
       return { player: ship.player(), x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() };
     });
+    const pirates = Array.from({ length: snapshot.piratesLength() }, (unused, index) => {
+      const pirate = snapshot.pirates(index);
+      if (!pirate) throw new Error(`snapshot pirate ${index} does not read`);
+      return { id: pirate.id(), x: pirate.x(), y: pirate.y(), heading: pirate.heading() };
+    });
+    const fights = Array.from({ length: snapshot.fightsLength() }, (unused, index) => {
+      const fight = snapshot.fights(index);
+      if (!fight) throw new Error(`snapshot fight ${index} does not read`);
+      return { player: fight.player(), view: new Float64Array(fight.viewArray() ?? []) };
+    });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
     return {
       kind: 'snapshot',
@@ -231,6 +266,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       events,
       shots,
       ships,
+      pirates,
+      fights,
       ...fleetOf(snapshot),
     };
   } catch {

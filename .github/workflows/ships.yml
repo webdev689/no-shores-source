@@ -1,0 +1,47 @@
+name: ships
+
+# Paints the Sloop's model with the game's pictures and publishes it and her mesh to R2 with the repository's
+# Cloudflare token, whenever the ship tools change. R2's objects are named by their hashes, so a run changes nothing
+# already published; the log ends with her manifest entry, which a commit then takes into content/ships/ships.json.
+on:
+  push:
+    paths: [tools/ships/**, .github/workflows/ships.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
+      - name: Check the token is set
+        id: token
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_API_TOKEN secret: nothing is published"; fi
+      - name: Install Blender's module and the TypeScript tools
+        if: steps.token.outputs.set == 'true'
+        run: pip install bpy==5.3.0 && npm ci
+      - name: Paint and publish the Sloop
+        if: steps.token.outputs.set == 'true'
+        run: |
+          source=$(node -p "const m = require('./content/ships/ships.json'); m.base + m.ships.sloop.source")
+          curl -sSfo "$RUNNER_TEMP/sloop.blend" "$source"
+          node tools/ships/ship_pictures.ts "$RUNNER_TEMP/pictures.bin"
+          python -I tools/ships/paint_ship.py -- "$RUNNER_TEMP/sloop.blend" "$RUNNER_TEMP/Sloop.blend" \
+            --pictures "$RUNNER_TEMP/pictures.bin"
+          python -I tools/ships/export_ship.py "$RUNNER_TEMP/Sloop.blend" sloop --waterline 0.4
+          node -p "JSON.stringify(require('./content/ships/ships.json').ships.sloop, null, 2)"

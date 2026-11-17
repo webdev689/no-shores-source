@@ -72,9 +72,10 @@ built upon so foes use the guard, the parry and the dodge of [[Combat]] too
   four fifths full: it hands its turn on and walks out to a ring 2 m farther for 2 s, at most once in 10 s.
 - **Shooters.** A ranged turn gates a shot and a shot spends it; held 5 s unused it goes on. Without one an archer stands
   off and holds its fire, never circling. It aims its bow and draws for a full second, aiming up for the arrow's
-  fall, then pulls the trigger, 0.5 to 1.5 s between shots: its arrows are aimed shots, half again as hard as a quick
-  one ([[Combat]]). A target inside 6 m it walks away from, one burst of at
-  most 2 s, out to 7 m; caught or cornered, it fights close with its fists for 3 s, and kites again only 8 s after.
+  fall, then pulls the trigger, 0.5 to 1.5 s between shots: its arrows strike as a quick shot does, never half again
+  as a player's aimed shot does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A target inside 6 m it walks away
+  from, one burst of at most 2 s, out to 7 m; caught or cornered, it fights close with its fists for 3 s, and kites
+  again only 8 s after.
 
 ## Answers to blows
 

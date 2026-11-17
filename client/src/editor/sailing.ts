@@ -16,6 +16,7 @@ export interface SailSource {
 }
 
 const STILL: Helm = { steer: 0, crab: false, climb: 0 };
+export { SAILS_RUNG } from './afloat.ts';
 
 /** The Sloop under the owner's hand in the World Editor: her numbers as the rules last answered them, the ticks the
  *  page owes her, and the rung presses waiting for a step. One step is with the rules at a time. */

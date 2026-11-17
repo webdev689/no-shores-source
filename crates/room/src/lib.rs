@@ -7,6 +7,7 @@
 pub mod fleet;
 mod foes;
 mod judging;
+pub mod pirates;
 mod players;
 pub mod sea;
 

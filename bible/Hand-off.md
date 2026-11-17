@@ -24,8 +24,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
   the ground's own contours, and every edge of land and water at each pixel, at any distance. The sea's reflection
   blurs the sky's clouds by the roughness of waves too small to draw.
-- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2 (the token is a network
-  secret for `api.cloudflare.com` on the Default environment). The [[Test Ground]] plays a forge figure with every
+- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2. The [[Test Ground]] plays a forge figure with every
   move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
 - Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the
   Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, agreeing to the bit
@@ -59,7 +58,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   through both maps. The game keeps at most one frame waiting on the GPU, so a slow machine gets fewer frames rather
   than a stalled browser, and the far map casts masses, not models (302k shadow triangles a frame from the plaza,
   against 448k for the view; tested offline). The owner has tested it and builds on it.
-- The sea navigated from the helm, on `main` (#49), as the owner decided it
+- The sea navigated from the helm, on `main` and published (#49), as the owner decided it
   ([[The Sea Is Navigated From the Helm With the Held Map]]): no nodes marked at sea, a port's icon within 60 km;
   off a coast the offer to dock (within 20 km of the harbour) or go ashore, either flying into the side's overview;
   the navigation panel (Map, Stop and Resume voyage, the pace dial), a stopped voyage resumable from anywhere; and the
@@ -67,6 +66,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   parchment raised in the gauntlets worn, the discovered world inked on it by the GPU, a click setting the
   destination. Discovery is kept in the browser. Tested offline in headless Chromium end to end: the map raised, a
   point of the sea chosen, Set sail, the ship under way.
+- The Sloop painted, under DFO's sails, at sea, with pirates and the pan to combat, on its pull request (#50), as
+  the owner decided it ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]): her model UV-mapped and
+  sorted into parts that wear the procedural painter's pictures; DFO's animated sails on her own corners; the
+  Overworld's ship; pirates from DFO's director in the sea room, which also runs in the page when playing alone; a bold
+  one meeting her starts a fight in the room, and the view pans down to it at true scale ([[Naval Combat]], "At sea").
+  Tested offline: the full check, the room traced in Node, and headless pictures of her and of a fight beginning.
 - On `main`: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
 - On `main` and deployed: the fight
@@ -96,22 +101,19 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- Pull request #48, to review and merge. Its intent carries the aim and its events the stroke, so the page and the
-  rooms deploy together, with the owner's yes. Foe archers' aimed arrows now strike 27, not 18: the owner may want
-  them tuned. Walking or sprinting that does not happen on demand was not reproduced playing alone; when it happens is
-  the owner's to say.
-- Pull request #50 (the painted Sloop, DFO's sails, pirates met at sea and fought in the sea room), to review; it
-  waits on her mesh being published, which needs the `CLOUDFLARE_API_TOKEN` secret in the repository.
-- Pull request #51 (ships in the rooms), after #48. It overlaps #50: both put naval fights in a room, #50 in the sea
-  room (the owner's decision), #51 in a fleet room of many ships. The recommendation on #51: merge #50 first, then
-  rebase #51 so the sea room's fights run on the many-ship fight, and say whether the fleet room stays. #51 also adds
-  `naval` and `sailing` to the crates `room`, `protocol` and `room-wasm` may use, a change to the repo checks' table
-  that needs the owner's agreement.
+- The Cloudflare token: the owner gave it in the chat, so it should be rotated, and the new one saved as the
+  repository's Actions secret `CLOUDFLARE_API_TOKEN` (no environment or secret holds it), for the `ships` workflow and
+  the rooms' deploy. A cloud session cannot deploy the rooms itself (its proxy rewrites the upload token Cloudflare
+  hands back), so they deploy from a by-hand workflow: #52 and #54 each add one, and one should go in.
+- #50's open choices: where another player's colour goes on the Sloop, her 75 m drawn size at sea.
+- #48 and #50 are merged. The intent carries the aim and its events the stroke, so the page and the rooms deploy
+  together, with the owner's yes. Walking or sprinting that does not happen on demand was not reproduced playing
+  alone; when it happens is the owner's to say.
 - Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
-  the Cloudflare token. The deployed rooms keep the speed hack and the two socket faults until that deploy.
-- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys and the R2
-  token are on the unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot
-  reach the forge's renders. A personal `overlook-source` environment allows only the renders' R2 host.
+  the token. The deployed rooms keep the speed hack and the two socket faults until that deploy, and have no pirates.
+- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
+  unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
+  renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
@@ -123,10 +125,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   wasm nor the schema; on foot in a node the browser predicts with an unwrapped look, so it and the room part in the
   last bits; and the session toolkit installs unpinned code. Its smaller findings are fixed on #51.
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
-  [[Naval Combat]] are on `main`, and ramming is on #51. The rest of the pick's step 3 is boarding, crew, quays and
-  ports ([[Pick - Sailing and Naval Combat]]). Boarding waits on the owner: which foe kinds crew a boarded ship, the
-  Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck, which boarding needs, is
-  for the `movement` crate once #50's sea room settles where fights are fought.
+  [[Naval Combat]] are on `main`, with the sea's pirates and fights, and ramming and the fleet room on #51. The rest of
+  the pick's step 3 is boarding, crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's
+  hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
+  crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
+  which boarding needs, is for the `movement` crate.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
@@ -140,10 +143,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   the game draws (its worker opens a landmass without the RMB index, and its city would be built again after every
   stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
-- Browser QA of the game: headless WebGPU loses its device when it presents to a canvas, so a driver hands the game an
-  offscreen texture, paces its frames by the GPU and reads the picture back; the forge's renders allow CORS only from
-  `http://localhost:5173`. #50 keeps the driver as `tools/claude-toolkit/webgpu-shot.cjs`. A driver should pace every
-  frame from the first, and read the page's panel only after a frame has drawn.
+- Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]); a frame
+  there takes seconds, so a fight is seen beginning, not fought through. A driver should pace every frame from the
+  first, and read the page's panel only after a frame has drawn.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
   map, the charted sea's wash laid while the map is up.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them

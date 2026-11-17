@@ -14,3 +14,4 @@ pub mod laying;
 pub mod ram;
 pub mod random;
 pub mod shots;
+pub mod wire;

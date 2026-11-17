@@ -31,6 +31,14 @@ export class LocalRoom implements RoomLink {
     return new LocalRoom(door, snapshot);
   }
 
+  /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
+   *  joined, their ship not yet at sea. */
+  static openSea(module: WebAssembly.Module, layoutText: string, snapshot: (snapshot: Snapshot) => void): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openSea(layoutText)) throw new Error('the world’s layout is not one the sea can open round');
+    return new LocalRoom(door, snapshot);
+  }
+
   send(bytes: Uint8Array<ArrayBuffer>): void {
     this.door.input(this.player, bytes);
   }

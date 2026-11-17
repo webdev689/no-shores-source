@@ -135,7 +135,8 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   fires onto the mark, an arrow laid for its fall; with no mark, along the look, and with one inside the fighter's own
   round across the ground (looking straight down at its feet), down onto it along the look's bearing. An aimed shot
   strikes half again as hard as a quick one: a crossbow's or a gun's at once, a bow's by its draw, from a quick shot's
-  power at none to half again at a full second. Letting the aim go lowers the weapon unfired.
+  power at none to half again at a full second; a foe's drawn shot strikes as a quick one. Letting the aim go lowers
+  the weapon unfired.
 - **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block or a body
   stops it; a pistolet's or thunderlock's ball reaches 60 m along its line at once. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and

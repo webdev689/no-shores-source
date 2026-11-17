@@ -17,7 +17,9 @@ status: in force
 > follows to the target."
 
 Asked which button fires, the owner chose "Left click fires"; how much harder an aimed shot hits, "1.5 times"; what a
-quick, unaimed shot does, "Seek the locked foe"; and how aiming moves and looks, "Half pace, modest zoom".
+quick, unaimed shot does, "Seek the locked foe"; and how aiming moves and looks, "Half pace, modest zoom". Asked how
+hard a foe archer's arrow should hit now that foes draw and aim their bows as players do, the owner chose "Back to
+18", then left it to Claude: "Do your recommendation". Claude recommended 18, a quick shot's, as foes struck before.
 
 ## What it settles
 
@@ -27,4 +29,5 @@ quick, unaimed shot does, "Seek the locked foe"; and how aiming moves and looks,
   or crossbow's side at 1.6 times ([[First Person]]). It moves at half pace with no sprint, lets the lock go, and
   fires onto the crosshair half again as hard; a bow reaches that over a second's charge.
 - A bow in first person has the same two shots.
+- A foe archer aims and draws as a player does, but its arrow strikes as a quick shot, never half again ([[Foes]]).
 - Every shot draws a tracer from the barrel or the arrow, along its flight to where it stops.

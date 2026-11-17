@@ -27,9 +27,11 @@ table Input {
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
 // of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest.
+// In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points.
 table Course {
   points: [double];
   pace: ushort;
+  orders: [double];
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: her helm (the rudder from -1, to port,
@@ -122,6 +124,20 @@ table Ship {
   pace: ushort;
 }
 
+// A pirate at sea: her number, where she is, and her heading in radians clockwise from north.
+table Pirate {
+  id: uint;
+  x: double;
+  y: double;
+  heading: double;
+}
+
+// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs).
+table SeaFight {
+  player: uint;
+  view: [double];
+}
+
 // One ship in a fleet room: her number; whether a captain sails her; her helm's numbers in the sailing crate's order
 // (crates/sailing/src/floats.rs) and her pose; her hull, sail and men, each with what she has of it whole; her state
 // (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; her guns (the seconds each side has left
@@ -177,8 +193,9 @@ table Naval {
 }
 
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
-// happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea; in a
-// fleet room, every ship, the balls aloft, what happened in its fight since the last snapshot, and the fight's clock.
+// happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
+// pirate, and each player's fight; in a fleet room, every ship, the balls aloft, what happened in its fight since the
+// last snapshot, and the fight's clock.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -187,6 +204,8 @@ table Snapshot {
   events: [Event];
   shots: [Flying];
   ships: [Ship];
+  pirates: [Pirate];
+  fights: [SeaFight];
   vessels: [Vessel];
   balls: [Ball];
   naval: [Naval];

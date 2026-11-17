@@ -316,20 +316,33 @@ impl Fight {
             let heading = (to_near + slant).rem_euclid(TAU);
             let heading = if heading < TAU { heading } else { 0.0 };
             let her_seed = draws.seed();
-            let ship = Ship { heading, ..at };
-            let her = Captain::new(PIRATE_SLOOP, her_seed, heading, &SLOOP_ARMS);
-            let command = Command { her, under: sink_depth(her_seed), struck_at: None, gone: None };
-            let vessel = Vessel {
-                pose: pose_of(&ship, &SLOOP, waters, time),
-                ship,
-                damage: Damage::new(&PIRATE_SLOOP, false),
-                guns: Guns::new(),
-                sailor: Sailor::Captain(Box::new(command)),
-            };
-            self.ships.insert(id, vessel);
+            self.enlist(id, Ship { heading, ..at }, her_seed, waters, time);
             return Ok(());
         }
         Err("There is no open water for a captain near the Sloop.".into())
+    }
+
+    /// A fight between the player's Sloop and a pirate captain already at sea: hers at `captain`, cruising on its
+    /// heading, her temper and every chance of the fight drawn from her `seed`.
+    pub fn meet(ship: Ship, captain: Ship, seed: u32, waters: &impl Waters, time: f64) -> Fight {
+        let mut fight = Fight::new(seed);
+        fight.put_to_sea(PLAYER, ship, waters, time);
+        fight.enlist(CAPTAIN, captain, seed, waters, time);
+        fight
+    }
+
+    /// A pirate captain under number `id` in her Sloop at `ship`, cruising on its heading, her temper drawn from `seed`.
+    fn enlist(&mut self, id: ShipId, ship: Ship, seed: u32, waters: &impl Waters, time: f64) {
+        let her = Captain::new(PIRATE_SLOOP, seed, ship.heading, &SLOOP_ARMS);
+        let command = Command { her, under: sink_depth(seed), struck_at: None, gone: None };
+        let vessel = Vessel {
+            pose: pose_of(&ship, &SLOOP, waters, time),
+            ship,
+            damage: Damage::new(&PIRATE_SLOOP, false),
+            guns: Guns::new(),
+            sailor: Sailor::Captain(Box::new(command)),
+        };
+        self.ships.insert(id, vessel);
     }
 
     /// A ship leaves the fight: the captains forget her; balls she fired fly on.

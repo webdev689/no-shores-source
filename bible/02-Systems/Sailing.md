@@ -18,7 +18,12 @@ code:
   - client/src/editor/sailing.ts#Sailing
   - client/src/editor/harbour.ts#Harbour
   - client/src/ships/shipView.ts#ShipView
+  - client/src/ships/sails.ts#SailRig
+  - client/src/ships/sails.ts#sailWind
+  - client/src/ships/sails.ts#gaffTrim
+  - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/export_ship.py#main
+  - tools/ships/paint_ship.py#main
 ---
 # Sailing
 
@@ -64,8 +69,12 @@ The owner's Sloop sails as Come Sail Away's Large Boat II, whose rig is hers: a 
 Its handling is the mod's own, unscaled, and its gain (1.159) DFO's for that rig. Under sail on a beam reach she makes
 2.4 m/s.
 
-Her model is a `.blend`. `tools/ships/export_ship.py` turns what Blender would render into Overlook's mesh: a header
-with her waterline, 20 bytes a vertex (position, normal, colour) and the corners' indices. Her frame is x to her
+Her model is a `.blend`. Its faces are in five part materials, `hull`, `deck`, `spar`, `sail` and `iron`, and its
+UVs are metres, each face laid flat on the axis it faces most so the planks run along her and a spar's grain up it
+(`tools/ships/paint_ship.py` sorted the owner's model so, and packed the game's pictures into it, so Blender shows her
+as the game does). `tools/ships/export_ship.py` turns what Blender would render into Overlook's mesh: a header with
+her waterline, 28 bytes a vertex (position, normal, UV, part) and the corners' indices. Her canvas is left out of the
+mesh: the export writes each sail's corners to `ships.json`, and the game sets the sails on them. Her frame is x to her
 bow, y to starboard and z up, mirrored from the model's as the world (east, south, up) is, so each face keeps the
 model's corner order and reaches the screen counter-clockwise, as the land's and the water's do. The export refuses a
 model whose faces are not wound outward. Her waterline is 0.4 m above the model's z = 0, where her beam nears its
@@ -75,7 +84,27 @@ the rules' Sloop to that waterline. Her `.blend` is on R2 beside it ([[Ship Mode
 cannons are the objects named `Cannon` in it, three a side, fore to aft: the export reads each one's mouth and bore,
 and the boxes a ball can strike (her hull, and each sail's canvas), into `ships.json` for [[Naval Combat]].
 
-## In the World Editor
+## Her look
+
+Each part wears a picture of the [[Procedural Textures]], repeating at 40 texels a metre as the forged towns' do:
+her hull's strakes and her deck's boards are Daggerfall's ship archive (50) as the painter files it, her spars one
+length of grain, her canvas 0.8 m cloths over a faint weave, her guns mottled iron (`shipPictures`).
+
+## Her sails
+
+DFO's sails ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), on her own corners (`SailRig`). Each
+canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large Boat's sizes:
+
+- **Filled.** A sail's wind walks one a second toward where the wind draws it (Come Sail Away's `sailWind`): a gaff
+  fullest with the wind square across it, a staysail with it astern, to the side it blows toward. Full, the gaff
+  bellies 1.1 m and the staysail 0.55 m; hanging, 0.12 and 0.1.
+- **Luffing.** A sail more than 150 degrees off the wind flaps on a sine of the clock, a quarter full each way.
+- **Trimmed.** The gaff swings about its luff to leeward (`gaffTrim`): square off with the wind astern, 45 degrees
+  with it abeam, home by 150 off it, at 100 degrees a second (300 by DFO's rule for the swing).
+- **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, the gaff home.
+
+In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
+along the swell's bearing.
 
 Sail (`B`) puts her to sea at the camera's target, heading where the camera looks; the rules refuse her where the
 water is shallower than her draught, and the camera stands back off. Each frame owes her its time in whole ticks, one
@@ -91,6 +120,8 @@ rides the wave drawn under her ([[Naval Combat]]).
 ## Limits
 
 - One hull, the Sloop.
-- Alone, the editor steps her; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows.
+- Her helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
+- Alone, the editor steps her; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
+  in the sea room's fights, the room steps her by her orders.
 - No current, cargo or crew yet. Hulls are kept apart only in a fight ([[Naval Combat]]), as every fleet room is.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.

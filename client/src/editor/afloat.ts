@@ -7,6 +7,8 @@ import type { Orbit } from './orbit.ts';
 
 /** Her deck and a little over, metres above her waterline: where the camera looks at her. */
 const LOOK_AT_M = 1.5;
+/** The helm's rung with her sails set (crates/sailing/src/ship.rs). */
+export const SAILS_RUNG = 2;
 /** Come Sail Away's wake threshold (a quarter of its sailing speed), m/s, and how far she runs between stirrings of
  *  the water at her bow and quarters, metres. */
 const WAKE_WAY = 0.5;
@@ -95,7 +97,7 @@ export class Afloat {
   }
 
   /** Where she is drawn in the window, her height scaled as the land is drawn. */
-  place(view: LandView, exaggeration: number): ShipPlace {
+  place(view: Pick<LandView, 'leftM' | 'topM'>, exaggeration: number): ShipPlace {
     return {
       x: (this.ship[0] ?? 0) - view.leftM,
       y: (this.ship[1] ?? 0) - view.topM,
@@ -110,5 +112,10 @@ export class Afloat {
   describe(): string {
     const rung = RUNG_WORDS[this.ship[7] ?? 0] ?? '';
     return `${rung} ${this.way().toFixed(1)} m/s${this.pose.aground ? ', aground' : ''}`;
+  }
+
+  /** Whether her sails are set: the helm's top rung. */
+  get sailsSet(): boolean {
+    return this.ship[7] === SAILS_RUNG;
   }
 }

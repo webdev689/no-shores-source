@@ -2,17 +2,20 @@ import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
 import type { MarkView } from '../ships/markView.ts';
+import { type SailRig, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
+import type { Afloat } from './afloat.ts';
 import { aimEye, type Lying, lookBearing, lookRange } from './aim.ts';
 import { type FightInput, type FightSource, Fighting } from './fighting.ts';
 import type { Orbit } from './orbit.ts';
-import type { Afloat } from './afloat.ts';
-import type { Sailing } from './sailing.ts';
+import { SAILS_RUNG, type Sailing } from './sailing.ts';
 
 /** The captain's Sloop is drawn this light: the same model as the player's, darker. */
 const CAPTAIN_SHADE = 0.55;
+/** Where a ship's numbers hold her rung (crates/sailing/src/floats.rs). */
+const SHIP_RUNG = 7;
 /** A fire's flames rise from this far over her waterline (metres). */
 const DECK_M = 1.2;
 /** A ball is drawn this many times its size, to be seen; the lay's arcs a dot every this many seconds of flight. */
@@ -33,6 +36,12 @@ const FAREWELL_S = 4;
  *  her helm's place, the aim's look and camera, and drawing her Sloop, the balls, the lay and the effects. */
 /** What draws the marks: the ship layer's mark view, or a test's. */
 export type MarkDrawer = Pick<MarkView, 'drawInto'>;
+/** The player's ship as a fight steers her: she takes each answer, and says where she is drawn. */
+export type FightingShip = Pick<Sailing, 'adopt' | 'place'>;
+/** Where a fight is drawn from: the window's corner, or the world's own (0, 0) in the game. */
+export type Window = Pick<LandView, 'leftM' | 'topM'>;
+/** A Sloop as the aim sees her: where she is drawn. */
+export type Aboard = Pick<Afloat, 'place'>;
 
 export class Naval {
   private fight: Fighting | null = null;
@@ -51,6 +60,11 @@ export class Naval {
   /** Whether a fight is on: the fight steps her, not her own helm. */
   get fighting(): boolean {
     return this.fight !== null;
+  }
+
+  /** The fight's last answer, while one is on. */
+  get view(): FightView | null {
+    return this.fight?.view ?? null;
   }
 
   /** Whether a fight is on or being called: either way her own helm stands. */
@@ -86,6 +100,12 @@ export class Naval {
       });
   }
 
+  /** Takes up a fight begun elsewhere: the sea room's. */
+  join(fighting: Fighting): void {
+    this.end();
+    this.fight = fighting;
+  }
+
   /** Ends the fight, if one is on or called. */
   end(): void {
     const fighting = this.fight;
@@ -99,8 +119,8 @@ export class Naval {
     seconds: number,
     input: FightInput,
     time: number,
-    sailing: Sailing,
-    view: LandView,
+    sailing: FightingShip,
+    view: Window,
     fail: (error: unknown) => void,
   ): Splash[] {
     const fighting = this.fight;
@@ -127,18 +147,18 @@ export class Naval {
     return splashes;
   }
 
-  /** The look the camera lays while aiming: its bearing off her bow and its range out along her fire. */
-  look(orbit: Orbit, sailing: Sailing, view: LandView): FightLook {
+  /** The look the camera lays while aiming (`lookOf`). */
+  look(orbit: Orbit, sailing: FightingShip, view: Window): FightLook {
     return lookOf(orbit, sailing, view);
   }
 
-  /** The camera while aiming: at DFO's aim eye on the side looked at, looking along the orbit's yaw and pitch. */
-  aimCamera(orbit: Orbit, sailing: Sailing, view: LandView, shown: number): Orbit {
+  /** The camera while aiming (`aimCameraOf`). */
+  aimCamera(orbit: Orbit, sailing: FightingShip, view: Window, shown: number): Orbit {
     return aimCameraOf(orbit, sailing, view, shown);
   }
 
   /** Her footprint on the water while she floats. */
-  hull(view: LandView, waterline: Waterline): HullMask | null {
+  hull(view: Window, waterline: Waterline): HullMask | null {
     const captain = this.fight?.view.captain;
     if (!captain || captain.state === 'sinking' || captain.state === 'sunk') return null;
     const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = captain.ship;
@@ -162,11 +182,12 @@ export class Naval {
   /** Draws her Sloop, the balls aloft, the lay's arcs and the effects, heights as drawn. */
   draw(
     pass: GPURenderPassEncoder,
-    view: LandView,
+    view: Window,
     shown: number,
     camera: ShipCamera,
     ship: ShipView | null,
     now: number,
+    sails: { readonly rig: SailRig; readonly bearing: number; readonly seconds: number } | null,
   ): void {
     const answer = this.fight?.view;
     const marks: Mark[] = this.effects.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
@@ -174,7 +195,11 @@ export class Naval {
       const [x = 0, y = 0, heading = 0] = answer.captain.ship;
       const [heave = 0, pitch = 0, roll = 0] = answer.captain.pose;
       const place = { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
-      if (answer.captain.state !== 'sunk') ship?.drawInto(pass, place, camera, 1, CAPTAIN_SHADE);
+      if (sails) {
+        const set = answer.captain.ship[SHIP_RUNG] === SAILS_RUNG;
+        sails.rig.step(sails.seconds, { offDeg: windOff(heading, sails.bearing), set }, now);
+      }
+      if (answer.captain.state !== 'sunk') ship?.drawInto(pass, place, camera, 1, CAPTAIN_SHADE, sails?.rig ?? null);
       for (const [ballX, ballY, ballZ, radius] of answer.balls)
         marks.push({
           x: ballX - view.leftM,
@@ -189,32 +214,32 @@ export class Naval {
   }
 
   /** The lay's arcs (`arcsOf`) of the fight's answer. */
-  static arcs(answer: FightView, view: LandView, shown: number): Mark[] {
+  static arcs(answer: FightView, view: Window, shown: number): Mark[] {
     return arcsOf(answer.lay, view, shown);
   }
 }
 
 /** Where a Sloop lies, for the aim. */
-function lying(afloat: Afloat, view: LandView): Lying {
-  const place = afloat.place(view, 1);
+function lyingOf(ship: Aboard, view: Window): Lying {
+  const place = ship.place(view, 1);
   return { x: place.x + view.leftM, y: place.y + view.topM, heading: place.heading, heave: place.z };
 }
 
 /** The look the camera lays while aiming from a Sloop: its bearing off her bow, its range out along her fire, and its
  *  ray from the aim eye. */
-export function lookOf(orbit: Orbit, afloat: Afloat, view: LandView): FightLook {
-  const lies = lying(afloat, view);
-  const bearing = lookBearing(orbit.yaw, lies.heading);
-  const eye = aimEye(lies, bearing >= 0 ? 1 : -1);
+export function lookOf(orbit: Orbit, ship: Aboard, view: Window): FightLook {
+  const lying = lyingOf(ship, view);
+  const bearing = lookBearing(orbit.yaw, lying.heading);
+  const eye = aimEye(lying, bearing >= 0 ? 1 : -1);
   const flat = Math.cos(orbit.pitch);
   const way = [Math.sin(orbit.yaw) * flat, -Math.cos(orbit.yaw) * flat, -Math.sin(orbit.pitch)];
-  return { bearing, range: Math.max(0, lookRange(lies, eye, orbit.yaw, -orbit.pitch)), ray: [...eye, ...way] };
+  return { bearing, range: Math.max(0, lookRange(lying, eye, orbit.yaw, -orbit.pitch)), ray: [...eye, ...way] };
 }
 
 /** The camera while aiming from a Sloop: at DFO's aim eye on the side looked at, along the orbit's yaw and pitch. */
-export function aimCameraOf(orbit: Orbit, afloat: Afloat, view: LandView, shown: number): Orbit {
-  const lies = lying(afloat, view);
-  const [x, y, z] = aimEye(lies, lookBearing(orbit.yaw, lies.heading) >= 0 ? 1 : -1);
+export function aimCameraOf(orbit: Orbit, ship: Aboard, view: Window, shown: number): Orbit {
+  const lying = lyingOf(ship, view);
+  const [x, y, z] = aimEye(lying, lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1);
   const ahead = 3;
   const flat = Math.cos(orbit.pitch) * ahead;
   return {
@@ -226,9 +251,9 @@ export function aimCameraOf(orbit: Orbit, afloat: Afloat, view: LandView, shown:
   };
 }
 
-/** A lay's arcs, red on target: each gun's unscattered flight in dots up to where the rules say it stops, a mark
- *  where it strikes her, and the landing zone's ring where it splashes. */
-export function arcsOf(lay: FightLay | null, view: LandView, shown: number): Mark[] {
+/** A lay's arcs, red on target: each gun's unscattered flight in dots up to where the rules say it stops, a mark where
+ *  it strikes her, and the landing zone's ring where it splashes. */
+export function arcsOf(lay: FightLay | null, view: Window, shown: number): Mark[] {
   if (!lay) return [];
   const colour = lay.on_target ? ON_TARGET : ARC;
   const placed = (x: number, y: number, z: number, radius: number, tint: Mark['colour']): Mark => ({

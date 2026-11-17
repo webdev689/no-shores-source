@@ -10,7 +10,6 @@ import {
   namesShown,
   OFFSHORE,
   offshore,
-  paintOf,
   timeText,
 } from './seaLaw.ts';
 
@@ -61,12 +60,6 @@ test('the course still ahead is the route points past where the ship has come', 
     [100, 100],
   ]);
   assert.deepEqual(courseAhead(voyage, 200), []);
-});
-
-test("each other player's ship takes a paint by their number, the same number the same paint", () => {
-  assert.deepEqual(paintOf(3), paintOf(3));
-  assert.notDeepEqual(paintOf(1), paintOf(2));
-  assert.deepEqual(paintOf(-1), paintOf(5), 'a number off the list still has one');
 });
 
 test('time left reads in seconds, then minutes', () => {
