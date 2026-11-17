@@ -83,6 +83,7 @@ export class Hud {
   private readonly voyage: HTMLButtonElement;
   private readonly landfall: HTMLButtonElement;
   private readonly leave: HTMLButtonElement;
+  private readonly manageButton = hudButton('Manage  B', () => this.manageWanted());
   private readonly wheel: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
   /** The shape Manage's panel was last built to, and the place each of its values is written. */
@@ -129,11 +130,7 @@ export class Hud {
         this.paceValue,
         hudButton(']  +', () => this.paceWanted(1)),
       ),
-      seaGroup(
-        'Ship',
-        hudButton('Manage  B', () => this.manageWanted()),
-        this.leave,
-      ),
+      seaGroup('Ship', this.manageButton, this.leave),
     ];
     // Each group after the first stands behind an engraved rail.
     for (const group of groups.slice(1)) group.classList.add(ROLES.rail);
@@ -268,14 +265,17 @@ export class Hud {
       readonly sailing: boolean;
       readonly resumable: boolean;
       readonly landfall: Landfall;
-      /** Whether the helm may be left: the ship is in the sea room. */
+      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and she may be managed (out of
+       *  a fight). */
       readonly canLeave: boolean;
+      readonly canManage: boolean;
     } | null,
   ): void {
     this.sea.hidden = state === null;
     this.landfall.hidden = !state?.landfall;
     if (!state) return;
     this.leave.disabled = !state.canLeave;
+    this.manageButton.disabled = !state.canManage;
     const pace = `×${state.pace}`;
     if (this.paceValue.textContent !== pace) this.paceValue.textContent = pace;
     this.voyage.hidden = !state.sailing && !state.resumable;

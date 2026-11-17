@@ -526,7 +526,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     hud.hints(seaHints({ fighting, landing: flow.mode === 'landing', atHelm, ...aboard.where }));
     hud.marks(shown.marks);
     const onSea = flow.mode === 'sea' && !flow.menu;
-    hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, canLeave: here.inRoom } : null);
+    const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
+    hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
     const build = aboard.managing ? builtSloop() : null;
     const voyage = { heading: here.heading, pace: here.paceStep, note: here.voyageNote };
     hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, sloop.waterline, voyage) : null);
