@@ -3,9 +3,9 @@ import { RoomConnection } from '../network/roomConnection.ts';
 import { type FleetRules, startFleetRules } from '../rules/fleetRules.ts';
 import { FleetSession } from './fleetSession.ts';
 
-/** The room's rules, compiled once for a page that sails in a fleet. */
-async function fleetRulesOf(): Promise<FleetRules> {
-  const bytes = await (await fetch(`${import.meta.env.BASE_URL}room.wasm`)).arrayBuffer();
+/** The room's rules from the `room.wasm` a page serves under `base`, compiled. */
+export async function fleetRulesAt(base: string): Promise<FleetRules> {
+  const bytes = await (await fetch(`${base}room.wasm`)).arrayBuffer();
   return startFleetRules(await WebAssembly.compile(bytes));
 }
 
@@ -15,18 +15,32 @@ async function fleetRulesOf(): Promise<FleetRules> {
  */
 export class FleetBerth {
   readonly url: string;
+  private readonly load: () => Promise<FleetRules>;
   private rules: Promise<FleetRules> | null = null;
   private connection: RoomConnection | null = null;
-  private joining = false;
+  /** The join under way: one let go before the room answers is dropped, its socket closed once it opens. */
+  private joining: object | null = null;
 
-  private constructor(url: string) {
+  private constructor(url: string, load: () => Promise<FleetRules>) {
     this.url = url;
+    this.load = load;
   }
 
-  /** The berth the page's address asks for, or null. */
-  static fromPage(search: string): FleetBerth | null {
+  /** The berth the page's address asks for, or null; its rules loaded by `load` when she first joins. */
+  static fromPage(search: string, load: () => Promise<FleetRules>): FleetBerth | null {
     const url = fleetAddress(new URLSearchParams(search).get('room'));
-    return url === null ? null : new FleetBerth(url);
+    return url === null ? null : new FleetBerth(url, load);
+  }
+
+  /** The room's rules, compiled once; rules that would not load are asked for again on the next join. */
+  private rulesOf(): Promise<FleetRules> {
+    if (this.rules) return this.rules;
+    const compiling = this.load();
+    this.rules = compiling;
+    compiling.catch(() => {
+      if (this.rules === compiling) this.rules = null;
+    });
+    return compiling;
   }
 
   /** Joins the fleet with the Sloop put to sea at (x, y) heading `heading`: her session once the room has welcomed
@@ -37,25 +51,36 @@ export class FleetBerth {
     fail: (error: unknown) => void,
   ): void {
     if (this.joining || this.connection) return;
-    this.joining = true;
-    this.rules ??= fleetRulesOf();
+    const attempt = {};
+    this.joining = attempt;
     let session: FleetSession | null = null;
     const opened = RoomConnection.open(this.url, (snapshot) => session?.receive(snapshot, performance.now() / 1000));
-    Promise.all([this.rules, opened])
+    Promise.all([this.rulesOf(), opened])
       .then(([rules, connection]) => {
-        this.joining = false;
+        if (this.joining !== attempt) {
+          connection.close();
+          return;
+        }
+        this.joining = null;
         this.connection = connection;
         session = new FleetSession(connection, rules, start);
         joined(session);
       })
       .catch((error: unknown) => {
-        this.joining = false;
+        // A socket that opened while the rules failed holds a place in the room: it is closed.
+        opened.then(
+          (connection) => connection.close(),
+          () => undefined,
+        );
+        if (this.joining !== attempt) return;
+        this.joining = null;
         fail(error);
       });
   }
 
-  /** Brings her in: she leaves the fleet. */
+  /** Brings her in, or lets go of her join: she leaves the fleet. */
   leave(): void {
+    this.joining = null;
     this.connection?.close();
     this.connection = null;
   }

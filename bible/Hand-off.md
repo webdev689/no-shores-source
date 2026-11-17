@@ -59,7 +59,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   through both maps. The game keeps at most one frame waiting on the GPU, so a slow machine gets fewer frames rather
   than a stalled browser, and the far map casts masses, not models (302k shadow triangles a frame from the plaza,
   against 448k for the view; tested offline). The owner has tested it and builds on it.
-- The sea navigated from the helm, on its pull request from this branch (#49), as the owner decided it
+- The sea navigated from the helm, on `main` (#49), as the owner decided it
   ([[The Sea Is Navigated From the Helm With the Held Map]]): no nodes marked at sea, a port's icon within 60 km;
   off a coast the offer to dock (within 20 km of the harbour) or go ashore, either flying into the side's overview;
   the navigation panel (Map, Stop and Resume voyage, the pace dial), a stopped voyage resumable from anywhere; and the
@@ -85,6 +85,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   facing the locked foe ([[Locked On, the Figure Faces Its Foe]]); foes drawn without stutter; and ranged weapons that
   aim and fire ([[Ranged Weapons Aim and Fire]]): no guard, quick and aimed shots, over the shoulder and ADS, a
   crosshair, and tracers.
+- Ships in the rooms, on pull request #51 from branch `ccr-6fe90e19-7gfp2g`, stacked on #48, tested offline
+  ([[Server]], "A fleet"; [[Naval Combat]], "The fight", "Ramming", "In a fleet room"): the naval `Fight` holds many
+  ships by number, each sailed by a player's orders or a captain's mind, a captain choosing whom she fights among the
+  players' ships; a fleet room (`/room/fleet-<name>`) where up to 16 players put their Sloops to sea, call up to four
+  captains and fight them together, each browser predicting her own ship through `room.wasm` to the bit; DFO's ram
+  and hull push; and the World Editor sailing there with `?room=`. A golden trace showed the one-captain fight
+  unchanged line for line. Two players and a captain ran 480 s on the local Cloudflare runtime at 57.8 snapshots a
+  second, both predictions equal to the room's ships to the bit.
 
 ## Waiting on the owner
 
@@ -92,7 +100,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   rooms deploy together, with the owner's yes. Foe archers' aimed arrows now strike 27, not 18: the owner may want
   them tuned. Walking or sprinting that does not happen on demand was not reproduced playing alone; when it happens is
   the owner's to say.
-- The sea's navigation and the held map (#49), to test and say yes to merging and publishing.
+- Pull request #50 (the painted Sloop, DFO's sails, pirates met at sea and fought in the sea room), to review; it
+  waits on her mesh being published, which needs the `CLOUDFLARE_API_TOKEN` secret in the repository.
+- Pull request #51 (ships in the rooms), after #48. It overlaps #50: both put naval fights in a room, #50 in the sea
+  room (the owner's decision), #51 in a fleet room of many ships. The recommendation on #51: merge #50 first, then
+  rebase #51 so the sea room's fights run on the many-ship fight, and say whether the fleet room stays. #51 also adds
+  `naval` and `sailing` to the crates `room`, `protocol` and `room-wasm` may use, a change to the repo checks' table
+  that needs the owner's agreement.
 - Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
   the Cloudflare token. The deployed rooms keep the speed hack and the two socket faults until that deploy.
 - Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys and the R2
@@ -105,8 +119,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Next
 
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
-  [[Naval Combat]] are on `main`. Next is the pick's step 3: boarding, ramming, crew, quays and
-  ports ([[Pick - Sailing and Naval Combat]]).
+  [[Naval Combat]] are on `main`, and ramming is on #51. The rest of the pick's step 3 is boarding, crew, quays and
+  ports ([[Pick - Sailing and Naval Combat]]). Boarding waits on the owner: which foe kinds crew a boarded ship, the
+  Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck, which boarding needs, is
+  for the `movement` crate once #50's sea room settles where fights are fought.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
@@ -122,7 +138,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
 - Browser QA of the game: headless WebGPU loses its device when it presents to a canvas, so a driver hands the game an
   offscreen texture, paces its frames by the GPU and reads the picture back; the forge's renders allow CORS only from
-  `http://localhost:5173`. The driver is not kept in the repo yet (task-observer observation 1).
+  `http://localhost:5173`. #50 keeps the driver as `tools/claude-toolkit/webgpu-shot.cjs`. A driver should pace every
+  frame from the first, and read the page's panel only after a frame has drawn.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
   map, the charted sea's wash laid while the map is up.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them

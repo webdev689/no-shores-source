@@ -38,6 +38,13 @@ export class FleetSloop extends Afloat {
     return this.session.balls(now);
   }
 
+  /** Her fires aboard by the room's word, on her deck as predicted (x, y, heave); none once she sinks. */
+  fires(): readonly [number, number, number, number] {
+    const own = this.session.own();
+    const [x = 0, y = 0] = this.ship;
+    return [x, y, this.pose.heave, own && own.state !== 'sinking' ? own.fires : 0];
+  }
+
   /** Her look's lay, as the room would lay it now. */
   lay(look: FleetLook, now: number): FleetLay | null {
     return this.session.lay(look, now);

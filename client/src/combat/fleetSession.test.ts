@@ -119,4 +119,38 @@ test('a captain called by one player is seen by both, and a look abeam lays its 
   fleet.tick((play) => (play === second ? { ...NOTHING, call: 'send off' } : NOTHING));
   for (let tick = 0; tick < 4; tick++) fleet.tick();
   assert.equal(first.others().filter((vessel) => vessel.captain).length, 0, 'sent off');
+  const gone = first.takeEvents().filter((event) => event.kind === 'gone');
+  assert.deepEqual(gone, [{ kind: 'gone', ship: 1, sunk: false }], 'gone from the room, she is still named a captain');
+});
+
+test('two load presses before the room answers the first step the load twice', () => {
+  const fleet = new Fleet(5);
+  const play = fleet.join([200_000, 300_000, 0]);
+  for (let tick = 0; tick < 8; tick++) fleet.tick();
+  assert.equal(play.own()?.load, 1, 'round shot');
+  fleet.tick(() => ({ ...NOTHING, loadSteps: 1 }));
+  fleet.tick(() => ({ ...NOTHING, loadSteps: 1 }));
+  for (let tick = 0; tick < 10; tick++) fleet.tick();
+  assert.equal(play.own()?.load, 3, 'round, grape, then chain');
+});
+
+test("the room's clock holds still for a late snapshot rather than run back", () => {
+  const door = startRoomDoor(compiled);
+  door.openFleet();
+  const player = door.join();
+  const link: RoomLink = { player, dressed: [], lost: null, send: () => undefined, pump: () => undefined };
+  const play = new FleetSession(link, startFleetRules(compiled), [200_000, 300_000, 0]);
+  const snapshots = [0, 1].map(() => {
+    door.tick();
+    const snapshot = readFromRoom(door.snapshot());
+    if (snapshot?.kind !== 'snapshot') throw new Error('the fleet room answers snapshots');
+    return snapshot;
+  });
+  const [early, late] = snapshots as [Snapshot, Snapshot];
+  play.receive(early, 0);
+  const before = play.roomTime(0.2);
+  // The next tick's snapshot comes 0.2 s late: its tick is a sixtieth on, the clock already 0.2 s past.
+  play.receive(late, 0.2);
+  assert.equal(play.roomTime(0.2), before, 'held');
+  assert.ok(play.roomTime(0.45) > before, 'and on again');
 });

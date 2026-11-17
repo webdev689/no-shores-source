@@ -205,9 +205,10 @@ impl Fleet {
         }
     }
 
-    /// Each player's orders this tick, as many as the clock allows and `CATCH_UP` at most, in order; her ship put to
-    /// sea by the first that asks while she is not; and a player a view's lag behind with none to take has her helm
-    /// stand a tick. Answers the orders for the fight and the captains asked for.
+    /// Each player's orders this tick, as many as the clock allows and `CATCH_UP` at most, in order, and none after
+    /// one that fires; her ship put to sea by the first that asks while she is not; and a player a view's lag behind
+    /// with none to take stands a tick, her helm too once she is at sea. Answers the orders for the fight and the
+    /// captains asked for.
     fn take_orders(&mut self, time: f64) -> Taken {
         let (mut orders, mut calls) = (Vec::new(), Vec::new());
         let clock = self.clock;
@@ -231,10 +232,18 @@ impl Fleet {
                 if input.call != Call::None {
                     calls.push((id, input.call));
                 }
+                // The fight judges a release by her brace and her ship after all her orders of the tick: so the one
+                // that fires is her last.
+                if input.orders.fire {
+                    break;
+                }
             }
-            if taken == 0 && found.at_sea && found.stepped + VIEW_LAG < clock - found.joined {
+            // She stands from the moment she joins, as on land: time spent in harbour is not banked to catch up on.
+            if taken == 0 && found.stepped + VIEW_LAG < clock - found.joined {
                 found.stepped += 1;
-                orders.push((id, STANDING));
+                if found.at_sea {
+                    orders.push((id, STANDING));
+                }
             }
         }
         Taken { orders, calls }

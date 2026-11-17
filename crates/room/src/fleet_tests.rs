@@ -1,5 +1,6 @@
 use super::*;
 use naval::fight::{Hurts, sail_hurt};
+use naval::shots::ShotEvent;
 use sailing::waters::OpenSea;
 
 const AT: [f64; 3] = [200_000.0, 300_000.0, 0.5];
@@ -85,6 +86,66 @@ fn a_flood_of_orders_steps_her_no_faster_than_the_rooms_clock() {
         fleet.tick();
     }
     assert_eq!(fleet.acknowledged(player), Some(30), "the rest in time");
+}
+
+#[test]
+fn time_in_harbour_is_not_banked_to_catch_up_on_at_sea() {
+    // One player waits in harbour 600 ticks, then floods the room; another joins as she puts to sea and sends one
+    // order a tick. Each sets her sails, then holds her course.
+    let mut fleet = Fleet::new();
+    let waited = fleet.join().unwrap_or_default();
+    for _ in 0..600 {
+        fleet.tick();
+    }
+    let honest = fleet.join().unwrap_or_default();
+    let (to_wait, to_honest) = (AT, [AT[0] + 5000.0, AT[1], AT[2]]);
+    let helm = |sequence: u32| if sequence <= 3 { CLIMB } else { STANDING.helm };
+    let order = |sequence: u32, at| {
+        let given = orders(sequence, helm(sequence));
+        if sequence == 1 { Input { put_to_sea: Some(at), ..given } } else { given }
+    };
+    let (mut waited_sent, mut honest_sent) = (0, 0);
+    for _ in 0..600 {
+        for _ in 0..CATCH_UP {
+            waited_sent += 1;
+            assert_eq!(fleet.input(waited, order(waited_sent, to_wait)), Ok(()));
+        }
+        honest_sent += 1;
+        assert_eq!(fleet.input(honest, order(honest_sent, to_honest)), Ok(()));
+        fleet.tick();
+    }
+    let run = |player, from: [f64; 3]| {
+        let (east, south) = ship_of(&fleet, player).map_or((0.0, 0.0), |ship| (ship.x - from[0], ship.y - from[1]));
+        (east * east + south * south).sqrt()
+    };
+    let (waited_run, honest_run) = (run(waited, to_wait), run(honest, to_honest));
+    assert!(honest_run > 10.0, "under sail she runs: {honest_run} m");
+    // A view's lag and the slack are 30 ticks to catch up on, 5% of 600.
+    assert!(waited_run < honest_run * 1.06, "she ran {waited_run} m to the honest {honest_run} m");
+}
+
+#[test]
+fn a_release_in_a_late_tick_is_her_last_order_of_it_so_it_is_judged_by_its_own_brace() {
+    let mut fleet = Fleet::new();
+    let player = fleet.join().unwrap_or_default();
+    assert_eq!(fleet.input(player, put(1, AT)), Ok(()));
+    fleet.tick();
+    fleet.take_events();
+    let aim = Some(Aim { bearing_deg: 90.0, range_m: 80.0, ray: None });
+    let fire = Input { orders: Orders { aim, fire: true, ..STANDING }, ..orders(2, STANDING.helm) };
+    let brace = |sequence| Input { orders: Orders { brace: true, ..STANDING }, ..orders(sequence, STANDING.helm) };
+    for input in [fire, brace(3), brace(4)] {
+        assert_eq!(fleet.input(player, input), Ok(()));
+    }
+    fleet.tick();
+    let events = fleet.take_events();
+    let refused = events.iter().any(|(_, event)| matches!(event, Event::Refused { .. }));
+    let fired = events.iter().any(|(_, event)| matches!(event, Event::Shot(ShotEvent::Muzzle { .. })));
+    assert!(fired && !refused, "unbraced when she fired: {events:?}");
+    assert_eq!(fleet.acknowledged(player), Some(2), "none after the release this tick");
+    fleet.tick();
+    assert_eq!(fleet.acknowledged(player), Some(4), "the braces the next tick");
+    assert!(fleet.fight().vessel(player).is_some_and(|vessel| vessel.guns.braced));
 }
 
 #[test]

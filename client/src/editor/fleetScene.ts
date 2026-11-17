@@ -65,6 +65,8 @@ export class FleetScene {
     const toWindow = (point: readonly [number, number, number]) =>
       [point[0] - view.leftM, point[1] - view.topM, point[2]] as const;
     const splashes = this.effects.take(this.play.takeEvents(), now, toWindow);
+    const [x, y, heave, fires] = this.play.fires();
+    this.effects.burn(toWindow([x, y, heave + DECK_M]), fires, now, seconds);
     for (const vessel of this.play.others()) {
       const [x = 0, y = 0] = vessel.ship;
       const [heave = 0] = vessel.pose;

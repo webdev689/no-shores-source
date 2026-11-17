@@ -272,6 +272,7 @@ export async function startLandEditor(
       selected = id;
       status = '';
       sailing = false;
+      fleet?.leave();
       showSelected(true);
       open(id, true);
     },
@@ -361,6 +362,11 @@ export async function startLandEditor(
     const data = viewMode === '3d' ? terrainData() : null;
     const places = session?.places(selected) ?? {};
     overlay.replaceChildren();
+    // Brought in, or walking or on the map before the room let her join, she leaves the fleet.
+    if (fleet && !sailing && (fleet.sloop || (fleet.joining && (walking || viewMode === '2d')))) {
+      if (fleet.joining) status = '';
+      fleet.leave();
+    }
     if (data && view) {
       const brush = brushShown && {
         x: brushShown.x - view.leftM,
@@ -368,8 +374,6 @@ export async function startLandEditor(
         radiusM: brushShown.radiusM,
       };
       const source = session;
-      // Brought in, she leaves the fleet.
-      if (!sailing && fleet?.sloop) fleet.leave();
       const drawn = scene.draw({
         id: selected,
         data,
@@ -589,7 +593,8 @@ export async function startLandEditor(
       requestFrame();
     },
     deactivate() {
-      active = false;
+      [active, sailing] = [false, false];
+      fleet?.leave();
     },
   };
 }

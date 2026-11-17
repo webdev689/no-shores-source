@@ -79,7 +79,7 @@ on Cloudflare.
   moves faster than real time and one catching up after a stall replays no faster than three times over.
 - **A player whose inputs stop** is stepped standing still once they fall a view's lag (24 ticks) behind, so nothing
   they were doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend
-  as speed. Past 30 waiting inputs, the oldest is let go as though taken, so a burst after a stall never breaks the
+  as speed; a body the section killed lies where it fell, but its ticks count the same. Past 30 waiting inputs, the oldest is let go as though taken, so a burst after a stall never breaks the
   order. The room tick a player says their screen showed moves on at most 4 ticks an input, so they cannot pick the
   moment they are judged at. A dress change is taken at most once a second.
 - **The section:** after each player's inputs a node's room judges their body against the node's section ([[Reach]]):
@@ -118,10 +118,12 @@ they choose, all in one fight ([[Naval Combat]]).
   sea there, at that heading, anywhere in the world's frame; after that only her helm moves her.
 - **Orders** are taken as a land room takes inputs: numbered 1, 2, 3 and so on, refused out of order or with a number
   that is not one (a rudder past its throw, a rung of more than one, a look past its half circle or the guns' 100 km);
-  one a tick, never more than the ticks since she joined and 6 of slack, 3 a tick at most to catch up; past 30
-  waiting, the oldest let go as though taken. Each order taken steps her ship once, so late ones catch her up and a
-  browser's prediction of her is her orders stepped in turn. A player whose orders stop lies as she was, riding the
-  swell, until she falls a view's lag (24 ticks) behind; then her helm stands, a tick at a time.
+  one a tick, never more than the ticks since she joined and 6 of slack, 3 a tick at most to catch up, and none in a
+  tick after one that fires, since the fight judges a release by her brace and her ship after all her orders of the
+  tick; past 30 waiting, the oldest let go as though taken. Each order taken steps her ship once, so late ones catch
+  her up and a browser's prediction of her is her orders stepped in turn. A player whose orders stop lies as she was,
+  riding the swell, until she falls a view's lag (24 ticks) behind; then she stands, a tick at a time, from the moment
+  she joins (her helm too once she is at sea), so time spent before putting to sea is not banked to catch up on.
 - **Captains.** An order may call a captain onto the ring round the player's ship, while the room holds fewer than
   four, or send every captain off. A captain who sinks, or lies past every player's ship and is not fighting, leaves
   the room.

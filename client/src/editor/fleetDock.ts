@@ -14,6 +14,7 @@ export const OPEN_WATER_M = 15;
 export class FleetDock {
   private readonly harbour: FleetHarbour;
   private held: FleetSloop | null = null;
+  private asked = false;
 
   constructor(harbour: FleetHarbour) {
     this.harbour = harbour;
@@ -24,6 +25,11 @@ export class FleetDock {
     return this.held;
   }
 
+  /** Whether she has asked to join and the room has not answered yet. */
+  get joining(): boolean {
+    return this.asked;
+  }
+
   /** Joins the fleet with the Sloop put to sea at world (x, y), heading `yaw`, in open water: `joined` once the room
    *  has welcomed her, or `fail` with why not. */
   join(
@@ -32,26 +38,31 @@ export class FleetDock {
     joined: () => void,
     fail: (error: unknown) => void,
   ): void {
-    if (this.held) return;
+    if (this.held || this.asked) return;
     if (-(heightAt(view, x, y) ?? 0) < OPEN_WATER_M) {
       fail(new Error(`In a fleet the Sloop puts to sea in open water, ${OPEN_WATER_M} m deep or more.`));
       return;
     }
     const turn = 2 * Math.PI;
     const heading = ((yaw % turn) + turn) % turn;
+    this.asked = true;
     this.harbour.join(
       [x, y, heading],
       (session) => {
+        this.asked = false;
         this.held = new FleetSloop(session);
         joined();
       },
-      fail,
+      (error) => {
+        this.asked = false;
+        fail(error);
+      },
     );
   }
 
-  /** Brings her in: she leaves the fleet. */
+  /** Brings her in, or lets go of her join: she leaves the fleet. */
   leave(): void {
     this.harbour.leave();
-    this.held = null;
+    [this.held, this.asked] = [null, false];
   }
 }

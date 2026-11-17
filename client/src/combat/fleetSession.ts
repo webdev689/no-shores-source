@@ -53,8 +53,13 @@ export class FleetSession {
   private climbs: number[] = [];
   private calls: SessionInput['call'][] = [];
   private lastLook: FleetLook | null = null;
+  /** The load she last asked for and the orders that asked, until the room has taken them. */
+  private loadAsked: { readonly load: number; readonly sequence: number } | null = null;
   private latest: Snapshot | null = null;
   private receivedAt = 0;
+  private shownTime = 0;
+  /** Every ship a captain sails that the room has shown: a number is never given twice, so one gone stays known. */
+  private readonly captains = new Set<number>();
   private events: FightEvent[] = [];
 
   constructor(link: RoomLink, rules: FleetRules, start: readonly [number, number, number]) {
@@ -83,10 +88,13 @@ export class FleetSession {
     return this.pose;
   }
 
-  /** The room's clock at `now` (page seconds): its last snapshot's tick, and the time since, a little at most. */
+  /** The room's clock at `now` (page seconds): its last snapshot's tick, and the time since, a little at most. A late
+   *  snapshot's next comes soon after it, so the clock holds still meanwhile rather than run back. */
   roomTime(now: number): number {
     const tick = this.latest ? Number(this.latest.tick) : 0;
-    return tick * TICK_SECONDS + Math.min(Math.max(0, now - this.receivedAt), MOST_AHEAD_S);
+    const reckoned = tick * TICK_SECONDS + Math.min(Math.max(0, now - this.receivedAt), MOST_AHEAD_S);
+    this.shownTime = Math.max(this.shownTime, reckoned);
+    return this.shownTime;
   }
 
   /** The room's word on her own ship, once it has her at sea. */
@@ -120,10 +128,12 @@ export class FleetSession {
   receive(snapshot: Snapshot, now: number): void {
     this.latest = snapshot;
     this.receivedAt = now;
+    for (const vessel of snapshot.vessels) if (vessel.captain) this.captains.add(vessel.id);
     const own = this.own();
     const time = this.roomTime(now);
     if (own) {
       this.start = null;
+      if (this.loadAsked && own.acknowledged >= this.loadAsked.sequence) this.loadAsked = null;
       const ship = this.prediction.corrected<ShipFloats>(
         new Float64Array(own.ship),
         own.acknowledged,
@@ -153,7 +163,9 @@ export class FleetSession {
       this.fires = Math.max(0, this.fires - 1);
       const step = Math.sign(this.loadSteps);
       this.loadSteps -= step;
-      const loaded = this.own()?.load ?? 1;
+      // A press on top of one the room has not taken yet steps from that one.
+      const loaded = this.loadAsked?.load ?? this.own()?.load ?? 1;
+      const load = step === 0 ? 0 : ((loaded - 1 + step + LOADS.length) % LOADS.length) + 1;
       const orders: FleetOrders = {
         steer: input.steer,
         crab: input.crab,
@@ -161,11 +173,12 @@ export class FleetSession {
         look: input.look ?? (firing ? this.lastLook : null),
         fire: firing,
         brace: input.brace,
-        load: step === 0 ? 0 : ((loaded - 1 + step + LOADS.length) % LOADS.length) + 1,
+        load,
         putToSea: this.start,
         call: this.calls.shift() ?? 'none',
       };
       const sequence = this.prediction.next(orders);
+      if (load !== 0) this.loadAsked = { load, sequence };
       this.link.send(ordersBytes(sequence, orders));
       this.ship = this.stepped(this.ship, orders, time);
     }
@@ -176,7 +189,7 @@ export class FleetSession {
   balls(now: number): (readonly [number, number, number, number])[] {
     const snapshot = this.latest;
     if (!snapshot) return [];
-    const clock = snapshot.fightClock + Math.min(Math.max(0, now - this.receivedAt), MOST_AHEAD_S);
+    const clock = snapshot.fightClock + this.roomTime(now) - Number(snapshot.tick) * TICK_SECONDS;
     return snapshot.balls
       .map((ball) => ({ ball, flown: clock - ball.born }))
       .filter(({ flown }) => flown >= 0)
@@ -211,7 +224,7 @@ export class FleetSession {
   /** A ship's number as the editor's fight words know it. */
   private known(id: number): number {
     if (id === this.id) return OWN;
-    return this.latest?.vessels.find((vessel) => vessel.id === id)?.captain ? CAPTAIN : OTHER;
+    return this.captains.has(id) ? CAPTAIN : OTHER;
   }
 
   /** An event of the room's fight as the editor's fight shows one; what was another player's own (her guns' refusals,
