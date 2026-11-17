@@ -170,26 +170,35 @@ impl Fight {
             let heading = (to_player + slant).rem_euclid(TAU);
             let heading = if heading < TAU { heading } else { 0.0 };
             let her_seed = draws.seed();
-            let captain_ship = Ship { heading, ..at };
-            let vessel = |ship: Ship, damage: Damage| Vessel {
-                pose: pose_of(&ship, &SLOOP, waters, time),
-                ship,
-                damage,
-                guns: Guns::new(),
-            };
-            return Ok(Fight {
-                clock: 0.0,
-                draws,
-                player: vessel(ship, Damage::new(&LARGE_BOAT, true)),
-                captain: vessel(captain_ship, Damage::new(&PIRATE_SLOOP, false)),
-                her: Captain::new(PIRATE_SLOOP, her_seed, heading, &SLOOP_ARMS),
-                balls: Vec::new(),
-                struck_at: None,
-                under: sink_depth(&SLOOP_ARMS, her_seed),
-                over: None,
-            });
+            return Ok(Self::met(ship, Ship { heading, ..at }, her_seed, draws, waters, time));
         }
         Err("There is no open water for a captain near the Sloop.".into())
+    }
+
+    /// A fight with a pirate captain already at sea: her Sloop at `captain`, cruising on its heading, her temper and
+    /// every chance of the fight drawn from her `seed`.
+    pub fn meet(ship: Ship, captain: Ship, seed: u32, waters: &impl Waters, time: f64) -> Fight {
+        Self::met(ship, captain, seed, Mulberry32::new(seed), waters, time)
+    }
+
+    fn met(ship: Ship, captain: Ship, her_seed: u32, draws: Mulberry32, waters: &impl Waters, time: f64) -> Fight {
+        let vessel = |ship: Ship, damage: Damage| Vessel {
+            pose: pose_of(&ship, &SLOOP, waters, time),
+            ship,
+            damage,
+            guns: Guns::new(),
+        };
+        Fight {
+            clock: 0.0,
+            draws,
+            player: vessel(ship, Damage::new(&LARGE_BOAT, true)),
+            captain: vessel(captain, Damage::new(&PIRATE_SLOOP, false)),
+            her: Captain::new(PIRATE_SLOOP, her_seed, captain.heading, &SLOOP_ARMS),
+            balls: Vec::new(),
+            struck_at: None,
+            under: sink_depth(&SLOOP_ARMS, her_seed),
+            over: None,
+        }
     }
 
     fn sighting(&self) -> Sighting {
