@@ -14,6 +14,7 @@ code:
   - client/src/textures/recipes/rooms.ts#paintRoom
   - client/src/textures/recipes/things.ts#paintThing
   - client/src/textures/recipes/ground.ts#paintTerrain
+  - client/src/textures/shipPictures.ts#shipPictures
   - content/forged/buildings.json
 ---
 # Procedural Textures
@@ -32,6 +33,8 @@ model's mapping holds. No texture file is read.
   named for (`wall`, `roof`, `window`, `door`, `floor`, `ceiling`, `slope`, `prop`, `cloth`), carried to every
   climate's and season's turn of it. Within an archive that holds many kinds, the use chooses what is painted.
   `pictureArchives(uses)` lists the archives those uses name.
+- `shipPictures()` answers the five pictures a ship's parts wear ([[Sailing]]): hull and deck from the ship archive,
+  spar, canvas and iron painted on the same surface and finish.
 - `pictureSize(archive, record)` gives a record's size and frames from the catalog; `climateArchive` moves an
   archive to a climate (desert, mountain, temperate, swamp) and season (summer, winter, rain); `PALETTE_RGB` holds
   the 256 colours.

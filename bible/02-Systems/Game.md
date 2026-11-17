@@ -17,7 +17,7 @@ code:
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
   - client/src/game/seaLaw.ts#continentToOpen
-  - client/src/game/meshes.ts#shipMesh
+  - client/src/game/sea.ts#SeaShip
   - client/src/game/rooms.ts#roomsFrom
   - client/src/heldmap/heldMap.ts#HeldMap
 ---
@@ -81,9 +81,10 @@ player comes back at the section's spawn nearest where they fell. A dead body li
 `Sea` is the [[Overworld]] in play. The first return puts the ship off Overlook's harbour: out from the city's middle
 through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left.
 
-- **The ship** is our own, built in code (`shipMesh`): a 30 m two-masted trader, its band and pennant in the owner's
-  paint (the player's own deep blue), riding a little on the swell. The Overworld is not to scale, and ships are drawn
-  2.5 times their size so one reads from the raised view.
+- **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures, riding a little on the swell, her sails
+  set while she is under way and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is
+  not to scale: a ship is drawn 75 m long (twelve times the Sloop), so one reads from the raised view. Every other
+  player's ship is the Sloop too.
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's

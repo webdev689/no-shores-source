@@ -2,16 +2,19 @@ import type { FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
 import type { MarkView } from '../ships/markView.ts';
+import { type SailRig, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { aimEye, type Lying, lookBearing, lookRange } from './aim.ts';
 import { type FightInput, type FightSource, Fighting } from './fighting.ts';
 import type { Orbit } from './orbit.ts';
-import type { Sailing } from './sailing.ts';
+import { SAILS_RUNG, type Sailing } from './sailing.ts';
 
 /** The captain's Sloop is drawn this light: the same model as the player's, darker. */
 const CAPTAIN_SHADE = 0.55;
+/** Where a ship's numbers hold her rung (crates/sailing/src/floats.rs). */
+const SHIP_RUNG = 7;
 /** A fire's flames rise from this far over her waterline (metres). */
 const DECK_M = 1.2;
 /** A ball is drawn this many times its size, to be seen; the lay's arcs a dot every this many seconds of flight. */
@@ -180,6 +183,7 @@ export class Naval {
     camera: ShipCamera,
     ship: ShipView | null,
     now: number,
+    sails: { readonly rig: SailRig; readonly bearing: number; readonly seconds: number } | null,
   ): void {
     const answer = this.fight?.view;
     const marks: Mark[] = this.effects.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
@@ -187,7 +191,11 @@ export class Naval {
       const [x = 0, y = 0, heading = 0] = answer.captain.ship;
       const [heave = 0, pitch = 0, roll = 0] = answer.captain.pose;
       const place = { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
-      if (answer.captain.state !== 'sunk') ship?.drawInto(pass, place, camera, 1, CAPTAIN_SHADE);
+      if (sails) {
+        const set = answer.captain.ship[SHIP_RUNG] === SAILS_RUNG;
+        sails.rig.step(sails.seconds, { offDeg: windOff(heading, sails.bearing), set }, now);
+      }
+      if (answer.captain.state !== 'sunk') ship?.drawInto(pass, place, camera, 1, CAPTAIN_SHADE, sails?.rig ?? null);
       for (const [ballX, ballY, ballZ, radius] of answer.balls)
         marks.push({
           x: ballX - view.leftM,

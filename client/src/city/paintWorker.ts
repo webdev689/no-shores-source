@@ -1,6 +1,7 @@
 // Paints the city's pictures off the page's thread: each takes 20 to 40 ms, and a city wears a hundred or more.
 import { paintPicture, type PictureUse } from '../textures/picture.ts';
 import { levelsOf, resampled, type LayerLevels } from './layerImage.ts';
+import { LAYER_SIZE } from './pictures.ts';
 
 /** A picture to paint, for its layer. */
 export type PaintJob = {
@@ -29,7 +30,7 @@ scope.addEventListener('message', (event) => {
     for (let texel = 0; texel < picture.rgba.length; texel += 4)
       for (let channel = 0; channel < 3; channel++)
         picture.rgba[texel + channel] = Math.min(255, Math.round(picture.rgba[texel + channel] * tint[channel]));
-  const levels = picture ? levelsOf(resampled(picture.rgba, picture.width, picture.height)) : null;
+  const levels = picture ? levelsOf(resampled(picture.rgba, picture.width, picture.height), LAYER_SIZE) : null;
   scope.postMessage(
     { layer, levels, milliseconds: performance.now() - started },
     levels ? levels.map((level) => level.buffer) : [],

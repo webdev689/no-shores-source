@@ -25,18 +25,11 @@ import { lookOf, type Shot } from './camera.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
 import type { Landmass } from './landmass.ts';
+import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
+import type { Waterline } from '../ships/shipMesh.ts';
+import type { ShipPlace } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import type { Mesh, Placing } from './meshView.ts';
-import {
-  courseAhead,
-  declutter,
-  type Landfall,
-  landfallOf,
-  namesShown,
-  paintOf,
-  PORT_SEEN_M,
-  timeText,
-} from './seaLaw.ts';
+import { courseAhead, declutter, type Landfall, landfallOf, namesShown, PORT_SEEN_M, timeText } from './seaLaw.ts';
 
 /** The world's frame, metres: every voyage between landmasses is planned over it. */
 const FRAME = { leftM: 0, topM: 0, ...WORLD_FRAME } as const;
@@ -45,23 +38,19 @@ const FRAME = { leftM: 0, topM: 0, ...WORLD_FRAME } as const;
 const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } as const;
 /** Marks at sea nearer each other on the picture than this are one: the nearer is shown. */
 const MARK_GAP_PX = 30;
-/** The Overworld is not to scale: ships are drawn this many times their size, so one reads from the raised view. */
-const SHIP_SCALE = 2.5;
-/** A ship's waterline as drawn, half its length and beam, metres: the hull's (meshes.ts STATIONS) at the waterline. */
-const WATERLINE_HALF_M = [14 * SHIP_SCALE, 2.8 * SHIP_SCALE] as const;
+/** The Overworld is not to scale: a ship is drawn this long, metres, so one reads from the raised view. */
+const SHIP_DRAWN_M = 75;
 /** The way a ship under way shows the water, m/s: her bow wave foams whole. */
 const UNDER_WAY = 4;
 /** The view the ship first comes to: lower than DFO's, so the island it lies off stands in it. */
 const FIRST_TILT = (30 * Math.PI) / 180;
 /** Seconds the view takes to fall back from an island's side to the ship. */
 const FLY_BACK_SECONDS = 1.4;
-/** The helm, on the stern castle: how far aft of the ship's middle and how high over the water the eye stands there,
- *  metres before the ship is drawn larger, and how far down it looks. */
-const HELM = { aftM: 11.5, eyeM: 6.1, pitch: 0.1 } as const;
+/** The helm, behind the Sloop's wheel on her quarterdeck: how far aft of her middle and how high over the water the
+ *  eye stands there, metres before she is drawn larger, and how far down it looks. */
+const HELM = { aftM: 2.7, eyeM: 2.5, pitch: 0.1 } as const;
 /** Seconds the view takes to come down to the helm, or go back up from it. */
 const HELM_SECONDS = 1.1;
-/** The player's own ship's paint: a deep sea blue. */
-const OWN_PAINT = [0.13, 0.36, 0.58] as const;
 /** A mark stands this far over the ground it marks, metres. */
 const MARK_RISE_M = 2;
 
@@ -88,9 +77,15 @@ type SeaView =
   | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' };
 
 /** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
+/** A ship at sea as drawn: her place, larger than life, and her sails' rig. */
+export interface SeaShip {
+  readonly place: ShipPlace;
+  readonly rig: SailRig;
+}
+
 export interface SeaFrame {
   readonly shot: Shot;
-  readonly ships: readonly Placing[];
+  readonly ships: readonly SeaShip[];
   /** Each ship's footprint on the water, world metres: none inside her, foam round her bow under way. */
   readonly hulls: readonly HullMask[];
   readonly marks: readonly ScreenMark[];
@@ -114,7 +109,10 @@ export interface SeaFrame {
 export class Sea {
   private landmass: Landmass;
   private readonly outlines: readonly (readonly Point2[])[];
-  private readonly shipMesh: Mesh;
+  /** Her waterline and sails; how many times her size she is drawn; each ship's rig by who sails her. */
+  private readonly hull: { readonly waterline: Waterline; readonly sails: readonly SailCorners[] };
+  private readonly scale: number;
+  private readonly rigs = new Map<number | 'own', SailRig>();
   private ship: { x: number; y: number; heading: number };
   private voyage: Voyage | null = null;
   /** Where the last voyage set out for, kept while it is stopped short, so it can be resumed. */
@@ -139,13 +137,14 @@ export class Sea {
   constructor(
     landmass: Landmass,
     outlines: readonly (readonly Point2[])[],
-    shipMesh: Mesh,
+    hull: { readonly waterline: Waterline; readonly sails: readonly SailCorners[] },
     start: Point2,
     heading: number,
   ) {
     this.landmass = landmass;
     this.outlines = outlines;
-    this.shipMesh = shipMesh;
+    this.hull = hull;
+    this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
     this.ship = { x: start[0], y: start[1], heading };
     this.camera = { ...initialCamera([start[0], start[1], 0], heading), tilt: FIRST_TILT };
     this.seaRig = this.camera;
@@ -370,8 +369,9 @@ export class Sea {
     if (this.view.kind === 'sail') this.camera = zoomCamera(this.camera, notches, ceilingFor(null));
   }
 
-  /** One frame at sea, `dt` seconds on, at world time `time`, on a picture of `viewport` CSS pixels. */
-  frame(dt: number, time: number, viewport: Viewport, turn: number, tilt: number): SeaFrame {
+  /** One frame at sea, `dt` seconds on, at world time `time`, on a picture of `viewport` CSS pixels, the steady
+   *  wind blowing toward `windBearing` (radians clockwise from north). */
+  frame(dt: number, time: number, viewport: Viewport, turn: number, tilt: number, windBearing: number): SeaFrame {
     this.viewport = viewport;
     if (this.voyage) {
       const fix = sail(this.voyage, this.travelled, dt, this.pace);
@@ -403,7 +403,7 @@ export class Sea {
     const seaShot: Shot = { eye: pose.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
     return {
       shot: this.view.kind === 'helm' ? this.helmShot(dt, time, seaShot) : seaShot,
-      ships: this.ships(time),
+      ships: this.ships(dt, time, windBearing),
       hulls: this.hulls(),
       marks: this.marks(pose, viewport),
       note: this.note(),
@@ -425,9 +425,9 @@ export class Sea {
     const { heading } = this.ship;
     // The eye rides the swell with the ship, as she is drawn.
     const eye = [
-      this.ship.x - Math.sin(heading) * HELM.aftM * SHIP_SCALE,
-      this.ship.y + Math.cos(heading) * HELM.aftM * SHIP_SCALE,
-      HELM.eyeM * SHIP_SCALE + 0.35 * Math.sin(time * 0.9) - 0.4,
+      this.ship.x - Math.sin(heading) * HELM.aftM * this.scale,
+      this.ship.y + Math.cos(heading) * HELM.aftM * this.scale,
+      HELM.eyeM * this.scale + 0.35 * Math.sin(time * 0.9) - 0.4,
     ] as const;
     const turn = Math.atan2(Math.sin(heading - sea.yaw), Math.cos(heading - sea.yaw));
     const mix = (from: number, to: number) => from + (to - from) * eased;
@@ -464,32 +464,41 @@ export class Sea {
     });
   }
 
-  private ships(time: number): Placing[] {
-    // Each ship rides the swell a little out of step with the others.
-    const riding = (
-      x: number,
-      y: number,
-      heading: number,
-      paint: readonly [number, number, number],
-      phase: number,
-    ) => ({
-      mesh: this.shipMesh,
-      at: [x, y, 0.35 * Math.sin(time * 0.9 + phase) - 0.4] as const,
-      scale: SHIP_SCALE,
-      heading,
-      roll: 0.035 * Math.sin(time * 0.7 + phase),
-      pitch: 0.015 * Math.sin(time * 0.53 + phase),
-      paint,
-    });
-    const own = riding(this.ship.x, this.ship.y, this.ship.heading, OWN_PAINT, 0);
-    const others = (this.room?.others ?? []).map((ship) =>
-      riding(ship.x, ship.y, ship.heading, paintOf(ship.player), ship.player),
-    );
-    return [own, ...others];
+  private ships(dt: number, time: number, windBearing: number): SeaShip[] {
+    // Each ship rides the swell a little out of step with the others, her sails set while she is under way.
+    const riding = (who: number | 'own', x: number, y: number, heading: number, underWay: boolean): SeaShip => {
+      const phase = who === 'own' ? 0 : who;
+      let rig = this.rigs.get(who);
+      if (!rig) {
+        rig = new SailRig(this.hull.sails);
+        this.rigs.set(who, rig);
+      }
+      rig.step(dt, { offDeg: windOff(heading, windBearing), set: underWay }, time + phase);
+      const place = {
+        x,
+        y,
+        z: 0.35 * Math.sin(time * 0.9 + phase) - 0.4,
+        heading,
+        roll: 0.035 * Math.sin(time * 0.7 + phase),
+        pitch: 0.015 * Math.sin(time * 0.53 + phase),
+        scale: this.scale,
+      };
+      return { place, rig };
+    };
+    const others = this.room?.others ?? [];
+    for (const who of this.rigs.keys())
+      if (who !== 'own' && !others.some((ship) => ship.player === who)) this.rigs.delete(who);
+    return [
+      riding('own', this.ship.x, this.ship.y, this.ship.heading, this.voyage !== null),
+      ...others.map((ship) => riding(ship.player, ship.x, ship.y, ship.heading, ship.pace > 0)),
+    ];
   }
 
   private hulls(): HullMask[] {
-    const [halfLength, halfBeam] = WATERLINE_HALF_M;
+    const [halfLength, halfBeam] = [
+      (this.hull.waterline.lengthM / 2) * this.scale,
+      (this.hull.waterline.beamM / 2) * this.scale,
+    ];
     const hull = (x: number, y: number, heading: number, moving: boolean): HullMask => ({
       x,
       y,

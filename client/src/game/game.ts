@@ -19,6 +19,8 @@ import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
+import { loadShip, shipSails } from '../ships/shipMesh.ts';
+import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -27,18 +29,18 @@ import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
-import { shipMesh } from './meshes.ts';
-import { MeshView, type Placing } from './meshView.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
-import { Sea } from './sea.ts';
+import { Sea, type SeaShip } from './sea.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
 const FIRST_NODE = 'overlook-social';
+/** The most ships drawn at sea in a frame: the player's and those near it. */
+const SEA_SHIPS = 16;
 /** The islands' names the owner has given, by continent. */
 const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 /** The region every island lies in. */
@@ -100,9 +102,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const meshes = new MeshView(gpu);
-  const ship = meshes.mesh(shipMesh());
-  const [world, rmbText, movement, { forge, firstPerson, store }] = await Promise.all([
+  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
     fetch(`${base}world/rmb/index.json`)
       .then((answer) => (answer.ok ? answer.text() : null))
@@ -114,6 +114,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       })
       .then(startMovementRules),
     openForge(gpu, figureView),
+    loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'), SEA_SHIPS)),
   ]);
   const { continents } = world;
   const cityAssets = loadCityAssets(base);
@@ -224,7 +225,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea = new Sea(
         landmass,
         continents.map((each) => each.outline),
-        ship,
+        sloop,
         anchorage,
         heading,
       );
@@ -398,11 +399,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   });
 
   /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides. */
-  const standing = (placings: readonly Placing[], figures: readonly CardAt[]): Drawer[] => {
+  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[]): Drawer[] => {
     const found: (Drawer | null)[] = [
       drawers.city,
       drawers.nature,
-      { drawInto: (pass, fromEye, shot) => meshes.drawInto(pass, fromEye, shot.eye, placings) },
+      {
+        drawInto: (pass, fromEye, shot) =>
+          ships.forEach((ship, slot) =>
+            sloop.drawInto(pass, ship.place, { fromEye, eye: shot.eye }, slot, 1, ship.rig),
+          ),
+      },
       {
         castInto: (pass, fromEye, shot, _time, shadow) =>
           figureView.castInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
@@ -444,7 +450,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const turn = held('turnRight') - held('turnLeft');
     const tilt = held('lookDown') - held('lookUp');
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const shown = here.frame(seconds, clock, viewport, turn, tilt);
+    const shown = here.frame(seconds, clock, viewport, turn, tilt, scene.land?.swell?.bearing ?? 0);
     // What a lookout sees is discovered as the ship sails.
     if (flow.mode === 'sea') discovered.lookout(here.position);
     if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
