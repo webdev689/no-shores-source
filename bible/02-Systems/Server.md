@@ -197,7 +197,7 @@ so every decision is Rust and the shell only carries bytes and time.
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`.
   `npm run server:deploy` deploys it, with the owner's yes each time ([[Ask Before Deploying]]); CI does not. From a
   cloud session it is deployed by running the `rooms` workflow on `main` by hand, which checks the commit and then
-  deploys with the repository's `CLOUDFLARE_API_TOKEN` secret: the session's own proxy puts the saved token in place
+  deploys with the repository's `CLOUDFLARE_SECRET` secret: the session's own proxy puts the saved token in place
   of the short-lived one wrangler uploads the node files with, so a deploy from the session itself is refused.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground played alone runs the same room in its own WebAssembly, ticked by the page.

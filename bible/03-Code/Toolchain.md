@@ -55,8 +55,9 @@ code:
 - **`npm run server:bundle`** bundles the Worker as a deploy would, into `target/server/`, without deploying.
   `cargo xtask check` runs it last.
 - **`npm run server:deploy`** deploys it, with the owner's yes each time ([[Ask Before Deploying]]). It needs
-  `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token; in a cloud session the token is a network secret the proxy adds, so
-  `CLOUDFLARE_API_TOKEN` holds a placeholder.
+  `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token. A cloud session cannot run it: its proxy puts its saved token in
+  place of the short-lived one wrangler uploads the node files with. There the `rooms` workflow deploys instead,
+  with the repository's `CLOUDFLARE_SECRET` secret ([[Server]]).
 
 ## The toolkit
 

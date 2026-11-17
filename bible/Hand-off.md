@@ -93,7 +93,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- The Cloudflare token: the repository's Actions secret `CLOUDFLARE_API_TOKEN` is saved, for the `ships` workflow and
+- The Cloudflare token: the repository's Actions secret `CLOUDFLARE_SECRET` is saved, for the `ships` workflow and
   the rooms' deploy. The one the owner gave in the chat should be rotated if the secret still holds it.
 - #50, her painted model and mesh published to R2: to test and say yes to merging and publishing. Its open choices: where another
   player's colour goes on the Sloop, her 75 m drawn size at sea.
