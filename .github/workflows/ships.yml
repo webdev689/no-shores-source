@@ -26,11 +26,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
       - name: Check the token is set
-        run: test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::the repository has no CLOUDFLARE_API_TOKEN secret"; exit 1; }
+        id: token
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_API_TOKEN secret: nothing is published"; fi
       - name: Install Blender's module and the TypeScript tools
+        if: steps.token.outputs.set == 'true'
         run: pip install bpy==5.3.0 && npm ci
       - name: Paint and publish the Sloop
+        if: steps.token.outputs.set == 'true'
         run: |
           source=$(node -p "const m = require('./content/ships/ships.json'); m.base + m.ships.sloop.source")
           curl -sSfo "$RUNNER_TEMP/sloop.blend" "$source"
