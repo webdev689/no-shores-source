@@ -36,6 +36,7 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "navmesh", workspace: &["movement"], outside: &["libm"], door: false },
     CrateRule { name: "foes", workspace: &["combat", "movement"], outside: &["libm"], door: false },
     CrateRule { name: "reach", workspace: &[], outside: &[], door: false },
+    CrateRule { name: "gear", workspace: &[], outside: &["serde", "serde_json", "libm"], door: false },
     CrateRule {
         name: "room",
         workspace: &["combat", "foes", "land", "movement", "naval", "navmesh", "reach", "sailing", "world"],

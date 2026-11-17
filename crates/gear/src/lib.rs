@@ -1,0 +1,31 @@
+//! Gear and power, the same on the server and in every browser, after Destiny 1 at launch: items of five rarities,
+//! their nodes unlocked by XP and bought with Aurem, fragments, island resources and Essence; Prestige carried by
+//! armour raising a player past level 20; a weapon's Attack and armour's Defense against a foe's level; Vestiges, the
+//! sealed drops, opened in a social space; and everything a player holds. See the Gear note in the bible.
+
+pub mod asks;
+pub mod catalogue;
+pub mod character;
+pub mod dice;
+pub mod grid;
+pub mod item;
+pub mod kinds;
+pub mod power;
+pub mod rarity;
+pub mod rewards;
+pub mod vestige;
+
+pub use asks::{Ask, Done, Here, Refusal};
+pub use character::{At, Character, Materials, Vestige};
+pub use item::Item;
+pub use kinds::{Kind, Slot};
+pub use rarity::Rarity;
+
+#[cfg(test)]
+mod asks_tests;
+#[cfg(test)]
+mod item_tests;
+#[cfg(test)]
+mod power_tests;
+#[cfg(test)]
+mod vestige_tests;

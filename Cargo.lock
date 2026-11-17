@@ -58,6 +58,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gear"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"

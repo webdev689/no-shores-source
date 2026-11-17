@@ -64,6 +64,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
 - [[The Rooms Deploy on Each Merge]]
+- [[Gear and Power Follow Destiny 1 Vanilla]]
+- [[Gear as Claude Shapes It]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
