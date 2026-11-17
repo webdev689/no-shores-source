@@ -10,6 +10,8 @@ use combat::floats::{FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS};
 use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
+use naval::wire::view_numbers;
+use protocol::SeaInput;
 use room::sea::{CourseRefused, Sea};
 use room::{Floor, FoeSeen, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
@@ -165,15 +167,19 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
             },
         },
-        Opened::Sea(sea) => match protocol::read_course(bytes) {
-            Err(_) => NOT_AN_INPUT,
-            Ok((points, pace)) => match sea.course(player, &points, pace) {
+        Opened::Sea(sea) => {
+            let asked = match protocol::read_sea_input(bytes) {
+                Err(_) => return NOT_AN_INPUT,
+                Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
+                Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
+            };
+            match asked {
                 Ok(()) => TAKEN,
                 Err(CourseRefused::NoSuchPlayer) => NO_SUCH_PLAYER,
                 Err(CourseRefused::TooSoon) => TOO_SOON,
                 Err(_) => REFUSED,
-            },
-        },
+            }
+        }
     });
     answer.unwrap_or(NO_SUCH_PLAYER)
 }
@@ -201,7 +207,15 @@ pub fn snapshot() -> Vec<u8> {
             };
             protocol::snapshot_bytes(&snapshot)
         }
-        Opened::Sea(sea) => protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>()),
+        Opened::Sea(sea) => {
+            let fights: Vec<(u32, Vec<f64>)> = sea
+                .fights()
+                .map(|(player, fought)| {
+                    (player, view_numbers(&fought.fight, &fought.events, fought.orders.aim.as_ref()))
+                })
+                .collect();
+            protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>(), sea.pirates(), &fights)
+        }
     })
     .unwrap_or_default()
 }
