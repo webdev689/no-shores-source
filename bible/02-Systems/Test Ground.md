@@ -17,6 +17,7 @@ code:
   - client/src/forge/compose.ts#composeFrame
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
+  - client/src/testground/blood.ts#TestgroundBlood
 ---
 # Test Ground
 
@@ -71,6 +72,8 @@ room's word for it, so playing alone and online are the same game.
   drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
   edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
   one. Arrows and bolts are drawn in flight.
+- **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, away from its
+  striker; a wounded body drips a trail, and a dead one lies in a spreading pool. `?blood=off` draws none.
 - **The display.** Health, stamina and poise at the bottom left, the stamina flashing when a swing or a dodge is
   pressed with none; the soft lock's target marked at its chest, with its name, health and poise at the top; a small
   health bar over each struck foe within 16 m; words on a dark chip over whoever was struck for each blow and what it

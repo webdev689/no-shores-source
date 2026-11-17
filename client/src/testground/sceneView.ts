@@ -134,6 +134,8 @@ export class SceneView implements CardMaker {
   private markCount = 0;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
   private depth: GPUTexture | null = null;
+  /** Draws into the scene's pass after the ground and blocks and before the cards, as blood does. */
+  underCards: ((pass: GPURenderPassEncoder) => void) | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -398,6 +400,7 @@ export class SceneView implements CardMaker {
       pass.setVertexBuffer(0, this.blockVertices.buffer);
       pass.draw(this.blockVertices.count);
     }
+    this.underCards?.(pass);
     pass.setPipeline(this.cards);
     pass.setBindGroup(0, this.sceneGroup);
     drawn.forEach(({ card, x, y, z, flip, flash }, index) => {
