@@ -120,6 +120,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]), in three parts. Part 1 is in
+  review: the [[Interface]]'s Enhanced Plus kit, the sea bar in it, and the Sloop at true scale at the helm. Part 2
+  is Manage: the view panned down to the Sloop, the vessel's statistics on an Enhanced Plus panel, the player at the
+  helm and stand-in crew wandering, cargo and crew marked as later. Part 3 is Leave the helm: the player roams the
+  deck while the helmsman sails her on, and walks to the wheel to take the helm again. A body on a moving deck is for
+  the `movement` crate and the sea room, which is the authority.
 - A whole-repo audit's findings are all fixed, with the owner's yes: the smaller with #51, then the five larger (a
   flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's wrap on
   foot, and the session kit's unpinned downloads). The rooms take them when next deployed.

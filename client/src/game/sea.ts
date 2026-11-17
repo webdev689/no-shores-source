@@ -30,7 +30,18 @@ import type { HullMask } from '../water/hullMask.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
-import { courseAhead, declutter, type Landfall, landfallOf, namesShown, PORT_SEEN_M, timeText } from './seaLaw.ts';
+import {
+  courseAhead,
+  declutter,
+  HELM,
+  helmEye,
+  type Landfall,
+  landfallOf,
+  namesShown,
+  PORT_SEEN_M,
+  shownScale,
+  timeText,
+} from './seaLaw.ts';
 
 /** The world's frame, metres: every voyage between landmasses is planned over it. */
 const FRAME = { leftM: 0, topM: 0, ...WORLD_FRAME } as const;
@@ -49,9 +60,6 @@ const UNDER_WAY = 4;
 const FIRST_TILT = (30 * Math.PI) / 180;
 /** Seconds the view takes to fall back from an island's side to the ship. */
 const FLY_BACK_SECONDS = 1.4;
-/** The helm, behind the Sloop's wheel on her quarterdeck: how far aft of her middle and how high over the water the
- *  eye stands there, metres before she is drawn larger, and how far down it looks. */
-const HELM = { aftM: 2.7, eyeM: 2.5, pitch: 0.1 } as const;
 /** Seconds the view takes to come down to the helm, or go back up from it. */
 const HELM_SECONDS = 1.1;
 /** A mark stands this far over the ground it marks, metres. */
@@ -138,6 +146,8 @@ export class Sea {
   private camera: OverworldCamera;
   private seaRig: Rig;
   private view: SeaView = { kind: 'sail' };
+  /** How far the view has come down to the helm, eased: 0 the sea's view, 1 at the helm. */
+  private helmShare = 0;
   private side: readonly Mark[] = [];
   private sideRig: Rig | null = null;
   private press: Press | null = null;
@@ -391,6 +401,7 @@ export class Sea {
   frame(dt: number, time: number, viewport: Viewport, turn: number, tilt: number, windBearing: number): SeaFrame {
     this.viewport = viewport;
     this.room?.pump(dt);
+    if (this.view.kind !== 'helm') this.helmShare = 0;
     this.meet(time);
     if (this.voyage && !this.combat) {
       const fix = sail(this.voyage, this.travelled, dt, this.pace);
@@ -472,13 +483,10 @@ export class Sea {
     const down = Math.min(1, Math.max(0, this.view.at + step));
     this.view = down <= 0 && this.view.going === 'up' ? { kind: 'sail' } : { ...this.view, at: down };
     const eased = down * down * (3 - 2 * down);
+    this.helmShare = eased;
     const { heading } = this.ship;
-    // The eye rides the swell with the ship, as she is drawn.
-    const eye = [
-      this.ship.x - Math.sin(heading) * HELM.aftM * this.scale,
-      this.ship.y + Math.cos(heading) * HELM.aftM * this.scale,
-      HELM.eyeM * this.scale + 0.35 * Math.sin(time * 0.9) - 0.4,
-    ] as const;
+    // The eye rides the swell with the ship, at the helm of the Sloop as she is drawn while she shrinks to her size.
+    const eye = helmEye(this.ship, shownScale(this.scale, eased), 0.35 * Math.sin(time * 0.9) - 0.4);
     const turn = Math.atan2(Math.sin(heading - sea.yaw), Math.cos(heading - sea.yaw));
     const mix = (from: number, to: number) => from + (to - from) * eased;
     return {
@@ -536,7 +544,7 @@ export class Sea {
         heading,
         roll: 0.035 * Math.sin(time * 0.7 + phase),
         pitch: 0.015 * Math.sin(time * 0.53 + phase),
-        scale: this.scale,
+        scale: shownScale(this.scale, this.helmShare),
       };
       return { place, rig, shade };
     };
@@ -561,8 +569,8 @@ export class Sea {
 
   private hulls(): HullMask[] {
     const [halfLength, halfBeam] = [
-      (this.hull.waterline.lengthM / 2) * this.scale,
-      (this.hull.waterline.beamM / 2) * this.scale,
+      (this.hull.waterline.lengthM / 2) * shownScale(this.scale, this.helmShare),
+      (this.hull.waterline.beamM / 2) * shownScale(this.scale, this.helmShare),
     ];
     const hull = (x: number, y: number, heading: number, moving: boolean): HullMask => ({
       x,

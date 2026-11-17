@@ -64,6 +64,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
 - [[The Rooms Deploy on Each Merge]]
+- [[The Ship Is Managed and Walked From the Sea's Panel]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

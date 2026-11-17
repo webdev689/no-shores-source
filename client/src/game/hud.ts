@@ -1,15 +1,24 @@
 import { button, make } from '../editor/dom.ts';
+import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
 
-/** A button of the heads-up display: let go of once pressed, so Space or Enter, which the game itself answers, never
- *  press it again. */
-function hudButton(text: string, run: () => void): HTMLButtonElement {
+/** A button of the heads-up display, in the role it plays: let go of once pressed, so Space or Enter, which the game
+ *  itself answers, never press it again. */
+function hudButton(text: string, run: () => void, role: Role = 'button'): HTMLButtonElement {
   const node = button(text, () => {
     node.blur();
     run();
   });
+  node.classList.add(ROLES[role]);
   return node;
+}
+
+/** A labelled group of the sea bar's controls. */
+function seaGroup(label: string, ...controls: HTMLElement[]): HTMLElement {
+  const group = make('div', '', 'sea-group');
+  group.append(make('span', label, 'pace-label'), ...controls);
+  return group;
 }
 
 /** A mark on the screen: a node or a port, where it stands in CSS pixels, its size there, and what it says. */
@@ -66,9 +75,9 @@ export class Hud {
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
   private readonly marksShown = new Map<string, MarkNode>();
-  private readonly menuNode = make('div', '', 'menu');
-  private readonly status = make('div', '', 'status');
-  private readonly sea = make('div', '', 'sea-bar');
+  private readonly menuNode = make('div', '', `menu ${ROLES.window}`);
+  private readonly status = make('div', '', `status ${ROLES.chip}`);
+  private readonly sea = make('div', '', `sea-bar ${ROLES.window}`);
   private readonly paceValue = make('span', '', 'pace');
   private readonly voyage: HTMLButtonElement;
   private readonly landfall: HTMLButtonElement;
@@ -81,10 +90,11 @@ export class Hud {
 
   constructor(root: HTMLElement) {
     root.classList.add('hud');
+    wearKit(root.ownerDocument);
     const place = make('div', '', 'place');
     place.append(this.placeTitle, this.placeKind);
     this.warning.append(make('div', 'Return to the area', 'warning-words'), this.count);
-    this.respawn = hudButton('Respawn', () => this.respawnWanted());
+    this.respawn = hudButton('Respawn', () => this.respawnWanted(), 'primary');
     this.death.append(
       make('div', 'You died', 'death-words'),
       make('div', 'You strayed too far from the area.', 'death-why'),
@@ -92,17 +102,24 @@ export class Hud {
     );
     this.veilNode.append(this.veilText);
     this.voyage = hudButton('', () => this.voyageWanted());
-    this.landfall = hudButton('', () => this.landfallWanted());
+    this.landfall = hudButton('', () => this.landfallWanted(), 'primary');
     this.landfall.classList.add('landfall');
-    this.sea.append(
-      make('span', 'Navigation', 'pace-label'),
-      hudButton('Map  N', () => this.mapWanted()),
-      this.voyage,
-      make('span', 'Pace', 'pace-label'),
-      hudButton('−  [', () => this.paceWanted(-1)),
-      this.paceValue,
-      hudButton(']  +', () => this.paceWanted(1)),
-    );
+    const groups = [
+      seaGroup(
+        'Navigation',
+        hudButton('Map  N', () => this.mapWanted()),
+        this.voyage,
+      ),
+      seaGroup(
+        'Pace',
+        hudButton('−  [', () => this.paceWanted(-1)),
+        this.paceValue,
+        hudButton(']  +', () => this.paceWanted(1)),
+      ),
+    ];
+    // Each group after the first stands behind an engraved rail.
+    for (const group of groups.slice(1)) group.classList.add(ROLES.rail);
+    this.sea.append(...groups);
     root.append(
       this.shade,
       this.markLayer,
@@ -216,7 +233,7 @@ export class Hud {
     this.menuNode.hidden = content === null;
     if (!content) return;
     this.menuNode.replaceChildren(
-      make('div', content.title, 'menu-title'),
+      make('div', content.title, `menu-title ${ROLES.header}`),
       ...content.choices.map((choice) => hudButton(choice.label, choice.run)),
     );
   }

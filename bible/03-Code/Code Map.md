@@ -37,6 +37,7 @@ decision, made in the same change as its entry here.
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
+| `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
 | `client/src/city/` | The city layer: a port city's plan drawn on WebGPU with the forged models and the procedural textures, whole near the eye, as masses and hulls further out, its solids and ground plates at every distance ([[Cities]]) |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
@@ -88,7 +89,8 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 `ships`), `combat` (imports `rules` and `network`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
 the editor's camera), `testground` (imports what `player` does, `player` itself, `combat` and the editor's panel
 helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap`
-(imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers) and `game`
+(imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers), `plus` (imports
+nothing) and `game`
 (imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
 
 ## The Rust crates

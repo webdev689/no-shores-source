@@ -25,6 +25,30 @@ export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Poi
   return through;
 }
 
+/** The helm, behind the Sloop's wheel on her quarterdeck: how far aft of her middle and how high over the water the
+ *  eye stands there at her true scale, and how far down it looks. */
+export const HELM = { aftM: 2.7, eyeM: 2.5, pitch: 0.1 } as const;
+
+/** The scale ships are drawn at: the Overworld's, shrinking to true scale as the view comes down to the helm
+ *  (`helmShare` 0 the sea's view, 1 at the helm), so at the wheel the Sloop and every ship round her are their own
+ *  size. */
+export function shownScale(overworldScale: number, helmShare: number): number {
+  return overworldScale + (1 - overworldScale) * helmShare;
+}
+
+/** Where the eye stands at the helm of a ship drawn at `scale`, the ship riding `heave` metres on the swell. */
+export function helmEye(
+  ship: { readonly x: number; readonly y: number; readonly heading: number },
+  scale: number,
+  heave: number,
+): readonly [number, number, number] {
+  return [
+    ship.x - Math.sin(ship.heading) * HELM.aftM * scale,
+    ship.y + Math.cos(ship.heading) * HELM.aftM * scale,
+    HELM.eyeM * scale + heave,
+  ];
+}
+
 /** A port's icon stands over its harbour at sea within this of it, metres: twice a landing's reach, so a port is seen
  *  before the ship can dock there. */
 export const PORT_SEEN_M = 60_000;

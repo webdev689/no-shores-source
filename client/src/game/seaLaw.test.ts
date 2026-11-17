@@ -6,6 +6,9 @@ import {
   courseAhead,
   declutter,
   DOCK_REACH_M,
+  HELM,
+  helmEye,
+  shownScale,
   landfallOf,
   namesShown,
   OFFSHORE,
@@ -92,4 +95,22 @@ test('off a coast the ship docks within reach of its harbour and goes ashore els
   assert.deepEqual(landfallOf([DOCK_REACH_M + 1, 0], true, port), { kind: 'ashore' });
   assert.deepEqual(landfallOf([100, 0], true, null), { kind: 'ashore' });
   assert.equal(landfallOf([100, 0], false, port), null);
+});
+
+test("ships are drawn at the Overworld's scale on the sea's view and shrink to their own size at the helm", () => {
+  assert.equal(shownScale(12, 0), 12);
+  assert.equal(shownScale(12, 1), 1, 'at the wheel the Sloop is her true size');
+  assert.equal(shownScale(12, 0.5), 6.5);
+});
+
+test('at the helm the eye stands behind the wheel of the Sloop as she is drawn, riding the swell with her', () => {
+  const heading = Math.PI / 2;
+  const ship = { x: 1000, y: 2000, heading };
+  const [x, y, z] = helmEye(ship, 1, 0.25);
+  assert.ok(Math.abs(x - (1000 - HELM.aftM)) < 1e-9, 'aft of her middle, against her heading east');
+  assert.ok(Math.abs(y - 2000) < 1e-9);
+  assert.equal(z, HELM.eyeM + 0.25);
+  const [drawnX, , drawnZ] = helmEye(ship, 12, 0);
+  assert.ok(Math.abs(drawnX - (1000 - HELM.aftM * 12)) < 1e-9, 'on the larger Sloop, its helm further aft');
+  assert.equal(drawnZ, HELM.eyeM * 12);
 });
