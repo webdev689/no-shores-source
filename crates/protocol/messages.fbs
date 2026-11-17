@@ -301,7 +301,8 @@ table GearDrop {
 // the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent;
 // whether they stand where a social space's asks are answered; and the answer to their last ask (0 done, then the
 // gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
-// answered.
+// answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
+// island's resource.
 table Gear {
   xp: ulong;
   level: ubyte;
@@ -318,6 +319,7 @@ table Gear {
   answer: ubyte;
   identified: uint;
   answered: uint;
+  nodes: [double];
 }
 
 // What a room sends: exactly one of these is present.

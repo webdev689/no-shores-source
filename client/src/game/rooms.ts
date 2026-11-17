@@ -1,5 +1,6 @@
 import { AccountLink, type Kept, LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
 
 /**
  * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, judging the edge
@@ -30,4 +31,10 @@ export function accountOf(page: Location, kept: Kept): { link: AccountLink | nul
   const link = new AccountLink(where, kept);
   if (link.takeFrom(page.hash)) history.replaceState(null, '', `${page.pathname}${page.search}`);
   return { link, session: link.session().then(() => link.token) };
+}
+
+/** A node's room's name: a patrol, mission, dungeon or boss at a voyage's harder seas is its own room
+ *  (`node-<id>--rough`); a social space is one for everyone, whatever the seas. */
+export function nodeRoom(node: { readonly id: string; readonly kind: string }, difficulty: Difficulty): string {
+  return node.kind === 'social' || difficulty === 'calm' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
 }

@@ -12,6 +12,8 @@ import type { Block, MovementRules, Reach } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import type { GearHere } from './gearScreen.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
+import { nodeRoom } from './rooms.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -111,7 +113,7 @@ export class Foot {
   }
 
   /** Lands the player in a node at its first spawn, facing `facing`, keeping how they hold the camera. */
-  static async enter(context: FootContext, node: NodeInfo, facing: number): Promise<Foot> {
+  static async enter(context: FootContext, node: NodeInfo, facing: number, seas: Difficulty = 'calm'): Promise<Foot> {
     const { movement, walker, rooms } = context;
     const rect = windowRect(node.ring);
     let boxes = await standOn(context, rect);
@@ -133,7 +135,7 @@ export class Foot {
     };
     const room = rooms
       ? await RoomPlay.join(
-          rooms(`node-${node.id}`),
+          rooms(nodeRoom(node, seas)),
           { movement, walker, forge: context.forge, others },
           await context.session,
         )

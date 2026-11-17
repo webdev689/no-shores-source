@@ -6,6 +6,7 @@ use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::rewards::Foe;
 use crate::vestige::{dropped, make, opens_to};
+use crate::world::Difficulty;
 
 fn dice(seed: u64) -> Dice {
     Dice { seed, tick: 3, player: 2 }
@@ -115,9 +116,9 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
 #[test]
 fn a_kill_pays_every_player_who_struck_by_the_foes_kind_and_level() {
     let mut character = Character::starting();
-    let reward = character.reward_kill(Foe::Swordsman, 5, Some(Slot::MainHand), &dice(1));
+    let reward = character.reward_kill(Foe::Swordsman, 5, Some(Slot::MainHand), Difficulty::Calm, &dice(1));
     assert_eq!((reward.xp, reward.aurem), (90, 8), "a swordsman's worth at level 5");
-    let captain = character.reward_kill(Foe::Captain, 15, None, &dice(1));
+    let captain = character.reward_kill(Foe::Captain, 15, None, Difficulty::Calm, &dice(1));
     assert_eq!((captain.xp, captain.aurem), (4_000, 240));
     assert!(captain.vestige.is_some(), "a captain always leaves a Vestige");
     assert_eq!(character.xp, 4_090);
@@ -133,4 +134,30 @@ fn a_player_carries_ten_vestiges_and_gathers_three_of_a_resource() {
     assert!(!character.pick_up(Vestige { id: 99, rarity: Rarity::Rare, slot: Slot::Legs, level: 1 }));
     assert_eq!(character.gather(0), 3);
     assert_eq!(character.materials.resource(0), 3);
+}
+
+#[test]
+fn a_harder_voyage_raises_foes_and_pays_more() {
+    use crate::world::{FOE_LEVEL_MOST, ISLANDS, island_levels};
+    assert_eq!(island_levels("continent-1"), Some((1, 4)));
+    assert_eq!(island_levels("nowhere"), None);
+    assert!(ISLANDS.windows(2).all(|pair| pair[0].2 <= pair[1].1), "each island picks up where the last left off");
+    assert_eq!(ISLANDS.last().map(|island| island.2), Some(30), "the last island reaches the highest player");
+    assert_eq!(Difficulty::from_name("storm"), Some(Difficulty::Storm));
+    assert_eq!(Difficulty::from_name("gale"), None);
+    assert_eq!((Difficulty::Rough.raise(10), Difficulty::Storm.raise(30)), (12, FOE_LEVEL_MOST));
+    let mut calm = Character::starting();
+    let mut storm = Character::starting();
+    let paid = calm.reward_kill(Foe::Swordsman, 5, None, Difficulty::Calm, &dice(1));
+    let stormy = storm.reward_kill(Foe::Swordsman, 5, None, Difficulty::Storm, &dice(1));
+    assert_eq!((stormy.xp, stormy.aurem), (paid.xp * 2, paid.aurem * 2));
+    let drops = |difficulty: Difficulty| {
+        (0..2_000)
+            .filter(|seed| {
+                Character::starting().reward_kill(Foe::Skirmisher, 10, None, difficulty, &dice(*seed)).vestige.is_some()
+            })
+            .count()
+    };
+    let (calm_drops, storm_drops) = (drops(Difficulty::Calm), drops(Difficulty::Storm));
+    assert!(storm_drops > calm_drops * 3 / 2, "a storm drops about twice as often: {calm_drops} against {storm_drops}");
 }

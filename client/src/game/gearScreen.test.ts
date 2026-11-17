@@ -40,6 +40,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   social: false,
   answer: 0,
   answered: 0,
+  nodes: [],
   identified: 0,
   ...fields,
 });

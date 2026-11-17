@@ -68,6 +68,14 @@ type Phase =
 
 type Choice = { readonly at: Point2; readonly name: string; readonly course: Course; readonly place: string | null };
 
+/** The difficulty a voyage sets out at: its island's foes as they are, or raised, paying more. */
+export type Difficulty = 'calm' | 'rough' | 'storm';
+const DIFFICULTY_WORDS: readonly (readonly [Difficulty, string, string])[] = [
+  ['calm', 'Calm', 'The island’s foes as they are.'],
+  ['rough', 'Rough', 'Foes two levels higher; half again the XP, Aurem and Vestiges.'],
+  ['storm', 'Storm', 'Foes four levels higher; twice the XP, Aurem and Vestiges.'],
+];
+
 export class HeldMap {
   private readonly view: HeldMapView;
   private readonly store: ForgeStore;
@@ -81,6 +89,8 @@ export class HeldMap {
   private ink: Rect = { x: 0, y: 0, width: 1, height: 1 };
   private press: { x: number; y: number; view: View; panning: boolean } | null = null;
   private choice: Choice | null = null;
+  /** The difficulty the next voyage sets out at, chosen on the card. */
+  difficulty: Difficulty = 'calm';
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
@@ -313,12 +323,21 @@ export class HeldMap {
     this.card.hidden = !choice;
     if (!choice) return;
     const words = choice.course.ok ? `Set a course for ${choice.name}` : choice.course.why;
-    if (this.card.dataset['words'] !== words) {
-      this.card.dataset['words'] = words;
+    const shape = `${words} ${this.difficulty}`;
+    if (this.card.dataset['words'] !== shape) {
+      this.card.dataset['words'] = shape;
       const sail = button('Set sail  Enter', () => this.setSail());
       sail.classList.add(ROLES.primary);
       sail.hidden = !choice.course.ok;
-      this.card.replaceChildren(make('div', words, 'held-card-words'), sail);
+      const seas = make('div', '', 'held-card-seas');
+      seas.hidden = !choice.course.ok;
+      for (const [difficulty, label, said] of DIFFICULTY_WORDS) {
+        const pick = button(label, () => (this.difficulty = difficulty));
+        pick.classList.add(ROLES[difficulty === this.difficulty ? 'primary' : 'button']);
+        pick.title = said;
+        seas.append(pick);
+      }
+      this.card.replaceChildren(make('div', words, 'held-card-words'), seas, sail);
     }
     this.card.style.transform = `translate(${this.ink.x + this.ink.width / 2}px, ${this.ink.y + drop - 12}px) translate(-50%, -100%)`;
   }

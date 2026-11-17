@@ -41,6 +41,7 @@ const state = (items: GearItem[]): GearState => ({
   social: false,
   answer: 0,
   answered: 0,
+  nodes: [],
   identified: 0,
 });
 const sets = ['chain', 'steel', 'iron', 'leather', 'knights'];

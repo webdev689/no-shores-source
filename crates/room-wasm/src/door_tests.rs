@@ -202,3 +202,25 @@ fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
     assert!(gear(first).is_empty(), "the sea keeps no gear");
     assert!(!furnish(&bytes_of(&[7.0, 15.0])));
 }
+
+#[test]
+fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_its_nodes() {
+    let mut patrol = node_file();
+    patrol["continent"] = json!("continent-1");
+    patrol["ring"] = json!([[-400.0, -400.0], [400.0, -400.0], [400.0, 400.0], [-400.0, 400.0]]);
+    patrol["bounds"] = json!([-500.0, -500.0, 500.0, 500.0]);
+    assert!(open_node(patrol.to_string().as_bytes()));
+    assert!(set_difficulty(2), "storm");
+    assert!(!set_difficulty(3), "no such seas");
+    let player = room_join();
+    room_tick();
+    let bytes = snapshot();
+    let foes = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap().foes().unwrap();
+    assert_eq!(foes.len(), 1, "the first foe at once");
+    let level = foes.get(0).level();
+    assert!((5..=8).contains(&level), "the island's 1 to 4, four higher in a storm: {level}");
+    let sent = gear(player);
+    let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
+    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve spots, four numbers each");
+    assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
+}

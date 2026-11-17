@@ -123,7 +123,7 @@ impl Room {
             }
             let dice = Dice { seed: self.seed, tick: self.clock, player };
             let Some(found) = self.players.get_mut(&player) else { continue };
-            let reward = found.character.reward_kill(worth, level, Some(hand), &dice);
+            let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
             found.gear_changed = true;
             if let Some(vestige) = reward.vestige {
                 self.lay_drop(player, vestige, at);

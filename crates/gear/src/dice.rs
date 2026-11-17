@@ -20,6 +20,8 @@ pub enum Purpose {
     Traits = 16,
     /// The Essence a dismantled Legendary gives back.
     Essence = 7,
+    /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
+    Patrol = 64,
 }
 
 /// One player's dice for one tick of one room.

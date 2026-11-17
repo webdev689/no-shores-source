@@ -66,7 +66,13 @@ on Cloudflare.
   twelve. A foe of level 0 has none and fights by combat's own numbers; one with a level has its kind's health grown
   for it ([[Gear]]).
   Each tick every foe thinks over the room as it stands and steps by the same rules ([[Foes]]), routing on a
-  [[Navmesh]] the room bakes from its blocks when it opens.
+  [[Navmesh]] the room bakes from its blocks when it opens, and straight across open ground where it knows no way.
+- **A patrol** (a patrol node's room) keeps eight foes up of its island's band of levels ([[Gear]], "Where foes
+  stand"), raised by its seas: skirmishers, swordsmen and archers, now and then a brute, each stood inside its
+  section, 25 m from every player and 30 m from every spawn, one every three seconds while it has fewer. Its island's
+  resource stands at twelve spots laid out from the node's name, the same every time, 60 m apart; a third of them hold
+  a node at once, the next third every three minutes, and each player may gather each node once while it stands. A
+  kill pays by the room's seas.
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
   same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way.
@@ -224,7 +230,8 @@ each room's name. The object keeps its room in WebAssembly: the room and protoco
 so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
-  continents; `node-<id>` is that node's room, from its baked file; `fleet-<name>` a fleet's place on the open sea;
+  continents; `node-<id>` is that node's room, from its baked file, and `node-<id>--rough` or `--storm` the same
+  node at a voyage's harder seas, a room of its own; `fleet-<name>` a fleet's place on the open sea;
   any other name is the Test Ground's course,
   `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the

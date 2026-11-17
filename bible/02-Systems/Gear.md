@@ -15,6 +15,9 @@ code:
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
   - crates/gear/src/catalogue.rs#catalogue
+  - crates/gear/src/world.rs#island_levels
+  - crates/gear/src/world.rs#Difficulty
+  - crates/room/src/patrol.rs#keep_patrol
   - crates/room/src/power.rs#empower
   - crates/room/src/power.rs#pay_kill
   - crates/room/src/asks.rs#answer
@@ -89,6 +92,14 @@ number is one of [[Gear as Claude Shapes It]].
   parry or a block gives back, with Last Light's reload.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space answers identifying and the vault
   anywhere in it; the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
+
+## Where foes stand
+
+- **Each island** has a band of foe levels (`gear::world`), rising with the voyage away from Overlook as Destiny 1's
+  worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
+- **The seas** a voyage sets out at raise them: Calm as they are, Rough two levels higher, Storm four, never past
+  level 32; and pay by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
+- A patrol's foes are drawn from its island's band ([[Server]], "A patrol").
 
 ## Looks
 

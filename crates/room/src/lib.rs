@@ -9,6 +9,7 @@ pub mod deck;
 pub mod fleet;
 mod foes;
 mod judging;
+pub mod patrol;
 mod perks;
 pub mod pirates;
 mod players;
@@ -139,6 +140,9 @@ pub struct Room {
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
     pub(crate) drops: Vec<Drop>,
+    /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
+    pub(crate) difficulty: gear::Difficulty,
+    pub(crate) patrol: Option<patrol::Patrol>,
 }
 
 impl Room {
@@ -191,6 +195,8 @@ impl Room {
             stall: None,
             resource_nodes: Vec::new(),
             drops: Vec::new(),
+            difficulty: gear::Difficulty::Calm,
+            patrol: None,
         }
     }
 
@@ -274,6 +280,7 @@ impl Room {
         self.ended_telegraphs.clear();
         self.step_players();
         self.spawn_asked();
+        self.keep_patrol();
         self.step_foes();
         self.fly_shots();
         self.judge_waiting();
@@ -586,3 +593,7 @@ mod gear_tests;
 #[cfg(test)]
 #[path = "perks_tests.rs"]
 mod perks_tests;
+
+#[cfg(test)]
+#[path = "patrol_tests.rs"]
+mod patrol_tests;

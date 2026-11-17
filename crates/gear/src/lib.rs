@@ -14,12 +14,14 @@ pub mod power;
 pub mod rarity;
 pub mod rewards;
 pub mod vestige;
+pub mod world;
 
 pub use asks::{Ask, Done, Here, Refusal};
 pub use character::{At, Character, Materials, Vestige};
 pub use item::Item;
 pub use kinds::{Kind, Slot};
 pub use rarity::Rarity;
+pub use world::Difficulty;
 
 #[cfg(test)]
 mod asks_tests;

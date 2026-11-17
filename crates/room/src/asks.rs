@@ -109,8 +109,10 @@ impl Room {
     fn gather(&mut self, player: PlayerId, node: u8) -> u8 {
         let Some(spot) = self.resource_nodes.get(usize::from(node)).copied() else { return OUT_OF_REACH };
         let Some(fighter) = self.fighter(player).copied() else { return OUT_OF_REACH };
+        let standing = self.node_standing(usize::from(node));
         let Some(found) = self.players.get_mut(&player) else { return OUT_OF_REACH };
-        if found.spent.contains(&node) || libm::hypot(fighter.body.x - spot.x, fighter.body.y - spot.y) > NODE_REACH {
+        let far = libm::hypot(fighter.body.x - spot.x, fighter.body.y - spot.y) > NODE_REACH;
+        if found.spent.contains(&node) || far || !standing {
             return OUT_OF_REACH;
         }
         found.spent.push(node);

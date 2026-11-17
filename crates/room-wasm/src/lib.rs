@@ -22,7 +22,7 @@ mod deck_door;
 mod fleet_door;
 mod gear_door;
 
-pub use gear_door::{character, furnish, gear, restore_character};
+pub use gear_door::{character, furnish, gear, restore_character, set_difficulty};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]
@@ -51,6 +51,8 @@ pub const REFUSED: i32 = 5;
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
+    kind: String,
+    continent: String,
     ring: Vec<[f64; 2]>,
     spawns: Vec<[f64; 2]>,
     bounds: [f64; 4],
@@ -96,8 +98,14 @@ pub fn open_node(text: &[u8]) -> bool {
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
     let mut room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
-    // A city's social space answers a social space's asks anywhere in it.
+    // A city's social space answers a social space's asks anywhere in it; a patrol keeps its island's foes and nodes.
     room.social = node.id.ends_with("-social");
+    let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
+    if node.kind == "patrol"
+        && let (Some(levels), Some(resource)) = (gear::world::island_levels(&node.continent), resource)
+    {
+        room.start_patrol(&node.id, levels, u8::try_from(resource).unwrap_or_default());
+    }
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
     true
 }

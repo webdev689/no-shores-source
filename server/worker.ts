@@ -15,6 +15,9 @@ interface Env {
   readonly ACCOUNTS: Service<CharacterKeeper>;
 }
 
+/** The seas a voyage sets out at, by the room door's numbers. */
+const SEAS = ['calm', 'rough', 'storm'];
+
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
 
@@ -32,7 +35,8 @@ function roomName(request: Request): string | null {
 
 /**
  * One room on Cloudflare: a Durable Object, one for each room's name, that keeps the room in WebAssembly. Its name
- * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land, `fleet-<name>` a fleet's
+ * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--rough` or
+ * `--storm` at a voyage's harder seas), `fleet-<name>` a fleet's
  * place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
  * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
  * room in step with the clock and sends every player the snapshot after each tick. Its sockets live and die with it:
@@ -107,8 +111,12 @@ export class RoomHost extends DurableObject<Env> {
     const node = /^node-(.+)$/.exec(name)?.[1];
     if (node === undefined)
       return this.room.open(course.start, course.blocks) && this.room.furnish(course.stall, course.resources);
-    const file = await this.env.NODES.fetch(`https://nodes/${node}.json`);
-    return file.ok && this.room.openNode(await file.text());
+    // `node-<id>--rough` is that node at a voyage's rough seas, a room of its own; a plain name, calm.
+    const [id, seas = 'calm'] = node.split('--');
+    const difficulty = SEAS.indexOf(seas);
+    if (difficulty < 0) return false;
+    const file = await this.env.NODES.fetch(`https://nodes/${id ?? ''}.json`);
+    return file.ok && this.room.openNode(await file.text()) && this.room.difficulty(difficulty);
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {

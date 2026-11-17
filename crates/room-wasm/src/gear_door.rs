@@ -100,3 +100,26 @@ pub unsafe extern "C" fn room_furnish(address: *const u8, length: usize) -> u32 
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(furnish(unsafe { std::slice::from_raw_parts(address, length) }))
 }
+
+/// Sets the difficulty a node's room's voyage set out at: 0 calm, 1 rough, 2 storm; false for no such difficulty, or
+/// no room on land.
+pub fn set_difficulty(number: u32) -> bool {
+    let Some(difficulty) = usize::try_from(number).ok().and_then(|index| gear::Difficulty::ALL.get(index).copied())
+    else {
+        return false;
+    };
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => {
+            room.set_difficulty(difficulty);
+            true
+        }
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    })
+    .unwrap_or(false)
+}
+
+/// Sets a node's room's difficulty (`set_difficulty`); 1 if set, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_difficulty(number: u32) -> u32 {
+    u32::from(set_difficulty(number))
+}

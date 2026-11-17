@@ -91,6 +91,14 @@ export interface GearDrop {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
+/** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
+export interface GearNode {
+  readonly index: number;
+  readonly x: number;
+  readonly y: number;
+  readonly resource: number;
+}
+
 export interface GearState {
   readonly xp: bigint;
   readonly level: number;
@@ -107,6 +115,7 @@ export interface GearState {
   readonly answer: number;
   readonly identified: number;
   readonly answered: number;
+  readonly nodes: readonly GearNode[];
 }
 
 /** No node chosen in a column, and no resource. */
@@ -186,7 +195,18 @@ export function gearOf(gear: Gear): GearState {
     answer: gear.answer(),
     identified: gear.identified(),
     answered: gear.answered(),
+    nodes: nodesOf(Array.from(gear.nodesArray() ?? [])),
   };
+}
+
+/** The resource nodes standing for the player, from the message's four numbers each. */
+function nodesOf(numbers: readonly number[]): GearNode[] {
+  const nodes: GearNode[] = [];
+  for (let start = 0; start + 3 < numbers.length; start += 4) {
+    const [index = 0, x = 0, y = 0, resource = 0] = numbers.slice(start, start + 4);
+    nodes.push({ index, x, y, resource });
+  }
+  return nodes;
 }
 
 /** An ask written into an input being built. */

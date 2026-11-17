@@ -58,6 +58,8 @@ export interface RoomDoor {
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
   /** A player's own gear's bytes, to send them alone; empty when it has not changed since last asked. */
   gear(player: number): Uint8Array;
+  /** Sets a node's room's seas, as its voyage set out: 0 calm, 1 rough, 2 storm; false if it is no room on land. */
+  difficulty(seas: number): boolean;
   /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
   character(player: number): string | null;
   /** Gives a player the character kept for them; false if the text is not one or they are not in. */
@@ -84,6 +86,7 @@ interface RoomExports {
   room_snapshot(): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
+  room_difficulty(seas: number): number;
   room_restore_character(player: number, address: number, length: number): number;
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
@@ -145,6 +148,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return lend(bytes, (address) => exports.room_furnish(address, bytes.length)) === 1;
     },
     gear: (player) => take(exports.room_gear(player)),
+    difficulty: (seas) => exports.room_difficulty(seas) === 1,
     character: (player) => {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);

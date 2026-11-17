@@ -215,7 +215,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foot?.leave();
     foot = null;
     sea?.leaveRoom();
-    foot = await Foot.enter(footContext, node, facing);
+    foot = await Foot.enter(footContext, node, facing, heldMap?.difficulty);
   };
 
   const goSea = async () => {

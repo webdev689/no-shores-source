@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
-import { accountsFrom, roomsFrom } from './rooms.ts';
+import { accountsFrom, nodeRoom, roomsFrom } from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
   assert.equal(roomsFrom(null), null);
@@ -27,4 +27,10 @@ test('the deployed rooms keep characters on the deployed accounts; a local serve
   assert.equal(accountsFrom('ws://127.0.0.1:8787', null), null);
   assert.equal(accountsFrom('ws://127.0.0.1:8787', 'http://127.0.0.1:8788'), 'http://127.0.0.1:8788');
   assert.equal(accountsFrom('live', 'elsewhere'), LIVE_ACCOUNTS, 'only a whole address names other accounts');
+});
+
+test('a harder voyage to a patrol is a room of its own; a social space is one for all', () => {
+  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'calm'), 'node-saltgrass-downs');
+  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'storm'), 'node-saltgrass-downs--storm');
+  assert.equal(nodeRoom({ id: 'overlook-social', kind: 'social' }, 'storm'), 'node-overlook-social');
 });

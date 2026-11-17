@@ -42,6 +42,7 @@ const state = (items: readonly GearItem[]): GearState => ({
   answer: 0,
   identified: 0,
   answered: 0,
+  nodes: [],
 });
 
 const WARDROBE: Wardrobe = {

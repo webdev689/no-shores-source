@@ -119,6 +119,15 @@ Destiny 1's perks were for guns and space magic; these are Overlook's own, for i
 armour stats (Intellect, Discipline, Strength) shortened ability cooldowns Overlook does not have, so armour has none
 yet.
 
+### Islands, seas and patrols
+
+| Choice | Chosen | Why |
+|---|---|---|
+| Islands' foe levels | 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26, 26–30, from Overlook's island outward | Destiny 1's worlds climbed as its players did, Earth to Mars; nine islands spread a player's 30 levels so each is worth visiting in turn |
+| The seas | Calm, Rough and Storm: foes 0, 2 or 4 levels higher, never past 32; XP, Aurem and Vestige chance ×1, ×1.5 or ×2 | The owner: a harder voyage pays better and scales its foes. Two and four keep a matched player above the four-level gap that makes a foe immune |
+| A patrol's foes | Eight kept up, one stood every 3 s, 25 m from players and 30 m from spawns; skirmishers 3, swordsmen 3, archers 2, brutes 1 by weight | Enough to find a fight anywhere in a 1.7 km section without crowding an arrival; captains are for bosses |
+| A patrol's nodes | Twelve spots from the node's name, 60 m apart; a third standing at once, the next third every 3 minutes, each gathered once a turn by each player | The owner: nodes at several spots so a farm has routes; a turn long enough to walk a route |
+
 ### Vestiges
 
 | Choice | Chosen | Why |

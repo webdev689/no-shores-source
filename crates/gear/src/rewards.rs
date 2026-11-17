@@ -5,6 +5,7 @@ use crate::character::{Character, Stuff, Vestige};
 use crate::dice::Dice;
 use crate::kinds::Slot;
 use crate::vestige;
+use crate::world::Difficulty;
 
 /// The foes that give loot, as rewards know them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,15 +60,31 @@ pub struct Reward {
 
 impl Character {
     /// Rewards a kill this player had a hand in: the XP, to them and to the weapon whose blow last landed (`weapon`)
-    /// and their armour; the Aurem; and maybe a Vestige, numbered here and returned to be laid on the ground.
-    pub fn reward_kill(&mut self, foe: Foe, foe_level: u8, weapon: Option<Slot>, dice: &Dice) -> Reward {
+    /// and their armour; the Aurem; and maybe a Vestige, numbered here and returned to be laid on the ground. A harder
+    /// voyage pays more of each.
+    pub fn reward_kill(
+        &mut self,
+        foe: Foe,
+        foe_level: u8,
+        weapon: Option<Slot>,
+        difficulty: Difficulty,
+        dice: &Dice,
+    ) -> Reward {
         let worth = worth(foe);
-        let xp = at_level(worth.xp, foe_level);
-        let aurem = at_level(worth.aurem, foe_level);
+        let times = |amount: u32| {
+            let raised = libm::round(f64::from(at_level(amount, foe_level)) * difficulty.reward());
+            u32::try_from(raised as u64).unwrap_or(u32::MAX)
+        };
+        let (xp, aurem) = (times(worth.xp), times(worth.aurem));
         self.earn_xp(xp, weapon);
         self.materials.add_aurem(aurem);
-        let vestige = vestige::dropped(worth.vestige, worth.boss, foe_level, dice)
-            .map(|(rarity, slot, level)| Vestige { id: self.take_id(), rarity, slot, level });
+        let chance = (worth.vestige * difficulty.reward()).min(1.0);
+        let vestige = vestige::dropped(chance, worth.boss, foe_level, dice).map(|(rarity, slot, level)| Vestige {
+            id: self.take_id(),
+            rarity,
+            slot,
+            level,
+        });
         Reward { xp, aurem, vestige }
     }
 
