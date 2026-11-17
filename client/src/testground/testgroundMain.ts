@@ -19,6 +19,7 @@ import { roomAddress } from '../network/roomAddress.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
+import { TestgroundBlood } from './blood.ts';
 import { Cards } from './cards.ts';
 import { COURSE, START } from './course.ts';
 import { type Dress, dressFrom } from './dressing.ts';
@@ -83,6 +84,8 @@ async function start(): Promise<void> {
   const gpu = await startGpu(canvas);
   const scene = new SceneView(gpu);
   scene.setBlocks(COURSE);
+  const blood = new TestgroundBlood(gpu, COURSE, location.search);
+  scene.underCards = (pass) => blood.draw(pass);
   // The body moves by the Rust movement rules, run in WebAssembly.
   const movement = await startMovementRules(
     await (await fetch(`${import.meta.env.BASE_URL}movement.wasm`)).arrayBuffer(),
@@ -392,6 +395,8 @@ async function start(): Promise<void> {
     );
     scene.setMarks(marksMesh(telegraphs, fight.shots));
     const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;
+    const events = fight.takeEvents();
+    blood.frame(seconds, events, fight, camera, canvas.width / Math.max(1, canvas.height));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
       if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
     });
@@ -415,7 +420,7 @@ async function start(): Promise<void> {
         matrix,
         width: canvas.clientWidth,
         height: canvas.clientHeight,
-        events: fight.takeEvents(),
+        events,
         player: fight.player,
         firstPerson: inFirstPerson,
         pressed: (armed && !shooter && controls.pressed('swing')) || (controls.locked && controls.pressed('dodge')),
