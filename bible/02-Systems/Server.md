@@ -12,6 +12,11 @@ code:
   - crates/room/src/lib.rs#WAITING_LIMIT
   - crates/room/src/sea.rs#Sea
   - crates/room/src/sea.rs#PACES
+  - crates/room/src/fleet.rs#Fleet
+  - crates/room/src/fleet.rs#CAPTAINS_MOST
+  - crates/protocol/src/fleet.rs#read_orders
+  - crates/protocol/src/fleet.rs#fleet_snapshot_bytes
+  - crates/room-wasm/src/fleet_door.rs#predict
   - crates/bake/src/lib.rs#nodes_of
   - crates/bake/src/lib.rs#MARGIN_M
   - crates/protocol/messages.fbs
@@ -26,6 +31,7 @@ code:
   - client/src/network/messages.ts#readFromRoom
   - client/src/network/roomConnection.ts#RoomConnection
   - client/src/network/prediction.ts#Prediction
+  - client/src/combat/fleetSession.ts#FleetSession
   - client/src/rules/nodeGround.ts#standOnNode
 ---
 # Server
@@ -101,6 +107,28 @@ one course a tick; a second in the same tick is dropped.
   arithmetic. A pace off the steps, a point outside the world's frame, and a course of more than 64 points are refused.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 
+## A fleet
+
+A room named `fleet-<name>` is a place at sea at true scale, on the open sea under the world's swell ([[Sailing]]),
+where each player sails her own Sloop by her helm and fights, and pirate captains called into the room fight whom
+they choose, all in one fight ([[Naval Combat]]).
+
+- **Putting to sea.** A player joins with no ship at sea. The first of her orders that says where puts her Sloop to
+  sea there, at that heading, anywhere in the world's frame; after that only her helm moves her.
+- **Orders** are taken as a land room takes inputs: numbered 1, 2, 3 and so on, refused out of order or with a number
+  that is not one (a rudder past its throw, a rung of more than one, a look past its half circle or the guns' 100 km);
+  one a tick, never more than the ticks since she joined and 6 of slack, 3 a tick at most to catch up; past 30
+  waiting, the oldest let go as though taken. Each order taken steps her ship once, so late ones catch her up and a
+  browser's prediction of her is her orders stepped in turn. A player whose orders stop lies as she was, riding the
+  swell, until she falls a view's lag (24 ticks) behind; then her helm stands, a tick at a time.
+- **Captains.** An order may call a captain onto the ring round the player's ship, while the room holds fewer than
+  four, or send every captain off. A captain who sinks, or lies past every player's ship and is not fighting, leaves
+  the room.
+- **What it sees:** every ship (her helm's numbers and pose, hull, sail and men, state and fires, guns and load, a
+  captain's mode, target and sides run out, and a player's last order taken), the balls aloft, what happened in the
+  fight since it was last asked, and the fight's clock.
+- A room holds 16 players. Its chances are drawn from one seed, so one room fights the same fight for the same orders.
+
 ## The bake
 
 A whole continent takes 104 to 230 MB to generate, more than a room's 128 MB. So `npm run bake` (`crates/bake`) cuts
@@ -127,8 +155,9 @@ an older reader skips them.
 |---|---|---|
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace |
+| Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired in the last tick as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired in the last tick as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
 
 The server reads an input or a course only after FlatBuffers' verifier passes its bytes, so bytes that are not one,
 controls that are not 7 numbers, or a course's numbers that are not pairs, are refused. The browser reads a message
@@ -147,15 +176,16 @@ each room's name. The object keeps its room in WebAssembly: the room and protoco
 so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
-  continents; `node-<id>` is that node's room, from its baked file; any other name is the Test Ground's course,
+  continents; `node-<id>` is that node's room, from its baked file; `fleet-<name>` a fleet's place on the open sea;
+  any other name is the Test Ground's course,
   `content/testground/course.json`, which the client reads too. A node with no baked file answers 404.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
 - A WebSocket joins the room and is welcomed with the player's number; each binary message is one of their inputs,
-  or at sea their course. A second course in a tick is dropped and a course the sea will not sail is refused; any
-  other input refused, or a message over 8 KB, closes the socket, since that browser is not keeping to the messages.
-  Its player leaves at once, and no snapshot is sent to a socket that is closing.
+  at sea their course, or in a fleet their ship's orders. A second course in a tick is dropped and a course the sea
+  will not sail is refused; any other input refused, or a message over 8 KB, closes the socket, since that browser is
+  not keeping to the messages. Its player leaves at once, and no snapshot is sent to a socket that is closing.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
   room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
@@ -173,6 +203,10 @@ so every decision is Rust and the shell only carries bytes and time.
   knows better, the body moves to it. A body the room says is dead stays where the room saw it.
 - The [[Test Ground]] joins a room when its address carries `?room=`, and shows every other player where the room
   last saw them.
+- In a fleet, `FleetSession` sends each tick's orders, numbered, as the page's clock owes them, and keeps her ship as
+  the room last gave it with her orders it has not taken stepped on top through `room-wasm` (`fleet_predict`), and
+  her look's lay laid among the ships she sees (`fleet_lay`). The [[World Editor]] sails in a fleet when its address
+  carries `?room=`: a fleet's name on the deployed rooms, or a local server's address for its `fleet-editor`.
 
 ## Running it
 
@@ -198,6 +232,9 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
   claimed lag at the most to gain up to 24 ticks of reaction; nothing checks it.
 - Arrows and bolts are not judged as their shooter saw: they fly in the room's time.
 - Riding is the browser's word: the room takes `mounted` as it is sent.
+- A fleet's sea knows no coast: where a ship is put to sea is the player's word, anywhere in the world's frame, and
+  the World Editor asks for open water 15 m deep before it joins. A fleet's lay is judged at the room's tick, not as
+  the player's screen showed the ships (a ball's flight is long beside the lag).
 - Players do not harm one another.
 - A dress travels with a player's inputs, which flow only while they play: until then, others see a plain figure.
 - A player who sends nothing waits a view's lag, then stands still where they were until their inputs come. The

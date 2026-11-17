@@ -18,6 +18,12 @@ code:
   - crates/naval/src/captain/aim.rs#captain_guns
   - crates/naval/src/captain/odds.rs#odds
   - crates/naval/src/fight.rs#Fight
+  - crates/naval/src/fight.rs#sail_hurt
+  - crates/naval/src/fight_step.rs
+  - crates/naval/src/laying.rs#preview
+  - crates/naval/src/ram.rs#ram_blow
+  - crates/naval/src/ram.rs#overlap
+  - crates/naval/src/fight_ram.rs
   - crates/land-wasm/src/fight.rs#fight_step_json
   - client/src/editor/naval.ts#Naval
   - client/src/editor/fighting.ts#Fighting
@@ -27,8 +33,19 @@ code:
 ---
 # Naval Combat
 
-Broadsides between the owner's Sloop and one pirate captain: DFO's naval combat, rebuilt in Rust
-([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships, and fought in the [[World Editor]].
+Broadsides, and rams, between players' Sloops and pirate captains' Sloops: DFO's naval combat, rebuilt in Rust
+([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one captain alone in the
+[[World Editor]], or with other players in a fleet room on the [[Server]].
+
+## The fight
+
+A fight holds any number of ships by number, each sailed by a player's orders or by a captain's mind, and flying the
+players' flag or the pirates'. Each tick, in this order: each player's ship steps once for each of her orders taken
+(late orders catch up; with none she lies as she was, riding the swell), each captain steers and sails, hulls that
+overlap are pushed apart, each player's stem may ram, the guns load, the captains fire and then the players, the
+balls fly, fires burn and sinking ships go down, each player's hands mend her, and a captain who has sunk, or lies
+past every player's ship and is not fighting, leaves the fight. A player's step under her hurts is one pure function
+(`sail_hurt`), which a browser predicting her runs too.
 
 ## How it works
 
@@ -54,7 +71,8 @@ Broadsides between the owner's Sloop and one pirate captain: DFO's naval combat,
   ticks) with her where her way will have carried her by then, to where it stops. The lay is on target only when one
   of those balls meets her, canvas or hull. Its landing zone's radius is DFO's: half the width the crew scatters the
   gun's yaw across at the splashes' mean range (at least 2 m wide), and never under 1.6 m.
-- **What stops a ball** is the first hull, water or ground it meets. A ball tears through any canvas it crosses
+- **What stops a ball** is the first hull of another flag, water or ground it meets: a player's ball passes through
+  another player's ship, and a pirate's through another pirate's. A ball tears through any canvas it crosses
   (once a ship) and flies on. The water is the swell's surface under it, and the ground the land's, sampled every 4 m.
 - **The harm** of a ball is DFO's: by where it struck (holed within 1.1 m of the water under it, 40% more; the hull
   above; the canvas), 85 to 115% by its own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
@@ -68,14 +86,19 @@ Broadsides between the owner's Sloop and one pirate captain: DFO's naval combat,
 
 ## The captain
 
-She sails a Sloop under the player's own helm, so her pace is the player's. DFO's captain commands a swing and a
+She sails a Sloop under the player's own helm, so her pace is the player's. She sees every player's ship and keeps,
+for each, whether it struck her lately and whether she spares it. DFO's captain commands a swing and a
 share of sail; here the swing is a share of her rudder and the sail the rung whose way is nearest. Under the ladder's
 law the wind's eye costs her 0.55 of her way, so she never tacks.
 
-- **Whom she fights.** A pirate is bold one time in four by her seed. A bold one takes on the player she sees within
+- **Whom she fights.** A pirate is bold one time in four by her seed. A bold one takes on a player she sees within
   750 m; a wary one only a wreck, a hull nearly gone, or a ship she outguns 5 to 4 by DFO's fighting power (the time
-  each takes to make the other strike). Struck by the player, she is hostile to him for 5 minutes.
-- **Her course.** Far off, she steers to intercept. A ship running from her she runs down astern, then sheers out to
+  each takes to make the other strike). Struck by a player, she is hostile to that ship for 5 minutes. Of the ships
+  she would fight and does not spare, she takes the nearest, the one she already fights reckoned a fifth nearer (as
+  DFO ranks them), and runs from the nearest that struck her within 320 m. What she remembers of a chase, a wreck,
+  her mark's way and the side she presented is let go when she marks another ship.
+- **Her course.** She bends round every hull about her, the bends of each summed, as DFO's traffic does. Far off,
+  she steers to intercept. A ship running from her she runs down astern, then sheers out to
   its beam. Otherwise she brings the side that costs least to bear on where her balls will meet him, bent off the beam
   to open or close her range of 50 m, and once presented keeps station with sail. She bends round his hull and sounds
   the land ahead, swinging off a foul course.
@@ -83,8 +106,30 @@ law the wind's eye costs her 0.55 of her way, so she never tacks.
   It fires no sooner than 1.3 s on, within her gunners' window, long or short by their want of skill. One run out too
   long unfired, or that loses its mark, is run in. She never fires on a wreck.
 - **When she breaks off.** Any pirate runs under 30% of her hull; a wary one runs from a ship that outguns her. A chase
-  that gains nothing in 150 s is given up, and a wreck left after 30 s. The fight ends when she has sunk, or sailed
-  out past 1.9 km and is not fighting.
+  that gains nothing in 150 s is given up, and a wreck left after 30 s. She leaves the fight when she has sunk, or lies
+  past 1.9 km from every player's ship and is not fighting; the editor's fight ends when its one captain leaves.
+
+## Ramming
+
+DFO's law of the ram. A player's stem, 1 m above her waterline at her bow, strikes the hull of a ship of another flag
+it comes within 1.2 m of, at the face it stands farthest outside of: her side, or her bow or stern. It rams when her
+way along her keel, at the most over the last 0.6 s, closes on that face at 1.6 m/s or more.
+
+- **The blow** is 0.15 of the lesser of the two whole hulls, times the closing way over 8 m/s (never more than whole),
+  and 0.4 of that into her bow or stern. It never takes her hull under a quarter, where she strikes: a ram brings a
+  ship to strike and no further. It takes a man for every 40 points it deals, over her men's toughness, by a roll
+  drawn from the fight's stream.
+- **The recoil**: the rammer takes 0.6 of the blow back (half that braced), and a ram is only as hard as she can pay
+  for within her own room over her line, one point short of it, so her own ram never makes her strike and a hull at its
+  line rams nothing. A wreck rams nothing.
+- **One ram a tick** for each player, none on the same ship again within 3 s, and her remembered way is spent on it.
+  A ram provokes the captain struck. Captains do not ram.
+- **Hulls kept apart.** Two hulls whose boxes overlap on the flat are each pushed out half the overlap, and each loses
+  the share of her way that drove squarely into it. DFO kept the player's own boat apart by Come Sail Away's sweep;
+  here every ship is pushed alike, so the room can do it.
+
+For the owner's Sloop and the Pirate Sloop, a ram at 8 m/s into her side deals 36 and costs the rammer 22; six from
+whole bring the Pirate Sloop to strike.
 
 ## In the World Editor
 
@@ -101,16 +146,27 @@ and "BROADSIDE! Brace (C)." while her guns stand run out. Each arc of the lay ru
 larger red mark where it strikes her, and a ring of the landing zone's radius where it splashes. The arcs are red, and
 the panel reads "Laying the ... guns: on target.", only when an unscattered ball strikes her.
 
+## In a fleet room
+
+With `?room=` in the World Editor's address, Sail joins a fleet room ([[Server]]) instead, on the open sea: every
+player's Sloop and every captain called in fight in one fight, the room's. F calls a captain onto the ring round her
+(four at most in a room), X sends them all off. Her lay's arcs are laid in the browser by the same functions the room
+fires by (`preview`), among the ships the room last showed.
+
 ## One crate, every machine
 
-The fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders (up to a
-second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. Its state never
-crosses, so requests and answers are JSON. A scripted fight's fingerprint at the end of each leg is pinned natively and
-through WebAssembly ([[Agree to the Bit]]).
+Alone, the fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders
+(up to a second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. Its state
+never crosses, so requests and answers are JSON. A scripted fight's fingerprint at the end of each leg is pinned
+natively and through WebAssembly ([[Agree to the Bit]]). In a fleet room the room's crate holds the fight, and a
+browser predicts its own ship through `room-wasm` by the same steps.
 
 ## Limits
 
-- One captain, a Pirate Sloop: no other factions or classes, and no ambient traffic.
+- Captains are Pirate Sloops: no other factions or classes, and no ambient traffic.
+- Players' balls do not strike other players' ships, and players do not ram one another.
 - Her canvas is always drawn, so her sails always take balls; it does not come down as her sail share falls.
-- She cruises on her course until she sees the player; DFO's captains wander between waypoints.
-- No boarding, ramming, crew, sounds, flotsam or magazine blast yet: step 3 of the pick.
+- She cruises on her course until she sees a player's ship; DFO's captains wander between waypoints.
+- No boarding, crew, sounds, flotsam or magazine blast yet: the rest of step 3 of the pick.
+- Hulls are kept apart by their boxes on the flat; the player's helm is not refused a turn into another hull, as Come
+  Sail Away's was, she is pushed back out of it.
