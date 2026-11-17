@@ -19,6 +19,6 @@ texture, which [[Own Work]] bars, the owner chose "Exactly as DFO has it".
 
 - A figure a blow harms flashes, white, or red for the player's own ([[Test Ground]]).
 - DFO's blood comes over whole, its numbers, orderings and colours unchanged: an exception to [[Own Work]] for
-  DaggerBlood's numbers and Daggerfall's blood red ([[Blood]], [[Pick - Blood]]).
+  DaggerBlood's numbers and Daggerfall's blood red.
 - Pictures of Daggerfall's stay behind: DFO's splash billboard from TEXTURE.380 and the frame its gibs wore.
 - Blows also throw sparks.

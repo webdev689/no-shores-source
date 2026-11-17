@@ -91,7 +91,7 @@ renderer's `drawScreenQuad`/`uploadTexture`; raw WebGL lives only in `ui/intro/i
 | `src/combat/technique/, techniques.js` | Weapon techniques: key, blows, roster, FX | Gameplay | Cut | TS port (key, FX); Rust rebuild (blow) | Ours (TECH1); its blow resolves through DFU CalculateAttackDamage. | M | `src/combat/technique/techniqueBlow.js` |
 | `src/combat/twoHands/` | Dual wield law, mirrored rig, spell hand | Gameplay | Cut | TS port | Law ours; mirrors the Morrowind skeleton and DFU's weapon state machine. | M | `src/combat/twoHands/handsLaw.js` |
 | `src/combat/gun/` (17 files, 2.9k) | Thunderlock and Pistolet: viewmodels, feel, strips, stances | Gameplay | Cut | TS port | Ours; stances pose the Morrowind body (`mwNifMesh`), art reads color32 order, strips are the forge's. | M | `src/combat/gun/gunViewmodel.js` |
-| **Blood**: approved, [[Pick - Blood]] | | | | | | | |
+| **Blood**: approved | | | | | | | |
 | `src/combat/blood/` | Blood decals, generated art, gibs, marks | Gameplay | Cut | TS port | Ours, art generated at boot; colour family of TEXTURE.380 and DFU `bloodIndex`. Decal drawing is in `render/`. | M | `src/combat/blood/bloodDecals.js` |
 | `src/combat/pvp*.js, duelCombat.js, friendlyFire.js, healthShare.js, siegeCombat.js, swingLaw.js` | PvP rules: guard, evade, buffs, potions, triangle, duels | Gameplay | Cut | Rust rebuild | Ours ("Not a DFU member"); leans on DFU wear and armour terms. | S | `src/combat/duelCombat.js` |
 | `src/combat/arrowFlight.js` | Arrow flight for hosts without the missile system | Gameplay | Cut | TS port (visual); Rust rebuild (hit) | Flight ours; DFU's lost-arrow law and classic model 99800. | S | `src/combat/arrowFlight.js` |
