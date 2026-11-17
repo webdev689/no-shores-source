@@ -10,6 +10,7 @@ use combat::shapes::{Shape, Telegraph};
 use combat::shots::{loose, shot_numbers};
 use combat::{Fighter, Happening, Ranged, Surroundings, step_fighter};
 use foes::{Kind, Seen, World, notice, spawn, think};
+use movement::Block;
 use navmesh::NavMesh;
 
 /// The most foes a room holds; how far before a player one is stood; and the ask that sends every foe away.
@@ -220,5 +221,25 @@ impl Room {
             }
             foe.brain = brain;
         }
+    }
+}
+
+/// Open ground a navmesh covers beyond the course's blocks and the spawn, each way.
+const GROUND_AROUND: f64 = 30.0;
+
+/// The ground a room's navmesh covers: the course's blocks and the spawn, and open ground around them.
+pub(crate) fn ground_around(blocks: &[Block], spawn: (f64, f64)) -> navmesh::Bounds {
+    let start = navmesh::Bounds { min_x: spawn.0, min_y: spawn.1, max_x: spawn.0, max_y: spawn.1 };
+    let covered = blocks.iter().fold(start, |bounds, block| navmesh::Bounds {
+        min_x: bounds.min_x.min(block.min_x),
+        min_y: bounds.min_y.min(block.min_y),
+        max_x: bounds.max_x.max(block.max_x),
+        max_y: bounds.max_y.max(block.max_y),
+    });
+    navmesh::Bounds {
+        min_x: covered.min_x - GROUND_AROUND,
+        min_y: covered.min_y - GROUND_AROUND,
+        max_x: covered.max_x + GROUND_AROUND,
+        max_y: covered.max_y + GROUND_AROUND,
     }
 }

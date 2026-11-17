@@ -8,6 +8,7 @@ pub mod asks;
 pub mod fleet;
 mod foes;
 mod judging;
+mod perks;
 pub mod pirates;
 mod players;
 mod power;
@@ -16,6 +17,7 @@ pub mod sea;
 pub use asks::{Asked, Grant, ResourceNode};
 pub use foes::{CLEAR_FOES, FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};
+pub use perks::trim_of;
 pub use players::{
     CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, VIEW_LAG,
     WAITING_LIMIT,
@@ -28,6 +30,7 @@ use combat::judge::swing_blow;
 use combat::strike::struck;
 use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
+use foes::ground_around;
 use judging::{Check, Group, Pending, how_of_swing};
 use land::ground::Ground;
 use movement::blocks::ground_at;
@@ -314,7 +317,8 @@ impl Room {
                     }
                     continue;
                 }
-                let fighter = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
+                let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
+                let fighter = Fighter { trim: found.trim, ..held };
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
                 found.fighter = next;
                 found.shown = input.shown;
@@ -553,26 +557,6 @@ impl Room {
 
 /// The seed every room's chances are drawn from: one room plays the same fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
-/// Open ground a navmesh covers beyond the course's blocks and the spawn, each way.
-const GROUND_AROUND: f64 = 30.0;
-
-/// The ground a room's navmesh covers: the course's blocks and the spawn, and open ground around them.
-fn ground_around(blocks: &[Block], spawn: (f64, f64)) -> navmesh::Bounds {
-    let start = navmesh::Bounds { min_x: spawn.0, min_y: spawn.1, max_x: spawn.0, max_y: spawn.1 };
-    let covered = blocks.iter().fold(start, |bounds, block| navmesh::Bounds {
-        min_x: bounds.min_x.min(block.min_x),
-        min_y: bounds.min_y.min(block.min_y),
-        max_x: bounds.max_x.max(block.max_x),
-        max_y: bounds.max_y.max(block.max_y),
-    });
-    navmesh::Bounds {
-        min_x: covered.min_x - GROUND_AROUND,
-        min_y: covered.min_y - GROUND_AROUND,
-        max_x: covered.max_x + GROUND_AROUND,
-        max_y: covered.max_y + GROUND_AROUND,
-    }
-}
-
 #[cfg(test)]
 #[path = "room_tests.rs"]
 mod room_tests;
@@ -596,3 +580,7 @@ mod node_tests;
 #[cfg(test)]
 #[path = "gear_tests.rs"]
 mod gear_tests;
+
+#[cfg(test)]
+#[path = "perks_tests.rs"]
+mod perks_tests;

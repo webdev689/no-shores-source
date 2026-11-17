@@ -115,6 +115,7 @@ impl Room {
         {
             self.mark_struck(blow.striker, defender, hand);
         }
+        self.perks_after(blow.striker, defender, &verdict, after.dead());
         if after.dead() && self.foes.contains_key(&defender) {
             self.pay_kill(defender);
         }
@@ -255,6 +256,10 @@ impl Room {
                 Flight::Flying(next) => self.shots.push(next),
                 Flight::Stopped { struck: Some(defender), .. } => {
                     let blow = self.empower(combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]), defender, false);
+                    // An arrow or a bolt has covered its speed for every tick it flew.
+                    let covered =
+                        combat::shots::shot_numbers(shot.ranged).0 * f64::from(shot.age + 1) * movement::TICK_SECONDS;
+                    let blow = self.at_range(blow, covered);
                     self.blow_lands(&blow, How::Shot, defender, Check::Shot);
                 }
                 Flight::Stopped { struck: None, .. } => {}
@@ -278,6 +283,8 @@ impl Room {
             && let Some(then) = self.as_seen(defender, view)
         {
             let blow = self.empower(combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]), defender, false);
+            let covered = libm::hypot(then.body.x - shot.at[0], then.body.y - shot.at[1]);
+            let blow = self.at_range(blow, covered);
             self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::MainHand));
         }
         stop

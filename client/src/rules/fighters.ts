@@ -65,7 +65,8 @@ export interface FighterView {
 const COMBAT_AT = BODY_FLOATS;
 const ACTION_NUMBERS = 10;
 export const GLANCE_FLOATS = 17 + ACTION_NUMBERS;
-export const FIGHTER_FLOATS = BODY_FLOATS + 24 + ACTION_NUMBERS;
+/** A whole fighter: its body, the fight's numbers, its action's, then its gear's trim (combat's TRIM_FLOATS). */
+export const FIGHTER_FLOATS = BODY_FLOATS + 24 + ACTION_NUMBERS + 29;
 
 function actionOf(kind: number, numbers: ArrayLike<number>): Action {
   const valueAt = (index: number) => numbers[index] ?? 0;

@@ -98,7 +98,7 @@ impl Room {
                 _ => 1.0,
             },
         };
-        Blow { damage: blow.damage * times, ..blow }
+        self.sharpened(Blow { damage: blow.damage * times, ..blow }, defender)
     }
 
     /// Notes that a player's blow by `hand` landed on a foe, so they share its kill.

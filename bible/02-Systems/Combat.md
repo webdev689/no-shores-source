@@ -84,6 +84,12 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
+- **Gear's trim.** A fighter carries what its gear trims of these numbers ([[Gear]]): what a swing, a dodge (and a
+  dodge with a weapon drawn) and a guard's blow cost; how fast stamina comes back, and again below half health; a
+  reload's time, a bow's draw to full power and the pace kept while aiming; what its blows do (a riposte, a counter,
+  an aimed shot, the poise they fill, what a guard lets through and pays, how long a stagger they cause lasts); and how
+  blows land on it (the poise they fill, and again with a weapon drawn; from behind; telegraphed). Nothing trimmed is
+  these numbers; a foe's never are.
 - **Numbers that are none.** A look, a push or a pitch that is not a number is never taken: the look keeps the aim.
 - **Death.** At no health a fighter dies and lies where it fell.
 
@@ -171,7 +177,7 @@ human limits ([[Foes]]).
 
 ## Limits
 
-- Gear's power scales a blow's damage in the rooms ([[Gear]]), but its perks change nothing the fight's rules do yet.
+- Gear's power and the rest of its perks reach a blow in the rooms ([[Gear]]): a fight stepped alone, with no room, has its trims but not those.
 - Running costs no stamina.
 - Casting does no harm yet.
 - A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).

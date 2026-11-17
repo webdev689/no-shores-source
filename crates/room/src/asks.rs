@@ -103,6 +103,7 @@ impl Room {
             found.answered = found.answered.wrapping_add(1);
             found.gear_changed = true;
         }
+        self.retrim(player);
     }
 
     fn gather(&mut self, player: PlayerId, node: u8) -> u8 {

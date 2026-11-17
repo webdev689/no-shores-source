@@ -82,12 +82,16 @@ number is one of [[Gear as Claude Shapes It]].
   of level 0 fights by combat's own numbers.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds, and lays each one's
   Vestige where it fell, seen by them alone, for two minutes.
+- **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
+  their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner
+  and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a
+  parry or a block gives back, with Last Light's reload.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space answers identifying and the vault
   anywhere in it; the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
 
 ## Limits
 
-- Perks are named and chosen but change no fight until the combat rules read them.
+- A weapon's traits work whichever hand strikes, and every trait worn counts once however many pieces give it.
 - The Test Ground's panel is the only screen; the Enhanced Plus screens come next.
 - Gear lives only while a player stays in one room, until there are accounts ([[Accounts Start as Guests, on Cloudflare D1]]).
 - The hands are drawn in a metal the rarity likes, not each item's own look; armour, clothing sets and the cloak do

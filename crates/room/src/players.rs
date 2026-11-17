@@ -127,6 +127,8 @@ pub struct Player {
     pub answered: u32,
     /// The room's resource nodes they have gathered from, spent for them until they leave.
     pub spent: Vec<u8>,
+    /// What their worn gear trims of the fight's numbers, set whenever it may change.
+    pub trim: combat::Trim,
 }
 
 impl Player {
@@ -154,6 +156,7 @@ impl Player {
             identified: 0,
             answered: 0,
             spent: Vec::new(),
+            trim: combat::Trim::PLAIN,
         }
     }
 
