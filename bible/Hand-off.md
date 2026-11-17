@@ -66,8 +66,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   test; the timings set against shipped games and a person's reaction ([[Combat]], "Why these numbers"); third-person
   attacks strike as fast as their blow lands. Deployed with the owner's yes, and tested live: two browsers on the
   published Test Ground fought one brute together in a deployed room.
+- The owner's playtest notes, on pull request #48 from branch `ccr-73003efa-gnnnqf`, tested offline: the naval aim
+  as DFO's ([[Ship Guns Keep Square Broadsides]]); a closing parry ring ([[Foes Show a Closing Parry Ring]]); struck
+  figures flash, clashes spark, and DFO's [[Blood]] whole ([[Struck Figures Flash, and DFO's Blood Comes Over]]);
+  facing the locked foe ([[Locked On, the Figure Faces Its Foe]]); foes drawn without stutter; and ranged weapons that
+  aim and fire ([[Ranged Weapons Aim and Fire]]): no guard, quick and aimed shots, over the shoulder and ADS, a
+  crosshair, and tracers.
 
 ## Waiting on the owner
+
+- Pull request #48, to review and merge. Its intent carries the aim, so the page and the rooms deploy together, with
+  the owner's yes. Foe archers' aimed arrows now strike 27, not 18: the owner may want them tuned. Walking or sprinting
+  that does not happen on demand was not reproduced playing alone; when it happens is the owner's to say.
 
 - The world's pull request, to review and merge; deploying its rooms needs the bake's node files and the owner's yes.
   The deployed rooms keep the speed hack and the two socket faults until that deploy.
