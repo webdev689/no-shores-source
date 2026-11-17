@@ -1,6 +1,6 @@
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { edgeArrow, threatens, wordOf } from './cues.ts';
+import { edgeArrow, parryCue, threatens, wordOf } from './cues.ts';
 
 /** A foe as the display marks it: its number, its kind's name and its glance (its place as it is drawn). */
 export interface MarkedFoe {
@@ -25,6 +25,10 @@ export interface HudFrame {
   readonly firstPerson: boolean;
   readonly pressed: boolean;
   readonly lost: string | null;
+  /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
+  readonly crosshair?: { readonly charge: number | null } | null;
+  /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen). */
+  readonly parryOpen?: boolean;
 }
 
 /** Seconds a word floats over where it happened, and how far it rises in that time, in CSS pixels. */
@@ -43,6 +47,11 @@ const RESPAWN_TICKS = 240;
 const FLASH_SECONDS = 0.45;
 /** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels. */
 const ARROW_INSET = 28;
+/** A parry ring's span as a blow begins and as it lands (its fixed inner ring's), in CSS pixels; and how high over
+ *  the foe's feet it stands, in metres. */
+const RING_WIDEST = 56;
+const RING_CLOSED = 14;
+const RING_HEIGHT = 2.5;
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
 function clipOf(matrix: Float32Array, point: readonly [number, number, number]): [number, number, number] {
@@ -102,8 +111,10 @@ export class Hud {
   private readonly over: HTMLElement;
   private readonly hurt: HTMLElement;
   private readonly veil: HTMLElement;
+  private readonly crosshair: HTMLElement;
   private readonly bars = new Map<number, Bar>();
   private readonly arrows = new Map<number, HTMLElement>();
+  private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
   private readonly ironTold = new Set<number>();
   private words: Word[] = [];
@@ -123,6 +134,9 @@ export class Hud {
     this.mark = element('div', 'mark', root);
     this.over = element('div', 'over', root);
     this.veil = element('div', 'veil', root);
+    this.crosshair = element('div', 'crosshair', root);
+    this.crosshair.hidden = true;
+    element('div', 'charge', this.crosshair);
   }
 
   update(frame: HudFrame, seconds: number): void {
@@ -136,10 +150,41 @@ export class Hud {
     if (frame.lost !== null) this.veil.textContent = `The link to the room was lost: ${frame.lost}.`;
     else if (dead)
       this.veil.textContent = `You fell. Standing again in ${Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60)} s`;
+    const charge = frame.crosshair?.charge ?? null;
+    this.crosshair.hidden = !frame.crosshair;
+    this.crosshair.classList.toggle('charging', charge !== null);
+    this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
+    this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
     this.markTarget(frame);
     this.markFoes(frame);
     this.pointAtThreats(frame);
+    this.ringParries(frame);
     this.floatWords(frame, seconds);
+  }
+
+  /** Over each foe at a blow the player can parry, a ring closing onto a fixed one as the blow lands, gold once a
+   *  press would parry it; over an iron one, a red mark with no ring. */
+  private ringParries(frame: HudFrame): void {
+    const shown = new Set<number>();
+    for (const { id, view } of frame.foes) {
+      const cue = parryCue(view, frame.player, frame.parryOpen ?? true);
+      const spot = cue && project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
+      if (!cue || !spot) continue;
+      shown.add(id);
+      const ring = this.rings.get(id) ?? element('div', 'parry', this.over);
+      this.rings.set(id, ring);
+      const iron = cue === 'iron';
+      ring.classList.toggle('iron', iron);
+      ring.classList.toggle('now', !iron && cue.now);
+      const span = iron ? RING_CLOSED : RING_CLOSED + (RING_WIDEST - RING_CLOSED) * cue.share;
+      ring.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
+      ring.style.setProperty('--span', `${span}px`);
+    }
+    for (const [id, ring] of this.rings) {
+      if (shown.has(id)) continue;
+      ring.remove();
+      this.rings.delete(id);
+    }
   }
 
   /** The stamina bar flashes for a swing or a dodge asked with no stamina; the screen's edge, red, for a blow taken. */

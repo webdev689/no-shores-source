@@ -14,7 +14,7 @@ const built = (name: string) =>
   });
 const compiled = new WebAssembly.Module(await built('room_wasm'));
 /** Forward at a walk, looking north, no fight's buttons. */
-const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN]);
 const walking = { anim: 'walk', frame: 2, facing: 0 };
 /** An input as a browser writes it, holding nothing and seeing the start of the room. */
 const asking = (sequence: number, intent: Float64Array, look: Look, dress?: string, respawn = false) =>
@@ -111,7 +111,18 @@ function nodeFile(): { text: string; ground: string } {
 
 /** Sends one input a browser writes and ticks the room; answers what the room then saw of the player. */
 function play(room: RoomDoor, player: number, sequence: number, controls: Controls, respawn = false): SeenPlayer {
-  const intent = new Float64Array([...floatsOfControls(controls), 0, 0, 0, 0, 0]);
+  const intent = new Float64Array([
+    ...floatsOfControls(controls),
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    Number.NaN,
+    Number.NaN,
+    Number.NaN,
+  ]);
   assert.equal(room.input(player, asking(sequence, intent, walking, undefined, respawn)), 'taken');
   room.tick();
   const snapshot = readFromRoom(room.snapshot());

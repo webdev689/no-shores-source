@@ -14,11 +14,13 @@ export const RECORD_OF: Readonly<Record<Direction, number>> = {
   up: 6,
 };
 
-/** The attack button this frame: held now, pressed since the last frame, let go since the last frame. */
+/** The attack button this frame: held now, pressed since the last frame, let go since the last frame; and, with a bow,
+ *  a gun or a crossbow, whether it is held up to aim. */
 export interface AttackInput {
   readonly attackHeld: boolean;
   readonly attackPressed: boolean;
   readonly attackReleased: boolean;
+  readonly aimHeld?: boolean;
 }
 
 /** What a frame of the machine set off: a blow that lands now, and an arrow loosed now. */
@@ -72,7 +74,8 @@ type Phase = 'idle' | 'strike' | 'draw' | 'release';
 /**
  * The first person's weapon through a swing: which record and frame it shows, and when a blow lands or an arrow
  * leaves. A press swings once; holding the button swings again as each blow ends, a new direction each time. A bow
- * draws while the button is held and looses when it is let go.
+ * not aimed looses a quick shot at once on a pull, and again as it reloads while held; aimed, it draws and holds the
+ * arrow drawn until a pull looses it, or lowers it unloosed when the aim is let go.
  */
 export class WeaponMachine {
   readonly kind: WeaponKind;
@@ -192,14 +195,18 @@ export class WeaponMachine {
 
   private shoot(seconds: number, input: AttackInput): MachineEvents {
     let loose = false;
-    // A draw begun this frame starts from its first frame; the time before the press is not its own.
-    const begins = this.phase === 'idle' && this.reload <= 0 && (input.attackPressed || input.attackHeld);
-    if (begins) {
-      this.phase = 'draw';
-      this.frame = 0;
-      this.clock = 0;
+    const aiming = input.aimHeld ?? false;
+    const ready = this.phase === 'idle' && this.reload <= 0;
+    // A draw or a shot begun this frame starts from its own first frame; the time before the press is not its own.
+    let begins = false;
+    if (this.phase === 'draw' && !aiming) this.cancel();
+    else if (this.phase === 'draw' && input.attackPressed) loose = this.loosed();
+    else if (ready && aiming) {
+      [this.phase, this.frame, this.clock, begins] = ['draw', 0, 0, true];
+    } else if (ready && (input.attackPressed || input.attackHeld)) {
+      loose = this.loosed();
+      begins = true;
     }
-    if (this.phase === 'draw' && (input.attackReleased || !input.attackHeld)) this.phase = 'release';
     if (this.phase === 'idle') return { blow: null, loose };
     this.clock += begins ? 0 : seconds;
     while (this.phase !== 'idle' && this.clock >= BOW_TICK) {
@@ -209,7 +216,6 @@ export class WeaponMachine {
         continue;
       }
       this.frame += 1;
-      if (this.frame === BOW_LOOSE_FRAME) loose = true;
       if (this.frame >= BOW_FRAMES) {
         this.phase = 'idle';
         this.frame = 0;
@@ -217,5 +223,11 @@ export class WeaponMachine {
       }
     }
     return { blow: null, loose };
+  }
+
+  /** The arrow leaves at once: the bow jumps to its loose frame and plays the rest of its release. */
+  private loosed(): boolean {
+    [this.phase, this.frame, this.clock] = ['release', BOW_LOOSE_FRAME, 0];
+    return true;
   }
 }

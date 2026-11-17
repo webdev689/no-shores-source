@@ -1,5 +1,5 @@
 //! The fight agrees to the bit wherever it runs: this scripted fight of a player against a still foe, through swings,
-//! a guard, a dodge and a draw, is fingerprinted here, natively, and by the client's test of the same fight through
+//! a guard, a dodge, an aimed shot and a quick one, is fingerprinted here, natively, and by the client's test of the same fight through
 //! WebAssembly (client/src/rules/combatRules.test.ts lists the same course and script).
 
 use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
@@ -8,23 +8,26 @@ use combat::{CombatInput, Fighter, Intent, Stroke, player_tick};
 use movement::{Block, Controls, standing};
 
 /// Both tests hold this value; a change to the fight changes it in both, on purpose.
-pub const FIGHT_HASH: &str = "9cd81176dbfb19c9";
+pub const FIGHT_HASH: &str = "e8eae610b38fdb17";
 
 const COURSE: [Block; 1] = [Block { min_x: -3.0, min_y: -8.0, max_x: 3.0, max_y: -7.0, top: 1.2 }];
 
-/// Ticks, then forward, sideways, yaw, the stroke held (0 none), guard, dodge, shoot, and arms (0 a sword and shield,
-/// 1 a bow).
-type Phase = (usize, f64, f64, f64, u8, bool, bool, bool, u8);
+/// Ticks, then forward, sideways, yaw, the stroke held (0 none), guard, dodge, shoot, aim, and arms (0 a sword and
+/// shield, 1 a bow).
+type Phase = (usize, f64, f64, f64, u8, bool, bool, bool, bool, u8);
 
-/// Walk at the foe, swing twice, back off guarding, dodge aside, then draw a bow and loose it.
-const SCRIPT: [Phase; 7] = [
-    (40, 1.0, 0.0, 0.1, 0, false, false, false, 0),
-    (70, 0.0, 0.0, 0.1, 6, false, false, false, 0),
-    (80, -1.0, 0.0, 0.0, 0, true, false, false, 0),
-    (1, 0.0, 1.0, 0.0, 0, false, true, false, 0),
-    (40, 0.0, 0.0, 0.0, 0, false, false, false, 0),
-    (50, 0.0, 0.0, -0.2, 0, false, false, true, 1),
-    (40, 0.0, 0.0, -0.2, 0, false, false, false, 1),
+/// Walk at the foe, swing twice, back off guarding, dodge aside, then aim a bow and fire it, and fire a quick shot.
+const SCRIPT: [Phase; 10] = [
+    (40, 1.0, 0.0, 0.1, 0, false, false, false, false, 0),
+    (70, 0.0, 0.0, 0.1, 6, false, false, false, false, 0),
+    (80, -1.0, 0.0, 0.0, 0, true, false, false, false, 0),
+    (1, 0.0, 1.0, 0.0, 0, false, true, false, false, 0),
+    (40, 0.0, 0.0, 0.0, 0, false, false, false, false, 0),
+    (50, 0.0, 0.0, -0.2, 0, false, false, false, true, 1),
+    (1, 0.0, 0.0, -0.2, 0, false, false, true, true, 1),
+    (40, 0.0, 0.0, -0.2, 0, false, false, false, false, 1),
+    (1, 0.0, 0.0, -0.2, 0, false, false, true, false, 1),
+    (40, 0.0, 0.0, -0.2, 0, false, false, false, false, 1),
 ];
 
 /// The still foe the player fights, 3 m north of where it starts.
@@ -39,7 +42,7 @@ pub fn run_script() -> Vec<Fighter> {
     let mut fighters = Vec::new();
     let mut player = combat::fighter::player(standing(0.0, 2.0), sword);
     let view = [(2, foe())];
-    for (ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, arms) in SCRIPT {
+    for (ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, aim, arms) in SCRIPT {
         for tick in 0..ticks {
             player.arms = if arms == 1 { bow } else { sword };
             let controls = Controls { forward, sideways, yaw, ..Controls::default() };
@@ -49,6 +52,8 @@ pub fn run_script() -> Vec<Fighter> {
                 dodge: dodge && tick == 0,
                 shoot,
                 pitch: 0.1,
+                aim,
+                mark: None,
                 telegraph: None,
             };
             player = player_tick(1, &player, &Intent { controls, combat }, &view, &COURSE, &movement::Flat).0;

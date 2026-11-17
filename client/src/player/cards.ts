@@ -12,13 +12,15 @@ export interface Card {
   readonly root: readonly [number, number];
 }
 
-/** One card to draw: where its feet stand (world metres) and whether it is mirrored. */
+/** One card to draw: where its feet stand (world metres), whether it is mirrored, and how strongly it flashes,
+ *  struck (white, or red for the player's own). */
 export interface CardAt {
   readonly card: Card;
   readonly x: number;
   readonly y: number;
   readonly z: number;
   readonly flip: boolean;
+  readonly flash?: { readonly share: number; readonly red: boolean };
 }
 
 /** Whatever turns a composed picture into a card it can draw: the Test Ground's scene, or the game's figures. */

@@ -5,9 +5,10 @@ import course from '../../../content/testground/course.json' with { type: 'json'
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { readFromRoom } from '../network/messages.ts';
+import type { FlyingShot } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
-import { startCombatRules } from '../rules/combatRules.ts';
-import { GLANCE_FLOATS } from '../rules/fighters.ts';
+import { type CombatRules, type Fired, startCombatRules } from '../rules/combatRules.ts';
+import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
 import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
 
@@ -123,14 +124,89 @@ test('the other guard binding pressed while one is held opens a fresh parry wind
   assert.deepEqual(fighting.own?.action, { kind: 'guard', elapsed: 0, window: 12 });
 });
 
-test('a bow let go before the least draw tells the page no shot left; one drawn longer does not', () => {
+test('a bow aimed and lowered unfired tells the page; an aimed pull hands over the arrow it fired', () => {
   const { fighting, tick } = fightIn('bow_long');
-  for (let count = 0; count < 5; count += 1) tick({ shoot: true, shootPressed: count === 0 });
+  for (let count = 0; count < 5; count += 1) tick({ aim: true });
   tick();
-  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped], ['idle', 1]);
-  for (let count = 0; count < 30; count += 1) tick({ shoot: true, shootPressed: count === 0 });
-  tick();
-  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped], ['reload', 1]);
+  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped, fighting.fired.length], ['idle', 1, 0]);
+  for (let count = 0; count < 10; count += 1) tick({ aim: true });
+  tick({ aim: true, shoot: true, shootPressed: true });
+  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped, fighting.fired.length], ['reload', 1, 1]);
+  assert.equal(fighting.fired[0]?.ranged, 1, 'an arrow');
+});
+
+test('a gun fired from the hip hands over its whole line, and no guard rises behind it', () => {
+  const { fighting, tick } = fightIn('pistolet');
+  tick({ guard: true, guardPressed: true });
+  assert.equal(fighting.own?.action.kind, 'idle', 'no guard with a gun');
+  tick({ shoot: true, shootPressed: true });
+  const [ball] = fighting.fired;
+  assert.equal(fighting.fired.length, 1);
+  assert.ok(ball && Math.hypot(...ball.velocity) * TICK > 1, 'a line, not a flight');
+});
+
+/** A fight whose rules fire a shot on every tick while `firing` says so, linked to no room: its snapshots are handed
+ *  in by the test, each the room's word on the player's fighter after input `acknowledged`, with these shots. */
+function fightByHand() {
+  const shot: Fired = { ranged: 3, at: [0, 0, 1], velocity: [0, -3600, 0] };
+  const control = { firing: false };
+  const rules = {
+    predict: (fighter: Float64Array) => ({ fighter, fired: control.firing ? shot : null }),
+    strokeReach: () => 1,
+  } as unknown as CombatRules;
+  const link = {
+    player: 1,
+    dressed: [],
+    lost: null,
+    send: () => undefined,
+    pump: () => undefined,
+  } as unknown as RoomLink;
+  const fighting = new Fighting(rules, link);
+  let tick = 0n;
+  const word = (acknowledged: number, shots: readonly FlyingShot[] = []) => {
+    tick += 1n;
+    const fighter = new Float64Array(FIGHTER_FLOATS);
+    const seen = { player: 1, acknowledged, fighter };
+    fighting.receive({
+      kind: 'snapshot',
+      tick,
+      players: [seen],
+      dressed: [],
+      foes: [],
+      events: [],
+      shots,
+    } as unknown as Snapshot);
+  };
+  const steps = fighting.steps(movement);
+  const step = () => steps.step({} as Body, STILL);
+  return { fighting, control, word, step };
+}
+
+test("a shot an input lets go only once the room's word is replayed is handed over once; one already handed over is not", () => {
+  const { fighting, control, word, step } = fightByHand();
+  word(0);
+  step();
+  assert.equal(fighting.fired.length, 0, 'first predicted, the input fired nothing');
+  control.firing = true;
+  word(0);
+  assert.equal(fighting.fired.length, 1, "replayed on the room's word, it fires: the player sees it");
+  word(0);
+  assert.equal(fighting.fired.length, 1, 'replayed again, it is the same shot');
+  step();
+  word(0);
+  assert.equal(fighting.fired.length, 2, 'a shot first predicted is handed over once, however often it is replayed');
+});
+
+test("every snapshot's shots are handed over once, however many came in a frame", () => {
+  const { fighting, word } = fightByHand();
+  const ball = (owner: number): FlyingShot => ({ owner, ranged: 3, at: [0, 0, 1], velocity: [0, -3600, 0], age: 0 });
+  word(0, [ball(2)]);
+  word(0, [ball(3)]);
+  assert.deepEqual(
+    fighting.takeShots().map((shot) => shot.owner),
+    [2, 3],
+  );
+  assert.deepEqual(fighting.takeShots(), []);
 });
 
 test('a dress too long for the room is never sent: the room takes every input, and the last dress that fit', () => {

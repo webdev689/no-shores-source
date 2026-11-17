@@ -1,4 +1,5 @@
 import type { FlyingShot } from '../network/messages.ts';
+import type { Spark } from './sparks.ts';
 import type { Action, Shape } from '../rules/fighters.ts';
 
 /** A telegraphed blow's mark: its shape where it stands, how far its wind-up has run, and whether it is iron. */
@@ -33,17 +34,37 @@ const LIFT = 0.03;
 const ARROW_M = 0.75;
 const ARROW_THICK = 0.035;
 const ARROW_COLOUR = [0.52, 0.38, 0.22, 1] as const;
+/** A spark's streak: as long as this much of its flight (seconds), this thick (metres), white hot cooling to orange. */
+const SPARK_STREAK_S = 0.03;
+const SPARK_THICK = 0.012;
+const SPARK_HOT = [1, 0.92, 0.6] as const;
+const SPARK_COOL = [1, 0.38, 0.06] as const;
 const CURVE_STEPS = 24;
 /** Each vertex's numbers: x, y, z, then red, green, blue, opacity. */
 export const MARK_FLOATS = 7;
 
 type Point = readonly [number, number];
 
-/** The triangles of every telegraphed blow's mark and every arrow in flight, as vertices of MARK_FLOATS numbers. */
-export function marksMesh(telegraphs: readonly TelegraphMark[], shots: readonly FlyingShot[]): Float32Array {
+/** The triangles of every telegraphed blow's mark, every arrow and bolt in flight, every spark and the tracers'
+ *  vertices `more`, as vertices of MARK_FLOATS numbers. */
+export function marksMesh(
+  telegraphs: readonly TelegraphMark[],
+  shots: readonly FlyingShot[],
+  sparks: readonly Spark[] = [],
+  more: readonly number[] = [],
+): Float32Array {
   const out: number[] = [];
   for (const telegraph of telegraphs) markTelegraph(out, telegraph);
-  for (const shot of shots) markShot(out, shot);
+  for (const shot of shots) markArrow(out, shot.at, shot.velocity);
+  for (const { at, velocity, age, life } of sparks) {
+    const cooled = Math.min(1, age / life);
+    const colour = [0, 1, 2].map(
+      (part) => (SPARK_HOT[part] ?? 1) + ((SPARK_COOL[part] ?? 1) - (SPARK_HOT[part] ?? 1)) * cooled,
+    );
+    const length = Math.hypot(...velocity) * SPARK_STREAK_S;
+    markStreak(out, at, velocity, length, SPARK_THICK, [...colour, 1 - cooled * cooled]);
+  }
+  for (const value of more) out.push(value);
   return new Float32Array(out);
 }
 
@@ -143,14 +164,25 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
   }
 }
 
-/** An arrow or a bolt: two thin crossed strips along its flight, so it shows from any side. */
-function markShot(out: number[], shot: FlyingShot): void {
-  const [x, y, z] = shot.at;
-  const [eastward, southward, upward] = shot.velocity;
+/** An arrow or a bolt flying at `velocity`, its head at `at`. */
+export function markArrow(out: number[], head: readonly number[], velocity: readonly number[]): void {
+  markStreak(out, head, velocity, ARROW_M, ARROW_THICK, ARROW_COLOUR);
+}
+
+/** A streak `length` long behind a point flying at `velocity` (an arrow, a bolt, a spark): two crossed strips `thick`
+ *  wide along its flight, so it shows from any side. */
+function markStreak(
+  out: number[],
+  [x, y, z]: readonly number[],
+  [eastward = 0, southward = 0, upward = 0]: readonly number[],
+  length: number,
+  thick: number,
+  colour: readonly number[],
+): void {
   const speed = Math.hypot(eastward, southward, upward);
-  if (speed <= 0 || speed > 1000) return;
+  if (speed <= 0 || speed > 1000 || x === undefined || y === undefined || z === undefined) return;
   const along = [eastward / speed, southward / speed, upward / speed] as const;
-  const tail = [x - along[0] * ARROW_M, y - along[1] * ARROW_M, z - along[2] * ARROW_M] as const;
+  const tail = [x - along[0] * length, y - along[1] * length, z - along[2] * length] as const;
   const flat = Math.hypot(along[0], along[1]) || 1;
   const sides = [
     [-along[1] / flat, along[0] / flat, 0],
@@ -158,10 +190,10 @@ function markShot(out: number[], shot: FlyingShot): void {
   ] as const;
   for (const side of sides) {
     const offset = (point: readonly number[], sign: number) =>
-      [0, 1, 2].map((axis) => (point[axis] ?? 0) + (side[axis] ?? 0) * ARROW_THICK * sign);
+      [0, 1, 2].map((axis) => (point[axis] ?? 0) + (side[axis] ?? 0) * thick * sign);
     const corners = [offset(tail, -1), offset([x, y, z], -1), offset([x, y, z], 1), offset(tail, 1)];
     const [first, second, third, fourth] = corners;
     if (!first || !second || !third || !fourth) continue;
-    for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...ARROW_COLOUR);
+    for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);
   }
 }

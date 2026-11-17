@@ -49,8 +49,10 @@ third begins. A frame lasts 0.199 s for a sword, DFO's swing law at an average S
 round quicker; a mace, a flail and the two-handed weapons slower. Bare hands' strike to the left goes up and back down
 over eight frames.
 
-A bow draws while the button is held and stays drawn at its fourth frame. Letting go looses it: the arrow leaves on
-the sixth frame, a frame every 0.0625 s. The bow then reloads for about half a second.
+A bow has two shots ([[Ranged Weapons Aim and Fire]]). Not aimed, a pull of the trigger looses a quick shot at once:
+the bow jumps to its sixth frame, the arrow leaving on it, and plays the rest of its release, a frame every 0.0625 s;
+holding the trigger looses again as it reloads. Aimed, it draws and stays drawn at its fourth frame until a pull
+looses it the same way; letting the aim go lowers it unloosed. The bow then reloads for about half a second.
 
 ### Guarding
 
@@ -74,8 +76,10 @@ it while it reloads is the blade's.
 
 ### Shooting
 
-The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads. A shot plays
-its frames at its own rate, then the weapon reloads:
+The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not
+while aiming, where each shot takes a fresh pull as the rules ask. Aiming raises one held alone down its side: it slides from its corner, as far as the aim has eased, until its muzzle at rest
+lies at (165, 107) on the design screen, just right of and below the crosshair at its middle. A shot plays its frames
+at its own rate, then the weapon reloads:
 
 | | Frames | A second | Leaves on | Reload | Kick | Dips |
 |---|---|---|---|---|---|---|
@@ -94,6 +98,11 @@ second pistol can fire while the first still smokes. Held, the volley fires agai
 Running on the ground with every gun loaded, the guns are carried: the Thunderlock low across the chest, a Pistolet
 held up, a frame each sixth of a stride. The carry comes up over a fifth of a second and dips 70 pixels as its hold
 changes, so no picture swaps in sight.
+
+Each ranged weapon's muzzle is known on its own picture, at rest and in the frame its shot leaves on, kicked up
+(design pixels): the Pistolet's at (72, 64) and (82, 53), the Thunderlock's at (66, 59) and (77, 42), the crossbow's
+at (109, 93) and (82, 73), and a drawn bow's arrowhead at (107, 150). The first person reports the firing one where the hands
+stand that frame, before they are drawn, so a shot let go then starts its tracer where it will be drawn.
 
 ### Which picture
 

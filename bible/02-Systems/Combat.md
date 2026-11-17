@@ -124,12 +124,32 @@ half again after a perfect dodge), taking 1.3 times more and staggered by the fi
 
 ## Shots
 
-A bow is drawn while the button is held and loosed when it is let go: drawn under 0.2 s nothing leaves; at a second it
-is at full power. An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block or a body
-stops it; a pistolet's or thunderlock's ball reaches 60 m along its line at once. A body is an upright cylinder 0.35 m
-across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and one coming
-down over a head meets its top. A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a pistolet's
-1.9, a thunderlock's 2.2.
+A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Ranged Weapons Aim and Fire]]).
+
+- **A quick shot.** A pull of the trigger at rest fires at once, a bow with no draw. If the soft lock holds a foe, or
+  takes one as the trigger is pulled (as a swing takes one), and the look is toward it (within the lock's 70 degrees),
+  the shot flies at its chest, an arrow or a bolt laid high enough for its fall over the flight; with none, or one the
+  look has turned from, along the look. Holding the trigger fires again as the weapon reloads.
+- **An aimed shot.** Holding the aim raises the weapon: the fighter moves at half its pace with no running, its lock
+  lets go and takes none, and its arms point at the aim's mark, the point under its player's crosshair. A fresh pull
+  fires onto the mark, an arrow laid for its fall; with no mark, along the look, and with one inside the fighter's own
+  round across the ground (looking straight down at its feet), down onto it along the look's bearing. An aimed shot
+  strikes half again as hard as a quick one: a crossbow's or a gun's at once, a bow's by its draw, from a quick shot's
+  power at none to half again at a full second; a foe's drawn shot strikes as a quick one. Letting the aim go lowers
+  the weapon unfired.
+- **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block or a body
+  stops it; a pistolet's or thunderlock's ball reaches 60 m along its line at once. A body is an upright cylinder
+  0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
+  one coming down over a head meets its top.
+- **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
+  pistolet's 1.9, a thunderlock's 2.2. While it reloads, the weapon stays pointed where it fired.
+
+| Weapon | Quick shot | Aimed in full |
+|---|---|---|
+| Bow | 18 | 27, after a second's draw |
+| Crossbow | 26 | 39 |
+| Pistolet | 30 | 45 |
+| Thunderlock | 45 | 67.5 |
 
 ## Why these numbers
 

@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { CAMERA, FIRST_PERSON, cameraOrbit, eased, rayHit, scrolled, toggled } from './playerCamera.ts';
+import { AIM, CAMERA, FIRST_PERSON, aimEased, cameraOrbit, eased, rayHit, scrolled, toggled } from './playerCamera.ts';
 
 test('the wheel pulls back into third person, steps a notch at a time, and comes back into first person', () => {
   let view = scrolled(FIRST_PERSON, 1);
@@ -35,4 +35,16 @@ test('third person sits behind the head and up; a wall between pulls it in', () 
   assert.ok(Math.abs(rayHit([0, 0, 1.7], [0, 2, 2.2], [wall]) - 0.5) < 1e-9);
   const pulled = cameraOrbit([0, 0, 1.7], 0, 0, view, [wall]);
   assert.ok(pulled.targetY + 1 < 1, `${pulled.targetY + 1} is short of the wall`);
+});
+
+test('aiming in third person stands the camera over the right shoulder and zooms in; in first person it zooms more', () => {
+  const head = [0, 0, 1.7] as const;
+  const third = { firstPerson: false, distance: 2, shown: 2 };
+  const aimed = cameraOrbit(head, 0, 0, third, [], 1);
+  const eye = [aimed.targetX, aimed.targetY + 1, aimed.targetZ];
+  assert.ok(Math.abs((eye[0] ?? 0) - AIM.shoulder) < 1e-9 && Math.abs((eye[1] ?? 0) - AIM.back) < 1e-9, `${eye}`);
+  assert.equal(aimed.zoom, AIM.thirdZoom);
+  assert.equal(cameraOrbit(head, 0, 0, third, []).zoom, 1, 'not aiming, no zoom');
+  assert.equal(cameraOrbit(head, 0, 0, { ...third, shown: 0 }, [], 1).zoom, AIM.firstZoom);
+  assert.ok(aimEased(0, true, 0.05) > 0.5 && aimEased(0, true, 0.05) < 1, 'it eases in');
 });

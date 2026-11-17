@@ -4,17 +4,17 @@
 //! order, so a fight is the same on every machine.
 
 use crate::arms::{Arms, LARGE_BOAT, PIRATE_SLOOP, SLOOP_ARMS, Side, hull_block, posed, sail_blocks, side_for_bearing};
-use crate::ballistics::{Ball, flight};
+use crate::ballistics::{Ball, Block, segment_entry};
 use crate::captain::odds::Power;
 use crate::captain::{Captain, Her, Mode, Sighting};
 use crate::damage::{
     Damage, PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State, WRECKED_OARS,
     Zone, founder, shot_harm,
 };
-use crate::gunnery::{Guns, Lay, lay, volley};
+use crate::gunnery::{Guns, Lay, RIPPLE_S, aimed, lay, lay_on, volley};
 use crate::guns::{Shot, fire_chance, rig_fire, shot_reach};
 use crate::random::Mulberry32;
-use crate::shots::{ShotEvent, Target, step_balls};
+use crate::shots::{ShotEvent, Stop, Target, step_balls, stop_of};
 use sailing::pose::{Pose, pose_of, shallower};
 use sailing::ship::{Helm, Pull, SAILS_SET, Ship, step_pulled};
 use sailing::waters::Waters;
@@ -31,6 +31,8 @@ pub const DESPAWN_BEYOND: f64 = 1900.0;
 pub const HOSTILE_NEAR_M: f64 = 700.0;
 /// The rest of the volley that made a ship strike, this long after (seconds), cannot sink her.
 pub const STRUCK_GRACE_S: f64 = 2.0;
+/// A look meets her within this far past the laid gun's longest throw (metres): DFO's `LOOK_REACH_PAD`.
+pub const LOOK_REACH_PAD_M: f64 = 60.0;
 
 /// A ship in the fight: her helm's numbers, how she lies, her hurts and her guns.
 #[derive(Debug, Clone, PartialEq)]
@@ -41,11 +43,13 @@ pub struct Vessel {
     pub guns: Guns,
 }
 
-/// The player's lay: the look's bearing off her bow (degrees, to starboard) and how far out it meets the water.
+/// The player's lay: the look's bearing off her bow (degrees, to starboard), how far out it meets the water, and
+/// its ray (the aim eye, then the way it looks; any length), if given.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Aim {
     pub bearing_deg: f64,
     pub range_m: f64,
+    pub ray: Option<[[f64; 3]; 2]>,
 }
 
 /// What the player orders for a tick: her helm, the lay she holds, whether she fires it (a release: one tick), her
@@ -203,16 +207,43 @@ impl Fight {
         }
     }
 
-    /// The side the player's look lays, as her guns would fire it now, if a side bears there: `range_m` out along
-    /// her fire from her middle, so from her guns' middle less the way they stand out from it.
+    /// The side the player's look lays, as her guns would fire it now, if a side bears there: on the point of the
+    /// captain the look's ray meets, else `range_m` out along her fire from her middle, so from her guns' middle less
+    /// the way they stand out from it.
     #[must_use]
     pub fn laid(&self, aim: &Aim) -> Option<Lay> {
         let side = side_for_bearing(aim.bearing_deg)?;
         let player = &self.player;
         let (ship, load) = (&player.ship, player.guns.load);
         let square = lay(ship, &player.pose, &SLOOP_ARMS, side, load, 0.0, None);
+        if let Some(point) = aim.ray.and_then(|ray| self.look_on_her(&square, ray)) {
+            return Some(lay_on(ship, &player.pose, &SLOOP_ARMS, side, load, point));
+        }
         let out = (square.centre[0] - ship.x) * square.dir[0] + (square.centre[1] - ship.y) * square.dir[1];
         Some(lay(ship, &player.pose, &SLOOP_ARMS, side, load, (aim.range_m - out).max(0.0), None))
+    }
+
+    /// The point to lay on where the look's ray first meets the captain, her hull or her canvas, within the square
+    /// lay's longest throw and `LOOK_REACH_PAD_M` (DFO's `lookOnShip`). A look on her canvas lays chain for that very
+    /// point and every other load for her hull's middle: a ball laid for a sail flies on through it. The point is
+    /// led along the fire by her way over the ball's flight there; across the fire the timing is the helm's.
+    fn look_on_her(&self, square: &Lay, [eye, look]: [[f64; 3]; 2]) -> Option<[f64; 3]> {
+        let length = (look[0] * look[0] + look[1] * look[1] + look[2] * look[2]).sqrt();
+        if self.captain.damage.state == State::Sunk || length <= 0.0 {
+            return None;
+        }
+        let far = [0, 1, 2].map(|axis| eye[axis] + look[axis] / length * (square.reach + LOOK_REACH_PAD_M));
+        let her = target_of(&self.captain);
+        let hull = segment_entry(eye, far, &her.hull, 0.0).map(|share| (share, false));
+        let rig = her.rig.iter().filter_map(|sail| segment_entry(eye, far, sail, 0.0)).map(|share| (share, true));
+        let (share, on_rig) = hull.into_iter().chain(rig).min_by(|one, other| one.0.total_cmp(&other.0))?;
+        let met = [0, 1, 2].map(|axis| eye[axis] + (far[axis] - eye[axis]) * share);
+        let point = if on_rig && square.shot != Shot::Chain { her.hull.centre } else { met };
+        let (way, fire, from) = (carry_of(&self.captain.ship), square.dir, &self.player.ship);
+        // DFO's own flight time: the way out over 0.97 of the muzzle speed, the ball's speed along the water.
+        let flown = libm::hypot(point[0] - from.x, point[1] - from.y) / (square.gun.speed * 0.97).max(1.0);
+        let along = (way[0] * fire[0] + way[1] * fire[1]) * flown;
+        Some([point[0] + fire[0] * along, point[1] + fire[1] * along, point[2]])
     }
 
     /// The player's lay, or why her guns will not fire it.
@@ -231,31 +262,27 @@ impl Fight {
         Ok(lay)
     }
 
-    /// Whether a lay's balls, unscattered, would meet the captain's hull where she will be when they arrive.
+    /// Where each gun of a lay stops, its ball unscattered and flown by the law every ball flies by, with the captain
+    /// where her way will have carried her when it gets there; none for a ball still aloft past its life.
     #[must_use]
-    pub fn on_target(&self, lay: &Lay) -> bool {
-        if self.captain.damage.state == State::Sunk {
-            return false;
-        }
-        let block = hull_block(&self.captain.ship, &self.captain.pose, &SLOOP_ARMS);
-        let moving = carry_of(&self.captain.ship);
-        let carry = carry_of(&self.player.ship);
-        let launch = crate::ballistics::launch_velocity(lay.dir, lay.elevation, lay.gun.speed, carry);
-        lay.mouths.iter().any(|mouth| {
-            let at = |time: f64| {
-                let point = flight(*mouth, launch, time);
-                [point[0] - moving[0] * time, point[1] - moving[1] * time, point[2]]
-            };
-            // Swept until it comes down to the water at her waterline: a ball stops there.
-            (0..80).take_while(|step| at(f64::from(*step) * 0.05)[2] >= self.captain.pose.heave).any(|step| {
-                let (from, to) = (f64::from(step) * 0.05, f64::from(step + 1) * 0.05);
-                let end = at(to);
-                let short = end[2] < self.captain.pose.heave;
-                let to =
-                    if short { to - 0.05 * (self.captain.pose.heave - end[2]) / (at(from)[2] - end[2]) } else { to };
-                crate::ballistics::segment_entry(at(from), at(to), &block, lay.gun.radius_m).is_some()
+    pub fn ends(&self, lay: &Lay, waters: &impl Waters, time: f64) -> Vec<Option<Stop>> {
+        let (carry, way) = (carry_of(&self.player.ship), carry_of(&self.captain.ship));
+        let (player, captain) = (target_of(&self.player), target_of(&self.captain));
+        (0..lay.mouths.len())
+            .map(|index| {
+                let delay = index as f64 * RIPPLE_S;
+                let moved = |block: &Block, seconds: f64| Block {
+                    centre: [block.centre[0] + way[0] * seconds, block.centre[1] + way[1] * seconds, block.centre[2]],
+                    ..*block
+                };
+                let at = |flown: f64| {
+                    let seconds = delay + flown;
+                    let rig = captain.rig.iter().map(|sail| moved(sail, seconds)).collect();
+                    [player.clone(), Target { hull: moved(&captain.hull, seconds), rig, ..captain.clone() }]
+                };
+                stop_of(aimed(lay, index, carry, 0.0, PLAYER), at, CAPTAIN, (waters, time + delay, TICK_SECONDS))
             })
-        })
+            .collect()
     }
 
     /// A ball's strike: its harm by zone (grape's men by its flight), rolled; the struck grace for the rest of the

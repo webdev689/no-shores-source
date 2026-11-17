@@ -68,14 +68,18 @@ export interface FightEvent {
   readonly striker: number;
   readonly defender: number;
   readonly amount: number;
+  /** The stroke a swing came by, the combat crate's 1 to 6; 0 for anything else. */
+  readonly stroke: number;
 }
 
-/** A shot in flight. */
+/** A shot in flight, or a gun's ball in the tick it was fired: its whole line from `at` to `at` plus a tick of its
+ *  velocity. `age` is the ticks it has flown. */
 export interface FlyingShot {
   readonly owner: number;
   readonly ranged: number;
   readonly at: readonly [number, number, number];
   readonly velocity: readonly [number, number, number];
+  readonly age: number;
 }
 
 /** What a room says: its welcome, with the joining player's number, every dress so far, and its node in a node's
@@ -210,6 +214,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         striker: event?.striker() ?? 0,
         defender: event?.defender() ?? 0,
         amount: event?.amount() ?? 0,
+        stroke: event?.stroke() ?? 0,
       };
     });
     const shots = Array.from({ length: snapshot.shotsLength() }, (unused, index) => {
@@ -219,6 +224,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         ranged: shot?.ranged() ?? 0,
         at: point(shot?.atArray() ?? null),
         velocity: point(shot?.velocityArray() ?? null),
+        age: shot?.age() ?? 0,
       };
     });
     const ships = Array.from({ length: snapshot.shipsLength() }, (unused, index) => {

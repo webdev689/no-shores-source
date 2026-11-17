@@ -15,8 +15,9 @@ use movement::{Body, Controls};
 pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS;
 const ACTION_NUMBERS: usize = 10;
 pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS;
-/// An intent's numbers: the controls', then the stroke held (0 none), guard, dodge, shoot, pitch.
-pub const INTENT_FLOATS: usize = CONTROLS_FLOATS + 5;
+/// An intent's numbers: the controls', then the stroke held (0 none), guard, dodge, shoot, pitch, aim, and the point an
+/// aimed shot is laid on (none for the look).
+pub const INTENT_FLOATS: usize = CONTROLS_FLOATS + 9;
 /// A glance at a fighter, all another browser needs to draw it and mark it: x, y, z, facing, the body's mode,
 /// crouched, aim, side, arms, weight, health and its most, stamina, poise and its most, target (id + 1), then the
 /// action's kind and numbers.
@@ -353,13 +354,15 @@ impl Intent {
         floats[..CONTROLS_FLOATS].copy_from_slice(&self.controls.to_floats());
         let combat = &self.combat;
         let stroke = combat.attack.map_or(0.0, |stroke| f64::from(stroke as u8));
-        floats[CONTROLS_FLOATS..].copy_from_slice(&[
+        floats[CONTROLS_FLOATS..CONTROLS_FLOATS + 6].copy_from_slice(&[
             stroke,
             flag(combat.guard),
             flag(combat.dodge),
             flag(combat.shoot),
             combat.pitch,
+            flag(combat.aim),
         ]);
+        floats[CONTROLS_FLOATS + 6..].copy_from_slice(&combat.mark.unwrap_or([f64::NAN; 3]));
         floats
     }
 
@@ -378,6 +381,8 @@ impl Intent {
                 dodge: at(2) != 0.0,
                 shoot: at(3) != 0.0,
                 pitch,
+                aim: at(5) != 0.0,
+                mark: Some([at(6), at(7), at(8)]).filter(|mark| mark.iter().all(|value| value.is_finite())),
                 telegraph: None,
             },
         }

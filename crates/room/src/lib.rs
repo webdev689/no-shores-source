@@ -109,6 +109,9 @@ pub struct Room {
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
     pub(crate) loosed: Vec<FighterId>,
+    /// The balls fired since the last snapshot, each as its whole line: from where it left to where it stopped, in one
+    /// tick of its velocity.
+    pub(crate) lines: Vec<Shot>,
     /// What the foes share, the routes they walk, and the seed their chances are drawn from.
     pub(crate) board: ::foes::Board,
     pub(crate) nav: navmesh::NavMesh,
@@ -158,6 +161,7 @@ impl Room {
             spawns: Vec::new(),
             swings: Vec::new(),
             loosed: Vec::new(),
+            lines: Vec::new(),
             board: ::foes::Board::default(),
             nav,
             seed: SEED,
@@ -393,7 +397,8 @@ impl Room {
                 self.loosed.push(id);
                 // A player's ball reaches its mark at once: judged among the foes as the player's screen showed them.
                 if self.players.contains_key(&id) && combat::shots::shot_numbers(shot.ranged).0 <= 0.0 {
-                    self.shoot_seen(&shot, view);
+                    let stop = self.shoot_seen(&shot, view);
+                    self.lines.push(combat::shots::line_of(&shot, stop));
                 } else {
                     self.shots.push(shot);
                 }
@@ -491,6 +496,12 @@ impl Room {
     #[must_use]
     pub fn shots(&self) -> &[Shot] {
         &self.shots
+    }
+
+    /// The balls fired since this was last asked, each as its whole line, to send to everyone once so every screen
+    /// draws its tracer, however many ticks a snapshot follows.
+    pub fn take_lines(&mut self) -> Vec<Shot> {
+        std::mem::take(&mut self.lines)
     }
 
     /// What happened in the fight since this was last asked, to send to everyone once.

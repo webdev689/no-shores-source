@@ -81,7 +81,10 @@ on Cloudflare.
   An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn nearest where
   it died. A room with no section never judges.
 - **What it sees:** every player's fighter, where they stand with the section, and the number of their last input it
-  took; every foe; the shots in flight; and what happened in the fight since it was last asked: hits, blocks, parries,
+  took; every foe; the shots in flight, each with the ticks it has flown, and every gun's ball fired since it was last
+  asked as its whole line from where it left to where it stopped, so every screen draws its tracer however many ticks
+  the room ran first; and what happened in the fight since it was last asked (a swing's blows with their stroke): hits,
+  blocks, parries,
   guard breaks, dodges, staggers, deaths, players standing again, feints, foes arriving. The same on every machine.
 
 ## The sea
@@ -123,10 +126,10 @@ an older reader skips them.
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser, on land | Its number, one tick's controls and the fight's buttons, the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
+| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight; and at sea every ship: its player, position, heading and pace, 0 at rest |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest |
 
 The server reads an input or a course only after FlatBuffers' verifier passes its bytes, so bytes that are not one,
 controls that are not 7 numbers, or a course's numbers that are not pairs, are refused. The browser reads a message

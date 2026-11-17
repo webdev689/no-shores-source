@@ -87,11 +87,11 @@ fn an_archer_kites_a_player_too_close_then_draws_and_looses_and_sometimes_aims()
     assert!(room.distance(PLAYER, 10) > 6.0, "it walked out of reach: {}", room.distance(PLAYER, 10));
     room.run(1800, &mut watching(10));
     let intents = room.foe_intents(10);
-    let held = intents.windows(2).filter(|pair| pair[0].1.combat.shoot && pair[1].1.combat.shoot).count();
-    let let_go = intents.windows(2).filter(|pair| pair[0].1.combat.shoot && !pair[1].1.combat.shoot).count();
+    let held = intents.windows(2).filter(|pair| pair[0].1.combat.aim && pair[1].1.combat.aim).count();
+    let pulled = intents.windows(2).filter(|pair| !pair[0].1.combat.shoot && pair[1].1.combat.shoot).count();
     let loosed =
         room.happenings.iter().filter(|(_, by, happening)| *by == 10 && matches!(happening, Happening::Loosed(_)));
-    assert!(held > 100 && let_go >= 5 && loosed.count() >= 5, "it draws, holds and looses");
+    assert!(held > 100 && pulled >= 5 && loosed.count() >= 5, "it aims its bow, holds it drawn and pulls");
     assert!(room.verdicts.iter().any(|(_, by, on, _)| *by == 10 && *on == PLAYER), "and its arrows find the player");
     let aimed = room.orders(10);
     assert!(!aimed.is_empty() && aimed.iter().all(|(_, order)| order.shape == Shape::Aimed), "{aimed:?}");

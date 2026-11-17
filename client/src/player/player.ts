@@ -1,7 +1,7 @@
 import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import type { InputFrame } from './input.ts';
-import { cameraOrbit, eased, FIRST_PERSON, scrolled, toggled, type ViewMode } from './playerCamera.ts';
+import { aimEased, cameraOrbit, eased, FIRST_PERSON, scrolled, toggled, type ViewMode } from './playerCamera.ts';
 
 /** The player: their body, where they look, how the camera is held, whether they ride, their weapon out or away, and
  *  the cast or chosen move playing. The first person's weapon swings; this only readies it. */
@@ -23,6 +23,8 @@ export interface Player {
   readonly act: { readonly anim: string; readonly elapsed: number; readonly seconds: number } | null;
   /** The way the figure faces, which only moving or acting turns. */
   readonly facing: number;
+  /** How far the camera has eased into aiming's view, 0 to 1. */
+  readonly aim: number;
 }
 
 /** A cast lasts its four frames at 0.125 s each. */
@@ -51,6 +53,7 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
     cast: null,
     act: null,
     facing: 0,
+    aim: 0,
   };
 }
 
@@ -59,7 +62,9 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
  * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon, and a right click
  * readies it too; Q casts; comma mounts or dismounts; the wheel and Mouse4 move between first and third person.
  * The body moves in whole ticks of the movement rules; the view turns every frame.
- * `swinging` says a swing is under way, which turns the figure to the view.
+ * `swinging` says a swing is under way, which turns the figure to the view; `toward` is the bearing to the soft lock's
+ * target, which a figure on foot faces however it walks; `aiming` says a ranged weapon is held up to aim, which eases
+ * the camera into aiming's view.
  */
 export function updatePlayer(
   player: Player,
@@ -67,6 +72,8 @@ export function updatePlayer(
   movement: MovementRules,
   seconds: number,
   swinging = false,
+  toward: number | null = null,
+  aiming = false,
 ): Player {
   const turn = (input.held('turnRight') ? 1 : 0) - (input.held('turnLeft') ? 1 : 0);
   const look = (input.held('lookDown') ? 1 : 0) - (input.held('lookUp') ? 1 : 0);
@@ -103,10 +110,14 @@ export function updatePlayer(
     queued = { jump: false, crouch: false };
   }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
+  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back.
   const acting = swinging || cast !== null;
-  const facing = acting ? yaw : body.mode !== 'ground' ? body.facing : body.moving ? body.facing : player.facing;
+  const locked = toward !== null && !mounted && body.mode === 'ground';
+  const walked = body.moving ? body.facing : player.facing;
+  const facing = acting ? yaw : locked ? toward : body.mode !== 'ground' ? body.facing : walked;
   const blend = carry / movement.tickSeconds;
-  return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, cast, act, facing };
+  const aim = aimEased(player.aim, aiming, seconds);
+  return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, cast, act, facing, aim };
 }
 
 /** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate. */
@@ -126,5 +137,5 @@ export function shownBody(player: Player): Body {
 export function playerCamera(player: Player, movement: MovementRules, blocks: readonly Block[]): Orbit {
   const body = shownBody(player);
   const head = [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
-  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks);
+  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim);
 }
