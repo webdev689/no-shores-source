@@ -128,6 +128,14 @@ yet.
 | A patrol's foes | Eight kept up, one stood every 3 s, 25 m from players and 30 m from spawns; skirmishers 3, swordsmen 3, archers 2, brutes 1 by weight | Enough to find a fight anywhere in a 1.7 km section without crowding an arrival; captains are for bosses |
 | A patrol's nodes | Twelve spots from the node's name, 60 m apart; a third standing at once, the next third every 3 minutes, each gathered once a turn by each player | The owner: nodes at several spots so a farm has routes; a turn long enough to walk a route |
 
+### Vendors
+
+| Choice | Chosen | Why |
+|---|---|---|
+| Who sells | The Quartermaster armour, the Armsmith weapons and shields, in each social space's arcades | The owner: proper vendor stations, as the Tower's |
+| What and when | Six wares a day each, three Rare and three Magic, at the buyer's level (at most 20), the same for everyone that day | Destiny 1's vendors showed a stock that changed on a schedule; Legendary and Atheric gear stays earned, so the loop of Vestiges keeps its worth |
+| Price | Aurem only: Rare 2,000, Magic 600 | About a tenth of the Aurem cap for a Rare piece, a few patrols' kills; no marks or reputation yet, as factions come later |
+
 ### Vestiges
 
 | Choice | Chosen | Why |

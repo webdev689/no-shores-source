@@ -143,6 +143,8 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
+    /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
+    pub day: u64,
 }
 
 impl Room {
@@ -197,6 +199,7 @@ impl Room {
             drops: Vec::new(),
             difficulty: gear::Difficulty::Calm,
             patrol: None,
+            day: 0,
         }
     }
 
@@ -567,33 +570,25 @@ impl Room {
 /// The seed every room's chances are drawn from: one room plays the same fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
-#[path = "room_tests.rs"]
 mod room_tests;
 
 #[cfg(test)]
-#[path = "fight_tests.rs"]
 mod fight_tests;
 
 #[cfg(test)]
-#[path = "foe_tests.rs"]
 mod foe_tests;
 
 #[cfg(test)]
-#[path = "fair_tests.rs"]
 mod fair_tests;
 
 #[cfg(test)]
-#[path = "node_tests.rs"]
 mod node_tests;
 
 #[cfg(test)]
-#[path = "gear_tests.rs"]
 mod gear_tests;
 
 #[cfg(test)]
-#[path = "perks_tests.rs"]
 mod perks_tests;
 
 #[cfg(test)]
-#[path = "patrol_tests.rs"]
 mod patrol_tests;

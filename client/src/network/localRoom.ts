@@ -40,6 +40,7 @@ export class LocalRoom implements RoomLink {
     const door = startRoomDoor(module);
     if (!door.open(spawn, blocks)) throw new Error('the course is not one a room can stand on');
     door.furnish(furnishing.stall, furnishing.nodes);
+    door.day(Math.floor(Date.now() / 86_400_000));
     return new LocalRoom(door, snapshot, gear);
   }
 

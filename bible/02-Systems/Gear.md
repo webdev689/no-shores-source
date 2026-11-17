@@ -16,6 +16,7 @@ code:
   - crates/gear/src/rewards.rs#worth
   - crates/gear/src/catalogue.rs#catalogue
   - crates/gear/src/world.rs#island_levels
+  - crates/gear/src/vendor.rs#wares
   - crates/gear/src/world.rs#Difficulty
   - crates/room/src/patrol.rs#keep_patrol
   - crates/room/src/power.rs#empower
@@ -92,6 +93,16 @@ number is one of [[Gear as Claude Shapes It]].
   parry or a block gives back, with Last Light's reload.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space answers identifying and the vault
   anywhere in it; the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
+
+## Vendors
+
+- **The Quartermaster** sells armour (head, torso, arms, legs) and **the Armsmith** weapons and shields, in a
+  social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three Magic, made at the buyer's
+  level (at most 20), the same for everyone that day and new the next (`gear::vendor`).
+- A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only in a social space, and carried with its
+  slot's nine. Legendary and Atheric gear is never sold: it is earned.
+- The room sends the day's wares with a player's gear while they stand in a social space, and a purchase is an ask
+  like any other.
 
 ## Where foes stand
 

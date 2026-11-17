@@ -12,14 +12,16 @@ import {
   inventoryOf,
   itemDetailOf,
   slotChoices,
+  vendorsOf,
 } from './gearScreen.ts';
 
-type Tab = 'character' | 'inventory' | 'account';
+type Tab = 'character' | 'inventory' | 'vendors' | 'account';
 
 /** Each tab: its name and the key that opens it. */
 const TABS: readonly (readonly [Tab, string, string])[] = [
   ['character', 'Character', 'I'],
   ['inventory', 'Inventory', 'O'],
+  ['vendors', 'Vendors', ''],
   ['account', 'Account', ''],
 ];
 /** How long a held press is held before it asks, in milliseconds: a Fruit of Dagon is eaten, not tapped. */
@@ -77,7 +79,7 @@ const rows = (pairs: readonly (readonly [string, string])[]): HTMLElement[] =>
 const heading = (text: string) => make('div', text, `gear-heading ${ROLES.rule}`);
 
 /**
- * The gear window, in the Enhanced Plus kit: Character (I), Inventory (O) and Account. While it is open the pointer is
+ * The gear window, in the Enhanced Plus kit: Character (I), Inventory (O), Vendors and Account. While it is open the pointer is
  * free and the game's keys rest; Escape closes it. It shows the player's gear as their room last sent it, and each
  * press asks the room, whose answer comes back with their gear. Where no room keeps gear it says so.
  */
@@ -220,6 +222,21 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
     ];
   };
 
+  const vendorsView = (gear: GearState, ask: GearHere['ask']): HTMLElement[] => {
+    if (!gear.social) return [make('p', 'The vendors keep their stalls in a social space’s arcades.', 'gear-hint')];
+    return vendorsOf(gear).flatMap((vendor) => [
+      heading(vendor.name),
+      ...vendor.wares.map((ware) => {
+        const row = make('div', '', 'gear-row');
+        const tile = tileNode(ware.tile, `${ware.kind} · level ${ware.level}`, () => undefined);
+        const buy = pressOf(ware.press.label, () => ask(ware.press.ask), ware.press.role);
+        buy.disabled = !ware.affordable;
+        row.append(tile, buy);
+        return row;
+      }),
+    ]);
+  };
+
   function render(): void {
     if (tab === null) return;
     for (const node of tabs) node.classList.toggle(ROLES.primary, node.dataset['tab'] === tab);
@@ -248,7 +265,8 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
     answer.style.color = opened ? (RARITIES[opened.rarity]?.colour ?? '') : '';
     const ask = (asked: Parameters<GearHere['ask']>[0]) => now.ask(asked);
     const itemNodes = item === null ? [] : itemView(gear, ask);
-    const tabNodes = () => (tab === 'character' ? characterView(gear) : inventoryView(gear, ask));
+    const tabNodes = () =>
+      tab === 'character' ? characterView(gear) : tab === 'vendors' ? vendorsView(gear, ask) : inventoryView(gear, ask);
     body.replaceChildren(...(itemNodes.length > 0 ? itemNodes : tabNodes()));
   }
 

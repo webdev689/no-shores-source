@@ -275,6 +275,7 @@ table GearItem {
   defense: uint;
   prestige: uint;
   columns: [GearColumn];
+  price: uint;
 }
 
 // A Vestige a player holds: their number for it, its colour, the slot it holds an item for, that item's level, and
@@ -302,7 +303,8 @@ table GearDrop {
 // whether they stand where a social space's asks are answered; and the answer to their last ask (0 done, then the
 // gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
 // answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
-// island's resource.
+// island's resource; and in a social space, the vendors' wares of the day, the Quartermaster's then the Armsmith's,
+// each numbered by its place among its vendor's and priced in Aurem.
 table Gear {
   xp: ulong;
   level: ubyte;
@@ -320,6 +322,7 @@ table Gear {
   identified: uint;
   answered: uint;
   nodes: [double];
+  wares: [GearItem];
 }
 
 // What a room sends: exactly one of these is present.

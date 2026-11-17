@@ -7,8 +7,8 @@ use crate::power::xp_for_level;
 use crate::rarity::Rarity;
 
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
-const AFIELD: Here = Here { social: false };
-const IN_TOWN: Here = Here { social: true };
+const AFIELD: Here = Here { social: false, day: 0 };
+const IN_TOWN: Here = Here { social: true, day: 0 };
 
 fn give(character: &mut Character, kind: Kind, rarity: Rarity, level: u8, bucket: Slot) -> u32 {
     let id = character.take_id();
@@ -214,4 +214,30 @@ fn the_vault_is_reached_in_a_social_space_and_holds_twenty_of_each() {
     assert_eq!(character.ask(Ask::Store { item: one_more }, IN_TOWN, &DICE), Err(Refusal::VaultFull));
     assert_eq!(character.ask(Ask::Withdraw { item: axe }, IN_TOWN, &DICE), Ok(Done::Done));
     assert_eq!(character.at(axe), Some(At::Carried));
+}
+
+#[test]
+fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level() {
+    use crate::vendor::{Vendor, WARES, price, wares};
+    let today = wares(Vendor::Armsmith, 20_400, 12);
+    assert_eq!(today.len(), WARES);
+    assert_eq!(today, wares(Vendor::Armsmith, 20_400, 12), "the same for everyone that day");
+    assert_ne!(today, wares(Vendor::Armsmith, 20_401, 12), "and new the next");
+    assert!(today.iter().all(|item| item.level == 12 && !item.rarity.named()));
+    assert_eq!(today.iter().filter(|item| item.rarity == Rarity::Rare).count(), WARES / 2);
+    assert!(wares(Vendor::Quartermaster, 20_400, 12).iter().all(|item| item.kind.defends()));
+    let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(12);
+    let here = Here { social: true, day: 20_400 };
+    let vend = Ask::Vend { vendor: Vendor::Armsmith, ware: 0 };
+    assert_eq!(character.ask(vend, here, &DICE), Err(Refusal::Short), "no Aurem yet");
+    character.materials.add_aurem(5_000);
+    assert_eq!(character.ask(vend, Here { social: false, ..here }, &DICE), Err(Refusal::NotHere));
+    let before = character.items.len();
+    assert_eq!(character.ask(vend, here, &DICE), Ok(Done::Done));
+    assert_eq!(character.items.len(), before + 1);
+    assert_eq!(character.materials.aurem, 5_000 - price(Rarity::Rare));
+    let bought = character.items.values().find(|(item, _)| item.level == 12).expect("the ware");
+    assert_eq!(bought.1, At::Carried);
+    assert_eq!(character.ask(Ask::Vend { vendor: Vendor::Armsmith, ware: 9 }, here, &DICE), Err(Refusal::NoSuchItem));
 }

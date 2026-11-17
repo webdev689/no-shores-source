@@ -1,6 +1,7 @@
 import type * as flatbuffers from 'flatbuffers';
 import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
+import type { GearItem as GearItemTable } from '../../../generated/messages/ts/overlook/wire/gear-item.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -15,6 +16,7 @@ export const ASKS = {
   withdraw: 9,
   storeVestige: 10,
   withdrawVestige: 11,
+  vend: 12,
   gather: 20,
   grantVestige: 30,
   grantNamed: 31,
@@ -70,6 +72,8 @@ export interface GearItem {
   readonly defense: number;
   readonly prestige: number;
   readonly columns: readonly GearColumn[];
+  /** A vendor's ware's price in Aurem; none for an item held. */
+  readonly price: number;
 }
 
 export interface GearVestige {
@@ -116,52 +120,64 @@ export interface GearState {
   readonly identified: number;
   readonly answered: number;
   readonly nodes: readonly GearNode[];
+  /** In a social space, the vendors' wares of the day: the Quartermaster's, then the Armsmith's, each numbered by
+   *  its place among its vendor's. */
+  readonly wares: readonly GearItem[];
 }
 
 /** No node chosen in a column, and no resource. */
 export const NONE = 255;
 
-/** The gear a message holds. */
-export function gearOf(gear: Gear): GearState {
-  const items = Array.from({ length: gear.itemsLength() }, (unused, index) => {
-    const item = gear.items(index);
-    if (!item) throw new Error(`gear item ${index} is missing`);
-    const columns = Array.from({ length: item.columnsLength() }, (unusedColumn, place) => {
-      const column = item.columns(place);
-      if (!column) throw new Error(`item ${item.id()}'s column ${place} is missing`);
-      const traits = Array.from({ length: column.traitsLength() }, (unusedTrait, nth) => column.traits(nth));
-      return {
-        kind: column.kind(),
-        traits,
-        xp: column.xp(),
-        aurem: column.aurem(),
-        fragments: column.fragments(),
-        essence: column.essence(),
-        resource: column.resource(),
-      };
-    });
-    const resource = item.resource();
+/** An item as a message holds it. */
+function itemOf(item: GearItemTable): GearItem {
+  const columns = Array.from({ length: item.columnsLength() }, (unusedColumn, place) => {
+    const column = item.columns(place);
+    if (!column) throw new Error(`item ${item.id()}'s column ${place} is missing`);
+    const traits = Array.from({ length: column.traitsLength() }, (unusedTrait, nth) => column.traits(nth));
     return {
-      id: item.id(),
-      kind: item.kind(),
-      rarity: item.rarity(),
-      level: item.level(),
-      named: item.named(),
-      name: item.name(),
-      resource: resource === NONE ? null : resource,
-      breach: item.breach(),
-      xp: item.xp(),
-      xpMost: item.xpMost(),
-      bought: item.bought(),
-      chosen: Array.from(item.chosenArray() ?? []),
-      bucket: item.bucket(),
-      at: item.at(),
-      attack: item.attack(),
-      defense: item.defense(),
-      prestige: item.prestige(),
-      columns,
+      kind: column.kind(),
+      traits,
+      xp: column.xp(),
+      aurem: column.aurem(),
+      fragments: column.fragments(),
+      essence: column.essence(),
+      resource: column.resource(),
     };
   });
+  const resource = item.resource();
+  return {
+    id: item.id(),
+    kind: item.kind(),
+    rarity: item.rarity(),
+    level: item.level(),
+    named: item.named(),
+    name: item.name(),
+    resource: resource === NONE ? null : resource,
+    breach: item.breach(),
+    xp: item.xp(),
+    xpMost: item.xpMost(),
+    bought: item.bought(),
+    chosen: Array.from(item.chosenArray() ?? []),
+    bucket: item.bucket(),
+    at: item.at(),
+    attack: item.attack(),
+    defense: item.defense(),
+    prestige: item.prestige(),
+    columns,
+    price: item.price(),
+  };
+}
+
+/** The gear a message holds. */
+export function gearOf(gear: Gear): GearState {
+  const listed = (length: number, nth: (index: number) => GearItemTable | null, what: string) =>
+    Array.from({ length }, (unused, index) => {
+      const item = nth(index);
+      if (!item) throw new Error(`${what} ${index} is missing`);
+      return itemOf(item);
+    });
+  const items = listed(gear.itemsLength(), (index) => gear.items(index), 'gear item');
+  const wares = listed(gear.waresLength(), (index) => gear.wares(index), 'ware');
   const vestiges = Array.from({ length: gear.vestigesLength() }, (unused, index) => {
     const vestige = gear.vestiges(index);
     if (!vestige) throw new Error(`gear Vestige ${index} is missing`);
@@ -196,6 +212,7 @@ export function gearOf(gear: Gear): GearState {
     identified: gear.identified(),
     answered: gear.answered(),
     nodes: nodesOf(Array.from(gear.nodesArray() ?? [])),
+    wares,
   };
 }
 

@@ -23,6 +23,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   defense: 0,
   prestige: 0,
   columns: [],
+  price: 0,
   ...fields,
 });
 
@@ -43,6 +44,7 @@ const state = (items: readonly GearItem[]): GearState => ({
   identified: 0,
   answered: 0,
   nodes: [],
+  wares: [],
 });
 
 const WARDROBE: Wardrobe = {

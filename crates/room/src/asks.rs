@@ -75,7 +75,7 @@ impl Room {
             self.fighter(player)
                 .is_some_and(|fighter| libm::hypot(fighter.body.x - stall[0], fighter.body.y - stall[1]) <= STALL_REACH)
         };
-        Here { social: self.social || self.stall.is_some_and(near_stall) }
+        Here { social: self.social || self.stall.is_some_and(near_stall), day: self.day }
     }
 
     /// Answers a player's ask, keeping the answer to send them.

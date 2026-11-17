@@ -44,7 +44,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 
 ## The gear window
 
-A window over the game, after Destiny's own: Character (I), Inventory (O) and Account, under a header of tabs. While
+A window over the game, after Destiny's own: Character (I), Inventory (O), Vendors and Account, under a header of
+tabs. While
 it is open the pointer is free and the game's own keys rest; Escape or Close shuts it. It shows the player's gear as
 their room last sent it ([[Gear]]), and each press is an ask the room answers with their gear.
 
@@ -61,6 +62,8 @@ their room last sent it ([[Gear]]), and each press is an ask the room answers wi
 - **Inventory.** Aurem, the fragments and Essence, Fruit of Dagon and each island's resource held; the Vestiges
   carried; and the vault. In a social space, a Vestige may be identified or vaulted, and the vault opens; elsewhere it
   says where they are.
+- **Vendors.** In a social space, the Quartermaster's and the Armsmith's wares of the day ([[Gear]], "Vendors"),
+  each a tile with its kind, level and a Buy press at its price, flat while the player's Aurem falls short.
 - **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
   password to keep a guest by, or to sign in with; Discord; and signing out, which warns a guest they cannot come
   back. A sign-in or out loads the page again, so its rooms hold the right character.

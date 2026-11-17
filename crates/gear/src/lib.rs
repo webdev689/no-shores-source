@@ -13,6 +13,7 @@ pub mod kinds;
 pub mod power;
 pub mod rarity;
 pub mod rewards;
+pub mod vendor;
 pub mod vestige;
 pub mod world;
 

@@ -24,6 +24,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   defense: 0,
   prestige: 0,
   columns: [],
+  price: 0,
   ...fields,
 });
 const state = (items: GearItem[]): GearState => ({
@@ -42,6 +43,7 @@ const state = (items: GearItem[]): GearState => ({
   answer: 0,
   answered: 0,
   nodes: [],
+  wares: [],
   identified: 0,
 });
 const sets = ['chain', 'steel', 'iron', 'leather', 'knights'];

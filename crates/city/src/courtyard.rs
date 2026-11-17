@@ -26,7 +26,7 @@ pub const SPAWN_OFFSETS_M: [f64; 4] = [-60.0, -20.0, 20.0, 60.0];
 const PORTICO_M: [f64; 4] = [52.0, 16.0, 1.2, 11.0];
 /// The arcades: where they start and end across the plaza, their depth, their columns' height and their bays' width
 /// as near as the arcade's length allows.
-const ARCADE_M: [f64; 5] = [32.0, 118.0, 10.0, 6.0, 7.2];
+pub(crate) const ARCADE_M: [f64; 5] = [32.0, 118.0, 10.0, 6.0, 7.2];
 /// The obelisk's height, over its two steps, metres.
 pub const OBELISK_M: f64 = 18.0;
 /// How thick a band laid in the paving is, metres: too low to step over, and clear of the paving's face.
@@ -38,17 +38,17 @@ impl Frame {
     }
 
     /// A point `toward_sea` metres seaward of the middle and `across` metres across.
-    fn at(&self, toward_sea: f64, across: f64) -> [f64; 2] {
+    pub(crate) fn at(&self, toward_sea: f64, across: f64) -> [f64; 2] {
         ahead(ahead(self.middle, self.seaward, toward_sea), self.across(), across)
     }
 
     /// A box standing at `base` metres over the floor, `width` across the plaza and `depth` toward the sea.
-    fn block(&self, toward_sea: f64, across: f64, base: f64, size: [f64; 3], material: Material) -> Solid {
+    pub(crate) fn block(&self, toward_sea: f64, across: f64, base: f64, size: [f64; 3], material: Material) -> Solid {
         let [x, y] = self.at(toward_sea, across);
         Solid::upright(Shape::Block, [x, y, self.level + base], size, material).turned(turn_toward(self.seaward))
     }
 
-    fn round(&self, toward_sea: f64, across: f64, base: f64, shape: [f64; 3], material: Material) -> Solid {
+    pub(crate) fn round(&self, toward_sea: f64, across: f64, base: f64, shape: [f64; 3], material: Material) -> Solid {
         let [width, height, top] = shape;
         let [x, y] = self.at(toward_sea, across);
         let column = Shape::Column { sides: 16, top };

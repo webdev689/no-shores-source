@@ -15,6 +15,9 @@ interface Env {
   readonly ACCOUNTS: Service<CharacterKeeper>;
 }
 
+/** A day, milliseconds: the vendors' wares change with it. */
+const DAY_MS = 86_400_000;
+
 /** The seas a voyage sets out at, by the room door's numbers. */
 const SEAS = ['calm', 'rough', 'storm'];
 
@@ -116,7 +119,8 @@ export class RoomHost extends DurableObject<Env> {
     const difficulty = SEAS.indexOf(seas);
     if (difficulty < 0) return false;
     const file = await this.env.NODES.fetch(`https://nodes/${id ?? ''}.json`);
-    return file.ok && this.room.openNode(await file.text()) && this.room.difficulty(difficulty);
+    const opened = file.ok && this.room.openNode(await file.text()) && this.room.difficulty(difficulty);
+    return opened && this.room.day(Math.floor(Date.now() / DAY_MS));
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
@@ -210,6 +214,7 @@ export class RoomHost extends DurableObject<Env> {
       if (now - this.lastKept >= 1000) {
         this.lastKept = now;
         void this.keeper?.due(now);
+        this.guarded(() => this.room.day(Math.floor(now / DAY_MS)), false);
       }
     }, tickMs);
   }

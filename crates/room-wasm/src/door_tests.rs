@@ -224,3 +224,27 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     assert_eq!(nodes.len(), 4 * 4, "a third of its twelve spots, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
 }
+
+#[test]
+fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem() {
+    let mut social = node_file();
+    social["id"] = json!("harbour-social");
+    social["kind"] = json!("social");
+    assert!(open_node(social.to_string().as_bytes()));
+    assert!(set_day(20_400));
+    let player = room_join();
+    room_tick();
+    let sent = gear(player);
+    let message = messages::root_as_from_room(&sent).unwrap();
+    let wares = message.gear().unwrap().wares().unwrap();
+    assert_eq!(wares.len(), 2 * gear::vendor::WARES, "the Quartermaster's and the Armsmith's");
+    assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
+    // Too poor to buy: refused, and the wares stay.
+    let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 4 });
+    let bytes = protocol::input_bytes(&room::Input { sequence: 1, ask: Some(ask), ..room::Input::default() });
+    assert_eq!(input(player, &bytes), 0);
+    room_tick();
+    let answered = gear(player);
+    let gear_now = messages::root_as_from_room(&answered).unwrap().gear().unwrap();
+    assert_eq!(gear_now.answer(), gear::Refusal::Short as u8 + 1, "no Aurem yet");
+}

@@ -22,7 +22,7 @@ mod deck_door;
 mod fleet_door;
 mod gear_door;
 
-pub use gear_door::{character, furnish, gear, restore_character, set_difficulty};
+pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]

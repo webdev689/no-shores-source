@@ -20,6 +20,7 @@ pub const STORE: u8 = 8;
 pub const WITHDRAW: u8 = 9;
 pub const STORE_VESTIGE: u8 = 10;
 pub const WITHDRAW_VESTIGE: u8 = 11;
+pub const VEND: u8 = 12;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -45,6 +46,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         WITHDRAW => Asked::Gear(Ask::Withdraw { item }),
         STORE_VESTIGE => Asked::Gear(Ask::StoreVestige { vestige: item }),
         WITHDRAW_VESTIGE => Asked::Gear(Ask::WithdrawVestige { vestige: item }),
+        VEND => Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::from_number(column)?, ware: node }),
         GATHER => Asked::Gather { node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -80,6 +82,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::StoreVestige { vestige } => args = messages::AskArgs { kind: STORE_VESTIGE, item: vestige, ..args },
             Ask::WithdrawVestige { vestige } => {
                 args = messages::AskArgs { kind: WITHDRAW_VESTIGE, item: vestige, ..args };
+            }
+            Ask::Vend { vendor, ware } => {
+                args = messages::AskArgs { kind: VEND, column: vendor as u8, node: ware, ..args };
             }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
@@ -134,6 +139,7 @@ fn item_offset<'built>(
     builder: &mut FlatBufferBuilder<'built>,
     item: &Item,
     at: At,
+    price: u32,
 ) -> WIPOffset<messages::GearItem<'built>> {
     let columns: Vec<_> = item
         .columns()
@@ -177,6 +183,7 @@ fn item_offset<'built>(
         defense: item.defense().unwrap_or(0),
         prestige: item.prestige(),
         columns,
+        price,
     };
     messages::GearItem::create(builder, &args)
 }
@@ -188,7 +195,23 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let character = &found.character;
     let held = &character.materials;
     let mut builder = FlatBufferBuilder::new();
-    let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at)).collect();
+    let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
+    // In a social space, the day's wares, each numbered by its place among its vendor's.
+    let wares: Vec<_> = if room.social_for(player) {
+        gear::vendor::Vendor::ALL
+            .into_iter()
+            .flat_map(|vendor| gear::vendor::wares(vendor, room.day, character.level()))
+            .enumerate()
+            .map(|(place, mut ware)| {
+                ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();
+                let price = gear::vendor::price(ware.rarity);
+                item_offset(&mut builder, &ware, At::Carried, price)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let wares = Some(builder.create_vector(&wares));
     let items = Some(builder.create_vector(&items));
     let vestiges: Vec<_> = character
         .vestiges
@@ -239,6 +262,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         identified: found.identified,
         answered: found.answered,
         nodes: Some(builder.create_vector(&nodes)),
+        wares,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -227,3 +227,34 @@ export function inventoryOf(state: GearState): Inventory {
     vaultedVestiges: shown(true),
   };
 }
+
+/** A vendor's ware as the Vendors tab shows it: the item's tile and kind, and its purchase. */
+export interface Ware {
+  readonly tile: Tile;
+  readonly kind: string;
+  readonly level: number;
+  readonly price: number;
+  readonly affordable: boolean;
+  readonly press: Press;
+}
+
+/** The Vendors tab: the Quartermaster's and the Armsmith's wares of the day, each bought for its price in Aurem. */
+export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
+  const names = ['The Quartermaster', 'The Armsmith'];
+  const half = state.wares.length / 2;
+  return names.map((name, vendor) => ({
+    name,
+    wares: state.wares.slice(vendor * half, (vendor + 1) * half).map((item) => ({
+      tile: tileOf(item),
+      kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(KINDS[item.kind] ?? '')}`,
+      level: item.level,
+      price: item.price,
+      affordable: state.aurem >= item.price,
+      press: {
+        label: `Buy · ${item.price.toLocaleString()} Aurem`,
+        ask: { kind: ASKS.vend, column: vendor, node: item.id },
+        role: 'primary',
+      },
+    })),
+  }));
+}

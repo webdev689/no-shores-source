@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { characterOf, inventoryOf, itemDetailOf, slotChoices, xpForLevel } from './gearScreen.ts';
+import { characterOf, inventoryOf, itemDetailOf, slotChoices, vendorsOf, xpForLevel } from './gearScreen.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -22,6 +22,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   defense: 0,
   prestige: 0,
   columns: [],
+  price: 0,
   ...fields,
 });
 
@@ -41,6 +42,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   answer: 0,
   answered: 0,
   nodes: [],
+  wares: [],
   identified: 0,
   ...fields,
 });
@@ -146,4 +148,24 @@ test('the Inventory counts materials, and opens Vestiges and the vault only in a
   );
   assert.equal(social.vaulted.length, 1);
   assert.deepEqual(social.vaultedVestiges[0]?.presses[0]?.ask, { kind: ASKS.withdrawVestige, item: 5 });
+});
+
+test('the Vendors tab shows each vendor’s wares of the day, bought for their price in Aurem', () => {
+  const wares = [
+    item({ id: 0, kind: 13, rarity: 2, level: 9, price: 2_000 }),
+    item({ id: 1, kind: 14, rarity: 1, level: 9, price: 600 }),
+    item({ id: 0, kind: 2, rarity: 2, level: 9, price: 2_000, attack: 120 }),
+    item({ id: 1, kind: 12, rarity: 1, level: 9, price: 600 }),
+  ];
+  const [quartermaster, armsmith] = vendorsOf(state({ wares, aurem: 1_000 }));
+  assert.equal(quartermaster?.name, 'The Quartermaster');
+  assert.deepEqual(
+    quartermaster?.wares.map((ware) => [ware.kind, ware.affordable]),
+    [
+      ['Rare Head', false],
+      ['Magic Torso', true],
+    ],
+  );
+  assert.deepEqual(armsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0 });
+  assert.equal(armsmith?.wares[0]?.press.label, 'Buy · 2,000 Aurem');
 });

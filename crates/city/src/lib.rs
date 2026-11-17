@@ -14,6 +14,7 @@ pub mod landmarks_inland;
 pub mod rmb;
 pub mod social;
 pub mod solids;
+pub mod stations;
 pub mod terraces;
 pub mod walls;
 pub mod ways;

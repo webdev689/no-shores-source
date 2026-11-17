@@ -60,6 +60,8 @@ export interface RoomDoor {
   gear(player: number): Uint8Array;
   /** Sets a node's room's seas, as its voyage set out: 0 calm, 1 rough, 2 storm; false if it is no room on land. */
   difficulty(seas: number): boolean;
+  /** Sets the day, counted from the epoch, whose wares its vendors show; false if it is no room on land. */
+  day(day: number): boolean;
   /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
   character(player: number): string | null;
   /** Gives a player the character kept for them; false if the text is not one or they are not in. */
@@ -87,6 +89,7 @@ interface RoomExports {
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
   room_difficulty(seas: number): number;
+  room_day(day: number): number;
   room_restore_character(player: number, address: number, length: number): number;
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
@@ -149,6 +152,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     gear: (player) => take(exports.room_gear(player)),
     difficulty: (seas) => exports.room_difficulty(seas) === 1,
+    day: (day) => exports.room_day(day) === 1,
     character: (player) => {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);

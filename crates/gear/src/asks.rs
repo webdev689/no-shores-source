@@ -7,6 +7,7 @@ use crate::dice::{Dice, Purpose};
 use crate::item::{Item, NAMED_LEVEL, NONE_CHOSEN};
 use crate::kinds::{Slot, Stock};
 use crate::rarity::Rarity;
+use crate::vendor::{self, Vendor};
 use crate::vestige;
 
 /// The XP a Fruit of Dagon gives an item.
@@ -15,17 +16,49 @@ pub const FRUIT_ITEM_XP: u32 = 5_000;
 /// One ask.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Ask {
-    Wear { item: u32, slot: Slot },
-    TakeOff { slot: Slot },
-    Buy { item: u32, column: u8, node: u8 },
-    Choose { item: u32, column: u8, node: u8 },
-    Dismantle { item: u32 },
-    Identify { vestige: u32 },
-    Feed { item: u32 },
-    Store { item: u32 },
-    Withdraw { item: u32 },
-    StoreVestige { vestige: u32 },
-    WithdrawVestige { vestige: u32 },
+    Wear {
+        item: u32,
+        slot: Slot,
+    },
+    TakeOff {
+        slot: Slot,
+    },
+    Buy {
+        item: u32,
+        column: u8,
+        node: u8,
+    },
+    Choose {
+        item: u32,
+        column: u8,
+        node: u8,
+    },
+    Dismantle {
+        item: u32,
+    },
+    Identify {
+        vestige: u32,
+    },
+    Feed {
+        item: u32,
+    },
+    Store {
+        item: u32,
+    },
+    Withdraw {
+        item: u32,
+    },
+    StoreVestige {
+        vestige: u32,
+    },
+    WithdrawVestige {
+        vestige: u32,
+    },
+    /// Buys one of a vendor's wares of the day, by its place among them.
+    Vend {
+        vendor: Vendor,
+        ware: u8,
+    },
 }
 
 /// Why an ask was refused.
@@ -66,10 +99,11 @@ pub enum Done {
     Identified(u32),
 }
 
-/// Where the player is when they ask.
+/// Where the player is when they ask, and the day, whose wares the vendors show.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Here {
     pub social: bool,
+    pub day: u64,
 }
 
 impl Character {
@@ -91,6 +125,7 @@ impl Character {
             Ask::Withdraw { item } => self.move_item(item, here, At::Vault, At::Carried),
             Ask::StoreVestige { vestige } => self.move_vestige(vestige, here, true),
             Ask::WithdrawVestige { vestige } => self.move_vestige(vestige, here, false),
+            Ask::Vend { vendor, ware } => self.vend(vendor, ware, here),
         }
         .map(|done| done.unwrap_or(Done::Done))
     }
@@ -127,6 +162,26 @@ impl Character {
             moves.push((off.id, At::Carried));
         }
         self.settle_moves(&moves)?;
+        Ok(None)
+    }
+
+    /// Buys a vendor's ware of the day, at the buyer's own level, carried with its slot's: only in a social space.
+    fn vend(&mut self, vendor: Vendor, ware: u8, here: Here) -> Result<Option<Done>, Refusal> {
+        if !here.social {
+            return Err(Refusal::NotHere);
+        }
+        let wares = vendor::wares(vendor, here.day, self.level());
+        let mut item = wares.into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
+        let cost = vendor::price(item.rarity);
+        if self.materials.aurem < cost {
+            return Err(Refusal::Short);
+        }
+        if self.carried_in(item.bucket) >= CARRIED_MOST {
+            return Err(Refusal::CarriedFull);
+        }
+        item.id = self.take_id();
+        self.materials.aurem -= cost;
+        self.items.insert(item.id, (item, At::Carried));
         Ok(None)
     }
 
