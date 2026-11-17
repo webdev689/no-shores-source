@@ -156,6 +156,7 @@ yet.
 | The starting kit | A level 1 Normal sword, and Normal armour of level 1 for each slot | Destiny 1 starts a Guardian in its plainest gear |
 | The cloak | Its slot holds one; until there are factions, cloaks belong to none | The owner: factions come later |
 | Clothing | Every garment is armour of its piece, the everyday ones Normal and Magic, the heavier sets Rare and above; no toggle | The owner: clothing is armour, with a wardrobe later ([[Clothing Is Armour, With a Wardrobe Later]]) |
+| How it looks | Normal and Magic are clothes (Magic adds a tunic or vest, tall boots, a leather helm and gloves); Rare is chain, steel or iron; Legendary silver, elven, dwarven or the knights'; Atheric daedric, ebony, adamantium or mithril; a cloak is casual, formal from Rare | Rarer gear should read as rarer at a glance, as Destiny's does, with the forge's own sets in order of their worth |
 
 ### Names
 

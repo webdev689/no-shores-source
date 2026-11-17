@@ -28,7 +28,8 @@ import { COURSE, RESOURCE_NODES, STALL, START } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
 import type { GearState } from '../network/gearMessages.ts';
-import { gearHands, worn } from '../player/gear.ts';
+import { SLOTS, worn } from '../player/gear.ts';
+import { gearOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { cameraOf, viewProjection } from '../editor/orbit.ts';
@@ -207,7 +208,7 @@ async function start(): Promise<void> {
   const otherGlides = new Glides();
   let foeId = -1;
   let armsKey = '';
-  let gearHandsKey = '';
+  let gearWornKey = '';
 
   let last = performance.now();
   let clock = 0;
@@ -220,13 +221,17 @@ async function start(): Promise<void> {
     last = now;
     clock += seconds;
     const controls = input.frame();
-    // The hands hold what the gear wears: the room takes no other arms.
-    const handsWorn = gear && JSON.stringify([you.dress.body, worn(gear, 0), worn(gear, 1)].map((each) => each ?? 0));
+    // The figure wears what the gear wears, and the hands hold it: the room takes no other arms.
+    const ownGear = gear;
+    const gearWorn =
+      ownGear && JSON.stringify([you.dress.body, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
     const bodyLayers = looks.bodies[you.dress.body]?.layers;
-    if (gear && handsWorn && handsWorn !== gearHandsKey && bodyLayers) {
-      gearHandsKey = handsWorn;
-      const hands = gearHands(gear, wardrobeOf(you.dress.body, bodyLayers));
-      you.dress = { ...you.dress, outfit: { ...you.dress.outfit, ...hands } };
+    if (ownGear && gearWorn && gearWorn !== gearWornKey && bodyLayers) {
+      gearWornKey = gearWorn;
+      you.dress = {
+        ...you.dress,
+        outfit: gearOutfit(ownGear, wardrobeOf(you.dress.body, bodyLayers), you.dress.outfit),
+      };
     }
     const wasDrawn = you.dress.outfit.drawn;
     // The fight's buttons for this frame's ticks: a swing or a shot only with the weapon already out, on foot, the

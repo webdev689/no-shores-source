@@ -71,5 +71,5 @@ their room last sent it ([[Gear]]), and each press is an ask the room answers wi
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels for now.
-- The gear window draws no item's picture, and no figure wearing it; the gear does not dress the figure yet.
+- The gear window draws no item's picture, and no figure wearing it: the figure in the world wears it ([[Gear]]).
 - No gamepad or touch layer yet.

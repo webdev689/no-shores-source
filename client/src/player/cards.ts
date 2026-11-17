@@ -2,7 +2,7 @@ import { type Colours, composeFrame } from '../forge/compose.ts';
 import type { DyeTable } from '../forge/dyes.ts';
 import { type ForgeLooks, mirroredGear } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
-import { type Dress, figureOf, rampsOf } from './dressing.ts';
+import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
 
 /** A figure's picture as a scene draws it: its texture, its size in pixels, and its feet on it. */
 export interface Card {
@@ -65,6 +65,12 @@ export class Cards {
   /** How many frames are being composed. */
   get pending(): number {
     return this.composing.size;
+  }
+
+  /** What a body can wear, as the forge draws it; null for a body it has not. */
+  wardrobe(body: string): Wardrobe | null {
+    const layers = this.looks.bodies[body]?.layers;
+    return layers ? wardrobeOf(body, layers) : null;
   }
 
   /** The frames an animation has on a body. */

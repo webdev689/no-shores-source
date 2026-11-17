@@ -20,6 +20,7 @@ code:
   - crates/room/src/asks.rs#answer
   - crates/protocol/src/gear_wire.rs#gear_bytes
   - client/src/player/gear.ts#gearHands
+  - client/src/player/gearLooks.ts#gearOutfit
   - client/src/testground/gearPanel.ts#startGearPanel
 ---
 # Gear
@@ -89,14 +90,28 @@ number is one of [[Gear as Claude Shapes It]].
 - **Asks** ride the player's inputs and are answered in turn. A city's social space answers identifying and the vault
   anywhere in it; the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
 
+## Looks
+
+The figure wears its gear (`gearOutfit`), redressed whenever what it wears changes, and the room passes the dress on
+to every other player. Every garment is armour ([[Clothing Is Armour, With a Wardrobe Later]]):
+
+- **Normal and Magic** pieces are clothes: a shirt (Magic, with a tunic or vest over it), breeches, trousers or a
+  skirt, and shoes (Magic, tall boots), dyed in the rarity's plain or brighter dyes. A Magic head or arms piece is
+  leather; a Normal one shows nothing.
+- **Rare and finer** pieces are armour sets of the forge: Rare in chain, steel or iron, Legendary in silver, elven,
+  dwarven or the knights' set, Atheric in daedric, ebony, adamantium or mithril, the first the forge draws for every
+  piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots).
+- **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; the hands hold the weapons and
+  shield worn, in the rarity's metal.
+- Each rolled item keeps its own look by its name; a named item takes its rarity's first.
+
 ## Limits
 
 - A weapon's traits work whichever hand strikes, and every trait worn counts once however many pieces give it.
 - The game's gear window ([[Interface]], "The gear window") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
-- The hands are drawn in a metal the rarity likes, not each item's own look; armour, clothing sets and the cloak do
-  not dress the figure yet.
-- No Breach items exist yet, and no clothing is armour yet ([[Clothing Is Armour, With a Wardrobe Later]]); cloaks
-  belong to no faction.
+- A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own,
+  and a Normal head or arms piece shows nothing over the figure.
+- No Breach items exist yet; cloaks belong to no faction.
 - The traits' and items' words are English only.

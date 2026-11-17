@@ -4,6 +4,8 @@ import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera } from '../player/player.ts';
 import type { Others } from '../player/others.ts';
+import type { GearState } from '../network/gearMessages.ts';
+import { gearOutfit } from '../player/gearLooks.ts';
 import { RoomPlay } from '../player/roomPlay.ts';
 import type { Walker } from '../player/walker.ts';
 import type { Block, MovementRules, Reach } from '../rules/movementRules.ts';
@@ -76,6 +78,8 @@ export class Foot {
   boxes: readonly Block[];
   private readonly context: FootContext;
   private readonly room: RoomPlay | null;
+  /** The gear the figure was last dressed in. */
+  private dressedIn: GearState | null = null;
   private readonly others: readonly Placed[];
   private readonly rules: MovementRules;
   private reach: Reach = { kind: 'inside' };
@@ -152,6 +156,17 @@ export class Foot {
     return new Foot(context, node, boxes, room, placed);
   }
 
+  /** Dresses the player's figure in their gear as their room last sent it, once it changes. */
+  private dressInGear(): void {
+    const gear = this.room?.gear ?? null;
+    if (!gear || gear === this.dressedIn) return;
+    this.dressedIn = gear;
+    const { walker, forge } = this.context;
+    const wardrobe = forge.wardrobe(walker.you.dress.body);
+    if (wardrobe)
+      walker.you.dress = { ...walker.you.dress, outfit: gearOutfit(gear, wardrobe, walker.you.dress.outfit) };
+  }
+
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
   get gear(): GearHere | null {
     const room = this.room;
@@ -168,6 +183,7 @@ export class Foot {
    *  is placed for an eye there. */
   frame(controls: InputFrame, seconds: number, clock: number, paused: boolean): FootFrame {
     const { walker, movement, forge, groundAt } = this.context;
+    this.dressInGear();
     walker.frame(paused ? IDLE : { ...controls, locked: true }, this.rules, seconds, clock);
     const shot = shotOfOrbit(playerCamera(walker.player, movement, this.boxes), LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
