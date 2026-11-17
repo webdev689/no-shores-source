@@ -11,6 +11,8 @@ export interface PanelState {
   readonly looks: ForgeLooks;
   readonly hair: HairColours;
   readonly figures: readonly Placed[];
+  /** The figures of other players in the room, whose moves the room sets each tick. */
+  readonly remote: ReadonlySet<Placed>;
   readonly chosen: Placed | null;
   readonly fps: number;
   readonly playerId: number;
@@ -93,8 +95,9 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
   return (state: PanelState) => {
     status.textContent = state.status;
     // Rebuilt only when the figures, the chosen one or the forge's looks (once they load) change, so typing in a
-    // field keeps its focus.
-    const figures = state.figures.map((each) => [each.id, each.anim, each.dress]);
+    // field keeps its focus; another player's move changes every tick, so it is left out.
+    const moveShown = (placed: Placed) => placed.id !== state.playerId && !state.remote.has(placed);
+    const figures = state.figures.map((each) => [each.id, moveShown(each) ? each.anim : '', each.dress]);
     const key = JSON.stringify([figures, state.chosen?.id, Object.keys(state.looks.bodies).length]);
     if (key === shown) return;
     shown = key;
@@ -104,7 +107,7 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
     const list = make('div', '', 'figures');
     for (const placed of state.figures) {
       const who = placed.id === state.playerId ? 'You' : `${placed.id}`;
-      const label = `${who}: ${placed.dress.race}, ${placed.dress.body}${placed.id === state.playerId ? '' : `, ${placed.anim}`}`;
+      const label = `${who}: ${placed.dress.race}, ${placed.dress.body}${moveShown(placed) ? `, ${placed.anim}` : ''}`;
       const pick = button(label, () => handlers.choose(placed.id));
       if (placed === state.chosen) pick.classList.add('active');
       list.append(pick);

@@ -87,6 +87,12 @@ fn history_in_a_comment_is_a_problem() {
         "// HOST-SPLIT: keeps the host small\n",
         "// WG2-EDIT keeps the layer\n",
         "// explained in bible/03-Code/Sea.md\n",
+        "// see PR#1674 for the reason\n",
+        "// GH-1674, as JIRA-2210 asked\n",
+        "// NAV-12 keeps the helm\n",
+        "// changed on 17 Nov 2026\n",
+        "// changed on 3 September 2026\n",
+        "// changed on 2026/11/14\n",
     ];
     for case in cases {
         assert_eq!(problems_in("crates/core/src/lib.rs", case).len(), 1, "{case}");
@@ -99,10 +105,20 @@ fn ordinary_words_are_not_history() {
         "// UTF-8 text, SHA-256 prints, a 2D grid, item #1 of a list\n",
         "// The hull rolls at 0.5 rad and 20 Hz; see the Sailing note.\n",
         "// x-axis and y-axis meet at the keel.\n",
+        "// ISO-8601 times, RFC-3339 stamps, May 2026's swell, 3 maybe 2026 ships\n",
     ];
     for case in cases {
         assert!(problems_in("crates/core/src/lib.rs", case).is_empty(), "{case}");
     }
+}
+
+#[test]
+fn python_docstrings_and_trailing_comments_are_read() {
+    let text = "def sail():\n    \"\"\"Changed on 2026-11-14,\n    see #1674.\"\"\"\n    x = '#1674'  # LOOT-GATE\n";
+    let lines: Vec<usize> = problems_in("forge/body.py", text).iter().filter_map(|problem| problem.line).collect();
+    assert_eq!(lines, [2, 3, 4], "the docstring's two lines and the trailing comment, not the string");
+    let long = format!("\"\"\"{}\"\"\"\n", "why\n".repeat(MAX_COMMENT_LINES + 1));
+    assert_eq!(problems_in("forge/body.py", &long).len(), 1, "a long docstring is a long comment");
 }
 
 #[test]

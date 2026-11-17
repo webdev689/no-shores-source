@@ -173,7 +173,7 @@ The figure is dressed as DFO's game dresses it ([[DFO's Sprite Forge Comes Over 
 ## How it draws
 
 The page reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
-its pack by its byte range and decoded once.
+its pack by its byte range and decoded once; one that fails to arrive is asked for again 5 s later, not every frame.
 
 A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 

@@ -1,22 +1,14 @@
-import { type JoinedNode, type PlayerDress, type Standing, inputBytes } from '../network/messages.ts';
+import { type JoinedNode, type Standing, inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { type Controls, type MovementRules, floatsOfControls } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
-import { type Dress, dressFrom, plainDress } from './dressing.ts';
-import type { Placed } from './figures.ts';
-import { showOther } from './others.ts';
+import { OtherPlayers, type Others } from './others.ts';
 import type { Walker } from './walker.ts';
 
 /** The fight's numbers after the controls in an input (stroke, guard, dodge, shoot, pitch, aim, and an aimed shot's
  *  mark, none here): a walker asks for none. */
 const NO_FIGHT = [0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN];
-
-/** How a page keeps other players' figures: it places one for a player who comes, and takes away one who leaves. */
-export interface Others {
-  place(dress: Dress, x: number, y: number, facing: number): Placed;
-  remove(placed: Placed): void;
-}
 
 /** What playing in a room needs: the movement rules, the player, the forge's cards, and the page's figures. */
 export interface RoomContext {
@@ -35,8 +27,7 @@ export class RoomPlay {
   /** Where the player stands with the room's section, as its last snapshot said. */
   standing: Standing = { kind: 'inside' };
   private readonly prediction = new Prediction<Controls>();
-  private readonly others = new Map<number, Placed>();
-  private readonly dresses = new Map<number, Dress>();
+  private readonly others: OtherPlayers;
   private readonly context: RoomContext;
   private connection: RoomConnection | null = null;
   private own = 0;
@@ -47,6 +38,7 @@ export class RoomPlay {
 
   private constructor(context: RoomContext) {
     this.context = context;
+    this.others = new OtherPlayers(context.others);
   }
 
   /** Joins the room at `url`; resolves once the room has welcomed the player. */
@@ -55,7 +47,7 @@ export class RoomPlay {
     const connection = await RoomConnection.open(url, (snapshot) => room.seen(snapshot));
     room.connection = connection;
     room.own = connection.player;
-    room.takeDresses(connection.dressed);
+    room.others.takeDresses(connection.dressed);
     return room;
   }
 
@@ -110,45 +102,25 @@ export class RoomPlay {
   /** Leaves the room, and takes away every other player's figure. */
   close(): void {
     this.connection?.close();
-    for (const placed of this.others.values()) this.context.others.remove(placed);
     this.others.clear();
   }
 
-  /** Another player's dress is used only when it is one: a broken or hostile one keeps the dress they had. */
-  private takeDresses(dressed: readonly PlayerDress[]): void {
-    for (const { player: number, dress } of dressed) {
-      const taken = dressFrom(dress);
-      if (!taken) continue;
-      this.dresses.set(number, taken);
-      const placed = this.others.get(number);
-      if (placed) placed.dress = taken;
-    }
-  }
-
   private seen(snapshot: Snapshot): void {
-    const { movement, walker, forge, others } = this.context;
+    const { movement, walker, forge } = this.context;
     this.lastTick = snapshot.tick;
-    this.takeDresses(snapshot.dressed);
-    const present = new Set<number>();
-    for (const seen of snapshot.players) {
-      const { player: number, acknowledged, body } = seen;
-      present.add(number);
-      if (number === this.own) {
-        this.standing = seen.standing;
-        const still = seen.standing.kind === 'dead';
-        const corrected = this.prediction.corrected(body, acknowledged, (from, ask) => movement.step(from, ask), still);
-        walker.player = { ...walker.player, body: corrected };
-        continue;
-      }
-      const dress = this.dresses.get(number) ?? plainDress('human', 0.6);
-      const placed = this.others.get(number) ?? others.place(dress, body.x, body.y, body.facing);
-      this.others.set(number, placed);
-      showOther(placed, seen, (anim) => forge.draws(placed.dress.body, anim, null));
+    this.others.takeDresses(snapshot.dressed);
+    const mine = snapshot.players.find((seen) => seen.player === this.own);
+    if (mine) {
+      this.standing = mine.standing;
+      const still = mine.standing.kind === 'dead';
+      const corrected = this.prediction.corrected(
+        mine.body,
+        mine.acknowledged,
+        (from, ask) => movement.step(from, ask),
+        still,
+      );
+      walker.player = { ...walker.player, body: corrected };
     }
-    for (const [number, placed] of this.others) {
-      if (present.has(number)) continue;
-      others.remove(placed);
-      this.others.delete(number);
-    }
+    this.others.seen(snapshot.players, this.own, forge);
   }
 }

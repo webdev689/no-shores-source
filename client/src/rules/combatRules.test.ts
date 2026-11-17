@@ -88,7 +88,7 @@ test('the scripted fight through WebAssembly moves to the same fingerprint as th
         Number.NaN,
         Number.NaN,
       ]);
-      fighter = rules.predict(fighter, intent, 1, view).fighter;
+      fighter = rules.predict(fighter, intent, 1, fighter[23] ?? 0, view).fighter;
       fighters.push(fighter);
     }
   }

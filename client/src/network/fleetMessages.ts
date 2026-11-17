@@ -123,12 +123,13 @@ export interface FleetPart {
 }
 
 /** Exactly `length` numbers, or a throw: the message is not whole. */
-function whole(numbers: Float64Array | null, length: number, what: string): Float64Array {
+export function whole(numbers: Float64Array | null, length: number, what: string): Float64Array {
   if (!numbers || numbers.length !== length) throw new Error(`${what} is not whole`);
   return numbers.slice();
 }
 
-const point = (numbers: Float64Array | null): [number, number, number] => {
+/** A point's three numbers. */
+export const point = (numbers: Float64Array | null): [number, number, number] => {
   const [x = 0, y = 0, z = 0] = numbers ?? [];
   return [x, y, z];
 };

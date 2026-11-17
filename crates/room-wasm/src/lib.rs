@@ -122,7 +122,8 @@ pub fn set_course(bytes: &[u8]) -> bool {
 }
 
 /// One tick of a player's fighter as a course's room would take it, on open ground, from its numbers: the fighter,
-/// the intent, the player's number, then every fighter it sees as a number and a glance. Answers the next fighter's
+/// the intent, the player's number, the arms their hands hold (taken up as the room takes them, `Fighter::holding`),
+/// then every fighter it sees as a number and a glance. Answers the next fighter's
 /// numbers, then, if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its
 /// whole line to where it stops among those seen, in a tick); or none when the numbers are not that.
 #[must_use]
@@ -130,7 +131,8 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let floats = floats_of(bytes);
     let Some((fighter, rest)) = floats.split_first_chunk::<FIGHTER_FLOATS>() else { return Vec::new() };
     let Some((intent, rest)) = rest.split_first_chunk::<INTENT_FLOATS>() else { return Vec::new() };
-    let Some((id, seen)) = rest.split_first() else { return Vec::new() };
+    let Some((id, rest)) = rest.split_first() else { return Vec::new() };
+    let Some((arms, seen)) = rest.split_first() else { return Vec::new() };
     if !seen.len().is_multiple_of(GLANCE_FLOATS + 1) {
         return Vec::new();
     }
@@ -141,7 +143,7 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
             Some((whole(*other), Fighter::from_glance(glance.try_into().ok()?)))
         })
         .collect();
-    let fighter = Fighter::from_floats(fighter);
+    let fighter = Fighter::from_floats(fighter).holding(combat::Arms::from_code(whole(*arms)));
     let intent = combat::Intent::from_floats(intent);
     let (next, shot) = COURSE.with(|course| {
         let blocks = course.borrow();

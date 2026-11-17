@@ -1,6 +1,14 @@
-import type { SeenPlayer } from '../network/messages.ts';
+import type { PlayerDress, SeenPlayer } from '../network/messages.ts';
 import type { Body } from '../rules/movementRules.ts';
+import type { Cards } from './cards.ts';
+import { type Dress, dressFrom, plainDress } from './dressing.ts';
 import type { Placed } from './figures.ts';
+
+/** How a page keeps other players' figures: it places one for a player who comes, and takes away one who leaves. */
+export interface Others {
+  place(dress: Dress, x: number, y: number, facing: number): Placed;
+  remove(placed: Placed): void;
+}
 
 /** Faster than a walk on foot is running. */
 export const RUNNING = 5.5;
@@ -24,4 +32,56 @@ export function showOther(placed: Placed, seen: SeenPlayer, draws: (anim: string
     ? { anim: seen.anim, frame: seen.frame, facing: seen.facing }
     : { anim: moveOf(seen.body), frame: null, facing: seen.body.facing };
   Object.assign(placed, { x, y, z, ...look });
+}
+
+/** Every other player in a room as their figures: each in their own dress, standing where the room last saw them, and
+ *  taken away once the room no longer sees them. */
+export class OtherPlayers {
+  /** Each other player's figure, by their number. */
+  readonly placed: ReadonlyMap<number, Placed>;
+  private readonly figures = new Map<number, Placed>();
+  private readonly dresses = new Map<number, Dress>();
+  private readonly page: Others;
+
+  constructor(page: Others) {
+    this.page = page;
+    this.placed = this.figures;
+  }
+
+  /** Another player's dress is used only when it is one: a broken or hostile one keeps the dress they had. */
+  takeDresses(dressed: readonly PlayerDress[]): void {
+    for (const { player: number, dress } of dressed) {
+      const taken = dressFrom(dress);
+      if (!taken) continue;
+      this.dresses.set(number, taken);
+      const placed = this.figures.get(number);
+      if (placed) placed.dress = taken;
+    }
+  }
+
+  /** Every player a snapshot saw but `own`, placed or moved, as `forge` draws their moves; one it no longer sees,
+   *  taken away. */
+  seen(players: readonly SeenPlayer[], own: number | null, forge: Cards): void {
+    const present = new Set<number>();
+    for (const seen of players) {
+      const { player: number, body } = seen;
+      if (number === own) continue;
+      present.add(number);
+      const dress = this.dresses.get(number) ?? plainDress('human', 0.6);
+      const placed = this.figures.get(number) ?? this.page.place(dress, body.x, body.y, body.facing);
+      this.figures.set(number, placed);
+      showOther(placed, seen, (anim) => forge.draws(placed.dress.body, anim, null));
+    }
+    for (const [number, placed] of this.figures) {
+      if (present.has(number)) continue;
+      this.page.remove(placed);
+      this.figures.delete(number);
+    }
+  }
+
+  /** Takes away every figure. */
+  clear(): void {
+    for (const placed of this.figures.values()) this.page.remove(placed);
+    this.figures.clear();
+  }
 }

@@ -159,12 +159,21 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     let mut numbers: Vec<f64> = fighter.to_floats().to_vec();
     numbers.extend(intent.to_floats());
     numbers.push(1.0);
+    let sword = combat::arms_of("sword_iron", "shield_kite_steel", true);
+    numbers.push(f64::from(sword.code()));
     let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3])];
-    let (expected, _) = combat::player_tick(1, &fighter, &intent, &[], &course, &Flat);
+    let (expected, _) = combat::player_tick(1, &fighter.holding(sword), &intent, &[], &course, &Flat);
     let next = floats_of(&predict(&bytes_of(&numbers)));
-    assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected);
+    assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected, "at rest, she takes up the sword");
+    let guarding = Fighter { action: combat::Action::Guard { elapsed: 3, window: 0 }, ..fighter };
+    let mut asked: Vec<f64> = guarding.to_floats().to_vec();
+    asked.extend(intent.to_floats());
+    asked.extend([1.0, f64::from(sword.code())]);
+    let (kept, _) = combat::player_tick(1, &guarding, &intent, &[], &course, &Flat);
+    let next = floats_of(&predict(&bytes_of(&asked)));
+    let next = Fighter::from_floats(next.as_slice().try_into().unwrap());
+    assert_eq!((next, next.arms.code()), (kept, combat::arms::BARE_HANDS.code()), "on guard, her arms stay");
     assert!(predict(&bytes_of(&[1.0, 2.0])).is_empty());
-    let sword = combat::arms_of("sword_iron", "shield_kite_steel", true).code();
-    assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword);
+    assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword.code());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\nworn"), combat::arms::BARE_HANDS.code());
 }

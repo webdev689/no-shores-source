@@ -18,7 +18,6 @@ import { Sparks } from '../combat/sparks.ts';
 import { IMPACT_SPARKS, Tracers, figureMuzzle, othersArrows, screenMuzzle } from './tracers.ts';
 import { Hud } from '../combat/hud.ts';
 import { LocalRoom } from '../network/localRoom.ts';
-import type { PlayerDress } from '../network/messages.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
@@ -26,12 +25,13 @@ import { startMovementRules } from '../rules/movementRules.ts';
 import { TestgroundBlood } from './blood.ts';
 import { type CardAt, Cards } from '../player/cards.ts';
 import { COURSE, START } from './course.ts';
-import { type Dress, dressFrom, plainDress } from '../player/dressing.ts';
+import { type Dress, plainDress } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from '../player/player.ts';
-import { RUNNING, showOther } from '../player/others.ts';
+import { OtherPlayers, RUNNING } from '../player/others.ts';
+import { GALLOP, HIDE_FIGURE_M, STILL, shownDress, strokesAfter } from '../player/walker.ts';
 import { likelyMoves, shownMove } from '../player/playerMoves.ts';
 import { startPanel } from './panel.ts';
 import { SceneView } from './sceneView.ts';
@@ -42,12 +42,6 @@ const SPIN = (2 * Math.PI) / 8;
 const PLAYER_ID = 1;
 /** How long each frame of a move chosen in the panel plays on the player. */
 const ACT_FRAME = 0.2;
-/** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
-const HIDE_FIGURE_M = 0.6;
-/** Faster than a horse's walk is a gallop. */
-const GALLOP = 10;
-/** The weapon's button, untouched: what the first person's weapon gets while it may not swing. */
-const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
 /** The weapons that shoot: their button draws or fires, as the fight's rules take a shot. */
 const SHOOTERS = /^(bow|crossbow|pistolet|thunderlock)(_|$)/;
 /** The first person's guard, a weapon's own stroke frame held upright across the middle of the view, and a parry's
@@ -99,6 +93,16 @@ async function start(): Promise<void> {
   };
   const you = place(plainDress('human', 0.3), START.x, START.y, 0);
   let chosen: Placed = you;
+  // Every other player in the room; one the panel already took away is not taken again.
+  const otherPlayers = new OtherPlayers({
+    place,
+    remove: (placed) => {
+      const index = figures.indexOf(placed);
+      if (index >= 0) figures.splice(index, 1);
+      if (chosen === placed) chosen = you;
+    },
+  });
+  const others = otherPlayers.placed;
   let cards: Cards | null = null;
   // Declared before the panel: a foe asked for while the forge loads is not asked for.
   let fight: Fighting | null = null;
@@ -131,6 +135,7 @@ async function start(): Promise<void> {
     looks,
     hair,
     figures,
+    remote: new Set(others.values()),
     chosen,
     fps,
     playerId: PLAYER_ID,
@@ -167,43 +172,16 @@ async function start(): Promise<void> {
   const roomUrl = given === null ? null : roomAddress(given);
   if (given !== null && !roomUrl)
     throw new Error(`"${given}" is not a room: a room's name is letters, digits and hyphens`);
-  const others = new Map<number, Placed>();
-  const dresses = new Map<number, Dress>();
-  // Another player's dress is used only when it is one: a broken or hostile one keeps the dress they had.
-  const takeDresses = (dressed: readonly PlayerDress[]) => {
-    for (const { player: number, dress } of dressed) {
-      const taken = dressFrom(dress);
-      if (!taken) continue;
-      dresses.set(number, taken);
-      const placed = others.get(number);
-      if (placed) placed.dress = taken;
-    }
-  };
   const received = (snapshot: Snapshot) => {
-    takeDresses(snapshot.dressed);
+    otherPlayers.takeDresses(snapshot.dressed);
     fight?.receive(snapshot);
-    const present = new Set<number>();
-    for (const seen of snapshot.players) {
-      const { player: number, body } = seen;
-      if (number === fight?.player) continue;
-      present.add(number);
-      const dress = dresses.get(number) ?? plainDress('human', 0.6);
-      const placed = others.get(number) ?? place(dress, body.x, body.y, body.facing);
-      others.set(number, placed);
-      showOther(placed, seen, (anim) => forge.draws(placed.dress.body, anim, null));
-    }
-    for (const [number, placed] of others) {
-      if (present.has(number)) continue;
-      figures.splice(figures.indexOf(placed), 1);
-      others.delete(number);
-      if (chosen === placed) chosen = you;
-    }
+    otherPlayers.seen(snapshot.players, fight?.player ?? null, forge);
   };
   const link = roomUrl
     ? await RoomConnection.open(roomUrl, received)
     : LocalRoom.open(roomModule, START, COURSE, received);
   fight = new Fighting(combatRules, link);
-  takeDresses(link.dressed);
+  otherPlayers.takeDresses(link.dressed);
   const steps = fight.steps(movement);
   if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
   const hud = new Hud(element<HTMLElement>('#hud'));
@@ -296,7 +274,7 @@ async function start(): Promise<void> {
     const drawn: CardAt[] = [];
     // On a wall or a ledge the hands hold on: the weapon is worn, not held.
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
-    const youDress: Dress = holding ? you.dress : { ...you.dress, outfit: { ...you.dress.outfit, drawn: false } };
+    const youDress = shownDress(you.dress, holding);
     const { outfit } = youDress;
     const handsKey = `${outfit.right}|${outfit.left}|${outfit.drawn}`;
     if (handsKey !== armsKey) {
@@ -343,8 +321,7 @@ async function start(): Promise<void> {
       aim: player.aim,
     });
     const swing = firstPerson.swing;
-    // A swing begins where there was none, or where the last one ended and the next began within the frame.
-    if (swing && (swingWas === null || swing.progress < swingWas)) strokes += 1;
+    strokes = strokesAfter(strokes, swingWas, swing?.progress ?? null);
     swingWas = swing?.progress ?? null;
     const ownFight = own ? fightOf(own) : null;
     const shown = shownMove(

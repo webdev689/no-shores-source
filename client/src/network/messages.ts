@@ -2,7 +2,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
-import { type FleetPart, fleetOf } from './fleetMessages.ts';
+import { type FleetPart, fleetOf, point, whole } from './fleetMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
@@ -163,18 +163,6 @@ function standingOf(number: number, ticks: number): Standing {
   const kind = STANDINGS[number] ?? 'inside';
   return kind === 'inside' ? { kind } : { kind, ticks };
 }
-
-/** Exactly `length` numbers, or a throw: the message is not whole. */
-function whole(numbers: Float64Array | null, length: number, what: string): Float64Array {
-  if (!numbers || numbers.length !== length) throw new Error(`${what} is not whole`);
-  return numbers.slice();
-}
-
-/** A point's three numbers. */
-const point = (numbers: Float64Array | null): [number, number, number] => {
-  const [x = 0, y = 0, z = 0] = numbers ?? [];
-  return [x, y, z];
-};
 
 /** The message a room's bytes hold, or null when they hold neither a welcome nor a snapshot that reads. */
 export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {

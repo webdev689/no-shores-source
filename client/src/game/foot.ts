@@ -3,7 +3,8 @@ import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera } from '../player/player.ts';
-import { type Others, RoomPlay } from '../player/roomPlay.ts';
+import type { Others } from '../player/others.ts';
+import { RoomPlay } from '../player/roomPlay.ts';
 import type { Walker } from '../player/walker.ts';
 import type { Block, MovementRules, Reach } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
@@ -32,8 +33,9 @@ const CAMERA_CLEARANCE_M = 0.3;
 const OVER_THE_PARAPET = 0.3;
 /** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
 const OTHERS_FPS = 6;
-/** Other players' figures are numbered from here, clear of the player's own. */
-const FIRST_OTHER_ID = 100;
+/** Other players' figures are numbered from here, clear of the player's own, and never twice in the page's life: the
+ *  forge keeps each figure's last card by its number, so a number used again would first show another node's figure. */
+let nextOtherId = 100;
 /** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
 const IDLE: InputFrame = {
   held: () => false,
@@ -111,10 +113,9 @@ export class Foot {
     const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
     walker.player = node.kind === 'social' ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
     const placed: Placed[] = [];
-    let nextId = FIRST_OTHER_ID;
     const others: Others = {
       place: (dress, x, y, facing) => {
-        const other = { id: nextId++, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
+        const other = { id: nextOtherId++, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
         placed.push(other);
         return other;
       },

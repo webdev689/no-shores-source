@@ -16,21 +16,11 @@ const ACTION_AT = 22 + 23;
 const MISSED_PARRY_AT = 22 + 19;
 const RANGED_SHIFT = 8;
 const IDLE = 0;
-const DEAD = 12;
 /** A ranged weapon raised to aim (a bow's draw), as the combat crate numbers the action. */
 const DRAW = 10;
 /** The most bytes of dress the room takes (room's DRESS_LIMIT); a longer one is refused as no input at all. */
 const DRESS_LIMIT = 4096;
 const STROKES = [1, 2, 3, 4, 5, 6] as const;
-
-/** The fighter holding these arms, as the room sets them from each input before it steps it (combat's
- *  `Fighter::holding`): taken up only at rest or dead, never in the middle of a swing, a guard, a draw or a reload. */
-function armed(fighter: Float64Array, arms: number): Float64Array {
-  if (fighter[ACTION_AT] !== IDLE && fighter[ACTION_AT] !== DEAD) return fighter;
-  const holding = fighter.slice();
-  holding[ARMS_AT] = arms;
-  return holding;
-}
 
 /** The strokes, 1 to 6, whose reach (`reach`, feet to a body's middle) takes in a target `apart` metres away; all six
  *  with no target, or when none reaches it. */
@@ -241,7 +231,7 @@ export class Fighting {
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
-    const predicted = this.rules.predict(armed(this.fighter, arms), intent, this.player, view);
+    const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
     this.fighter = predicted.fighter;
     asked.fired = predicted.fired;
     if (predicted.fired) this.fired.push(predicted.fired);
@@ -263,7 +253,7 @@ export class Fighting {
     for (const seen of snapshot.players) {
       if (seen.player === this.player) {
         this.fighter = this.prediction.corrected(seen.fighter, seen.acknowledged, (fighter, asked) => {
-          const replayed = this.rules.predict(armed(fighter, asked.arms), asked.intent, this.player, asked.view);
+          const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
           // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
           // has been drawn already.
           if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);

@@ -118,6 +118,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- A whole-repo audit found five things to fix before the next deploy, each waiting on the owner's word: one socket's
+  flood of inputs stalls a room; costly courses can stall the shared sea; `npm run server:deploy` builds neither the
+  wasm nor the schema; on foot in a node the browser predicts with an unwrapped look, so it and the room part in the
+  last bits; and the session toolkit installs unpinned code. Its smaller findings are fixed on #51.
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
   [[Naval Combat]] are on `main`, and ramming is on #51. The rest of the pick's step 3 is boarding, crew, quays and
   ports ([[Pick - Sailing and Naval Combat]]). Boarding waits on the owner: which foe kinds crew a boarded ship, the
