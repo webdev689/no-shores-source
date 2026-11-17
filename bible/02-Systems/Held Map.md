@@ -7,6 +7,7 @@ code:
   - client/src/heldmap/heldMapLaw.ts#clampView
   - client/src/heldmap/heldMapView.ts#HeldMapView
   - client/src/heldmap/coastField.ts#coastField
+  - client/src/game/discovered.ts#Discovered
   - client/src/overworld/discovery.ts#chartAround
   - client/src/overworld/discovery.ts#sightIslands
 ---
