@@ -79,7 +79,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   test; the timings set against shipped games and a person's reaction ([[Combat]], "Why these numbers"); third-person
   attacks strike as fast as their blow lands. Deployed with the owner's yes, and tested live: two browsers on the
   published Test Ground fought one brute together in a deployed room.
-- The owner's playtest notes, on pull request #48 from branch `ccr-73003efa-gnnnqf`, tested offline: the naval aim
+- The owner's playtest notes, on `main` (pull request #48) and the page published, tested offline: the naval aim
   as DFO's ([[Ship Guns Keep Square Broadsides]]); a closing parry ring ([[Foes Show a Closing Parry Ring]]); struck
   figures flash, clashes spark, and DFO's [[Blood]] whole ([[Struck Figures Flash, and DFO's Blood Comes Over]]);
   facing the locked foe ([[Locked On, the Figure Faces Its Foe]]); foes drawn without stutter; and ranged weapons that
@@ -88,12 +88,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- Pull request #48, to review and merge. Its intent carries the aim and its events the stroke, so the page and the
-  rooms deploy together, with the owner's yes. Walking or sprinting that does not happen on demand was not reproduced
-  playing alone; when it happens is the owner's to say.
+- The rooms, to deploy now: the page published from `main` sends the new fight input, which the deployed rooms
+  refuse, so playing in a room waits on it. The owner said yes; it waits on the `rooms` workflow reaching `main` and
+  the repository's `CLOUDFLARE_API_TOKEN` secret ([[Server]]). It deploys the world's rooms too. Walking or sprinting
+  that does not happen on demand was not reproduced playing alone; when it happens is the owner's to say.
 - The sea's navigation and the held map (#49), to test and say yes to merging and publishing.
-- Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
-  the Cloudflare token. The deployed rooms keep the speed hack and the two socket faults until that deploy.
 - Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys and the R2
   token are on the unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot
   reach the forge's renders. A personal `overlook-source` environment allows only the renders' R2 host.
