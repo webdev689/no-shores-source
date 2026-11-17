@@ -116,3 +116,20 @@ fn a_players_trim_reaches_their_fighter_with_their_next_input() {
     room.tick();
     assert_eq!(room.fighter(player).expect("in").trim.swing_stamina, 0.85);
 }
+
+#[test]
+fn a_kept_character_comes_back_into_the_room_trimmed() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    // As kept, its next number already past the sword `wearing` slipped in.
+    let kept = gear::Character::from_json(&wearing(&["light_grip", "weighted", "keen_edge"], 0).to_json())
+        .expect("a character")
+        .to_json();
+    assert!(room.take_gear_change(player), "a new player's gear goes to them");
+    assert!(room.restore_character(player, &kept));
+    assert!(room.take_gear_change(player), "and again once their own comes back");
+    assert_eq!(room.kept_character(player), Some(kept));
+    assert_eq!(room.fighter(player).expect("in").trim.swing_stamina, 0.85);
+    assert!(!room.restore_character(player, "not a character"));
+    assert!(!room.restore_character(player + 1, &gear::Character::starting().to_json()));
+}

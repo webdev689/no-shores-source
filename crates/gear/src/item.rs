@@ -15,7 +15,7 @@ pub const ITEM_LEVEL_MOST: u8 = 20;
 /// An item as a player holds it. Its own number is the player's for it; a named item's traits are copied from the
 /// catalogue when it is made, so the item stays what it was. `bucket` is the slot whose carried items it counts
 /// among: a weapon found for the off hand is carried with the off hand's.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Item {
     pub id: u32,
     pub kind: Kind,

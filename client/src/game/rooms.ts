@@ -1,3 +1,4 @@
+import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
 
 /**
@@ -9,4 +10,12 @@ export function roomsFrom(given: string | null): ((name: string) => string) | nu
   if (given === null) return null;
   const server = /^wss?:\/\//.test(given) ? given.replace(/\/room(\/.*)?$/, '').replace(/\/+$/, '') : LIVE_ROOMS;
   return (name) => `${server}/room/${name}`;
+}
+
+/** Where the game's accounts are, from its page's `?room=` and `?accounts=`: a whole `http://` or `https://` address
+ *  given names them (`?accounts=http://127.0.0.1:8788` under `npm run accounts`); the deployed rooms keep characters
+ *  on the deployed accounts; offline, or on a room server named without accounts, none are kept. */
+export function accountsFrom(rooms: string | null, given: string | null): string | null {
+  if (given !== null && /^https?:\/\//.test(given)) return given;
+  return rooms === null || /^wss?:\/\//.test(rooms) ? null : LIVE_ACCOUNTS;
 }

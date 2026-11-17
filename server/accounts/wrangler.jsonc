@@ -1,0 +1,20 @@
+// The Cloudflare Worker that keeps the accounts, their sessions and their characters, over D1. `npm run accounts`
+// runs it here, beside `npm run server`; the rooms reach its CharacterKeeper through their service binding.
+{
+  "name": "overlook-accounts",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-01",
+  "send_metrics": false,
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "overlook-accounts",
+      // CI writes the real database's id here in its own copy before it deploys (.github/workflows/rooms.yml).
+      "database_id": "set-by-the-deploy",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "vars": { "PAGES": "https://lattymoy.github.io http://localhost:5173 http://127.0.0.1:5173" },
+}

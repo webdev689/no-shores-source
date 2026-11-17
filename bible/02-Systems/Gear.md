@@ -93,7 +93,7 @@ number is one of [[Gear as Claude Shapes It]].
 
 - A weapon's traits work whichever hand strikes, and every trait worn counts once however many pieces give it.
 - The Test Ground's panel is the only screen; the Enhanced Plus screens come next.
-- Gear lives only while a player stays in one room, until there are accounts ([[Accounts Start as Guests, on Cloudflare D1]]).
+- Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
 - The hands are drawn in a metal the rarity likes, not each item's own look; armour, clothing sets and the cloak do
   not dress the figure yet.
 - No Breach items exist yet, and no clothing is armour yet ([[Clothing Is Armour, With a Wardrobe Later]]); cloaks

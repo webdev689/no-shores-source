@@ -26,6 +26,8 @@ mod asks_tests;
 #[cfg(test)]
 mod item_tests;
 #[cfg(test)]
+mod keep_tests;
+#[cfg(test)]
 mod power_tests;
 #[cfg(test)]
 mod vestige_tests;

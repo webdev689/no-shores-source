@@ -1,10 +1,10 @@
 //! What an item is and where it is worn: the kinds of weapon, the shield, the four armour pieces and the cloak; the
 //! slots a player wears them in; which hand a weapon takes; and which materials it is made and unmade with.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// What an item is. Each weapon kind is one type, its handling the combat rules' own.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
     Dagger = 1,
@@ -27,7 +27,7 @@ pub enum Kind {
 }
 
 /// Where a player wears an item.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Slot {
     MainHand = 0,

@@ -8,6 +8,7 @@ use crate::item::Item;
 use crate::kinds::{Kind, Slot, Stock};
 use crate::power;
 use crate::rarity::Rarity;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// How many items each slot carries beside the one worn.
@@ -24,7 +25,7 @@ pub const STOCK_MOST: u16 = 200;
 pub const FRUIT_XP: u64 = 20_000;
 
 /// Where an item is.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum At {
     Worn(Slot),
     Carried,
@@ -32,7 +33,7 @@ pub enum At {
 }
 
 /// A sealed drop: the colour it shows, the slot it holds an item for, and the level of that item.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Vestige {
     pub id: u32,
     pub rarity: Rarity,
@@ -42,7 +43,7 @@ pub struct Vestige {
 
 /// Every material a player holds: Aurem, each stock's fragments and Essence, Fruit of Dagon, and each island's
 /// resource in the catalogue's order.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Materials {
     pub aurem: u32,
     pub weapon_fragments: u16,
@@ -111,7 +112,7 @@ pub enum Stuff {
 }
 
 /// A player's gear and progress.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Character {
     pub xp: u64,
     /// The Fruit of Dagon XP past level 20 has grown so far.
@@ -147,6 +148,26 @@ impl Character {
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }
         character
+    }
+
+    /// The character as it is kept between sessions.
+    #[must_use]
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(self).unwrap_or_default()
+    }
+
+    /// A character kept between sessions, or none when the text is not one. It gains a stock of each island's resource
+    /// added since it was kept, and its next number stays past every one it holds.
+    #[must_use]
+    pub fn from_json(text: &str) -> Option<Self> {
+        let mut character: Self = serde_json::from_str(text).ok()?;
+        let resources = catalogue().resources.len();
+        if character.materials.resources.len() < resources {
+            character.materials.resources.resize(resources, 0);
+        }
+        let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
+        character.next_id = character.next_id.max(highest.saturating_add(1));
+        Some(character)
     }
 
     /// A fresh number for an item or Vestige.

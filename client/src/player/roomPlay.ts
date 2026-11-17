@@ -41,10 +41,11 @@ export class RoomPlay {
     this.others = new OtherPlayers(context.others);
   }
 
-  /** Joins the room at `url`; resolves once the room has welcomed the player. */
-  static async join(url: string, context: RoomContext): Promise<RoomPlay> {
+  /** Joins the room at `url`, signed in with a session's token if given; resolves once the room has welcomed the
+   *  player. */
+  static async join(url: string, context: RoomContext, session: string | null = null): Promise<RoomPlay> {
     const room = new RoomPlay(context);
-    const connection = await RoomConnection.open(url, (snapshot) => room.seen(snapshot));
+    const connection = await RoomConnection.open(url, (snapshot) => room.seen(snapshot), undefined, session);
     room.connection = connection;
     room.own = connection.player;
     room.others.takeDresses(connection.dressed);

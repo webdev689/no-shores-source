@@ -39,11 +39,13 @@ export class RoomConnection implements RoomLink {
   }
 
   /** Joins the room at `url` (`ws://…/room/<name>`); resolves once the room has welcomed the player, and fails if it
-   *  closes first (a full room says so). Each snapshot goes to `snapshot`, and the player's own gear to `gear`. */
+   *  closes first (a full room says so). Each snapshot goes to `snapshot`, and the player's own gear to `gear`. With
+   *  a session's token, the room is sent it once welcomed, to keep the player's character. */
   static open(
     url: string,
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void = () => undefined,
+    session: string | null = null,
   ): Promise<RoomConnection> {
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(url);
@@ -55,8 +57,10 @@ export class RoomConnection implements RoomLink {
       socket.addEventListener('message', (event: MessageEvent<unknown>) => {
         if (!(event.data instanceof ArrayBuffer)) return;
         const message = readFromRoom(new Uint8Array(event.data));
-        if (message?.kind === 'joined') resolve(new RoomConnection(socket, message));
-        else if (message?.kind === 'snapshot') snapshot(message);
+        if (message?.kind === 'joined') {
+          if (session !== null) socket.send(session);
+          resolve(new RoomConnection(socket, message));
+        } else if (message?.kind === 'snapshot') snapshot(message);
         else if (message?.kind === 'gear') gear(message);
       });
     });

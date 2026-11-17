@@ -1,0 +1,46 @@
+import { WorkerEntrypoint } from 'cloudflare:workers';
+import { handle } from './accounts.ts';
+import { type Characters, type Claimed, characters } from './characters.ts';
+
+interface Env {
+  readonly DB: D1Database;
+  /** The pages, by origin and space-separated, a Discord sign-in may come back to. */
+  readonly PAGES: string;
+  /** The Discord app's keys, as the Worker's secrets; without them, Discord sign-in says it is not set up. */
+  readonly DISCORD_CLIENT_ID?: string;
+  readonly DISCORD_CLIENT_SECRET?: string;
+}
+
+const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
+
+/** The characters, for the rooms alone: reached only through the rooms' service binding, never from the web. */
+export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters {
+  private readonly kept = characters(this.env.DB, Date.now, wait);
+
+  claim(token: string, holder: string): Promise<Claimed | null> {
+    return this.kept.claim(token, holder);
+  }
+
+  save(account: string, holder: string, body: string): Promise<boolean> {
+    return this.kept.save(account, holder, body);
+  }
+
+  release(account: string, holder: string, body: string | null): Promise<boolean> {
+    return this.kept.release(account, holder, body);
+  }
+}
+
+/** The accounts' web API (`accounts.ts`). */
+export default {
+  fetch(request: Request, env: Env): Promise<Response> {
+    const discord =
+      env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
+        ? {
+            id: env.DISCORD_CLIENT_ID,
+            secret: env.DISCORD_CLIENT_SECRET,
+            fetch: (...asked: Parameters<typeof fetch>) => fetch(...asked),
+          }
+        : null;
+    return handle(request, { database: env.DB, now: Date.now, discord, pages: env.PAGES.split(/\s+/).filter(Boolean) });
+  },
+} satisfies ExportedHandler<Env>;

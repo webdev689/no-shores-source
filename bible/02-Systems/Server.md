@@ -76,7 +76,8 @@ on Cloudflare.
   blow that finds no one overreaches its foe once every player near it has been judged.
 - **Shots** fly a tick at a time and strike the first body of the other side on their line; arrows and bolts fly in
   the room's own time.
-- **Gear** ([[Gear]]): each player holds their gear while they are in the room, the starting kit as they join, and
+- **Gear** ([[Gear]]): each player holds their gear while they are in the room, the starting kit as they join (in a
+  node's room, their own kept character once their session is given, [[Accounts]]), and
   only what it puts in their hands (or a torch beside a one-handed weapon): any other arms asked for are bare hands.
   Every blow is made with its power: a player's on a foe by the Attack of the hand that struck and their levels, a
   foe's on a player by the player's Defense and their levels. A foe's kill pays every player whose blow landed on it
@@ -225,6 +226,9 @@ so every decision is Rust and the shell only carries bytes and time.
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
+- A browser's one text message is its session's token. In a node's room the player's character is claimed with it
+  from the [[Accounts]], saved as it changes and let go when they leave; a second text message, or any other, closes
+  the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
@@ -235,7 +239,8 @@ so every decision is Rust and the shell only carries bytes and time.
 
 ## The browser's side
 
-- `RoomConnection` joins a room, keeps its welcome's node, and sends each tick's controls, numbered, as the player
+- `RoomConnection` joins a room, keeps its welcome's node, sends its session's token once welcomed when the page holds
+  one ([[Accounts]]), and sends each tick's controls, numbered, as the player
   plays, with a respawn when asked; at sea it sends the ship's course.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
   with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
@@ -255,7 +260,9 @@ so every decision is Rust and the shell only carries bytes and time.
   CI deploys it after each merge into `main`, once the same commit has passed the check, as it publishes the page
   ([[The Rooms Deploy on Each Merge]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret, and
   only while that commit is still `main`'s head. Without the secret it warns and deploys nothing. It runs by hand
-  from `main` too, and `npm run server:deploy` does the same from a machine that holds the token itself.
+  from `main` too, and `npm run server:deploy` does the same from a machine that holds the token itself. The same
+  workflow deploys the [[Accounts]] first, since the rooms' service binding names their Worker; should that fail, the
+  rooms still deploy, beside the accounts last deployed.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground played alone runs the same room in its own WebAssembly, ticked by the page.
 
@@ -269,9 +276,7 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
   coming back to it. A deployed node's window can lag the edits files until the next merge.
 - A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
-- Any page can join a room, under any name; no one signs in.
-- A player's gear lives only while they stay in one room: each room starts them from the starting kit, and none is
-  kept when they leave, until there are accounts ([[Accounts Start as Guests, on Cloudflare D1]]).
+- Any page can join a room, under any name; a player is known only by the session their page gives ([[Accounts]]).
 - A full sea of sockets each asking for the costliest course it may holds about a third of the sea's time: 40
   snapshots a second against 57, with 63 such sockets on the local runtime (tested offline).
 - A snapshot sends every player's whole fighter and look and every foe's glance every tick: fine for a few players and

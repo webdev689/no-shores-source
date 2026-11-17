@@ -1,10 +1,10 @@
 //! The five rarities, lowest first, and what each sets of an item: how near its level's most its power reaches, and
 //! how much XP each of its columns of nodes waits on.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// How rare an item is: Normal (white), Magic (blue), Rare (yellow), Legendary (gold) or Atheric (cyan blue).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Rarity {
     Normal = 0,

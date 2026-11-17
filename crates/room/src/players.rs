@@ -202,6 +202,23 @@ impl Room {
         self.players.get_mut(&player).is_some_and(|found| std::mem::take(&mut found.gear_changed))
     }
 
+    /// A player's character as it is kept between sessions.
+    #[must_use]
+    pub fn kept_character(&self, player: PlayerId) -> Option<String> {
+        self.players.get(&player).map(|found| found.character.to_json())
+    }
+
+    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear; false if
+    /// they are not in the room or the text is not a character.
+    pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
+        let Some(character) = gear::Character::from_json(text) else { return false };
+        let Some(found) = self.players.get_mut(&player) else { return false };
+        found.character = character;
+        found.gear_changed = true;
+        self.retrim(player);
+        true
+    }
+
     /// Whether a player stands where a social space's asks are answered.
     #[must_use]
     pub fn social_for(&self, player: PlayerId) -> bool {

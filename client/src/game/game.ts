@@ -19,6 +19,7 @@ import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
+import { AccountLink } from '../network/accounts.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
@@ -33,7 +34,7 @@ import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
-import { roomsFrom } from './rooms.ts';
+import { accountsFrom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea, type SeaShip } from './sea.ts';
 import { fightControls } from './seaCombat.ts';
@@ -106,7 +107,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let flow: Flow = arriving(FIRST_NODE, 'Overlook');
   if (flow.mode === 'loading') hud.veil(flow.words);
   const base = import.meta.env.BASE_URL;
-  const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
+  const asking = new URLSearchParams(location.search);
+  const rooms = roomsFrom(asking.get('room'));
+  const accountsAt = accountsFrom(asking.get('room'), asking.get('accounts'));
+  const account = accountsAt ? new AccountLink(accountsAt, localStorage) : null;
+  // A Discord sign-in comes back with its session in the address's fragment, which is taken and cleared at once.
+  if (account?.takeFrom(location.hash)) history.replaceState(null, '', `${location.pathname}${location.search}`);
+  const session = account ? account.session().then(() => account.token) : Promise.resolve(null);
   // The sea room's own module, for playing alone; fetched now, compiled once.
   const roomModule = fetch(`${base}room.wasm`)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
@@ -163,6 +170,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     walker,
     forge,
     rooms,
+    session,
     groundAt: (x, y) => scene.groundAt(x, y),
   };
   const closeSource = (left: number, top: number, step: number, samples: number) =>

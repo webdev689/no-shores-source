@@ -14,13 +14,15 @@ import { type Rect, windowRect } from './nodes.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
- *  rooms (null offline) and the ground as drawn, to hold the camera over it. */
+ *  rooms (null offline), the session's token the rooms keep the player's character by (null for none), and the ground
+ *  as drawn, to hold the camera over it. */
 export interface FootContext {
   readonly movement: MovementRules;
   readonly land: LandWorker;
   readonly walker: Walker;
   readonly forge: Cards;
   readonly rooms: ((name: string) => string) | null;
+  readonly session: Promise<string | null>;
   readonly groundAt: (x: number, y: number) => number | null;
 }
 
@@ -125,7 +127,11 @@ export class Foot {
       },
     };
     const room = rooms
-      ? await RoomPlay.join(rooms(`node-${node.id}`), { movement, walker, forge: context.forge, others })
+      ? await RoomPlay.join(
+          rooms(`node-${node.id}`),
+          { movement, walker, forge: context.forge, others },
+          await context.session,
+        )
       : null;
     // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
     const bounds = room?.node?.bounds;
