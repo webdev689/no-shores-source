@@ -79,7 +79,7 @@ export class TestgroundBlood {
     const own = fight.own;
     if (own) seen.set(fight.player, { key: `player ${fight.player}`, view: own });
     for (const other of fight.others.values())
-      seen.set(other.player, { key: `player ${other.player}`, view: fighterView(other.fighter) });
+      if (other.fighter) seen.set(other.player, { key: `player ${other.player}`, view: fighterView(other.fighter) });
     for (const foe of fight.foes.values()) seen.set(foe.id, { key: `foe ${foe.id}`, view: foe.view });
     return seen;
   }

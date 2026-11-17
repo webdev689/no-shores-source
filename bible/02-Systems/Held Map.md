@@ -20,7 +20,9 @@ war, and a click on it sets the ship's destination.
 ## How it works
 
 - **Opening.** At sea, Map on the navigation panel, or N, takes the view down from the [[Overworld]]'s raised camera
-  to the helm behind the Sloop's wheel on her quarterdeck in first person, over 1.1 s, the eye riding the swell with her. There the
+  to the helm behind the Sloop's wheel on her quarterdeck in first person, over 1.1 s, the eye riding the swell with her.
+  On the way down every ship shrinks from the Overworld's scale to her own, so at the wheel the Sloop is her true size
+  ([[The Ship Is Managed and Walked From the Sea's Panel]]). There the
   painting rises from below the screen over 0.42 s, eased at both ends; it never fades. The ship sails on meanwhile.
 - **The art** is the owner's, from their Blender pipeline, published with the [[Sprite Forge]]'s renders: the
   parchment (`@art/held-map-forge-sheet.png`, 1648 × 1086) and over it the gauntlets of the set worn

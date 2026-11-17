@@ -132,7 +132,11 @@ fn head_to_wind_she_still_makes_way_at_the_head_share() {
 fn she_takes_the_ground_on_the_shelf_and_stops() {
     let ship = sail(at_rest(FRAC_PI_2, 2), STILL, EAST, &Shelf, 60 * 90);
     let bow_keel = ship.x + 0.8 * SLOOP.half_length_m;
-    assert!(bow_keel > 140.0 && bow_keel <= 144.0, "her bow's keel stops where the water is her draught: {bow_keel}");
+    let draught_deep = 100.0 + (5.0 - SLOOP.draught_m) * 10.0;
+    assert!(
+        bow_keel > draught_deep - 4.0 && bow_keel <= draught_deep,
+        "her bow's keel stops where the water is her draught: {bow_keel}"
+    );
     assert!(ship.ahead.abs() < 0.05, "she has lost her way: {}", ship.ahead);
     assert!(pose_of(&ship, &SLOOP, &Shelf, 0.0).aground, "her keel touches, so the panel can say so");
 }
@@ -291,7 +295,10 @@ fn a_ship_on_dry_land_cannot_row_further_up_it_but_may_row_off_it() {
 
 #[test]
 fn a_swing_that_would_ground_her_stern_does_not_cost_her_way() {
-    let ship = Ship { x: 0.01, heading: 0.003, ahead: 2.0, turn: 20.0, ..at_rest(0.0, 1) };
+    // Her stern's keel 2.5 mm off the shoal, so any swing to starboard would ground it.
+    let heading: f64 = 0.003;
+    let x = 0.8 * SLOOP.half_length_m * libm::sin(heading) + 0.0025;
+    let ship = Ship { x, heading, ahead: 2.0, turn: 20.0, ..at_rest(0.0, 1) };
     let next = step(ship, Helm { steer: 1.0, ..STILL }, &SLOOP, &Bank);
     assert_eq!([next.ahead, next.heading, next.turn], [2.0, 0.003, 0.0], "she runs on, unswung");
     assert!(next.y < ship.y);

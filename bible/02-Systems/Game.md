@@ -17,7 +17,10 @@ code:
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
   - client/src/game/seaLaw.ts#continentToOpen
-  - client/src/game/sea.ts#SeaShip
+  - client/src/game/seaShips.ts#SeaShips
+  - client/src/game/aboard.ts#Aboard
+  - client/src/game/shipPanel.ts#shipPanelOf
+  - client/src/game/hints.ts#seaHints
   - client/src/game/rooms.ts#roomsFrom
   - client/src/heldmap/heldMap.ts#HeldMap
 ---
@@ -83,23 +86,41 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 - **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures, riding a little on the swell, her sails
   set while she is under way and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is
-  not to scale: a ship is drawn 75 m long (twelve times the Sloop), so one reads from the raised view. Every other
-  player's ship is the Sloop too.
+  not to scale: a ship is drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other
+  player's ship is the Sloop too. At the helm every ship is her true size ([[Held Map]]).
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
   planned says why.
-- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]) holds Map (N), which takes the
+- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]), a window of the [[Interface]]
+  at the foot of the screen in three groups, Navigation, Pace and Ship, holds Map (N), which takes the
   view down to the helm and raises the [[Held Map]], where a destination is set; Stop while under way and Resume
-  voyage once stopped short (both Space); and the pace dial. A stopped voyage keeps its destination: resuming
+  voyage once stopped short (both Space); the pace dial; and Manage (B) and Leave the helm (H)
+  ([[The Ship Is Managed and Walked From the Sea's Panel]]). A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too.
+- **Manage** pans the view down over 1.4 s to the Sloop at her true size, from her starboard quarter 39 m off,
+  looking 0.5 radians down at her middle; a drag turns it round her, the wheel brings it from 18 m to 78 m. The player
+  stands at her wheel, three stand-in hands go about her deck, and a panel of the [[Interface]] shows her: her hull
+  and canvas whole (the naval rules' build, read through the room's own module), her guns a side and their loads,
+  her length, beam and draught; her heading, pace and voyage; and Cargo and Crew, marked Later. B, or the panel's
+  Back to the sea, pans back up.
+- **Leave the helm** pans the view down to the player behind her wheel, walking her deck as on foot (the same
+  controls, first or third person), the sea room the authority on every step ([[Server]], "The sea"). Under way her
+  helmsman stands at the wheel and she sails on; at rest the player simply leaves it. At her wheel the offer Take the
+  helm (E) takes it again, and once the room agrees the view pans back up. A fight that begins calls the player
+  straight back to the helm.
+- **Her hands.** Stand-ins until crew management comes: a human, a felid and a human in plain dress, each walking
+  between spots on her deck at 1.3 m/s and standing at each 2 to 7 s, on a leg the deck leaves clear and away from
+  her wheel; seeded, so they walk the same however the frames fall.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
-- **Pirates** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"). A bold one that comes
-  within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight at true scale,
-  then back up when it ends.
+- **Pirates** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her voyage's pace. As one
+  comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says so; the page sails its
+  ship at the pace the room sailed her at, drawn to where the room has her. A bold one that comes within 750 m meets
+  her: the ship heaves to, her voyage kept, and the view pans down to the fight at true scale, then back up when it
+  ends.
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 

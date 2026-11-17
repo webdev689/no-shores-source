@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { frameOf, fromEyeMatrix, lookOf, onScreen, type Shot, shotOfOrbit } from './camera.ts';
+import { frameOf, fromEyeMatrix, lookOf, onScreen, panShot, type Shot, shotOfOrbit } from './camera.ts';
 
 const shot: Shot = { eye: [1_000_000, 2_000_000, 100], yaw: 0, pitch: 0, fov: Math.PI / 2, near: 1, far: 10_000 };
 const size = { width: 800, height: 400 };
@@ -50,4 +50,17 @@ test('a forward vector reads back as its bearing and pitch', () => {
   const frame = frameOf({ ...shot, yaw: 1.1, pitch: 0.4 });
   const look = lookOf(frame.forward);
   assert.ok(Math.abs(look.yaw - 1.1) < 1e-12 && Math.abs(look.pitch - 0.4) < 1e-12, JSON.stringify(look));
+});
+
+test("a pan eases its eye and lens across, its bearing the short way round, its near plane the target's past half way", () => {
+  const from: Shot = { eye: [0, 0, 100], yaw: 3, pitch: 0.5, fov: 1, near: 5, far: 9_000 };
+  const to: Shot = { eye: [10, 20, 4], yaw: -3, pitch: 0.1, fov: 0.8, near: 0.3, far: 500 };
+  assert.deepEqual(panShot(from, to, 0), from);
+  const half = panShot(from, to, 0.5);
+  assert.deepEqual(half.eye, [5, 10, 52]);
+  assert.ok(Math.abs(half.yaw - (3 + (2 * Math.PI - 6) / 2)) < 1e-12, 'across south, not all the way round');
+  assert.equal(half.near, 5);
+  const there = panShot(from, to, 1);
+  assert.deepEqual([there.eye, there.near, there.far], [to.eye, 0.3, 9_000]);
+  assert.ok(Math.abs(there.pitch - to.pitch) < 1e-12 && Math.abs(there.fov - to.fov) < 1e-12, 'at the target');
 });

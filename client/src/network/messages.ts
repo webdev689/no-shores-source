@@ -23,12 +23,13 @@ export type Standing =
 const STANDINGS = ['inside', 'warned', 'dead'] as const;
 
 /** One player as a room last stepped them, what their figure showed with it, the number of their last input it took,
- *  their whole fighter in the combat crate's order, and where they stand with its section. */
+ *  their whole fighter in the combat crate's order, and where they stand with its section. In the sea room, a player
+ *  off the helm, their body on her deck, in her own frame, with no fighter. */
 export interface SeenPlayer extends Look {
   readonly player: number;
   readonly acknowledged: number;
   readonly body: Body;
-  readonly fighter: Float64Array;
+  readonly fighter: Float64Array | null;
   readonly standing: Standing;
 }
 
@@ -173,7 +174,23 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
 export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, pace, 0));
+  builder.finish(Course.createCourse(builder, numbers, pace, 0, 0, 0, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** A step of the walk on deck, off the helm, as its bytes: its number and its controls in the movement crate's order,
+ *  in a course's message. */
+export function walkBytes(sequence: number, controls: readonly number[]): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(128);
+  const numbers = Course.createWalkVector(builder, [...controls]);
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, sequence, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
+export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(32);
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2));
   return builder.asUint8Array().slice();
 }
 
@@ -181,7 +198,7 @@ export function courseBytes(points: readonly (readonly [number, number])[], pace
 export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers));
+  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -219,9 +236,12 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const players = Array.from({ length: snapshot.playersLength() }, (unused, index) => {
       const seen = snapshot.players(index);
       if (!seen) throw new Error(`snapshot player ${index} is missing`);
-      const fighter = whole(seen.fighterArray(), FIGHTER_FLOATS, `player ${index}'s fighter`);
+      // A walker on a ship's deck crosses as their body alone, and has no fighter.
+      const numbers = seen.fighterArray();
+      const walker = numbers?.length === BODY_FLOATS;
+      const fighter = walker ? null : whole(numbers, FIGHTER_FLOATS, `player ${index}'s fighter`);
       // A fighter's first numbers are its body: the room sends them once.
-      const body = bodyOf(Array.from(fighter.subarray(0, BODY_FLOATS)));
+      const body = bodyOf(Array.from((fighter ?? Float64Array.from(numbers ?? [])).subarray(0, BODY_FLOATS)));
       const look = { anim: seen.anim() ?? '', frame: seen.frame(), facing: seen.facing() };
       const standing = standingOf(seen.standing(), seen.standingTicks());
       return { player: seen.player(), acknowledged: seen.acknowledged(), body, fighter, standing, ...look };

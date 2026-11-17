@@ -11,13 +11,18 @@ use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
 use protocol::SeaInput;
+use room::deck::WalkRefused;
 use room::fleet::Fleet;
-use room::sea::{CourseRefused, Sea};
+use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::{Floor, FoeSeen, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
 use std::cell::RefCell;
 
+mod deck_door;
 mod fleet_door;
+mod gear_door;
+
+pub use gear_door::{character, furnish, gear, restore_character};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]
@@ -97,12 +102,13 @@ pub fn open_node(text: &[u8]) -> bool {
     true
 }
 
-/// Opens the sea round the continents of a layout file's text; answers whether the text was a layout.
-pub fn open_sea(text: &[u8]) -> bool {
+/// Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; answers whether
+/// the text was a layout.
+pub fn open_sea(text: &[u8], seed: u32) -> bool {
     let Some(layout) = std::str::from_utf8(text).ok().and_then(|text| world::layout::parse(text).ok()) else {
         return false;
     };
-    keep(Opened::Sea(Box::new(Sea::new(&layout))));
+    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone(), seed))));
     true
 }
 
@@ -190,7 +196,8 @@ pub fn arms_code(text: &[u8]) -> u32 {
     combat::arms_of(right, left, lines.next() == Some("drawn")).code()
 }
 
-/// A player's input bytes, read and handed to the room: an input on land, a course at sea. One of the answers above.
+/// A player's input bytes, read and handed to the room: an input on land; at sea a course, orders, a step on deck or
+/// the helm. One of the answers above.
 pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     let answer = with_open(|opened| match opened {
         Opened::Land { room, .. } => match protocol::read_input(bytes) {
@@ -207,6 +214,23 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
+                Ok(SeaInput::Walk(sequence, controls)) => {
+                    return match sea.walk(player, sequence, controls) {
+                        Ok(()) => TAKEN,
+                        Err(WalkRefused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                        Err(WalkRefused::BadControls) => NOT_AN_INPUT,
+                        Err(WalkRefused::NotAboard) => REFUSED,
+                    };
+                }
+                Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
+                    let asked =
+                        if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };
+                    return match asked {
+                        Ok(()) => TAKEN,
+                        Err(HelmRefused::NoSuchPlayer) => NO_SUCH_PLAYER,
+                        Err(_) => REFUSED,
+                    };
+                }
             };
             match asked {
                 Ok(()) => TAKEN,
@@ -255,7 +279,9 @@ pub fn snapshot() -> Vec<u8> {
         }
         Opened::Sea(sea) => {
             let fights: Vec<(u32, Vec<f64>)> = sea.fight_views().collect();
-            protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>(), sea.pirates(), &fights)
+            let aboard: Vec<(u32, u32, movement::Body)> =
+                sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
+            protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>(), sea.pirates(), &fights, &aboard)
         }
         Opened::Fleet(fleet) => {
             let happened = fleet.take_events();
@@ -264,72 +290,6 @@ pub fn snapshot() -> Vec<u8> {
         }
     })
     .unwrap_or_default()
-}
-
-/// Lays out a course's stall and resource nodes: the stall's x and y (not numbers for none), then each node's x, y
-/// and resource, little-endian floats. Answers whether a room on land is open and the numbers made a layout.
-pub fn furnish(bytes: &[u8]) -> bool {
-    let floats = floats_of(bytes);
-    let Some((stall, nodes)) = floats.split_first_chunk::<2>() else { return false };
-    if !nodes.len().is_multiple_of(3) || nodes.iter().any(|number| !number.is_finite()) {
-        return false;
-    }
-    let stall = stall.iter().all(|number| number.is_finite()).then_some(*stall);
-    let nodes = nodes.chunks_exact(3).map(|node| room::ResourceNode {
-        x: node[0],
-        y: node[1],
-        resource: u8::try_from(node[2] as u32).unwrap_or_default(),
-    });
-    let nodes = nodes.collect();
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => {
-            room.furnish(stall, nodes);
-            true
-        }
-        Opened::Sea(_) | Opened::Fleet(_) => false,
-    })
-    .unwrap_or(false)
-}
-
-/// A player's own gear, as its bytes, when it changed since it was last asked; empty when it did not, or in a room
-/// that keeps no gear.
-#[must_use]
-pub fn gear(player: PlayerId) -> Vec<u8> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => {
-            if room.take_gear_change(player) {
-                protocol::gear_wire::gear_bytes(room, player)
-            } else {
-                None
-            }
-        }
-        Opened::Sea(_) | Opened::Fleet(_) => None,
-    })
-    .flatten()
-    .unwrap_or_default()
-}
-
-/// A player's character as it is kept between sessions, as JSON's bytes; empty on land with no such player, and at
-/// sea, where no one holds gear.
-#[must_use]
-pub fn character(player: PlayerId) -> Vec<u8> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => room.kept_character(player),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
-    })
-    .flatten()
-    .map(String::into_bytes)
-    .unwrap_or_default()
-}
-
-/// Gives a player on land the character kept for them, from JSON's bytes; false if it is not one or they are not in.
-pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
-    let Ok(text) = std::str::from_utf8(bytes) else { return false };
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => room.restore_character(player, text),
-        Opened::Sea(_) | Opened::Fleet(_) => false,
-    })
-    .unwrap_or(false)
 }
 
 /// The welcome's bytes for a player: their number, every dress in the room so far, and a node's id and rect.
@@ -390,14 +350,15 @@ pub unsafe extern "C" fn room_open_node(address: *const u8, length: usize) -> u3
     u32::from(open_node(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
-/// Opens the sea round the layout file's text written at `address`, `length` bytes long; 1 if it opened, 0 if not.
+/// Opens the sea round the layout file's text written at `address`, `length` bytes long, its pirates drawn from
+/// `seed`; 1 if it opened, 0 if not.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn room_open_sea(address: *const u8, length: usize) -> u32 {
+pub unsafe extern "C" fn room_open_sea(address: *const u8, length: usize, seed: u32) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    u32::from(open_sea(unsafe { std::slice::from_raw_parts(address, length) }))
+    u32::from(open_sea(unsafe { std::slice::from_raw_parts(address, length) }, seed))
 }
 
 /// Opens a fleet room on the open sea; always 1.
@@ -465,36 +426,10 @@ pub extern "C" fn room_snapshot() -> u64 {
     hand_over(snapshot())
 }
 
-/// A player's own gear's bytes, empty when it has not changed.
+/// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).
 #[unsafe(no_mangle)]
-pub extern "C" fn room_gear(player: PlayerId) -> u64 {
-    hand_over(gear(player))
-}
-
-/// A player's character as kept, as JSON's bytes (`character`), packed as `hand_over` packs.
-#[unsafe(no_mangle)]
-pub extern "C" fn room_character(player: PlayerId) -> u64 {
-    hand_over(character(player))
-}
-
-/// Gives a player the character written at `address` as JSON; 1 if it was one and they are in, 0 if not.
-///
-/// # Safety
-/// `address` must point at `length` readable bytes, as `reserve` gives.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn room_restore_character(player: PlayerId, address: *const u8, length: usize) -> u32 {
-    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    u32::from(restore_character(player, unsafe { std::slice::from_raw_parts(address, length) }))
-}
-
-/// Lays out the course's stall and resource nodes written at `address`; 1 if laid, 0 if not.
-///
-/// # Safety
-/// `address` must point at `length` readable bytes, as `reserve` gives.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn room_furnish(address: *const u8, length: usize) -> u32 {
-    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    u32::from(furnish(unsafe { std::slice::from_raw_parts(address, length) }))
+pub extern "C" fn room_sloop() -> u64 {
+    hand_over(deck_door::sloop_build_json().into_bytes())
 }
 
 /// Keeps the course written at `address` for predicting; 1 if it was one, 0 if not.

@@ -1,6 +1,6 @@
 use super::*;
 use crate::pirates::Pirate;
-use naval::fight::{CAPTAIN, End, Sailor};
+use naval::fight::{CAPTAIN, End, HOSTILE_NEAR_M, Sailor};
 
 /// A ship of a fight, by its number.
 fn sailed(fight: &Fight, id: naval::shots::ShipId) -> sailing::ship::Ship {
@@ -10,7 +10,7 @@ fn sailed(fight: &Fight, id: naval::shots::ShipId) -> sailing::ship::Ship {
 /// One square continent, 100 km a side, its north-west corner 100 km from the frame's.
 fn sea() -> Sea {
     let text = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    Sea::new(&world::layout::parse(text).unwrap())
+    Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7)
 }
 
 fn ship(sea: &Sea, player: PlayerId) -> Ship {
@@ -35,11 +35,15 @@ fn a_ship_puts_to_sea_at_its_first_point_and_sails_north_at_its_pace() {
     let player = sea.join();
     assert_eq!(sea.ships().count(), 0, "not at sea before its first course");
     sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10).unwrap();
-    assert_eq!(ship(&sea, player), Ship { x: 50_000.0, y: 150_000.0, heading: 0.0, pace: 10 });
+    assert_eq!(ship(&sea, player), Ship { x: 50_000.0, y: 150_000.0, heading: 0.0, pace: 10, rate: 0 });
     ticks(&mut sea, 60);
     let sailed = ship(&sea, player);
     assert!((sailed.y - (150_000.0 - 120.0)).abs() < 1e-6, "a second at 10 × 12 m/s: {}", sailed.y);
-    assert_eq!((sailed.x, sailed.heading, sailed.pace), (50_000.0, 0.0, 10));
+    assert_eq!(
+        (sailed.x, sailed.heading, sailed.pace, sailed.rate),
+        (50_000.0, 0.0, 10, 10),
+        "an empty sea holds no one back"
+    );
 }
 
 #[test]
@@ -53,7 +57,10 @@ fn a_ship_turns_onto_each_leg_and_comes_to_rest_at_its_course_end() {
     assert_eq!(turned.y, 149_000.0, "past the corner");
     assert!(turned.x > 50_000.0 && turned.heading == std::f64::consts::FRAC_PI_2, "heading east at {turned:?}");
     ticks(&mut sea, 60);
-    assert_eq!(ship(&sea, player), Ship { x: 51_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0 });
+    assert_eq!(
+        ship(&sea, player),
+        Ship { x: 51_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0, rate: 0 }
+    );
 }
 
 #[test]
@@ -122,7 +129,7 @@ fn an_empty_course_brings_a_ship_to_rest_and_one_who_leaves_takes_their_ship() {
     sea.course(first, &[], 5).unwrap();
     let stopped = ship(&sea, first);
     ticks(&mut sea, 10);
-    assert_eq!(ship(&sea, first), Ship { pace: 0, ..stopped });
+    assert_eq!(ship(&sea, first), Ship { pace: 0, rate: 0, ..stopped });
     sea.leave(second);
     assert_eq!(sea.ships().map(|(player, _)| player).collect::<Vec<_>>(), vec![first]);
     assert_eq!(sea.clock(), COURSE_EVERY_TICKS + 10);
@@ -136,6 +143,50 @@ fn met_at_sea(out: f64) -> (Sea, PlayerId) {
     let bold = Pirate { id: 1, seed: 7, x: 50_000.0, y: 50_000.0 - out, heading: 0.0, bold: true };
     sea.pirates.sailing.push(bold);
     (sea, player)
+}
+
+/// A ship at sea at x60, north from (50 km, 90 km), and a pirate `ahead` metres north of her heading north too.
+fn voyage_on(ahead: f64, bold: bool) -> (Sea, PlayerId) {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 90_000.0], [50_000.0, 10_000.0]], 60).unwrap();
+    let pirate = Pirate { id: 1, seed: 7, x: 50_000.0, y: 90_000.0 - ahead, heading: 0.0, bold };
+    sea.pirates.sailing.push(pirate);
+    (sea, player)
+}
+
+#[test]
+fn a_voyage_eases_down_as_a_pirate_comes_near_along_her_way_and_is_held_by_her_to_the_worlds_time() {
+    let (mut sea, player) = voyage_on(1_800.0, false);
+    let mut sailed = Vec::new();
+    for _ in 0..60 * 60 {
+        sea.tick();
+        let (ship, pirate) = (ship(&sea, player), sea.pirates()[0]);
+        let (east, south) = (pirate.x - ship.x, pirate.y - ship.y);
+        sailed.push(((east * east + south * south).sqrt(), ship.rate));
+    }
+    assert_eq!(sailed[0].1, 60, "1800 m off, ahead: the pace the player set");
+    let inside = sailed.iter().position(|&(apart, _)| apart <= HOSTILE_NEAR_M).expect("she comes up on the pirate");
+    let rates: Vec<u16> = sailed[..inside].iter().map(|&(_, rate)| rate).collect();
+    assert!(rates.windows(2).all(|pair| pair[1] <= pair[0]), "easing down, never back up: {rates:?}");
+    assert!(rates.last().is_some_and(|&rate| rate <= 5), "down to the near-enemy pace by her ring: {rates:?}");
+    assert!(sailed[inside].0 > HOSTILE_NEAR_M - 2.0, "into her ring a metre at a time: {} m", sailed[inside].0);
+    assert!(sailed[inside + 1..].iter().all(|&(_, rate)| rate == 1), "held to the world's time inside it");
+}
+
+#[test]
+fn a_voyage_at_speed_meets_a_bold_pirate_ahead_at_the_near_enemy_pace() {
+    let (mut sea, player) = voyage_on(1_800.0, true);
+    let mut last = 60;
+    for _ in 0..60 * 60 {
+        sea.tick();
+        if sea.fights().next().is_some() {
+            break;
+        }
+        last = ship(&sea, player).rate;
+    }
+    assert_eq!(sea.fights().next().map(|(fighting, _)| fighting), Some(player), "she took the player on");
+    assert!(last <= 5, "the voyage came to her sight at x{last}");
 }
 
 #[test]
@@ -161,7 +212,7 @@ fn a_fight_steps_by_the_players_orders_and_moves_their_ship_with_it() {
     let fought = &sea.fights().next().unwrap().1.fight;
     let her = sailed(fought, PLAYER);
     assert!(her.heading != 0.0, "she answered her helm");
-    assert_eq!(ship(&sea, player), Ship { x: her.x, y: her.y, heading: her.heading, pace: 0 });
+    assert_eq!(ship(&sea, player), Ship { x: her.x, y: her.y, heading: her.heading, pace: 0, rate: 0 });
     assert_eq!(sea.orders(2, QUIET), Err(CourseRefused::Fighting), "no fight, no orders");
 }
 
@@ -187,4 +238,55 @@ fn a_wary_pirate_or_one_out_of_sight_begins_no_fight() {
     sea.pirates.sailing[0] = Pirate { bold: false, y: 50_000.0 - 500.0, ..sea.pirates.sailing[0] };
     sea.tick();
     assert_eq!(sea.fights().count(), 0);
+}
+
+#[test]
+fn a_player_leaves_the_helm_only_at_sea_and_out_of_a_fight_and_walks_while_her_helmsman_keeps_her_course() {
+    let mut sea = sea();
+    let player = sea.join();
+    assert_eq!(sea.leave_helm(player), Err(HelmRefused::NotAtSea));
+    sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10).unwrap();
+    assert_eq!(sea.leave_helm(player), Ok(()));
+    assert_eq!(sea.leave_helm(player), Err(HelmRefused::AlreadyThere));
+    assert_eq!(next_course(&mut sea, player, &[[60_000.0, 150_000.0]], 10), Err(CourseRefused::OffTheHelm));
+    let before = ship(&sea, player);
+    let forward = Controls { forward: 1.0, ..Controls::default() };
+    for sequence in 1..=30 {
+        sea.walk(player, sequence, forward).unwrap();
+        sea.tick();
+    }
+    assert!(ship(&sea, player).y < before.y - 50.0, "under way, she sails on under her helmsman");
+    let (_, walking) = sea.aboard().next().expect("the player on deck");
+    assert_eq!(walking.acknowledged, 30);
+    assert!(walking.body.y < 2.7 - 1.0, "they walked forward from the wheel, in her frame: {}", walking.body.y);
+    assert_eq!(sea.take_helm(player), Err(HelmRefused::NotAtTheWheel));
+    let back = Controls { forward: -1.0, ..Controls::default() };
+    for sequence in 31..=60 {
+        sea.walk(player, sequence, back).unwrap();
+        sea.tick();
+    }
+    assert_eq!(sea.take_helm(player), Ok(()), "back at the wheel");
+    assert_eq!(sea.walk(player, 61, forward), Err(WalkRefused::NotAboard));
+    assert_eq!(sea.aboard().count(), 0);
+}
+
+#[test]
+fn a_fight_calls_a_player_off_the_helm_back_to_it_and_one_in_a_fight_keeps_it() {
+    let (mut sea, player) = met_at_sea(700.0);
+    sea.leave_helm(player).unwrap();
+    sea.tick();
+    assert_eq!(sea.fights().count(), 1, "a bold pirate in sight begins the fight");
+    assert_eq!(sea.aboard().count(), 0, "all hands: the player is back at the helm");
+    assert_eq!(sea.leave_helm(player), Err(HelmRefused::Fighting));
+}
+
+#[test]
+fn a_player_who_leaves_the_room_leaves_her_deck_too() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 150_000.0]], 10).unwrap();
+    sea.leave_helm(player).unwrap();
+    sea.leave(player);
+    assert_eq!(sea.aboard().count(), 0);
+    assert_eq!(sea.take_helm(player), Err(HelmRefused::NoSuchPlayer));
 }

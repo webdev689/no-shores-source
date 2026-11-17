@@ -126,7 +126,17 @@ will take it, by the room's own tick.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - Pirates sail among the ships, and a bold one that meets a player fights them in the room, by the player's orders
   ([[Naval Combat]], "At sea"). While a player fights, the room takes their orders and no course, and their ship is
-  where the fight has her, at rest on the room's word.
+  where the fight has her, at rest on the room's word. A ship sails at her pace held down as a pirate comes near, and
+  the snapshot's pace for her is the one she sailed at. The sea opens on a seed for its pirates, from the runtime's
+  random numbers (`room_open_sea`'s third number).
+- **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
+  deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
+  deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
+  out of order or with controls that are not numbers or ask past a whole pace; never more than the ticks since they
+  left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken.
+  Meanwhile her helmsman keeps her course: under way she sails on, at rest she stays, and a course is refused. They
+  take the helm again within 0.8 m of the spot behind her wheel, standing; a bold pirate that meets them calls them to
+  it at once.
 - Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
 
 ## A fleet
@@ -178,10 +188,10 @@ an older reader skips them.
 | Message | From | Holds |
 |---|---|---|
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for and its level, whether they ask to respawn, and an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names |
-| Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`) |
+| Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind, a glance at its fighter and its level; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; and each player's fight as the naval crate's numbers; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind, a glance at its fighter and its level; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
 starboard), crab and climb; whether a look is laid, its bearing off her bow (degrees) and range (metres); whether it

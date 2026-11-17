@@ -1,15 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { voyageOf } from '../overworld/voyage.ts';
+import { SHIP_SPEED, voyageOf } from '../overworld/voyage.ts';
+import { cellHeight, SLOOP_DECK } from '../ships/deck.ts';
 import {
   continentToOpen,
   courseAhead,
   declutter,
   DOCK_REACH_M,
+  followed,
+  heldNote,
+  HELM,
+  helmEye,
+  shownScale,
   landfallOf,
   namesShown,
   OFFSHORE,
   offshore,
+  STANDING_EYE_M,
   timeText,
 } from './seaLaw.ts';
 
@@ -92,4 +99,40 @@ test('off a coast the ship docks within reach of its harbour and goes ashore els
   assert.deepEqual(landfallOf([DOCK_REACH_M + 1, 0], true, port), { kind: 'ashore' });
   assert.deepEqual(landfallOf([100, 0], true, null), { kind: 'ashore' });
   assert.equal(landfallOf([100, 0], false, port), null);
+});
+
+test("ships are drawn at the Overworld's scale on the sea's view and shrink to their own size at the helm", () => {
+  assert.equal(shownScale(12, 0), 12);
+  assert.equal(shownScale(12, 1), 1, 'at the wheel the Sloop is her true size');
+  assert.equal(shownScale(12, 0.5), 6.5);
+});
+
+test('at the helm the eye stands behind the wheel of the Sloop as she is drawn, riding the swell with her', () => {
+  const heading = Math.PI / 2;
+  const ship = { x: 1000, y: 2000, heading };
+  const aft = SLOOP_DECK.helm[1];
+  const [x, y, z] = helmEye(ship, 1, 0.25);
+  assert.ok(Math.abs(x - (1000 - aft)) < 1e-9, 'aft of her middle at her helm spot, against her heading east');
+  assert.ok(Math.abs(y - 2000) < 1e-9);
+  assert.equal(z, HELM.eyeM + 0.25);
+  assert.equal(HELM.eyeM, (cellHeight(SLOOP_DECK, ...SLOOP_DECK.helm) ?? NaN) + STANDING_EYE_M, 'a standing eye');
+  const [drawnX, , drawnZ] = helmEye(ship, 12, 0);
+  assert.ok(Math.abs(drawnX - (1000 - aft * 12)) < 1e-9, 'on the larger Sloop, its helm further aft');
+  assert.equal(drawnZ, HELM.eyeM * 12);
+});
+
+test("the page sails its ship at the room's pace and draws her to where the room has her, the dial's till then", () => {
+  const voyage = voyageOf([
+    [0, 0],
+    [0, -100_000],
+  ]);
+  assert.equal(followed(voyage, 1_000, 1, 60, null), 1_000 + SHIP_SPEED * 60, "no word yet: the dial's x60");
+  const held = { x: 0, y: -1_000 - SHIP_SPEED, pace: 1 };
+  assert.equal(followed(voyage, 1_000, 1, 60, held), 1_000 + SHIP_SPEED, 'held by the room to x1, where it has her');
+  const behind = { x: 0, y: -900, pace: 1 };
+  const drawn = followed(voyage, 1_000, 0.1, 60, behind);
+  assert.ok(drawn < 1_000 && drawn > 900, `drawn back toward the room's place: ${drawn}`);
+  assert.equal(heldNote(60, held), ' · Held to ×1: a pirate near');
+  assert.equal(heldNote(60, { ...held, pace: 60 }), '', 'sailing at the dial, nothing to say');
+  assert.equal(heldNote(60, null), '');
 });

@@ -6,7 +6,7 @@ import type { HullMask } from '../water/hullMask.ts';
 import type { Orbit } from './orbit.ts';
 
 /** Her deck and a little over, metres above her waterline: where the camera looks at her. */
-const LOOK_AT_M = 1.5;
+const LOOK_AT_M = 4.5;
 /** The helm's rung with her sails set (crates/sailing/src/ship.rs). */
 export const SAILS_RUNG = 2;
 /** Come Sail Away's wake threshold (a quarter of its sailing speed), m/s, and how far she runs between stirrings of

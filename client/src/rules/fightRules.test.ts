@@ -71,8 +71,8 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   assert.equal(view.player.guns.load, 'grape');
   assert.equal(
     prints.join(' '),
-    '834b070d18a1080e 5d1bca60bb36a1c1 9764c3dc4b2f824c 1ddd3e8e0cb5316d 10c2d6d7ae711e19 353c8645961cccf0 ' +
-      '73adeff595ee6a7e d272c71d1db938e3 67cd244ae0c78118',
+    '09dd8c9bd99eff6c 85de4ce719306842 32cab532b0cd1a68 c618adbddc734f92 07f46d7bed623939 59ca543db216d105 ' +
+      'a864cfe4e923d461 37ac921c66a09909 41765ed667ea77ff',
   );
 });
 

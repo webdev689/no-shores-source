@@ -5,6 +5,7 @@
 //! the room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
 
 pub mod asks;
+pub mod deck;
 pub mod fleet;
 mod foes;
 mod judging;
@@ -13,6 +14,7 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+pub mod threat;
 
 pub use asks::{Asked, Grant, ResourceNode};
 pub use foes::{CLEAR_FOES, FOES_MOST};

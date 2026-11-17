@@ -7,6 +7,7 @@ code:
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
   - crates/movement/src/terrain.rs#Terrain
+  - crates/movement/src/heights.rs#Heights
   - crates/movement/src/floats.rs#fingerprint
   - crates/movement-wasm/src/lib.rs#movement_step
   - crates/movement-wasm/src/lib.rs#set_ground
@@ -45,6 +46,12 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   block's side, so the body slides along the rise. Walked slantwise, a slope too steep to walk straight up is
   climbed as steeply as the path rises. The rise is the terrain's own, so a block sunk into a slope is walked onto
   and off again. Climbing down a wall stops at the terrain.
+- **A grid of heights.** One terrain is a grid of square cells, each with its height or none (`Heights`), as a
+  ship's deck is ([[Sailing]], "Her deck"). In a cell with a height, the ground blends the four cell centres round
+  the point by nearness, leaving out any that hold none; a cell with none, or past the grid's end, stands 10 m over
+  the highest cell, a wall at that cell's edge that no step or slope takes and no climb starts on, a climb holding
+  to blocks alone. So a passage one cell wide is walked to its end. A body standing on it faces north (her bow). The browser hands it to its door as numbers
+  (the grid's shape, then each height, NaN for none), the same numbers the sea room stands its walkers on.
 - **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
   order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;
   it leaves alone memory too short for a step.

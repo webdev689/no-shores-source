@@ -1,11 +1,13 @@
 // The sea room as the ship sails in it, a server's or the one in the page when playing alone: its course sent when
-// set and its orders in a fight, and every ship, pirate and fight the room last showed.
-import { courseBytes, ordersBytes, type SeenPirate, type SeenShip } from '../network/messages.ts';
+// set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, pirate and fight the room
+// last showed, with its word on the player's body on deck.
+import { courseBytes, helmBytes, ordersBytes, type SeenPirate, type SeenShip, walkBytes } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { fightViewOf, ordersNumbers } from '../network/seaFight.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Pace } from '../overworld/voyage.ts';
 import type { FightEvent, FightOrders, FightView } from '../rules/fightRules.ts';
+import type { Body } from '../rules/movementRules.ts';
 
 /** A room link that may be closed: a server's socket is; the room in the page has nothing to close. */
 type Closable = RoomLink & { close?(): void };
@@ -20,6 +22,10 @@ export class SeaRoom {
   private ships: readonly SeenShip[] = [];
   /** The pirates at sea, none of them in a fight. */
   pirates: readonly SeenPirate[] = [];
+  /** The room's last word on the player's body on deck, off the helm (the number of their last step it took), or
+   *  null while they hold it; and how many words it has sent, so each is taken once. */
+  onDeck: { readonly acknowledged: number; readonly body: Body } | null = null;
+  words = 0;
   /** The player's own fight as the room last showed it, and its events since they were last taken. */
   private fight: FightView | null = null;
   private events: FightEvent[] = [];
@@ -54,6 +60,9 @@ export class SeaRoom {
     this.sendCourse();
     this.ships = snapshot.ships;
     this.pirates = snapshot.pirates;
+    const walking = snapshot.players.find((seen) => seen.player === this.own);
+    this.onDeck = walking ? { acknowledged: walking.acknowledged, body: walking.body } : null;
+    this.words += 1;
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     if (own) {
       this.fight = fightViewOf(own.view);
@@ -70,6 +79,14 @@ export class SeaRoom {
   /** The player's own ship as the room last moved it, if at sea. */
   get ownShip(): SeenShip | null {
     return this.ships.find((ship) => ship.player === this.own) ?? null;
+  }
+
+  /** The room's word on the player's ship once it has taken the last course sent (none waits, and a snapshot came
+   *  since); null before. */
+  get settledShip(): SeenShip | null {
+    const sent = this.courseSentAt;
+    if (this.waitingCourse || sent === null || this.tick === null || this.tick <= sent) return null;
+    return this.ownShip;
   }
 
   /** The player's fight as the room last showed it, its events those since they were last taken; null out of one. */
@@ -100,6 +117,21 @@ export class SeaRoom {
     if (sent !== null && (this.tick === null || this.tick < sent + COURSE_EVERY_TICKS)) return;
     this.link.send(waiting);
     [this.waitingCourse, this.courseSentAt] = [null, this.tick ?? 0];
+  }
+
+  /** The player leaves the helm, to walk her deck while her helmsman keeps her course. */
+  leaveHelm(): void {
+    this.link.send(helmBytes(true));
+  }
+
+  /** The player takes the helm again, at her wheel. */
+  takeHelm(): void {
+    this.link.send(helmBytes(false));
+  }
+
+  /** A step of the player's walk on deck: its number and its controls in the movement crate's order. */
+  walk(sequence: number, controls: readonly number[]): void {
+    this.link.send(walkBytes(sequence, controls));
   }
 
   /** The player's orders in their fight. */

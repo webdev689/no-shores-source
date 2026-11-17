@@ -22,8 +22,16 @@ code:
   - client/src/ships/sails.ts#sailWind
   - client/src/ships/sails.ts#gaffTrim
   - client/src/textures/shipPictures.ts#shipPictures
+  - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
   - tools/ships/paint_ship.py#main
+  - tools/ships/deck.py#deck_of
+  - crates/room/src/deck.rs#Aboard
+  - crates/room-wasm/src/deck_door.rs#sloop_deck
+  - client/src/ships/deck.ts#SLOOP_DECK
+  - client/src/game/aboard.ts#Aboard
+  - client/src/game/deckWalk.ts#DeckWalk
+  - client/src/game/crew.ts#Crew
 ---
 # Sailing
 
@@ -69,20 +77,27 @@ The owner's Sloop sails as Come Sail Away's Large Boat II, whose rig is hers: a 
 Its handling is the mod's own, unscaled, and its gain (1.159) DFO's for that rig. Under sail on a beam reach she makes
 2.4 m/s.
 
-Her model is a `.blend`. Its faces are in five part materials, `hull`, `deck`, `spar`, `sail` and `iron`, and its
-UVs are metres, each face laid flat on the axis it faces most so the planks run along her and a spar's grain up it
+Her model is a `.blend`. `tools/ships/shape_ship.py` first shapes the owner's model ([[The Sloop Is About 18 m Long]]):
+it brings her to three times its size about her origin, and opens the rail round her quarterdeck (raised 0.67 m over
+her deck about her wheel) at its two front corners, either side of her hatch, closing the cut ends and laying four
+steps down to her deck forward of each gap. The model keeps a record of each, so shaping a shaped model changes
+nothing.
+
+Its faces are in five part materials, `hull`, `deck`, `spar`, `sail` and `iron`, and its UVs are metres, each face
+laid flat on the axis it faces most so the planks run along her and a spar's grain up it
 (`tools/ships/paint_ship.py` sorted the owner's model so, and packed the game's pictures into it, so Blender shows her
 as the game does). `tools/ships/export_ship.py` turns what Blender would render into Overlook's mesh: a header with
 her waterline, 28 bytes a vertex (position, normal, UV, part) and the corners' indices. Her canvas is left out of the
 mesh: the export writes each sail's corners to `ships.json`, and the game sets the sails on them. Her frame is x to her
 bow, y to starboard and z up, mirrored from the model's as the world (east, south, up) is, so each face keeps the
 model's corner order and reaches the screen counter-clockwise, as the land's and the water's do. The export refuses a
-model whose faces are not wound outward. Her waterline is 0.4 m above the model's z = 0, where her beam nears its
-widest ([[The Sloop's Trim]]): 6.2 m long, 1.9 m across, her keel 0.6 m below it. The mesh lives on R2 under its hash
-([[Generated Files Stay Out of Git]]); its key and her waterline are in `content/ships/ships.json`, and a test holds
-the rules' Sloop to that waterline. Her `.blend` is on R2 beside it ([[Ship Models Live on R2]]). Her
-cannons are the objects named `Cannon` in it, three a side, fore to aft: the export reads each one's mouth and bore,
-and the boxes a ball can strike (her hull, and each sail's canvas), into `ships.json` for [[Naval Combat]].
+model whose faces are not wound outward. Her waterline is 1.2 m above the shaped model's z = 0 (0.4 m up the owner's),
+where her beam nears its widest ([[The Sloop's Trim]]): 18.7 m long, 5.6 m across, her keel 1.8 m below it. The
+mesh lives on R2 under its hash ([[Generated Files Stay Out of Git]]); its key and her waterline are in
+`content/ships/ships.json`, and a test holds the rules' Sloop to that waterline. Her `.blend` is on R2 beside it
+([[Ship Models Live on R2]]). Her cannons are the objects named `Cannon` in it, three a side, fore to aft: the export
+reads each one's mouth and bore, and the boxes a ball can strike (her hull, and each sail's canvas), into `ships.json`
+for [[Naval Combat]].
 
 ## Her look
 
@@ -117,11 +132,33 @@ or more: the room steps her by her orders, a tick at a time, and the browser pre
 `room-wasm`, correcting her by each snapshot. The water then rolls by the room's clock, so every ship the room shows
 rides the wave drawn under her ([[Naval Combat]]).
 
+## Her deck
+
+A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
+
+- **The grid.** `tools/ships/deck.py` measures it from her published mesh, and the export writes it with her: a grid
+  of 10 cm cells in the walk's frame (x to her starboard, y to her stern, the origin amidships), each holding the
+  height over her waterline of the highest of her hull's and deck's upward faces there, in centimetres. A cell where
+  a spar or a gun stands in the room a body takes (from 0.25 m to 1.8 m over the planks), where the floor lies under
+  1.7 m (her hold through her hatch, the stair down into it), or that is off her deck holds none. Each cell is then let down to within 8
+  cm of every neighbour, nothing raised, so a dip in her planks or a raised part of her deck has a way in and out a
+  body walks (a slope under 1.19). The grid is kept round the deck with a cell to spare, each row on a line of the
+  manifest. The spot behind her wheel on her quarterdeck, 8.1 m aft of her middle, is her helm's; from it a body
+  walks down her steps to all her deck.
+- **The ground it makes.** The movement crate stands a body on the grid as a terrain ([[Movement]]): between cell
+  centres the ground blends, and a cell with none, or the grid's end, is a wall no step or slope takes. A wall of the
+  ground is never climbed, as a block's is, so a body never leaves her deck.
+- **Her own frame.** A body on deck moves in her frame, so her way, her heading and the swell never move it; the game
+  lays it into the world as she lies, at her drawn size.
+
 ## Limits
 
 - One hull, the Sloop.
+- A walker on deck stands on her heights, not her shape: no stairs below, no rigging to climb, and a body's edge
+  may brush a rail it stands within a cell of.
 - Her helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
 - Alone, the editor steps her; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
   in the sea room's fights, the room steps her by her orders.
-- No current, cargo or crew yet. Hulls are kept apart only in a fight ([[Naval Combat]]), as every fleet room is.
+- No current or cargo yet, and no crew but the stand-ins aboard ([[Game]]). Hulls are kept apart only in a fight
+  ([[Naval Combat]]), as every fleet room is.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.

@@ -67,6 +67,10 @@ export interface MovementRules {
    *  the bit as the node's room; null, or anything that is not a window, is open ground at 0 m. Answers whether a
    *  window was set. */
   setGround(windowJson: string | null): boolean;
+  /** Stands every later step on a ship's deck in place of any ground: its grid of heights as the movement crate
+   *  numbers it (`Heights::to_floats`), the same heights to the bit as the sea room's; null, or numbers that are not a
+   *  grid, is open ground at 0 m. Answers whether a deck was set. */
+  setHeights(grid: readonly number[] | null): boolean;
   /** Judges every later `reachTick` against a node's section (its ring and spawns, world metres), by the room's own
    *  reach rules, the body standing inside; null clears it. */
   setSection(section: { readonly ring: readonly Point[]; readonly spawns: readonly Point[] } | null): void;
@@ -102,6 +106,7 @@ interface MovementExports {
   movement_tuning(): bigint;
   movement_set_course(address: number, length: number): number;
   movement_set_ground(address: number, length: number): number;
+  movement_set_heights(address: number, length: number): number;
   movement_standing(address: number, length: number): void;
   movement_step(address: number, length: number): void;
   movement_set_section(address: number, length: number): number;
@@ -238,6 +243,17 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
         return exports.movement_set_ground(address, bytes.length) === 1;
       } finally {
         exports.release(address, bytes.length);
+      }
+    },
+    setHeights: (grid) => {
+      const floats = grid ?? [];
+      const address = exports.reserve(Math.max(1, floats.length) * 8);
+      const numbers = new DataView(exports.memory.buffer, address, floats.length * 8);
+      floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));
+      try {
+        return exports.movement_set_heights(address, floats.length * 8) === 1;
+      } finally {
+        exports.release(address, Math.max(1, floats.length) * 8);
       }
     },
     setSection: (section) => {

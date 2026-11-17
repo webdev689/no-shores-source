@@ -1,8 +1,10 @@
 //! Pirates at sea, from DFO's director trimmed to pirates alone. Each player at sea rolls for a ship half a minute
 //! after reaching the water and then every minute to two and a half; a roll that draws a pirate stands her on the ring
-//! round their ship, clear of every player, crossing their waters on a slant. She sails on at a Sloop's way and goes
-//! once no player is near. A bold one that comes within sight of a player who is not fighting takes them on. One
-//! seeded stream draws every chance in a fixed order, so the sea is the same wherever it is given the same courses.
+//! round their ship, clear of every player, crossing their waters on a slant. She sails on at a Sloop's way, on the
+//! clock of the player she sails by (their voyage's pace, real time where another player shares those waters), and
+//! goes once no player is near. A bold one that comes within sight of a player who is not fighting takes them on. One
+//! stream, seeded as the sea opens, draws every chance in a fixed order, so a sea is the same given the same seed and
+//! courses.
 
 use crate::PlayerId;
 use naval::captain::course::heading_to;
@@ -26,6 +28,9 @@ pub const DENSITY: usize = 2;
 pub const SPAWN_CLEAR_M: f64 = 450.0;
 /// A pirate's way at sea, metres a second: a Sloop's on a beam reach.
 pub const PIRATE_WAY_M_S: f64 = 2.4;
+/// Waters another player sails within this of are shared, and keep real time (metres).
+pub const SHARE_M: f64 = 1_200.0;
+#[cfg(test)]
 const STREAM_SEED: u32 = 0x5ea_9a7e;
 
 /// A pirate at sea: her number in the room, her seed (her temper, and every chance of her fight), where she is and
@@ -49,9 +54,10 @@ pub struct Pirates {
     pub sailing: Vec<Pirate>,
 }
 
+#[cfg(test)]
 impl Default for Pirates {
     fn default() -> Self {
-        Self { draws: Mulberry32::new(STREAM_SEED), next_id: 1, waits: BTreeMap::new(), sailing: Vec::new() }
+        Self::new(STREAM_SEED)
     }
 }
 
@@ -60,19 +66,38 @@ fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
     (east * east + south * south).sqrt()
 }
 
+/// The rate a pirate at `at` sails at: the clock of the player nearest her within `DESPAWN_BEYOND`, but real time where
+/// another player sails within `SHARE_M` of that one, or none is near.
+fn clock_at(at: [f64; 2], ships: &[(PlayerId, [f64; 2], bool, f64)]) -> f64 {
+    let nearest = ships
+        .iter()
+        .filter(|&&(_, ship, _, _)| apart(at, ship) <= DESPAWN_BEYOND)
+        .min_by(|one, other| apart(at, one.1).total_cmp(&apart(at, other.1)));
+    let Some(&(player, ship, _, clock)) = nearest else { return 1.0 };
+    let shared = ships.iter().any(|&(other, there, _, _)| other != player && apart(there, ship) <= SHARE_M);
+    if shared { 1.0 } else { clock }
+}
+
 impl Pirates {
-    /// One tick of `seconds`. `ships` is each player's ship at sea, with whether they are fighting; `open` answers
-    /// whether a ship may sail straight from one point to another without touching land. Answers each pirate who
-    /// came within sight of a player this tick, with that player, for their fight; she leaves the sea.
+    /// An empty sea, its chances drawn from `seed`.
+    #[must_use]
+    pub fn new(seed: u32) -> Self {
+        Self { draws: Mulberry32::new(seed), next_id: 1, waits: BTreeMap::new(), sailing: Vec::new() }
+    }
+
+    /// One tick of `seconds`. `ships` is each player's ship at sea, with whether they are fighting and the clock their
+    /// waters run at (their voyage's pace, 1 at rest); `open` answers whether a ship may sail straight from one point
+    /// to another without touching land. Answers each pirate who came within sight of a player this tick, with that
+    /// player, for their fight; she leaves the sea.
     pub fn tick(
         &mut self,
         seconds: f64,
-        ships: &[(PlayerId, [f64; 2], bool)],
+        ships: &[(PlayerId, [f64; 2], bool, f64)],
         open: impl Fn([f64; 2], [f64; 2]) -> bool,
     ) -> Vec<(PlayerId, Pirate)> {
-        let nearest = |at: [f64; 2]| ships.iter().map(|&(_, ship, _)| apart(at, ship)).fold(f64::INFINITY, f64::min);
+        let nearest = |at: [f64; 2]| ships.iter().map(|&(_, ship, _, _)| apart(at, ship)).fold(f64::INFINITY, f64::min);
         for pirate in &mut self.sailing {
-            let step = PIRATE_WAY_M_S * seconds;
+            let step = PIRATE_WAY_M_S * seconds * clock_at([pirate.x, pirate.y], ships);
             let ahead = [pirate.x + libm::sin(pirate.heading) * step, pirate.y - libm::cos(pirate.heading) * step];
             if open([pirate.x, pirate.y], ahead) {
                 [pirate.x, pirate.y] = ahead;
@@ -83,7 +108,7 @@ impl Pirates {
         }
         self.sailing.retain(|pirate| nearest([pirate.x, pirate.y]) <= DESPAWN_BEYOND);
         let mut met = Vec::new();
-        for &(player, ship, fighting) in ships {
+        for &(player, ship, fighting, _) in ships {
             if fighting || met.iter().any(|&(taken, _)| taken == player) {
                 continue;
             }
@@ -93,8 +118,8 @@ impl Pirates {
                 met.push((player, self.sailing.remove(index)));
             }
         }
-        self.waits.retain(|player, _| ships.iter().any(|&(at_sea, _, _)| at_sea == *player));
-        for &(player, ship, fighting) in ships {
+        self.waits.retain(|player, _| ships.iter().any(|&(at_sea, _, _, _)| at_sea == *player));
+        for &(player, ship, fighting, _) in ships {
             let wait = self.waits.entry(player).or_insert(FIRST_ROLL_S);
             *wait -= seconds;
             // While a player fights, the sea sends no one else.

@@ -125,8 +125,8 @@ fn a_node_with_no_spawn_or_text_that_is_no_node_does_not_open() {
 #[test]
 fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    assert!(!open_sea(b"not a layout"));
-    assert!(open_sea(layout.as_bytes()));
+    assert!(!open_sea(b"not a layout", 7));
+    assert!(open_sea(layout.as_bytes(), 7));
     let (first, second) = (room_join(), room_join());
     assert_eq!(input(first, &protocol::course_bytes(&[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10)), TAKEN);
     assert_eq!(input(second, &protocol::course_bytes(&[[50_000.0, 150_000.0], [250_000.0, 150_000.0]], 10)), REFUSED);
@@ -145,7 +145,12 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
         .ships()
         .unwrap()
         .iter()
-        .map(|ship| (ship.player(), Ship { x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() }))
+        .map(|ship| {
+            (
+                ship.player(),
+                Ship { x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace(), rate: ship.pace() },
+            )
+        })
         .collect();
     assert_eq!(ships.len(), 1, "only the ship whose course was taken is at sea");
     assert_eq!((ships[0].0, ships[0].1.x, ships[0].1.pace), (first, 50_000.0, 10));
@@ -193,7 +198,7 @@ fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
     let bytes = gear(second);
     let message = messages::root_as_from_room(&bytes).unwrap();
     assert_eq!(message.gear().unwrap().items().unwrap().len(), 5, "the second player's own starting kit");
-    assert!(open_sea(include_bytes!("../../../content/world/layout.json")));
+    assert!(open_sea(include_bytes!("../../../content/world/layout.json"), 7));
     assert!(gear(first).is_empty(), "the sea keeps no gear");
     assert!(!furnish(&bytes_of(&[7.0, 15.0])));
 }

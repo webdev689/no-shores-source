@@ -108,7 +108,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
   does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
   owner's to say.
-- #50's open choices: where another player's colour goes on the Sloop, her 75 m drawn size at sea.
+- #50's open choice: where another player's colour goes on the Sloop. Her drawn size at sea, 75 m, is settled
+  ([[The Sloop Is About 18 m Long]]).
 - #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
   playing alone; when it happens is the owner's to say.
 - Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
@@ -130,6 +131,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   Enhanced Plus kit, built on its branch until it merges (character, inventory, an item's nodes, the stall); gear
   dressing the figure, every garment armour ([[Clothing Is Armour, With a Wardrobe Later]]); and the loop in the game
   itself: fighting on foot, levelled foes, the stall and vault in Overlook, and resource nodes in patrol areas.
+- The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]), all three parts in review in
+  one pull request: the [[Interface]]'s Enhanced Plus kit and the sea bar in it; the Sloop at true scale at the helm;
+  Manage, the view over her deck with her panel and stand-in hands; and Leave the helm, the player walking her deck
+  ([[Sailing]], "Her deck") with the sea room the authority on every step ([[Server]], "The sea"). The same pull
+  request makes the Sloop about 18 m long, her quarterdeck opened with steps down ([[The Sloop Is About 18 m Long]]);
+  her model on R2 is the one the `ships` workflow shaped and published. It also makes pirates met at sea
+  ([[Pirates Must Be Met at Sea]]): they sail on the voyage's clock and hold a voyage as they come near, each sea on a
+  seed of its own ([[Naval Combat]], "At sea"). Waiting on the owner: the keys (B, H, E), the stand-ins' number and
+  dress, Manage's view, what a walker who goes overboard should meet (the deck keeps them aboard for now), and whether
+  DFO's Travel Options encounter (a journey stopped near an enemy) or wary pirates falling on a ship they outgun should
+  come over. It changes the sea room's wire, so its merge sends the page and the rooms out together.
 - A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
   larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
   wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare
@@ -139,7 +151,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   the pick's step 3 is boarding, crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's
   hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
   crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
-  which boarding needs, is for the `movement` crate.
+  which boarding needs, is the `movement` crate's grid of heights, walked on the player's own Sloop.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.

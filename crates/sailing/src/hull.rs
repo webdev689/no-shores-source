@@ -40,9 +40,9 @@ pub struct Hull {
 /// gain DFO's for that rig.
 pub const SLOOP: Hull = Hull {
     name: "sloop",
-    half_length_m: 6.2258 / 2.0,
-    half_beam_m: 1.8561 / 2.0,
-    draught_m: 0.6,
+    half_length_m: 18.6775 / 2.0,
+    half_beam_m: 5.5684 / 2.0,
+    draught_m: 1.7999,
     gain: 1.159,
     sails: &[
         Sail { kind: SailKind::Gaff, size: SailSize::Small },

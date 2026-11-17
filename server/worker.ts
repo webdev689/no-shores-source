@@ -101,7 +101,8 @@ export class RoomHost extends DurableObject<Env> {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
-    if (name === 'sea') return this.room.openSea(JSON.stringify(layout));
+    if (name === 'sea')
+      return this.room.openSea(JSON.stringify(layout), crypto.getRandomValues(new Uint32Array(1))[0] ?? 0);
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
     if (node === undefined)
