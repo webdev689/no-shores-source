@@ -5,7 +5,7 @@ import { startCombatRules } from './combatRules.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS, fighterView } from './fighters.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
-const FIGHT_HASH = '9cd81176dbfb19c9';
+const FIGHT_HASH = 'e8eae610b38fdb17';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -17,15 +17,19 @@ const COURSE = [{ minX: -3, minY: -8, maxX: 3, maxY: -7, top: 1.2 }];
 /** The arms codes of a sword with a shield and of a bow, as the combat crate packs them. */
 const SWORD_AND_SHIELD = 2 | (1 << 16);
 const BOW = 1 << 8;
-/** Ticks, then forward, sideways, yaw, the stroke held, guard, dodge, shoot, and whether the bow is held. */
-const SCRIPT: readonly (readonly [number, number, number, number, number, boolean, boolean, boolean, boolean])[] = [
-  [40, 1, 0, 0.1, 0, false, false, false, false],
-  [70, 0, 0, 0.1, 6, false, false, false, false],
-  [80, -1, 0, 0, 0, true, false, false, false],
-  [1, 0, 1, 0, 0, false, true, false, false],
-  [40, 0, 0, 0, 0, false, false, false, false],
-  [50, 0, 0, -0.2, 0, false, false, true, true],
-  [40, 0, 0, -0.2, 0, false, false, false, true],
+/** Ticks, then forward, sideways, yaw, the stroke held, guard, dodge, shoot, aim, and whether the bow is held. */
+type Phase = readonly [number, number, number, number, number, boolean, boolean, boolean, boolean, boolean];
+const SCRIPT: readonly Phase[] = [
+  [40, 1, 0, 0.1, 0, false, false, false, false, false],
+  [70, 0, 0, 0.1, 6, false, false, false, false, false],
+  [80, -1, 0, 0, 0, true, false, false, false, false],
+  [1, 0, 1, 0, 0, false, true, false, false, false],
+  [40, 0, 0, 0, 0, false, false, false, false, false],
+  [50, 0, 0, -0.2, 0, false, false, false, true, true],
+  [1, 0, 0, -0.2, 0, false, false, true, true, true],
+  [40, 0, 0, -0.2, 0, false, false, false, false, true],
+  [1, 0, 0, -0.2, 0, false, false, true, false, true],
+  [40, 0, 0, -0.2, 0, false, false, false, false, true],
 ];
 
 /** A fighter's numbers in the combat crate's order: a player standing at (0, 2) facing south with a sword and shield. */
@@ -58,11 +62,11 @@ function fingerprint(fighters: readonly Float64Array[]): string {
 test('the scripted fight through WebAssembly moves to the same fingerprint as the crate run natively', () => {
   const rules = startCombatRules(compiled);
   rules.setCourse(COURSE);
-  assert.deepEqual(rules.sizes, { fighter: FIGHTER_FLOATS, intent: 12, glance: GLANCE_FLOATS });
+  assert.deepEqual(rules.sizes, { fighter: FIGHTER_FLOATS, intent: 16, glance: GLANCE_FLOATS });
   const view = [{ id: 2, glance: foeGlance() }];
   let fighter = startingPlayer();
   const fighters: Float64Array[] = [];
-  for (const [ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, bow] of SCRIPT) {
+  for (const [ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, aim, bow] of SCRIPT) {
     for (let tick = 0; tick < ticks; tick += 1) {
       fighter = fighter.slice();
       fighter[23] = bow ? BOW : SWORD_AND_SHIELD;
@@ -79,8 +83,12 @@ test('the scripted fight through WebAssembly moves to the same fingerprint as th
         +(dodge && tick === 0),
         +shoot,
         0.1,
+        +aim,
+        Number.NaN,
+        Number.NaN,
+        Number.NaN,
       ]);
-      fighter = rules.predict(fighter, intent, 1, view);
+      fighter = rules.predict(fighter, intent, 1, view).fighter;
       fighters.push(fighter);
     }
   }

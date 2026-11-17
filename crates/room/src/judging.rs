@@ -217,7 +217,13 @@ impl Room {
                 .filter(|(_, fighter)| fighter.side != side && !fighter.dead())
                 .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
                 .collect();
-            match fly(&shot, &self.blocks, &bodies) {
+            let flight = fly(&shot, &self.blocks, &bodies);
+            if let Flight::Stopped { at, .. } = flight
+                && combat::shots::shot_numbers(shot.ranged).0 <= 0.0
+            {
+                self.lines.push(line_of(&shot, at));
+            }
+            match flight {
                 Flight::Flying(next) => self.shots.push(next),
                 Flight::Stopped { struck: Some(defender), .. } => {
                     let blow = combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]);
@@ -229,19 +235,24 @@ impl Room {
     }
 
     /// A player's ball, flown at once among the foes as the player's screen showed them (`view`), and judged against
-    /// the foe it struck as `as_seen` has it.
-    pub(crate) fn shoot_seen(&mut self, shot: &combat::Shot, view: &[(FighterId, Fighter)]) {
+    /// the foe it struck as `as_seen` has it. Answers where it stopped.
+    pub(crate) fn shoot_seen(&mut self, shot: &combat::Shot, view: &[(FighterId, Fighter)]) -> [f64; 3] {
         let bodies: Vec<(FighterId, [f64; 3])> = view
             .iter()
             .filter(|(id, fighter)| self.foes.contains_key(id) && !fighter.dead())
             .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
             .collect();
-        if let Flight::Stopped { struck: Some(defender), .. } = fly(shot, &self.blocks, &bodies)
+        let (stop, struck) = match fly(shot, &self.blocks, &bodies) {
+            Flight::Stopped { at, struck } => (at, struck),
+            Flight::Flying(next) => (next.at, None),
+        };
+        if let Some(defender) = struck
             && let Some(then) = self.as_seen(defender, view)
         {
             let blow = combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]);
             self.judge_now(&blow, How::Shot, defender, &then);
         }
+        stop
     }
 
     /// A blow reaching a defender: a foe is judged at once as it stands, a player waits for their view.
@@ -252,6 +263,13 @@ impl Room {
             self.judge_now(blow, how, defender, &then);
         }
     }
+}
+
+/// A ball's whole line as a shot: from where it left to `stop`, in one tick of its velocity.
+#[must_use]
+pub fn line_of(shot: &combat::Shot, stop: [f64; 3]) -> combat::Shot {
+    let velocity = [0, 1, 2].map(|axis| (stop[axis] - shot.at[axis]) / movement::TICK_SECONDS);
+    combat::Shot { velocity, ..*shot }
 }
 
 /// How a blow's kind reads.

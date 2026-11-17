@@ -15,6 +15,16 @@ export const CAMERA = { back: 2, up: 0.5, notch: 0.2, nearest: 0.8, farthest: 10
 
 export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back, shown: 0 };
 
+/** Aiming a ranged weapon, as the owner chose it: in third person the camera stands over the right shoulder, this far
+ *  out, back and up from the head (metres), zoomed in this much; in first person the view zooms in this much. It
+ *  eases there and back about as fast as the camera eases. */
+export const AIM = { shoulder: 0.55, back: 1.3, up: 0.1, thirdZoom: 1.4, firstZoom: 1.6, ease: 12 } as const;
+
+/** How far into its aiming view a camera is, 0 to 1, eased toward aiming or not over `seconds`. */
+export function aimEased(share: number, aiming: boolean, seconds: number): number {
+  return share + ((aiming ? 1 : 0) - share) * Math.min(1, seconds * AIM.ease);
+}
+
 /** The view after wheel notches: positive pulls back (into third person, then farther), negative comes in (nearer, then
  *  into first person). One notch counts at a time. */
 export function scrolled(view: ViewMode, notches: number): ViewMode {
@@ -61,14 +71,28 @@ export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number
 }
 
 /** The camera as an orbit the scene draws from: at the head in first person; behind it and up in third, pulled in
- *  short of any block between. `pitch` is how far it looks down, negative looking up. */
-export function cameraOrbit(head: Point, yaw: number, pitch: number, view: ViewMode, blocks: readonly Block[]): Orbit {
+ *  short of any block between; and `aim` (0 to 1) of the way into aiming's view, over the right shoulder and zoomed.
+ *  `pitch` is how far it looks down, negative looking up. */
+export function cameraOrbit(
+  head: Point,
+  yaw: number,
+  pitch: number,
+  view: ViewMode,
+  blocks: readonly Block[],
+  aim = 0,
+): Orbit {
   const forward: Point = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
   const up: Point = [Math.sin(pitch) * Math.sin(yaw), -Math.sin(pitch) * Math.cos(yaw), Math.cos(pitch)];
+  const right: Point = [Math.cos(yaw), Math.sin(yaw), 0];
   let eye: Point = head;
-  if (view.shown > 0.01) {
+  const third = view.shown > 0.01;
+  if (third) {
+    const behind = (axis: 0 | 1 | 2) =>
+      head[axis] - forward[axis] * view.shown + up[axis] * CAMERA.up * Math.min(1, view.shown / CAMERA.back);
+    const shoulder = (axis: 0 | 1 | 2) =>
+      head[axis] + right[axis] * AIM.shoulder - forward[axis] * AIM.back + up[axis] * AIM.up;
     const want: Point = [0, 1, 2].map(
-      (axis) => head[axis] - forward[axis] * view.shown + up[axis] * CAMERA.up * Math.min(1, view.shown / CAMERA.back),
+      (axis) => behind(axis as 0 | 1 | 2) + (shoulder(axis as 0 | 1 | 2) - behind(axis as 0 | 1 | 2)) * aim,
     ) as unknown as Point;
     const length = Math.hypot(want[0] - head[0], want[1] - head[1], want[2] - head[2]);
     const hit = rayHit(head, want, blocks);
@@ -76,6 +100,7 @@ export function cameraOrbit(head: Point, yaw: number, pitch: number, view: ViewM
     const share = hit >= 1 ? 1 : Math.max(0, hit - CAMERA.clearance / Math.max(length, 1e-6));
     eye = [0, 1, 2].map((axis) => head[axis] + (want[axis] - head[axis]) * share) as unknown as Point;
   }
+  const zoom = 1 + ((third ? AIM.thirdZoom : AIM.firstZoom) - 1) * aim;
   return {
     targetX: eye[0] + forward[0],
     targetY: eye[1] + forward[1],
@@ -83,5 +108,6 @@ export function cameraOrbit(head: Point, yaw: number, pitch: number, view: ViewM
     yaw,
     pitch,
     distance: 1,
+    zoom,
   };
 }

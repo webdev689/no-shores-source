@@ -69,17 +69,34 @@ export interface FirstPersonState {
   readonly blocking?: boolean;
   /** A weapon held in a fight's pose, one of its strokes' frames: a guard, a parry's deflect. */
   readonly pose?: { readonly record: number; readonly frame: number } | null;
+  /** How far a bow, a gun or a crossbow is raised to aim down its side, 0 to 1. */
+  readonly aim?: number;
 }
 
 /** What the first person draws with: a texture a picture, and the quads over the scene. */
 export type QuadDrawer = Pick<FirstPersonView, 'texture' | 'forget' | 'draw'>;
 
-/** A picture wanted on the screen: what names it, how it is composed, and where it lies once it is. */
+/** A picture wanted on the screen: what names it, how it is composed, where it lies once it is, and where on it a
+ *  ranged weapon's muzzle (or its arrow's head) is. */
 interface Wanted {
   readonly key: string;
   readonly ask: () => Promise<Picture | null>;
   readonly place: (picture: Picture) => Omit<ScreenQuad, 'texture'>;
+  readonly tip?: readonly [number, number];
 }
+
+/** Where on each ranged weapon's picture its muzzle is, or its arrow's head drawn, in its own pixels: at rest, which
+ *  aiming sights by, and in the frame its shot leaves on, kicked up, where a tracer starts. And where on the design
+ *  screen aiming lays the muzzle at rest: just right of and below the crosshair at its middle, so the eye sights along
+ *  the weapon's side. */
+const MUZZLE: Readonly<Record<string, { readonly rest: Tip; readonly fire: Tip } | undefined>> = {
+  pistolet: { rest: [72, 64], fire: [82, 53] },
+  thunderlock: { rest: [66, 59], fire: [77, 42] },
+  crossbow: { rest: [109, 93], fire: [82, 73] },
+  bow: { rest: [107, 150], fire: [107, 150] },
+};
+type Tip = readonly [number, number];
+const SIGHTED: readonly [number, number] = [165, 107];
 
 /** The casting hands step through their records and back to the first, a step every 0.04 s. */
 const CAST_SEQUENCE = [0, 1, 2, 3, 4, 5, 0] as const;
@@ -160,6 +177,9 @@ export class FirstPerson {
   private look = '';
   private wanted: Wanted[] = [];
   private shown: ScreenQuad[] = [];
+  private aim = 0;
+  /** Where the ranged weapon's muzzle is on the design screen as last drawn, or null with none in hand. */
+  muzzle: readonly [number, number] | null = null;
   private readonly kept = new Map<string, { texture: GPUTexture; picture: Picture } | null>();
   private readonly loading = new Set<string>();
 
@@ -196,6 +216,7 @@ export class FirstPerson {
    *  from outside can match them. */
   update(seconds: number, input: AttackInput, state: FirstPersonState): HandsEvents {
     this.plan = state.drawn ? handsPlan(state.right, state.left) : null;
+    this.aim = state.aim ?? 0;
     const worn: Worn = {
       hands: state.armour.gauntlets ? forgeName(state.armour.gauntlets) : null,
       feet: state.armour.boots ? forgeName(state.armour.boots) : null,
@@ -271,7 +292,12 @@ export class FirstPerson {
     const { holding } = view;
     const resting = holding.kind === 'weapon' && holding.wielded.kind === 'sword' && view.record === 0;
     const aside = resting ? (view.flip ? -SWORD_RIGHT : SWORD_RIGHT) : 0;
-    const place = atOwnPlace(view.flip, drop + view.dy + (resting ? SWORD_DROP : 0), view.lower, across + aside);
+    const own = atOwnPlace(view.flip, drop + view.dy + (resting ? SWORD_DROP : 0), view.lower, across + aside);
+    const kind =
+      holding.kind === 'shooter' ? holding.shooter.kind : holding.kind === 'weapon' ? holding.wielded.kind : '';
+    const muzzle = view.hand === 'right' && !this.plan?.pair ? MUZZLE[kind] : undefined;
+    const place = muzzle ? this.sighted(own, muzzle.rest) : own;
+    const tip = muzzle?.fire;
     if (holding.kind === 'shooter') {
       const { shooter } = holding;
       const key = `shot|${shooter.kind}|${shooter.metal}|${shooter.gilded}|${worn.hands}|${view.record}-${view.frame}|${view.pairArt}`;
@@ -279,14 +305,24 @@ export class FirstPerson {
         shooter.kind === 'crossbow' && view.record === 0
           ? () => crossbowPicture(this.source, shooter, view.frame, view.pairArt)
           : () => gunPicture(this.source, shooter, worn.hands, view.record, view.frame);
-      return { key, ask, place };
+      return { key, ask, place, ...(tip ? { tip } : {}) };
     }
     if (holding.kind !== 'weapon') return this.heldWanted(holding, worn, drop);
     const { wielded } = holding;
     let { record, frame } = view;
     if (wielded.kind === 'flail' && record === 0) [record, frame] = [SWAY_RECORD, swayFrame(sway, SWAY_FRAMES)];
     const key = `weapon|${wielded.kind}|${wielded.make}|${wielded.bow}|${worn.hands}|${worn.feet}|${record}-${frame}|${view.flip}`;
-    return { key, ask: () => weaponPicture(this.source, wielded, worn, record, frame, view.flip), place };
+    const ask = () => weaponPicture(this.source, wielded, worn, record, frame, view.flip);
+    return { key, ask, place, ...(tip ? { tip } : {}) };
+  }
+
+  /** A ranged weapon's place, slid by the aim's share from its own toward laying its muzzle at SIGHTED. */
+  private sighted(own: (picture: Picture) => Omit<ScreenQuad, 'texture'>, tip: readonly [number, number]) {
+    return (picture: Picture) => {
+      const placed = own(picture);
+      const shift = [SIGHTED[0] - (picture.at[0] + tip[0]), SIGHTED[1] - (picture.at[1] + tip[1])] as const;
+      return { ...placed, x: placed.x + shift[0] * this.aim, y: placed.y + shift[1] * this.aim };
+    };
   }
 
   /** A shield's frame is its pose's, raised to lowered; a light's its flame's. */
@@ -379,12 +415,17 @@ export class FirstPerson {
   draw(encoder: GPUCommandEncoder, colourView: GPUTextureView, width: number, height: number): void {
     const quads: ScreenQuad[] = [];
     let ready = true;
+    let muzzle: readonly [number, number] | null = null;
     for (const wanted of this.wanted) {
       const kept = this.kept.get(wanted.key);
       if (kept === undefined) ready = false;
-      else if (kept) quads.push({ texture: kept.texture, ...wanted.place(kept.picture) });
+      else if (kept) {
+        const quad = wanted.place(kept.picture);
+        quads.push({ texture: kept.texture, ...quad });
+        if (wanted.tip) muzzle = [quad.x + wanted.tip[0], quad.y + wanted.tip[1]];
+      }
     }
-    if (ready) this.shown = quads;
+    if (ready) [this.shown, this.muzzle] = [quads, muzzle];
     this.view.draw(encoder, colourView, width, height, this.shown);
   }
 }

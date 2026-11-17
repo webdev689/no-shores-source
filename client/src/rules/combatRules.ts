@@ -1,5 +1,8 @@
 import type { Block } from './movementRules.ts';
 
+/** A fired shot's numbers after a predicted fighter's: its weapon, where it left, its velocity. */
+const FIRED_FLOATS = 7;
+
 /** How many numbers a fighter, an intent and a glance are, as the combat crate lays them out. */
 export interface CombatSizes {
   readonly fighter: number;
@@ -13,13 +16,26 @@ export interface Glanced {
   readonly glance: Float64Array;
 }
 
+/** A shot a tick let go: its weapon's number, where it left and its velocity; a ball's velocity is its whole line, to
+ *  where it stops among those the player sees, in one tick. */
+export interface Fired {
+  readonly ranged: number;
+  readonly at: readonly [number, number, number];
+  readonly velocity: readonly [number, number, number];
+}
+
 /** The combat crate's player tick and arms, running in WebAssembly: the same tick, to the bit, the room takes. */
 export interface CombatRules {
   readonly sizes: CombatSizes;
   /** Keeps these blocks as the course every later prediction moves on. */
   setCourse(blocks: readonly Block[]): void;
-  /** The player's fighter one tick on under an intent, among the fighters they see. */
-  predict(fighter: Float64Array, intent: Float64Array, id: number, view: readonly Glanced[]): Float64Array;
+  /** The player's fighter one tick on under an intent, among the fighters they see, and the shot it let go. */
+  predict(
+    fighter: Float64Array,
+    intent: Float64Array,
+    id: number,
+    view: readonly Glanced[],
+  ): { readonly fighter: Float64Array; readonly fired: Fired | null };
   /** What hands holding these forge layers fight with, as combat's arms code. */
   armsCode(right: string | null, left: string | null, drawn: boolean): number;
   /** The farthest a stroke (1 to 6) of the melee weapon in this arms code reaches, feet to a body's middle. */
@@ -77,8 +93,19 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
         floats.set(each.glance, start + 1);
       });
       const bytes = take(lend(floatBytes(floats), (address) => exports.fighter_predict(address, floats.byteLength)));
-      if (bytes.length !== sizes.fighter * 8) return fighter;
-      return new Float64Array(bytes.buffer, bytes.byteOffset, sizes.fighter).slice();
+      const length = bytes.length / 8;
+      if (length !== sizes.fighter && length !== sizes.fighter + FIRED_FLOATS) return { fighter, fired: null };
+      const numbers = new Float64Array(bytes.buffer, bytes.byteOffset, length).slice();
+      const after = (index: number) => numbers[sizes.fighter + index] ?? 0;
+      const fired =
+        length === sizes.fighter
+          ? null
+          : {
+              ranged: after(0),
+              at: [after(1), after(2), after(3)] as const,
+              velocity: [after(4), after(5), after(6)] as const,
+            };
+      return { fighter: numbers.subarray(0, sizes.fighter), fired };
     },
     armsCode: (right, left, drawn) => {
       const text = new TextEncoder().encode(`${right ?? ''}\n${left ?? ''}\n${drawn ? 'drawn' : 'worn'}`);

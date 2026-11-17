@@ -1,36 +1,133 @@
-//! Shots: a bow drawn and loosed, too soon and nothing leaves; an arrow flying and falling until a block or a body
-//! stops it; a gun's ball reaching its mark at once; and the number layout every fighter crosses in.
+//! Shots: a quick shot from the hip at once, at the soft lock's foe; an aimed one half again as hard, a bow's charged
+//! by its aiming; no guard behind a ranged weapon; an arrow flying and falling until a block or a body stops it; a
+//! gun's ball reaching its mark at once; and the number layout every fighter crosses in.
 
 mod common;
 
 use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
 use combat::fighter::Action;
 use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
-use combat::shots::{Flight, fly, loose};
-use combat::{CombatInput, Fighter, Happening, Intent, Stroke};
-use common::{idle, player_at, run};
+use combat::shots::{AIMED_POWER, DRAW_FULL, Flight, fly, loose};
+use combat::{CombatInput, Fighter, Happening, Intent, Stroke, player_tick};
+use common::{asking, foe_at, guarding, idle, player_at, run};
 use core::f64::consts::PI;
 use movement::{Block, Controls};
 
-fn archer() -> Fighter {
+fn holding(ranged: Ranged) -> Fighter {
     let mut fighter = player_at(0.0, 0.0);
-    fighter.arms = Arms { melee: WeaponClass::Fists, ranged: Some(Ranged::Bow), off_hand: OffHand::Empty };
+    fighter.arms = Arms { melee: WeaponClass::Fists, ranged: Some(ranged), off_hand: OffHand::Empty };
     fighter
 }
 
-fn drawing() -> Intent {
-    Intent { controls: Controls::default(), combat: CombatInput { shoot: true, ..CombatInput::default() } }
+fn archer() -> Fighter {
+    holding(Ranged::Bow)
+}
+
+const TRIGGER: CombatInput = CombatInput {
+    attack: None,
+    guard: false,
+    dodge: false,
+    shoot: true,
+    pitch: 0.0,
+    aim: false,
+    mark: None,
+    telegraph: None,
+};
+const AIMING: CombatInput = CombatInput { shoot: false, aim: true, ..TRIGGER };
+
+/// The one shot a run let go, and its tick.
+fn only_shot(happenings: &[(u32, Happening)]) -> (u32, combat::Shot) {
+    let [(tick, Happening::Loosed(shot))] = happenings else { panic!("one shot: {happenings:?}") };
+    (*tick, *shot)
 }
 
 #[test]
-fn a_bow_drawn_long_enough_looses_at_its_power_when_let_go_and_too_soon_looses_nothing() {
-    let (drawn, _) = run(archer(), drawing(), 61, None);
-    assert!(matches!(drawn.action, Action::Draw { elapsed: 60 }));
-    let (_, happenings) = run(drawn, idle(0.0), 1, None);
-    let [(0, Happening::Loosed(arrow))] = happenings.as_slice() else { panic!("one arrow: {happenings:?}") };
-    assert!((arrow.damage - 18.0).abs() < 1e-9 && arrow.velocity[1] < -44.0, "full power, north");
-    let (early, _) = run(archer(), drawing(), 10, None);
-    assert!(run(early, idle(0.0), 1, None).1.is_empty());
+fn a_bow_not_aimed_fires_a_quick_shot_at_once_and_again_as_it_reloads() {
+    let (fired, happenings) = run(archer(), asking(0.0, TRIGGER), 1, None);
+    let (tick, arrow) = only_shot(&happenings);
+    assert_eq!(tick, 0, "no charging");
+    assert!((arrow.damage - 18.0).abs() < 1e-9 && arrow.velocity[1] < -44.0, "a quick shot's power, north");
+    assert!(matches!(fired.action, Action::Reload { .. }));
+    let (_, held) = run(archer(), asking(0.0, TRIGGER), 40, None);
+    assert_eq!(held.len(), 2, "holding the trigger shoots again once reloaded");
+}
+
+#[test]
+fn an_aimed_bow_charges_to_half_again_over_a_second_and_fires_on_a_pull() {
+    let (drawn, none) = run(archer(), asking(0.0, AIMING), 61, None);
+    assert!(none.is_empty(), "aiming alone fires nothing");
+    assert!(matches!(drawn.action, Action::Draw { elapsed } if elapsed == DRAW_FULL));
+    let (_, happenings) = run(drawn, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
+    assert!((only_shot(&happenings).1.damage - 18.0 * AIMED_POWER).abs() < 1e-9);
+    let (half, _) = run(archer(), asking(0.0, AIMING), DRAW_FULL / 2 + 1, None);
+    let (_, happenings) = run(half, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
+    assert!((only_shot(&happenings).1.damage - 18.0 * (1.0 + (AIMED_POWER - 1.0) / 2.0)).abs() < 1e-9);
+}
+
+#[test]
+fn an_aimed_gun_or_crossbow_hits_half_again_at_once_onto_the_aims_mark() {
+    for (ranged, damage) in [(Ranged::Pistolet, 30.0), (Ranged::Crossbow, 26.0)] {
+        let mark = Some([20.0, 0.0, combat::tuning::CHEST]);
+        let (raised, _) = run(holding(ranged), asking(0.0, CombatInput { mark, ..AIMING }), 2, None);
+        assert!((raised.aim - PI / 2.0).abs() < 1e-9, "the weapon points at its mark");
+        let (_, happenings) = run(raised, asking(0.0, CombatInput { shoot: true, mark, ..AIMING }), 1, None);
+        let shot = only_shot(&happenings).1;
+        assert!((shot.damage - damage * AIMED_POWER).abs() < 1e-9, "{ranged:?}");
+        assert!(shot.velocity[0] > 0.0 && shot.velocity[1].abs() < 1e-6, "east, onto the mark");
+    }
+}
+
+#[test]
+fn an_aimed_arrow_laid_on_a_mark_comes_down_on_it() {
+    let mark = [0.0, -30.0, 1.0];
+    let (drawn, _) = run(archer(), asking(0.0, CombatInput { mark: Some(mark), ..AIMING }), 30, None);
+    let pull = CombatInput { shoot: true, mark: Some(mark), ..AIMING };
+    let mut arrow = only_shot(&run(drawn, asking(0.0, pull), 1, None).1).1;
+    let came = loop {
+        match fly(&arrow, &[], &[]) {
+            Flight::Flying(next) if next.at[1] > mark[1] => arrow = next,
+            Flight::Flying(next) => break next.at,
+            Flight::Stopped { at, .. } => break at,
+        }
+    };
+    assert!((came[2] - mark[2]).abs() < 0.2, "it falls onto the mark's height: {came:?}");
+}
+
+#[test]
+fn a_trigger_held_as_the_aim_begins_waits_for_a_pull_and_letting_the_aim_go_lowers_it_unfired() {
+    let (raised, happenings) = run(archer(), asking(0.0, CombatInput { shoot: true, ..AIMING }), 5, None);
+    assert!(happenings.is_empty(), "only a fresh pull fires an aimed shot");
+    assert!(matches!(raised.action, Action::Draw { .. }));
+    let (lowered, happenings) = run(raised, idle(0.0), 1, None);
+    assert!(happenings.is_empty() && matches!(lowered.action, Action::Idle));
+}
+
+#[test]
+fn a_ranged_weapon_raises_no_guard() {
+    for ranged in [Ranged::Bow, Ranged::Crossbow, Ranged::Pistolet, Ranged::Thunderlock] {
+        let (held, happenings) = run(holding(ranged), guarding(0.0), 20, None);
+        assert!(happenings.is_empty() && matches!(held.action, Action::Idle), "{ranged:?}");
+    }
+    let (sword, _) = run(player_at(0.0, 0.0), guarding(0.0), 2, None);
+    assert!(matches!(sword.action, Action::Guard { .. }), "a sword still guards");
+}
+
+#[test]
+fn a_quick_shot_takes_the_lock_and_flies_at_its_foe_and_aiming_lets_the_lock_go() {
+    // A foe 6 m off, north-east of north; the look due north, within the lock's arc of it.
+    let foe = foe_at(3.0, -5.2, PI);
+    let view = [(2, foe)];
+    let (fired, happening) =
+        player_tick(1, &holding(Ranged::Pistolet), &asking(0.0, TRIGGER), &view, &[], &movement::Flat);
+    assert_eq!(fired.target, Some(2), "the quick shot takes the lock");
+    let Some(Happening::Loosed(ball)) = happening else { panic!("a shot: {happening:?}") };
+    let (bearing, way) = (libm::atan2(3.0, 5.2), libm::atan2(ball.velocity[0], -ball.velocity[1]));
+    assert!((way - bearing).abs() < 1e-9, "at the foe, not along the look: {way} against {bearing}");
+    let arrow = player_tick(1, &archer(), &asking(0.0, TRIGGER), &view, &[], &movement::Flat).1;
+    let Some(Happening::Loosed(arrow)) = arrow else { panic!("an arrow") };
+    assert!(arrow.velocity[2] > 0.0, "an arrow at a foe level with it is loosed a little high, for its fall");
+    let (aiming, _) = player_tick(1, &fired, &asking(0.0, AIMING), &view, &[], &movement::Flat);
+    assert_eq!(aiming.target, None, "aiming lets the lock go");
 }
 
 #[test]
@@ -108,6 +205,8 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
             dodge: false,
             shoot: true,
             pitch: -0.25,
+            aim: true,
+            mark: Some([3.0, -4.0, 1.5]),
             telegraph: None,
         },
     };

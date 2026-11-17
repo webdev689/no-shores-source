@@ -25,6 +25,8 @@ export interface HudFrame {
   readonly firstPerson: boolean;
   readonly pressed: boolean;
   readonly lost: string | null;
+  /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
+  readonly crosshair?: { readonly charge: number | null } | null;
 }
 
 /** Seconds a word floats over where it happened, and how far it rises in that time, in CSS pixels. */
@@ -107,6 +109,7 @@ export class Hud {
   private readonly over: HTMLElement;
   private readonly hurt: HTMLElement;
   private readonly veil: HTMLElement;
+  private readonly crosshair: HTMLElement;
   private readonly bars = new Map<number, Bar>();
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
@@ -129,6 +132,9 @@ export class Hud {
     this.mark = element('div', 'mark', root);
     this.over = element('div', 'over', root);
     this.veil = element('div', 'veil', root);
+    this.crosshair = element('div', 'crosshair', root);
+    this.crosshair.hidden = true;
+    element('div', 'charge', this.crosshair);
   }
 
   update(frame: HudFrame, seconds: number): void {
@@ -142,6 +148,11 @@ export class Hud {
     if (frame.lost !== null) this.veil.textContent = `The link to the room was lost: ${frame.lost}.`;
     else if (dead)
       this.veil.textContent = `You fell. Standing again in ${Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60)} s`;
+    const charge = frame.crosshair?.charge ?? null;
+    this.crosshair.hidden = !frame.crosshair;
+    this.crosshair.classList.toggle('charging', charge !== null);
+    this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
+    this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
     this.markTarget(frame);
     this.markFoes(frame);
     this.pointAtThreats(frame);

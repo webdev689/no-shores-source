@@ -2,7 +2,7 @@ import type { Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messag
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
-import type { CombatRules, Glanced } from '../rules/combatRules.ts';
+import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
 import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
 import { type FighterView, fighterView, glanceFrom, glanceView } from '../rules/fighters.ts';
 
@@ -13,7 +13,7 @@ const BLOWS_AT = 22 + 21;
 const ACTION_AT = 22 + 23;
 const IDLE = 0;
 const DEAD = 12;
-/** A bow's draw, as the combat crate numbers the action. */
+/** A ranged weapon raised to aim (a bow's draw), as the combat crate numbers the action. */
 const DRAW = 10;
 /** The most bytes of dress the room takes (room's DRESS_LIMIT); a longer one is refused as no input at all. */
 const DRESS_LIMIT = 4096;
@@ -45,15 +45,18 @@ export interface KeptFoe {
   readonly ticks: number;
 }
 
-/** The fight's buttons for the ticks of a frame: a swing held (and the stroke the next one takes, 1 to 6), a shot
- *  held, the guard held, a dodge pressed, the look's pitch, and whether the swing, the shot or the guard was pressed
- *  since the last frame (even let go again). */
+/** The fight's buttons for the ticks of a frame: a swing held (and the stroke the next one takes, 1 to 6), a shot's
+ *  trigger held, the guard held, a dodge pressed, the look's pitch, a ranged weapon held up to aim and the point an
+ *  aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or the guard
+ *  was pressed since the last frame (even let go again). */
 export interface FightButtons {
   readonly swing: boolean;
   readonly shoot: boolean;
   readonly guard: boolean;
   readonly dodge: boolean;
   readonly pitch: number;
+  readonly aim?: boolean;
+  readonly mark?: readonly [number, number, number] | null;
   readonly swingPressed?: boolean;
   readonly shootPressed?: boolean;
   readonly guardPressed?: boolean;
@@ -116,8 +119,10 @@ export class Fighting {
   stroke: number;
   /** Swings the player's fighter has begun since the page last asked. */
   swingsBegun = 0;
-  /** Bow draws the player's fighter let go too soon to shoot, since the page last asked. */
+  /** Times the player's fighter lowered an aimed weapon unfired, since the page last asked. */
   drawsDropped = 0;
+  /** The shots the player's fighter let go, as its own ticks predicted them, since the page last asked. */
+  fired: Fired[] = [];
   arms = 0;
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
   dress = '';
@@ -208,6 +213,8 @@ export class Fighting {
       this.latches.dodge.tick(false) ? 1 : 0,
       this.latches.shoot.tick(this.buttons.shoot) ? 1 : 0,
       pitch,
+      this.buttons.aim ? 1 : 0,
+      ...(this.buttons.mark ?? [Number.NaN, Number.NaN, Number.NaN]),
     ]);
     const dress = this.dressToSend();
     const view = this.view;
@@ -217,7 +224,9 @@ export class Fighting {
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
-    this.fighter = this.rules.predict(armed(this.fighter, arms), intent, this.player, view);
+    const predicted = this.rules.predict(armed(this.fighter, arms), intent, this.player, view);
+    this.fighter = predicted.fighter;
+    if (predicted.fired) this.fired.push(predicted.fired);
     if (drawing && this.fighter[ACTION_AT] === IDLE) this.drawsDropped += 1;
     if ((this.fighter[BLOWS_AT] ?? 0) !== before) {
       this.swingsBegun += 1;
@@ -235,8 +244,11 @@ export class Fighting {
     this.others.clear();
     for (const seen of snapshot.players) {
       if (seen.player === this.player) {
-        this.fighter = this.prediction.corrected(seen.fighter, seen.acknowledged, (fighter, asked) =>
-          this.rules.predict(armed(fighter, asked.arms), asked.intent, this.player, asked.view),
+        this.fighter = this.prediction.corrected(
+          seen.fighter,
+          seen.acknowledged,
+          (fighter, asked) =>
+            this.rules.predict(armed(fighter, asked.arms), asked.intent, this.player, asked.view).fighter,
         );
         continue;
       }

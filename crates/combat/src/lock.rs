@@ -1,6 +1,7 @@
-//! The soft lock, as Soulframe has it: no button. A fighter's lock takes the foe it swings at or raises its guard
-//! to, and the one that strikes it; it steers that fighter's swings and guard while it holds. It lets go when the foe
-//! dies, walks out of range, is lost from sight, or the fighter turns its look away. The camera stays its player's.
+//! The soft lock, as Soulframe has it: no button. A fighter's lock takes the foe it swings at, raises its guard to or
+//! shoots at from the hip, and the one that strikes it; it steers that fighter's swings, guard and quick shots while
+//! it holds. It lets go when the foe dies, walks out of range, is lost from sight, the fighter turns its look away, or
+//! the fighter aims a ranged weapon. The camera stays its player's.
 
 use crate::fighter::{Fighter, FighterId};
 use crate::sight::{apart, bearing, clear_line, off};
@@ -59,7 +60,9 @@ pub fn hold(me: &Fighter, yaw: f64, fighters: &[(FighterId, Fighter)], blocks: &
     Fighter { lock_unseen, lock_away, ..*me }
 }
 
-fn let_go(me: &Fighter) -> Fighter {
+/// The lock let go.
+#[must_use]
+pub fn let_go(me: &Fighter) -> Fighter {
     Fighter { target: None, lock_away: 0, lock_unseen: 0, ..*me }
 }
 

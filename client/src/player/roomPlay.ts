@@ -8,8 +8,9 @@ import type { Placed } from './figures.ts';
 import { showOther } from './others.ts';
 import type { Walker } from './walker.ts';
 
-/** The fight's numbers after the controls in an input (stroke, guard, dodge, shoot, pitch): a walker asks for none. */
-const NO_FIGHT = [0, 0, 0, 0, 0];
+/** The fight's numbers after the controls in an input (stroke, guard, dodge, shoot, pitch, aim, and an aimed shot's
+ *  mark, none here): a walker asks for none. */
+const NO_FIGHT = [0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN];
 
 /** How a page keeps other players' figures: it places one for a player who comes, and takes away one who leaves. */
 export interface Others {

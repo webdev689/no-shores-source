@@ -45,16 +45,17 @@ export const MARK_FLOATS = 7;
 
 type Point = readonly [number, number];
 
-/** The triangles of every telegraphed blow's mark, every arrow in flight and every spark, as vertices of
- *  MARK_FLOATS numbers. */
+/** The triangles of every telegraphed blow's mark, every arrow and bolt in flight, every spark and the tracers'
+ *  vertices `more`, as vertices of MARK_FLOATS numbers. */
 export function marksMesh(
   telegraphs: readonly TelegraphMark[],
   shots: readonly FlyingShot[],
   sparks: readonly Spark[] = [],
+  more: readonly number[] = [],
 ): Float32Array {
   const out: number[] = [];
   for (const telegraph of telegraphs) markTelegraph(out, telegraph);
-  for (const shot of shots) markStreak(out, shot.at, shot.velocity, ARROW_M, ARROW_THICK, ARROW_COLOUR);
+  for (const shot of shots) markArrow(out, shot.at, shot.velocity);
   for (const { at, velocity, age, life } of sparks) {
     const cooled = Math.min(1, age / life);
     const colour = [0, 1, 2].map(
@@ -63,6 +64,7 @@ export function marksMesh(
     const length = Math.hypot(...velocity) * SPARK_STREAK_S;
     markStreak(out, at, velocity, length, SPARK_THICK, [...colour, 1 - cooled * cooled]);
   }
+  for (const value of more) out.push(value);
   return new Float32Array(out);
 }
 
@@ -160,6 +162,11 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
       break;
     }
   }
+}
+
+/** An arrow or a bolt flying at `velocity`, its head at `at`. */
+export function markArrow(out: number[], head: readonly number[], velocity: readonly number[]): void {
+  markStreak(out, head, velocity, ARROW_M, ARROW_THICK, ARROW_COLOUR);
 }
 
 /** A streak `length` long behind a point flying at `velocity` (an arrow, a bolt, a spark): two crossed strips `thick`

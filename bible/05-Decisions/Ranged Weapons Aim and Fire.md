@@ -1,0 +1,30 @@
+---
+type: decision
+date: 2026-11-17
+status: in force
+---
+# Ranged Weapons Aim and Fire
+
+> "Bows and firearms shouldnt have a parry/block.
+>
+> When wielding these, right click should zoom into an over the shoulder look (firearm aim/bow charge). Which cancels
+> auto targeting but with a more potent shot.
+>
+> Bows should fire without charging when not aiming. Same applies to first person. First person now has a zoom in ADS
+> on the side of firearms, and bows recieve 2 types of attacks (like 3rd person)
+>
+> Projectile weapons should have a detailed tracer when firing an arrow/shot that alligns with the barrel/arrow and
+> follows to the target."
+
+Asked which button fires, the owner chose "Left click fires"; how much harder an aimed shot hits, "1.5 times"; what a
+quick, unaimed shot does, "Seek the locked foe"; and how aiming moves and looks, "Half pace, modest zoom".
+
+## What it settles
+
+- A bow, a crossbow or a gun raises no guard: left click (or `F`) fires it ([[Combat]], [[Test Ground]]).
+- Not aiming, a pull fires a quick shot at once, a bow with no charge, at the foe the soft lock holds.
+- Holding right click aims: over the right shoulder at 1.4 times zoom in third person, and in first person down a gun's
+  or crossbow's side at 1.6 times ([[First Person]]). It moves at half pace with no sprint, lets the lock go, and
+  fires onto the crosshair half again as hard; a bow reaches that over a second's charge.
+- A bow in first person has the same two shots.
+- Every shot draws a tracer from the barrel or the arrow, along its flight to where it stops.

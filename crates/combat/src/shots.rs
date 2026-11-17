@@ -34,10 +34,10 @@ pub fn shot_numbers(ranged: Ranged) -> (f64, f64, f64, u32) {
 /// An arrow or a bolt falls this fast; a ball reaches this far.
 pub const FALL: f64 = 6.0;
 pub const BALL_REACH: f64 = 60.0;
-/// A bow loosed sooner than this does not shoot; drawn this long it is at full power, and never less than this.
-pub const DRAW_LEAST: u32 = 12;
+/// An aimed shot strikes this many times as hard as a quick one: a gun's or a crossbow's at once, a bow's once it has
+/// been aimed this many ticks, and by its share of them before.
+pub const AIMED_POWER: f64 = 1.5;
 pub const DRAW_FULL: u32 = 60;
-pub const DRAW_POWER_LEAST: f64 = 0.4;
 /// A flight is let go after this many ticks.
 pub const FLIGHT_TICKS: u32 = 240;
 
@@ -59,6 +59,26 @@ pub fn loose(owner: FighterId, ranged: Ranged, chest: [f64; 3], bearing: f64, pi
         weight,
         age: 0,
     }
+}
+
+/// The power of a shot aimed `aimed` ticks: a bow's grows from a quick shot's to `AIMED_POWER` over `DRAW_FULL`,
+/// a crossbow's or a gun's is `AIMED_POWER` at once.
+#[must_use]
+pub fn aimed_power(ranged: Ranged, aimed: u32) -> f64 {
+    let share = if ranged == Ranged::Bow { (f64::from(aimed) / f64::from(DRAW_FULL)).min(1.0) } else { 1.0 };
+    1.0 + (AIMED_POWER - 1.0) * share
+}
+
+/// The bearing and pitch that carry a shot from a chest to a target's: straight for a ball, and for an arrow or a
+/// bolt high enough for its fall over the flight, as a quick shot at a locked foe flies.
+#[must_use]
+pub fn toward(ranged: Ranged, chest: [f64; 3], target: [f64; 3]) -> (f64, f64) {
+    let (east, south) = (target[0] - chest[0], target[1] - chest[1]);
+    let distance = (east * east + south * south).sqrt();
+    let speed = shot_numbers(ranged).0;
+    let flight = if speed > 0.0 { distance / speed } else { 0.0 };
+    let rise = target[2] - chest[2] + 0.5 * FALL * flight * flight;
+    (crate::sight::bearing([chest[0], chest[1]], [target[0], target[1]]), libm::atan2(rise, distance.max(0.1)))
 }
 
 /// What a tick of flight came to: the shot flown on, or where it stopped and the body it struck, if any.

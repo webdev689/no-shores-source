@@ -71,8 +71,9 @@ built upon so foes use the guard, the parry and the dodge of [[Combat]] too
 - **Backing off and running.** A quarter of its health lost inside 3 s, or, for a foe that guards or dodges, its poise
   four fifths full: it hands its turn on and walks out to a ring 2 m farther for 2 s, at most once in 10 s.
 - **Shooters.** A ranged turn gates a shot and a shot spends it; held 5 s unused it goes on. Without one an archer stands
-  off and holds its fire, never circling. It draws by holding its shot for a full second, aiming up for the arrow's
-  fall, and looses by letting go, 0.5 to 1.5 s between shots. A target inside 6 m it walks away from, one burst of at
+  off and holds its fire, never circling. It aims its bow and draws for a full second, aiming up for the arrow's
+  fall, then pulls the trigger, 0.5 to 1.5 s between shots: its arrows are aimed shots, half again as hard as a quick
+  one ([[Combat]]). A target inside 6 m it walks away from, one burst of at
   most 2 s, out to 7 m; caught or cornered, it fights close with its fists for 3 s, and kites again only 8 s after.
 
 ## Answers to blows

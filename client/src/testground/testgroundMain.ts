@@ -12,8 +12,10 @@ import { foeKind } from './foeKinds.ts';
 import { Glides } from './glide.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
+import { crosshairPoint } from './crosshair.ts';
 import { Flashes } from '../combat/flashes.ts';
 import { Sparks } from '../combat/sparks.ts';
+import { IMPACT_SPARKS, Tracers, figureMuzzle, othersArrows, screenMuzzle } from './tracers.ts';
 import { Hud } from '../combat/hud.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import type { PlayerDress } from '../network/messages.ts';
@@ -26,7 +28,7 @@ import { type CardAt, Cards } from '../player/cards.ts';
 import { COURSE, START } from './course.ts';
 import { type Dress, dressFrom, plainDress } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
-import { viewProjection } from '../editor/orbit.ts';
+import { cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from '../player/player.ts';
 import { RUNNING, showOther } from '../player/others.ts';
@@ -207,6 +209,7 @@ async function start(): Promise<void> {
   const hud = new Hud(element<HTMLElement>('#hud'));
   const flashes = new Flashes();
   const sparks = new Sparks();
+  const tracers = new Tracers();
   /** The foes' figures, by the room's number for each, apart from the panel's figures; they and other players are
    *  drawn gliding between the room's snapshots. */
   const foeFigures = new Map<number, Placed>();
@@ -232,17 +235,28 @@ async function start(): Promise<void> {
     const free = player.body.mode === 'ground' || player.body.mode === 'air';
     const armed = controls.locked && wasDrawn && free && !player.mounted;
     const shooter = SHOOTERS.test(you.dress.outfit.right ?? '');
-    const guards = controls.locked && free && !player.mounted;
+    // A bow, a crossbow or a gun drawn: the right button aims it, laying its shot on the crosshair's point, and the
+    // left fires it; no guard rises behind it.
+    const ranged = armed && shooter;
+    const aiming = ranged && controls.held('swing');
+    const guards = controls.locked && free && !player.mounted && !ranged;
+    const bodies = [...foeFigures.values(), ...others.values()].map(
+      (placed) => [placed.x, placed.y, placed.z] as const,
+    );
+    const aspect = canvas.width / Math.max(1, canvas.height);
+    const mark = aiming ? crosshairPoint(playerCamera(player, movement, COURSE), aspect, COURSE, bodies) : null;
     // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the
     // other is held is a fresh press.
     fight.press({
       swing: armed && !shooter && controls.held('swing'),
-      shoot: armed && shooter && controls.held('swing'),
+      shoot: ranged && controls.held('guard'),
       guard: guards && controls.held('guard'),
       dodge: controls.locked && controls.pressed('dodge'),
       pitch: -player.pitch,
+      aim: aiming,
+      mark,
       swingPressed: armed && !shooter && controls.pressed('swing'),
-      shootPressed: armed && shooter && controls.pressed('swing'),
+      shootPressed: ranged && controls.pressed('guard'),
       guardPressed: guards && controls.pressed('guard'),
     });
     if (controls.locked) {
@@ -255,6 +269,7 @@ async function start(): Promise<void> {
         seconds,
         firstPerson.swing !== null,
         toward,
+        aiming,
       );
       if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
@@ -304,9 +319,10 @@ async function start(): Promise<void> {
         ? STILL
         : shooter
           ? {
-              attackHeld: controls.held('swing'),
-              attackPressed: controls.pressed('swing'),
-              attackReleased: controls.released('swing'),
+              attackHeld: controls.held('guard'),
+              attackPressed: controls.pressed('guard'),
+              attackReleased: controls.released('guard'),
+              aimHeld: aiming,
             }
           : { attackHeld: false, attackPressed: begun, attackReleased: false };
     firstPerson.update(seconds, button, {
@@ -323,6 +339,7 @@ async function start(): Promise<void> {
       yaw: player.yaw,
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
+      aim: player.aim,
     });
     const swing = firstPerson.swing;
     // A swing begins where there was none, or where the last one ended and the next began within the frame.
@@ -401,8 +418,18 @@ async function start(): Promise<void> {
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
-    scene.setMarks(marksMesh(telegraphs, fight.shots, sparks.flying));
     const inFirstPerson = player.view.shown <= HIDE_FIGURE_M;
+    // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
+    const fpMuzzle = inFirstPerson ? firstPerson.muzzle : null;
+    tracers.fired(fight.fired.splice(0), (shot) =>
+      fpMuzzle
+        ? screenMuzzle(camera, aspect, fpMuzzle)
+        : figureMuzzle([body.x, body.y, body.z], Math.atan2(shot.velocity[0], -shot.velocity[1])),
+    );
+    tracers.seen(fight.shots, fight.player);
+    for (const impact of tracers.update(seconds, COURSE, bodies)) sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
+    const traced = tracers.mesh(cameraOf(camera).eye, fight.shots, fight.player);
+    scene.setMarks(marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, traced));
     blood.frame(seconds, events, fight, camera, canvas.width / Math.max(1, canvas.height));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
       if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
@@ -432,6 +459,15 @@ async function start(): Promise<void> {
         firstPerson: inFirstPerson,
         pressed: (armed && !shooter && controls.pressed('swing')) || (controls.locked && controls.pressed('dodge')),
         lost: link.lost,
+        crosshair:
+          aiming || (ranged && inFirstPerson)
+            ? {
+                charge:
+                  you.dress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw'
+                    ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull)
+                    : null,
+              }
+            : null,
       },
       seconds,
     );

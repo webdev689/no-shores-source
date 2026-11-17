@@ -1,7 +1,7 @@
 //! A shooter's fight, as DFO's tactics have it: a ranged token gates its shot and a shot spends it; without one it
 //! stands off and holds its fire, never circling; a target closing inside its bow's near edge it walks away from, one
-//! burst, and caught or cornered it fights close until it may kite again. It draws by holding its shot and looses by
-//! letting go, aiming high enough for the arrow's fall.
+//! burst, and caught or cornered it fights close until it may kite again. It draws by aiming its bow and looses by
+//! pulling the trigger once drawn, aiming high enough for the arrow's fall.
 
 use crate::board::Board;
 use crate::brain::Brain;
@@ -40,21 +40,22 @@ fn pitch(here: &Here<'_, '_>, sight: &Sight) -> f64 {
     libm::atan2(rise, sight.distance.max(0.1))
 }
 
-/// Holding a draw until `drawn` ticks, then letting go; and, from rest, beginning one when `may` allows. Answers the
-/// ask and whether it let a shot go this tick.
+/// Holding its aim until it has drawn `drawn` ticks, then pulling the trigger; and, from rest, raising its bow when
+/// `may` allows. Answers the ask and whether it let a shot go this tick.
 pub fn draw(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, drawn: u32, may: bool) -> (Ask, bool) {
     let mut ask = Ask::facing(sight.toward);
     ask.combat.pitch = pitch(here, sight);
     let facing = off(brain.heading, sight.toward) <= SWING_FACE / 4.0;
     match here.fighter.action {
         Action::Draw { elapsed } => {
-            ask.combat.shoot = elapsed < drawn;
-            if !ask.combat.shoot {
+            ask.combat.aim = true;
+            ask.combat.shoot = elapsed >= drawn;
+            if ask.combat.shoot {
                 brain.bow.shot_ready = here.tick() + Here::ticks(here.dice.between(Purpose::ShotGap, SHOT_GAP));
                 return (ask, true);
             }
         }
-        Action::Idle => ask.combat.shoot = may && facing && here.tick() >= brain.bow.shot_ready,
+        Action::Idle => ask.combat.aim = may && facing && here.tick() >= brain.bow.shot_ready,
         _ => {}
     }
     (ask, false)

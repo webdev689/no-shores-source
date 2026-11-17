@@ -87,8 +87,16 @@ fn dressed_in(
 fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn() {
     let shown = Shown { anim: "ride_gallop".to_owned(), frame: 3, facing: -1.5 };
     let controls = Controls { forward: 1.0, sideways: -0.5, yaw: 0.3, run: true, crouch: true, ..Controls::default() };
-    let combat =
-        CombatInput { attack: Some(Stroke::Up), guard: true, dodge: false, shoot: true, pitch: -0.2, telegraph: None };
+    let combat = CombatInput {
+        attack: Some(Stroke::Up),
+        guard: true,
+        dodge: false,
+        shoot: true,
+        pitch: -0.2,
+        aim: true,
+        mark: Some([1.0, -2.0, 1.5]),
+        telegraph: None,
+    };
     let sent = Input {
         sequence: 42,
         intent: Intent { controls, combat },

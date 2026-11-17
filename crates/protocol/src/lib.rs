@@ -221,7 +221,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .map(|shot| {
             let at = Some(builder.create_vector(&shot.at));
             let velocity = Some(builder.create_vector(&shot.velocity));
-            let args = messages::FlyingArgs { owner: shot.owner, ranged: shot.ranged as u8, at, velocity };
+            let age = u16::try_from(shot.age).unwrap_or(u16::MAX);
+            let args = messages::FlyingArgs { owner: shot.owner, ranged: shot.ranged as u8, at, velocity, age };
             messages::Flying::create(&mut builder, &args)
         })
         .collect();

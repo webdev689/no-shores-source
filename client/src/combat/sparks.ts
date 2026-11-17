@@ -48,15 +48,20 @@ export class Sparks {
         defender[1] + toward[1] * CLASH_TOWARD,
         defender[2] + CLASH_HEIGHT,
       ];
-      for (let spark = 0; spark < count; spark++) {
-        const between = (range: readonly [number, number]) => range[0] + (range[1] - range[0]) * this.random();
-        const spread = [this.random() - 0.5, this.random() - 0.5, this.random() * 0.8 + 0.2] as const;
-        const way = [toward[0] + spread[0], toward[1] + spread[1], spread[2]] as const;
-        const length = Math.hypot(...way) || 1;
-        const speed = between(SPEED);
-        const velocity: Vector = [(way[0] / length) * speed, (way[1] / length) * speed, (way[2] / length) * speed];
-        this.flying.push({ at: clash, velocity, age: 0, life: between(LIFE) });
-      }
+      this.burst(clash, toward, count);
+    }
+  }
+
+  /** Throws `count` sparks from `from`, up and along `toward` (a way over the ground, east and south). */
+  burst(from: Vector, toward: readonly [number, number], count: number): void {
+    for (let spark = 0; spark < count; spark++) {
+      const between = (range: readonly [number, number]) => range[0] + (range[1] - range[0]) * this.random();
+      const spread = [this.random() - 0.5, this.random() - 0.5, this.random() * 0.8 + 0.2] as const;
+      const way = [toward[0] + spread[0], toward[1] + spread[1], spread[2]] as const;
+      const length = Math.hypot(...way) || 1;
+      const speed = between(SPEED);
+      const velocity: Vector = [(way[0] / length) * speed, (way[1] / length) * speed, (way[2] / length) * speed];
+      this.flying.push({ at: from, velocity, age: 0, life: between(LIFE) });
     }
   }
 

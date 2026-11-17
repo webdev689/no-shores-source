@@ -81,12 +81,15 @@ table Event {
   amount: double;
 }
 
-// A shot in flight: who shot it, what shot it (combat's number), where it is (x, y, z) and how fast it goes.
+// A shot in flight, or a gun's ball in the tick it was fired: who shot it, what shot it (combat's number), where it is
+// (x, y, z), how fast it goes, and the ticks it has flown. A ball's whole line runs from `at` to `at` plus one tick of
+// its velocity.
 table Flying {
   owner: uint;
   ranged: ubyte;
   at: [double];
   velocity: [double];
+  age: ushort;
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and its pace, 0

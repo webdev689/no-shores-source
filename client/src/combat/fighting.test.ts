@@ -123,14 +123,25 @@ test('the other guard binding pressed while one is held opens a fresh parry wind
   assert.deepEqual(fighting.own?.action, { kind: 'guard', elapsed: 0, window: 12 });
 });
 
-test('a bow let go before the least draw tells the page no shot left; one drawn longer does not', () => {
+test('a bow aimed and lowered unfired tells the page; an aimed pull hands over the arrow it fired', () => {
   const { fighting, tick } = fightIn('bow_long');
-  for (let count = 0; count < 5; count += 1) tick({ shoot: true, shootPressed: count === 0 });
+  for (let count = 0; count < 5; count += 1) tick({ aim: true });
   tick();
-  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped], ['idle', 1]);
-  for (let count = 0; count < 30; count += 1) tick({ shoot: true, shootPressed: count === 0 });
-  tick();
-  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped], ['reload', 1]);
+  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped, fighting.fired.length], ['idle', 1, 0]);
+  for (let count = 0; count < 10; count += 1) tick({ aim: true });
+  tick({ aim: true, shoot: true, shootPressed: true });
+  assert.deepEqual([fighting.own?.action.kind, fighting.drawsDropped, fighting.fired.length], ['reload', 1, 1]);
+  assert.equal(fighting.fired[0]?.ranged, 1, 'an arrow');
+});
+
+test('a gun fired from the hip hands over its whole line, and no guard rises behind it', () => {
+  const { fighting, tick } = fightIn('pistolet');
+  tick({ guard: true, guardPressed: true });
+  assert.equal(fighting.own?.action.kind, 'idle', 'no guard with a gun');
+  tick({ shoot: true, shootPressed: true });
+  const [ball] = fighting.fired;
+  assert.equal(fighting.fired.length, 1);
+  assert.ok(ball && Math.hypot(...ball.velocity) * TICK > 1, 'a line, not a flight');
 });
 
 test('a dress too long for the room is never sent: the room takes every input, and the last dress that fit', () => {

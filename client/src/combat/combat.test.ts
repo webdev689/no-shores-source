@@ -34,7 +34,7 @@ test('a telegraphed blow is marked on the ground where its shape lies, filling a
   const red = vertices(late).every((vertex) => (vertex[3] ?? 0) > 0.9 && (vertex[4] ?? 0) < 0.2);
   assert.ok(red, 'iron is red');
   assert.ok((vertices(late)[0]?.[6] ?? 0) > (vertices(early)[0]?.[6] ?? 0), 'brighter in its last stretch');
-  const arrow = marksMesh([], [{ owner: 3, ranged: 1, at: [0, 0, 1], velocity: [45, 0, 0] }]);
+  const arrow = marksMesh([], [{ owner: 3, ranged: 1, at: [0, 0, 1], velocity: [45, 0, 0], age: 0 }]);
   assert.equal(arrow.length, 12 * MARK_FLOATS, 'an arrow is two crossed strips');
 });
 

@@ -12,6 +12,8 @@ export interface Orbit {
   readonly yaw: number;
   readonly pitch: number;
   readonly distance: number;
+  /** How many times the view is magnified, as aiming does; 1 when absent. */
+  readonly zoom?: number;
 }
 
 /** A line from the camera through a screen point, in world metres. `direction` has length 1. */
@@ -84,7 +86,7 @@ export const REVERSED_DEPTH = { format: 'depth32float', clearValue: 0, compare: 
 export function viewProjection(orbit: Orbit, aspect: number, fromEye = false): Float32Array {
   const { eye: placed, forward, right, up, depthScale, depthOffset } = cameraOf(orbit);
   const eye: Vector = fromEye ? [0, 0, 0] : placed;
-  const focal = 1 / Math.tan(FIELD_OF_VIEW / 2);
+  const focal = (orbit.zoom ?? 1) / Math.tan(FIELD_OF_VIEW / 2);
   // View space looks down its -z: x along `right`, y along `up`, z against `forward`.
   const viewRows = [
     [...right, -dot(right, eye)],
@@ -150,7 +152,7 @@ export function fitOrbit(widthM: number, heightM: number, aspect: number): Orbit
 /** The ray from the camera through a screen point given in normalised device coordinates (-1..1, y up). */
 export function rayAt(orbit: Orbit, aspect: number, ndcX: number, ndcY: number): Ray {
   const { eye, forward, right, up } = cameraFrame(orbit);
-  const halfHeight = Math.tan(FIELD_OF_VIEW / 2);
+  const halfHeight = Math.tan(FIELD_OF_VIEW / 2) / (orbit.zoom ?? 1);
   const across = ndcX * halfHeight * aspect;
   const upward = ndcY * halfHeight;
   const raw: Vector = [0, 1, 2].map((axis) => forward[axis] + right[axis] * across + up[axis] * upward) as Vector;

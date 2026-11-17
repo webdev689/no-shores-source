@@ -40,7 +40,7 @@ function firstPerson(drawn: (path: string) => boolean) {
     person.draw({} as GPUCommandEncoder, {} as GPUTextureView, 640, 400);
     return { events, quads: quads.map(({ x, y, width, height, flip }) => ({ x, y, width, height, flip })) };
   };
-  return { frame, asked };
+  return { frame, asked, person };
 }
 
 const still = { attackHeld: false, attackPressed: false, attackReleased: false };
@@ -57,6 +57,20 @@ const standing: FirstPersonState = {
 };
 const wholeFrames = (path: string) =>
   /WEAPON\d\d\.CIF_\d+-\d+(_[A-Za-z]+)?\.png$/.test(path) || path.startsWith('@art');
+
+test('aiming slides a lone gun from its corner until its muzzle at rest lies just right of and below the crosshair', async () => {
+  const { frame, person } = firstPerson(() => true);
+  const pistolet = { ...standing, right: 'pistolet' };
+  await frame(0.016, pistolet);
+  const [ownX = 0, ownY = 0] = person.muzzle ?? [];
+  assert.ok(ownX > 300 && ownY > 200, `at rest it sits by the corner: ${ownX}, ${ownY}`);
+  await frame(0.016, { ...pistolet, aim: 1 });
+  // The muzzle reported is the firing frame's, kicked 10 right and 11 up of the resting one laid at (165, 107).
+  assert.deepEqual(person.muzzle, [175, 96]);
+  await frame(0.016, { ...pistolet, aim: 0.5 });
+  const [halfX = 0] = person.muzzle ?? [];
+  assert.ok(Math.abs(halfX - (ownX + 175) / 2) < 1e-9, 'halfway raised, halfway there');
+});
 
 test('a drawn sword rests 60 design pixels below and 40 right of its own place, and strikes from its own; sheathed, nothing shows', async () => {
   const { frame, asked } = firstPerson(wholeFrames);

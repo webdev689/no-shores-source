@@ -14,7 +14,6 @@ import {
 
 const press: AttackInput = { attackHeld: true, attackPressed: true, attackReleased: false };
 const hold: AttackInput = { attackHeld: true, attackPressed: false, attackReleased: false };
-const letGo: AttackInput = { attackHeld: false, attackPressed: false, attackReleased: true };
 const none: AttackInput = { attackHeld: false, attackPressed: false, attackReleased: false };
 
 /** A random source that always picks `direction` from the six. */
@@ -95,34 +94,40 @@ test('bare hands strike to the left up and back down: 0 1 2 3 4 2 1 0, one blow'
   assert.equal(machine.busy, false);
 });
 
-test('a bow draws while held and stays drawn, looses on frame 5 when let go, then reloads', () => {
+test('a bow aimed draws and stays drawn, looses on its loose frame at a pull, then reloads', () => {
   const machine = new WeaponMachine('bow');
-  machine.update(0.01, press);
+  const aimed: AttackInput = { ...none, aimHeld: true };
+  machine.update(0.01, aimed);
   assert.deepEqual([machine.record, machine.frame], [0, 0]);
-  const drawn = run(machine, 6, BOW_TICK, hold).map((step) => step.frame);
+  const drawn = run(machine, 6, BOW_TICK, aimed).map((step) => step.frame);
   assert.deepEqual(drawn, [1, 2, 3, 3, 3, 3]);
-  const released = run(machine, 4, BOW_TICK, letGo);
+  const pulled = machine.update(0, { ...press, aimHeld: true });
+  assert.deepEqual([machine.frame, pulled.loose], [5, true], 'the arrow leaves on the pull');
+  const released = run(machine, 2, BOW_TICK, aimed);
   assert.deepEqual(
-    released.map((step) => step.frame),
-    [4, 5, 6, 0],
+    released.map((step) => [step.frame, step.events.loose]),
+    [
+      [6, false],
+      [0, false],
+    ],
   );
-  assert.deepEqual(
-    released.map((step) => step.events.loose),
-    [false, true, false, false],
-  );
-  assert.equal(machine.busy, false);
-  machine.update(BOW_RELOAD / 2, press);
+  machine.update(BOW_RELOAD / 2, aimed);
   assert.equal(machine.busy, false, 'still reloading');
-  machine.update(BOW_RELOAD, hold);
-  assert.equal(machine.busy, true, 'held through the reload, it draws again');
+  machine.update(BOW_RELOAD, aimed);
+  assert.equal(machine.busy, true, 'aimed through the reload, it draws again');
   assert.equal(BOW_HELD_FRAME, 3);
 });
 
-test('a quick click on a bow plays the whole draw and release', () => {
+test('a bow not aimed looses a quick shot at once on a pull; an aim let go lowers it unloosed', () => {
   const machine = new WeaponMachine('bow');
-  machine.update(0.01, { attackHeld: false, attackPressed: true, attackReleased: true });
-  const frames = run(machine, 7, BOW_TICK, none).map((step) => step.frame);
-  assert.deepEqual(frames, [1, 2, 3, 4, 5, 6, 0]);
+  const quick = machine.update(0.01, { attackHeld: false, attackPressed: true, attackReleased: true });
+  assert.deepEqual([machine.frame, quick.loose], [5, true]);
+  const frames = run(machine, 2, BOW_TICK, none).map((step) => step.frame);
+  assert.deepEqual(frames, [6, 0]);
+  const lowered = new WeaponMachine('bow');
+  run(lowered, 4, BOW_TICK, { ...none, aimHeld: true });
+  const events = lowered.update(BOW_TICK, none);
+  assert.deepEqual([lowered.busy, lowered.frame, events.loose], [false, 0, false]);
 });
 
 test('a swing and a shot report how far through them they are, for the figure seen from outside', () => {
@@ -133,8 +138,8 @@ test('a swing and a shot report how far through them they are, for the figure se
   sword.update(swingFrameSeconds('sword') * 2.5, { attackHeld: false, attackPressed: false, attackReleased: false });
   assert.ok(Math.abs((sword.progress ?? 0) - 0.5) < 1e-9);
   const bow = new WeaponMachine('bow');
-  bow.update(0, { attackHeld: true, attackPressed: true, attackReleased: false });
-  bow.update(1, { attackHeld: true, attackPressed: false, attackReleased: false });
+  bow.update(0, { ...none, aimHeld: true });
+  bow.update(1, { ...none, aimHeld: true });
   assert.equal(bow.progress, 0.5);
 });
 
