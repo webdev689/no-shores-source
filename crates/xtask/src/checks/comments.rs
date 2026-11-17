@@ -65,20 +65,65 @@ pub fn rust_comments(text: &str) -> Vec<Comment> {
     comments
 }
 
-/// The comments of a Python file: consecutive `#` lines that stand alone form one comment.
+/// The comments of a Python file: consecutive `#` lines that stand alone form one comment, a `#` after code is one
+/// of its own, and so is a docstring (a statement that is only a `"""` or `'''` string).
 pub fn python_comments(text: &str) -> Vec<Comment> {
     let mut comments: Vec<Comment> = Vec::new();
     let mut last_line = 0;
+    let mut docstring: Option<(&str, Comment)> = None;
     for (offset, raw) in text.lines().enumerate() {
         let line = offset + 1;
-        let Some(body) = raw.trim_start().strip_prefix('#') else { continue };
-        match comments.last_mut() {
-            Some(comment) if last_line + 1 == line => comment.lines.push((line, body.to_owned())),
-            _ => comments.push(Comment { lines: vec![(line, body.to_owned())] }),
+        if let Some((quotes, mut open)) = docstring.take() {
+            let closed = raw.contains(quotes);
+            open.lines.push((line, raw.split(quotes).next().unwrap_or_default().to_owned()));
+            if closed {
+                comments.push(open)
+            } else {
+                docstring = Some((quotes, open))
+            }
+            continue;
         }
-        last_line = line;
+        let code = raw.trim_start();
+        if let Some(quotes) = ["\"\"\"", "'''"].into_iter().find(|quotes| code.starts_with(quotes)) {
+            let rest = &code[quotes.len()..];
+            let opened = Comment { lines: vec![(line, rest.split(quotes).next().unwrap_or_default().to_owned())] };
+            if rest.contains(quotes) {
+                comments.push(opened)
+            } else {
+                docstring = Some((quotes, opened))
+            }
+            continue;
+        }
+        let Some(at) = python_comment_start(raw) else { continue };
+        let body = raw[at + 1..].to_owned();
+        let standalone = raw[..at].trim().is_empty();
+        match comments.last_mut() {
+            Some(comment) if standalone && last_line + 1 == line => comment.lines.push((line, body)),
+            _ => comments.push(Comment { lines: vec![(line, body)] }),
+        }
+        last_line = if standalone { line } else { 0 };
     }
+    comments.extend(docstring.map(|(_, open)| open));
     comments
+}
+
+/// Where a Python line's `#` comment starts, outside its quotes.
+fn python_comment_start(line: &str) -> Option<usize> {
+    let mut quote: Option<char> = None;
+    let mut escaped = false;
+    for (at, ch) in line.char_indices() {
+        match (quote, ch) {
+            (Some(_), '\\') if !escaped => escaped = true,
+            (Some(open), _) if ch == open && !escaped => quote = None,
+            (None, '\'' | '"') => quote = Some(ch),
+            (None, '#') => return Some(at),
+            _ => escaped = false,
+        }
+        if ch != '\\' {
+            escaped = false;
+        }
+    }
+    None
 }
 
 fn block_comment(chars: &[char], start: usize, start_line: usize) -> (Comment, usize, usize) {
@@ -180,40 +225,73 @@ fn history_marker(words: &str) -> Option<&'static str> {
     }
 }
 
+const MONTHS: [&str; 12] = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+];
+
+/// A year, month and day joined by hyphens or slashes, or a day, a month's name and a year.
 fn has_date(words: &str) -> bool {
     let bytes = words.as_bytes();
-    let shape = b"20dd-dd-dd";
-    bytes.windows(shape.len()).enumerate().any(|(start, window)| {
-        let fits = window.iter().zip(shape).all(|(&got, &want)| match want {
-            b'd' => got.is_ascii_digit(),
-            other => got == other,
-        });
-        let clear_before = start == 0 || !bytes[start - 1].is_ascii_digit();
-        let clear_after = bytes.get(start + shape.len()).is_none_or(|next| !next.is_ascii_digit());
-        fits && clear_before && clear_after
-    })
+    let numbered = [b"20dd-dd-dd", b"20dd/dd/dd"].iter().any(|shape| {
+        bytes.windows(shape.len()).enumerate().any(|(start, window)| {
+            let fits = window.iter().zip(*shape).all(|(&got, &want)| match want {
+                b'd' => got.is_ascii_digit(),
+                other => got == other,
+            });
+            let clear_before = start == 0 || !bytes[start - 1].is_ascii_digit();
+            let clear_after = bytes.get(start + shape.len()).is_none_or(|next| !next.is_ascii_digit());
+            fits && clear_before && clear_after
+        })
+    });
+    let tokens: Vec<&str> =
+        words.split(|ch: char| !ch.is_ascii_alphanumeric()).filter(|token| !token.is_empty()).collect();
+    let named = tokens.windows(3).any(|three| {
+        let day = three[0].len() <= 2 && three[0].chars().all(|ch| ch.is_ascii_digit());
+        let named = three[1].to_ascii_lowercase();
+        let month = MONTHS.iter().any(|full| named == *full || named == full[..3]);
+        let year = three[2].len() == 4 && three[2].starts_with("20") && three[2].chars().all(|ch| ch.is_ascii_digit());
+        day && month && year
+    });
+    numbered || named
 }
 
 fn has_issue_number(words: &str) -> bool {
     let bytes = words.as_bytes();
     bytes.iter().enumerate().any(|(at, &byte)| {
-        let clear_before = at == 0 || bytes[at - 1] == b' ' || bytes[at - 1] == b'(';
+        let clear_before = at == 0 || !bytes[at - 1].is_ascii_digit();
         let digits = bytes[at + 1..].iter().take_while(|next| next.is_ascii_digit()).count();
         byte == b'#' && clear_before && digits >= 2
     })
 }
 
-/// Capital words joined by a hyphen, the first possibly numbered. `UTF-8` and `SHA-256` are not tags.
+/// Standards named the way a ticket is, by capital letters, a hyphen and a number.
+const STANDARDS: [&str; 4] = ["UTF", "SHA", "ISO", "RFC"];
+
+/// Capital words joined by a hyphen, the first possibly numbered, or a capital word and a number joined by one, save
+/// a standard's name.
 fn has_ticket_tag(words: &str) -> bool {
     words.split(|ch: char| !(ch.is_ascii_alphanumeric() || ch == '-')).any(|token| {
         let mut parts = token.split('-');
         let (Some(first), Some(second)) = (parts.next(), parts.next()) else { return false };
         let letters = first.chars().take_while(char::is_ascii_uppercase).count();
         let first_ok = letters >= 2 && first.chars().skip(letters).all(|ch| ch.is_ascii_digit());
-        let second_ok = second.len() >= 2
+        let words_joined = second.len() >= 2
             && second.chars().take(2).all(|ch| ch.is_ascii_uppercase())
             && second.chars().all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit());
-        first_ok && second_ok
+        let numbered =
+            !second.is_empty() && second.chars().all(|ch| ch.is_ascii_digit()) && !STANDARDS.contains(&first);
+        first_ok && (words_joined || numbered)
     })
 }
 

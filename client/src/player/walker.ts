@@ -12,9 +12,9 @@ import { likelyMoves, type Shown, shownMove } from './playerMoves.ts';
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
 /** Faster than a horse's walk is a gallop. */
-const GALLOP = 10;
+export const GALLOP = 10;
 /** The weapon's button, untouched: what the first person's weapon gets while it may not swing. */
-const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
+export const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
 
 /** The strokes struck so far after this frame's swing: a swing begins where there was none, or where the last one
  *  ended and the next began within the frame (its progress went back). */

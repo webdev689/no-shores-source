@@ -270,6 +270,10 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     ships: [],
     pirates: [],
     fights: [],
+    vessels: [],
+    balls: [],
+    naval: [],
+    fightClock: 0,
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));

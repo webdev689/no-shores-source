@@ -17,6 +17,8 @@ import { fitWindow, heightAt, ReliefView } from './reliefView.ts';
 import { drawSites, groundProjector, siteMarks } from './siteDrawing.ts';
 import { NODE_COLOURS, siteFocus } from './sites.ts';
 import type { TerrainData } from '../terrain/terrainView.ts';
+import { FleetDock } from './fleetDock.ts';
+import { fleetOffered } from './fleetLink.ts';
 
 /** The Land mode: the land the generator makes from the painted coasts, shaped by the owner's brushes. */
 export interface LandEditor {
@@ -30,7 +32,6 @@ const DEFAULT_STRENGTH: Partial<Record<LandTool, number>> = { raise: 40, lower: 
 const REACH_PX = 12;
 /** The 2D map zooms closer than the coasts' map, so a node a few hundred metres across can be drawn. */
 const ZOOM = { closest: 1, farthest: 20_000 } as const;
-
 export async function startLandEditor(
   canvas: HTMLCanvasElement,
   overlay: SVGSVGElement,
@@ -57,6 +58,9 @@ export async function startLandEditor(
   let editsVersion = 0;
   let walking = false;
   let sailing = false;
+  /** With a fleet room offered by the page (`?room=`), the Sloop sails there. */
+  const harbour = fleetOffered();
+  const fleet = harbour && new FleetDock(harbour);
   const aim = new AimInput();
   /** The lowest the camera may look: over the horizon while aiming, a swimmer's own, else the orbit's. */
   const lowestLook = () => (aim.aiming ? AIM_HIGHEST_LOOK : walking ? scene.lowestPitch : undefined);
@@ -268,6 +272,7 @@ export async function startLandEditor(
       selected = id;
       status = '';
       sailing = false;
+      fleet?.leave();
       showSelected(true);
       open(id, true);
     },
@@ -322,12 +327,25 @@ export async function startLandEditor(
     requestFrame();
   }
 
-  /** Puts the Sloop to sea at the camera's target, or brings her in: the camera stands off her quarter. */
+  /** Puts the Sloop to sea at the camera's target, or brings her in: the camera stands off her quarter. With a fleet
+   *  room, she joins it first. */
   function toggleSail() {
-    sailing = !sailing;
     aim.reset();
     walking = false;
     viewMode = '3d';
+    const view = shown();
+    if (fleet && !sailing && view) {
+      const sail = () => {
+        status = '';
+        sailing = true;
+        orbit = { ...orbit, distance: 25, pitch: 0.3 };
+        requestFrame();
+      };
+      status = 'Joining the fleet…';
+      fleet.join(view, [orbit.targetX + view.leftM, orbit.targetY + view.topM, orbit.yaw], sail, fail);
+      return;
+    }
+    sailing = !sailing;
     orbit = sailing ? { ...orbit, distance: 25, pitch: 0.3 } : { ...orbit, distance: 600, pitch: 0.5 };
     requestFrame();
   }
@@ -344,6 +362,11 @@ export async function startLandEditor(
     const data = viewMode === '3d' ? terrainData() : null;
     const places = session?.places(selected) ?? {};
     overlay.replaceChildren();
+    // Brought in, or walking or on the map before the room let her join, she leaves the fleet.
+    if (fleet && !sailing && (fleet.sloop || (fleet.joining && (walking || viewMode === '2d')))) {
+      if (fleet.joining) status = '';
+      fleet.leave();
+    }
     if (data && view) {
       const brush = brushShown && {
         x: brushShown.x - view.leftM,
@@ -365,6 +388,7 @@ export async function startLandEditor(
         pressed,
         ...aim.take(),
         source,
+        fleet: sailing ? (fleet?.sloop ?? null) : null,
         editsVersion,
         stroking: stroke !== null,
       });
@@ -514,7 +538,7 @@ export async function startLandEditor(
     if (!active || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
     const key = event.key.toLowerCase();
     const siteTool = event.ctrlKey || event.metaKey ? undefined : SITE_TOOLS.find(([, , letter]) => letter === key);
-    const moving = ['w', 'a', 's', 'd', 'shift', 'c', 'f', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+    const moving = ['w', 'a', 's', 'd', 'shift', 'c', 'f', 'x', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
     if ((walking || sailing) && moving.includes(key)) {
       event.preventDefault();
       held.add(key);
@@ -569,7 +593,8 @@ export async function startLandEditor(
       requestFrame();
     },
     deactivate() {
-      active = false;
+      [active, sailing] = [false, false];
+      fleet?.leave();
     },
   };
 }

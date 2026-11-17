@@ -29,10 +29,10 @@ function roomName(request: Request): string | null {
 
 /**
  * One room on Cloudflare: a Durable Object, one for each room's name, that keeps the room in WebAssembly. Its name
- * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land, and any other the Test
- * Ground's course. Players join by WebSocket; each binary message is one of their inputs, or at sea their ship's
- * course. While anyone is in, it ticks the room in step with the clock and sends every player the snapshot after each
- * tick.
+ * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land, `fleet-<name>` a fleet's
+ * place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
+ * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
+ * room in step with the clock and sends every player the snapshot after each tick.
  */
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);
@@ -71,6 +71,7 @@ export class RoomHost extends DurableObject<Env> {
   /** Opens the room its name says, once: a node's from its baked file, which only that node's room reads. */
   private async openRoom(name: string): Promise<boolean> {
     if (name === 'sea') return this.room.openSea(JSON.stringify(layout));
+    if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
     if (node === undefined) return this.room.open(course.start, course.blocks);
     const file = await this.env.NODES.fetch(`https://nodes/${node}.json`);

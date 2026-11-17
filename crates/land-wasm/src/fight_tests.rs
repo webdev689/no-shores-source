@@ -150,7 +150,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it.
     assert_eq!(
         prints.join(" "),
-        "a5c0d39eeb17893c 74506578b683e8a2 aeaf36b6ca60c8cc 9aff61ffcc9e671a 8cb013d3ab3702b7 7b58f4772709c29e 5615a0179dc1b60e 53b0562d4c9edb37 567b4bddda81f749"
+        "834b070d18a1080e 5d1bca60bb36a1c1 9764c3dc4b2f824c 1ddd3e8e0cb5316d 10c2d6d7ae711e19 353c8645961cccf0 73adeff595ee6a7e d272c71d1db938e3 67cd244ae0c78118"
     );
 }
 

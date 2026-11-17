@@ -33,6 +33,7 @@ export function wordsFor(event: FightEvent, captain: string): string | null {
     const side = SIDE_WORDS[event.side ?? 'port'];
     return `The ${side} guns are reloading (${(event.left ?? 0).toFixed(1)} s).`;
   }
+  if (event.kind === 'ram' && event.by === 0) return 'You ram the ship!';
   if (event.kind === 'no-sail')
     return event.wrecked ? 'The ship is crippled. No sail will set.' : 'The rigging is shot away. No sail will set.';
   if (event.kind === 'state' && event.ship === 1 && event.state === 'struck') return `The ${captain} surrenders!`;

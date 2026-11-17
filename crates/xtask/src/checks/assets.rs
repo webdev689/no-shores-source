@@ -3,9 +3,10 @@ use super::Problem;
 /// No file in git is bigger than this. Renders, bakes and builds are generated, and stored outside git.
 pub const MAX_BYTES: u64 = 1024 * 1024;
 
-const MEDIA_EXTENSIONS: [&str; 26] = [
+/// Media, and builds that are not text (WebAssembly, the ship exporter's meshes), which the UTF-8 check skips.
+const MEDIA_EXTENSIONS: [&str; 28] = [
     "png", "jpg", "jpeg", "webp", "gif", "bmp", "tga", "dds", "ktx", "ktx2", "glb", "gltf", "fbx", "obj", "blend",
-    "wav", "ogg", "mp3", "flac", "mp4", "webm", "ttf", "otf", "woff", "woff2", "exr",
+    "wav", "ogg", "mp3", "flac", "mp4", "webm", "ttf", "otf", "woff", "woff2", "exr", "wasm", "mesh",
 ];
 
 /// Pictures for the bible's own pages are the one place media may sit in git.
@@ -32,7 +33,7 @@ pub fn check(files: &[(String, u64)]) -> Vec<Problem> {
                 "assets",
                 path,
                 None,
-                "media is made by our tools from sources in the repo and stored outside git",
+                "media and builds are made by our tools from sources in the repo and stored outside git",
             ));
         }
     }
@@ -53,6 +54,12 @@ mod tests {
     fn media_outside_the_attachments_is_a_problem() {
         let problems = check(&[("crates/client/assets/hull.PNG".to_owned(), 10)]);
         assert_eq!(problems.len(), 1);
+    }
+
+    #[test]
+    fn a_small_build_is_a_problem() {
+        let files = [("client/public/room.wasm".to_owned(), 900_000), ("tools/ships/sloop.mesh".to_owned(), 900_000)];
+        assert_eq!(check(&files).len(), 2);
     }
 
     #[test]

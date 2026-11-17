@@ -2,6 +2,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
+import { type FleetPart, fleetOf, point, whole } from './fleetMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
@@ -99,7 +100,7 @@ export interface FlyingShot {
 
 /** What a room says: its welcome, with the joining player's number, every dress so far, and its node in a node's
  *  room; or everyone after one of its ticks, with the dresses that changed and what happened in the fight since the
- *  last, the shots in flight, and every ship at sea. */
+ *  last, the shots in flight, every ship at sea, and a fleet's ships, balls and what happened in its fight. */
 export type FromRoomMessage =
   | {
       readonly kind: 'joined';
@@ -107,7 +108,7 @@ export type FromRoomMessage =
       readonly dressed: readonly PlayerDress[];
       readonly node: JoinedNode | null;
     }
-  | {
+  | ({
       readonly kind: 'snapshot';
       readonly tick: bigint;
       readonly players: readonly SeenPlayer[];
@@ -118,7 +119,7 @@ export type FromRoomMessage =
       readonly ships: readonly SeenShip[];
       readonly pirates: readonly SeenPirate[];
       readonly fights: readonly SeenSeaFight[];
-    };
+    } & FleetPart);
 
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
  *  shows, their dress when it changed, what their hands hold, the room tick their screen showed, a foe's kind to stand
@@ -188,18 +189,6 @@ function standingOf(number: number, ticks: number): Standing {
   return kind === 'inside' ? { kind } : { kind, ticks };
 }
 
-/** Exactly `length` numbers, or a throw: the message is not whole. */
-function whole(numbers: Float64Array | null, length: number, what: string): Float64Array {
-  if (!numbers || numbers.length !== length) throw new Error(`${what} is not whole`);
-  return numbers.slice();
-}
-
-/** A point's three numbers. */
-const point = (numbers: Float64Array | null): [number, number, number] => {
-  const [x = 0, y = 0, z = 0] = numbers ?? [];
-  return [x, y, z];
-};
-
 /** The message a room's bytes hold, or null when they hold neither a welcome nor a snapshot that reads. */
 export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
   // The TypeScript runtime has no verifier, so a message cut short throws while it is read.
@@ -268,7 +257,19 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       return { player: fight.player(), view: new Float64Array(fight.viewArray() ?? []) };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
-    return { kind: 'snapshot', tick: snapshot.tick(), players, dressed, foes, events, shots, ships, pirates, fights };
+    return {
+      kind: 'snapshot',
+      tick: snapshot.tick(),
+      players,
+      dressed,
+      foes,
+      events,
+      shots,
+      ships,
+      pirates,
+      fights,
+      ...fleetOf(snapshot),
+    };
   } catch {
     return null;
   }

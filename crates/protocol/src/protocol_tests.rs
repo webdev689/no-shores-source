@@ -90,8 +90,8 @@ impl sailing::waters::Waters for Open {
     }
 }
 
-/// A fight as a snapshot carries it: its player, and its view with the player's look laid to starboard and her port
-/// guns run out (the client's test reads it back).
+/// A fight as a snapshot carries it: its player, and its view with the player's look laid to starboard, the captain's
+/// port guns run out and the player's stem ramming her (the client's test reads it back).
 fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
         x,
@@ -105,7 +105,11 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
     };
     let fight = naval::fight::Fight::meet(at(0.0, 0.0, 0.0), at(0.0, -700.0, 3.0), 7, &Open, 0.0);
     let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
-    let events = [naval::fight::Event::RunOut { side: naval::arms::Side::Port }];
+    let (player, captain) = (naval::fight::PLAYER, naval::fight::CAPTAIN);
+    let events = [
+        naval::fight::Event::RunOut { ship: captain, side: naval::arms::Side::Port },
+        naval::fight::Event::Ram { ship: captain, by: player, point: [1.0, 2.0, 3.0], dealt: 4.5 },
+    ];
     vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0))]
 }
 

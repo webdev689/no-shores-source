@@ -145,6 +145,7 @@ version = "0.0.0"
 dependencies = [
  "combat",
  "flatbuffers",
+ "land",
  "movement",
  "naval",
  "room",
@@ -198,6 +199,7 @@ dependencies = [
  "naval",
  "protocol",
  "room",
+ "sailing",
  "serde",
  "serde_json",
  "world",

@@ -12,9 +12,10 @@ flatbuffers.workspace = true
 movement = { path = "../movement" }
 naval = { path = "../naval" }
 room = { path = "../room" }
+sailing = { path = "../sailing" }
 
 [dev-dependencies]
-sailing = { path = "../sailing" }
+land = { path = "../land" }
 
 [lints]
 workspace = true

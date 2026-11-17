@@ -30,18 +30,7 @@ export class Harbour<View> {
   /** Each frame Sail is on: fetches her model and puts her to sea at world (x, y), each once. Answers whether she
    *  may sail: false once the rules have refused her. */
   board(source: SailSource | null, id: string, x: number, y: number, heading: number, time: number): boolean {
-    if (!this.model && this.fetching === 'no') {
-      this.fetching = 'fetching';
-      this.load()
-        .then((model) => {
-          this.model = model;
-          this.fetching = 'no';
-        })
-        .catch((error: unknown) => {
-          this.fetching = 'failed';
-          this.fail(error);
-        });
-    }
+    this.fetchModel();
     if (!this.afloat && source && this.asked === 'no') {
       this.asked = 'asking';
       const voyage = this.voyage;
@@ -61,6 +50,21 @@ export class Harbour<View> {
         });
     }
     return this.asked !== 'refused';
+  }
+
+  /** Fetches her model, once, for a Sloop sailed elsewhere (a fleet room's) to be drawn by. */
+  fetchModel(): void {
+    if (this.model || this.fetching !== 'no') return;
+    this.fetching = 'fetching';
+    this.load()
+      .then((model) => {
+        this.model = model;
+        this.fetching = 'no';
+      })
+      .catch((error: unknown) => {
+        this.fetching = 'failed';
+        this.fail(error);
+      });
   }
 
   /** Brings her in: the next Sail puts her to sea afresh, and fetches again a model that failed. */

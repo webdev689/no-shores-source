@@ -74,14 +74,15 @@ pub struct Input {
 }
 
 impl Input {
-    /// Whether its look and dress are within what a room carries, and every number in it is one.
+    /// Whether its look and dress are within what a room carries, and every number in it is one (the intent's reading
+    /// already took a pitch or mark that is none as such).
     #[must_use]
     pub fn fits(&self) -> bool {
         let anim = &self.shown.anim;
         let named = anim.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_');
         let dress_fits = self.dress.as_ref().is_none_or(|dress| dress.len() <= DRESS_LIMIT);
         let controls = self.intent.controls;
-        let numbers = [controls.forward, controls.sideways, controls.yaw, self.intent.combat.pitch, self.shown.facing];
+        let numbers = [controls.forward, controls.sideways, controls.yaw, self.shown.facing];
         named && anim.len() <= MOVE_LIMIT && dress_fits && numbers.iter().all(|number| number.is_finite())
     }
 }

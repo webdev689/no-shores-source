@@ -122,6 +122,8 @@ export function fightViewOf(numbers: ArrayLike<number>): FightView {
         return { kind: 'no-sail', wrecked: next() === 1 };
       case 9:
         return { kind: 'load', shot: named(SHOT_CYCLE) };
+      case 10:
+        return { kind: 'ram', ship: next(), by: next(), point: point(), dealt: next() };
       default:
         throw new Error('a fight’s event is of no kind');
     }

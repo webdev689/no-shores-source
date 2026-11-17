@@ -5,6 +5,9 @@ import course from '../content/testground/course.json' with { type: 'json' };
 // The browser's side of the messages and rules, so these tests send the room exactly the bytes a browser sends and
 // check its bodies with the browser's own steps.
 import { type Look, type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
+import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
+import { startFleetRules } from '../client/src/rules/fleetRules.ts';
+import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
@@ -202,4 +205,50 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
   assert.equal(ships.length, 1, 'only the ship whose course was taken is at sea');
   assert.deepEqual([ships[0]?.player, ships[0]?.x, ships[0]?.heading, ships[0]?.pace], [first, 50_000, 0, 10]);
   assert.ok(Math.abs((ships[0]?.y ?? 0) - (150_000 - 120)) < 1e-6, 'a second north at 10 × 12 m/s');
+});
+
+test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
+  const room = startRoomDoor(compiled);
+  assert.equal(room.openFleet(), true);
+  const [first, second] = [room.join(), room.join()];
+  const still: Helm = { steer: 0, crab: false, climb: 0 };
+  const helmAt = (sequence: number): Helm =>
+    sequence <= 3 ? { ...still, climb: 1 } : { ...still, steer: sequence % 40 < 15 ? 0.7 : -0.3 };
+  const orders = (sequence: number, more: Partial<FleetOrders> = {}): Uint8Array<ArrayBuffer> =>
+    ordersBytes(sequence, {
+      ...helmAt(sequence),
+      look: null,
+      fire: false,
+      brace: false,
+      load: 0,
+      putToSea: null,
+      call: 'none',
+      ...more,
+    });
+  assert.equal(room.input(first, orders(1, { ...still, putToSea: [200_000, 300_000, 0.25] })), 'taken');
+  assert.equal(room.input(second, orders(1, { ...still, putToSea: [200_100, 300_000, 0] })), 'taken');
+  assert.equal(room.input(second, orders(3)), 'out of order');
+  assert.equal(room.input(second, new Uint8Array([9, 9, 9])), 'not an input');
+  room.tick();
+  const read = () => {
+    const snapshot = readFromRoom(room.snapshot());
+    if (snapshot?.kind !== 'snapshot') throw new Error('a fleet room answers snapshots');
+    return snapshot;
+  };
+  const put = read().vessels.find((vessel) => vessel.id === first);
+  for (let sequence = 2; sequence <= 150; sequence++) {
+    assert.equal(room.input(first, orders(sequence)), 'taken');
+    room.tick();
+  }
+  const last = read().vessels.find((vessel) => vessel.id === first);
+  assert.deepEqual([last?.acknowledged, read().vessels.length], [150, 2]);
+  const rules = startFleetRules(compiled);
+  const helms = Array.from({ length: 149 }, (unused, index) => helmAt(index + 2));
+  const hurts = { wrecked: false, sail: last?.hurts.sail ?? 0, maxSail: last?.hurts.maxSail ?? 0 };
+  const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, helms);
+  assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'her ship, to the bit');
+  assert.equal(room.input(first, orders(151, { call: 'captain' })), 'taken');
+  room.tick();
+  const called = read();
+  assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round her');
 });

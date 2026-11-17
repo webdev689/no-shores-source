@@ -180,8 +180,9 @@ function picturesTexture(device: GPUDevice): GPUTexture {
   return texture;
 }
 
-/** How many ships of one model the World Editor draws in a frame: the player's and a captain's. */
-export const SHIP_SLOTS = 2;
+/** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
+ *  captains'. */
+export const SHIP_SLOTS = 20;
 const PLACE_FLOATS = 40;
 
 /** Draws a ship's mesh at her place, lit as the land is, into the land's pass so the water sees her, each part in its

@@ -381,3 +381,15 @@ fn a_pull_on_her_sails_or_oars_holds_her_to_its_share_of_her_way() {
     let once = step_pulled(&full_way_north(), &STILL, &SLOOP, EAST, &Flat, 10.0, TICK_SECONDS, whole);
     assert_eq!(once, step_ship(&full_way_north(), &STILL, &SLOOP, EAST, &Flat, 10.0, TICK_SECONDS));
 }
+
+#[test]
+fn the_open_sea_is_the_swell_whole_as_it_rolls_over_any_sea_past_its_reach() {
+    let swell = land::sea::Swell::default();
+    let sea = crate::waters::OpenSea { swell: &swell };
+    for (x, y, time) in [(0.0, 0.0, 0.0), (1234.5, -987.25, 77.7), (2.0e5, 3.0e5, 1.0e4)] {
+        let spot = sea.at(x, y, time);
+        let whole = swell.height_at(x, y, time, land::sea::FULL_DEPTH_M);
+        assert_eq!(spot.surface.map(f64::to_bits), Some(whole.to_bits()), "the same water, to the bit");
+        assert!(!crate::pose::shallower(&spot, SLOOP.draught_m), "nowhere aground");
+    }
+}

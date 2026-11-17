@@ -102,38 +102,42 @@ pub fn flee_course(me: [f64; 2], from: [f64; 2], wind: [f64; 2]) -> f64 {
     best.0
 }
 
-/// `want` bent clear of another hull at `other` moving at `other_vel` (hers `vel`, her heading `heading`), `reach`
-/// both their pass reaches: by how near and how soon they would pass, to starboard for a hull off her bow, else away
-/// from where it will lie.
+/// A hull about her: where it is and its way, east and south.
+pub type Traffic = ([f64; 2], [f64; 2]);
+
+/// `want` bent clear of the hulls about her (`others`, each where it is and its way; hers `vel`, her heading
+/// `heading`), `reach` both their pass reaches: each that will pass near and soon bends it by its urgency, to
+/// starboard for a hull off her bow, else away from where it will lie, up to `AVOID_SHIP_SWING_DEG` in all.
 #[must_use]
-pub fn traffic_course(
-    (me, heading, vel): ([f64; 2], f64, [f64; 2]),
-    want: f64,
-    (other, other_vel): ([f64; 2], [f64; 2]),
-    reach: f64,
-) -> f64 {
-    let gap = [other[0] - me[0], other[1] - me[1]];
-    if length(gap[0], gap[1]) > AVOID_SHIP_RANGE {
-        return want;
-    }
-    let closing = [other_vel[0] - vel[0], other_vel[1] - vel[1]];
-    let square = closing[0] * closing[0] + closing[1] * closing[1];
-    let nearest = if square > 1e-6 { (-(gap[0] * closing[0] + gap[1] * closing[1]) / square).max(0.0) } else { 0.0 };
-    if nearest > AVOID_SHIP_S {
-        return want;
-    }
-    let then = [gap[0] + closing[0] * nearest, gap[1] + closing[1] * nearest];
-    let pass = length(then[0], then[1]);
-    let room = reach + AVOID_SHIP_CLEAR;
-    if pass >= room {
-        return want;
-    }
-    let urgency = (1.0 - pass / room) * (1.0 - nearest / AVOID_SHIP_S);
-    let bearing = wrap(heading_to([0.0, 0.0], gap) - heading);
-    let lies = wrap(heading_to([0.0, 0.0], then) - heading);
-    let way = if bearing.abs() < AVOID_HEAD_ON_DEG * DEG || lies <= 0.0 { 1.0 } else { -1.0 };
+pub fn traffic_course((me, heading, vel): ([f64; 2], f64, [f64; 2]), want: f64, others: &[Traffic], reach: f64) -> f64 {
     let most = AVOID_SHIP_SWING_DEG * DEG;
-    wrap(want + (way * urgency * most).clamp(-most, most))
+    let mut bend = None;
+    for &(other, other_vel) in others {
+        let gap = [other[0] - me[0], other[1] - me[1]];
+        if length(gap[0], gap[1]) > AVOID_SHIP_RANGE {
+            continue;
+        }
+        let closing = [other_vel[0] - vel[0], other_vel[1] - vel[1]];
+        let square = closing[0] * closing[0] + closing[1] * closing[1];
+        let nearest =
+            if square > 1e-6 { (-(gap[0] * closing[0] + gap[1] * closing[1]) / square).max(0.0) } else { 0.0 };
+        if nearest > AVOID_SHIP_S {
+            continue;
+        }
+        let then = [gap[0] + closing[0] * nearest, gap[1] + closing[1] * nearest];
+        let pass = length(then[0], then[1]);
+        let room = reach + AVOID_SHIP_CLEAR;
+        if pass >= room {
+            continue;
+        }
+        let urgency = (1.0 - pass / room) * (1.0 - nearest / AVOID_SHIP_S);
+        let bearing = wrap(heading_to([0.0, 0.0], gap) - heading);
+        let lies = wrap(heading_to([0.0, 0.0], then) - heading);
+        let way = if bearing.abs() < AVOID_HEAD_ON_DEG * DEG || lies <= 0.0 { 1.0 } else { -1.0 };
+        let this = way * urgency * most;
+        bend = Some(bend.map_or(this, |sum: f64| sum + this));
+    }
+    bend.map_or(want, |bend| wrap(want + bend.clamp(-most, most)))
 }
 
 #[cfg(test)]

@@ -139,6 +139,20 @@ fn a_respawn_is_refused_for_four_seconds_then_stands_the_body_at_the_nearest_spa
 }
 
 #[test]
+fn a_body_dead_and_silent_still_stands_a_tick_at_a_time_so_the_time_is_not_banked() {
+    let mut room = flat_node();
+    let mut runner = Driver::join(&mut room);
+    let (_, dead) = runner.until(&mut room, RUN_NORTH, |standing| standing != Standing::Dead { ticks: 0 });
+    assert_eq!(dead.standing, Standing::Dead { ticks: 0 });
+    for _ in 0..600 {
+        room.tick();
+    }
+    let found = &room.players[&runner.player];
+    let behind = room.clock() - found.joined - found.stepped;
+    assert!(behind <= VIEW_LAG + 1, "{behind} ticks banked to catch up on at 3 a tick");
+}
+
+#[test]
 fn players_join_at_the_spawns_in_turn_standing_on_the_land_and_walk_on_it() {
     let floor = land();
     let mut room = Room::node(floor.clone(), Vec::new(), section());
