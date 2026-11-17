@@ -145,8 +145,11 @@ version = "0.0.0"
 dependencies = [
  "combat",
  "flatbuffers",
+ "land",
  "movement",
+ "naval",
  "room",
+ "sailing",
 ]
 
 [[package]]
@@ -176,8 +179,10 @@ dependencies = [
  "land",
  "libm",
  "movement",
+ "naval",
  "navmesh",
  "reach",
+ "sailing",
  "serde_json",
  "world",
 ]
@@ -191,8 +196,10 @@ dependencies = [
  "combat",
  "land",
  "movement",
+ "naval",
  "protocol",
  "room",
+ "sailing",
  "serde",
  "serde_json",
  "world",

@@ -1,5 +1,5 @@
 //! The room for its Cloudflare host and for a browser playing alone. Each WebAssembly instance keeps one room: a
-//! course's, a node's or the sea's. The host opens it, lets players join and leave, hands it each player's input bytes
+//! course's, a node's, the sea's or a fleet's. The host opens it, lets players join and leave, hands it each player's input bytes
 //! as they come, ticks it, and sends out the bytes it answers. A browser also steps its own player's fighter here, by
 //! the same rules, to predict it. The rules stay in the combat and room crates and the messages in the protocol crate.
 //! See the Server and Combat notes in the bible.
@@ -10,16 +10,20 @@ use combat::floats::{FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS};
 use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
+use room::fleet::Fleet;
 use room::sea::{CourseRefused, Sea};
 use room::{Floor, FoeSeen, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
 use std::cell::RefCell;
 
-/// The room an instance keeps: on land, with its node's id and window rect when it is a node's, or the sea.
+mod fleet_door;
+
+/// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]
 enum Opened {
     Land { room: Box<Room>, node: Option<(String, [f64; 4])> },
     Sea(Sea),
+    Fleet(Box<Fleet>),
 }
 
 thread_local! {
@@ -97,6 +101,11 @@ pub fn open_sea(text: &[u8]) -> bool {
     };
     keep(Opened::Sea(Sea::new(&layout)));
     true
+}
+
+/// Opens a fleet room on the open sea.
+pub fn open_fleet() {
+    keep(Opened::Fleet(Box::new(Fleet::new())));
 }
 
 /// Keeps a course for predicting a fighter without a room: the blocks, five numbers each. Answers whether they made
@@ -198,6 +207,15 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Err(_) => REFUSED,
             },
         },
+        Opened::Fleet(fleet) => match protocol::fleet::read_orders(bytes) {
+            Err(_) => NOT_AN_INPUT,
+            Ok(orders) => match fleet.input(player, orders) {
+                Ok(()) => TAKEN,
+                Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                Err(Refused::BadLook) => NOT_AN_INPUT,
+                Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
+            },
+        },
     });
     answer.unwrap_or(NO_SUCH_PLAYER)
 }
@@ -227,6 +245,11 @@ pub fn snapshot() -> Vec<u8> {
             protocol::snapshot_bytes(&snapshot)
         }
         Opened::Sea(sea) => protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>()),
+        Opened::Fleet(fleet) => {
+            let happened = fleet.take_events();
+            let acknowledged = |ship| fleet.acknowledged(ship);
+            protocol::fleet::fleet_snapshot_bytes(fleet.clock(), fleet.fight(), &acknowledged, &happened)
+        }
     })
     .unwrap_or_default()
 }
@@ -239,7 +262,7 @@ pub fn joined(player: PlayerId) -> Vec<u8> {
             let node = node.as_ref().map(|(id, bounds)| (id.as_str(), *bounds));
             protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>(), node)
         }
-        Opened::Sea(_) => protocol::joined_bytes(player, &[], None),
+        Opened::Sea(_) | Opened::Fleet(_) => protocol::joined_bytes(player, &[], None),
     })
     .unwrap_or_default()
 }
@@ -299,6 +322,13 @@ pub unsafe extern "C" fn room_open_sea(address: *const u8, length: usize) -> u32
     u32::from(open_sea(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
+/// Opens a fleet room on the open sea; always 1.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_open_fleet() -> u32 {
+    open_fleet();
+    1
+}
+
 /// How long one of the room's ticks is, in seconds: its host ticks it that often.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_tick_seconds() -> f64 {
@@ -311,6 +341,7 @@ pub extern "C" fn room_join() -> PlayerId {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.join(),
         Opened::Sea(sea) => Some(sea.join()),
+        Opened::Fleet(fleet) => fleet.join(),
     })
     .flatten()
     .unwrap_or(0)
@@ -327,6 +358,7 @@ pub extern "C" fn room_leave(player: PlayerId) {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.leave(player),
         Opened::Sea(sea) => sea.leave(player),
+        Opened::Fleet(fleet) => fleet.leave(player),
     });
 }
 
@@ -345,6 +377,7 @@ pub extern "C" fn room_tick() {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.tick(),
         Opened::Sea(sea) => sea.tick(),
+        Opened::Fleet(fleet) => fleet.tick(),
     });
 }
 
@@ -373,6 +406,29 @@ pub unsafe extern "C" fn fighter_course(address: *const u8, length: usize) -> u3
 pub unsafe extern "C" fn fighter_predict(address: *const u8, length: usize) -> u64 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     hand_over(predict(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers her
+/// ship's and her pose's numbers.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fleet_predict(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
+    hand_over(fleet_door::predict(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
+}
+
+/// A fleet player's lay for the look written at `address`, as `fleet_door::lay` reads it; answers its numbers.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
+    hand_over(fleet_door::lay(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
 }
 
 /// The arms code for the hands written at `address`, as `arms_code` reads them.
@@ -407,3 +463,7 @@ pub extern "C" fn fighter_sizes() -> u32 {
 #[cfg(test)]
 #[path = "door_tests.rs"]
 mod door_tests;
+
+#[cfg(test)]
+#[path = "fleet_door_tests.rs"]
+mod fleet_door_tests;

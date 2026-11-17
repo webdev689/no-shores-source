@@ -2,6 +2,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
+import { type FleetPart, fleetOf } from './fleetMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
@@ -82,7 +83,7 @@ export interface FlyingShot {
 
 /** What a room says: its welcome, with the joining player's number, every dress so far, and its node in a node's
  *  room; or everyone after one of its ticks, with the dresses that changed and what happened in the fight since the
- *  last, the shots in flight, and every ship at sea. */
+ *  last, the shots in flight, every ship at sea, and a fleet's ships, balls and what happened in its fight. */
 export type FromRoomMessage =
   | {
       readonly kind: 'joined';
@@ -90,7 +91,7 @@ export type FromRoomMessage =
       readonly dressed: readonly PlayerDress[];
       readonly node: JoinedNode | null;
     }
-  | {
+  | ({
       readonly kind: 'snapshot';
       readonly tick: bigint;
       readonly players: readonly SeenPlayer[];
@@ -99,7 +100,7 @@ export type FromRoomMessage =
       readonly events: readonly FightEvent[];
       readonly shots: readonly FlyingShot[];
       readonly ships: readonly SeenShip[];
-    };
+    } & FleetPart);
 
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
  *  shows, their dress when it changed, what their hands hold, the room tick their screen showed, a foe's kind to stand
@@ -230,7 +231,17 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       return { player: ship.player(), x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
-    return { kind: 'snapshot', tick: snapshot.tick(), players, dressed, foes, events, shots, ships };
+    return {
+      kind: 'snapshot',
+      tick: snapshot.tick(),
+      players,
+      dressed,
+      foes,
+      events,
+      shots,
+      ships,
+      ...fleetOf(snapshot),
+    };
   } catch {
     return null;
   }

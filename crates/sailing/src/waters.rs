@@ -35,6 +35,22 @@ impl Waters for LandWaters<'_> {
     }
 }
 
+/// How deep the open sea is, metres: well past where the swell feels the bottom, so it rolls whole everywhere.
+pub const OPEN_SEA_DEPTH_M: f64 = 1000.0;
+
+/// The open sea: deep water everywhere under the swell, and no land. Wherever a landmass's sea is deeper than the
+/// swell feels, its water is this water to the bit.
+#[derive(Debug, Clone, Copy)]
+pub struct OpenSea<'sea> {
+    pub swell: &'sea Swell,
+}
+
+impl Waters for OpenSea<'_> {
+    fn at(&self, x: f64, y: f64, time: f64) -> Spot {
+        Spot { bed: -OPEN_SEA_DEPTH_M, surface: Some(self.swell.height_at(x, y, time, OPEN_SEA_DEPTH_M)) }
+    }
+}
+
 /// The one steady wind until weather drives it: where the swell runs, at a ship's rated wind (m/s, east and south).
 #[must_use]
 pub fn steady_wind(swell: &Swell) -> [f64; 2] {

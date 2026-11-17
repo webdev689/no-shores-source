@@ -25,6 +25,8 @@ pub mod wire {
 
 use wire::overlook::wire as messages;
 
+pub mod fleet;
+
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch.
 const COMBAT_NUMBERS: usize = INTENT_FLOATS - CONTROLS_FLOATS;
 
@@ -228,7 +230,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .collect();
     let shots = Some(builder.create_vector(&shots));
     let tick = snapshot.tick;
-    let args = messages::SnapshotArgs { tick, players, dressed, foes, events, shots, ships: None };
+    let args =
+        messages::SnapshotArgs { tick, players, dressed, foes, events, shots, ..messages::SnapshotArgs::default() };
     finish_snapshot(builder, &args)
 }
 

@@ -2,11 +2,12 @@
 //! the look's ray meets (DFO's `lookOnShip`), else for the water's range; and where each gun's ball, unscattered,
 //! would stop. Free functions over the ships as numbers, so a browser lays the same lay the room fires.
 
-use crate::arms::{SLOOP_ARMS, hull_block, sail_blocks, side_for_bearing};
-use crate::ballistics::{Block, segment_entry};
+use crate::arms::{LARGE_BOAT, SLOOP_ARMS, hull_block, sail_blocks, side_for_bearing};
+use crate::ballistics::{Block, launch_velocity, segment_entry};
+use crate::captain::course::velocity_of;
 use crate::damage::State;
 use crate::fight::{Aim, Fight, Refusal, Vessel, carry_of};
-use crate::gunnery::{Lay, RIPPLE_S, aimed, lay, lay_on};
+use crate::gunnery::{Lay, RIPPLE_S, aimed, lay, lay_on, zone_radius};
 use crate::guns::Shot;
 use crate::shots::{Flag, ShipId, Stop, Target, stop_of};
 
@@ -128,7 +129,56 @@ pub fn ends_of(shooter: &Sighted, lay: &Lay, ships: &[Sighted], waters: &impl Wa
         .collect()
 }
 
+/// What a lay shows before it is fired: the lay, where each gun's ball stops, each gun's unscattered launch (its
+/// mouth, then its velocity), the landing zone's radius at the mean range its balls splash at, and whether any
+/// would strike a ship.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Preview {
+    pub lay: Lay,
+    pub ends: Vec<Option<Stop>>,
+    pub launches: Vec<[f64; 6]>,
+    pub radius: f64,
+    pub on_target: bool,
+}
+
+/// The preview of `shooter`'s look laid with `load` among `ships`, if a side bears.
+#[must_use]
+pub fn preview(
+    shooter: &Sighted,
+    load: Shot,
+    aim: &Aim,
+    ships: &[Sighted],
+    (waters, time): (&impl Waters, f64),
+) -> Option<Preview> {
+    let laid = lay_for(shooter, load, aim, ships)?;
+    let ends = ends_of(shooter, &laid, ships, waters, time);
+    let splashes: Vec<f64> = ends
+        .iter()
+        .flatten()
+        .filter(|stop| stop.water)
+        .map(|stop| {
+            let (east, south) = (stop.point[0] - laid.centre[0], stop.point[1] - laid.centre[1]);
+            (east * east + south * south).sqrt()
+        })
+        .collect();
+    let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
+    let way = velocity_of(&shooter.ship);
+    let launch = launch_velocity(laid.dir, laid.elevation, laid.gun.speed, [way[0], way[1], 0.0]);
+    let launches =
+        laid.mouths.iter().map(|mouth| [mouth[0], mouth[1], mouth[2], launch[0], launch[1], launch[2]]).collect();
+    let radius = zone_radius(&laid.gun, LARGE_BOAT.skill, range);
+    let on_target = ends.iter().flatten().any(|stop| stop.strike.is_some());
+    Some(Preview { lay: laid, ends, launches, radius, on_target })
+}
+
 impl Fight {
+    /// The preview of a player's look as her guns would lay it now (`preview`), the fight's ships as they lie.
+    #[must_use]
+    pub fn preview(&self, shooter: ShipId, aim: &Aim, waters: &impl Waters, time: f64) -> Option<Preview> {
+        let vessel = self.vessel(shooter)?;
+        preview(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted(), (waters, time))
+    }
+
     /// Every ship still in the fight as a lay and a ball see her, by number.
     #[must_use]
     pub fn sighted(&self) -> Vec<Sighted> {
