@@ -140,7 +140,7 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
   of 10 cm cells in the walk's frame (x to her starboard, y to her stern, the origin amidships), each holding the
   height over her waterline of the highest of her hull's and deck's upward faces there, in centimetres. A cell where
   a spar or a gun stands in the room a body takes (from 0.25 m to 1.8 m over the planks), where the floor lies under
-  1.8 m (her hold through her hatch), or that is off her deck holds none. Each cell is then let down to within 8
+  1.7 m (her hold through her hatch, the stair down into it), or that is off her deck holds none. Each cell is then let down to within 8
   cm of every neighbour, nothing raised, so a dip in her planks or a raised part of her deck has a way in and out a
   body walks (a slope under 1.19). The grid is kept round the deck with a cell to spare, each row on a line of the
   manifest. The spot behind her wheel on her quarterdeck, 8.1 m aft of her middle, is her helm's; from it a body

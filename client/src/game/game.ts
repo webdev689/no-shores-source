@@ -98,9 +98,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const roomModule = fetch(`${base}room.wasm`)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
     .then((bytes) => WebAssembly.compile(bytes));
-  // The Sloop's build as the naval rules hold it, for Manage's panel.
-  let sloopBuild: SloopBuild | null = null;
-  void roomModule.then((module) => (sloopBuild = sloopBuildOf(sloopBuildText(module)))).catch(() => undefined);
+  // The Sloop's build as the naval rules hold it, for Manage's panel: read once, the first time it is opened.
+  let [compiled, sloopBuild]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
+  void roomModule.then((module) => (compiled = module)).catch(() => undefined);
+  const builtSloop = () => (compiled ? (sloopBuild ??= sloopBuildOf(sloopBuildText(compiled))) : null);
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
@@ -162,6 +163,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let ready = false;
   let waited = 0;
   let wasDead = false;
+  let wasWalking = false;
   let charting: string | null = null;
   let sinceChart = 0;
   /** Continents that would not open: not tried again this visit. */
@@ -485,6 +487,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'sea' || flow.menu;
     const wind = scene.land?.swell?.bearing ?? 0;
     const shown = here.frame(seconds, clock, viewport, turn, tilt, wind, controls, paused);
+    // Back at the helm, or called to it, the pointer is the player's again.
+    if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
+    wasWalking = here.aboard.walking;
     // What a lookout sees is discovered as the ship sails.
     if (flow.mode === 'sea') discovered.lookout(here.position);
     if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
@@ -522,7 +527,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     hud.marks(shown.marks);
     const onSea = flow.mode === 'sea' && !flow.menu;
     hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, canLeave: here.inRoom } : null);
-    const build = sloopBuild;
+    const build = aboard.managing ? builtSloop() : null;
     const voyage = { heading: here.heading, pace: here.paceStep, note: here.voyageNote };
     hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, sloop.waterline, voyage) : null);
     hud.wheelOffer(onSea && aboard.atWheel);

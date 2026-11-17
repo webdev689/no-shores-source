@@ -28,8 +28,9 @@ pub enum WalkRefused {
     BadControls,
 }
 
-/// A player's body on deck, the number of their last step taken, the steps waiting, and the room's tick they left the
-/// helm at with how many steps have been taken since, which together bound how fast steps are taken.
+/// A player's body on deck, the number of their last step taken, the steps waiting, the room's tick they left the
+/// helm at with how many ticks have been stepped since, which together bound how fast steps are taken, and the way
+/// they last looked.
 #[derive(Clone, Debug)]
 pub struct Aboard {
     pub body: Body,
@@ -37,6 +38,7 @@ pub struct Aboard {
     waiting: VecDeque<(u32, Controls)>,
     since: u64,
     taken: u64,
+    yaw: f64,
 }
 
 impl Aboard {
@@ -44,7 +46,8 @@ impl Aboard {
     #[must_use]
     pub fn left_helm(deck: &Deck, clock: u64) -> Self {
         let [x, y] = deck.helm;
-        Self { body: deck.heights.standing(x, y), acknowledged: 0, waiting: VecDeque::new(), since: clock, taken: 0 }
+        let body = deck.heights.standing(x, y);
+        Self { body, acknowledged: 0, waiting: VecDeque::new(), since: clock, taken: 0, yaw: 0.0 }
     }
 
     /// Keeps a step's controls for the ticks to come, in order. Past `WAITING_LIMIT` waiting, the oldest is let go
@@ -71,24 +74,35 @@ impl Aboard {
     }
 
     /// One room tick, the room's clock now `clock`: the steps due are taken in order, no more than `CATCH_UP`, and no
-    /// more since the helm was left than the ticks since and their slack, so time away is never banked.
+    /// more since the helm was left than the ticks since and their slack. A tick with none to take, further behind the
+    /// clock than the slack, is stood out where the body is, so time away is never banked to catch up on.
     pub fn tick(&mut self, deck: &Deck, clock: u64) {
         let allowed = (clock.saturating_sub(self.since) + SLACK_TICKS).saturating_sub(self.taken);
         let due = self.waiting.len().min(CATCH_UP).min(usize::try_from(allowed).unwrap_or(usize::MAX));
         for _ in 0..due {
             let Some((sequence, controls)) = self.waiting.pop_front() else { break };
             self.body = step_body(&self.body, &controls, &[], &deck.heights, TICK_SECONDS);
-            self.acknowledged = sequence;
+            (self.acknowledged, self.yaw) = (sequence, controls.yaw);
+            self.taken += 1;
+        }
+        if due == 0 && clock.saturating_sub(self.since) > self.taken + SLACK_TICKS {
+            let still = Controls { yaw: self.yaw, ..Controls::default() };
+            self.body = step_body(&self.body, &still, &[], &deck.heights, TICK_SECONDS);
             self.taken += 1;
         }
     }
 
-    /// Whether the body stands at the wheel, near enough the helm's spot to take it.
+    /// Whether the body stands at the wheel, near enough the helm's spot to take it, once the steps waiting are taken:
+    /// where the player's own screen has them when they ask for the helm.
     #[must_use]
     pub fn at_wheel(&self, deck: &Deck) -> bool {
+        let body = self
+            .waiting
+            .iter()
+            .fold(self.body, |body, (_, controls)| step_body(&body, controls, &[], &deck.heights, TICK_SECONDS));
         let [x, y] = deck.helm;
-        let (east, south) = (self.body.x - x, self.body.y - y);
-        self.body.mode == Mode::Ground && (east * east + south * south).sqrt() <= WHEEL_REACH_M
+        let (east, south) = (body.x - x, body.y - y);
+        body.mode == Mode::Ground && (east * east + south * south).sqrt() <= WHEEL_REACH_M
     }
 }
 

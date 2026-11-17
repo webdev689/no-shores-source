@@ -1,5 +1,5 @@
-// What Manage shows of the player's Sloop (The Ship Is Managed and Walked From the Sea's Panel): what the naval rules
-// say she is, her measure, where her voyage stands, and the parts of managing her still to come, marked Later.
+// What Manage shows of the player's Sloop: what the naval rules say she is, her measure, where her voyage stands, and
+// the parts of managing her still to come, marked Later.
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
 export interface SloopBuild {

@@ -1,6 +1,6 @@
-// Stand-in crew on the Sloop's deck until crew management comes (The Ship Is Managed and Walked From the Sea's
-// Panel): a few hands walking between spots on her deck and pausing at each, each leg one the deck leaves clear, all
-// kept away from her wheel. Seeded, so a voyage's hands move the same however it is drawn. In her own frame.
+// Stand-in crew on the Sloop's deck until crew management comes: a few hands walking between spots on her deck and
+// pausing at each, each leg one the deck leaves clear, all kept away from her wheel. Seeded, so a voyage's hands move
+// the same however it is drawn. In her own frame.
 import { type Race } from '../player/dressing.ts';
 import { cellHeight, type Deck, deckCells } from '../ships/deck.ts';
 

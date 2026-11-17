@@ -1,7 +1,7 @@
-// The view brought down aboard the player's Sloop at her true size (The Ship Is Managed and Walked From the Sea's
-// Panel): Manage, a view over her deck where the player stands at her wheel and her stand-in crew go about; and the
-// walk, the player off the helm roaming her deck while her helmsman keeps her course. Each pans down from the sea's
-// view and back up to it. Everything aboard is in her own frame, laid into the world as she lies.
+// The view brought down aboard the player's Sloop at her true size: Manage, a view over her deck where the player
+// stands at her wheel and her stand-in crew go about; and the walk, the player off the helm roaming her deck while her
+// helmsman keeps her course. Each pans down from the sea's view and back up to it. Everything aboard is in her own
+// frame, laid into the world as she lies.
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { type Dress, plainDress } from '../player/dressing.ts';
@@ -11,7 +11,8 @@ import { playerCamera } from '../player/player.ts';
 import type { Walker } from '../player/walker.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import { cellHeight, type Deck, deckToWorld, type Lying, worldToDeck } from '../ships/deck.ts';
-import { type Shot, shotOfOrbit } from './camera.ts';
+import { smooth01 } from '../overworld/overworldCamera.ts';
+import { panShot, type Shot, shotOfOrbit } from './camera.ts';
 import { Crew } from './crew.ts';
 import { type DeckRoom, DeckWalk } from './deckWalk.ts';
 import { IDLE } from './foot.ts';
@@ -28,7 +29,7 @@ const FIGURES_FROM = 0.97;
 /** How near the spot behind her wheel the player stands to take the helm, metres: the sea room's own reach
  *  (crates/room/src/deck.rs `WHEEL_REACH_M`), which judges it. */
 export const WHEEL_REACH_M = 0.8;
-/** How long the room has to say the player is off the helm before the view goes back up, seconds. */
+/** How long the room has to say the player is off the helm before the leave is taken back, seconds. */
 const LEAVING_S = 2;
 /** The walk's lens and how far the third-person camera keeps over her deck, as on foot. */
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
@@ -38,8 +39,6 @@ const LOOP_FPS = 6;
 /** The forge keeps a figure's last card by its number: the helmsman's and the hands' are their own. */
 const HELMSMAN_ID = 950;
 const HAND_IDS = 960;
-
-const eased = (share: number) => share * share * (3 - 2 * share);
 
 /** What the view aboard needs of the game: the movement rules, the player, and the forge's cards. */
 export interface AboardContext {
@@ -89,7 +88,7 @@ export class Aboard {
 
   /** How far down the view has come, eased: 0 the sea's view, 1 aboard. */
   get share(): number {
-    return this.view ? eased(this.view.at) : 0;
+    return this.view ? smooth01(this.view.at) : 0;
   }
 
   /** Whether Manage is open, or coming down. */
@@ -161,8 +160,8 @@ export class Aboard {
   /** One frame aboard, `seconds` on: the crew go about; the view comes down or goes up; on the walk the player steps
    *  by `controls` (by nothing while `paused`), and the room's word on their body and on the helm is taken. */
   step(seconds: number, clock: number, controls: InputFrame, paused: boolean, room: HelmRoom | null): void {
-    this.crew.step(seconds);
     if (!this.view) return;
+    this.crew.step(seconds);
     const down = Math.min(1, Math.max(0, this.view.at + (this.view.going === 'down' ? seconds : -seconds) / PAN_S));
     this.view = { ...this.view, at: down };
     if (this.view.going === 'up' && down <= 0) {
@@ -173,12 +172,23 @@ export class Aboard {
     if (this.view.kind !== 'deck' || !walk || !room) return;
     this.sinceLeft += seconds;
     if (room.onDeck) this.heardOff = true;
-    // The room's word that the player holds the helm again, or that they never left it: the view goes back up.
-    const atHelm = this.heardOff ? !room.onDeck : this.sinceLeft > LEAVING_S;
-    if (atHelm && this.view.going === 'down') this.view = { ...this.view, going: 'up' };
+    if (!this.heardOff) {
+      // No word yet that the player is off the helm: they stand, sending no step. Past LEAVING_S the leave is taken
+      // back, should the room have taken it late, and the view goes back up.
+      if (this.sinceLeft > LEAVING_S && this.view.going === 'down') {
+        room.takeHelm();
+        this.view = { ...this.view, going: 'up' };
+      }
+      return;
+    }
+    // The room's word that the player holds the helm again: the view goes back up.
+    if (!room.onDeck && this.view.going === 'down') this.view = { ...this.view, going: 'up' };
     if (this.view.going === 'up') return;
     walk.correct();
-    this.context.walker.frame(paused ? IDLE : controls, walk.rules(), seconds, clock);
+    const { walker } = this.context;
+    walker.frame(paused ? IDLE : controls, walk.rules(), seconds, clock);
+    // A deck is no saddle: the walk is on foot, as the room steps it.
+    if (walker.player.mounted) walker.player = { ...walker.player, mounted: false };
   }
 
   /** The shot aboard, eased down from the sea's `sea` as she `lying` lies. */
@@ -186,17 +196,7 @@ export class Aboard {
     const view = this.view;
     if (!view) return sea;
     const target = view.kind === 'manage' ? this.manageShot(lying) : this.walkShot(lying);
-    const share = eased(view.at);
-    const mix = (from: number, to: number) => from + (to - from) * share;
-    const turn = Math.atan2(Math.sin(target.yaw - sea.yaw), Math.cos(target.yaw - sea.yaw));
-    return {
-      eye: [mix(sea.eye[0], target.eye[0]), mix(sea.eye[1], target.eye[1]), mix(sea.eye[2], target.eye[2])],
-      yaw: sea.yaw + turn * share,
-      pitch: mix(sea.pitch, target.pitch),
-      fov: FIELD_OF_VIEW,
-      near: share > 0.5 ? target.near : sea.near,
-      far: sea.far,
-    };
+    return panShot(sea, target, smooth01(view.at));
   }
 
   private manageShot(lying: Lying): Shot {
@@ -229,7 +229,7 @@ export class Aboard {
    *  wheel in Manage or walking her deck, her helmsman at the wheel while she sails on under him, and her hands. */
   figures(lying: Lying, eye: readonly [number, number, number], clock: number, underWay: boolean): CardAt[] {
     const view = this.view;
-    if (!view || eased(view.at) < FIGURES_FROM) return [];
+    if (!view || smooth01(view.at) < FIGURES_FROM) return [];
     const { walker, forge } = this.context;
     const [eyeX, eyeY] = worldToDeck(lying, ...eye);
     const shown: CardAt[] = [];

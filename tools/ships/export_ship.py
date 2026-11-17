@@ -395,8 +395,6 @@ def main():
     struck = boxes(bpy.context.evaluated_depsgraph_get(), offset)
     rigged = sails(bpy.context.evaluated_depsgraph_get(), offset)
     header, mesh = mesh_bytes(args.name, moved(faces, offset), size)
-    # Her deck from the mesh as published, so this and tools/ships/deck.py measure the same numbers.
-    walked = deck_of(mesh_triangles(mesh))
     print(json.dumps(armed))
     print(json.dumps(struck))
     print(json.dumps(rigged))
@@ -405,7 +403,8 @@ def main():
         with open(f'{args.name}.mesh', 'wb') as file:
             file.write(mesh)
         return
-    publish(args.name, args.blend, mesh, size, armed, struck, rigged, walked)
+    # Her deck from the mesh as published, so this and tools/ships/deck.py measure the same numbers.
+    publish(args.name, args.blend, mesh, size, armed, struck, rigged, deck_of(mesh_triangles(mesh)))
 
 
 if __name__ == '__main__':

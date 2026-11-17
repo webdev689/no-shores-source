@@ -85,7 +85,9 @@ export class Hud {
   private readonly leave: HTMLButtonElement;
   private readonly wheel: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
-  private panelShown = '';
+  /** The shape Manage's panel was last built to, and the place each of its values is written. */
+  private panelShape = '';
+  private panelValues: HTMLElement[] = [];
   private respawnWanted: () => void = () => undefined;
   private markChosen: (id: string) => void = () => undefined;
   private paceWanted: (direction: number) => void = () => undefined;
@@ -298,26 +300,40 @@ export class Hud {
     this.voyageWanted = toggle;
   }
 
-  /** Manage's panel over her deck: her name, and each part of it, those still to come marked Later; null hides it. */
+  /** Manage's panel over her deck: her name, and each part of it, those still to come marked Later; null hides it.
+   *  It is built again only when its shape changes, its values written in place, so a press on it is never lost. */
   shipPanel(panel: ShipPanel | null): void {
     this.panel.hidden = panel === null;
-    const shown = JSON.stringify(panel);
-    if (!panel || shown === this.panelShown) return;
-    this.panelShown = shown;
-    const parts = panel.parts.map((part) => {
-      const node = make('div', '', 'ship-part');
-      node.append(make('div', part.heading, `ship-part-heading ${ROLES.rule}`));
-      if (part.later) node.append(make('span', 'Later', `ship-later ${ROLES.chip}`));
-      for (const [label, value] of part.rows) {
-        const row = make('div', '', 'ship-row');
-        row.append(make('span', label, 'ship-label'), make('span', value, 'ship-value'));
-        node.append(row);
-      }
-      return node;
-    });
-    const footer = make('div', '', `ship-footer ${ROLES.footer}`);
-    footer.append(hudButton('Back to the sea  B', () => this.manageWanted()));
-    this.panel.replaceChildren(make('div', panel.title, `ship-title ${ROLES.header}`), ...parts, footer);
+    if (!panel) return;
+    const shape = JSON.stringify([
+      panel.title,
+      panel.parts.map((part) => [part.heading, part.later, part.rows.length]),
+    ]);
+    if (shape !== this.panelShape) {
+      this.panelShape = shape;
+      this.panelValues = [];
+      const parts = panel.parts.map((part) => {
+        const node = make('div', '', 'ship-part');
+        node.append(make('div', part.heading, `ship-part-heading ${ROLES.rule}`));
+        if (part.later) node.append(make('span', 'Later', `ship-later ${ROLES.chip}`));
+        for (const [label] of part.rows) {
+          const [row, value] = [make('div', '', 'ship-row'), make('span', '', 'ship-value')];
+          row.append(make('span', label, 'ship-label'), value);
+          this.panelValues.push(value);
+          node.append(row);
+        }
+        return node;
+      });
+      const footer = make('div', '', `ship-footer ${ROLES.footer}`);
+      footer.append(hudButton('Back to the sea  B', () => this.manageWanted()));
+      this.panel.replaceChildren(make('div', panel.title, `ship-title ${ROLES.header}`), ...parts, footer);
+    }
+    panel.parts
+      .flatMap((part) => part.rows)
+      .forEach(([, value], index) => {
+        const shown = this.panelValues[index];
+        if (shown && shown.textContent !== value) shown.textContent = value;
+      });
   }
 
   /** Offers the helm at her wheel, or takes the offer away. */

@@ -23,12 +23,12 @@ const STANDINGS = ['inside', 'warned', 'dead'] as const;
 
 /** One player as a room last stepped them, what their figure showed with it, the number of their last input it took,
  *  their whole fighter in the combat crate's order, and where they stand with its section. In the sea room, a player
- *  off the helm, their fighter only their body on her deck, in her own frame. */
+ *  off the helm, their body on her deck, in her own frame, with no fighter. */
 export interface SeenPlayer extends Look {
   readonly player: number;
   readonly acknowledged: number;
   readonly body: Body;
-  readonly fighter: Float64Array;
+  readonly fighter: Float64Array | null;
   readonly standing: Standing;
 }
 
@@ -224,14 +224,12 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const players = Array.from({ length: snapshot.playersLength() }, (unused, index) => {
       const seen = snapshot.players(index);
       if (!seen) throw new Error(`snapshot player ${index} is missing`);
-      // A walker on a ship's deck crosses as their body alone.
+      // A walker on a ship's deck crosses as their body alone, and has no fighter.
       const numbers = seen.fighterArray();
-      const fighter =
-        numbers?.length === BODY_FLOATS
-          ? Float64Array.from(numbers)
-          : whole(numbers, FIGHTER_FLOATS, `player ${index}'s fighter`);
+      const walker = numbers?.length === BODY_FLOATS;
+      const fighter = walker ? null : whole(numbers, FIGHTER_FLOATS, `player ${index}'s fighter`);
       // A fighter's first numbers are its body: the room sends them once.
-      const body = bodyOf(Array.from(fighter.subarray(0, BODY_FLOATS)));
+      const body = bodyOf(Array.from((fighter ?? Float64Array.from(numbers ?? [])).subarray(0, BODY_FLOATS)));
       const look = { anim: seen.anim() ?? '', frame: seen.frame(), facing: seen.facing() };
       const standing = standingOf(seen.standing(), seen.standingTicks());
       return { player: seen.player(), acknowledged: seen.acknowledged(), body, fighter, standing, ...look };

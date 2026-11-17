@@ -92,7 +92,7 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
     [walker?.player, walker?.acknowledged, walker?.body.x, walker?.body.y, walker?.body.z],
     [3, 41, 0.25, 2.5, 0.8],
   );
-  assert.equal(walker?.fighter.length, 22, 'a walker on deck crosses as their body alone');
+  assert.equal(walker?.fighter, null, 'a walker on deck crosses as their body alone, with no fighter');
   assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.ships] : null, [
     77n,
     [

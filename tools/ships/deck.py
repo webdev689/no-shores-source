@@ -4,7 +4,7 @@ stand a walker on, and the spot behind her wheel where her helm is kept.
     python3 -I tools/ships/deck.py <name>
 
 reads the mesh the manifest names for <name> from R2 and writes her deck into content/ships/ships.json, as
-tools/ships/export_ship.py does when it publishes a ship. The Sailing note says how the grid is laid out and used.
+tools/ships/export_ship.py does when it publishes a ship.
 """
 import json
 import math
@@ -25,7 +25,7 @@ UPWARD = 0.5
 # The grid's cell, metres.
 CELL_M = 0.1
 # A floor lower than this over her waterline is no deck (her bilge seen through an opening).
-LOWEST_DECK_M = 1.8
+LOWEST_DECK_M = 1.7
 # The room a body takes over its feet: a spar or gun in it, from just above the planks to over a head, keeps it off.
 CLEAR_FROM_M = 0.25
 CLEAR_TO_M = 1.8

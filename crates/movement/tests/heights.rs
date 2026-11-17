@@ -66,3 +66,8 @@ fn a_wall_stands_at_its_cells_edge_so_a_passage_one_cell_wide_is_walked() {
         (0..60).fold(passage.standing(0.25, 0.75), |body, _| step_body(&body, &controls, &[], &passage, TICK_SECONDS));
     assert!(walked.x > 1.2, "it walked the passage to its far end: {}", walked.x);
 }
+
+#[test]
+fn a_shape_whose_cells_overflow_the_count_is_none() {
+    assert!(Heights::new(0.0, 0.0, 0.1, usize::MAX, 2, Vec::new()).is_none(), "a count past what a number holds");
+}

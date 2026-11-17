@@ -33,17 +33,22 @@ fn steps_are_taken_in_order_and_walk_her_deck() {
 fn steps_come_no_faster_than_the_clock_and_its_slack_so_time_away_is_never_banked() {
     let deck = test_deck();
     let mut aboard = Aboard::left_helm(&deck, 100);
-    // Two seconds standing at the wheel sending nothing, then a flood of steps.
+    // Two seconds standing at the wheel sending nothing, a tick at a time, then a flood of steps.
+    for clock in 101..=220 {
+        aboard.tick(&deck, clock);
+    }
+    let still = aboard.body;
     for sequence in 1..=29 {
         aboard.walk(sequence, FORWARD).unwrap();
     }
-    aboard.tick(&deck, 220);
-    assert_eq!(aboard.acknowledged, CATCH_UP as u32, "a tick takes a few to catch up, never the flood");
     for clock in 221..=230 {
         aboard.tick(&deck, clock);
     }
+    // Stood out to the slack behind the clock while away, then up to the slack ahead of it: never the whole flood.
     let taken = u64::from(aboard.acknowledged);
-    assert!(taken <= 130 - 100 + SLACK_TICKS + 100, "bounded by the clock since the helm was left");
+    assert!(taken <= 10 + 2 * SLACK_TICKS, "ten ticks on, the ten and their slack either way: {taken}");
+    assert!(taken >= 10, "every tick takes one");
+    assert!(aboard.body.y < still.y, "and the steps walk her deck");
     let mut flooded = Aboard::left_helm(&deck, 100);
     for sequence in 1..=29 {
         flooded.walk(sequence, FORWARD).unwrap();
@@ -81,4 +86,20 @@ fn controls_that_are_not_numbers_or_ask_past_a_whole_pace_are_refused() {
     assert_eq!(aboard.walk(1, Controls { forward: 2.0, ..FORWARD }), Err(WalkRefused::BadControls));
     assert_eq!(aboard.walk(1, Controls { yaw: f64::NAN, ..FORWARD }), Err(WalkRefused::BadControls));
     assert_eq!(aboard.walk(1, Controls { mounted: true, ..FORWARD }), Ok(()), "taken, on foot: a deck is no saddle");
+}
+
+#[test]
+fn the_wheel_is_judged_where_the_steps_waiting_leave_the_body() {
+    let deck = test_deck();
+    let mut aboard = Aboard::left_helm(&deck, 100);
+    let aft = Controls { yaw: std::f64::consts::PI, ..FORWARD };
+    for (sequence, clock) in (1..=30).zip(101..) {
+        aboard.walk(sequence, FORWARD).unwrap();
+        aboard.tick(&deck, clock);
+    }
+    assert!(!aboard.at_wheel(&deck), "a pace forward of her wheel");
+    for sequence in 31..=60 {
+        aboard.walk(sequence, aft).unwrap();
+    }
+    assert!(aboard.at_wheel(&deck), "the steps back to it are waiting, not yet taken");
 }

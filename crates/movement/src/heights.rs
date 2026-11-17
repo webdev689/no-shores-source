@@ -37,7 +37,7 @@ impl Heights {
     ) -> Option<Self> {
         let finite = [west, north, cell].iter().all(|number| number.is_finite())
             && heights.iter().flatten().all(|height| height.is_finite());
-        if !finite || cell <= 0.0 || heights.len() != columns * rows {
+        if !finite || cell <= 0.0 || columns.checked_mul(rows) != Some(heights.len()) {
             return None;
         }
         let highest = heights.iter().flatten().copied().fold(f64::NEG_INFINITY, f64::max);

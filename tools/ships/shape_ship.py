@@ -2,8 +2,7 @@
 
     <python with bpy> tools/ships/shape_ship.py Sloop.blend Shaped.blend --scale <times>
 
-The Sailing note says what each change is. The model keeps a record of each it has had, so a run on one already
-shaped changes nothing.
+The model keeps a record of each change it has had, so a run on one already shaped changes nothing.
 """
 import argparse
 import sys

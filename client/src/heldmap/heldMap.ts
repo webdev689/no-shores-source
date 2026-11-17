@@ -2,6 +2,7 @@
 // zoomed and clicked to choose where to sail; lowered with or without a destination. The forge's art is the owner's
 // own; its rules are DFO's held map's (heldMapLaw.ts).
 import { button, make } from '../editor/dom.ts';
+import { ROLES } from '../plus/kit.ts';
 import type { Gpu } from '../gpu.ts';
 import { forgeName } from '../firstperson/fpFrames.ts';
 import { WORLD_FRAME } from '../overworld/discovery.ts';
@@ -315,6 +316,7 @@ export class HeldMap {
     if (this.card.dataset['words'] !== words) {
       this.card.dataset['words'] = words;
       const sail = button('Set sail  Enter', () => this.setSail());
+      sail.classList.add(ROLES.primary);
       sail.hidden = !choice.course.ok;
       this.card.replaceChildren(make('div', words, 'held-card-words'), sail);
     }
