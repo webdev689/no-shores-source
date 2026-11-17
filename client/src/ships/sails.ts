@@ -1,0 +1,203 @@
+// A ship's sails as DFO set them (its galleonRig.js poses, its Come Sail Away's updateSails and autoTrim), on the
+// corners her own model gives each sail: a canvas of grid points filled from the side the wind blows to, flapping in
+// its eye, a gaff swung to leeward, and furled or set as her sails come down or go up.
+
+type Point = readonly [number, number, number];
+
+/** A sail's corners as her export measured them, in her frame (x to her bow, y to starboard, z up), metres. */
+export type SailCorners =
+  | { readonly kind: 'gaff'; readonly tack: Point; readonly clew: Point; readonly throat: Point; readonly peak: Point }
+  | { readonly kind: 'stay'; readonly tack: Point; readonly clew: Point; readonly head: Point };
+
+/** A canvas's grid: points along its foot, and rows from its foot to its head. */
+export const SAIL_COLUMNS = 8;
+export const SAIL_ROWS = 7;
+/** How far DFO's Large Boat's gaff and staysail belly set full, metres, and a hanging gaff's and staysail's. */
+const GAFF_BELLY_M = 1.1;
+const GAFF_HANGING_M = 0.12;
+const STAY_BELLY_M = 0.55;
+const STAY_HANGING_M = 0.1;
+/** A staysail's grid stops this share of the way to its head, its head row a short cut across it. */
+const STAY_TOP = 0.985;
+/** A sail's wind walks this far a second; a gaff swings 100 degrees a second, 300 when DFO's rule says. */
+const WIND_PER_S = 1;
+const TRIM_DEG_S = 100;
+const TRIM_FAST_DEG_S = 300;
+/** A sail this many degrees off the wind's way luffs: it flaps on a sine of the clock. */
+const LUFF_DEG = 150;
+/** A sail is set or furled over this many seconds. */
+const SET_S = 2;
+
+/** What the sails answer to: the degrees from her bow to where the wind blows (to starboard positive), and whether
+ *  her sails are set. The sea's one steady wind is always enough to fill them. */
+export interface SailWind {
+  readonly offDeg: number;
+  readonly set: boolean;
+}
+
+/** The degrees from a heading to where the wind blows, both radians clockwise from north: to starboard positive. */
+export function windOff(heading: number, bearing: number): number {
+  return wrap(((bearing - heading) * 180) / Math.PI);
+}
+
+const lerp = (from: Point, to: Point, share: number): [number, number, number] => [
+  from[0] + (to[0] - from[0]) * share,
+  from[1] + (to[1] - from[1]) * share,
+  from[2] + (to[2] - from[2]) * share,
+];
+/** An angle in degrees put between -180 and 180. */
+const wrap = (degrees: number): number => degrees - 360 * Math.round(degrees / 360);
+const toward = (from: number, to: number, step: number): number =>
+  Math.abs(to - from) <= step ? to : from + Math.sign(to - from) * step;
+const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
+
+/** A gaff sail's grid in a pose: its sideways belly at full (-1 to port, 1 to starboard), furled to its luff, or flat
+ *  between its corners (null). */
+function gaffPose(sail: Extract<SailCorners, { kind: 'gaff' }>, pose: number | 'stowed' | null): Float32Array {
+  const points = new Float32Array(SAIL_COLUMNS * SAIL_ROWS * 3);
+  for (let row = 0; row < SAIL_ROWS; row++)
+    for (let column = 0; column < SAIL_COLUMNS; column++) {
+      const [along, up] = [column / (SAIL_COLUMNS - 1), row / (SAIL_ROWS - 1)];
+      let point = lerp(lerp(sail.tack, sail.clew, along), lerp(sail.throat, sail.peak, along), up);
+      const arch = Math.sin(Math.PI * along) * Math.sin(Math.PI * (0.1 + 0.85 * up));
+      if (pose === 'stowed') {
+        // Brailed in to the mast, in loose folds.
+        point = lerp(lerp(sail.tack, sail.throat, up), point, 0.07 + 0.05 * Math.sin(along * Math.PI * 3));
+        point[1] += 0.18 * Math.sin(along * 7 + up * 3);
+      } else if (pose !== null) point[1] += pose === 0 ? GAFF_HANGING_M * arch : pose * GAFF_BELLY_M * arch;
+      points.set(point, (row * SAIL_COLUMNS + column) * 3);
+    }
+  return points;
+}
+
+/** A staysail's grid in a pose: its belly at `pose` of full (-1 to port, 1 to starboard), rolled down its stay, or
+ *  flat between its corners (null). */
+function stayPose(sail: Extract<SailCorners, { kind: 'stay' }>, pose: number | 'stowed' | null): Float32Array {
+  const points = new Float32Array(SAIL_COLUMNS * SAIL_ROWS * 3);
+  for (let row = 0; row < SAIL_ROWS; row++)
+    for (let column = 0; column < SAIL_COLUMNS; column++) {
+      const [along, up] = [column / (SAIL_COLUMNS - 1), row / (SAIL_ROWS - 1)];
+      let point = lerp(lerp(sail.tack, sail.clew, along), sail.head, up * STAY_TOP);
+      const arch = Math.sin(Math.PI * along) * (1 - up) * 1.6 * Math.sin(Math.PI * (0.2 + 0.6 * (1 - up)));
+      if (pose === 'stowed') {
+        // DFO numbers its rows from the head down.
+        const fromHead = SAIL_ROWS - 1 - row;
+        const stay = lerp(sail.tack, sail.head, Math.min(1, up * 0.97 + along * 0.03));
+        point = [stay[0] + 0.06 * Math.cos(along * 5), stay[1] + 0.12 * Math.sin(along * 6 + fromHead), stay[2] - 0.12];
+      } else if (pose !== null) point[1] += pose === 0 ? STAY_HANGING_M * arch : pose * STAY_BELLY_M * arch;
+      points.set(point, (row * SAIL_COLUMNS + column) * 3);
+    }
+  return points;
+}
+
+/** Where a sail's wind is drawn toward, `offDeg` from its own forward to the wind (Come Sail Away's sailWind): a gaff
+ *  fullest with the wind square across it, a staysail fullest with the wind astern. */
+export function sailWind(kind: SailCorners['kind'], offDeg: number): number {
+  const off = Math.abs(offDeg);
+  const side = offDeg > 0 ? 1 : -1;
+  if (off === 0) return 0;
+  if (kind === 'gaff') return (side * (off <= 90 ? off : 180 - off)) / 90;
+  return side * (off <= 90 ? 1 - 0.75 * (off / 90) : 0.25 * (1 - (off - 90) / 90));
+}
+
+/** Where a gaff's boom is trimmed, degrees to starboard of her centreline aft (autoTrim): square off before the wind,
+ *  45 with it abeam, home by 150 off it. */
+export function gaffTrim(offDeg: number): number {
+  const off = Math.abs(offDeg);
+  const side = offDeg > 0 ? 1 : -1;
+  if (off === 0) return 0;
+  return side * (off <= 90 ? 90 - 45 * (off / 90) : 45 * (1 - clamp01((off - 90) / 60)));
+}
+
+interface Rigged {
+  readonly corners: SailCorners;
+  /** Its grid flat between its corners, where its picture is laid; furled; and full to port, hanging and full to
+   *  starboard (a staysail's halves between). */
+  readonly flat: Float32Array;
+  readonly stowed: Float32Array;
+  readonly poses: readonly (readonly [number, Float32Array])[];
+  wind: number;
+  trimDeg: number;
+}
+
+/** A ship's sails: stepped by the wind, and their canvas where it stands now. */
+export class SailRig {
+  readonly sails: readonly Rigged[];
+  /** 1 with her sails set, 0 furled, between while they are set or furled. */
+  private setShare = 0;
+
+  constructor(corners: readonly SailCorners[]) {
+    this.sails = corners.map((sail) => {
+      const poseOf = (pose: number | 'stowed' | null) =>
+        sail.kind === 'gaff' ? gaffPose(sail, pose) : stayPose(sail, pose);
+      const winds = sail.kind === 'gaff' ? [-1, 0, 1] : [-1, -0.5, 0, 0.5, 1];
+      const poses = winds.map((wind) => [wind, poseOf(wind)] as const);
+      return { corners: sail, flat: poseOf(null), stowed: poseOf('stowed'), poses, wind: 0, trimDeg: 0 };
+    });
+  }
+
+  /** One step of `seconds` at `time` (seconds, for a luff's flapping). */
+  step(seconds: number, wind: SailWind, time: number): void {
+    this.setShare = toward(this.setShare, wind.set ? 1 : 0, seconds / SET_S);
+    this.sails.forEach((sail, index) => {
+      const gaff = sail.corners.kind === 'gaff';
+      if (gaff) {
+        const target = wind.set ? gaffTrim(wind.offDeg) : 0;
+        const now = sail.trimDeg;
+        // DFO's rule for the faster swing, as its trim compares the boom's angle with its mark.
+        const fast = wind.set && ((now < 0 && now < -target) || (now > 0 && now > -target));
+        sail.trimDeg = toward(now, target, (fast ? TRIM_FAST_DEG_S : TRIM_DEG_S) * seconds);
+      }
+      // The boom swung to starboard turns the sail's forward to port.
+      const off = wrap(wind.offDeg + (gaff ? sail.trimDeg : 0));
+      const pull = sailWind(sail.corners.kind, off);
+      const target =
+        Math.abs(off) > LUFF_DEG ? Math.sin((time + index) * 2) * 0.25 : gaff ? (pull >= 0 ? 1 : -1) : pull;
+      sail.wind = toward(sail.wind, target, WIND_PER_S * seconds);
+    });
+  }
+
+  /** Each sail's canvas now, its grid's points in her frame: set and furled mixed as they are being set, the poses
+   *  mixed by its wind, a gaff swung about its luff. */
+  canvas(): Float32Array[] {
+    return this.sails.map((sail) => {
+      const { poses } = sail;
+      const wind = Math.min(1, Math.max(-1, sail.wind));
+      let upper = 1;
+      while (upper < poses.length - 1 && (poses[upper]?.[0] ?? 1) < wind) upper++;
+      const [low, high] = [poses[upper - 1], poses[upper]];
+      if (!low || !high) throw new Error('a sail has fewer than two poses');
+      const share = (wind - low[0]) / (high[0] - low[0]);
+      const points = new Float32Array(sail.stowed.length);
+      for (let index = 0; index < points.length; index++) {
+        const set = (low[1][index] ?? 0) * (1 - share) + (high[1][index] ?? 0) * share;
+        points[index] = (sail.stowed[index] ?? 0) * (1 - this.setShare) + set * this.setShare;
+      }
+      if (sail.corners.kind === 'gaff' && sail.trimDeg !== 0)
+        swing(points, sail.corners.tack, sail.corners.throat, sail.trimDeg);
+      return points;
+    });
+  }
+}
+
+/** Turns points about the line from `foot` to `head` (her luff), `degrees` taking what lies aft of it to starboard. */
+function swing(points: Float32Array, foot: Point, head: Point, degrees: number): void {
+  const axis = [head[0] - foot[0], head[1] - foot[1], head[2] - foot[2]];
+  const length = Math.hypot(axis[0] ?? 0, axis[1] ?? 0, axis[2] ?? 0);
+  const [axisX, axisY, axisZ] = axis.map((value) => value / length) as [number, number, number];
+  // About an axis pointing up, a positive turn (right-handed) takes aft (-x) to port (-y): starboard is the other way.
+  const turn = (-degrees * Math.PI) / 180;
+  const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
+  for (let point = 0; point < points.length; point += 3) {
+    const [x, y, z] = [
+      (points[point] ?? 0) - foot[0],
+      (points[point + 1] ?? 0) - foot[1],
+      (points[point + 2] ?? 0) - foot[2],
+    ];
+    const dot = axisX * x + axisY * y + axisZ * z;
+    const [crossX, crossY, crossZ] = [axisY * z - axisZ * y, axisZ * x - axisX * z, axisX * y - axisY * x];
+    points[point] = foot[0] + x * cos + crossX * sin + axisX * dot * (1 - cos);
+    points[point + 1] = foot[1] + y * cos + crossY * sin + axisY * dot * (1 - cos);
+    points[point + 2] = foot[2] + z * cos + crossZ * sin + axisZ * dot * (1 - cos);
+  }
+}

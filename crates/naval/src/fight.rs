@@ -11,7 +11,7 @@ use crate::damage::{
     Damage, PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State, WRECKED_OARS,
     Zone, founder, shot_harm,
 };
-use crate::gunnery::{Guns, Lay, RIPPLE_S, aimed, lay, lay_on, volley};
+use crate::gunnery::{Guns, Lay, RIPPLE_S, aimed, lay, lay_on, volley, zone_radius};
 use crate::guns::{Shot, fire_chance, rig_fire, shot_reach};
 use crate::random::Mulberry32;
 use crate::shots::{ShotEvent, Stop, Target, step_balls, stop_of};
@@ -50,6 +50,21 @@ pub struct Aim {
     pub bearing_deg: f64,
     pub range_m: f64,
     pub ray: Option<[[f64; 3]; 2]>,
+}
+
+/// A lay as the player's look shows it: its side, elevation and reach; each gun's unscattered ball as it leaves (its
+/// mouth, then its launch), a ripple after the one before and carried on by her way meanwhile, as `Fight::ends` flies
+/// it, so each arc ends on its own stop; where each stops (none: still aloft); the landing zone's radius at their mean
+/// range on the water; and whether any would strike her.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ShownLay {
+    pub side: Side,
+    pub elevation: f64,
+    pub reach: f64,
+    pub launches: Vec<[f64; 6]>,
+    pub ends: Vec<Option<Stop>>,
+    pub radius: f64,
+    pub on_target: bool,
 }
 
 /// What the player orders for a tick: her helm, the lay she holds, whether she fires it (a release: one tick), her
@@ -174,26 +189,35 @@ impl Fight {
             let heading = (to_player + slant).rem_euclid(TAU);
             let heading = if heading < TAU { heading } else { 0.0 };
             let her_seed = draws.seed();
-            let captain_ship = Ship { heading, ..at };
-            let vessel = |ship: Ship, damage: Damage| Vessel {
-                pose: pose_of(&ship, &SLOOP, waters, time),
-                ship,
-                damage,
-                guns: Guns::new(),
-            };
-            return Ok(Fight {
-                clock: 0.0,
-                draws,
-                player: vessel(ship, Damage::new(&LARGE_BOAT, true)),
-                captain: vessel(captain_ship, Damage::new(&PIRATE_SLOOP, false)),
-                her: Captain::new(PIRATE_SLOOP, her_seed, heading, &SLOOP_ARMS),
-                balls: Vec::new(),
-                struck_at: None,
-                under: sink_depth(&SLOOP_ARMS, her_seed),
-                over: None,
-            });
+            return Ok(Self::met(ship, Ship { heading, ..at }, her_seed, draws, waters, time));
         }
         Err("There is no open water for a captain near the Sloop.".into())
+    }
+
+    /// A fight with a pirate captain already at sea: her Sloop at `captain`, cruising on its heading, her temper and
+    /// every chance of the fight drawn from her `seed`.
+    pub fn meet(ship: Ship, captain: Ship, seed: u32, waters: &impl Waters, time: f64) -> Fight {
+        Self::met(ship, captain, seed, Mulberry32::new(seed), waters, time)
+    }
+
+    fn met(ship: Ship, captain: Ship, her_seed: u32, draws: Mulberry32, waters: &impl Waters, time: f64) -> Fight {
+        let vessel = |ship: Ship, damage: Damage| Vessel {
+            pose: pose_of(&ship, &SLOOP, waters, time),
+            ship,
+            damage,
+            guns: Guns::new(),
+        };
+        Fight {
+            clock: 0.0,
+            draws,
+            player: vessel(ship, Damage::new(&LARGE_BOAT, true)),
+            captain: vessel(captain, Damage::new(&PIRATE_SLOOP, false)),
+            her: Captain::new(PIRATE_SLOOP, her_seed, captain.heading, &SLOOP_ARMS),
+            balls: Vec::new(),
+            struck_at: None,
+            under: sink_depth(&SLOOP_ARMS, her_seed),
+            over: None,
+        }
     }
 
     fn sighting(&self) -> Sighting {
@@ -283,6 +307,39 @@ impl Fight {
                 stop_of(aimed(lay, index, carry, 0.0, PLAYER), at, CAPTAIN, (waters, time + delay, TICK_SECONDS))
             })
             .collect()
+    }
+
+    /// The lay the look `aim` holds as the player sees it, over `waters` at `time`; none where no side bears.
+    #[must_use]
+    pub fn shown_lay(&self, aim: &Aim, waters: &impl Waters, time: f64) -> Option<ShownLay> {
+        let laid = self.laid(aim)?;
+        let ends = self.ends(&laid, waters, time);
+        let splashes: Vec<f64> = ends
+            .iter()
+            .flatten()
+            .filter(|stop| stop.water)
+            .map(|stop| {
+                let (east, south) = (stop.point[0] - laid.centre[0], stop.point[1] - laid.centre[1]);
+                (east * east + south * south).sqrt()
+            })
+            .collect();
+        let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
+        let carry = carry_of(&self.player.ship);
+        let launches = (0..laid.mouths.len())
+            .map(|index| {
+                let ball = aimed(&laid, index, carry, 0.0, PLAYER);
+                [ball.start[0], ball.start[1], ball.start[2], ball.launch[0], ball.launch[1], ball.launch[2]]
+            })
+            .collect();
+        Some(ShownLay {
+            side: laid.side,
+            elevation: laid.elevation,
+            reach: laid.reach,
+            launches,
+            on_target: ends.iter().flatten().any(|stop| stop.strike.is_some()),
+            ends,
+            radius: zone_radius(&laid.gun, LARGE_BOAT.skill, range),
+        })
     }
 
     /// A ball's strike: its harm by zone (grape's men by its flight), rolled; the struck grace for the rest of the

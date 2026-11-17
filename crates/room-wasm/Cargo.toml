@@ -13,6 +13,7 @@ crate-type = ["cdylib", "rlib"]
 combat = { path = "../combat" }
 land = { path = "../land" }
 movement = { path = "../movement" }
+naval = { path = "../naval" }
 protocol = { path = "../protocol" }
 room = { path = "../room" }
 world = { path = "../world" }

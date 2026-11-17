@@ -38,7 +38,7 @@ test('the drawn swell stands where the shared rules put it', async () => {
 });
 
 test('the swell fades from whole to nothing as the sea shallows', () => {
-  const swell = { waves: [], fullDepthM: 15, goneDepthM: 1 };
+  const swell = { waves: [], fullDepthM: 15, goneDepthM: 1, bearing: 0 };
   assert.equal(reach(swell, 0.5), 0);
   assert.equal(reach(swell, 40), 1);
   assert.ok(reach(swell, 5) < reach(swell, 10));

@@ -31,10 +31,11 @@ pub const LAYERS: &[Layer] = &[
             "firstperson",
             "player",
             "heldmap",
+            "ships",
         ],
     },
     Layer { name: "water", may_import: &["rules"] },
-    Layer { name: "ships", may_import: &["rules", "water"] },
+    Layer { name: "ships", may_import: &["rules", "water", "textures"] },
     Layer { name: "forge", may_import: &[] },
     Layer { name: "player", may_import: &["rules", "network", "forge", "editor", "firstperson"] },
     Layer {

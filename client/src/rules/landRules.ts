@@ -51,6 +51,8 @@ export interface Swell {
   readonly waves: readonly SeaWave[];
   readonly fullDepthM: number;
   readonly goneDepthM: number;
+  /** Where it and the steady wind run toward, radians clockwise from north. */
+  readonly bearing: number;
 }
 
 /** What the helm asks for a tick (crates/sailing/src/ship.rs Helm): the rudder from -1 (port) to 1 (starboard), the
@@ -197,7 +199,7 @@ interface ViewHeader {
   readonly rect?: [number, number, number, number];
   readonly ground?: [number, number, number] | null;
   readonly snow_m?: number | null;
-  readonly swell?: { waves: SeaWave[]; full_depth_m: number; gone_depth_m: number };
+  readonly swell?: { waves: SeaWave[]; full_depth_m: number; gone_depth_m: number; bearing: number };
 }
 
 /** The header of an answer and where its floats begin; throws the answer's error. */
@@ -240,6 +242,7 @@ function takeView(exports: LandExports, packed: bigint): LandView {
               waves: header.swell.waves,
               fullDepthM: header.swell.full_depth_m,
               goneDepthM: header.swell.gone_depth_m,
+              bearing: header.swell.bearing,
             },
           }
         : {}),

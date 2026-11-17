@@ -2,8 +2,8 @@
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
   "ships": {
     "sloop": {
-      "mesh": "ships/292d90562ec88cbec3fc289da03cc37866226eef0185d54ae8df9a76c013f11e.mesh",
-      "source": "sources/d6f9093188019beb445d87a51ef5de3fd263f572ff247be95bb95e1c2600271c.blend",
+      "mesh": "ships/fee0ad1cb8071e57f6448b965a7525f167903e309799628e4945b1a5116fe396.mesh",
+      "source": "sources/57d9a43efb62c87f8f243765136a5287c22e121f4ebd0d0f0211be5d4c3059ea.blend",
       "waterline": {
         "level_m": 0.4,
         "length_m": 6.2258,
@@ -135,7 +135,50 @@
             ]
           ]
         ]
-      }
+      },
+      "sails": [
+        {
+          "kind": "stay",
+          "tack": [
+            5.417,
+            -0.0073,
+            1.5514
+          ],
+          "clew": [
+            1.7259,
+            -0.0038,
+            1.7551
+          ],
+          "head": [
+            -0.0495,
+            -0.0003,
+            4.4951
+          ]
+        },
+        {
+          "kind": "gaff",
+          "tack": [
+            -0.0587,
+            -0.0003,
+            1.4091
+          ],
+          "clew": [
+            -2.8586,
+            -0.0003,
+            1.491
+          ],
+          "throat": [
+            -0.0768,
+            -0.0003,
+            3.509
+          ],
+          "peak": [
+            -2.3767,
+            -0.0003,
+            4.3909
+          ]
+        }
+      ]
     }
   }
 }

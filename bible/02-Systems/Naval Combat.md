@@ -24,6 +24,10 @@ code:
   - client/src/editor/aim.ts#lookReach
   - client/src/ships/effects.ts#Effects
   - client/src/ships/markView.ts#MarkView
+  - crates/naval/src/fight.rs#meet
+  - crates/naval/src/wire.rs#view_numbers
+  - crates/room/src/pirates.rs#Pirates
+  - client/src/game/seaCombat.ts#SeaCombat
 ---
 # Naval Combat
 
@@ -102,6 +106,26 @@ ripple after the gun before it and carried on by her way, and runs only to where
 where it strikes her, and a ring of the landing zone's radius where it splashes. The arcs are red, and
 the panel reads "Laying the ... guns: on target.", only when an unscattered ball strikes her.
 
+## At sea
+
+The sea room ([[Server]]) sails pirates among the players' ships on the [[Overworld]]: DFO's director, trimmed to
+pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]).
+
+- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s. While
+  fewer than two pirates sail within 1.9 km of them, a roll brings a ship 0.8 of the time, and she is a pirate 0.3 of
+  that (DFO's open sea: 30 of its factions' 100); no other ship sails yet.
+- **Where.** On the ring 650 to 1000 m round their ship, no nearer than 450 m to any player, where open water lies
+  between, heading across their waters on a slant; she sails on at 2.4 m/s, going about at land, and goes once no
+  player is within 1.9 km. Her seed is her temper: one in four is bold.
+- **The meeting.** A bold pirate within 750 m of a player who is not fighting meets them: she leaves the sea and the
+  fight begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it
+  each tick by the player's orders, on waters made from the coasts (open sea, the swell on it, dry land on them), until
+  she sinks or is gone; its last view is shown once, and the player sails on from where it left them.
+- **In the game** the view pans down over 1.5 s from the raised sea to their Sloop at true scale, and the fight is
+  the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
+  let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
+  Then the view pans back up. Pirates at sea are drawn as the Overworld's ships are, darker.
+
 ## One crate, every machine
 
 The fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders (up to a
@@ -111,7 +135,9 @@ through WebAssembly ([[Agree to the Bit]]).
 
 ## Limits
 
-- One captain, a Pirate Sloop: no other factions or classes, and no ambient traffic.
+- One captain, a Pirate Sloop: no other factions or classes, and at sea pirates alone.
+- At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port), no notoriety and no slowing near
+  enemies; a fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
 - Her canvas is always drawn, so her sails always take balls; it does not come down as her sail share falls.
 - She cruises on her course until she sees the player; DFO's captains wander between waypoints.
 - No boarding, ramming, crew, sounds, flotsam or magazine blast yet: step 3 of the pick.

@@ -72,22 +72,6 @@ export function courseAhead(voyage: Voyage, travelledM: number): Point2[] {
   return voyage.points.filter((unused, index) => (voyage.along[index] ?? 0) > travelledM);
 }
 
-/** Other players' ships' paints, taken in turn by their numbers: none is the player's own blue. */
-const PAINTS: readonly (readonly [number, number, number])[] = [
-  [0.62, 0.16, 0.12],
-  [0.78, 0.6, 0.18],
-  [0.2, 0.46, 0.24],
-  [0.46, 0.24, 0.52],
-  [0.86, 0.86, 0.82],
-  [0.12, 0.12, 0.14],
-];
-
-/** The paint of another player's ship, by their number in the room. */
-export function paintOf(player: number): readonly [number, number, number] {
-  const index = ((Math.trunc(player) % PAINTS.length) + PAINTS.length) % PAINTS.length;
-  return PAINTS[index] ?? [1, 1, 1];
-}
-
 /** Marks laid farthest first, less any nearer than `gapPx` on the picture to a nearer one kept, so marks of one place
  *  (a city and its port) or far behind one another do not pile up; still farthest first. */
 export function declutter<T extends { readonly x: number; readonly y: number }>(

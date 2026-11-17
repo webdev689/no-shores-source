@@ -25,7 +25,7 @@ function meshFile(vertices: number, indices: readonly number[], claimed = vertic
   for (let vertex = 0; vertex < vertices; vertex++) {
     view.setFloat32(start + vertex * VERTEX_BYTES, vertex % 2, true);
     view.setInt8(start + vertex * VERTEX_BYTES + 14, 127);
-    view.setUint8(start + vertex * VERTEX_BYTES + 19, 255);
+    view.setUint8(start + vertex * VERTEX_BYTES + 24, vertex % 5);
   }
   indices.forEach((index, corner) => view.setUint32(start + vertices * VERTEX_BYTES + corner * 4, index, true));
   return bytes;

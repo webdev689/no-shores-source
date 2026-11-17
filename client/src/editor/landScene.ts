@@ -1,8 +1,9 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import { loadShip } from '../ships/shipMesh.ts';
+import { loadShip, shipSails } from '../ships/shipMesh.ts';
 import { MarkView } from '../ships/markView.ts';
+import { SailRig, windOff } from '../ships/sails.ts';
 import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
@@ -105,6 +106,8 @@ const SWIMMER_LOWEST_PITCH = -1.2;
 const STROKE_WORDS = { walk: 'Walking', wade: 'Wading', swim: 'Swimming', dive: 'Diving' } as const;
 /** A wader's stride or a swimmer's stroke, metres: each pushes the water once. */
 const STROKE_M = 0.35;
+/** The most a frame steps the sails, seconds: a stall or a hidden tab does not swing them at once. */
+const MOST_SAIL_STEP_S = 0.1;
 
 /**
  * The 3D view of a landmass: its 1 km land, the exact ground round the camera's target, the water over both, and a
@@ -129,6 +132,9 @@ export class LandScene {
   private lastFrame = performance.now();
   /** The Sloop and her model; and whether she may still sail (the rules have not refused her). */
   private readonly harbour: Harbour<ShipView>;
+  /** Her sails' rig and a captain's, once her model has come; and when they were last stepped. */
+  private rigs: [SailRig, SailRig] | null = null;
+  private sailedAt = 0;
   private mayStillSail = true;
   /** A captain's fight round the Sloop. */
   private readonly naval: Naval;
@@ -138,7 +144,10 @@ export class LandScene {
     this.redraw = redraw;
     this.fail = fail;
     this.water = new WaterView(gpu);
-    this.harbour = new Harbour(() => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh)), fail);
+    this.harbour = new Harbour(
+      () => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'))),
+      fail,
+    );
     this.naval = new Naval(new MarkView(gpu));
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
@@ -276,9 +285,22 @@ export class LandScene {
       },
     });
     terrain.drawInto(pass);
-    if (this.sailing && this.ship)
-      this.ship.drawInto(pass, this.sailing.place(view, shown), { fromEye, eye: camera.eye });
-    this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, this.ship, time);
+    const ship = this.ship;
+    // Her rig and a captain's, once her model has come.
+    if (ship && !this.rigs) this.rigs = [new SailRig(ship.sails), new SailRig(ship.sails)];
+    const sails = this.rigs && {
+      rig: this.rigs[1],
+      bearing: view.swell?.bearing ?? 0,
+      seconds: Math.min(MOST_SAIL_STEP_S, Math.max(0, time - this.sailedAt)),
+    };
+    this.sailedAt = time;
+    if (this.sailing && ship && sails && this.rigs) {
+      const place = this.sailing.place(view, shown);
+      const wind = { offDeg: windOff(place.heading, sails.bearing), set: this.sailing.sailsSet };
+      this.rigs[0].step(sails.seconds, wind, time);
+      ship.drawInto(pass, place, { fromEye, eye: camera.eye }, 0, 1, this.rigs[0]);
+    }
+    this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, time, sails);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [

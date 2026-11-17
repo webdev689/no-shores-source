@@ -1,7 +1,9 @@
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
+import type { SailCorners } from './sails.ts';
 
-/** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8) and colour (4 × unorm8, sRGB). */
-export const VERTEX_BYTES = 20;
+/** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), UV (2 × float32, metres) and part (4 ×
+ *  uint8, the first its place in `SHIP_PARTS`). */
+export const VERTEX_BYTES = 28;
 
 /** Her waterline as the export measured it: its length and beam, and her draught below it, metres. */
 export interface Waterline {
@@ -58,6 +60,13 @@ export function readShipMesh(bytes: ArrayBuffer): ShipMesh {
     indices,
     waterline: { lengthM: waterline.length_m, beamM: waterline.beam_m, draughtM: waterline.draught_m },
   };
+}
+
+/** A published ship's sails' corners, as her export measured them; none for a ship without sails. */
+export function shipSails(name: string): SailCorners[] {
+  // The manifest is the export's own, in the repository: its sails are as `SailCorners` says.
+  const entry = (ships.ships as unknown as Readonly<Record<string, { readonly sails?: readonly SailCorners[] }>>)[name];
+  return [...(entry?.sails ?? [])];
 }
 
 /** A published ship's mesh, fetched from R2 by the key the manifest names. */
