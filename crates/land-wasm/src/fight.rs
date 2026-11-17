@@ -7,12 +7,12 @@ use super::sail::{helm_from, ship_from, ticks_from};
 use land::exact::fingerprint;
 use land::sea::Swell;
 use naval::arms::{LARGE_BOAT, PIRATE_SLOOP, Side};
-use naval::ballistics::{flight, launch_velocity};
+use naval::ballistics::flight;
 use naval::captain::Mode;
 use naval::captain::course::velocity_of;
 use naval::damage::{State, Zone};
-use naval::fight::{Aim, End, Event, Fight, Orders, Refusal, Vessel};
-use naval::gunnery::zone_radius;
+use naval::fight::{Aim, End, Event, Fight, Orders, PLAYER, Refusal, Vessel};
+use naval::gunnery::{aimed, zone_radius};
 use naval::guns::Shot;
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
@@ -129,9 +129,14 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
         .collect();
     let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
     let way = velocity_of(&fight.player.ship);
-    let launch = launch_velocity(laid.dir, laid.elevation, laid.gun.speed, [way[0], way[1], 0.0]);
-    let launches: Vec<[f64; 6]> =
-        laid.mouths.iter().map(|mouth| [mouth[0], mouth[1], mouth[2], launch[0], launch[1], launch[2]]).collect();
+    // Each gun's ball as it leaves, a ripple after the one before and carried on by her way meanwhile, as `ends` flies
+    // it: so each arc ends on its own stop.
+    let launches: Vec<[f64; 6]> = (0..laid.mouths.len())
+        .map(|index| {
+            let ball = aimed(&laid, index, [way[0], way[1], 0.0], 0.0, PLAYER);
+            [ball.start[0], ball.start[1], ball.start[2], ball.launch[0], ball.launch[1], ball.launch[2]]
+        })
+        .collect();
     json!({
         "side": side_name(laid.side),
         "launches": launches,

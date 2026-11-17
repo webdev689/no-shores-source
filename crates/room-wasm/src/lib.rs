@@ -150,8 +150,7 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
             combat::shots::Flight::Stopped { at, .. } => at,
             combat::shots::Flight::Flying(flown) => flown.at,
         };
-        let velocity = [0, 1, 2].map(|axis| (stop[axis] - shot.at[axis]) / movement::TICK_SECONDS);
-        (next, Some(combat::Shot { velocity, ..shot }))
+        (next, Some(combat::shots::line_of(&shot, stop)))
     });
     let mut floats = next.to_floats().to_vec();
     if let Some(shot) = shot {
@@ -215,7 +214,8 @@ pub fn snapshot() -> Vec<u8> {
             let players: Vec<Seen> = room.seen().collect();
             let foes: Vec<FoeSeen> = room.foes_seen().collect();
             let tick = room.clock();
-            let shots: Vec<combat::Shot> = room.shots().iter().chain(room.lines()).copied().collect();
+            let lines = room.take_lines();
+            let shots: Vec<combat::Shot> = room.shots().iter().chain(&lines).copied().collect();
             let snapshot = protocol::Snapshot {
                 tick,
                 players: &players,

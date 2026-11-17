@@ -12,9 +12,10 @@ use crate::tell::aimed;
 use crate::tuning::{
     KITE_COOLDOWN, KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, PATIENCE, RANGED_LEASE, SHOT_GAP, STEP_PACE, SWING_FACE,
 };
+use combat::Ranged;
 use combat::fighter::Action;
 use combat::lock::sees;
-use combat::shots::{DRAW_FULL, FALL, shot_numbers};
+use combat::shots::{DRAW_FULL, toward};
 use combat::sight::{apart, off};
 use core::f64::consts::PI;
 
@@ -32,12 +33,10 @@ pub struct Bow {
     pub from: [f64; 2],
 }
 
-/// The pitch that carries an arrow from its chest to its target's over `distance`, against its fall.
+/// The pitch that carries its shot from its chest to its target's, as a player's quick shot is laid: an arrow high
+/// enough for its fall, a ball straight.
 fn pitch(here: &Here<'_, '_>, sight: &Sight) -> f64 {
-    let speed = here.fighter.arms.ranged.map_or(45.0, |ranged| shot_numbers(ranged).0.max(1.0));
-    let flight = sight.distance / speed;
-    let rise = sight.spot[2] - here.fighter.body.z + 0.5 * FALL * flight * flight;
-    libm::atan2(rise, sight.distance.max(0.1))
+    toward(here.fighter.arms.ranged.unwrap_or(Ranged::Bow), here.feet(), sight.spot).1
 }
 
 /// Holding its aim until it has drawn `drawn` ticks, then pulling the trigger; and, from rest, raising its bow when

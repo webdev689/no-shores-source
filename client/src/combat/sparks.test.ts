@@ -13,6 +13,7 @@ const clash = (kind: number): FightEvent => ({
   striker: STRIKER,
   defender: DEFENDER,
   amount: 0,
+  stroke: 0,
 });
 const where = (id: number) => (id === STRIKER ? ([2, 0, 0] as const) : id === DEFENDER ? ([0, 0, 0] as const) : null);
 

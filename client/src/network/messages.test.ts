@@ -60,10 +60,18 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   );
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   assert.deepEqual(
-    snapshot.events.map((event) => [event.tick, event.kind, event.how, event.striker, event.defender, event.amount]),
+    snapshot.events.map((event) => [
+      event.tick,
+      event.kind,
+      event.how,
+      event.striker,
+      event.defender,
+      event.amount,
+      event.stroke,
+    ]),
     [
-      [1233n, 3, 1, 12, 9, 0],
-      [1234n, 1, 2, 9, 12, 35],
+      [1233n, 3, 1, 12, 9, 0, 0],
+      [1234n, 1, 2, 9, 12, 35, 3],
     ],
   );
   const [arrow] = snapshot.shots;

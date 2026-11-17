@@ -76,8 +76,8 @@ it while it reloads is the blade's.
 
 ### Shooting
 
-The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads. Aiming
-raises one held alone down its side: it slides from its corner, as far as the aim has eased, until its muzzle at rest
+The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not
+while aiming, where each shot takes a fresh pull as the rules ask. Aiming raises one held alone down its side: it slides from its corner, as far as the aim has eased, until its muzzle at rest
 lies at (165, 107) on the design screen, just right of and below the crosshair at its middle. A shot plays its frames
 at its own rate, then the weapon reloads:
 
@@ -101,8 +101,8 @@ changes, so no picture swaps in sight.
 
 Each ranged weapon's muzzle is known on its own picture, at rest and in the frame its shot leaves on, kicked up
 (design pixels): the Pistolet's at (72, 64) and (82, 53), the Thunderlock's at (66, 59) and (77, 42), the crossbow's
-at (109, 93) and (82, 73), and a drawn bow's arrowhead at (107, 150). The first person reports the firing one as drawn,
-where a shot's tracer starts.
+at (109, 93) and (82, 73), and a drawn bow's arrowhead at (107, 150). The first person reports the firing one where the hands
+stand that frame, before they are drawn, so a shot let go then starts its tracer where it will be drawn.
 
 ### Which picture
 

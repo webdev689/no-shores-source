@@ -178,8 +178,7 @@ export class FirstPerson {
   private wanted: Wanted[] = [];
   private shown: ScreenQuad[] = [];
   private aim = 0;
-  /** Where the ranged weapon's muzzle is on the design screen as last drawn, or null with none in hand. */
-  muzzle: readonly [number, number] | null = null;
+  private drawnMuzzle: readonly [number, number] | null = null;
   private readonly kept = new Map<string, { texture: GPUTexture; picture: Picture } | null>();
   private readonly loading = new Set<string>();
 
@@ -410,6 +409,18 @@ export class FirstPerson {
     this.shown = [];
   }
 
+  /** Where the ranged weapon's muzzle is on the design screen as the hands stand this frame, so a shot let go now
+   *  leaves from where it will be drawn (as last drawn while this frame's picture is still composing); null with none
+   *  in hand. */
+  get muzzle(): readonly [number, number] | null {
+    const sighting = this.wanted.find((wanted) => wanted.tip);
+    if (!sighting?.tip) return null;
+    const kept = this.kept.get(sighting.key);
+    if (!kept) return this.drawnMuzzle;
+    const quad = sighting.place(kept.picture);
+    return [quad.x + sighting.tip[0], quad.y + sighting.tip[1]];
+  }
+
   /** Draws the first person over what `colourView` holds, `width` by `height` pixels. Until every picture wanted is
    *  composed, the last whole set stays on the screen. */
   draw(encoder: GPUCommandEncoder, colourView: GPUTextureView, width: number, height: number): void {
@@ -425,7 +436,7 @@ export class FirstPerson {
         if (wanted.tip) muzzle = [quad.x + wanted.tip[0], quad.y + wanted.tip[1]];
       }
     }
-    if (ready) [this.shown, this.muzzle] = [quads, muzzle];
+    if (ready) [this.shown, this.drawnMuzzle] = [quads, muzzle];
     this.view.draw(encoder, colourView, width, height, this.shown);
   }
 }

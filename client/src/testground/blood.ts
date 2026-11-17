@@ -1,6 +1,6 @@
 import { Bleeding, type BodySeen } from '../combat/blood/bleeding.ts';
 import { BloodMarks, GORE_NORMAL, type SurfaceHit, type Surfaces, bloodOn } from '../combat/blood/marks.ts';
-import { type Vector, thrownAway } from '../combat/blood/spray.ts';
+import { type Vector, swingThrow } from '../combat/blood/spray.ts';
 import { BloodView } from '../combat/blood/view.ts';
 import { EVENT } from '../combat/cues.ts';
 import type { Fighting } from '../combat/fighting.ts';
@@ -9,12 +9,12 @@ import type { Gpu } from '../gpu.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
+import { BODY_HEIGHT } from './crosshair.ts';
 
-/** A body's height (combat's tuning); a body bleeds at five eighths of it, its capsule's middle and an eighth more. */
-export const BODY_HEIGHT = 1.8;
 /** The arms code's melee byte for a warhammer (combat's WeaponClass), whose overkill takes DFO's heavy branch. */
 const WARHAMMER = 6;
 
+/** A body bleeds at five eighths of its height, its capsule's middle and an eighth more. */
 export const chestOf = (view: FighterView): Vector => [view.x, view.y, view.z + (BODY_HEIGHT * 5) / 8];
 
 /** The ground at height zero and the course's blocks as boxes from the ground to their tops: the nearest surface a ray
@@ -58,9 +58,9 @@ export function surfacesOf(blocks: readonly Block[]): Surfaces {
 }
 
 /**
- * The Test Ground's blood: each hit in the fight's events marks the struck body's chest, thrown away from its
- * striker; every fighter, foes and players alike, is seen each frame by its health and feet for its trail, its prints
- * and, once dead, its pool. `?blood=off` turns it all off.
+ * The Test Ground's blood: each hit in the fight's events marks the struck body's chest, a player's swing throwing it
+ * the way its blade went; every fighter, foes and players alike, is seen each frame by its health and feet for its
+ * trail, its prints and, once dead, its pool. `?blood=off` turns it all off.
  */
 export class TestgroundBlood {
   private readonly marks: BloodMarks;
@@ -92,9 +92,12 @@ export class TestgroundBlood {
       const defender = fighters.get(event.defender)?.view;
       if (event.kind !== EVENT.hit || !defender) continue;
       const striker = fighters.get(event.striker)?.view;
-      const heavy = striker?.side === 'players' && (striker.arms & 0xff) === WARHAMMER;
-      const thrown: readonly [number, number] = striker
-        ? thrownAway([striker.x, striker.y, striker.z], [defender.x, defender.y, defender.z])
+      const player = striker?.side === 'players';
+      const heavy = player && (striker.arms & 0xff) === WARHAMMER;
+      // Only a player's swing throws its spray, the way its blade went (DFO's swingThrow); a shot's or a foe's lands
+      // where it struck. The way it struck is from the striker to the struck.
+      const thrown: readonly [number, number] = player
+        ? swingThrow(event.stroke, [defender.x - striker.x, defender.y - striker.y])
         : [0, 0];
       this.marks.place(chestOf(defender), { damage: event.amount, healthMax: defender.healthMax, heavy, thrown });
     }

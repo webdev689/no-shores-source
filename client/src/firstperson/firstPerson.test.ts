@@ -70,6 +70,11 @@ test('aiming slides a lone gun from its corner until its muzzle at rest lies jus
   await frame(0.016, { ...pistolet, aim: 0.5 });
   const [halfX = 0] = person.muzzle ?? [];
   assert.ok(Math.abs(halfX - (ownX + 175) / 2) < 1e-9, 'halfway raised, halfway there');
+  // Read between this frame's step and its draw, as a shot let go this frame reads it: where it will be drawn.
+  person.update(0.016, still, { ...pistolet, aim: 1 });
+  assert.deepEqual(person.muzzle, [175, 96]);
+  person.update(0.016, still, { ...pistolet, drawn: false });
+  assert.equal(person.muzzle, null, 'put away, none');
 });
 
 test('a drawn sword rests 60 design pixels below and 40 right of its own place, and strikes from its own; sheathed, nothing shows', async () => {

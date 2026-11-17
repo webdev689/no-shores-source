@@ -97,8 +97,9 @@ lookReach), unless the look is on her: then the guns are laid on the point it me
 Her Sloop is drawn darker from the same model, and the water cuts her footprint as it does the player's. The balls,
 the lay's arcs, and each event's flash and smoke, spray and ripples, splinters, dust, and fire aboard
 are small lit spheres. The panel shows both ships' hull, canvas and men, the guns' reload and load, DFO's messages,
-and "BROADSIDE! Brace (C)." while her guns stand run out. Each arc of the lay runs only to where its ball stops: a
-larger red mark where it strikes her, and a ring of the landing zone's radius where it splashes. The arcs are red, and
+and "BROADSIDE! Brace (C)." while her guns stand run out. Each arc of the lay starts where its ball leaves, a
+ripple after the gun before it and carried on by her way, and runs only to where that ball stops: a larger red mark
+where it strikes her, and a ring of the landing zone's radius where it splashes. The arcs are red, and
 the panel reads "Laying the ... guns: on target.", only when an unscattered ball strikes her.
 
 ## One crate, every machine

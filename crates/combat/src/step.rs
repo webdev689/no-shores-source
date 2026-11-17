@@ -6,11 +6,11 @@ use crate::arms::{swing_ticks, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Side, Swing};
 use crate::shapes::Telegraph;
 use crate::shots::{DRAW_FULL, Shot, aimed_power, loose, shot_numbers, toward};
-use crate::sight::{bearing, off, turned, wrap};
+use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::tuning::{
-    AIM_TURN, ATTACK_PACE, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH, FLINCH_DODGE,
-    GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, PARRY_WINDOW, POISE_REST, PRESS_KEPT, STAMINA,
-    STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH,
+    AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
+    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, PARRY_WINDOW, POISE_REST, PRESS_KEPT,
+    STAMINA, STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH,
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, slide};
@@ -284,13 +284,15 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
         next.aim = aimed_bearing(next, intent);
         return None;
     }
-    // The trigger shoots at once, at the soft lock's target if it holds one; the swing's button swings a ranged
-    // holder's fists.
+    // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
+    // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
+    // swings a ranged holder's fists.
     if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot) {
-        let chest = next.chest();
-        let (bearing, pitch) =
-            around.target_at.map_or((intent.controls.yaw, input.pitch), |target| toward(ranged, chest, target));
-        return Some(shoot(next, loose(0, ranged, chest, bearing, pitch, 1.0)));
+        let (chest, yaw) = (next.chest(), intent.controls.yaw);
+        let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
+        let (heading, pitch) =
+            around.target_at.filter(ahead).map_or((yaw, input.pitch), |target| toward(ranged, chest, target));
+        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, 1.0)));
     }
     swing(next, intent)
 }
@@ -392,10 +394,12 @@ fn wind_up(next: &mut Fighter, telegraph: Telegraph, around: &Surroundings<'_>) 
     None
 }
 
-/// The bearing a weapon aimed points along: at the aim's mark, or along the look without one.
+/// The bearing a weapon aimed points along: at the aim's mark, or along the look without one or with one inside the
+/// fighter's own round across the ground (straight below or above, it has no bearing of its own).
 fn aimed_bearing(next: &Fighter, intent: &Intent) -> f64 {
-    let body = next.body;
-    intent.combat.mark.map_or(intent.controls.yaw, |mark| bearing([body.x, body.y], [mark[0], mark[1]]))
+    let at = [next.body.x, next.body.y];
+    let mark = intent.combat.mark.map(|mark| [mark[0], mark[1]]).filter(|mark| apart(at, *mark) >= BODY_RADIUS);
+    mark.map_or(intent.controls.yaw, |mark| bearing(at, mark))
 }
 
 /// A ranged weapon held up to aim while the aim is held, a bow charging: a pull of the trigger fires the aimed shot
@@ -408,10 +412,9 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
         return None;
     };
     if pulled {
-        let chest = next.chest();
-        let (bearing, pitch) =
-            input.mark.map_or((intent.controls.yaw, input.pitch), |mark| toward(ranged, chest, mark));
-        return Some(shoot(next, loose(0, ranged, chest, bearing, pitch, aimed_power(ranged, elapsed))));
+        let (chest, heading) = (next.chest(), aimed_bearing(next, intent));
+        let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
+        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, aimed_power(ranged, elapsed))));
     }
     next.action = Action::Draw { elapsed: (elapsed + 1).min(DRAW_FULL) };
     None

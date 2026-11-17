@@ -51,8 +51,24 @@ pub fn foes() -> Vec<FoeSeen> {
 }
 
 pub const EVENTS: [Event; 2] = [
-    Event { tick: 1233, kind: EventKind::Parried, how: Some(How::Swing), striker: 12, defender: 9, amount: 0.0 },
-    Event { tick: 1234, kind: EventKind::Hit, how: Some(How::Riposte), striker: 9, defender: 12, amount: 35.0 },
+    Event {
+        tick: 1233,
+        kind: EventKind::Parried,
+        how: Some(How::Swing),
+        striker: 12,
+        defender: 9,
+        amount: 0.0,
+        stroke: None,
+    },
+    Event {
+        tick: 1234,
+        kind: EventKind::Hit,
+        how: Some(How::Riposte),
+        striker: 9,
+        defender: 12,
+        amount: 35.0,
+        stroke: Some(Stroke::Left),
+    },
 ];
 
 fn shots() -> Vec<Shot> {
@@ -111,6 +127,12 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
     let asked = (plain.dress, plain.spawn, plain.intent.combat, plain.respawn);
     assert_eq!(asked, (None, None, CombatInput::default(), false));
+    // An input with no fight's numbers at all asks nothing in the fight, and lays no aim's mark at the world's origin.
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let controls = Some(builder.create_vector(&[0.0; CONTROLS_FLOATS]));
+    let bare = messages::Input::create(&mut builder, &messages::InputArgs { controls, ..Default::default() });
+    builder.finish(bare, None);
+    assert_eq!(read_input(builder.finished_data()).unwrap().intent.combat, CombatInput::default());
 }
 
 #[test]

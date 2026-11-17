@@ -11,6 +11,10 @@ import { type FighterView, fighterView, glanceFrom, glanceView } from '../rules/
 const ARMS_AT = 22 + 1;
 const BLOWS_AT = 22 + 21;
 const ACTION_AT = 22 + 23;
+/** Where it keeps the ticks since a parry window passed unused (0 once a press may open another), and where its arms
+ *  code keeps the ranged weapon's number. */
+const MISSED_PARRY_AT = 22 + 19;
+const RANGED_SHIFT = 8;
 const IDLE = 0;
 const DEAD = 12;
 /** A ranged weapon raised to aim (a bow's draw), as the combat crate numbers the action. */
@@ -90,11 +94,12 @@ class Latch {
 }
 
 /** One input kept until the room takes it: its intent and the fighters it was predicted among, so a replay takes the
- *  same steps the room does. */
+ *  same steps the room does, and the shot its tick let go as last predicted. */
 interface Asked {
   readonly intent: Float64Array;
   readonly view: readonly Glanced[];
   readonly arms: number;
+  fired: Fired | null;
 }
 
 /**
@@ -121,7 +126,8 @@ export class Fighting {
   swingsBegun = 0;
   /** Times the player's fighter lowered an aimed weapon unfired, since the page last asked. */
   drawsDropped = 0;
-  /** The shots the player's fighter let go, as its own ticks predicted them, since the page last asked. */
+  /** The shots the player's fighter let go, as its own ticks predicted them, since the page last asked: each once,
+   *  when first predicted, or when the room's word made an input let go a shot it had not. */
   fired: Fired[] = [];
   arms = 0;
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
@@ -130,6 +136,7 @@ export class Fighting {
   readonly others = new Map<number, SeenPlayer>();
   events: FightEvent[] = [];
   shots: readonly FlyingShot[] = [];
+  private shotsReceived: FlyingShot[] = [];
 
   constructor(rules: CombatRules, link: RoomLink, random: () => number = Math.random) {
     this.rules = rules;
@@ -171,6 +178,15 @@ export class Fighting {
    *  room and its fighter predicted among the fighters the player last saw. Before the room's first word, it stands. */
   steps(movement: MovementRules): MovementRules {
     return { ...movement, step: (body, controls) => this.tick(body, controls) };
+  }
+
+  /** Whether a press of the guard now could open a parry window, as the rules have it: never with a ranged weapon in
+   *  hand, nor hard on the heels of a window left unused. */
+  get parryOpen(): boolean {
+    const fighter = this.fighter;
+    if (!fighter) return false;
+    const ranged = ((fighter[ARMS_AT] ?? 0) >> RANGED_SHIFT) & 0xff;
+    return ranged === 0 && (fighter[MISSED_PARRY_AT] ?? 0) === 0;
   }
 
   /** Where the soft lock's target stands, as last seen; null with no lock. */
@@ -219,13 +235,15 @@ export class Fighting {
     const dress = this.dressToSend();
     const view = this.view;
     const arms = this.arms;
-    const sequence = this.prediction.next({ intent, view, arms });
+    const asked: Asked = { intent, view, arms, fired: null };
+    const sequence = this.prediction.next(asked);
     const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnsQueued.shift() ?? 0 };
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
     const predicted = this.rules.predict(armed(this.fighter, arms), intent, this.player, view);
     this.fighter = predicted.fighter;
+    asked.fired = predicted.fired;
     if (predicted.fired) this.fired.push(predicted.fired);
     if (drawing && this.fighter[ACTION_AT] === IDLE) this.drawsDropped += 1;
     if ((this.fighter[BLOWS_AT] ?? 0) !== before) {
@@ -244,12 +262,14 @@ export class Fighting {
     this.others.clear();
     for (const seen of snapshot.players) {
       if (seen.player === this.player) {
-        this.fighter = this.prediction.corrected(
-          seen.fighter,
-          seen.acknowledged,
-          (fighter, asked) =>
-            this.rules.predict(armed(fighter, asked.arms), asked.intent, this.player, asked.view).fighter,
-        );
+        this.fighter = this.prediction.corrected(seen.fighter, seen.acknowledged, (fighter, asked) => {
+          const replayed = this.rules.predict(armed(fighter, asked.arms), asked.intent, this.player, asked.view);
+          // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
+          // has been drawn already.
+          if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
+          asked.fired = replayed.fired ?? asked.fired;
+          return replayed.fighter;
+        });
         continue;
       }
       this.others.set(seen.player, seen);
@@ -266,12 +286,21 @@ export class Fighting {
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);
     this.view = view;
     this.shots = snapshot.shots;
+    this.shotsReceived.push(...snapshot.shots);
     this.events.push(...snapshot.events);
   }
 
   /** Lets the room's clock run, for a room in the page. */
   pump(seconds: number): void {
     this.link.pump(seconds);
+  }
+
+  /** Every snapshot's shots since the page last asked, each snapshot's handed over once: a ball's line comes in the
+   *  one snapshot after it was fired. */
+  takeShots(): FlyingShot[] {
+    const shots = this.shotsReceived;
+    this.shotsReceived = [];
+    return shots;
   }
 
   /** The events since the page last asked, handed over once. */

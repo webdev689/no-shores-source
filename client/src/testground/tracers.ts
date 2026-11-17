@@ -111,7 +111,6 @@ const faded = (colour: Colour, share: number): Colour => [colour[0], colour[1], 
 export class Tracers {
   private lines: Line[] = [];
   private flights: Flight[] = [];
-  private readonly taken = new Map<string, number>();
 
   /** The player's own shots, each leaving the weapon as drawn at its `muzzle`. */
   fired(shots: readonly Fired[], muzzleOf: (shot: Fired) => Point): void {
@@ -123,13 +122,11 @@ export class Tracers {
     }
   }
 
-  /** Everyone else's balls, each taken once from the snapshot that carried its line. */
+  /** Everyone else's balls, from the shots of snapshots each handed over once (Fighting's takeShots), each line coming
+   *  in the one snapshot after it was fired. */
   seen(shots: readonly FlyingShot[], player: number): void {
     for (const shot of shots) {
       if (shot.owner === player || !BALLS.has(shot.ranged)) continue;
-      const key = `${shot.owner}|${shot.at.join(',')}`;
-      if (this.taken.has(key)) continue;
-      this.taken.set(key, 0);
       this.lines.push({ from: shot.at, to: add(shot.at, shot.velocity, TICK), age: 0 });
     }
   }
@@ -150,10 +147,6 @@ export class Tracers {
       line.age += seconds;
     }
     this.lines = this.lines.filter((line) => line.age < this.arrival(line) + BALL.fade);
-    for (const [key, age] of this.taken) {
-      if (age + seconds > 1) this.taken.delete(key);
-      else this.taken.set(key, age + seconds);
-    }
     for (const flight of this.flights) {
       if (flight.stopped !== null) {
         flight.stopped += seconds;

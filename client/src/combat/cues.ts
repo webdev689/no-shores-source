@@ -66,9 +66,14 @@ export function threatens(view: FighterView, player: number): boolean {
 const PARRY_WINDOW = 12;
 
 /** The parry ring over a foe at a blow the player can parry: the share of its wind-up still to come (1 as it begins,
- *  0 as it lands) and whether a press now would parry it. An iron blow must be dodged, so it shows no ring to time;
- *  a shot is never parried. Null for none. */
-export function parryCue(view: FighterView, player: number): { share: number; now: boolean } | 'iron' | null {
+ *  0 as it lands) and whether a press now would parry it, which it never does while `open` is false (the player's
+ *  guard could open no window). An iron blow must be dodged, so it shows no ring to time; a shot is never parried.
+ *  Null for none. */
+export function parryCue(
+  view: FighterView,
+  player: number,
+  open = true,
+): { share: number; now: boolean } | 'iron' | null {
   const { action } = view;
   if (view.target !== player) return null;
   if (action.kind === 'telegraph' && action.iron) return 'iron';
@@ -79,7 +84,7 @@ export function parryCue(view: FighterView, player: number): { share: number; no
         ? [action.windup - action.elapsed, action.windup]
         : [0, 0];
   if (left <= 0 || lead <= 0) return null;
-  return { share: left / lead, now: left < PARRY_WINDOW };
+  return { share: left / lead, now: open && left < PARRY_WINDOW };
 }
 
 /** Where on the screen's edge an arrow points to a point off the screen, and its angle (0 to the right, a quarter turn

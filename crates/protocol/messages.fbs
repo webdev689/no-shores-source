@@ -71,7 +71,7 @@ table Foe {
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
-// and who was struck, and how much it did.
+// and who was struck, how much it did, and the stroke a swing came by (combat's 1 to 6, 0 for none).
 table Event {
   tick: ulong;
   kind: ubyte;
@@ -79,6 +79,7 @@ table Event {
   striker: uint;
   defender: uint;
   amount: double;
+  stroke: ubyte;
 }
 
 // A shot in flight, or a gun's ball in the tick it was fired: who shot it, what shot it (combat's number), where it is

@@ -27,6 +27,8 @@ export interface HudFrame {
   readonly lost: string | null;
   /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
   readonly crosshair?: { readonly charge: number | null } | null;
+  /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen). */
+  readonly parryOpen?: boolean;
 }
 
 /** Seconds a word floats over where it happened, and how far it rises in that time, in CSS pixels. */
@@ -165,7 +167,7 @@ export class Hud {
   private ringParries(frame: HudFrame): void {
     const shown = new Set<number>();
     for (const { id, view } of frame.foes) {
-      const cue = parryCue(view, frame.player);
+      const cue = parryCue(view, frame.player, frame.parryOpen ?? true);
       const spot = cue && project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
       if (!cue || !spot) continue;
       shown.add(id);

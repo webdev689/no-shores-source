@@ -25,8 +25,11 @@ pub mod wire {
 
 use wire::overlook::wire as messages;
 
-/// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch.
+/// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
+/// aim's mark (x, y, z, none as NaN).
 const COMBAT_NUMBERS: usize = INTENT_FLOATS - CONTROLS_FLOATS;
+/// The fight's numbers of an input that carries none: nothing held, and no mark.
+const NO_FIGHT: [f64; COMBAT_NUMBERS] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f64::NAN, f64::NAN, f64::NAN];
 
 /// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
 /// changed, what their hands hold, the tick their screen showed, a foe asked for, and whether they ask to respawn; or
@@ -38,8 +41,7 @@ pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     if controls.len() != CONTROLS_FLOATS {
         return Err(format!("controls are {CONTROLS_FLOATS} numbers, not {}", controls.len()));
     }
-    let combat: Vec<f64> =
-        input.combat().map(|combat| combat.iter().collect()).unwrap_or_else(|| vec![0.0; COMBAT_NUMBERS]);
+    let combat: Vec<f64> = input.combat().map(|combat| combat.iter().collect()).unwrap_or_else(|| NO_FIGHT.to_vec());
     if combat.len() != COMBAT_NUMBERS {
         return Err(format!("the fight's numbers are {COMBAT_NUMBERS}, not {}", combat.len()));
     }
@@ -210,6 +212,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 striker: event.striker,
                 defender: event.defender,
                 amount: event.amount,
+                stroke: event.stroke.map_or(0, |stroke| stroke as u8),
             };
             messages::Event::create(&mut builder, &args)
         })
