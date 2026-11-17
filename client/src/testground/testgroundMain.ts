@@ -319,7 +319,8 @@ async function start(): Promise<void> {
         ? STILL
         : shooter
           ? {
-              attackHeld: controls.held('guard'),
+              // Aiming, the rules fire only on a fresh pull: a trigger held through a reload fires nothing.
+              attackHeld: !aiming && controls.held('guard'),
               attackPressed: controls.pressed('guard'),
               attackReleased: controls.released('guard'),
               aimHeld: aiming,
@@ -426,7 +427,7 @@ async function start(): Promise<void> {
         ? screenMuzzle(camera, aspect, fpMuzzle)
         : figureMuzzle([body.x, body.y, body.z], Math.atan2(shot.velocity[0], -shot.velocity[1])),
     );
-    tracers.seen(fight.shots, fight.player);
+    tracers.seen(fight.takeShots(), fight.player);
     for (const impact of tracers.update(seconds, COURSE, bodies)) sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     const traced = tracers.mesh(cameraOf(camera).eye, fight.shots, fight.player);
     scene.setMarks(marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, traced));
@@ -459,6 +460,7 @@ async function start(): Promise<void> {
         firstPerson: inFirstPerson,
         pressed: (armed && !shooter && controls.pressed('swing')) || (controls.locked && controls.pressed('dodge')),
         lost: link.lost,
+        parryOpen: fight.parryOpen,
         crosshair:
           aiming || (ranged && inFirstPerson)
             ? {

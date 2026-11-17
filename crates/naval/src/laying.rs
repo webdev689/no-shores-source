@@ -3,8 +3,7 @@
 //! would stop. Free functions over the ships as numbers, so a browser lays the same lay the room fires.
 
 use crate::arms::{LARGE_BOAT, SLOOP_ARMS, hull_block, sail_blocks, side_for_bearing};
-use crate::ballistics::{Block, launch_velocity, segment_entry};
-use crate::captain::course::velocity_of;
+use crate::ballistics::{Block, segment_entry};
 use crate::damage::State;
 use crate::fight::{Aim, Fight, Refusal, Vessel, carry_of};
 use crate::gunnery::{Lay, RIPPLE_S, aimed, lay, lay_on, zone_radius};
@@ -129,8 +128,8 @@ pub fn ends_of(shooter: &Sighted, lay: &Lay, ships: &[Sighted], waters: &impl Wa
         .collect()
 }
 
-/// What a lay shows before it is fired: the lay, where each gun's ball stops, each gun's unscattered launch (its
-/// mouth, then its velocity), the landing zone's radius at the mean range its balls splash at, and whether any
+/// What a lay shows before it is fired: the lay, where each gun's ball stops, each gun's unscattered launch (where
+/// its ball leaves, then its velocity), the landing zone's radius at the mean range its balls splash at, and whether any
 /// would strike a ship.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Preview {
@@ -162,10 +161,15 @@ pub fn preview(
         })
         .collect();
     let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
-    let way = velocity_of(&shooter.ship);
-    let launch = launch_velocity(laid.dir, laid.elevation, laid.gun.speed, [way[0], way[1], 0.0]);
-    let launches =
-        laid.mouths.iter().map(|mouth| [mouth[0], mouth[1], mouth[2], launch[0], launch[1], launch[2]]).collect();
+    // Each gun's ball as it leaves, a ripple after the one before and carried on by her way meanwhile, as `ends_of`
+    // flies it: so each arc ends on its own stop.
+    let carry = carry_of(&shooter.ship);
+    let launches = (0..laid.mouths.len())
+        .map(|index| {
+            let ball = aimed(&laid, index, carry, 0.0, (shooter.id, shooter.flag));
+            [ball.start[0], ball.start[1], ball.start[2], ball.launch[0], ball.launch[1], ball.launch[2]]
+        })
+        .collect();
     let radius = zone_radius(&laid.gun, LARGE_BOAT.skill, range);
     let on_target = ends.iter().flatten().any(|stop| stop.strike.is_some());
     Some(Preview { lay: laid, ends, launches, radius, on_target })

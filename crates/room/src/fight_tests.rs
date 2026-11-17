@@ -51,7 +51,7 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
     }
     let events = room.take_events();
     let hit = events.iter().find(|event| event.kind == EventKind::Hit).expect("the chop lands");
-    assert_eq!((hit.striker, hit.defender, hit.how), (player, foe, Some(How::Swing)));
+    assert_eq!((hit.striker, hit.defender, hit.how, hit.stroke), (player, foe, Some(How::Swing), Some(Stroke::Down)));
     assert!((hit.amount - 14.0 * 1.15).abs() < 1e-9);
     assert!((room.fighter(foe).unwrap().health - (130.0 - 14.0 * 1.15)).abs() < 1e-9);
     assert_eq!(room.fighter(player).unwrap().target, Some(foe), "the lock takes the foe it struck");
@@ -138,6 +138,10 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
             .any(|event| event.kind == EventKind::Hit && event.how == Some(How::Shot) && event.defender == foe)
     );
     assert!(room.shots().is_empty());
+    // Two ticks before the snapshot, as a late timer runs them: the ball's line is kept for it, and sent once.
+    let lines = room.take_lines();
+    assert!(lines.len() == 1 && lines[0].owner == player, "{lines:?}");
+    assert!(room.take_lines().is_empty());
 }
 
 #[test]

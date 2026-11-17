@@ -110,8 +110,8 @@ pub struct Room {
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
     pub(crate) loosed: Vec<FighterId>,
-    /// The balls fired this tick, each as its whole line: from where it left to where it stopped, in one tick of its
-    /// velocity.
+    /// The balls fired since the last snapshot, each as its whole line: from where it left to where it stopped, in one
+    /// tick of its velocity.
     pub(crate) lines: Vec<Shot>,
     /// What the foes share, the routes they walk, and the seed their chances are drawn from.
     pub(crate) board: ::foes::Board,
@@ -246,7 +246,6 @@ impl Room {
     pub fn tick(&mut self) {
         self.clock += 1;
         self.verdicts.clear();
-        self.lines.clear();
         self.ended_telegraphs.clear();
         self.step_players();
         self.spawn_asked();
@@ -400,7 +399,7 @@ impl Room {
                 // A player's ball reaches its mark at once: judged among the foes as the player's screen showed them.
                 if self.players.contains_key(&id) && combat::shots::shot_numbers(shot.ranged).0 <= 0.0 {
                     let stop = self.shoot_seen(&shot, view);
-                    self.lines.push(judging::line_of(&shot, stop));
+                    self.lines.push(combat::shots::line_of(&shot, stop));
                 } else {
                     self.shots.push(shot);
                 }
@@ -500,10 +499,10 @@ impl Room {
         &self.shots
     }
 
-    /// The balls fired in the last tick, each as its whole line, so every screen can draw its tracer.
-    #[must_use]
-    pub fn lines(&self) -> &[Shot] {
-        &self.lines
+    /// The balls fired since this was last asked, each as its whole line, to send to everyone once so every screen
+    /// draws its tracer, however many ticks a snapshot follows.
+    pub fn take_lines(&mut self) -> Vec<Shot> {
+        std::mem::take(&mut self.lines)
     }
 
     /// What happened in the fight since this was last asked, to send to everyone once.

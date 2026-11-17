@@ -182,17 +182,30 @@ export const CEILING_EVERY = 4;
 export const isCeilingNormal = (normal: Vector): boolean => -(unit(normal)?.[2] ?? 0) > CEILING_DOT;
 export const looksUp = (index: number): boolean => index > 0 && (index + 1) % CEILING_EVERY === 0;
 
-/** How far a unit of DaggerBlood's swing push leans a spray, and a side swipe's push: a blow throws its spray away
- *  from its striker by the two together. */
+/** DaggerBlood's push for each of the six strokes (combat's 1 to 6: down, down-left, left, right, down-right, up), the
+ *  middle of each band, in the striker's own frame: x its right, y up, z its forward. An upward cut throws it back. */
+export const SWING_PUSH: Readonly<Record<number, Vector>> = {
+  1: [0, 3, 0],
+  2: [-7.5, -7.5, 0],
+  3: [-7.5, 0, 0],
+  4: [7.5, 0, 0],
+  5: [7.5, -7.5, 0],
+  6: [0, 0, -5],
+};
+/** How far a unit of the push leans a spray, in metres. */
 export const SWING_LEAN = 0.08;
-export const SIDE_SWIPE_PUSH = 7.5;
-export function thrownAway(striker: Vector, defender: Vector): [number, number] {
-  const apartX = defender[0] - striker[0];
-  const apartY = defender[1] - striker[1];
-  const apart = Math.hypot(apartX, apartY);
-  if (!(apart > 1e-6)) return [0, 0];
-  const lean = SIDE_SWIPE_PUSH * SWING_LEAN;
-  return [(apartX / apart) * lean, (apartY / apart) * lean];
+
+/** Where a swing by `stroke` throws its spray across the ground, as DFO's swingThrow: the push's flat part in the
+ *  striker's frame, `forward` the way it struck across the ground. A mark lies on a surface, so the push's up or down
+ *  part is dropped: a straight chop throws nowhere. Nothing for any other blow. */
+export function swingThrow(stroke: number, forward: readonly [number, number]): [number, number] {
+  const push = SWING_PUSH[stroke];
+  const length = Math.hypot(forward[0], forward[1]);
+  if (!push || !(length > 1e-6)) return [0, 0];
+  const [aheadX, aheadY] = [forward[0] / length, forward[1] / length];
+  // The ground's x runs east and its y south: the right of a way is a quarter turn clockwise from it, seen from above.
+  const [rightX, rightY] = [-aheadY, aheadX];
+  return [(rightX * push[0] + aheadX * push[2]) * SWING_LEAN, (rightY * push[0] + aheadY * push[2]) * SWING_LEAN];
 }
 
 /** A mark floats this far off its surface so it never fights it for depth. */

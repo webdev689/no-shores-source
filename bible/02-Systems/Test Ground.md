@@ -77,10 +77,12 @@ room's word for it, so playing alone and online are the same game.
   stopped at 350 m/s, a 6 m streak behind it and the line faint behind that, then fades over 0.3 s; a flash marks the
   muzzle. An arrow or a bolt trails the last 0.3 s of its falling flight. The player's own shots draw at once from the
   weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
-  true flight within 0.15 s; others' from the room's word. Where a shot comes to rest it throws six sparks back the way
-  it came.
-- **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, away from its
-  striker; a wounded body drips a trail, and a dead one lies in a spreading pool. `?blood=off` draws none.
+  true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
+  comes. Others' come from the room's word, each ball's line from the one snapshot that carries it. Where a shot comes
+  to rest it throws six sparks back the way it came.
+- **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
+  throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
+  `?blood=off` draws none.
 - **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
   the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
@@ -92,7 +94,8 @@ room's word for it, so playing alone and online are the same game.
   gold or green when it is good for the player and red when bad; in first person, words about the player under the
   crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over
   a foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold
-  once a press of the guard would parry it ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
+  once a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in
+  hand, or hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
   a red mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
   ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
   with `?room=`, that the link to the room was lost and why.

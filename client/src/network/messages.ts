@@ -69,6 +69,8 @@ export interface FightEvent {
   readonly striker: number;
   readonly defender: number;
   readonly amount: number;
+  /** The stroke a swing came by, the combat crate's 1 to 6; 0 for anything else. */
+  readonly stroke: number;
 }
 
 /** A shot in flight, or a gun's ball in the tick it was fired: its whole line from `at` to `at` plus a tick of its
@@ -213,6 +215,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         striker: event?.striker() ?? 0,
         defender: event?.defender() ?? 0,
         amount: event?.amount() ?? 0,
+        stroke: event?.stroke() ?? 0,
       };
     });
     const shots = Array.from({ length: snapshot.shotsLength() }, (unused, index) => {

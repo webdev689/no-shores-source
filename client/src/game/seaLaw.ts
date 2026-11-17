@@ -25,6 +25,27 @@ export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Poi
   return through;
 }
 
+/** A port's icon stands over its harbour at sea within this of it, metres: twice a landing's reach, so a port is seen
+ *  before the ship can dock there. */
+export const PORT_SEEN_M = 60_000;
+/** Within this of a harbour the ship is offered to dock there; elsewhere off a coast, to go ashore. */
+export const DOCK_REACH_M = 20_000;
+
+/** What a ship is offered off an island: to dock at its port, to go ashore on its coast, or nothing out of reach. */
+export type Landfall = { readonly kind: 'dock'; readonly port: string } | { readonly kind: 'ashore' } | null;
+
+/** The landfall offered a ship that lies off an island's coast (`offCoast`), whose port, if it has one, has its harbour
+ *  at `harbour`. */
+export function landfallOf(
+  ship: Point2,
+  offCoast: boolean,
+  port: { readonly name: string; readonly harbour: Point2 } | null,
+): Landfall {
+  if (!offCoast) return null;
+  const toHarbour = port ? Math.hypot(port.harbour[0] - ship[0], port.harbour[1] - ship[1]) : Infinity;
+  return port && toHarbour <= DOCK_REACH_M ? { kind: 'dock', port: port.name } : { kind: 'ashore' };
+}
+
 /** How near another continent's coast a ship comes before that landmass is opened and drawn in place of the open
  *  one, metres. */
 export const CHART_REACH_M = 60_000;

@@ -7,9 +7,9 @@ use crate::Room;
 use combat::fighter::{Action, Attack, FighterId};
 use combat::judge::{answered, overreached, suffer};
 use combat::shapes::{LATE, Telegraph};
-use combat::shots::{Flight, fly};
+use combat::shots::{Flight, fly, line_of};
 use combat::strike::reaches;
-use combat::{Blow, BlowKind, Fighter, Verdict, judge, ticks};
+use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 
 /// What a client is told of the fight: a blow and what it came to, a stagger, a death, a player standing again, a
 /// foe's feint, a foe arriving.
@@ -48,6 +48,8 @@ pub struct Event {
     pub striker: FighterId,
     pub defender: FighterId,
     pub amount: f64,
+    /// The stroke a swing came by, so a screen throws its blood the way the blade went; none for anything else.
+    pub stroke: Option<Stroke>,
 }
 
 /// What a waiting blow must still ask of its defender when it is judged: a swing whether it reaches them, a
@@ -116,11 +118,26 @@ impl Room {
             Verdict::Dodged { perfect: false } => (EventKind::Dodged, 0.0),
             Verdict::Hit { damage, .. } => (EventKind::Hit, damage),
         };
-        self.tell(kind, Some(how), blow.striker, defender, amount);
+        let stroke = match blow.kind {
+            BlowKind::Swing(stroke) => Some(stroke),
+            _ => None,
+        };
+        let mut tell = |kind, amount| {
+            self.events.push(Event {
+                tick: self.clock,
+                kind,
+                how: Some(how),
+                striker: blow.striker,
+                defender,
+                amount,
+                stroke,
+            });
+        };
+        tell(kind, amount);
         if after.dead() {
-            self.tell(EventKind::Killed, Some(how), blow.striker, defender, 0.0);
+            tell(EventKind::Killed, 0.0);
         } else if matches!(after.action, Action::Staggered { .. }) && !before.staggered() {
-            self.tell(EventKind::Staggered, Some(how), blow.striker, defender, 0.0);
+            tell(EventKind::Staggered, 0.0);
         }
         self.verdicts.push((blow.striker, defender, verdict));
     }
@@ -133,7 +150,7 @@ impl Room {
         defender: FighterId,
         amount: f64,
     ) {
-        self.events.push(Event { tick: self.clock, kind, how, striker, defender, amount });
+        self.events.push(Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None });
     }
 
     /// Judges every waiting blow whose defender's view has reached it, or that has waited as long as a blow may.
@@ -263,13 +280,6 @@ impl Room {
             self.judge_now(blow, how, defender, &then);
         }
     }
-}
-
-/// A ball's whole line as a shot: from where it left to `stop`, in one tick of its velocity.
-#[must_use]
-pub fn line_of(shot: &combat::Shot, stop: [f64; 3]) -> combat::Shot {
-    let velocity = [0, 1, 2].map(|axis| (stop[axis] - shot.at[axis]) / movement::TICK_SECONDS);
-    combat::Shot { velocity, ..*shot }
 }
 
 /// How a blow's kind reads.

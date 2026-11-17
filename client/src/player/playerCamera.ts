@@ -15,7 +15,7 @@ export const CAMERA = { back: 2, up: 0.5, notch: 0.2, nearest: 0.8, farthest: 10
 
 export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back, shown: 0 };
 
-/** Aiming a ranged weapon, as the owner chose it: in third person the camera stands over the right shoulder, this far
+/** Aiming a ranged weapon: in third person the camera stands over the right shoulder, this far
  *  out, back and up from the head (metres), zoomed in this much; in first person the view zooms in this much. It
  *  eases there and back about as fast as the camera eases. */
 export const AIM = { shoulder: 0.55, back: 1.3, up: 0.1, thirdZoom: 1.4, firstZoom: 1.6, ease: 12 } as const;

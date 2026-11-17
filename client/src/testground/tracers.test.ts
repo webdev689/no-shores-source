@@ -59,16 +59,15 @@ test("the player's arrow flies and falls until the ground stops it, its trail ou
   assert.equal(tracers.mesh(eye, [], 1).length, 0);
 });
 
-test("another's ball is taken once from the snapshots that carry it; the player's own is left to their own shots", () => {
+test("another's ball draws its tracer from the snapshot that carried it; the player's own is left to their own shots", () => {
   const tracers = new Tracers();
   const theirs: FlyingShot = { owner: 2, ranged: 4, at: [0, 0, 1.5], velocity: [0, -600, 0], age: 0 };
-  tracers.seen([theirs, { ...theirs, owner: 1 }], 1);
-  tracers.seen([theirs], 1);
-  const once = tracers.mesh(eye, [], 1).length;
-  const fresh = new Tracers();
-  fresh.seen([theirs], 1);
-  assert.equal(once, fresh.mesh(eye, [], 1).length);
-  assert.ok(once > 0);
+  tracers.seen([theirs, { ...theirs, owner: 1 }, { ...theirs, ranged: 1 }], 1);
+  const drawn = tracers.mesh(eye, [], 1).length;
+  const alone = new Tracers();
+  alone.seen([theirs], 1);
+  assert.equal(drawn, alone.mesh(eye, [], 1).length, "only the other player's ball, not the own one nor an arrow");
+  assert.ok(drawn > 0);
 });
 
 test("a figure's muzzle stands ahead of its chest and a little to its right", () => {

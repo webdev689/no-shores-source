@@ -81,6 +81,13 @@ pub fn toward(ranged: Ranged, chest: [f64; 3], target: [f64; 3]) -> (f64, f64) {
     (crate::sight::bearing([chest[0], chest[1]], [target[0], target[1]]), libm::atan2(rise, distance.max(0.1)))
 }
 
+/// A ball's whole line as a shot: from where it left to `stop`, in one tick of its velocity.
+#[must_use]
+pub fn line_of(shot: &Shot, stop: [f64; 3]) -> Shot {
+    let velocity = [0, 1, 2].map(|axis| (stop[axis] - shot.at[axis]) / TICK_SECONDS);
+    Shot { velocity, ..*shot }
+}
+
 /// What a tick of flight came to: the shot flown on, or where it stopped and the body it struck, if any.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Flight {

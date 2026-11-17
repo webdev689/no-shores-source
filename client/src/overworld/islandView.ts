@@ -64,16 +64,24 @@ export function gridCentre(grid: HeightGrid): Point2 | null {
 
 /** How far a point is from an outline's nearest edge, metres. */
 export function coastDistance(point: Point2, ring: readonly Point2[]): number {
-  let nearest = Number.POSITIVE_INFINITY;
+  const [x, y] = coastPoint(point, ring);
+  return Math.hypot(x - point[0], y - point[1]);
+}
+
+/** The point of a ring's coast nearest a point. */
+export function coastPoint(point: Point2, ring: readonly Point2[]): Point2 {
+  let nearest: { distance: number; at: Point2 } = { distance: Number.POSITIVE_INFINITY, at: point };
   ring.forEach(([fromX, fromY], index) => {
     const [toX, toY] = ring[(index + 1) % ring.length];
     const [edgeX, edgeY] = [toX - fromX, toY - fromY];
     const lengthSquared = edgeX * edgeX + edgeY * edgeY;
     const share = lengthSquared > 0 ? ((point[0] - fromX) * edgeX + (point[1] - fromY) * edgeY) / lengthSquared : 0;
     const clamped = Math.max(0, Math.min(1, share));
-    nearest = Math.min(nearest, Math.hypot(fromX + edgeX * clamped - point[0], fromY + edgeY * clamped - point[1]));
+    const onEdge: Point2 = [fromX + edgeX * clamped, fromY + edgeY * clamped];
+    const distance = Math.hypot(onEdge[0] - point[0], onEdge[1] - point[1]);
+    if (distance < nearest.distance) nearest = { distance, at: onEdge };
   });
-  return nearest;
+  return nearest.at;
 }
 
 /** The island whose coast is nearest the ship, and how far it is; null when none is within the view's reach. */

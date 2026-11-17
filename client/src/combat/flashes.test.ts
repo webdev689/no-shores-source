@@ -11,6 +11,7 @@ const blow = (kind: number, defender: number, amount: number): FightEvent => ({
   defender,
   how: 1,
   amount,
+  stroke: 0,
 });
 
 test('a fighter harmed by a blow flashes at once and fades out over a tenth of a second', () => {

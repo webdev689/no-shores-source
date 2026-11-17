@@ -10,6 +10,8 @@ import {
   ladderRate,
   sprayCount,
   sprayPattern,
+  SWING_LEAN,
+  swingThrow,
 } from './spray.ts';
 
 const FLOOR = [0, 0, 1] as const;
@@ -81,4 +83,18 @@ test("a spray's first drop is the body's own spot, and the rest fall inside its 
   const pattern = sprayPattern(12, 1, null, held);
   assert.deepEqual(pattern[0], { offsetX: 0, offsetY: 0, scale: 1 });
   for (const drop of pattern.slice(1)) assert.ok(Math.hypot(drop.offsetX, drop.offsetY) <= 1.35 + 1e-9);
+});
+
+test("a swing throws its spray the way its blade went, in the striker's frame, as DFO's swingThrow", () => {
+  const north: [number, number] = [0, -1];
+  const near = (thrown: readonly [number, number], expected: readonly [number, number]) =>
+    assert.ok(Math.hypot(thrown[0] - expected[0], thrown[1] - expected[1]) < 1e-9, `${thrown} against ${expected}`);
+  near(swingThrow(3, north), [-7.5 * SWING_LEAN, 0]);
+  near(swingThrow(4, north), [7.5 * SWING_LEAN, 0]);
+  near(swingThrow(1, north), [0, 0]);
+  near(swingThrow(6, north), [0, 5 * SWING_LEAN]);
+  // Struck facing east, a cut to the right throws it south; any length of the way throws as far.
+  near(swingThrow(5, [3, 0]), [0, 7.5 * SWING_LEAN]);
+  near(swingThrow(0, north), [0, 0]);
+  near(swingThrow(3, [0, 0]), [0, 0]);
 });

@@ -25,11 +25,15 @@ numbers, orderings and colours unchanged ([[Struck Figures Flash, and DFO's Bloo
 - **A blow's spray.** Each hit is measured by its damage over the struck body's whole health, on DFO's rate ladder: up
   to 25 percent is 30, up to 50 is 50, up to 100 is 70, past that 150, and from 175 percent, an overkill, 200. About
   an eighth of the rate reaches a surface, at most 24 drops, thrown from the body's chest (five eighths of its 1.8 m)
-  in one to three lobes away from its striker, the reach and the marks' size growing with the rate. Drop zero is the
+  in one to three lobes, the reach and the marks' size growing with the rate. Drop zero is the
   pool under the body. Each drop finds its own surface: a block's side between it and the body, else the ground or a
   block's top below it within 3 m, or, one drop in four, a ceiling above it within 4 m; one that finds none leaves
   nothing. The pool is laid at once; every other drop flies to its mark on an arc solved to end there and is drawn in
   flight. A drop that came down at a slant streaks along its travel; one on a wall runs down it.
+- **The throw.** A player's swing leans every drop but the pool the way its blade went, as DFO's swing throw has it:
+  DaggerBlood's push for the stroke, taken in the striker's frame along the way it struck, 0.08 m a unit. A cut to the
+  left or the right, level or downward, throws it 0.6 m that way, an upward cut 0.4 m back at the striker, and a
+  straight chop nowhere, its push being all upward. A shot's blood and a foe's are thrown nowhere.
 - **An overkill.** At 175 percent a second, wider spray goes down first, 350's worth, or 450's when a player's
   warhammer struck. A player's warhammer overkill also throws the body apart: ten chunks fly up and out at three times
   gravity, and each sprays where it lands.

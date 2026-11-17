@@ -45,7 +45,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   with each prediction to the bit.
 - On `main` and deployed: other players shown in their own dress, with their weapon drawn, swings, casts, panel moves
   and horse, checked live with two browsers on the deployed rooms.
-- The world after Destiny 1, on its pull request from branch `ccr-66ead32a-8056kw`
+- The world after Destiny 1, on `main` and published to GitHub Pages with the owner's yes
   ([[Every Island Is Seen Whole and Reached by Nodes]], [[The World as Claude Shapes It]]): a port city on each of
   the nine continents, planned by the `city` crate on World 2.0's stages from Daggerfall's RMB blocks, each with its
   motif's landmark and a social space the size of the Tower ([[Cities]]); nodes walked one section at a time, with
@@ -53,7 +53,20 @@ Where the work stands now, for the next session. Each session rewrites this note
   the Overworld's sea and an island's side seen from above ([[Overworld]]); DFO's procedural textures, forged models
   and nature; and the [[Game]] page that plays it from arriving in Overlook to landing at another node. Its AAA pass
   is on the same pull request: the sun's shadows round the eye, the Tower's courtyard on every plaza, landmarks
-  dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found.
+  dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found. Then the
+  shadows across the view ([[Game]]): a far map 2.4 km across where the city's solids and its buildings' masses or
+  hulls cast, so the city below the plaza is shadowed; and the figures cast, each card turned to the sun, and are lit
+  through both maps. The game keeps at most one frame waiting on the GPU, so a slow machine gets fewer frames rather
+  than a stalled browser, and the far map casts masses, not models (302k shadow triangles a frame from the plaza,
+  against 448k for the view; tested offline). The owner has tested it and builds on it.
+- The sea navigated from the helm, on its pull request from this branch (#49), as the owner decided it
+  ([[The Sea Is Navigated From the Helm With the Held Map]]): no nodes marked at sea, a port's icon within 60 km;
+  off a coast the offer to dock (within 20 km of the harbour) or go ashore, either flying into the side's overview;
+  the navigation panel (Map, Stop and Resume voyage, the pace dial), a stopped voyage resumable from anywhere; and the
+  [[Held Map]], DFO's ported ([[Pick - Held Map]]): the view down to the helm in first person, the owner's
+  parchment raised in the gauntlets worn, the discovered world inked on it by the GPU, a click setting the
+  destination. Discovery is kept in the browser. Tested offline in headless Chromium end to end: the map raised, a
+  point of the sea chosen, Set sail, the ship under way.
 - On `main`: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
 - On `main` and deployed: the fight
@@ -75,17 +88,19 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- Pull request #48, to review and merge. Its intent carries the aim, so the page and the rooms deploy together, with
-  the owner's yes. Foe archers' aimed arrows now strike 27, not 18: the owner may want them tuned. Walking or sprinting
-  that does not happen on demand was not reproduced playing alone; when it happens is the owner's to say.
-
-- The world's pull request, to review and merge; deploying its rooms needs the bake's node files and the owner's yes.
-  The deployed rooms keep the speed hack and the two socket faults until that deploy.
+- Pull request #48, to review and merge. Its intent carries the aim and its events the stroke, so the page and the
+  rooms deploy together, with the owner's yes. Foe archers' aimed arrows now strike 27, not 18: the owner may want
+  them tuned. Walking or sprinting that does not happen on demand was not reproduced playing alone; when it happens is
+  the owner's to say.
+- The sea's navigation and the held map (#49), to test and say yes to merging and publishing.
+- Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
+  the Cloudflare token. The deployed rooms keep the speed hack and the two socket faults until that deploy.
+- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys and the R2
+  token are on the unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot
+  reach the forge's renders. A personal `overlook-source` environment allows only the renders' R2 host.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- Named approval for the kit's Context7 key check to pass when the key is the network proxy's placeholder, not a key
-  on disk (task-observer observation 4). Until then check-tools fails that line in every cloud session.
 
 ## Next
 
@@ -100,8 +115,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   is the owner's to decide.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
-- The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them;
-  flats (people, lamps) and lit windows in the cities; shadows for the figures, which are cards, and from the masses
-  past 700 m; the World Editor's 3D view without the woods and shadows the game draws.
+- The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them
+  (no node comes within 2 km of a city's wall yet); the World Editor's 3D view without the city, woods and shadows
+  the game draws (its worker opens a landmass without the RMB index, and its city would be built again after every
+  stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
+  but keeps no places for them, their archives are not paintable, and lit windows want a night.
+- Browser QA of the game: headless WebGPU loses its device when it presents to a canvas, so a driver hands the game an
+  offscreen texture, paces its frames by the GPU and reads the picture back; the forge's renders allow CORS only from
+  `http://localhost:5173`. The driver is not kept in the repo yet (task-observer observation 1).
+- The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
+  map, the charted sea's wash laid while the map is up.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.
