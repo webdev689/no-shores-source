@@ -1,6 +1,6 @@
-// The held map's rules, as DFO's held map had them (src/ui/heldMap.js, src/ui/ink/inkMap.js): the painting fitted to
-// the screen by its parchment, raised and lowered, and the view of the world on the parchment panned, zoomed and
-// picked. Nothing here draws; the held map's view does.
+// The held map's rules, as DFO's held map had them: the painting fitted to the screen by its parchment, raised and
+// lowered, and the view of the world on the parchment panned, zoomed and picked. Nothing here draws; the held map's
+// view does.
 
 /** The forge's held-map painting, pixels: the sheet and each frame of the hands, drawn six times over, are this size. */
 export const SPRITE = { width: 1648, height: 1086 } as const;

@@ -1,43 +1,14 @@
 // The held map drawn over the finished picture: the forge's parchment, the world inked on it under the player's fog of
 // war, then the gauntlets holding it. The ink is worked out a pixel at a time from the coast field, so its coasts are
 // sharp at any zoom.
+import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../firstperson/fpMotion.ts';
+import { FirstPersonView } from '../firstperson/firstPersonView.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { CoastField } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
 
 /** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
 export const ROUTE_POINTS = 128;
-
-const PICTURE_SHADER = /* wgsl */ `
-struct Quad {
-  // The quad on the screen in clip space: its left, top, right and foot.
-  corners: vec4f,
-  // The part of the picture drawn: its left and right as shares of its width, and how far the quad runs down it, as a
-  // share of its height: past 1 its last row is carried down to the quad's foot.
-  part: vec4f,
-};
-@group(0) @binding(0) var<uniform> quad: Quad;
-@group(0) @binding(1) var picture: texture_2d<f32>;
-
-struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
-
-@vertex fn picture_vertex(@builtin(vertex_index) index: u32) -> Out {
-  let corners = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
-  let corner = corners[index];
-  var out: Out;
-  out.position = vec4f(mix(quad.corners.xy, quad.corners.zw, corner), 0.0, 1.0);
-  out.corner = corner;
-  return out;
-}
-
-@fragment fn picture_fragment(in: Out) -> @location(0) vec4f {
-  let size = vec2f(textureDimensions(picture));
-  let at = vec2f(mix(quad.part.x, quad.part.y, in.corner.x), min(in.corner.y * quad.part.z, 1.0));
-  let texel = textureLoad(picture, vec2i(min(at * size, size - 1.0)), 0);
-  if (texel.a < 0.5) { discard; }
-  return vec4f(texel.rgb, 1.0);
-}
-`;
 
 const INK_SHADER = /* wgsl */ `
 struct Ink {
@@ -152,22 +123,22 @@ export interface HeldMapFrame {
   readonly route: Float32Array;
 }
 
-const QUAD_BYTES = 32;
 const INK_BYTES = 80;
 
 export class HeldMapView {
   private readonly gpu: Gpu;
-  private readonly picture: GPURenderPipeline;
+  /** The parchment and the hands, each drawn as the first person's pictures are, one drawer each so their quads'
+   *  terms never share a slot within a frame. */
+  private readonly sheetDrawer: FirstPersonView;
+  private readonly handsDrawer: FirstPersonView;
   private readonly inking: GPURenderPipeline;
-  private readonly sheetQuad: GPUBuffer;
-  private readonly handsQuad: GPUBuffer;
   private readonly inkUniforms: GPUBuffer;
   private readonly routeBuffer: GPUBuffer;
   private readonly charted: GPUTexture;
   private readonly chartedBytes: Uint8Array;
   private readonly inkGroup: GPUBindGroup;
   private readonly field: CoastField;
-  private pictures: { sheet: GPUBindGroup; hands: GPUBindGroup; frames: number; textures: GPUTexture[] } | null = null;
+  private pictures: { sheet: GPUTexture; hands: GPUTexture; frames: number } | null = null;
 
   constructor(gpu: Gpu, field: CoastField) {
     this.gpu = gpu;
@@ -177,12 +148,8 @@ export class HeldMapView {
       color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
       alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' },
     };
-    const pictureModule = device.createShaderModule({ code: PICTURE_SHADER });
-    this.picture = device.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module: pictureModule, entryPoint: 'picture_vertex' },
-      fragment: { module: pictureModule, entryPoint: 'picture_fragment', targets: [{ format: gpu.format }] },
-    });
+    this.sheetDrawer = new FirstPersonView(gpu);
+    this.handsDrawer = new FirstPersonView(gpu);
     const inkModule = device.createShaderModule({ code: INK_SHADER });
     const inkLayout = device.createBindGroupLayout({
       entries: [
@@ -201,8 +168,6 @@ export class HeldMapView {
     });
     const uniform = (bytes: number) =>
       device.createBuffer({ size: bytes, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
-    this.sheetQuad = uniform(QUAD_BYTES);
-    this.handsQuad = uniform(QUAD_BYTES);
     this.inkUniforms = uniform(INK_BYTES);
     this.routeBuffer = device.createBuffer({
       size: ROUTE_POINTS * 16,
@@ -240,34 +205,18 @@ export class HeldMapView {
     hands: { readonly width: number; readonly height: number; readonly data: Uint8ClampedArray | Uint8Array },
     frames: number,
   ): void {
-    for (const texture of this.pictures?.textures ?? []) texture.destroy();
-    const { device } = this.gpu;
-    const upload = (picture: typeof sheet) => {
-      const texture = device.createTexture({
-        size: [picture.width, picture.height],
-        format: 'rgba8unorm',
-        usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
-      });
-      device.queue.writeTexture({ texture }, picture.data, { bytesPerRow: picture.width * 4 }, [
-        picture.width,
-        picture.height,
-      ]);
-      return texture;
-    };
-    const textures = [upload(sheet), upload(hands)];
-    const group = (buffer: GPUBuffer, texture: GPUTexture | undefined) =>
-      device.createBindGroup({
-        layout: this.picture.getBindGroupLayout(0),
-        entries: [
-          { binding: 0, resource: { buffer } },
-          { binding: 1, resource: (texture as GPUTexture).createView() },
-        ],
-      });
+    if (this.pictures) {
+      this.sheetDrawer.forget(this.pictures.sheet);
+      this.handsDrawer.forget(this.pictures.hands);
+      this.pictures.sheet.destroy();
+      this.pictures.hands.destroy();
+    }
+    const bytes = (picture: typeof sheet) =>
+      new Uint8Array(picture.data.buffer, picture.data.byteOffset, picture.data.byteLength);
     this.pictures = {
-      sheet: group(this.sheetQuad, textures[0]),
-      hands: group(this.handsQuad, textures[1]),
+      sheet: this.sheetDrawer.texture(bytes(sheet), sheet.width, sheet.height),
+      hands: this.handsDrawer.texture(bytes(hands), hands.width, hands.height),
       frames,
-      textures,
     };
   }
 
@@ -292,28 +241,20 @@ export class HeldMapView {
     if (!pictures) return;
     const { device } = this.gpu;
     const { screen, sprite, ink, view } = frame;
-    const clip = (x: number, y: number) => [(x / screen.width) * 2 - 1, 1 - (y / screen.height) * 2] as const;
-    const corners = (top: number, foot: number) => [...clip(sprite.x, top), ...clip(sprite.x + sprite.width, foot)];
-    device.queue.writeBuffer(
-      this.sheetQuad,
-      0,
-      new Float32Array([...corners(sprite.y, sprite.y + sprite.height), 0, 1, 1, 0]),
-    );
-    // The hands' cuffs are carried down to the screen's foot when the painting stops short of it.
+    // The painting on the first person's design screen; the hands' cuffs carried down to the screen's foot when the
+    // painting stops short of it.
+    const [toDesignX, toDesignY] = [DESIGN_WIDTH / screen.width, DESIGN_HEIGHT / screen.height];
     const foot = Math.max(sprite.y + sprite.height, screen.height);
-    const frameShare = 1 / pictures.frames;
+    const placed = { x: sprite.x * toDesignX, y: sprite.y * toDesignY, width: sprite.width * toDesignX, flip: false };
     const handsFrame = Math.min(pictures.frames - 1, Math.max(0, frame.handsFrame));
-    device.queue.writeBuffer(
-      this.handsQuad,
-      0,
-      new Float32Array([
-        ...corners(sprite.y, foot),
-        handsFrame * frameShare,
-        (handsFrame + 1) * frameShare,
-        (foot - sprite.y) / sprite.height,
-        0,
-      ]),
-    );
+    const sheetQuad = { ...placed, texture: pictures.sheet, height: sprite.height * toDesignY };
+    const handsQuad = {
+      ...placed,
+      texture: pictures.hands,
+      height: (foot - sprite.y) * toDesignY,
+      part: [handsFrame / pictures.frames, (handsFrame + 1) / pictures.frames] as const,
+      reach: (foot - sprite.y) / sprite.height,
+    };
     const points = Math.min(ROUTE_POINTS, frame.route.length / 4);
     if (points) device.queue.writeBuffer(this.routeBuffer, 0, frame.route, 0, points * 4);
     const uniforms = new ArrayBuffer(INK_BYTES);
@@ -325,18 +266,14 @@ export class HeldMapView {
     ]);
     new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, 0, 0, 0]);
     device.queue.writeBuffer(this.inkUniforms, 0, uniforms);
+    this.sheetDrawer.draw(encoder, target, screen.width, screen.height, [sheetQuad]);
     const pass = encoder.beginRenderPass({
       colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }],
     });
-    pass.setPipeline(this.picture);
-    pass.setBindGroup(0, pictures.sheet);
-    pass.draw(6);
     pass.setPipeline(this.inking);
     pass.setBindGroup(0, this.inkGroup);
     pass.draw(6);
-    pass.setPipeline(this.picture);
-    pass.setBindGroup(0, pictures.hands);
-    pass.draw(6);
     pass.end();
+    this.handsDrawer.draw(encoder, target, screen.width, screen.height, [handsQuad]);
   }
 }

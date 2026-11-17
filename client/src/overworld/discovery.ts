@@ -66,12 +66,14 @@ export function sightIslands(
 
 /** A discovery as text to keep: the charted cells eight to a byte in base 64, and the ids discovered. */
 export function discoveryText(discovery: Discovery): string {
-  const bits = new Uint8Array(Math.ceil(discovery.charted.length / 8));
-  discovery.charted.forEach((charted, index) => {
-    if (charted) bits[index >> 3] = (bits[index >> 3] ?? 0) | (1 << (index & 7));
-  });
+  const { charted } = discovery;
+  const bits = new Uint8Array(Math.ceil(charted.length / 8));
+  for (let index = 0; index < charted.length; index++)
+    if (charted[index]) bits[index >> 3] = (bits[index >> 3] ?? 0) | (1 << (index & 7));
+  // A few thousand bytes a call, not one: the chart is some 80,000.
   let binary = '';
-  for (const byte of bits) binary += String.fromCharCode(byte);
+  for (let start = 0; start < bits.length; start += 4096)
+    binary += String.fromCharCode(...bits.subarray(start, start + 4096));
   return JSON.stringify({
     charted: btoa(binary),
     islands: [...discovery.islands],

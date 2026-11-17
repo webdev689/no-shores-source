@@ -26,7 +26,8 @@ war, and a click on it sets the ship's destination.
   parchment (`@art/held-map-forge-sheet.png`, 1648 × 1086) and over it the gauntlets of the set worn
   (`@art/held-map-forge-hands-<Set>.png`; bare hands with none), a strip of 17 frames drawn six times over. The
   hands rest on frame 0 and every 6 s flex the fingers of each in turn, a frame each twelfth of a second. Where the
-  painting stops short of the screen's foot, the cuffs are carried down to it.
+  painting stops short of the screen's foot, the cuffs are carried down to it. Both are drawn as the [[First Person]]'s
+  pictures are, texel for texel.
 - **The fit**, DFO's: the parchment takes 0.9 of the screen's width or 0.84 of its height, whichever fits, under a
   head of a tenth of the height (78 px at least) and over a foot of 0.06 (52 px at least); the painting's foot sits
   a little past the screen's, so the gauntlets run off it.
@@ -41,17 +42,18 @@ war, and a click on it sets the ship's destination.
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.
-- **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; the way
-  there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
+- **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
+  is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (Enter), or says why no way leads there. Escape lets the choice go, then lowers the map.
+- **Turning back.** Escape on the way down to the helm turns the view back before the map is raised.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation
   panel.
 
 ## Fog of war
 
-What the player has discovered is kept in this browser (`overlook-discovery`), every few seconds once it changes and
-as the page goes ([[World Map]]):
+What the player has discovered is kept in this browser (`overlook-discovery`), every 30 s once it changes and as the
+page is hidden or goes ([[World Map]]):
 
 | What | Discovered |
 |---|---|

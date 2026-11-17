@@ -87,7 +87,7 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 `ships`), `combat` (imports `rules` and `network`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
 the editor's camera), `testground` (imports what `player` does, `player` itself, `combat` and the editor's panel
 helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap`
-(imports `forge`, `overworld` and the editor's page helpers) and `game`
+(imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers) and `game`
 (imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
 
 ## The Rust crates

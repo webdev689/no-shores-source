@@ -1,5 +1,6 @@
 import type { SeenShip } from '../network/messages.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
+import { WORLD_FRAME } from '../overworld/discovery.ts';
 import type { Point2, Vec3 } from '../overworld/ground.ts';
 import { flyRig, frameSide, nearestIsland, ringCentre, SIDE, sideNodes } from '../overworld/islandView.ts';
 import {
@@ -38,7 +39,7 @@ import {
 } from './seaLaw.ts';
 
 /** The world's frame, metres: every voyage between landmasses is planned over it. */
-const FRAME = { leftM: 0, topM: 0, widthM: 4_915_200, heightM: 3_072_000 } as const;
+const FRAME = { leftM: 0, topM: 0, ...WORLD_FRAME } as const;
 /** How far in from the picture's top and foot a held mark stands, clear of the place's name and, at sea, the sea's
  *  bar. */
 const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } as const;

@@ -3,6 +3,8 @@
 // own; its rules are DFO's held map's (heldMapLaw.ts).
 import { button, make } from '../editor/dom.ts';
 import type { Gpu } from '../gpu.ts';
+import { forgeName } from '../firstperson/fpFrames.ts';
+import { WORLD_FRAME } from '../overworld/discovery.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type CoastField } from './coastField.ts';
@@ -25,23 +27,23 @@ import {
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 
 /** The world's frame, metres. */
-const WORLD = { width: 4_915_200, height: 3_072_000 } as const;
+const WORLD = { width: WORLD_FRAME.widthM, height: WORLD_FRAME.heightM } as const;
 /** The forge's held-map art: the parchment, and the gauntlets' strips of 17 frames, one a set and one bare. */
 const SHEET_PATH = '@art/held-map-forge-sheet.png';
 const HANDS_FRAMES = 17;
 const handsPath = (gauntlets: string | null) =>
-  gauntlets
-    ? `@art/held-map-forge-hands-${gauntlets[0]?.toUpperCase() ?? ''}${gauntlets.slice(1)}.png`
-    : '@art/held-map-forge-hands.png';
+  `@art/held-map-forge-hands${gauntlets ? `-${forgeName(gauntlets)}` : ''}.png`;
 /** The gauntlets' fidget: the fingers of each hand flex in turn, every few seconds, a frame each twelfth of a second. */
 const FIDGET = { every: 6, frameS: 1 / 12 } as const;
 
-/** Something the map shows, once discovered: a port or a node, where it lies and what it is. */
+/** Something the map shows, once discovered: a port or a node, where it lies, what it is, and where a ship sails for
+ *  it (a node's nearest coast). */
 export interface MapPlace {
   readonly id: string;
   readonly name: string;
   readonly kind: string;
   readonly at: Point2;
+  readonly sail: Point2;
 }
 
 /** A route as the map inks it, or why there is none. */
@@ -63,7 +65,7 @@ type Phase =
   | { readonly kind: 'open' }
   | { readonly kind: 'closing'; readonly t: number; readonly from: number; readonly sail: Point2 | null };
 
-type Choice = { readonly at: Point2; readonly name: string; readonly course: Course };
+type Choice = { readonly at: Point2; readonly name: string; readonly course: Course; readonly place: string | null };
 
 export class HeldMap {
   private readonly view: HeldMapView;
@@ -178,8 +180,13 @@ export class HeldMap {
     const [inkX, inkY] = [x - this.ink.x, y - this.ink.y];
     if (inkX < 0 || inkY < 0 || inkX > this.ink.width || inkY > this.ink.height) return;
     const mark = nearestMark(this.placed, inkX, inkY);
-    const point = mark ? mark.place.at : (toWorld(this.mapView, inkX, inkY) as Point2);
-    this.choice = { at: point, name: mark ? mark.place.name : 'This stretch of sea', course: this.plan(point) };
+    const point = mark ? mark.place.sail : (toWorld(this.mapView, inkX, inkY) as Point2);
+    this.choice = {
+      at: point,
+      name: mark ? mark.place.name : 'This stretch of sea',
+      course: this.plan(point),
+      place: mark?.place.id ?? null,
+    };
   }
 
   /** The wheel at a point on the screen: the map zooms about it. */
@@ -287,7 +294,7 @@ export class HeldMap {
         this.layer.append(label);
       }
       label.style.transform = `translate(${this.ink.x + x}px, ${this.ink.y + y + drop}px)`;
-      label.classList.toggle('chosen', this.choice?.at === place.at);
+      label.classList.toggle('chosen', this.choice?.place === place.id);
     }
     for (const [id, label] of this.labels)
       if (!seen.has(id)) {

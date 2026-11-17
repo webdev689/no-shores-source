@@ -22,7 +22,7 @@ import { startLandWorker } from '../terrain/landClient.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
-import { Discovered } from './discovered.ts';
+import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
@@ -126,7 +126,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     flow = arriving(start.node, start.name);
     if (flow.mode === 'loading') hud.veil(flow.words);
   }
-  const discovered = new Discovered(world);
+  const discovered = keptDiscovered(world);
   discovered.arrived(start.continent, start.node);
 
   let landmass = await openLandmass(land, world, rmbText, start.continent);
@@ -343,6 +343,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       else if (key === 'enter') heldMap.setSail();
       return;
     }
+    // On the way down to the helm, Escape turns back before the map is raised.
+    if (key === 'escape' && mapWanted && sea?.helmView) {
+      mapWanted = false;
+      sea.fromHelm();
+      return;
+    }
     if (key === 'enter' && retry) retry();
     else if (key === 'm') change({ kind: 'menu' });
     else if (key === 'escape' && flow.mode === 'landing') {
@@ -445,13 +451,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       mapWanted = false;
       mapOf().open(viewport, here.position, dress.outfit.armour.gauntlets ?? null, discovered.discovery.charted);
     }
-    const mapFrame = heldMap?.frame(seconds, viewport, canvas.width / Math.max(1, canvas.clientWidth), {
-      ship: here.position,
-      heading: here.heading,
-      places: discovered.places,
-      knownIslands: discovered.knownIslands,
-      course: here.course,
-    });
+    // The map's scene is gathered only while the map is up.
+    const mapFrame = heldMap?.shown
+      ? heldMap.frame(seconds, viewport, canvas.width / Math.max(1, canvas.clientWidth), {
+          ship: here.position,
+          heading: here.heading,
+          places: discovered.places,
+          knownIslands: discovered.knownIslands,
+          course: here.course,
+        })
+      : null;
     const after = mapFrame
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => heldMap?.draw(encoder, view, mapFrame)
       : undefined;

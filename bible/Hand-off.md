@@ -56,9 +56,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found. Then the
   shadows across the view ([[Game]]): a far map 2.4 km across where the city's solids and its buildings' masses or
   hulls cast, so the city below the plaza is shadowed; and the figures cast, each card turned to the sun, and are lit
-  through both maps. The owner's first test froze the whole browser after a while; the game now keeps at most one
-  frame waiting on the GPU, and the far map casts masses, not models (302k shadow triangles a frame from the plaza,
-  against 448k for the view; tested offline). The owner was "very very impressed" and called it the base to build on.
+  through both maps. The game keeps at most one frame waiting on the GPU, so a slow machine gets fewer frames rather
+  than a stalled browser, and the far map casts masses, not models (302k shadow triangles a frame from the plaza,
+  against 448k for the view; tested offline). The owner has tested it and builds on it.
 - The sea navigated from the helm, on its pull request from this branch (#49), as the owner decided it
   ([[The Sea Is Navigated From the Helm With the Held Map]]): no nodes marked at sea, a port's icon within 60 km;
   off a coast the offer to dock (within 20 km of the harbour) or go ashore, either flying into the side's overview;
