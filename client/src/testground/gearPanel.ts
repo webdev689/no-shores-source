@@ -8,13 +8,16 @@ import {
   RARITIES,
   RESOURCE_COUNT,
   SLOTS,
+  STOCK_NAMES,
   VAULTED,
   WORN,
   answerText,
   itemName,
+  itemNumbers,
   itemWords,
+  nodeShown,
   resourceName,
-  traitOf,
+  wearAsks,
 } from '../player/gear.ts';
 import { choice, labelled } from './dressPanel.ts';
 
@@ -28,9 +31,6 @@ export interface GearView {
 
 /** How long a Fruit of Dagon is held before it is eaten, in milliseconds. */
 const HOLD_MS = 800;
-/** The off hand takes a shield, or a blade or mace. */
-const OFF_HAND = new Set(['shield', 'dagger', 'sword', 'mace', 'flail']);
-const STOCKS = ['Weapon Fragments', 'Armor Fragments', 'Weapon Essence', 'Armor Essence', 'Fruit of Dagon'];
 
 /** An item's name in its rarity's colour. */
 function named(item: GearItem): HTMLElement {
@@ -40,42 +40,16 @@ function named(item: GearItem): HTMLElement {
   return name;
 }
 
-/** What an item carries: its Attack, Defense and Prestige, its level and XP. */
-function numbers(item: GearItem): string {
-  const power = [
-    item.attack ? `${item.attack} Attack` : '',
-    item.defense ? `${item.defense} Defense` : '',
-    item.prestige ? `${item.prestige} Prestige` : '',
-  ].filter(Boolean);
-  return `${power.join(', ')} · level ${item.level} · XP ${item.xp.toLocaleString()} of ${item.xpMost.toLocaleString()}`;
-}
-
 /** A column's node: bought, chosen, unlocked or locked, and what it costs. */
 function nodeButton(item: GearItem, column: number, node: number, ask: (ask: GearAsk) => void): HTMLElement {
-  const kind = item.columns[column];
-  if (!kind) return make('span');
-  const offsets = item.columns.slice(0, column).reduce((total, each) => total + Math.max(1, each.traits.length), 0);
-  const bought = (item.bought & (1 << (offsets + node))) !== 0;
-  const chosen = bought && item.chosen[column] === node;
-  const unlocked = item.xp >= kind.xp;
-  const trait = kind.traits[node];
-  const label = trait ? traitOf(trait).name : 'Upgrade';
-  const cost = [
-    kind.aurem ? `${kind.aurem} Aurem` : '',
-    kind.fragments ? `${kind.fragments} fragments` : '',
-    kind.essence ? `${kind.essence} Essence` : '',
-    kind.resource && item.resource !== null ? `${kind.resource} ${resourceName(item.resource)}` : '',
-  ].filter(Boolean);
-  const pressed = button(label, () => {
-    if (bought && trait) ask({ kind: ASKS.choose, item: item.id, column, node });
-    else if (!bought) ask({ kind: ASKS.buy, item: item.id, column, node });
+  const shown = nodeShown(item, column, node);
+  if (!shown) return make('span');
+  const pressed = button(shown.label, () => {
+    if (shown.ask) ask(shown.ask);
   });
-  if (chosen || (bought && !trait)) pressed.classList.add('active');
-  pressed.disabled = !unlocked || (bought && !trait);
-  pressed.title = [
-    trait ? traitOf(trait).words : 'Raises its power.',
-    bought ? 'Bought.' : unlocked ? `Costs ${cost.join(', ')}.` : `Unlocks at ${kind.xp.toLocaleString()} XP.`,
-  ].join(' ');
+  if (shown.chosen) pressed.classList.add('active');
+  pressed.disabled = !shown.unlocked || (shown.bought && shown.ask === null && shown.chosen);
+  pressed.title = `${shown.words} ${shown.cost}`;
   return pressed;
 }
 
@@ -103,15 +77,11 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
   root.append(make('h1', 'Gear'), answer, body);
 
   const itemRow = (item: GearItem, gear: GearState, view: GearView): HTMLElement => {
-    const kind = KINDS[item.kind] ?? '';
     const row = make('div', '', 'row');
     const actions: HTMLElement[] = [];
     if (item.at >= WORN) actions.push(button('Take off', () => ask({ kind: ASKS.takeOff, slot: item.at - WORN })));
     if (item.at === CARRIED) {
-      const home = kind === 'shield' ? 1 : SLOTS.indexOf(kind as (typeof SLOTS)[number]);
-      actions.push(button('Wear', () => ask({ kind: ASKS.wear, item: item.id, slot: Math.max(0, home) })));
-      if (OFF_HAND.has(kind) && kind !== 'shield')
-        actions.push(button('Off hand', () => ask({ kind: ASKS.wear, item: item.id, slot: 1 })));
+      for (const wear of wearAsks(item)) actions.push(button(wear.label, () => ask(wear.ask)));
       actions.push(button('Dismantle', () => ask({ kind: ASKS.dismantle, item: item.id })));
       if (view.atStall || gear.social) actions.push(button('Vault', () => ask({ kind: ASKS.store, item: item.id })));
     }
@@ -125,7 +95,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       );
     row.append(...actions);
     const card = make('div', '', 'kit-item');
-    card.append(named(item), make('div', numbers(item), 'hint'), row);
+    card.append(named(item), make('div', itemNumbers(item), 'hint'), row);
     if (open !== item.id) return card;
     const grid = make('div', '', 'gear');
     item.columns.forEach((column, index) => {
@@ -206,7 +176,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     answer.textContent = answerText(gear.answer);
     const opened = gear.items.find((item) => item.id === gear.identified);
     const level = `Level ${gear.level} · Prestige ${gear.prestige} · Defense ${gear.defense} · XP ${gear.xp.toLocaleString()}`;
-    const stocks = STOCKS.map((name, index) => `${name} ${gear.stocks[index] ?? 0}`);
+    const stocks = STOCK_NAMES.map((name, index) => `${name} ${gear.stocks[index] ?? 0}`);
     const islands = Array.from({ length: RESOURCE_COUNT }, (unused, index) => index)
       .filter((index) => (gear.resources[index] ?? 0) > 0)
       .map((index) => `${resourceName(index)} ${gear.resources[index] ?? 0}`);

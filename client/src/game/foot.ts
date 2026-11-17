@@ -9,6 +9,7 @@ import type { Walker } from '../player/walker.ts';
 import type { Block, MovementRules, Reach } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
+import type { GearHere } from './gearScreen.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -149,6 +150,12 @@ export class Foot {
       walker.player = { ...walker.player, body: standing, previous: standing };
     }
     return new Foot(context, node, boxes, room, placed);
+  }
+
+  /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
+  get gear(): GearHere | null {
+    const room = this.room;
+    return room?.connected ? { gear: room.gear, ask: (ask) => room.askGear(ask) } : null;
   }
 
   /** A line on the room the player plays in: their number in it, word that it was lost, or nothing offline. */

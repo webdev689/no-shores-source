@@ -92,7 +92,8 @@ number is one of [[Gear as Claude Shapes It]].
 ## Limits
 
 - A weapon's traits work whichever hand strikes, and every trait worn counts once however many pieces give it.
-- The Test Ground's panel is the only screen; the Enhanced Plus screens come next.
+- The game's gear window ([[Interface]], "The gear window") shows gear on foot in a room; offline, no room keeps
+  gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
 - The hands are drawn in a metal the rarity likes, not each item's own look; armour, clothing sets and the cloak do
   not dress the figure yet.

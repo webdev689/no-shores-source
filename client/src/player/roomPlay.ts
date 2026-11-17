@@ -1,3 +1,4 @@
+import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import { type JoinedNode, type Standing, inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
@@ -33,6 +34,9 @@ export class RoomPlay {
   private own = 0;
   private sentDress = '';
   private respawnAsked = false;
+  /** The player's gear as the room last sent it, and the asks of it waiting for an input to carry them. */
+  private gearNow: GearState | null = null;
+  private readonly gearAsks: GearAsk[] = [];
   /** The room tick of the last snapshot taken. */
   private lastTick = 0n;
 
@@ -45,7 +49,12 @@ export class RoomPlay {
    *  player. */
   static async join(url: string, context: RoomContext, session: string | null = null): Promise<RoomPlay> {
     const room = new RoomPlay(context);
-    const connection = await RoomConnection.open(url, (snapshot) => room.seen(snapshot), undefined, session);
+    const connection = await RoomConnection.open(
+      url,
+      (snapshot) => room.seen(snapshot),
+      (gear) => (room.gearNow = gear),
+      session,
+    );
     room.connection = connection;
     room.own = connection.player;
     room.others.takeDresses(connection.dressed);
@@ -78,6 +87,7 @@ export class RoomPlay {
         // Once the room is lost nothing is numbered for it, so nothing waits on its word for ever.
         if (this.connection?.open) {
           const intent = new Float64Array([...floatsOfControls(controls), ...NO_FIGHT]);
+          const ask = this.gearAsks.shift();
           const parts = {
             intent,
             look: walker.look,
@@ -85,6 +95,7 @@ export class RoomPlay {
             seen: this.lastTick,
             spawn: 0,
             respawn: this.respawnAsked,
+            ...(ask ? { ask } : {}),
           };
           const sequence = this.prediction.next(controls);
           this.connection.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
@@ -93,6 +104,16 @@ export class RoomPlay {
         return this.standing.kind === 'dead' ? body : movement.step(body, controls);
       },
     };
+  }
+
+  /** The player's gear as the room last sent it; null before its first word. */
+  get gear(): GearState | null {
+    return this.gearNow;
+  }
+
+  /** Asks something of the player's gear, one ask an input, in the order asked. */
+  askGear(ask: GearAsk): void {
+    this.gearAsks.push(ask);
   }
 
   /** Asks the room, with the next tick's controls, to stand the player up at the nearest spawn. */

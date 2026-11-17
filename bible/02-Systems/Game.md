@@ -145,6 +145,9 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   ground and corrected by each snapshot, held still while the room says they are dead. The warning, the count and
   death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
   A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
+  With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
+  makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
+  the gear window ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies; each voyage's course and pace go
   to it, and every other player's ship is drawn where the room moved it. Playing alone, the same sea room runs in the
   page, so its pirates and fights are the same law.

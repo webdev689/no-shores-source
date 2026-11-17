@@ -1,0 +1,148 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
+import { characterOf, inventoryOf, itemDetailOf, slotChoices, xpForLevel } from './gearScreen.ts';
+
+const item = (fields: Partial<GearItem>): GearItem => ({
+  id: 1,
+  kind: 2,
+  rarity: 0,
+  level: 1,
+  named: null,
+  name: 0,
+  resource: null,
+  breach: false,
+  xp: 0,
+  xpMost: 0,
+  bought: 0,
+  chosen: [],
+  bucket: 0,
+  at: 0,
+  attack: 0,
+  defense: 0,
+  prestige: 0,
+  columns: [],
+  ...fields,
+});
+
+const state = (fields: Partial<GearState>): GearState => ({
+  xp: 0n,
+  level: 1,
+  prestige: 0,
+  defense: 0,
+  aurem: 0,
+  stocks: [0, 0, 0, 0, 0],
+  resources: [],
+  items: [],
+  vestiges: [],
+  drops: [],
+  spent: [],
+  social: false,
+  answer: 0,
+  answered: 0,
+  identified: 0,
+  ...fields,
+});
+
+/** A Legendary sword with an upgrade column (bought) and a perk column of two, its second chosen-to-be. */
+const legendary = item({
+  id: 7,
+  kind: 2,
+  rarity: 3,
+  level: 20,
+  named: 'harbourwarden',
+  at: 2,
+  attack: 248,
+  xp: 1_500,
+  xpMost: 30_000,
+  bought: 0b001,
+  chosen: [255, 255],
+  columns: [
+    { kind: 0, traits: [], xp: 1_000, aurem: 0, fragments: 0, essence: 0, resource: 0 },
+    { kind: 3, traits: ['light_grip', 'weighted'], xp: 1_500, aurem: 800, fragments: 2, essence: 0, resource: 5 },
+  ],
+});
+
+test('a level below 20 counts XP to the next; past it, Prestige; the last is full', () => {
+  assert.equal(xpForLevel(20), 190_000);
+  const low = characterOf(state({ xp: BigInt(xpForLevel(5) + 2_500), level: 5 }));
+  assert.equal(low.toNext, 0.5);
+  assert.equal(low.toNextWords, '2,500 XP to level 6');
+  assert.equal(low.fruitGrown, null);
+  const high = characterOf(state({ xp: 230_000n, level: 21, prestige: 22 }));
+  assert.equal(high.toNextWords, '10 more Prestige for level 22');
+  assert.equal(high.fruitGrown, 0, 'two Fruits grown, the third begun');
+  assert.equal(characterOf(state({ level: 30, prestige: 120 })).toNext, 1);
+});
+
+test('the Character tab shows each slot worn and each hand’s Attack; a slot offers what it carries', () => {
+  const off = item({ id: 8, kind: 12, at: 3, defense: 30 });
+  const spare = item({ id: 9, kind: 2, at: 0, bucket: 0, attack: 120 });
+  const gear = state({ items: [legendary, off, spare] });
+  const character = characterOf(gear);
+  assert.deepEqual(character.attack, [248, null], 'a shield gives no Attack');
+  assert.equal(character.slots.length, 7);
+  assert.deepEqual(character.slots[0], {
+    slot: 0,
+    name: 'Main hand',
+    worn: { id: 7, name: 'Harbourwarden', colour: '#e0a12e', power: '248 Attack' },
+  });
+  assert.equal(character.slots[2]?.worn, null);
+  const choices = slotChoices(gear, 0);
+  assert.equal(choices.worn?.id, 7);
+  assert.deepEqual(
+    choices.carried.map((tile) => tile.id),
+    [9],
+  );
+});
+
+test('an item’s detail lays out its nodes: bought, to buy once unlocked, and what it may do where it is', () => {
+  const detail = itemDetailOf(legendary, state({ items: [legendary], stocks: [0, 0, 0, 0, 2] }));
+  assert.equal(detail.kind, 'Legendary Sword');
+  assert.deepEqual(detail.numbers, [
+    ['Attack', '248'],
+    ['Level', '20'],
+  ]);
+  assert.equal(detail.xp, 0.05);
+  const [upgrade, perk] = detail.columns;
+  assert.equal(upgrade?.nodes[0]?.chosen, true);
+  assert.equal(upgrade?.nodes[0]?.ask, null, 'an upgrade bought asks nothing');
+  assert.deepEqual(perk?.nodes[1]?.ask, { kind: ASKS.buy, item: 7, column: 1, node: 1 });
+  assert.equal(perk?.nodes[1]?.cost, 'Costs 800 Aurem, 2 fragments.');
+  assert.deepEqual(
+    detail.presses.map((press) => [press.label, press.role]),
+    [
+      ['Take off', 'button'],
+      ['Hold to feed a Fruit of Dagon', 'button'],
+    ],
+  );
+  const carried = itemDetailOf({ ...legendary, at: 0 }, state({ social: true }));
+  assert.deepEqual(
+    carried.presses.map((press) => press.label),
+    ['Wear', 'Off hand', 'Put in the vault', 'Dismantle'],
+  );
+  assert.equal(carried.presses.at(-1)?.role, 'warn');
+});
+
+test('the Inventory counts materials, and opens Vestiges and the vault only in a social space', () => {
+  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
+  const away = inventoryOf(state({ aurem: 1_250, stocks: [3, 0, 1, 0, 0], vestiges: [vestige] }));
+  assert.deepEqual(away.materials.slice(0, 2), [
+    ['Aurem', '1,250'],
+    ['Weapon Fragments', '3'],
+  ]);
+  assert.equal(away.vestiges[0]?.label, 'Rare Vestige · Head · level 12');
+  assert.deepEqual(away.vestiges[0]?.presses, []);
+  const social = inventoryOf(
+    state({ social: true, vestiges: [vestige, { ...vestige, id: 5, vaulted: true }], items: [item({ at: 1 })] }),
+  );
+  assert.deepEqual(
+    social.vestiges[0]?.presses.map((press) => press.ask),
+    [
+      { kind: ASKS.identify, item: 4 },
+      { kind: ASKS.storeVestige, item: 4 },
+    ],
+  );
+  assert.equal(social.vaulted.length, 1);
+  assert.deepEqual(social.vaultedVestiges[0]?.presses[0]?.ask, { kind: ASKS.withdrawVestige, item: 5 });
+});

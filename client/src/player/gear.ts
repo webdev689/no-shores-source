@@ -2,7 +2,7 @@ import items from '../../../content/gear/items.json' with { type: 'json' };
 import resources from '../../../content/gear/resources.json' with { type: 'json' };
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
 import traits from '../../../content/gear/traits.json' with { type: 'json' };
-import type { GearItem, GearState } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
 
 /** The kinds of item, by the gear crate's numbers. */
@@ -102,6 +102,70 @@ export const RESOURCE_COUNT = resources.resources.length;
 
 /** Every named item's id and name, for the Test Ground's grants. */
 export const NAMED = items.items.map((found) => ({ id: found.id, name: found.name, rarity: found.rarity }));
+
+/** The names of the stocks a gear message counts, in its order. */
+export const STOCK_NAMES = ['Weapon Fragments', 'Armor Fragments', 'Weapon Essence', 'Armor Essence', 'Fruit of Dagon'];
+
+/** What an item carries: its Attack, Defense and Prestige, its level and XP. */
+export function itemNumbers(item: GearItem): string {
+  const power = [
+    item.attack ? `${item.attack} Attack` : '',
+    item.defense ? `${item.defense} Defense` : '',
+    item.prestige ? `${item.prestige} Prestige` : '',
+  ].filter(Boolean);
+  return `${power.join(', ')} · level ${item.level} · XP ${item.xp.toLocaleString()} of ${item.xpMost.toLocaleString()}`;
+}
+
+/** One node of an item's column as a screen shows it: its name and words, whether it is bought, chosen (or, an
+ *  upgrade, bought) and unlocked, what it costs, and what pressing it asks (buy, choose, or nothing). */
+export interface NodeShown {
+  readonly label: string;
+  readonly words: string;
+  readonly bought: boolean;
+  readonly chosen: boolean;
+  readonly unlocked: boolean;
+  readonly cost: string;
+  readonly ask: GearAsk | null;
+}
+
+/** A column's node of an item, or null for none there. */
+export function nodeShown(item: GearItem, column: number, node: number): NodeShown | null {
+  const kind = item.columns[column];
+  if (!kind || node >= Math.max(1, kind.traits.length)) return null;
+  const offsets = item.columns.slice(0, column).reduce((total, each) => total + Math.max(1, each.traits.length), 0);
+  const bought = (item.bought & (1 << (offsets + node))) !== 0;
+  const unlocked = item.xp >= kind.xp;
+  const trait = kind.traits[node];
+  const costs = [
+    kind.aurem ? `${kind.aurem} Aurem` : '',
+    kind.fragments ? `${kind.fragments} fragments` : '',
+    kind.essence ? `${kind.essence} Essence` : '',
+    kind.resource && item.resource !== null ? `${kind.resource} ${resourceName(item.resource)}` : '',
+  ].filter(Boolean);
+  const ask: GearAsk | null = !bought
+    ? { kind: ASKS.buy, item: item.id, column, node }
+    : trait && item.chosen[column] !== node
+      ? { kind: ASKS.choose, item: item.id, column, node }
+      : null;
+  return {
+    label: trait ? traitOf(trait).name : 'Upgrade',
+    words: trait ? traitOf(trait).words : 'Raises its power.',
+    bought,
+    chosen: bought && (!trait || item.chosen[column] === node),
+    unlocked,
+    cost: bought ? 'Bought.' : unlocked ? `Costs ${costs.join(', ')}.` : `Unlocks at ${kind.xp.toLocaleString()} XP.`,
+    ask: unlocked ? ask : null,
+  };
+}
+
+/** The asks that put a carried item on: in its own slot, and in the off hand for a blade or mace. */
+export function wearAsks(item: GearItem): readonly { readonly label: string; readonly ask: GearAsk }[] {
+  const kind = KINDS[item.kind] ?? '';
+  const home = kind === 'shield' ? 1 : SLOTS.indexOf(kind as (typeof SLOTS)[number]);
+  const asks = [{ label: 'Wear', ask: { kind: ASKS.wear, item: item.id, slot: Math.max(0, home) } }];
+  if (OFF_HAND_BLADES.has(kind)) asks.push({ label: 'Off hand', ask: { kind: ASKS.wear, item: item.id, slot: 1 } });
+  return asks;
+}
 
 /** The item worn in a slot. */
 export function worn(state: GearState, slot: number): GearItem | undefined {

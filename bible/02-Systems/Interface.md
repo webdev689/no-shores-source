@@ -8,6 +8,10 @@ code:
   - client/src/plus/frame.ts#frameSvg
   - client/src/plus/tones.ts#TONES
   - client/src/game/hud.ts#Hud
+  - client/src/game/gearScreen.ts#characterOf
+  - client/src/game/gearScreen.ts#itemDetailOf
+  - client/src/game/gearWindow.ts#startGearWindow
+  - client/src/game/accountTab.ts#accountPanel
 ---
 # Interface
 
@@ -38,9 +42,34 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.
 
+## The gear window
+
+A window over the game, after Destiny's own: Character (I), Inventory (O) and Account, under a header of tabs. While
+it is open the pointer is free and the game's own keys rest; Escape or Close shuts it. It shows the player's gear as
+their room last sent it ([[Gear]]), and each press is an ask the room answers with their gear.
+
+- **Character.** The weapons (main hand, off hand) and the cloak to the left, the four armour pieces to the right,
+  each slot a tile with its item's name in its rarity's colour and its Attack, Defense or Prestige. Between them,
+  the player's level, a meter to the next (XP below 20, Prestige past it), Prestige, Defense, each hand's Attack, the
+  Fruit of Dagon held and a meter for the next one growing past level 20. A slot pressed lists what it wears and the
+  nine it may carry; an item pressed opens it.
+- **An item.** Its name, rarity and kind, its numbers, a meter of its XP, its words if it is named, and its nodes,
+  column by column, each with its XP: a node chosen in brass, one that can be bought or chosen raised, one locked
+  flat, each saying what it does and costs. Below, what may be done where it is: wear it (or in the off hand), take
+  it off, dismantle it (in blood), put it in or take it out of the vault, and feed it a Fruit of Dagon, held for a
+  moment.
+- **Inventory.** Aurem, the fragments and Essence, Fruit of Dagon and each island's resource held; the Vestiges
+  carried; and the vault. In a social space, a Vestige may be identified or vaulted, and the vault opens; elsewhere it
+  says where they are.
+- **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
+  password to keep a guest by, or to sign in with; Discord; and signing out, which warns a guest they cannot come
+  back. A sign-in or out loads the page again, so its rooms hold the right character.
+- A new build of the window waits while a press is held, so no press is lost to it.
+
 ## Limits
 
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels for now.
+- The gear window draws no item's picture, and no figure wearing it; the gear does not dress the figure yet.
 - No gamepad or touch layer yet.
