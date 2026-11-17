@@ -134,7 +134,7 @@ texels a side each, every square ahead of the camera and snapped to its own texe
 | Map | Its square | A texel | What casts into it |
 |---|---|---|---|
 | Near | 300 m across, centred 75 m ahead | 0.15 m | The city's solids and near models, the near plants and the figures |
-| Far | 2.4 km across, centred 900 m ahead | 1.2 m | The city's solids, its whole cells' models, and its masses and hulls in the tiers they are drawn in |
+| Far | 2.4 km across, centred 900 m ahead | 1.2 m | The city's solids, and each building's masses, or its hull past where the masses are drawn |
 
 What casts is found by whether, seen along the sun, its box overlaps a square, those behind the camera and far below
 the eye too, so the city under the plaza casts. The land, the city, the plants and the figures are then lit through

@@ -399,6 +399,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       });
   };
 
+  /** The GPU's work for the frame drawn last. */
+  let inFlight = Promise.resolve();
   const frame = (now: number) => {
     const elapsed = (now - last) / 1000;
     const seconds = Math.min(0.1, elapsed);
@@ -419,7 +421,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         syncMenu();
       }
     }
-    requestAnimationFrame(frame);
+    // At most one frame waits on the GPU while the next is drawn: a GPU that falls behind slows the frames instead of
+    // queueing work without end, which stalls every tab and the browser itself.
+    const previous = inFlight;
+    inFlight = gpu.device.queue.onSubmittedWorkDone();
+    void previous.then(() => requestAnimationFrame(frame));
   };
   requestAnimationFrame(frame);
 }

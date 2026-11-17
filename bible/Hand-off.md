@@ -56,7 +56,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   dressed as built stone, woods coloured on the land from afar, and the fixes four code reviews found. Then the
   shadows across the view ([[Game]]): a far map 2.4 km across where the city's solids, models, masses and hulls cast,
   so the city below the plaza is shadowed; and the figures cast, each card turned to the sun, and are lit through
-  both maps. Tested offline in headless Chromium; not yet looked at by the owner in a browser.
+  both maps. The owner's first test on the published site froze the whole browser after a while: the game queued GPU
+  work without waiting for it, and the far map cast every whole model. The game now keeps at most one frame waiting on
+  the GPU, and the far map casts each building's masses (shadows 302k triangles a frame from the plaza, against 448k
+  for the view; tested offline). The owner is to test again.
 - On `main`: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
 - On `main` and deployed: the fight
