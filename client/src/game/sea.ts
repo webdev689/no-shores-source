@@ -1,5 +1,3 @@
-import type { SeenShip } from '../network/messages.ts';
-import { RoomConnection } from '../network/roomConnection.ts';
 import { WORLD_FRAME } from '../overworld/discovery.ts';
 import type { Point2, Vec3 } from '../overworld/ground.ts';
 import { flyRig, frameSide, nearestIsland, ringCentre, SIDE, sideNodes } from '../overworld/islandView.ts';
@@ -29,6 +27,9 @@ import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
+import type { MarkDrawer } from '../editor/naval.ts';
+import { SeaCombat } from './seaCombat.ts';
+import { SeaRoom } from './seaRoom.ts';
 import { courseAhead, declutter, type Landfall, landfallOf, namesShown, PORT_SEEN_M, timeText } from './seaLaw.ts';
 
 /** The world's frame, metres: every voyage between landmasses is planned over it. */
@@ -40,6 +41,8 @@ const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } 
 const MARK_GAP_PX = 30;
 /** The Overworld is not to scale: a ship is drawn this long, metres, so one reads from the raised view. */
 const SHIP_DRAWN_M = 75;
+/** A pirate's Sloop is drawn darker, as a captain's is in a fight. */
+const PIRATE_SHADE = 0.55;
 /** The way a ship under way shows the water, m/s: her bow wave foams whole. */
 const UNDER_WAY = 4;
 /** The view the ship first comes to: lower than DFO's, so the island it lies off stands in it. */
@@ -76,12 +79,22 @@ type SeaView =
   /** Coming down to the helm, there, or going back up: `at` how far down, 0 the sea's view, 1 the helm. */
   | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' };
 
-/** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
-/** A ship at sea as drawn: her place, larger than life, and her sails' rig. */
+/** The Sloop every ship at sea is, and what draws a fight's balls, arcs and effects. */
+export interface SeaHull {
+  readonly waterline: Waterline;
+  readonly sails: readonly SailCorners[];
+  readonly marks: MarkDrawer;
+}
+
+/** A ship at sea as drawn: her place, larger than life but in a fight, her sails' rig, and how light she is drawn
+ *  (a pirate's darker). */
 export interface SeaShip {
   readonly place: ShipPlace;
   readonly rig: SailRig;
+  readonly shade: number;
 }
+
+/** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
 
 export interface SeaFrame {
   readonly shot: Shot;
@@ -109,10 +122,13 @@ export interface SeaFrame {
 export class Sea {
   private landmass: Landmass;
   private readonly outlines: readonly (readonly Point2[])[];
-  /** Her waterline and sails; how many times her size she is drawn; each ship's rig by who sails her. */
-  private readonly hull: { readonly waterline: Waterline; readonly sails: readonly SailCorners[] };
+  /** Her waterline and sails, and what draws a fight's marks; how many times her size she is drawn; each ship's rig
+   *  by who sails her. */
+  private readonly hull: SeaHull;
   private readonly scale: number;
-  private readonly rigs = new Map<number | 'own', SailRig>();
+  private readonly rigs = new Map<string, SailRig>();
+  /** The fight the sea room began for the player, from the pan down to the pan back up. */
+  private combat: SeaCombat | null = null;
   private ship: { x: number; y: number; heading: number };
   private voyage: Voyage | null = null;
   /** Where the last voyage set out for, kept while it is stopped short, so it can be resumed. */
@@ -137,7 +153,7 @@ export class Sea {
   constructor(
     landmass: Landmass,
     outlines: readonly (readonly Point2[])[],
-    hull: { readonly waterline: Waterline; readonly sails: readonly SailCorners[] },
+    hull: SeaHull,
     start: Point2,
     heading: number,
   ) {
@@ -173,9 +189,9 @@ export class Sea {
     this.islandMarks = marks;
   }
 
-  /** Joins the sea room, the ship put to sea where it lies. */
-  async enterRoom(url: string): Promise<void> {
-    this.room = await SeaRoom.join(url, this.position, this.pace);
+  /** Joins the sea room `open` makes, a server's or the page's own, the ship put to sea where it lies. */
+  async enterRoom(open: Parameters<typeof SeaRoom.join>[0]): Promise<void> {
+    this.room = await SeaRoom.join(open, this.position, this.pace);
     if (this.voyage) this.room.course(courseAhead(this.voyage, this.travelled), this.pace);
   }
 
@@ -187,7 +203,7 @@ export class Sea {
 
   /** What the ship is offered off the open landmass's coast: to dock at its port, to go ashore, or nothing. */
   get landfall(): Landfall {
-    if (this.view.kind !== 'sail') return null;
+    if (this.view.kind !== 'sail' || this.combat) return null;
     const offCoast = nearestIsland(this.position, [this.landmass.outline]) !== null;
     const { plan } = this.landmass;
     return landfallOf(this.position, offCoast, plan?.harbour ? { name: plan.name, harbour: plan.harbour } : null);
@@ -213,6 +229,7 @@ export class Sea {
 
   /** Takes the view down to the ship's helm, in first person, where the held map is raised. */
   toHelm(): boolean {
+    if (this.combat) return false;
     if (this.view.kind !== 'sail') return false;
     this.view = { kind: 'helm', at: 0, going: 'down' };
     return true;
@@ -373,7 +390,9 @@ export class Sea {
    *  wind blowing toward `windBearing` (radians clockwise from north). */
   frame(dt: number, time: number, viewport: Viewport, turn: number, tilt: number, windBearing: number): SeaFrame {
     this.viewport = viewport;
-    if (this.voyage) {
+    this.room?.pump(dt);
+    this.meet(time);
+    if (this.voyage && !this.combat) {
       const fix = sail(this.voyage, this.travelled, dt, this.pace);
       this.ship = { x: fix.position[0], y: fix.position[1], heading: fix.heading ?? this.ship.heading };
       this.travelled = fix.travelledM;
@@ -401,11 +420,26 @@ export class Sea {
     const fromShip = Math.hypot(pose.eye[0] - this.ship.x, pose.eye[1] - this.ship.y, pose.eye[2]);
     const lens = horizonOf({ fogEndM: 28_000, nearM: 2, farM: 60_000 }, 1, fromShip);
     const seaShot: Shot = { eye: pose.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
+    const combat = this.combat;
+    const fail = (error: unknown) => {
+      this.said = error instanceof Error ? error.message : String(error);
+    };
+    const shown = combat
+      ? combat.frame(dt, time, seaShot, fail)
+      : this.view.kind === 'helm'
+        ? this.helmShot(dt, time, seaShot)
+        : seaShot;
+    if (combat?.done) {
+      this.ship = combat.lying;
+      this.combat = null;
+    }
     return {
-      shot: this.view.kind === 'helm' ? this.helmShot(dt, time, seaShot) : seaShot,
-      ships: this.ships(dt, time, windBearing),
-      hulls: this.hulls(),
-      marks: this.marks(pose, viewport),
+      shot: shown,
+      ships: combat
+        ? combat.ships(dt, time, windBearing).map((ship) => ({ ...ship }))
+        : this.ships(dt, time, windBearing),
+      hulls: combat ? combat.hulls(this.hull.waterline) : this.hulls(),
+      marks: combat ? [] : this.marks(pose, viewport),
       note: this.note(),
       landfall: this.landfall,
       sailing: this.voyage !== null,
@@ -413,6 +447,22 @@ export class Sea {
       pace: this.pace,
       overSide: this.view.kind === 'landing',
     };
+  }
+
+  /** The fight the sea room began for the player, while it is on screen. */
+  get fight(): SeaCombat | null {
+    return this.combat;
+  }
+
+  /** Takes up a fight the sea room has begun for the player: the ship heaves to, her voyage kept to be resumed, and
+   *  the view pans down to it, from the helm's view too. */
+  private meet(time: number): void {
+    if (this.combat || !this.room?.fighting) return;
+    const first = this.room.takeFight();
+    if (!first) return;
+    if (this.voyage) this.stop();
+    if (this.view.kind === 'helm') this.view = { kind: 'sail' };
+    this.combat = new SeaCombat(this.room, first, this.hull.marks, this.hull.sails, time);
   }
 
   /** The view coming down to the helm, there, or going back up, eased between the sea's shot and the helm's. */
@@ -466,8 +516,13 @@ export class Sea {
 
   private ships(dt: number, time: number, windBearing: number): SeaShip[] {
     // Each ship rides the swell a little out of step with the others, her sails set while she is under way.
-    const riding = (who: number | 'own', x: number, y: number, heading: number, underWay: boolean): SeaShip => {
-      const phase = who === 'own' ? 0 : who;
+    const riding = (
+      who: string,
+      phase: number,
+      [x, y, heading]: readonly [number, number, number],
+      underWay: boolean,
+      shade = 1,
+    ): SeaShip => {
       let rig = this.rigs.get(who);
       if (!rig) {
         rig = new SailRig(this.hull.sails);
@@ -483,14 +538,24 @@ export class Sea {
         pitch: 0.015 * Math.sin(time * 0.53 + phase),
         scale: this.scale,
       };
-      return { place, rig };
+      return { place, rig, shade };
     };
     const others = this.room?.others ?? [];
-    for (const who of this.rigs.keys())
-      if (who !== 'own' && !others.some((ship) => ship.player === who)) this.rigs.delete(who);
+    const pirates = this.room?.pirates ?? [];
+    const sailing = new Set([
+      'own',
+      ...others.map((ship) => `player-${ship.player}`),
+      ...pirates.map((pirate) => `pirate-${pirate.id}`),
+    ]);
+    for (const who of this.rigs.keys()) if (!sailing.has(who)) this.rigs.delete(who);
     return [
-      riding('own', this.ship.x, this.ship.y, this.ship.heading, this.voyage !== null),
-      ...others.map((ship) => riding(ship.player, ship.x, ship.y, ship.heading, ship.pace > 0)),
+      riding('own', 0, [this.ship.x, this.ship.y, this.ship.heading], this.voyage !== null),
+      ...others.map((ship) =>
+        riding(`player-${ship.player}`, ship.player, [ship.x, ship.y, ship.heading], ship.pace > 0),
+      ),
+      ...pirates.map((pirate) =>
+        riding(`pirate-${pirate.id}`, pirate.id + 0.5, [pirate.x, pirate.y, pirate.heading], true, PIRATE_SHADE),
+      ),
     ];
   }
 
@@ -514,6 +579,7 @@ export class Sea {
 
   private note(): string {
     const room = this.room ? ` · In the sea room as player ${this.room.own}` : '';
+    if (this.combat) return `Fighting${room}`;
     if (this.view.kind !== 'sail') return room.slice(3);
     if (this.voyage) {
       const remaining = this.voyage.lengthM - this.travelled;
@@ -521,42 +587,5 @@ export class Sea {
       return `Sailing · ${distanceText(remaining)} to go · ${left}${room}`;
     }
     return (this.said || (this.destination ? 'Hove to' : 'At anchor')) + room;
-  }
-}
-
-/** The sea room as the ship sails in it: its course sent when set, and every ship the room last moved. */
-class SeaRoom {
-  readonly own: number;
-  private readonly connection: RoomConnection;
-  private ships: readonly SeenShip[] = [];
-
-  private constructor(connection: RoomConnection) {
-    this.connection = connection;
-    this.own = connection.player;
-  }
-
-  /** Joins the sea at `url`, the ship put to sea at `start`, at rest. */
-  static async join(url: string, start: Point2, pace: Pace): Promise<SeaRoom> {
-    let room: SeaRoom | null = null;
-    const connection = await RoomConnection.open(url, (snapshot) => {
-      if (room) room.ships = snapshot.ships;
-    });
-    room = new SeaRoom(connection);
-    connection.sendCourse([start], pace);
-    return room;
-  }
-
-  /** Every other player's ship. */
-  get others(): readonly SeenShip[] {
-    return this.ships.filter((ship) => ship.player !== this.own);
-  }
-
-  /** Sets the ship's course: the points ahead, at a pace; none brings it to rest. */
-  course(points: readonly Point2[], pace: Pace): void {
-    this.connection.sendCourse(points, pace);
-  }
-
-  close(): void {
-    this.connection.close();
   }
 }

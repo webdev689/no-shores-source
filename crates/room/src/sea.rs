@@ -260,7 +260,7 @@ impl Sea {
             };
             sailing.course.clear();
             sailing.ship.pace = 0;
-            let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
+            let at = |x: f64, y: f64, heading: f64, rung: i8| sailing::ship::Ship {
                 x,
                 y,
                 heading,
@@ -268,10 +268,12 @@ impl Sea {
                 abeam: 0.0,
                 turn: 0.0,
                 sail_way: 0.0,
-                rung: SAILS_SET,
+                rung,
             };
-            let own = at(sailing.ship.x, sailing.ship.y, sailing.ship.heading);
-            let fight = Fight::meet(own, at(pirate.x, pirate.y, pirate.heading), pirate.seed, &waters, time);
+            // She has hove to: the player sets her sails; the pirate comes on under hers.
+            let own = at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0);
+            let captain = at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
+            let fight = Fight::meet(own, captain, pirate.seed, &waters, time);
             self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
         }
     }

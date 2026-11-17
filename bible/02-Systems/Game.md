@@ -97,6 +97,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   plans the way there again from wherever the ship lies, after going ashore and coming back too.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
+- **Pirates** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"). A bold one that comes
+  within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight at true scale,
+  then back up when it ends.
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
@@ -122,7 +125,8 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
   A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies; each voyage's course and pace go
-  to it, and every other player's ship is drawn where the room moved it, each in a paint of its own.
+  to it, and every other player's ship is drawn where the room moved it. Playing alone, the same sea room runs in the
+  page, so its pirates and fights are the same law.
 
 ## Drawing
 

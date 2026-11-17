@@ -65,9 +65,32 @@ const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_
 /// The ships the client's test expects in the sea's snapshot.
 const PIRATES: [Pirate; 1] = [Pirate { id: 4, seed: 9, x: 1_000.5, y: 2_000.25, heading: 1.5, bold: true }];
 
-/// A fight as a snapshot carries it: its player and some numbers of its view.
+/// Deep, still water everywhere.
+struct Open;
+
+impl sailing::waters::Waters for Open {
+    fn at(&self, _x: f64, _y: f64, _time: f64) -> sailing::waters::Spot {
+        sailing::waters::Spot { bed: -50.0, surface: Some(0.0) }
+    }
+}
+
+/// A fight as a snapshot carries it: its player, and its view with the player's look laid to starboard and her port
+/// guns run out (the client's test reads it back).
 fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
-    vec![(2, vec![12.5, 0.0, -3.25])]
+    let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
+        x,
+        y,
+        heading,
+        ahead: 0.0,
+        abeam: 0.0,
+        turn: 0.0,
+        sail_way: 0.0,
+        rung: 2,
+    };
+    let fight = naval::fight::Fight::meet(at(0.0, 0.0, 0.0), at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0 };
+    let events = [naval::fight::Event::RunOut { side: naval::arms::Side::Port }];
+    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim)))]
 }
 
 const SHIPS: [(PlayerId, Ship); 2] = [

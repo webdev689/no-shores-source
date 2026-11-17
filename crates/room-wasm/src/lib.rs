@@ -21,7 +21,7 @@ use std::cell::RefCell;
 #[derive(Debug)]
 enum Opened {
     Land { room: Box<Room>, node: Option<(String, [f64; 4])> },
-    Sea(Sea),
+    Sea(Box<Sea>),
 }
 
 thread_local! {
@@ -97,7 +97,7 @@ pub fn open_sea(text: &[u8]) -> bool {
     let Some(layout) = std::str::from_utf8(text).ok().and_then(|text| world::layout::parse(text).ok()) else {
         return false;
     };
-    keep(Opened::Sea(Sea::new(&layout)));
+    keep(Opened::Sea(Box::new(Sea::new(&layout))));
     true
 }
 

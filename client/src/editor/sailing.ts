@@ -182,7 +182,7 @@ export class Sailing {
   }
 
   /** Where she is drawn in the window, her height scaled as the land is drawn. */
-  place(view: LandView, exaggeration: number): ShipPlace {
+  place(view: Pick<LandView, 'leftM' | 'topM'>, exaggeration: number): ShipPlace {
     return {
       x: (this.ship[0] ?? 0) - view.leftM,
       y: (this.ship[1] ?? 0) - view.topM,

@@ -3,9 +3,11 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
-import { courseBytes, inputBytes, readFromRoom } from './messages.ts';
+import { courseBytes, inputBytes, ordersBytes, readFromRoom } from './messages.ts';
+import { fightViewOf, ordersNumbers } from './seaFight.ts';
 
 const target = (path: string) => new URL(`../../../target/${path}`, import.meta.url);
 const built = (path: string, how: string) =>
@@ -75,7 +77,7 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   );
 });
 
-test('the sea’s snapshot the server wrote reads back as its ships', async () => {
+test('the sea’s snapshot the server wrote reads back as its ships, its pirates and its fights', async () => {
   const sea = readFromRoom(await written('sea.bin'));
   assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.players, sea.ships] : null, [
     77n,
@@ -85,6 +87,25 @@ test('the sea’s snapshot the server wrote reads back as its ships', async () =
       { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
     ],
   ]);
+  assert.deepEqual(sea?.kind === 'snapshot' ? sea.pirates : null, [{ id: 4, x: 1_000.5, y: 2_000.25, heading: 1.5 }]);
+  const fights = sea?.kind === 'snapshot' ? sea.fights : [];
+  assert.equal(fights[0]?.player, 2);
+  const fight = fightViewOf(fights[0]?.view ?? []);
+  assert.deepEqual(
+    [fight.clock, fight.over, fight.player.ship.slice(0, 3), fight.captain.ship.slice(0, 3)],
+    [0, null, [0, 0, 0], [0, -700, 3]],
+  );
+  assert.deepEqual([fight.player.state, fight.captain.mode, fight.player.guns.load], ['afloat', 'cruise', 'round']);
+  assert.deepEqual([fight.lay?.side, fight.lay?.launches.length], ['starboard', 3]);
+  assert.deepEqual(fight.events, [{ kind: 'run-out', side: 'port' }]);
+});
+
+test('a fighting ship’s orders cross as the naval crate’s numbers', () => {
+  const helm = { steer: -0.5, crab: true, climb: 1 } as const;
+  const orders: FightOrders = { helm, aim: { bearing: 85, range: 120 }, fire: true, brace: false, load: 'chain' };
+  assert.deepEqual(ordersNumbers(orders), [-0.5, 1, 1, 1, 85, 120, 1, 0, 3]);
+  const course = Course.getRootAsCourse(new flatbuffers.ByteBuffer(ordersBytes(ordersNumbers(orders))));
+  assert.deepEqual([Array.from(course.ordersArray() ?? []), course.pointsLength()], [ordersNumbers(orders), 0]);
 });
 
 test('an input is its number, its controls and fight buttons in the combat crate’s order, its look, its arms, the tick seen, a foe asked for, a dress if given, and a respawn', () => {

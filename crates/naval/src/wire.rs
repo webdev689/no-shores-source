@@ -1,16 +1,6 @@
-//! A fight's orders and what it shows, as numbers in a fixed order: the sea room's messages carry them
-//! (crates/protocol), and the browser reads them back into its view of the fight (client/src/network/seaFight.ts).
-//!
-//! Orders, `ORDERS` numbers: the helm's steer (-1 port to 1 starboard), crab (0 or 1) and climb (-1, 0 or 1); whether
-//! a look is laid (0 or 1), its bearing off her bow (degrees, to starboard) and its range (metres); the fire and the
-//! brace (0 or 1); and a load to take (0 none, else 1 + its place in `Shot::CYCLE`).
-//!
-//! The view: the clock and its end (0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, in
-//! `VESSEL_NUMBERS` (her numbers, her pose, hull, its most, canvas, its most, men, their most, her state, her fires,
-//! the port and starboard guns' seconds left and progress, her load and her brace); the captain's mode, whether she
-//! is hostile and whether her port and starboard guns stand run out; the balls aloft, a count and four each (place,
-//! radius); the lay, 0 for none or 1 and its side, elevation, reach, whether it is on target and a count of six each
-//! (mouth, velocity); and the tick's events, a count and each event's kind and numbers (`EVENT_NUMBERS`).
+//! A fight's orders and what it shows, as numbers in a fixed order: the sea room's messages carry them, so a fight
+//! crosses as a body does (crates/protocol), and the browser reads them back into its view of the fight
+//! (client/src/network/seaFight.ts). The Server note in the bible lists the order.
 
 use crate::arms::Side;
 use crate::ballistics::{flight, launch_velocity};
