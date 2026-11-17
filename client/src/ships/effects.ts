@@ -125,9 +125,10 @@ export class Effects {
           colour: DUST,
           life: 1.4,
         }));
-      } else if (event.kind === 'hit') {
+      } else if (event.kind === 'hit' || event.kind === 'ram') {
+        // A stem's ram throws up a hull's splinters where it struck.
         const spot = toWindow(event.point);
-        const canvas = event.zone === 'rig';
+        const canvas = event.kind === 'hit' && event.zone === 'rig';
         this.add(canvas ? 6 : 9, spot, now, () => ({
           velocity: [
             this.spread(canvas ? 1.5 : 4),

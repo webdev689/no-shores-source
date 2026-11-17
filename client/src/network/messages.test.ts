@@ -110,7 +110,10 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
     fight.lay?.ends.every((end) => end !== null && end.water && end.strike === null),
     'laid 80 m out with her 700 m off, each ball splashes',
   );
-  assert.deepEqual(fight.events, [{ kind: 'run-out', side: 'port' }]);
+  assert.deepEqual(fight.events, [
+    { kind: 'run-out', side: 'port' },
+    { kind: 'ram', ship: 1, by: 0, point: [1, 2, 3], dealt: 4.5 },
+  ]);
 });
 
 test('a fighting ship’s orders cross as the naval crate’s numbers', () => {

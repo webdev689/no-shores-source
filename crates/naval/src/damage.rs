@@ -76,12 +76,12 @@ pub struct Hurt {
 }
 
 /// A browser's Math.round, for positive numbers: half up.
-fn rounded(value: f64) -> f64 {
+pub(crate) fn rounded(value: f64) -> f64 {
     (value + 0.5).floor()
 }
 
 /// Men a ball takes: its men over her toughness, the roll deciding the part man.
-fn men(count: f64, roll: f64, tough: f64) -> f64 {
+pub(crate) fn men(count: f64, roll: f64, tough: f64) -> f64 {
     if count > 0.0 { (count / tough + roll.clamp(0.0, 0.999_999)).floor() } else { 0.0 }
 }
 
@@ -170,7 +170,7 @@ impl Damage {
     /// The share of her best way her canvas leaves her.
     #[must_use]
     pub fn way_share(&self) -> f64 {
-        if self.max_sail > 0.0 { BARE_POLES + (1.0 - BARE_POLES) * self.sail / self.max_sail } else { 1.0 }
+        way_share_of(self.sail, self.max_sail)
     }
 
     /// Whether she still fights: afloat.
@@ -340,6 +340,12 @@ impl Damage {
         }
         true
     }
+}
+
+/// The share of her best way `sail` of her `max_sail` canvas leaves her: bare poles leave her some.
+#[must_use]
+pub fn way_share_of(sail: f64, max_sail: f64) -> f64 {
+    if max_sail > 0.0 { BARE_POLES + (1.0 - BARE_POLES) * sail / max_sail } else { 1.0 }
 }
 
 /// What her hurts and her going down do to her pose: how far she has settled (metres), her trim (radians, bow up) and

@@ -11,11 +11,12 @@ dfo_paths:
   - src/systems/seaHelm.js
   - src/systems/naval/
   - src/scenes/naval/navalHost.js
+  - src/scenes/naval/navalRams.js
   - src/world/ships/ownBoats/
   - src/systems/naval/navalDirector.js
   - src/world/ships/galleonRig.js
   - src/world/ships/largeBoatRig.js
-dfo_commit: ce0bb33c20 (main); fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit) for ownBoats and sailAssist; 1c0fd681 for the aim
+dfo_commit: ce0bb33c20 (main); fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit) for ownBoats and sailAssist; 1c0fd681 for the aim and the ram
 ---
 # Pick - Sailing and Naval Combat
 
@@ -56,5 +57,7 @@ DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over
    owner's Sloop.
 2. The naval combat core: broadsides between the player's hull and one captain. Built: [[Naval Combat]], a pirate
    captain on a second Sloop.
-3. Boarding, ramming, crew, quays and ports.
+3. Boarding, ramming, crew, quays and ports. Built so far: ramming and hulls kept apart, by DFO's `navalRam.js` and
+   `navalRams.js` ([[Naval Combat]]); and the fight of many ships in a fleet room on the [[Server]], which boarding
+   and crew stand on. Waiting: boarding, crew, quays and ports.
 4. Pirates on the Overworld, and the pan to combat when one comes for the player.

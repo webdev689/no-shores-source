@@ -29,11 +29,13 @@ export interface CombatRules {
   readonly sizes: CombatSizes;
   /** Keeps these blocks as the course every later prediction moves on. */
   setCourse(blocks: readonly Block[]): void;
-  /** The player's fighter one tick on under an intent, among the fighters they see, and the shot it let go. */
+  /** The player's fighter one tick on under an intent, taking up `arms` as the room does, among the fighters they
+   *  see, and the shot it let go. */
   predict(
     fighter: Float64Array,
     intent: Float64Array,
     id: number,
+    arms: number,
     view: readonly Glanced[],
   ): { readonly fighter: Float64Array; readonly fired: Fired | null };
   /** What hands holding these forge layers fight with, as combat's arms code. */
@@ -82,13 +84,14 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
       );
       lend(floatBytes(floats), (address) => exports.fighter_course(address, floats.byteLength));
     },
-    predict: (fighter, intent, id, view) => {
-      const floats = new Float64Array(sizes.fighter + sizes.intent + 1 + view.length * (sizes.glance + 1));
+    predict: (fighter, intent, id, arms, view) => {
+      const floats = new Float64Array(sizes.fighter + sizes.intent + 2 + view.length * (sizes.glance + 1));
       floats.set(fighter, 0);
       floats.set(intent, sizes.fighter);
       floats[sizes.fighter + sizes.intent] = id;
+      floats[sizes.fighter + sizes.intent + 1] = arms;
       view.forEach((each, index) => {
-        const start = sizes.fighter + sizes.intent + 1 + index * (sizes.glance + 1);
+        const start = sizes.fighter + sizes.intent + 2 + index * (sizes.glance + 1);
         floats[start] = each.id;
         floats.set(each.glance, start + 1);
       });

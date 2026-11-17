@@ -90,17 +90,25 @@ Where the work stands now, for the next session. Each session rewrites this note
   facing the locked foe ([[Locked On, the Figure Faces Its Foe]]); foes drawn without stutter; and ranged weapons that
   aim and fire ([[Ranged Weapons Aim and Fire]]): no guard, quick and aimed shots, over the shoulder and ADS, a
   crosshair, and tracers.
+- Ships in the rooms, on `main` (pull request #51), tested offline
+  ([[Server]], "A fleet"; [[Naval Combat]], "The fight", "Ramming", "In a fleet room"): the naval `Fight` holds many
+  ships by number, each sailed by a player's orders or a captain's mind, a captain choosing whom she fights among the
+  players' ships; a fleet room (`/room/fleet-<name>`) where up to 16 players put their Sloops to sea, call up to four
+  captains and fight them together, each browser predicting her own ship through `room.wasm` to the bit; DFO's ram
+  and hull push; and the World Editor sailing there with `?room=`. A golden trace showed the one-captain fight
+  unchanged line for line. Two players and a captain ran 480 s on the local Cloudflare runtime at 57.8 snapshots a
+  second, both predictions equal to the room's ships to the bit.
 
 ## Waiting on the owner
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
-  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms: its proxy writes
-  the stored token over the upload token Cloudflare hands back.
-- #50 is merged and published. Its open choices: where another
-  player's colour goes on the Sloop, her 75 m drawn size at sea.
-- #48 is merged. Its intent carries the aim and its events the stroke, so the page and the rooms deploy
-  together, with the owner's yes. Walking or sprinting that does not happen on demand was not reproduced
-  playing alone; when it happens is the owner's to say.
+  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
+  writes the stored token over the upload token Cloudflare hands back, so they deploy from the `rooms` workflow, run by
+  hand on `main` with the owner's yes.
+- #50's open choices: where another player's colour goes on the Sloop, her 75 m drawn size at sea.
+- #48, #50 and #51 are merged. The intent carries the aim and its events the stroke, so the page and the rooms deploy
+  together, with the owner's yes. Walking or sprinting that does not happen on demand was not reproduced playing
+  alone; when it happens is the owner's to say.
 - Deploying the world's rooms (`npm run server:deploy`, which bakes the node files first) needs the owner's yes and
   the token. The deployed rooms keep the speed hack and the two socket faults until that deploy, and have no pirates.
 - Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
@@ -112,10 +120,16 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- A whole-repo audit found five things to fix before the next deploy, each waiting on the owner's word: one socket's
+  flood of inputs stalls a room; costly courses can stall the shared sea; `npm run server:deploy` builds neither the
+  wasm nor the schema; on foot in a node the browser predicts with an unwrapped look, so it and the room part in the
+  last bits; and the session toolkit installs unpinned code. Its smaller findings are fixed (#51).
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
-  [[Naval Combat]] are on `main`, the sea's pirates and fights on #50. Next is the pick's step 3: boarding, ramming,
-  crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's hurts kept after it, ports' waters
-  and the land a fight is fought over.
+  [[Naval Combat]] are on `main`, with the sea's pirates and fights, and ramming and the fleet room. The rest of
+  the pick's step 3 is boarding, crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's
+  hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
+  crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
+  which boarding needs, is for the `movement` crate.
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
@@ -130,7 +144,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
 - Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]); a frame
-  there takes seconds, so a fight is seen beginning, not fought through.
+  there takes seconds, so a fight is seen beginning, not fought through. A driver should pace every frame from the
+  first, and read the page's panel only after a frame has drawn.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
   map, the charted sea's wash laid while the map is up.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them

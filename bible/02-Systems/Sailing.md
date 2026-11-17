@@ -11,8 +11,10 @@ code:
   - crates/sailing/src/pose.rs#pose_of
   - crates/sailing/src/waters.rs#LandWaters
   - crates/sailing/src/waters.rs#steady_wind
+  - crates/sailing/src/waters.rs#OpenSea
   - crates/land/src/exact.rs#fingerprint
   - crates/land-wasm/src/sail.rs#sail_bytes
+  - client/src/editor/afloat.ts#Afloat
   - client/src/editor/sailing.ts#Sailing
   - client/src/editor/harbour.ts#Harbour
   - client/src/ships/shipView.ts#ShipView
@@ -53,6 +55,9 @@ rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop
   already aground onto higher ground. Then she runs on unswung if only her swing grounds her, or swings clear if only
   her way does, as the mod refused only what ran into what she touched; else she is held and loses her way. Oars
   astern take her off a shore. Within a hand of her draught she touches, and the panel says so.
+- **The open sea.** A fleet room's waters ([[Server]]): deep water everywhere under the world's swell, and no land.
+  The swell rolls whole over any sea 15 m deep or more, so wherever a landmass's sea is that deep, its water is the
+  open sea's to the bit.
 - **One crate, every machine.** The browser steps her through `land-wasm`'s door, over the open landmass, in ticks of
   1/60 s, a second's at most a request. Its maths is exact or `libm`'s, so a voyage's fingerprint is the same natively
   and as WebAssembly ([[Agree to the Bit]]). The door refuses numbers no ship could have: a way over 10 m/s, a swing
@@ -107,10 +112,16 @@ request at a time; time spent waiting on the land worker is caught up, a second 
 into the land's pass, lit as the land is, so the water sees her ([[Water]]): none inside her, foam at her bow, and her
 wake in the ripples. Picking another landmass brings her in.
 
+With `?room=` in the editor's address, Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep
+or more: the room steps her by her orders, a tick at a time, and the browser predicts her by the same rules through
+`room-wasm`, correcting her by each snapshot. The water then rolls by the room's clock, so every ship the room shows
+rides the wave drawn under her ([[Naval Combat]]).
+
 ## Limits
 
 - One hull, the Sloop.
 - Her helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
-- The editor steps her; no room hosts a ship yet.
-- No current, collisions with other hulls, cargo or crew yet.
+- Alone, the editor steps her; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
+  in the sea room's fights, the room steps her by her orders.
+- No current, cargo or crew yet. Hulls are kept apart only in a fight ([[Naval Combat]]), as every fleet room is.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.

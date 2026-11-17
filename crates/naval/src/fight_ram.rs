@@ -1,0 +1,170 @@
+//! Hulls in a fight after every ship has moved: those that overlap pushed apart, and each player's stem ramming a
+//! ship of another flag it meets with way on, by the ram's law.
+
+use super::{Event, Fight, Sailor, Vessel};
+use crate::arms::{SLOOP_ARMS, hull_block, posed};
+use crate::captain::course::velocity_of;
+use crate::damage::{BRACE_TAKEN, Hurt, SHIP_TOUGHNESS, State, founder, rounded};
+use crate::ram::{
+    Flat, RAM_COOLDOWN_S, RAM_MEMORY_S, RAM_REACH, RAM_SPEED, RECOIL_SHARE, driven_into, overlap, ram_blow,
+    ram_closing, ram_contact, ram_line, ram_men, ram_paid, ram_room, recoil_room,
+};
+use crate::shots::ShipId;
+use sailing::SLOOP;
+use sailing::pose::{Pose, frame, pose_of};
+use sailing::waters::Waters;
+use std::collections::{BTreeMap, VecDeque};
+
+/// A player's stem as the ram's law keeps it: her way over the last moments (the fight's clock, then her velocity),
+/// and when she last rammed each ship.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Stem {
+    ways: VecDeque<(f64, [f64; 2])>,
+    rammed: BTreeMap<ShipId, f64>,
+}
+
+impl Stem {
+    /// Every number it holds, in a fixed order.
+    #[must_use]
+    pub fn numbers(&self) -> Vec<f64> {
+        let mut numbers = vec![self.ways.len() as f64];
+        numbers.extend(self.ways.iter().flat_map(|(at, way)| [*at, way[0], way[1]]));
+        numbers.push(self.rammed.len() as f64);
+        numbers.extend(self.rammed.iter().flat_map(|(ship, at)| [f64::from(*ship), *at]));
+        numbers
+    }
+}
+
+/// A Sloop on the flat: her hull's box (`SLOOP_ARMS`), its middle set forward of hers as the box is.
+fn flat_of(vessel: &Vessel) -> Flat {
+    let [low, high] = SLOOP_ARMS.hull;
+    let (forward, starboard) = frame(vessel.ship.heading);
+    let ahead = (high[0] + low[0]) / 2.0;
+    Flat {
+        middle: [vessel.ship.x + forward[0] * ahead, vessel.ship.y + forward[1] * ahead],
+        forward,
+        starboard,
+        half_length: (high[0] - low[0]) / 2.0,
+        half_beam: high[1].max(-low[1]),
+    }
+}
+
+/// Her pose on the water at `time`, a captain's as she founders.
+fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
+    let afloat = pose_of(&vessel.ship, &SLOOP, waters, time);
+    vessel.pose = match &vessel.sailor {
+        Sailor::Captain(command) => {
+            let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
+            Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat }
+        }
+        Sailor::Player => afloat,
+    };
+}
+
+/// Moves her by `push` and cuts her way by how squarely she drove into it.
+fn shove(vessel: &mut Vessel, push: [f64; 2]) {
+    let (forward, _) = frame(vessel.ship.heading);
+    let kept = 1.0 - driven_into(forward, push);
+    let ship = &mut vessel.ship;
+    (ship.x, ship.y) = (ship.x + push[0], ship.y + push[1]);
+    (ship.ahead, ship.sail_way) = (ship.ahead * kept, ship.sail_way * kept);
+}
+
+impl Fight {
+    /// Hulls that overlap pushed apart, each pair in the order of their numbers: each out of the other by half the
+    /// overlap, her way cut by how squarely she drove into it. A ship gone down is no longer in the way.
+    pub(super) fn keep_apart(&mut self, waters: &impl Waters, time: f64) {
+        let ids: Vec<ShipId> = self
+            .ships
+            .iter()
+            .filter(|(_, vessel)| vessel.in_fight() && vessel.damage.state != State::Sunk)
+            .map(|(id, _)| *id)
+            .collect();
+        for (at, first) in ids.iter().enumerate() {
+            for second in &ids[at + 1..] {
+                let (Some(one), Some(other)) = (self.ships.get(first), self.ships.get(second)) else { continue };
+                let Some(push) = overlap(&flat_of(one), &flat_of(other)) else { continue };
+                let half = [push[0] / 2.0, push[1] / 2.0];
+                for (id, push) in [(*first, half), (*second, [-half[0], -half[1]])] {
+                    if let Some(vessel) = self.ships.get_mut(&id) {
+                        shove(vessel, push);
+                        settle(vessel, waters, time);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Each player's stem, after every ship has moved: her way kept for `RAM_MEMORY_S`, and, with way on along her
+    /// keel and afloat, a ram on the first ship of another flag it meets, one a tick.
+    pub(super) fn rams(&mut self, events: &mut Vec<Event>) {
+        let clock = self.clock;
+        let players: Vec<ShipId> =
+            self.ships.iter().filter(|(_, vessel)| vessel.command().is_none()).map(|(id, _)| *id).collect();
+        for id in players {
+            let Some(vessel) = self.ships.get(&id) else { continue };
+            let way = velocity_of(&vessel.ship);
+            let (forward, _) = frame(vessel.ship.heading);
+            let stem = self.stems.entry(id).or_default();
+            stem.ways.push_back((clock, way));
+            while stem.ways.front().is_some_and(|(at, _)| clock - at > RAM_MEMORY_S) {
+                stem.ways.pop_front();
+            }
+            stem.rammed.retain(|_, at| clock - *at < RAM_COOLDOWN_S);
+            let driving = stem.ways.iter().any(|(_, way)| way[0] * forward[0] + way[1] * forward[1] >= RAM_SPEED);
+            if driving && vessel.damage.state == State::Afloat {
+                self.ram_from(id, events);
+            }
+        }
+    }
+
+    /// Her stem on the first ship of another flag it meets, if its way drives a blow home she can pay for.
+    fn ram_from(&mut self, id: ShipId, events: &mut Vec<Event>) {
+        let (Some(vessel), Some(stem)) = (self.ships.get(&id), self.stems.get(&id)) else { return };
+        let [_, high] = SLOOP_ARMS.hull;
+        let point = posed(&vessel.ship, &vessel.pose, [high[0], 0.0, 1.0]);
+        let share = RECOIL_SHARE * if vessel.guns.braced { BRACE_TAKEN } else { 1.0 };
+        let ways: Vec<[f64; 2]> = stem.ways.iter().map(|(_, way)| *way).collect();
+        let mine = &vessel.damage;
+        let struck = self.ships.iter().find_map(|(target, her)| {
+            let fair = her.flag() != vessel.flag() && her.in_fight() && her.damage.state == State::Afloat;
+            if !fair || stem.rammed.contains_key(target) {
+                return None;
+            }
+            let contact = ram_contact(&hull_block(&her.ship, &her.pose, &SLOOP_ARMS), point, RAM_REACH)?;
+            let closing = ram_closing(&ways, velocity_of(&her.ship), contact.normal);
+            let blow = ram_blow(closing, contact.side, mine.max_hull, her.damage.max_hull);
+            let blow = ram_paid(blow, recoil_room(mine), share);
+            (blow >= 1.0).then_some((*target, blow))
+        });
+        let Some((target, blow)) = struck else { return };
+        let recoil = rounded(blow * share).min(recoil_room(mine));
+        if let Some(stem) = self.stems.get_mut(&id) {
+            stem.rammed.insert(target, self.clock);
+            stem.ways.clear();
+        }
+        let roll = self.draws.draw();
+        let clock = self.clock;
+        let Some(her) = self.ships.get_mut(&target) else { return };
+        let dealt = blow.min(ram_room(&her.damage));
+        let crew = ram_men(dealt, roll, SHIP_TOUGHNESS);
+        let floor = ram_line(&her.damage);
+        let change = her.damage.apply(Hurt { hull: blow, sail: 0.0, crew, fire: false }, clock, floor);
+        if let Sailor::Captain(command) = &mut her.sailor {
+            if change == Some(State::Struck) {
+                command.struck_at = Some(clock);
+            }
+            command.her.provoke(id);
+        }
+        events.push(Event::Ram { ship: target, by: id, point, dealt });
+        if let Some(state) = change {
+            events.push(Event::State { ship: target, state });
+        }
+        if let Some(rammer) = self.ships.get_mut(&id)
+            && let Some(state) =
+                rammer.damage.apply(Hurt { hull: recoil, sail: 0.0, crew: 0.0, fire: false }, clock, 0.0)
+        {
+            events.push(Event::State { ship: id, state });
+        }
+    }
+}

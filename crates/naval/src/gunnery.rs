@@ -5,6 +5,7 @@ use crate::arms::{Arms, Side, posed};
 use crate::ballistics::{Ball, elevation_for_range, launch_velocity, max_range, scatter};
 use crate::guns::{Gun, SHOT_SWITCH, SWIVEL, Shot, loaded};
 use crate::random::Mulberry32;
+use crate::shots::{Flag, ShipId};
 use sailing::pose::{Pose, frame};
 use sailing::ship::Ship;
 use std::f64::consts::PI;
@@ -161,7 +162,7 @@ pub fn lay_on(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, tar
 /// The balls a laid side fires: one from each mouth, each `RIPPLE_S` after the one before and from where its port is
 /// by then, carried at the deck's velocity, scattered by its crew's skill and the volley's seed.
 #[must_use]
-pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, shooter: usize) -> Vec<Ball> {
+pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, shooter: (ShipId, Flag)) -> Vec<Ball> {
     let mut draws = Mulberry32::new(seed);
     let widen = widening(skill);
     (0..lay.mouths.len())
@@ -181,7 +182,7 @@ pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, sho
 /// Gun `index`'s ball as the lay lies, unscattered (the aim's): `RIPPLE_S` a gun after the first and from where its
 /// port is by then.
 #[must_use]
-pub fn aimed(lay: &Lay, index: usize, carry: [f64; 3], clock: f64, shooter: usize) -> Ball {
+pub fn aimed(lay: &Lay, index: usize, carry: [f64; 3], clock: f64, (shooter, flag): (ShipId, Flag)) -> Ball {
     let delay = index as f64 * RIPPLE_S;
     let mouth = lay.mouths[index];
     Ball {
@@ -189,11 +190,12 @@ pub fn aimed(lay: &Lay, index: usize, carry: [f64; 3], clock: f64, shooter: usiz
         launch: launch_velocity(lay.dir, lay.elevation, lay.gun.speed, carry),
         born: clock + delay,
         shooter,
+        flag,
         gun: lay.gun,
         shot: lay.shot,
         flown: 0.0,
         fired: false,
-        rigged: [false; 2],
+        rigged: Vec::new(),
     }
 }
 

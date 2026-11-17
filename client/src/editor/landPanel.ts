@@ -174,7 +174,8 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   const fightHint = make(
     'p',
     'F calls a pirate, or sends her off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
-      ' A left click holds fire, the wheel changes shot, and C braces.',
+      ' A left click holds fire, the wheel changes shot, and C braces. In a fleet (?room= in the address), F calls' +
+      ' a captain and X sends them all off.',
     'hint',
   );
   root.append(views, walkHint, sailHint, fightHint);

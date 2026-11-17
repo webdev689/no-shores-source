@@ -1,6 +1,7 @@
 use super::*;
 use crate::arms::{SLOOP_ARMS, Side};
 use crate::guns::{SWIVEL, Shot};
+use crate::shots::Flag;
 use sailing::pose::Pose;
 use sailing::ship::Ship;
 
@@ -77,7 +78,7 @@ fn a_lay_on_a_point_above_the_water_lays_a_higher_arc() {
 fn a_volley_ripples_its_guns_and_each_leaves_its_own_port_moving_with_the_deck() {
     let ship = sailing_north(3.0);
     let laid = lay(&ship, &LEVEL, &SLOOP_ARMS, Side::Port, Shot::Round, 80.0, None);
-    let balls = volley(&laid, [0.0, -3.0, 0.0], 0.6, 1234, 10.0, 0);
+    let balls = volley(&laid, [0.0, -3.0, 0.0], 0.6, 1234, 10.0, (0, Flag::Player));
     assert_eq!(balls.len(), 3);
     for (index, ball) in balls.iter().enumerate() {
         let delay = index as f64 * RIPPLE_S;
@@ -87,8 +88,8 @@ fn a_volley_ripples_its_guns_and_each_leaves_its_own_port_moving_with_the_deck()
         let speed = (own[0] * own[0] + own[1] * own[1] + own[2] * own[2]).sqrt();
         assert!((speed - SWIVEL.speed).abs() < 1e-9, "{speed}");
     }
-    assert_eq!(balls, volley(&laid, [0.0, -3.0, 0.0], 0.6, 1234, 10.0, 0), "one seed, one scatter");
-    assert_ne!(balls, volley(&laid, [0.0, -3.0, 0.0], 0.6, 4321, 10.0, 0));
+    assert_eq!(balls, volley(&laid, [0.0, -3.0, 0.0], 0.6, 1234, 10.0, (0, Flag::Player)), "one seed, one scatter");
+    assert_ne!(balls, volley(&laid, [0.0, -3.0, 0.0], 0.6, 4321, 10.0, (0, Flag::Player)));
 }
 
 #[test]

@@ -4,6 +4,7 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
 
+pub mod fleet;
 mod foes;
 mod judging;
 pub mod pirates;
@@ -310,11 +311,16 @@ impl Room {
         }
     }
 
-    /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim.
+    /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
+    /// a body the section killed lies still, but the tick counts, so time spent dead is not banked to catch up on.
     fn stand_stalled(&mut self, id: PlayerId) {
         let clock = self.clock;
         let Some(found) = self.players.get_mut(&id) else { return };
-        if found.stepped + VIEW_LAG >= clock - found.joined || matches!(found.standing, Standing::Dead { .. }) {
+        if found.stepped + VIEW_LAG >= clock - found.joined {
+            return;
+        }
+        if matches!(found.standing, Standing::Dead { .. }) {
+            found.stepped += 1;
             return;
         }
         let standing = combat::Intent {

@@ -27,6 +27,9 @@ export function pictureRange(
   return { url: manifest.base + pack, range: `bytes=${offset}-${offset + length - 1}`, type };
 }
 
+/** A strip that failed to arrive is asked for again only this long after, not on every frame that wants it. */
+export const RETRY_AFTER_MS = 5000;
+
 async function fetched(url: string, init?: RequestInit): Promise<Response> {
   const answer = await fetch(url, init);
   if (!answer.ok) throw new Error(`${url} answered ${answer.status}`);
@@ -79,8 +82,8 @@ export class ForgeStore {
           .then((answer) => answer.arrayBuffer())
           .then((bytes) => decode(bytes, where.type))
       : Promise.resolve(null);
-    // A failed fetch is forgotten, so the next ask tries again.
-    loading.catch(() => this.strips.delete(path));
+    // A failed fetch is forgotten after a while, so an ask then tries again, and none meanwhile fetches it anew.
+    loading.catch(() => setTimeout(() => this.strips.delete(path), RETRY_AFTER_MS));
     this.strips.set(path, loading);
     return loading;
   }

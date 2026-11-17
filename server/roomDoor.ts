@@ -31,15 +31,18 @@ export interface RoomDoor {
   openNode(nodeText: string): boolean;
   /** Opens the sea round the continents of a layout file's text; false if the text is not a layout. */
   openSea(layoutText: string): boolean;
+  /** Opens a fleet room on the open sea. */
+  openFleet(): boolean;
   /** A new player's number, or 0 when the room is full. */
   join(): number;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
-  /** A player's input on land, or their ship's course at sea. */
+  /** A player's input on land, their ship's course at sea, or their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
-  /** Every player, or every ship, after the last tick, as a snapshot's bytes. */
+  /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
+   *  bytes. */
   snapshot(): Uint8Array;
 }
 
@@ -51,6 +54,7 @@ interface RoomExports {
   room_open(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
   room_open_sea(address: number, length: number): number;
+  room_open_fleet(): number;
   room_join(): number;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -96,6 +100,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
     openSea: (layoutText) => openWith(exports.room_open_sea, layoutText),
+    openFleet: () => exports.room_open_fleet() === 1,
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),

@@ -6,7 +6,7 @@ use crate::arms::Side;
 use crate::ballistics::flight;
 use crate::captain::Mode;
 use crate::damage::{State, Zone};
-use crate::fight::{Aim, End, Event, Fight, Orders, Refusal, Vessel};
+use crate::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use crate::guns::Shot;
 use crate::shots::ShotEvent;
 use crate::shots::Stop;
@@ -21,8 +21,8 @@ const MOST_RANGE_M: f64 = 1e5;
 
 /// Each event's kind and how many numbers follow it: muzzle (ship, point, launch), hit (ship struck, by, zone,
 /// point), splash and land (point), run-out (side), state (ship, state), refused (why, side, seconds left), no-sail
-/// (wrecked), load (shot).
-pub const EVENT_NUMBERS: [usize; 9] = [7, 6, 3, 3, 1, 2, 3, 1, 1];
+/// (wrecked), load (shot), ram (ship struck, by, point, hull dealt).
+pub const EVENT_NUMBERS: [usize; 10] = [7, 6, 3, 3, 1, 2, 3, 1, 1, 6];
 
 /// Orders from their numbers, or why they are not orders. They come from a player's machine.
 pub fn orders_from(numbers: &[f64]) -> Result<Orders, String> {
@@ -116,7 +116,7 @@ fn event_numbers(event: &Event) -> Option<Vec<f64>> {
     let point = |at: [f64; 3]| at.to_vec();
     Some(match *event {
         Event::Shot(ShotEvent::Muzzle { shooter, point: at, launch }) => {
-            [vec![1.0, shooter as f64], point(at), point(launch)].concat()
+            [vec![1.0, f64::from(shooter)], point(at), point(launch)].concat()
         }
         Event::Shot(ShotEvent::Hit { shooter, target, zone, point: at, .. }) => {
             let zone = match zone {
@@ -124,21 +124,25 @@ fn event_numbers(event: &Event) -> Option<Vec<f64>> {
                 Zone::Holed => 1.0,
                 Zone::Rig => 2.0,
             };
-            [vec![2.0, target as f64, shooter as f64, zone], point(at)].concat()
+            [vec![2.0, f64::from(target), f64::from(shooter), zone], point(at)].concat()
         }
         Event::Shot(ShotEvent::Splash { point: at, .. }) => [vec![3.0], point(at)].concat(),
         Event::Shot(ShotEvent::Land { point: at, .. }) => [vec![4.0], point(at)].concat(),
         Event::Shot(ShotEvent::Gone { .. }) => return None,
-        Event::RunOut { side } => vec![5.0, side_number(side)],
-        Event::State { ship, state } => vec![6.0, ship as f64, state_number(state)],
-        Event::Refused(refusal) => match refusal {
+        Event::RunOut { side, .. } => vec![5.0, side_number(side)],
+        Event::State { ship, state } => vec![6.0, f64::from(ship), state_number(state)],
+        Event::Refused { refusal, .. } => match refusal {
             Refusal::NoGuns => vec![7.0, 0.0, 0.0, 0.0],
             Refusal::Silent => vec![7.0, 1.0, 0.0, 0.0],
             Refusal::Braced => vec![7.0, 2.0, 0.0, 0.0],
             Refusal::Reloading { side, left } => vec![7.0, 3.0, side_number(side), left],
         },
-        Event::NoSail { wrecked } => vec![8.0, f64::from(u8::from(wrecked))],
-        Event::Load { shot } => vec![9.0, shot_number(shot)],
+        Event::NoSail { wrecked, .. } => vec![8.0, f64::from(u8::from(wrecked))],
+        Event::Load { shot, .. } => vec![9.0, shot_number(shot)],
+        Event::Ram { ship, by, point: at, dealt } => {
+            [vec![10.0, f64::from(ship), f64::from(by)], point(at), vec![dealt]].concat()
+        }
+        Event::Gone { .. } => return None,
     })
 }
 
@@ -152,37 +156,41 @@ fn stop_numbers(stop: Option<&Stop>) -> [f64; STOP_NUMBERS] {
 }
 
 /// The fight as the browser shows it, after a tick whose events are `events`, its lay the look `aim` holds over
-/// `waters` at `time`.
+/// `waters` at `time`: a fight of the player's Sloop and one captain's (`Fight::meet`), or none for any other.
 #[must_use]
 pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Vec<f64> {
-    let over = match fight.over {
+    let (Some(player), Some(captain)) = (fight.vessel(PLAYER), fight.vessel(CAPTAIN)) else { return Vec::new() };
+    let Sailor::Captain(command) = &captain.sailor else { return Vec::new() };
+    let her = &command.her;
+    let over = match fight.over() {
         None => 0.0,
         Some(End::Sunk) => 1.0,
         Some(End::Gone) => 2.0,
     };
     let mut numbers = vec![fight.clock, over];
-    numbers.extend(vessel_numbers(&fight.player));
-    numbers.extend(vessel_numbers(&fight.captain));
-    let mode = match fight.her.mode {
+    numbers.extend(vessel_numbers(player));
+    numbers.extend(vessel_numbers(captain));
+    let mode = match her.mode {
         Mode::Cruise => 0.0,
         Mode::Engage => 1.0,
         Mode::Flee => 2.0,
         Mode::Struck => 3.0,
         Mode::Sinking => 4.0,
     };
-    let run_out = |side: Side| f64::from(u8::from(fight.her.run.out(side).is_some()));
-    numbers.extend([mode, f64::from(u8::from(fight.her.hostile())), run_out(Side::Port), run_out(Side::Starboard)]);
+    let run_out = |side: Side| f64::from(u8::from(her.run.out(side).is_some()));
+    numbers.extend([mode, f64::from(u8::from(her.hostile_to(PLAYER))), run_out(Side::Port), run_out(Side::Starboard)]);
     let balls: Vec<&_> = fight.balls.iter().filter(|ball| ball.fired).collect();
     numbers.push(balls.len() as f64);
     for ball in balls {
         let at = flight(ball.start, ball.launch, fight.clock - ball.born);
         numbers.extend([at[0], at[1], at[2], ball.gun.radius_m]);
     }
-    match aim.and_then(|aim| fight.shown_lay(aim, waters, time)) {
+    match aim.and_then(|aim| fight.preview(PLAYER, aim, waters, time)) {
         None => numbers.push(0.0),
         Some(shown) => {
             let on_target = f64::from(u8::from(shown.on_target));
-            numbers.extend([1.0, side_number(shown.side), shown.elevation, shown.reach, shown.radius, on_target]);
+            let lay = &shown.lay;
+            numbers.extend([1.0, side_number(lay.side), lay.elevation, lay.reach, shown.radius, on_target]);
             numbers.push(shown.launches.len() as f64);
             for (launch, stop) in shown.launches.iter().zip(&shown.ends) {
                 numbers.extend(launch);

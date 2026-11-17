@@ -74,7 +74,9 @@ export type FightEvent =
       readonly left?: number;
     }
   | { readonly kind: 'no-sail'; readonly wrecked: boolean }
-  | { readonly kind: 'load'; readonly shot: ShotName };
+  | { readonly kind: 'load'; readonly shot: ShotName }
+  | { readonly kind: 'ram'; readonly ship: number; readonly by: number; readonly point: Point; readonly dealt: number }
+  | { readonly kind: 'gone'; readonly ship: number; readonly sunk: boolean };
 
 /** Where a gun's unscattered ball stops (crates/naval/src/shots.rs Stop): seconds after it leaves its gun, the
  *  point, whether in the water, and where it first meets her, if it does. */

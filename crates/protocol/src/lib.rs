@@ -28,6 +28,8 @@ pub mod wire {
 
 use wire::overlook::wire as messages;
 
+pub mod fleet;
+
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
 /// aim's mark (x, y, z, none as NaN).
 const COMBAT_NUMBERS: usize = INTENT_FLOATS - CONTROLS_FLOATS;

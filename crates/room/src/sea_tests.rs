@@ -1,5 +1,11 @@
 use super::*;
 use crate::pirates::Pirate;
+use naval::fight::{CAPTAIN, End, Sailor};
+
+/// A ship of a fight, by its number.
+fn sailed(fight: &Fight, id: naval::shots::ShipId) -> sailing::ship::Ship {
+    fight.vessel(id).map(|vessel| vessel.ship).expect("a ship of the fight")
+}
 
 /// One square continent, 100 km a side, its north-west corner 100 km from the frame's.
 fn sea() -> Sea {
@@ -136,13 +142,9 @@ fn a_bold_pirate_in_sight_begins_a_fight_where_she_and_the_ship_lie() {
     let (fighting, fought) = sea.fights().next().expect("a fight");
     assert_eq!(fighting, player);
     assert!(sea.pirates().is_empty(), "she left the sea for the fight");
-    let captain = fought.fight.captain.ship;
+    let captain = sailed(&fought.fight, CAPTAIN);
     assert!((captain.y - (50_000.0 - 700.0)).abs() < 1.0 && (captain.x - 50_000.0).abs() < 1e-6, "{captain:?}");
-    assert_eq!(
-        (fought.fight.player.ship.rung, fought.fight.captain.ship.rung),
-        (0, SAILS_SET),
-        "hove to, she under sail"
-    );
+    assert_eq!((sailed(&fought.fight, PLAYER).rung, captain.rung), (0, SAILS_SET), "hove to, she under sail");
     assert_eq!(sea.course(player, &[[60_000.0, 50_000.0]], 10), Err(CourseRefused::Fighting));
 }
 
@@ -154,9 +156,9 @@ fn a_fight_steps_by_the_players_orders_and_moves_their_ship_with_it() {
     sea.orders(player, Orders { helm, ..QUIET }).unwrap();
     ticks(&mut sea, 600);
     let fought = &sea.fights().next().unwrap().1.fight;
-    let [x, y] = [fought.player.ship.x, fought.player.ship.y];
-    assert!(fought.player.ship.heading != 0.0, "she answered her helm");
-    assert_eq!(ship(&sea, player), Ship { x, y, heading: fought.player.ship.heading, pace: 0 });
+    let her = sailed(fought, PLAYER);
+    assert!(her.heading != 0.0, "she answered her helm");
+    assert_eq!(ship(&sea, player), Ship { x: her.x, y: her.y, heading: her.heading, pace: 0 });
     assert_eq!(sea.orders(2, QUIET), Err(CourseRefused::Fighting), "no fight, no orders");
 }
 
@@ -164,7 +166,10 @@ fn a_fight_steps_by_the_players_orders_and_moves_their_ship_with_it() {
 fn a_fight_that_ends_is_shown_once_and_the_player_sails_again() {
     let (mut sea, player) = met_at_sea(700.0);
     sea.tick();
-    sea.fights.get_mut(&player).unwrap().fight.over = Some(naval::fight::End::Gone);
+    let fight = &mut sea.fights.get_mut(&player).unwrap().fight;
+    if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&CAPTAIN).map(|vessel| &mut vessel.sailor) {
+        command.gone = Some(End::Gone);
+    }
     assert_eq!(sea.fights().count(), 1, "shown in the snapshot after the tick it ended");
     sea.tick();
     assert_eq!(sea.fights().count(), 0);

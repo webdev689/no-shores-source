@@ -1,4 +1,4 @@
-import type { FightLook, FightView } from '../rules/fightRules.ts';
+import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
 import type { MarkView } from '../ships/markView.ts';
@@ -6,6 +6,7 @@ import { type SailRig, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
+import type { Afloat } from './afloat.ts';
 import { aimEye, type Lying, lookBearing, lookRange } from './aim.ts';
 import { type FightInput, type FightSource, Fighting } from './fighting.ts';
 import type { Orbit } from './orbit.ts';
@@ -39,6 +40,8 @@ export type MarkDrawer = Pick<MarkView, 'drawInto'>;
 export type FightingShip = Pick<Sailing, 'adopt' | 'place'>;
 /** Where a fight is drawn from: the window's corner, or the world's own (0, 0) in the game. */
 export type Window = Pick<LandView, 'leftM' | 'topM'>;
+/** A Sloop as the aim sees her: where she is drawn. */
+export type Aboard = Pick<Afloat, 'place'>;
 
 export class Naval {
   private fight: Fighting | null = null;
@@ -144,35 +147,14 @@ export class Naval {
     return splashes;
   }
 
-  /** Where the player lies, for the aim. */
-  private static lying(sailing: FightingShip, view: Window): Lying {
-    const place = sailing.place(view, 1);
-    return { x: place.x + view.leftM, y: place.y + view.topM, heading: place.heading, heave: place.z };
-  }
-
-  /** The look the camera lays while aiming: its bearing off her bow and its range out along her fire. */
+  /** The look the camera lays while aiming (`lookOf`). */
   look(orbit: Orbit, sailing: FightingShip, view: Window): FightLook {
-    const lying = Naval.lying(sailing, view);
-    const bearing = lookBearing(orbit.yaw, lying.heading);
-    const eye = aimEye(lying, bearing >= 0 ? 1 : -1);
-    const flat = Math.cos(orbit.pitch);
-    const way = [Math.sin(orbit.yaw) * flat, -Math.cos(orbit.yaw) * flat, -Math.sin(orbit.pitch)];
-    return { bearing, range: Math.max(0, lookRange(lying, eye, orbit.yaw, -orbit.pitch)), ray: [...eye, ...way] };
+    return lookOf(orbit, sailing, view);
   }
 
-  /** The camera while aiming: at DFO's aim eye on the side looked at, looking along the orbit's yaw and pitch. */
+  /** The camera while aiming (`aimCameraOf`). */
   aimCamera(orbit: Orbit, sailing: FightingShip, view: Window, shown: number): Orbit {
-    const lying = Naval.lying(sailing, view);
-    const [x, y, z] = aimEye(lying, lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1);
-    const ahead = 3;
-    const flat = Math.cos(orbit.pitch) * ahead;
-    return {
-      ...orbit,
-      targetX: x - view.leftM + Math.sin(orbit.yaw) * flat,
-      targetY: y - view.topM - Math.cos(orbit.yaw) * flat,
-      targetZ: (z - Math.sin(orbit.pitch) * ahead) * shown,
-      distance: ahead,
-    };
+    return aimCameraOf(orbit, sailing, view, shown);
   }
 
   /** Her footprint on the water while she floats. */
@@ -231,34 +213,70 @@ export class Naval {
     this.marks.drawInto(pass, marks, camera);
   }
 
-  /** The lay's arcs, red on target: each gun's unscattered flight in dots up to where the rules say it stops, a mark
-   *  where it strikes her, and the landing zone's ring where it splashes. */
+  /** The lay's arcs (`arcsOf`) of the fight's answer. */
   static arcs(answer: FightView, view: Window, shown: number): Mark[] {
-    const lay = answer.lay;
-    if (!lay) return [];
-    const colour = lay.on_target ? ON_TARGET : ARC;
-    const placed = (x: number, y: number, z: number, radius: number, tint: Mark['colour']): Mark => ({
-      x: x - view.leftM,
-      y: y - view.topM,
-      z: z * shown,
-      radius,
-      colour: tint,
-    });
-    return lay.launches.flatMap(([x = 0, y = 0, z = 0, east = 0, south = 0, up = 0], index) => {
-      const end = lay.ends[index] ?? null;
-      const dots: Mark[] = [];
-      for (let time = ARC_STEP_S; time < (end?.time ?? ARC_LONGEST_S); time += ARC_STEP_S)
-        dots.push(placed(x + east * time, y + south * time, z + up * time - (9.81 * time * time) / 2, 0.07, colour));
-      if (end?.strike) dots.push(placed(...end.strike, STRIKE_M, ON_TARGET));
-      if (end?.water) {
-        const [endX, endY, endZ] = end.point;
-        for (let step = 0; step < ZONE_DOTS; step++) {
-          const turn = (step / ZONE_DOTS) * 2 * Math.PI;
-          const ring = [endX + Math.cos(turn) * lay.radius, endY + Math.sin(turn) * lay.radius] as const;
-          dots.push(placed(ring[0], ring[1], endZ, 0.07, colour));
-        }
-      }
-      return dots;
-    });
+    return arcsOf(answer.lay, view, shown);
   }
+}
+
+/** Where a Sloop lies, for the aim. */
+function lyingOf(ship: Aboard, view: Window): Lying {
+  const place = ship.place(view, 1);
+  return { x: place.x + view.leftM, y: place.y + view.topM, heading: place.heading, heave: place.z };
+}
+
+/** The look the camera lays while aiming from a Sloop: its bearing off her bow, its range out along her fire, and its
+ *  ray from the aim eye. */
+export function lookOf(orbit: Orbit, ship: Aboard, view: Window): FightLook {
+  const lying = lyingOf(ship, view);
+  const bearing = lookBearing(orbit.yaw, lying.heading);
+  const eye = aimEye(lying, bearing >= 0 ? 1 : -1);
+  const flat = Math.cos(orbit.pitch);
+  const way = [Math.sin(orbit.yaw) * flat, -Math.cos(orbit.yaw) * flat, -Math.sin(orbit.pitch)];
+  return { bearing, range: Math.max(0, lookRange(lying, eye, orbit.yaw, -orbit.pitch)), ray: [...eye, ...way] };
+}
+
+/** The camera while aiming from a Sloop: at DFO's aim eye on the side looked at, along the orbit's yaw and pitch. */
+export function aimCameraOf(orbit: Orbit, ship: Aboard, view: Window, shown: number): Orbit {
+  const lying = lyingOf(ship, view);
+  const [x, y, z] = aimEye(lying, lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1);
+  const ahead = 3;
+  const flat = Math.cos(orbit.pitch) * ahead;
+  return {
+    ...orbit,
+    targetX: x - view.leftM + Math.sin(orbit.yaw) * flat,
+    targetY: y - view.topM - Math.cos(orbit.yaw) * flat,
+    targetZ: (z - Math.sin(orbit.pitch) * ahead) * shown,
+    distance: ahead,
+  };
+}
+
+/** A lay's arcs, red on target: each gun's unscattered flight in dots up to where the rules say it stops, a mark where
+ *  it strikes her, and the landing zone's ring where it splashes. */
+export function arcsOf(lay: FightLay | null, view: Window, shown: number): Mark[] {
+  if (!lay) return [];
+  const colour = lay.on_target ? ON_TARGET : ARC;
+  const placed = (x: number, y: number, z: number, radius: number, tint: Mark['colour']): Mark => ({
+    x: x - view.leftM,
+    y: y - view.topM,
+    z: z * shown,
+    radius,
+    colour: tint,
+  });
+  return lay.launches.flatMap(([x = 0, y = 0, z = 0, east = 0, south = 0, up = 0], index) => {
+    const end = lay.ends[index] ?? null;
+    const dots: Mark[] = [];
+    for (let time = ARC_STEP_S; time < (end?.time ?? ARC_LONGEST_S); time += ARC_STEP_S)
+      dots.push(placed(x + east * time, y + south * time, z + up * time - (9.81 * time * time) / 2, 0.07, colour));
+    if (end?.strike) dots.push(placed(...end.strike, STRIKE_M, ON_TARGET));
+    if (end?.water) {
+      const [endX, endY, endZ] = end.point;
+      for (let step = 0; step < ZONE_DOTS; step++) {
+        const turn = (step / ZONE_DOTS) * 2 * Math.PI;
+        const ring = [endX + Math.cos(turn) * lay.radius, endY + Math.sin(turn) * lay.radius] as const;
+        dots.push(placed(ring[0], ring[1], endZ, 0.07, colour));
+      }
+    }
+    return dots;
+  });
 }

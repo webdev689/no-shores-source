@@ -91,11 +91,6 @@ export class Cards {
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);
     const kept = this.kept.get(key);
     if (kept !== undefined || this.composing.has(key)) return kept ?? null;
-    if (this.kept.size > KEPT_CARDS) {
-      for (const old of this.kept.values()) old?.texture.destroy();
-      this.kept.clear();
-      this.last.clear();
-    }
     this.composing.add(key);
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
     composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, (path) => this.store.strip(path))
@@ -135,8 +130,14 @@ export class Cards {
     }
   }
 
-  /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. */
+  /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. Past the most
+   *  kept, every card is let go here, before a frame asks for any: none handed out this frame is destroyed under it. */
   pump(): void {
+    if (this.kept.size > KEPT_CARDS) {
+      for (const old of this.kept.values()) old?.texture.destroy();
+      this.kept.clear();
+      this.last.clear();
+    }
     for (let started = 0; started < WARM_A_TICK && this.composing.size < WARM_UNDER_WAY; started++) {
       const next = this.queued.shift();
       if (!next) return;

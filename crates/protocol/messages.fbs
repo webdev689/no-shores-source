@@ -34,6 +34,25 @@ table Course {
   orders: [double];
 }
 
+// A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: her helm (the rudder from -1, to port,
+// to 1, to starboard; whether her oars pull her sideways; a rung up the ladder, 1, or down, -1, for one tick); her look
+// while she aims (its bearing off her bow in degrees and how far out it meets the water in metres, then its ray: the
+// aim eye and the way it looks, east, south and up; none while she does not aim); whether she fires and whether she
+// braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where she puts to sea (x, y and heading,
+// heeded once); and a captain asked for (0 none, 1 one called round her, 255 every one sent off).
+table Orders {
+  sequence: uint;
+  steer: double;
+  crab: bool;
+  climb: byte;
+  aim: [double];
+  fire: bool;
+  brace: bool;
+  load: ubyte;
+  put_to_sea: [double];
+  call: ubyte;
+}
+
 // A player's dress, passed on as their browser wrote it.
 table Dressed {
   player: uint;
@@ -119,9 +138,64 @@ table SeaFight {
   view: [double];
 }
 
+// One ship in a fleet room: her number; whether a captain sails her; her helm's numbers in the sailing crate's order
+// (crates/sailing/src/floats.rs) and her pose; her hull, sail and men, each with what she has of it whole; her state
+// (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; her guns (the seconds each side has left
+// to load, port then starboard, then how far each has loaded); her load (as Orders numbers it) and whether she is
+// braced; for a captain, her mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship she fights (0 none) and
+// her sides run out (1 port, 2 starboard, 3 both); and for a player's ship, the number of her last orders taken.
+table Vessel {
+  id: uint;
+  captain: bool;
+  ship: [double];
+  pose: [double];
+  hurts: [double];
+  state: ubyte;
+  fires: ubyte;
+  guns: [double];
+  load: ubyte;
+  braced: bool;
+  mode: ubyte;
+  target: uint;
+  run_out: ubyte;
+  acknowledged: uint;
+}
+
+// A ball aloft in a fleet room: the ship that fired it, where it leaves its gun and when (seconds of the fight's
+// clock), its launch velocity, and its radius. It flies by its closed form: at t seconds it is start plus launch times
+// t, less half of 9.81 m/s² times t squared upward.
+table Ball {
+  shooter: uint;
+  start: [double];
+  launch: [double];
+  born: double;
+  radius: double;
+}
+
+// Something that happened in a fleet room's fight, with its tick: what (1 a ball leaves its gun, 2 a ball strikes a
+// ship, 3 splashes, 4 lands, 5 a captain runs out a side, 6 a ship's state changes, 7 a player's guns refuse, 8 her
+// sails will not set, 9 she takes a load, 10 a captain leaves the fight, 11 a player's stem rams a ship); the ship it
+// happened to (for a ball, the one that fired it, for a strike or a ram the one struck) and, for a strike or a ram,
+// who struck; a number saying more (a strike's zone, 0 hull, 1 holed, 2 canvas; a side, 0 port, 1 starboard; a state
+// as Vessel numbers it; why guns refuse, 0 no side bears, 1 silent, 2 braced, 3 loading; a load as Orders numbers it;
+// 1 for a wreck's sails; how a captain left, 0 sunk, 1 sailed off); the side still loading; a point, and a ball's
+// launch; and the seconds that side has left to load, or the hull a ram took.
+table Naval {
+  tick: ulong;
+  kind: ubyte;
+  ship: uint;
+  by: uint;
+  detail: ubyte;
+  side: ubyte;
+  point: [double];
+  launch: [double];
+  left: double;
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
-// pirate, and each player's fight.
+// pirate, and each player's fight; in a fleet room, every ship, the balls aloft, what happened in its fight since the
+// last snapshot, and the fight's clock.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -132,6 +206,10 @@ table Snapshot {
   ships: [Ship];
   pirates: [Pirate];
   fights: [SeaFight];
+  vessels: [Vessel];
+  balls: [Ball];
+  naval: [Naval];
+  fight_clock: double;
 }
 
 // What a room sends: exactly one of these is present.

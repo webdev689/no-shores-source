@@ -8,7 +8,7 @@ use crate::PlayerId;
 use crate::pirates::{Pirate, Pirates};
 use land::sea::{FULL_DEPTH_M, Swell};
 use movement::TICK_SECONDS;
-use naval::fight::{Event, Fight, Orders};
+use naval::fight::{Event, Fight, Orders, PLAYER};
 use naval::wire::view_numbers;
 use sailing::ship::{Helm, SAILS_SET};
 use sailing::waters::{Spot, Waters, steady_wind};
@@ -225,7 +225,7 @@ impl Sea {
     pub fn tick(&mut self) {
         self.clock += 1;
         let time = self.clock as f64 * TICK_SECONDS;
-        self.fights.retain(|_, fought| fought.fight.over.is_none());
+        self.fights.retain(|_, fought| fought.fight.over().is_none());
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             if !self.fights.contains_key(player) {
@@ -235,12 +235,12 @@ impl Sea {
         let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
         let wind = steady_wind(&self.swell);
         for (player, fought) in &mut self.fights {
-            fought.events = fought.fight.step(&fought.orders, &waters, wind, time);
+            fought.events = fought.fight.step(&[(PLAYER, fought.orders)], &waters, wind, time);
             // The climb, the fire and the load are presses: they act once.
             let helm = Helm { climb: 0, ..fought.orders.helm };
             fought.orders = Orders { helm, fire: false, load: None, ..fought.orders };
-            if let Some(sailing) = self.berths.get_mut(player).and_then(|berth| berth.sailing.as_mut()) {
-                let ship = fought.fight.player.ship;
+            let berth = self.berths.get_mut(player).and_then(|berth| berth.sailing.as_mut());
+            if let (Some(sailing), Some(ship)) = (berth, fought.fight.vessel(PLAYER).map(|vessel| vessel.ship)) {
                 sailing.ship = Ship { x: ship.x, y: ship.y, heading: ship.heading, pace: 0 };
                 sailing.course.clear();
             }
