@@ -173,7 +173,8 @@ struct Picture {
 
 fn picture_of(uv: vec2f, wraps: f32) -> Picture {
   let side = form.atlas.w;
-  let inset = 1.5 / 1024.0;
+  // Kept a footprint in from the picture's edge, so a small mip never reads the neighbouring picture.
+  let inset = max(1.5 / 1024.0, 0.5 * max(length(dpdx(uv)), length(dpdy(uv))) * side);
   let wrapped = form.atlas.yz + inset + fract(uv) * (side - 2.0 * inset);
   let bark = wraps > 0.5;
   return Picture(select(uv, wrapped, bark), dpdx(uv) * select(1.0, side, bark), dpdy(uv) * select(1.0, side, bark));

@@ -246,7 +246,6 @@ export class NatureView {
   }
 
   /** How many instances and triangles the last update drew, for a page's readout. */
-  /** How many instances and triangles the last update drew, for a page's readout. */
   get drawn(): { readonly instances: number; readonly triangles: number; readonly draws: number } {
     let [instances, triangles] = [0, 0];
     for (const { part, count } of this.draws) {
@@ -256,8 +255,6 @@ export class NatureView {
     return { instances, triangles, draws: this.draws.length };
   }
 
-  /** Draws into the land's pass (four samples, depth reversed) what `update` worked out: the contact shades on the
-   *  land first, then the plants over them, in the sun's shadows when a map is given. */
   /** Draws into the land's pass (four samples, depth reversed) what `update` worked out: the contact shades on the
    *  land first, then the near meshes and the far quads over them, in the sun's shadows when a map is given. */
   drawInto(pass: GPURenderPassEncoder, shadow?: ShadowMap): void {
@@ -281,7 +278,6 @@ export class NatureView {
     }
   }
 
-  /** Gives the GPU back this view's buffers; it draws nothing after. */
   /** Gives the GPU back this view's buffers and pictures; it draws nothing after. */
   destroy(): void {
     this.frameBuffer.destroy();
@@ -290,7 +286,6 @@ export class NatureView {
     [this.bind, this.draws, this.loading] = [null, [], null];
   }
 
-  /** The cast's meshes and terms on the GPU, made again when the biome changes. */
   /** The biome's baked meshes, terms and pictures on the GPU, loaded when the biome changes. Answers whether they
    *  are ready to draw. */
   private keepMeshes(cast: Cast, biome: string): boolean {
@@ -328,6 +323,8 @@ export class NatureView {
     const albedo = this.pictureArray(loaded.layers.map((layer) => layer.albedo));
     const normal = this.pictureArray(loaded.layers.map((layer) => layer.normal));
     this.meshes = { cast, forms, vertices, blocks, albedo, normal };
+    // Its pictures are on the GPU now: the decoded copies are let go.
+    this.loading.loaded = null;
     this.bind = null;
     return true;
   }
@@ -351,6 +348,7 @@ export class NatureView {
           { width: size, height: size },
         );
       }
+      picture.close();
     }
     return texture;
   }

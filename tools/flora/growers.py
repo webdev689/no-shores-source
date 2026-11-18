@@ -98,7 +98,7 @@ def conifer(shape, rng):
     """A fir or spruce: whorls of drooping boughs round a straight trunk, longer at each tier's foot."""
     height, width, tiers = shape['height'], shape['width'], shape['tiers']
     model = Model(height, dict(colour=shape['bark'], style='scaly'),
-                  dict(colour=shape['leaves'], form='needle', length=0.05))
+                  dict(colour=shape['leaves'], form='needle', length=0.11))
     model.limbs.append(grounded(flared(Limb(np.array([[0, 0, z] for z in np.linspace(0, height, 12)]),
                                             np.linspace(height * 0.018, 0.02, 12), 0), 1.4, 1.0)))
     first = height * 0.12

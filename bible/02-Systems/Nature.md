@@ -46,7 +46,7 @@ leaves. The client's casts (`coolCasts.ts`, `warmCasts.ts`) keep each kind's gro
 | `swamp` | Cypresses flaring onto dark buttresses under broad drooping tiers, short clumps of dark moss under their edges, mangroves only by water, reeds at the water's edge, marsh ferns |
 | `tundra` | Stunted spruces, dead trees, dwarf shrubs, snowy rocks |
 
-A near tree is at most 600 triangles, a shrub 240, grass, ferns and reeds 60, a rock 300; far off each is one quad.
+A near tree is about 600 triangles (900 at most), a shrub 240, grass, ferns and reeds 60, a rock 300; far off each is one quad.
 
 ## Where they grow
 
@@ -124,7 +124,28 @@ width, and from the exact close patch where it reaches, eased in over its outer 
 
 Each frame a page calls `update` with the camera and the ground, then `drawInto` the land's pass after the land.
 
+## What it costs
+
+A frame in headless SwiftShader at 1280 x 720, every tile in reach scattered, at eye height and 60 m up, before the
+baked flora (code-made meshes, near to 700 m, far to 3 km) and with it. Triangles and draw calls are the whole
+frame's, shadows included; the time is SwiftShader's own GPU time, which counts every pixel shaded on the CPU.
+
+| From | Before: triangles, draws, ms | Baked: triangles, draws, ms |
+|---|---|---|
+| The Elder Thicket (woodland), on foot | 4,832,976, 464, 9,376 | 4,767,612, 259, 17,076 |
+| The Elder Thicket, 60 m up | 4,857,852, 488, 8,491 | 4,589,576, 421, 15,286 |
+| The Emerald Tangle (rainforest), on foot | 4,912,076, 747, 9,100 | 4,233,360, 396, 12,719 |
+| The Emerald Tangle, 60 m up | 5,382,482, 856, 15,101 | 4,381,067, 575, 13,861 |
+
+Fewer triangles and draws, but each card and sprite pixel samples its pictures and is cut by their coverage, which
+SwiftShader pays for on the CPU: in the woodland the frame takes about twice as long there.
+
 ## Limits
+
+- On SwiftShader the woodland's frame is slower than the code-made meshes' was (see What it costs); a real GPU's
+  cost is unchecked.
+- The sprites' frames are blended, not morphed, and the swamp's cypresses read flatter and browner far off than
+  near.
 
 - Only the near plants within the near shadow map's square cast; past it the contact shade stands in under each one.
 - Low plants keep off the feet of the tall ones in their own tile only: within a couple of metres of a tile's edge,

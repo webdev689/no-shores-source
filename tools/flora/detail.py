@@ -98,7 +98,7 @@ def tube(surface, points, radii, sides, ribs=0, closed_top=False):
 def leaf_shape(form, length, rng):
     """A leaf's outline in its own plane, (across, along) metres, base at the origin."""
     if form == 'needle':
-        width = length * 0.08
+        width = length * 0.12
         return [(-width, 0), (width, 0), (0, length)]
     width = length * (0.55 if form == 'broad' else 0.45) * rng.uniform(0.85, 1.15)
     if form == 'small':
@@ -131,7 +131,7 @@ def spray(surface, model, cluster, rng):
     form, length = model.leaf['form'], model.leaf['length']
     if form == 'needle':
         twig = unit(cluster.out * 0.6 + rng.normal(0, 0.3, 3))
-        count = int(150 * (cluster.radius / 0.35) ** 2)
+        count = int(260 * (cluster.radius / 0.35) ** 2)
         for _ in range(count):
             at = cluster.centre + twig * rng.uniform(-cluster.radius, cluster.radius) * 0.9
             way = unit(rng.normal(0, 1, 3) + twig * 0.6 - UP * 0.2)

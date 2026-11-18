@@ -47,10 +47,11 @@ round a trunk and along it with no seam, and a normal map from its height.
 
 - **The near mesh** (`near.py`): the trunk and the thickest limbs that fit as tapered rings of 3 to 12 sides; the
   sprays gathered by k-means into crossed pairs of cards; fronds as bent strips; grass as three crossed cards; a
-  boulder at a low subdivision. Budgets: a tree at most 880 triangles, a shrub 240, a grass, fern or reed 60, a rock
-  300. Each corner carries its normal (cards take the crown's, so a crown lights as one mass), its tangent for the
-  normal map, its uv, a tint, the ambient occlusion the detailed model casts on it (24 rays), and its wind weight,
-  still at the foot and freest at the top and the crown's rim.
+  boulder at a low subdivision. Budgets: a tree's wood and cards 600 triangles (a cypress's moss and a cactus's
+  domes come on top, to 900 at most), a shrub 240, a grass, fern or reed 60, a rock 300. Each corner carries its
+  normal (cards take the crown's, so a crown lights as one mass), its tangent for the normal map, its uv, a tint,
+  the ambient occlusion the detailed model casts on it (24 rays), and its wind weight, still at the foot and freest
+  at the top and the crown's rim.
 - **The card pictures**: a kind's first form gives its pictures. A spray card shows the form's own sprays round a
   group's middle, grown again alone and seen face on, so its outline is ragged; a frond is laid flat; a tuft is seen
   from two sides; a strand of moss hangs.
