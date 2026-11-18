@@ -14,10 +14,13 @@ export const GUILD_MOST = 100;
 /** The ranks: its founder, an admin, a member. */
 export const RANKS = ['Founder', 'Admin', 'Member'] as const;
 const [FOUNDER, ADMIN, MEMBER] = [0, 1, 2];
-/** A guild's name, its tag and its motto. */
-const NAME = /^[A-Za-z][A-Za-z0-9' -]{1,22}[A-Za-z0-9]$/;
+/** A guild's name, its tag and its motto. A name's spaces, dashes and apostrophes each stand alone between letters or
+ *  digits. */
+const NAME = /^(?=.{3,24}$)[A-Za-z][A-Za-z0-9]*(?:[' -][A-Za-z0-9]+)*$/;
 const TAG = /^[A-Za-z0-9]{2,4}$/;
 const MOTTO_MOST = 80;
+/** Control characters and the marks that turn text's direction, which could hide or reorder what others read. */
+const HIDDEN = /[\p{Cc}\u202A-\u202E\u2066-\u2069]/u;
 
 /** A player's guild and rank in it, or null for none. */
 export async function guildOf(
@@ -37,7 +40,10 @@ export async function guildOf(
 async function found(database: Db, own: string, given: Record<string, unknown> | null, now: number): Promise<Answer> {
   const [name, tag] = [given?.['name'], given?.['tag']];
   if (typeof name !== 'string' || !NAME.test(name))
-    return said(400, 'A guild name is 3 to 24 letters, digits, spaces or dashes, starting with a letter.');
+    return said(
+      400,
+      'A guild name is 3 to 24 characters: letters and digits, starting with a letter, with single spaces, dashes or apostrophes between them.',
+    );
   if (typeof tag !== 'string' || !TAG.test(tag)) return said(400, 'A tag is 2 to 4 letters or digits.');
   if (await guildOf(database, own)) return said(409, 'Leave your guild first.');
   const id = crypto.randomUUID();
@@ -118,8 +124,8 @@ export async function guildAsk(
   if (asked === 'motto') {
     const motto = given?.['motto'];
     if (mine.rank > ADMIN) return said(403, 'Only the founder and admins can set the motto.');
-    if (typeof motto !== 'string' || motto.length > MOTTO_MOST)
-      return said(400, `A motto is ${MOTTO_MOST} characters at most.`);
+    if (typeof motto !== 'string' || motto.length > MOTTO_MOST || HIDDEN.test(motto))
+      return said(400, `A motto is one line of ${MOTTO_MOST} characters at most.`);
     await database.prepare('UPDATE guilds SET motto = ?1 WHERE id = ?2').bind(motto.trim(), mine.id).run();
     return done;
   }
@@ -165,12 +171,22 @@ export async function guildAsk(
       if (mine.rank !== FOUNDER || theirs.rank !== ADMIN) return said(403, 'The founder makes admins members.');
       await setRank(MEMBER, them.id);
       return done;
-    case 'founder':
-      if (mine.rank !== FOUNDER || theirs.rank !== ADMIN)
-        return said(403, 'The founder hands the founding to an admin.');
-      await setRank(FOUNDER, them.id);
-      await setRank(ADMIN, own);
-      return done;
+    case 'founder': {
+      const refused = said(403, 'The founder hands the founding to an admin.');
+      if (mine.rank !== FOUNDER || theirs.rank !== ADMIN) return refused;
+      // One write, made only while the asker still founds it and the other is still its admin, so two at once cannot
+      // make two founders.
+      const handed = await database
+        .prepare(
+          `UPDATE guild_members SET rank = CASE account_id WHEN ?1 THEN ${ADMIN} ELSE ${FOUNDER} END
+           WHERE guild_id = ?3 AND account_id IN (?1, ?2)
+           AND EXISTS (SELECT 1 FROM guild_members WHERE account_id = ?1 AND guild_id = ?3 AND rank = ${FOUNDER})
+           AND EXISTS (SELECT 1 FROM guild_members WHERE account_id = ?2 AND guild_id = ?3 AND rank = ${ADMIN})`,
+        )
+        .bind(own, them.id, mine.id)
+        .run();
+      return handed.meta.changes === 2 ? done : refused;
+    }
     default:
       return said(404, 'No such page.');
   }

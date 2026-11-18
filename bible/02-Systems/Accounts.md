@@ -66,7 +66,8 @@ they play in holds it while they are there.
   account with a way back in may sign out everywhere, which ends every session it has; a room already holding its
   character keeps it until that player leaves.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no
-  page acts as a player without holding their token. Discord sends players back only to pages under those listed in
+  page acts as a player without holding their token. A write that fails is logged and answered like any other: 409
+  when another ask changed the same rows first, 500 otherwise. Discord sends players back only to pages under those listed in
   the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/overlook-source/`, and
   under `npm run accounts` the dev server's.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
@@ -99,29 +100,34 @@ username, as a player is found by theirs; a guest is told to add one in Settings
 
 - **A player as shown**: their name, their guild's tag, the emblem they wear and their level (from what their room kept
   of their character, `shown`), and where they play: the room that holds their character, or, at sea, the room's word
-  that they are there, said every 30 seconds and kept a minute.
+  that they are there, said every 30 seconds and kept a minute. Leaving the sea ends that word at once, and it is kept
+  as when they were last seen.
 - **Friends**, by username: asked, accepted or declined, and ended by either. One row a pair, whoever asked, held so by
-  the database, so an ask that crosses one already made accepts it. A player's own count is their friends and the asks
+  the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
 - **The fireteam**, as Destiny's: three at most, one its leader; a player alone leads their own. A player is
-  invited (the invite stands ten minutes), or joins as the leader's privacy allows: Public, anyone; Friends Only (each
-  player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though an invite still
-  stands. The leader makes another the leader or removes them; a leader who leaves hands the lead to the longest
-  there. A member away from the game ten minutes leaves it, but never the player asking.
-- **The guild**: a name of 3 to 24 letters, digits, spaces or dashes and a tag of 2 to 4 letters or digits, each
-  unique however it is typed, and a motto. Its founder and admins invite players with no guild, who accept or
+  invited (the invite stands ten minutes, then is let go), or joins as the leader's privacy allows: Public, anyone;
+  Friends Only (each player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though
+  an invite still stands. The Roster shows the leader's privacy, the one that applies; a member's own applies once they
+  lead. A full fireteam is refused before the player leaves their own, and joining one ends the invites they sent. The
+  leader makes another the leader or removes them; a leader who leaves hands the lead to the longest there. A member
+  away from the game ten minutes leaves it, but never the player asking.
+- **The guild**: a name of 3 to 24 characters, letters and digits starting with a letter, with single spaces, dashes
+  or apostrophes between them; a tag of 2 to 4 letters or digits, each unique however it is typed; and a motto of one
+  line, 80 characters at most, with no control characters or marks that turn the text's direction. Its founder and admins invite players with no guild, who accept or
   decline; the founder makes members admins and back, either removes those below them, and the founder hands the
-  founding to an admin, who must first be made one. A founder leaves only once another founds it, or alone, which
+  founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. A founder leaves only once another founds it, or alone, which
   ends it. A hundred at most.
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
-  as sent and never arrives; they cannot join the blocker's fireteam, and the blocker is not found by them. A blocked
-  player is unblocked from Settings.
+  as sent and never arrives. A block either way between a player and anyone in a fireteam keeps them out of it, by
+  joining or by an invite, answered as a fireteam closed to them. The one blocked sees the blocker's details as a
+  stranger does, so the block shows nowhere. A blocked player is unblocked from Settings.
 - **Reporting** keeps a player's name, who reported them and why (cheating, a name, harassment, something else) for
   the owner to read in the database, ten a day a player.
 - **The room's own**: the Game column lists the players with a name in the same room beside the fireteam, the guests
   only counted. Another player's details show what they wear always, and where they are only to their friends, fireteam
-  and guild.
+  and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
 
 ## Running it here

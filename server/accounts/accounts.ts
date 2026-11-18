@@ -7,7 +7,7 @@
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type AccountRow, HEADERS, LAPSED, bodyOf, json, refused, sessionOf, signedIn, within } from './http.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
-import { friendAsk, friendsOf } from './friends.ts';
+import { INVITE_MS } from './fireteams.ts';
 import { socialAsk, socialRead } from './social.ts';
 import { USERNAME } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
@@ -34,7 +34,6 @@ const LIMITS = {
   nameEverywhere: { most: 100, window: 10 * MINUTE },
   discord: { most: 20, window: 10 * MINUTE },
   ticket: { most: 10, window: 10 * MINUTE },
-  friend: { most: 30, window: 60 * MINUTE },
   social: { most: 60, window: 60 * MINUTE },
   report: { most: 10, window: 24 * 60 * MINUTE },
 } as const;
@@ -131,7 +130,7 @@ async function finish(request: Request, deps: Deps, now: number): Promise<Respon
 async function social(request: Request, deps: Deps, route: string, now: number): Promise<Response> {
   const { database } = deps;
   const read = /^GET \/v1\/(roster|players\/[^/]+)$/.exec(route)?.[1];
-  const asked = /^POST \/v1\/social\/([a-z]+\/?[a-z]*)$/.exec(route)?.[1];
+  const asked = /^POST \/v1\/social\/([a-z]+(?:\/[a-z]+)?)$/.exec(route)?.[1];
   if (!read && !asked) return refused(404, 'No such page.');
   const account = await sessionOf(request, database, now);
   if (account === LAPSED) return refused(401, LAPSED);
@@ -149,8 +148,8 @@ async function social(request: Request, deps: Deps, route: string, now: number):
   return json(answer.body, answer.status);
 }
 
-/** Answers one request to the API. */
-export async function handle(request: Request, deps: Deps): Promise<Response> {
+/** Answers one request to the API, or throws for a write that failed. */
+async function respond(request: Request, deps: Deps): Promise<Response> {
   const { database } = deps;
   const now = deps.now();
   const address = addressKey(request.headers.get('CF-Connecting-IP') ?? 'nowhere');
@@ -164,6 +163,10 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
       await database
         .prepare('DELETE FROM limits WHERE window_start < ?1')
         .bind(now - 24 * 60 * MINUTE)
+        .run();
+      await database
+        .prepare('DELETE FROM fireteam_invites WHERE created_at < ?1')
+        .bind(now - INVITE_MS)
         .run();
       await database
         .prepare(
@@ -266,23 +269,20 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
     }
     case 'POST /v1/discord/finish':
       return finish(request, deps, now);
-    case 'GET /v1/friends':
-    case 'POST /v1/friends/ask':
-    case 'POST /v1/friends/accept':
-    case 'POST /v1/friends/remove': {
-      const account = await sessionOf(request, database, now);
-      if (account === LAPSED) return refused(401, LAPSED);
-      if (!account) return refused(401, 'Not signed in.');
-      if (account.username === null) return refused(409, 'Add a username in Settings to have friends.');
-      if (request.method === 'GET') return json(await friendsOf(database, account.id, now));
-      const asked =
-        route === 'POST /v1/friends/ask' ? 'ask' : route === 'POST /v1/friends/accept' ? 'accept' : 'remove';
-      if (asked === 'ask' && !(await within(database, `friend:${account.id}`, LIMITS.friend, now)))
-        return refused(429, 'Too many asks. Wait a while.');
-      const answer = await friendAsk(database, account.id, asked, (await bodyOf(request))?.['name'], now);
-      return json(answer.body, answer.status);
-    }
     default:
       return social(request, deps, route, now);
+  }
+}
+
+/** Answers one request to the API. A write that fails is logged and answered as JSON with the usual headers: 409
+ *  when a constraint refused it, as another ask changed the same rows between a read and a write; 500 otherwise. */
+export async function handle(request: Request, deps: Deps): Promise<Response> {
+  try {
+    return await respond(request, deps);
+  } catch (error) {
+    console.error('accounts:', error);
+    return /constraint failed/i.test(String(error))
+      ? refused(409, 'Someone else changed that at the same moment. Try again.')
+      : refused(500, 'Something went wrong. Try again.');
   }
 }

@@ -41,14 +41,51 @@ export async function fireteamOf(
 async function leave(database: Db, account: string): Promise<void> {
   const fireteam = await fireteamOf(database, account);
   if (!fireteam) return;
-  const rest = fireteam.members.filter((member) => member !== account);
   await database.prepare('DELETE FROM fireteam_members WHERE account_id = ?1').bind(account).run();
-  if (rest.length < 2) {
-    await database.prepare('DELETE FROM fireteams WHERE id = ?1').bind(fireteam.id).run();
+  // Each step reads what is left as it runs, so two leaving at once still end a fireteam of one and pass its lead.
+  const ended = await database
+    .prepare(
+      'DELETE FROM fireteams WHERE id = ?1 AND (SELECT COUNT(*) FROM fireteam_members WHERE fireteam_id = ?1) < 2',
+    )
+    .bind(fireteam.id)
+    .run();
+  if (ended.meta.changes === 1) {
     await database.prepare('DELETE FROM fireteam_members WHERE fireteam_id = ?1').bind(fireteam.id).run();
-  } else if (fireteam.leader === account) {
-    await database.prepare('UPDATE fireteams SET leader_id = ?1 WHERE id = ?2').bind(rest[0], fireteam.id).run();
+    return;
   }
+  await database
+    .prepare(
+      `UPDATE fireteams SET leader_id = (SELECT account_id FROM fireteam_members WHERE fireteam_id = ?1
+       ORDER BY joined_at, account_id LIMIT 1)
+       WHERE id = ?1 AND leader_id NOT IN (SELECT account_id FROM fireteam_members WHERE fireteam_id = ?1)`,
+    )
+    .bind(fireteam.id)
+    .run();
+}
+
+/** Whether a block stands either way between `account` and any of `others`. */
+async function blockedAmong(database: Db, account: string, others: readonly string[]): Promise<boolean> {
+  const found = await database
+    .prepare(
+      `SELECT 1 AS yes FROM blocks WHERE (blocker_id = ?1 AND blocked_id IN (SELECT value FROM json_each(?2)))
+       OR (blocked_id = ?1 AND blocker_id IN (SELECT value FROM json_each(?2))) LIMIT 1`,
+    )
+    .bind(account, JSON.stringify(others))
+    .first<{ yes: number }>();
+  return found !== null;
+}
+
+/** Said to one who may not join, whether for the leader's privacy or a block, so it tells no one they are blocked. */
+const closed = (privacy: number): Answer =>
+  said(403, privacy === 1 ? 'Only their friends can join them.' : 'Their fireteam is closed to you.');
+
+/** Who may join the fireteam `leader` leads, as its leader set it. */
+export async function privacyOf(database: Db, leader: string): Promise<number> {
+  const row = await database
+    .prepare('SELECT privacy FROM accounts WHERE id = ?1')
+    .bind(leader)
+    .first<{ privacy: number }>();
+  return row?.privacy ?? 1;
 }
 
 /** Lets go of those in a player's fireteam who have been away from the game too long; never the player asking, who is
@@ -66,9 +103,12 @@ export async function keepPresent(database: Db, account: string, now: number): P
   for (const { id } of results) await leave(database, id);
 }
 
-/** Puts `joining` in the fireteam `host` is in, made for the host if they lead none; false if it is full. */
+/** Puts `joining` in the fireteam `host` is in, made for the host if they lead none; false if it is full. Joining
+ *  ends the invites the player had sent, which were for a fireteam they no longer lead. */
 async function join(database: Db, joining: string, host: string, now: number): Promise<boolean> {
   if ((await fireteamOf(database, joining))?.members.includes(host)) return true;
+  // A full fireteam is refused before the player leaves their own.
+  if (((await fireteamOf(database, host))?.members.length ?? 1) >= FIRETEAM_MOST) return false;
   await leave(database, joining);
   if (!(await fireteamOf(database, host))) {
     const id = crypto.randomUUID();
@@ -93,7 +133,9 @@ async function join(database: Db, joining: string, host: string, now: number): P
     )
     .bind(joining, fireteam.id, now + 1)
     .run();
-  return joined.meta.changes === 1;
+  if (joined.meta.changes !== 1) return false;
+  await database.prepare('DELETE FROM fireteam_invites WHERE from_id = ?1').bind(joining).run();
+  return true;
 }
 
 /** What account `own` asks of the fireteams: of the player named, where it names one. */
@@ -141,20 +183,17 @@ export async function fireteamAsk(
         .first<{ created_at: number }>();
       if (asked === 'decline') return done;
       if (!taken || taken.created_at < now - INVITE_MS) return said(404, 'That invite has run out.');
+      const theirs = await fireteamOf(database, them.id);
+      if (await blockedAmong(database, own, theirs?.members ?? [them.id]))
+        return closed(await privacyOf(database, theirs?.leader ?? them.id));
       return (await join(database, own, them.id, now)) ? done : said(409, 'Their fireteam is full.');
     }
     case 'join': {
       const theirs = await fireteamOf(database, them.id);
       const leader = theirs?.leader ?? them.id;
       if (theirs?.members.includes(own)) return done;
-      const row = await database
-        .prepare('SELECT privacy FROM accounts WHERE id = ?1')
-        .bind(leader)
-        .first<{ privacy: number }>();
-      const blocked =
-        (await blocks(database, leader, own)) ||
-        (await blocks(database, them.id, own)) ||
-        (await blocks(database, own, them.id));
+      const members = theirs?.members ?? [them.id];
+      const blocked = await blockedAmong(database, own, members);
       const friends = await database
         .prepare(
           `SELECT 1 AS yes FROM friends WHERE accepted = 1 AND ((asker_id = ?1 AND asked_id = ?2)
@@ -162,7 +201,6 @@ export async function fireteamAsk(
         )
         .bind(own, leader)
         .first<{ yes: number }>();
-      const members = theirs?.members ?? [them.id];
       const invited = await database
         .prepare(
           `SELECT 1 AS yes FROM fireteam_invites WHERE to_id = ?1 AND created_at >= ?2
@@ -170,11 +208,9 @@ export async function fireteamAsk(
         )
         .bind(own, now - INVITE_MS, JSON.stringify(members))
         .first<{ yes: number }>();
-      const privacy = row?.privacy ?? 1;
+      const privacy = await privacyOf(database, leader);
       const allowed = !blocked && (privacy === 0 || (privacy === 1 && friends) || (privacy <= 2 && invited));
-      // A block answers as a fireteam closed to them, so it tells no one they are blocked.
-      if (!allowed)
-        return said(403, privacy === 1 ? 'Only their friends can join them.' : 'Their fireteam is closed to you.');
+      if (!allowed) return closed(privacy);
       return (await join(database, own, them.id, now)) ? done : said(409, 'Their fireteam is full.');
     }
     case 'kick':

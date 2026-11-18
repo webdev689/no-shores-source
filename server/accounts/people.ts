@@ -62,11 +62,12 @@ export async function blocks(database: Db, blocker: string, blocked: string): Pr
   return found !== null;
 }
 
-/** Notes that a player is in a room that keeps no character, for a while; or, with no room, that they left it. */
+/** Notes that a player is in a room that keeps no character, for a while; or, with no room, that they left it now.
+ *  The row stays, to say when they were last seen. */
 export async function present(database: Db, account: string, room: string | null, now: number): Promise<void> {
   await (
     room === null
-      ? database.prepare('DELETE FROM presence WHERE account_id = ?1').bind(account)
+      ? database.prepare('UPDATE presence SET until = min(until, ?2) WHERE account_id = ?1').bind(account, now)
       : database
           .prepare(
             `INSERT INTO presence (account_id, room, until) VALUES (?1, ?2, ?3)

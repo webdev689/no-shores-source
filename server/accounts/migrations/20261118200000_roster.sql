@@ -76,3 +76,7 @@ CREATE TABLE presence (
   room TEXT NOT NULL,
   until INTEGER NOT NULL
 );
+-- The players in a room are found from these: those it last saw, and the characters it holds (each holder begins with
+-- its room's name), never by reading every account.
+CREATE INDEX presence_by_room ON presence (room);
+CREATE INDEX characters_by_holder ON characters (holder);

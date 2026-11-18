@@ -87,12 +87,12 @@ export async function friendAsk(
       .run();
   if ((await acceptTheirs()).meta.changes === 1) return done;
   if (asked === 'accept') return notAsked;
-  // A player's own count is their friends and their own asks, so strangers' asks cannot fill it; a list that holds
+  // Each player's count is their friends and their own asks, so strangers' asks cannot fill it; a list that holds
   // the most takes no new asks.
   const counts = await database
     .prepare(
       `SELECT (SELECT COUNT(*) FROM friends WHERE asker_id = ?1 OR (asked_id = ?1 AND accepted = 1)) AS mine,
-       (SELECT COUNT(*) FROM friends WHERE asker_id = ?2 OR asked_id = ?2) AS theirs`,
+       (SELECT COUNT(*) FROM friends WHERE asker_id = ?2 OR (asked_id = ?2 AND accepted = 1)) AS theirs`,
     )
     .bind(own, them.id)
     .first<{ mine: number; theirs: number }>();

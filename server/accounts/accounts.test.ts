@@ -206,3 +206,47 @@ test('a session with a way back in lapses after 30 days unseen; a guest is never
   assert.equal((await ask('GET', '/v1/me', undefined, other)).status, 401, 'every session ends');
   assert.equal((await ask('GET', '/v1/me', undefined, again)).status, 401);
 });
+
+test('a write that fails is answered as JSON with the usual headers: 409 when another ask changed its rows', async (t) => {
+  const logged = t.mock.method(console, 'error', () => undefined);
+  const { ask, deps } = accounts();
+  const named = async (username: string) => {
+    const token = (await ask('POST', '/v1/guest')).body['token'] as string;
+    await ask('POST', '/v1/register', { username, password: 'long enough' }, token);
+    return token;
+  };
+  const [ada, ben] = [await named('Ada'), await named('Ben')];
+  await ask('POST', '/v1/social/guild/found', { name: 'Oaks', tag: 'OAK' }, ada);
+  await ask('POST', '/v1/social/guild/invite', { name: 'Ben' }, ada);
+  // The guild ends between Ben's accepting being read and his joining being written.
+  const { database } = deps;
+  const ending = (sql: string) => {
+    const statement = database.prepare(sql);
+    if (!sql.includes('INSERT OR IGNORE INTO guild_members')) return statement;
+    return {
+      ...statement,
+      bind: (...values: unknown[]) => ({
+        ...statement.bind(...values),
+        run: async () => {
+          await database.prepare('DELETE FROM guilds').run();
+          return statement.bind(...values).run();
+        },
+      }),
+    };
+  };
+  Object.assign(deps, { database: { prepare: ending } });
+  const raced = await ask('POST', '/v1/social/guild/accept', { tag: 'OAK' }, ben);
+  assert.deepEqual(
+    [raced.status, raced.body],
+    [409, { error: 'Someone else changed that at the same moment. Try again.' }],
+  );
+  assert.equal(raced.response.headers.get('Access-Control-Allow-Origin'), '*');
+  const broken = () => {
+    throw new Error('the database is not answering');
+  };
+  Object.assign(deps, { database: { prepare: broken } });
+  const failed = await ask('POST', '/v1/guest');
+  assert.deepEqual([failed.status, failed.body], [500, { error: 'Something went wrong. Try again.' }]);
+  assert.equal(failed.response.headers.get('Access-Control-Allow-Origin'), '*');
+  assert.equal(logged.mock.callCount(), 2, 'each is logged');
+});

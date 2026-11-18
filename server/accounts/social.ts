@@ -47,6 +47,8 @@ export async function socialAsk(
     return friendAsk(database, own, asked, given?.['name'], now);
   if (group === 'fireteam') return fireteamAsk(database, own, asked, given, now);
   if (group === 'guild') return guildAsk(database, own, asked, given, now);
+  // Blocking, unblocking and reporting take nothing after them, so no other path escapes their limit.
+  if (asked !== '') return said(404, 'No such page.');
   const them = await accountNamed(database, given?.['name']);
   if (!them || them.id === own) return said(404, 'No one by that name is there.');
   switch (group) {

@@ -1,6 +1,7 @@
 // A world of accounts for the tests: the API on a fresh database, its clock where a test sets it.
 
 import { type Deps, handle } from './accounts.ts';
+import type { Statement } from './database.ts';
 import type { DiscordApp } from './discord.ts';
 import { sqliteForTests } from './sqliteForTests.ts';
 
@@ -33,4 +34,17 @@ export function accounts(discord: DiscordApp | null = null) {
     };
   };
   return { deps, clock, ask };
+}
+
+/** Makes each statement of a world a round trip, as D1's are, so asks made at once interleave between them. */
+export function slowly(deps: Deps): void {
+  const { database } = deps;
+  const tick = () => new Promise((resolve) => setTimeout(resolve, 2));
+  const slow = (statement: Statement): Statement => ({
+    bind: (...values) => slow(statement.bind(...values)),
+    first: async () => (await tick(), statement.first()),
+    all: async () => (await tick(), statement.all()),
+    run: async () => (await tick(), statement.run()),
+  });
+  Object.assign(deps, { database: { prepare: (sql: string) => slow(database.prepare(sql)) } });
 }
