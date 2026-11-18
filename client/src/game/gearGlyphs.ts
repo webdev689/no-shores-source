@@ -1,12 +1,12 @@
 // The gear screens' glyphs, drawn pixel by pixel to sit with the forge's pixel figures and Enhanced Plus's carved
-// frames: Aurem, the fragments and Essence, the Fruit of Dagon, an island's resource, a sealed Vestige and an empty
+// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a sealed Vestige and an empty
 // place. Enhanced Plus has no icons of its own for these, and the classic item art stays behind, so they are ours.
 
 import { RARITIES } from '../player/gear.ts';
 import type { Glyph } from './gearCards.ts';
 
 /** Each glyph as rows of letters, each letter a colour of its palette and a dot none. 12 × 12. */
-const MAPS: Readonly<Record<Exclude<Glyph, 'item'>, readonly string[]>> = {
+const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string[]>> = {
   aurem: [
     '....aaaa....',
     '..aabbbbaa..',
@@ -91,20 +91,6 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item'>, readonly string[]>> = {
     '...abbbba...',
     '....aaaa....',
   ],
-  resource: [
-    '.....a......',
-    '....aba.....',
-    '...abcba....',
-    '..abccba.a..',
-    '..abcbba.aba',
-    '.abccbbaabca',
-    '.abcbbbaabba',
-    'abccbbbbaaa.',
-    'abcbbbbbba..',
-    '.abbbbbbba..',
-    '..aaaaaaa...',
-    '............',
-  ],
   vestige: [
     '....aaaa....',
     '...abbbba...',
@@ -136,7 +122,7 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item'>, readonly string[]>> = {
 };
 
 const OUTLINE = '#120e0a';
-/** Each glyph's colours, outline first; a Vestige's and a resource's come from their rarity or island. */
+/** Each glyph's colours, outline first; a Vestige's come from its rarity. */
 const PALETTES: Readonly<Record<string, readonly string[]>> = {
   aurem: [OUTLINE, '#c08a3e', '#f3cf86'],
   'weapon-fragments': [OUTLINE, '#9fb2c4', '#e2ecf4'],
@@ -146,36 +132,193 @@ const PALETTES: Readonly<Record<string, readonly string[]>> = {
   fruit: [OUTLINE, '#8c2a2a', '#d86a5a', '#5a3a1e', '#4e7f3e'],
   empty: ['#6b665c'],
 };
-/** Each island's resource's colour, in the catalogue's order. */
-const RESOURCE_TONES = [
-  '#bfe8ff',
-  '#8a8f96',
-  '#d9973e',
-  '#f0b545',
-  '#e4d27a',
-  '#c9b8f0',
-  '#9fd8c0',
-  '#e8e0c8',
-  '#d8f0ff',
+/** Each island's resource as a picture of its own, in the catalogue's order: its rows as `MAPS`' are, and its
+ *  colours, the outline then its body in the island's colour, its light and its shade, then any other parts. */
+const MATERIALS: readonly { readonly rows: readonly string[]; readonly colours: readonly string[] }[] = [
+  {
+    // Brineglass: salt grown into clear cubes.
+    rows: [
+      '........aa..',
+      '......aabbaa',
+      '......abbbba',
+      '...aa.acbbda',
+      '.aabbaaccdda',
+      'abbbbbbacdda',
+      'accbbddacdaa',
+      'acccdddaaa..',
+      'acccddda.aa.',
+      'acccdddaabba',
+      '.aacdaa.acda',
+      '...aa....aa.',
+    ],
+    colours: [OUTLINE, '#bfe8ff', '#f4fdff', '#6ea6c6'],
+  },
+  {
+    // Cairn Iron: three bars, stacked.
+    rows: [
+      '............',
+      '............',
+      '...aaaaaa...',
+      '...acecca...',
+      '...abbbda...',
+      '...abbdda...',
+      '.aaaaaaaaaa.',
+      'aceccaacecca',
+      'abbbdaabbbda',
+      'abbddaabbdda',
+      'aaaaaaaaaaaa',
+      '............',
+    ],
+    colours: [OUTLINE, '#8a8f96', '#c9ced4', '#54585e', '#f4f7fa'],
+  },
+  {
+    // Heartwood Resin: a drop of amber, lit through its foot.
+    rows: [
+      '.....aa.....',
+      '....abba....',
+      '....acba....',
+      '...acbbda...',
+      '..aecbbbda..',
+      '.aecbbbbbda.',
+      '.acbbbbbbda.',
+      '.abbbffbbda.',
+      '.abbffffdda.',
+      '..abbbddda..',
+      '...adddda...',
+      '....aaaa....',
+    ],
+    colours: [OUTLINE, '#d9973e', '#f7d590', '#8e5518', '#fffbe8', '#f0bc6a'],
+  },
+  {
+    // Sunstone: a stone giving off the day's heat.
+    rows: [
+      '.....bb.....',
+      '.b...bb...b.',
+      '..b.aaaa.b..',
+      '...acccba...',
+      '..accbbbda..',
+      'bbacbbbbdabb',
+      'bbabbbbbdabb',
+      '..abbbbdda..',
+      '...adddda...',
+      '..b.aaaa.b..',
+      '.b...bb...b.',
+      '.....bb.....',
+    ],
+    colours: [OUTLINE, '#f0b545', '#fde7a0', '#b0661c'],
+  },
+  {
+    // Goldgrass Seed: an ear of the grass.
+    rows: [
+      '.......aa...',
+      '......acba..',
+      '.....acbdaa.',
+      '....acbdacba',
+      '...acbdacbda',
+      '..acbdacbda.',
+      '.acbdacbda..',
+      '.abdacbda...',
+      '..aacbda....',
+      '..eabda.....',
+      '.e..aa......',
+      'e...........',
+    ],
+    colours: [OUTLINE, '#e4d27a', '#fff3bd', '#a48c3a', '#9c8a44'],
+  },
+  {
+    // Mistbloom: a flower open.
+    rows: [
+      '....aaaa....',
+      '...abccba...',
+      '.aaabccbaaa.',
+      'acccabbabbda',
+      'abccbeebbbda',
+      '.abbeffebda.',
+      '..abeffeba..',
+      '.abbbeebbba.',
+      'abbdaaaadbba',
+      '.aaa.ae.aaa.',
+      '.....ae.....',
+      '.....ae.....',
+    ],
+    colours: [OUTLINE, '#c9b8f0', '#f1ebff', '#8774bd', '#5d8a56', '#fff2b8'],
+  },
+  {
+    // Windthistle: a thistle's head, its down like wire.
+    rows: [
+      '.c..c..c..c.',
+      '..b.b..b.b..',
+      '.c.bbbbbb.c.',
+      '..bbbbbbbb..',
+      '..adddddda..',
+      '.abbdbbdbba.',
+      '.adbbdbbdba.',
+      '.abbdbbdbba.',
+      '..adbbdbda..',
+      '...adddda...',
+      '.....ea.....',
+      '.....ea.....',
+    ],
+    colours: [OUTLINE, '#9fd8c0', '#e2fff2', '#4f8a72', '#3d5e3a'],
+  },
+  {
+    // Bog Pearl: a pearl in its open shell.
+    rows: [
+      '............',
+      '....aaaa....',
+      '...accbba...',
+      '..accbbbba..',
+      '..acbbbbda..',
+      '.aebbbbbdea.',
+      'aefbbbbddfea',
+      'aeffbdddffea',
+      '.aeeffffeea.',
+      '..aeeeeeea..',
+      '...aaaaaa...',
+      '............',
+    ],
+    colours: [OUTLINE, '#e8e0c8', '#fffaf0', '#a89f86', '#2a3530', '#7f948a'],
+  },
+  {
+    // Rimecrystal: a shard of frost.
+    rows: [
+      '.....aa.....',
+      '....acba....',
+      '...accbda...',
+      '..acbbbdda..',
+      '..acbbbdda..',
+      '..acbbbdda..',
+      '..acbbbdda..',
+      '..acbbbdda..',
+      '...acbbda...',
+      '....abda....',
+      '.....aa.....',
+      '............',
+    ],
+    colours: [OUTLINE, '#d8f0ff', '#ffffff', '#86b8dc'],
+  },
 ];
 
-/** A glyph as an SVG picture: its pixels as squares, crisp at any size. */
+/** A glyph as an SVG picture; a material past the catalogue's end shows an empty place. */
 export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): string {
-  const rows = MAPS[glyph];
-  const tone = (shades: readonly [string, string]) => [OUTLINE, ...shades];
+  if (glyph === 'resource') {
+    const material = MATERIALS[tint];
+    return material ? pictureSvg(material.rows, material.colours) : glyphSvg('empty');
+  }
+  const found = RARITIES[rarity];
   const colours =
     glyph === 'vestige'
-      ? [
-          ...tone([RARITIES[rarity]?.shade ?? '#555', RARITIES[rarity]?.colour ?? '#999']),
-          RARITIES[rarity]?.lit ?? '#ddd',
-        ]
-      : glyph === 'resource'
-        ? [...tone(['#3a3530', RESOURCE_TONES[tint] ?? '#bbb']), '#ffffff']
-        : (PALETTES[glyph] ?? [OUTLINE]);
+      ? [OUTLINE, found?.shade ?? '#555', found?.colour ?? '#999', found?.lit ?? '#ddd']
+      : (PALETTES[glyph] ?? [OUTLINE]);
+  return pictureSvg(MAPS[glyph], colours);
+}
+
+/** Rows of letters as an SVG picture: each pixel a square in its letter's colour, crisp at any size. */
+function pictureSvg(rows: readonly string[], colours: readonly string[]): string {
   const squares: string[] = [];
   rows.forEach((row, line) =>
     [...row].forEach((letter, column) => {
-      const fill = colours['abcde'.indexOf(letter)];
+      const fill = colours['abcdef'.indexOf(letter)];
       if (fill) squares.push(`<rect x="${column}" y="${line}" width="1" height="1" fill="${fill}"/>`);
     }),
   );

@@ -108,7 +108,8 @@ never while a press is held. Each press is an ask the room answers.
   a weapon or a shield is its own layer drawn alone in the pose that holds it, so no hand hides its grip. Each is
   fitted to its place as Enhanced Plus fits its icons; an icon long and thin (a blade, a staff, a gun) is laid on its
   tile's diagonal, as Destiny lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
-  name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs.
+  name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
+  is, mostly in its island's colour.
 - **Rarity.** Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal piece's frame is the
   kit's plain stone. A tile is Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a
   card or page takes its rarity's band; pips mark it.
