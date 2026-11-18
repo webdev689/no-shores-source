@@ -220,9 +220,16 @@ Where the work stands now, for the next session. Each session rewrites this note
   Roster's races and its query over every account fixed; the Reader's Open shown where it works; Gilded earned only by
   a Legendary or Atheric piece; Escape giving the Roster's panel and details their own step; a join travelling only when
   nothing else is under way; the menu's words at the names' size, the Roster fitted to the screen, long icons on the
-  diagonal, the banner kept once shown. Tested offline: the full check, and headless at 1920×1080 and 1280×720. Not
-  done, for the owner or later: a scale for screens past 1440p, the item page's missing grip, a glyph of its own for
-  each material, Destiny's 3×3 gear shelf, and whether strangers see "Playing" or "Away".
+  diagonal, the banner kept once shown. Tested offline: the full check, and headless at 1920×1080 and 1280×720.
+- **The owner's answers to the fourth audit are on #60 too**
+  ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]],
+  [[Names Follow Guidelines, Checked by the Accounts]]): names, guild names, tags and mottos judged by one module
+  of the accounts, with own-written blocked words, reserved names and look-alikes refused, and the owner's way to rename
+  in [[Names]]; the HUD's "In the room" line gone; no join from a fight at sea or a fall; letter spacing in whole
+  pixels and the Character page's words at 22 on a wide screen; the menu doubled past 1440p; Destiny 1's three-by-three
+  gear shelf; a held weapon's picture whole, grip and all; a glyph of its own for each material; and DFO's profile mark
+  at the menu's top right, the player's face in a brass well, opening Settings. Tested offline: the full check, and
+  headless at 1920×1080, 1280×720 and 2560×1440.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
