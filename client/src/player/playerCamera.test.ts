@@ -1,6 +1,17 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { AIM, CAMERA, FIRST_PERSON, aimEased, cameraOrbit, eased, rayHit, scrolled, toggled } from './playerCamera.ts';
+import {
+  AIM,
+  askedView,
+  CAMERA,
+  FIRST_PERSON,
+  aimEased,
+  cameraOrbit,
+  eased,
+  rayHit,
+  scrolled,
+  toggled,
+} from './playerCamera.ts';
 
 test('the wheel pulls back into third person, steps a notch at a time, and comes back into first person', () => {
   let view = scrolled(FIRST_PERSON, 1);
@@ -47,4 +58,13 @@ test('aiming in third person stands the camera over the right shoulder and zooms
   assert.equal(cameraOrbit(head, 0, 0, third, []).zoom, 1, 'not aiming, no zoom');
   assert.equal(cameraOrbit(head, 0, 0, { ...third, shown: 0 }, [], 1).zoom, AIM.firstZoom);
   assert.ok(aimEased(0, true, 0.05) > 0.5 && aimEased(0, true, 0.05) < 1, 'it eases in');
+});
+
+test('an address asks for first person, or third at a distance', () => {
+  assert.equal(askedView('?at=saltgrass-downs&view=first'), FIRST_PERSON);
+  assert.deepEqual(askedView('?view=third'), { firstPerson: false, distance: CAMERA.back, shown: CAMERA.back });
+  assert.equal(askedView('?view=third,6')?.distance, 6);
+  assert.equal(askedView('?view=third,99')?.distance, CAMERA.farthest);
+  assert.equal(askedView('?at=saltgrass-downs'), null);
+  assert.equal(askedView('?view=sideways'), null);
 });

@@ -7,11 +7,13 @@ pub mod blocks;
 pub mod body;
 pub mod floats;
 pub mod heights;
+pub mod near;
 pub mod step;
 pub mod terrain;
 
 pub use blocks::Block;
 pub use body::{Body, Controls, Mode, Over, TICK_SECONDS, TUNING, standing};
 pub use heights::Heights;
+pub use near::{Blocks, Near};
 pub use step::{step_body, wrap};
 pub use terrain::{Flat, Terrain};

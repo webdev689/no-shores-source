@@ -220,7 +220,9 @@ export class Aboard {
   private walkShot(lying: Lying): Shot {
     const { walker, movement } = this.context;
     const groundAt = (x: number, y: number) => cellHeight(this.deck, x, y);
-    const local = shotOfOrbit(playerCamera(walker.player, movement, []), LENS, groundAt, CAMERA_CLEARANCE_M);
+    // The deck has no blocks to ease the boom off, so a boom pulled in on foot is let go, not kept in.
+    const free = { ...walker.player, view: { ...walker.player.view, boom: undefined } };
+    const local = shotOfOrbit(playerCamera(free, movement, []), LENS, groundAt, CAMERA_CLEARANCE_M);
     return { ...local, eye: deckToWorld(lying, ...local.eye), yaw: local.yaw + lying.heading };
   }
 

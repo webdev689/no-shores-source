@@ -3,7 +3,7 @@
 //! writes each node's file and the index of them into `generated/nodes/`, which git leaves out.
 #![allow(clippy::print_stdout, reason = "a command-line tool reports to the terminal")]
 
-use bake::{Builders, Listed, NodeFile, ids_problem, nodes_of};
+use bake::{Builders, Listed, NodeFile, builders, ids_problem, nodes_of};
 use city::rmb::Blocks;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -33,38 +33,6 @@ fn root() -> PathBuf {
 
 fn read(path: &Path) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
-}
-
-/// What the layouts are built with: every RMB block file beside the index, the forged models' boxes and the briefs,
-/// each left empty where the repository holds none.
-fn builders(root: &Path) -> Result<Builders, String> {
-    let mut builders = Builders::default();
-    let rmb = root.join("content/world/rmb");
-    if rmb.is_dir() {
-        let mut files: Vec<PathBuf> = std::fs::read_dir(&rmb)
-            .map_err(|error| format!("{}: {error}", rmb.display()))?
-            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
-            .filter(|path| {
-                path.extension().is_some_and(|extension| extension == "json") && !path.ends_with("index.json")
-            })
-            .collect();
-        files.sort();
-        for file in files {
-            builders.book.add_blocks(&read(&file)?)?;
-        }
-    }
-    let forged = root.join("content/forged");
-    for (name, table) in [("buildings.json", &mut builders.book.buildings), ("props.json", &mut builders.book.props)] {
-        let path = forged.join(name);
-        if path.is_file() {
-            *table = layout::book::Book::measures(&read(&path)?)?;
-        }
-    }
-    let briefs = root.join("content/world/briefs.json");
-    if briefs.is_file() {
-        builders.briefs = layout::brief::Briefs::parse(&read(&briefs)?)?;
-    }
-    Ok(builders)
 }
 
 /// Each continent's nodes, generated a few continents at a time; the nodes come back in the layout's order.

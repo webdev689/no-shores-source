@@ -2,6 +2,7 @@
 //! sliding along a side.
 
 use crate::body::{Body, TUNING};
+use crate::near::Near;
 use crate::terrain::{Terrain, too_steep};
 
 /// A block: its footprint (x east, y south, metres), its top, and its underside.
@@ -25,16 +26,16 @@ impl Block {
 
 /// The ground under a point: the higher of the terrain and the highest block top at or below `z` plus a step.
 #[must_use]
-pub fn ground_at(blocks: &[Block], terrain: &dyn Terrain, x: f64, y: f64, z: f64) -> f64 {
+pub fn ground_at<B: Near + ?Sized>(blocks: &B, terrain: &dyn Terrain, x: f64, y: f64, z: f64) -> f64 {
     blocks
-        .iter()
+        .near(x, y)
         .filter(|block| block.holds(x, y, 0.0) && block.top <= z + TUNING.step)
         .fold(terrain.height_at(x, y), |ground, block| if block.top > ground { block.top } else { ground })
 }
 
 /// The first block in the way at a point of a body `height` tall with its feet at `z`.
-fn blocking_at(blocks: &[Block], x: f64, y: f64, z: f64, height: f64) -> Option<&Block> {
-    blocks.iter().find(|block| block.holds(x, y, TUNING.radius) && in_the_way(block, z, height))
+fn blocking_at<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, z: f64, height: f64) -> Option<&Block> {
+    blocks.near(x, y).find(|block| block.holds(x, y, TUNING.radius) && in_the_way(block, z, height))
 }
 
 /// Whether a block overlaps the column of a body `height` tall with its feet at `z`: its top over a step above the
@@ -46,16 +47,16 @@ fn in_the_way(block: &Block, z: f64, height: f64) -> bool {
 
 /// Whether a body `height` tall with its feet at `z` fits at a point: no block is in the way of it there.
 #[must_use]
-pub fn room_at(blocks: &[Block], x: f64, y: f64, z: f64, height: f64) -> bool {
+pub fn room_at<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, z: f64, height: f64) -> bool {
     blocking_at(blocks, x, y, z, height).is_none()
 }
 
 /// The lowest underside over a body with its feet at `z` at a point, within its radius: of the blocks whose
 /// underside is over a step above the feet, so neither the ground nor a wall beside it; infinite when none is.
 #[must_use]
-pub fn ceiling_at(blocks: &[Block], x: f64, y: f64, z: f64) -> f64 {
+pub fn ceiling_at<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, z: f64) -> f64 {
     blocks
-        .iter()
+        .near(x, y)
         .filter(|block| block.holds(x, y, TUNING.radius) && block.bottom > z + TUNING.step)
         .fold(f64::INFINITY, |lowest, block| if block.bottom < lowest { block.bottom } else { lowest })
 }
@@ -63,7 +64,7 @@ pub fn ceiling_at(blocks: &[Block], x: f64, y: f64, z: f64) -> f64 {
 /// The feet of a body `height` tall rising from `from` towards `to` at a point, stopped where its head meets a
 /// ceiling; never below `from`.
 #[must_use]
-pub fn under_ceiling(blocks: &[Block], x: f64, y: f64, from: f64, to: f64, height: f64) -> f64 {
+pub fn under_ceiling<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, from: f64, to: f64, height: f64) -> f64 {
     let highest = ceiling_at(blocks, x, y, from) - height;
     to.min(highest.max(from))
 }
@@ -77,7 +78,7 @@ pub struct WallAhead {
 
 /// The block ahead of the body along a bearing, a short reach past its radius, and how deep it runs that way.
 #[must_use]
-pub fn wall_ahead(blocks: &[Block], body: &Body, bearing: f64) -> Option<WallAhead> {
+pub fn wall_ahead<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64) -> Option<WallAhead> {
     let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let probe = TUNING.radius + 0.15;
     let block = *blocking_at(blocks, body.x + dir_x * probe, body.y + dir_y * probe, body.z, body.height())?;
@@ -89,7 +90,7 @@ pub fn wall_ahead(blocks: &[Block], body: &Body, bearing: f64) -> Option<WallAhe
 /// stepping up onto a block no higher than a step. A path the blocks leave open and no steeper than the slope limit is
 /// walked whole; otherwise each axis is tried alone, so the body slides along the rise. Answers the new (x, y).
 #[must_use]
-pub fn slide(blocks: &[Block], terrain: &dyn Terrain, body: &Body, move_x: f64, move_y: f64) -> (f64, f64) {
+pub fn slide<B: Near + ?Sized>(blocks: &B, terrain: &dyn Terrain, body: &Body, move_x: f64, move_y: f64) -> (f64, f64) {
     let past_blocks = along_axes(blocks, None, body, move_x, move_y);
     let (whole_x, whole_y) = (body.x + move_x, body.y + move_y);
     let run = (move_x * move_x + move_y * move_y).sqrt();
@@ -100,7 +101,13 @@ pub fn slide(blocks: &[Block], terrain: &dyn Terrain, body: &Body, move_x: f64, 
 }
 
 /// The move an axis at a time, each axis taken where no block, nor the terrain if one is given, stops it.
-fn along_axes(blocks: &[Block], terrain: Option<&dyn Terrain>, body: &Body, move_x: f64, move_y: f64) -> (f64, f64) {
+fn along_axes<B: Near + ?Sized>(
+    blocks: &B,
+    terrain: Option<&dyn Terrain>,
+    body: &Body,
+    move_x: f64,
+    move_y: f64,
+) -> (f64, f64) {
     let open = |from: (f64, f64), to: (f64, f64), run: f64| {
         blocking_at(blocks, to.0, to.1, body.z, body.height()).is_none()
             && terrain.is_none_or(|terrain| !too_steep(terrain, body.z, from, to, run))

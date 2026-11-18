@@ -10,6 +10,7 @@ import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
+import { askedView } from '../player/playerCamera.ts';
 import { Walker } from '../player/walker.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
@@ -123,7 +124,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const dress = plainDress('human', 0.3);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
-  const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
+  // The address may ask for another (`&view=`), to picture a place from first person or nearer.
+  const arrivalView = askedView(location.search) ?? { firstPerson: false, distance: 4.5, shown: 4.5 };
   const walker = new Walker({ ...newPlayer(movement, 0, 0), view: arrivalView }, you, firstPerson, forge);
   const footContext: FootContext = {
     movement,

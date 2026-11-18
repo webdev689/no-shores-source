@@ -1,7 +1,8 @@
 //! One step of a body: the rules for each way it can be held.
 
-use crate::blocks::{Block, WallAhead, ground_at, room_at, slide, under_ceiling, wall_ahead};
+use crate::blocks::{WallAhead, ground_at, room_at, slide, under_ceiling, wall_ahead};
 use crate::body::{Body, Controls, Mode, Over, TUNING};
+use crate::near::Near;
 use crate::terrain::Terrain;
 use std::f64::consts::PI;
 
@@ -31,13 +32,13 @@ fn pace_of(crouched: bool, controls: &Controls) -> f64 {
 }
 
 /// Whether a body has room to stand at a point with its feet at `z`.
-fn room_to_stand(blocks: &[Block], x: f64, y: f64, z: f64) -> bool {
+fn room_to_stand<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, z: f64) -> bool {
     room_at(blocks, x, y, z, TUNING.height)
 }
 
 /// Starts a mantle up onto a lip, or a vault over a low, thin block: the body goes over it in time with its rise.
 /// None where there is no room to stand over the lip, or where a vault lands, under a floor above it.
-fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool, blocks: &[Block]) -> Option<Body> {
+fn go_over<B: Near + ?Sized>(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool, blocks: &B) -> Option<Body> {
     let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let rise = ahead.block.top - body.z;
     let onto = TUNING.radius + 0.3;
@@ -80,7 +81,13 @@ pub fn wrap(angle: f64) -> f64 {
 /// ground, up steps and slopes; jumping and falling; grabbing a lip on a jump to hang, mantle or vault; shimmying
 /// along a lip; climbing a wall too high to grab.
 #[must_use]
-pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64) -> Body {
+pub fn step_body<B: Near + ?Sized>(
+    body: &Body,
+    controls: &Controls,
+    blocks: &B,
+    terrain: &dyn Terrain,
+    seconds: f64,
+) -> Body {
     // The controls come from a player's machine: held to their range here, a body never takes a NaN from them, and a
     // look turned past half a turn is wrapped, as the fight's rules wrap it, so a browser's step and a room's agree.
     let unit = |value: f64| if value.is_finite() { value.clamp(-1.0, 1.0) } else { 0.0 };
@@ -99,7 +106,7 @@ pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &d
 }
 
 /// Mantling or vaulting: along the way at its pace, rising first and then going over, so it never cuts the lip.
-fn going_over(body: &Body, blocks: &[Block], seconds: f64) -> Body {
+fn going_over<B: Near + ?Sized>(body: &Body, blocks: &B, seconds: f64) -> Body {
     let Some(over) = body.over else { return Body { mode: Mode::Ground, ..*body } };
     let progress = (over.progress + seconds / over.seconds).min(1.0);
     let along = |axis: usize| over.from[axis] + (over.to[axis] - over.from[axis]) * progress;
@@ -116,7 +123,13 @@ fn going_over(body: &Body, blocks: &[Block], seconds: f64) -> Body {
 
 /// Hanging from a lip or climbing a wall: crouch lets go, forward at the lip goes over, sideways moves along it, and on
 /// the wall forward climbs and a jump kicks off.
-fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64) -> Body {
+fn on_wall<B: Near + ?Sized>(
+    body: &Body,
+    controls: &Controls,
+    blocks: &B,
+    terrain: &dyn Terrain,
+    seconds: f64,
+) -> Body {
     if controls.crouch {
         return Body { mode: Mode::Air, vz: 0.0, moving: false, ..*body };
     }
@@ -156,7 +169,14 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Ter
 
 /// In the air: falling under gravity, exactly for a constant pull so a jump's apex does not hang on the tick, and
 /// catching a lip in reach when pressed into a wall.
-fn in_air(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64, wish: Wish) -> Body {
+fn in_air<B: Near + ?Sized>(
+    body: &Body,
+    controls: &Controls,
+    blocks: &B,
+    terrain: &dyn Terrain,
+    seconds: f64,
+    wish: Wish,
+) -> Body {
     let mut fall_speed = body.vz - TUNING.gravity * seconds;
     let rising = body.z + body.vz * seconds - 0.5 * TUNING.gravity * seconds * seconds;
     let (x, y) = slide(blocks, terrain, body, body.vx * seconds, body.vy * seconds);
@@ -202,10 +222,10 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terr
 
 /// On the ground: walking, running or crouching where the controls point, up steps and off edges; jumping, or going
 /// over a lip in reach; and taking hold of a wall too high to grab.
-fn on_ground(
+fn on_ground<B: Near + ?Sized>(
     body: &Body,
     controls: &Controls,
-    blocks: &[Block],
+    blocks: &B,
     terrain: &dyn Terrain,
     seconds: f64,
     wish: Wish,

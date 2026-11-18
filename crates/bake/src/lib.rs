@@ -11,6 +11,7 @@ use land::sites::NodeKind;
 use layout::book::Book;
 use layout::brief::Briefs;
 use serde::Serialize;
+use std::path::{Path, PathBuf};
 use world::layout::Continent;
 
 /// How far past a section's ring its window reaches, metres: beyond the 60 m where a body dies, so no living body
@@ -129,6 +130,42 @@ pub fn nodes_of(
         cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
     });
     Ok(drawn.chain(social).collect())
+}
+
+/// What the layouts are built with: every RMB block file beside the index, the forged models' boxes and the briefs,
+/// each left empty where the repository holds none, under the repository's `root`.
+pub fn builders(root: &Path) -> Result<Builders, String> {
+    let mut builders = Builders::default();
+    let rmb = root.join("content/world/rmb");
+    if rmb.is_dir() {
+        let mut files: Vec<PathBuf> = std::fs::read_dir(&rmb)
+            .map_err(|error| format!("{}: {error}", rmb.display()))?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| {
+                path.extension().is_some_and(|extension| extension == "json") && !path.ends_with("index.json")
+            })
+            .collect();
+        files.sort();
+        for file in files {
+            builders.book.add_blocks(&read_text(&file)?)?;
+        }
+    }
+    let forged = root.join("content/forged");
+    for (name, table) in [("buildings.json", &mut builders.book.buildings), ("props.json", &mut builders.book.props)] {
+        let path = forged.join(name);
+        if path.is_file() {
+            *table = layout::book::Book::measures(&read_text(&path)?)?;
+        }
+    }
+    let briefs = root.join("content/world/briefs.json");
+    if briefs.is_file() {
+        builders.briefs = layout::brief::Briefs::parse(&read_text(&briefs)?)?;
+    }
+    Ok(builders)
+}
+
+fn read_text(path: &Path) -> Result<String, String> {
+    std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
 }
 
 #[cfg(test)]

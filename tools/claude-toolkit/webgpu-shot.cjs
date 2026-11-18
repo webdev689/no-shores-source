@@ -5,12 +5,16 @@
 // Headless SwiftShader has no shared-image backing for a WebGPU canvas, so presenting to one loses the device a few
 // seconds in. The page's canvas context is given a texture of its own instead, and a picture reads that texture back
 // and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
-// forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first.
+// forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first, or, where another
+// checkout holds 5173, Vite on any port with "anyPort": true, and the driver fetches R2 for the page.
 //
-// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
-// step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
-// { "wheel": [x, y, deltaY] }, { "clickText": "Return to ship" }, { "eval": "js" }, { "shot": "out.png" }. The
-// console's errors are printed.
+// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "steps":
+// [ ... ] }, each step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "hold": ["w", seconds] },
+// { "click": [x, y] },
+// { "wheel": [x, y, deltaY, notches] }, { "clickText": "Return to ship" }, { "eval": "js" }, { "shot": "out.png" }.
+// The console's errors are printed. The game takes one wheel notch a frame, so a wheel step sends its notches (1
+// unless said) 0.1 s apart: from the arrival's 4.5 m, about 20 notches in (deltaY < 0) reach first person. To arrive
+// in a camera instead, the address asks for it as it asks for a spawn: `&view=first` or `&view=third,<metres>`.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
 
@@ -89,6 +93,18 @@ async function main() {
     await page.route(`**/*${part}*`, (route) =>
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
+  // R2 answers CORS for port 5173 alone; with "anyPort" the page's cross-origin reads are fetched by the driver and
+  // handed back open to any origin, so a worktree's Vite can serve on another port while 5173 is taken.
+  if (plan.anyPort) {
+    const own = new URL(plan.url).origin;
+    await page.route(
+      (url) => url.origin !== own && url.protocol.startsWith('http'),
+      async (route) => {
+        const response = await route.fetch({ headers: { ...route.request().headers(), origin: 'http://localhost:5173' } });
+        await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } });
+      },
+    );
+  }
   await page.addInitScript(OWN_TEXTURE);
   await page.goto(plan.url);
   for (const step of plan.steps) {
@@ -96,10 +112,18 @@ async function main() {
     if (step.wait) await page.waitForTimeout(step.wait * 1000);
     else if (step.waitFor) await page.getByText(step.waitFor).first().waitFor({ timeout: (step.timeout ?? 180) * 1000 });
     else if (step.key) await page.keyboard.press(step.key);
+    else if (step.hold) {
+      await page.keyboard.down(step.hold[0]);
+      await page.waitForTimeout(step.hold[1] * 1000);
+      await page.keyboard.up(step.hold[0]);
+    }
     else if (step.click) await page.mouse.click(step.click[0], step.click[1]);
     else if (step.wheel) {
       await page.mouse.move(step.wheel[0], step.wheel[1]);
-      await page.mouse.wheel(0, step.wheel[2]);
+      for (let notch = 0; notch < (step.wheel[3] ?? 1); notch++) {
+        await page.mouse.wheel(0, step.wheel[2]);
+        await page.waitForTimeout(100);
+      }
     }
     else if (step.clickText) await page.getByText(step.clickText).first().click();
     else if (step.eval) console.log('eval:', JSON.stringify(await page.evaluate(step.eval)));
