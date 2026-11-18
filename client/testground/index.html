@@ -67,6 +67,29 @@
         flex: 1;
         min-width: 0;
       }
+      .feel {
+        border: 1px solid #2a3038;
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin: 6px 0;
+      }
+      .feel-head > span:first-child {
+        font-weight: 600;
+      }
+      .feel .row:not(.feel-head) > span:first-child {
+        min-width: 82px;
+        padding-left: 10px;
+        color: #b4bcc6;
+      }
+      .feel .value {
+        min-width: 40px;
+        text-align: right;
+        color: #9aa4b0;
+        font-variant-numeric: tabular-nums;
+      }
+      .feel.off .row:not(.feel-head) {
+        opacity: 0.4;
+      }
       .figures {
         display: flex;
         flex-direction: column;

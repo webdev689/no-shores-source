@@ -18,7 +18,7 @@ export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back
 /** Aiming a ranged weapon: in third person the camera stands behind the right shoulder, offset from the middle, this
  *  far out, back and up from the head (metres), zoomed in a little; in first person the view zooms in this much, the
  *  hands with it. It eases there and back about as fast as the camera eases. */
-export const AIM = { shoulder: 0.65, back: 1.8, up: 0.25, thirdZoom: 1.15, firstZoom: 1.6, ease: 12 } as const;
+export const AIM = { shoulder: 0.8, back: 3, up: 0.25, thirdZoom: 1.3, firstZoom: 1.6, ease: 12 } as const;
 
 /** How far the view is zoomed `aim` (0 to 1) of the way into aiming, in third person once it stands back more than
  *  `shown` 0.01, else in first; the first person's hands zoom with it. */

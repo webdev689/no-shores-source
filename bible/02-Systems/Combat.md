@@ -186,4 +186,5 @@ human limits ([[Foes]]).
 - Running costs no stamina.
 - Casting does no harm yet.
 - A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).
-- No hit-stop: the rules step in fixed ticks for everyone, so a blow cannot pause them.
+- No hit-stop: the rules step in fixed ticks for everyone, so a blow cannot pause them; the Test Ground holds only
+  the drawing ([[Test Ground]], [[The Attack Feel Is Tried in the Test Ground]]).

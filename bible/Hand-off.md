@@ -128,7 +128,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-
+- #65 sets the owner's third-person aim, 0.8 m out, 3 m back, 0.25 m up and 1.3 times zoom, as the game's own
+  ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]), and brings the attack feel to the [[Test Ground]]: the
+  swing arc, the hit-stop, the camera kick and the lunge, each a switch and a slider
+  ([[The Attack Feel Is Tried in the Test Ground]]), and eases third-person strikes back to about a third faster than
+  DFO's ([[Third-Person Strikes Run Faster Than DFO's]]). Tested offline, with tests and headless Test Ground runs; it
+  waits for the owner's yes to merge. Which effects go into the game, and at what settings, is the owner's to say.
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
   writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
@@ -136,8 +141,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
   does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
   owner's to say.
-- #62's: the third-person aim's numbers, once the owner gives them, go into `AIM` in `playerCamera.ts`; no weapon is
-  seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and `r2.dev` limits its rate.
+- #62's: no weapon is seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and
+  `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
   overboard should meet (the deck keeps them aboard for now), and whether DFO's Travel Options encounter (a journey
   stopped near an enemy) or wary pirates falling on a ship they outgun should come over.

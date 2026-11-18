@@ -29,6 +29,14 @@ export interface FoeClock {
   readonly tickSeconds: number;
 }
 
+/** How a frame's attack feel moves a foe as drawn: its moves held back while a blow landing holds it, its figure
+ *  shifted off where it stands, and where its feet were drawn, which its swing's arc follows. */
+export interface FoeFeel {
+  held(id: number, view: FighterView): FighterView;
+  shift(id: number, view: FighterView): readonly [number, number, number];
+  readonly feet: Map<number, readonly [number, number, number]>;
+}
+
 /** The moves a foe's figure is composed in ahead of time beside its likeliest, so its first swing is drawn as it
  *  begins: the telegraphed blows' strokes and what a fight holds it to. */
 const FOE_MOVES = ['thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death'];
@@ -54,12 +62,13 @@ export class FoeFigures {
     return this.figures;
   }
 
-  /** Every foe's card for an eye at `eye`, each flashing by `flashOf` its number. */
+  /** Every foe's card for an eye at `eye`, each flashing by `flashOf` its number, moved by `feel` where one is felt. */
   cards(
     foes: Iterable<FoeSeen>,
     eye: { readonly x: number; readonly y: number },
     time: FoeClock,
     flashOf: (id: number) => number,
+    feel: FoeFeel | null = null,
   ): CardAt[] {
     const { forge } = this;
     const cards: CardAt[] = [];
@@ -68,7 +77,8 @@ export class FoeFigures {
       present.add(kept.id);
       const kind = foeKind(kept.kind);
       if (!kind) continue;
-      const { view } = kept;
+      // Its moves as its drawing shows them, held back while a blow landing holds it.
+      const view = feel ? feel.held(kept.id, kept.view) : kept.view;
       const placed = this.figures.get(kept.id) ?? {
         id: nextFoeId--,
         x: view.x,
@@ -98,7 +108,10 @@ export class FoeFigures {
       const { view: side, flip } = viewOf(placed.facing, x, y, eye.x, eye.y);
       const card = forge.card(placed.id, kind.dress, move.anim, side, frameShown, flip);
       const flash = { share: flashOf(kept.id), red: false };
-      if (card) cards.push({ card, ...cardStand(x, y, eye.x, eye.y), z, flip, flash });
+      const [movedX, movedY, movedZ] = feel ? feel.shift(kept.id, kept.view) : [0, 0, 0];
+      const drawnAt = [x + movedX, y + movedY, z + movedZ] as const;
+      feel?.feet.set(kept.id, drawnAt);
+      if (card) cards.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
     for (const [id, placed] of this.figures)
       if (!present.has(id)) {

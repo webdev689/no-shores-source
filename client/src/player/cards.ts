@@ -119,9 +119,9 @@ export class Cards {
     const dressed = figureOf(dress, layers, anim);
     const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
     const gear = [...dressed.gear, ...carried];
-    // A view drawn mirrored keeps each hip piece at its own hip.
-    const holding = [dress.outfit.right, dress.outfit.left].some((hand) => !!hand && gear.includes(hand));
-    const figure = { ...dressed, gear: (flip && mirroredGear(gear, anim, layers, holding)) || gear };
+    // A view drawn mirrored keeps each hip piece at its own hip, and what each fist holds in its own fist.
+    const held = [dress.outfit.right, dress.outfit.left, ...carried];
+    const figure = { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);
     const kept = this.kept.get(key);
     if (kept !== undefined) {
