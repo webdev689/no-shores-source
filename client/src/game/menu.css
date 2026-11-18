@@ -123,3 +123,20 @@
   text-align: right;
   font-weight: 500;
 }
+
+/* The recorded sounds' credits, small under the volume, each link in brass. */
+.gear-sound-credits {
+  margin-top: 12px;
+}
+.gear-credits {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--faint);
+}
+.gear-credits li {
+  margin: 2px 0;
+}
+#hud .gear-credits a {
+  color: var(--brass-lit);
+  pointer-events: auto;
+}

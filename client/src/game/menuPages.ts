@@ -7,6 +7,7 @@ import { ROLES } from '../plus/kit.ts';
 import { accountPanel } from './accountTab.ts';
 import { pressOf } from './gearDom.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import { soundCredits } from './soundSamples.ts';
 import { interfaceVolume, play, setInterfaceVolume } from './uiSounds.ts';
 
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
@@ -66,8 +67,27 @@ function soundPanel(): HTMLElement {
   });
   slider.addEventListener('change', () => play('press'));
   row.append(make('span', 'Interface sounds'), slider, shown);
-  panel.append(make('h2', 'Sound', `gear-heading ${ROLES.rule}`), row);
+  panel.append(make('h2', 'Sound', `gear-heading ${ROLES.rule}`), row, creditsList());
   return panel;
+}
+
+/** The recorded sounds' credits: each sound's name and author, its licence and its source, and what was changed. */
+function creditsList(): HTMLElement {
+  const list = make('ul', '', 'gear-credits');
+  list.setAttribute('aria-label', 'Sound credits');
+  for (const credit of soundCredits()) {
+    const item = make('li', '');
+    const licence = make('a', credit.licence);
+    licence.href = credit.licenceUrl;
+    const source = make('a', 'Freesound');
+    source.href = credit.page;
+    for (const link of [licence, source]) Object.assign(link, { target: '_blank', rel: 'noopener' });
+    item.append(`"${credit.name}" by ${credit.author}, `, licence, ', from ', source, `. ${credit.changes}`);
+    list.append(item);
+  }
+  const credits = make('section', '', 'gear-sound-credits');
+  credits.append(make('h3', 'Sound credits', 'gear-hint'), list);
+  return credits;
 }
 
 /** The players blocked, each with a press to unblock them; blocking is done from the Roster. */

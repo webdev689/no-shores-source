@@ -1,8 +1,11 @@
-// The interface's sounds, made by the browser's own synthesiser, so no file is fetched: a tick as the pointer or the
-// keys reach a control, a press, a tab turned, the menu opened and shut, a hold's charge rising until it acts, an item
-// dismantled or fed, a gain's chime pitched by its rarity, and a refusal. One listener hears every press, as DFO's
+// The interface's sounds: a tick as the pointer or the keys reach a control, a press, a tab turned, the menu opened and
+// shut, a hold's charge rising until it acts, an item dismantled or fed, a gain's chime by its rarity, and a refusal.
+// The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), or one the browser's own
+// synthesiser makes here, which also stands in while a recording loads. One listener hears every press, as DFO's
 // click does, and plays the press only where no sound of its own already played. The volume is the player's, kept in
 // this browser.
+
+import { loadSamples, playSample } from './soundSamples.ts';
 
 /** The sounds the interface makes. */
 export type Cue = 'hover' | 'press' | 'tab' | 'open' | 'close' | 'back' | 'dismantle' | 'feed' | 'refused';
@@ -16,6 +19,15 @@ const LEVEL = 0.35;
 const TICK_MS = 45;
 /** How far a tick's or a press's pitch strays, either way, as a share of it. */
 const STRAY = 0.06;
+/** The cues played from a recording the owner picked, by its place in content/audio/sounds.json. */
+const RECORDED: Partial<Record<Cue, string>> = {
+  hover: 'ui.hover',
+  press: 'ui.press',
+  back: 'ui.back',
+  open: 'ui.open',
+  dismantle: 'hold.dismantle',
+  feed: 'hold.feed',
+};
 /** What a press is: buttons and what acts like them. */
 const PRESSABLE = 'button, a[href], summary, select, [role="button"], [role="tab"], input[type="checkbox"]';
 /** What a tick is heard on, reached by the pointer. */
@@ -55,6 +67,7 @@ function wake(): void {
   master = context.createGain();
   master.gain.value = interfaceVolume() * LEVEL;
   master.connect(context.destination);
+  loadSamples(context);
   // A second of white noise, the stuff of every crunch and swish.
   noise = context.createBuffer(1, context.sampleRate, context.sampleRate);
   const samples = noise.getChannelData(0);
@@ -115,6 +128,10 @@ export function play(cue: Cue): void {
   lastCueAt = performance.now();
   // The sounds heard most stray a little in pitch, so a run of them never drones.
   const stray = 1 + (Math.random() - 0.5) * STRAY;
+  const now = live();
+  const recorded = RECORDED[cue];
+  const often = cue === 'hover' || cue === 'press' || cue === 'back';
+  if (now && recorded && playSample(now.audio, now.out, recorded, often ? stray : 1)) return;
   switch (cue) {
     case 'hover':
       return tone('sine', [2100 * stray, 1700 * stray], 0.05, 0.03);
@@ -145,23 +162,70 @@ export function play(cue: Cue): void {
   }
 }
 
-/** Each rarity's chime, from Common up: a higher, longer bell for the rarer. */
-const CHIMES: readonly (readonly [number, number])[] = [
-  [880, 0.25],
-  [988, 0.3],
-  [1175, 0.4],
-  [1319, 0.55],
-  [1568, 0.7],
-];
+/** A brass bell: a sine rung by another at 1.4 times its pitch, the ring fading faster than the note, over a soft
+ *  octave below for its body. */
+function bell(pitch: number, peak: number, length: number, delay = 0) {
+  const now = live();
+  if (!now) return;
+  const when = now.when + delay;
+  const sound = (freq: number, share: number, rings: number, struck: boolean) => {
+    const voice = now.audio.createOscillator();
+    voice.frequency.setValueAtTime(freq, when);
+    if (struck) {
+      const striker = now.audio.createOscillator();
+      striker.frequency.setValueAtTime(freq * 1.4, when);
+      const depth = now.audio.createGain();
+      depth.gain.setValueAtTime(freq * 2.2, when);
+      depth.gain.exponentialRampToValueAtTime(freq * 0.05, when + rings * 0.6);
+      striker.connect(depth).connect(voice.frequency);
+      striker.start(when);
+      striker.stop(when + rings + 0.05);
+    }
+    voice.connect(envelope(now.audio, now.out, when, peak * share, rings));
+    voice.start(when);
+    voice.stop(when + rings + 0.05);
+  };
+  sound(pitch, 1, length, true);
+  sound(pitch / 2, 0.25, length * 0.8, false);
+}
 
-/** A gain's chime: a bell of its rarity, the rarer answered by a fifth above. */
+/** A chord swelling in and out, its notes each a little apart in pitch so it shimmers. */
+function held(pitches: readonly number[], peak: number, length: number, delay: number) {
+  const now = live();
+  if (!now) return;
+  const when = now.when + delay;
+  for (const pitch of pitches)
+    for (const cents of [-6, 6]) {
+      const voice = now.audio.createOscillator();
+      voice.frequency.setValueAtTime(pitch * 2 ** (cents / 1200), when);
+      const gain = now.audio.createGain();
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.exponentialRampToValueAtTime(peak / pitches.length, when + length * 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+      voice.connect(gain).connect(now.out);
+      voice.start(when);
+      voice.stop(when + length + 0.05);
+    }
+}
+
+/** The gains' bells are pitched from A5, a step at a time in semitones. */
+const BELL = 880;
+const fromBell = (steps: readonly number[]) => steps.map((semitones) => BELL * 2 ** (semitones / 12));
+/** A Legendary gain's glints, as dust catching the light: each a multiple of the bell an octave up. */
+const GLINTS = [2, 3, 2.5, 4, 3.5, 2, 3, 2.5];
+/** A gain's chime, the Brass bells the owner picked: one voice at three sizes, a single bell for a Normal or Magic gain,
+ *  a rising run for a Rare, and for a Legendary or Atheric a longer run over a held, shimmering chord and its glints. */
 export function chime(rarity: number): void {
   wake();
   lastCueAt = performance.now();
-  const [pitch, length] = CHIMES[Math.min(CHIMES.length - 1, Math.max(0, rarity))] ?? [880, 0.25];
-  tone('sine', [pitch, pitch], 0.16, length);
-  tone('sine', [pitch * 2.76, pitch * 2.76], 0.04, length * 0.5);
-  if (rarity >= 3) tone('sine', [pitch * 1.5, pitch * 1.5], 0.12, length, 0.09);
+  if (rarity <= 1) return bell(BELL, 0.22, 0.45);
+  if (rarity === 2) return fromBell([0, 4, 7]).forEach((pitch, nth) => bell(pitch, 0.2, 0.7, nth * 0.075));
+  fromBell([0, 4, 7, 12, 16]).forEach((pitch, nth) => bell(pitch, 0.18, 0.9, nth * 0.065));
+  held(fromBell([-12, -5, 0, 4]), 0.12, 1.6, 0.2);
+  GLINTS.forEach((step, nth) => {
+    const pitch = BELL * 2 * step;
+    tone('sine', [pitch, pitch], 0.05 * (1 - nth / 10), 0.12, 0.35 + nth * 0.045 + (nth % 3) * 0.012);
+  });
 }
 
 /** A hold's charge: a tone rising over `holdMs` as it is held; the stop it returns lets it fall away at once. */

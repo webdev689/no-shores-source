@@ -19,6 +19,8 @@ code:
   - client/src/game/acquiredFeed.ts#startAcquiredFeed
   - client/src/game/gains.ts#gainsOf
   - client/src/game/uiSounds.ts#play
+  - client/src/game/soundSamples.ts#playSample
+  - client/src/game/soundSamples.ts#soundCredits
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/itemPictures.ts#ItemPictures
   - client/src/game/gearDom.ts#HoverCard
@@ -148,9 +150,14 @@ never while a press is held. Each press is an ask the room answers.
   shows a pickup: a row each, its picture in a well of its rarity, its name and how many. Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain.
-- **Sounds.** Every control makes a sound, made by the browser's own synthesiser, so no file is fetched: a tick as
-  the pointer or the keys reach it, a press, a tab turned, the menu opened and shut, a hold's charge rising, a crunch
-  for a dismantle, a chime for a feed or a gain, a buzz for a refusal. One listener hears every press, as DFO's does.
+- **Sounds.** Every control makes a sound: a tick as the pointer or the keys reach it, a press, a step back, a tab
+  turned, the menu opened and shut, a hold's charge rising, a dismantle, a feed, a gain's chime by its rarity, a
+  refusal. Each is the owner's pick on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the
+  tick, press, step back, opening, dismantle and feed are recordings from Freesound, listed with their credits in
+  `content/audio/sounds.json`, kept on R2 and levelled to one peak; the gains are the synthesiser's Brass bells, one
+  bell for a Normal or Magic gain, a rising run for a Rare, a longer run over a held chord for a Legendary or
+  Atheric; the tab, the close, the charge and the refusal are the synthesiser's own, which also stands in while a
+  recording loads. One listener hears every press, as DFO's does.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
@@ -172,7 +179,7 @@ never while a press is held. Each press is an ask the room answers.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
   Under it, the players blocked, each with a press to unblock them; then the interface's volume, kept in this
-  browser.
+  browser, and the recorded sounds' credits: each one's name, author, licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
   wash move: no quiver, no shards, and the gains appear without sliding in.
 
@@ -214,5 +221,5 @@ the Tailor's stall.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - No gamepad or touch layer yet.
-- The sounds are the interface's alone; the world and the music have none yet.
+- The sounds are the interface's alone; the world and the music have none yet. The charge waits on the owner's pick.
 - The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
