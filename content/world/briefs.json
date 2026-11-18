@@ -83,8 +83,8 @@
     "name": "Driftwood Strand"
    },
    {
-    "kind": "wreck",
-    "name": "The Saltbreaker"
+    "kind": "hulks",
+    "name": "The Saltbreaker Hulks"
    },
    {
     "kind": "hamlet",
@@ -253,6 +253,1970 @@
    {
     "kind": "arena",
     "name": "The Pearl Tomb"
+   }
+  ]
+ },
+ "highwater-fells": {
+  "theme": "Bare fells above a drowned valley, a keep on the crag and shepherds' huts in the lee of the stones.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Fellfoot"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Highwater",
+    "blocks": 2
+   },
+   {
+    "kind": "keep",
+    "name": "Crag Keep"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Weeping Stones"
+   },
+   {
+    "kind": "farm",
+    "name": "Lambing Fold"
+   },
+   {
+    "kind": "wilds",
+    "name": "The High Fells"
+   },
+   {
+    "kind": "ruin",
+    "name": "Old Highwater"
+   },
+   {
+    "kind": "tower",
+    "name": "Ravensight"
+   }
+  ]
+ },
+ "highwater-glen": {
+  "theme": "A glen of falling water and old mills, a hold of the clans walled in the narrows.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Glen Mouth"
+   },
+   {
+    "kind": "mill",
+    "name": "Falls Mill"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Glenmoss",
+    "blocks": 3
+   },
+   {
+    "kind": "graveyard",
+    "name": "The Clan Cairns"
+   },
+   {
+    "kind": "keep",
+    "name": "The Narrows Hold"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Long Meadow"
+   },
+   {
+    "kind": "coven",
+    "name": "Mist Coven"
+   }
+  ]
+ },
+ "greystone-tors": {
+  "theme": "Granite tors and a quarry cut into them, the Grey Tithe's camp among the spoil.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Tor Landing"
+   },
+   {
+    "kind": "quarry",
+    "name": "The Greystone Quarry"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Quarrymen's Row",
+    "blocks": 2
+   },
+   {
+    "kind": "camp",
+    "name": "Tithe Camp"
+   },
+   {
+    "kind": "tower",
+    "name": "Tor Watch"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Spoil Heaps"
+   },
+   {
+    "kind": "ruin",
+    "name": "Fallen Hall"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Tor Altar"
+   }
+  ]
+ },
+ "wreckwood": {
+  "theme": "A wood grown through the wrecks of a fleet the storm threw inland.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Wood's Edge"
+   },
+   {
+    "kind": "hulks",
+    "name": "The Wreckwood Hulls"
+   },
+   {
+    "kind": "arena",
+    "name": "The Mast Grove"
+   }
+  ]
+ },
+ "gallows-point": {
+  "theme": "A headland gallows where the Tithe hangs its prisoners, its gibbets creaking in the wind.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "The Cliff Road"
+   },
+   {
+    "kind": "ruin",
+    "name": "Hangman's House"
+   },
+   {
+    "kind": "arena",
+    "name": "Gallows Point"
+   }
+  ]
+ },
+ "lookout-rock": {
+  "theme": "A lookout tower on a rock over the sound, its beacon long cold.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Rock Stair"
+   },
+   {
+    "kind": "tower",
+    "name": "The Lookout"
+   },
+   {
+    "kind": "arena",
+    "name": "The Beacon Floor"
+   }
+  ]
+ },
+ "cinder-deep": {
+  "theme": "A mine burned out from within, its shafts still smoking.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Pithead"
+   },
+   {
+    "kind": "quarry",
+    "name": "The Cinder Pit"
+   },
+   {
+    "kind": "cave",
+    "name": "The Deep Adit"
+   },
+   {
+    "kind": "arena",
+    "name": "The Burning Gallery"
+   }
+  ]
+ },
+ "leviathans-rest": {
+  "theme": "The bones of a leviathan on the shore, and what nests in them.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "The Bone Strand"
+   },
+   {
+    "kind": "bones",
+    "name": "Leviathan's Ribs"
+   },
+   {
+    "kind": "arena",
+    "name": "Leviathan's Rest"
+   }
+  ]
+ },
+ "ironwood-camp": {
+  "theme": "A logging camp in the ironwoods taken by the Grey Tithe.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Logging Track"
+   },
+   {
+    "kind": "camp",
+    "name": "Ironwood Camp"
+   },
+   {
+    "kind": "mill",
+    "name": "Sawmill"
+   },
+   {
+    "kind": "arena",
+    "name": "The Felling Ground"
+   }
+  ]
+ },
+ "hollow-crypt": {
+  "theme": "A crypt under the fells, its door hollowed into the hill.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Barrow Path"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Hollow Barrows"
+   },
+   {
+    "kind": "cave",
+    "name": "The Crypt Door"
+   },
+   {
+    "kind": "arena",
+    "name": "The Hollow Crypt"
+   }
+  ]
+ },
+ "elder-thicket": {
+  "theme": "Old woodland of oak and beech, a woodcutters' village and a coven deep in the thicket.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Thicket Edge"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Elderwick",
+    "blocks": 3
+   },
+   {
+    "kind": "coven",
+    "name": "Thicket Coven"
+   },
+   {
+    "kind": "mill",
+    "name": "Brook Mill"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Elder Stones"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Clearing"
+   },
+   {
+    "kind": "ruin",
+    "name": "Hunter's Lodge"
+   },
+   {
+    "kind": "camp",
+    "name": "Poachers' Camp"
+   }
+  ]
+ },
+ "hollow-dells": {
+  "theme": "Deep dells under the trees, farms in the hollows and a ruined abbey on the rise.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Dell Landing"
+   },
+   {
+    "kind": "farm",
+    "name": "Hollowfield"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Dellby",
+    "blocks": 2
+   },
+   {
+    "kind": "ruin",
+    "name": "The Abbey Ruin"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Abbey Graves"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Bracken Dell"
+   },
+   {
+    "kind": "keep",
+    "name": "Warden's Keep"
+   },
+   {
+    "kind": "tower",
+    "name": "Dellwatch"
+   }
+  ]
+ },
+ "oakshade-weald": {
+  "theme": "The weald under its great oaks, charcoal burners' camps and a keep of the forest wardens.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Weald Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Oakshade",
+    "blocks": 2
+   },
+   {
+    "kind": "camp",
+    "name": "Charcoal Camp"
+   },
+   {
+    "kind": "keep",
+    "name": "Wardenhold"
+   },
+   {
+    "kind": "farm",
+    "name": "Swineherd's Farm"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Greenwood"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Hollow Oak"
+   },
+   {
+    "kind": "quarry",
+    "name": "Chalk Pit"
+   }
+  ]
+ },
+ "lost-caravan": {
+  "theme": "A caravan lost on the forest road, its wagons where it fell.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "The Forest Road"
+   },
+   {
+    "kind": "camp",
+    "name": "The Wagon Ring"
+   },
+   {
+    "kind": "arena",
+    "name": "The Broken Wagons"
+   }
+  ]
+ },
+ "moonwell": {
+  "theme": "A sacred well in a ring of stones, where the moon shows at noon.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Moon Path"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Moonwell"
+   },
+   {
+    "kind": "arena",
+    "name": "The Silver Glade"
+   }
+  ]
+ },
+ "old-lighthouse": {
+  "theme": "A lighthouse on the woods' coast, its lamp lit again by no one.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Shore Path"
+   },
+   {
+    "kind": "lighthouse",
+    "name": "The Old Lighthouse"
+   },
+   {
+    "kind": "arena",
+    "name": "The Keeper's Yard"
+   }
+  ]
+ },
+ "black-tide-caverns": {
+  "theme": "Sea caves where the black tide runs, and the smugglers who use them.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Tide Cut"
+   },
+   {
+    "kind": "dock",
+    "name": "Smugglers' Jetty"
+   },
+   {
+    "kind": "cave",
+    "name": "Black Tide Mouth"
+   },
+   {
+    "kind": "arena",
+    "name": "The Drowned Hall"
+   }
+  ]
+ },
+ "ironclad-wreck": {
+  "theme": "An iron-hulled ship broken on the rocks, something enormous aboard.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "The Strand"
+   },
+   {
+    "kind": "hulks",
+    "name": "Ironclad Hulks"
+   },
+   {
+    "kind": "arena",
+    "name": "The Ironclad Wreck"
+   }
+  ]
+ },
+ "tar-pit-camp": {
+  "theme": "A camp round the tar pits where the Tithe boils pitch for its fleet.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Pitch Road"
+   },
+   {
+    "kind": "quarry",
+    "name": "The Tar Pits"
+   },
+   {
+    "kind": "camp",
+    "name": "Tar Pit Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "The Boiling Yard"
+   }
+  ]
+ },
+ "pale-undercroft": {
+  "theme": "The undercroft of a vanished temple, pale with old bones.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Temple Steps"
+   },
+   {
+    "kind": "ruin",
+    "name": "The Fallen Temple"
+   },
+   {
+    "kind": "cave",
+    "name": "Undercroft Door"
+   },
+   {
+    "kind": "arena",
+    "name": "The Pale Undercroft"
+   }
+  ]
+ },
+ "ochre-wastes": {
+  "theme": "Ochre mesas and dry washes, an oasis town and a caravanserai keep against the sand.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Wash Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Ochrewell",
+    "blocks": 3
+   },
+   {
+    "kind": "keep",
+    "name": "The Caravanserai"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Red Mesas"
+   },
+   {
+    "kind": "quarry",
+    "name": "Ochre Diggings"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Sand Tombs"
+   },
+   {
+    "kind": "tower",
+    "name": "Mesa Watch"
+   },
+   {
+    "kind": "camp",
+    "name": "Raiders' Camp"
+   }
+  ]
+ },
+ "sunscorched-barrens": {
+  "theme": "Sun-scorched barrens strewn with the hulls of ships the old sea left behind.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Barren Strand"
+   },
+   {
+    "kind": "hulks",
+    "name": "The Dry Fleet"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Scorchwell",
+    "blocks": 1
+   },
+   {
+    "kind": "ruin",
+    "name": "Sun Temple Ruin"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Glass Flats"
+   },
+   {
+    "kind": "shrine",
+    "name": "Sun Stones"
+   },
+   {
+    "kind": "camp",
+    "name": "Salvagers' Camp"
+   },
+   {
+    "kind": "tower",
+    "name": "Heatwatch"
+   }
+  ]
+ },
+ "scorpion-erg": {
+  "theme": "Dunes and rock ribs, a fortified well and the scorpion-hunters' camp.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Erg Landing"
+   },
+   {
+    "kind": "keep",
+    "name": "Wellguard"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Erg's End",
+    "blocks": 2
+   },
+   {
+    "kind": "camp",
+    "name": "Hunters' Camp"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Scorpion Dunes"
+   },
+   {
+    "kind": "bones",
+    "name": "The Great Husk"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Nomad Cairns"
+   }
+  ]
+ },
+ "hanging-bridge": {
+  "theme": "A rope bridge over a slot canyon, cut at one end.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Canyon Rim"
+   },
+   {
+    "kind": "causeway",
+    "name": "The Hanging Bridge"
+   },
+   {
+    "kind": "arena",
+    "name": "The Far Rim"
+   }
+  ]
+ },
+ "cinder-mine": {
+  "theme": "A copper mine whose smelters still burn.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Mine Road"
+   },
+   {
+    "kind": "quarry",
+    "name": "Smelter Yard"
+   },
+   {
+    "kind": "cave",
+    "name": "The Cinder Adit"
+   },
+   {
+    "kind": "arena",
+    "name": "The Slag Floor"
+   }
+  ]
+ },
+ "old-customs-house": {
+  "theme": "The customs house of a port the sea abandoned.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Old Quay Road"
+   },
+   {
+    "kind": "dock",
+    "name": "Dry Quay"
+   },
+   {
+    "kind": "ruin",
+    "name": "The Customs House"
+   },
+   {
+    "kind": "arena",
+    "name": "Bonded Yard"
+   }
+  ]
+ },
+ "forsaken-cistern": {
+  "theme": "A great cistern under the sand, forsaken when the wells failed.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Cistern Stair"
+   },
+   {
+    "kind": "ruin",
+    "name": "Pump House"
+   },
+   {
+    "kind": "cave",
+    "name": "Cistern Gate"
+   },
+   {
+    "kind": "arena",
+    "name": "The Forsaken Cistern"
+   }
+  ]
+ },
+ "thundercrag": {
+  "theme": "A crag that draws the storms, and the beast that rides them.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Crag Path"
+   },
+   {
+    "kind": "tower",
+    "name": "Lightning Spire"
+   },
+   {
+    "kind": "arena",
+    "name": "Thundercrag"
+   }
+  ]
+ },
+ "sunken-chapel": {
+  "theme": "A chapel half swallowed by the dunes.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Dune Path"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Chapel Graves"
+   },
+   {
+    "kind": "arena",
+    "name": "The Sunken Chapel"
+   }
+  ]
+ },
+ "sandworn-vault": {
+  "theme": "A vault worn by the sand to its door.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Vault Road"
+   },
+   {
+    "kind": "ruin",
+    "name": "Vault Gatehouse"
+   },
+   {
+    "kind": "cave",
+    "name": "The Vault Door"
+   },
+   {
+    "kind": "arena",
+    "name": "The Sandworn Vault"
+   }
+  ]
+ },
+ "lion-grasslands": {
+  "theme": "Golden grass and acacia, a herders' kraal and a stone granary on the kopje.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Kopje Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Lionsfold",
+    "blocks": 2
+   },
+   {
+    "kind": "farm",
+    "name": "The Kraal"
+   },
+   {
+    "kind": "keep",
+    "name": "Kopje Granary"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Long Grass"
+   },
+   {
+    "kind": "bones",
+    "name": "Elephant Bones"
+   },
+   {
+    "kind": "camp",
+    "name": "Poachers' Camp"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Lion Stones"
+   }
+  ]
+ },
+ "baobab-grasslands": {
+  "theme": "Baobabs and termite towers over the plain, a market village by the waterhole.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Waterhole Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Baobab Market",
+    "blocks": 3
+   },
+   {
+    "kind": "mill",
+    "name": "Waterhole Wheel"
+   },
+   {
+    "kind": "ruin",
+    "name": "Termite Ruin"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Baobab Plain"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Ancestors' Grove"
+   },
+   {
+    "kind": "tower",
+    "name": "Plainwatch"
+   }
+  ]
+ },
+ "thunderhoof-grasslands": {
+  "theme": "The plain where the great herds run, and the hunters' lodges that follow them.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Herd Landing"
+   },
+   {
+    "kind": "camp",
+    "name": "Hunters' Lodge"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Thunderhoof",
+    "blocks": 1
+   },
+   {
+    "kind": "farm",
+    "name": "Cattle Ranch"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Stampede Flats"
+   },
+   {
+    "kind": "bones",
+    "name": "The Herd's Bones"
+   },
+   {
+    "kind": "keep",
+    "name": "Ridge Fort"
+   },
+   {
+    "kind": "coven",
+    "name": "Thorn Coven"
+   }
+  ]
+ },
+ "drowned-abbey": {
+  "theme": "An abbey drowned when the river moved, its bell still under the water.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "River Path"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Monks' Graves"
+   },
+   {
+    "kind": "ruin",
+    "name": "The Drowned Abbey"
+   },
+   {
+    "kind": "arena",
+    "name": "The Cloister"
+   }
+  ]
+ },
+ "kiln-hollow": {
+  "theme": "Brick kilns in a hollow, fired again by the Tithe for its forts.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Clay Road"
+   },
+   {
+    "kind": "quarry",
+    "name": "Clay Pits"
+   },
+   {
+    "kind": "camp",
+    "name": "Kiln Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "Kiln Hollow"
+   }
+  ]
+ },
+ "beacon-ridge": {
+  "theme": "A ridge of signal beacons, one lit to call the raiders in.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Ridge Track"
+   },
+   {
+    "kind": "tower",
+    "name": "The Lit Beacon"
+   },
+   {
+    "kind": "arena",
+    "name": "Beacon Ridge"
+   }
+  ]
+ },
+ "smugglers-labyrinth": {
+  "theme": "A maze of gullies where smugglers hide their cargo.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Gully Mouth"
+   },
+   {
+    "kind": "camp",
+    "name": "Smugglers' Store"
+   },
+   {
+    "kind": "cave",
+    "name": "The Labyrinth"
+   },
+   {
+    "kind": "arena",
+    "name": "The Heart of the Maze"
+   }
+  ]
+ },
+ "bone-colossus": {
+  "theme": "A colossus of bones that walks the plain at dusk.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Bone Field Edge"
+   },
+   {
+    "kind": "bones",
+    "name": "The Bone Field"
+   },
+   {
+    "kind": "arena",
+    "name": "The Bone Colossus"
+   }
+  ]
+ },
+ "scrimshaw-camp": {
+  "theme": "A whalers' camp where bone is carved and boiled.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Shore Track"
+   },
+   {
+    "kind": "bones",
+    "name": "Whale Bones"
+   },
+   {
+    "kind": "camp",
+    "name": "Scrimshaw Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "The Boiling Pits"
+   }
+  ]
+ },
+ "silt-barrows": {
+  "theme": "Barrows in the river silt, half washed open.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Silt Path"
+   },
+   {
+    "kind": "graveyard",
+    "name": "The Silt Barrows"
+   },
+   {
+    "kind": "cave",
+    "name": "Barrow Mouth"
+   },
+   {
+    "kind": "arena",
+    "name": "The Deep Barrow"
+   }
+  ]
+ },
+ "emerald-tangle": {
+  "theme": "Rainforest giants over a river, a stilt village and a stepped shrine in the green.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "River Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Stiltwater",
+    "blocks": 2
+   },
+   {
+    "kind": "shrine",
+    "name": "The Green Steps"
+   },
+   {
+    "kind": "mill",
+    "name": "Waterwheel"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Tangle"
+   },
+   {
+    "kind": "ruin",
+    "name": "Vine Temple"
+   },
+   {
+    "kind": "camp",
+    "name": "Collectors' Camp"
+   },
+   {
+    "kind": "coven",
+    "name": "Root Coven"
+   }
+  ]
+ },
+ "vinewood-basin": {
+  "theme": "A basin of vines and waterfalls, plantation terraces and an overgrown fort.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Basin Landing"
+   },
+   {
+    "kind": "farm",
+    "name": "Spice Terraces"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Vinewood",
+    "blocks": 3
+   },
+   {
+    "kind": "keep",
+    "name": "The Overgrown Fort"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Falls Pool"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Moss Graves"
+   },
+   {
+    "kind": "tower",
+    "name": "Canopy Watch"
+   }
+  ]
+ },
+ "rainshadow-canopy": {
+  "theme": "High canopy country in the mountain's rain shadow, quarries and a hunters' hall.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Canopy Landing"
+   },
+   {
+    "kind": "quarry",
+    "name": "Jade Quarry"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Rainshadow",
+    "blocks": 1
+   },
+   {
+    "kind": "camp",
+    "name": "Hunters' Hall"
+   },
+   {
+    "kind": "wilds",
+    "name": "The High Canopy"
+   },
+   {
+    "kind": "ruin",
+    "name": "The Sky Temple"
+   },
+   {
+    "kind": "bones",
+    "name": "Serpent Bones"
+   },
+   {
+    "kind": "shrine",
+    "name": "Rain Altar"
+   }
+  ]
+ },
+ "smugglers-stair": {
+  "theme": "A stair cut down the cliff to a hidden cove.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Cliff Top"
+   },
+   {
+    "kind": "dock",
+    "name": "Hidden Cove"
+   },
+   {
+    "kind": "arena",
+    "name": "Smuggler's Stair"
+   }
+  ]
+ },
+ "copper-quarry": {
+  "theme": "A copper quarry stained green, worked by the Tithe's prisoners.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Quarry Road"
+   },
+   {
+    "kind": "quarry",
+    "name": "The Green Cut"
+   },
+   {
+    "kind": "camp",
+    "name": "Prison Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "The Copper Floor"
+   }
+  ]
+ },
+ "cutthroat-landing": {
+  "theme": "A pirate landing where no one comes ashore twice.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Jungle Path"
+   },
+   {
+    "kind": "dock",
+    "name": "Cutthroat Jetty"
+   },
+   {
+    "kind": "camp",
+    "name": "Pirate Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "Cutthroat Landing"
+   }
+  ]
+ },
+ "deepwater-vault": {
+  "theme": "A vault under the river, its door below the waterline.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Riverbank"
+   },
+   {
+    "kind": "ruin",
+    "name": "Vault House"
+   },
+   {
+    "kind": "cave",
+    "name": "The Water Door"
+   },
+   {
+    "kind": "arena",
+    "name": "Deepwater Vault"
+   }
+  ]
+ },
+ "stormspire": {
+  "theme": "A spire of rock where the storms are born.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Spire Path"
+   },
+   {
+    "kind": "tower",
+    "name": "The Stormspire"
+   },
+   {
+    "kind": "arena",
+    "name": "The Eye of the Storm"
+   }
+  ]
+ },
+ "salt-road": {
+  "theme": "The old salt road through the forest, its waystation burned.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Road's End"
+   },
+   {
+    "kind": "ruin",
+    "name": "The Waystation"
+   },
+   {
+    "kind": "camp",
+    "name": "Salters' Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "The Salt Road"
+   }
+  ]
+ },
+ "coral-halls": {
+  "theme": "Halls of coral raised when this was sea floor.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Reef Path"
+   },
+   {
+    "kind": "bones",
+    "name": "Coral Arches"
+   },
+   {
+    "kind": "cave",
+    "name": "The Coral Door"
+   },
+   {
+    "kind": "arena",
+    "name": "The Coral Halls"
+   }
+  ]
+ },
+ "kurgan-plateau": {
+  "theme": "A wind-cut plateau of kurgans, a nomad camp and the windmills of a lone village.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Plateau Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Kurgan Mill",
+    "blocks": 2
+   },
+   {
+    "kind": "graveyard",
+    "name": "The Kurgans"
+   },
+   {
+    "kind": "camp",
+    "name": "Nomad Camp"
+   },
+   {
+    "kind": "mill",
+    "name": "The Windmills"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Open Steppe"
+   },
+   {
+    "kind": "shrine",
+    "name": "Sky Stones"
+   },
+   {
+    "kind": "tower",
+    "name": "Kurgan Watch"
+   }
+  ]
+ },
+ "horsehead-mounds": {
+  "theme": "Mounds where horse heads were buried with their riders, and the horse fairs that still gather.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Mound Landing"
+   },
+   {
+    "kind": "farm",
+    "name": "Horse Fair"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Horsehead",
+    "blocks": 3
+   },
+   {
+    "kind": "graveyard",
+    "name": "The Horse Mounds"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Running Ground"
+   },
+   {
+    "kind": "ruin",
+    "name": "Khan's Hall"
+   },
+   {
+    "kind": "keep",
+    "name": "Steppe Fort"
+   }
+  ]
+ },
+ "greywind-steppe": {
+  "theme": "Grey wind over sage and salt, a salt-works and a fort on the trade road.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Greywind Landing"
+   },
+   {
+    "kind": "quarry",
+    "name": "Salt Works"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Greywind",
+    "blocks": 1
+   },
+   {
+    "kind": "keep",
+    "name": "Road Fort"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Sage Flats"
+   },
+   {
+    "kind": "hulks",
+    "name": "Stranded Barges"
+   },
+   {
+    "kind": "camp",
+    "name": "Raiders' Camp"
+   },
+   {
+    "kind": "coven",
+    "name": "Wind Coven"
+   }
+  ]
+ },
+ "marooned-hulk": {
+  "theme": "A ship marooned far inland, crewed by those who never left her.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "The Dry Shore"
+   },
+   {
+    "kind": "hulks",
+    "name": "The Marooned Hulk"
+   },
+   {
+    "kind": "arena",
+    "name": "The Hulk's Deck"
+   }
+  ]
+ },
+ "saltpan-ruins": {
+  "theme": "Ruins on the salt pan, white to the horizon.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Pan's Edge"
+   },
+   {
+    "kind": "ruin",
+    "name": "Saltpan Ruins"
+   },
+   {
+    "kind": "arena",
+    "name": "The White Court"
+   }
+  ]
+ },
+ "signal-fires": {
+  "theme": "A chain of signal fires the Tithe uses to call its raiders.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Hill Track"
+   },
+   {
+    "kind": "tower",
+    "name": "First Fire"
+   },
+   {
+    "kind": "camp",
+    "name": "Fire Keepers' Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "The Last Fire"
+   }
+  ]
+ },
+ "barrow-halls": {
+  "theme": "Halls under the steppe barrows.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Barrow Field"
+   },
+   {
+    "kind": "graveyard",
+    "name": "The Barrows"
+   },
+   {
+    "kind": "cave",
+    "name": "Hall Door"
+   },
+   {
+    "kind": "arena",
+    "name": "The Barrow Halls"
+   }
+  ]
+ },
+ "tusked-behemoth": {
+  "theme": "The lair of a tusked behemoth among the bones of its herd.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Trample Path"
+   },
+   {
+    "kind": "bones",
+    "name": "The Tusk Field"
+   },
+   {
+    "kind": "arena",
+    "name": "The Behemoth's Wallow"
+   }
+  ]
+ },
+ "silent-fort": {
+  "theme": "A frontier fort no one answers from.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Fort Road"
+   },
+   {
+    "kind": "camp",
+    "name": "Abandoned Camp"
+   },
+   {
+    "kind": "keep",
+    "name": "The Silent Fort"
+   },
+   {
+    "kind": "arena",
+    "name": "The Parade Ground"
+   }
+  ]
+ },
+ "saltworm-warrens": {
+  "theme": "Warrens bored through the salt by worms as long as ships.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Salt Cut"
+   },
+   {
+    "kind": "quarry",
+    "name": "The Bore Holes"
+   },
+   {
+    "kind": "cave",
+    "name": "Warren Mouth"
+   },
+   {
+    "kind": "arena",
+    "name": "The Nest"
+   }
+  ]
+ },
+ "bogmire-sloughs": {
+  "theme": "Sloughs of black water and cypress, a stilt village and a causeway to a drowned temple.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Slough Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Bogmire",
+    "blocks": 2
+   },
+   {
+    "kind": "causeway",
+    "name": "The Old Causeway"
+   },
+   {
+    "kind": "ruin",
+    "name": "Drowned Temple"
+   },
+   {
+    "kind": "coven",
+    "name": "Bog Coven"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Sloughs"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Sunken Graves"
+   }
+  ]
+ },
+ "sunken-fen": {
+  "theme": "A fen sinking year by year, its farms on islands and its watchtower leaning.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Fen Landing"
+   },
+   {
+    "kind": "farm",
+    "name": "Island Farm"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Sunkenfold",
+    "blocks": 1
+   },
+   {
+    "kind": "tower",
+    "name": "The Leaning Watch"
+   },
+   {
+    "kind": "mill",
+    "name": "Fen Mill"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Reed Beds"
+   },
+   {
+    "kind": "camp",
+    "name": "Eel-trappers' Camp"
+   },
+   {
+    "kind": "shrine",
+    "name": "Mire Stones"
+   }
+  ]
+ },
+ "blackwater-marsh": {
+  "theme": "Blackwater marsh with the hulks of a fleet that ran aground in the reeds.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Blackwater Landing"
+   },
+   {
+    "kind": "hulks",
+    "name": "The Reed Fleet"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Blackwater",
+    "blocks": 2
+   },
+   {
+    "kind": "keep",
+    "name": "Marsh Keep"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Black Pools"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Fleet Graves"
+   },
+   {
+    "kind": "coven",
+    "name": "Witchlight Coven"
+   }
+  ]
+ },
+ "raven-hill": {
+  "theme": "A hill of ravens over the marsh, a gibbet on its crown.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Hill Path"
+   },
+   {
+    "kind": "ruin",
+    "name": "Raven Hall"
+   },
+   {
+    "kind": "arena",
+    "name": "The Crown of the Hill"
+   }
+  ]
+ },
+ "hermits-rock": {
+  "theme": "A rock in the marsh where a hermit kept watch for something.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Reed Path"
+   },
+   {
+    "kind": "shrine",
+    "name": "Hermit's Shrine"
+   },
+   {
+    "kind": "arena",
+    "name": "Hermit's Rock"
+   }
+  ]
+ },
+ "tithe-watchtower": {
+  "theme": "The Grey Tithe's watchtower over the marsh channels.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Channel Bank"
+   },
+   {
+    "kind": "camp",
+    "name": "Tithe Camp"
+   },
+   {
+    "kind": "tower",
+    "name": "The Tithe Watchtower"
+   },
+   {
+    "kind": "arena",
+    "name": "The Tower Yard"
+   }
+  ]
+ },
+ "mire-hollows": {
+  "theme": "Hollows under the mire, dry where nothing should be.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Mire Edge"
+   },
+   {
+    "kind": "coven",
+    "name": "Hollow Coven"
+   },
+   {
+    "kind": "cave",
+    "name": "The Hollow Mouth"
+   },
+   {
+    "kind": "arena",
+    "name": "The Mire Hollows"
+   }
+  ]
+ },
+ "mire-queens-throne": {
+  "theme": "The throne of the Mire Queen, raised from the drowned.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Queen's Causeway"
+   },
+   {
+    "kind": "causeway",
+    "name": "The Royal Causeway"
+   },
+   {
+    "kind": "arena",
+    "name": "The Mire Queen's Throne"
+   }
+  ]
+ },
+ "corsairs-rest": {
+  "theme": "A corsairs' haven hidden in the marsh channels.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Hidden Channel"
+   },
+   {
+    "kind": "dock",
+    "name": "Corsairs' Jetty"
+   },
+   {
+    "kind": "camp",
+    "name": "Corsairs' Rest"
+   },
+   {
+    "kind": "arena",
+    "name": "The Captain's Yard"
+   }
+  ]
+ },
+ "rotwater-sewers": {
+  "theme": "The sewers of a town the marsh swallowed.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Drowned Street"
+   },
+   {
+    "kind": "ruin",
+    "name": "The Drowned Town"
+   },
+   {
+    "kind": "cave",
+    "name": "Sewer Gate"
+   },
+   {
+    "kind": "arena",
+    "name": "Rotwater Cistern"
+   }
+  ]
+ },
+ "whitewind-tundra": {
+  "theme": "Snowy tundra and frozen tarns, a whaling village and a broken keep on the ridge.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Whitewind Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Whitewind",
+    "blocks": 2
+   },
+   {
+    "kind": "bones",
+    "name": "Whale Bones"
+   },
+   {
+    "kind": "keep",
+    "name": "Ridge Keep"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Frozen Tarns"
+   },
+   {
+    "kind": "dock",
+    "name": "Whalers' Jetty"
+   },
+   {
+    "kind": "shrine",
+    "name": "Frost Stones"
+   },
+   {
+    "kind": "camp",
+    "name": "Tithe Camp"
+   }
+  ]
+ },
+ "pale-wastes": {
+  "theme": "Pale wastes of ice and stone, a mine and the hulks of a frozen fleet.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Pale Landing"
+   },
+   {
+    "kind": "hulks",
+    "name": "The Frozen Fleet"
+   },
+   {
+    "kind": "quarry",
+    "name": "Ice Mine"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Paleholt",
+    "blocks": 1
+   },
+   {
+    "kind": "wilds",
+    "name": "The White Waste"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Frozen Graves"
+   },
+   {
+    "kind": "tower",
+    "name": "Frostwatch"
+   }
+  ]
+ },
+ "aurora-wastes": {
+  "theme": "Wastes under the aurora, a fishing village and a seers' circle of stones.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Aurora Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Aurora Rest",
+    "blocks": 2
+   },
+   {
+    "kind": "shrine",
+    "name": "The Seers' Circle"
+   },
+   {
+    "kind": "dock",
+    "name": "Ice Jetty"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Lit Wastes"
+   },
+   {
+    "kind": "ruin",
+    "name": "Old Holdfast"
+   },
+   {
+    "kind": "coven",
+    "name": "Frost Coven"
+   },
+   {
+    "kind": "mill",
+    "name": "Ice Mill"
+   }
+  ]
+ },
+ "pearl-divers-camp": {
+  "theme": "A pearl divers' camp on the ice, its divers missing.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Ice Path"
+   },
+   {
+    "kind": "dock",
+    "name": "Diving Holes"
+   },
+   {
+    "kind": "camp",
+    "name": "Pearl Diver's Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "The Dive Ice"
+   }
+  ]
+ },
+ "cracked-bell": {
+  "theme": "A bell tower whose great bell cracked in the cold and rings by itself.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Bell Road"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Ringers' Graves"
+   },
+   {
+    "kind": "tower",
+    "name": "The Cracked Bell"
+   },
+   {
+    "kind": "arena",
+    "name": "The Bell Yard"
+   }
+  ]
+ },
+ "charred-pier": {
+  "theme": "A pier burned to the waterline by the Grey Tithe.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Shore Road"
+   },
+   {
+    "kind": "dock",
+    "name": "The Charred Pier"
+   },
+   {
+    "kind": "arena",
+    "name": "The Burned Warehouse"
+   }
+  ]
+ },
+ "frozen-sepulchre": {
+  "theme": "A sepulchre sealed in ice.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Ice Stair"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Ice Tombs"
+   },
+   {
+    "kind": "cave",
+    "name": "Sepulchre Door"
+   },
+   {
+    "kind": "arena",
+    "name": "The Frozen Sepulchre"
+   }
+  ]
+ },
+ "frostwyrms-grave": {
+  "theme": "The grave of a frost wyrm, which is not empty.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Wyrm Path"
+   },
+   {
+    "kind": "bones",
+    "name": "Wyrm Bones"
+   },
+   {
+    "kind": "arena",
+    "name": "The Frostwyrm's Grave"
+   }
+  ]
+ },
+ "wreckers-cove": {
+  "theme": "A cove where wreckers lure ships onto the ice.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Cove Path"
+   },
+   {
+    "kind": "hulks",
+    "name": "Lured Ships"
+   },
+   {
+    "kind": "camp",
+    "name": "Wreckers' Camp"
+   },
+   {
+    "kind": "arena",
+    "name": "Wrecker's Cove"
+   }
+  ]
+ },
+ "brine-catacombs": {
+  "theme": "Catacombs flooded with brine that never freezes.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Catacomb Stair"
+   },
+   {
+    "kind": "ruin",
+    "name": "Brine House"
+   },
+   {
+    "kind": "cave",
+    "name": "Catacomb Gate"
+   },
+   {
+    "kind": "arena",
+    "name": "The Brine Catacombs"
    }
   ]
  }

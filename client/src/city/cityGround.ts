@@ -168,19 +168,21 @@ const BUCKET_M = 64;
 export function clearedGround(plan: CityPlan): (x: number, y: number) => boolean {
   const rects: (readonly [number, number, number, number])[] = plan.pads.map((pad) => pad.bounds);
   const solids: Solid[] = [...plan.works, ...plan.landmark, ...plan.social.solids];
-  const buckets = new Map<string, { rects: number[]; solids: number[] }>();
+  type Entry = { rects: number[]; solids: number[]; clearings: number[] };
+  const buckets = new Map<string, Entry>();
   const bucket = (column: number, row: number) => {
     const key = `${column},${row}`;
     let found = buckets.get(key);
-    if (!found) buckets.set(key, (found = { rects: [], solids: [] }));
+    if (!found) buckets.set(key, (found = { rects: [], solids: [], clearings: [] }));
     return found;
   };
-  const spread = (bounds: readonly number[], add: (entry: { rects: number[]; solids: number[] }) => void): void => {
+  const spread = (bounds: readonly number[], add: (entry: Entry) => void): void => {
     for (let row = Math.floor(bounds[1] / BUCKET_M); row <= Math.floor(bounds[3] / BUCKET_M); row++)
       for (let column = Math.floor(bounds[0] / BUCKET_M); column <= Math.floor(bounds[2] / BUCKET_M); column++)
         add(bucket(column, row));
   };
   rects.forEach((rect, k) => spread(rect, (entry) => entry.rects.push(k)));
+  const clearings = plan.clearings ?? [];
   const reaches = solids.map(solidReach);
   solids.forEach((solid, k) =>
     spread(
@@ -188,12 +190,19 @@ export function clearedGround(plan: CityPlan): (x: number, y: number) => boolean
       (entry) => entry.solids.push(k),
     ),
   );
+  clearings.forEach(({ at, radius }, k) =>
+    spread([at[0] - radius, at[1] - radius, at[0] + radius, at[1] + radius], (entry) => entry.clearings.push(k)),
+  );
   return (x, y) => {
     const entry = buckets.get(`${Math.floor(x / BUCKET_M)},${Math.floor(y / BUCKET_M)}`);
     if (!entry) return false;
     for (const k of entry.rects) {
       const rect = rects[k];
       if (x >= rect[0] && x <= rect[2] && y >= rect[1] && y <= rect[3]) return true;
+    }
+    for (const k of entry.clearings) {
+      const { at, radius } = clearings[k];
+      if (Math.hypot(x - at[0], y - at[1]) <= radius) return true;
     }
     for (const k of entry.solids) {
       const solid = solids[k];

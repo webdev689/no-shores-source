@@ -1,8 +1,8 @@
 //! A landmass's layouts, planned for every node it draws and laid on its ground: each patrol area with gates to the
 //! instances of its side (the mission, dungeon and boss nodes nearest it), each instance entered from that patrol
-//! area. The buildings' seats become pads and the paths roads, so every later reading of the ground (a node's window,
-//! the browser's land, nature keeping off the paths) stands on them; then what is laid on the land (a block's
-//! streets, the paths) takes its heights from the ground as it now lies.
+//! area. Their sculpts carve the land, the buildings' seats become pads and the paths roads, so every later reading
+//! of the ground (a node's window, the browser's land, nature keeping off the paths) stands on them; then what is
+//! laid on the land (a block's streets, the paths) takes its heights from the ground as it now lies.
 
 use crate::book::Book;
 use crate::brief::Briefs;
@@ -10,6 +10,7 @@ use crate::collide::boxes_of;
 use crate::{Layout, Link, middle_of, plan};
 use land::landmass::Landmass;
 use land::pads::{Pad, Pads};
+use land::sculpts::Sculpts;
 use land::sites::{Node, NodeKind};
 use std::collections::BTreeMap;
 
@@ -56,13 +57,15 @@ fn dense(points: &[[f64; 2]], step: f64) -> Vec<(f64, f64)> {
 pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layout> {
     let nodes: Vec<Node> = landmass.edits.nodes.iter().filter(|node| node.kind != NodeKind::Social).cloned().collect();
     let links = links_of(&nodes);
+    let rise = crate::carve::rise_of(landmass.biome.map(|biome| biome.key));
     let mut layouts: Vec<Layout> = nodes
         .iter()
         .map(|node| {
             let linked = links.get(&node.id).map_or(&[][..], Vec::as_slice);
-            plan(node, &landmass.surface, &briefs.of(&node.id, node.kind), linked, book)
+            plan(node, &landmass.surface, &briefs.of(&node.id, node.kind), linked, book, rise)
         })
         .collect();
+    landmass.surface.sculpts = Sculpts::from(layouts.iter().map(|layout| layout.sculpt.clone()).collect::<Vec<_>>());
     let mut pads: Vec<Pad> = landmass.surface.pads.clone().into();
     pads.extend(layouts.iter().flat_map(|layout| layout.seating.pads.iter().copied()));
     landmass.surface.pads = Pads::from(pads);

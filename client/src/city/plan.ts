@@ -48,6 +48,8 @@ export type Pad = { readonly bounds: readonly [number, number, number, number]; 
 export type Piece = {
   readonly model: number;
   readonly building: boolean;
+  /** A building walked into: its doorways stand open. */
+  readonly open?: boolean;
   readonly at: readonly [number, number, number];
   readonly yaw: number;
 };
@@ -82,6 +84,8 @@ export type CityPlan = {
   /** Models placed in the world and pictures laid on the land, beside the blocks the cells stand. */
   readonly pieces?: readonly Piece[];
   readonly decals?: readonly Decal[];
+  /** Round ground kept clear of the wild: a camp's floor, a landing's shore, an arena. */
+  readonly clearings?: readonly { readonly at: readonly [number, number]; readonly radius: number }[];
 };
 
 /** The climate and season a city's pictures are drawn in. */

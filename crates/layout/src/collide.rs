@@ -1,6 +1,7 @@
 //! What a body runs into in a layout, as boxes square to the world (west, north, east, south, top, bottom), the
-//! shape the movement rules stand bodies against: each building, each plinth and set piece, and each prop tall enough
-//! not to be stepped over. A box's bottom is its real underside, so a body walks under one that stands over its head.
+//! shape the movement rules stand bodies against: the walls, floors and stairs of the buildings walked into, each other
+//! building whole, each plinth and set piece, and each prop tall enough not to be stepped over. A box's bottom is its
+//! real underside, so a body walks under one that stands over its head.
 
 use crate::Layout;
 use crate::book::Book;
@@ -23,7 +24,8 @@ pub fn within(boxes: &[Box3], bounds: [f64; 4]) -> impl Iterator<Item = Box3> + 
 #[must_use]
 pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
     let mut boxes = Vec::new();
-    for building in &layout.seating.buildings {
+    boxes.extend(layout.seating.walls.iter().copied());
+    for building in layout.seating.buildings.iter().filter(|building| !building.open) {
         let Some(measure) = book.measure(building.model, true) else { continue };
         let [west, north, east, south] = building.footprint;
         boxes.push([west, north, east, south, building.at[2] + measure.max[1], building.at[2] + measure.min[1]]);
@@ -43,5 +45,13 @@ pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
         let [west, north, east, south, bottom, top] = solid.bounds();
         boxes.push([west, north, east, south, top, bottom]);
     }
+    // To the centimetre, grown out to it so no box shrinks: thousands of them are written into each node's file.
     boxes
+        .into_iter()
+        .map(|found| {
+            let [west, north, east, south, top, bottom] = found;
+            let (down, up) = (|value: f64| (value * 100.0).floor() / 100.0, |value: f64| (value * 100.0).ceil() / 100.0);
+            [down(west), down(north), up(east), up(south), up(top), down(bottom)]
+        })
+        .collect()
 }

@@ -29,7 +29,7 @@ const SPREAD_M: f64 = 520.0;
 pub fn radius_of(kind: AreaKind, blocks: u8) -> f64 {
     match kind {
         AreaKind::Hamlet => 70.0 + 35.0 * f64::from(blocks.clamp(1, 4)),
-        AreaKind::Farm => 95.0,
+        AreaKind::Farm | AreaKind::Hulks => 95.0,
         AreaKind::Ruin | AreaKind::Keep => 75.0,
         AreaKind::Graveyard | AreaKind::Coven | AreaKind::Wilds | AreaKind::Arena => 65.0,
         AreaKind::Quarry | AreaKind::Bones | AreaKind::Causeway => 55.0,
@@ -76,6 +76,7 @@ fn wants(kind: AreaKind, land: &Reading, radius: f64) -> Option<f64> {
         AreaKind::Landing => bell(land.to_sea, 25.0, 220.0, 260.0) * 0.6 + flat(8.0) * 0.4,
         AreaKind::Hamlet => flat(14.0) * 0.6 + bell(land.to_fresh, 30.0, 260.0, 400.0) * 0.2 + 0.2 - high.abs() * 0.1,
         AreaKind::Farm => flat(12.0) * 0.7 + (0.3 - high * 0.2),
+        AreaKind::Hulks => flat(10.0) * 0.6 + (0.4 - high.max(0.0) * 0.3) + bell(land.to_sea, 0.0, 600.0, 900.0) * 0.2,
         AreaKind::Ruin => flat(16.0) * 0.5 + high.max(0.0) * 0.5,
         AreaKind::Keep => flat(10.0) * 0.4 + high * 0.6,
         AreaKind::Graveyard => flat(8.0) * 0.7 + high.max(0.0) * 0.3,

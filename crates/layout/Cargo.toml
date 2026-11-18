@@ -12,6 +12,7 @@ land = { path = "../land" }
 world = { path = "../world" }
 serde.workspace = true
 serde_json.workspace = true
+libm.workspace = true
 
 [lints]
 workspace = true

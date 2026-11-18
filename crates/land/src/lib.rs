@@ -13,6 +13,7 @@ pub mod landmass;
 pub mod pads;
 pub mod places;
 pub mod relief;
+pub mod sculpts;
 pub mod sea;
 pub mod sites;
 pub mod water;

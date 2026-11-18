@@ -13,6 +13,8 @@ export interface Seated {
   readonly yaw: number;
   readonly building: boolean;
   readonly footprint: readonly [number, number, number, number];
+  /** A building walked into: its doorways stand open onto its rooms. */
+  readonly open: boolean;
 }
 
 /** A tile of a block's streets or yards: its middle, its byte as the block keeps it, its block's quarter turns, and
@@ -55,6 +57,8 @@ export interface NodeLayout {
   readonly props: readonly Seated[];
   readonly tiles: readonly LaidTile[];
   readonly solids: readonly Solid[];
+  /** The rooms of the buildings walked into: linings, floors, ceilings, stairs. */
+  readonly rooms: readonly Solid[];
   readonly pads: readonly Pad[];
 }
 

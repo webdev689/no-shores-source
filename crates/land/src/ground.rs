@@ -7,6 +7,7 @@ use crate::edits::Edits;
 use crate::exact::{clamp, fbm, fingerprint, lerp, seed_of, smooth};
 use crate::grid::{D8_X, D8_Y, Grid, catmull};
 use crate::pads::Pads;
+use crate::sculpts::Sculpts;
 use crate::relief::{COAST_REACH_M, LAND_FLOOR_M, SEA_CEILING_M};
 use crate::water::{River, river_depth_m, river_width_m};
 use serde::{Deserialize, Serialize};
@@ -79,6 +80,8 @@ pub struct Ground {
     pub across: Grid,
     /// The levels a city sets its terraces to, over everything else where they lie.
     pub pads: Pads,
+    /// The land the layouts carve: raised round their networks into cliffs and mesas.
+    pub sculpts: Sculpts,
     seed: u32,
     #[serde(skip)]
     index: CourseIndex,
@@ -236,6 +239,7 @@ impl Ground {
             across: carried(land, coast),
             seed: seed_of(seed, "grain"),
             pads: Pads::default(),
+            sculpts: Sculpts::default(),
             index: BTreeMap::new(),
         };
         for town in &edits.towns {
@@ -380,15 +384,21 @@ impl Ground {
 
     /// The land alone: the land and the sea met along the painted coast, with its grain on the land.
     fn base(&self, x: f64, y: f64) -> f64 {
+        self.base_and_coast(x, y).0
+    }
+
+    /// The land alone, and the point's distance from the painted coast.
+    fn base_and_coast(&self, x: f64, y: f64) -> (f64, f64) {
         let [land, sea, coast] = self.sides(x, y);
         let height = coast_meet(land, sea, coast);
         let grain = GRAIN_M * fbm(self.seed, x / GRAIN_SCALE_M, y / GRAIN_SCALE_M, 3);
-        height + grain * smooth(2.0, 30.0, height)
+        (height + grain * smooth(2.0, 30.0, height), coast)
     }
 
-    /// The land with the towns' areas levelled.
+    /// The land as the layouts carved it, with the towns' areas levelled.
     fn padded(&self, x: f64, y: f64) -> f64 {
-        let mut height = self.base(x, y);
+        let (base, coast) = self.base_and_coast(x, y);
+        let mut height = base + self.sculpts.raise(x, y, coast);
         for town in &self.towns {
             let (west, north, east, south) = town.bounds;
             if x < west - TOWN_EDGE_M || x > east + TOWN_EDGE_M || y < north - TOWN_EDGE_M || y > south + TOWN_EDGE_M {

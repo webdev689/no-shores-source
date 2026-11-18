@@ -141,7 +141,7 @@ export function buildCity(
     placedPieces.push({
       cell: index,
       chunk: chunkOf(column, row),
-      key: modelKeyOf(tables, piece.model, piece.building ? 'building' : 'prop'),
+      key: modelKeyOf(tables, piece.model, piece.building ? 'building' : 'prop', piece.open),
       at: [piece.at[0] - origin[0], piece.at[1] - origin[1], piece.at[2], yaw],
       row: piece.building ? [piece.model, 0, 0, 0, piece.yaw, 0, 0] : [piece.model, 0, 0, 0, piece.yaw, 1],
     });
@@ -348,7 +348,8 @@ function buildingMassesOf(
   }));
   const tops = new Float32Array(chunkCount).fill(-Infinity);
   for (const piece of pieces) {
-    if (!piece.key.startsWith('building:') && !(piece.row.length === 7 && tables.props[piece.row[0]])) continue;
+    const building = piece.key.startsWith('building:') || piece.key.startsWith('open:');
+    if (!building && !(piece.row.length === 7 && tables.props[piece.row[0]])) continue;
     const shapes = shapesOf(piece.row[0]);
     for (const mass of shapes.kept) byChunk[piece.chunk].masses.push([mass, piece]);
     if (shapes.hull) byChunk[piece.chunk].hulls.push([shapes.hull, piece]);

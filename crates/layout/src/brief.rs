@@ -53,6 +53,8 @@ pub enum AreaKind {
     Arena,
     /// A way from a patrol area into an instance, at the patrol area's edge.
     Gate,
+    /// A graveyard of ships: hulls driven up and left to rot, and the wreckage strewn between them.
+    Hulks,
 }
 
 /// One area a brief asks for.

@@ -26,7 +26,9 @@ impl Tier {
         }
     }
 
-    const fn steepest(self) -> f64 {
+    /// The steepest grade the tier climbs, as a rise a metre.
+    #[must_use]
+    pub const fn steepest(self) -> f64 {
         match self {
             Self::Track => 0.18,
             Self::Footpath => 0.32,
@@ -69,6 +71,10 @@ const STEPS: [(i32, i32); 16] = [
 const LAID_SHARE: f64 = 0.35;
 /// The extra cost of a metre over a river, in metres of dry ground: a bridge is worth a detour, but not a long one.
 const RIVER_COST_M: f64 = 14.0;
+/// How far round its ends a path may pass between buildings, metres: out of a village's yards.
+const END_YARD_M: f64 = 18.0;
+/// The steepest grade any way climbs where no gentler one is open: stepped like a stair.
+pub const STEPPED: f64 = 0.7;
 /// How far inside the claim a path keeps, metres.
 const EDGE_KEEP_M: f64 = 14.0;
 
@@ -81,7 +87,7 @@ pub struct Blocked(pub Vec<bool>);
 pub fn find(
     field: &Field,
     ends: [[f64; 2]; 2],
-    tier: Tier,
+    steepest: f64,
     laid: &[bool],
     blocked: &Blocked,
     seed: u32,
@@ -95,10 +101,16 @@ pub fn find(
     cost[start] = 0.0;
     heap.push(start as u32, 0.0);
     let goal_at = field.centre(goal % field.columns, goal / field.columns);
+    let start_at = field.centre(start % field.columns, start / field.columns);
+    // A way leaves its own ends' yards between the buildings round them: near an end what stands is walked round.
+    let by_end = |at: usize| {
+        let centre = field.centre(at % field.columns, at / field.columns);
+        distance(centre, start_at).min(distance(centre, goal_at)) <= END_YARD_M
+    };
     let passable = |at: usize| {
         at == goal
             || at == start
-            || (!blocked.0[at]
+            || ((!blocked.0[at] || by_end(at))
                 && field.inside[at] >= EDGE_KEEP_M
                 && matches!(field.water[at], Water::Dry | Water::River)
                 && field.slope[at] <= 1.2)
@@ -122,10 +134,10 @@ pub fn find(
             }
             let length = CELL_M * f64::from(step_x * step_x + step_y * step_y).sqrt();
             let grade = (field.height[next] - field.height[cell]).abs() / length;
-            if grade > tier.steepest() && next != goal {
+            if grade > steepest && next != goal {
                 continue;
             }
-            let over_grade = grade / tier.steepest();
+            let over_grade = grade / steepest;
             let [x, y] = field.centre(next_column as usize, next_row as usize);
             // A slow noise in the cost bends a way over open level ground, as worn tracks wander.
             let wander = 1.0 + 0.4 * fbm(seed, x / 120.0, y / 120.0, 2);
@@ -135,6 +147,9 @@ pub fn find(
             }
             if laid[next] {
                 step *= LAID_SHARE;
+            }
+            if blocked.0[next] {
+                step *= 4.0;
             }
             let total = cost[cell] + step;
             if total < cost[next] {
@@ -174,7 +189,8 @@ pub fn smoothed(field: &Field, cells: &[usize], from: [f64; 2], to: [f64; 2]) ->
         points = land::ground::chaikin(&points);
     }
     points.dedup_by(|later, earlier| distance(*later, *earlier) < 0.5);
-    points
+    // To the centimetre: a path's points are written into every window it crosses.
+    points.iter().map(|point| point.map(|value| (value * 100.0).round() / 100.0)).collect()
 }
 
 /// A line with every point dropped that lies within `tolerance` of the line its neighbours kept make

@@ -149,12 +149,14 @@ mod tests {
     }
 
     #[test]
-    fn a_square_landmass_with_a_node_bakes_its_window_and_section() {
+    fn a_square_landmass_with_a_node_bakes_its_laid_window_and_section() {
         let (node, layout) = glade();
         assert_eq!((node.id.as_str(), node.continent.as_str(), node.kind), ("glade", "square", NodeKind::Patrol));
-        assert_eq!(node.bounds, [259_900.0, 359_900.0, 261_100.0, 361_100.0]);
-        assert!(node.boxes.is_empty(), "no city stands on the square");
-        let whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
+        assert_eq!(node.bounds, bounds_of(&node.ring), "the window covers the laid section and its margin");
+        let [west, north, east, south] = node.bounds;
+        assert!(west >= 259_900.0 - 100.0 && east <= 261_100.0 + 100.0 && north >= 359_900.0 - 100.0 && south <= 361_100.0 + 100.0);
+        let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
+        let _ = layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
         for (x, y) in [(260_500.25, 360_500.75), (259_950.5, 361_050.5)] {
             assert_eq!(node.ground.height_at(x, y).to_bits(), whole.surface.height_at(x, y).to_bits());
         }

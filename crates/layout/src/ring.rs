@@ -2,81 +2,28 @@
 //! traced into a ring that follows the land (the shore, the foot of a slope, the reach of the last house) rather than
 //! a circle or a square.
 
-use crate::field::{CELL_M, Field, Water, chamfer, distance};
-use land::exact::fbm;
-use land::heap::CellHeap;
+use crate::field::{CELL_M, Field, Water, chamfer};
 use crate::paths::simplified;
 
-/// How far past an area's reach or a path the section runs on open, level ground, metres: room to roam and fight.
-/// Slopes cost more to cross, so the section narrows where the land climbs and its edge falls along the hills.
-pub const ROOM_M: f64 = 92.0;
+/// How far onto its cliffs' feet a section reaches past its floor's edge, metres: a body walks no further.
+const CLIFF_FOOT_M: f64 = 4.0;
 /// How far the section keeps from the sea, metres, so its smoothed edge never reaches into the water.
 const SHORE_KEEP_M: f64 = 6.0;
 
-/// The cells inside a section: within a slope-weighted reach of an area or a path, on land, in the claim, as one
-/// piece with no holes. The reach swells and shrinks with a slow noise, so the edge wanders as land does.
+/// The cells inside a section: on the land its sculpt leaves as floor (a few metres onto its cliffs' feet), on land,
+/// in the claim, as one piece with no holes, so the section's edge is the foot of its bounds.
 #[must_use]
-pub fn section_cells(
-    field: &Field,
-    areas: &[([f64; 2], f64)],
-    paths: &[Vec<[f64; 2]>],
-    anchor: [f64; 2],
-    seed: u32,
-) -> Vec<bool> {
+pub fn section_cells(field: &Field, floor_distance: &dyn Fn(f64, f64) -> f64, anchor: [f64; 2]) -> Vec<bool> {
     let (columns, rows) = (field.columns, field.rows);
     let count = columns * rows;
-    let mut cost = vec![f64::INFINITY; count];
-    let mut heap = CellHeap::with_capacity(4096);
-    let start = |at: usize, cost: &mut Vec<f64>, heap: &mut CellHeap| {
-        if cost[at] > 0.0 {
-            cost[at] = 0.0;
-            heap.push(at as u32, 0.0);
-        }
-    };
-    for path in paths {
-        for pair in path.windows(2) {
-            let steps = (distance(pair[0], pair[1]) / (CELL_M * 0.5)).ceil().max(1.0) as usize;
-            for step in 0..=steps {
-                let along = step as f64 / steps as f64;
-                let x = pair[0][0] + (pair[1][0] - pair[0][0]) * along;
-                let y = pair[0][1] + (pair[1][1] - pair[0][1]) * along;
-                start(field.nearest(x, y), &mut cost, &mut heap);
-            }
-        }
-    }
-    for at in 0..count {
-        let centre = field.centre(at % columns, at / columns);
-        if areas.iter().any(|&(middle, radius)| distance(middle, centre) <= radius) {
-            start(at, &mut cost, &mut heap);
-        }
-    }
     let land = |at: usize| !matches!(field.water[at], Water::Sea | Water::Lake) && field.to_sea[at] >= SHORE_KEEP_M;
-    let room = |at: usize| {
-        let [x, y] = field.centre(at % columns, at / columns);
-        ROOM_M * (0.75 + 0.6 * fbm(seed, x / 300.0, y / 300.0, 3))
-    };
-    while let Some(cell) = heap.pop() {
-        let cell = cell as usize;
-        let (column, row) = (cell % columns, cell / columns);
-        for (step_x, step_y, length) in NEIGHBOURS {
-            let (next_column, next_row) = (column as isize + step_x, row as isize + step_y);
-            if next_column < 0 || next_row < 0 || next_column >= columns as isize || next_row >= rows as isize {
-                continue;
-            }
-            let next = next_row as usize * columns + next_column as usize;
-            if !land(next) || !field.claimed[next] {
-                continue;
-            }
-            let climb = 1.0 + 3.0 * field.slope[next] + if field.water[next] == Water::River { 1.5 } else { 0.0 };
-            let total = cost[cell] + length * CELL_M * climb;
-            if total < cost[next] && total <= room(next) {
-                cost[next] = total;
-                heap.push(next as u32, total);
-            }
-        }
-    }
-    let mut kept: Vec<bool> = (0..count).map(|at| cost[at].is_finite() && land(at) && field.claimed[at]).collect();
-    kept = closed(&kept, columns, rows, 26);
+    let mut kept: Vec<bool> = (0..count)
+        .map(|at| {
+            let [x, y] = field.centre(at % columns, at / columns);
+            land(at) && field.claimed[at] && floor_distance(x, y) <= CLIFF_FOOT_M
+        })
+        .collect();
+    kept = closed(&kept, columns, rows, 2);
     for (at, keep) in kept.iter_mut().enumerate() {
         *keep = *keep && land(at) && field.claimed[at];
     }
@@ -85,18 +32,6 @@ pub fn section_cells(
     unpinched(&mut kept, columns, rows);
     kept
 }
-
-/// The eight steps to a cell's neighbours and their lengths in cells.
-const NEIGHBOURS: [(isize, isize, f64); 8] = [
-    (1, 0, 1.0),
-    (-1, 0, 1.0),
-    (0, 1, 1.0),
-    (0, -1, 1.0),
-    (1, 1, std::f64::consts::SQRT_2),
-    (1, -1, std::f64::consts::SQRT_2),
-    (-1, 1, std::f64::consts::SQRT_2),
-    (-1, -1, std::f64::consts::SQRT_2),
-];
 
 /// The cells grown by `steps` cells and shrunk back, which closes narrow gaps and bays in the edge.
 fn closed(cells: &[bool], columns: usize, rows: usize, steps: usize) -> Vec<bool> {

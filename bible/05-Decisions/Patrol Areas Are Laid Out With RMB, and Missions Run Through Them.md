@@ -28,6 +28,19 @@ The owner's answers to the questions that followed:
 >
 > Take your time and only come back when this is 100% complete. AAA grade is the goal"
 
+Then, with screenshots of Destiny's Cosmodrome (the Divide, the Cosmodrome Wall, the map of its areas) as
+reference:
+
+> "Also the big thing im going for is ensuring the land isn't completely flat and that patrol zones dont feel like
+> they're on open land.
+>
+> Images attached as reference.
+>
+> Basically patrol zones have large regions, inter connectivity, detail. Walls, canyons, large structures that create
+> pathways, bounds, etc
+>
+> Im really pushing for maximum detail, geometry and hand craftedness. We're pushing this beyond limits"
+
 ## What it settles
 
 - Villages, ruins and outposts are built from Daggerfall's RMB blocks ([[RMB Blocks]]) inside the patrol areas and
@@ -39,6 +52,9 @@ The owner's answers to the questions that followed:
 - Buildings are open spaces walked into, not entered by interacting.
 - The layouts are not simple square areas: they are detailed and handcrafted, AAA grade. How they are laid out is
   Claude's to research and decide ([[The World Is Claude's to Mold]]).
+- A patrol area's land is not flat and does not feel like open land: it has large regions joined to one another, and
+  walls, canyons and large structures that make its pathways and its bounds, in as much detail and geometry as can be
+  made. Destiny's Cosmodrome is the reference for the feel; nothing of Destiny's comes over ([[Own Work]]).
 
 It builds on [[Every Island Is Seen Whole and Reached by Nodes]] and [[Overlook Is a Shared World After Destiny 1]],
 and takes up the mission loop that [[Gameplay Starts With the Shared Rules]] left for when the work reached it.

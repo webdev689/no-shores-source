@@ -85,6 +85,7 @@ export class Hud {
   private readonly leave: HTMLButtonElement;
   private readonly manageButton = hudButton('Manage  B', () => this.manageWanted());
   private readonly wheel: HTMLButtonElement;
+  private readonly passage: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
   /** The shape Manage's panel was last built to, and the place each of its values is written. */
   private panelShape = '';
@@ -98,6 +99,7 @@ export class Hud {
   private manageWanted: () => void = () => undefined;
   private leaveWanted: () => void = () => undefined;
   private wheelWanted: () => void = () => undefined;
+  private passageWanted: () => void = () => undefined;
 
   constructor(root: HTMLElement) {
     root.classList.add('hud');
@@ -118,6 +120,9 @@ export class Hud {
     this.leave = hudButton('Leave the helm  H', () => this.leaveWanted());
     this.wheel = hudButton('Take the helm  E', () => this.wheelWanted(), 'primary');
     this.wheel.classList.add('landfall');
+    this.passage = hudButton('', () => this.passageWanted(), 'primary');
+    this.passage.classList.add('landfall');
+    this.passage.hidden = true;
     const groups = [
       seaGroup(
         'Navigation',
@@ -145,6 +150,7 @@ export class Hud {
       this.sea,
       this.landfall,
       this.wheel,
+      this.passage,
       this.panel,
       this.menuNode,
       this.death,
@@ -334,6 +340,17 @@ export class Hud {
         const shown = this.panelValues[index];
         if (shown && shown.textContent !== value) shown.textContent = value;
       });
+  }
+
+  /** Offers the way through the gate the player stands in (its words), or takes the offer away (null). */
+  passageOffer(words: string | null): void {
+    this.passage.hidden = words === null;
+    if (words !== null && this.passage.textContent !== words) this.passage.textContent = words;
+  }
+
+  /** What the offer of a way through a gate does. */
+  onPassage(take: () => void): void {
+    this.passageWanted = take;
   }
 
   /** Offers the helm at her wheel, or takes the offer away. */

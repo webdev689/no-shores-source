@@ -210,11 +210,23 @@ fn vertex_main(@builtin(vertex_index) index: u32, @builtin(instance_index) ring:
   return surface;
 }
 
+// Bare rock: layered in strata a few metres thick that wander with the face, dark seams between them, each layer its
+// own tone, gritty close up, and leaning toward the biome's own ground colour, so a carved cliff reads as stone.
+fn rock_colour(world: vec2f, bed: f32) -> vec3f {
+  let wobble = grove_noise(world, 37.0, 53) * 1.6 + grove_noise(world, 11.0, 59) * 0.5;
+  let layer = fract(bed / 3.4 + wobble);
+  let seam = smoothstep(0.0, 0.07, layer) * (1.0 - smoothstep(0.88, 1.0, layer));
+  let tone = mix(0.8, 1.14, grove_noise(vec2f(bed * 0.29 + wobble, 0.5), 1.0, 61));
+  let grit = mix(0.86, 1.08, grove_noise(world, 2.3, 67));
+  let tint = mix(ROCK, view.ground.rgb * 1.2, 0.07);
+  return tint * tone * grit * mix(0.55, 1.0, seam);
+}
+
 // The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w). Along the painted
 // coast ('coast' metres inland) the low, gentle ground is a beach, darker below the swash's reach.
-fn land_colour(bed: f32, slope: f32, coast: f32) -> vec3f {
+fn land_colour(bed: f32, slope: f32, coast: f32, world: vec2f) -> vec3f {
   let ground = mix(view.ground.rgb, HIGHLAND, smoothstep(200.0, 1600.0, bed));
-  let bare = mix(ground, ROCK, smoothstep(0.25, 0.5, slope));
+  let bare = mix(ground, rock_colour(world, bed), smoothstep(0.3, 0.55, slope));
   let snowy = mix(bare, SNOW, smoothstep(view.ground.w - 200.0, view.ground.w, bed));
   let low = 1.0 - smoothstep(1.5, 3.0, bed);
   let beach = (1.0 - smoothstep(60.0, 140.0, coast)) * low * (1.0 - smoothstep(0.12, 0.3, slope));
@@ -308,7 +320,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let light = caustics(local, view.eye.w) * fine * exp(-max(depth, 0.0) / 9.0) * smoothstep(0.0, 0.4, depth);
   wet += SUN_LIGHT * light * select(0.32, 0.12, fresh);
 
-  var dry = wooded(land_colour(bed, slope, ground.w), view.world.xy + point, bed, slope, reach_to);
+  var dry = wooded(land_colour(bed, slope, ground.w, view.world.xy + point), view.world.xy + point, bed, slope, reach_to);
   let in_close = share > 0.5;
   dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
   let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);

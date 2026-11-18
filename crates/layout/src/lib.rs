@@ -7,13 +7,20 @@
 pub mod areas;
 pub mod book;
 pub mod brief;
+pub mod carve;
 pub mod collide;
 pub mod compose;
 pub mod field;
+pub mod interiors;
 pub mod paths;
+pub mod pieces;
+pub mod pieces_coast;
+pub mod pieces_land;
 pub mod ring;
 pub mod seat;
 pub mod settle;
+pub mod sites;
+pub mod works;
 
 use crate::areas::{Area, place, radius_of};
 use crate::book::Book;
@@ -48,8 +55,11 @@ pub struct Layout {
     pub spawns: Vec<[f64; 2]>,
     pub areas: Vec<Area>,
     pub paths: Vec<Path>,
+    pub sites: Vec<sites::Site>,
     #[serde(flatten)]
     pub seating: Seating,
+    /// How the layout carves its land.
+    pub sculpt: land::sculpts::Sculpt,
     /// What a body runs into, once the layout is laid on the ground: west, north, east, south, top and bottom.
     pub boxes: Vec<collide::Box3>,
 }
@@ -71,22 +81,60 @@ pub fn middle_of(node: &Node) -> [f64; 2] {
 /// Plans a node's layout on the ground from its brief: for a patrol area, `links` are the instances its gates lead
 /// to; for an instance, the patrol area it is entered from.
 #[must_use]
-pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &Book) -> Layout {
+pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &Book, rise: f64) -> Layout {
     let seed = seed_of(0x1A70, &node.id);
     let field = Field::read(ground, &claim_of(node), MARGIN_M);
     let patrol = node.kind == NodeKind::Patrol;
     let (areas, wanted) = place_areas(node, &field, brief, links, seed);
     let mut seating = compose::stand(&areas, &wanted, book, ground, &field, seed);
+    let mut buildings = std::mem::take(&mut seating.buildings);
+    let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x400D, draws: 0, into: &mut seating };
+    for building in &mut buildings {
+        if let Some(built) = interiors::build(&mut kit, building, book) {
+            kit.into.rooms.extend(built.solids);
+            kit.into.walls.extend(built.boxes);
+        }
+    }
+    seating.buildings = buildings;
+    let mut kit = pieces::Kit { ground, book, seed, draws: 0, into: &mut seating };
+    let heart = areas.iter().fold([0.0, 0.0], |sum, area| [sum[0] + area.at[0], sum[1] + area.at[1]]);
+    let heart = [heart[0] / areas.len().max(1) as f64, heart[1] / areas.len().max(1) as f64];
+    for area in &areas {
+        let linked = area.leads_to.as_ref().and_then(|id| links.iter().find(|link| &link.id == id));
+        let toward = unit(linked.map_or(heart, |link| link.towards), area.at, field.seaward);
+        pieces::build(&mut kit, area, toward, field.seaward);
+    }
     let hubs: Vec<[f64; 2]> =
         areas.iter().zip(&wanted).map(|(area, &blocks)| if blocks > 0 { hub(&seating, area.at) } else { area.at }).collect();
     let blocked = blocked_by(&field, &seating);
     let paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
     keep_props_off(&mut seating, &paths);
+    let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
+    for path in &paths {
+        for &banks in &path.crossings {
+            pieces_land::bridge(&mut kit, banks, path.tier.width());
+        }
+    }
+    let sites = sites::mark(&field, &areas, &paths, &seating, seed);
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);
-    let room: Vec<([f64; 2], f64)> = areas.iter().map(|area| (area.at, area.radius)).collect();
-    let lines: Vec<Vec<[f64; 2]>> = paths.iter().map(|path| path.points.clone()).collect();
-    let cells = ring::section_cells(&field, &room, &lines, anchor, seed);
+    let exits: Vec<([f64; 2], [f64; 2])> = areas
+        .iter()
+        .filter_map(|area| {
+            let linked = area.leads_to.as_ref().and_then(|id| links.iter().find(|link| &link.id == id));
+            match (area.kind, linked) {
+                (AreaKind::Gate | AreaKind::Entrance, Some(link)) => Some((area.at, unit(link.towards, area.at, field.seaward))),
+                (AreaKind::Landing, _) if field.seaward != [0.0, 0.0] => Some((area.at, field.seaward)),
+                _ => None,
+            }
+        })
+        .collect();
+    let network = carve::Network { areas: &areas, paths: &paths, exits: &exits };
+    let sculpt = carve::carve(&field, claim_of(node), network, &seating, rise, seed);
+    let carved = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
+    let cells = ring::section_cells(&field, &|x, y| carved.floor_distance(x, y), anchor);
     let ring = ring::traced(&field, &cells);
+    let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
+    works::build(&mut kit, &areas, &paths, &ring, rise);
     let spawns = spawns_round(&field, anchor);
     Layout {
         id: node.id.clone(),
@@ -97,7 +145,9 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         spawns,
         areas,
         paths,
+        sites,
         seating,
+        sculpt,
         boxes: Vec::new(),
     }
 }
@@ -155,16 +205,36 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
     (areas, wanted)
 }
 
-/// The cells a path may not cross: under a building, and a metre and a half round it.
+/// The unit vector from `from` to `to`; `otherwise` where they meet.
+fn unit(to: [f64; 2], from: [f64; 2], otherwise: [f64; 2]) -> [f64; 2] {
+    let (east, south) = (to[0] - from[0], to[1] - from[1]);
+    let length = (east * east + south * south).sqrt();
+    if length > 1e-6 { [east / length, south / length] } else if otherwise == [0.0, 0.0] { [0.0, -1.0] } else { otherwise }
+}
+
+/// The cells a path may not cross: under a building, a set piece's solid or a large prop, and a metre and a half
+/// round it.
 fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
     let mut blocked = vec![false; field.columns * field.rows];
-    let column_of = |x: f64| ((x - field.west) / CELL_M).floor().clamp(0.0, (field.columns - 1) as f64) as usize;
-    let row_of = |y: f64| ((y - field.north) / CELL_M).floor().clamp(0.0, (field.rows - 1) as f64) as usize;
-    for building in &seating.buildings {
-        let [west, north, east, south] = building.footprint;
-        for row in row_of(north - 1.5)..=row_of(south + 1.5) {
-            for column in column_of(west - 1.5)..=column_of(east + 1.5) {
-                blocked[field.index(column, row)] = true;
+    let solids = seating.solids.iter().map(|solid| {
+        let [west, north, east, south, _, _] = solid.bounds();
+        [west, north, east, south]
+    });
+    let large_props = seating.props.iter().map(|prop| prop.footprint).filter(|print| (print[2] - print[0]) * (print[3] - print[1]) > 6.0);
+    let prints: Vec<[f64; 4]> = seating.buildings.iter().map(|building| building.footprint).chain(solids).chain(large_props).collect();
+    // A cell is blocked where its middle stands under something, or a metre from it.
+    for [west, north, east, south] in prints {
+        let column_of = |x: f64| ((x - field.west) / CELL_M - 0.5).ceil().max(0.0) as usize;
+        let row_of = |y: f64| ((y - field.north) / CELL_M - 0.5).ceil().max(0.0) as usize;
+        for row in row_of(north - 1.0)..=row_of(south + 1.0).min(field.rows) {
+            for column in column_of(west - 1.0)..=column_of(east + 1.0).min(field.columns) {
+                if row >= field.rows || column >= field.columns {
+                    continue;
+                }
+                let [x, y] = field.centre(column, row);
+                if x >= west - 1.0 && x <= east + 1.0 && y >= north - 1.0 && y <= south + 1.0 {
+                    blocked[field.index(column, row)] = true;
+                }
             }
         }
     }
@@ -206,13 +276,45 @@ fn lay_paths(field: &Field, areas: &[Area], hubs: &[[f64; 2]], blocked: &Blocked
         links.extend((1..areas.len()).map(|at| (at - 1, at, Tier::Footpath)));
     }
     let mut paths = Vec::new();
-    for (from, to, tier) in links {
+    let mut group: Vec<usize> = (0..areas.len()).collect();
+    let root = |group: &[usize], mut at: usize| {
+        while group[at] != at {
+            at = group[at];
+        }
+        at
+    };
+    let lay = |from: usize, to: usize, tier: Tier, laid: &mut Vec<bool>, paths: &mut Vec<Path>| {
         let (start, end) = (hubs[from], hubs[to]);
-        let Some(cells) = find(field, [start, end], tier, &laid, blocked, seed) else { continue };
+        // A way too steep for its tier is laid as a footpath, then as a stepped way, rather than not at all.
+        let tries = [(tier, tier.steepest()), (Tier::Footpath, Tier::Footpath.steepest()), (Tier::Footpath, crate::paths::STEPPED)];
+        let found = tries.iter().find_map(|&(tier, steepest)| find(field, [start, end], steepest, laid, blocked, seed).map(|cells| (tier, cells)));
+        let Some((tier, cells)) = found else { return false };
         for &cell in &cells {
             laid[cell] = true;
         }
         paths.push(Path { tier, points: smoothed(field, &cells, start, end), crossings: crossings(field, &cells), heights: Vec::new() });
+        true
+    };
+    for (from, to, tier) in links {
+        if lay(from, to, tier, &mut laid, &mut paths) {
+            let (first, second) = (root(&group, from), root(&group, to));
+            group[first] = second;
+        }
+    }
+    // An area no way reached is joined to the nearest one that is joined to the first.
+    for area in 1..areas.len() {
+        if root(&group, area) == root(&group, 0) {
+            continue;
+        }
+        let mut others: Vec<usize> = (0..areas.len()).filter(|&other| root(&group, other) == root(&group, 0)).collect();
+        others.sort_by(|&first, &second| distance(areas[first].at, areas[area].at).total_cmp(&distance(areas[second].at, areas[area].at)));
+        for other in others {
+            if lay(other, area, Tier::Footpath, &mut laid, &mut paths) {
+                let (first, second) = (root(&group, area), root(&group, other));
+                group[first] = second;
+                break;
+            }
+        }
     }
     paths
 }

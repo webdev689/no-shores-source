@@ -37,6 +37,11 @@ pub struct Seated {
     pub yaw: f64,
     pub building: bool,
     pub footprint: [f64; 4],
+    /// A building's type as its block keeps it (a tavern, a house, a temple); 0 for a prop.
+    #[serde(skip)]
+    pub purpose: u8,
+    /// Whether a body walks into it: its doors stand open onto rooms of its own.
+    pub open: bool,
 }
 
 /// A tile of a block's streets or yards laid on the land: its middle, its byte as the block keeps it, and the quarter
@@ -58,6 +63,11 @@ pub struct Seating {
     pub props: Vec<Seated>,
     pub tiles: Vec<Tile>,
     pub solids: Vec<Solid>,
+    /// The rooms of the buildings walked into: their linings, floors, ceilings and stairs.
+    pub rooms: Vec<Solid>,
+    /// Boxes a body meets that are not each one solid: a room's walls, floors and stairs, a wing too low to enter.
+    #[serde(skip)]
+    pub walls: Vec<crate::collide::Box3>,
     pub pads: Vec<Pad>,
 }
 
@@ -84,7 +94,7 @@ pub fn turned(point: [f64; 2], at: [f64; 2], turns: u8) -> [f64; 2] {
 }
 
 /// A model's footprint (west, north, east, south) where it stands at `origin` turned `yaw` degrees.
-fn footprint(measure: crate::book::Measure, origin: [f64; 2], yaw: f64) -> [f64; 4] {
+fn footprint(measure: &crate::book::Measure, origin: [f64; 2], yaw: f64) -> [f64; 4] {
     let (sine, cosine) = land::exact::sin_cos(yaw.to_radians());
     let corners = [
         [measure.min[0], measure.min[2]],
@@ -192,7 +202,15 @@ pub fn seat(
             seating.solids.push(Solid::upright(Shape::Block, middle, size, Material::Stone));
         }
         seating.pads.push(Pad { bounds: print, level });
-        seating.buildings.push(Seated { model: row[0] as u32, at: [origin[0], origin[1], level + row[3]], yaw, building: true, footprint: print });
+        seating.buildings.push(Seated {
+            model: row[0] as u32,
+            at: [origin[0], origin[1], level + row[3]],
+            yaw,
+            building: true,
+            footprint: print,
+            purpose: row[5] as u8,
+            open: false,
+        });
     }
     let standing = &seating.buildings[first_building..];
     let level_at = |x: f64, y: f64| {
@@ -209,7 +227,15 @@ pub fn seat(
         }
         let yaw = (row[4] + quarter) % 360.0;
         let print = book.measure(row[0] as u32, false).map_or([origin[0], origin[1], origin[0], origin[1]], |measure| footprint(measure, origin, yaw));
-        props.push(Seated { model: row[0] as u32, at: [origin[0], origin[1], level_at(origin[0], origin[1]) + row[3]], yaw, building: false, footprint: print });
+        props.push(Seated {
+            model: row[0] as u32,
+            at: [origin[0], origin[1], level_at(origin[0], origin[1]) + row[3]],
+            yaw,
+            building: false,
+            footprint: print,
+            purpose: 0,
+            open: false,
+        });
     }
     let mut tiles = Vec::new();
     for (index, &byte) in ground_tiles(block).iter().enumerate() {
@@ -275,9 +301,9 @@ mod tests {
 
     #[test]
     fn a_footprint_turned_a_quarter_swaps_its_width_and_depth() {
-        let measure = crate::book::Measure { min: [-5.0, 0.0, -2.0], max: [5.0, 4.0, 2.0] };
-        let straight = footprint(measure, [0.0, 0.0], 0.0);
-        let quarter = footprint(measure, [0.0, 0.0], 90.0);
+        let measure = crate::book::Measure { min: [-5.0, 0.0, -2.0], max: [5.0, 4.0, 2.0], grid: None, plan: Vec::new(), doors: Vec::new() };
+        let straight = footprint(&measure, [0.0, 0.0], 0.0);
+        let quarter = footprint(&measure, [0.0, 0.0], 90.0);
         assert!((straight[2] - straight[0] - 10.0).abs() < 1e-9 && (straight[3] - straight[1] - 4.0).abs() < 1e-9);
         assert!((quarter[2] - quarter[0] - 4.0).abs() < 1e-9 && (quarter[3] - quarter[1] - 10.0).abs() < 1e-9);
     }

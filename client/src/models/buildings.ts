@@ -270,7 +270,7 @@ const built = new WeakMap<ForgedModel, { table: BuildingTable; id: number }>();
 export function buildingModel(
   table: BuildingTable,
   id: number,
-  { doors = true }: { doors?: boolean } = {},
+  { doors = true, open = false }: { doors?: boolean; open?: boolean } = {},
 ): ForgedModel | null {
   const measure: BuildingMeasure | undefined = table[id];
   if (!measure) return null;
@@ -354,7 +354,8 @@ export function buildingModel(
         );
   }
   if (!doors) return { ...parts.model(), doors: [] };
-  const model = withDoors(parts.model(), measure, fit, trim);
+  // An open building's doorways are cut and framed with no door in them: a body walks straight in.
+  const model = withDoors(parts.model(), measure, fit, trim, { picture: !open });
   built.set(model, { table, id });
   return model;
 }

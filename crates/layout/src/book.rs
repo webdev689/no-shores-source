@@ -16,11 +16,47 @@ pub struct RmbBlock {
     pub ground: String,
 }
 
-/// A model's box in its own frame (x right, y up, z forward), metres.
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+/// A model's box in its own frame (x right, y up, z forward), metres; for a building, its plan and doors too.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Measure {
     pub min: [f64; 3],
     pub max: [f64; 3],
+    /// The plan's grid, columns along x and rows along z, each cell 0.4 m or so.
+    #[serde(default)]
+    pub grid: Option<[u32; 2]>,
+    #[serde(default)]
+    pub plan: Vec<Wing>,
+    #[serde(default)]
+    pub doors: Vec<Door>,
+}
+
+/// One wing of a building's plan: its eaves and ridge, the floor it stands on if not the ground (`low`), whether it
+/// is outdoor steps or a platform, and its rectangles of grid cells `[column0, row0, column1, row1]`, each with its
+/// own top as a fifth number where it steps.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Wing {
+    pub eaves: f64,
+    pub ridge: f64,
+    #[serde(default)]
+    pub low: Option<f64>,
+    #[serde(default)]
+    pub steps: bool,
+    #[serde(default)]
+    pub platform: bool,
+    pub rects: Vec<Vec<f64>>,
+}
+
+/// A door as measured: its top corner over its sill's start, its sill's two corners, and the way out of the building.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct Door {
+    #[serde(rename = "a")]
+    pub top: [f64; 3],
+    #[serde(rename = "b")]
+    pub sill: [f64; 3],
+    #[serde(rename = "c")]
+    pub sill_end: [f64; 3],
+    #[serde(rename = "n")]
+    pub out: [f64; 3],
 }
 
 /// The blocks by name and the models' boxes by id.
@@ -59,9 +95,9 @@ impl Book {
 
     /// A model's box: a building's from the buildings' table, falling back to the props', as the city draws them.
     #[must_use]
-    pub fn measure(&self, model: u32, building: bool) -> Option<Measure> {
+    pub fn measure(&self, model: u32, building: bool) -> Option<&Measure> {
         let (first, second) = if building { (&self.buildings, &self.props) } else { (&self.props, &self.buildings) };
-        first.get(&model).or_else(|| second.get(&model)).copied()
+        first.get(&model).or_else(|| second.get(&model))
     }
 }
 

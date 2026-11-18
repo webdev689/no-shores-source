@@ -33,6 +33,7 @@ import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { loadLandTexts } from './landTexts.ts';
+import { type Passage, passageAt } from '../layout/passage.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
@@ -398,6 +399,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'b') manage();
     else if (key === 'h') leaveHelm();
     else if (key === 'e' && sea?.aboard.walking) takeHelm();
+    else if (key === 'e' && flow.mode === 'foot' && !flow.menu) goThrough();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
     else if (key === 'enter' && flow.mode === 'foot') respawn();
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
@@ -462,6 +464,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     return found.filter((drawer): drawer is Drawer => drawer !== null);
   };
 
+  /** The way through the gate the player stands in, if any, and going through it to the node it leads to. */
+  let passage: Passage | null = null;
+  const goThrough = () => {
+    const through = passage;
+    const node = through && landmass.nodes.find((each) => each.id === through.to);
+    if (!through || !node || flow.mode !== 'foot') return;
+    const arriving = { ...node, spawns: [through.arrive] };
+    travel({ kind: 'pass', node: node.id, name: node.name, into: through.into }, () =>
+      goFoot(arriving, bearingTo(through.arrive, node.centre)),
+    );
+  };
+  hud.onPassage(goThrough);
+
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const paused = flow.mode !== 'foot' || flow.menu;
     const shown = here.frame(controls, seconds, clock, paused);
@@ -473,6 +488,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures), { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
+    passage = paused ? null : passageAt(landmass.layouts, landmass.nodes, here.node.id, [body.x, body.y]);
+    hud.passageOffer(passage && `${passage.into ? 'Enter' : 'Return to'} ${passage.name}  E`);
     hud.hints(shown.standing.kind === 'dead' ? HINTS.dead : HINTS.foot);
     hud.marks([]);
     hud.seaBar(null);

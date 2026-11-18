@@ -7,6 +7,29 @@ import { type LaidPath, type LaidTile, type NodeLayout, PATH_WIDTH_M } from './l
 
 /** How far round a building nothing wild grows, metres: its yard, its eaves' drip and the lane past its door. */
 const YARD_CLEAR_M = 10;
+/** How much of each kind of area's reach is open ground nothing wild grows on; a kind not listed keeps its wild. */
+const CLEARED_SHARE: Readonly<Record<string, number>> = {
+  landing: 0.9,
+  entrance: 0.7,
+  gate: 0.45,
+  camp: 0.65,
+  wilds: 0.5,
+  arena: 0.7,
+  tower: 0.6,
+  lighthouse: 0.7,
+  dock: 0.7,
+  mill: 0.6,
+  quarry: 0.7,
+  bones: 0.55,
+  causeway: 0.6,
+  cave: 0.4,
+  farm: 0.85,
+  graveyard: 0.75,
+  shrine: 0.6,
+  ruin: 0.45,
+  keep: 0.6,
+  hamlet: 0.55,
+};
 /** The ground records a path wears: Daggerfall's dirt. */
 const DIRT = 1;
 /** A ground picture's side on the land, metres: one tile of a block. */
@@ -123,6 +146,7 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
     [...layout.buildings, ...layout.props].map((seated) => ({
       model: seated.model,
       building: seated.building,
+      open: seated.open,
       at: seated.at,
       yaw: seated.yaw,
     })),
@@ -131,7 +155,7 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
     ...layout.tiles.map(tileDecal),
     ...layout.paths.flatMap(pathDecals),
   ]);
-  const solids = layouts.flatMap((layout) => layout.solids);
+  const solids = layouts.flatMap((layout) => [...layout.solids, ...layout.rooms]);
   const spots = [
     ...pieces.map((piece) => [piece.at[0], piece.at[1]] as const),
     ...decals.flatMap((decal) => decal.corners.map((corner) => [corner[0], corner[1]] as const)),
@@ -183,5 +207,11 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
     pads: [...layouts.flatMap((layout) => layout.pads), ...tileRects, ...yards(layouts)],
     pieces,
     decals,
+    clearings: layouts.flatMap((layout) =>
+      layout.areas.flatMap((area) => {
+        const share = CLEARED_SHARE[area.kind];
+        return share ? [{ at: area.at, radius: area.radius * share }] : [];
+      }),
+    ),
   };
 }
