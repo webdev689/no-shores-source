@@ -1,10 +1,11 @@
-import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { NEAR, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SLOW_CLOCK_S } from '../water/shore.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { runsInView, tilesCasting, tilesInView } from './cull.ts';
 import { NatureField, type NatureGround, type Packed } from './field.ts';
-import { FORM_BLOCK_BYTES, type FormBuffers, formBuffers, type Part, VERTEX_BYTES } from './forms.ts';
+import { FLORA, type LoadedFlora, loadFlora, MESH_VERTEX_BYTES } from './flora.ts';
+import { FORM_BLOCK_BYTES, FORM_FLOATS, type FormBuffers, formBuffers, type Part } from './forms.ts';
 import { type Cast, TREE } from './kinds.ts';
 import { FRAME_FLOATS, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
 
@@ -26,9 +27,6 @@ const DEFAULT_WIND = [0.8, -0.6] as const;
 /** How much higher than the plants' reach the eye may stand over the ground below before nothing is drawn, metres. */
 const HIGH_MARGIN_M = 2000;
 const GUST_PER_M = 0.035;
-/** The plants' faces wound counter-clockwise outward in the world (x east, y south, z up) reach the screen
- *  clockwise, its y flipped against the world's south: the view's frame is mirrored. */
-const FRONT_FACE: GPUFrontFace = 'cw';
 /** WebGPU's storage usage flag, by the specification's value (gpu.ts names the flags the rest of the client uses). */
 const STORAGE_USAGE = 0x80;
 
@@ -54,14 +52,26 @@ export class NatureView {
   private readonly field: NatureField;
   private readonly layout: GPUBindGroupLayout;
   private readonly pipelines: {
-    readonly culled: GPURenderPipeline;
-    readonly twoSided: GPURenderPipeline;
+    /** The near meshes, both sides of every face: cards are seen from either. */
+    readonly plants: GPURenderPipeline;
+    /** The far quads. */
+    readonly sprites: GPURenderPipeline;
     readonly shade: GPURenderPipeline;
     /** The near plants' depth along the sun, into the shadow map. */
     readonly cast: GPURenderPipeline;
   };
   private readonly frameBuffer: GPUBuffer;
-  private meshes: { cast: Cast; forms: FormBuffers; vertices: GPUBuffer; blocks: GPUBuffer } | null = null;
+  private meshes: {
+    cast: Cast;
+    forms: FormBuffers;
+    vertices: GPUBuffer;
+    blocks: GPUBuffer;
+    albedo: GPUTexture;
+    normal: GPUTexture;
+  } | null = null;
+  /** The biome whose flora is loading or loaded, and what came of it: null while it loads or if it failed. */
+  private loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean } | null = null;
+  private readonly sampler: GPUSampler;
   private readonly slots: Grown = { buffer: null };
   private readonly list: Grown = { buffer: null };
   private readonly corners: Grown = { buffer: null };
@@ -82,40 +92,57 @@ export class NatureView {
     this.layout = device.createBindGroupLayout({
       entries: [
         { binding: 0, visibility: seen, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: seen, buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: 48 } },
+        {
+          binding: 1,
+          visibility: seen,
+          buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: FORM_FLOATS * 4 },
+        },
         { binding: 2, visibility: SHADER_STAGE.vertex, buffer: stored },
         { binding: 3, visibility: SHADER_STAGE.vertex, buffer: stored },
         { binding: 4, visibility: SHADER_STAGE.vertex, buffer: stored },
+        { binding: 5, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
+        { binding: 6, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
+        { binding: 7, visibility: SHADER_STAGE.fragment, sampler: {} },
       ],
+    });
+    this.sampler = device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmapFilter: 'linear',
+      maxAnisotropy: 4,
     });
     const module = device.createShaderModule({ code: NATURE_SHADER });
     const shadows = shadowLayouts(device);
     const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.receiver] });
     const mesh: GPUVertexBufferLayout = {
-      arrayStride: VERTEX_BYTES,
+      arrayStride: MESH_VERTEX_BYTES,
       attributes: [
         { shaderLocation: 0, offset: 0, format: 'float32x3' },
         { shaderLocation: 1, offset: 12, format: 'snorm8x4' },
-        { shaderLocation: 2, offset: 16, format: 'unorm8x4' },
+        { shaderLocation: 2, offset: 16, format: 'snorm8x4' },
+        { shaderLocation: 3, offset: 20, format: 'float32x2' },
+        { shaderLocation: 4, offset: 28, format: 'unorm8x4' },
+        { shaderLocation: 5, offset: 32, format: 'unorm8x4' },
       ],
     };
-    const plants = (cullMode: GPUCullMode) =>
+    const drawn = (vertex: string, fragment: string, buffers: GPUVertexBufferLayout[]) =>
       device.createRenderPipeline({
         layout,
-        vertex: { module, entryPoint: 'plant_vertex', buffers: [mesh] },
-        fragment: { module, entryPoint: 'plant_fragment', targets: [{ format: gpu.format }] },
-        primitive: { topology: 'triangle-list', cullMode, frontFace: FRONT_FACE },
+        vertex: { module, entryPoint: vertex, buffers },
+        fragment: { module, entryPoint: fragment, targets: [{ format: gpu.format }] },
+        primitive: { topology: 'triangle-list', cullMode: 'none' },
         depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
         multisample: { count: SAMPLES },
       });
     // The shade only darkens what is under it: the colour drawn is kept by the share its alpha leaves.
+    const castModule = device.createShaderModule({ code: NATURE_CAST_SHADER });
     const darken: GPUBlendState = {
       color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
       alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' },
     };
     this.pipelines = {
-      culled: plants('back'),
-      twoSided: plants('none'),
+      plants: drawn('plant_vertex', 'plant_fragment', [mesh]),
+      sprites: drawn('sprite_vertex', 'sprite_fragment', []),
       shade: device.createRenderPipeline({
         layout,
         vertex: { module, entryPoint: 'shade_vertex' },
@@ -126,11 +153,8 @@ export class NatureView {
       }),
       cast: device.createRenderPipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.caster] }),
-        vertex: {
-          module: device.createShaderModule({ code: NATURE_CAST_SHADER }),
-          entryPoint: 'plant_cast',
-          buffers: [mesh],
-        },
+        vertex: { module: castModule, entryPoint: 'plant_cast', buffers: [mesh] },
+        fragment: { module: castModule, entryPoint: 'plant_cast_fragment', targets: [] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
         depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
       }),
@@ -153,7 +177,11 @@ export class NatureView {
       return false;
     }
     const waiting = this.field.update(frame.eye[0], frame.eye[1], ground);
-    this.keepMeshes(this.field.drawnCast);
+    // Until the biome's flora has loaded, its plants are not drawn; the page is asked to draw again meanwhile.
+    if (!this.keepMeshes(this.field.drawnCast, ground.biome)) {
+      [this.draws, this.casts] = [[], []];
+      return !this.loading?.failed;
+    }
     this.sendStore();
     const packed = this.field.packed;
     if (this.listed !== packed) this.sendList(packed);
@@ -218,6 +246,7 @@ export class NatureView {
   }
 
   /** How many instances and triangles the last update drew, for a page's readout. */
+  /** How many instances and triangles the last update drew, for a page's readout. */
   get drawn(): { readonly instances: number; readonly triangles: number; readonly draws: number } {
     let [instances, triangles] = [0, 0];
     for (const { part, count } of this.draws) {
@@ -229,6 +258,8 @@ export class NatureView {
 
   /** Draws into the land's pass (four samples, depth reversed) what `update` worked out: the contact shades on the
    *  land first, then the plants over them, in the sun's shadows when a map is given. */
+  /** Draws into the land's pass (four samples, depth reversed) what `update` worked out: the contact shades on the
+   *  land first, then the near meshes and the far quads over them, in the sun's shadows when a map is given. */
   drawInto(pass: GPURenderPassEncoder, shadow?: ShadowMap): void {
     const { meshes, bind } = this;
     if (!meshes || !bind || this.draws.length === 0) return;
@@ -243,7 +274,7 @@ export class NatureView {
     pass.setVertexBuffer(0, meshes.vertices);
     let shown: GPURenderPipeline | null = null;
     for (const { part, first, count } of this.draws) {
-      const pipeline = part.twoSided ? this.pipelines.twoSided : this.pipelines.culled;
+      const pipeline = part.far ? this.pipelines.sprites : this.pipelines.plants;
       if (pipeline !== shown) pass.setPipeline((shown = pipeline));
       pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
       pass.draw(part.vertexCount, count, part.firstVertex, first);
@@ -251,21 +282,39 @@ export class NatureView {
   }
 
   /** Gives the GPU back this view's buffers; it draws nothing after. */
+  /** Gives the GPU back this view's buffers and pictures; it draws nothing after. */
   destroy(): void {
     this.frameBuffer.destroy();
-    this.meshes?.vertices.destroy();
-    this.meshes?.blocks.destroy();
+    this.dropMeshes();
     for (const grown of [this.slots, this.list, this.corners]) grown.buffer?.destroy();
-    [this.meshes, this.bind, this.draws] = [null, null, []];
+    [this.bind, this.draws, this.loading] = [null, [], null];
   }
 
   /** The cast's meshes and terms on the GPU, made again when the biome changes. */
-  private keepMeshes(cast: Cast): void {
-    if (this.meshes?.cast === cast) return;
-    this.meshes?.vertices.destroy();
-    this.meshes?.blocks.destroy();
+  /** The biome's baked meshes, terms and pictures on the GPU, loaded when the biome changes. Answers whether they
+   *  are ready to draw. */
+  private keepMeshes(cast: Cast, biome: string): boolean {
+    if (this.meshes?.cast === cast) return true;
+    if (this.loading?.cast !== cast) {
+      const loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean } = {
+        cast,
+        loaded: null,
+        failed: false,
+      };
+      this.loading = loading;
+      loadFlora(cast, biome).then(
+        (loaded) => ([loading.loaded, loading.failed] = [loaded, !loaded]),
+        (error: unknown) => {
+          loading.failed = true;
+          console.warn(`the ${biome} flora did not load`, error);
+        },
+      );
+    }
+    const loaded = this.loading.loaded;
+    if (!loaded) return false;
+    this.dropMeshes();
     const { device } = this.gpu;
-    const forms = formBuffers(cast);
+    const forms = formBuffers(cast, loaded);
     const vertices = device.createBuffer({
       size: Math.max(4, forms.vertices.byteLength),
       usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
@@ -276,8 +325,40 @@ export class NatureView {
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
     });
     device.queue.writeBuffer(blocks, 0, forms.blocks);
-    this.meshes = { cast, forms, vertices, blocks };
+    const albedo = this.pictureArray(loaded.layers.map((layer) => layer.albedo));
+    const normal = this.pictureArray(loaded.layers.map((layer) => layer.normal));
+    this.meshes = { cast, forms, vertices, blocks, albedo, normal };
     this.bind = null;
+    return true;
+  }
+
+  /** A texture array of a biome's layers, each picture's mip levels copied from where they lie beside it. */
+  private pictureArray(pictures: readonly ImageBitmap[]): GPUTexture {
+    const side = FLORA.layer;
+    const texture = this.gpu.device.createTexture({
+      size: { width: side, height: side, depthOrArrayLayers: pictures.length },
+      format: 'rgba8unorm',
+      mipLevelCount: FLORA.mips,
+      usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination | TEXTURE_USAGE.renderAttachment,
+    });
+    for (const [layer, picture] of pictures.entries()) {
+      for (let level = 0; level < FLORA.mips; level++) {
+        const size = side >> level;
+        const origin = level === 0 ? { x: 0, y: 0 } : { x: side, y: side - ((2 * side) >> level) };
+        this.gpu.device.queue.copyExternalImageToTexture(
+          { source: picture, origin },
+          { texture, mipLevel: level, origin: { x: 0, y: 0, z: layer } },
+          { width: size, height: size },
+        );
+      }
+    }
+    return texture;
+  }
+
+  private dropMeshes(): void {
+    for (const owned of [this.meshes?.vertices, this.meshes?.blocks, this.meshes?.albedo, this.meshes?.normal])
+      owned?.destroy();
+    this.meshes = null;
   }
 
   /** Sends the store's changed pages to the GPU; all of it when it has grown. */
@@ -325,14 +406,18 @@ export class NatureView {
   private rebind(): void {
     const [slots, list, corners] = [this.slots.buffer, this.list.buffer, this.corners.buffer];
     if (!this.meshes || !slots || !list || !corners) return;
+    const arrayView = (texture: GPUTexture) => texture.createView({ dimension: '2d-array' });
     this.bind = this.gpu.device.createBindGroup({
       layout: this.layout,
       entries: [
         { binding: 0, resource: { buffer: this.frameBuffer } },
-        { binding: 1, resource: { buffer: this.meshes.blocks, size: 48 } },
+        { binding: 1, resource: { buffer: this.meshes.blocks, size: FORM_FLOATS * 4 } },
         { binding: 2, resource: { buffer: slots } },
         { binding: 3, resource: { buffer: list } },
         { binding: 4, resource: { buffer: corners } },
+        { binding: 5, resource: arrayView(this.meshes.albedo) },
+        { binding: 6, resource: arrayView(this.meshes.normal) },
+        { binding: 7, resource: this.sampler },
       ],
     });
   }

@@ -63,7 +63,7 @@ test('every packed plant stands within its reach of the eye, placed from an anch
   const { anchor, groups } = field.packed;
   assert.ok(Math.abs(anchor[0] - EYE[0]) < TILE_M && Math.abs(anchor[1] - EYE[1]) < TILE_M);
   const cast = castOf('woodland');
-  const kindOfForm = cast.kinds.flatMap((kind) => kind.plants.map(() => kind));
+  const kindOfForm = cast.kinds.flatMap((kind) => Array.from({ length: kind.forms }, () => kind));
   assert.ok(groups.length > 0);
   for (const group of groups) {
     const kind = kindOfForm[group.form];

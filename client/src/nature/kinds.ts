@@ -1,7 +1,3 @@
-import type { Colour } from './shapes.ts';
-import { conifer, type Plant } from './trees.ts';
-import { rock, tuft } from './undergrowth.ts';
-
 /** Trees, palms, cacti and boulders stand in the tall layer's 8 m slots; shrubs, grass, ferns and reeds in the low
  *  layer's 4 m slots, round the tall ones' feet. */
 export type Layer = 'tall' | 'low';
@@ -35,8 +31,8 @@ export interface Kind extends Reach {
   readonly name: string;
   readonly layer: Layer;
   readonly growth: Growth;
-  /** The same kind grown a few ways; each instance takes one. */
-  readonly plants: readonly Plant[];
+  /** How many forms the same kind is grown in (content/nature/flora.json bakes each); each instance takes one. */
+  readonly forms: number;
   /** The least and most it is scaled by. */
   readonly sizes: readonly [number, number];
   /** Its trunk's or footprint's radius, metres, at size 1: nothing low grows inside it. */
@@ -49,12 +45,14 @@ export interface Cast {
   readonly keepAtReach: number;
 }
 
-export const TREE: Reach = { nearM: 700, reachM: 3000, swayM: 0.3 };
-export const SMALL_TREE: Reach = { nearM: 450, reachM: 2000, swayM: 0.2 };
-export const ROCK: Reach = { nearM: 350, reachM: 1800, swayM: 0 };
-export const SHRUB: Reach = { nearM: 200, reachM: 700, swayM: 0.06 };
+/** Past its near range a plant is a sprite, its baked mesh's triangles kept for where they show; trees are drawn out
+ *  to 6 km. */
+export const TREE: Reach = { nearM: 300, reachM: 6000, swayM: 0.3 };
+export const SMALL_TREE: Reach = { nearM: 220, reachM: 2000, swayM: 0.2 };
+export const ROCK: Reach = { nearM: 200, reachM: 1800, swayM: 0 };
+export const SHRUB: Reach = { nearM: 120, reachM: 700, swayM: 0.06 };
 export const GRASS: Reach = { nearM: Infinity, reachM: 160, swayM: 0.1 };
-export const TREE_FERN: Reach = { nearM: 300, reachM: 900, swayM: 0.15 };
+export const TREE_FERN: Reach = { nearM: 150, reachM: 900, swayM: 0.15 };
 
 /** Trees keep off the beach, below the snow line by a margin. */
 export const TREES = { slopes: [0, 0.6], lowestM: 2, snowLineM: -300 } as const;
@@ -65,14 +63,14 @@ export const tall = (
   name: string,
   reach: Reach,
   growth: Growth,
-  plants: Plant[],
+  forms: number,
   sizes: [number, number],
   footM: number,
 ): Kind => ({
   name,
   layer: 'tall',
   growth,
-  plants,
+  forms,
   sizes,
   footM,
   ...reach,
@@ -81,29 +79,10 @@ export const low = (
   name: string,
   reach: Reach,
   growth: Growth,
-  plants: Plant[],
+  forms: number,
   sizes: [number, number],
   footM: number,
 ): Kind => ({
-  ...tall(name, reach, growth, plants, sizes, footM),
+  ...tall(name, reach, growth, forms, sizes, footM),
   layer: 'low',
 });
-
-export const twice = (grow: (seed: number) => Plant, seed: number): Plant[] => [grow(seed), grow(seed + 101)];
-export const boulders = (seed: number, stone: Colour, cap?: { colour: Colour; from: number }): Plant[] => [
-  rock({ seed, size: [1.6, 1.3, 1.1], stone, ...(cap ? { cap } : {}) }),
-  rock({ seed: seed + 7, size: [2.6, 2.0, 1.5], stone, ...(cap ? { cap } : {}) }),
-];
-export const meadow = (seed: number, height: number, foot: Colour, tip: Colour, blades = 8): Plant[] => [
-  tuft({ seed, blades, height, spread: height * 0.35, width: 0.07, foot, tip }),
-];
-
-export const FIR_BARK: Colour = [0.3, 0.24, 0.2];
-export const FIR: Colour = [0.11, 0.25, 0.19];
-export const firs = (seed: number) =>
-  twice(
-    (each) => conifer({ seed: each, height: 18, width: 6, tiers: 6, skirt: 0.07, bark: FIR_BARK, needles: FIR }),
-    seed,
-  );
-
-/** The nine casts, by the biome's key in the layout. Each is made the first time a landmass of it is drawn. */

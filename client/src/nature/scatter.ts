@@ -99,14 +99,14 @@ export function firstForms(cast: Cast): number[] {
   let next = 0;
   return cast.kinds.map((kind) => {
     const first = next;
-    next += kind.plants.length;
+    next += kind.forms;
     return first;
   });
 }
 
 /** The kind of each of the cast's forms. */
 export function formKinds(cast: Cast): number[] {
-  return cast.kinds.flatMap((kind, index) => kind.plants.map(() => index));
+  return cast.kinds.flatMap((kind, index) => Array.from({ length: kind.forms }, () => index));
 }
 
 interface Layout {
@@ -132,7 +132,7 @@ function layout(cast: Cast, layer: Layer): Layout {
  * One layer of one tile: each slot's plant, if the ground grows it, sorted by form and each form's by rank, so the
  * far plants thinned out at a distance are the end of each form's run. The low layer keeps off the feet
  * of the tile's tall plants (`tall`, that layer's scatter). Nothing grows on water, marks or the caller's cleared
- * ground.
+ * ground. A `far` tile holds only kinds drawn past `beyondM`, and of them only ranks below `keepBelow`.
  */
 export function scatterTile(
   cast: Cast,
@@ -141,6 +141,7 @@ export function scatterTile(
   tileY: number,
   ground: ScatterGround,
   tall: Float32Array | null = null,
+  far: { readonly beyondM: number; readonly keepBelow: number } | null = null,
 ): Float32Array {
   const slot = SLOT_M[layer];
   const across = TILE_M / slot;
@@ -155,6 +156,8 @@ export function scatterTile(
     const share = kinds.find((each) => pick < each.to);
     const kind = share && cast.kinds[share.kind];
     if (!share || !kind) continue;
+    // A far tile keeps only the kinds drawn that far and the plants their thinning leaves, before the ground is read.
+    if (far && (kind.reachM <= far.beyondM || drawn(seed, 8) >= far.keepBelow)) continue;
     const [east, south] = [
       ((index % across) + drawn(seed, 1)) * slot,
       (Math.floor(index / across) + drawn(seed, 2)) * slot,
@@ -166,7 +169,7 @@ export function scatterTile(
     const width = kind.sizes[0] + (kind.sizes[1] - kind.sizes[0]) * drawn(seed, 3);
     if (tall && crowded(cast, kindOf, tall, east, south, kind.footM * width)) continue;
     if (ground.cleared(x, y)) continue;
-    const plant = Math.min(kind.plants.length - 1, Math.floor(drawn(seed, 4) * kind.plants.length));
+    const plant = Math.min(kind.forms - 1, Math.floor(drawn(seed, 4) * kind.forms));
     const form = (forms[share.kind] ?? 0) + plant;
     // Sunk by its foot's rise across the slope, so its downhill side never stands clear of the ground.
     const foot = here.height - here.slope * kind.footM * width - 0.1;
