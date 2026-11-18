@@ -1,6 +1,7 @@
 // The fight's display's own sheet, laid once on whichever page shows a fight, so every page draws the fight alike. The
 // Enhanced Plus kit paints the windows, troughs, fills and plates by their roles; this sheet gives each its room, and
 // never a colour to a border the kit paints, only its width and style.
+import { PLATES } from '../plus/barLayout.ts';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
 import { wearKit } from '../plus/kit.ts';
 import { BEVELS, FILLS, TONES } from '../plus/tones.ts';
@@ -9,7 +10,22 @@ const SHEET_ID = 'fight-hud';
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
  *  2 px edge. */
 const EMBLEM_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
-const WORDS_SHADOW = `1px 1px 0 ${TONES.outline}, 0 0 3px #000`;
+/** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a
+ *  soft shade past it, so they read over bright sky and every fill. */
+export const HALO = [
+  ...[
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [1, 1],
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+  ].map(([across, down]) => `${across}px ${down}px 0 ${TONES.outline}`),
+  '0 0 4px rgba(0,0,0,0.6)',
+].join(', ');
+const { overhead, boss } = PLATES;
 
 /** The plates' sheet: an emblem square, a title line and the bars under it, sized for each place a plate stands. */
 function platesCss(): string {
@@ -36,7 +52,7 @@ ${emblems.join('\n')}
 ${squares.join('\n')}
 .fight-hud .plate .body { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .fight-hud .plate .title { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden;
-  color: ${TONES.word}; text-shadow: ${WORDS_SHADOW}; }
+  color: ${TONES.word}; text-shadow: ${HALO}; }
 .fight-hud .plate .name { overflow: hidden; text-overflow: ellipsis; }
 .fight-hud .rank-mark { display: none; flex: none; background-size: 100% 100%; image-rendering: pixelated;
   filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
@@ -52,10 +68,11 @@ ${marks.join('\n')}
 .fight-hud .meter .lost { background-color: #fff6e4; opacity: 0.42; }
 .fight-hud .meter.poise { --fill: ${FILLS.poise}; }
 
-.fight-hud .overhead { width: 140px; height: 26px; translate: -50% -100%; margin-top: -30px; font-size: 12px; }
-.fight-hud .overhead .body { width: 109px; }
+.fight-hud .overhead { width: ${overhead.width}px; height: ${overhead.height}px; translate: -50% -100%;
+  margin-top: -30px; font-size: 12px; }
+.fight-hud .overhead .body { width: ${overhead.width - overhead.height - 5}px; }
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
-.fight-hud .overhead .meter { height: 8px; }
+.fight-hud .overhead .meter { height: ${overhead.bar}px; }
 
 .fight-hud .target { position: absolute; top: 16px; left: 50%; width: 340px; translate: -50% 0; font-size: 14px; }
 .fight-hud .target .body { flex: 1; gap: 3px; }
@@ -63,13 +80,14 @@ ${marks.join('\n')}
 .fight-hud .target .meter.poise { height: 6px; }
 .fight-hud.bossed .target { top: 80px; }
 
-.fight-hud .boss { position: absolute; top: 14px; left: 50%; width: min(640px, 76%); translate: -50% 0; }
+.fight-hud .boss { position: absolute; top: ${boss.top}px; left: 50%; width: min(${boss.width}px, ${boss.share * 100}%);
+  translate: -50% 0; }
 .fight-hud .boss .body { flex: 1; }
 .fight-hud .boss .title { align-items: baseline; gap: 12px; font-size: 18px; }
 .fight-hud .boss .faction, .fight-hud .boss .phase { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
   color: ${TONES.wordDim}; }
 .fight-hud .boss .phase { margin-left: auto; }
-.fight-hud .boss .meter.health { height: 16px; border-width: 2px; }
+.fight-hud .boss .meter.health { height: ${boss.bar}px; border-width: 2px; }
 .fight-hud .boss .phase-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px;
   display: block; background: ${TONES.outline}; box-shadow: 1px 0 0 ${TONES.groove}; }
 `;
@@ -86,7 +104,7 @@ function vitalsCss(): string {
 .fight-hud .vital.health { --fill: ${FILLS.health}; }
 .fight-hud .vital.stamina { --fill: ${FILLS.stamina}; }
 .fight-hud .vital .label, .fight-hud .vital .number { position: relative; padding: 0 7px; color: ${TONES.word};
-  text-shadow: 1px 1px 0 ${TONES.outline}, 2px 2px 0 rgba(0,0,0,0.7); }
+  text-shadow: ${HALO}; }
 .fight-hud .vital .label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
 .fight-hud .vital .number { font-size: 11px; font-variant-numeric: tabular-nums; }
 .fight-hud .vital.low { animation: fight-low 0.9s steps(1, end) infinite; }
@@ -95,6 +113,7 @@ function vitalsCss(): string {
 @keyframes fight-blink { 50% { background-color: rgba(255,255,255,0.27); } }
 @media (prefers-reduced-motion: reduce) {
   .fight-hud .vital.low { animation: none; border-color: ${BEVELS.blood}; }
+  .fight-hud .vital.stamina.flash { animation: none; }
 }
 `;
 }
@@ -104,8 +123,11 @@ function vitalsCss(): string {
 function cuesCss(): string {
   return `
 .fight-hud { position: absolute; inset: 0; pointer-events: none; overflow: hidden; font-weight: 600;
-  text-shadow: 0 1px 2px #000; }
+  text-shadow: 0 1px 2px #000; isolation: isolate; }
 .fight-hud [hidden] { display: none !important; }
+/* The plates over figures are stacked nearest in front among themselves only, so the veil, laid after, covers them as
+   it covers the rest of the display, and nothing of the display stands over the page's own windows. */
+.fight-hud .over { isolation: isolate; }
 .fight-hud .hurt { position: absolute; inset: 0; opacity: 0; box-shadow: inset 0 0 90px 24px #c41a12; }
 .fight-hud .mark { position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border: 2px solid #f4e3b0;
   border-radius: 50%; box-shadow: 0 0 6px #f4e3b0; }
@@ -139,7 +161,8 @@ function cuesCss(): string {
   border-bottom: 12px solid transparent; border-left: 22px solid #ff5a4a; transform-origin: 10px 12px;
   filter: drop-shadow(0 0 2px #000) drop-shadow(0 0 2px #000); }
 .fight-hud .veil { position: absolute; inset: 0; display: grid; place-items: center; background: #300a;
-  font-size: 22px; }
+  font-size: 22px; text-shadow: ${HALO}; }
+.fight-hud .veil.link { background: rgba(5,7,10,0.72); }
 /* A page whose own sheet styles .mark and .veil for its map (the Game's) must not reach the fight's. */
 .fight-hud .mark { border: 2px solid #f4e3b0 !important; }
 .fight-hud .veil { opacity: 1; transition: none; pointer-events: none; }

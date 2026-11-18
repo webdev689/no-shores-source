@@ -20,6 +20,14 @@ export interface LaidBar {
   readonly front: number;
 }
 
+/** The plates' sizes in CSS pixels, one for a foe's and a ship's alike: over a figure, its box (as tall as its emblem's
+ *  square) and its bar's height; across the top of the screen, the boss bar's box at most `width` and `share` of the
+ *  screen's width, its bar's height, and how far down it stands. */
+export const PLATES = {
+  overhead: { width: 140, height: 26, bar: 8 },
+  boss: { width: 640, share: 0.76, height: 48, bar: 16, top: 14 },
+} as const;
+
 /** The space kept between two bars, in CSS pixels. */
 const GAP = 2;
 /** How much further clear, across, a lifted bar must stand before it comes down, in CSS pixels. */

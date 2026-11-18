@@ -1,4 +1,4 @@
-import { BarLayout } from '../plus/barLayout.ts';
+import { BarLayout, PLATES } from '../plus/barLayout.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe } from './foePlate.ts';
@@ -42,9 +42,6 @@ export function bossBarOf(foe: MarkedFoe): { title: string; faction: string; sha
   return { title: foe.name, faction: foe.faction, share, phase: `Phase ${phase} of 3` };
 }
 
-/** An overhead plate's size in CSS pixels, as the display's sheet draws it, for the layout that keeps them apart. */
-export const OVERHEAD = { width: 140, height: 26 } as const;
-
 /** Over each living foe its plate, laid so none covers another, and across the top of the screen the boss bar of the
  *  Boss in the fight, who shows none over its head. */
 export class FoeBars {
@@ -72,6 +69,7 @@ export class FoeBars {
     spotOf: (view: FighterView) => { readonly x: number; readonly y: number; readonly depth: number } | null,
     seconds: number,
   ): void {
+    const { width, height } = PLATES.overhead;
     const shown: { foe: MarkedFoe; x: number; y: number; depth: number; since: number }[] = [];
     for (const foe of foes) {
       const was = this.alerts.get(foe.id);
@@ -83,7 +81,7 @@ export class FoeBars {
       shown.push({ foe, ...spot, since });
     }
     const laid = this.layout.lay(
-      shown.map(({ foe, x, y, depth }) => ({ key: foe.id, x, y, depth, ...OVERHEAD })),
+      shown.map(({ foe, x, y, depth }) => ({ key: foe.id, x, y, depth, width, height })),
       seconds,
     );
     for (const { foe, x, y, since } of shown) {

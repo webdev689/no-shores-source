@@ -42,8 +42,10 @@ const IRON_NEAR_M = 12;
 const RESPAWN_TICKS = 240;
 /** How long the stamina bar flashes for a swing or a dodge asked with none, and the screen's edge for a blow taken. */
 const FLASH_SECONDS = 0.45;
-/** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels. */
+/** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels; and how far clear of the
+ *  vitals' panel it stands where it would fall on it: half an arrow, the panel's frame and a little more. */
 const ARROW_INSET = 28;
+const ARROW_CLEAR = 22;
 /** A parry ring's span as a blow begins and as it lands (its fixed inner ring's), in CSS pixels; and how high over
  *  the foe's feet it stands, in metres, a foe's name and bar standing just above it. */
 const RING_WIDEST = 56;
@@ -65,6 +67,30 @@ export function project(matrix: Float32Array, point: readonly [number, number, n
   return { x: ((clipX / clipW + 1) / 2) * width, y: ((1 - clipY / clipW) / 2) * height };
 }
 
+/** A spot on the screen's edge moved up the edge to stand `gap` above `box` (CSS pixels from the display's corner)
+ *  where it would fall within `gap` of it; elsewhere as it is. */
+export function clearOf<Spot extends { readonly x: number; readonly y: number }>(
+  spot: Spot,
+  box: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number },
+  gap: number,
+): Spot {
+  const near = (value: number, from: number, to: number) => value >= from - gap && value <= to + gap;
+  return near(spot.x, box.left, box.right) && near(spot.y, box.top, box.bottom) ? { ...spot, y: box.top - gap } : spot;
+}
+
+/** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
+ *  death (the ticks they have lain); a link's veil is plain, death's is blood. Null while none of these holds. */
+export function veilOf(
+  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining'>,
+): { readonly words: string; readonly link: boolean } | null {
+  if (frame.rejoining) return { words: 'Reconnecting…', link: true };
+  if (frame.lost !== null) return { words: `The link to the room was lost: ${frame.lost}.`, link: true };
+  const dead = frame.own?.action.kind === 'dead' ? frame.own.action : null;
+  if (!dead) return null;
+  const seconds = Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60);
+  return { words: `You fell. Standing again in ${seconds} s`, link: false };
+}
+
 /** A word floating up and fading: over a place in the world, or (null) at the player's own spot in first person. */
 interface Word {
   readonly element: HTMLElement;
@@ -75,6 +101,7 @@ interface Word {
 
 /** The fight's display over the canvas, which lays its own sheet on the page and dresses `root` in it. */
 export class Hud {
+  private readonly root: HTMLElement;
   private readonly vitals: Vitals;
   private readonly target: FoePlate;
   private readonly mark: HTMLElement;
@@ -94,28 +121,30 @@ export class Hud {
   constructor(root: HTMLElement) {
     wearFightSheet(root.ownerDocument);
     root.classList.add('fight-hud');
+    this.root = root;
+    // Back to front: what stands over the world, then the plates fixed at the top over it, then the veil over all.
     this.hurt = element('div', 'hurt', root);
     this.vitals = new Vitals(root);
-    this.target = new FoePlate(root, 'target', { poise: true });
     this.mark = element('div', 'mark', root);
     this.over = element('div', 'over', root);
-    this.veil = element('div', 'veil', root);
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
+    this.target = new FoePlate(root, 'target', { poise: true });
     this.foeBars = new FoeBars(root, this.over);
+    this.veil = element('div', 'veil', root);
   }
 
   update(frame: HudFrame, seconds: number): void {
     const { own } = frame;
     this.flash(frame, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0);
-    const dead = own?.action.kind === 'dead' ? own.action : null;
-    this.veil.hidden = !dead && frame.lost === null && !frame.rejoining;
-    if (frame.rejoining) this.veil.textContent = 'Reconnecting…';
-    else if (frame.lost !== null) this.veil.textContent = `The link to the room was lost: ${frame.lost}.`;
-    else if (dead)
-      this.veil.textContent = `You fell. Standing again in ${Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60)} s`;
+    const veil = veilOf(frame);
+    this.veil.hidden = !veil;
+    if (veil) {
+      if (this.veil.textContent !== veil.words) this.veil.textContent = veil.words;
+      this.veil.classList.toggle('link', veil.link);
+    }
     const charge = frame.crosshair?.charge ?? null;
     this.crosshair.hidden = !frame.crosshair;
     this.crosshair.classList.toggle('charging', charge !== null);
@@ -185,14 +214,21 @@ export class Hud {
   }
 
   /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
-   *  ends. */
+   *  ends, standing clear of the vitals' panel. */
   private pointAtThreats(frame: HudFrame): void {
     const shown = new Set<number>();
+    let panel: { left: number; top: number; right: number; bottom: number } | null = null;
     for (const { id, view } of frame.foes) {
       if (!threatens(view, frame.player)) continue;
       const clip = clipOf(frame.matrix, [view.x, view.y, view.z + 1.1]);
-      const spot = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
-      if (!spot) continue;
+      const edge = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
+      if (!edge) continue;
+      if (!panel) {
+        const [box, origin] = [this.vitals.root.getBoundingClientRect(), this.root.getBoundingClientRect()];
+        const [left, top] = [box.left - origin.left, box.top - origin.top];
+        panel = { left, top, right: left + box.width, bottom: top + box.height };
+      }
+      const spot = clearOf(edge, panel, ARROW_CLEAR);
       shown.add(id);
       const arrow = this.arrows.get(id) ?? element('div', 'arrow', this.over);
       this.arrows.set(id, arrow);

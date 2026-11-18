@@ -31,7 +31,7 @@
         height: 100%;
         transition: filter 1.4s ease-out;
       }
-      /* In death the world drains to grey, as Destiny's does, and comes back in colour on respawn. */
+      /* In death the world drains to grey, and comes back in colour on respawn. */
       canvas.dead {
         filter: grayscale(0.92) brightness(0.72) contrast(1.05);
       }
@@ -132,12 +132,17 @@
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
       }
+      /* The offer to dock or go ashore stands over the sea bar, where the hints would run into it. */
+      #hud:has(> .sea-bar:not([hidden])):has(> .landfall:not([hidden])) .hints {
+        bottom: 148px;
+      }
       /* On foot the hints stand over the fight's vitals panel, 126 px tall from the screen's foot. */
       #hud:has(> .fight:not([hidden])) .hints {
         bottom: 140px;
       }
-      /* A boss's bar takes the top of the screen from the place's name while it shows. */
-      #hud:has(> .fight.bossed:not([hidden])) .place {
+      /* The fight's plates at the top (a boss's bar, the soft lock's) take it from the place's name while they show. */
+      #hud:has(> .fight.bossed:not([hidden])) .place,
+      #hud:has(> .fight:not([hidden]) > .target:not([hidden])) .place {
         visibility: hidden;
       }
       .status {
@@ -149,6 +154,20 @@
         border: 2px solid transparent;
         white-space: nowrap;
         text-shadow: 1px 1px 0 #000;
+      }
+      /* On foot the fight's plates hold the top's middle, so the line stands under the place's name. */
+      #hud:has(> .fight:not([hidden])) .status {
+        left: 28px;
+        top: 84px;
+        transform: none;
+      }
+      /* In a fight at sea the ships' plates hold the top, a Boss's across it: the line stands under it, and the
+         place's name gives way. */
+      #hud:has(> svg:not(:empty)) .status {
+        top: 76px;
+      }
+      #hud:has(> svg:not(:empty)) .place {
+        visibility: hidden;
       }
       .sea-bar {
         position: absolute;
@@ -463,6 +482,11 @@
       @keyframes breathe {
         50% {
           opacity: 0.45;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .veil-text {
+          animation: none;
         }
       }
     </style>

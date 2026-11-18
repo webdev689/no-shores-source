@@ -2,7 +2,7 @@
 // its right, her name above a long thin bar of her hull, coloured by her rank, over a dark trough with a hairline edge;
 // a Boss's the same, wide across the top of the screen. Drawn on an SVG laid over the picture, in the kit's palette.
 
-import { BarLayout } from '../plus/barLayout.ts';
+import { BarLayout, PLATES } from '../plus/barLayout.ts';
 import { EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
@@ -16,10 +16,8 @@ export const SHIP_FACTIONS = [
 export const RANKS = ['Minor', 'Major', 'Elite', 'Miniboss', 'Boss'] as const;
 export const PIRATES = 2;
 const BOSS = 5;
-/** A ship's plate over her and a Boss's across the top, in CSS pixels: as wide and tall as a foe's over its head, and
- *  a Boss's emblem square, its bar's height and how far down it stands. */
-const PLATE = { width: 140, height: 26, bar: 8 } as const;
-const BOSS_PLATE = { width: 560, height: 48, bar: 16, top: 14 } as const;
+/** A ship's plate over her and a Boss's across the top: a foe's over its head and the boss bar, size for size. */
+const { overhead: PLATE, boss: BOSS_PLATE } = PLATES;
 /** How far over her waterline a ship's bar stands, metres: over her masthead. */
 export const BAR_OVER_M = 16;
 
@@ -72,7 +70,7 @@ export function barOver(
 }
 
 /** A plate as laid on the screen: its box's left and top, its size and its bar's height (CSS pixels), what it shows,
- *  and the words at its bar's right end (a Boss's faction). */
+ *  and the words after its name (a Boss's faction), as the boss bar on foot writes them. */
 export interface PlacedBar {
   readonly left: number;
   readonly top: number;
@@ -105,7 +103,7 @@ export function placeShipBars(
     colour: rankColour(bar.rank),
     share: Math.max(0, Math.min(1, bar.share)),
   });
-  const bossWidth = Math.min(BOSS_PLATE.width, width - 32);
+  const bossWidth = Math.min(BOSS_PLATE.width, BOSS_PLATE.share * width);
   const bosses = bars.filter((bar) => bar.rank >= BOSS);
   const placedBosses = bosses.map((bar, index) => ({
     ...shown(bar),
@@ -180,8 +178,9 @@ export function drawShipBars(svg: SVGSVGElement, bars: readonly PlacedBar[]): vo
       const [width, height] = [picture.width * 2, picture.height * 2];
       pixels(picture.url, left + name.getComputedTextLength() + 5, baseline - height, width, height);
     }
-    const end = { 'x': right, 'y': baseline, 'font-size': 11, 'text-anchor': 'end', 'letter-spacing': '0.14em' };
-    if (bar.words) add('text', { ...words, ...end, fill: TONES.wordDim }, bar.words.toUpperCase());
+    const after = left + (name instanceof SVGTextElement ? name.getComputedTextLength() : 0) + 12;
+    const small = { 'x': after, 'y': baseline, 'font-size': 11, 'letter-spacing': '0.14em', 'fill': TONES.wordDim };
+    if (bar.words) add('text', { ...words, ...small }, bar.words.toUpperCase());
   }
 }
 
