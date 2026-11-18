@@ -46,6 +46,19 @@ export function ordersNumbers(orders: FightOrders): number[] {
   ];
 }
 
+/** Where a view's other captains sit (after its clock, its end, the player's Sloop, the captain's and her mind:
+ *  crates/naval/src/wire.rs OTHERS_AT). */
+const OTHERS_AT = 2 + 2 * (SHIP_NUMBERS + POSE_NUMBERS + 14) + 4;
+
+/** A fight's numbers as `fightViewOf` reads them, from a room's view and its other captains, which the room sends apart
+ *  so a page that knows one captain reads the view whole: their count and each one's numbers, or none. */
+export function withOthers(view: ArrayLike<number>, others: ArrayLike<number> | null): Float64Array {
+  const numbers = Array.from(view);
+  if (numbers.length <= OTHERS_AT) return new Float64Array(numbers);
+  const between = others && others.length > 0 ? Array.from(others) : [0];
+  return new Float64Array([...numbers.slice(0, OTHERS_AT), ...between, ...numbers.slice(OTHERS_AT)]);
+}
+
 /** Who a fight's captain is: her name, her faction and her rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 /** A captain the room has not named: a Major of the pirates. */

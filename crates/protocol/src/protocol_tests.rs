@@ -98,8 +98,9 @@ impl sailing::waters::Waters for Open {
     }
 }
 
-/// A fight as a snapshot carries it: its player, and its view with the player's look laid to starboard, the captain's
-/// port guns run out, the player's stem ramming her, and a pirate fighting too (the client's test reads it back).
+/// Two fights as a snapshot carries them: each its player, and its view with the player's look laid to starboard, the
+/// captain's port guns run out and the player's stem ramming her; player 2's with a pirate fighting too, player 5's the
+/// same fight without her (the client's test reads both back).
 fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
         x,
@@ -113,15 +114,18 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
     };
     let pirate_elite = Commission { faction: naval::ranks::PIRATES, rank: naval::ranks::Rank::Elite };
     let captains = [(at(0.0, -700.0, 3.0), TITHE_MINIBOSS, 7), (at(400.0, -700.0, 0.5), pirate_elite, 8)];
-    let mut fight = naval::fight::Fight::among(&captains, &Open, 0.0);
-    fight.put_to_sea(naval::fight::PLAYER, at(0.0, 0.0, 0.0), &Open, 0.0);
     let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let (player, captain) = (naval::fight::PLAYER, naval::fight::CAPTAIN);
     let events = [
         naval::fight::Event::RunOut { ship: captain, side: naval::arms::Side::Port },
         naval::fight::Event::Ram { ship: captain, by: player, point: [1.0, 2.0, 3.0], dealt: 4.5 },
     ];
-    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0), TITHE_MINIBOSS)]
+    let view = |captains: &[(sailing::ship::Ship, Commission, u32)]| {
+        let mut fight = naval::fight::Fight::among(captains, &Open, 0.0);
+        fight.put_to_sea(player, at(0.0, 0.0, 0.0), &Open, 0.0);
+        naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0)
+    };
+    vec![(2, view(&captains), TITHE_MINIBOSS), (5, view(&captains[..1]), TITHE_MINIBOSS)]
 }
 
 /// The captain of the fight the client's test reads: a Miniboss of the Grey Tithe.
@@ -314,7 +318,15 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
-    assert_eq!((fight.player(), fight.view().unwrap().iter().collect::<Vec<_>>()), (2, fights_seen()[0].1.clone()));
+    let numbers =
+        |numbers: Option<flatbuffers::Vector<'_, f64>>| -> Option<Vec<f64>> { Some(numbers?.iter().collect()) };
+    let alone = sea.fights().unwrap().get(1);
+    // A page that knows one captain reads the view whole, the same with others in the fight or without them.
+    assert_eq!((fight.player(), numbers(fight.view())), (2, numbers(alone.view())));
+    let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].1.clone(), numbers(fight.others()).unwrap());
+    assert_eq!((others[0], others.len()), (1.0, 1 + 2 + naval::wire::VESSEL_NUMBERS + 4), "one other captain");
+    assert!(seen.windows(others.len()).any(|part| part == others), "her numbers as the fight's view holds them");
+    assert_eq!((alone.player(), numbers(alone.others())), (5, None), "none, as a room from before others sends it");
     let walker = sea.players().unwrap().get(0);
     let body = body_of(&walker.fighter().unwrap().iter().collect::<Vec<_>>());
     assert_eq!((walker.player(), walker.acknowledged(), body), (3, 41, Some(aboard_seen()[0].2)));

@@ -19,6 +19,7 @@ code:
   - crates/room-wasm/src/fleet_door.rs#predict
   - crates/room/src/pirates.rs#Pirates
   - crates/naval/src/wire.rs#view_numbers
+  - crates/naval/src/wire.rs#parted
   - crates/bake/src/lib.rs#nodes_of
   - crates/bake/src/lib.rs#MARGIN_M
   - crates/protocol/messages.fbs
@@ -207,7 +208,9 @@ faction, rank, 26 numbers, mode, hostility and sides run out; the balls aloft, a
 and its side, elevation, reach, landing zone's radius, whether on target, and a count of sixteen each: the gun's
 launch (six), then where its ball stops (whether it does, its time, point, whether in the water, and whether and
 where it strikes her); and the events, a count and each one's kind and numbers (a ram, the tenth kind: the ship
-struck, by whom, the point and the hull it took).
+struck, by whom, the point and the hull it took). The message carries the other captains in a field of their own
+(`naval::wire::parted`), out of the view, so a page that knows one captain reads the view whole; a page that knows them
+puts them back in their place, and reads a fight from a room that sends none as a fight without them.
 
 The server reads an input or a course only after FlatBuffers' verifier passes its bytes, so bytes that are not one,
 controls that are not 7 numbers, or a course's numbers that are not pairs, are refused. The browser reads a message

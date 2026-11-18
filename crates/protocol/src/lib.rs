@@ -40,8 +40,8 @@ const NO_FIGHT: [f64; COMBAT_NUMBERS] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f64::NAN,
 
 /// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
 /// changed, what their hands hold, the tick their screen showed, a foe asked for (a type and a rank) or every foe sent
-/// away, and whether they ask to respawn; or why they do not read. The bytes come from a player's machine, so the verifier passes them first. An input with no
-/// fight's numbers asks for nothing in the fight.
+/// away, and whether they ask to respawn; or why they do not read. The bytes come from a player's machine, so the
+/// verifier passes them first. An input with no fight's numbers asks for nothing in the fight.
 pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let input = flatbuffers::root::<messages::Input>(bytes).map_err(|error| error.to_string())?;
     let controls: Vec<f64> = input.controls().map(|controls| controls.iter().collect()).unwrap_or_default();
@@ -363,8 +363,9 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
 }
 
 /// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction and rank, each
-/// player's fight as the naval crate's numbers (`naval::wire::view_numbers`) with its captain's commission, and each
-/// player off the helm with the number of their last step taken and their body on deck.
+/// player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a field
+/// of their own) with its captain's commission, and each player off the helm with the number of their last step taken
+/// and their body on deck.
 #[must_use]
 pub fn sea_snapshot_bytes(
     tick: u64,
@@ -405,9 +406,14 @@ pub fn sea_snapshot_bytes(
     let each: Vec<_> = fights
         .iter()
         .map(|(player, numbers, commission)| {
-            let view = Some(builder.create_vector(numbers));
-            let (faction, rank) = (commission.faction, commission.rank.number());
-            messages::SeaFight::create(&mut builder, &messages::SeaFightArgs { player: *player, view, faction, rank })
+            let (view, others) = naval::wire::parted(numbers);
+            let (view, faction, rank) =
+                (Some(builder.create_vector(&view)), commission.faction, commission.rank.number());
+            let others = (!others.is_empty()).then(|| builder.create_vector(&others));
+            messages::SeaFight::create(
+                &mut builder,
+                &messages::SeaFightArgs { player: *player, view, faction, rank, others },
+            )
         })
         .collect();
     let fights = Some(builder.create_vector(&each));

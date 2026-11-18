@@ -130,6 +130,10 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
     ['of 2', 2, 3, [400, -700, 0.5], 'cruise'],
     'a pirates’ Elite fights too',
   );
+  // The same fight without her, as a room from before other captains sends any fight: no others, the rest alike.
+  const alone = fightViewOf(fights[1]?.view ?? [], named);
+  assert.deepEqual([fights[1]?.player, alone.others], [5, []]);
+  assert.deepEqual({ ...alone, others: fight.others }, fight);
   assert.deepEqual([fight.lay?.side, fight.lay?.launches.length, fight.lay?.ends.length], ['starboard', 3, 3]);
   assert.ok((fight.lay?.radius ?? 0) > 0, 'the landing zone has a size');
   assert.ok(

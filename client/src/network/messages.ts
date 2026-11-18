@@ -4,6 +4,7 @@ import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dress
 import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
 import { type FleetPart, commissionOf, fleetOf, heldIn, point, whole, wholeIn } from './fleetMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
+import { withOthers } from './seaFight.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -59,8 +60,8 @@ export interface SeenPirate {
   readonly rank: number;
 }
 
-/** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), which
- *  `fightViewOf` reads, and her captain's faction and rank. */
+/** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), its other
+ *  captains put back in the view (`withOthers`), which `fightViewOf` reads, and her captain's faction and rank. */
 export interface SeenSeaFight {
   readonly player: number;
   readonly view: Float64Array;
@@ -319,7 +320,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const fight = snapshot.fights(index);
       if (!fight) throw new Error(`snapshot fight ${index} does not read`);
       const { faction, rank } = commissionOf(fight.faction(), fight.rank());
-      return { player: fight.player(), view: new Float64Array(fight.viewArray() ?? []), faction, rank };
+      return { player: fight.player(), view: withOthers(fight.viewArray() ?? [], fight.othersArray()), faction, rank };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
     return {
