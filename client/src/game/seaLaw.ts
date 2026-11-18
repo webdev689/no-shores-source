@@ -63,7 +63,7 @@ export function shownScale(overworldScale: number, picture: PictureAtHer): numbe
   return Math.max(1, (1 - picture.share) * held + picture.share * near);
 }
 
-/** Where the eye stands at the helm of a ship as she lies, at her size as drawn. */
+/** Where the eye stands at the helm of a ship as she lies, at the size she lies at. */
 export function helmEye(lying: Lying): readonly [number, number, number] {
   const [helmX, helmY] = SLOOP_DECK.helm;
   return deckToWorld(lying, helmX, helmY, HELM.eyeM);
