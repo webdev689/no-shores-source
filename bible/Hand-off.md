@@ -134,14 +134,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The helm's keys in the Overworld's view, her crew and the player seen from any view, and the wheel all the way in
     to her at full detail with the World Editor's motion
     ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]; [[Game]], "At sea").
-  - Three independent audits of the whole pull request, every finding checked and the real ones fixed with tests.
+  - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
+    ones fixed with tests.
   - Waiting on the owner: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
-    overboard should meet (the deck keeps them aboard for now), and whether DFO's Travel Options encounter (a journey
-    stopped near an enemy) or wary pirates falling on a ship they outgun should come over. It changes the sea room's
-    wire, so its merge sends the page and the rooms out together.
+    overboard should meet (the deck keeps them aboard for now), whether DFO's Travel Options encounter (a journey
+    stopped near an enemy) or wary pirates falling on a ship they outgun should come over, and whether the kit's
+    four roles nothing wears yet (panel, warn, tile, well) stay. It changes the sea room's wire, so its merge sends
+    the page and the rooms out together.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; the `ships` workflow's Cloudflare token given to its publishing step alone, not the whole
-  job; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to R2 as a bake.
+  job; whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to R2 as a bake; and the
+  kit's `cloud-setup-script.sh` as the `overlook-source` environment's setup script, which only the owner can add.
+  Until then the repository's SessionStart hook says when the kit is missing (`.claude/settings.json`).
 - A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
   larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
   wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare
