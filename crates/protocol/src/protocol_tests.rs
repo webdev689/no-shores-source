@@ -41,14 +41,14 @@ pub fn players() -> Vec<Seen> {
 }
 
 /// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
-/// staggered with 40 of its 130 health gone.
+/// staggered with 40 of its 130 health gone, alert to the player its lock is on.
 pub fn foes() -> Vec<FoeSeen> {
     let warhammer = Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
     let mut brute = fighter(Side::Faction(2), standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
-    vec![FoeSeen { foe: 12, kind: 3, foe_type: 15, rank: 3, faction: 2, phase: 1, fighter: brute }]
+    vec![FoeSeen { foe: 12, kind: 3, foe_type: 15, rank: 3, faction: 2, phase: 1, alert: 2, fighter: brute }]
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -244,7 +244,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
         foe.glance().unwrap().iter().collect::<Vec<_>>().try_into().unwrap();
     assert_eq!((foe.id(), foe.kind(), glance), (12, 3, foes[0].fighter.glance()));
     let named = (foe.type_(), foe.rank(), foe.faction(), foe.phase(), foe.alert());
-    assert_eq!(named, (15, 3, 2, 1, 0), "its type, rank, faction and phase cross; alert waits for perception");
+    assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

@@ -60,8 +60,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [foe?.id, foe?.kind, brute.health, brute.healthMax, brute.target, brute.side],
     [12, 3, 90, 130, 9, 'foes'],
   );
-  // A pirate brute of the Elite rank in its first phase; how alert it is waits for its senses.
-  assert.deepEqual([foe?.type, foe?.rank, foe?.faction, foe?.phase, foe?.alert], [15, 3, 2, 1, 0]);
+  // A pirate brute of the Elite rank in its first phase, alert.
+  assert.deepEqual([foe?.type, foe?.rank, foe?.faction, foe?.phase, foe?.alert], [15, 3, 2, 1, 2]);
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   assert.deepEqual(
     snapshot.events.map((event) => [

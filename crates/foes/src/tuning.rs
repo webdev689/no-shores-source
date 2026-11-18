@@ -18,6 +18,34 @@ pub const STALE: f64 = 1.5;
 /// all round.
 pub const SIGHT_ARC: f64 = 90.0 * DEGREES;
 
+/// Awareness, from nothing to full: seeing a fighter raises it by up to SIGHT_GAIN a second, dead ahead at its feet,
+/// falling away to nothing at the edge of its range and of its arc; with nothing stirring it bleeds ALERT_BLEED a
+/// second. Full, a foe is alert; above ALERT_OFF and short of full it is suspicious, and walks this far toward what
+/// stirred it. A foe newly alert wakes the allies within ALERT_PROP.
+pub const SIGHT_GAIN: f64 = 5.0;
+pub const ALERT_BLEED: f64 = 0.16;
+pub const ALERT_ON: f64 = 1.0;
+pub const ALERT_OFF: f64 = 0.02;
+pub const SUSPICIOUS_WALK: f64 = 3.0;
+pub const ALERT_PROP: f64 = 12.0;
+/// Searching, a foe walks to within SEARCH_REACH of the place it last knew, looks about there SEARCH_T, sweeping its
+/// gaze SEARCH_SWEEP a second one way then back, then lets go.
+pub const SEARCH_REACH: f64 = 1.4;
+pub const SEARCH_T: f64 = 2.6;
+pub const SEARCH_SWEEP: f64 = 2.2;
+/// Noises: the awareness each adds where it is made, falling away to nothing at its reach. A gun alerts outright
+/// within half its reach; a bow or a crossbow only stirs; a swing, or a blow landing, alerts only at a fighter's elbow;
+/// a runner's feet stir once each RUN_EVERY.
+pub const GUN_LOUDNESS: f64 = 2.0;
+pub const GUN_REACH: f64 = 40.0;
+pub const BOW_LOUDNESS: f64 = 0.7;
+pub const BOW_REACH: f64 = 10.0;
+pub const BLOW_LOUDNESS: f64 = 1.0;
+pub const BLOW_REACH: f64 = 15.0;
+pub const RUN_LOUDNESS: f64 = 0.42;
+pub const RUN_REACH: f64 = 8.0;
+pub const RUN_EVERY: f64 = 0.5;
+
 /// The ring the waiting stand on: this far outside their reach, with this much give either side. A waiting foe circles
 /// at this share of its walk toward its place on the ring, which drifts this far round a second.
 pub const RING_GAP: f64 = 1.5;

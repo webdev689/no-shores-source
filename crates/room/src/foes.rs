@@ -1,10 +1,12 @@
 //! The room's foes: each thinks with its brain over the room as it stands and steps by the same rules a player does.
 //! Foes of different factions fight each other as they fight players: blows on a foe are judged at once, blows on
 //! players wait for their view; its telegraphed blows land on whoever's feet stand in their shape; its brain is told
-//! what it saw. Players ask for foes from the Test Ground's panel, and a Boss calls its crew.
+//! what it saw, the noises fighters of other sides made, and its allies' shouts. Players ask for foes from the Test
+//! Ground's panel, and a Boss calls its crew.
 
 use crate::judging::{Check, Group, How, Pending};
 use crate::{EventKind, PlayerId, Room, SpawnAsk};
+use ::foes::noises::{Noise, landed, running, shot, swing};
 use ::foes::roster::CREW;
 use ::foes::{Brain, FoeType, Rank, Seen, World, foe_type, notice, spawn, think};
 use combat::fighter::{FighterId, Side};
@@ -34,8 +36,8 @@ pub(crate) struct Foe {
     pub brain: Brain,
 }
 
-/// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's and its phase,
-/// and its fighter.
+/// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
+/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), and its fighter.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeSeen {
     pub foe: FighterId,
@@ -44,6 +46,7 @@ pub struct FoeSeen {
     pub rank: u8,
     pub faction: u8,
     pub phase: u8,
+    pub alert: u8,
     pub fighter: Fighter,
 }
 
@@ -78,6 +81,10 @@ impl foes::Spots for MeshSpots<'_> {
         let near = self.mesh.spots_near(point, radius);
         near.map(|spot| foes::Spot { point: spot.point, cover: spot.cover, lanes: spot.lanes }).collect()
     }
+}
+
+fn feet(fighter: &Fighter) -> [f64; 3] {
+    [fighter.body.x, fighter.body.y, fighter.body.z]
 }
 
 /// How far a telegraphed blow's shape reaches from its foe's feet.
@@ -133,9 +140,12 @@ impl Room {
         self.tell(EventKind::Spawned, None, asker, id, 0.0);
     }
 
-    /// A Boss's crew called to its side: two Minor Deckhands, one either side of it, while the room has room for them.
+    /// A Boss's crew called to its side: two Minor Deckhands, one either side of it, while the room has room for them,
+    /// each alert to where the Boss's foe stands.
     fn call_crew(&mut self, boss: FighterId) {
         let (Some(at), Some(crew)) = (self.fighter(boss).copied(), foe_type(CREW)) else { return };
+        let foe = self.foes.get(&boss).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));
+        let called = foe.map(|foe| Seen::Shouted { from: feet(&at), at: feet(foe) });
         for side in [-1.0, 1.0] {
             if self.foes.len() >= FOES_MOST {
                 return;
@@ -144,8 +154,11 @@ impl Room {
             let (sin, cos) = (libm::sin(bearing), libm::cos(bearing));
             let beside = [at.body.x + sin * CREW_BESIDE, at.body.y - cos * CREW_BESIDE, at.body.z];
             let spot = self.nav.nearest_point(beside).unwrap_or(beside);
-            let (fighter, brain) = spawn(crew, Rank::Minor, spot[0], spot[1], at.aim);
+            let (fighter, mut brain) = spawn(crew, Rank::Minor, spot[0], spot[1], at.aim);
             let id = self.next_id();
+            if let Some(called) = called {
+                brain = notice(&brain, id, &called, self.clock);
+            }
             self.foes.insert(id, Foe { fighter, brain });
             self.tell(EventKind::Spawned, None, boss, id, 0.0);
         }
@@ -181,7 +194,7 @@ impl Room {
                 intents.push((*id, think(*id, &foe.brain, &mut self.board, &world)));
             }
         }
-        let mut crews = Vec::new();
+        let (mut crews, mut shouts) = (Vec::new(), Vec::new());
         for (id, (mut brain, intent)) in intents {
             let target = brain.target();
             let target_at = target
@@ -195,6 +208,9 @@ impl Room {
             }
             if calls.crew {
                 crews.push(id);
+            }
+            if let Some(at) = calls.shout {
+                shouts.push((id, feet(&fighter), at));
             }
             let (next, happening) = step_fighter(
                 &fighter,
@@ -211,8 +227,23 @@ impl Room {
                 other => self.happened(id, &next, other, &fighters),
             }
         }
+        for (shouter, from, at) in shouts {
+            self.shout(shouter, from, at);
+        }
         for boss in crews {
             self.call_crew(boss);
+        }
+    }
+
+    /// A foe's shout as it turns alert, told to every ally: each that stands near enough and is not yet alert turns
+    /// alert toward the place.
+    fn shout(&mut self, shouter: FighterId, from: [f64; 3], at: [f64; 3]) {
+        let Some(side) = self.fighter(shouter).map(|fighter| fighter.side) else { return };
+        let (shouted, tick) = (Seen::Shouted { from, at }, self.clock);
+        for (id, foe) in &mut self.foes {
+            if *id != shouter && foe.fighter.side == side {
+                foe.brain = notice(&foe.brain, *id, &shouted, tick);
+            }
         }
     }
 
@@ -288,9 +319,10 @@ impl Room {
     }
 
     /// Tells each foe's brain what it saw this tick: swings begun and shots loosed by fighters of another side, blows
-    /// that reached it and its own that landed, and how its telegraphed blows ended.
+    /// that reached it and its own that landed, how its telegraphed blows ended, and every noise made.
     pub(crate) fn tell_brains(&mut self) {
         let (swings, loosed) = (std::mem::take(&mut self.swings), std::mem::take(&mut self.loosed));
+        let noises = self.noises(&swings, &loosed);
         let side = |id: &FighterId| self.fighter(*id).map(|fighter| fighter.side);
         let swings: Vec<(FighterId, combat::fighter::Attack, Option<Side>)> =
             swings.into_iter().map(|(by, attack)| (by, attack, side(&by))).collect();
@@ -315,6 +347,9 @@ impl Room {
                     brain = notice(&brain, *id, &Seen::Landed { on: *defender, verdict: *verdict }, tick);
                 }
             }
+            for noise in &noises {
+                brain = notice(&brain, *id, &Seen::Heard(*noise), tick);
+            }
             for (foe_id, missed, perfectly_dodged) in &ended {
                 if foe_id == id {
                     brain = notice(
@@ -329,6 +364,21 @@ impl Room {
         }
     }
 
+    /// The noises made this tick: swings begun, shots loosed, blows landed, and runners' feet, but for a player's
+    /// still in their grace.
+    fn noises(&self, swings: &[(FighterId, combat::fighter::Attack)], loosed: &[FighterId]) -> Vec<Noise> {
+        let swung = swings.iter().filter_map(|(id, _)| self.fighter(*id).map(swing));
+        let shots = loosed.iter().filter_map(|id| self.fighter(*id).and_then(|by| Some(shot(by, by.arms.ranged?))));
+        let blows = self
+            .verdicts
+            .iter()
+            .filter_map(|(striker, defender, _)| Some(landed(self.fighter(*striker)?, self.fighter(*defender)?)));
+        let graced = |id: &FighterId| self.players.get(id).is_some_and(|found| found.graced > self.clock);
+        let fighters = self.fighters().into_iter().filter(|(id, _)| !graced(id));
+        let runners = fighters.filter_map(|(_, by)| running(&by, self.clock));
+        swung.chain(shots).chain(blows).chain(runners).collect()
+    }
+
     /// Every foe as the room last stepped it, in the order of their numbers.
     pub fn foes_seen(&self) -> impl Iterator<Item = FoeSeen> + '_ {
         self.foes.iter().map(|(&foe, found)| {
@@ -340,6 +390,7 @@ impl Room {
                 rank: brain.rank as u8,
                 faction: brain.foe_type.faction,
                 phase: brain.phase(),
+                alert: brain.alertness() as u8,
                 fighter: found.fighter,
             }
         })

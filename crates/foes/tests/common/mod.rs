@@ -1,6 +1,6 @@
 //! What every foe test builds on: a small room, its players scripted tick by tick, its foes thinking, every fighter
 //! stepped by the combat rules, and blows, telegraphed blows and shots judged as a room judges them, with each foe told
-//! what it saw.
+//! what it saw, the noises fighters of other sides made, and its allies' shouts.
 #![allow(dead_code, reason = "each test file uses its own share of these")]
 
 use combat::fighter::Action;
@@ -10,6 +10,7 @@ use combat::shots::{Flight, Shot, fly};
 use combat::sight::bearing;
 use combat::strike::struck;
 use combat::{Fighter, FighterId, Happening, Intent, Surroundings, Verdict, step_fighter};
+use foes::noises::{Noise, landed, running, swing};
 use foes::{Board, Brain, Director, Rank, Routes, Seen, Straight, World, foe_type, notice, spawn, think};
 use movement::{Block, Controls, standing};
 
@@ -40,6 +41,8 @@ pub struct Room {
     pub verdicts: Vec<(u64, FighterId, FighterId, Verdict)>,
     /// Every call for a crew a foe made: tick and foe.
     pub crew_calls: Vec<(u64, FighterId)>,
+    /// Every shout a foe made as it turned alert: tick and foe.
+    pub shouts: Vec<(u64, FighterId)>,
     pub shots: Vec<Shot>,
     /// Players' health kept full, so a long fight goes on.
     pub immortal: bool,
@@ -60,6 +63,7 @@ impl Room {
             happenings: Vec::new(),
             verdicts: Vec::new(),
             crew_calls: Vec::new(),
+            shouts: Vec::new(),
             shots: Vec::new(),
             immortal: true,
         }
@@ -98,6 +102,13 @@ impl Room {
 
     pub fn brain(&self, id: FighterId) -> &Brain {
         self.brains.iter().find(|(other, _)| *other == id).map(|(_, brain)| brain).expect("a foe of the room")
+    }
+
+    /// Wakes a foe as an ally's shout beside it would, toward where `whom` stands: alert from its first thought.
+    pub fn alert(mut self, id: FighterId, whom: FighterId) -> Self {
+        let (from, at) = (feet(&self.fighter(id)), feet(&self.fighter(whom)));
+        self.tell(id, Seen::Shouted { from, at });
+        self
     }
 
     pub fn distance(&self, first: FighterId, second: FighterId) -> f64 {
@@ -160,6 +171,15 @@ impl Room {
             if calls.crew {
                 self.crew_calls.push((tick, id));
             }
+            if let Some(at) = calls.shout {
+                self.shouts.push((tick, id));
+                let (from, side) = (feet(&self.fighter(id)), self.fighter(id).side);
+                for ally in self.brain_ids(|other| other.side == side) {
+                    if ally != id {
+                        self.tell(ally, Seen::Shouted { from, at });
+                    }
+                }
+            }
             self.brains[index].1 = next;
             intents.push((id, intent));
             self.intents.push((tick, id, intent));
@@ -196,6 +216,10 @@ impl Room {
         for (id, happening) in happened {
             self.answer(id, happening);
         }
+        let runners: Vec<Noise> = self.fighters.iter().filter_map(|(_, fighter)| running(fighter, tick)).collect();
+        for noise in runners {
+            self.hear(noise);
+        }
         self.fly();
         if self.immortal {
             for (_, fighter) in &mut self.fighters {
@@ -207,7 +231,8 @@ impl Room {
         self.tick += 1;
     }
 
-    fn tell(&mut self, id: FighterId, seen: Seen) {
+    /// Tells a foe what the room saw, as a room's foe is told.
+    pub fn tell(&mut self, id: FighterId, seen: Seen) {
         let tick = self.tick;
         if let Some((_, brain)) = self.brains.iter_mut().find(|(other, _)| *other == id) {
             *brain = notice(brain, id, &seen, tick);
@@ -221,6 +246,18 @@ impl Room {
         }
     }
 
+    /// The foes whose fighters pass a test, in order.
+    fn brain_ids(&self, test: impl Fn(&Fighter) -> bool) -> Vec<FighterId> {
+        self.brains.iter().map(|(id, _)| *id).filter(|id| test(&self.fighter(*id))).collect()
+    }
+
+    /// A noise, told to every foe.
+    pub fn hear(&mut self, noise: Noise) {
+        for id in self.brain_ids(|_| true) {
+            self.tell(id, Seen::Heard(noise));
+        }
+    }
+
     fn judged(&mut self, striker: FighterId, defender: FighterId, blow: &combat::Blow) -> Verdict {
         let verdict = judge(blow, &self.fighter(defender));
         let hurt = suffer(&self.fighter(defender), blow, &verdict);
@@ -229,13 +266,17 @@ impl Room {
         self.set(striker, |fighter| *fighter = answer);
         self.verdicts.push((self.tick, striker, defender, verdict));
         self.tell(defender, Seen::Struck { by: striker, verdict });
+        self.hear(landed(&self.fighter(striker), &self.fighter(defender)));
         verdict
     }
 
     fn answer(&mut self, by: FighterId, happening: Happening) {
         self.happenings.push((self.tick, by, happening));
         match happening {
-            Happening::Swung(attack) => self.tell_all(by, Seen::Swung { by, attack }),
+            Happening::Swung(attack) => {
+                self.tell_all(by, Seen::Swung { by, attack });
+                self.hear(swing(&self.fighter(by)));
+            }
             Happening::Struck(attack) => {
                 let striker = self.fighter(by);
                 for defender in struck(by, &striker, &attack, &self.fighters, &self.blocks) {
@@ -266,6 +307,7 @@ impl Room {
             Happening::Loosed(shot) => {
                 self.shots.push(Shot { owner: by, ..shot });
                 self.tell_all(by, Seen::Loosed { by });
+                self.hear(foes::noises::shot(&self.fighter(by), shot.ranged));
             }
             Happening::Feinted(_) | Happening::Dodged | Happening::Guarded { .. } => {}
         }
@@ -291,6 +333,11 @@ impl Room {
             }
         }
     }
+}
+
+/// Where a fighter's feet are.
+pub fn feet(fighter: &Fighter) -> [f64; 3] {
+    [fighter.body.x, fighter.body.y, fighter.body.z]
 }
 
 /// Standing still, looking along `yaw`.

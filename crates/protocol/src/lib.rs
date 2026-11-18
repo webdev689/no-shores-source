@@ -314,7 +314,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 rank: foe.rank,
                 faction: foe.faction,
                 phase: foe.phase,
-                alert: 0,
+                alert: foe.alert,
             };
             messages::Foe::create(&mut builder, &args)
         })

@@ -22,10 +22,11 @@ fn one_swing(room: &Room, _me: u32) -> combat::Intent {
     intent
 }
 
-/// The room after one swing at a foe of the type numbered `number`, a Major, 1.5 m north of the player: the verdict on the swing, the tick the foe
-/// first pressed its guard or its dodge, and whether it then riposted.
+/// The room after one swing at a foe of the type numbered `number`, a Major already alert, 1.5 m north of the player:
+/// the verdict on the swing, the tick the foe first pressed its guard or its dodge, and whether it then riposted.
 fn answered(number: u8, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
-    let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, Major, 0.0, -1.5, PI);
+    let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, Major, 0.0, -1.5, PI);
+    let mut room = room.alert(10, PLAYER);
     room.run(120, &mut one_swing);
     let verdict =
         room.verdicts.iter().find(|(_, by, on, _)| *by == PLAYER && *on == 10).map(|(_, _, _, verdict)| *verdict);

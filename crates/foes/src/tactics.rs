@@ -5,6 +5,7 @@
 //! anyone. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers blows at it first, then takes
 //! the openings it is given.
 
+use crate::awareness::look;
 use crate::board::Board;
 use crate::brain::{Brain, Plan};
 use crate::dice::Purpose;
@@ -63,7 +64,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     }
     let Some(sight) = sight else {
         brain.plan = Plan::Wait;
-        return Ask::default();
+        return look(brain, here);
     };
     if let Some(ask) = flee(brain, here, board, &sight) {
         return ask;
