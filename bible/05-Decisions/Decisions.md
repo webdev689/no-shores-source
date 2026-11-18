@@ -70,6 +70,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Enemies as Claude Builds Them]]
 - [[The Bars and the Fight Wear the Plus Kit]]
 - [[Foes Leash to Their Posts and Fall With Their Boss]]
+- [[Plates Stay Light and Bars Do What Enhanced Plus Does]]
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
 - [[The Rooms Deploy When Their Code Changes]]
