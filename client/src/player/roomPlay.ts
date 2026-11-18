@@ -26,11 +26,13 @@ export interface RoomContext {
 export class RoomPlay {
   /** Where the player stands with the room's section, as its last snapshot said. */
   standing: Standing = { kind: 'inside' };
-  private readonly prediction = new Prediction<Controls>();
+  private prediction = new Prediction<Controls>();
   private readonly others: OtherPlayers;
   private readonly context: RoomContext;
   private connection: RoomConnection | null = null;
+  /** The player's number, and the connection's welcomes followed: one more means they joined the room again. */
   private own = 0;
+  private joined = 1;
   private sentDress = '';
   private respawnAsked = false;
   /** The room tick of the last snapshot taken. */
@@ -56,6 +58,22 @@ export class RoomPlay {
     return this.connection?.open ?? false;
   }
 
+  /** Whether the connection is joining the room again after its socket closed. */
+  get rejoining(): boolean {
+    return this.connection?.rejoining ?? false;
+  }
+
+  /** Follows the connection into the room it joined again: a new player there, their dress sent again, standing
+   *  where the room's next word puts them. */
+  private follow(): void {
+    const connection = this.connection;
+    if (!connection || connection.joins === this.joined) return;
+    [this.joined, this.own, this.prediction] = [connection.joins, connection.player, new Prediction()];
+    [this.sentDress, this.lastTick, this.standing] = ['', 0n, { kind: 'inside' }];
+    this.others.clear();
+    this.others.takeDresses(connection.dressed);
+  }
+
   /** The player's number in the room. */
   get player(): number {
     return this.own;
@@ -72,6 +90,7 @@ export class RoomPlay {
     return {
       ...movement,
       step: (body, controls) => {
+        this.follow();
         const dress = walker.lookDress === this.sentDress ? undefined : walker.lookDress;
         this.sentDress = walker.lookDress;
         // Once the room is lost nothing is numbered for it, so nothing waits on its word for ever.
@@ -105,6 +124,7 @@ export class RoomPlay {
   }
 
   private seen(snapshot: Snapshot): void {
+    this.follow();
     const { movement, walker, forge } = this.context;
     this.lastTick = snapshot.tick;
     this.others.takeDresses(snapshot.dressed);

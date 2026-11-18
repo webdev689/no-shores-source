@@ -4,7 +4,10 @@
 #![allow(unsafe_code, reason = "the code flatc makes reads a message's bytes in place, once the verifier passes them")]
 
 use combat::floats::INTENT_FLOATS;
+use combat::shots::Line;
 use combat::{Intent, Shot};
+use foes::factions::PIRATES;
+use foes::{Rank, Role};
 use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
 use naval::fight::Orders;
@@ -58,11 +61,18 @@ pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let dress = input.dress().map(str::to_owned);
     let spawn = match (input.spawn(), input.spawn_type()) {
         (CLEAR_FOES, _) => Some(SpawnAsk::Clear),
-        (_, 0) => None,
+        (role, 0) => role_spawn(role),
         (_, foe_type) => Some(SpawnAsk::Foe { foe_type, rank: input.spawn_rank() }),
     };
     let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
     Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn })
+}
+
+/// A foe asked for by its role alone (1 skirmisher to 5 captain, no type), as a page from before the roster asks: the
+/// pirates' type in that role, a Major, or at its first rank if it comes in none (their Captain an Elite).
+fn role_spawn(role: u8) -> Option<SpawnAsk> {
+    let foe_type = foes::in_role(PIRATES, Role::from_number(role)?)?;
+    Some(SpawnAsk::Foe { foe_type: foe_type.number, rank: foe_type.rank_or_first(Some(Rank::Major)) as u8 })
 }
 
 /// An input as its bytes: what a browser sends, written from Rust for tests.
@@ -279,6 +289,8 @@ pub struct Snapshot<'snapshot> {
     pub foes: &'snapshot [FoeSeen],
     pub events: &'snapshot [Event],
     pub shots: &'snapshot [Shot],
+    /// The balls that stopped since the last snapshot, each sent among the shots as its last segment and its muzzle.
+    pub lines: &'snapshot [Line],
 }
 
 /// Every player as the room saw them after its tick, the dresses that changed since the last snapshot, every foe,
@@ -338,14 +350,17 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         })
         .collect();
     let events = Some(builder.create_vector(&events));
-    let shots: Vec<_> = snapshot
-        .shots
-        .iter()
-        .map(|shot| {
+    let flying = snapshot.shots.iter().map(|shot| (shot, None));
+    let stopped = snapshot.lines.iter().map(|line| (&line.last, Some(line.muzzle)));
+    let shots: Vec<_> = flying
+        .chain(stopped)
+        .map(|(shot, muzzle)| {
             let at = Some(builder.create_vector(&shot.at));
             let velocity = Some(builder.create_vector(&shot.velocity));
+            let muzzle = muzzle.map(|muzzle| builder.create_vector(&muzzle));
             let age = u16::try_from(shot.age).unwrap_or(u16::MAX);
-            let args = messages::FlyingArgs { owner: shot.owner, ranged: shot.ranged as u8, at, velocity, age };
+            let (owner, ranged) = (shot.owner, shot.ranged as u8);
+            let args = messages::FlyingArgs { owner, ranged, at, velocity, age, muzzle };
             messages::Flying::create(&mut builder, &args)
         })
         .collect();

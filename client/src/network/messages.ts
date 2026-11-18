@@ -2,7 +2,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
-import { type FleetPart, fleetOf, point, whole } from './fleetMessages.ts';
+import { type FleetPart, commissionOf, fleetOf, heldIn, point, whole, wholeIn } from './fleetMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
@@ -108,14 +108,16 @@ export interface FightEvent {
   readonly stroke: number;
 }
 
-/** A shot in flight, or a gun's ball in the tick it was fired: its whole line from `at` to `at` plus a tick of its
- *  velocity. `age` is the ticks it has flown. */
+/** A shot in flight, or a gun's ball in the tick it stopped: `age` is the ticks it has flown. A stopped ball's last
+ *  segment runs from `at` to `at` plus a tick of its velocity, where it stopped, and carries the point it left its gun
+ *  (`muzzle`); a shot still flying carries none. */
 export interface FlyingShot {
   readonly owner: number;
   readonly ranged: number;
   readonly at: readonly [number, number, number];
   readonly velocity: readonly [number, number, number];
   readonly age: number;
+  readonly muzzle: readonly [number, number, number] | null;
 }
 
 /** What a room says: its welcome, with the joining player's number, every dress so far, and its node in a node's
@@ -154,7 +156,11 @@ export interface InputParts {
   readonly respawn?: boolean;
 }
 
-/** One tick's input as its bytes, as the schema defines them. */
+/** The most a ulong field holds. */
+const ULONG_MOST = 2n ** 64n - 1n;
+
+/** One tick's input as its bytes, as the schema defines them: its number, its arms and a foe's type refused outside
+ *  what their fields hold (a RangeError), and its frame, the tick seen and a foe's rank held within theirs. */
 export function inputBytes(sequence: number, parts: InputParts): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(320);
   const numbers = Array.from(parts.intent);
@@ -163,21 +169,21 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
   const anim = builder.createString(parts.look.anim);
   const dressed = parts.dress === undefined ? 0 : builder.createString(parts.dress);
   Input.startInput(builder);
-  Input.addSequence(builder, sequence);
+  Input.addSequence(builder, wholeIn(sequence, 0, 0xffff_ffff, "the input's number"));
   Input.addControls(builder, controls);
   Input.addAnim(builder, anim);
-  Input.addFrame(builder, parts.look.frame);
+  Input.addFrame(builder, Math.floor(heldIn(parts.look.frame, 0, 0xffff, "the look's frame")));
   Input.addFacing(builder, parts.look.facing);
   if (dressed) Input.addDress(builder, dressed);
   Input.addCombat(builder, combat);
-  Input.addArms(builder, parts.arms);
-  Input.addSeen(builder, parts.seen);
+  Input.addArms(builder, wholeIn(parts.arms, 0, 0xffff_ffff, 'the arms'));
+  Input.addSeen(builder, parts.seen < 0n ? 0n : parts.seen > ULONG_MOST ? ULONG_MOST : parts.seen);
   const spawn = parts.spawn;
   Input.addSpawn(builder, spawn === 'clear' ? CLEAR_FOES : 0);
   Input.addRespawn(builder, parts.respawn ?? false);
   if (spawn !== undefined && spawn !== 'clear') {
-    Input.addSpawnType(builder, spawn.type);
-    Input.addSpawnRank(builder, spawn.rank);
+    Input.addSpawnType(builder, wholeIn(spawn.type, 0, 0xff, "the foe's type"));
+    Input.addSpawnRank(builder, Math.round(heldIn(spawn.rank, 1, 5, "the foe's rank")));
   }
   builder.finish(Input.endInput(builder));
   return builder.asUint8Array().slice();
@@ -188,7 +194,7 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
 export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, pace, 0, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -206,7 +212,8 @@ export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
 export function walkBytes(sequence: number, controls: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createWalkVector(builder, [...controls]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, sequence, 0, 0));
+  const numbered = wholeIn(sequence, 0, 0xffff_ffff, "the step's number");
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -294,6 +301,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         at: point(shot?.atArray() ?? null),
         velocity: point(shot?.velocityArray() ?? null),
         age: shot?.age() ?? 0,
+        muzzle: shot?.muzzleArray()?.length === 3 ? point(shot.muzzleArray()) : null,
       };
     });
     const ships = Array.from({ length: snapshot.shipsLength() }, (unused, index) => {
@@ -304,13 +312,13 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const pirates = Array.from({ length: snapshot.piratesLength() }, (unused, index) => {
       const pirate = snapshot.pirates(index);
       if (!pirate) throw new Error(`snapshot pirate ${index} does not read`);
-      const [faction, rank] = [pirate.faction(), pirate.rank()];
+      const { faction, rank } = commissionOf(pirate.faction(), pirate.rank());
       return { id: pirate.id(), x: pirate.x(), y: pirate.y(), heading: pirate.heading(), faction, rank };
     });
     const fights = Array.from({ length: snapshot.fightsLength() }, (unused, index) => {
       const fight = snapshot.fights(index);
       if (!fight) throw new Error(`snapshot fight ${index} does not read`);
-      const [faction, rank] = [fight.faction(), fight.rank()];
+      const { faction, rank } = commissionOf(fight.faction(), fight.rank());
       return { player: fight.player(), view: new Float64Array(fight.viewArray() ?? []), faction, rank };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));

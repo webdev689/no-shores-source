@@ -45,6 +45,8 @@ class Fleet {
     const link: RoomLink = {
       player,
       dressed: [],
+      joins: 1,
+      rejoining: false,
       lost: null,
       send: (bytes) => assert.equal(door.input(player, bytes), 'taken'),
       pump: () => undefined,
@@ -146,7 +148,15 @@ test("the room's clock holds still for a late snapshot rather than run back", ()
   const door = startRoomDoor(compiled);
   door.openFleet();
   const player = door.join();
-  const link: RoomLink = { player, dressed: [], lost: null, send: () => undefined, pump: () => undefined };
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: () => undefined,
+    pump: () => undefined,
+  };
   const play = new FleetSession(link, startFleetRules(compiled), [200_000, 300_000, 0]);
   const snapshots = [0, 1].map(() => {
     door.tick();
@@ -161,4 +171,42 @@ test("the room's clock holds still for a late snapshot rather than run back", ()
   play.receive(late, 0.2);
   assert.equal(play.roomTime(0.2), before, 'held');
   assert.ok(play.roomTime(0.45) > before, 'and on again');
+});
+
+test('a session whose link joins a new fleet puts her to sea again where she lay, her orders numbered anew', () => {
+  const [before, after] = [startRoomDoor(compiled), startRoomDoor(compiled)];
+  for (const door of [before, after]) assert.equal(door.openFleet(), true);
+  let door = before;
+  const answers = new Set<string>();
+  const link = {
+    player: door.join(),
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: (bytes: Uint8Array<ArrayBuffer>) => void answers.add(door.input(link.player, bytes)),
+    pump: () => undefined,
+  };
+  const play = new FleetSession(link, startFleetRules(compiled), [200_000, 300_000, 0.25]);
+  let clock = 0;
+  const tick = (input: SessionInput) => {
+    clock += TICK;
+    play.advance(TICK, input, clock);
+    door.tick();
+    const snapshot = readFromRoom(door.snapshot());
+    if (snapshot?.kind === 'snapshot') play.receive(snapshot, clock);
+  };
+  tick(sailing(0, 1));
+  tick(sailing(0, 1));
+  for (let count = 0; count < 300; count++) tick(sailing(1));
+  const [x = 0, y = 0] = play.shipFloats();
+  assert.ok(Math.hypot(x - 200_000, y - 300_000) > 5, `under sail she has moved: ${x}, ${y}`);
+  // A deploy: the fleet starts afresh, and her link joins it as its second player.
+  door = after;
+  after.join();
+  Object.assign(link, { player: door.join(), joins: 2 });
+  for (let count = 0; count < 30; count++) tick(NOTHING);
+  assert.deepEqual([...answers], ['taken'], 'every order numbered anew, from 1');
+  const [atX = 0, atY = 0] = play.own()?.ship ?? [];
+  assert.ok(Math.hypot(atX - x, atY - y) < 5, `the new fleet has her where she lay: ${atX}, ${atY}`);
 });

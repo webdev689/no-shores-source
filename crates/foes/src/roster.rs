@@ -117,6 +117,12 @@ pub fn foe_type(number: u8) -> Option<&'static FoeType> {
     ROSTER.iter().find(|foe_type| foe_type.number == number)
 }
 
+/// A faction's first type in a role, or none.
+#[must_use]
+pub fn in_role(faction: u8, role: Role) -> Option<&'static FoeType> {
+    ROSTER.iter().find(|foe_type| foe_type.faction == faction && foe_type.role == role)
+}
+
 impl FoeType {
     /// The rank asked for if the type comes in it, else its first.
     #[must_use]

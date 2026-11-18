@@ -44,7 +44,7 @@ pub const CRATES: &[CrateRule] = &[
     },
     CrateRule {
         name: "protocol",
-        workspace: &["combat", "movement", "naval", "room", "sailing"],
+        workspace: &["combat", "foes", "movement", "naval", "room", "sailing"],
         outside: &["flatbuffers"],
         door: true,
     },

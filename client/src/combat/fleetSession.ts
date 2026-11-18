@@ -44,7 +44,9 @@ export interface SessionInput {
 export class FleetSession {
   private readonly link: RoomLink;
   private readonly rules: FleetRules;
-  private readonly prediction = new Prediction<FleetOrders>();
+  private prediction = new Prediction<FleetOrders>();
+  /** The link's welcomes followed: one more means she joined the fleet again. */
+  private joined: number;
   private start: readonly [number, number, number] | null;
   private ship: ShipFloats;
   private pose: Pose = { heave: 0, pitch: 0, roll: 0, aground: false };
@@ -67,7 +69,23 @@ export class FleetSession {
     this.link = link;
     this.rules = rules;
     this.start = start;
+    this.joined = link.joins;
     this.ship = new Float64Array([start[0], start[1], start[2], 0, 0, 0, 0, 0]);
+  }
+
+  /** Follows the link into the fleet it joined again: a new player there, her ship put to sea where she lies, with
+   *  nothing of the old room kept. */
+  private follow(): void {
+    if (this.link.joins === this.joined) return;
+    const [x = 0, y = 0, heading = 0] = this.ship;
+    [this.joined, this.prediction, this.start] = [this.link.joins, new Prediction(), this.start ?? [x, y, heading]];
+    [this.latest, this.loadAsked, this.shownTime] = [null, null, 0];
+    this.captains.clear();
+  }
+
+  /** Whether the link is joining the fleet again after its socket closed. */
+  get rejoining(): boolean {
+    return this.link.rejoining;
   }
 
   /** Her number in the room: her ship's. */
@@ -127,6 +145,7 @@ export class FleetSession {
   /** A snapshot from the room: her ship set to its word with her orders it has not taken stepped on top, and what
    *  happened kept for the effects and the panel. */
   receive(snapshot: Snapshot, now: number): void {
+    this.follow();
     this.latest = snapshot;
     this.receivedAt = now;
     for (const vessel of snapshot.vessels) if (vessel.captain) this.captains.add(vessel.id);
@@ -151,6 +170,7 @@ export class FleetSession {
   /** Owes the room `seconds` more and sends a tick's orders for each whole tick owed: her rudder as held, her look
    *  while aiming, and the presses (a rung, a release, a load, a call) on the first tick that takes them. */
   advance(seconds: number, input: SessionInput, now: number): void {
+    this.follow();
     this.climbs.push(...input.climbs);
     if (input.fire) this.fires++;
     if (input.look) this.lastLook = input.look;

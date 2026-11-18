@@ -124,15 +124,17 @@ table Event {
   stroke: ubyte;
 }
 
-// A shot in flight, or a gun's ball in the tick it was fired: who shot it, what shot it (combat's number), where it is
-// (x, y, z), how fast it goes, and the ticks it has flown. A ball's whole line runs from `at` to `at` plus one tick of
-// its velocity.
+// A shot in flight, or a gun's ball in the tick it stopped: who shot it, what shot it (combat's number), where it is
+// (x, y, z), how fast it goes, and the ticks it has flown. A stopped ball's last segment runs from `at` to `at` plus
+// one tick of its velocity, to where it stopped, and carries `muzzle`, the point it left its gun; a ball still flying
+// carries none.
 table Flying {
   owner: uint;
   ranged: ubyte;
   at: [double];
   velocity: [double];
   age: ushort;
+  muzzle: [double];
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it

@@ -148,6 +148,7 @@ export class Foot {
   /** A line on the room the player plays in: their number in it, word that it was lost, or nothing offline. */
   get roomNote(): string {
     if (!this.room) return '';
+    if (this.room.rejoining) return 'Reconnecting…';
     return this.room.connected ? `In the room as player ${this.room.player}` : 'The room was lost: playing on alone';
   }
 

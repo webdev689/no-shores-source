@@ -11,9 +11,9 @@ type Colour = readonly [number, number, number, number];
 
 /** A tick of the rules, and how fast an arrow or a bolt falls (crates/combat/src/shots.rs FALL), m/s². */
 const TICK = 1 / 60;
-/** A foe's flying ball is held short of the last point the room gave it until no snapshot has carried it on for this
- *  long, so a late or paused snapshot never reads as the ball striking in mid-air. */
-const CARRY_GRACE = 8 * TICK;
+/** A foe's ball still flying that no snapshot has carried on for this long was let go of unstopped (its shooter sent
+ *  away, or the room lost): it is dropped, throwing no sparks. */
+const UNCARRIED_DROP = 1;
 const FALL = 6;
 /** The guns' numbers, as the combat crate numbers its ranged weapons: a Pistolet and a Thunderlock fire balls. */
 const BALLS = new Set([3, 4]);
@@ -39,7 +39,8 @@ export interface Impact {
 
 /** A ball's line, from its muzzle to the farthest it is known to reach, seconds after it was fired, and how fast its
  *  head follows it (m/s). One from the room keeps whose it is and the ticks it had flown when the room last carried it
- *  on: a foe's ball travels, and each tick's snapshot carries it a tick farther. */
+ *  on: a foe's ball travels, and each tick's snapshot carries it a tick farther until the one that says it stopped.
+ *  Until then its head is held short of the farthest point, so a late or paused snapshot never reads as a strike. */
 interface Line {
   readonly from: Point;
   to: Point;
@@ -47,6 +48,7 @@ interface Line {
   readonly speed: number;
   readonly owner: number | null;
   ticks: number;
+  stopped: boolean;
   /** Seconds since a snapshot last carried it on. */
   quiet: number;
 }
@@ -129,7 +131,16 @@ export class Tracers {
       const muzzle = muzzleOf(shot);
       const to = add(shot.at, shot.velocity, TICK);
       if (BALLS.has(shot.ranged))
-        this.lines.push({ from: muzzle, to, age: 0, speed: BALL.speed, owner: null, ticks: 0, quiet: 0 });
+        this.lines.push({
+          from: muzzle,
+          to,
+          age: 0,
+          speed: BALL.speed,
+          owner: null,
+          ticks: 0,
+          stopped: true,
+          quiet: 0,
+        });
       else
         this.flights.push({ muzzle, launch: shot.at, at: shot.at, velocity: shot.velocity, flown: 0, stopped: null });
     }
@@ -137,24 +148,31 @@ export class Tracers {
 
   /** Everyone else's balls, from the shots of snapshots each handed over once (Fighting's takeShots). A ball that
    *  reaches its mark at once comes whole in the one snapshot after it was fired; one that travels comes a tick's
-   *  length in each, carrying its owner's line on, and its first, from its muzzle back along its flight, fires it. */
+   *  length in each, carrying its owner's line on, and its first fires it. Its last says it stopped, with the point it
+   *  left its gun: its line ends there at once. One first seen flying is reckoned back along its flight to its muzzle. */
   seen(shots: readonly FlyingShot[], player: number): void {
     for (const shot of shots) {
       if (shot.owner === player || !BALLS.has(shot.ranged)) continue;
       const to = add(shot.at, shot.velocity, TICK);
-      const carried = shot.age > 0 && this.lines.find((line) => line.owner === shot.owner && line.ticks <= shot.age);
+      const stopped = shot.muzzle !== null;
+      const carried =
+        shot.age > 0 && this.lines.find((line) => line.owner === shot.owner && !line.stopped && line.ticks <= shot.age);
       if (carried) {
-        Object.assign(carried, { to, ticks: shot.age, quiet: 0 });
+        Object.assign(carried, { to, ticks: shot.age, stopped, quiet: 0 });
         continue;
       }
+      const from = shot.muzzle ?? add(shot.at, shot.velocity, -shot.age * TICK);
+      // A stopped ball's last segment is short of a tick's flight: its speed is how far it flew before it.
+      const speed = shot.muzzle && shot.age > 0 ? Math.hypot(...minus(shot.at, from)) / (shot.age * TICK) : null;
       this.lines.push({
-        from: add(shot.at, shot.velocity, -shot.age * TICK),
+        from,
         to,
         // Its head a tick behind where the room has it, so a snapshot come late does not stall it.
         age: Math.max(0, shot.age - 1) * TICK,
-        speed: Math.min(BALL.speed, Math.hypot(...shot.velocity)),
+        speed: Math.min(BALL.speed, speed ?? Math.hypot(...shot.velocity)),
         owner: shot.owner,
         ticks: shot.age,
+        stopped,
         quiet: 0,
       });
     }
@@ -172,7 +190,7 @@ export class Tracers {
     for (const line of this.lines) {
       const arrives = this.arrival(line);
       line.quiet += seconds;
-      if (line.ticks > 0 && line.quiet < CARRY_GRACE) {
+      if (!line.stopped) {
         line.age = Math.max(line.age, Math.min(line.age + seconds, arrives - TICK));
         continue;
       }
@@ -180,7 +198,9 @@ export class Tracers {
         impacts.push({ at: line.to, back: back(line.from, line.to) });
       line.age += seconds;
     }
-    this.lines = this.lines.filter((line) => line.age < this.arrival(line) + BALL.fade);
+    this.lines = this.lines.filter((line) =>
+      line.stopped ? line.age < this.arrival(line) + BALL.fade : line.quiet < UNCARRIED_DROP,
+    );
     for (const flight of this.flights) {
       if (flight.stopped !== null) {
         flight.stopped += seconds;

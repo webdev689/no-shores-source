@@ -9,7 +9,7 @@ import { ForgeStore } from '../forge/store.ts';
 import type { Action } from '../rules/fighters.ts';
 import { FIGHT_TICKS, fightOf, foeDoing } from './fightMoves.ts';
 import { foeDress } from './foeDress.ts';
-import { rosterOf } from '../rules/roster.ts';
+import { rosterOf, shownType } from '../rules/roster.ts';
 import { Glides } from './glide.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
@@ -187,7 +187,14 @@ async function start(): Promise<void> {
   const roomUrl = given === null ? null : roomAddress(given);
   if (given !== null && !roomUrl)
     throw new Error(`"${given}" is not a room: a room's name is letters, digits and hyphens`);
+  // A link that joined the room again brings every dress there with its welcome.
+  let joins = 1;
   const received = (snapshot: Snapshot) => {
+    if (link.joins !== joins) {
+      joins = link.joins;
+      otherPlayers.takeDresses(link.dressed);
+      status = `Click the view to play. In the room as player ${link.player}.`;
+    }
     otherPlayers.takeDresses(snapshot.dressed);
     fight?.receive(snapshot);
     otherPlayers.seen(snapshot.players, fight?.player ?? null, forge);
@@ -438,12 +445,12 @@ async function start(): Promise<void> {
     const foesMarked = [...fight.foes.values()].map((kept) => {
       const figure = foeFigures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
-      const type = roster.find((each) => each.type === kept.type);
+      const type = shownType(roster, kept);
       return {
         ...kept,
         name: type?.name ?? 'Foe',
         faction: type?.factionName ?? '',
-        factionNumber: kept.faction,
+        factionNumber: kept.faction || (type?.faction ?? 0),
         view,
       };
     });
@@ -461,6 +468,7 @@ async function start(): Promise<void> {
         firstPerson: inFirstPerson,
         pressed: (armed && !shooter && controls.pressed('swing')) || (controls.locked && controls.pressed('dodge')),
         lost: link.lost,
+        rejoining: link.rejoining,
         parryOpen: fight.parryOpen,
         crosshair:
           aiming || aimHeld || (ranged && inFirstPerson)
@@ -486,7 +494,7 @@ async function start(): Promise<void> {
   const drawFoes = (eye: { x: number; y: number }, frameTicks: number): CardAt[] => {
     const cards: CardAt[] = [];
     for (const kept of fight.foes.values()) {
-      const dress = dresses.get(kept.type);
+      const dress = dresses.get(shownType(roster, kept)?.type ?? kept.type);
       if (!dress) continue;
       let placed = foeFigures.get(kept.id);
       if (!placed) {
