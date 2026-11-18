@@ -249,3 +249,23 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem() {
     let gear_now = messages::root_as_from_room(&answered).unwrap().gear().unwrap();
     assert_eq!(gear_now.answer(), gear::Refusal::Short as u8 + 1, "no Aurem yet");
 }
+
+#[test]
+fn a_browser_predicts_a_fighter_on_a_nodes_ground_as_its_room_steps_it() {
+    let window = serde_json::to_vec(&node_file()["ground"]).unwrap();
+    let floor = Floor::Land(Box::new(serde_json::from_slice::<Ground>(&window).unwrap()));
+    let fighter = combat::fighter::player(room::standing_on(&floor, &[], 30.0, 30.0), combat::arms::BARE_HANDS);
+    let controls = Controls { forward: 1.0, ..Controls::default() };
+    let intent = combat::Intent { controls, ..combat::Intent::default() };
+    let mut numbers: Vec<f64> = fighter.to_floats().to_vec();
+    numbers.extend(intent.to_floats());
+    numbers.extend([1.0, f64::from(combat::arms::BARE_HANDS.code())]);
+    let stepped = || Fighter::from_floats(floats_of(&predict(&bytes_of(&numbers))).as_slice().try_into().unwrap());
+    let (expected, _) = combat::player_tick(1, &fighter, &intent, &[], &[], &floor);
+    assert!(!set_ground(b"not a window"), "anything else is open ground");
+    assert_ne!(stepped(), expected, "on open ground, a body on the land is not stepped as the node's room steps it");
+    assert!(set_ground(&window));
+    assert_eq!(stepped(), expected, "on the node's window, the same step as its room's");
+    let land = movement::Terrain::height_at(&floor, expected.body.x, expected.body.y);
+    assert!(land > 1.0 && (expected.body.z - land).abs() < 1e-6, "walking on the land, well above 0 m");
+}

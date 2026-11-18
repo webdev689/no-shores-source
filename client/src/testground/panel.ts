@@ -3,7 +3,7 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
-import { CLEAR_FOES, FOE_KINDS } from './foeKinds.ts';
+import { CLEAR_FOES, FOE_KINDS } from '../player/foeKinds.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
  *  speed, whether the player is playing, and a status line. */

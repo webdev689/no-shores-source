@@ -17,7 +17,7 @@ export interface HudFrame {
   readonly own: FighterView | null;
   readonly foes: readonly MarkedFoe[];
   readonly where: (id: number) => readonly [number, number, number] | null;
-  readonly matrix: Float32Array;
+  readonly matrix: ArrayLike<number>;
   readonly width: number;
   readonly height: number;
   readonly events: readonly FightEvent[];
@@ -54,7 +54,7 @@ const RING_CLOSED = 14;
 const RING_HEIGHT = 2.5;
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
-function clipOf(matrix: Float32Array, point: readonly [number, number, number]): [number, number, number] {
+function clipOf(matrix: ArrayLike<number>, point: readonly [number, number, number]): [number, number, number] {
   const [x, y, z] = point;
   const component = (row: number) =>
     (matrix[row] ?? 0) * x + (matrix[4 + row] ?? 0) * y + (matrix[8 + row] ?? 0) * z + (matrix[12 + row] ?? 0);
@@ -62,7 +62,12 @@ function clipOf(matrix: Float32Array, point: readonly [number, number, number]):
 }
 
 /** Where a point falls on the canvas in CSS pixels, or null behind the camera. */
-export function project(matrix: Float32Array, point: readonly [number, number, number], width: number, height: number) {
+export function project(
+  matrix: ArrayLike<number>,
+  point: readonly [number, number, number],
+  width: number,
+  height: number,
+) {
   const [clipX, clipY, clipW] = clipOf(matrix, point);
   if (clipW <= 1e-6) return null;
   return { x: ((clipX / clipW + 1) / 2) * width, y: ((1 - clipY / clipW) / 2) * height };
@@ -131,9 +136,9 @@ export class Hud {
     this.targetName = element('div', 'name', this.target);
     this.targetHealth = new Bar(this.target, 'health');
     this.targetPoise = new Bar(this.target, 'poise');
-    this.mark = element('div', 'mark', root);
+    this.mark = element('div', 'lock', root);
     this.over = element('div', 'over', root);
-    this.veil = element('div', 'veil', root);
+    this.veil = element('div', 'fallen', root);
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);

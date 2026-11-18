@@ -1,7 +1,7 @@
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import { type JoinedNode, type Standing, inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
-import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
+import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import { type Controls, type MovementRules, floatsOfControls } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
 import { OtherPlayers, type Others } from './others.ts';
@@ -10,6 +10,15 @@ import type { Walker } from './walker.ts';
 /** The fight's numbers after the controls in an input (stroke, guard, dodge, shoot, pitch, aim, and an aimed shot's
  *  mark, none here): a walker asks for none. */
 const NO_FIGHT = [0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN];
+
+/** A fight over the room's link (the combat layer's Fighting), which sends each tick's input in the walker's place:
+ *  it takes every snapshot, steps the player's body as its fighter, and carries the gear's asks and a respawn. */
+export interface RoomFight {
+  receive(snapshot: Snapshot): void;
+  steps(movement: MovementRules): MovementRules;
+  askGear(ask: GearAsk): void;
+  askRespawn(): void;
+}
 
 /** What playing in a room needs: the movement rules, the player, the forge's cards, and the page's figures. */
 export interface RoomContext {
@@ -39,6 +48,8 @@ export class RoomPlay {
   private readonly gearAsks: GearAsk[] = [];
   /** The room tick of the last snapshot taken. */
   private lastTick = 0n;
+  /** The fight that sends the player's inputs, once one is given. */
+  private fight: RoomFight | null = null;
 
   private constructor(context: RoomContext) {
     this.context = context;
@@ -71,17 +82,30 @@ export class RoomPlay {
     return this.own;
   }
 
+  /** The link to the room, for a fight over it; null before the room's welcome. */
+  get link(): RoomLink | null {
+    return this.connection;
+  }
+
   /** A node's room's word on its node: its id and the rect its window of the ground was cut to. */
   get node(): JoinedNode | null {
     return this.connection?.node ?? null;
   }
 
-  /** The rules the player steps by in this room: the movement rules, each tick's controls sent on. */
-  rules(): MovementRules {
+  /** The rules the player steps by in this room: the movement rules, each tick's controls sent on; or, with a fight,
+   *  the fight's, which sends each tick's input and predicts the body as its fighter. Once the room is lost, the
+   *  player walks on alone. */
+  rules(fight: RoomFight | null = null): MovementRules {
     const { movement, walker } = this.context;
+    this.fight = fight;
+    const fought = fight?.steps(movement) ?? null;
     return {
       ...movement,
       step: (body, controls) => {
+        if (fought && this.connection?.open) {
+          const next = fought.step(body, controls);
+          return this.standing.kind === 'dead' ? body : next;
+        }
         const dress = walker.lookDress === this.sentDress ? undefined : walker.lookDress;
         this.sentDress = walker.lookDress;
         // Once the room is lost nothing is numbered for it, so nothing waits on its word for ever.
@@ -113,12 +137,14 @@ export class RoomPlay {
 
   /** Asks something of the player's gear, one ask an input, in the order asked. */
   askGear(ask: GearAsk): void {
-    this.gearAsks.push(ask);
+    if (this.fight) this.fight.askGear(ask);
+    else this.gearAsks.push(ask);
   }
 
   /** Asks the room, with the next tick's controls, to stand the player up at the nearest spawn. */
   askRespawn(): void {
-    this.respawnAsked = true;
+    if (this.fight) this.fight.askRespawn();
+    else this.respawnAsked = true;
   }
 
   /** Leaves the room, and takes away every other player's figure. */
@@ -131,9 +157,11 @@ export class RoomPlay {
     const { movement, walker, forge } = this.context;
     this.lastTick = snapshot.tick;
     this.others.takeDresses(snapshot.dressed);
+    this.fight?.receive(snapshot);
     const mine = snapshot.players.find((seen) => seen.player === this.own);
-    if (mine) {
-      this.standing = mine.standing;
+    if (mine) this.standing = mine.standing;
+    // A fight's prediction steps the body as its fighter; the walker's own is corrected here.
+    if (mine && !this.fight) {
       const still = mine.standing.kind === 'dead';
       const corrected = this.prediction.corrected(
         mine.body,

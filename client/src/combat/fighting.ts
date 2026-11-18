@@ -111,6 +111,7 @@ export class Fighting {
   private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
   private readonly spawnsQueued: { readonly kind: number; readonly level: number }[] = [];
   private readonly gearQueued: GearAsk[] = [];
+  private respawnAsked = false;
   private sentDress = '';
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
    *  Daggerfall Unity's click chooses among all six, and again once used. */
@@ -170,6 +171,12 @@ export class Fighting {
   /** Asks something of the player's gear: one ask an input, in the order asked. */
   askGear(ask: GearAsk): void {
     this.gearQueued.push(ask);
+  }
+
+  /** Asks the room, with the next tick's input, to stand the player up at the nearest spawn, dead past a node's
+   *  section. */
+  askRespawn(): void {
+    this.respawnAsked = true;
   }
 
   /** Whether an ask of a foe or of the gear waits for an input to carry it. */
@@ -249,8 +256,10 @@ export class Fighting {
       seen: this.seen,
       spawn: spawned?.kind ?? 0,
       spawnLevel: spawned?.level ?? 0,
+      respawn: this.respawnAsked,
       ...(gear === undefined ? {} : { ask: gear }),
     };
+    this.respawnAsked = false;
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;

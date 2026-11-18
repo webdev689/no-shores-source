@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CROSSHAIR_REACH, crosshairPoint } from './crosshair.ts';
+import { CROSSHAIR_REACH, crosshairPoint, groundShare, shotStop } from './crosshair.ts';
 
 /** A view from 1.5 m up at the origin, looking north (`pitch` down positive). */
 const looking = (pitch: number) => ({
@@ -25,4 +25,15 @@ test('looking down it meets the ground, and with nothing ahead it lies at its re
   assert.ok(Math.abs(y + 15) < 1e-6 && Math.abs(z) < 1e-9);
   const [, far] = crosshairPoint(looking(-0.1), 1, [], []);
   assert.ok(Math.abs(far + CROSSHAIR_REACH * Math.cos(0.1)) < 1e-6);
+});
+
+test('on rising ground the crosshair meets the slope, and a shot stops on the ground or a body in its way', () => {
+  // Ground rising a metre in every ten northward: met where the view's level line, 1.5 m up, comes to it.
+  const slope = (unused: number, south: number) => -south / 10;
+  const [, y, z] = crosshairPoint(looking(0), 1, [], [], slope);
+  assert.ok(Math.abs(y + 15) < 1e-6 && Math.abs(z - 1.5) < 1e-6, `${y}, ${z}`);
+  assert.ok(Math.abs(groundShare([0, 0, 1], [0, -20, 0], slope, 20) - 0.5) < 1e-9, 'met at 10 m');
+  assert.equal(groundShare([0, 0, 3], [0, -20, 0], slope), 1, 'over the slope all the way');
+  assert.ok(Math.abs(shotStop([0, 0, 1], [0, -4, 0], [], [[0, -2, 0]]) - (2 - 0.35) / 4) < 1e-9, 'a body');
+  assert.equal(shotStop([0, 0, 1], [0, 0, -2], [], []), 0.5, 'the open ground at 0 m');
 });

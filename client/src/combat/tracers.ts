@@ -1,12 +1,11 @@
-import { type Orbit, rayAt } from '../editor/orbit.ts';
 import type { FlyingShot } from '../network/messages.ts';
-import { rayHit } from '../player/playerCamera.ts';
 import type { Fired } from '../rules/combatRules.ts';
-import type { Block } from '../rules/movementRules.ts';
-import { bodyHit } from './crosshair.ts';
-import { markArrow } from '../combat/marks.ts';
+import { markArrow } from './marks.ts';
 
 type Point = readonly [number, number, number];
+/** How far along a shot's step (`from` plus shares of `along`) it first meets something that stops it: a block, the
+ *  ground or a body; 1 where it meets none. The page knows its ground and what stands on it. */
+export type ShotStops = (from: Point, along: Point) => number;
 type Colour = readonly [number, number, number, number];
 
 /** A tick of the rules, and how fast an arrow or a bolt falls (crates/combat/src/shots.rs FALL), m/s². */
@@ -131,10 +130,10 @@ export class Tracers {
     }
   }
 
-  /** Runs every tracer on by `seconds`: the player's own arrows fly a tick at a time until a block, the ground or one
-   *  of `bodies` (feet) stops them. Answers where a ball's head or an arrow came to rest this time, and the way back
-   *  over the ground it came from, for the sparks it throws there. */
-  update(seconds: number, blocks: readonly Block[], bodies: readonly Point[]): Impact[] {
+  /** Runs every tracer on by `seconds`: the player's own arrows fly a tick at a time until `stops` says something
+   *  stops them. Answers where a ball's head or an arrow came to rest this time, and the way back over the ground it
+   *  came from, for the sparks it throws there. */
+  update(seconds: number, stops: ShotStops): Impact[] {
     const impacts: Impact[] = [];
     const back = (from: Point, to: Point): readonly [number, number] => {
       const length = Math.hypot(from[0] - to[0], from[1] - to[1]) || 1;
@@ -156,10 +155,7 @@ export class Tracers {
         const step = Math.min(TICK, left);
         const velocity: Point = [flight.velocity[0], flight.velocity[1], flight.velocity[2] - FALL * step];
         const along: Point = [velocity[0] * step, velocity[1] * step, velocity[2] * step];
-        const to = add(flight.at, along);
-        let share = rayHit(flight.at, to, blocks);
-        if (to[2] < 0 && flight.at[2] >= 0) share = Math.min(share, flight.at[2] / (flight.at[2] - to[2]));
-        for (const feet of bodies) share = Math.min(share, bodyHit(flight.at, along, feet) ?? 1);
+        const share = stops(flight.at, along);
         flight.at = add(flight.at, along, share);
         flight.velocity = velocity;
         flight.flown += step * share;
@@ -251,17 +247,8 @@ export class Tracers {
   }
 }
 
-/** Where a shot leaves a weapon on the screen: the first person's muzzle carried out along its ray this far, in metres;
- *  and the sparks a shot throws where it comes to rest. */
-export const MUZZLE_OUT = 0.55;
+/** The sparks a shot throws where it comes to rest. */
 export const IMPACT_SPARKS = 6;
-
-/** The first person's muzzle in the world: its point on the design screen (320 by 200 pixels over the whole canvas)
- *  carried out from the eye along the view's ray through it. */
-export function screenMuzzle(orbit: Orbit, aspect: number, design: readonly [number, number]): Point {
-  const { origin, direction } = rayAt(orbit, aspect, design[0] / 160 - 1, 1 - design[1] / 100);
-  return add(origin, direction, MUZZLE_OUT);
-}
 
 /** The arrows and bolts in flight the scene draws from the room's word: everyone's but the player's own, whose own
  *  ticks fly theirs; a ball's line is a tracer's, not an arrow. */

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import * as flatbuffers from 'flatbuffers';
+import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { LocalRoom } from '../network/localRoom.ts';
@@ -293,4 +295,35 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
   fighting.receive(snapshot(13n, 0.15));
   const kept = fighting.foes.get(7);
   assert.deepEqual([kept?.before?.x, kept?.view.x, kept?.ticks, fighting.roomTick], [0, 0.15, 3, 13]);
+});
+
+test('a respawn asked goes with the next input only', () => {
+  const door = startRoomDoor(compiled);
+  door.open(course.start, course.blocks);
+  const player = door.join();
+  const asked: boolean[] = [];
+  let fight: Fighting | null = null;
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    lost: null,
+    send: (bytes) => {
+      asked.push(Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).respawn());
+      door.input(player, bytes);
+    },
+    pump: () => {
+      door.tick();
+      const message = readFromRoom(door.snapshot());
+      if (message?.kind === 'snapshot') fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump(TICK);
+  const steps = fighting.steps(movement);
+  fighting.askRespawn();
+  for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
+  assert.deepEqual(asked, [true, false, false]);
 });

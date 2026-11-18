@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
-import { fightOf, foeDoing } from './fightMoves.ts';
+import { fightButtons, fightHands, fightOf, foeDoing, guardPose } from './fightMoves.ts';
 import { FOE_KINDS } from './foeKinds.ts';
-import { shownMove } from '../player/playerMoves.ts';
+import type { Action as Control, InputFrame } from './input.ts';
+import { shownMove } from './playerMoves.ts';
 
 const standing: FighterView = {
   x: 0,
@@ -80,4 +81,55 @@ test('a foe that moved over a snapshot of several ticks walks at its own pace, n
   // Walking at 3 m/s: 0.15 m over the three ticks between two snapshots.
   const walked = foeDoing({ ...standing, x: 0.15 }, standing, dress, 3 / 60);
   assert.deepEqual([walked.moving, walked.running, Math.round(walked.speed * 100) / 100], [true, false, 3]);
+});
+
+/** A frame with these controls held, and those pressed this frame, the pointer held or not. */
+const controls = (held: Control[], pressed: Control[] = [], locked = true): InputFrame => ({
+  held: (action) => held.includes(action) || pressed.includes(action),
+  pressed: (action) => pressed.includes(action),
+  released: () => false,
+  lookX: 0,
+  lookY: 0,
+  wheel: 0,
+  locked,
+});
+const onFoot = { body: { mode: 'ground' }, mounted: false };
+
+test('a sword drawn swings on the right button, guards on the left and dodges; put away, it only guards and dodges', () => {
+  const pressing = controls(['guard'], ['swing', 'dodge']);
+  const drawn = fightHands(pressing, onFoot, true, 'sword_iron');
+  const buttons = fightButtons(pressing, drawn, 0.2, null);
+  assert.deepEqual(
+    [buttons.swing, buttons.swingPressed, buttons.guard, buttons.shoot, buttons.dodge, buttons.pitch, buttons.aim],
+    [true, true, true, false, true, -0.2, false],
+  );
+  const away = fightButtons(pressing, fightHands(pressing, onFoot, false, 'sword_iron'), 0, null);
+  assert.deepEqual(
+    [away.swing, away.guard, away.dodge],
+    [false, true, true],
+    'the click that readies it does not swing',
+  );
+  const riding = fightHands(pressing, { ...onFoot, mounted: true }, true, 'sword_iron');
+  assert.deepEqual([riding.armed, riding.guards], [false, false], 'in the saddle, no swing and no guard');
+  const free = fightButtons(controls(['guard'], ['swing'], false), drawn, 0, null);
+  assert.deepEqual([free.guard, free.dodge], [true, false], 'the hands as given: no dodge with the pointer free');
+});
+
+test('a bow drawn aims on the right button and fires on the left, with no guard behind it', () => {
+  const pressing = controls(['swing'], ['guard']);
+  const hands = fightHands(pressing, onFoot, true, 'bow_long');
+  assert.deepEqual([hands.shooter, hands.ranged, hands.aiming, hands.guards], [true, true, true, false]);
+  const mark = [1, 2, 3] as const;
+  const buttons = fightButtons(pressing, hands, 0, mark);
+  assert.deepEqual(
+    [buttons.swing, buttons.shoot, buttons.shootPressed, buttons.guard, buttons.aim, buttons.mark],
+    [false, true, true, false, true, mark],
+  );
+});
+
+test('the first person holds a guard, and plays a parry through its deflect', () => {
+  assert.deepEqual(guardPose({ kind: 'guard', elapsed: 4, window: 0 }), { record: 3, frame: 2 });
+  assert.equal(guardPose({ kind: 'parry', elapsed: 0 })?.frame, 1);
+  assert.equal(guardPose({ kind: 'parry', elapsed: 17 })?.frame, 3);
+  assert.equal(guardPose({ kind: 'idle' }), null);
 });
