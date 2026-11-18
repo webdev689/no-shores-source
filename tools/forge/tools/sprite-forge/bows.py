@@ -130,8 +130,10 @@ class _Limb:
     outline beside it, where what stands off it shows. A make's places are metres past the riser, `riser` along the
     line, stretched `k` times along a longer span (`z`)."""
 
-    def __init__(self, c, w, a, b, x, seen, riser=0.0, k=1.0):
+    def __init__(self, c, w, a, b, x, seen, riser=0.0, k=1.0, swell=1.0, ornament=1.0):
         self.c, self.w, self.a, self.b, self.x = c, w, a, b, x
+        self.swell = swell   # the share of a sleeve's growth past the limb's girth it keeps
+        self.o = ornament    # what stands off the limb (a horn, a blade, a stud) at this many times its size
         self.s = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(c, axis=0), axis=1))])
         self.belly = seen == 'belly'
         self.riser, self.k = riser, k
@@ -160,9 +162,10 @@ class _Limb:
         """A sleeve round the limb: a ring at each (place, growth) row, the limb's girth that many times there and a
         hair proud of it."""
         secs = [self.sec(self.z(p)) for p, _ in rows]
+        grows = [1.0 + (g - 1.0) * self.swell for _, g in rows]
         m = tube([s[0] for s in secs], [s[2] for s in secs], [s[4] for s in secs],
-                 [s[3] * g + lift for s, (_, g) in zip(secs, rows)],
-                 [s[5] * g + lift for s, (_, g) in zip(secs, rows)], n=n, radius=radius)
+                 [s[3] * g + lift for s, g in zip(secs, grows)],
+                 [s[5] * g + lift for s, g in zip(secs, grows)], n=n, radius=radius)
         return facets(*m) if flat else m
 
     def band(self, p, long, grow, n=8, bevel=0.3):
@@ -180,20 +183,24 @@ class _Limb:
 
     def stud(self, p, off, half, tall, side=1.0):
         """A four-sided point on the face."""
+        half, tall = half * self.o, tall * self.o
         at, d, f, g = self.spot(p, off, side)
         return pyramid(at - f * 0.0008, d, g, f, half, half, tall, 0.0)
 
     def rivet(self, p, off, r, side=1.0):
         """A rivet's round head on the face."""
+        r = r * self.o
         return ball(self.spot(p, off, side, r * 0.4)[0], r)
 
     def boss(self, p, r, tall, side=1.0, n=10):
         """A round boss on the face, its top flat and narrower."""
+        r, tall = r * self.o, tall * self.o
         at, d, f, g = self.spot(p, 0.0, side)
         return facets(*tube([at - f * 0.001, at + f * tall], [d, d], [g, g], [r, r * 0.62], [r, r * 0.62], n=n))
 
     def lozenge(self, p, long, wide, tall, side=1.0):
         """A lozenge boss on the face, its points along the limb and across it."""
+        long, wide, tall = long * self.o, wide * self.o, tall * self.o
         at, d, f, g = self.spot(p, 0.0, side)
         v = np.array([at - d * long, at + g * wide, at + d * long, at - g * wide, at + f * tall])
         return facets(v, outward(v, [[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4], [0, 2, 1], [0, 3, 2]],
@@ -202,6 +209,7 @@ class _Limb:
     def frame(self, p0, p1, share, r, side=1.0, bars=()):
         """A raised frame on the face from place `p0` to `p1`, `share` of its half-span across, bars across it at
         `bars` places: [(vertices, triangles)]."""
+        r = r * self.o
         corners = [self.spot(p, o * share, side, r)[0] for p, o in ((p0, -1), (p1, -1), (p1, 1), (p0, 1))]
         out = [rod(corners[j], corners[(j + 1) % 4], r) for j in range(4)]
         return out + [rod(self.spot(p, -share, side, r)[0], self.spot(p, share, side, r)[0], r) for p in bars]
@@ -209,6 +217,7 @@ class _Limb:
     def strap(self, p0, p1, share, thin, side=1.0, point=0.3):
         """A strap lying along the face from place `p0` to `p1`, `share` of its half-span wide, its last `point` of its
         length drawn to a point."""
+        thin = thin * self.o
         ps = np.linspace(p0, p1, 8)
         u = (ps - p0) / (p1 - p0)
         w = share * np.clip((1 - u) / point, 0.04, 1.0)
@@ -218,6 +227,7 @@ class _Limb:
 
     def facing(self, p0, p1, share, thin, n=8, k=16):
         """A strip lying on the face the eye meets, `share` of its half-span wide."""
+        thin = thin * self.o
         rows = [self.at(self.z(p)) for p in np.linspace(p0, p1, k)]
         return tube([r[0] + r[2] * (r[3] + thin) for r in rows], [r[4] for r in rows], [r[2] for r in rows],
                     [r[5] * share for r in rows], thin, n=n)
@@ -234,6 +244,7 @@ class _Limb:
         """A thin blade off the outline, `h` tall at each of places `ps`, its edge swept `sweep` of its height toward
         the tip: a diamond section from inside the limb to its edge, its midrib a crease toward the eye. Gives the
         blade and its edge's points."""
+        h, thick = np.asarray(h, float) * self.o, thick * self.o
         rows = [self.at(self.z(p)) for p in ps]
         root = [r[0] + r[6] * r[5] * 0.4 for r in rows]
         top = [r[0] + r[6] * (r[5] + hh) + r[1] * sweep * hh for r, hh in zip(rows, h)]
@@ -244,6 +255,7 @@ class _Limb:
 
     def horn(self, p, tall, hook, girth, bend=1.6):
         """A horn or a claw off the outline: thick at its root, curving `hook` along as it rises to its point."""
+        tall, hook, girth = tall * self.o, hook * self.o, girth * self.o
         c, d, f, hf, g, hg, e = self.at(self.z(p))
         t = np.linspace(0.0, 1.0, 12)
         path = c + np.outer(hg * 0.55 + tall * t, e) + np.outer(hook * t ** bend, d)
@@ -254,6 +266,7 @@ class _Limb:
     def claw(self, p0, p1, turn, bow, girth, n=6):
         """A claw from place `p0` round the limb at angle `turn` (0 its outline, a quarter turn the face the eye
         meets), bowing `bow` out from it and curling in to its point at `p1`."""
+        bow, girth = bow * self.o, girth * self.o
         t = np.linspace(0.0, 1.0, 10)
         pts = []
         for tt in t:
@@ -271,6 +284,7 @@ class _Limb:
         """A feather off the outline from place `p`, leaving it `angle` radians from the limb's line and sweeping
         `length` toward the tip, `wide` at its broadest, `lift` toward the eye over the one before: a leaf of the metal
         and its quill. [((vertices, triangles), stuff)]"""
+        length, wide, thick, lift = length * self.o, wide * self.o, thick * self.o, lift * self.o
         c, d, f, hf, g, hg, e = self.at(self.z(p))
         s = np.linspace(0.0, 1.0, 12)
         root = c + e * hg * 0.5 + f * lift
@@ -283,6 +297,7 @@ class _Limb:
 
     def cog(self, p, rad, teeth):
         """A toothed wheel lying on the face the eye meets, its hub and axle standing from it."""
+        rad = rad * self.o
         c, d, f, hf, g, hg, e = self.at(self.z(p))
         base = c + f * hf
         tooth = lambda j: np.where(j % 4 < 2, 1.0, 1.22)   # noqa: E731
@@ -295,6 +310,7 @@ class _Limb:
     def crescent(self, p, half, tall, wide, thick):
         """A thin crescent standing off the outline at place `p`: its back on the limb, its two horns `half` along
         either way and rising `tall` off it, `wide` across at its middle."""
+        half, tall, wide, thick = half * self.o, tall * self.o, wide * self.o, thick * self.o
         c, d, f, hf, g, hg, e = self.at(self.z(p))
         th = np.linspace(-1.0, 1.0, 15)
         mid = c + e * (hg * 0.6)
@@ -305,6 +321,7 @@ class _Limb:
 
     def ruff(self, p, many, long, girth, seed=3):
         """A ruff of fur round the limb at place `p`: tufts out from it and back toward the grip."""
+        long, girth = long * self.o, girth * self.o
         rng = np.random.default_rng(seed)
         c, d, x, a, w, b = self.sec(self.z(p))
         out = []
@@ -320,6 +337,7 @@ class _Limb:
 
     def stones(self, p, many, r, turn=0.0):
         """Stones set round the limb at place `p`, `many` of them: four-sided, low."""
+        r = r * self.o
         c, d, x, a, w, b = self.sec(self.z(p))
         out = []
         for j in range(many):
@@ -617,10 +635,10 @@ def look(metal):
     return LOOK[metal]
 
 
-def grip(lk, r, g):
+def grip(lk, r, g, cap=CAP):
     """The grip's dressing in first person, about the bow's axis (+Z): the metal's warhammer's haft work, as its staff's
     pole wears it, from the wrap's middle up to its upper collar at `g` (`r` the wrap's girth), and its mirror down to
-    the lower. [(vertices, triangles, stuff)]"""
+    the lower, its reach held near `cap` times the wrap's girth. [(vertices, triangles, stuff)]"""
     work = lk.get('grip')
     if not work:
         return []
@@ -630,22 +648,25 @@ def grip(lk, r, g):
     for v, t, m in work(H):
         v, t = np.asarray(v, float).copy(), np.asarray(t)
         reach = np.hypot(v[:, 0], v[:, 1])
-        cap = CAP * r
-        far = reach > cap
-        v[far, :2] *= ((cap + (reach[far] - cap) * SQUEEZE) / reach[far])[:, None]
+        cap_r = cap * r
+        far = reach > cap_r
+        v[far, :2] *= ((cap_r + (reach[far] - cap_r) * SQUEEZE) / reach[far])[:, None]
         out += [(v, t, HAMMER_STUFF[m]), (v * np.array([1.0, 1.0, -1.0]), t[:, ::-1], HAMMER_STUFF[m])]
     return out
 
 
-def limb(lk, c, w, a, b, x, seen='belly', span=SEEN, riser=0.0, own=None):
+def limb(lk, c, w, a, b, x, seen='belly', span=SEEN, riser=0.0, own=None, swell=1.0, ornament=1.0):
     """A limb in look `lk`: along its line `c` (its back `w`, its half-width `a` and half-thickness `b` at each point,
     `x` its across), the stave and its work, which runs `span` metres past the riser at `riser` along the line (SEEN's
     places stretched along it): [(vertices, triangles, stuff)]. `seen` is the face the eye meets (_Limb). Its stuffs
-    are its own with `own` (first person's, by default), else folded onto a sprite bow's (PLAIN)."""
+    are its own with `own` (first person's, by default), else folded onto a sprite bow's (PLAIN). `swell` is the share
+    a make keeps of its own stave's width and thickness over the fitted bow's, and of its sleeves' flare; `ornament`
+    the size of what stands off the stave (horns, blades, studs), each its make's times that."""
     c, w, x = np.asarray(c, float), np.asarray(w, float), np.asarray(x, float)
-    a, b = a * lk.get('width', 1.0), b * lk.get('thick', 1.0)
+    a = a * (1.0 + (lk.get('width', 1.0) - 1.0) * swell)
+    b = b * (1.0 + (lk.get('thick', 1.0) - 1.0) * swell)
     k = span / SEEN
-    L = _Limb(c, w, a, b, x, seen, riser, k)
+    L = _Limb(c, w, a, b, x, seen, riser, k, swell, ornament)
     stuff = 'metal' if lk.get('metal') else 'wood'
     th = (2 * np.pi * lk.get('twist', 0.0) * L.s / SEEN)[:, None]   # its section turned `twist` times along SEEN
     us, ws = np.cos(th) * x + np.sin(th) * w, np.cos(th) * w - np.sin(th) * x

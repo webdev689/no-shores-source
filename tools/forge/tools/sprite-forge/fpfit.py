@@ -10,6 +10,7 @@ The reference (reference.mjs) stays outside the repo; only the poses and the sha
 frame with no pose yet is seeded from its outline: the far end where the outline narrows, the root where it widens, its
 width giving the depth. A mirrored record is never fitted: it is its source flipped."""
 import argparse
+import itertools
 import json
 import math
 import os
@@ -51,6 +52,9 @@ EDGE = 3   # texels of outline on a canvas's edge that say Daggerfall's canvas c
 SHAPE_KEYS = {'sword': ('focal',),   # the sword is the world's (gear.py): only the eye's lens is the archive's to fit
               'fists': ('focal', 'arm_r', 'fist', 'cuff', 'boot_r', 'foot', 'ankle'),
               'climbarm': ('arm_r', 'hand', 'cuff'), 'castarm': ('arm_r', 'hand'),
+              # the werecreature's claws: the eye's lens, the pelt's girth, the hand's size and its fingers' length and
+              # girth (fpmodel.py CLAWS); its thumb's girth too
+              'claws': ('focal', 'arm_r', 'hand', 'thumb', 'fingers', 'slim'),
               # the battleaxe: its socket and spike, each bit's polygon corners (axes.py ANGLES) and centre, its facets
               'battleaxe': ('focal', 'haft_r', 'sock_len', 'sock_r', 'spike_len', 'spike_r',
                             *(f'b_r{k}' for k in range(11)), *(f'k_r{k}' for k in range(11)), 'b_c', 'k_c', 'b_att',
@@ -150,6 +154,11 @@ class Frame:
         self.canvas = np.zeros((fpstage.H, fpstage.W), dtype=bool)
         self.canvas[y:y + ch, x:x + cw] = True
         self.rect = (x, y, cw, ch)
+        if rec.get('pair'):   # both hands, the drawn one its right: the left is its mirror (fpforge.paired)
+            half = x + cw // 2
+            self.ref[:, :half] = 0
+            self.lum[:, :half] = 0
+            self.canvas[:, :half] = False
         # past an edge the outline runs into, Daggerfall's canvas cut the weapon off: it may go on there
         self.free = np.zeros_like(self.canvas)
         on = classes > 0
@@ -209,11 +218,22 @@ def light_match(light, fr, inside, mat=None, names=()):
     return total / n if n else None
 
 
-def score(img, fr, light=None, mat=None, names=(), weights=None):
+def soft_iou(a, b, sigma):
+    """Two thin masks' overlap with each blurred `sigma` pixels: a claw a pixel off Daggerfall's still counts, and a
+    nearer one more, where their plain overlap is nothing either way."""
+    from scipy import ndimage as ndi
+    fa = ndi.gaussian_filter(a.astype(np.float64), sigma)
+    fb = ndi.gaussian_filter(b.astype(np.float64), sigma)
+    u = np.maximum(fa, fb).sum()
+    return float(np.minimum(fa, fb).sum() / u) if u else None
+
+
+def score(img, fr, light=None, mat=None, names=(), weights=None, soft=None):
     """How well a screen (`img`, classes; `light`, its brightness; `mat`, its materials) covers a frame: inside the
     canvas against its outline, classes and light, each by its weight (WEIGHTS, or a weapon's own). What the weapon draws
     on the screen past the canvas counts against the outline, as Daggerfall's canvas holds all it draws, but past an edge
-    the outline runs into (Frame.free)."""
+    the outline runs into (Frame.free). A class in `soft` (a weapon's `soft`: class -> pixels) is weighed blurred
+    (soft_iou)."""
     inside = img * fr.canvas
     outside = int(((img > 0) & ~fr.canvas & ~fr.free).sum())
     total, wsum = 0.0, 0.0
@@ -225,7 +245,8 @@ def score(img, fr, light=None, mat=None, names=(), weights=None):
         else:
             if (fr.ref == key).sum() < 40 and not (inside == key).any():
                 continue
-            v = iou(inside == key, fr.ref == key)
+            v = soft_iou(inside == key, fr.ref == key, soft[key]) if soft and key in soft else iou(inside == key,
+                                                                                                   fr.ref == key)
         if v is not None:
             total += w * v
             wsum += w
@@ -312,7 +333,8 @@ def evaluate(wpn, fr, x):
     margin = wpn.S['focal'] * fpmodel.root_radius(wpn.weapon, wpn.S, fr.part) / pose['depth']
     past = sum(max(0.0, lo - pose[j[0]], pose[j[0]] - hi) for j in js for lo, hi in (j[2],))
     own = fpmodel.WEAPONS[wpn.weapon].get('penalty')   # a weapon's own law of its pose (the held map: no hand in paper)
-    return (score(img, fr, light, mat, wpn.names, fpmodel.WEAPONS[wpn.weapon].get('weights')) - SHORT_PULL * short
+    W = fpmodel.WEAPONS[wpn.weapon]
+    return (score(img, fr, light, mat, wpn.names, W.get('weights'), W.get('soft')) - SHORT_PULL * short
             - (own(wpn.S, pose) if own else 0.0)
             - (0.0 if fpmodel.WEAPONS[wpn.weapon].get('root_seen') else ROOT_PULL * off_screen(*pose['base'], margin))
             - ROOT_PULL * elbow_off(wpn, pose, fr.part)
@@ -321,12 +343,13 @@ def evaluate(wpn, fr, x):
 
 
 def prior_distance(x, p, joints=()):
-    """How far vector `x` is from pose `p`, in squared units (PRIOR_UNIT, each joint's own; the roll the short way
-    round), capped."""
+    """How far vector `x` is from pose `p` in what `p` names, in squared units (PRIOR_UNIT, each joint's own; the roll
+    the short way round), capped: a key that leaves out its roll or a joint leaves it to the fit."""
     d = x - vector_of(p, joints)
     d[5] = (d[5] + 180.0) % 360.0 - 180.0
     unit = np.append(PRIOR_UNIT, [j[3] for j in joints])
-    return min(float(((d / unit) ** 2).sum()), PRIOR_CAP)
+    named = np.array([True] * 5 + ['roll' in p] + [j[0] in p for j in joints])
+    return min(float(((d / unit)[named] ** 2).sum()), PRIOR_CAP)
 
 
 def outline(fr):
@@ -412,20 +435,24 @@ GRID = {'roll': np.arange(0.0, 360.0, 30.0), 'swing': (0.0, 25.0, 50.0, 80.0, 11
 GRID_KEEP = 4
 
 
-def grid_seeds(wpn, fr):
-    """The weapon's own first places for a frame (fpmodel.WEAPONS `seeds`), each tried at every roll and joint of the
-    grid; the best GRID_KEEP."""
+def grid_seeds(wpn, fr, place=None, held=()):
+    """First poses from a search: the weapon's own first places for a frame (fpmodel.WEAPONS `seeds`) at every value
+    of GRID, or, for a weapon with a `grid` of its own, `place` at every value of that but what the frame's key holds;
+    the best GRID_KEEP."""
+    own = {k: v for k, v in fpmodel.WEAPONS[wpn.weapon].get('grid', {}).items() if k not in held}
     hook = fpmodel.WEAPONS[wpn.weapon].get('seeds')
-    if not hook:
+    if own and place:
+        places, grid = [place], own
+    elif hook and not own:
+        places, grid = hook(fr, wpn.S), GRID
+    else:
         return []
     js = joints_of(wpn, fr.part)
     tried = []
-    for p in hook(fr, wpn.S):
-        for roll in GRID['roll']:
-            for sw in GRID['swing']:
-                for cu in GRID['curl']:
-                    x = vector_of(dict(p, roll=roll, swing=sw, curl=cu), js)
-                    tried.append((evaluate(wpn, fr, x), x))
+    for p in places:
+        for values in itertools.product(*grid.values()):
+            x = vector_of(dict(p, **dict(zip(grid, values))), js)
+            tried.append((evaluate(wpn, fr, x), x))
     tried.sort(key=lambda a: -a[0])
     return [pose_of(x, js) for _, x in tried[:GRID_KEEP]]
 
@@ -451,7 +478,9 @@ def fit_frame(wpn, fr, iters, restarts, rng, init=None, seed_pose=None, near=(),
     starts += [] if own and init else [(vector_of(p, js), 0.8) for p in edge_seeds(fr, wpn.S, wpn.weapon)]
     if seed_pose:
         starts += [(vector_of(dict(seed_pose, roll=a), js), 1.0) for a in (0.0, 70.0, -70.0)]
-    if not init:
+    if fpmodel.WEAPONS[wpn.weapon].get('grid') and not own:   # its grid from the place it holds now
+        starts += [(vector_of(p, js), 0.6) for p in grid_seeds(wpn, fr, init or seed_pose, held)]
+    elif not init:
         starts += [(vector_of(p, js), 0.6) for p in grid_seeds(wpn, fr)]
     if held and init:   # every start holds them too
         fixed = vector_of(init, js)

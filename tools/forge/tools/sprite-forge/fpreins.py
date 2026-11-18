@@ -180,12 +180,12 @@ def lay_rein(ob, grip, bit, via=()):
 
 
 # the Dwarven Dragon's saddle (public/art/dwarven-dragon/saddle-0.png, 320 x 97, along the screen's foot): each fist
-# closed over its control post's crystal knob, seen a little from the side as the reins' fists are, the elbow off the
-# view's lower corner; the left as a right hand in the mirrored world, the saddle near enough its own mirror. The
-# posts stand at the screen's foot, so a fist round a post below its knob would fall off the view. On the cannons'
-# volley each fist squeezes and pushes in
-DRAGON_HOLD = {'R': {'tip': (208.0, 166.0), 'depth': 0.40, 'elbow': (320.0, 300.0), 'roll': 40.0, 'tilt': 10.0},
-               'L': {'tip': (208.0, 166.0), 'depth': 0.40, 'elbow': (320.0, 300.0), 'roll': 40.0, 'tilt': 10.0}}
+# closed round its control post just under the crystal knob, the knob left in sight above it, the back of the hand to
+# the eye and the forearm running off the view's lower corner; the left as a right hand in the mirrored world, the
+# saddle near enough its own mirror. Nearer, the fist would hide the knob; farther, it falls off the screen's foot
+# with the post. On the cannons' volley each fist squeezes and pushes in
+DRAGON_HOLD = {'R': {'tip': (206.0, 176.0), 'depth': 0.44, 'elbow': (290.0, 250.0), 'roll': 0.0, 'tilt': 0.0},
+               'L': {'tip': (206.0, 176.0), 'depth': 0.44, 'elbow': (290.0, 250.0), 'roll': 0.0, 'tilt': 0.0}}
 DRAGON_FIRE = (1.5, 2.0, 0.015, 6.0)   # the volley's push: screen dx inward, dy down, depth, roll
 DRAGON_POSES = ('rest', 'fire')
 

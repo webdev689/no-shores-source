@@ -2,6 +2,8 @@ import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import type { InputFrame } from './input.ts';
 import {
+  AIM,
+  type AimPlace,
   aimEased,
   boomFollowed,
   cameraOrbit,
@@ -148,14 +150,17 @@ function headOf(player: Player, movement: MovementRules): readonly [number, numb
   return [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)];
 }
 
-/** The camera the scene draws the player's frame from, kept off `blocks` and, given its height, the ground. */
+/** The camera the scene draws the player's frame from, its aiming view at `place`, kept off `blocks` and, given its
+ *  height, the ground. */
 export function playerCamera(
   player: Player,
   movement: MovementRules,
   blocks: readonly Block[],
+  place: AimPlace = AIM,
   groundAt: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
-  return cameraOrbit(headOf(player, movement), player.yaw, player.pitch, player.view, blocks, player.aim, groundAt);
+  const head = headOf(player, movement);
+  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place, groundAt);
 }
 
 /** The player with the third-person camera's boom eased over `seconds` clear of `blocks` and the ground: called
@@ -168,6 +173,6 @@ export function cameraFollowed(
   seconds: number,
 ): Player {
   const head = headOf(player, movement);
-  const view = boomFollowed(head, player.yaw, player.pitch, player.view, blocks, player.aim, groundAt, seconds);
-  return { ...player, view };
+  const { yaw, pitch, view, aim } = player;
+  return { ...player, view: boomFollowed(head, yaw, pitch, view, blocks, aim, AIM, groundAt, seconds) };
 }

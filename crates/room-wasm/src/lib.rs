@@ -493,6 +493,15 @@ pub extern "C" fn fighter_reach(arms: u32, stroke: u32) -> f64 {
         .map_or(0.0, |stroke| combat::strike::stroke_reach(melee, stroke))
 }
 
+/// The half-width in radians of the arc stroke `stroke` (1 to 6) sweeps either side of its aim; 0 for no stroke.
+#[unsafe(no_mangle)]
+pub extern "C" fn fighter_stroke_arc(stroke: u32) -> f64 {
+    u8::try_from(stroke)
+        .ok()
+        .and_then(combat::Stroke::from_number)
+        .map_or(0.0, |stroke| combat::arms::stroke_shape(stroke).half_arc)
+}
+
 /// How many numbers a fighter, an intent and a glance are, for the browser to lay them out: as one number, each in a
 /// byte.
 #[unsafe(no_mangle)]

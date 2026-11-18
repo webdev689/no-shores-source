@@ -115,6 +115,17 @@ Where the work stands now, for the next session. Each session rewrites this note
     ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]; [[Game]], "At sea").
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
+- The [[Test Ground]]'s third-person aim placed by hand, DFO's next forge work with its dodge roll, and faster strikes,
+  merged to `main` with the owner's yes (#62) and deployed; the live Test Ground serves the aim's panel:
+  - the aim's sliders, kept in the browser and shown as numbers;
+  - the forge's code exactly but for the were-creatures' ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]),
+    and its 118,158 redrawn and new pictures and the roll's 1,200 published to R2 by a helper session on the
+    `overlook-source` environment;
+  - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
+    twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
+- First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
+  ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
+  the page and the rooms; tested offline, with a test and a headless Test Ground run.
 
 - On pull request #63 from branch `ccr-0f4acf2e-wd3195`, tested offline, not merged, as the owner decided it
   ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]): every patrol area and instance laid out
@@ -155,6 +166,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- #65 sets the owner's third-person aim, 0.8 m out, 3 m back, 0.25 m up and 1.3 times zoom, as the game's own
+  ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]), and brings the attack feel to the [[Test Ground]]: the
+  swing arc, the hit-stop, the camera kick and the lunge, each a switch and a slider
+  ([[The Attack Feel Is Tried in the Test Ground]]), and eases third-person strikes back to about a third faster than
+  DFO's ([[Third-Person Strikes Run Faster Than DFO's]]). Tested offline, with tests and headless Test Ground runs; it
+  waits for the owner's yes to merge. Which effects go into the game, and at what settings, is the owner's to say.
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
   writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
@@ -162,6 +179,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
   does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
   owner's to say.
+- #62's: no weapon is seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and
+  `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
   overboard should meet (the deck keeps them aboard for now), and whether DFO's Travel Options encounter (a journey
   stopped near an enemy) or wary pirates falling on a ship they outgun should come over.
@@ -197,6 +216,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes). The well
   house (props 43202 and 43204) draws its roof 1.8 m over its posts, which stop at the eaves under the ridge: running
   them up to the ridge breaks the Prop Forge's pin to DFO's props, to the bit, so it is the owner's to allow.
+- Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
+  seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
+  not yet known.
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to

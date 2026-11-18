@@ -6,6 +6,7 @@ import { setDfLookPalette } from '../../src/world/dfLook.js';
 import { DFPalette } from '../../src/formats/dfPalette.js';
 import { decodePng } from '../../src/systems/textureReplacement.js';
 import { studioUrl, STUDIO_INDEX } from '../../src/systems/studioArt/studioArt.js';
+import { setStripCopies } from '../../src/systems/studioArt/forgeWebp.js';
 import { getBytes } from '../../src/scenes/dataSource.js';
 import * as K from './kit.js';
 import { choiceOfHash, hashOfChoice } from './address.js';
@@ -252,6 +253,7 @@ async function boot() {
   if (index) {
     files = index.files ?? [];
     listed = new Set(K.forgeLayersListed(index.layers));
+    setStripCopies(index.layers?.copies);   // a built site's strips shipped as another's file, as the game reads them
   }
   artFiles = (art?.files ?? []).map((path) => `${ART}${path}`);
   folders = K.studioFolders([...files, ...artFiles]);

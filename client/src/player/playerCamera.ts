@@ -20,8 +20,17 @@ export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back
 
 /** Aiming a ranged weapon: in third person the camera stands behind the right shoulder, offset from the middle, this
  *  far out, back and up from the head (metres), zoomed in a little; in first person the view zooms in this much, the
- *  hands still. It eases there and back about as fast as the camera eases. */
-export const AIM = { shoulder: 0.65, back: 1.8, up: 0.25, thirdZoom: 1.15, firstZoom: 1.6, ease: 12 } as const;
+ *  hands with it. It eases there and back about as fast as the camera eases. */
+export const AIM = { shoulder: 0.8, back: 3, up: 0.25, thirdZoom: 1.3, firstZoom: 1.6, ease: 12 } as const;
+
+/** Where third person's aiming view stands and how far it zooms, as `AIM` has it unless the Test Ground's panel sets
+ *  its own. */
+export interface AimPlace {
+  readonly shoulder: number;
+  readonly back: number;
+  readonly up: number;
+  readonly thirdZoom: number;
+}
 
 /** How far into its aiming view a camera is, 0 to 1, eased toward aiming or not over `seconds`. */
 export function aimEased(share: number, aiming: boolean, seconds: number): number {
@@ -86,8 +95,8 @@ export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number
 }
 
 /** Where the camera's boom reaches from the head with nothing in the way: nowhere in first person; behind the head
- *  and up in third, and `aim` (0 to 1) of the way to aiming's place over the right shoulder. */
-function boomEnd(head: Point, yaw: number, pitch: number, view: ViewMode, aim: number): Point | null {
+ *  and up in third, and `aim` (0 to 1) of the way to aiming's `place` over the shoulder. */
+function boomEnd(head: Point, yaw: number, pitch: number, view: ViewMode, aim: number, place: AimPlace): Point | null {
   if (view.shown <= 0.01) return null;
   const forward = forwardOf(yaw, pitch);
   const up: Point = [Math.sin(pitch) * Math.sin(yaw), -Math.sin(pitch) * Math.cos(yaw), Math.cos(pitch)];
@@ -95,7 +104,7 @@ function boomEnd(head: Point, yaw: number, pitch: number, view: ViewMode, aim: n
   const end = (axis: 0 | 1 | 2) => {
     const behind =
       head[axis] - forward[axis] * view.shown + up[axis] * CAMERA.up * Math.min(1, view.shown / CAMERA.back);
-    const shoulder = head[axis] + right[axis] * AIM.shoulder - forward[axis] * AIM.back + up[axis] * AIM.up;
+    const shoulder = head[axis] + right[axis] * place.shoulder - forward[axis] * place.back + up[axis] * place.up;
     return behind + (shoulder - behind) * aim;
   };
   return [end(0), end(1), end(2)];
@@ -117,10 +126,11 @@ export function boomFollowed(
   view: ViewMode,
   blocks: readonly Block[],
   aim: number,
+  place: AimPlace,
   groundAt: ((x: number, y: number) => number | null) | null,
   seconds: number,
 ): ViewMode {
-  const end = boomEnd(head, yaw, pitch, view, aim);
+  const end = boomEnd(head, yaw, pitch, view, aim, place);
   if (!end) return view.boom === undefined ? view : { ...view, boom: Number.POSITIVE_INFINITY };
   const clear = boomReach(head, end, blocks, groundAt, BOOM.clearance);
   return { ...view, boom: boomEased(view.boom ?? Number.POSITIVE_INFINITY, clear, lengthOf(head, end), seconds) };
@@ -128,8 +138,8 @@ export function boomFollowed(
 
 /** The camera as an orbit the scene draws from: at the head in first person; in third at the end of its boom as far
  *  out as it has eased (`boomFollowed`), and never nearer a block or the ground than `BOOM.closest`, so a boom easing
- *  in behind a sudden wall never shows through it; and `aim` (0 to 1) of the way into aiming's view, over the right
- *  shoulder and zoomed. `pitch` is how far it looks down, negative looking up. */
+ *  in behind a sudden wall never shows through it; and `aim` (0 to 1) of the way into aiming's view, at `place` over
+ *  the shoulder and zoomed. `pitch` is how far it looks down, negative looking up. */
 export function cameraOrbit(
   head: Point,
   yaw: number,
@@ -137,10 +147,11 @@ export function cameraOrbit(
   view: ViewMode,
   blocks: readonly Block[],
   aim = 0,
+  place: AimPlace = AIM,
   groundAt: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
   const forward = forwardOf(yaw, pitch);
-  const end = boomEnd(head, yaw, pitch, view, aim);
+  const end = boomEnd(head, yaw, pitch, view, aim, place);
   let eye: Point = head;
   if (end) {
     const length = lengthOf(head, end);
@@ -152,7 +163,7 @@ export function cameraOrbit(
     const share = length > 1e-6 ? Math.min(1, Math.max(0, shown) / length) : 0;
     eye = [0, 1, 2].map((axis) => head[axis] + (end[axis] - head[axis]) * share) as unknown as Point;
   }
-  const zoom = 1 + ((end ? AIM.thirdZoom : AIM.firstZoom) - 1) * aim;
+  const zoom = 1 + ((end ? place.thirdZoom : AIM.firstZoom) - 1) * aim;
   return {
     targetX: eye[0] + forward[0],
     targetY: eye[1] + forward[1],

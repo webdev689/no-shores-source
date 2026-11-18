@@ -36,6 +36,7 @@ import fit  # noqa: E402
 import forge  # noqa: E402
 import materials  # noqa: E402
 import model  # noqa: E402
+import bowhold  # noqa: E402
 import bows  # noqa: E402
 from gear import (BENT, BOW_KINDS, BOW_METAL_GRADE, CROSSBOW_METALS, build_bow,  # noqa: E402
                   build_crossbow, build_metal_bow, build_axe, build_sparks, build_staff, build_sword,  # noqa: E402
@@ -51,8 +52,10 @@ import torch3p  # noqa: E402
 import casting  # noqa: E402
 import playing  # noqa: E402
 import riding  # noqa: E402
+import driving  # noqa: E402
 import onehand  # noqa: E402
 import attacks  # noqa: E402,F401  (its attacks join poses.OWN)
+import blows  # noqa: E402
 import agility  # noqa: E402
 # a short skirt rides up in the body's own moves that spread the legs, never stretched between them (the hang's plumb)
 drape.RIDE_UP = frozenset(m for m in agility.MOVES if m not in ('hang', 'shimmy'))
@@ -151,8 +154,8 @@ def class_records(archive):
 # own with the staff: its walk, idle, hurt, attack and spell) and the forge's own
 STAFF_ANIMS = {'walk_staff': 4, 'attack_staff': 6, 'hurt_staff': 1, 'idle_staff': 1, 'spell': 4}
 ANIMS = {'walk': 4, 'attack_axe': 6, 'attack_sword': 6, 'hurt': 1, 'idle': 1, 'bow': 4, **STAFF_ANIMS, **poses.OWN,
-         **playing.PLAY, **onehand.ONEHAND, **riding.RIDE, **people.PEOPLE, **gunplay.GUNPLAY,
-         **agility.MOVES, **casting.CAST}
+         **blows.BLOWS, **playing.PLAY, **onehand.ONEHAND, **riding.RIDE, **driving.DRIVE, **people.PEOPLE, **gunplay.GUNPLAY,
+         **agility.MOVES, **casting.CAST, **bowhold.ANIMS, **agility.ELSEWHERE}
 # the bow at rest in the left fist (poses.py `AT_REST`): each animation a carried weapon shows in, the right hand empty
 BOW_REST = {anim: ANIMS[base] for anim, base in poses.AT_REST.items()}
 ANIMS.update(BOW_REST)
@@ -209,7 +212,8 @@ def held_as(weapon):
 
 def weapon_anims(weapon):
     """The animations a weapon's layer is drawn in: the bow in its own, the spark in the spell, a staff in the staff's
-    and the forge's own, an axe or a sword (and what is held as either, `HELD`) in all the rest but the other's attack.
+    and the forge's own, an axe or a sword (and what is held as either, `HELD`) in all the rest but the other's attack,
+    and of the blows its own holds' (blows.py `blows_of`).
     The spell is cast with the left hand, so whatever the right holds is drawn in it, the staff or a weapon held
     one-handed, upright where the staff would stand; the spark is a layer of its own for any look. An instrument is
     drawn in its own playing, and no weapon is. A weapon worn on the body is drawn in the frames it is cleared in. A
@@ -227,13 +231,13 @@ def weapon_anims(weapon):
     if weapon in GUN_LAYERS or weapon in guns3p.OFF:
         return gunplay.anims_of(weapon)
     if weapon in LEFT_HELD:   # a pair's left weapon: and in the body's moves, held as the right is (`PairBearer`)
-        return [*onehand.TWIN, *agility.HELD]
+        return [*onehand.TWIN, *agility.HELD, *blows.PAIR]
     if weapon == torch3p.LAYER:
         return list(torch3p.ANIMS)
     if weapon in CROSSBOW_LAYERS:   # and carried at port arms in its own sprint (gunplay.py `xbowrun`)
         return ['bow', *BOW_REST, 'death', 'fallen', 'xbowrun']
-    if weapon in BOW_LAYERS:   # in hand at rest too, and let fall as any weapon is
-        return ['bow', *BOW_REST, 'death', 'fallen']
+    if weapon in BOW_LAYERS:   # in hand at rest too, let fall as any weapon is, and in its own holds (bowhold.py)
+        return ['bow', *BOW_REST, 'death', 'fallen', *bowhold.ANIMS]
     if weapon == 'bow':
         return ['bow']
     if weapon == 'spark':   # and in the player's own cast (casting.py)
@@ -246,8 +250,12 @@ def weapon_anims(weapon):
             and (a not in onehand.ONEHAND or held == 'sword')   # one-handed, the sword alone
             and a not in gunplay.GUNPLAY   # a gun's moves hold the gun alone
             and a not in riding.RIDE and a not in BOW_REST   # a rider's fists are on the reins; at rest, the bow's
+            and a not in bowhold.ANIMS   # and in its own holds
+            and a not in driving.DRIVE   # and a driver's
             and a not in agility.BARE   # a climber's hands are on the wall
-            and a not in casting.CAST]   # a player casts with the weapon put away
+            and a not in casting.CAST   # a player casts with the weapon put away
+            and a not in agility.ELSEWHERE   # drawn for outside the game, the hands empty
+            and (a not in blows.BLOWS or a in blows.blows_of(weapon))]   # each its own holds' blows
 
 
 def anim_of(rec_anim, weapon):
@@ -1358,9 +1366,10 @@ def main():
         if os.path.exists(riding.HORSE_GRADE):   # the horse's coat and mane onto Daggerfall's town horse
             forge.GRADE.update(json.load(open(riding.HORSE_GRADE)))
     # the one-handed animations (onehand.py) and the guns' (gunplay.py) only when named: a run of every animation
-    # draws them for no layer yet
+    # draws them for no layer yet; and what is drawn for outside the game (agility.py `ELSEWHERE`)
     want_anims = (args.anims.split(',') if args.anims else
-                  [a for a in ANIMS if a not in onehand.ONEHAND and a not in gunplay.GUNPLAY])
+                  [a for a in ANIMS if a not in onehand.ONEHAND and a not in gunplay.GUNPLAY
+                   and a not in agility.ELSEWHERE])
     if body_name in CHILDREN and not args.anims:   # a child draws only the poses the placed children take
         want_anims = [a for a in ANIMS if a in PEOPLE_WORN.get(body_name, {}).get('anims', ())]
     out = os.path.join(args.out, body_name)
@@ -1510,10 +1519,10 @@ def main():
 def class_looks(body, drawn):
     """Each class archive's look on `body`: its outfit, its weapon, its records, each playing its animation (a record
     shorter or longer than its animation, the guard's attack or a woman mage's spell, plays the frames its keys name;
-    one with none plays the animation's, its last again where the record runs past it), and its own moves, the run
-    among them once it is drawn whole. A layer of its outfit not yet drawn in every move the look plays (`drawn`, the
-    body's layers by animation) is left off until it is, so the game never falls back to Daggerfall's own sprite for
-    want of a strip."""
+    one with none plays the animation's, its last again where the record runs past it), and its own moves: the strokes
+    (blows.py `blow_records`), and the run last once it is drawn whole. A layer of its outfit not yet drawn in every
+    move the look plays (`drawn`, the body's layers by animation; a blow not counted, its records standing in until
+    drawn) is left off until it is, so the game never falls back to Daggerfall's own sprite for want of a strip."""
     out = {}
     for archive, (b, gear, weapon, dyes, race) in LOOKS_OF.items():
         if b != body:
@@ -1528,9 +1537,12 @@ def class_looks(body, drawn):
         worn = [g for g in gear if anims <= set(drawn.get(g, ()))]
         dyes = {k: v for k, v in dyes.items() if k in worn}
         own = [{'anim': a, 'view': v, 'frames': n} for a, n in poses.OWN.items() for v in range(5)]
+        # the strokes (blows.py): its weapon's hold's where the body, all it wears and its weapon are drawn in them
+        stacked = lambda a: all(a in drawn.get(layer, ()) for layer in ('body', *worn, *([weapon] if weapon else [])))  # noqa: E731
+        own += blows.blow_records(blows.CLASS_HOLD.get(weapon), stacked)
         # a pursuing foe runs (foeOwnMoves.js): the run last, so every other record keeps its place, and only where
         # the body, all it wears and its weapon are drawn in it
-        if all('run' in drawn.get(layer, ()) for layer in ('body', *worn, *([weapon] if weapon else []))):
+        if stacked('run'):
             own += [{'anim': 'run', 'view': v, 'frames': agility.MOVES['run']} for v in range(5)]
         out[str(archive)] = {
             'body': b, 'gear': worn + (['spark'] if weapon == 'staff' else []), 'weapon': weapon,

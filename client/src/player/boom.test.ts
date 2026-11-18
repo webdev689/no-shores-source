@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { BOOM, blockReach, boomEased, boomReach, groundReach } from './boom.ts';
-import { boomFollowed, cameraOrbit, type ViewMode } from './playerCamera.ts';
+import { AIM, boomFollowed, cameraOrbit, type ViewMode } from './playerCamera.ts';
 
 const near = (actual: number, expected: number, what: string) =>
   assert.ok(Math.abs(actual - expected) < 1e-9, `${what}: ${actual}, not ${expected}`);
@@ -84,11 +84,11 @@ test('the boom eases in fast and out slowly, and never snaps', () => {
 
 test('the camera follows its eased boom, but never nearer a sudden wall than the closest it may stand', () => {
   // Out in the open the boom stands whole.
-  const open = boomFollowed(head, 0, 0, third, [], 0, null, 1 / 60);
+  const open = boomFollowed(head, 0, 0, third, [], 0, AIM, null, 1 / 60);
   assert.equal(open.boom, Number.POSITIVE_INFINITY);
   near(eyeOf(cameraOrbit(head, 0, 0, open, []))[1], 2, 'two metres behind');
   // A wall appears: one frame later the eased boom is partway in, yet the eye stands short of the wall.
-  const followed = boomFollowed(head, 0, 0, open, [wall], 0, null, 1 / 60);
+  const followed = boomFollowed(head, 0, 0, open, [wall], 0, AIM, null, 1 / 60);
   assert.ok(followed.boom! > 1 && followed.boom! < Math.hypot(2, 0.5), `${followed.boom}`);
   const eye = eyeOf(cameraOrbit(head, 0, 0, followed, [wall]));
   assert.ok(eye[1] <= 1 - BOOM.closest + 1e-9, `the eye at y ${eye[1]} is short of the wall`);
@@ -96,7 +96,7 @@ test('the camera follows its eased boom, but never nearer a sudden wall than the
   assert.ok(eyeOf(cameraOrbit(head, 0, 0, third, [wall]))[1] <= 1 - BOOM.clearance + 1e-9);
   // First person keeps no boom.
   assert.equal(
-    boomFollowed(head, 0, 0, { ...third, firstPerson: true, shown: 0 }, [wall], 0, null, 1 / 60).boom,
+    boomFollowed(head, 0, 0, { ...third, firstPerson: true, shown: 0 }, [wall], 0, AIM, null, 1 / 60).boom,
     undefined,
   );
 });
