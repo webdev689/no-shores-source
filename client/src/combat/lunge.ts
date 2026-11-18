@@ -1,9 +1,9 @@
 // A lunge: the striker's figure drives forward into its blow and settles back. Only the drawing moves; the fight's
 // rules keep the fighter where it stands.
-import { STROKE_DIRECTIONS } from '../rules/fighters.ts';
+import { type StrokeDirection, directionOf } from '../rules/fighters.ts';
 
 /** How far each stroke drives in (metres): a thrust most, an overhead and the slants less, a sweep least. */
-const DRIVE: Readonly<Record<string, number>> = {
+const DRIVE: Readonly<Record<StrokeDirection, number>> = {
   up: 0.32,
   down: 0.2,
   downLeft: 0.2,
@@ -32,7 +32,7 @@ export function lungeOf(
   end: number,
   distance = 1,
 ): { readonly ahead: number; readonly down: number } {
-  const drive = (DRIVE[STROKE_DIRECTIONS[stroke - 1] ?? 'down'] ?? 0) * distance;
+  const drive = DRIVE[directionOf(stroke)] * distance;
   const from = strike * DRIVE_FROM;
   const settled = strike + HOLD_S + Math.max(end - strike - HOLD_S, 0) * SETTLE;
   const share =

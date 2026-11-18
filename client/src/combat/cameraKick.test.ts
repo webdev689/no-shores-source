@@ -73,3 +73,13 @@ test("the lean into the player's own swing follows its stroke", () => {
   assert.ok((leanOf(3).yaw ?? 0) < 0 && (leanOf(4).yaw ?? 0) > 0);
   assert.ok((leanOf(1).pitch ?? 0) > 0 && leanOf(6).ahead === 0.03);
 });
+
+test("a blow's hit and the kill it made punch once, as hard as the kill; a shot punches nothing", () => {
+  const blow = [event(EVENT.hit, 1, 2, 30, 3), { ...event(EVENT.killed, 1, 2, 0, 0) }];
+  const both = kicksOf(blow, 1);
+  const killed = kicksOf([event(EVENT.killed, 1, 2, 0, 3)], 1);
+  assert.equal(both.pushes.length, 1);
+  assert.equal(both.pushes[0]?.pitch, killed.pushes[0]?.pitch);
+  assert.ok((both.pushes[0]?.yaw ?? 0) < 0, 'along the hit’s stroke');
+  assert.equal(kicksOf([{ ...event(EVENT.hit, 2, 1, 30), how: 6 }], 1).pushes.length, 0, 'an arrow');
+});

@@ -53,8 +53,8 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Wheel, Mouse4 | Pull back into third person and further, or come back into first person; Mouse4 switches straight |
 
 Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than
-0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second and stops
-short of a wall. Aiming a ranged weapon, it eases behind the right shoulder, 0.8 m out, 3 m back and 0.25 m up from
+0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second, stops
+short of a wall and keeps 0.25 m over the ground. Aiming a ranged weapon, it eases behind the right shoulder, 0.8 m out, 3 m back and 0.25 m up from
 the head, and zooms in 1.3 times ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]); in first person the view zooms in 1.6 times, the hands with it
 ([[Aiming Sits Behind the Shoulder and Zooms the View]], [[First-Person Aiming Zooms the Weapon With the View]]).
 
@@ -109,15 +109,19 @@ room's word for it, so playing alone and online are the same game.
     cuts down and across, and a thrust drives out and flares where it lands. Each part fades by how long ago the blade
     passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut
     seen edge on still shows, and a dark rim keeps it clear against the sky. It burns in the weapon's metal (daedric
-    red, steel blue, dwarven gold), gold for a riposte or a counter; it flares where the blow meets something, stops
-    where a flinch or a dodge cuts it short, and through the eyes crosses the view. Brightness and trail are set.
+    red, steel blue, dwarven gold), gold for a riposte or a counter; it follows the blow's aim as the rules turn it,
+    flares where the blow meets something, stops where a flinch or a dodge cuts it short, waits while the fight waits,
+    and through the eyes crosses the view. Brightness and trail are set.
   - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
-    0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing holds nothing), the one
-    struck shuddering, then catch up at 1.6 times. Its length is set.
+    0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing, or a shot, holds
+    nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch
+    up at 1.6 times, never more than 0.2 s behind, and the player's hands go back to the rules' clock as what they do
+    changes. Other players' figures, drawn from their own looks, are not held. Its length is set.
   - *Camera kick.* The player's blow landing punches the view down and along the stroke and shakes it a little, harder
     for a kill, a stagger or a guard broken; a blow of theirs stopped by a guard knocks the view back; a blow landing
-    on the player jolts it and shakes it as hard as the harm; and the view leans into their own swing as it lands. Its
-    strength is set.
+    on the player jolts it and shakes it as hard as the harm; and the view leans into their own swing as it lands. A
+    blow's hit and the kill it made punch once; a shot kicks nothing; while a crosshair shows, the kick moves the view
+    but never turns it, so the crosshair stays where shots land. Its strength is set.
   - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the

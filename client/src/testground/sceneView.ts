@@ -323,28 +323,27 @@ export class SceneView implements CardMaker {
 
   /** The marks the next frames draw: telegraphed blows on the ground and shots in flight, as `marksMesh` lays them. */
   setMarks(vertices: Float32Array): void {
-    const { device } = this.gpu;
     this.markCount = vertices.length / MARK_FLOATS;
-    if (this.markCount === 0) return;
-    if (!this.markBuffer || this.markBuffer.size < vertices.byteLength) {
-      this.markBuffer?.destroy();
-      const size = Math.max(4096, 2 ** Math.ceil(Math.log2(vertices.byteLength)));
-      this.markBuffer = device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
-    }
-    device.queue.writeBuffer(this.markBuffer, 0, vertices);
+    this.markBuffer = this.written(this.markBuffer, vertices);
   }
 
   /** The swings' streaks the next frames draw, as `SwingArcs` lays them. */
   setSwings(vertices: Float32Array): void {
-    const { device } = this.gpu;
     this.swingCount = vertices.length / SWING_FLOATS;
-    if (this.swingCount === 0) return;
-    if (!this.swingBuffer || this.swingBuffer.size < vertices.byteLength) {
-      this.swingBuffer?.destroy();
+    this.swingBuffer = this.written(this.swingBuffer, vertices);
+  }
+
+  /** `vertices` written into `buffer`, or into a new one, a power of two in size, where they do not fit. */
+  private written(buffer: GPUBuffer | null, vertices: Float32Array): GPUBuffer | null {
+    if (vertices.length === 0) return buffer;
+    let into = buffer;
+    if (!into || into.size < vertices.byteLength) {
+      into?.destroy();
       const size = Math.max(4096, 2 ** Math.ceil(Math.log2(vertices.byteLength)));
-      this.swingBuffer = device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
+      into = this.gpu.device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
     }
-    device.queue.writeBuffer(this.swingBuffer, 0, vertices);
+    this.gpu.device.queue.writeBuffer(into, 0, vertices);
+    return into;
   }
 
   /** A composed picture as a texture the scene can draw. */

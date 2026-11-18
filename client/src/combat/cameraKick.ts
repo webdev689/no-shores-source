@@ -2,8 +2,8 @@
 // spring carries each push, overshooting a little and settling, and a struck player's view also shakes, as hard as
 // the blow, dying away. Only the view moves: where the player looks and aims is their own.
 import type { FightEvent } from '../network/messages.ts';
-import { STROKE_DIRECTIONS } from '../rules/fighters.ts';
-import { EVENT } from './cues.ts';
+import { type StrokeDirection, directionOf } from '../rules/fighters.ts';
+import { EVENT, HOW } from './cues.ts';
 
 /** A push on the view: turned right (`yaw`) and down (`pitch`), radians; moved ahead, to the right and up, metres. */
 export interface Push {
@@ -35,42 +35,57 @@ const SHAKE = { yaw: 1.6 * DEGREE, pitch: 1.2 * DEGREE, move: 0.025, dies: 1.6, 
 const STEP_S = 1 / 240;
 
 /** Which way a stroke's blade travels across the view, -1 to the left to 1 to the right. */
-const SIDE: Readonly<Record<string, number>> = { left: -1, right: 1, downLeft: -0.6, downRight: 0.6, down: 0, up: 0 };
-const sideOf = (stroke: number) => SIDE[STROKE_DIRECTIONS[stroke - 1] ?? 'down'] ?? 0;
+const SIDE: Readonly<Record<StrokeDirection, number>> = {
+  left: -1,
+  right: 1,
+  downLeft: -0.6,
+  downRight: 0.6,
+  down: 0,
+  up: 0,
+};
+/** How hard each way a blow lands punches the striker's view: a kill hardest, a guard broken or a stagger next. */
+const LANDED: Readonly<Record<number, number | undefined>> = {
+  [EVENT.killed]: 1.6,
+  [EVENT.guardBroken]: 1.3,
+  [EVENT.staggered]: 1.3,
+};
 
 /** The pushes and the shake the fight's events give player `player`'s view: their blow landing punches it down and
  *  along the stroke, harder for a kill or a guard broken; their blow stopped by a guard knocks it back; a blow landing
- *  on them jolts it up and back and shakes it, as hard as the harm. */
+ *  on them jolts it up and back and shakes it, as hard as the harm. A blow's events (a hit and the kill it made) push
+ *  once, as hard as the hardest; a shot pushes nothing: the feel is the blows'. */
 export function kicksOf(events: readonly FightEvent[], player: number): { pushes: Push[]; trauma: number } {
+  const blows = new Map<string, FightEvent[]>();
+  for (const event of events) {
+    if (event.how === HOW.shot || (event.striker !== player && event.defender !== player)) continue;
+    const key = `${event.tick}:${event.striker}:${event.defender}`;
+    blows.set(key, [...(blows.get(key) ?? []), event]);
+  }
   const pushes: Push[] = [];
   let trauma = 0;
-  for (const event of events) {
-    const side = sideOf(event.stroke);
-    if (event.striker === player) {
-      const landed =
-        event.kind === EVENT.killed
-          ? 1.6
-          : event.kind === EVENT.guardBroken || event.kind === EVENT.staggered
-            ? 1.3
-            : 0;
-      const harm = event.kind === EVENT.hit && event.amount > 0 ? 1 : landed;
-      if (harm > 0) {
-        pushes.push({ pitch: 0.9 * DEGREE * harm, yaw: 0.5 * DEGREE * side * harm, ahead: -0.025 * harm });
-        trauma = Math.max(trauma, 0.12 * harm);
-      } else if (event.kind === EVENT.blocked || event.kind === EVENT.parried) {
+  for (const blow of blows.values()) {
+    const side = SIDE[directionOf(Math.max(...blow.map((event) => event.stroke)))];
+    const stopped = blow.some((event) => event.kind === EVENT.blocked || event.kind === EVENT.parried);
+    const harm = Math.max(0, ...blow.map((event) => event.amount));
+    if (blow[0]?.striker === player) {
+      const landed = Math.max(
+        harm > 0 && blow.some((event) => event.kind === EVENT.hit) ? 1 : 0,
+        ...blow.map((event) => LANDED[event.kind] ?? 0),
+      );
+      if (landed > 0) {
+        pushes.push({ pitch: 0.9 * DEGREE * landed, yaw: 0.5 * DEGREE * side * landed, ahead: -0.025 * landed });
+        trauma = Math.max(trauma, 0.12 * landed);
+      } else if (stopped) {
         pushes.push({ yaw: -0.9 * DEGREE * (side || 1), pitch: -0.5 * DEGREE, ahead: -0.04 });
         trauma = Math.max(trauma, 0.22);
       }
-    }
-    if (event.defender === player) {
-      if (event.kind === EVENT.hit && event.amount > 0) {
-        const weight = Math.min(1.6, 0.8 + event.amount / 40);
-        pushes.push({ pitch: -1.3 * DEGREE * weight, yaw: 1 * DEGREE * side * weight, ahead: -0.06 * weight });
-        trauma = Math.max(trauma, Math.min(0.8, 0.25 + event.amount / 80));
-      } else if (event.kind === EVENT.blocked || event.kind === EVENT.parried) {
-        pushes.push({ pitch: -0.5 * DEGREE, ahead: -0.03 });
-        trauma = Math.max(trauma, 0.15);
-      }
+    } else if (harm > 0 && blow.some((event) => event.kind === EVENT.hit)) {
+      const weight = Math.min(1.6, 0.8 + harm / 40);
+      pushes.push({ pitch: -1.3 * DEGREE * weight, yaw: 1 * DEGREE * side * weight, ahead: -0.06 * weight });
+      trauma = Math.max(trauma, Math.min(0.8, 0.25 + harm / 80));
+    } else if (stopped) {
+      pushes.push({ pitch: -0.5 * DEGREE, ahead: -0.03 });
+      trauma = Math.max(trauma, 0.15);
     }
   }
   return { pushes, trauma };
@@ -79,9 +94,9 @@ export function kicksOf(events: readonly FightEvent[], player: number): { pushes
 /** The lean into the player's own swing as its blow lands, met or not: along the stroke, down for an overhead, in
  *  for a thrust. */
 export function leanOf(stroke: number): Push {
-  const direction = STROKE_DIRECTIONS[stroke - 1] ?? 'down';
+  const direction = directionOf(stroke);
   return {
-    yaw: 0.35 * DEGREE * sideOf(stroke),
+    yaw: 0.35 * DEGREE * SIDE[direction],
     pitch: direction === 'down' || direction === 'downLeft' || direction === 'downRight' ? 0.4 * DEGREE : 0,
     ahead: direction === 'up' ? 0.03 : 0.01,
   };

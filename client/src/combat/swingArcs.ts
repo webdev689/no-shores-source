@@ -1,7 +1,7 @@
 // A swing's arc: the streak of light a blade leaves through the air. It is laid from the fight's own blow (its stroke,
 // when it lands, how far it reaches and how wide it sweeps), so the eye follows where the blow goes rather than the
 // frames between. Each part of the streak fades by how long ago the blade passed it and burns by how fast it went.
-import { STROKE_DIRECTIONS, type StrokeDirection } from '../rules/fighters.ts';
+import { type StrokeDirection, directionOf } from '../rules/fighters.ts';
 
 export type Vector = readonly [number, number, number];
 export type Colour = readonly [number, number, number];
@@ -87,8 +87,8 @@ const FLARE = { from: 0.3, to: 0.85, fades: 0.08, lasts: 0.3 } as const;
 const GOLD: Colour = [1, 0.8, 0.32];
 const GOLD_SHARE = 0.65;
 const SPECIAL_BRIGHTER = 1.35;
-/** A blow seen again within this long (seconds) of where it began is the same blow. */
-const SAME_BLOW_S = 0.12;
+/** Between the rules' words on a blow, its arc runs on for at most this long (seconds): a snapshot's span. */
+const RUNS_ON_S = 0.15;
 
 /** Each stroke's path, in the striker's frame (ahead, right, up) for its right hand: where the blow lands (`land`),
  *  which way the blade travels as it lands (`travel`), and how far round it sweeps before and after the landing
@@ -173,7 +173,7 @@ export interface Course {
 
 /** A blow's course, from the swing as seen. */
 export function courseOf(swing: Swing): Course {
-  const direction = STROKE_DIRECTIONS[swing.stroke - 1] ?? 'down';
+  const direction = directionOf(swing.stroke);
   const forward: Vector = [Math.sin(swing.aim), -Math.cos(swing.aim), 0];
   const right: Vector = [Math.cos(swing.aim), Math.sin(swing.aim), 0];
   const up: Vector = [0, 0, 1];
@@ -247,56 +247,82 @@ export function tipAt(course: Course, feet: Vector, time: number): Vector {
   return course.thrust ? add(pivot, course.land, along) : add(pivot, outward(course, along), course.tip);
 }
 
-/** An arc being drawn: its blow as last seen, when it began on the page's clock, where its striker's feet were last
- *  drawn, when into the blow its striker stopped striking it (null while it still is), and a flare where it struck
- *  something (its time into the blow, and strength). */
+/** An arc being drawn: its blow and course as last seen (the rules turn a blow's aim until it lands), where its
+ *  striker's feet were last drawn, a flare where it struck something (its time into the blow, and strength), and its
+ *  clock: the blow's time as drawn, the rules' last word on it and when that came (page seconds), and when into the
+ *  blow its striker stopped striking it (null while it still is). */
 interface Arc {
   swing: Swing;
   course: Course;
-  readonly began: number;
   feet: Vector;
-  stopped: number | null;
   flare: { readonly when: number; readonly strength: number } | null;
+  time: number;
+  told: number;
+  toldAt: number;
+  clock: number;
+  stopped: number | null;
 }
 
 /** The swings' arcs: each blow's begun when it is first seen, drawn as it sweeps, flared where it strikes something, and
- *  let go once its streak has faded. */
+ *  let go once its streak has faded. An arc keeps the blow's own time, not the page's: between the rules' words it runs
+ *  on for at most a snapshot's span, and it waits while the fight waits, so a paused fight never replays a swing. */
 export class SwingArcs {
   private arcs: Arc[] = [];
 
-  /** Takes every blow being struck at `now` (the page's clock, seconds): one not seen before begins an arc; an arc whose
-   *  blow is no longer struck stops where it was, so a blow cut short by a flinch or a dodge never sweeps on; and every
-   *  arc follows its striker's feet as `where` draws them (null for one not drawn). */
+  /** Takes every blow being struck at `now` (the page's clock, seconds): one not seen before begins an arc; one seen
+   *  again takes its latest aim and time; an arc whose blow is no longer struck stops where it was, so a blow cut short
+   *  by a flinch or a dodge never sweeps on, and fades from there; and every arc follows its striker's feet as `where`
+   *  draws them (null for one not drawn). */
   seen(now: number, swings: readonly Swing[], where: (id: number) => Vector | null): void {
     const struck = new Set<Arc>();
     for (const swing of swings) {
-      const began = now - swing.elapsed;
-      const same = this.arcs.find(
+      // The same blow: its striker's, its stroke, never earlier than it was, and still being struck.
+      const same = this.arcs.findLast(
         (arc) =>
-          arc.swing.id === swing.id && arc.swing.stroke === swing.stroke && Math.abs(arc.began - began) < SAME_BLOW_S,
+          arc.stopped === null &&
+          arc.swing.id === swing.id &&
+          arc.swing.stroke === swing.stroke &&
+          swing.elapsed >= arc.told - 1e-9,
       );
       if (same) {
+        if (swing.elapsed > same.told) [same.told, same.toldAt] = [swing.elapsed, now];
+        same.time = Math.max(same.time, Math.min(same.told + (now - same.toldAt), same.told + RUNS_ON_S));
+        [same.swing, same.course, same.clock] = [swing, courseOf(swing), now];
         struck.add(same);
         continue;
       }
       const feet = where(swing.id);
       if (!feet) continue;
-      const arc: Arc = { swing, course: courseOf(swing), began, feet, stopped: null, flare: null };
+      const arc: Arc = {
+        swing,
+        course: courseOf(swing),
+        feet,
+        flare: null,
+        time: swing.elapsed,
+        told: swing.elapsed,
+        toldAt: now,
+        clock: now,
+        stopped: null,
+      };
       this.arcs.push(arc);
       struck.add(arc);
     }
     for (const arc of this.arcs) {
-      if (!struck.has(arc)) arc.stopped ??= now - arc.began;
+      if (!struck.has(arc)) {
+        arc.stopped ??= arc.time;
+        // Stopped, its time runs on so its streak fades.
+        [arc.time, arc.clock] = [arc.time + (now - arc.clock), now];
+      }
       arc.feet = where(arc.swing.id) ?? arc.feet;
     }
   }
 
   /** Flares the latest arc of `striker` as its blow meets something, as strongly as `strength`, if it is still in its
-   *  sweep at `now` (`lag` the seconds its striker's drawing is held back). */
-  struck(striker: number, strength: number, now: number, lag = 0): void {
+   *  sweep (`lag` the seconds its striker's drawing is held back). */
+  struck(striker: number, strength: number, lag = 0): void {
     const arc = this.arcs.findLast((each) => each.swing.id === striker);
     if (!arc) return;
-    const time = now - arc.began - lag;
+    const time = arc.time - lag;
     if (time >= arc.course.from && time <= arc.course.to + FLARE.fades)
       arc.flare = { when: Math.min(time, arc.course.to), strength };
   }
@@ -306,26 +332,25 @@ export class SwingArcs {
     return this.arcs.length;
   }
 
-  /** The vertices of every arc at `now`, seen from `eye`, as `look` sets them; `lagOf` is the seconds each striker's
-   *  drawing is held back (a hit-stop). Arcs whose streaks have faded are let go. */
-  mesh(now: number, eye: Vector, look: ArcLook, lagOf: (id: number) => number = () => 0): Float32Array {
+  /** The vertices of every arc, seen from `eye`, as `look` sets them; `lagOf` is the seconds each striker's drawing is
+   *  held back (a hit-stop). Arcs whose streaks have faded are let go. */
+  mesh(eye: Vector, look: ArcLook, lagOf: (id: number) => number = () => 0): Float32Array {
     const out: number[] = [];
     const trail = TRAIL_S * Math.max(0.05, look.trail);
     this.arcs = this.arcs.filter((arc) => {
-      const time = now - arc.began - lagOf(arc.swing.id);
-      const flaring = arc.flare !== null && time - arc.flare.when < FLARE.lasts;
+      const time = arc.time - lagOf(arc.swing.id);
+      const since = arc.flare ? time - arc.flare.when : -1;
+      const flaring = since >= 0 && since < FLARE.lasts;
       if (time > Math.min(arc.course.to, arc.stopped ?? Infinity) + trail && !flaring) return false;
-      const tint = arc.swing.special ? mix(arc.swing.tint, GOLD, GOLD_SHARE) : arc.swing.tint;
-      const flared =
-        arc.flare && time >= arc.flare.when ? arc.flare.strength * Math.exp(-(time - arc.flare.when) / FLARE.fades) : 0;
-      const strength = look.brightness * (arc.swing.special ? SPECIAL_BRIGHTER : 1) * (1 + flared);
       if (look.brightness <= 0) return true;
+      const tint = arc.swing.special ? mix(arc.swing.tint, GOLD, GOLD_SHARE) : arc.swing.tint;
+      const flared = flaring && arc.flare ? arc.flare.strength * Math.exp(-since / FLARE.fades) : 0;
+      const strength = look.brightness * (arc.swing.special ? SPECIAL_BRIGHTER : 1) * (1 + flared);
       layStreak(out, arc, time, trail, eye, tint, strength);
-      if (arc.flare && time >= arc.flare.when && time - arc.flare.when < FLARE.lasts) {
-        const since = time - arc.flare.when;
+      if (flaring && arc.flare) {
         const size = FLARE.from + (FLARE.to - FLARE.from) * (1 - Math.exp(-since / FLARE.fades));
         const point = tipAt(arc.course, arc.feet, arc.flare.when);
-        layFlare(out, point, size, eye, tint, look.brightness * arc.flare.strength * Math.exp(-since / FLARE.fades));
+        layFlare(out, point, size, eye, tint, look.brightness * flared);
       }
       return true;
     });
@@ -366,10 +391,13 @@ function layStreak(
   const pivot = add(arc.feet, course.offset);
   const normal = unit(cross(course.land, course.travel));
   const samples: { along: number; age: number; speed: number }[] = [];
+  // Sampled back from where the head last moved, its sweep's end or where it stopped: nothing moves after that.
+  const last = Math.min(time, course.to, stopped);
   for (let step = 0; step <= SAMPLES; step += 1) {
-    const age = (step / SAMPLES) * trail;
-    if (time - age < course.from) break;
-    const head = headAt(course, Math.min(time - age, stopped));
+    const when = last - (step / SAMPLES) * trail;
+    const age = time - when;
+    if (when < course.from || age > trail) break;
+    const head = headAt(course, when);
     samples.push({ along: head.along, age: age / trail, speed: head.speed });
   }
   for (let step = 0; step + 1 < samples.length; step += 1) {

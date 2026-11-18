@@ -28,7 +28,7 @@ import { type CardAt, Cards } from '../player/cards.ts';
 import { COURSE, START } from './course.ts';
 import { type Dress, plainDress } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
-import { cameraOf, viewProjection } from '../editor/orbit.ts';
+import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from '../player/player.ts';
 import { AIM, type AimPlace } from '../player/playerCamera.ts';
@@ -57,6 +57,13 @@ const guardPose = (action: Action) => {
   if (action.kind !== 'parry') return null;
   return { record: PARRY_RECORD, frame: 1 + Math.min(2, Math.floor((action.elapsed / FIGHT_TICKS.parry) * 3)) };
 };
+/** The Test Ground's ground is flat at 0, and its camera keeps this far over it (metres): an aiming view looking up
+ *  from behind the shoulder stays above the ground. */
+const GROUND_CLEARANCE_M = 0.25;
+function aboveGround(orbit: Orbit): Orbit {
+  const eyeZ = orbit.targetZ + Math.sin(orbit.pitch) * orbit.distance;
+  return eyeZ >= GROUND_CLEARANCE_M ? orbit : { ...orbit, targetZ: orbit.targetZ + GROUND_CLEARANCE_M - eyeZ };
+}
 /** What the fight holds the player to, when their weapon neither swings nor shoots. */
 const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
 
@@ -144,7 +151,7 @@ async function start(): Promise<void> {
   const feel = new AttackFeel(element<HTMLElement>('#panel'), combatRules, movement.tickSeconds);
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: typeof player) =>
-    playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, COURSE, aimPlace);
+    aboveGround(playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, COURSE, aimPlace));
   const panelState = (looks: ForgeLooks, hair: HairColours, line: string) => ({
     looks,
     hair,
@@ -275,7 +282,7 @@ async function start(): Promise<void> {
       const fighter = id === fight.player ? fight.own : (fight.foes.get(id)?.view ?? fight.others.get(id)?.body);
       return fighter ? [fighter.x, fighter.y, fighter.z] : null;
     });
-    feel.frame(events, own, fight.player, clock, seconds);
+    feel.frame(events, own, fight.player, seconds, new Set(fight.others.keys()));
     const frameTicks = seconds / movement.tickSeconds;
     const body = shownBody(player);
     // Fighting, the figure faces where its arms point.
@@ -283,7 +290,8 @@ async function start(): Promise<void> {
     Object.assign(you, { x: body.x, y: body.y, facing: fighting ? own.aim : player.facing });
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
-    const camera = feel.camera(aimView(player), fight.player, own, player.view.shown <= HIDE_FIGURE_M);
+    const eyes = player.view.shown <= HIDE_FIGURE_M;
+    const camera = feel.camera(aimView(player), fight.player, own, eyes, aiming || aimHeld || (ranged && eyes));
     const eye = eyeOf(camera);
     // Each figure drawn off where it stands by the attack feel; its feet as drawn, which its swing's arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, camera.yaw);

@@ -97,13 +97,35 @@ test("a weapon's arc burns in its metal's light, bare hands in a warm white", ()
   assert.deepEqual(weaponTint(null), weaponTint('staff'));
 });
 
+const EYE: Vector = [10, 30, 1.6];
+/** A striker's blow seen frame by frame, `elapsed` its time at each of `nows`. */
+const play = (
+  arcs: SwingArcs,
+  steps: readonly (readonly [now: number, elapsed: number | null])[],
+  over: Partial<Swing> = {},
+) => {
+  for (const [now, elapsed] of steps) arcs.seen(now, elapsed === null ? [] : [swing({ ...over, elapsed })], () => FEET);
+};
+const parts = (mesh: Float32Array) => {
+  const found = new Set<number>();
+  for (let vertex = 0; vertex < mesh.length; vertex += SWING_FLOATS) found.add(mesh[vertex + 6] ?? -1);
+  return found;
+};
+const strongest = (mesh: Float32Array) =>
+  Math.max(
+    0,
+    ...Array.from({ length: mesh.length / SWING_FLOATS }, (_unused, index) => mesh[index * SWING_FLOATS + 10] ?? 0),
+  );
+
 test('a blow seen again is one arc; a later one another; each laid as triangles while it sweeps, then let go', () => {
   const arcs = new SwingArcs();
-  const where = () => FEET;
-  arcs.seen(5, [swing({ elapsed: 0.2 })], where);
-  arcs.seen(5.05, [swing({ elapsed: 0.25 })], where);
+  play(arcs, [
+    [5, 0.2],
+    [5.05, 0.25],
+    [5.2, 0.4],
+  ]);
   assert.equal(arcs.count, 1);
-  const mesh = arcs.mesh(5.2, [10, 30, 1.6], LOOK);
+  const mesh = arcs.mesh(EYE, LOOK);
   assert.ok(mesh.length > 0 && mesh.length % (SWING_FLOATS * 6) === 0, 'whole quads');
   const course = courseOf(swing());
   for (let vertex = 0; vertex < mesh.length; vertex += SWING_FLOATS) {
@@ -111,62 +133,96 @@ test('a blow seen again is one arc; a later one another; each laid as triangles 
     const from = [(mesh[vertex] ?? 0) - 10.18, (mesh[vertex + 1] ?? 0) - 19.85, (mesh[vertex + 2] ?? 0) - 1.3];
     assert.ok(Math.hypot(...from) <= course.tip * 1.06 + 1e-4, 'within the blade');
   }
-  arcs.seen(6, [swing({ elapsed: 0 })], where);
-  assert.equal(arcs.count, 2, 'a later blow');
-  assert.equal(arcs.mesh(9, [10, 30, 1.6], LOOK).length, 0, 'faded');
+  play(arcs, [[6, 0]]);
+  assert.equal(arcs.count, 2, 'a later blow, begun anew');
+  play(arcs, [[9, null]]);
+  assert.equal(arcs.mesh(EYE, LOOK).length, 0, 'faded');
   assert.equal(arcs.count, 0, 'let go');
 });
 
-test('a blow that meets something flares where its tip was, and only while it sweeps', () => {
-  const parts = (mesh: Float32Array) => {
-    const found = new Set<number>();
-    for (let vertex = 0; vertex < mesh.length; vertex += SWING_FLOATS) found.add(mesh[vertex + 6] ?? -1);
-    return found;
-  };
-  const strongest = (mesh: Float32Array) =>
-    Math.max(
-      ...Array.from({ length: mesh.length / SWING_FLOATS }, (_unused, index) => mesh[index * SWING_FLOATS + 10] ?? 0),
-    );
+test("a blow keeps the rules' time, not the page's: it runs on a snapshot's span, then waits while the fight waits", () => {
   const arcs = new SwingArcs();
-  arcs.seen(0, [swing()], () => FEET);
-  arcs.struck(7, 1, 0.41);
-  const flared = arcs.mesh(0.43, [10, 30, 1.6], LOOK);
+  play(arcs, [
+    [0, 0.2],
+    [0.05, 0.2],
+  ]);
+  const laid = (mesh: Float32Array) => mesh.length;
+  const early = laid(arcs.mesh(EYE, LOOK));
+  // The fight paused for two seconds: the same blow, never begun again, and its arc not run on past a snapshot's span.
+  for (let now = 0.1; now < 2; now += 0.05) play(arcs, [[now, 0.2]]);
+  assert.equal(arcs.count, 1, 'never begun again');
+  const paused = new SwingArcs();
+  play(paused, [
+    [0, 0.2],
+    [0.15, 0.2],
+  ]);
+  assert.equal(laid(arcs.mesh(EYE, LOOK)), laid(paused.mesh(EYE, LOOK)), 'run on by a snapshot span at most');
+  assert.ok(early > 0);
+});
+
+test('a blow turned as it winds up sweeps where it is aimed at last', () => {
+  const arcs = new SwingArcs();
+  play(arcs, [[0, 0.2]]);
+  play(arcs, [[0.2, 0.4]], { aim: Math.PI / 2 });
+  const mesh = arcs.mesh(EYE, LOOK);
+  let east = 0;
+  for (let vertex = 0; vertex < mesh.length; vertex += SWING_FLOATS) east = Math.max(east, (mesh[vertex] ?? 0) - 10);
+  assert.ok(east > 1, `it sweeps east, where it was turned: ${east}`);
+});
+
+test('a blow that meets something flares where its tip was, and only while it sweeps', () => {
+  const arcs = new SwingArcs();
+  play(arcs, [
+    [0, 0],
+    [0.41, 0.41],
+  ]);
+  arcs.struck(7, 1);
+  play(arcs, [[0.43, 0.43]]);
+  const flared = arcs.mesh(EYE, LOOK);
   assert.ok(parts(flared).has(PART.flare) && parts(flared).has(PART.band) && parts(flared).has(PART.strip));
   assert.ok(strongest(flared) > 1.5, `brighter than plain: ${strongest(flared)}`);
   // Struck before its fast part began, or by another striker: no flare, only the plain streak and its glint.
   const late = new SwingArcs();
-  late.seen(0, [swing()], () => FEET);
-  late.struck(7, 1, 0.1);
-  late.struck(8, 1, 0.41);
-  assert.ok(strongest(late.mesh(0.43, [10, 30, 1.6], LOOK)) <= 1);
+  play(late, [[0, 0.1]]);
+  late.struck(7, 1);
+  late.struck(8, 1);
+  play(late, [[0.33, 0.43]]);
+  assert.ok(strongest(late.mesh(EYE, LOOK)) <= 1);
 });
 
 test('dark at no brightness, and held back by a hit-stop', () => {
   const arcs = new SwingArcs();
-  arcs.seen(0, [swing()], () => FEET);
-  assert.equal(arcs.mesh(0.3, [10, 30, 1.6], { brightness: 0, trail: 1 }).length, 0);
+  play(arcs, [[0, 0.3]]);
+  assert.equal(arcs.mesh(EYE, { brightness: 0, trail: 1 }).length, 0);
   assert.equal(arcs.count, 1, 'kept');
   // Held back by the whole of its time, it has not yet begun its fast part: nothing is laid.
-  assert.equal(arcs.mesh(0.3, [10, 30, 1.6], LOOK, () => 0.3).length, 0);
+  assert.equal(arcs.mesh(EYE, LOOK, () => 0.3).length, 0);
 });
 
 test('a blow cut short stops where it was and fades from there, never sweeping on', () => {
   const struck = new SwingArcs();
   const cut = new SwingArcs();
-  for (const arcs of [struck, cut]) arcs.seen(0, [swing()], () => FEET);
-  struck.seen(0.3, [swing({ elapsed: 0.3 })], () => FEET);
-  cut.seen(0.3, [], () => FEET);
+  play(struck, [
+    [0, 0],
+    [0.3, 0.3],
+    [0.47, 0.47],
+  ]);
+  play(cut, [
+    [0, 0],
+    [0.3, 0.3],
+    [0.47, null],
+  ]);
   // Uninterrupted, it still sweeps at 0.47; cut short at 0.3, its streak has faded by then.
-  assert.ok(struck.mesh(0.47, [10, 30, 1.6], LOOK).length > 0);
-  assert.equal(cut.mesh(0.47, [10, 30, 1.6], LOOK).length, 0);
+  assert.ok(struck.mesh(EYE, LOOK).length > 0);
+  assert.equal(cut.mesh(EYE, LOOK).length, 0);
   assert.equal(cut.count, 0, 'let go');
 });
 
 test('a thrust stabs as it lands, a flare at its tip that shows even end on, and none before', () => {
   const flares = (time: number) => {
     const arcs = new SwingArcs();
-    arcs.seen(0, [swing({ stroke: 6, reach: 2.65, halfArc: 20 * DEGREE, elapsed: time })], () => FEET);
-    const mesh = arcs.mesh(0, [10, 30, 1.6], LOOK);
+    play(arcs, [[0, time]], { stroke: 6, reach: 2.65, halfArc: 20 * DEGREE });
+    const mesh = arcs.mesh(EYE, LOOK);
     let count = 0;
     for (let vertex = 0; vertex < mesh.length; vertex += SWING_FLOATS) if (mesh[vertex + 6] === PART.flare) count += 1;
     return count / 6;

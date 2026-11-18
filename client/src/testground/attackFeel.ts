@@ -42,8 +42,13 @@ export class AttackFeel {
   private readonly kick = new CameraKick();
   private readonly rules: CombatRules;
   private readonly tick: number;
-  /** The player's own blow's clock last frame, to find the frame it lands in. */
+  /** The player's own blow's clock last frame, to find the frame it lands in; and what they were doing, as their
+   *  action's kind and clock, so their drawing goes back to the rules' clock as that changes. */
   private ownElapsed: number | null = null;
+  private ownKind = '';
+  private ownClock: number | null = null;
+  /** Fighters whose drawing is not this page's to hold (other players, drawn from their own looks). */
+  private unheld: ReadonlySet<number> = new Set();
 
   /** Adds the feel's panel to `panel`; `rules` reach and width each stroke, and a tick is `tickSeconds`. */
   constructor(panel: HTMLElement, rules: CombatRules, tickSeconds: number) {
@@ -54,16 +59,30 @@ export class AttackFeel {
     });
   }
 
-  /** Takes a frame of `seconds`: each blow landing holds its fighters still, flares its arc, and kicks the view of
-   *  `player` (its fighter `own`) as it lands on or by them; their own blow leans the view as it lands, met or not.
-   *  `clock` is the page's. */
-  frame(events: readonly FightEvent[], own: FighterView | null, player: number, clock: number, seconds: number): void {
+  /** Takes a frame of `seconds`: each blow landing holds its fighters still from the next frame (so its landing is what
+   *  holds), flares its arc, and kicks the view of `player` (its fighter `own`) as it lands on or by them; their own
+   *  blow leans the view as it lands, met or not. `unheld` are fighters whose drawing is not held. */
+  frame(
+    events: readonly FightEvent[],
+    own: FighterView | null,
+    player: number,
+    seconds: number,
+    unheld: ReadonlySet<number>,
+  ): void {
     const { feel } = this;
-    this.stops.struck(events, feel.stop ? feel.stopLength : 0);
+    this.unheld = unheld;
     this.stops.update(seconds);
+    // The player's hands keep their own clock: as what they do changes, or a new swing begins, it goes back to the
+    // rules', so a held swing cut short never leaves the next one running ahead.
+    const kind = own?.action.kind ?? '';
+    const clock = own && 'elapsed' in own.action ? own.action.elapsed : null;
+    const anew = clock !== null && this.ownClock !== null && clock < this.ownClock;
+    if (kind !== this.ownKind || anew) this.stops.release(player);
+    [this.ownKind, this.ownClock] = [kind, clock];
+    this.stops.struck(events, feel.stop ? feel.stopLength : 0);
     for (const event of events) {
       const flare = event.kind === EVENT.hit && event.amount <= 0 ? 0 : (ARC_FLARE[event.kind] ?? 0);
-      if (flare > 0) this.arcs.struck(event.striker, flare, clock, this.stops.lagOf(event.striker));
+      if (flare > 0) this.arcs.struck(event.striker, flare, this.lag(event.striker));
     }
     const attack = own?.action.kind === 'attack' ? own.action : null;
     if (feel.kick) {
@@ -77,9 +96,14 @@ export class AttackFeel {
     this.kick.update(seconds);
   }
 
+  /** How far behind the rules a fighter's drawing is held, seconds. */
+  private lag(id: number): number {
+    return this.unheld.has(id) ? 0 : this.stops.lagOf(id);
+  }
+
   /** A fighter's view as its drawing shows it, held back while a blow landing holds it. */
   held(id: number, view: FighterView): FighterView {
-    return heldBack(view, this.stops.lagOf(id) / this.tick);
+    return heldBack(view, this.lag(id) / this.tick);
   }
 
   /** The seconds a fighter's own drawing moves on this frame of `seconds`. */
@@ -101,11 +125,13 @@ export class AttackFeel {
     );
   }
 
-  /** `orbit` kicked as the fight's blows land, and through the eyes (`eyes`) carried with `player`'s own lunge. */
-  camera<Seen extends Orbit>(orbit: Seen, player: number, own: FighterView | null, eyes: boolean): Seen {
+  /** `orbit` kicked as the fight's blows land, and through the eyes (`eyes`) carried with `player`'s own lunge. While
+   *  a crosshair shows (`aiming`), the kick moves the view but never turns it, so the crosshair stays where shots land. */
+  camera<Seen extends Orbit>(orbit: Seen, player: number, own: FighterView | null, eyes: boolean, aiming: boolean): Seen {
     const push = this.feel.kick ? this.kick.now : STILL;
     const lunge = eyes ? this.lunge(player, own).ahead * OWN_LUNGE_EYE : 0;
-    return this.kick.kicked(orbit, { ...push, ahead: push.ahead + lunge });
+    const turn = aiming ? { yaw: 0, pitch: 0 } : {};
+    return this.kick.kicked(orbit, { ...push, ...turn, ahead: push.ahead + lunge });
   }
 
   /** Where a fighter's figure is drawn off where it stands: driven along its aim into its blow, and shuddered across a
@@ -146,6 +172,6 @@ export class AttackFeel {
     }
     this.arcs.seen(clock, swung, (id) => feet.get(id) ?? null);
     const look = { brightness: this.feel.arc ? this.feel.arcBrightness : 0, trail: this.feel.arcTrail };
-    return this.arcs.mesh(clock, eye, look, (id) => this.stops.lagOf(id));
+    return this.arcs.mesh(eye, look, (id) => this.lag(id));
   }
 }

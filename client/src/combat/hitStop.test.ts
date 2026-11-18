@@ -89,3 +89,30 @@ test("a fighter held back shows its action's clock that much earlier, never befo
   assert.equal(flinched.kind === 'flinch' ? flinched.left : null, 8);
   assert.equal(heldBack(view, 0), view);
 });
+
+test('shots hold nothing; holds one on another never leave the drawing more than 0.2 s behind; a release lets it go', () => {
+  const shot = new HitStops();
+  shot.struck([{ ...event(EVENT.hit), how: 6 }]);
+  shot.update(0.05);
+  assert.equal(shot.lagOf(2), 0, 'a shot');
+  const many = new HitStops();
+  for (let blow = 0; blow < 60; blow += 1) {
+    many.struck([event(EVENT.killed)], 2.5);
+    many.update(0.15);
+  }
+  assert.ok(many.lagOf(1) <= 0.2 + 1e-12, `${many.lagOf(1)}`);
+  many.release(1);
+  assert.equal(many.lagOf(1), 0);
+  assert.equal(many.shownSeconds(1, 0.05), 0.05, 'back on the rules’ clock');
+});
+
+test('a striker just struck does not shudder at its own blow', () => {
+  const stops = new HitStops();
+  stops.struck([{ ...event(EVENT.hit), striker: 2, defender: 1 }]);
+  stops.update(0.2);
+  stops.struck([event(EVENT.hit)]);
+  for (let frame = 0; frame < 6; frame += 1) {
+    stops.update(1 / 120);
+    assert.equal(stops.shudderOf(1), 0, 'now the striker');
+  }
+});

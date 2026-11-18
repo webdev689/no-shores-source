@@ -3,6 +3,8 @@ import { BODY_FLOATS, type Mode } from './movementRules.ts';
 /** The combat crate's strokes 1 to 6, as the way each swing goes. */
 export const STROKE_DIRECTIONS = ['down', 'downLeft', 'left', 'right', 'downRight', 'up'] as const;
 export type StrokeDirection = (typeof STROKE_DIRECTIONS)[number];
+/** The way stroke `stroke` (1 to 6) goes; an overhead for any other. */
+export const directionOf = (stroke: number): StrokeDirection => STROKE_DIRECTIONS[stroke - 1] ?? 'down';
 /** A foe's telegraphed blow's shapes, by the combat crate's numbers 1 to 7. */
 export const SHAPES = ['lunge', 'sweep', 'slam', 'ring', 'charge', 'leap', 'aimed'] as const;
 export type Shape = (typeof SHAPES)[number];

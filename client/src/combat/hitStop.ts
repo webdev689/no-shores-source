@@ -3,7 +3,7 @@
 // drawing is held: the rules' clock never stops.
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { EVENT } from './cues.ts';
+import { EVENT, HOW } from './cues.ts';
 
 /** How long each meeting holds both still (seconds): a blow that harms, a kill, a guard broken, a stagger, a parry
  *  and a block. A kill holds longest, so it lands hardest. */
@@ -15,8 +15,10 @@ const HOLD: Readonly<Record<number, number | undefined>> = {
   [EVENT.parried]: 0.08,
   [EVENT.blocked]: 0.05,
 };
-/** After a hold, the drawing runs this share faster than the rules until it has caught up. */
+/** After a hold, the drawing runs this share faster than the rules until it has caught up; however many blows land, it
+ *  is never more than this far behind (seconds). */
 const CATCH_UP = 0.6;
+const MOST_BEHIND_S = 0.2;
 /** The one struck shudders across the view: this far either way (metres) at first, this many times a second, dying
  *  with the hold. */
 const SHUDDER = { metres: 0.035, rate: 45 } as const;
@@ -38,16 +40,18 @@ export class HitStops {
   private clock = 0;
 
   /** Holds each blow's striker and the one it met, `length` times as long as made (0 holds none). A blow that harms
-   *  nothing holds nothing. */
+   *  nothing holds nothing, and nor does a shot: the feel is the blows'. */
   struck(events: readonly FightEvent[], length = 1): void {
     for (const event of events) {
       const hold = (HOLD[event.kind] ?? 0) * length;
-      if (hold <= 0 || (event.kind === EVENT.hit && event.amount <= 0)) continue;
+      if (hold <= 0 || event.how === HOW.shot || (event.kind === EVENT.hit && event.amount <= 0)) continue;
       for (const [id, struck] of [
         [event.striker, false],
         [event.defender, true],
       ] as const) {
         const held = this.held.get(id) ?? { left: 0, whole: 0, lag: 0, change: 0, struck };
+        // A new hold says afresh whether it was the one struck: a striker just struck does not shudder at its own blow.
+        if (held.left <= 0) held.struck = struck;
         if (hold > held.left) Object.assign(held, { left: hold, whole: hold });
         held.struck ||= struck;
         this.held.set(id, held);
@@ -62,10 +66,15 @@ export class HitStops {
       const before = held.lag;
       const holding = Math.min(held.left, seconds);
       held.left -= holding;
-      held.lag = Math.max(0, held.lag + holding - (seconds - holding) * CATCH_UP);
+      held.lag = Math.min(MOST_BEHIND_S, Math.max(0, held.lag + holding - (seconds - holding) * CATCH_UP));
       held.change = held.lag - before;
       if (held.left <= 0 && held.lag <= 0 && held.change === 0) this.held.delete(id);
     }
+  }
+
+  /** Lets a fighter's drawing go at once to where the rules have it: its hold and its lag both gone. */
+  release(id: number): void {
+    this.held.delete(id);
   }
 
   /** How far behind the rules a fighter's drawing is, seconds. */
