@@ -115,7 +115,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
 - The [[Test Ground]]'s third-person aim placed by hand, DFO's next forge work with its dodge roll, and faster strikes,
-  merged to `main` with the owner's yes (#62), which deploys the page and the rooms, tested offline:
+  merged to `main` with the owner's yes (#62) and deployed; the live Test Ground serves the aim's panel:
   - the aim's sliders, kept in the browser and shown as numbers;
   - the forge's code exactly but for the were-creatures' ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]),
     and its 118,158 redrawn and new pictures and the roll's 1,200 published to R2 by a helper session on the
@@ -124,6 +124,10 @@ Where the work stands now, for the next session. Each session rewrites this note
     twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
 
 ## Waiting on the owner
+
+- A pull request for [[First-Person Aiming Zooms the Weapon With the View]]: aiming in first person zooms the hands
+  with the view, and the muzzle with them, as the owner chose from pictures. Tested offline, with a test and a
+  headless Test Ground run; it waits for the owner's yes to merge.
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
@@ -149,6 +153,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
 ## Next
+
+- Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
+  seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
+  not yet known.
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
