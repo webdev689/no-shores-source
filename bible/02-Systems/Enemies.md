@@ -147,13 +147,13 @@ WebAssembly, so names, factions and weapons are read in one place.
 - **Who stands where** is drawn from the room's seed, the course's mixed with the node's id, so every machine stands
   the same garrison in the same places.
 - **Levels and shields** ([[Garrisons Take the Gear Loop's Levels and Shields]]): each foe stands at a level drawn
-  evenly from its island's band ([[Gear]], "Where foes stand"), raised by the seas its voyage set out at, and one foe
-  in five, of any rank, with a shield of an element drawn evenly, holding half its health; both are drawn from the
-  node's id, so a group stands again with the same. Its level sets its power against a player's gear, and its rank
-  multiplies on top: a Grey Tithe Elite at level 13 has 2.2 times a Major's health, times 1.07 to the 13th (2.41), 5.30
-  times in all, and its blow is 1.15 times a Major's, times 2.41 on a level-13 player with no Defense. A Boss's
-  called foes fight at its level, with no shield. A kill pays every player whose blow landed in its last ten
-  seconds, as any foe's does ([[Gear]], "In the rooms").
+  evenly from its island's band ([[Gear]], "Where foes stand"), raised by the seas its voyage set out at, and one foe in
+  five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health; both are drawn
+  from the node's id, so a group stands again with the same. Its level sets its power against a player's gear, and its
+  rank multiplies on top: a Grey Tithe Elite at level 13 has 2.2 times a Major's health, times 1.07 to the 13th (2.41),
+  5.30 times in all, and its blow is 1.15 times a Major's, times 2.41 on a level-13 player with no Defense. A Boss's
+  called foes fight at its level, with no shield. A kill pays every player whose blow landed in its last ten seconds, as
+  any foe's does ([[Gear]], "In the rooms").
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
   farthest from the nearest spawn. A group stands 2.5 m round its post, each foe facing outward, a leader in the

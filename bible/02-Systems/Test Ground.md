@@ -119,11 +119,12 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   **Attack feel**, kept in the browser with its numbers shown to copy
   ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never
   do.
-  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own landing, reach and width, going
-    the way the striker's figure is drawn swinging ([[First Person Strikes Faster Without Arcs, and Arcs Follow the
-    Drawn Blow]]). A blow goes its own way, whatever way the swing was asked: the overhead down, the thrust out, the
-    side cut to the right with one hand or a pair, to the left with a hilt or a haft. Any other move goes the rules'
-    stroke. A figure drawn mirrored swings left-handed, so its arc is mirrored too, as it was when the swing began.
+  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own landing, reach and width, going the
+    way the striker's figure is drawn swinging
+    ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). A blow goes its own way, whatever
+    way the swing was asked: the overhead down, the thrust out, the side cut to the right with one hand or a pair, to
+    the left with a hilt or a haft. Any other move goes the rules' stroke. A figure drawn mirrored swings left-handed,
+    so its arc is mirrored too, as it was when the swing began.
     An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
     cuts down and across, and a thrust drives out and flares where it lands. Each part fades by how long ago the blade
     passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut

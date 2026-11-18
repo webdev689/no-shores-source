@@ -248,8 +248,11 @@ impl Room {
         }
         let (seed, mut nth) = (self.world_seed, 0_u32);
         for post in &mut self.garrison {
-            for _ in 0..post.members.len() {
-                post.girds.push(gird_of(seed, nth, levels));
+            for &(_, rank, _, _) in &post.members {
+                let (level, shield) = gird_of(seed, nth, levels);
+                // A Boss or a Miniboss never stands shielded, at the owner's word; the draw is still made, so every
+                // other foe's stays as it was.
+                post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));
                 nth += 1;
             }
         }
