@@ -69,6 +69,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Clothing Is Armour, With a Wardrobe Later]]
 - [[The Accounts Deploy on Each Merge, and the Owner Adds Their Keys]]
 - [[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]
+- [[The Gear Screens Follow Destiny, on Enhanced Plus]]
 - [[The Ship Is Managed and Walked From the Sea's Panel]]
 - [[The Sloop Is About 18 m Long]]
 - [[Pirates Must Be Met at Sea]]
