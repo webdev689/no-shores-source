@@ -9,8 +9,9 @@
 //
 // steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
-// { "wheel": [x, y, deltaY] }, { "clickText": "Return to ship" }, { "eval": "js" }, { "shot": "out.png" }. The
-// console's errors are printed.
+// { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
+// { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
+// player about 0.03 rad a second. The console's errors are printed.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
 
@@ -96,6 +97,11 @@ async function main() {
     if (step.wait) await page.waitForTimeout(step.wait * 1000);
     else if (step.waitFor) await page.getByText(step.waitFor).first().waitFor({ timeout: (step.timeout ?? 180) * 1000 });
     else if (step.key) await page.keyboard.press(step.key);
+    else if (step.hold) {
+      await page.keyboard.down(step.hold[0]);
+      await page.waitForTimeout(step.hold[1] * 1000);
+      await page.keyboard.up(step.hold[0]);
+    }
     else if (step.click) await page.mouse.click(step.click[0], step.click[1]);
     else if (step.wheel) {
       await page.mouse.move(step.wheel[0], step.wheel[1]);

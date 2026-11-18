@@ -116,21 +116,27 @@ Where the work stands now, for the next session. Each session rewrites this note
   unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
   renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
+- #60's keys: the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and the repository secrets
+  `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; and the Cloudflare token's leave to edit D1, which CI needs to
+  make the accounts' database.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
 ## Next
 
 - **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
-  choices in [[Gear as Claude Shapes It]]). Its rules are the `gear` crate ([[Gear]]), on pull request #60, and gear in
-  the rooms with it: each player's gear held by their room and sent to them, asks in their inputs, blows by Attack,
-  level and Defense, foes with levels, kills paying XP, Aurem and Vestiges, arms from the gear worn, and the
-  [[Test Ground]]'s gear panel, stall, vault and resource nodes. Next, one pull request each: perks in the combat
-  rules; accounts on Cloudflare D1, guests first, with a username and password or Discord
-  ([[Accounts Start as Guests, on Cloudflare D1]]), so gear is kept across rooms and sessions; the screens in #59's
-  Enhanced Plus kit, built on its branch until it merges (character, inventory, an item's nodes, the stall); gear
-  dressing the figure, every garment armour ([[Clothing Is Armour, With a Wardrobe Later]]); and the loop in the game
-  itself: fighting on foot, levelled foes, the stall and vault in Overlook, and resource nodes in patrol areas.
+  choices in [[Gear as Claude Shapes It]]), is built on pull request #60 and waits on the owner's yes to merge; a
+  merge deploys the accounts, the rooms and the page together. On it: the `gear` crate ([[Gear]]); gear held by the
+  rooms, blows by Attack, level and Defense, kills paying XP, Aurem and Vestiges; perks trimming the fight
+  ([[Combat]]); accounts on Cloudflare D1 keeping a character between visits ([[Accounts]]); the gear screens after
+  Destiny on Enhanced Plus ([[The Gear Screens Follow Destiny, on Enhanced Plus]], [[Interface]]); gear on the
+  figure; island levels and the voyage's seas ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]);
+  patrols with camps and resource spots ([[Server]]); Overlook's stations, vendors, keepers and townsfolk
+  ([[Cities]]); the fight on foot in the game; and on the ground, beams over the nodes and Vestiges, with E to use a
+  counter or gather ([[Game]], "On foot"). Tested offline. Its open ends: the patrols look plain (their camps have
+  no tents or fires, and the owner wants them extremely detailed); Breaches, Elite Dungeons and Missions as loot
+  sources; the wardrobe; other players' figures neither glide nor flash on foot; a ranged weapon's fight on foot is
+  untested headless.
 - The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]), all three parts in review in
   one pull request: the [[Interface]]'s Enhanced Plus kit and the sea bar in it; the Sloop at true scale at the helm;
   Manage, the view over her deck with her panel and stand-in hands; and Leave the helm, the player walking her deck
