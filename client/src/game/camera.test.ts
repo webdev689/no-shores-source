@@ -63,6 +63,9 @@ test("a pan eases its eye and lens across, its bearing the short way round, its 
   const there = panShot(from, to, 1);
   assert.deepEqual([there.eye, there.near, there.far], [to.eye, 0.3, 9_000]);
   assert.ok(Math.abs(there.pitch - to.pitch) < 1e-12 && Math.abs(there.fov - to.fov) < 1e-12, 'at the target');
+  const far: Shot = { ...to, eye: [4_812_345.123, 2_345_678.9, 31.7], pitch: 0.123, fov: 0.987 };
+  const landed = panShot({ ...from, eye: [4_810_000.7, 2_344_000.3, 260.1] }, far, 1);
+  assert.deepEqual([landed.eye, landed.pitch, landed.fov], [far.eye, far.pitch, far.fov], 'exactly, far out too');
 });
 
 test('a matrix shifted by an offset takes a point as the point plus the offset, far from the origin as near it', () => {

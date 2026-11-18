@@ -225,12 +225,13 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   by the player's orders on the fight of many ships, so her stem may ram the captain's, on waters made from the coasts
   (open sea, the swell on it, dry land on them), until she sinks or is gone; its last view is shown once, and the player
   sails on from where it left them.
-- **In the game** the view pans down over 1.5 s from the raised sea to their Sloop at true scale, and the fight is
+- **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
+  the size the sea draws her to her true size as on the sea's other views near her ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
   Every captain in it is drawn with her name over a bar of her hull. Then the view pans back up. Hostile ships at sea
-  are drawn as the Overworld's ships are, darker, those fighting each other where the room has them. A ship that
-  comes into view is drawn under the sails she sails by, already set (`seaShips.ts`).
+  are drawn as the Overworld's ships are, darker, each with her footprint on the water, those fighting each other where
+  the room has them. A ship that comes into view is drawn under the sails she sails by, already set (`seaShips.ts`).
 
 ## In a fleet room
 

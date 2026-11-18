@@ -15,7 +15,7 @@ import type { Lying } from '../ships/deck.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import { panShot, type Shot } from './camera.ts';
+import type { Shot } from './camera.ts';
 import type { SeaRoom } from './seaRoom.ts';
 
 /** Seconds the view takes to come down to the fight, or go back up. */
@@ -150,8 +150,9 @@ export class SeaCombat {
     return { ...target, ...this.orbit, distance: ORBIT.distance };
   }
 
-  /** One frame of the fight, `seconds` on at `time`: it steps, and the view pans from the sea's `seaShot`. */
-  frame(seconds: number, time: number, seaShot: Shot, fail: (error: unknown) => void): Shot {
+  /** One frame of the fight, `seconds` on at `time`: it steps, and answers the fight's own view, drawing to `far`,
+   *  which the view pans down to from the sea's by `share`. */
+  frame(seconds: number, time: number, far: number, fail: (error: unknown) => void): Shot {
     const orbit = this.orbitAt();
     const look = this.aiming ? this.naval.look(orbit, this.fought, this.window) : null;
     const input: FightInput = {
@@ -167,24 +168,29 @@ export class SeaCombat {
     if (!this.naval.fighting) this.going = -1;
     this.down = Math.min(1, Math.max(0, this.down + (this.going * seconds) / PAN_S));
     const camera = cameraOf(this.aiming ? this.naval.aimCamera(orbit, this.fought, this.window, 1) : orbit);
-    const fightShot: Shot = {
+    return {
       eye: [camera.eye[0] + this.window.leftM, camera.eye[1] + this.window.topM, camera.eye[2]],
       yaw: this.orbit.yaw,
       pitch: this.orbit.pitch,
       fov: FIELD_OF_VIEW,
       near: 0.3,
-      far: seaShot.far,
+      far,
     };
-    return panShot(seaShot, fightShot, smooth01(this.down));
   }
 
-  /** The player's Sloop as she lies in the fight, at true scale, while she floats; null once she has sunk. */
-  get own(): Lying | null {
+  /** How far the view has come down to the fight's, eased: 0 the sea's, 1 the fight's. */
+  get share(): number {
+    return smooth01(this.down);
+  }
+
+  /** The player's Sloop as she lies in the fight, drawn `scale` times her size, while she floats; null once she has
+   *  sunk. */
+  ownAt(scale: number): Lying | null {
     const vessel = this.last.player;
     if (vessel.state === 'sunk') return null;
     const [x = 0, y = 0, heading = 0] = vessel.ship;
     const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
-    return { x, y, heading, scale: 1, heave, pitch, roll };
+    return { x, y, heading, scale, heave, pitch, roll };
   }
 
   /** Every captain in the fight: hers, then any other. */
@@ -192,8 +198,13 @@ export class SeaCombat {
     return [this.last.captain, ...(this.last.others ?? [])];
   }
 
-  /** Every Sloop at true scale, the captains' darker, each with her sails as her rung sets them. */
-  ships(seconds: number, time: number, windBearing: number): { place: ShipPlace; rig: SailRig; shade: number }[] {
+  /** Every Sloop drawn `scale` times her size, the captains' darker, each with her sails as her rung sets them. */
+  ships(
+    seconds: number,
+    time: number,
+    windBearing: number,
+    scale: number,
+  ): { place: ShipPlace; rig: SailRig; shade: number }[] {
     const all = [this.last.player, ...this.captains];
     while (this.rigs.length < all.length) this.rigs.push(new SailRig(this.sails));
     return all.flatMap((vessel, index) => {
@@ -202,18 +213,19 @@ export class SeaCombat {
       const [x = 0, y = 0, heading = 0, , , , , rung = 0] = vessel.ship;
       const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
       rig.step(seconds, { offDeg: windOff(heading, windBearing), set: rung === SAILS_RUNG }, time);
-      return [{ place: { x, y, z: heave, heading, pitch, roll }, rig, shade: index === 0 ? 1 : CAPTAIN_SHADE }];
+      return [{ place: { x, y, z: heave, heading, pitch, roll, scale }, rig, shade: index === 0 ? 1 : CAPTAIN_SHADE }];
     });
   }
 
-  /** Each Sloop's footprint on the water at true scale. */
-  hulls(waterline: Waterline): HullMask[] {
+  /** Each Sloop's footprint on the water, drawn `scale` times her size. */
+  hulls(waterline: Waterline, scale: number): HullMask[] {
     return [this.last.player, ...this.captains]
       .filter((vessel) => vessel.state !== 'sunk' && vessel.state !== 'sinking')
       .map((vessel) => {
         const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
         const way = Math.hypot(ahead, abeam) > 0.5 ? UNDER_WAY : 0;
-        return { x, y, heading, halfLength: waterline.lengthM / 2, halfBeam: waterline.beamM / 2, way };
+        const [halfLength, halfBeam] = [(waterline.lengthM / 2) * scale, (waterline.beamM / 2) * scale];
+        return { x, y, heading, halfLength, halfBeam, way };
       });
   }
 
@@ -223,9 +235,10 @@ export class SeaCombat {
     this.naval.draw(pass, this.window, 1, { fromEye: camera.fromEye, eye }, null, now, null);
   }
 
-  /** Each captain's bar over her masthead, in world metres at true scale, while she floats. */
-  bars(): ShipBar[] {
-    const bar = (captain: FightCaptain) => barOver({ ...captain, maxHull: captain.max_hull }, { leftM: 0, topM: 0 }, 1);
+  /** Each captain's bar over her masthead, in world metres, her drawn `scale` times her size, while she floats. */
+  bars(scale: number): ShipBar[] {
+    const bar = (captain: FightCaptain) =>
+      barOver({ ...captain, maxHull: captain.max_hull }, { leftM: 0, topM: 0 }, scale);
     return this.captains.map(bar).filter((shown) => shown !== null);
   }
 

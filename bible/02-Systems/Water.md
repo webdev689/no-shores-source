@@ -91,4 +91,4 @@ deep. A diver's camera comes in close rather than sink into the bed.
 - The breakers and the ripples are drawn in the browser only; the server has the swell alone.
 - One swell for the whole world, until the weather drives it ([[World Map]]).
 - The walker has no body yet: the ripples and splashes come from the point the camera follows.
-- One ship's footprint at a time, an ellipse, not her hull's own line.
+- Eight ships' footprints at a time, the player's and the nearest her, each an ellipse, not her hull's own line.
