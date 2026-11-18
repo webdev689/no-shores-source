@@ -26,6 +26,12 @@ export function rankBand(rank: number): RankBand {
   return rank <= 1 ? 'red' : rank === 2 ? 'orange' : 'yellow';
 }
 
+/** The mark beside an Elite's or a Miniboss's name, which tells the two apart where their bars share a yellow; none
+ *  for the other ranks. */
+export function rankMark(rank: number): 'elite' | 'miniboss' | null {
+  return rank === 3 ? 'elite' : rank === 4 ? 'miniboss' : null;
+}
+
 interface RosterRow {
   readonly type: number;
   readonly name: string;

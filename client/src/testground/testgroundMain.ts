@@ -439,7 +439,13 @@ async function start(): Promise<void> {
       const figure = foeFigures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
       const type = roster.find((each) => each.type === kept.type);
-      return { ...kept, name: type?.name ?? 'Foe', faction: type?.factionName ?? '', view };
+      return {
+        ...kept,
+        name: type?.name ?? 'Foe',
+        faction: type?.factionName ?? '',
+        factionNumber: kept.faction,
+        view,
+      };
     });
     const matrix = viewProjection(camera, canvas.width / Math.max(1, canvas.height));
     hud.update(

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
-import { rankBand } from '../rules/roster.ts';
+import { rankBand, rankMark } from '../rules/roster.ts';
 import { ALERT_MARK_SECONDS, type MarkedFoe, PHASE_MARKS, alertMark, bossBarOf, bossInFight } from './foeBars.ts';
 
 const standing: FighterView = {
@@ -40,6 +40,10 @@ const thule = (
 
 test("a foe's bar is red for a Minor, orange for a Major, and yellow for an Elite and a Miniboss", () => {
   assert.deepEqual([1, 2, 3, 4].map(rankBand), ['red', 'orange', 'yellow', 'yellow']);
+});
+
+test('an Elite and a Miniboss, one yellow, are told apart by a mark of their own beside the name', () => {
+  assert.deepEqual([1, 2, 3, 4, 5].map(rankMark), [null, null, 'elite', 'miniboss', null]);
 });
 
 test('the alert mark is nothing idle, "?" suspicious or searching, and "!" only for a moment once alert', () => {

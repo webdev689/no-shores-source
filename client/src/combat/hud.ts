@@ -2,6 +2,10 @@ import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { edgeArrow, parryCue, threatens, wordOf } from './cues.ts';
 import { FoeBars, type MarkedFoe } from './foeBars.ts';
+import { FoePlate } from './foePlate.ts';
+import { wearFightSheet } from './hudSheet.ts';
+import { element } from './meter.ts';
+import { Vitals } from './vitals.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
  *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
@@ -60,28 +64,6 @@ export function project(matrix: Float32Array, point: readonly [number, number, n
   return { x: ((clipX / clipW + 1) / 2) * width, y: ((1 - clipY / clipW) / 2) * height };
 }
 
-function element(tag: string, className: string, parent: HTMLElement): HTMLElement {
-  const made = document.createElement(tag);
-  made.className = className;
-  parent.append(made);
-  return made;
-}
-
-/** A labelled bar: its fill set as a share. */
-class Bar {
-  readonly root: HTMLElement;
-  private readonly fill: HTMLElement;
-
-  constructor(parent: HTMLElement, kind: string) {
-    this.root = element('div', `bar ${kind}`, parent);
-    this.fill = element('div', 'fill', this.root);
-  }
-
-  set(share: number): void {
-    this.fill.style.width = `${Math.round(Math.max(0, Math.min(1, share)) * 1000) / 10}%`;
-  }
-}
-
 /** A word floating up and fading: over a place in the world, or (null) at the player's own spot in first person. */
 interface Word {
   readonly element: HTMLElement;
@@ -90,15 +72,10 @@ interface Word {
   age: number;
 }
 
-/** The fight's display over the canvas. */
+/** The fight's display over the canvas, which lays its own sheet on the page and dresses `root` in it. */
 export class Hud {
-  private readonly health: Bar;
-  private readonly stamina: Bar;
-  private readonly poise: Bar;
-  private readonly target: HTMLElement;
-  private readonly targetName: HTMLElement;
-  private readonly targetHealth: Bar;
-  private readonly targetPoise: Bar;
+  private readonly vitals: Vitals;
+  private readonly target: FoePlate;
   private readonly mark: HTMLElement;
   private readonly over: HTMLElement;
   private readonly hurt: HTMLElement;
@@ -114,15 +91,11 @@ export class Hud {
   private hurtFlash = 0;
 
   constructor(root: HTMLElement) {
+    wearFightSheet(root.ownerDocument);
+    root.classList.add('fight-hud');
     this.hurt = element('div', 'hurt', root);
-    const own = element('div', 'own', root);
-    this.health = new Bar(own, 'health');
-    this.stamina = new Bar(own, 'stamina');
-    this.poise = new Bar(own, 'poise');
-    this.target = element('div', 'target', root);
-    this.targetName = element('div', 'name', this.target);
-    this.targetHealth = new Bar(this.target, 'health');
-    this.targetPoise = new Bar(this.target, 'poise');
+    this.vitals = new Vitals(root);
+    this.target = new FoePlate(root, 'target', { poise: true });
     this.mark = element('div', 'mark', root);
     this.over = element('div', 'over', root);
     this.veil = element('div', 'veil', root);
@@ -134,10 +107,8 @@ export class Hud {
 
   update(frame: HudFrame, seconds: number): void {
     const { own } = frame;
-    this.health.set(own ? own.health / Math.max(1, own.healthMax) : 1);
-    this.stamina.set(own ? own.stamina / 100 : 1);
-    this.poise.set(own ? own.poise / Math.max(1, own.poiseMax) : 0);
     this.flash(frame, seconds);
+    this.vitals.update(own, seconds, this.staminaFlash > 0);
     const dead = own?.action.kind === 'dead' ? own.action : null;
     this.veil.hidden = !dead && frame.lost === null;
     if (frame.lost !== null) this.veil.textContent = `The link to the room was lost: ${frame.lost}.`;
@@ -148,9 +119,12 @@ export class Hud {
     this.crosshair.classList.toggle('charging', charge !== null);
     this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
     this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
-    this.markTarget(frame);
-    const overHead = (view: FighterView) =>
-      project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
+    this.markTarget(frame, seconds);
+    const overHead = (view: FighterView) => {
+      const point = [view.x, view.y, view.z + RING_HEIGHT] as const;
+      const spot = project(frame.matrix, point, frame.width, frame.height);
+      return spot && { ...spot, depth: clipOf(frame.matrix, point)[2] };
+    };
     this.foeBars.update(frame.foes, own, overHead, seconds);
     this.pointAtThreats(frame);
     this.ringParries(frame);
@@ -190,22 +164,19 @@ export class Hud {
     if (struck) this.hurtFlash = FLASH_SECONDS;
     this.staminaFlash = Math.max(0, this.staminaFlash - seconds);
     this.hurtFlash = Math.max(0, this.hurtFlash - seconds);
-    this.stamina.root.classList.toggle('flash', this.staminaFlash > 0);
     this.hurt.style.opacity = String(this.hurtFlash / FLASH_SECONDS);
   }
 
-  /** The soft lock's target: a mark at its chest and its bars at the top. */
-  private markTarget(frame: HudFrame): void {
+  /** The soft lock's target: a mark at its chest and its plate at the top. */
+  private markTarget(frame: HudFrame, seconds: number): void {
     const target = frame.own?.target ?? null;
     const foe = frame.foes.find((each) => each.id === target);
-    this.target.hidden = !foe;
+    this.target.root.hidden = !foe;
     if (!foe) {
       this.mark.hidden = true;
       return;
     }
-    this.targetName.textContent = foe.name;
-    this.targetHealth.set(foe.view.health / Math.max(1, foe.view.healthMax));
-    this.targetPoise.set(foe.view.poise / Math.max(1, foe.view.poiseMax));
+    this.target.show(foe, seconds);
     const spot = project(frame.matrix, [foe.view.x, foe.view.y, foe.view.z + 1.1], frame.width, frame.height);
     this.mark.hidden = !spot;
     if (spot) this.mark.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
