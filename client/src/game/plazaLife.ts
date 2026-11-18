@@ -1,0 +1,78 @@
+// A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, moved each
+// frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in.
+
+import type { Placed } from '../player/figures.ts';
+import type { Others } from '../player/others.ts';
+import type { StationInfo } from './nodes.ts';
+import { Townsfolk } from './townsfolk.ts';
+import type { NodeInfo } from './worldData.ts';
+
+/** How near a counter a player stands to be served, metres. */
+export const SERVED_M = 3;
+
+/** The gear window's tab a station opens, and its words. */
+export interface Offer {
+  readonly words: string;
+  readonly tab: 'inventory' | 'vendors';
+}
+
+/** What each station that deals with a player offers. */
+const OFFERS: Readonly<Record<string, Offer>> = {
+  reader: { words: 'The Reader of Vestiges: open your Vestiges', tab: 'inventory' },
+  vault: { words: 'Your vault', tab: 'inventory' },
+  quartermaster: { words: 'The Quartermaster: armour for Aurem', tab: 'vendors' },
+  armsmith: { words: 'The Armsmith: weapons for Aurem', tab: 'vendors' },
+};
+
+/** The offer of the station whose counter a player stands at, if one deals with them. */
+export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {
+  for (const station of stations) {
+    const offer = OFFERS[station.kind];
+    const near = Math.hypot(station.counter[0] - x, station.counter[1] - y) <= SERVED_M;
+    if (offer && near) return offer;
+  }
+  return null;
+}
+
+/** The figures of a social space's people, kept among those drawn while the player is there. */
+export class PlazaLife {
+  private readonly folk: Townsfolk;
+  private readonly figures = new Map<number, Placed>();
+  private readonly others: Others;
+  private readonly floor: (x: number, y: number) => number | null;
+
+  constructor(node: NodeInfo, others: Others, floor: (x: number, y: number) => number | null) {
+    const eastings = node.ring.map((point) => point[0]);
+    const southings = node.ring.map((point) => point[1]);
+    const bounds = [
+      Math.min(...eastings),
+      Math.min(...southings),
+      Math.max(...eastings),
+      Math.max(...southings),
+    ] as const;
+    // Seeded by the plaza, so its people walk the same each visit.
+    const seed = Math.round(bounds[0] * 31 + bounds[1]);
+    this.folk = new Townsfolk({ bounds, spawns: node.spawns, stations: node.stations ?? [] }, seed);
+    this.others = others;
+    this.floor = floor;
+  }
+
+  /** Moves everyone on by `seconds` and places their figures. */
+  frame(seconds: number): void {
+    for (const person of this.folk.step(seconds)) {
+      const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
+      this.figures.set(person.id, placed);
+      placed.x = person.x;
+      placed.y = person.y;
+      placed.z = this.floor(person.x, person.y) ?? placed.z;
+      placed.facing = person.facing;
+      placed.anim = person.walking ? 'walk' : 'idle';
+    }
+  }
+
+  /** Takes every figure away, as the player leaves. */
+  close(): void {
+    for (const placed of this.figures.values()) this.others.remove(placed);
+    this.figures.clear();
+  }
+}

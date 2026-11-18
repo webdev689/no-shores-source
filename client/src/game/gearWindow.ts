@@ -15,7 +15,7 @@ import {
   vendorsOf,
 } from './gearScreen.ts';
 
-type Tab = 'character' | 'inventory' | 'vendors' | 'account';
+export type Tab = 'character' | 'inventory' | 'vendors' | 'account';
 
 /** Each tab: its name and the key that opens it. */
 const TABS: readonly (readonly [Tab, string, string])[] = [
@@ -24,6 +24,14 @@ const TABS: readonly (readonly [Tab, string, string])[] = [
   ['vendors', 'Vendors', ''],
   ['account', 'Account', ''],
 ];
+/** The page event that opens the gear window at a tab, as a station's counter does. */
+const OPEN_AT = 'overlook:gear';
+
+/** Opens the gear window at a tab, wherever it was started. */
+export function openGearWindow(tab: Tab): void {
+  dispatchEvent(new CustomEvent<Tab>(OPEN_AT, { detail: tab }));
+}
+
 /** How long a held press is held before it asks, in milliseconds: a Fruit of Dagon is eaten, not tapped. */
 const HOLD_MS = 800;
 /** How often the window looks for new gear while open, in milliseconds. */
@@ -276,6 +284,10 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
     pressing = false;
     // A press that chose a slot or an item, or went back, builds the window at once.
     window.setTimeout(render, 0);
+  });
+  addEventListener(OPEN_AT, (event) => {
+    const wanted = (event as CustomEvent<Tab>).detail;
+    if (tab !== wanted) open(wanted);
   });
   // Typing in the window's fields reaches no game key.
   box.addEventListener('keydown', (event) => event.stopPropagation());
