@@ -27,7 +27,7 @@ is kept; where Overlook must choose, the choice is Claude's, with its reason. Th
 | Away | A member not playing ten minutes leaves; the player looking at the Roster never does | Destiny's fireteam left with a player who quit |
 | Joining | Joins their fireteam, and goes to them on foot on this landmass at their seas; the ship stays where she lies | Destiny's join brings a player into the other's game; a landmass across the sea is not open |
 | Guild ranks | Founder, Admin, Member; a hundred at most | Destiny 2's clans, less Beginner, which has nothing to do here yet |
-| Guild name and tag | Name 3 to 24 letters, digits, spaces or dashes; tag 2 to 4 letters or digits, unique | Destiny's tag is up to 4 |
+| Guild name and tag | Name 3 to 24 letters and digits, with single spaces, dashes or apostrophes between; tag 2 to 4 letters or digits; each unique | Destiny's tag is up to 4 |
 | Founding | Any player with a username, in no guild, from the Roster; the Guild tab stays Later | The roster's guild list needs a guild; the tab's own page waits on the owner |
 | Blocking | Ends friendship and invites; what the blocked one asks after is answered as sent and never arrives | Destiny 2's block stops friend, fireteam and clan invites; answering as sent tells no one they are blocked |
 | Reporting | A reason of four, kept for the owner, ten a day | Destiny 2's roster reports; the owner reads them in the database |
