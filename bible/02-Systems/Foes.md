@@ -65,8 +65,9 @@ phases) is [[Enemies]].
 | Archer | 50 | 18 | light | 1.0 | 18 | - / - / 25% | aimed shot |
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
-  A foe may have a level: its health is its kind's times 1.07 for each, and its blows on a player and theirs on it
-  are made with the power of [[Gear]]. A foe of level 0 has none, and fights by these numbers alone.
+  A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
+  are made with the power of [[Gear]], its rank's might and its phase's on top. A foe of level 0 has none, and fights
+  by these numbers alone. A garrison's foes stand at their island's levels ([[Enemies]]).
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
 - **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it, and
@@ -117,7 +118,9 @@ phases) is [[Enemies]].
   while the target stays that close. A foe that blocks holds its guard up on the ring while it waits its turn, as a
   shield-bearer does. A holder going in takes the shortest way.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
-  health players take from foes and 0.09 for each foe they kill, falls 0.006 for each point a player loses (three
+  health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
+  the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each
+  foe they kill, falls 0.006 for each point a player loses (three
   times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
   hand and one shooting, from 0.25 two and two, from 0.6 three and two, from 0.85 three and three; a holder keeps its
   turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay and the ring's

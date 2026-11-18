@@ -107,6 +107,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]
 - [[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]]
 - [[Sounds Come From Freesound, Judged on a Test Sheet]]
+- [[Garrisons Take the Gear Loop's Levels and Shields]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

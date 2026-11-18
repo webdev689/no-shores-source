@@ -182,6 +182,7 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
 }
 
 /// The pirates' type in a role, at the rank a page asking by role alone gets (`SpawnAsk::by_role`).
+#[cfg(test)]
 pub(crate) fn pirate_in(role: ::foes::Role) -> Option<(&'static FoeType, Rank)> {
     let SpawnAsk::Foe { foe_type: number, rank, .. } = SpawnAsk::by_role(role as u8, 0)? else { return None };
     Some((foe_type(number)?, Rank::from_number(rank)?))
@@ -284,6 +285,8 @@ impl Room {
             let beside = [from_x + sin * out, from_y - cos * out, at.body.z];
             let spot = self.nav.nearest_point(beside).unwrap_or(beside);
             let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
+            // A called foe fights at its caller's level, and stands with no shield.
+            self.gird(id, self.foes.get(&caller).map_or(0, |found| found.level), None);
             let Some(found) = self.foes.get_mut(&id) else { continue };
             found.caller = Some(caller);
             if let Some(called) = called {

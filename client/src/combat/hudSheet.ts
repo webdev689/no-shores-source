@@ -6,6 +6,7 @@ import { wearCompass } from '../plus/compass.ts';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
 import { wearKit } from '../plus/kit.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
+import { ELEMENTS } from '../player/gear.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 
 const SHEET_ID = 'fight-hud';
@@ -24,6 +25,14 @@ function platesCss(): string {
     return `.fight-hud .rank-mark[data-mark='${mark}'] { display: block; width: ${width * 2}px; height: ${height * 2}px;
   background-image: url("${url}"); }`;
   });
+  // Each element's ward, from its palette: its dark, its own colour and its light (`ELEMENTS`).
+  const wards = ELEMENTS.flatMap((element, number) => {
+    if (!element) return [];
+    const [dark, , lit] = element.palette;
+    return [
+      `.fight-hud .ward[data-element='${number}'] { --ward-dark: ${dark}; --ward: ${element.colour}; --ward-lit: ${lit}; }`,
+    ];
+  }).join('\n');
   const squares = Object.entries(EMBLEM_SCALE).map(([place, scale]) => {
     const side = EMBLEM_PIXELS * scale;
     return `.fight-hud .${place} .emblem { width: ${side + 4}px; height: ${side + 4}px; background-size: ${side}px ${side}px; }`;
@@ -55,6 +64,13 @@ ${marks.join('\n')}
 /* What a foe's bar lost stands pale, its own hue lightened under a cream top line. */
 .fight-hud .meter .lost { opacity: 0.6;
   background: linear-gradient(180deg, #fff6e4 0 1px, color-mix(in srgb, var(--fill) 45%, #fff6e4) 1px); }
+/* A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, a lit top line, its
+   element's colour through, a dark foot line. */
+.fight-hud .meter .ward { position: absolute; left: 0; top: 0; bottom: 0; display: block; pointer-events: none;
+  background: linear-gradient(180deg, var(--ward-lit) 0 1px, var(--ward) 1px calc(100% - 1px),
+    var(--ward-dark) calc(100% - 1px)); opacity: 0.9; }
+.fight-hud .meter .ward[hidden] { display: none; }
+${wards}
 /* A piece a loss breaks off: two halves the display drops a step at a time, under the words, over the fill. */
 .fight-hud .meter .piece { position: absolute; top: 0; bottom: 0; display: block; pointer-events: none; }
 .fight-hud .meter .piece > i { position: absolute; top: 0; bottom: 0; display: block; box-shadow: 0 0 0 1px ${TONES.outline};
@@ -144,6 +160,11 @@ function vitalsCss(): string {
 
 /** The rest of the display: the struck edge, the lock's mark, the crosshair, the parry ring, the words, the arrows to
  *  threats off the screen and the veil. */
+/** What a shield took is said in its element's colour. */
+const shieldWords = ELEMENTS.flatMap((element, number) =>
+  element ? [`.fight-hud .word.shield[data-element='${number}'] .rise { color: ${element.colour}; }`] : [],
+).join('\n');
+
 function cuesCss(): string {
   return `
 .fight-hud { position: absolute; inset: 0; pointer-events: none; overflow: hidden; font-weight: 600;
@@ -187,6 +208,7 @@ function cuesCss(): string {
 .fight-hud .word.good .rise { color: #ffd95a; }
 .fight-hud .word.warn .rise { color: #fff; font-size: 18px; background: #a0140ccc; border: 2px solid #fff; }
 .fight-hud .word.plain .rise { color: #bfc8d2; }
+${shieldWords}
 @keyframes fight-word-rise {
   0% { opacity: 0; transform: translateY(10px) scale(0.9); }
   12% { opacity: 1; transform: translateY(0) scale(1); }

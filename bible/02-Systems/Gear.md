@@ -145,8 +145,9 @@ and its art (`gear::emblems`).
   rarity: one in ten for Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and
   Atheric; it is not guaranteed. Armour and shields carry none. A blow carries the element of the weapon that struck
   it, none from the fists while a bow or gun is worn; a shot keeps the one it was loosed with.
-- **A foe's shield.** One foe in five that a patrol stands carries a shield of an element chosen evenly, holding half
-  its health. While it holds, a blow wears the shield and not the foe's health: three times as hard with the shield's
+- **A foe's shield.** One foe in five that a garrison stands carries a shield of an element chosen evenly, holding half
+  its health, drawn from its node's id, so its group stands with the same shields each time; a Boss's or a Miniboss's
+  too, as any rank's. A foe a Boss calls stands with none. While it holds, a blow wears the shield and not the foe's health: three times as hard with the shield's
   own element, half as hard with another, as hard as on health with none. A blow the shield holds whole fills no
   poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold reaches health. A shield
   does not come back.
@@ -161,7 +162,10 @@ and its art (`gear::emblems`).
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
 - **The seas** a voyage sets out at raise them: Calm as they are, Rough two levels higher, Storm three, never past
   level 32; and pay by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
-- A patrol's foes are drawn from its island's band ([[Server]], "A patrol").
+- **A garrison's foes** ([[Garrisons Take the Gear Loop's Levels and Shields]], [[Enemies]]) each stand at a level
+  drawn evenly from their island's band, from the node's id, raised by the room's seas; a Boss's called foes at its
+  level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might
+  and defence on top ([[Foes]]). A node with no island stands its foes at level 0.
 
 ## Looks
 

@@ -66,8 +66,10 @@ on Cloudflare.
 - **Foes:** on a course, a player may ask for a foe by its type and rank, at a level and with a shield (the
   [[Test Ground]]'s panel), one with each input; the room stands it 5 m along the player's aim, which follows their
   look, on its navmesh, facing them, and holds at most twelve. A foe of level 0 has none and fights by combat's own
-  numbers; one with a level has its health grown for it ([[Gear]]). A node's room takes no ask: as it opens, its node's kind and id stand its garrison, which
-  stands again as it is cleared, and it holds at most 24 ([[Enemies]]). A Boss's called foes come the same way. Each
+  numbers; one with a level has its health grown for it ([[Gear]]). A node's room takes no ask: as it opens, its
+  node's kind and id stand its garrison at its island's levels, raised by its seas once the host sets them, one foe in
+  five shielded, and the garrison stands again as it is cleared; the room holds at most 24 ([[Enemies]]). A Boss's
+  called foes come the same way, at its level. Each
   tick the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
   routing and taking cover on a [[Navmesh]] the room bakes when it opens: a course's over its blocks and 30 m round
   them; a node's over a 70 m square of its land, its first spawn 15 m inside the square's edge toward the middle of
@@ -75,14 +77,10 @@ on Cloudflare.
   shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
-- **A patrol** (a patrol node's room) has six camps of its island's foes ([[Gear]], "Where foes stand"), at places
-  laid out from the node's name, the same every time, 150 m apart and 80 m from every spawn: each of two or three
-  foes (skirmishers, swordsmen and archers, now and then a brute) within 8 m of its middle, at its island's levels
-  raised by its seas. A camp stands whole as the first player arrives; once all its foes have fallen it waits 45 s,
-  and then stands again only while no player is within 40 m of it. Its island's
-  resource stands at twelve spots laid out from the node's name, the same every time, 60 m apart; a third of them hold
-  a node at once, the next third every three minutes, and each player may gather each node once while it stands. A
-  kill pays by the room's seas.
+- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve
+  spots laid out from the node's name, the same every time, 60 m apart; a third of them hold a node at once, the next
+  third every three minutes, and each player may gather each node once while it stands. A kill, in any node, pays by
+  the room's seas ([[Gear]], "Where foes stand").
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
   same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way.
@@ -195,7 +193,8 @@ rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
   fight since it was last asked, and the fight's clock.
 - A room holds 16 players. Its chances are drawn from one seed, so one room fights the same fight for the same orders.
   A room on land the servers host is given two seeds of its own, random and never sent: one its loot is drawn from,
-  and one its foes' choices and its camps are, so what a player sees of the foes tells them nothing of the loot.
+  and one its foes' choices are, so what a player sees of the foes tells them nothing of the loot. A node's garrison
+  is drawn, as the room opens, from its id alone, so it stands the same on every machine.
 
 ## The bake
 

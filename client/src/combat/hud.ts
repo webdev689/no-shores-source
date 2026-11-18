@@ -280,7 +280,10 @@ export class Hud {
       const place = frame.where(said.defender);
       if (!place) continue;
       const own = frame.firstPerson && said.defender === frame.player;
-      this.words.say(said, own ? null : [place[0], place[1], place[2] + 1.9]);
+      // What a shield took is said in its element's colour.
+      const shield = said.tone === 'shield' ? frame.foes.find((foe) => foe.id === said.defender)?.shield : null;
+      const told = shield ? { ...said, element: shield.element } : said;
+      this.words.say(told, own ? null : [place[0], place[1], place[2] + 1.9]);
     }
     for (const { id, view } of frame.foes) {
       const iron = view.action.kind === 'telegraph' && view.action.iron;

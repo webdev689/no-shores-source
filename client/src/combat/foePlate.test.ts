@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
-import { FoePlate, type MarkedFoe, poiseTrackOf } from './foePlate.ts';
+import { FoePlate, type MarkedFoe, poiseTrackOf, wardOf } from './foePlate.ts';
 import { findAll, onFakePage } from './page.test.ts';
 
 const view: FighterView = {
@@ -119,4 +119,20 @@ test('the boss bar, which comes before any blow, takes a Boss it first shows as 
     assert.equal(findAll(root, 'piece').filter((piece) => !piece.hidden).length, 0);
     plate.show(rat(9, { health: 40 }), 1 / 60);
     assert.equal(findAll(root, 'piece').filter((piece) => !piece.hidden).length, 1, 'a blow seen still breaks off');
+  }));
+
+test('a shield’s ward stands over its foe’s health from the bar’s left end, its share of the whole health, in its element; gone once broken', () =>
+  onFakePage((root) => {
+    const plate = new FoePlate(root, 'target', { poise: true, remembers: 'whole' });
+    const ward = () => findAll(root, 'ward')[0];
+    const shielded = (left: number) => ({ ...rat(1), shield: { element: 2, left, most: 50 } });
+    plate.show(shielded(50), 1 / 60);
+    assert.deepEqual([ward()?.hidden, ward()?.style['width'], ward()?.dataset['element']], [false, '50%', '2']);
+    assert.deepEqual(wardOf(shielded(20)), { share: 0.2, element: 2 }, 'as it wears');
+    // A blow the shield holds whole fills no poise in the room, and the track under the ward says nothing.
+    assert.equal(poiseTrackOf(shielded(20).view).state, 'empty');
+    plate.show(shielded(0), 1 / 60);
+    assert.equal(ward()?.hidden, true, 'broken');
+    plate.show(rat(2), 1 / 60);
+    assert.equal(ward()?.hidden, true, 'a foe with none');
   }));

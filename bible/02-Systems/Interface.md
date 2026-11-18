@@ -30,6 +30,7 @@ code:
   - client/src/combat/plateSight.ts#plateScale
   - client/src/combat/plateSight.ts#PlateSight
   - client/src/combat/hitWords.ts#wordsOf
+  - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
   - client/src/ships/shipBars.ts#drawShipBars
   - client/src/ships/shipBars.ts#HullLosses
@@ -144,6 +145,11 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   brass; an iron blow wound up, full and hatched in red, "Iron"; staggered, full and white, "Staggered", flashing as
   the foe it shows breaks and never as the plate turns onto one already staggered; open after a blow that found no
   one, a brass edge, "Open". With nothing to say it keeps its room unseen.
+- **A foe's shield** ([[Gear]], "Elements and shields") lies over its health on every plate (over a figure, the
+  target's and the boss bar), as DFO's Enhanced HUD laid a boss's ward: from the bar's left end, as long as the share
+  of the foe's whole health it holds still, lit along its top and dark along its foot in its element's colours, Blaze
+  orange, Volt blue, Cosmic violet (`wardOf`). It is gone once broken. What it takes from the player's own blows is
+  said in its element's colour; a blow it holds whole fills no poise, so the poise track says nothing of it.
 - **Plates over figures are never overbearing.** A foe's shows only within 20 degrees of the crosshair, whole within
   17 and none past 23, easing in and out over 0.25 s; a plate new on the screen starts where the cone puts it, so
   none pops in. The foes the player traded a blow with in the last minute show wherever they are. A plate shows

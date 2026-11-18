@@ -1,9 +1,8 @@
-//! A node's garrison. The Grey Tithe holds the land: every node but a social space, on every continent, stands its
-//! garrison as its room opens, in groups at posts on the navmesh its room bakes by its first spawn, inside its
-//! section, each foe at least SPAWN_CLEAR from every spawn, idle and facing outward. The room's seed, mixed from the
-//! node's id, draws who stands where, so every machine stands the same. A group whose last foe fell stands again
-//! STAND_AGAIN later, once no player is within CLEAR_AROUND of its post and the living foes leave it room. Each foe is
-//! leashed to its place at its post: it gives up a target that leads it too far and walks back (the foes crate).
+//! A node's garrison: the Grey Tithe's groups at posts on the navmesh its room bakes by its first spawn, idle and
+//! facing outward, each foe at least SPAWN_CLEAR from every spawn. The room's world seed, mixed from the node's id,
+//! draws who stands where, each foe's level from its island's band and its shield, so every machine stands the same;
+//! the seas raise the levels once the host sets them. A cleared group stands again STAND_AGAIN later, once no player is
+//! within CLEAR_AROUND of its post and the living foes leave it room; each foe is leashed to its post (the foes crate).
 //! The baked square reaches inland from the spawn rather than round it, so it holds the garrison past the spawn's
 //! clear ground without growing: a bake's cost grows far faster than its area.
 
@@ -14,6 +13,7 @@ use ::foes::{Rank, foe_type};
 use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use core::f64::consts::TAU;
+use gear::dice::{Dice, Purpose};
 use movement::{Block, Terrain};
 use naval::random::Mulberry32;
 use navmesh::NavMesh;
@@ -45,14 +45,28 @@ struct Group {
     farthest: bool,
 }
 
-/// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing, the fighters of
-/// it standing now, and the tick the last of them fell.
+/// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing, and its level
+/// before the seas (0 for none) and its shield's element, if it stands with one; the fighters of it standing now, and
+/// the tick the last of them fell.
 #[derive(Debug)]
 pub(crate) struct Post {
     pub at: [f64; 3],
     pub members: Vec<(u8, Rank, [f64; 3], f64)>,
+    pub girds: Vec<(u8, Option<gear::Element>)>,
     pub standing: Vec<FighterId>,
     pub cleared_at: Option<u64>,
+}
+
+/// A garrison foe's level, drawn evenly from its island's band (0 with none), and its shield's element if it stands
+/// with one, as `gear::element::Shield::rolled` draws for any foe: one in five, of an element drawn evenly. Each is the
+/// `nth` foe's draw from the node's seed, apart from every other draw of the garrison.
+fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
+    let dice = Dice { seed, tick: 0, player: nth };
+    let level = levels.map_or(0, |(low, high)| {
+        let band = usize::from(high.saturating_sub(low)) + 1;
+        low.saturating_add(u8::try_from(dice.pick(Purpose::Patrol, 0, band)).unwrap_or(0))
+    });
+    (level, gear::element::Shield::rolled(&dice, 0, 1.0).map(|shield| shield.element))
 }
 
 const PATROL: [(u8, Rank); 6] = [
@@ -196,20 +210,27 @@ fn open_points(section: &Section, middle: (f64, f64)) -> Vec<(f64, f64)> {
 }
 
 impl Room {
-    /// A node's room of its kind, its chances drawn from its id: as it opens, the garrison its kind holds stands in it.
+    /// A node's room of its kind, its chances drawn from its id: as it opens, the garrison its kind holds stands in it,
+    /// at its island's band of `levels` (none for a node of no island, whose foes fight by combat's own numbers).
     #[must_use]
-    pub fn garrisoned(floor: Floor, blocks: Vec<movement::Block>, section: Section, kind: NodeKind, id: &str) -> Self {
+    pub fn garrisoned(
+        floor: Floor,
+        blocks: Vec<movement::Block>,
+        section: Section,
+        kind: NodeKind,
+        (id, levels): (&str, Option<(u8, u8)>),
+    ) -> Self {
         let mut room = Self::node(floor, blocks, section);
         room.world_seed = node_seed(id);
         room.foes_most = NODE_FOES_MOST;
-        room.stand_garrison(kind);
+        room.stand_garrison(kind, levels);
         room
     }
 
     /// Stands a node's garrison as its room opens: each group in turn at a post drawn from those open (the farthest
     /// from the spawns for one that stands there), every post at least POSTS_APART from the others. A group whose foes
     /// the mesh or the section cannot hold tries the next; when no post is left, the rest stand nowhere.
-    pub(crate) fn stand_garrison(&mut self, kind: NodeKind) {
+    pub(crate) fn stand_garrison(&mut self, kind: NodeKind, levels: Option<(u8, u8)>) {
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
@@ -223,6 +244,13 @@ impl Room {
                     self.garrison.push(post);
                     break;
                 }
+            }
+        }
+        let (seed, mut nth) = (self.world_seed, 0_u32);
+        for post in &mut self.garrison {
+            for _ in 0..post.members.len() {
+                post.girds.push(gird_of(seed, nth, levels));
+                nth += 1;
             }
         }
         for post in 0..self.garrison.len() {
@@ -255,24 +283,54 @@ impl Room {
         members.iter().all(|(_, _, place, _)| clear(place)).then_some(Post {
             at,
             members,
+            girds: Vec::new(),
             standing: Vec::new(),
             cleared_at: None,
         })
     }
 
-    /// Stands every foe of a post's group at its place, idle, facing as it was posted, and leashed to it.
+    /// Stands every foe of a post's group at its place, idle, facing as it was posted, leashed to it, at its level
+    /// raised by the seas and with its shield whole, if it has one.
     fn stand_post(&mut self, post: usize) {
-        let members = self.garrison[post].members.clone();
+        let (members, girds) = (self.garrison[post].members.clone(), self.garrison[post].girds.clone());
         let standing = members
             .iter()
-            .filter_map(|&(number, rank, place, facing)| {
+            .zip(girds)
+            .filter_map(|(&(number, rank, place, facing), (level, shield))| {
                 let id = self.stand_foe(foe_type(number)?, rank, place, facing, None);
+                self.gird(id, self.at_seas(level), shield);
                 self.foes.get_mut(&id)?.brain.posted_at(place, facing);
                 Some(id)
             })
             .collect();
         self.garrison[post].standing = standing;
         self.garrison[post].cleared_at = None;
+    }
+
+    /// A garrison level raised by the room's seas; 0, none, stays none.
+    fn at_seas(&self, level: u8) -> u8 {
+        if level == 0 { 0 } else { self.difficulty.raise(level) }
+    }
+
+    /// Raises every garrison foe standing to its level at the room's seas, which a host sets once the room has opened:
+    /// its health and its shield grow by the levels it gained, as standing at them would have made them.
+    pub(crate) fn raise_garrison(&mut self) {
+        for post in 0..self.garrison.len() {
+            let found = &self.garrison[post];
+            let raised: Vec<(FighterId, u8)> =
+                found.standing.iter().zip(&found.girds).map(|(id, &(level, _))| (*id, self.at_seas(level))).collect();
+            for (id, level) in raised {
+                let Some(foe) = self.foes.get_mut(&id) else { continue };
+                let times = gear::power::foe_health_times(level) / gear::power::foe_health_times(foe.level);
+                foe.level = level;
+                foe.fighter.health *= times;
+                foe.fighter.health_max *= times;
+                if let Some(shield) = foe.shield.as_mut() {
+                    shield.left *= times;
+                    shield.most *= times;
+                }
+            }
+        }
     }
 
     /// Each tick: a group whose last foe has fallen is cleared from that tick, and stands again once STAND_AGAIN has
@@ -315,6 +373,10 @@ fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
 #[cfg(test)]
 #[path = "garrison_tests.rs"]
 mod garrison_tests;
+
+#[cfg(test)]
+#[path = "gird_tests.rs"]
+mod gird_tests;
 
 #[cfg(test)]
 #[path = "leash_tests.rs"]

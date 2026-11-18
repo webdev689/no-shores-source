@@ -28,7 +28,12 @@ pub(super) fn section() -> Section {
 }
 
 pub(super) fn node(kind: NodeKind, id: &str) -> Room {
-    Room::garrisoned(sloped(), Vec::new(), section(), kind, id)
+    Room::garrisoned(sloped(), Vec::new(), section(), kind, (id, None))
+}
+
+/// A node of `kind` on an island of the band `levels`.
+pub(super) fn levelled(kind: NodeKind, id: &str, levels: (u8, u8)) -> Room {
+    Room::garrisoned(sloped(), Vec::new(), section(), kind, (id, Some(levels)))
 }
 
 /// Each group's foes as the seed draws them, in the order they stand.

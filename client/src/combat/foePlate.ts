@@ -1,6 +1,7 @@
 // A foe's plate, one layout for every bar of a foe: its faction's emblem in a square at the left and, to its right, its
 // name above a long thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge.
 import { ROLES } from '../plus/kit.ts';
+import type { FoeShield } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
@@ -8,7 +9,8 @@ import { element, Meter } from './meter.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
- *  3 searching); and its faction's number, which picks its emblem (none without it). */
+ *  3 searching); its faction's number, which picks its emblem (none without it); and its shield, if it stands with
+ *  one. */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
@@ -18,6 +20,18 @@ export interface MarkedFoe {
   readonly phase: number;
   readonly alert: number;
   readonly factionNumber?: number;
+  readonly shield?: FoeShield | null;
+}
+
+/** A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, as long as the
+ *  share of the foe's whole health it holds still, in its element's colour (by the gear crate's number); none once
+ *  it is broken or for a foe with none. */
+export function wardOf(
+  foe: Pick<MarkedFoe, 'shield' | 'view'>,
+): { readonly share: number; readonly element: number } | null {
+  const shield = foe.shield;
+  if (!shield || shield.left <= 0) return null;
+  return { share: Math.min(1, shield.left / Math.max(1, foe.view.healthMax)), element: shield.element };
 }
 
 /** What the poise track under a foe's health says: nothing to say (not drawn), its poise filling toward a break, an
@@ -83,6 +97,7 @@ export class FoePlate {
   private readonly name: HTMLElement;
   private readonly mark: HTMLElement;
   private readonly poise: PoiseTrack | null;
+  private readonly ward: HTMLElement;
   /** The share of health the plate last showed of each foe it remembers, so a foe it turns back to loses from where
    *  its bar stood; and the share a foe first shown is taken at (null for as found). */
   private readonly seen: Map<number, number> | null;
@@ -100,6 +115,8 @@ export class FoePlate {
     this.mark = element('i', 'rank-mark', title);
     this.words = Object.fromEntries((parts.words ?? []).map((word) => [word, element('span', word, title)]));
     this.health = new Meter(body, 'health', { pieceLeast: parts.remembers ? PIECE_LEAST.foe : null });
+    this.ward = element('i', 'ward', this.health.root);
+    this.ward.hidden = true;
     this.poise = parts.poise ? new PoiseTrack(body) : null;
     this.seen = parts.remembers ? new Map() : null;
     this.firstSeen = parts.remembers === 'whole' ? 1 : null;
@@ -122,6 +139,12 @@ export class FoePlate {
     if (this.alert.textContent !== alert) this.alert.textContent = alert;
     this.alert.classList.toggle('now', alert === '!');
     this.health.set(share, seconds);
+    const ward = wardOf(foe);
+    this.ward.hidden = !ward;
+    if (ward) {
+      this.ward.style.width = `${Math.round(ward.share * 1000) / 10}%`;
+      if (this.ward.dataset['element'] !== String(ward.element)) this.ward.dataset['element'] = String(ward.element);
+    }
     this.seen?.set(foe.id, Math.max(0, Math.min(1, share)));
     this.poise?.show(foe.id, foe.view);
   }

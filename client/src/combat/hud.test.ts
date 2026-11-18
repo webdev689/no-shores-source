@@ -5,6 +5,7 @@ import { Compass, SHIP_MARK_COLOURS, UNDER_COMPASS } from '../plus/compass.ts';
 import { HALO, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { blockedBy, clearOf, veilOf } from './hud.ts';
+import { Words } from './hitWords.ts';
 import { fightSheetCss } from './hudSheet.ts';
 import { findAll, onFakePage } from './page.test.ts';
 
@@ -188,5 +189,15 @@ test('the compass turns its points with the view and pools its marks: one no lon
       ],
     );
     assert.equal(marks[1]?.hidden, false, 'and shown again');
+  });
+});
+
+test('a shield’s ward and the words of what it took are drawn in its element’s colours', () => {
+  const css = fightSheetCss();
+  assert.ok(rule(css, ".fight-hud .ward[data-element='2']").includes('--ward: #5ccbff'), 'Volt’s blue');
+  assert.ok(rule(css, ".fight-hud .word.shield[data-element='1'] .rise").includes('#ff8a3d'), 'Blaze’s orange');
+  onFakePage((root) => {
+    new Words(root).say({ text: '12', tone: 'shield', tags: [], element: 3 }, [0, 0, 0]);
+    assert.equal(findAll(root, 'word', 'shield')[0]?.dataset['element'], '3');
   });
 });

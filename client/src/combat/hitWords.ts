@@ -72,9 +72,15 @@ export class Words {
     this.over = over;
   }
 
-  /** Says `said` over `place` (null for the player's own spot), `scatter` (0 to 1) setting how far to either side. */
-  say(said: Pick<Said, 'text' | 'tone' | 'tags'>, place: Word['at'], scatter = Math.random()): void {
+  /** Says `said` over `place` (null for the player's own spot), `scatter` (0 to 1) setting how far to either side; a
+   *  shield's word in its `element`'s colour (the gear crate's number). */
+  say(
+    said: Pick<Said, 'text' | 'tone' | 'tags'> & { readonly element?: number },
+    place: Word['at'],
+    scatter = Math.random(),
+  ): void {
     const made = element('div', `word ${said.tone}`, this.over);
+    if (said.element !== undefined) made.dataset['element'] = String(said.element);
     const rise = element('span', 'rise', made, said.text);
     for (const tag of said.tags) element('small', 'tag', rise, tag);
     const line = place ? 0 : this.words.filter((word) => !word.at).length;

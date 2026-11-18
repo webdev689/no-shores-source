@@ -1,8 +1,7 @@
-//! A patrol keeps its island's foes up, well away from players and spawns, at its levels and its voyage's; and its
-//! resource nodes take turns at spots laid out the same every time.
+//! A patrol's resource nodes take turns at spots laid out the same every time; its foes are its garrison's alone.
 
 use super::*;
-use crate::patrol::{CAMP_CLEAR_M, CAMPS, GROUPS, PATROL_FOES, REFILL_TICKS, ROTATE_TICKS, SPOTS};
+use crate::patrol::{GROUPS, ROTATE_TICKS, SPOTS};
 use gear::Difficulty;
 
 const SPAWN: [f64; 2] = [0.0, 0.0];
@@ -10,76 +9,20 @@ const SPAWN: [f64; 2] = [0.0, 0.0];
 fn patrol(difficulty: Difficulty) -> (Room, PlayerId) {
     let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
     let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![SPAWN] });
-    room.start_patrol("saltgrass-downs", (1, 4), 0);
+    room.start_patrol("saltgrass-downs", 0);
     room.set_difficulty(difficulty);
     let player = room.join().expect("a room with space");
     (room, player)
 }
 
 #[test]
-fn a_patrol_stands_its_camps_whole_at_their_places_at_its_levels() {
-    let (mut room, player) = patrol(Difficulty::Rough);
-    let (again, _) = patrol(Difficulty::Rough);
-    let camps = room.patrol.as_ref().expect("a patrol").camps.clone();
-    assert_eq!(camps.len(), CAMPS);
-    assert_eq!(camps, again.patrol.expect("a patrol").camps, "the same places every time");
-    room.tick();
-    let you = room.fighter(player).expect("in").body;
-    let camps = room.patrol.as_ref().expect("a patrol").camps.clone();
-    let standing: usize = camps.iter().map(|camp| camp.foes.len()).sum();
-    assert_eq!(standing, room.foes.len());
-    assert!((2..=PATROL_FOES).contains(&standing), "{standing} foes");
-    for camp in camps.iter().filter(|camp| !camp.foes.is_empty()) {
-        assert_eq!(camp.foes.len(), camp.size, "a camp stands whole");
-        assert!(libm::hypot(camp.at[0] - you.x, camp.at[1] - you.y) >= CAMP_CLEAR_M);
-        for id in &camp.foes {
-            let foe = &room.foes[id];
-            let at = foe.fighter.body;
-            assert!(libm::hypot(at.x - camp.at[0], at.y - camp.at[1]) <= 8.0 + 1e-9, "at its camp");
-            assert!((3..=6).contains(&foe.level), "the island's 1 to 4, two higher rough: {}", foe.level);
-        }
-    }
-}
-
-#[test]
-fn a_cleared_camp_stands_again_after_its_wait_and_only_with_no_one_near() {
-    let (mut room, player) = patrol(Difficulty::Calm);
-    room.tick();
-    let camp =
-        room.patrol.as_ref().expect("a patrol").camps.iter().position(|camp| !camp.foes.is_empty()).expect("one");
-    let at = room.patrol.as_ref().expect("a patrol").camps[camp].at;
-    for id in room.patrol.as_ref().expect("a patrol").camps[camp].foes.clone() {
-        room.foes.remove(&id);
-    }
-    room.tick();
-    let fallen_at = room.clock;
-    // Someone stands in the empty camp as its wait runs out: it stays empty while they are there.
-    let mut there = *room.fighter(player).expect("in");
-    there.body.x = at[0];
-    there.body.y = at[1];
-    while room.clock < fallen_at + REFILL_TICKS + 60 {
-        room.set_fighter(player, there);
-        room.tick();
-    }
-    assert!(room.patrol.as_ref().expect("a patrol").camps[camp].foes.is_empty(), "not while watched");
-    let mut away = there;
-    away.body.x = 0.0;
-    away.body.y = 0.0;
-    room.set_fighter(player, away);
-    room.tick();
-    let refilled = &room.patrol.as_ref().expect("a patrol").camps[camp];
-    assert_eq!(refilled.foes.len(), refilled.size, "whole again once no one is near");
-}
-
-#[test]
-fn an_empty_patrol_stands_no_one() {
-    let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
-    let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![SPAWN] });
-    room.start_patrol("saltgrass-downs", (1, 4), 0);
+fn a_patrol_stands_no_camps_of_its_own_its_fights_are_its_garrisons() {
+    let (mut room, _) = patrol(Difficulty::Storm);
     for _ in 0..600 {
         room.tick();
     }
-    assert!(room.foes.is_empty());
+    assert!(room.foes.is_empty(), "with a player in it a minute, no camp stood");
+    assert_eq!(room.resource_nodes.len(), SPOTS, "its resource nodes keep their spots");
 }
 
 #[test]

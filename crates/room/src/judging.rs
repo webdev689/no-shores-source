@@ -114,12 +114,15 @@ impl Room {
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
-        // The fight's heat follows what the players took and what they dealt and killed.
+        // The fight's heat follows what the players took and what they dealt and killed: what they dealt, a shield's
+        // share with it, as the numbers combat is tuned for, whatever the foe's level.
         let lost = before.health - after.health;
         if self.players.contains_key(&defender) {
             self.director.taken(lost);
         } else if self.players.contains_key(&blow.striker) {
-            self.director.dealt(lost);
+            let level = self.foes.get(&defender).map_or(0, |foe| foe.level);
+            let took = shielded.map_or(0.0, |(took, _)| took);
+            self.director.dealt((lost + took) / gear::power::foe_health_times(level));
             if after.dead() {
                 self.director.killed();
             }

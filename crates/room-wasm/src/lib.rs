@@ -123,14 +123,17 @@ pub fn open_node(text: &[u8]) -> bool {
     }
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
-    let mut room = Room::garrisoned(Floor::Land(Box::new(node.ground)), blocks.collect(), section, node.kind, &node.id);
-    // A city's social space serves a player's gear at its counters; a patrol keeps its island's foes and nodes.
+    // Its garrison stands at its island's levels; a city's social space serves a player's gear at its counters; a
+    // patrol keeps its island's resource nodes.
+    let levels = gear::world::island_levels(&node.continent);
+    let floor = Floor::Land(Box::new(node.ground));
+    let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
     room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol
-        && let (Some(levels), Some(resource)) = (gear::world::island_levels(&node.continent), resource)
+        && let Some(resource) = resource
     {
-        room.start_patrol(&node.id, levels, u8::try_from(resource).unwrap_or_default());
+        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
     }
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
     true

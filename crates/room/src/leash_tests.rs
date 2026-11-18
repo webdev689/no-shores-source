@@ -3,7 +3,7 @@
 //! never does. A Boss or a Miniboss that leashes goes back to its first phase, its called foes falling; and a garrison
 //! foe whose search finds no one walks home as well, heeding what it sees on the way.
 
-use super::garrison_tests::{called_by, into_its_last_phase, node, run, section, shoot, stand_player};
+use super::garrison_tests::{called_by, into_its_last_phase, levelled, node, run, section, shoot, stand_player};
 use super::*;
 use crate::{Input, PlayerId};
 use ::foes::tuning::{HOME_REACHED, LEASH};
@@ -70,7 +70,13 @@ fn alert(room: &Room, id: FighterId) -> u8 {
 #[test]
 fn a_garrison_foe_chased_50_m_from_its_post_walks_back_healing_heeds_no_one_and_stands_idle_there_again() {
     for kind in [NodeKind::Patrol, NodeKind::Boss] {
-        let mut room = node(kind, "glade");
+        // At an island's highest levels in a storm, every foe of the group shielded, it keeps its leash as any does.
+        let mut room = levelled(kind, "glade", (26, 30));
+        room.set_difficulty(gear::Difficulty::Storm);
+        for id in room.garrison[0].standing.clone() {
+            let found = room.foes.get_mut(&id).unwrap();
+            found.shield = Some(gear::element::Shield::whole(gear::Element::Blaze, found.fighter.health_max));
+        }
         let player = room.join().unwrap();
         let posted = group(&room);
         let standing = room.garrison[0].standing.clone();
