@@ -2,14 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
 import { rankBand } from '../rules/roster.ts';
-import {
-  ALERT_MARK_SECONDS,
-  type MarkedFoe,
-  PHASE_MARKS,
-  alertMark,
-  bossBarOf,
-  bossInFight,
-} from './foeBars.ts';
+import { ALERT_MARK_SECONDS, type MarkedFoe, PHASE_MARKS, alertMark, bossBarOf, bossInFight } from './foeBars.ts';
 
 const standing: FighterView = {
   x: 0,
