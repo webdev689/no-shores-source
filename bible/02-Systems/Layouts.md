@@ -137,6 +137,41 @@ from the sea, fresh water and the claim's edge), then:
     piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
     the landing or the way in.
 
+## Runs
+
+A patrol area's brief may name its runs ([[Patrol Zones Stay as Built and Gain Linear Combat Areas]]): one-way linear
+combat areas that break off it, where missions will run later. Saltmere's three zones have three each: in the open
+(a gorge, a ledge, a rampart) or through a large building (a keep, a mine, an undercroft), in the zone's own rock or
+out past its edge.
+
+- **Its line** (`runs::find`): from where an area's floor ends (not a gate's, landing's or dock's), a way into the
+  rock through three to five beats (small arenas 25 to 60 m across, fewer beats larger) to an end arena 40 to 54 m
+  across and its sealed door: 200 to 400 m in all. Each passage between beats runs out of one beat's rim, bends 26
+  to 49 degrees at its elbow and turns back into the next, so one beat never sees the next whole. The first fit wins
+  among 24 headings from each area, seeded; a run keeps 16 m and its half-width off every floor, twice the face's run
+  off every climb and other run, and its door has 40 m of rock behind it. A run in the rock keeps 30 m inside the
+  claim; a run past the edge carries its door 80 m or more out of it, on dry land 50 m from the sea and clear of every
+  other node's claim by the land's fade, read on a field 456 m wider than the claim's.
+- **Its land**: cut into the sculpt as levelled capsules ([[Land]]), its beats flat and its passages climbing between
+  their rims. A ledge climbs to 0.55 of the massif's height; a rampart climbs to the top in its first two fifths,
+  keeps to it and drops to 0.55 into its end arena; the rest keep to the floor. A climbing run ends at 0.55 so the face
+  behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
+  it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
+  road. Foes hold its beats; its end arena is an objective's site and its door a door's.
+- **What stands in it** (`run_kits`, `run_halls`, `halls`): its mouth marked so the zone sees where it goes (a fallen
+  arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
+  chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone
+  coffins), and a stone shelf 1.6 m high with steps along the rim up to it; a gorge's fallen bridge, a ledge's broken
+  watch post, a rampart's wall along its drop. A keep has walled courts and roofed great halls over its beats in turn,
+  roofed passages and two towers at its door; a mine has timbered galleries boarded over, caverns roofed with rubble
+  slabs on rock pillars (light falling in shafts beside the way) and an iron grate; an undercroft has vaulted passages,
+  pillared vaults and a slab of stone for its door. The door stands at the foot of the face behind the end arena, iron-
+  banded timber in a stone arch for the rest. A building's rooms stand square to the world and open wherever the way
+  crosses a wall; a slanted wall is laid in lengths short enough that each piece's box stays within half a metre of it.
+- **Kept clear**: no box of a run's pieces stands within 1.2 m of its line under head height; every ceiling over a
+  building run's way stands 2.6 m or more over its floor. A body walks every run from its mouth to its door, and no
+  further (`crates/room/tests/runs_walked.rs`).
+
 ## Laid on the land
 
 `settle` plans every drawn node's layout on a landmass whose city is settled, then lays them on its ground: the
@@ -192,6 +227,7 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 
 ## Limits
 
+- Only Saltmere's three zones have runs; the other 24 zones' briefs name none yet.
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
   wait on the server.

@@ -62,3 +62,32 @@ test("a transition tile's dirt lies at the corner its record keeps it, turned as
   );
   assert.deepEqual(tileCorners({ byte: 46, turns: 0 })[0], { dirt: 0, paving: 1 });
 });
+
+test("a building run's floor is painted, a keep's paved and a mine's in earth, along its way and over its beats", () => {
+  const run = (kind: string) => ({
+    name: kind,
+    kind,
+    place: 'rock',
+    line: [
+      [-30, 0],
+      [0, 0],
+    ] as [number, number][],
+    beats: [{ at: [0, 0] as [number, number], radius: 15, level: 0 }],
+    door: [20, 0] as [number, number],
+  });
+  const path: LaidPath = {
+    tier: 'footpath',
+    points: [
+      [-40, 30],
+      [40, 30],
+    ],
+    heights: [0, 0],
+    crossings: [],
+  };
+  const paved = paintOfLayouts([{ ...layout([path], []), runs: [run('keep')] }], [0, 0], 2500, [0, 0]);
+  const earthen = paintOfLayouts([{ ...layout([path], []), runs: [run('mine')] }], [0, 0], 2500, [0, 0]);
+  assert.ok(paved && earthen);
+  assert.ok(reachAt(paved, 8, 6, 1) > 1, "the keep's beat is paved off its line");
+  assert.ok(reachAt(earthen, 8, 6, 0) > 1, "the mine's beat is earth off its line");
+  assert.ok(reachAt(paved, 8, 6, 0) < 0, 'and the keep is not earth there');
+});

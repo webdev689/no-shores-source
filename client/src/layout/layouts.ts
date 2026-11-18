@@ -42,6 +42,16 @@ export interface LayoutArea {
 }
 
 /** A node's layout. */
+/** A run breaking off a patrol area, as the layout crate writes it: its kind, its line and its beats. */
+export interface LaidRun {
+  readonly name: string;
+  readonly kind: string;
+  readonly place: string;
+  readonly line: readonly Point[];
+  readonly beats: readonly { readonly at: Point; readonly radius: number; readonly level: number }[];
+  readonly door: Point;
+}
+
 export interface NodeLayout {
   readonly id: string;
   readonly kind: string;
@@ -58,6 +68,8 @@ export interface NodeLayout {
   /** The rooms of the buildings walked into: linings, floors, ceilings, stairs. */
   readonly rooms: readonly Solid[];
   readonly pads: readonly Pad[];
+  /** The linear combat areas breaking off a patrol area; none written when it has none. */
+  readonly runs?: readonly LaidRun[];
 }
 
 /** The track's and the footpath's widths, metres, as the layout crate lays them. */

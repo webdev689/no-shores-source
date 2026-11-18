@@ -11,6 +11,9 @@ const FINEST_M = 1;
 const MOST_TEXELS = 4096;
 /** How far a distance reaches each way in a byte, metres: 128 at the edge, 32 a metre. */
 const REACH_M = 4;
+/** The runs through a building, whose floors are laid, and how far either side of their way, metres. */
+const RUN_FLOORS = new Set(['keep', 'mine', 'undercroft']);
+const RUN_FLOOR_HALF_M = 3;
 /** A block's tile side, metres (seat.rs TILE_M). */
 const TILE_M = 6.4;
 /** The town records (textures' ground.ts TOWN): paving, and ground paved across part of it. */
@@ -93,6 +96,44 @@ export function paintOfLayouts(
           for (let column = Math.floor(lowX); column <= Math.ceil(highX); column++) {
             const [x, y] = [west + (column + 0.5) * texelM, north + (row + 0.5) * texelM];
             lay(0, column, row, half - offLine([x, y], from, to));
+          }
+        }
+      }
+    }
+    // A building run's floor: a keep's and an undercroft's paved, a mine's trodden earth, over its beats and along
+    // its passages as wide as its rooms and galleries.
+    for (const run of layout.runs ?? []) {
+      if (!RUN_FLOORS.has(run.kind)) continue;
+      const channel = run.kind === 'mine' ? 0 : 1;
+      const shapes: [readonly [number, number], readonly [number, number], number][] = [
+        ...run.beats.map(
+          (beat) =>
+            [beat.at, beat.at, beat.radius * 0.9] as [readonly [number, number], readonly [number, number], number],
+        ),
+        ...run.line
+          .slice(1)
+          .map(
+            (to, k) =>
+              [run.line[k] ?? to, to, RUN_FLOOR_HALF_M] as [
+                readonly [number, number],
+                readonly [number, number],
+                number,
+              ],
+          ),
+      ];
+      for (const [from, to, half] of shapes) {
+        const [lowX, lowY] = texelOf(
+          Math.min(from[0], to[0]) - half - REACH_M,
+          Math.min(from[1], to[1]) - half - REACH_M,
+        );
+        const [highX, highY] = texelOf(
+          Math.max(from[0], to[0]) + half + REACH_M,
+          Math.max(from[1], to[1]) + half + REACH_M,
+        );
+        for (let row = Math.floor(lowY); row <= Math.ceil(highY); row++) {
+          for (let column = Math.floor(lowX); column <= Math.ceil(highX); column++) {
+            const [x, y] = [west + (column + 0.5) * texelM, north + (row + 0.5) * texelM];
+            lay(channel, column, row, half - offLine([x, y], from, to));
           }
         }
       }

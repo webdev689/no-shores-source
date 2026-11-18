@@ -102,7 +102,8 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).
 - A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder. A layout's paths are laid
-  as roads after the land is made (`add_roads`), each point of a course 8 m from the next.
+  as roads after the land is made (`add_roads`), each point of a course 8 m from the next, but for its runs' ways,
+  whose floors are carved to their levels already.
 - A layout's sculpt carves the land round its patrol area or instance ([[Layouts]]): its network's floor (basins and
   canyons) is left as it is and everything else in its claim is raised into a massif with stepped cliffs, fading back
   to the land over 140 m past the claim. It is applied to the land before the towns, rivers and roads, never raises
@@ -110,7 +111,11 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   climbs are capsules whose level runs from one share of the massif's height to another along them: on a climb the
   land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
   from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
-  top. The floor's distance counts the climbs, so a section reaches up them. Each sculpt measures its claim's edge
+  top. The floor's distance counts the climbs, so a section reaches up them. Its runs ([[Layouts]], "Runs") are cut
+  into its rock the same way, but where a run's capsules meet at a bend its level is a blend of its near capsules',
+  weighted by how near each is (within 3 m), so the land climbs round the bend without a step. Its wings are capsules
+  that carry its claim past its ring, so the massif stands round a run that leaves the zone and fades back past the
+  wing. Neither is written when empty. Each sculpt measures its claim's edge
   once a 32 m bucket: where a bucket lies wholly in the claim or wholly past its fade, the fade is 1 or 0 with no
   measuring, the same to the bit; a 2 km close-up of carved ground samples in about a quarter of a second.
 

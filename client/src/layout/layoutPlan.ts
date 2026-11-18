@@ -57,6 +57,25 @@ export function tileUvs(byte: number, blockTurns: number): [number, number][] {
   });
 }
 
+/** A run's ground nothing wild grows on: its beats whole, and its way every few metres. */
+function runClearings(
+  run: NonNullable<NodeLayout['runs']>[number],
+): { at: readonly [number, number]; radius: number }[] {
+  const along = run.line.slice(1).flatMap((to, k) => {
+    const from = run.line[k] ?? to;
+    const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / RUN_CLEAR_EVERY_M));
+    return Array.from({ length: steps }, (_unused, step) => ({
+      at: [from[0] + ((to[0] - from[0]) * step) / steps, from[1] + ((to[1] - from[1]) * step) / steps] as const,
+      radius: RUN_CLEAR_M,
+    }));
+  });
+  return [...run.beats.map((beat) => ({ at: beat.at, radius: beat.radius + 2 })), ...along];
+}
+
+/** How far round a run's way nothing wild grows, metres, and how far apart its clearings are laid. */
+const RUN_CLEAR_M = 6;
+const RUN_CLEAR_EVERY_M = 5;
+
 /** The ground round each building kept clear of the wild, as rects: what nature keeps off. */
 function yards(layouts: readonly NodeLayout[]): Pad[] {
   return layouts.flatMap((layout) =>
@@ -137,11 +156,12 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
     social: { bounds: [0, 0, 0, 0], level: 0, ring: [], spawns: [], solids: [] },
     pads: [...layouts.flatMap((layout) => layout.pads), ...tileRects, ...yards(layouts)],
     pieces,
-    clearings: layouts.flatMap((layout) =>
-      layout.areas.flatMap((area) => {
+    clearings: layouts.flatMap((layout) => [
+      ...layout.areas.flatMap((area) => {
         const share = CLEARED_SHARE[area.kind];
         return share ? [{ at: area.at, radius: area.radius * share }] : [];
       }),
-    ),
+      ...(layout.runs ?? []).flatMap(runClearings),
+    ]),
   };
 }
