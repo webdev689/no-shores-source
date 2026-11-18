@@ -69,6 +69,8 @@ export interface FirstPersonState {
   readonly blocking?: boolean;
   /** A weapon held in a fight's pose, one of its strokes' frames: a guard, a parry's deflect. */
   readonly pose?: { readonly record: number; readonly frame: number } | null;
+  /** How far the view is zoomed in (aiming): the hands zoom with it, about the middle of the screen. */
+  readonly zoom?: number;
 }
 
 /** What the first person draws with: a texture a picture, and the quads over the scene. */
@@ -84,13 +86,19 @@ interface Wanted {
 }
 
 /** Where on each ranged weapon's picture its muzzle is, or its arrow's head drawn, in its own pixels, in the frame its
- *  shot leaves on, kicked up: where a tracer starts. Aiming zooms the view, not the hands, so it stays where drawn. */
+ *  shot leaves on, kicked up: where a tracer starts. Aiming zooms it with the hands, so it stays where drawn. */
 const MUZZLE: Readonly<Record<string, readonly [number, number] | undefined>> = {
   pistolet: [82, 53],
   thunderlock: [77, 42],
   crossbow: [82, 73],
   bow: [107, 150],
 };
+
+/** A point on the design screen as a view zoomed `zoom` times about the screen's middle shows it. */
+const zoomedOnScreen = (x: number, y: number, zoom: number): [number, number] => [
+  DESIGN_WIDTH / 2 + (x - DESIGN_WIDTH / 2) * zoom,
+  DESIGN_HEIGHT / 2 + (y - DESIGN_HEIGHT / 2) * zoom,
+];
 
 /** The casting hands step through their records and back to the first, a step every 0.04 s. */
 const CAST_SEQUENCE = [0, 1, 2, 3, 4, 5, 0] as const;
@@ -172,6 +180,7 @@ export class FirstPerson {
   private wanted: Wanted[] = [];
   private shown: ScreenQuad[] = [];
   private drawnMuzzle: readonly [number, number] | null = null;
+  private zoom = 1;
   private readonly kept = new Map<string, { texture: GPUTexture; picture: Picture } | null>();
   private readonly loading = new Set<string>();
   /** Picks each swing's direction as a share of DFO's six, as each swing begins; a fight's rules may choose it, and
@@ -211,6 +220,7 @@ export class FirstPerson {
    *  from outside can match them. */
   update(seconds: number, input: AttackInput, state: FirstPersonState): HandsEvents {
     this.plan = state.drawn ? handsPlan(state.right, state.left) : null;
+    this.zoom = state.zoom ?? 1;
     const worn: Worn = {
       hands: state.armour.gauntlets ? forgeName(state.armour.gauntlets) : null,
       feet: state.armour.boots ? forgeName(state.armour.boots) : null,
@@ -393,16 +403,16 @@ export class FirstPerson {
     this.shown = [];
   }
 
-  /** Where the ranged weapon's muzzle is on the design screen as the hands stand this frame, so a shot let go now
-   *  leaves from where it will be drawn (as last drawn while this frame's picture is still composing); null with none
-   *  in hand. */
+  /** Where the ranged weapon's muzzle is on the design screen as the hands stand this frame, zoomed as they are, so a
+   *  shot let go now leaves from where it will be drawn (as last drawn while this frame's picture is still composing);
+   *  null with none in hand. */
   get muzzle(): readonly [number, number] | null {
     const sighting = this.wanted.find((wanted) => wanted.tip);
     if (!sighting?.tip) return null;
     const kept = this.kept.get(sighting.key);
-    if (!kept) return this.drawnMuzzle;
-    const quad = sighting.place(kept.picture);
-    return [quad.x + sighting.tip[0], quad.y + sighting.tip[1]];
+    const quad = kept && sighting.place(kept.picture);
+    const muzzle = quad ? ([quad.x + sighting.tip[0], quad.y + sighting.tip[1]] as const) : this.drawnMuzzle;
+    return muzzle && zoomedOnScreen(muzzle[0], muzzle[1], this.zoom);
   }
 
   /** Draws the first person over what `colourView` holds, `width` by `height` pixels. Until every picture wanted is
@@ -421,6 +431,11 @@ export class FirstPerson {
       }
     }
     if (ready) [this.shown, this.drawnMuzzle] = [quads, muzzle];
-    this.view.draw(encoder, colourView, width, height, this.shown);
+    const zoom = this.zoom;
+    const zoomed = this.shown.map((quad) => {
+      const [x, y] = zoomedOnScreen(quad.x, quad.y, zoom);
+      return { ...quad, x, y, width: quad.width * zoom, height: quad.height * zoom };
+    });
+    this.view.draw(encoder, colourView, width, height, zoomed);
   }
 }

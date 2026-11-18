@@ -86,8 +86,10 @@ third person, the forge's figure and the first person's hands.
 - **The fight.** Online, the player fights in the node's room as on the Test Ground ([[Combat]]), by the same
   shared pieces: `FootFight` holds the combat layer's `Fighting` over the room's link. Right button swings once the
   weapon is out (Z), left button or F guards, and V dodges; with a bow, a crossbow or a gun the right button aims
-  and the left fires, onto the crosshair's point over the node's ground. The arms are what the figure's hands
-  hold. The lock turns the body to its foe, the first person swings as the fight's rules begin each swing, and the
+  and the left fires, onto the crosshair's point over the node's ground; aiming eases the view behind the shoulder
+  and zooms it, and in first person the weapon zooms with it
+  ([[Aiming Sits Behind the Shoulder and Zooms the View]], [[First-Person Aiming Zooms the Weapon With the View]]).
+  The arms are what the figure's hands hold. The lock turns the body to its foe, the first person swings as the fight's rules begin each swing, and the
   figure shows what the fight holds it to. Each foe is drawn in its kind's dress (`FoeFigures`), and it and every
   other player glide between snapshots. Struck figures flash, sparks fly where a guard meets a blow, shots leave tracers, and telegraphed blows
   are marked on the ground (`FightMarks`). The fight's display (`#fight-hud`, drawn by `combat/hud.css`, the Test

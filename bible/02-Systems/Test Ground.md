@@ -49,8 +49,8 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than
 0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second and stops
 short of a wall. Aiming a ranged weapon, it eases behind the right shoulder, 0.65 m out, 1.8 m back and 0.25 m up from
-the head, and zooms in 1.15 times; in first person the view zooms in 1.6 times and the hands keep still
-([[Aiming Sits Behind the Shoulder and Zooms the View]]).
+the head, and zooms in 1.15 times; in first person the view zooms in 1.6 times, the hands with it
+([[Aiming Sits Behind the Shoulder and Zooms the View]], [[First-Person Aiming Zooms the Weapon With the View]]).
 
 The panel's **Third-person aim** places that view by hand: sliders for how far right of the head it stands (left below
 zero), how far behind and above, and its zoom. A ticked **Hold the aiming view** keeps the camera there, with the

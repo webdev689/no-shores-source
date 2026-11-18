@@ -327,6 +327,7 @@ async function start(): Promise<void> {
       yaw: player.yaw,
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
+      zoom: camera.zoom ?? 1,
     });
     const swing = firstPerson.swing;
     strokes = strokesAfter(strokes, swingWas, swing?.progress ?? null);

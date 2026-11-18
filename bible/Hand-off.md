@@ -115,15 +115,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
 - The [[Test Ground]]'s third-person aim placed by hand, DFO's next forge work with its dodge roll, and faster strikes,
-  merged to `main` with the owner's yes (#62), which deploys the page and the rooms, tested offline:
+  merged to `main` with the owner's yes (#62) and deployed; the live Test Ground serves the aim's panel:
   - the aim's sliders, kept in the browser and shown as numbers;
   - the forge's code exactly but for the were-creatures' ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]),
     and its 118,158 redrawn and new pictures and the roll's 1,200 published to R2 by a helper session on the
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
     twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
+- First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
+  ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
+  the page and the rooms; tested offline, with a test and a headless Test Ground run.
 
 ## Waiting on the owner
+
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
@@ -166,6 +170,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
+  seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
+  not yet known.
 - **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
   choices in [[Gear as Claude Shapes It]]), is built on pull request #60 and waits on the owner's yes to merge; a
   merge deploys the accounts, the rooms and the page together. On it: the `gear` crate ([[Gear]]); gear held by the
