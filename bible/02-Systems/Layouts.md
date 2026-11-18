@@ -93,6 +93,9 @@ from the sea, fresh water and the claim's edge), then:
    with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m
    along the ways within 70 m of a settlement (a hamlet, farm, keep, landing, camp, dock or mill), side to side; and
    drystone walls along both sides of the tracks within 170 m of a hamlet or farm, broken by gaps, with fallen stones.
+   Each keeps clear of its own way all along it, not only where it was set, so none stands on a bend; and once the
+   ways are laid, the set pieces' props and small solids in a way's path (a lantern, a fire's stones) are left out,
+   with what stands on them.
 6. **The land carved.** Each area becomes a basin 32 m wider than its reach and each path a canyon (15 m either side
    of a track, 11 of a footpath), their edges wandering outward with a noise; a gorge runs out of the claim from
    each gate toward its instance and from the landing toward the sea. Everything else in the claim is raised into a
@@ -124,8 +127,8 @@ from the sea, fresh water and the claim's edge), then:
    solids' rubble, which wears the ground's stone in the grey the terrain draws its cliffs in.
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
-   paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), and where foes hold
-   ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), each beacon and resource
+   5 m clear of every way's edge, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each beacon and resource is a place before its activity comes (`marks`): a beacon's brazier glowing
    on a stone plinth in a ring of standing stones; ore as a broken outcrop seamed with metal and its spoil; salvage as
    broken timbers and spilt stores; herbs by a gatherer's drying rack hung with bundles; timber as felled logs stacked

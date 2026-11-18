@@ -55,6 +55,17 @@ fn clear(field: &Field, seating: &Seating, at: [f64; 2]) -> bool {
 }
 
 /// The sites of a layout.
+/// How far a beacon or a resource keeps from every way's edge, metres: it stands beside the ways, never on one.
+const OFF_PATHS_M: f64 = 5.0;
+
+/// Whether a point keeps OFF_PATHS_M clear of every path's edge.
+fn off_paths(paths: &[Path], at: [f64; 2]) -> bool {
+    paths.iter().all(|path| {
+        let reach = path.tier.width() / 2.0 + OFF_PATHS_M;
+        path.points.windows(2).all(|pair| crate::paths::off_line(at, pair[0], pair[1]) > reach)
+    })
+}
+
 #[must_use]
 pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec<Site> {
     let mut sites = Vec::new();
@@ -91,7 +102,7 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
             let at = [area.at[0] + sine * area.radius * 0.85, area.at[1] - cosine * area.radius * 0.85];
             let apart =
                 sites.iter().filter(|other| other.kind == SiteKind::Beacon).all(|other| distance(other.at, at) > 40.0);
-            if clear(field, seating, at) && apart {
+            if clear(field, seating, at) && apart && off_paths(paths, at) {
                 sites.push(site(SiteKind::Beacon, at, 3.0, None));
                 placed += 1;
                 if placed == 2 {
@@ -118,6 +129,7 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
             let resources = sites.iter().filter(|other| other.kind == SiteKind::Resource).count();
             if resources < RESOURCE_MOST
                 && clear(field, seating, at)
+                && off_paths(paths, at)
                 && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6)
             {
                 sites.push(site(SiteKind::Resource, at, 2.0, Some(resource_at(field, at).to_owned())));

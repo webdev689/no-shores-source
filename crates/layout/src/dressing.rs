@@ -76,6 +76,12 @@ fn clear(kit: &Kit, others: &[&Path], at: [f64; 2], margin: f64) -> bool {
     off_ways && off_seats && kit.dry(at)
 }
 
+/// Whether a point keeps at least `at_least` metres off a way's middle line, all along it: a post set beside one
+/// stretch can lie on another where the way bends.
+fn off_way(path: &Path, at: [f64; 2], at_least: f64) -> bool {
+    path.points.windows(2).all(|pair| off_line(at, pair[0], pair[1]) >= at_least)
+}
+
 /// Dresses every way of a layout.
 pub fn dress(kit: &mut Kit, areas: &[Area], paths: &[Path]) {
     for (number, path) in paths.iter().enumerate() {
@@ -98,7 +104,7 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
             // Leaving a place a signpost faces on along the way; reaching one, it faces back along it.
             let facing = if within.is_none() { way } else { [-way[0], -way[1]] };
             let post = beside(at, way, edge + 1.2);
-            if clear(kit, others, post, 1.0) {
+            if clear(kit, others, post, 1.0) && off_way(path, post, edge + 1.0) {
                 let sign = kit.pick(&model::SIGNPOSTS);
                 kit.prop(sign, post, yaw_toward(facing));
             }
@@ -109,8 +115,8 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
         };
         since_lantern += STEP_M;
         if since_lantern >= LANTERN_EVERY_M && near(LANTERN_REACH_M, settled) {
-            let post = beside(at, way, (edge + 1.0) * lantern_side);
-            if clear(kit, others, post, 1.0) {
+            let post = beside(at, way, (edge + 1.4) * lantern_side);
+            if clear(kit, others, post, 1.0) && off_way(path, post, edge + 1.1) {
                 lantern(kit, post, 2.8);
                 since_lantern = 0.0;
                 lantern_side = -lantern_side;
@@ -121,7 +127,10 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
         if within.is_none() && path.tier == Tier::Track && since_wall >= WALL_STRETCH_M && near(WALL_REACH_M, walled) {
             since_wall = 0.0;
             for side in [-1.0, 1.0] {
-                drystone(kit, others, beside(at, way, (edge + WALL_OFF_M) * side), way);
+                let stretch = beside(at, way, (edge + WALL_OFF_M) * side);
+                if off_way(path, stretch, edge + WALL_OFF_M - 0.5) {
+                    drystone(kit, others, stretch, way);
+                }
             }
         }
         if within.is_some() {
@@ -131,7 +140,7 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
         since_scene += STEP_M;
         if since_mile >= MILESTONE_EVERY_M {
             let stone_at = beside(at, way, -(edge + 0.8));
-            if clear(kit, others, stone_at, 0.8) {
+            if clear(kit, others, stone_at, 0.8) && off_way(path, stone_at, edge + 0.6) {
                 kit.stand(
                     Shape::Pyramid { top: 0.7 },
                     stone_at,
@@ -146,7 +155,7 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
         if since_scene >= next_scene {
             let side = if kit.draw() < 0.5 { 1.0 } else { -1.0 };
             let middle = beside(at, way, (edge + 5.0) * side);
-            if clear(kit, others, middle, 4.0) {
+            if clear(kit, others, middle, 4.0) && off_way(path, middle, edge + 3.0) {
                 scene(kit, middle, way);
                 since_scene = 0.0;
                 next_scene = SCENE_EVERY_M * (0.6 + kit.draw() * 0.8);

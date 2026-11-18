@@ -115,7 +115,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         .collect();
     let blocked = blocked_by(&field, &seating);
     let mut paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
-    keep_props_off(&mut seating, &paths);
+    keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
     for path in &paths {
         for &banks in &path.crossings {
@@ -150,6 +150,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, rise);
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
+    let laid = paths.len();
     for pair in sculpt.climbs.chunks_exact(2) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
         let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
@@ -166,6 +167,8 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
     rocks::talus(&mut kit, &ring, &paths, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &paths, &carved);
     skyline::rim(&mut kit, &ring, &paths, &carved);
+    // The climbs came after what stands was kept off the ways: keep it off them too.
+    keep_off_paths(&mut seating, &paths[laid..], &|x, y| ground.height_at(x, y));
     let spawns = spawns_round(&field, anchor);
     Layout {
         id: node.id.clone(),
@@ -288,16 +291,35 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
     Blocked(blocked)
 }
 
-/// Leaves out the props a path runs over: a cart or a fence in the middle of a track.
-fn keep_props_off(seating: &mut Seating, paths: &[Path]) {
-    seating.props.retain(|prop| {
-        let at = [prop.at[0], prop.at[1]];
+/// Leaves out what a path runs over: a cart or a fence in the middle of a track, a lantern on its post.
+fn keep_off_paths(seating: &mut Seating, paths: &[Path], height: &dyn Fn(f64, f64) -> f64) {
+    let clear = |at: [f64; 2], spread: f64| {
         paths.iter().all(|path| {
-            let reach = path.tier.width() / 2.0 + 0.6;
+            let reach = path.tier.width() / 2.0 + 0.6 + spread;
             path.points.windows(2).all(|pair| crate::paths::off_line(at, pair[0], pair[1]) > reach)
         })
-    });
+    };
+    seating.props.retain(|prop| clear([prop.at[0], prop.at[1]], 0.0));
+    // The set pieces' small solids standing on the ground in a way's path (a lantern, a fire's stones), and what stands
+    // on them, go too: a deck, a pile in the water or a work's great stones keep their places.
+    let place =
+        |solid: &city::solids::Solid| ((solid.at[0] * 100.0).round() as i64, (solid.at[1] * 100.0).round() as i64);
+    let in_the_way: std::collections::BTreeSet<(i64, i64)> = seating
+        .solids
+        .iter()
+        .filter(|solid| {
+            let small = solid.size[0].max(solid.size[1]) <= SMALL_SOLID_M;
+            let ground_at = height(solid.at[0], solid.at[1]);
+            let standing = solid.at[2] >= ground_at - 1.2 && solid.at[2] <= ground_at + 0.05;
+            small && standing && !clear([solid.at[0], solid.at[1]], solid.size[0].max(solid.size[1]) / 2.0)
+        })
+        .map(place)
+        .collect();
+    seating.solids.retain(|solid| !in_the_way.contains(&place(solid)));
 }
+
+/// The widest a set piece's solid may be and still be cleared out of a way, metres: a post, a lantern, a stone.
+const SMALL_SOLID_M: f64 = 2.5;
 
 /// The paths joining a layout's areas. A patrol area's areas are joined by tracks along a tree of the shortest links
 /// and footpaths closing a loop or two; its gates by a footpath from the nearest area. An instance's run in a chain.
@@ -398,4 +420,33 @@ fn spawns_round(field: &Field, at: [f64; 2]) -> Vec<[f64; 2]> {
         .chain(std::iter::once(at))
         .take(3)
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use city::solids::{Material, Shape, Solid};
+
+    #[test]
+    fn a_lantern_on_a_way_goes_with_its_light_and_a_pile_under_a_deck_stays() {
+        let path = Path {
+            tier: Tier::Track,
+            points: vec![[0.0, 0.0], [100.0, 0.0]],
+            crossings: Vec::new(),
+            heights: Vec::new(),
+        };
+        let solid = |at: [f64; 3], size: [f64; 3]| Solid::upright(Shape::Block, at, size, Material::Timber);
+        let mut seating = Seating {
+            solids: vec![
+                solid([50.0, 1.0, -0.3], [0.16, 0.16, 2.8]),
+                solid([50.0, 1.0, 2.5], [0.2, 0.2, 0.26]),
+                solid([60.0, 0.5, -6.0], [0.5, 0.5, 6.0]),
+                solid([70.0, 9.0, -0.3], [0.16, 0.16, 2.8]),
+            ],
+            ..Seating::default()
+        };
+        keep_off_paths(&mut seating, &[path], &|_, _| 0.0);
+        let left: Vec<[f64; 2]> = seating.solids.iter().map(|solid| [solid.at[0], solid.at[1]]).collect();
+        assert_eq!(left, [[60.0, 0.5], [70.0, 9.0]], "the lantern on the track and its light are gone");
+    }
 }
