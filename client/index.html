@@ -132,9 +132,13 @@
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
       }
-      /* On foot the hints stand over the fight's bars. */
+      /* On foot the hints stand over the fight's vitals panel, 126 px tall from the screen's foot. */
       #hud:has(> .fight:not([hidden])) .hints {
-        bottom: 64px;
+        bottom: 140px;
+      }
+      /* A boss's bar takes the top of the screen from the place's name while it shows. */
+      #hud:has(> .fight.bossed:not([hidden])) .place {
+        visibility: hidden;
       }
       .status {
         position: absolute;
