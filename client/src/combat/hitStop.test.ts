@@ -78,10 +78,14 @@ test("a fighter held back shows its action's clock that much earlier, never befo
     aim: 0,
     action: { kind: 'attack', stroke: 3, elapsed: 30, strike: 24, end: 60, swing: 'plain', leftHand: false },
   } as unknown as FighterView;
-  const held = heldBack(view, 6);
-  assert.equal(held.action.kind === 'attack' && held.action.elapsed, 24);
-  assert.equal(heldBack(view, 40).action.kind === 'attack' && heldBack(view, 40).action.elapsed === 0, true);
+  const elapsed = (ticks: number) => {
+    const { action } = heldBack(view, ticks);
+    return action.kind === 'attack' ? action.elapsed : null;
+  };
+  assert.equal(elapsed(6), 24);
+  assert.equal(elapsed(40), 0, 'never before it began');
   const flinch = { action: { kind: 'flinch', left: 5 } } as unknown as FighterView;
-  assert.equal(heldBack(flinch, 3).action.kind === 'flinch' && heldBack(flinch, 3).action.left, 8);
+  const { action: flinched } = heldBack(flinch, 3);
+  assert.equal(flinched.kind === 'flinch' ? flinched.left : null, 8);
   assert.equal(heldBack(view, 0), view);
 });
