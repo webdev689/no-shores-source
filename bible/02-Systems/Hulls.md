@@ -12,7 +12,8 @@ code:
 
 The ships Overlook will sail beyond the Sloop, one for each rank of ship
 ([[Enemies Come in Five Ranks, After Destiny]]), made in Blender in her style
-([[New Ships Are Planned in the Sloop's Style, After the System]]). Only the Sloop is built ([[Sailing]]).
+([[New Ships Are Planned in the Sloop's Style, After the System]]). Only the Sloop is built ([[Sailing]]): until the others are, both factions' captains sail her at every rank
+([[Naval Combat]], "Ranks and factions").
 
 ## The Sloop's style
 

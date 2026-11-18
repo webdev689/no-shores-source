@@ -114,8 +114,29 @@ Where the work stands now, for the next session. Each session rewrites this note
     ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]; [[Game]], "At sea").
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
+- The enemy system, on pull request #61 from branch `claude/enemies-factions-ai-fiapxf`, tested offline, as the owner
+  decided it ([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]],
+  [[project-final's AI Comes Over Onto DFO's]], [[The Enemies as Claude Builds Them]]):
+  - [[Enemies]]: a fighter's side is the players' or a faction's, and factions fight each other; the Grey Tithe (land
+    and sea) and the pirates (sea); five roles, a roster of 17 types, five ranks scaling health, poise, might,
+    reaction, defence and telegraphed blows; a Miniboss's second phase and Captain Brannoc Thule's three, his crew
+    called in the last; foes' guns that fly; names over rank-coloured bars, the boss bar, a panel by faction, type and
+    rank, and each type's dress.
+  - [[Foes]]: project-final's awareness and noises (suspicion, alert, searching, allies woken by a shout), its combat
+    director (the room's heat setting the turns), shooters at posts in cover, and waiting foes flanking.
+  - [[Navmesh]]: baked over any ground, a node's room on its land, and firing spots baked with it.
+  - [[Naval Combat]]: captains of a faction and a rank, the Grey Tithe's Tithe Sloop at sea beside the pirates, ranks
+    scaling hull, guns, reload, aim, temper and when she runs and strikes, factions' ships fighting each other in a
+    fight, and bars over captains' ships.
+  - [[Hulls]]: new ships in the Sloop's style, planned, not built
+    ([[New Ships Are Planned in the Sloop's Style, After the System]]).
 
 ## Waiting on the owner
+
+- #61, the enemy system: the owner's yes to merge it. Its open choices: whether the sea's pirates become the Grey
+  Tithe; a boss on land; the roster's names, Claude's for now; which hulls the ranks of ships sail, and who builds
+  them; where each faction is present, and whether that shifts; whether project-final's crystal faction comes over
+  ([[Open Questions]]).
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
@@ -156,9 +177,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
-- The fight's open ends ([[Combat]], [[Foes]]): gear power by metal, running's stamina, casting's harm, foes that
-  flank or seek a line around a block, and the navmesh baked over the [[Land]]. Whether players may harm one another
-  is the owner's to decide.
+- The fight's open ends ([[Combat]], [[Foes]]): gear power by metal, running's stamina, casting's harm. Whether
+  players may harm one another is the owner's to decide.
+- The enemies' open ends ([[Enemies]], [[Naval Combat]]): placing each faction's presence in the world (foes stand
+  only where a player asks), captains of different factions meeting outside a fight at sea, the planned hulls
+  ([[Hulls]]), and the boarding fight on a deck that the deck crews are for.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them
