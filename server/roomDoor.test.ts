@@ -203,8 +203,10 @@ test('a node’s room stands the foes a player asks for only once a page playing
     const snapshot = readFromRoom(room.snapshot());
     return snapshot?.kind === 'snapshot' ? snapshot.foes.map((foe) => foe.type) : [];
   };
-  assert.deepEqual(foesAfterAsking(false), []);
-  assert.deepEqual(foesAfterAsking(true), [2]);
+  // The patrol node's own garrison stands either way; the ask adds a Collector only when the room is told to take it.
+  const garrison = foesAfterAsking(false);
+  assert.ok(garrison.length > 0, 'its garrison');
+  assert.deepEqual(foesAfterAsking(true), [...garrison, 2]);
 });
 
 test('the sea sails the course a browser writes, refuses one across land, and shows each ship', () => {
