@@ -74,3 +74,20 @@ export function layoutMarksOf(text: string): LayoutMarks[] {
     })),
   }));
 }
+
+/** The named layouts from the land worker's layouts JSON, whole as the city layer draws them, as a JSON list in the
+ *  order named; their collision boxes and carving claims, which nothing on the page reads, are left behind. */
+export function layoutsNamed(text: string, ids: readonly string[]): string {
+  const laid = JSON.parse(text) as unknown;
+  if (!Array.isArray(laid)) return '[]';
+  const byId = new Map((laid as { id: string }[]).map((layout) => [layout.id, layout]));
+  const named = ids.flatMap((id) => {
+    const layout = byId.get(id);
+    if (!layout) return [];
+    const drawn: Record<string, unknown> = { ...layout };
+    delete drawn.boxes;
+    delete drawn.sculpt;
+    return [drawn];
+  });
+  return JSON.stringify(named);
+}

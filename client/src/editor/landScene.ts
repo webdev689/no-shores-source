@@ -31,11 +31,13 @@ import type { FleetCall } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
 import { FleetScene } from './fleetScene.ts';
 import { Harbour } from './harbour.ts';
+import { LayoutCity, type LayoutSource } from './layoutCity.ts';
+import type { LayoutMarks } from '../terrain/layoutMarks.ts';
 import { Naval } from './naval.ts';
 import type { SailSource } from './sailing.ts';
 
 /** Where the close-up's exact ground comes from, and where a ship is sailed and fought. */
-export interface GroundSource extends SailSource, FightSource {
+export interface GroundSource extends SailSource, FightSource, LayoutSource {
   ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null>;
   isOpen(id: string): boolean;
 }
@@ -97,6 +99,8 @@ export interface SceneFrame {
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
   readonly stroking: boolean;
+  /** The layouts as last planned, whose buildings are drawn near the camera; null while they are not drawn. */
+  readonly buildings: readonly LayoutMarks[] | null;
 }
 
 interface CloseUp {
@@ -147,6 +151,7 @@ export class LandScene {
   private readonly marks: MarkView;
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
+  private readonly layoutCity: LayoutCity;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
     this.gpu = gpu;
@@ -159,6 +164,7 @@ export class LandScene {
     );
     this.marks = new MarkView(gpu);
     this.naval = new Naval(this.marks);
+    this.layoutCity = new LayoutCity(gpu, import.meta.env.BASE_URL);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -288,6 +294,7 @@ export class LandScene {
       { exaggeration: shown, brush: frame.brush },
     );
 
+    this.layoutCity.prepare(id, frame.buildings, eyeWorld, frame.source);
     const drawn = this.targets(frame.size.width, frame.size.height);
     const encoder = this.gpu.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
@@ -308,6 +315,7 @@ export class LandScene {
       },
     });
     terrain.drawInto(pass);
+    this.layoutCity.drawInto(pass, fromEye, camera.eye, view, shown, time);
     const ship = this.ship;
     // Her rig and a captain's, once her model has come.
     if (ship && !this.rigs) this.rigs = [new SailRig(ship.sails), new SailRig(ship.sails)];

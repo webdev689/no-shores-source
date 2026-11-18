@@ -65,7 +65,7 @@ export async function startLandEditor(
   let editsVersion = 0;
   let walking = false;
   let sailing = false;
-  let layoutsShown = true;
+  let [layoutsShown, buildingsShown] = [true, true];
   /** With a fleet room offered by the page (`?room=`), the Sloop sails there. */
   const harbour = fleetOffered();
   const fleet = harbour && new FleetDock(harbour);
@@ -285,6 +285,7 @@ export async function startLandEditor(
     }),
     walk: () => toggleWalk(),
     layouts: redrawn<void>(() => (layoutsShown = !layoutsShown)),
+    buildings: redrawn<void>(() => (buildingsShown = !buildingsShown)),
     sail: () => toggleSail(),
     exaggeration: redrawn((times: number) => (exaggeration = times)),
     tool: redrawn((next: LandTool) => ([tool, tools.draft] = [next, null])),
@@ -379,6 +380,7 @@ export async function startLandEditor(
         fleet: sailing ? (fleet?.sloop ?? null) : null,
         editsVersion,
         stroking: stroke !== null,
+        buildings: buildingsShown ? laid : null,
       });
       orbit = drawn.orbit;
       // A refused Sail stands the camera back off, as bringing her in does.
@@ -453,6 +455,7 @@ export async function startLandEditor(
       walking,
       sailing,
       layouts: layoutsShown,
+      buildings: buildingsShown,
       exaggeration,
       cursor: (walking || sailing) && view ? scene.describe(view, orbit) : readoutAt(view, world),
       fight: sailing ? scene.fightLines() : [],
@@ -542,6 +545,7 @@ export async function startLandEditor(
     }
     if (key === 'g') toggleWalk();
     else if (key === 'l') layoutsShown = !layoutsShown;
+    else if (key === 'k') buildingsShown = !buildingsShown;
     else if (key === 'b') toggleSail();
     else if (key === 'enter') tools.finish();
     else if (key === 'escape') tools.draft = null;

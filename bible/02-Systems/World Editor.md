@@ -20,6 +20,7 @@ code:
   - client/src/editor/layoutDrawing.ts#layoutMarks
   - client/src/editor/reliefTiles.ts#ReliefTiles
   - client/src/terrain/layoutMarks.ts#layoutMarksOf
+  - client/src/editor/layoutCity.ts#LayoutCity
   - client/src/terrain/landTexts.ts#loadLandTexts
   - client/src/terrain/terrainView.ts#TerrainView
   - vite.config.ts#worldFiles
@@ -143,6 +144,14 @@ across. Their names are laid after the city's and the nodes', none over another.
 it was laid at and the rest on the ground as drawn, the exact ground where the close-up reaches; a point screens
 off the view is left out, so no line runs out to it.
 
+The 3D view also draws the layouts' buildings, props and solids (plinths, set pieces, great works, rock) with the
+city layer, as the game draws them: the buildings walked into with their doorways open, near models dithering into
+masses and hulls further out. Only the layouts within 4 km of the camera are drawn, gathered again once it has moved
+1.5 km or the layouts were planned again (after a stroke, a place change, an undo or a redo). The page asks the land
+worker for those layouts by name and parses only them, about 2 MB for the Saltgrass Downs and its two neighbours
+against about 8 MB for all of continent 1's, and builds them once a frame before any pass is recorded. Buildings (`K`)
+in the panel, shown in 3D, turns them off and on. The 2D map draws only the plans.
+
 The 1 km land cannot show a canyon 30 m across, so the 2D map lays the exact ground over it round the layouts:
 tiles of 128 steps a side, a step the power of two from 2 m to 16 m nearest a pixel, within 200 m of a layout's
 section and in view, sampled by the worker nearest the middle of the view first, one at a time. Each is drawn
@@ -183,9 +192,10 @@ browser cannot keep it, the status says so. To keep shaping done on the site, pu
   round the layouts, where it lays the exact ground; the 3D view's close-up shows that ground everywhere.
 - The exact ground is slow to sample where it is carved: a tile takes about half a second to two seconds, and the
   3D view's 2 km close-up about 7 s in Node (3 s uncarved), so a node's carving fills in over a few seconds.
-- The layouts' buildings, props, streets and solids are not drawn: the city layer draws them in the game, and the
-  editor's layer may not import it. Drawing them would take that layer's plan and pieces, or a drawing of its own
-  of the layouts' footprints, in a layer the editor may import.
+- The layouts' streets and yards are not painted on the editor's ground, and nothing grows there: the game's
+  ground paint and nature are the game's.
+- Building the layouts near the camera takes the page's thread about 0.25–0.6 s after each change (in Node, for the
+  Saltgrass Downs and its neighbours), on top of the worker's replanning, so the view stalls that long once.
 - All of a landmass's layouts are planned again after every change, not only those it touches.
 - The first draw uploads the whole grid, about 15 MB, to the GPU: instant on a graphics card, slow on a machine
   without one.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { layoutMarksOf } from './layoutMarks.ts';
+import { layoutMarksOf, layoutsNamed } from './layoutMarks.ts';
 
 const LAID = {
   id: 'downs',
@@ -64,4 +64,20 @@ test("a layout's marks keep what the editor draws and leave its buildings, solid
 test('no layouts, or text that is not a list, has no marks', () => {
   assert.deepEqual(layoutMarksOf('[]'), []);
   assert.deepEqual(layoutMarksOf('{}'), []);
+});
+
+test('named layouts come whole in the order named, without their boxes and claims', () => {
+  const other = { ...LAID, id: 'mill', name: 'Weir Mill' };
+  const named = JSON.parse(layoutsNamed(JSON.stringify([LAID, other]), ['mill', 'gone', 'downs'])) as {
+    id: string;
+  }[];
+  assert.deepEqual(
+    named.map((layout) => layout.id),
+    ['mill', 'downs'],
+  );
+  const kept: Record<string, unknown> = { ...LAID };
+  delete kept.boxes;
+  delete kept.sculpt;
+  assert.deepEqual(named[1], kept);
+  assert.equal(layoutsNamed('{}', ['downs']), '[]');
 });
