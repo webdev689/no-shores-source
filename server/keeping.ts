@@ -137,16 +137,17 @@ export class Keeper {
     await Promise.all(saves);
   }
 
-  /** Lets a player's character go with a last save; call it before the room lets the player go. A release the
-   *  accounts did not answer is tried again after a wait, then the last save is made on its own, so an outage of a
-   *  minute loses none of it: the hold then lapses by itself. */
+  /** Lets a player's character go with a last save; call it, without waiting, before the room lets the player go. A
+   *  release the accounts did not answer is tried again after a wait, then the last save is made on its own, so an
+   *  outage of a minute loses none of it: the hold then lapses by itself. */
   async leave(player: number): Promise<void> {
     const held = this.held.get(player);
     const characters = this.characters;
     if (!held || !characters) return;
     this.held.delete(player);
-    await held.inFlight;
+    // Read before any wait: the room lets the player go in the same tick this is called.
     const body = this.room.character(player);
+    await held.inFlight;
     for (const millis of [0, ...LEAVE_WAITS_MS]) {
       if (millis > 0) await this.wait(millis);
       const released = await characters.release(held.account, held.holder, body).catch(() => null);

@@ -67,8 +67,12 @@ test('a signed-in player plays their kept character, saved after a change and ke
   await keeper.due(clock.now + 1);
   clock.now += SAVE_AFTER_CHANGE_MS;
   await keeper.due(clock.now);
-  await keeper.leave(1);
+  room.held.set(1, '{"xp":11}');
+  keeper.changed(1);
+  // As the room server leaves: the keeper is told first, unawaited, and the room forgets the player at once.
+  const leaving = keeper.leave(1);
   room.held.delete(1);
+  await leaving;
 
   // Back in another room, the character comes back as it was left.
   const next = roomOf();
@@ -83,7 +87,7 @@ test('a signed-in player plays their kept character, saved after a change and ke
     ),
     true,
   );
-  assert.equal(next.held.get(7), '{"xp":10}');
+  assert.equal(next.held.get(7), '{"xp":11}', 'with the change made just before leaving');
   assert.deepEqual(lost, []);
 });
 
@@ -224,7 +228,9 @@ test('a leaving player whose release the accounts do not answer has their last s
     true,
   );
   room.held.set(1, '{"xp":7}');
-  await keeper.leave(1);
+  const leaving = keeper.leave(1);
+  room.held.delete(1);
+  await leaving;
   assert.deepEqual(asked, ['release', 'release', 'release', 'release', 'release', 'save']);
   assert.deepEqual(waited, [1_000, 4_000, 15_000, 40_000], 'each try after a longer wait, through a minute out');
   const back = await kept.claim(token, 'room-b:1');
@@ -269,6 +275,7 @@ test('a change that changed nothing is not saved again, and a leaving save waits
   const saving = keeper.due(clock.now);
   room.held.set(1, '{"xp":3}');
   const leaving = keeper.leave(1);
+  room.held.delete(1);
   await Promise.resolve();
   assert.deepEqual(saved, ['{"xp":1}', '{"xp":2}'], 'the release waits for the save under way');
   landSave();
