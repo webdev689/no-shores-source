@@ -72,6 +72,7 @@ export class NatureView {
   /** The biome whose flora is loading or loaded, and what came of it: null while it loads or if it failed. */
   private loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean } | null = null;
   private readonly sampler: GPUSampler;
+  private readonly cutSampler: GPUSampler;
   private readonly slots: Grown = { buffer: null };
   private readonly list: Grown = { buffer: null };
   private readonly corners: Grown = { buffer: null };
@@ -103,14 +104,17 @@ export class NatureView {
         { binding: 5, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
         { binding: 6, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
         { binding: 7, visibility: SHADER_STAGE.fragment, sampler: {} },
+        { binding: 8, visibility: SHADER_STAGE.fragment, sampler: {} },
       ],
     });
     this.sampler = device.createSampler({
       magFilter: 'linear',
       minFilter: 'linear',
       mipmapFilter: 'linear',
-      maxAnisotropy: 4,
     });
+    // The near meshes' cards read their leaves from one mip: most of a card's pixels are tested and cut away, and on
+    // a CPU renderer that read is what a forest's frame costs. An alpha-cut edge hides the step.
+    this.cutSampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear', mipmapFilter: 'nearest' });
     const module = device.createShaderModule({ code: NATURE_SHADER });
     const shadows = shadowLayouts(device);
     const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.receiver] });
@@ -416,6 +420,7 @@ export class NatureView {
         { binding: 5, resource: arrayView(this.meshes.albedo) },
         { binding: 6, resource: arrayView(this.meshes.normal) },
         { binding: 7, resource: this.sampler },
+        { binding: 8, resource: this.cutSampler },
       ],
     });
   }

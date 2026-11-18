@@ -95,84 +95,98 @@ def mangrove(shape, rng):
 
 
 def conifer(shape, rng):
-    """A fir or spruce: whorls of drooping boughs round a straight trunk, longer at each tier's foot."""
+    """A fir or spruce: whorls of drooping boughs round a straight trunk, longer at each tier's foot, needled to the
+    tip of its leader."""
     height, width, tiers = shape['height'], shape['width'], shape['tiers']
     model = Model(height, dict(colour=shape['bark'], style='scaly'),
                   dict(colour=shape['leaves'], form='needle', length=0.11))
     model.limbs.append(grounded(flared(Limb(np.array([[0, 0, z] for z in np.linspace(0, height, 12)]),
                                             np.linspace(height * 0.018, 0.02, 12), 0), 1.4, 1.0)))
-    first = height * 0.12
+    first = height * 0.08
     whorls = max(8, int((height - first) / (0.42 * height / 18 + 0.25)))
+    spray_size = 0.35 + 0.04 * width
     for whorl in range(whorls):
         share = whorl / whorls
         z = first + (height - first) * share
         in_tier = (share * tiers) % 1.0
-        reach = width * 0.5 * (1 - share) ** 0.9 * (1.0 - 0.35 * in_tier) + 0.15
+        # The cone's outline: the full width at the foot, narrowing a little slower than straight toward the top.
+        reach = width * 0.55 * (1 - share) ** 0.85 * (1.0 - 0.25 * in_tier) + 0.2
         droop = 0.25 + shape['skirt'] * 3 * (1 - share)
-        boughs = 5 + int(rng.integers(0, 3))
+        boughs = 7 + int(rng.integers(0, 3))
         offset = rng.uniform(0, math.tau)
         for bough in range(boughs):
             turn = offset + bough / boughs * math.tau + rng.uniform(-0.2, 0.2)
-            length = reach * rng.uniform(0.8, 1.1)
+            length = reach * rng.uniform(0.85, 1.1)
             steps = np.linspace(0, 1, 6)
             points = np.stack([np.cos(turn) * length * steps, np.sin(turn) * length * steps,
                                z + length * (0.15 * steps - droop * steps ** 2)], 1)
             model.limbs.append(Limb(points, np.linspace(0.02 + 0.03 * (1 - share) * width / 6, 0.008, 6), 1))
-            sprays = max(1, int(length / 0.45))
+            sprays = max(1, int(length / (spray_size * 0.9)))
             for spray in range(sprays):
-                at = points[min(5, 1 + int((spray + 0.5) / sprays * 5))]
+                along = (spray + 0.6) / sprays
+                at = np.array([math.cos(turn) * length * along, math.sin(turn) * length * along,
+                               z + length * (0.15 * along - droop * along ** 2)])
                 out = unit(np.array([at[0], at[1], 0.0]) + UP * 0.25)
-                model.clusters.append(Cluster(at, out, 0.32 + 0.1 * (1 - share)))
+                model.clusters.append(Cluster(at, out, spray_size * (1.1 - 0.3 * share)))
+    # The leader's last stretch is needled too, so the tree ends in a green tip, not a bare spike.
+    for z in np.arange(height - 1.6, height - 0.1, 0.35):
+        model.clusters.append(Cluster(np.array([0.0, 0.0, z]), UP, spray_size * 0.6))
     return model
 
 
 def umbrella_pine(shape, rng):
+    """A stone pine: a tall trunk forking into a broad, flat, dense crown of needle tufts."""
     height = shape['height']
     model = Model(height, dict(colour=shape['bark'], style='scaly'),
-                  dict(colour=shape['leaves'], form='needle', length=0.12))
-    crown = [(np.array([0, 0, height * 0.86]), np.array([5.2, 5.2, 1.6])),
-             (np.array([1.8, -1.0, height * 0.9]), np.array([3.0, 3.0, 1.2]))]
-    tree(rng, model, (0, 0, height * 0.62), crown, 420, 0.55, 4.0, 0.8, 0.4, 0.75, rise=0.35,
-         keep=lambda points: points[:, 2] > height * 0.8)
+                  dict(colour=shape['leaves'], form='needle', length=0.16, tufted=True))
+    crown = [(np.array([0, 0, height * 0.84]), np.array([5.4, 5.4, 1.9])),
+             (np.array([1.8, -1.0, height * 0.88]), np.array([3.2, 3.2, 1.4]))]
+    tree(rng, model, (0, 0, height * 0.6), crown, 900, 0.5, 4.0, 0.7, 0.4, 0.8, rise=0.35,
+         keep=lambda points: points[:, 2] > height * 0.76)
+    # Tufts face up out of the crown's flat top, so from above and afar it reads as one green roof.
+    for cluster in model.clusters:
+        cluster.out = unit(cluster.out * 0.5 + UP)
     return model
 
 
 def tiered(shape, rng):
-    """Broad, flat tiers drooping at their edges and stepping in as they rise, over a buttressed trunk."""
-    height, spread, tiers = shape['height'], shape['spread'], shape['tiers']
+    """Broad tiers, one over another with air between them, drooping at their rims and stepping in as they rise, over
+    a trunk flaring onto buttress fins. Each tier is a flat disc of crown its boughs grow into from the trunk."""
+    height, spread, tiers, depth = shape['height'], shape['spread'], shape['tiers'], shape['depth']
     model = Model(height, dict(colour=shape['bark'], style='smooth'),
                   dict(colour=shape['leaves'], form='broad', length=0.12))
     base = height * shape['crown_base']
     crown = []
     for tier in range(tiers):
-        share = tier / max(1, tiers - 1) if tiers > 1 else 0
-        z = base + (height - base) * (0.25 + 0.6 * share)
-        radius = spread * (1 - 0.3 * share)
-        crown.append((np.array([rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5), z]),
-                      np.array([radius, radius * rng.uniform(0.85, 1.0), 0.5 + 0.03 * height / tiers])))
-
-    def droop(points):
-        # Points out at a tier's edge sag below it, so the tiers' rims droop.
-        return points[:, 2] > base - 0.5
-
-    nodes = tree(rng, model, (0, 0, base), crown, 260 * tiers, 0.6, spread * 0.6, 1.0, shape['trunk'], 0.8,
-                 rise=0.1, sprout_from=int(base / 0.6 * 0.8), flare=shape['flare'], keep=droop)
+        share = tier / max(1, tiers - 1)
+        # The lowest tier sits a little over the crown's base and the highest just under the top, so the top tier's
+        # leaves reach the tree's height.
+        z = base + depth + (height - base - 2 * depth) * share
+        radius = spread * (1 - shape['step_in'] * share)
+        crown.append((np.array([rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), z]),
+                      np.array([radius, radius * rng.uniform(0.85, 1.0), depth])))
+    top = crown[-1][0][2]
+    tree(rng, model, (0, 0, top - depth), crown, 300 * tiers, 0.6, spread * shape['influence'], 1.0,
+         shape['trunk'], shape['spray'],
+         rise=0.05, sprout_from=int(base / 0.6 * 0.85), flare=shape['flare'])
+    # A tier's rim sags below it, the further out the more, so each tier reads as its own drooping layer.
     for cluster in model.clusters:
         out = math.hypot(cluster.centre[0], cluster.centre[1]) / spread
-        cluster.centre = cluster.centre - UP * 1.2 * out ** 2
-        cluster.out = unit(cluster.out * 0.25 + UP)
+        cluster.centre = cluster.centre - UP * shape['droop'] * out ** 2
+        cluster.out = unit(cluster.out * 0.35 + UP - UP * out * 0.6)
     for fin in range(shape['fins']):
         turn = fin / shape['fins'] * math.tau + rng.uniform(-0.3, 0.3)
         model.fins.append((turn, shape['trunk'] * rng.uniform(3.5, 5), shape['trunk'] * rng.uniform(2.6, 3.4),
-                           shape['trunk'] * 0.18))
+                           shape['trunk'] * 0.35))
     if shape['moss']:
         model.moss_colour = shape['moss']
-        under = [cluster for cluster in model.clusters if cluster.centre[2] < base + 2.5]
-        for cluster in under[::5]:
-            top = cluster.centre - UP * 0.2
-            length = rng.uniform(0.8, 1.5)
-            model.moss.append(Strip(np.array([top, top - UP * length * 0.5, top - UP * length]), 0.5))
-    del nodes
+        # Moss hangs from the underside of every tier's outer half.
+        under = [cluster for cluster in model.clusters
+                 if math.hypot(cluster.centre[0], cluster.centre[1]) > spread * 0.45]
+        for cluster in under[::9]:
+            hold = cluster.centre - UP * 0.25
+            length = rng.uniform(0.8, 1.6)
+            model.moss.append(Strip(np.array([hold, hold - UP * length * 0.5, hold - UP * length]), 0.5))
     return model
 
 

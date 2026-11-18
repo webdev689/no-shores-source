@@ -91,13 +91,17 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   and along them, and foliage as crossed cards cut out by their pictures' coverage, an edge smoothed across the
   pixel's samples. Its normal map bends the light across each card and up each furrow, and the ambient occlusion
   the detailed model casts darkens a crown's inside. Past its near range, a tree's 300 m (a small tree's 220, a
-  rock's 200, a shrub's 120, a tree fern's 150), it is one quad facing the eye over its bounding sphere: the frames
-  of its impostor sheet nearest the view (two azimuths, two elevations) blended by how near each is
-  (`impostor.ts`), lit by their normals turned with the plant. Trees are drawn to 6 km, small trees to 2 km, rocks to
+  rock's 200, a shrub's 120, a tree fern's 150), it is one quad facing the eye, covering only the part of its
+  bounding sphere's frames the plant fills: the two azimuths of its impostor sheet either side of the view blended
+  by how near each is (`impostor.ts`), and of the two elevations either side the nearer one, dithered pixel by
+  pixel across the middle third between them, lit by their normals turned with the plant. A card reads its picture
+  from one mip level, a sprite from two, and a card's normal only where its leaves survive the cut. Trees are drawn to 6 km, small trees to 2 km, rocks to
   1.8 km, shrubs to 700 m; grass, ferns and reeds go at 160 m. From 1 km far trees thin out to a share kept at 3 km
   and on to the reach (a seventh in the rainforest, a fifth in the woodland, nearly all in the desert), each widened
-  to fill in. On steep ground they thin out further from half a kilometre, so a mountainside reads as trees fading
-  out, not a speckle, and far off a plant's colour leans toward the biome's ground. Moss is drawn to 150 m.
+  to fill in, and sinking toward its crown's foot as their crowns round it would hide its trunk, so a far wood reads
+  as one roof of crowns, not crowns on poles. On steep ground they thin out further from half a kilometre, so a
+  mountainside reads as trees fading out, not a speckle, and far off a plant's colour leans toward the biome's
+  ground. Moss is drawn to 150 m.
   Distances are taken from the eye in three dimensions.
 - **No popping.** A plant fades by its samples, not by blending: across the last eighth of the near range the near
   mesh hands its samples to the far quad, each taking exactly what the other leaves (`handover.ts`), and toward the
@@ -114,7 +118,9 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   ([[Game]]): a tree in another's shade, or a wall's, is in shade.
 - **Woods from afar.** As its trees' sprites fade out, from 4.8 to 6 km, a biome's woods are coloured on the land
   itself (`woodsOf`): its canopy's colour (its baked leaves seen from above) where the grove field puts its groves,
-  as thick as its trees grow, and the forest floor darker under them near. So a forest reads from the sea and over an
+  as thick as its trees grow, and the forest floor darker under them near. From 1 km, where the far trees thin out,
+  the ground under the groves already takes most of the canopy's colour, so the gaps between the widened trees
+  read as more crowns. So a forest reads from the sea and over an
   island's side, and stands where its trees stand.
 - **Contact shade.** Each plant drawn far lays a soft dark disc on the ground under it,
   as wide as its crown, leaning a little the way the sun throws shadows and laid on the ground's slope at its foot,
@@ -126,26 +132,30 @@ Each frame a page calls `update` with the camera and the ground, then `drawInto`
 
 ## What it costs
 
-A frame in headless SwiftShader at 1280 x 720, every tile in reach scattered, at eye height and 60 m up, before the
-baked flora (code-made meshes, near to 700 m, far to 3 km) and with it. Triangles and draw calls are the whole
-frame's, shadows included; the time is SwiftShader's own GPU time, which counts every pixel shaded on the CPU.
+A frame in headless SwiftShader at 1280 x 720, every tile in reach scattered, the view held still once two frames in
+a row draw the same, on foot at the node's arrival and 60 m straight up from there: before the baked flora
+(code-made meshes, near to 700 m, far to 3 km) and with it now, measured one after the other. Triangles and draw
+calls are the whole frame's, shadows included; the time is SwiftShader's own GPU time a frame, which counts every
+pixel shaded on the CPU and swings with what else the machine runs, so only a pair measured together compares.
 
 | From | Before: triangles, draws, ms | Baked: triangles, draws, ms |
 |---|---|---|
-| The Elder Thicket (woodland), on foot | 4,832,976, 464, 9,376 | 4,767,612, 259, 17,076 |
-| The Elder Thicket, 60 m up | 4,857,852, 488, 8,491 | 4,589,576, 421, 15,286 |
-| The Emerald Tangle (rainforest), on foot | 4,912,076, 747, 9,100 | 4,233,360, 396, 12,719 |
-| The Emerald Tangle, 60 m up | 5,382,482, 856, 15,101 | 4,381,067, 575, 13,861 |
+| The Elder Thicket (woodland), on foot | 4,899,256, 475, 8,049 | 3,499,493, 384, 10,807 |
+| The Elder Thicket, 60 m up | 4,857,852, 488, 8,106 | 3,620,747, 396, 10,405 |
+| The Emerald Tangle (rainforest), on foot | 5,360,198, 837, 7,292 | 3,304,028, 508, 11,548 |
+| The Emerald Tangle, 60 m up | 5,382,482, 856, 7,276 | 3,277,338, 563, 11,455 |
 
-Fewer triangles and draws, but each card and sprite pixel samples its pictures and is cut by their coverage, which
-SwiftShader pays for on the CPU: in the woodland the frame takes about twice as long there.
+Where the time goes, in the woodland on foot: with every near mesh's pixels cut at once, the frame takes about 60%
+of its time, so the near meshes' cards are most of the rest; their lighting and normal map are little of it, as
+most of a card's pixels are air or hidden behind other cards. So the cards are cut to their leaves, cover half
+their group's reach, read one mip, and read their normal only where leaves survive the cut; sprites cover only the
+box their frames fill and read two frames, not four.
 
 ## Limits
 
-- On SwiftShader the woodland's frame is slower than the code-made meshes' was (see What it costs); a real GPU's
+- On SwiftShader a forest's frame is still slower than the code-made meshes' was (see What it costs); a real GPU's
   cost is unchecked.
-- The sprites' frames are blended, not morphed, and the swamp's cypresses read flatter and browner far off than
-  near.
+- The sprites' frames are blended, not morphed: between two azimuths a far plant shows a soft double image.
 
 - Only the near plants within the near shadow map's square cast; past it the contact shade stands in under each one.
 - Low plants keep off the feet of the tall ones in their own tile only: within a couple of metres of a tile's edge,

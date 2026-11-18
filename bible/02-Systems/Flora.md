@@ -29,10 +29,18 @@ grown in and their seeds, sizes and colours. A form's grower (`growers.py`) make
   (`grow.py`). Points scattered through the crown's shape (a core with lobes, a flat disc, a dome) draw branches
   out of the trunk toward them; each branch's thickness follows the pipe model, its area the sum of its children's.
   A spray of leaves hangs at every outer twig. Mangroves stand on arching prop roots.
-- **Rainforest trees and swamp cypresses**: broad, flat tiers that droop at their rims and step in as they rise, over
-  a trunk flaring onto buttress fins; moss hangs under the cypress's lower tier.
-- **Firs and spruces**: whorls of drooping boughs round a straight trunk, longer at each tier's foot, needle sprays
-  along each bough.
+- **Rainforest trees and swamp cypresses**: tiers one over another with air between them, each a broad disc of
+  crown the trunk's boughs grow into, drooping at its rim and stepping in as they rise, over a trunk flaring onto
+  buttress fins. A cypress has four thin tiers from a third of its height, wide gaps between them and moss hanging
+  under each tier's outer half; a giant three deep tiers from two fifths of its height; a canopy tree three deep tiers
+  close together from a quarter of its height, so from above and afar their crowns close into one roof.
+- **Buttress fins**: slabs of wood with thickness, thickest at the trunk and thinning to the toe, rounded over their
+  top edge and curving a little along the ground.
+- **Firs and spruces**: whorls of seven to nine drooping boughs round a straight trunk, the cone as wide as the
+  cast's width at its foot, longer at each tier's foot, needle sprays all along each bough and up the leader to its
+  tip.
+- **Umbrella pines**: a tall trunk forking into a broad, flat, dense crown of needle tufts, each a burst of needles
+  out of a ball round its twig's end.
 - **Palms, ferns and tree ferns**: fronds arching from the crown, leaflets along both sides of each.
 - **Cacti**: a ribbed column with arms that turn up. **Bushes**: woody stems fanning from one foot, a tuft at each
   end. **Grass and reeds**: tufts of tapering blades. **Boulders**: an icosphere pushed out by noise, stepped into
@@ -51,12 +59,15 @@ round a trunk and along it with no seam, and a normal map from its height.
   domes come on top, to 900 at most), a shrub 240, a grass, fern or reed 60, a rock 300. Each corner carries its
   normal (cards take the crown's, so a crown lights as one mass), its tangent for the normal map, its uv, a tint,
   the ambient occlusion the detailed model casts on it (24 rays), and its wind weight, still at the foot and freest
-  at the top and the crown's rim.
+  at the top and the crown's rim. A card covers half its group's reach, so a crown is a few leaves deep along a
+  view, and is cut to the rectangle round its picture's leaves, so the GPU shades little air: a spray strung
+  along a bough is pictured turned to lie along its picture.
 - **The card pictures**: a kind's first form gives its pictures. A spray card shows the form's own sprays round a
   group's middle, grown again alone and seen face on, so its outline is ragged; a frond is laid flat; a tuft is seen
   from two sides; a strand of moss hangs.
 - **The sprites** (`sprites.py`): the impostor sheet, 8 azimuths by 4 elevations (0, 25, 50 and 75 degrees), each
-  frame 128 px showing the model's bounding sphere. It is rendered by Cycles in one pass of 32 turned copies.
+  frame 128 px showing the model's bounding sphere. It is rendered by Cycles in one pass of 32 turned copies. The
+  box of a frame that any frame fills is kept, and the far quad covers only that.
 - **Every picture** is three emission-only renders, so a pixel holds exactly what is asked: the albedo darkened by
   ambient occlusion, the normal (the card's own frame, or the model's for a sprite), and the leaf share. Each is
   unpremultiplied by its coverage and bled outward into the empty pixels, so an edge keeps its own colour and a mip

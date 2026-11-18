@@ -15,6 +15,9 @@ export interface Impostor {
   readonly top: number;
   readonly centre: readonly [number, number, number];
   readonly radius: number;
+  /** The part of a frame any of its frames fills (left, top, right, bottom, 0..1 of the frame): the far quad covers
+   *  only that, so a slim tree's quad is not mostly air. The whole frame when absent. */
+  readonly box?: readonly [number, number, number, number];
 }
 
 /** One baked form: its mesh's key, the layer its cards and bark lie in, its bark picture's place there (u, v,
@@ -63,6 +66,7 @@ function formProblem(form: unknown): string | null {
   const sprites = each.impostor as Record<string, unknown> | undefined;
   if (sprites && (!isNumber(sprites.layer) || !isNumber(sprites.radius) || !numbers(sprites.centre, 3)))
     return 'a broken impostor';
+  if (sprites?.box !== undefined && !numbers(sprites.box, 4)) return "a broken impostor's box";
   return null;
 }
 

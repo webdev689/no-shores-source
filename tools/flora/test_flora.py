@@ -69,6 +69,50 @@ class Deterministic(unittest.TestCase):
             sparse = chain[level][size:size + cell, :cell, 3]
             self.assertGreater(float((sparse > 0.5).mean()), 0.15)
 
+    def test_a_card_is_cut_to_its_pictures_cover(self):
+        albedo = np.zeros((256, 256, 4), np.float32)
+        albedo[100:150, 20:230, 3] = 1.0
+        corners = list(near.card_shape(albedo))
+        self.assertEqual(len(corners), 4)
+        self.assertTrue(all(0 <= u <= 1 and 0 <= v <= 1 for u, v in corners))
+        self.assertLess(polygon_area(corners), 0.5)
+        rows, columns = np.nonzero(albedo[..., 3] > 0.25)
+        for x, y in zip((columns + 0.5) / 256, (rows + 0.5) / 256):
+            self.assertTrue(inside(corners, x, y), (x, y))
+
+    def test_a_round_picture_keeps_its_whole_card(self):
+        albedo = np.ones((256, 256, 4), np.float32)
+        self.assertAlmostEqual(polygon_area(near.card_shape(albedo)), 1.0, places=6)
+
+    def test_the_sprites_box_holds_what_every_frame_shows(self):
+        albedo = np.zeros((atlas.SHEET[1], atlas.SHEET[0], 4), np.float32)
+        albedo[128 + 10:128 + 120, 3 * 128 + 40:3 * 128 + 80, 3] = 1.0
+        albedo[3 * 128 + 30:3 * 128 + 90, 50:100, 3] = 1.0
+        left, top, right, bottom = sprites_box(albedo)
+        self.assertTrue(left <= 40 / 128 and right >= 100 / 128 and top <= 10 / 128 and bottom >= 120 / 128)
+        self.assertTrue(left > 0.2 and right < 0.9 and top >= 0 and bottom <= 1)
+
+
+def polygon_area(corners):
+    """The area a polygon's corners enclose, in uv units."""
+    points = np.array(corners)
+    x, y = points[:, 0], points[:, 1]
+    return abs(float(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))) / 2
+
+
+def inside(corners, x, y):
+    """Whether a point lies in a convex polygon, its edge included."""
+    signs = []
+    for (ax, ay), (bx, by) in zip(corners, corners[1:] + corners[:1]):
+        signs.append((bx - ax) * (y - ay) - (by - ay) * (x - ax))
+    return all(sign >= -1e-9 for sign in signs) or all(sign <= 1e-9 for sign in signs)
+
+
+def sprites_box(albedo):
+    """The sprites' box, with bpy's sprites module loaded only here (it renders, the rest of the tests do not)."""
+    import sprites
+    return sprites.box_of((albedo, albedo))
+
 
 if __name__ == '__main__':
     unittest.main()

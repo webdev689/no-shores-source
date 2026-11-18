@@ -5,7 +5,7 @@ import type { Cast } from './kinds.ts';
 /** Each form's detail has its own block of drawing terms, read at a dynamic offset this far apart. */
 export const FORM_BLOCK_BYTES = 256;
 /** The floats of a block the shader reads (natureShader.ts Form). */
-export const FORM_FLOATS = 24;
+export const FORM_FLOATS = 28;
 /** A near mesh with no far one is drawn to its reach: its range is past anything drawn. */
 const NO_FAR_M = 1e9;
 /** A far plant is one quad, two triangles. */
@@ -30,7 +30,7 @@ export interface FormBuffers {
 }
 
 /** A form's terms for one detail: its ranges, crossfade band and detail; its thinning and sway; its contact shade;
- *  its pictures' layer and bark; its sprites' sheet and bounding sphere. */
+ *  its pictures' layer and bark; its sprites' sheet, bounding sphere and the box of the frame they fill. */
 function blockOf(
   form: FloraForm,
   kind: Cast['kinds'][number],
@@ -41,7 +41,8 @@ function blockOf(
   const thins = kind.reachM > THIN_FROM_M;
   const nearM = form.impostor ? kind.nearM : NO_FAR_M;
   const darkness = !form.leafy ? 0.26 : tall ? 0.34 : 0.24;
-  const shade = form.impostor && !far ? [...form.shade, darkness] : [0, 0, 0];
+  // A far block keeps the crown's height (a widened far tree sinks by it) but draws no contact shade of its own.
+  const shade = form.impostor ? [...form.shade, far ? 0 : darkness] : [0, 0, 0];
   const sprites = form.impostor;
   return [
     nearM,
@@ -62,6 +63,7 @@ function blockOf(
     FLORA.frames.cell,
     ...(sprites?.centre ?? [0, 0, 0]),
     0,
+    ...(sprites?.box ?? [0, 0, 1, 1]),
   ];
 }
 
