@@ -179,8 +179,9 @@ its landmark over the city, as on arriving. Escape flies back down.
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, and starts at the spawn the room stands them at,
-  each joiner at the next of the node's spawns in turn. The room judges the edge. Each tick's controls go to
+- **On foot** the player joins the node's room, `node-<node id>`, and stands at the spawn the room's first word
+  puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first). The room judges
+  the edge. Each tick's controls go to
   it with the fight's buttons and arms, the figure's look, the dress when it changed and a respawn when asked; the
   player is predicted on the same ground and corrected by each snapshot, held still while the room says they are dead.
   The warning, the count and death are the room's word. Every other player in the room is shown where the room last

@@ -260,7 +260,8 @@ so every decision is Rust and the shell only carries bytes and time.
 - **Joining again.** When a room's socket closes, for a deploy or a dropped network, `RoomConnection` joins the room
   again by itself: after 1 s, then 2, 4 and 8 s between tries, 15 s at most, and 1 s again once a join holds. The
   page says "Reconnecting…" meanwhile, and nothing is sent. A rejoin is a new join: a new number, inputs numbered from
-  1 again, the player standing where the room puts them, their dress sent again and what their hands hold kept. The
+  1 again, the player standing where the room puts them, their dress sent again and what their hands hold kept, and
+every other figure drawn on from where the new room has it, though its clock starts again. The
   [[Test Ground]], the [[Game]]'s node rooms and sea, and a fleet each follow it so; at sea, and in a fleet, the ship
   puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009)
   is not joined again, and the page says why.
