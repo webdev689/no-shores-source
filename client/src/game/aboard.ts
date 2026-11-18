@@ -12,7 +12,7 @@ import type { Walker } from '../player/walker.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import { cellHeight, type Deck, deckToWorld, type Lying, worldToDeck } from '../ships/deck.ts';
 import { smooth01 } from '../overworld/overworldCamera.ts';
-import { panShot, type Shot, shotOfOrbit } from './camera.ts';
+import { type Shot, shotOfOrbit } from './camera.ts';
 import { Crew } from './crew.ts';
 import { type DeckRoom, DeckWalk } from './deckWalk.ts';
 import { IDLE } from './foot.ts';
@@ -190,12 +190,11 @@ export class Aboard {
     if (walker.player.mounted) walker.player = { ...walker.player, mounted: false };
   }
 
-  /** The shot aboard, eased down from the sea's `sea` as she `lying` lies. */
-  shot(sea: Shot, lying: Lying): Shot {
-    const view = this.view;
-    if (!view) return sea;
-    const target = view.kind === 'manage' ? this.manageShot(lying) : this.walkShot(lying);
-    return panShot(sea, target, smooth01(view.at));
+  /** The shot aboard all the way down as she `lying` lies, which the view eases down to by `share`; none while the
+   *  view is not aboard. */
+  target(lying: Lying): Shot | null {
+    if (!this.view) return null;
+    return this.view.kind === 'manage' ? this.manageShot(lying) : this.walkShot(lying);
   }
 
   private manageShot(lying: Lying): Shot {

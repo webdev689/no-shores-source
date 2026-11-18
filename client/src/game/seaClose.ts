@@ -1,6 +1,6 @@
-// The view brought in close over the player's Sloop: past the Overworld's lowest zoom the wheel keeps coming in, and
-// she eases from her Overworld size to her own while the eye comes down to her, so at the closest she is seen whole at
-// her true scale, as the World Editor shows her afloat.
+// The view brought in close over the player's Sloop: past the Overworld's lowest zoom the wheel keeps coming in, the
+// eye coming down along the camera's look to where it stands off her at her true scale, as the World Editor shows her
+// afloat. She is drawn as large as `shownScale` holds her on the way, so at the closest she is seen whole at her size.
 import { smooth01 } from '../overworld/overworldCamera.ts';
 import type { Lying } from '../ships/deck.ts';
 import { panShot, type Shot, shotOfOrbit } from './camera.ts';
@@ -46,7 +46,11 @@ export class CloseZoom {
    *  along `yaw` and `tilt` radians down, the Overworld camera's own. */
   shot(sea: Shot, lying: Lying, yaw: number, tilt: number): Shot {
     const eased = this.eased;
-    if (eased <= 0) return sea;
+    return eased <= 0 ? sea : panShot(sea, this.closest(sea, lying, yaw, tilt), eased);
+  }
+
+  /** The shot all the way in, through the lens of the sea's `sea`. */
+  closest(sea: Shot, lying: Lying, yaw: number, tilt: number): Shot {
     const orbit = {
       targetX: lying.x,
       targetY: lying.y,
@@ -55,7 +59,6 @@ export class CloseZoom {
       pitch: tilt,
       distance: CLOSE.distanceM * lying.scale,
     };
-    const close = shotOfOrbit(orbit, { fov: sea.fov, near: CLOSE.nearM, far: sea.far }, () => null, 0);
-    return panShot(sea, close, eased);
+    return shotOfOrbit(orbit, { fov: sea.fov, near: CLOSE.nearM, far: sea.far }, () => null, 0);
   }
 }

@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { Shot } from './camera.ts';
+import { eyeFor, FIELD_OF_VIEW, HEIGHT } from '../overworld/overworldCamera.ts';
+import { deckToWorld, type Lying } from '../ships/deck.ts';
+import { onScreen, type Shot } from './camera.ts';
 import { CLOSE, CloseZoom } from './seaClose.ts';
+import { pictureAt, shownScale } from './seaLaw.ts';
 
 const SEA: Shot = { eye: [1000, 2190, 150], yaw: 0, pitch: 0.65, fov: 1.1, near: 2, far: 60_000 };
 const lying = (scale: number) => ({ x: 1000, y: 2000, heading: 0.3, scale, heave: 0.2, pitch: 0, roll: 0 });
@@ -42,4 +45,47 @@ test("out of the close view the shot is the sea's own, and halfway in it lies be
   close.step(10);
   const halfway = close.shot(SEA, lying(2.5), 0, 0.5);
   assert.ok(halfway.eye[2] < SEA.eye[2] && halfway.eye[2] > 0.2 + CLOSE.lookAtM, `${halfway.eye[2]}`);
+});
+
+/** The Sloop's length at her waterline, and how many times that she is drawn on the sea's view: 75 m. */
+const LENGTH_M = 18.6775;
+const SEA_SCALE = 75 / LENGTH_M;
+
+/** Her length on a 960 by 600 picture as she `lying` lies, pixels. */
+function lengthPx(shot: Shot, lying: Lying): number {
+  const [bow, stern] = [-1, 1].map((end) => {
+    const point = deckToWorld(lying, 0, (end * LENGTH_M) / 2, 0);
+    return onScreen(shot, { width: 960, height: 600 }, point);
+  });
+  assert.ok(bow && stern, 'she is in the picture');
+  return Math.hypot(bow[0] - stern[0], bow[1] - stern[1]);
+}
+
+test('the wheel brings the eye in without her shrinking on the screen or looming past her own size', () => {
+  const ship = { x: 1000, y: 2000, heading: 0.4, scale: 1, heave: 0, pitch: 0, roll: 0 };
+  const atHer = (view: Shot) => pictureAt(view, [ship.x, ship.y, 0]);
+  for (const degrees of [30, 52, 75]) {
+    const [yaw, tilt] = [2.6, (degrees * Math.PI) / 180];
+    const { eye } = eyeFor([ship.x, ship.y, 0], yaw, tilt, HEIGHT.lowest);
+    const sea: Shot = { eye, yaw, pitch: tilt, fov: FIELD_OF_VIEW, near: 2, far: 60_000 };
+    const closest = new CloseZoom().closest(sea, ship, yaw, tilt);
+    const scaleOf = (shown: Shot, share: number) =>
+      shownScale(SEA_SCALE, { seaM: atHer(sea), shownM: atHer(shown), nearM: atHer(closest), share });
+    assert.equal(scaleOf(sea, 0), SEA_SCALE, "the sea's view draws her 75 m long");
+    const seaPx = lengthPx(sea, { ...ship, scale: SEA_SCALE });
+    const close = new CloseZoom();
+    close.zoom(5, true);
+    let lastPx = seaPx;
+    while (close.eased < 1) {
+      close.step(0.02);
+      const shown = close.shot(sea, ship, yaw, tilt);
+      const scale = scaleOf(shown, close.eased);
+      const drawnPx = lengthPx(shown, { ...ship, scale });
+      assert.ok(drawnPx >= lastPx - 1e-9, `${degrees} degrees: she shrank from ${lastPx} px to ${drawnPx} px`);
+      const ownPx = lengthPx(shown, ship);
+      if (ownPx >= seaPx * 1.01) assert.equal(scale, 1, `${degrees} degrees: ${scale} times her size at ${ownPx} px`);
+      lastPx = drawnPx;
+    }
+    assert.equal(scaleOf(close.shot(sea, ship, yaw, tilt), 1), 1, 'all the way in, her own size');
+  }
 });

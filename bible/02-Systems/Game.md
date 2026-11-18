@@ -19,6 +19,7 @@ code:
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
   - client/src/game/seaLaw.ts#continentToOpen
+  - client/src/game/seaLaw.ts#shownScale
   - client/src/game/seaShips.ts#SeaShips
   - client/src/game/passage.ts#Passage
   - client/src/game/seaHelm.ts#clearAhead
@@ -109,12 +110,19 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is not to scale: a ship is
   drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other player's ship is the Sloop
   too. At the helm every ship is her true size ([[Held Map]]).
+- **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's and the walk's) is laid
+  on her at her true size, and the view eases down to it from the sea's. On the way every ship is drawn as large as
+  holds the Sloop on the screen at the size the sea's view shows her, and never under her true size. So she never
+  shrinks on the screen as the eye comes in, and she is her true size as soon as that shows her as large: from about
+  75 m off with the camera at its lowest, looking 30 degrees down. A view near her that shows her smaller at her
+  true size (Manage with its wheel taken out) is eased to instead. On each view near her every ship is her true size,
+  her pose on the swell, her footprint on the water and everyone aboard with her.
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
   lowest the wheel keeps coming in, a fifth of the way a notch. The eye comes down along the camera's own look to
-  25 m from the point 4.5 m over her waterline that the World Editor looks at, while every ship eases to her true
-  size. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
+  25 m from the point 4.5 m over her waterline that the World Editor looks at, every ship drawn as her size coming in
+  has it. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
   on the picture as shown.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
