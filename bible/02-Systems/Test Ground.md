@@ -104,14 +104,18 @@ room's word for it, so playing alone and online are the same game.
   **Attack feel**, kept in the browser with its numbers shown to copy
   ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never
   do.
-  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own stroke, landing, reach and width:
-    an overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
+  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own landing, reach and width, going
+    the way the striker's figure is drawn swinging ([[First Person Strikes Faster Without Arcs, and Arcs Follow the
+    Drawn Blow]]). A blow goes its own way, whatever way the swing was asked: the overhead down, the thrust out, the
+    side cut to the right with one hand or a pair, to the left with a hilt or a haft. Any other move goes the rules'
+    stroke. A figure drawn mirrored swings left-handed, so its arc is mirrored too, as it was when the swing began.
+    An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
     cuts down and across, and a thrust drives out and flares where it lands. Each part fades by how long ago the blade
     passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut
     seen edge on still shows, and a dark rim keeps it clear against the sky. It burns in the weapon's metal (daedric
     red, steel blue, dwarven gold), gold for a riposte or a counter; it follows the blow's aim as the rules turn it,
-    flares where the blow meets something, stops where a flinch or a dodge cuts it short, waits while the fight waits,
-    and through the eyes crosses the view. Brightness and trail are set.
+    flares where the blow meets something, stops where a flinch or a dodge cuts it short, and waits while the fight
+    waits. None is drawn through the eyes. Brightness and trail are set.
   - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
     0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing, or a shot, holds
     nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch

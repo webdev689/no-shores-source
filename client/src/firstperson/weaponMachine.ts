@@ -59,6 +59,24 @@ export function swingFrameSeconds(kind: WeaponKind): number {
 const STRIKE_FRAMES = 5;
 /** The strike frame a blow lands on. */
 export const HIT_FRAME = 2;
+/** How fast a strike's frames run, faster than DFO's: the frames before the blow in the last three quarters of the
+ *  time up to it, the first held before; the blow's frame as it lands; the rest over a little over half that time
+ *  after it. The blow still lands when the fight's rules land it. The figure seen from outside runs at this pace too. */
+export const STRIKE_PACE = { windup: 0.75, recover: 0.55 } as const;
+
+/** The step a strike `length` steps long shows `time` seconds in, at `tick` seconds a step by DFO's swing law, landing
+ *  on HIT_FRAME at STRIKE_PACE and never before step `from`; null once its follow-through is over, at rest while the
+ *  swing runs out. */
+export function pacedStep(time: number, tick: number, length: number, from = 0): number | null {
+  const lands = HIT_FRAME * tick;
+  if (time < lands) {
+    const start = lands * (1 - STRIKE_PACE.windup);
+    const share = Math.max(0, (time - start) / (lands - start));
+    return Math.max(from, Math.min(HIT_FRAME - 1, Math.floor(share * HIT_FRAME)));
+  }
+  const after = HIT_FRAME + Math.floor(((time - lands) / (lands * STRIKE_PACE.recover)) * (length - HIT_FRAME));
+  return after < length ? after : null;
+}
 /** Bare hands' strike to the left goes up and comes back down, a frame a step. */
 export const UNARMED_LEFT = [0, 1, 2, 3, 4, 2, 1, 0] as const;
 /** A bow steps on a fixed clock: the draw to its held frame, the release through to the end. */
@@ -85,6 +103,8 @@ export class WeaponMachine {
   private direction: Direction = 'down';
   private clock = 0;
   private step = 0;
+  /** The step a strike began on: a pair's flurry is thrown from a hand already raised. */
+  private from = 0;
   private reload = 0;
   private readonly random: () => number;
 
@@ -161,16 +181,26 @@ export class WeaponMachine {
     }
     const again = this.followingThrough && input.attackPressed;
     if (again || (this.phase === 'idle' && (input.attackPressed || input.attackHeld))) this.beginStrike(opening());
+    if (this.phase === 'strike') this.show();
     return { blow, loose: false };
   }
 
   private beginStrike(fromStep: number): void {
     this.direction = DIRECTIONS[Math.floor(this.random() * DIRECTIONS.length)] ?? 'down';
     this.phase = 'strike';
-    this.record = RECORD_OF[this.direction];
     this.step = Math.max(0, Math.min(HIT_FRAME - 1, fromStep));
-    this.frame = (this.sequence?.[this.step] ?? this.step) | 0;
+    this.from = this.step;
     this.clock = 0;
+  }
+
+  /** The strike's frame as it is shown: its steps at STRIKE_PACE, on DFO's clock, and at rest once it has followed
+   *  through. */
+  private show(): void {
+    const sequence = this.sequence;
+    const tick = swingFrameSeconds(this.kind);
+    const step = pacedStep(this.step * tick + this.clock, tick, sequence?.length ?? STRIKE_FRAMES, this.from);
+    this.record = step === null ? 0 : RECORD_OF[this.direction];
+    this.frame = step === null ? 0 : (sequence?.[step] ?? step);
   }
 
   /** Bare hands' strike to the left steps through its own list of frames; every other strike counts up. */
@@ -178,18 +208,15 @@ export class WeaponMachine {
     return this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT : null;
   }
 
-  /** One frame on; true when the blow lands on it. Bare hands' strike to the left steps through its own list. */
+  /** One step on DFO's clock; true when the blow lands on it. Bare hands' strike to the left takes its list's steps. */
   private advanceStrike(): boolean {
     this.step += 1;
-    const sequence = this.sequence;
-    const length = sequence?.length ?? STRIKE_FRAMES;
-    if (this.step >= length) {
+    if (this.step >= (this.sequence?.length ?? STRIKE_FRAMES)) {
       this.phase = 'idle';
       this.record = 0;
       this.frame = 0;
       return false;
     }
-    this.frame = sequence ? (sequence[this.step] ?? 0) : this.step;
     return this.step === HIT_FRAME;
   }
 
