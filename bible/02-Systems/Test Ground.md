@@ -231,8 +231,12 @@ A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 - Then every texel is snapped to the nearest colour of the palette.
 
 The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are
-the other side's, mirrored. A mirrored view with nothing in hand wears each hip piece (a sword's or dagger's sheath, a
-Pistolet's) at the other hip first, so the mirror lays it back at its own; the forge draws a twin of each for that. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
+the other side's, mirrored. A mirrored view wears each hip piece (a sword's or dagger's sheath, a Pistolet's) at the
+other hip first, and puts what each fist holds in the other fist, so the mirror lays each back on its own side. The
+forge draws each hip piece's twin in every move, but a weapon's twin in the left fist only in some: a sword, a dagger
+or a mace through the run, the crouch and the jump, never the walk, the rest or a blow. Where a fist's twin is not
+drawn, both fists keep the plain mirror, so the weapon is seen in the other hand; where a hip has a piece with no
+twin (the quiver), both hips keep it. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
 eye. Its card stands a body's radius, 0.35 m, in front of the
 body's centre toward the eye, so a wall the body touches, or a lip it is going over, does not cut through the flat
 picture.
