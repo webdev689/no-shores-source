@@ -121,7 +121,7 @@ Where the work stands now, for the next session. Each session rewrites this note
     and its 118,158 redrawn and new pictures and the roll's 1,200 published to R2 by a helper session on the
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
-    twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
+    faster, landing with the blow (about 1.4 times DFO's, [[Strikes Run Faster, Not Twice as Fast]]); [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
 - First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
   ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
   the page and the rooms; tested offline, with a test and a headless Test Ground run.

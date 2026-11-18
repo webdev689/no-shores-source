@@ -134,10 +134,10 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
 /** The owner's blows (the forge's blows.py): a stroke for each way a weapon is held, nine frames, the weapon landing on
  *  the fifth. */
 const BLOW = { frames: 9, lands: 4 } as const;
-/** How fast a strike's frames run: the wind-up's in the last half of the time up to the blow, its first frame held
- *  before; a blow's follow-through over a third of that time after it lands. The blow still lands when the fight's
- *  rules land it. */
-const STRIKE = { windup: 0.5, recover: 1 / 3 } as const;
+/** How fast a strike's frames run, about 1.4 times DFO's: the wind-up's in the last three quarters of the time up to
+ *  the blow, its first frame held before; a blow's follow-through over a little over half that time after it lands.
+ *  The blow still lands when the fight's rules land it. */
+const STRIKE = { windup: 0.75, recover: 0.55 } as const;
 
 /** How far through its wind-up's frames, 0 to 1, a strike is at `progress` through its swing, landing at `lands`. */
 function woundUp(progress: number, lands: number): number {
