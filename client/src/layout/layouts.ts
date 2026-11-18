@@ -86,14 +86,18 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
 }
 
 /** A layout's bounds: its ring's, west, north, east and south. */
-export function layoutBounds(layout: NodeLayout): [number, number, number, number] {
+export function layoutBounds(layout: Pick<NodeLayout, 'ring'>): [number, number, number, number] {
   const eastings = layout.ring.map((point) => point[0]);
   const southings = layout.ring.map((point) => point[1]);
   return [Math.min(...eastings), Math.min(...southings), Math.max(...eastings), Math.max(...southings)];
 }
 
 /** The layouts whose section comes within `reach` metres of a point (by their bounds), in their order. */
-export function layoutsNear(layouts: readonly NodeLayout[], spot: Point, reach: number): NodeLayout[] {
+export function layoutsNear<Laid extends Pick<NodeLayout, 'ring'>>(
+  layouts: readonly Laid[],
+  spot: Point,
+  reach: number,
+): Laid[] {
   return layouts.filter((layout) => {
     if (layout.ring.length < 3) return false;
     const [west, north, east, south] = layoutBounds(layout);

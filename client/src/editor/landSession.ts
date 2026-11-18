@@ -51,6 +51,7 @@ export class LandSession {
   storageFailed = false;
   private readonly worker: LandWorker;
   private readonly layoutText: string;
+  private readonly climates: ReadonlyMap<string, string>;
   /** What the land is settled with besides its edits, so the editor carves it and lays its layouts as the game does. */
   private readonly texts: Promise<LandTexts>;
   private openId = '';
@@ -64,8 +65,9 @@ export class LandSession {
     this.worker = worker;
     this.layoutText = layoutText;
     this.texts = texts;
-    const ids = (JSON.parse(layoutText) as { continents: { id: string }[] }).continents.map(({ id }) => id);
-    for (const id of ids)
+    const continents = (JSON.parse(layoutText) as { continents: { id: string; climate?: string }[] }).continents;
+    this.climates = new Map(continents.flatMap(({ id, climate }) => (climate ? [[id, climate] as const] : [])));
+    for (const { id } of continents)
       this.landmasses.set(id, {
         state: 'waiting',
         view: null,
@@ -276,6 +278,16 @@ export class LandSession {
    *  open. */
   ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null> {
     return this.then(async () => (this.openId === id ? this.worker.ground(left, top, step, size, size) : null));
+  }
+
+  /** The open landmass's named layouts whole, as a JSON list; null when another is open. */
+  layoutsNamed(id: string, ids: readonly string[]): Promise<string | null> {
+    return this.then(async () => (this.openId === id ? this.worker.layoutsNamed(ids) : null));
+  }
+
+  /** A landmass's climate as the world's layout names it, which the city's pictures are painted in. */
+  climateOf(id: string): string | null {
+    return this.climates.get(id) ?? null;
   }
 
   /** A ship sailed over a landmass; null when another is open. */

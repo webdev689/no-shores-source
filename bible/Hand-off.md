@@ -154,7 +154,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   faster natively), the third-person camera kept off walls and inside rooms, `&view=first` for pictures, and rooms
   every body can walk into and up (`crates/room/tests/rooms_walked.rs`). From the editor worker: the World Editor
   opens each landmass carved as the game does and draws every layout's areas, paths, section and sites, in 2D (over
-  tiles of the exact carved ground) and in 3D ([[World Editor]]).
+  tiles of the exact carved ground) and in 3D, where the layouts near the camera stand with their buildings,
+  props and solids drawn by the city layer ([[World Editor]]).
 - Also on #63, from a worker branch: the flora baked from detailed Blender models ([[Flora Is Baked From Detailed
   Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, on R2. A second pass gave the
   swamp's cypresses distinct drooping tiers, the rainforest giants buttress fins with thickness, firs their full
@@ -211,9 +212,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- The layouts' open ends ([[Layouts]], "Limits"): the World Editor's drawing of their buildings, props and solids
-  (the owner's to allow: the editor's layer may not import the city's), replanning only the layouts a change
-  touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes). The well
+- The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes). The well
   house (props 43202 and 43204) draws its roof 1.8 m over its posts, which stop at the eaves under the ridge: running
   them up to the ridge breaks the Prop Forge's pin to DFO's props, to the bit, so it is the owner's to allow.
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten

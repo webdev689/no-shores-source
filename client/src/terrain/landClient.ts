@@ -18,6 +18,7 @@ export type LandRequest =
   | { readonly kind: 'city' }
   | { readonly kind: 'layouts' }
   | { readonly kind: 'layout-marks' }
+  | { readonly kind: 'layouts-named'; readonly ids: readonly string[] }
   | { readonly kind: 'window'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'boxes'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'dab'; readonly brush: Brush; readonly point: readonly [number, number]; readonly starts: boolean }
@@ -90,6 +91,8 @@ export interface LandWorker {
   layouts(): Promise<string>;
   /** What the World Editor draws of them, cut down in the worker so the page never parses the rest. */
   layoutMarks(): Promise<readonly LayoutMarks[]>;
+  /** The named layouts whole, as a JSON list, so the page parses only those it draws. */
+  layoutsNamed(ids: readonly string[]): Promise<string>;
   /** The open landmass's exact ground over a rect (west, north, east, south) as JSON, and the city's boxes there. */
   window(rect: readonly [number, number, number, number]): Promise<string>;
   boxes(rect: readonly [number, number, number, number]): Promise<readonly Block[]>;
@@ -149,6 +152,7 @@ export function startLandWorker(): LandWorker {
     cityPlan: async () => (await ask({ kind: 'city' })).text ?? null,
     layouts: async () => (await ask({ kind: 'layouts' })).text ?? '[]',
     layoutMarks: async () => (await ask({ kind: 'layout-marks' })).marks ?? [],
+    layoutsNamed: async (ids) => (await ask({ kind: 'layouts-named', ids })).text ?? '[]',
     window: async (rect) => {
       const { text } = await ask({ kind: 'window', rect });
       if (typeof text !== 'string') throw new Error('the land worker answered no window');

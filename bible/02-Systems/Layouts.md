@@ -186,14 +186,14 @@ it. The terrain lays carved cliffs in strata of rock, and draws the land's carvi
 The editor's land worker opens a landmass with the same texts as the game's, so its ground is the game's to the bit,
 carved, and its layouts are the game's. After each stroke, place change, undo or redo the worker settles the land and
 plans the layouts again, and hands the page only their plans (`layoutMarksOf`): sections, areas, paths and sites,
-about 0.2 MB for continent 1 against 12.6 MB of whole layouts.
+about 0.2 MB for continent 1 against 12.6 MB of whole layouts. The 3D view draws the buildings, props and solids of
+the layouts within 4 km of its camera with the city layer, as the game does; it asks the worker for those layouts
+whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]]).
 
 ## Limits
 
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
   wait on the server.
-- The World Editor shows the layouts' plans and the carved land, not their buildings, props and solids: those are
-  drawn by the city layer, which the editor's layer may not import ([[World Editor]]). After every change all of a
-  landmass's layouts are planned again, not only those it touches: about 1.5 s for continent 1's ten, in the land's
-  worker.
+- After every change in the World Editor all of a landmass's layouts are planned again, not only those it touches:
+  about 1.5 s for continent 1's ten, in the land's worker. The layouts' streets are not painted on its ground.

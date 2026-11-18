@@ -1,6 +1,6 @@
 import { type LandRules, startLand } from '../rules/landRules.ts';
 import { shoreField } from '../water/shore.ts';
-import { layoutMarksOf } from './layoutMarks.ts';
+import { layoutMarksOf, layoutsNamed } from './layoutMarks.ts';
 import type { LandAnswer, LandRequest } from './landClient.ts';
 
 /** The worker's own scope: the DOM library types the page's, so the two calls it needs are named here. */
@@ -44,6 +44,10 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
   }
   if (request.kind === 'layout-marks') {
     scope.postMessage({ ticket, marks: layoutMarksOf(rules.layouts()) }, []);
+    return;
+  }
+  if (request.kind === 'layouts-named') {
+    scope.postMessage({ ticket, text: layoutsNamed(rules.layouts(), request.ids) }, []);
     return;
   }
   if (request.kind === 'window') {

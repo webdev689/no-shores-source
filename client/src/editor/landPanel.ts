@@ -74,6 +74,8 @@ export interface LandPanelView extends SitePanelView {
   readonly sailing: boolean;
   /** Whether the nodes' layouts are drawn over both views. */
   readonly layouts: boolean;
+  /** Whether the layouts' buildings, props and solids are drawn in the 3D view. */
+  readonly buildings: boolean;
   readonly exaggeration: number;
   readonly cursor: string;
   /** A fight's lines: both ships, the guns, the warning to brace, and what happened. */
@@ -88,6 +90,7 @@ export interface LandPanelHandlers extends SitePanelHandlers {
   walk(): void;
   sail(): void;
   layouts(): void;
+  buildings(): void;
   exaggeration(times: number): void;
   tool(tool: LandTool): void;
   radius(kilometres: number): void;
@@ -165,7 +168,8 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   const walk = button('Walk (G)', () => handlers.walk());
   const sail = button('Sail (B)', () => handlers.sail());
   const layouts = button('Layouts (L)', () => handlers.layouts());
-  views.append(flat, solid, walk, sail, layouts);
+  const buildings = button('Buildings (K)', () => handlers.buildings());
+  views.append(flat, solid, walk, sail, layouts, buildings);
   const legend = make('p', '', 'hint');
   legend.append(
     ...LAYOUT_LEGEND.map(([name, colour]) => {
@@ -271,6 +275,8 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       sail.classList.toggle('active', view.sailing);
       layouts.classList.toggle('active', view.layouts);
       legend.hidden = !view.layouts;
+      buildings.classList.toggle('active', view.buildings);
+      buildings.hidden = view.view !== '3d';
       sailHint.hidden = !view.sailing;
       fightHint.hidden = !view.sailing;
       exaggerationLabel.hidden = view.view !== '3d';

@@ -12,7 +12,7 @@ pub struct Layer {
 pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "network", may_import: &["rules"] },
-    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships"] },
+    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships", "city", "layout"] },
     Layer { name: "terrain", may_import: &["rules", "water"] },
     Layer {
         name: "game",
@@ -206,6 +206,16 @@ mod tests {
         let problems = run("client/src/editor/editorMain.ts", "import { fitCanvas } from '../main.ts';\n");
         assert_eq!(problems.len(), 1);
         assert_eq!(problems[0].message, "editor may not import the entry point");
+    }
+
+    #[test]
+    fn the_editor_draws_layouts_with_the_city_but_never_reaches_the_game() {
+        let path = "client/src/editor/layoutCity.ts";
+        assert!(run(path, "import { CityView } from '../city/cityView.ts';\n").is_empty());
+        assert!(run(path, "import { planOfLayouts } from '../layout/layoutPlan.ts';\n").is_empty());
+        let problems = run(path, "import { loadCityAssets } from '../game/landDrawers.ts';\n");
+        assert_eq!(problems.len(), 1);
+        assert_eq!(problems[0].message, "editor may not import game");
     }
 
     #[test]
