@@ -15,6 +15,8 @@ code:
   - crates/layout/src/works.rs#build
   - crates/layout/src/rocks.rs#talus
   - crates/layout/src/rocks.rs#clad
+  - crates/layout/src/skyline.rs#rim
+  - crates/layout/src/skyline.rs#natural_arch
   - crates/layout/src/dressing.rs#dress
   - crates/layout/src/interiors.rs#build
   - crates/layout/src/sites.rs#mark
@@ -96,8 +98,12 @@ from the sea, fresh water and the claim's edge), then:
 7. **The great works**, across and along the canyons, so they make the ways and the bounds: a colossal ruined wall of
    ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed and
    battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from cliff
-   top to cliff top on piers and arches, one span fallen into the gorge; and retaining walls along part of the wider
-   basins' feet.
+   top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing over a
+   third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and retaining
+   walls along part of the wider basins' feet. Along the cliff tops round the section, every 130 to 210 m where the
+   massif stands over the floor and no way runs out, stand the ruins of an older frontier: round towers broken off
+   at their tops with a few merlons left, and runs of curtain wall in lengths broken to different heights, some
+   buttressed, so the bounds read as a border once held.
 8. **The rock.** Every cliff's foot is walked every 7 m and given a heap of talus where no path runs: a great boulder
    on the carved face's first ledge, smaller ones round it, scree spilt onto the floor too low to trip on, now and
    then one of the forged rocks, and every 46 m a slab several metres high broken from the face and leant back on it.
@@ -128,7 +134,9 @@ file takes its section, spawns and boxes from its layout.
 
 What a body meets ([[Movement]]): each room's linings, lintels, slabs and stairs, the outdoor steps, each wing too low
 to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the ways,
-and each prop too tall to step over. Rubble past the section, at the cliffs' feet, is never reached and is no box. A box's underside is its own, so a body walks under a viaduct's deck and a lintel. Boxes are written to
+and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is never
+reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m, by
+any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's underside is its own, so a body walks under a viaduct's deck and a lintel. Boxes are written to
 the centimetre, grown out so none shrinks.
 
 ## Gates
@@ -156,6 +164,6 @@ it. The terrain lays carved cliffs in strata of rock, and draws the land's carvi
 
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
   wait on the server.
-- A patrol area full of rooms holds three thousand boxes or so; the movement rules test them one by one.
+- A patrol area full of rooms and rock holds six or seven thousand boxes; the movement rules test them one by one.
 - Only the third-person camera's distance is kept from the land; indoors it can stand outside the walls.
 - The World Editor does not plan layouts yet: it shows the land as generated, uncarved.

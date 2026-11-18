@@ -44,7 +44,7 @@ fn between_areas(areas: &[Area], at: [f64; 2]) -> bool {
 }
 
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
-/// longest path's, and the retaining walls.
+/// longest path's, a natural arch over a third, and the retaining walls.
 pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
@@ -58,8 +58,17 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64) {
     }
     // The viaduct stands well away from the wall, so each is a place of its own.
     let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, _, _))| distance(middle, run.1.0) > WORKS_APART_M);
-    if let Some((tier, (middle, way, _))) = runs.iter().find(apart) {
-        viaduct(kit, *middle, *way, *tier, rise);
+    let viaduct_at = runs.iter().find(apart).copied();
+    if let Some((tier, (middle, way, _))) = viaduct_at {
+        viaduct(kit, middle, way, tier, rise);
+    }
+    // A natural arch over a third canyon, apart from both.
+    let clear_of =
+        |work: Option<(Tier, Run)>, at: [f64; 2]| work.is_none_or(|(_, run)| distance(run.0, at) > WORKS_APART_M);
+    if let Some((tier, (middle, way, _))) =
+        runs.iter().find(|(_, run)| clear_of(wall, run.0) && clear_of(viaduct_at, run.0))
+    {
+        crate::skyline::natural_arch(kit, *middle, *way, *tier, rise);
     }
     for area in
         areas.iter().filter(|area| area.radius >= 60.0 && !matches!(area.kind, AreaKind::Wilds | AreaKind::Arena))

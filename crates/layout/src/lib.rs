@@ -22,6 +22,7 @@ pub mod rocks;
 pub mod seat;
 pub mod settle;
 pub mod sites;
+pub mod skyline;
 pub mod works;
 
 use crate::areas::{Area, place, radius_of};
@@ -145,6 +146,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
     works::build(&mut kit, &areas, &paths, rise);
     rocks::talus(&mut kit, &ring, &paths, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &paths);
+    skyline::rim(&mut kit, &ring, &paths, &carved);
     let spawns = spawns_round(&field, anchor);
     Layout {
         id: node.id.clone(),

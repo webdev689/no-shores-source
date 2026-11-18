@@ -37,17 +37,17 @@ fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &
             prop.at[2] += moved(prop.at, before);
         }
     }
-    let bases: Vec<[f64; 2]> = seating
+    // A solid's place to the centimetre: a stack's pieces stand on the same point.
+    let place = |at: [f64; 3]| ((at[0] * 100.0).round() as i64, (at[1] * 100.0).round() as i64);
+    let bases: std::collections::BTreeSet<(i64, i64)> = seating
         .solids
         .iter()
         .zip(&was.solids)
         .filter(|(solid, before)| stood_on(solid.at[2], **before))
-        .map(|(solid, _)| [solid.at[0], solid.at[1]])
+        .map(|(solid, _)| place(solid.at))
         .collect();
     for (solid, &before) in seating.solids.iter_mut().zip(&was.solids) {
-        let over_one =
-            bases.iter().any(|base| (base[0] - solid.at[0]).abs() < 0.01 && (base[1] - solid.at[1]).abs() < 0.01);
-        if over_one {
+        if bases.contains(&place(solid.at)) {
             solid.at[2] += moved(solid.at, before);
         }
     }
