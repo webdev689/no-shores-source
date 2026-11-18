@@ -127,7 +127,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   local Cloudflare runtime, as the owner decided it ([[Enemies Come in Five Ranks, After Destiny]],
   [[Enemy Factions Start With the Grey Tithe]], [[project-final's AI Comes Over Onto DFO's]],
   [[The Enemies as Claude Builds Them]], [[The Bars and the Fight Wear the Plus Kit]],
-  [[The Rooms Deploy When Their Code Changes]], [[Foes Leash to Their Posts and Fall With Their Boss]]):
+  [[The Rooms Deploy When Their Code Changes]], [[Foes Leash to Their Posts and Fall With Their Boss]],
+  [[Plates Stay Light and Bars Do What Enhanced Plus Does]]):
   - [[Enemies]]: a fighter's side is the players' or a faction's, and factions fight each other; the Grey Tithe (land
     and sea) and the pirates (sea); five roles, a roster of 18 types, five ranks scaling health, poise, might,
     reaction, defence and telegraphed blows; a Miniboss's second phase; Captain Brannoc Thule's three phases at sea and
@@ -155,6 +156,11 @@ Where the work stands now, for the next session. Each session rewrites this note
     sea fights' views read across a deploy, and figures glide after a rejoin; the fight display's layers, outline,
     veils and overlaps with the Game's own display; at sea the Sloop is never drawn larger than she is as the view
     comes in or a fight begins, and pirates cut the water.
+  - The bars do what DFO's Enhanced Plus does with them ([[Pick - Enhanced Plus UI]], read at DFO's fc2a8e6): a
+    hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
+    the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
+    hit the same way; and plates stay light: only near the crosshair or for foes fought in the last minute, never
+    larger, never through a block, none past 60 m.
 - First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
   ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
   the page and the rooms; tested offline, with a test and a headless Test Ground run.
@@ -172,11 +178,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   see none in their first 5–7 minutes. Measured options were offered and the owner skipped them for now: hostiles
   taking the cut ships' share, DFO's faster rolls, both (about 1 minute to the first), pirates ahead on voyages, the
   port's label giving way, and DFO's other ships back.
-- The design pass's proposals, the owner's to choose: plates and the parry ring lower over a foe (2.1 m, not 2.5 m);
-  a soft-locked Boss shown once, not in both the boss bar and the target's plate; a mark for a Major, so it is not
-  told from a Minor by colour alone; plates only near or alert foes, against towers of far plates; the display
-  scaled with the screen; one look for both kinds of death in the Game.
-
+- The bars' proposals, the owner's to choose: a foe's alert "!" showing its plate through the cone for a second;
+  a setting to switch the vitals' rest off; near plates growing (DFO's own law grows them to 1.5×, ours caps them);
+  ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
+  a Major; the display scaled with the screen; one look for both kinds of death in the Game. DFO's blade face is
+  left out: its pictures are another person's ([[Own Work]]).
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
   writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into
