@@ -252,3 +252,49 @@ fn a_building_runs_ceilings_stand_clear_and_its_passages_are_roofed() {
         );
     });
 }
+
+#[test]
+fn a_ramparts_way_along_the_top_is_walled_on_both_sides() {
+    each_run(&|laid, run, floor| {
+        if run.kind != layout::brief::RunKind::Rampart {
+            return;
+        }
+        let in_beat =
+            |at: [f64; 2]| run.beats.iter().any(|beat| layout::field::distance(at, beat.at) <= beat.radius + 0.1);
+        let (mut walled, mut checked) = (0, 0);
+        for (pair, levels) in run.line.windows(2).zip(run.levels.windows(2)) {
+            if levels[0] < 0.95 || levels[1] < 0.95 || (in_beat(pair[0]) && in_beat(pair[1])) {
+                continue;
+            }
+            let length = layout::field::distance(pair[0], pair[1]);
+            let (way, across) = (
+                [(pair[1][0] - pair[0][0]) / length, (pair[1][1] - pair[0][1]) / length],
+                [-(pair[1][1] - pair[0][1]) / length, (pair[1][0] - pair[0][0]) / length],
+            );
+            let mut along = 4.0;
+            while along <= length - 4.0 {
+                let at = [pair[0][0] + way[0] * along, pair[0][1] + way[1] * along];
+                let ground = floor(at);
+                let side_walled = |side: f64| {
+                    (2..=6).any(|out| {
+                        let spot =
+                            [at[0] + across[0] * side * f64::from(out), at[1] + across[1] * side * f64::from(out)];
+                        laid.boxes
+                            .iter()
+                            .any(|b| off_box(spot, b) < 1.0 && b[4] >= ground + 2.0 && b[5] <= ground + 0.6)
+                    })
+                };
+                walled += usize::from(side_walled(1.0) && side_walled(-1.0));
+                checked += 1;
+                along += 2.0;
+            }
+        }
+        assert!(checked > 0, "{}: {} runs along the top somewhere", laid.id, run.name);
+        assert!(
+            walled * 10 >= checked * 6,
+            "{}: {} is walled both sides at {walled} of {checked} points",
+            laid.id,
+            run.name
+        );
+    });
+}

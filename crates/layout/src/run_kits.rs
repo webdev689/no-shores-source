@@ -283,35 +283,52 @@ fn middle_piece(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts) {
     }
 }
 
-/// A rampart's wall along its drop side wherever its line has climbed to the top: lengths of curtain wall broken to
-/// different heights, a length now and then fallen, each kept clear of the whole line where it bends.
+/// A rampart's walls wherever its way runs along the massif's top: lengths of curtain wall either side of the way and
+/// round the beats there, broken to different heights with a merlon on each, kept clear of the way where it bends
+/// and open where it passes through a beat's ring.
 fn rampart_wall(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     let half = half_of(run.kind);
-    let side = if kit.draw() < 0.5 { 1.0 } else { -1.0 };
+    let in_beat = |at: [f64; 2]| run.beats.iter().any(|beat| distance(at, beat.at) <= beat.radius + 0.1);
     for (pair, levels) in run.line.windows(2).zip(run.levels.windows(2)) {
-        if levels[0] < 0.95 || levels[1] < 0.95 {
+        // Along the passages only: a beat on the top is walled round its rim.
+        if levels[0] < 0.95 || levels[1] < 0.95 || (in_beat(pair[0]) && in_beat(pair[1])) {
             continue;
         }
         let length = distance(pair[0], pair[1]);
         let way = [(pair[1][0] - pair[0][0]) / length.max(1e-9), (pair[1][1] - pair[0][1]) / length.max(1e-9)];
-        let across = [-way[1] * side, way[0] * side];
         let lengths = (length / WALL_LENGTH_M).floor() as u32;
-        for piece in 0..lengths {
-            let middle = ahead(ahead(pair[0], way, WALL_LENGTH_M * (f64::from(piece) + 0.5)), across, half + 2.2);
-            let ends = [ahead(middle, way, -WALL_LENGTH_M / 2.0), ahead(middle, way, WALL_LENGTH_M / 2.0)];
-            if kit.draw() < 0.2 || ends.iter().any(|end| off_run(run, *end) < half + 1.4) {
-                continue;
+        for side in [1.0, -1.0] {
+            let across = [-way[1] * side, way[0] * side];
+            for piece in 0..lengths {
+                let middle = ahead(ahead(pair[0], way, WALL_LENGTH_M * (f64::from(piece) + 0.5)), across, half + 2.2);
+                wall_length(kit, run, carved, middle, way);
             }
-            let base = carved_at(kit, carved, middle) - 1.0;
-            let high = 2.6 + kit.draw() * 2.8;
-            let size = [1.6, WALL_LENGTH_M - 0.3, high];
-            let wall = Solid::upright(Shape::Block, [middle[0], middle[1], base], size, Material::Stone);
-            kit.solid(wall.turned(turn_along(way)));
-            let merlon = [1.6, 1.0, 0.9];
-            let crest = Solid::upright(Shape::Block, [middle[0], middle[1], base + high], merlon, Material::Stone);
-            kit.solid(crest.turned(turn_along(way)));
         }
     }
+    for beat in run.beats.iter().filter(|beat| beat.level >= 0.95) {
+        let pieces = (std::f64::consts::TAU * (beat.radius + 1.5) / WALL_LENGTH_M).floor().max(6.0);
+        for piece in 0..pieces as u32 {
+            let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(piece) / pieces);
+            let middle = ahead(beat.at, [sine, -cosine], beat.radius + 1.5);
+            wall_length(kit, run, carved, middle, [cosine, sine]);
+        }
+    }
+}
+
+/// One length of a rampart's curtain wall at a point along `way`, left out where its ends come near the run's way.
+fn wall_length(kit: &mut Kit, run: &Run, carved: &Sculpts, middle: [f64; 2], way: [f64; 2]) {
+    let ends = [ahead(middle, way, -WALL_LENGTH_M / 2.0), ahead(middle, way, WALL_LENGTH_M / 2.0)];
+    if ends.iter().chain(std::iter::once(&middle)).any(|end| off_run(run, *end) < half_of(run.kind) + 1.4) {
+        return;
+    }
+    let base = carved_at(kit, carved, middle) - 1.0;
+    let high = 3.4 + kit.draw() * 2.2;
+    let size = [1.6, WALL_LENGTH_M - 0.3, high];
+    kit.solid(
+        Solid::upright(Shape::Block, [middle[0], middle[1], base], size, Material::Stone).turned(turn_along(way)),
+    );
+    let crest = Solid::upright(Shape::Block, [middle[0], middle[1], base + high], [1.6, 1.0, 0.9], Material::Stone);
+    kit.solid(crest.turned(turn_along(way)));
 }
 
 /// The sealed door at the end arena's far rim: a great door of timber banded with iron in a stone arch; where the
