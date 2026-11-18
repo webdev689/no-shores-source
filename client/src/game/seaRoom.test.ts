@@ -45,3 +45,15 @@ test('a course set sooner than the sea takes one waits for a later snapshot, the
   assert.equal(sent.length, 3);
   assert.notDeepEqual(sent[1], sent[2], 'each its own course');
 });
+
+test('a facing still waiting when the player leaves the helm is let go, and a course is not', async () => {
+  const { room, sent, atTick } = await joined();
+  room.face(1.5);
+  room.leaveHelm();
+  atTick(1000);
+  assert.equal(sent.length, 2, 'the course that put her to sea, and the helm left: no facing');
+  room.course([[60_000, 150_000]], 10);
+  room.leaveHelm();
+  atTick(1100);
+  assert.equal(sent.length, 4, 'the helm left again, and the course sent in its turn');
+});

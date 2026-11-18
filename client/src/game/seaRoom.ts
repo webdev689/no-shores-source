@@ -45,6 +45,7 @@ export class SeaRoom {
   private tick: number | null = null;
   private courseSentAt: number | null = null;
   private waitingCourse: ReturnType<typeof courseBytes> | null = null;
+  private waitingFacing = false;
 
   private constructor(link: Closable) {
     this.link = link;
@@ -122,13 +123,13 @@ export class SeaRoom {
   /** Sets the ship's course: the points ahead, at a pace; none brings it to rest. One set sooner after the last than
    *  the sea takes waits for a later snapshot, and a newer course takes its place. */
   course(points: readonly Point2[], pace: Pace): void {
-    this.waitingCourse = courseBytes(points, pace);
+    [this.waitingCourse, this.waitingFacing] = [courseBytes(points, pace), false];
     this.sendCourse();
   }
 
   /** Brings the ship to rest turned to `heading`, radians clockwise from north: sent as a course is, in its turn. */
   face(heading: number): void {
-    this.waitingCourse = faceBytes(heading);
+    [this.waitingCourse, this.waitingFacing] = [faceBytes(heading), true];
     this.sendCourse();
   }
 
@@ -138,11 +139,13 @@ export class SeaRoom {
     const sent = this.courseSentAt;
     if (sent !== null && (this.tick === null || this.tick < sent + COURSE_EVERY_TICKS)) return;
     this.link.send(waiting);
-    [this.waitingCourse, this.courseSentAt] = [null, this.tick ?? 0];
+    [this.waitingCourse, this.waitingFacing, this.courseSentAt] = [null, false, this.tick ?? 0];
   }
 
-  /** The player leaves the helm, to walk her deck while her helmsman keeps her course. */
+  /** The player leaves the helm, to walk her deck while her helmsman keeps her course: a facing still waiting to be
+   *  sent is let go, since the room turns no ship off the helm. */
   leaveHelm(): void {
+    if (this.waitingFacing) [this.waitingCourse, this.waitingFacing] = [null, false];
     this.link.send(helmBytes(true));
   }
 
