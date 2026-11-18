@@ -63,3 +63,12 @@ test('snapshots come late and early: the figure never jumps further than its pac
   // Gliding at most three ticks' walk over a frame of half a tick.
   assert.ok(Math.max(...moved) < 0.05 * 3, `largest step ${Math.max(...moved)}`);
 });
+
+test('a room that starts its clock over (the player joined it again after a deploy) moves the figure on, not frozen', () => {
+  const glide = new Glide([0, 0, 0], 0);
+  for (let tick = 1; tick <= 50_000; tick += 1) glide.follow([tick * 0.05, 0, 0], tick, 1);
+  // The new room's clock starts again near 0, the same number now a figure standing elsewhere.
+  let place: Place = [0, 0, 0];
+  for (let tick = 1; tick <= 30; tick += 1) place = glide.follow([-40, 10, 2], tick, 1);
+  assert.deepEqual(place, [-40, 10, 2]);
+});
