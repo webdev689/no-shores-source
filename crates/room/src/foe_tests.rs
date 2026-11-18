@@ -336,6 +336,30 @@ fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
 }
 
 #[test]
+fn a_foe_walks_on_off_its_navmesh_to_a_player_standing_past_its_edge_and_strikes_them() {
+    // The room's navmesh reaches 30 m round its spawn; the player stands 3 m past its eastern edge.
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.players.get_mut(&player).unwrap().fighter.body.x = 33.0;
+    let (fighter, brain) =
+        ::foes::spawn(::foes::foe_type(SWORDSMAN).unwrap(), ::foes::Rank::Minor, 22.0, 0.0, FRAC_PI_2);
+    let foe = room.next_id();
+    room.foes.insert(foe, Foe { fighter, brain });
+    let (mut closest, mut struck) = (f64::MAX, false);
+    for sequence in 1..=600 {
+        let input = asking(&room, sequence, None, Controls { yaw: -FRAC_PI_2, ..Controls::default() });
+        room.input(player, input).unwrap();
+        room.tick();
+        struck |= room.take_events().iter().any(|event| event.striker == foe && event.defender == player);
+        let whole = room.players[&player].fighter.health_max;
+        room.players.get_mut(&player).unwrap().fighter.health = whole;
+        let (me, them) = (room.players[&player].fighter.body, room.foes[&foe].fighter.body);
+        closest = closest.min(combat::sight::apart([me.x, me.y], [them.x, them.y]));
+    }
+    assert!(closest < 2.0 && struck, "it came no nearer than {closest} m, and struck: {struck}");
+}
+
+#[test]
 fn a_foe_sent_to_a_place_atop_a_wall_it_cannot_climb_goes_round_to_its_foot_rather_than_into_its_end() {
     // Its foe last seen standing on the wall, just over its northern face; the foe off the wall's eastern end.
     let wall = Block { min_x: -8.0, min_y: -0.5, max_x: 8.0, max_y: 0.5, top: 2.5 };

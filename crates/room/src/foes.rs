@@ -100,10 +100,17 @@ impl ::foes::Routes for MeshRoutes<'_> {
     fn next_point(&self, from: [f64; 3], to: [f64; 3]) -> Option<[f64; 3]> {
         let mut ways = self.ways.borrow_mut();
         let way = ways.entry(self.asking.get()).or_default();
-        let path = self.mesh.find_path_kept(way, from, to).or_else(|| {
-            let reachable = self.placed(to)?;
-            self.mesh.find_path_kept(way, from, reachable)
-        });
+        if let Some(points) = self.mesh.find_path_kept(way, from, to) {
+            return Some(ahead(&points, from, to));
+        }
+        let Some(reachable) = self.placed(to) else { return Some(to) };
+        // Standing as near the goal as the mesh reaches, or nearer, the foe walks on to it straight, off the mesh:
+        // turned back to the mesh's edge each time it stepped past it, it would shake there out of its target's reach.
+        let apart = |point: [f64; 3]| combat::sight::apart([point[0], point[1]], [to[0], to[1]]);
+        if apart(from) <= apart(reachable) + CORNER_REACHED {
+            return Some(to);
+        }
+        let path = self.mesh.find_path_kept(way, from, reachable);
         Some(path.map_or(to, |points| ahead(&points, from, to)))
     }
 
