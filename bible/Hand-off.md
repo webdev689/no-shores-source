@@ -134,9 +134,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   the layouts are drawn; every piece re-seated on the ground as the roads lay it; ruins of an older frontier on the
   cliff tops, a natural arch over a canyon; climbs cut up the cliffs to lookouts, so a patrol area has heights; a
   pocket off its path for each resource, and beacons, ore, salvage, herbs and timber each standing as a place.
+  After the owner's look: rock lies on the floor at each face's foot, nothing stuck into the hillsides; walk-in
+  buildings' doorways are open from outside too (they were cut from just behind the door's face, so the wall in its
+  plane stayed); a room shows its building's windows; carved ground samples about six times faster.
   From the movement worker: a spatial index under the movement rules (same answers to the bit, a tick 2.5 times
   faster natively), the third-person camera kept off walls and inside rooms, `&view=first` for pictures, and rooms
-  every body can walk into and up (`crates/room/tests/rooms_walked.rs`).
+  every body can walk into and up (`crates/room/tests/rooms_walked.rs`). From the editor worker: the World Editor
+  opens each landmass carved as the game does and draws every layout's areas, paths, section and sites, in 2D (over
+  tiles of the exact carved ground) and in 3D ([[World Editor]]).
 - Also on #63, from a worker branch: the flora baked from detailed Blender models ([[Flora Is Baked From Detailed
   Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, 153 objects on R2. Its frame on
   SwiftShader is about 1.8 times slower in the woodland; the cost on a real GPU is unchecked. Its weak spots are listed
@@ -183,7 +188,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - The layouts' open ends ([[Layouts]], "Limits"): the World Editor's drawing of their buildings, props and solids
   (the owner's to allow: the editor's layer may not import the city's), replanning only the layouts a change
-  touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes).
+  touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes). Rooms are
+  lit as brightly as the street where the sun reaches in; the well in a ruin's block (model 43202) draws its roof
+  over its posts.
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
