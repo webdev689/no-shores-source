@@ -160,10 +160,19 @@ export interface RoomWord {
 }
 
 /** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
- *  it has her, the room being the law; at the dial's pace while it has not taken her course yet (`room` null). */
-export function followed(voyage: Voyage, travelledM: number, dt: number, dial: Pace, room: RoomWord | null): number {
+ *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the dial's pace, held
+ *  to the pace it last sailed her at (`held`) while she was under way. */
+export function followed(
+  voyage: Voyage,
+  travelledM: number,
+  dt: number,
+  dial: Pace,
+  room: RoomWord | null,
+  held: number | null = null,
+): number {
   const seconds = Math.max(0, dt);
-  if (!room) return travelledM + sailSpeed(dial) * seconds;
+  const asked = held !== null && held > 0 ? Math.min(sailSpeed(dial), SHIP_SPEED * held) : sailSpeed(dial);
+  if (!room) return travelledM + asked * seconds;
   const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
   const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
   return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);

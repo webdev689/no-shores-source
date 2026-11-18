@@ -227,8 +227,11 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     event.preventDefault();
     event.stopImmediatePropagation();
   };
+  // A key let go still reaches the sea's own controls, so none is held there once the fight is over.
   const key = (down: boolean) => (event: KeyboardEvent) => {
-    if (fight()?.key(event.key.toLowerCase(), down)) taken(event);
+    if (!fight()?.key(event.key.toLowerCase(), down)) return;
+    if (down) taken(event);
+    else event.preventDefault();
   };
   addEventListener('keydown', key(true), { capture: true });
   addEventListener('keyup', key(false), { capture: true });

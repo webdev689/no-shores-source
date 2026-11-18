@@ -33,7 +33,7 @@ pub fn metres_to_reach(east: f64, south: f64, reach: f64, way: Option<[f64; 2]>)
     if enter >= 0.0 { enter } else { f64::INFINITY }
 }
 
-/// A rate down the old ladder: 1, 2, 3, 4, 5, then fives; never under 1.
+/// A rate down DFO's ladder of paces: whole fives, and whole ones under five; never under 1.
 #[must_use]
 pub fn step_down(rate: f64) -> f64 {
     if rate >= 5.0 { libm::floor(rate / 5.0) * 5.0 } else { libm::floor(rate).max(1.0) }

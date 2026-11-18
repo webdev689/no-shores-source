@@ -96,8 +96,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
   lowest the wheel keeps coming in, a fifth of the way a notch. The eye comes down along the camera's own look to
-  25 m from a point 4.5 m over her waterline, the World Editor's, while every ship eases to her true size. Out goes
-  back from close first. Clicks and marks are taken on the picture as shown.
+  25 m from the point 4.5 m over her waterline that the World Editor looks at, while every ship eases to her true
+  size. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
+  on the picture as shown.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
@@ -165,9 +166,13 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   ground and corrected by each snapshot, held still while the room says they are dead. The warning, the count and
   death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
   A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
-- **At sea** the player joins the `sea` room, their ship put to sea where it lies; each voyage's course and pace go
-  to it, and every other player's ship is drawn where the room moved it. Playing alone, the same sea room runs in the
-  page, so its pirates and fights are the same law.
+- **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
+  course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
+  is taken 20 ticks after her course is sent, a round trip's allowance: until then the page sails her at the pace the
+  room last held her to, then draws her to where the room has her. Where the room has her at rest short of her
+  voyage's end, a course it would not take, the page heaves her to there. A sea room whose link is lost calls the
+  player to the helm, and they sail on alone, the voyage's line saying so. Playing alone, the same sea room runs in
+  the page, so its pirates and fights are the same law.
 
 ## Drawing
 
@@ -209,8 +214,8 @@ In death the world drains to grey, and comes back in colour on respawn or on lea
 ## Limits
 
 - Until the city's tables and blocks have come, the land shows without its city.
-- A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and others
-  then see the ship at rest.
+- A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and the ship
+  then rests short of it, the page drawing her where the room has her.
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
 - Offline, the edge is judged in the browser; online, the room judges it and the browser predicts nothing of it.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.

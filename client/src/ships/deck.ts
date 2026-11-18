@@ -76,6 +76,35 @@ export function deckCells(deck: Deck): { readonly x: number; readonly y: number;
   );
 }
 
+/** Each cell a body walks to from (x, y), from cell to cell across their edges, as its centre on her deck and its
+ *  height: her walls and the rail tops beyond them left out. */
+export function cellsReached(
+  deck: Deck,
+  x: number,
+  y: number,
+): { readonly x: number; readonly y: number; readonly z: number }[] {
+  const { columns, rows, heights } = deck;
+  const column = Math.floor((x - deck.west) / deck.cell);
+  const row = Math.floor((y - deck.north) / deck.cell);
+  if (cellHeight(deck, x, y) === null) return [];
+  const reached = new Set([row * columns + column]);
+  for (const cell of reached) {
+    const [down, across] = [Math.floor(cell / columns), cell % columns];
+    const near = [
+      down > 0 && cell - columns,
+      down < rows - 1 && cell + columns,
+      across > 0 && cell - 1,
+      across < columns - 1 && cell + 1,
+    ];
+    for (const next of near) if (next !== false && (heights[next] ?? null) !== null) reached.add(next);
+  }
+  return [...reached].map((cell) => ({
+    x: deck.west + ((cell % columns) + 0.5) * deck.cell,
+    y: deck.north + (Math.floor(cell / columns) + 0.5) * deck.cell,
+    z: heights[cell] ?? 0,
+  }));
+}
+
 /** Where a ship lies as she is drawn: her middle on the water, her heading (radians clockwise from north), how many
  *  times her size she is drawn, how far the swell lifts her, and her bow's rise and heel to starboard (radians). */
 export interface Lying {

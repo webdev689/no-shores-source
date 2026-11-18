@@ -22,10 +22,10 @@ The owner's answers to the questions that followed:
 
 ## What it settles
 
-- **The helm's keys at sea.** In the Overworld's view the Sloop is sailed by a click, as before, and by the fight's
-  helm keys ([[Game]], "At sea"). The arrow keys still turn the view, and off the helm the same keys walk her deck.
-- **Her crew and the player are seen from any view**: the player at her wheel and her hands on her deck, drawn as
-  large as she is ([[Game]]).
-- **The wheel comes all the way in** past the Overworld's lowest, to her at her true size ([[Game]]).
-- **She moves as the World Editor's does**: riding the swell, heeling into a turn, her wake on the water and her sails
-  by the wind ([[Sailing]]).
+- **The helm's keys at sea.** In the Overworld's view the Sloop is sailed by a click, as before, and by W, A, S and D
+  as the fight's helm has them: A and D turn her while held, W sets her sailing straight ahead at the pace dial, S
+  heaves her to, and she holds her new heading until stopped or a click sets a voyage ([[Game]], "At sea").
+- **Her crew and the player at the helm are seen from any view** ([[Game]]).
+- **Zoomed all the way in**, the ship is seen at full detail ([[Game]]).
+- **She has the World Editor's animations**: riding the real swell, heeling into a turn, her wake on the water and her
+  sails by the wind ([[Sailing]]).

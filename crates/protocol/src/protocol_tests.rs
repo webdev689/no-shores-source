@@ -114,7 +114,7 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
 }
 
 const SHIPS: [(PlayerId, Ship); 2] = [
-    (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 10, rate: 10 }),
+    (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 60, rate: 5 }),
     (4, Ship { x: 61_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0, rate: 0 }),
 ];
 
@@ -261,7 +261,9 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
             )
         })
         .collect();
-    assert_eq!((sea.tick(), ships), (77, SHIPS.to_vec()));
+    // The pace a ship crosses at is the one she sailed at, held down near a pirate, not the one asked.
+    let sent = SHIPS.map(|(player, ship)| (player, Ship { pace: ship.rate, ..ship }));
+    assert_eq!((sea.tick(), ships), (77, sent.to_vec()));
     let pirate = sea.pirates().unwrap().get(0);
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
     let fight = sea.fights().unwrap().get(0);

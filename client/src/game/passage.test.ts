@@ -10,37 +10,45 @@ import { Passage } from './passage.ts';
 import { AHEAD, HELM_TURN } from './seaHelm.ts';
 import type { SeaRoom } from './seaRoom.ts';
 
-/** A square island 10 km a side, its west coast 30 km east of the origin. */
+/** A point `east` and `south` metres from one well inside the world's frame. */
+const place = (east: number, south: number): Point2 => [1_000_000 + east, 1_000_000 + south];
+/** A square island 10 km a side, its west coast 30 km east of that point. */
 const ISLAND: readonly Point2[][] = [
-  [
-    [30_000, -5_000],
-    [40_000, -5_000],
-    [40_000, 5_000],
-    [30_000, 5_000],
-  ],
+  [place(30_000, -5_000), place(40_000, -5_000), place(40_000, 5_000), place(30_000, 5_000)],
 ];
-const MASK = maskFromOutlines(ISLAND, { leftM: -100_000, topM: -100_000, widthM: 200_000, heightM: 200_000 });
+const [LEFT, TOP] = place(-100_000, -100_000);
+const MASK = maskFromOutlines(ISLAND, { leftM: LEFT, topM: TOP, widthM: 200_000, heightM: 200_000 });
 
-/** What the passage asks of a sea room, kept in the order asked. */
-function fakeRoom(): { room: SeaRoom; asked: string[] } {
+/** A sea room for a passage: what the passage asks of it, kept in the order asked, and its word on her ship, as set. */
+function fakeRoom(): {
+  room: SeaRoom;
+  asked: string[];
+  word: { settledShip: SeenShip | null; ownShip: SeenShip | null };
+} {
   const asked: string[] = [];
+  const word = { settledShip: null as SeenShip | null, ownShip: null as SeenShip | null };
   const room = {
-    settledShip: null,
+    get settledShip() {
+      return word.settledShip;
+    },
+    get ownShip() {
+      return word.ownShip;
+    },
     // To the nearest metre, as the room takes a course.
     course: (points: readonly Point2[], pace: number) =>
       asked.push(`course ${JSON.stringify(points.map((point) => point.map(Math.round)))} ×${pace}`),
     face: (heading: number) => asked.push(`face ${heading.toFixed(4)}`),
   } as unknown as SeaRoom;
-  return { room, asked };
+  return { room, asked, word };
 }
 
 test('W sets her sailing straight on short of the coast, A and D turn her onto a new course, S heaves her to', () => {
-  const passage = new Passage(ISLAND, () => MASK, [15_000, 0], Math.PI / 2);
+  const passage = new Passage(ISLAND, () => MASK, place(15_000, 0), Math.PI / 2);
   const { room, asked } = fakeRoom();
   passage.room = room;
   passage.straightOn();
   assert.equal(passage.sailing, true);
-  assert.deepEqual(asked, [`course [[${30_000 - AHEAD.shortM},0]] ×${passage.pace}`]);
+  assert.deepEqual(asked, [`course ${JSON.stringify([place(30_000 - AHEAD.shortM, 0)])} ×${passage.pace}`]);
   assert.equal(passage.note, 'Sailing straight on');
   passage.steer(-1, 0.5);
   assert.ok(Math.abs(passage.ship.heading - (Math.PI / 2 - HELM_TURN / 2)) < 1e-12, 'to port');
@@ -55,7 +63,7 @@ test('W sets her sailing straight on short of the coast, A and D turn her onto a
 });
 
 test('turned toward a coast too near, she comes to rest facing it and the voyage line says why', () => {
-  const passage = new Passage(ISLAND, () => MASK, [29_700, 0], 0);
+  const passage = new Passage(ISLAND, () => MASK, place(29_700, 0), 0);
   const { room, asked } = fakeRoom();
   passage.room = room;
   passage.straightOn();
@@ -66,24 +74,51 @@ test('turned toward a coast too near, she comes to rest facing it and the voyage
 });
 
 test('straight on toward a coast, she comes to rest short of it and the voyage line says why', () => {
-  const passage = new Passage(ISLAND, () => MASK, [25_000, 0], Math.PI / 2);
+  const passage = new Passage(ISLAND, () => MASK, place(25_000, 0), Math.PI / 2);
   passage.room = fakeRoom().room;
   passage.straightOn();
   for (let second = 0; second < 30 && passage.sailing; second++) passage.advance(1);
   assert.equal(passage.sailing, false);
-  assert.ok(Math.abs(passage.ship.x - (30_000 - AHEAD.shortM)) < 1e-6, `${passage.ship.x}`);
+  assert.ok(Math.abs(passage.ship.x - place(30_000 - AHEAD.shortM, 0)[0]) < 1e-6, `${passage.ship.x}`);
   assert.equal(passage.note, 'Land lies ahead.');
 });
 
 test('her course straight on is set again as she nears its end, while the sea lies open', () => {
-  const passage = new Passage(ISLAND, () => MASK, [0, 0], 0);
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked } = fakeRoom();
   passage.room = room;
   passage.straightOn();
   for (let second = 0; second < 40 && asked.length < 2; second++) passage.advance(1);
   assert.equal(asked.length, 2, 'set again before she reaches its end');
-  assert.ok(passage.ship.y < -(AHEAD.reachM - AHEAD.renewM) + 1, `${passage.ship.y}`);
+  assert.ok(passage.ship.y < place(0, -(AHEAD.reachM - AHEAD.renewM))[1] + 1, `${passage.ship.y}`);
   assert.equal(passage.sailing, true);
+});
+
+test('while the room has not yet taken her new course, she sails at the pace it last held her to', () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  const { room, word } = fakeRoom();
+  passage.room = room;
+  word.ownShip = { player: 1, ...{ x: 0, y: 0 }, heading: 0, pace: 1 };
+  passage.straightOn();
+  passage.advance(1);
+  assert.ok(Math.abs(passage.ship.y - (place(0, 0)[1] - 12)) < 1e-6, `held to ×1, 12 m: ${passage.ship.y}`);
+});
+
+test("the room's word sets her right: at rest where it has her, or laid there when she drifts off her course", () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  const { room, asked, word } = fakeRoom();
+  passage.room = room;
+  passage.straightOn();
+  const [x, y] = place(80, -500);
+  word.settledShip = { player: 1, x, y, heading: 0, pace: 60 };
+  passage.advance(0);
+  assert.deepEqual([passage.ship.x, passage.ship.y], [x, y], '80 m off her line: laid where the room has her');
+  assert.equal(asked.length, 2, 'and her course set again from there');
+  word.settledShip = { player: 1, x, y: y - 300, heading: 0, pace: 0 };
+  passage.advance(1);
+  assert.equal(passage.sailing, false, 'the room has her at rest short of the end: she rests');
+  assert.equal(passage.stoppedShort, true, 'hove to, to be resumed');
+  assert.deepEqual([passage.ship.x, passage.ship.y], [x, y - 300]);
 });
 
 const built = (name: string) =>

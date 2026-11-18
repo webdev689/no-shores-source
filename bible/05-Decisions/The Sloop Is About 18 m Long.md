@@ -24,3 +24,5 @@ The owner's answers to the questions that followed:
   5.6 m across it, her keel 1.8 m below it ([[Sailing]]). Everything on her scales with her: her deck, her guns,
   her sails, the boxes a ball strikes and her draught. Her trim stays where [[The Sloop's Trim]] put it on her.
 - **On the Overworld** she is still drawn 75 m long ([[Game]]).
+- **Her quarterdeck** is opened at its two front corners, either side of her hatch, by gaps in its rail with steps
+  down to her main deck, in her published model ([[Sailing]], "Her deck").

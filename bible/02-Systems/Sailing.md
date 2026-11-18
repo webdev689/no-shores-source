@@ -156,14 +156,20 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
   of 10 cm cells in the walk's frame (x to her starboard, y to her stern, the origin amidships), each holding the
   height over her waterline of the highest of her hull's and deck's upward faces there, in centimetres. A cell where
   a spar or a gun stands in the room a body takes (from 0.25 m to 1.8 m over the planks), where the floor lies under
-  1.7 m (her hold through her hatch, the stair down into it), or that is off her deck holds none. Each cell is then
-  let down to within 8 cm of every neighbour, nothing raised, so a dip in her planks or a raised part of her deck has a way in and out a
-  body walks (a slope under 1.19). The grid is kept round the deck with a cell to spare, each row on a line of the
-  manifest. The spot behind her wheel on her quarterdeck, 8.1 m aft of her middle, is her helm's; from it a body
-  walks down her steps to all her deck.
+  1.7 m (her hold through her hatch, the stair down into it), or that is off her deck holds none.
+- **Her walls.** A cell standing more than 30 cm over a neighbour holds none either, judged on her heights as
+  measured: her rails, her bulwarks and the drop at her quarterdeck's edges are walls. Her steps rise 17 cm a tread,
+  so they stay a way up and down.
+- **Her ramps.** Each cell left is then let down to within 8 cm of every neighbour, nothing raised, so her steps
+  and a dip in her planks become slopes a body walks (under 1.19).
+- **Her ways off her quarterdeck** are the steps at its two front corners and the stair down its open aft end, as
+  her model has it. The grid is kept round the deck with a cell to spare, each row on a line of the manifest.
+- **Her helm.** The spot behind her wheel on her quarterdeck, 7.25 m aft of her middle and 0.45 m aft of the wheel,
+  is her helm's: where a player leaving the helm stands, the helm's view stands, and the helm is taken again.
 - **The ground it makes.** The movement crate stands a body on the grid as a terrain ([[Movement]]): between cell
-  centres the ground blends, and a cell with none, or the grid's end, is a wall no step or slope takes. A wall of the
-  ground is never climbed, as a block's is, so a body never leaves her deck.
+  centres the ground blends, and a cell with none, or the grid's end, is a wall no step or slope takes, along the
+  whole of every move, so a run is never carried through one. A wall of the ground is never climbed, as a block's
+  is, so a body never leaves her deck.
 - **Her own frame.** A body on deck moves in her frame, so her way, her heading and the swell never move it; the game
   lays it into the world as she lies, at her drawn size.
 
@@ -171,7 +177,8 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 - One hull, the Sloop.
 - A walker on deck stands on her heights, not her shape: no stairs below, no rigging to climb, and a body's edge
-  may brush a rail it stands within a cell of.
+  may brush a rail it stands within a cell of. The tops of her rails and bulwarks lie past her walls, where no body
+  comes.
 - Her helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
 - Alone, the editor steps her; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
   in the sea room's fights, the room steps her by her orders.

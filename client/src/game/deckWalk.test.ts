@@ -5,7 +5,9 @@ import { LocalRoom } from '../network/localRoom.ts';
 import { courseBytes, helmBytes, walkBytes } from '../network/messages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import { type Body, type Controls, floatsOf, floatsOfControls, startMovementRules } from '../rules/movementRules.ts';
+import type { Walker } from '../player/walker.ts';
 import { deckFloats, SLOOP_DECK } from '../ships/deck.ts';
+import { DeckWalk } from './deckWalk.ts';
 import { STANDING_EYE_M } from './seaLaw.ts';
 
 const built = (name: string) =>
@@ -59,31 +61,76 @@ test('a player off the helm walks down her steps to her deck, and takes the helm
   const { room, last } = atSea();
   room.send(helmBytes(true));
   let sequence = 1;
+  const onDeck = () => last()?.players.find((player) => player.player === room.player);
+  const heights: number[] = [];
   const walk = (ticks: number, yaw: number) => {
     const controls: Controls = { forward: 1, sideways: 0, yaw, run: false, jump: false, crouch: false, mounted: false };
     for (let tick = 0; tick < ticks; tick++) {
       room.send(walkBytes(sequence++, floatsOfControls(controls)));
       room.pump(rules.tickSeconds);
+      heights.push(onDeck()?.body.z ?? NaN);
     }
   };
-  const onDeck = () => last()?.players.find((player) => player.player === room.player);
-  const [, helmY] = SLOOP_DECK.helm;
-  // To port, then forward off her quarterdeck through the gap at its corner and down her steps to her deck.
-  walk(20, -Math.PI / 2);
-  walk(60, 0);
+  // To port along her quarterdeck, then forward through the gap at its corner and down her port steps.
+  walk(12, -Math.PI / 2);
+  walk(36, 0);
   const below = onDeck()?.body;
-  assert.ok(below && helmY - below.y > 4 && below.z < 1.85, `down on her deck: ${JSON.stringify(below)}`);
+  assert.ok(below && below.y < 5 && below.z < 1.85, `down on her deck: ${JSON.stringify(below)}`);
+  const treads = new Set(heights.filter((z) => z > 1.9 && z < 2.4).map((z) => z.toFixed(2)));
+  assert.ok(treads.size >= 4, `down her steps, not off an edge: ${[...treads].join(' ')}`);
   room.send(helmBytes(false));
   room.pump(rules.tickSeconds);
   assert.ok(onDeck(), 'away from her wheel, still on deck');
   // Back up her steps, and across to the spot behind her wheel.
-  walk(60, Math.PI);
-  walk(20, Math.PI / 2);
+  walk(36, Math.PI);
+  walk(12, Math.PI / 2);
   room.send(helmBytes(false));
   room.pump(rules.tickSeconds);
   assert.equal(onDeck(), undefined, 'back at the helm');
 });
 
+test('from her wheel a walker or a runner straight to port or to starboard is stopped by her rail', () => {
+  rules.setCourse([]);
+  assert.ok(rules.setHeights(deckFloats(SLOOP_DECK)));
+  for (const yaw of [-Math.PI / 2, Math.PI / 2]) {
+    for (const run of [false, true]) {
+      const controls: Controls = { forward: 1, sideways: 0, yaw, run, jump: false, crouch: false, mounted: false };
+      let body = rules.standing(...SLOOP_DECK.helm);
+      for (let tick = 0; tick < 120; tick++) body = rules.step(body, controls);
+      assert.ok(body.z > 2.3, `yaw ${yaw.toFixed(2)}${run ? ', running' : ''}: ${body.x.toFixed(2)}, z ${body.z}`);
+    }
+  }
+});
+
 test("the helm's eye stands a standing body's eye over her deck, as the movement crate stands one", () => {
   assert.equal(rules.eyeHeight(rules.standing(...SLOOP_DECK.helm)), STANDING_EYE_M);
+});
+
+test("the page corrects its walk to the room's word, once, stepping again the steps the room has not taken", () => {
+  const sent: number[] = [];
+  const room = {
+    onDeck: null as { acknowledged: number; body: Body } | null,
+    words: 0,
+    walk: (sequence: number) => sent.push(sequence),
+  };
+  const walker = { player: { view: 'third' } } as unknown as Walker;
+  const walk = new DeckWalk(rules, walker, SLOOP_DECK, room);
+  const asked = (tick: number): Controls => ({ ...walked(tick), run: false, jump: false });
+  for (let tick = 0; tick < 10; tick++) {
+    const body = walk.rules().step(walker.player.body, asked(tick));
+    walker.player = { ...walker.player, body };
+  }
+  assert.deepEqual(sent, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 'each step sent, numbered from 1');
+  // The room's word: it has taken four, and has the body a little to starboard of where the page did.
+  let body = rules.standing(...SLOOP_DECK.helm);
+  for (let tick = 0; tick < 4; tick++) body = rules.step(body, { ...asked(tick), mounted: false });
+  const word = { ...body, x: body.x + 0.05 };
+  [room.onDeck, room.words] = [{ acknowledged: 4, body: word }, 1];
+  walk.correct();
+  let replayed: Body = word;
+  for (let tick = 4; tick < 10; tick++) replayed = rules.step(replayed, { ...asked(tick), mounted: false });
+  assert.deepEqual(floatsOf(walker.player.body), floatsOf(replayed), 'its word, and the six steps since on top');
+  walker.player = { ...walker.player, body: rules.standing(...SLOOP_DECK.helm) };
+  walk.correct();
+  assert.deepEqual(floatsOf(walker.player.body), floatsOf(rules.standing(...SLOOP_DECK.helm)), 'a word is taken once');
 });

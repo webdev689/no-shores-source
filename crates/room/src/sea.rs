@@ -10,6 +10,7 @@ use crate::PlayerId;
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates};
 use crate::threat::held_pace;
+use core::f64::consts::{PI, TAU};
 use land::sea::{FULL_DEPTH_M, Swell};
 use movement::{Controls, TICK_SECONDS};
 use naval::fight::{Event, Fight, Orders, PLAYER};
@@ -30,6 +31,10 @@ pub const COURSE_LIMIT: usize = 64;
 /// The fewest ticks between a player's courses: half a second, so even a full sea of sockets asking for the costliest
 /// courses holds a third of the room's time at most. A browser sends its latest course once the wait is over.
 pub const COURSE_EVERY_TICKS: u64 = 30;
+
+/// How far off a ship's heading a course may lead and still hold it, radians: past what rounding its point to the
+/// metre turns it, 200 m out.
+const HOLD_RAD: f64 = 0.01;
 
 /// Why a course was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -218,7 +223,7 @@ impl Sea {
             return Err(HelmRefused::NoSuchPlayer);
         }
         let walking = self.aboard.get(&player).ok_or(HelmRefused::AlreadyThere)?;
-        if !walking.at_wheel(&self.deck) {
+        if !walking.at_wheel(&self.deck, self.clock) {
             return Err(HelmRefused::NotAtTheWheel);
         }
         self.aboard.remove(&player);
@@ -238,13 +243,14 @@ impl Sea {
     /// Sets a player's course: the points their ship sails through in turn, to the nearest whole metre, at `pace`. A
     /// ship not yet at sea puts to sea at the first point; one at sea starts it from where it is, to the nearest
     /// metre, so the legs it sails are the legs judged. An empty course brings a ship at sea to rest. A course is
-    /// refused whole when any point lies on a continent or any leg meets a coast. A player sets one course a tick.
+    /// refused whole when any point lies on a continent or any leg meets a coast. A player sets one course a tick. Off
+    /// the helm, only one that holds her heading straight on is taken: her helmsman sails on as she was.
     pub fn course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
         let clock = self.clock;
         if self.fights.contains_key(&player) {
             return Err(CourseRefused::Fighting);
         }
-        if self.aboard.contains_key(&player) {
+        if self.aboard.contains_key(&player) && !self.holds_her_heading(player, points, pace) {
             return Err(CourseRefused::OffTheHelm);
         }
         let berth = self.berths.get_mut(&player).ok_or(CourseRefused::NoSuchPlayer)?;
@@ -293,8 +299,25 @@ impl Sea {
         self.course(player, &[], 0)?;
         let berth = self.berths.get_mut(&player).ok_or(CourseRefused::NoSuchPlayer)?;
         let sailing = berth.sailing.as_mut().ok_or(CourseRefused::BadCourse)?;
-        sailing.ship.heading = heading.rem_euclid(core::f64::consts::TAU);
+        let turned = heading.rem_euclid(TAU);
+        // A hair under zero comes back as a whole turn: the same way, kept in one turn.
+        sailing.ship.heading = if turned < TAU { turned } else { 0.0 };
         Ok(())
+    }
+
+    /// Whether a course keeps the player's ship sailing straight on along her heading at her pace: one point ahead,
+    /// while she is under way.
+    fn holds_her_heading(&self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> bool {
+        let Some(ship) = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref()).map(|sailing| sailing.ship)
+        else {
+            return false;
+        };
+        let &[[x, y]] = points else { return false };
+        if ship.pace == 0 || pace != ship.pace {
+            return false;
+        }
+        let bearing = libm::atan2(x - ship.x, -(y - ship.y));
+        ((bearing - ship.heading + PI).rem_euclid(TAU) - PI).abs() <= HOLD_RAD
     }
 
     /// A fighting player's orders for the ticks to come: her helm, her lay, the fire, the brace and a load. The climb,
@@ -321,10 +344,13 @@ impl Sea {
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
+            // Judged along every leg her pace would take her through this tick, so no turn of her course slips by.
+            let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;
+            let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, pirates.iter().copied());
             sailing.ship.rate = if self.fights.contains_key(player) {
                 0
             } else {
-                held_pace(ship.pace, [ship.x, ship.y], ship.heading, pirates.iter().copied())
+                ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
             };
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS);
         }
@@ -453,6 +479,24 @@ fn leg_enters_box(coast: &Coast, from: Point, to: Point) -> bool {
         Point::new(coast.west, coast.south),
     ];
     inside(from) || inside(to) || edges(&corners).any(|side| segments_meet((from, to), side))
+}
+
+/// The bearing of each leg a ship sails through within `reach` metres along her course, from where she is.
+fn ways_ahead(sailing: &Sailing, reach: f64) -> Vec<f64> {
+    let (mut at, mut left, mut ways) = ([sailing.ship.x, sailing.ship.y], reach, Vec::new());
+    for &[to_x, to_y] in &sailing.course {
+        let (along_x, along_y) = (to_x - at[0], to_y - at[1]);
+        let length = (along_x * along_x + along_y * along_y).sqrt();
+        if length > 0.0 {
+            ways.push(libm::atan2(along_x, -along_y));
+        }
+        left -= length;
+        if left <= 0.0 {
+            break;
+        }
+        at = [to_x, to_y];
+    }
+    ways
 }
 
 /// Moves a ship `distance` metres along its course.

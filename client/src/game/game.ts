@@ -99,10 +99,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const roomModule = fetch(`${base}room.wasm`)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
     .then((bytes) => WebAssembly.compile(bytes));
-  // The Sloop's build as the naval rules hold it, for Manage's panel: read once, the first time it is opened.
+  // The Sloop's build as the naval rules hold it, for Manage's panel: read once when first opened, however it reads.
   let [compiled, sloopBuild]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
   void roomModule.then((module) => (compiled = module)).catch(() => undefined);
-  const builtSloop = () => (compiled ? (sloopBuild ??= sloopBuildOf(sloopBuildText(compiled))) : null);
+  const builtSloop = () =>
+    (compiled && sloopBuild === undefined ? (sloopBuild = sloopBuildOf(sloopBuildText(compiled))) : sloopBuild) ?? null;
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
@@ -404,8 +405,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const mapUp = () => heldMap?.shown ?? false;
   canvas.addEventListener('pointerdown', (event) => {
     if (!atSea()) return;
-    // Held to the canvas, so a press let go over a mark or the bar still ends here.
-    canvas.setPointerCapture(event.pointerId);
+    // Held to the canvas, so a press let go over a mark or the bar still ends here; a locked pointer is held already.
+    if (!input.locked) canvas.setPointerCapture(event.pointerId);
     if (mapUp()) heldMap?.pointerDown(event.offsetX, event.offsetY);
     else sea?.pointerDown(event.offsetX, event.offsetY);
   });

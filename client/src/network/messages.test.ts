@@ -96,7 +96,8 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
   assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.ships] : null, [
     77n,
     [
-      { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 10 },
+      // The pace she sailed at, held down near a pirate: 5 where 60 was asked.
+      { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 5 },
       { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
     ],
   ]);

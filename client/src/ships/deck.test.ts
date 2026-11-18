@@ -1,6 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cellHeight, deckCells, deckFloats, deckOf, deckToWorld, SLOOP_DECK, worldToDeck } from './deck.ts';
+import {
+  cellHeight,
+  cellsReached,
+  type Deck,
+  deckCells,
+  deckFloats,
+  deckOf,
+  deckToWorld,
+  SLOOP_DECK,
+  worldToDeck,
+} from './deck.ts';
 
 test("the Sloop's deck reads from the manifest, and behind her wheel is deck", () => {
   const [x, y] = SLOOP_DECK.helm;
@@ -10,28 +20,40 @@ test("the Sloop's deck reads from the manifest, and behind her wheel is deck", (
   assert.ok(deckCells(SLOOP_DECK).length > 500, 'room to walk');
 });
 
-test('from the spot behind her wheel a walker reaches all her deck, down from her quarterdeck', () => {
-  const { columns, rows, heights } = SLOOP_DECK;
-  const [x, y] = SLOOP_DECK.helm;
-  const start =
-    Math.floor((y - SLOOP_DECK.north) / SLOOP_DECK.cell) * columns +
-    Math.floor((x - SLOOP_DECK.west) / SLOOP_DECK.cell);
-  const reached = new Set([start]);
-  for (const cell of reached) {
-    const [row, column] = [Math.floor(cell / columns), cell % columns];
-    const near = [
-      row > 0 && cell - columns,
-      row < rows - 1 && cell + columns,
-      column > 0 && cell - 1,
-      column < columns - 1 && cell + 1,
-    ];
-    for (const next of near) if (next !== false && (heights[next] ?? null) !== null) reached.add(next);
-  }
-  const standing = heights.filter((height) => height !== null).length;
-  assert.ok(reached.size > 0.97 * standing, `${reached.size} of ${standing} cells`);
+test('from the spot behind her wheel a walker reaches her main deck, and never the top of a rail', () => {
+  const reached = cellsReached(SLOOP_DECK, ...SLOOP_DECK.helm);
+  const standing = deckCells(SLOOP_DECK).length;
+  assert.ok(reached.length > 0.9 * standing, `${reached.length} of ${standing} cells`);
   assert.ok(
-    [...reached].some((cell) => (heights[cell] ?? 9) < 1.85),
-    'her main deck among them',
+    reached.some((cell) => cell.z < 1.85 && cell.y < 0),
+    'her main deck forward among them',
+  );
+  assert.ok(
+    reached.every((cell) => cell.z < 2.6),
+    'no rail top, nor her bulwarks',
+  );
+});
+
+test('her quarterdeck is left only down her steps at its front corners or her stair aft', () => {
+  const [x, y] = SLOOP_DECK.helm;
+  // Her steps lie 5 to 6.2 m aft of her middle, her stair 7.8 to 8.9 m; her main deck stands about 1.8 m up.
+  const step = (cell: { y: number; z: number }) =>
+    cell.z > 1.82 && ((cell.y > 5 && cell.y < 6.2) || (cell.y > 7.8 && cell.y < 8.9));
+  const withoutSteps: Deck = {
+    ...SLOOP_DECK,
+    heights: SLOOP_DECK.heights.map((height, index) => {
+      const cell = {
+        y: SLOOP_DECK.north + (Math.floor(index / SLOOP_DECK.columns) + 0.5) * SLOOP_DECK.cell,
+        z: height ?? 0,
+      };
+      return height !== null && step(cell) ? null : height;
+    }),
+  };
+  const kept = cellsReached(withoutSteps, x, y);
+  assert.ok(kept.length > 100, 'her quarterdeck still');
+  assert.ok(
+    kept.every((cell) => cell.z > 2.3),
+    `never her main deck: ${Math.min(...kept.map((cell) => cell.z))}`,
   );
 });
 

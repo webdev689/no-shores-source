@@ -67,10 +67,14 @@ impl Heights {
         if on { self.heights[row as usize * self.columns + column as usize] } else { None }
     }
 
+    /// The column and row (x, y) lies in.
+    fn index_of(&self, x: f64, y: f64) -> (i64, i64) {
+        (((x - self.west) / self.cell).floor() as i64, ((y - self.north) / self.cell).floor() as i64)
+    }
+
     /// The height of the cell (x, y) lies in, or none.
     fn cell_at(&self, x: f64, y: f64) -> Option<f64> {
-        let column = ((x - self.west) / self.cell).floor() as i64;
-        let row = ((y - self.north) / self.cell).floor() as i64;
+        let (column, row) = self.index_of(x, y);
         self.at(column, row)
     }
 
@@ -111,5 +115,58 @@ impl Terrain for Heights {
             .filter_map(|&(height, weight)| height.map(|height| (height * weight, weight)))
             .fold((0.0, 0.0), |(sum, total), (part, weight)| (sum + part, total + weight));
         if weight > 0.0 { sum / weight } else { self.wall }
+    }
+
+    /// Whether a cell that holds no height lies on the move, each cell it passes through taken in turn; through a
+    /// corner, both cells beside it count, so two walls meeting at a corner leave no gap.
+    fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
+        let (mut column, mut row) = self.index_of(from.0, from.1);
+        let end = self.index_of(to.0, to.1);
+        let (along_x, along_y) = (to.0 - from.0, to.1 - from.1);
+        let (step_x, step_y) = (sign(along_x), sign(along_y));
+        // The share of the move at which it first crosses into the next column and the next row, and each one after.
+        let first = |at: f64, edge: f64, index: i64, step: i64, along: f64| {
+            if step == 0 {
+                f64::INFINITY
+            } else {
+                (edge + (index + i64::from(step > 0)) as f64 * self.cell - at) / along
+            }
+        };
+        let mut cross_x = first(from.0, self.west, column, step_x, along_x);
+        let mut cross_y = first(from.1, self.north, row, step_y, along_y);
+        let each_x = if step_x == 0 { f64::INFINITY } else { self.cell / along_x.abs() };
+        let each_y = if step_y == 0 { f64::INFINITY } else { self.cell / along_y.abs() };
+        let mut left = (end.0 - column).abs() + (end.1 - row).abs();
+        while (column, row) != end && left > 0 {
+            left -= 1;
+            if cross_x < cross_y {
+                column += step_x;
+                cross_x += each_x;
+            } else if cross_y < cross_x {
+                row += step_y;
+                cross_y += each_y;
+            } else {
+                if self.at(column + step_x, row).is_none() || self.at(column, row + step_y).is_none() {
+                    return true;
+                }
+                (column, row) = (column + step_x, row + step_y);
+                (cross_x, cross_y) = (cross_x + each_x, cross_y + each_y);
+            }
+            if self.at(column, row).is_none() {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+/// -1, 0 or 1 by the sign of a number.
+fn sign(number: f64) -> i64 {
+    if number > 0.0 {
+        1
+    } else if number < 0.0 {
+        -1
+    } else {
+        0
     }
 }

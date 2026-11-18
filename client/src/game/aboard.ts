@@ -252,7 +252,7 @@ export class Aboard {
     const helmZ = cellHeight(this.deck, helmX, helmY) ?? 0;
     if (this.view?.kind === 'deck') {
       lay(walker.figure(eyeX, eyeY));
-      if (underWay) place(HELMSMAN_ID, this.helmsman, 'idle', helmX, helmY, helmZ, 0);
+      if (underWay && this.walking) place(HELMSMAN_ID, this.helmsman, 'idle', helmX, helmY, helmZ, 0);
     } else if (!eyeAtHelm) place(walker.you.id, walker.you.dress, 'idle', helmX, helmY, helmZ, 0);
     this.crew.hands.forEach((hand, index) => {
       this.handDresses[index] ??= plainDress(hand.race, hand.tone);

@@ -121,10 +121,13 @@ will take it, by the room's own tick.
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
   out of order or with controls that are not numbers or ask past a whole pace; never more than the ticks since they
-  left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken.
-  Meanwhile her helmsman keeps her course: under way she sails on, at rest she stays, and a course is refused. They
-  take the helm again within 0.8 m of the spot behind her wheel, standing; a bold pirate that meets them calls them to
-  it at once.
+  left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken. One
+  whose steps stop coming is stood out a tick at a time once a view's lag (24 ticks) behind, as on land.
+- **Her helmsman** keeps her course meanwhile: under way she sails on, at rest she stays. A course is refused but one
+  that holds her heading straight on, at her pace (one point, within 0.01 radians of it): the page's course straight
+  on, set again as she nears its end, so she sails on. They take the helm again within 0.8 m of the spot behind her
+  wheel, standing, judged where their steps leave them once the steps the clock allows by then are taken; a bold
+  pirate that meets them calls them to it at once.
 - Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
 
 ## A fleet

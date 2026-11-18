@@ -1,6 +1,7 @@
 // The helm's keys at sea in the Overworld's view, as in a fight: A and D turn her while held, W sets her sailing
 // straight ahead at the pace dial, S heaves her to. Straight ahead is a course to the farthest point that way short of
 // the first coast, so the sea room, which refuses a course whose leg meets a coast, takes every one sent.
+import { WORLD_FRAME } from '../overworld/discovery.ts';
 import type { Point2 } from '../overworld/ground.ts';
 
 /** How fast the helm turns her under sail, radians a second: Come Sail Away's (crates/sailing/src/helm.rs,
@@ -30,8 +31,17 @@ function meetsAt(from: Point2, way: Point2, a: Point2, b: Point2): number {
   return along >= 0 && share >= 0 && share <= 1 ? along : Infinity;
 }
 
+/** The world's frame as a ring: the sea room takes no point past it. */
+const FRAME_RING: readonly Point2[] = [
+  [0, 0],
+  [WORLD_FRAME.widthM, 0],
+  [WORLD_FRAME.widthM, WORLD_FRAME.heightM],
+  [0, WORLD_FRAME.heightM],
+];
+
 /** The farthest point straight ahead of `from` along `heading` (radians clockwise from north), up to `reachM`, and
- *  `shortM` short of the first coast of `outlines` the way meets; null where that leaves less than `leastM`. */
+ *  `shortM` short of the first coast of `outlines` the way meets, or of the world's frame; null where that leaves less
+ *  than `leastM`. */
 export function clearAhead(
   outlines: readonly (readonly Point2[])[],
   from: Point2,
@@ -40,7 +50,7 @@ export function clearAhead(
 ): Point2 | null {
   const way: Point2 = [Math.sin(heading), -Math.cos(heading)];
   let nearest = Infinity;
-  for (const ring of outlines) {
+  for (const ring of [...outlines, FRAME_RING]) {
     for (let index = 0; index < ring.length; index++) {
       const [a, b] = [ring[index], ring[(index + 1) % ring.length]];
       if (a && b) nearest = Math.min(nearest, meetsAt(from, way, a, b));

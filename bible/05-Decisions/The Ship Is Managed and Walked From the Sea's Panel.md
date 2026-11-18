@@ -46,5 +46,4 @@ The owner's answers to the questions that followed:
 - **Leave the helm** pans the view down to the ship and lets the player roam her on board. Under way, the helmsman
   takes over and she keeps sailing; at rest, the player simply leaves the helm. The player takes the helm again by
   walking to the wheel and pressing a key.
-- **The map view**, at the helm where the [[Held Map]] is raised, shows the detailed Sloop at her true scale, not the
-  [[Overworld]]'s model.
+- **The map view** shows the detailed 3D model of the ship, not the [[Overworld]]'s ([[Held Map]]).

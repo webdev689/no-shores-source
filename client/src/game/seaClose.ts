@@ -6,7 +6,7 @@ import type { Lying } from '../ships/deck.ts';
 import { panShot, type Shot, shotOfOrbit } from './camera.ts';
 
 /** A wheel notch brings the view this share of the way in, and the share eases toward the wheel's at `rate` a second.
- *  At the closest the eye stands `distanceM` from a point `lookAtM` over her waterline (the World Editor's), its near
+ *  At the closest the eye stands `distanceM` from the point `lookAtM` over her waterline the World Editor looks at, its near
  *  plane `nearM` off, metres. */
 export const CLOSE = { perNotch: 0.2, rate: 6, distanceM: 25, lookAtM: 4.5, nearM: 0.3 } as const;
 
@@ -25,9 +25,9 @@ export class CloseZoom {
     return 0;
   }
 
-  /** Takes the view straight back out to the Overworld's. */
-  reset(): void {
-    [this.target, this.share] = [0, 0];
+  /** Lets the view ease back out to the Overworld's. */
+  release(): void {
+    this.target = 0;
   }
 
   /** Eases the view `seconds` on toward the wheel's share. */

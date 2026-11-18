@@ -23,6 +23,9 @@ type Closable = RoomLink & { close?(): void };
 /** The ticks between the courses the page sends: the sea takes one each half second (crates/room/src/sea.rs,
  *  `COURSE_EVERY_TICKS`), and a quarter second more keeps the network's jitter from bringing two closer than that. */
 const COURSE_EVERY_TICKS = 45;
+/** The ticks after a course is sent before the room's word is taken as having taken it: a round trip's allowance, so a
+ *  snapshot already on its way with the course before is never read as the room's answer. */
+const SETTLE_TICKS = 20;
 
 export class SeaRoom {
   readonly own: number;
@@ -93,8 +96,13 @@ export class SeaRoom {
    *  since); null before. */
   get settledShip(): SeenShip | null {
     const sent = this.courseSentAt;
-    if (this.waitingCourse || sent === null || this.tick === null || this.tick <= sent) return null;
+    if (this.waitingCourse || sent === null || this.tick === null || this.tick <= sent + SETTLE_TICKS) return null;
     return this.ownShip;
+  }
+
+  /** Why the link to the room was lost, or null while it holds. */
+  get lost(): string | null {
+    return this.link.lost;
   }
 
   /** The player's fight as the room last showed it, its events those since they were last taken; null out of one. */

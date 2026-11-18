@@ -24,7 +24,7 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **Presses answer alike.** A button or primary is raised stone; it goes brass under the pointer or focus, sinks while
   held and goes flat when it cannot be pressed. A warn lights in blood, never brass.
 - **Paint only.** The kit writes colours, bevels, grounds and shadows, never a width, padding or size, so dressing a
-  surface never moves it. The page's own sheet gives each surface its room, and each window and press the 2 px
+  surface never sizes or spaces it; only a held press sinks a pixel. The page's own sheet gives each surface its room, and each window and press the 2 px
   border the kit's bevel and frame land on.
 - **The frame** is a 25 px square picture drawn pixel for pixel and used at 1:1: the outline, the stone bevel lit
   from the top left, an engraved line and a dark lip, with a brass fitting and its rivet at each corner. It reaches

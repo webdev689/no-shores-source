@@ -12,7 +12,7 @@ fn a_player_leaving_the_helm_stands_behind_the_wheel_on_the_deck_facing_her_bow(
     assert_eq!((aboard.body.x, aboard.body.y), (0.0, 2.7));
     assert!((aboard.body.z - 0.8).abs() < 1e-9, "on her planks, over her waterline");
     assert_eq!(aboard.body.facing, 0.0);
-    assert!(aboard.at_wheel(&deck));
+    assert!(aboard.at_wheel(&deck, 10));
 }
 
 #[test]
@@ -26,7 +26,7 @@ fn steps_are_taken_in_order_and_walk_her_deck() {
     }
     assert_eq!(aboard.acknowledged, 30);
     assert!(aboard.body.y < 2.7 - 1.5, "half a second's walk toward her bow: {}", aboard.body.y);
-    assert!(!aboard.at_wheel(&deck), "and away from the wheel");
+    assert!(!aboard.at_wheel(&deck, 30), "and away from the wheel");
 }
 
 #[test]
@@ -44,9 +44,11 @@ fn steps_come_no_faster_than_the_clock_and_its_slack_so_time_away_is_never_banke
     for clock in 221..=230 {
         aboard.tick(&deck, clock);
     }
-    // Stood out to the slack behind the clock while away, then up to the slack ahead of it: never the whole flood.
+    // Stood out to a view's lag behind the clock while away, as a land room stands one out; then up to the slack ahead
+    // of it.
+    assert!(aboard.taken + VIEW_LAG >= 120, "the time away stood out, but for a view's lag: {}", aboard.taken);
     let taken = u64::from(aboard.acknowledged);
-    assert!(taken <= 10 + 2 * SLACK_TICKS, "ten ticks on, the ten and their slack either way: {taken}");
+    assert!(taken <= 10 + VIEW_LAG + SLACK_TICKS, "ten ticks on, the ten and the lag and slack: {taken}");
     assert!(taken >= 10, "every tick takes one");
     assert!(aboard.body.y < still.y, "and the steps walk her deck");
     let mut flooded = Aboard::left_helm(&deck, 100);
@@ -97,9 +99,18 @@ fn the_wheel_is_judged_where_the_steps_waiting_leave_the_body() {
         aboard.walk(sequence, FORWARD).unwrap();
         aboard.tick(&deck, clock);
     }
-    assert!(!aboard.at_wheel(&deck), "a pace forward of her wheel");
+    assert!(!aboard.at_wheel(&deck, 130), "a pace forward of her wheel");
+    let mut honest = aboard.clone();
+    // Walking back a step a tick, the last few still on their way when the player asks for the helm.
+    for (sequence, clock) in (31..=60).zip(131..) {
+        honest.walk(sequence, aft).unwrap();
+        if sequence <= 56 {
+            honest.tick(&deck, clock);
+        }
+    }
+    assert!(honest.at_wheel(&deck, 156), "the steps back to it waiting, not yet taken");
     for sequence in 31..=60 {
         aboard.walk(sequence, aft).unwrap();
     }
-    assert!(aboard.at_wheel(&deck), "the steps back to it are waiting, not yet taken");
+    assert!(!aboard.at_wheel(&deck, 130), "a burst of steps the clock has not reached yet takes no one to it");
 }

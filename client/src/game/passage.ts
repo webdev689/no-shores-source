@@ -20,6 +20,10 @@ const REFUSED: Record<RouteRefusal, string> = {
   'no way': 'No water leads there.',
 };
 
+/** How far the room's word may lie off her course straight on before she is laid where it has her and the course set
+ *  again from there, metres. */
+const DRIFT_M = 30;
+
 /** Where the ship lies and heads, radians clockwise from north. */
 export interface Lie {
   readonly x: number;
@@ -135,6 +139,9 @@ export class Passage {
   /** Sets her sailing straight on along her heading, short of the first coast that way; where land lies too near,
    *  she comes to rest and the voyage's line says so. */
   straightOn(): void {
+    // From where the room has her once it has taken her course, so a drift of the page's is never carried on.
+    const settled = this.room?.settledShip;
+    if (settled) this.lie = { ...this.lie, x: settled.x, y: settled.y };
     const point = clearAhead(this.outlines, this.position, this.lie.heading);
     if (!point) {
       this.stop();
@@ -158,22 +165,44 @@ export class Passage {
    *  course straight on set again as she nears its end, while the way beyond lies clear. */
   advance(seconds: number): void {
     if (!this.voyage) return;
-    const fix = shipAt(
-      this.voyage,
-      followed(this.voyage, this.travelled, seconds, this.dial, this.room?.settledShip ?? null),
-    );
+    const settled = this.room?.settledShip ?? null;
+    if (settled?.pace === 0) {
+      this.restWhereTheRoomHasHer(this.voyage, settled);
+      return;
+    }
+    const held = this.room?.ownShip?.pace ?? null;
+    const fix = shipAt(this.voyage, followed(this.voyage, this.travelled, seconds, this.dial, settled, held));
     this.lie = { x: fix.position[0], y: fix.position[1], heading: fix.heading ?? this.lie.heading };
     this.travelled = fix.travelledM;
     if (fix.arrived) {
-      // Straight on, she comes to the end of a course only where a coast lies too near to set it again.
-      if (this.straight) this.said = 'Land lies ahead.';
-      [this.voyage, this.destination, this.straight] = [null, null, false];
+      this.arrived();
       return;
     }
+    if (!this.straight) return;
+    const away = settled ? [settled.x - this.lie.x, settled.y - this.lie.y] : [0, 0];
+    const aside = Math.abs((away[0] ?? 0) * Math.cos(this.lie.heading) + (away[1] ?? 0) * Math.sin(this.lie.heading));
     const left = this.voyage.lengthM - this.travelled;
-    if (!this.straight || left >= AHEAD.renewM) return;
-    const point = clearAhead(this.outlines, this.position, this.lie.heading);
-    if (point && Math.hypot(point[0] - this.lie.x, point[1] - this.lie.y) > left + 1) this.straightOn();
+    if (aside > DRIFT_M) this.straightOn();
+    else if (left < AHEAD.renewM) {
+      const point = clearAhead(this.outlines, this.position, this.lie.heading);
+      if (point && Math.hypot(point[0] - this.lie.x, point[1] - this.lie.y) > left + 1) this.straightOn();
+    }
+  }
+
+  /** At the end of her voyage: straight on, she comes to the end of a course only where a coast lies too near to set
+   *  it again. */
+  private arrived(): void {
+    if (this.straight) this.said = 'Land lies ahead.';
+    [this.voyage, this.destination, this.straight] = [null, null, false];
+  }
+
+  /** The room has her at rest, having taken her course, while the page sails her: at its end, she has arrived; short
+   *  of it (a course it would not take), she is hove to where it has her, her voyage kept to be resumed. */
+  private restWhereTheRoomHasHer(voyage: Voyage, settled: { readonly x: number; readonly y: number }): void {
+    this.lie = { ...this.lie, x: settled.x, y: settled.y };
+    const end = voyage.points.at(-1);
+    if (end && Math.hypot(end[0] - settled.x, end[1] - settled.y) < 2) this.arrived();
+    else this.voyage = null;
   }
 
   /** Where her voyage stands: under way straight on, or with the way and time to go; hove to short of it; or at

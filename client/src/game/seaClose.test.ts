@@ -17,8 +17,9 @@ test('the wheel comes in past the Overworld only from its lowest, and goes back 
   assert.equal(close.zoom(10, true), 0);
   close.step(10);
   assert.equal(close.eased, 1, 'no further in than her true size');
-  close.reset();
-  assert.equal(close.eased, 0);
+  close.release();
+  close.step(10);
+  assert.equal(close.eased, 0, 'let go, it eases back out');
   assert.equal(close.zoom(-1, true), -1, 'all the way out, the Overworld zooms out');
 });
 

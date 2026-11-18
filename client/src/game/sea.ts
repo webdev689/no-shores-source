@@ -44,6 +44,9 @@ const SHIP_DRAWN_M = 75;
 const FIRST_TILT = (30 * Math.PI) / 180;
 /** Seconds the view takes to fall back from an island's side to the ship. */
 const FLY_BACK_SECONDS = 1.4;
+/** Her wake stirs the ripples only where she is drawn near her own size, the ripples round her a 32 m field, and at
+ *  most as often as they step, seconds. */
+const WAKE = { mostScale: 1.5, everyS: 1 / 60 } as const;
 /** Seconds the view takes to come down to the helm, or go back up from it. */
 const HELM_SECONDS = 1.1;
 /** A mark stands this far over the ground it marks, metres. */
@@ -129,6 +132,9 @@ export class Sea {
   private helmShare = 0;
   /** How far the wheel has brought the view in over her, past the Overworld's lowest. */
   private readonly close = new CloseZoom();
+  /** Seconds since her wake last stirred the water; and whether the sea room's link was lost. */
+  private sinceStir = 0;
+  private roomLost = false;
   private side: readonly Mark[] = [];
   private sideRig: Rig | null = null;
   private press: Press | null = null;
@@ -191,7 +197,9 @@ export class Sea {
   /** Joins the sea room `open` makes, a server's or the page's own, the ship put to sea where it lies. */
   async enterRoom(open: Parameters<typeof SeaRoom.join>[0]): Promise<void> {
     this.room = await SeaRoom.join(open, this.position, this.passage.pace);
-    this.passage.room = this.room;
+    [this.passage.room, this.roomLost] = [this.room, false];
+    // Put to sea at rest, she is turned as she lies, so the room shows every player her heading.
+    if (!this.passage.sailing) this.room.face(this.heading);
     this.passage.sendVoyage();
   }
 
@@ -333,7 +341,7 @@ export class Sea {
     );
     this.passage.stop();
     this.chosen = null;
-    this.close.reset();
+    this.close.release();
     this.view = { kind: 'fly', from: this.seaRig, to: this.sideRig, t: 0, seconds: SIDE.flySeconds, then: 'landing' };
     return true;
   }
@@ -400,6 +408,12 @@ export class Sea {
     const { seconds: dt, time, viewport } = input;
     const windBearing = input.swell?.bearing ?? 0;
     this.viewport = viewport;
+    // A room whose link was lost says no more: the player is called to the helm and sails on alone.
+    if (this.room?.lost) {
+      this.aboard.drop();
+      this.leaveRoom();
+      this.roomLost = true;
+    }
     this.water.swell = input.swell;
     this.room?.pump(dt);
     this.meet(time);
@@ -432,7 +446,7 @@ export class Sea {
     const fromShip = Math.hypot(shot.eye[0] - ship.x, shot.eye[1] - ship.y, shot.eye[2]);
     const lens = horizonOf({ fogEndM: 28_000, nearM: 2, farM: 60_000 }, 1, fromShip);
     const overworld: Shot = { eye: shot.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
-    const overShip = this.view.kind === 'sail' || this.view.kind === 'helm';
+    const overShip = this.view.kind !== 'landing';
     const seaShot = overShip ? this.close.shot(overworld, lying, this.camera.yaw, this.camera.tilt) : overworld;
     // Clicks and marks are taken on the picture as shown, brought in close or not.
     const pose = poseOf({ eye: seaShot.eye, forward: forwardOf(seaShot.yaw, -seaShot.pitch) }, FIELD_OF_VIEW);
@@ -475,7 +489,7 @@ export class Sea {
         ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, this.helmShare > 0.5)
         : [],
       firstPerson: !combat && this.aboard.firstPerson,
-      stirs: !combat && own.underWay ? this.wake(lying) : [],
+      stirs: !combat && own.underWay ? this.wake(lying, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
       note: this.note(),
       landfall: this.landfall,
@@ -486,8 +500,12 @@ export class Sea {
     };
   }
 
-  /** Her bow and quarters stir the water under way, as she is drawn, at a ship's own way. */
-  private wake(lying: Lying): Stir[] {
+  /** Her bow and quarters stir the water under way, as she is drawn, at a ship's own way: near her own size, where
+   *  the ripples round her hold her, and as often as they step. */
+  private wake(lying: Lying, seconds: number): Stir[] {
+    this.sinceStir += seconds;
+    if (lying.scale > WAKE.mostScale || this.sinceStir < WAKE.everyS) return [];
+    this.sinceStir = 0;
     const { lengthM, beamM } = this.hull.waterline;
     return wakeStirs(lying, (lengthM / 2) * lying.scale, (beamM / 2) * lying.scale, SHIP_SPEED).map((stir) => ({
       ...stir,
@@ -538,7 +556,8 @@ export class Sea {
   }
 
   private note(): string {
-    const room = this.room ? ` · In the sea room as player ${this.room.own}` : '';
+    const lost = this.roomLost ? ' · The sea room was lost: sailing on alone' : '';
+    const room = this.room ? ` · In the sea room as player ${this.room.own}` : lost;
     if (this.combat) return `Fighting${room}`;
     if (this.view.kind !== 'sail') return room.slice(3);
     // Off the helm, her helmsman has her while she sails on.

@@ -3,7 +3,7 @@
 //! swell never move it. Their inputs are numbered and taken in order, as a land room takes them: never faster than
 //! the clock and its slack allow, and a few a tick to catch up after a stall.
 
-use crate::players::{CATCH_UP, SLACK_TICKS, WAITING_LIMIT};
+use crate::players::{CATCH_UP, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT};
 use movement::{Body, Controls, Heights, Mode, TICK_SECONDS, step_body};
 use std::collections::VecDeque;
 
@@ -74,31 +74,38 @@ impl Aboard {
     }
 
     /// One room tick, the room's clock now `clock`: the steps due are taken in order, no more than `CATCH_UP`, and no
-    /// more since the helm was left than the ticks since and their slack. A tick with none to take, further behind the
-    /// clock than the slack, is stood out where the body is, so time away is never banked to catch up on.
+    /// more since the helm was left than the ticks since and their slack. A tick with none to take, a view's lag behind
+    /// the clock, is stood out where the body is, as a land room stands out a player, so time away is never banked.
     pub fn tick(&mut self, deck: &Deck, clock: u64) {
-        let allowed = (clock.saturating_sub(self.since) + SLACK_TICKS).saturating_sub(self.taken);
-        let due = self.waiting.len().min(CATCH_UP).min(usize::try_from(allowed).unwrap_or(usize::MAX));
+        let due = self.waiting.len().min(CATCH_UP).min(self.allowed(clock));
         for _ in 0..due {
             let Some((sequence, controls)) = self.waiting.pop_front() else { break };
             self.body = step_body(&self.body, &controls, &[], &deck.heights, TICK_SECONDS);
             (self.acknowledged, self.yaw) = (sequence, controls.yaw);
             self.taken += 1;
         }
-        if due == 0 && clock.saturating_sub(self.since) > self.taken + SLACK_TICKS {
+        if due == 0 && clock.saturating_sub(self.since) > self.taken + VIEW_LAG {
             let still = Controls { yaw: self.yaw, ..Controls::default() };
             self.body = step_body(&self.body, &still, &[], &deck.heights, TICK_SECONDS);
             self.taken += 1;
         }
     }
 
-    /// Whether the body stands at the wheel, near enough the helm's spot to take it, once the steps waiting are taken:
-    /// where the player's own screen has them when they ask for the helm.
+    /// How many steps the clock allows taken by `clock`: the ticks since the helm was left and their slack, less those
+    /// taken.
+    fn allowed(&self, clock: u64) -> usize {
+        let allowed = (clock.saturating_sub(self.since) + SLACK_TICKS).saturating_sub(self.taken);
+        usize::try_from(allowed).unwrap_or(usize::MAX)
+    }
+
+    /// Whether the body stands at the wheel, near enough the helm's spot to take it, once the steps waiting that the
+    /// clock allows by `clock` are taken: where the player's own screen has them when they ask for the helm.
     #[must_use]
-    pub fn at_wheel(&self, deck: &Deck) -> bool {
+    pub fn at_wheel(&self, deck: &Deck, clock: u64) -> bool {
         let body = self
             .waiting
             .iter()
+            .take(self.allowed(clock))
             .fold(self.body, |body, (_, controls)| step_body(&body, controls, &[], &deck.heights, TICK_SECONDS));
         let [x, y] = deck.helm;
         let (east, south) = (body.x - x, body.y - y);
