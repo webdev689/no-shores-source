@@ -5,9 +5,11 @@ code:
   - server/accounts/accounts.ts#handle
   - server/accounts/characters.ts#characters
   - server/accounts/discord.ts#callback
+  - server/accounts/discord.ts#taken
   - server/accounts/secrets.ts#hashPassword
   - server/accounts/worker.ts#CharacterKeeper
   - server/accounts/migrations/0001_accounts.sql
+  - server/accounts/migrations/0002_discord_codes.sql
   - server/keeping.ts#Keeper
   - client/src/network/accounts.ts#AccountLink
   - crates/gear/src/character.rs#from_json
@@ -32,18 +34,30 @@ they play in holds it while they are there.
   characters. It is kept as PBKDF2 over SHA-256, 100,000 iterations (the most a Worker derives) with a random salt.
   Signing in with them (`POST /v1/login`) starts a new session for that account, leaving any guest behind. Signing
   out ends the session, and the next visit is a new guest.
-- **Discord.** The page sends the player to `/v1/discord/start`, with a ticket naming its account when it holds a
-  session, and Discord sends them back through `/v1/discord/callback` to the page, the outcome in the address's
-  fragment. A Discord account already linked signs in to its account; one not linked links to the page's account if
-  that has no Discord yet, and otherwise becomes a new account. The state sent to Discord lasts ten minutes, is used
-  once, and must match a cookie set as the player left, so a sign-in begun in one browser finishes in no other. The
-  Discord app must list `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a redirect.
-  Without the app's keys, Discord sign-in says it is not set up.
-- **Slowing guesses and floods.** One address may make 10 guests and register 10 times an hour, and try 20
-  sign-ins in ten minutes; one username may be tried 10 times in ten minutes.
+- **Discord.** The page keeps a random nonce for its own tab and sends the player to `/v1/discord/start` with it,
+  and with a ticket naming its account when it holds a session. Discord sends them back through
+  `/v1/discord/callback` to the page with a one-time code in the address's fragment; nothing is signed in or linked
+  yet. The page takes the code from `POST /v1/discord/finish`, showing its nonce. A Discord account already linked
+  signs in to its account; one not linked links to the ticket's account, which only a session of that account may
+  take, and otherwise becomes a new account. The state sent to Discord is used once and must match a cookie set as
+  the player left; the code is used once and taken only with the nonce of the tab that began it; each lapses after
+  ten minutes. So no one can finish another's sign-in, hand a player their own session, or link a player's Discord
+  to their own account. A session's token never travels in an address. The Discord app must list
+  `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a redirect. Without the app's keys,
+  Discord sign-in says it is not set up.
+- **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
+  guests and register 10 times an hour, try 20 sign-ins in ten minutes, and start Discord 20 times in ten minutes;
+  one username may be tried 10 times in ten minutes from one address and 100 times from everywhere, so a stranger
+  cannot lock its owner out; one account may take 10 Discord tickets in ten minutes. A name no account could hold is
+  refused before it is kept, and a request's body is read only up to 2 KB. States, tickets and codes past their
+  time are let go.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no
-  page acts as a player without holding their token. Discord sends players back only to the pages listed in the
-  Worker's `PAGES`: the live page and the dev server's.
+  page acts as a player without holding their token. Discord sends players back only to pages under those listed in
+  the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/overlook-source/`, and
+  under `npm run accounts` the dev server's.
+- **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
+  rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
+  kept apart from any other's.
 
 ## The character, kept
 
@@ -53,7 +67,8 @@ they play in holds it while they are there.
   reach) and gives it to the player, trimming their fight by it.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
-  and let go.
+  and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the
+  hold left to lapse.
 - **Moving between rooms.** A claim waits up to three seconds for the room the player left to let go, then takes the
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room.
@@ -65,4 +80,10 @@ they play in holds it while they are there.
 
 `npm run accounts` applies the migrations to a local database and runs the accounts on port 8788, beside
 `npm run server`; the rooms' binding finds them. The game takes `?accounts=http://127.0.0.1:8788` with its
-`?room=`.
+`?room=ws://127.0.0.1:8787`.
+
+## Limits
+
+- Sessions do not lapse, and there is no signing out everywhere or changing a password yet.
+- A sign-in derives PBKDF2 at 100,000 iterations, about 50 ms of CPU: on Cloudflare's Workers Free plan, whose
+  limit is 10 ms, it would fail. Untested live.

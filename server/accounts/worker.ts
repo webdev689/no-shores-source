@@ -4,7 +4,7 @@ import { type Characters, type Claimed, characters } from './characters.ts';
 
 interface Env {
   readonly DB: D1Database;
-  /** The pages, by origin and space-separated, a Discord sign-in may come back to. */
+  /** The pages, by origin and path and space-separated, a Discord sign-in may come back to. */
   readonly PAGES: string;
   /** The Discord app's keys, as the Worker's secrets; without them, Discord sign-in says it is not set up. */
   readonly DISCORD_CLIENT_ID?: string;

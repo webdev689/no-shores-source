@@ -185,3 +185,36 @@ test('a character this room cannot read, or a player gone before the claim is an
     'no such player',
   );
 });
+
+test('a leaving player whose release the accounts do not answer has their last save made all the same', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const asked: string[] = [];
+  const flaky = {
+    ...kept,
+    release: () => {
+      asked.push('release');
+      return Promise.reject(new Error('the accounts are not answering'));
+    },
+    save: (account: string, holder: string, body: string) => {
+      asked.push('save');
+      return kept.save(account, holder, body);
+    },
+  };
+  const keeper = new Keeper(flaky, room, 'node-overlook', () => undefined);
+  assert.equal(
+    await keeper.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  room.held.set(1, '{"xp":7}');
+  await keeper.leave(1);
+  assert.deepEqual(asked, ['release', 'release', 'save']);
+  const back = await kept.claim(token, 'room-b:1');
+  assert.equal(back?.body, '{"xp":7}', 'the last save is kept');
+});

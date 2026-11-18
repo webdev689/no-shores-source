@@ -69,6 +69,9 @@ export function accountPanel(link: AccountLink): HTMLElement {
     nameRow.hidden = passwordRow.hidden = account === null;
     presses.replaceChildren(...(named ? [signIn] : [keep, signIn]), discord, ...(account ? [out] : []));
   };
-  void link.session().then(show);
+  void link.session().then((account) => {
+    show(account);
+    said.textContent = link.said ?? '';
+  });
   return panel;
 }

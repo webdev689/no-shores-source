@@ -95,7 +95,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   if (flow.mode === 'loading') hud.veil(flow.words);
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
-  const { link, session } = accountOf(location, localStorage);
+  const { link, session } = accountOf(location, localStorage, sessionStorage);
   // The sea room's own module, for playing alone; fetched now, compiled once.
   const roomModule = fetch(`${base}room.wasm`)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))

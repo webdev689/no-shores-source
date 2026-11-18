@@ -13,22 +13,34 @@ export function roomsFrom(given: string | null): ((name: string) => string) | nu
   return (name) => `${server}/room/${name}`;
 }
 
-/** Where the game's accounts are, from its page's `?room=` and `?accounts=`: a whole `http://` or `https://` address
- *  given names them (`?accounts=http://127.0.0.1:8788` under `npm run accounts`); the deployed rooms keep characters
- *  on the deployed accounts; offline, or on a room server named without accounts, none are kept. */
+/** Whether an address is this machine's own, where only its player runs servers. */
+const LOOPBACK = /^(?:https?|wss?):\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?(?:\/|$)/;
+
+/** Where the game's accounts are, from its page's `?room=` and `?accounts=`. The deployed rooms keep characters on the
+ *  deployed accounts; a room server on this machine keeps them on accounts named on this machine
+ *  (`?accounts=http://127.0.0.1:8788` under `npm run accounts`). A session goes nowhere else, so a crafted link
+ *  cannot send it to another's room or accounts: offline, or with a room server or accounts elsewhere, none are kept. */
 export function accountsFrom(rooms: string | null, given: string | null): string | null {
-  if (given !== null && /^https?:\/\//.test(given)) return given;
-  return rooms === null || /^wss?:\/\//.test(rooms) ? null : LIVE_ACCOUNTS;
+  if (rooms === null) return null;
+  const named = /^wss?:\/\//.test(rooms);
+  if (named && !LOOPBACK.test(rooms)) return null;
+  if (given !== null && LOOPBACK.test(given)) return given;
+  return named ? null : LIVE_ACCOUNTS;
 }
 
 /** The page's account, from its address: the link to the accounts its `?room=` and `?accounts=` name (null for none),
  *  and the session's token the rooms keep the player's character by, once the player is signed in or made a guest. A
- *  Discord sign-in comes back with its session in the address's fragment, which is taken and cleared at once. */
-export function accountOf(page: Location, kept: Kept): { link: AccountLink | null; session: Promise<string | null> } {
+ *  Discord sign-in comes back with a code in the address's fragment, which is taken and cleared at once; the tab's
+ *  own nonce (in `passing`) redeems it. */
+export function accountOf(
+  page: Location,
+  kept: Kept,
+  passing: Kept,
+): { link: AccountLink | null; session: Promise<string | null> } {
   const asking = new URLSearchParams(page.search);
   const where = accountsFrom(asking.get('room'), asking.get('accounts'));
   if (where === null) return { link: null, session: Promise.resolve(null) };
-  const link = new AccountLink(where, kept);
+  const link = new AccountLink(where, kept, undefined, passing);
   if (link.takeFrom(page.hash)) history.replaceState(null, '', `${page.pathname}${page.search}`);
   return { link, session: link.session().then(() => link.token) };
 }

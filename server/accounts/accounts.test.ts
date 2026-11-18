@@ -1,41 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Deps, handle } from './accounts.ts';
+import { addressKey } from './accounts.ts';
 import { HOLD_MS, characters } from './characters.ts';
-import type { DiscordApp } from './discord.ts';
+import { backTo } from './discord.ts';
 import { NO_ONES_PASSWORD, hashPassword, passwordMatches } from './secrets.ts';
-import { sqliteForTests } from './sqliteForTests.ts';
-
-const API = 'https://accounts.test';
-const PAGE = 'https://lattymoy.github.io';
-
-/** A world of accounts on a fresh database, its clock where the test sets it. */
-function accounts(discord: DiscordApp | null = null) {
-  const clock = { now: 1_000_000 };
-  const deps: Deps = { database: sqliteForTests(), now: () => clock.now, discord, pages: [PAGE] };
-  const ask = async (method: string, path: string, body?: unknown, token?: string, headers: HeadersInit = {}) => {
-    const response = await handle(
-      new Request(`${API}${path}`, {
-        method,
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'CF-Connecting-IP': '203.0.113.9',
-          ...headers,
-        },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      }),
-      deps,
-    );
-    const text = await response.text();
-    const isJson = response.headers.get('Content-Type') === 'application/json';
-    return {
-      status: response.status,
-      body: (isJson ? JSON.parse(text) : { text }) as Record<string, unknown>,
-      response,
-    };
-  };
-  return { deps, clock, ask };
-}
+import { PAGE, accounts } from './accountsForTests.ts';
 
 test('a password is kept salted and matches only itself; the password kept for no one matches nothing', async () => {
   const kept = await hashPassword('correct horse');
@@ -139,63 +108,63 @@ test('one room at a time holds a character; a claim waits for another to let go,
   assert.deepEqual(waited, []);
 });
 
-test('Discord signs in, links a guest, and keeps one Discord account to one account', async () => {
-  const discordUser = { id: '80351110224678912' };
-  const app: DiscordApp = {
-    id: 'app-id',
-    secret: 'app-secret',
-    fetch: (input) => {
-      const url = String(input instanceof Request ? input.url : input);
-      if (url.endsWith('/oauth2/token')) return Promise.resolve(Response.json({ access_token: 'granted' }));
-      if (url.endsWith('/users/@me')) return Promise.resolve(Response.json(discordUser));
-      return Promise.resolve(new Response(null, { status: 404 }));
-    },
-  };
-  const { ask } = accounts(app);
-  const goTo = async (ticket?: string) => {
-    const started = await ask('GET', `/v1/discord/start?back=${PAGE}/game/${ticket ? `&ticket=${ticket}` : ''}`);
-    assert.equal(started.status, 302);
-    const to = new URL(started.response.headers.get('Location') ?? '');
-    assert.equal(to.origin + to.pathname, 'https://discord.com/oauth2/authorize');
-    assert.equal(to.searchParams.get('redirect_uri'), `${API}/v1/discord/callback`);
-    const state = to.searchParams.get('state') ?? '';
-    const cookie = (started.response.headers.get('Set-Cookie') ?? '').split(';')[0] ?? '';
-    return { state, cookie };
-  };
-  const comeBack = async (state: string, cookie: string, code = 'a-code') => {
-    const came = await ask('GET', `/v1/discord/callback?code=${code}&state=${state}`, undefined, undefined, {
-      Cookie: cookie,
-    });
-    assert.equal(came.status, 302);
-    const back = new URL(came.response.headers.get('Location') ?? '');
-    assert.equal(back.origin + back.pathname, `${PAGE}/game/`);
-    return new URLSearchParams(back.hash.slice(1));
-  };
+test('limits are kept by address, an IPv6 address by its /64; a name no account can hold is never kept', async () => {
+  assert.equal(addressKey('203.0.113.9'), '203.0.113.9');
+  assert.equal(addressKey('2001:db8:85a3:0042:1000:8a2e:370:7334'), '2001:db8:85a3:42::/64');
+  assert.equal(addressKey('2001:DB8::1'), addressKey('2001:db8:0:0:ffff::9'), 'one network, one count');
+  const { ask } = accounts();
+  const long = 'x'.repeat(5000);
+  assert.equal(
+    (await ask('POST', '/v1/login', { username: long, password: 'long enough' })).status,
+    400,
+    'too long a body',
+  );
+  assert.equal((await ask('POST', '/v1/login', { username: 'no such name!', password: 'long enough' })).status, 401);
+});
 
-  assert.equal((await ask('GET', '/v1/discord/start?back=https://elsewhere.test/')).status, 400);
+test('guesses at one username from many addresses meet a ceiling, but one address cannot lock it alone', async () => {
+  const { ask } = accounts();
+  const token = (await ask('POST', '/v1/guest')).body['token'] as string;
+  await ask('POST', '/v1/register', { username: 'Mariner', password: 'long enough' }, token);
+  const from = (address: string) => ({ 'CF-Connecting-IP': address });
+  for (let guess = 0; guess < 10; guess++)
+    await ask(
+      'POST',
+      '/v1/login',
+      { username: 'Mariner', password: `guess ${guess}!` },
+      undefined,
+      from('198.51.100.1'),
+    );
+  const locked = await ask(
+    'POST',
+    '/v1/login',
+    { username: 'Mariner', password: 'long enough' },
+    undefined,
+    from('198.51.100.1'),
+  );
+  assert.equal(locked.status, 429, 'the guessing address is slowed');
+  const owner = await ask(
+    'POST',
+    '/v1/login',
+    { username: 'Mariner', password: 'long enough' },
+    undefined,
+    from('198.51.100.2'),
+  );
+  assert.equal(owner.status, 200, 'the owner, elsewhere, still signs in');
+});
 
-  // A guest's ticket links their Discord to them.
-  const guest = (await ask('POST', '/v1/guest')).body['token'] as string;
-  const ticket = (await ask('POST', '/v1/discord/ticket', undefined, guest)).body['ticket'] as string;
-  const linking = await goTo(ticket);
-  assert.equal((await comeBack(linking.state, linking.cookie)).get('discord'), 'linked');
-  const linked = (await ask('GET', '/v1/me', undefined, guest)).body['account'] as { discord: boolean; id: string };
-  assert.equal(linked.discord, true);
-
-  // Signing in with it from anywhere comes to that account.
-  const signing = await goTo();
-  const session = (await comeBack(signing.state, signing.cookie)).get('session') ?? '';
-  assert.equal(((await ask('GET', '/v1/me', undefined, session)).body['account'] as { id: string }).id, linked.id);
-
-  // A state is used once, and only in the browser that began it.
-  assert.equal((await ask('GET', `/v1/discord/callback?code=c&state=${signing.state}`)).status, 400);
-  const stolen = await goTo();
-  assert.equal((await comeBack(stolen.state, 'overlook_discord=someone-else')).get('discord'), 'failed');
-
-  // A new Discord account with no ticket becomes a new account.
-  discordUser.id = '41771983423143937';
-  const fresh = await goTo();
-  const newSession = (await comeBack(fresh.state, fresh.cookie)).get('session') ?? '';
-  const newAccount = (await ask('GET', '/v1/me', undefined, newSession)).body['account'] as { id: string };
-  assert.notEqual(newAccount.id, linked.id);
+test('a Discord sign-in comes back only to a page under a listed one, by origin and path', () => {
+  const pages = ['https://lattymoy.github.io/overlook-source/'];
+  assert.equal(
+    backTo('https://lattymoy.github.io/overlook-source/?room=live#x', pages),
+    'https://lattymoy.github.io/overlook-source/?room=live',
+  );
+  assert.equal(
+    backTo('https://lattymoy.github.io/overlook-source', pages),
+    'https://lattymoy.github.io/overlook-source',
+  );
+  assert.equal(backTo('https://lattymoy.github.io/daggerfall-js-source/', pages), null, "another project's page");
+  assert.equal(backTo('https://lattymoy.github.io/overlook-sourced/', pages), null);
+  assert.equal(backTo('https://evil.example/overlook-source/', pages), null);
+  assert.equal(backTo('javascript:alert(1)', pages), null);
 });

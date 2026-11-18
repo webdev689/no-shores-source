@@ -1,9 +1,11 @@
 /**
- * Signing in with Discord. A page sends the player to `/v1/discord/start`, with a ticket when it holds a session, and
- * Discord sends them back to `/v1/discord/callback`, which takes them back to the page. A Discord account already
- * linked signs in to its account; one not yet linked links to the page's account if that has none, and otherwise
- * becomes a new account. The state sent to Discord is single-use, lapses after ten minutes, and must match a cookie
- * set on the way out, so no one can finish a sign-in begun in another browser.
+ * Signing in with Discord. A page sends the player to `/v1/discord/start` with a nonce it keeps for itself, and a
+ * ticket when it holds a session; Discord sends them back to `/v1/discord/callback`, which takes them back to the page
+ * with a one-time code; the page takes what the code came to from `/v1/discord/finish`, showing its nonce. A Discord
+ * account already linked signs in to its account; one not yet linked links to the ticket's account, which only that
+ * account's own session may take, and otherwise becomes a new account. The state sent to Discord is single-use, lapses
+ * after ten minutes, and must match a cookie set on the way out; the code is single-use, lapses as soon, and is taken
+ * only with the nonce of the page that began it. So no page can be handed another's sign-in or link.
  */
 
 import type { Db } from './database.ts';
@@ -19,30 +21,55 @@ export interface DiscordApp {
 const AUTHORIZE = 'https://discord.com/oauth2/authorize';
 const TOKEN = 'https://discord.com/api/v10/oauth2/token';
 const USER = 'https://discord.com/api/v10/users/@me';
-/** How long a state or ticket lasts. */
+/** How long a state, a ticket or a code lasts. */
 const STATE_MS = 10 * 60_000;
 const COOKIE = 'overlook_discord';
+/** A nonce or a code: what `randomToken` makes. */
+export const NONCE = /^[0-9a-f]{64}$/;
 
 /** What a sign-in came to, for the page to read from its address's fragment. */
-type Came = { readonly session: string } | { readonly discord: 'linked' | 'cancelled' | 'failed' };
+type Came = { readonly discord: 'done'; readonly code: string } | { readonly discord: 'cancelled' | 'failed' };
+
+/** What a code is taken for: a session (an existing account's, or a new one's), or a link to the page's account. */
+export type Finished =
+  | { readonly kind: 'signin'; readonly account: string | null; readonly discord: string }
+  | { readonly kind: 'link'; readonly account: string; readonly discord: string };
 
 /** Where the callback lives, which the Discord app must list as a redirect. */
 const callbackOf = (request: Request): string => `${new URL(request.url).origin}/v1/discord/callback`;
 
-/** A page the player may be sent back to: one whose origin is listed. */
+/** A page the player may be sent back to: one under a listed page, by origin and path. */
 export function backTo(given: string | null, pages: readonly string[]): string | null {
   if (given === null) return null;
   try {
     const url = new URL(given);
     url.hash = '';
-    return pages.includes(url.origin) ? url.toString() : null;
+    const under = (page: string) => {
+      const listed = new URL(page);
+      const path = listed.pathname.endsWith('/') ? listed.pathname : `${listed.pathname}/`;
+      return url.origin === listed.origin && `${url.pathname}/`.startsWith(path);
+    };
+    return pages.some(under) ? url.toString() : null;
   } catch {
     return null;
   }
 }
 
+/** Lets go of every state, ticket and code past its time. */
+async function sweep(database: Db, now: number): Promise<void> {
+  await database
+    .prepare('DELETE FROM discord_states WHERE created_at <= ?1')
+    .bind(now - STATE_MS)
+    .run();
+  await database
+    .prepare('DELETE FROM discord_codes WHERE created_at <= ?1')
+    .bind(now - STATE_MS)
+    .run();
+}
+
 /** A ticket for a signed-in page to take to Discord, saying which account is asking. */
 export async function ticketFor(database: Db, account: string, now: number): Promise<string> {
+  await sweep(database, now);
   const ticket = randomToken();
   await database
     .prepare('INSERT INTO discord_states (state, account_id, back, created_at) VALUES (?1, ?2, NULL, ?3)')
@@ -51,14 +78,17 @@ export async function ticketFor(database: Db, account: string, now: number): Pro
   return ticket;
 }
 
-/** Starts a sign-in: keeps a state for the page to come back to, and sends the player to Discord. */
+/** Starts a sign-in: keeps a state with the page's nonce for the page to come back to, and sends the player to
+ *  Discord. */
 export async function start(
   request: Request,
   database: Db,
   app: DiscordApp,
   back: string,
+  nonce: string,
   now: number,
 ): Promise<Response> {
+  await sweep(database, now);
   const given = new URL(request.url).searchParams.get('ticket');
   const ticket = given
     ? await database
@@ -70,8 +100,8 @@ export async function start(
     : null;
   const state = randomToken();
   await database
-    .prepare('INSERT INTO discord_states (state, account_id, back, created_at) VALUES (?1, ?2, ?3, ?4)')
-    .bind(state, ticket?.account_id ?? null, back, now)
+    .prepare('INSERT INTO discord_states (state, account_id, back, created_at, nonce) VALUES (?1, ?2, ?3, ?4, ?5)')
+    .bind(state, ticket?.account_id ?? null, back, now, nonce)
     .run();
   const to = new URL(AUTHORIZE);
   for (const [name, value] of [
@@ -114,41 +144,44 @@ async function discordId(request: Request, app: DiscordApp, code: string): Promi
   return typeof id === 'string' && /^\d{1,24}$/.test(id) ? id : null;
 }
 
-/** Finishes a sign-in, signing in or linking, and sends the player back to their page with what it came to. */
-export async function callback(
-  request: Request,
-  database: Db,
-  app: DiscordApp,
-  now: number,
-  signIn: (account: string | null, discord: string) => Promise<string>,
-): Promise<Response> {
+/** Finishes Discord's side of a sign-in: keeps what it came to under a one-time code, and sends the player back to
+ *  their page with the code. Nothing is signed in or linked until the page takes the code. */
+export async function callback(request: Request, database: Db, app: DiscordApp, now: number): Promise<Response> {
   const asked = new URL(request.url).searchParams;
   const state = asked.get('state') ?? '';
   const kept = await database
-    .prepare('DELETE FROM discord_states WHERE state = ?1 AND back IS NOT NULL RETURNING account_id, back, created_at')
+    .prepare(
+      'DELETE FROM discord_states WHERE state = ?1 AND back IS NOT NULL RETURNING account_id, back, created_at, nonce',
+    )
     .bind(state)
-    .first<{ account_id: string | null; back: string; created_at: number }>();
+    .first<{ account_id: string | null; back: string; created_at: number; nonce: string | null }>();
   if (!kept) return new Response('This sign-in has run out. Start it again from the game.', { status: 400 });
   const cookie = (request.headers.get('Cookie') ?? '').split(/;\s*/).find((each) => each.startsWith(`${COOKIE}=`));
   const came = async (): Promise<Came> => {
-    if (cookie !== `${COOKIE}=${state}` || kept.created_at <= now - STATE_MS) return { discord: 'failed' };
-    const code = asked.get('code');
-    if (!code) return { discord: 'cancelled' };
-    const discord = await discordId(request, app, code).catch(() => null);
+    const fresh = kept.created_at > now - STATE_MS && kept.nonce !== null;
+    if (cookie !== `${COOKIE}=${state}` || !fresh) return { discord: 'failed' };
+    const given = asked.get('code');
+    if (!given) return { discord: 'cancelled' };
+    const discord = await discordId(request, app, given).catch(() => null);
     if (discord === null) return { discord: 'failed' };
     const owner = await database
       .prepare('SELECT id FROM accounts WHERE discord_id = ?1')
       .bind(discord)
       .first<{ id: string }>();
-    if (owner) return { session: await signIn(owner.id, discord) };
-    if (kept.account_id !== null) {
-      const linked = await database
-        .prepare('UPDATE accounts SET discord_id = ?1 WHERE id = ?2 AND discord_id IS NULL')
-        .bind(discord, kept.account_id)
-        .run();
-      if (linked.meta.changes === 1) return { discord: 'linked' };
-    }
-    return { session: await signIn(null, discord) };
+    const [kind, account] = owner
+      ? ['signin', owner.id]
+      : kept.account_id
+        ? ['link', kept.account_id]
+        : ['signin', null];
+    const code = randomToken();
+    await database
+      .prepare(
+        `INSERT INTO discord_codes (code, nonce, kind, account_id, discord_id, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+      )
+      .bind(code, kept.nonce, kind, account, discord, now)
+      .run();
+    return { discord: 'done', code };
   };
   const back = new URL(kept.back);
   back.hash = new URLSearchParams(Object.entries(await came())).toString();
@@ -159,4 +192,17 @@ export async function callback(
       'Set-Cookie': `${COOKIE}=; Path=/v1/discord; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
     },
   });
+}
+
+/** What a code came to, taken once by the page that began its sign-in, showing its nonce; null if it is not that
+ *  page's, has been taken, or has lapsed. */
+export async function taken(database: Db, code: string, nonce: string, now: number): Promise<Finished | null> {
+  const row = await database
+    .prepare('DELETE FROM discord_codes WHERE code = ?1 RETURNING nonce, kind, account_id, discord_id, created_at')
+    .bind(code)
+    .first<{ nonce: string; kind: string; account_id: string | null; discord_id: string; created_at: number }>();
+  if (!row || row.nonce !== nonce || row.created_at <= now - STATE_MS) return null;
+  if (row.kind === 'link' && row.account_id !== null)
+    return { kind: 'link', account: row.account_id, discord: row.discord_id };
+  return row.kind === 'signin' ? { kind: 'signin', account: row.account_id, discord: row.discord_id } : null;
 }

@@ -17,6 +17,8 @@ export interface KeptRoom {
 /** How soon a change is saved, and how often a character is saved unchanged, to keep the room's hold. */
 export const SAVE_AFTER_CHANGE_MS = 2_000;
 export const SAVE_UNCHANGED_MS = 20_000;
+/** How many times a leaving player's release is asked before their last save is made on its own. */
+const LEAVE_TRIES = 2;
 
 /** A session's token, as a browser sends it. */
 export const TOKEN = /^[0-9a-f]{64}$/;
@@ -100,11 +102,19 @@ export class Keeper {
     await Promise.all(saves);
   }
 
-  /** Lets a player's character go with a last save; call it before the room lets the player go. */
+  /** Lets a player's character go with a last save; call it before the room lets the player go. A release the
+   *  accounts did not answer is tried again, then the last save is made on its own, so a moment's outage loses none of
+   *  it: the hold then lapses by itself. */
   async leave(player: number): Promise<void> {
     const held = this.held.get(player);
-    if (!held || !this.characters) return;
+    const characters = this.characters;
+    if (!held || !characters) return;
     this.held.delete(player);
-    await this.characters.release(held.account, held.holder, this.room.character(player)).catch(() => false);
+    const body = this.room.character(player);
+    for (let tried = 0; tried < LEAVE_TRIES; tried++) {
+      const released = await characters.release(held.account, held.holder, body).catch(() => null);
+      if (released !== null) return;
+    }
+    if (body !== null) await characters.save(held.account, held.holder, body).catch(() => false);
   }
 }

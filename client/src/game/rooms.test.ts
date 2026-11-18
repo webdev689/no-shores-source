@@ -27,6 +27,11 @@ test('the deployed rooms keep characters on the deployed accounts; a local serve
   assert.equal(accountsFrom('ws://127.0.0.1:8787', null), null);
   assert.equal(accountsFrom('ws://127.0.0.1:8787', 'http://127.0.0.1:8788'), 'http://127.0.0.1:8788');
   assert.equal(accountsFrom('live', 'elsewhere'), LIVE_ACCOUNTS, 'only a whole address names other accounts');
+  // A crafted link sends the session nowhere but the deployed accounts and rooms, or this machine's own.
+  assert.equal(accountsFrom('live', 'https://evil.example'), LIVE_ACCOUNTS, 'accounts elsewhere are never named');
+  assert.equal(accountsFrom('wss://evil.example', null), null, "another's room gets no session");
+  assert.equal(accountsFrom('wss://evil.example', 'http://127.0.0.1:8788'), null);
+  assert.equal(accountsFrom('ws://localhost:8787', 'http://localhost:8788/'), 'http://localhost:8788/');
 });
 
 test('a harder voyage to a patrol is a room of its own; a social space is one for all', () => {

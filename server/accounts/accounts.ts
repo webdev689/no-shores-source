@@ -5,11 +5,11 @@
  */
 
 import type { Db } from './database.ts';
-import { type DiscordApp, backTo, callback, start, ticketFor } from './discord.ts';
+import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
-/** What the API runs on: the database, the clock, the Discord app if its keys are set, and the pages (by origin) a
- *  Discord sign-in may come back to. */
+/** What the API runs on: the database, the clock, the Discord app if its keys are set, and the pages (by origin and
+ *  path) a Discord sign-in may come back to. */
 export interface Deps {
   readonly database: Db;
   readonly now: () => number;
@@ -22,14 +22,19 @@ const USERNAME = /^[A-Za-z][A-Za-z0-9_]{2,19}$/;
 const PASSWORD_LEAST = 8;
 const PASSWORD_MOST = 200;
 const MINUTE = 60_000;
-/** How many times one address may ask each of these within its window, and one username be tried. */
+/** How many times one address may ask each of these within its window; one username be tried from one address, and
+ *  from everywhere at once; and one account take a Discord ticket. */
 const LIMITS = {
   guest: { most: 10, window: 60 * MINUTE },
   register: { most: 10, window: 60 * MINUTE },
   login: { most: 20, window: 10 * MINUTE },
   name: { most: 10, window: 10 * MINUTE },
+  nameEverywhere: { most: 100, window: 10 * MINUTE },
   discord: { most: 20, window: 10 * MINUTE },
+  ticket: { most: 10, window: 10 * MINUTE },
 } as const;
+/** The most a request's body may hold, in bytes: a username and password, or a code and nonce, are far less. */
+const BODY_MOST = 2048;
 
 const HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -104,18 +109,85 @@ async function signedIn(request: Request, database: Db): Promise<AccountRow | nu
     .first<AccountRow>();
 }
 
+/** A request's JSON body, read only up to `BODY_MOST` bytes; null if it is longer or not JSON. */
+async function bodyOf(request: Request): Promise<Record<string, unknown> | null> {
+  if (Number(request.headers.get('Content-Length') ?? 0) > BODY_MOST) return null;
+  const text = await request.text().catch(() => '');
+  if (text.length > BODY_MOST) return null;
+  try {
+    const read: unknown = JSON.parse(text);
+    return typeof read === 'object' && read !== null ? (read as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** A request's JSON body's username and password, if it has both as strings. */
 async function nameAndPassword(request: Request): Promise<{ username: string; password: string } | null> {
-  const body = (await request.json().catch(() => null)) as { username?: unknown; password?: unknown } | null;
-  const [username, password] = [body?.username, body?.password];
+  const body = await bodyOf(request);
+  const [username, password] = [body?.['username'], body?.['password']];
   return typeof username === 'string' && typeof password === 'string' ? { username, password } : null;
+}
+
+/** The address a request's limits are kept by: an IPv4 address whole, an IPv6 address by its /64, since one network
+ *  holds a whole /64. */
+export function addressKey(address: string): string {
+  if (!address.includes(':')) return address;
+  const [head = '', tail = ''] = address.split('::');
+  const front = head ? head.split(':') : [];
+  const back = tail ? tail.split(':') : [];
+  const groups = address.includes('::')
+    ? [...front, ...Array(8 - front.length - back.length).fill('0'), ...back]
+    : front;
+  return `${groups
+    .slice(0, 4)
+    .map((group) => group.toLowerCase().replace(/^0+(?=.)/, ''))
+    .join(':')}::/64`;
+}
+
+/** Takes what a Discord sign-in came to for the page that began it: a session, or a link to the page's own account,
+ *  which only that account's session may take. */
+async function finish(request: Request, deps: Deps, now: number): Promise<Response> {
+  const { database } = deps;
+  const body = await bodyOf(request);
+  const [code, nonce] = [body?.['code'], body?.['nonce']];
+  const came =
+    typeof code === 'string' && typeof nonce === 'string' && NONCE.test(code) && NONCE.test(nonce)
+      ? await taken(database, code, nonce, now)
+      : null;
+  if (!came) return refused(400, 'This sign-in has run out. Start it again from the game.');
+  if (came.kind === 'link') {
+    const account = await signedIn(request, database);
+    if (account?.id !== came.account) return refused(403, 'Discord can be linked only from the account that asked.');
+    const linked = await database
+      .prepare('UPDATE accounts SET discord_id = ?1 WHERE id = ?2 AND discord_id IS NULL')
+      .bind(came.discord, came.account)
+      .run()
+      .catch(() => ({ meta: { changes: 0 } }));
+    if (linked.meta.changes !== 1) return refused(409, 'That Discord account or this account is already linked.');
+    return json({ linked: true, account: shown({ ...account, discord_id: came.discord }) });
+  }
+  // A Discord account linked since its code was made signs in to its account, never a second one.
+  const owner = await database
+    .prepare('SELECT id, username, discord_id FROM accounts WHERE discord_id = ?1')
+    .bind(came.discord)
+    .first<AccountRow>();
+  const id = owner?.id ?? came.account ?? (await newAccount(database, now, came.discord));
+  const row =
+    owner ??
+    (await database
+      .prepare('SELECT id, username, discord_id FROM accounts WHERE id = ?1')
+      .bind(id)
+      .first<AccountRow>());
+  if (!row) return refused(400, 'This sign-in has run out. Start it again from the game.');
+  return json({ token: await newSession(database, row.id, now), account: shown(row) });
 }
 
 /** Answers one request to the API. */
 export async function handle(request: Request, deps: Deps): Promise<Response> {
   const { database } = deps;
   const now = deps.now();
-  const address = request.headers.get('CF-Connecting-IP') ?? 'nowhere';
+  const address = addressKey(request.headers.get('CF-Connecting-IP') ?? 'nowhere');
   const route = `${request.method} ${new URL(request.url).pathname}`;
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: HEADERS });
   switch (route) {
@@ -164,10 +236,14 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
     case 'POST /v1/login': {
       const given = await nameAndPassword(request);
       if (!given) return refused(400, 'Give a username and a password.');
+      if (!(await within(database, `login:${address}`, LIMITS.login, now)))
+        return refused(429, 'Too many tries. Wait a few minutes.');
+      // No account holds a name that is not a username, so it is refused before it is kept or hashed.
+      if (!USERNAME.test(given.username)) return refused(401, 'That username and password do not match.');
       const key = given.username.toLowerCase();
       const allowed =
-        (await within(database, `login:${address}`, LIMITS.login, now)) &&
-        (await within(database, `name:${key}`, LIMITS.name, now));
+        (await within(database, `name:${key}:${address}`, LIMITS.name, now)) &&
+        (await within(database, `name:${key}`, LIMITS.nameEverywhere, now));
       if (!allowed) return refused(429, 'Too many tries. Wait a few minutes.');
       const row = await database
         .prepare('SELECT id, username, discord_id, password FROM accounts WHERE username_key = ?1')
@@ -188,21 +264,26 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
     }
     case 'POST /v1/discord/ticket': {
       const account = await signedIn(request, database);
-      return account ? json({ ticket: await ticketFor(database, account.id, now) }) : refused(401, 'Not signed in.');
+      if (!account) return refused(401, 'Not signed in.');
+      if (!(await within(database, `ticket:${account.id}`, LIMITS.ticket, now))) return refused(429, 'Too many tries.');
+      return json({ ticket: await ticketFor(database, account.id, now) });
     }
     case 'GET /v1/discord/start': {
       if (!deps.discord) return refused(503, 'Discord sign-in is not set up yet.');
       if (!(await within(database, `discord:${address}`, LIMITS.discord, now))) return refused(429, 'Too many tries.');
-      const back = backTo(new URL(request.url).searchParams.get('back'), deps.pages);
+      const asked = new URL(request.url).searchParams;
+      const back = backTo(asked.get('back'), deps.pages);
       if (!back) return refused(400, 'That page cannot sign in here.');
-      return start(request, database, deps.discord, back, now);
+      const nonce = asked.get('nonce') ?? '';
+      if (!NONCE.test(nonce)) return refused(400, 'Start Discord sign-in from the game.');
+      return start(request, database, deps.discord, back, nonce, now);
     }
     case 'GET /v1/discord/callback': {
       if (!deps.discord) return refused(503, 'Discord sign-in is not set up yet.');
-      return callback(request, database, deps.discord, now, async (owner, discord) =>
-        newSession(database, owner ?? (await newAccount(database, now, discord)), now),
-      );
+      return callback(request, database, deps.discord, now);
     }
+    case 'POST /v1/discord/finish':
+      return finish(request, deps, now);
     default:
       return refused(404, 'No such page.');
   }
