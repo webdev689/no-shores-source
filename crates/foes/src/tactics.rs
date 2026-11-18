@@ -17,9 +17,9 @@ use crate::shoot::{ranged, shooting};
 use crate::steer::{Ask, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
-    BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSING, FLEE, FLEE_SHARE,
-    GUARD_RESERVE, HURT_SHARE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE,
-    SWING_SLACK, WALLED,
+    BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
+    FLEE_SHARE, GUARD_RESERVE, HURT_SHARE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM, STALE, STEP_PACE,
+    SWING_FACE, SWING_SLACK, WALLED,
 };
 use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
@@ -88,8 +88,14 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         }
         return way_to(here, sight.spot).map_or_else(Ask::default, |way| Ask::walking(way, 1.0, true));
     }
-    if sight.distance > here.range() {
-        board.forget(me);
+    // A shooter closing walks on well inside its range, so a target walking off along its edge never stops and
+    // starts it every tick.
+    let back_in = if brain.bow.closing { CLOSE_IN } else { 0.0 };
+    brain.bow.closing = here.numbers.shooter && sight.distance > here.range() - back_in;
+    if sight.distance > here.range() - back_in {
+        if sight.distance > here.range() {
+            board.forget(me);
+        }
         return way_to(here, sight.spot).map_or_else(|| Ask::facing(sight.toward), |way| Ask::walking(way, 1.0, true));
     }
     if let Some(ask) = defend(brain, here) {

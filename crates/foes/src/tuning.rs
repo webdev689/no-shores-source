@@ -90,6 +90,9 @@ pub const KITE_CAUGHT: f64 = 2.5;
 pub const KITE_COOLDOWN: f64 = 8.0;
 pub const KITE_CORNERED: f64 = 3.0;
 pub const RANGED_LEASE: f64 = 5.0;
+/// A shooter that walks in on a target seen past its range walks on until it stands this far inside it: about a walk
+/// through its longest draw, so it looses before a target walking off is out again.
+pub const CLOSE_IN: f64 = 6.0;
 
 /// A shooter's post, from the firing spots within POST_SEEK of it that have cover to fall back behind. It likes its
 /// target at its weapon's band of distances (near and far, times its standoff) and pays: NEAR_WEIGHT a metre walked,

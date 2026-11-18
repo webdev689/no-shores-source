@@ -26,7 +26,8 @@ use core::f64::consts::PI;
 /// What a shooter keeps: whether it is kiting and until when, when it may kite again, until when it fights close,
 /// when it may shoot again, whether it asked to walk last tick and from where (a kite that goes nowhere is
 /// cornered), and the tick it last raised its weapon from rest, which its draw is counted from. And its post, whether
-/// it looks out from it or hides, and until when, and when it may seek a post again after finding none.
+/// it looks out from it or hides, and until when, and when it may seek a post again after finding none. And whether
+/// it is closing on a target it saw past its range.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Bow {
     pub kiting: bool,
@@ -41,6 +42,7 @@ pub struct Bow {
     pub peeking: bool,
     pub turn_at: u64,
     pub seek_at: u64,
+    pub closing: bool,
 }
 
 /// The ticks a shooter draws its weapon before it looses.
