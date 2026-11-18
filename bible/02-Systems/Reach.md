@@ -45,8 +45,8 @@ In play with others, the node's room alone ([[Server]]). After each of its ticks
 its inputs left it, once a tick, whether or not that player sent any. A dead body is still: the room takes its inputs without moving it.
 An input asking to respawn is granted only once the standing offers it, and stands the body on the ground at the
 nearest spawn. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
-the browser shows what the room says; it does not judge. Offline, with no room, the [[Game]] judges its player by
-these same rules, run in the browser through the movement door.
+the browser shows what the room says; it does not judge. Playing alone, the [[Game]] runs the node's room in the
+page, so the same room judges.
 
 ## Limits
 

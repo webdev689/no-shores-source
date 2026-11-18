@@ -34,6 +34,9 @@ export interface RoomDoor {
   openSea(layoutText: string, seed: number): boolean;
   /** Opens a fleet room on the open sea. */
   openFleet(): boolean;
+  /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
+   *  Only a page playing alone tells it; a server never does. */
+  takeFoeAsks(): void;
   /** A new player's number, or 0 when the room is full. */
   join(): number;
   /** The welcome's bytes for a player. */
@@ -64,6 +67,7 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
+  room_take_foe_asks(): void;
   room_join(): number;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -113,6 +117,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openSea: (layoutText, seed) =>
       openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,
+    takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),

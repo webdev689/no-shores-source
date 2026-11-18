@@ -1,8 +1,10 @@
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Look } from '../network/messages.ts';
+import type { Action, FighterView } from '../rules/fighters.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
+import { FIGHT_TICKS, fightOf } from './fightMoves.ts';
 import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
@@ -15,6 +17,28 @@ export const HIDE_FIGURE_M = 0.6;
 export const GALLOP = 10;
 /** The weapon's button, untouched: what the first person's weapon gets while it may not swing. */
 export const STILL = { attackHeld: false, attackPressed: false, attackReleased: false };
+/** The weapons that shoot: their button draws or fires, as the fight's rules take a shot. */
+export const SHOOTERS = /^(bow|crossbow|pistolet|thunderlock)(_|$)/;
+/** The first person's guard, a weapon's own stroke frame held upright across the middle of the view, and a parry's
+ *  deflect, the next stroke's middle frames played through. */
+const GUARD_POSE = { record: 3, frame: 2 } as const;
+const PARRY_RECORD = 4;
+const guardPose = (action: Action) => {
+  if (action.kind === 'guard') return GUARD_POSE;
+  if (action.kind !== 'parry') return null;
+  return { record: PARRY_RECORD, frame: 1 + Math.min(2, Math.floor((action.elapsed / FIGHT_TICKS.parry) * 3)) };
+};
+/** What the fight holds the player to, when their weapon neither swings nor shoots. */
+const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
+
+/** What a fight holds the player to this frame, for the walker to show: their fighter as the page predicts it, whether
+ *  the rules began a swing or lowered an aimed weapon unfired since the last frame, and whether a ranged weapon aims. */
+export interface FightShown {
+  readonly own: FighterView | null;
+  readonly begun: boolean;
+  readonly dropped: boolean;
+  readonly aiming: boolean;
+}
 
 /** The strokes struck so far after this frame's swing: a swing begins where there was none, or where the last one
  *  ended and the next began within the frame (its progress went back). */
@@ -48,6 +72,8 @@ export class Walker {
   private swingWas: number | null = null;
   private dress: Dress;
   private shown: Shown = { anim: 'idle', frame: null, frameSeconds: 0.25 };
+  /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
+  private drawnBefore = false;
 
   constructor(player: Player, you: Placed, firstPerson: FirstPerson, forge: Cards) {
     this.player = player;
@@ -58,40 +84,71 @@ export class Walker {
     this.lookDress = JSON.stringify(you.dress);
   }
 
+  /** Where the first person's weapon fires from on the design screen while the view is the player's own eyes, or
+   *  null. */
+  get muzzle(): readonly [number, number] | null {
+    return this.inFirstPerson ? this.firstPerson.muzzle : null;
+  }
+
   /** Whether the camera is in the head, so the hands are drawn and the figure is not. */
   get inFirstPerson(): boolean {
     return this.player.view.shown <= HIDE_FIGURE_M;
   }
 
+  /** The dress the figure shows this frame: the weapon worn while the hands hold a wall or a ledge. */
+  get shownDress(): Dress {
+    return this.dress;
+  }
+
   /** One frame of play: the body stepped by `rules` while the pointer is held, the first person's weapon swung, and
    *  the move the figure shows chosen. `clock` is the page's seconds, which loops a move's frames. */
   frame(controls: InputFrame, rules: MovementRules, seconds: number, clock: number): void {
-    const { you, forge, firstPerson } = this;
+    this.step(controls, rules, seconds);
+    this.show(controls, seconds, clock);
+  }
+
+  /** Steps the body by `rules` while the pointer is held, under DFO's controls: facing the bearing `toward` while a
+   *  soft lock holds a foe, and held to an aim's pace while `aiming`. */
+  step(
+    controls: InputFrame,
+    rules: MovementRules,
+    seconds: number,
+    toward: number | null = null,
+    aiming = false,
+  ): void {
+    const { you, firstPerson } = this;
     const wasDrawn = you.dress.outfit.drawn;
-    if (controls.locked) {
-      const swinging = firstPerson.swing !== null;
-      this.player = updatePlayer({ ...this.player, drawn: wasDrawn }, controls, rules, seconds, swinging);
-      if (this.player.drawn !== wasDrawn)
-        you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: this.player.drawn } };
-    }
-    const { player } = this;
+    this.drawnBefore = wasDrawn;
+    if (!controls.locked) return;
+    const swinging = firstPerson.swing !== null;
+    this.player = updatePlayer({ ...this.player, drawn: wasDrawn }, controls, rules, seconds, swinging, toward, aiming);
+    if (this.player.drawn !== wasDrawn)
+      you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: this.player.drawn } };
+  }
+
+  /** Shows the frame stepped: the first person's weapon, and the move the figure shows. In a fight (`fight`), both
+   *  follow the fight's rules: a swing as the rules begin one, a shot while they let one go, the guard and the parry
+   *  posed, and the figure held to what the fight holds it to, facing where its arms point. */
+  show(controls: InputFrame, seconds: number, clock: number, fight: FightShown | null = null): void {
+    const { you, forge, firstPerson, player } = this;
     const body = shownBody(player);
-    Object.assign(you, { x: body.x, y: body.y, z: body.z, facing: player.facing });
+    const own = fight?.own ?? null;
+    const fighting = own !== null && own.action.kind !== 'idle' && own.action.kind !== 'dead';
+    Object.assign(you, { x: body.x, y: body.y, z: body.z, facing: fighting ? own.aim : player.facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const dress = shownDress(you.dress, holding);
     const { outfit } = dress;
     const speed = Math.hypot(body.vx, body.vy);
     if (body.moving && body.mode === 'ground') this.stride += speed * seconds;
     // The weapon swings only once it is out, on foot, with the hands free; the click that readies it does not swing.
-    const swings = controls.locked && wasDrawn && outfit.drawn && holding && !player.mounted;
-    const button = swings
-      ? {
-          attackHeld: controls.held('swing'),
-          attackPressed: controls.pressed('swing'),
-          attackReleased: controls.released('swing'),
-        }
-      : STILL;
-    firstPerson.update(seconds, button, {
+    const swings = controls.locked && this.drawnBefore && outfit.drawn && holding && !player.mounted;
+    const shooter = SHOOTERS.test(outfit.right ?? '');
+    // A swing the rules end early (a dodge, a flinch, a guard) ends in the first person too, as does a bow's draw let
+    // go too soon to shoot.
+    if (fight && ((own && !shooter && own.action.kind !== 'attack') || (shooter && fight.dropped)))
+      firstPerson.cancel();
+    const free = swings && !(own && HELD.has(own.action.kind));
+    firstPerson.update(seconds, this.button(controls, free, shooter, fight), {
       right: outfit.right,
       left: outfit.left,
       armour: { gauntlets: outfit.armour.gauntlets, boots: outfit.armour.boots },
@@ -103,10 +160,13 @@ export class Walker {
       climbing: holding ? 0 : 1,
       mounted: player.mounted,
       yaw: player.yaw,
+      blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
+      pose: own ? guardPose(own.action) : null,
     });
     const swing = firstPerson.swing;
     this.strokes = strokesAfter(this.strokes, this.swingWas, swing?.progress ?? null);
     this.swingWas = swing?.progress ?? null;
+    const held = own ? fightOf(own) : null;
     this.shown = shownMove(
       {
         mode: body.mode,
@@ -126,34 +186,57 @@ export class Walker {
           // A pair's blows are its two hands' strokes; one weapon's alternate.
           second: swing.paired ? swing.hand === 'left' : this.strokes % 2 === 0,
           progress: swing.progress,
+          lands: swing.lands,
         },
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
+        // A bow's draw plays with the first person's, and a shot's frames over a gun's aim pose.
+        fight: held?.kind === 'draw' && (outfit.right?.startsWith('bow') || swing) ? null : held,
       },
       (anim) => forge.frames(dress.body, anim),
-      (anim, held) => forge.draws(dress.body, anim, held),
+      (anim, drawn) => forge.draws(dress.body, anim, drawn),
     );
     const hands = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
     forge.warm(
       dress,
-      likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, held) => forge.draws(dress.body, anim, held)),
+      likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, drawn) => forge.draws(dress.body, anim, drawn)),
     );
     forge.pump();
     const frames = forge.frames(dress.body, this.shown.anim);
     const index = this.shown.frame ?? Math.floor(clock / Math.max(this.shown.frameSeconds, 0.01)) % frames;
-    this.look = { anim: this.shown.anim, frame: index, facing: player.facing };
+    this.look = { anim: this.shown.anim, frame: index, facing: you.facing };
     this.dress = dress;
     this.lookDress = JSON.stringify(dress);
   }
 
+  /** The first person's weapon button: the swing's own while it may swing; in a fight, a swing as the rules begin one,
+   *  or a ranged weapon's trigger and aim (aiming, the rules fire only on a fresh pull, so a trigger held through a
+   *  reload fires nothing). */
+  private button(controls: InputFrame, swings: boolean, shooter: boolean, fight: FightShown | null) {
+    if (!swings) return STILL;
+    if (!fight)
+      return {
+        attackHeld: controls.held('swing'),
+        attackPressed: controls.pressed('swing'),
+        attackReleased: controls.released('swing'),
+      };
+    if (!shooter) return { attackHeld: false, attackPressed: fight.begun, attackReleased: false };
+    return {
+      attackHeld: !fight.aiming && controls.held('guard'),
+      attackPressed: controls.pressed('guard'),
+      attackReleased: controls.released('guard'),
+      aimHeld: fight.aiming,
+    };
+  }
+
   /** The player's own figure as an eye at (eyeX, eyeY) sees it, or null in first person or before its first frame is
    *  composed. Its card stands a body's radius toward the eye. */
-  figure(eyeX: number, eyeY: number): CardAt | null {
+  figure(eyeX: number, eyeY: number, flash?: CardAt['flash']): CardAt | null {
     if (this.inFirstPerson) return null;
     const { you, player } = this;
     const body = shownBody(player);
-    const { view, flip } = viewOf(player.facing, body.x, body.y, eyeX, eyeY);
+    const { view, flip } = viewOf(you.facing, body.x, body.y, eyeX, eyeY);
     const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip);
-    return card && { card, ...cardStand(body.x, body.y, eyeX, eyeY), z: body.z, flip };
+    return card && { card, ...cardStand(body.x, body.y, eyeX, eyeY), z: body.z, flip, ...(flash ? { flash } : {}) };
   }
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FlyingShot } from '../network/messages.ts';
-import { MARK_FLOATS } from '../combat/marks.ts';
+import { MARK_FLOATS } from './marks.ts';
 import { Tracers, before, figureMuzzle, ribbon } from './tracers.ts';
 
 const TICK = 1 / 60;

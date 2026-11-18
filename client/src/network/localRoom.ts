@@ -31,6 +31,20 @@ export class LocalRoom implements RoomLink {
     return new LocalRoom(door, snapshot);
   }
 
+  /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
+   *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
+  static openNode(
+    module: WebAssembly.Module,
+    nodeText: string,
+    snapshot: (snapshot: Snapshot) => void,
+    foeAsks = false,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
+    if (foeAsks) door.takeFoeAsks();
+    return new LocalRoom(door, snapshot);
+  }
+
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
    *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default. */
   static openSea(

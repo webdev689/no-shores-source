@@ -1,4 +1,4 @@
-import type { FoeAsk, Look, FightEvent, FlyingShot, SeenFoe, SeenPlayer } from '../network/messages.ts';
+import type { FoeAsk, Look, FightEvent, FlyingShot, SeenFoe, SeenPlayer, Standing } from '../network/messages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
@@ -107,6 +107,10 @@ export class Fighting {
   private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
   private readonly spawnsQueued: FoeAsk[] = [];
   private sentDress = '';
+  private respawnAsked = false;
+  /** Where the player stands with a node's section, as the room last said: dead past its edge, the room takes their
+   *  inputs without moving them. */
+  standing: Standing = { kind: 'inside' };
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
    *  Daggerfall Unity's click chooses among all six, and again once used. */
   stroke: number;
@@ -160,6 +164,12 @@ export class Fighting {
    *  input, in the order asked. */
   ask(foe: FoeAsk): void {
     this.spawnsQueued.push(foe);
+  }
+
+  /** Asks the room, with the next tick's input, to stand the player again at the spawn nearest where they fell past
+   *  the section's edge. */
+  askRespawn(): void {
+    this.respawnAsked = true;
   }
 
   /** The movement rules as the page's tick loop steps them, but each tick's body the fighter's: its intent sent to the
@@ -225,8 +235,11 @@ export class Fighting {
     const arms = this.arms;
     const asked: Asked = { intent, view, arms, fired: null };
     const sequence = this.prediction.next(asked);
-    const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnsQueued.shift() };
+    const spawn = this.spawnsQueued.shift();
+    const parts = { intent, look: this.look, arms, seen: this.seen, spawn, respawn: this.respawnAsked };
+    this.respawnAsked = false;
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
+    if (this.standing.kind === 'dead') return bodyOf(Array.from(this.fighter.subarray(0, 22)));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
@@ -252,14 +265,21 @@ export class Fighting {
       // Only a fighter fights: a player with none (a walker on a ship's deck) is no one's to strike here.
       if (!seen.fighter) continue;
       if (seen.player === this.player) {
-        this.fighter = this.prediction.corrected(seen.fighter, seen.acknowledged, (fighter, asked) => {
-          const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
-          // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
-          // has been drawn already.
-          if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
-          asked.fired = replayed.fired ?? asked.fired;
-          return replayed.fighter;
-        });
+        this.standing = seen.standing;
+        const still = seen.standing.kind === 'dead';
+        this.fighter = this.prediction.corrected(
+          seen.fighter,
+          seen.acknowledged,
+          (fighter, asked) => {
+            const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
+            // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
+            // has been drawn already.
+            if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
+            asked.fired = replayed.fired ?? asked.fired;
+            return replayed.fighter;
+          },
+          still,
+        );
         continue;
       }
       this.others.set(seen.player, seen);

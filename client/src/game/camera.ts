@@ -81,6 +81,17 @@ export function fromEyeMatrix(shot: Shot, aspect: number): Float32Array {
   return matrix;
 }
 
+/** A camera's matrix from the eye (column-major), taking points `offset` metres off from the eye: a point p maps as
+ *  p + offset would. Worked in double precision, so a world far from its origin keeps its centimetres. */
+export function shifted(fromEye: Float32Array, offset: readonly [number, number, number]): Float32Array {
+  const out = Float32Array.from(fromEye);
+  for (let row = 0; row < 4; row += 1) {
+    const term = (column: number) => fromEye[column * 4 + row] ?? 0;
+    out[12 + row] = term(0) * offset[0] + term(1) * offset[1] + term(2) * offset[2] + term(3);
+  }
+  return out;
+}
+
 /** Where a world point lands on the screen in pixels (x right, y down), or null behind the eye. */
 export function onScreen(
   shot: Shot,

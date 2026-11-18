@@ -15,7 +15,8 @@ code:
   - client/src/rules/roster.ts#rankBand
   - client/src/combat/foeBars.ts#FoeBars
   - client/src/combat/foeBars.ts#bossInFight
-  - client/src/testground/foeDress.ts#foeDress
+  - client/src/player/foeDress.ts#foeDress
+  - client/src/combat/foeFigures.ts#FoeFigures
   - client/src/testground/panel.ts#startPanel
 ---
 # Enemies
@@ -90,9 +91,11 @@ Captain Brannoc Thule as the Boss: 1,120 health, 210 poise.
 
 ## In a room
 
-A player asks the room for a foe by type and rank (a rank the type does not come in takes its first); the room stands
-it 5 m before them. The room sends each foe's type, rank, faction, phase and alert state ([[Server]]). The rules hand
-the browser the roster through WebAssembly, so names, factions and weapons are read in one place.
+A player asks the room for a foe by type and rank (a rank the type does not come in takes its first); the room stands it
+5 m before them. A node's room takes no such ask, but one a page playing alone runs is told to take them, for trying a
+fight on the node's land ([[Game]], `?spawn=`). The room sends each foe's type, rank, faction, phase and alert state
+([[Server]]). The rules hand the browser the roster through WebAssembly, so names, factions and weapons are read in one
+place.
 
 ## On screen
 
@@ -106,6 +109,7 @@ the browser the roster through WebAssembly, so names, factions and weapons are r
   a grey sash; the Reeve in iron with a grey surcoat and cloak; Thule in full steel plate, a grey surcoat and a long
   grey cloak); the pirates as the Test Ground's foes were dressed.
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
+- **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 
 ## Limits
 

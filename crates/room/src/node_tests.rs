@@ -195,6 +195,35 @@ fn a_node_s_room_stands_no_foe_a_player_asks_for_where_a_course_s_room_does() {
 }
 
 #[test]
+fn a_node_s_room_told_to_take_asks_stands_each_foe_on_its_land_and_it_stays_there() {
+    let floor = land();
+    let mut room = Room::node(floor.clone(), Vec::new(), section());
+    room.take_foe_asks();
+    let mut asker = Driver::join(&mut room);
+    // Off the terrace, so the foe stands 5 m ahead on the land 10 m up.
+    for _ in 0..240 {
+        asker.play(&mut room, Controls { yaw: PI, ..RUN_NORTH }, false);
+    }
+    asker.sequence += 1;
+    let spawn = Some(SpawnAsk::Foe { foe_type: 2, rank: 1 });
+    let input = Input {
+        sequence: asker.sequence,
+        intent: combat::Intent { controls: STILL, ..combat::Intent::default() },
+        spawn,
+        ..Input::default()
+    };
+    room.input(asker.player, input).unwrap();
+    room.tick();
+    let foe = room.foes_seen().next().expect("the foe asked for").fighter.body;
+    assert_eq!(foe.z.to_bits(), floor.height_at(foe.x, foe.y).to_bits(), "stood on the land at {foe:?}");
+    for _ in 0..60 {
+        asker.play(&mut room, STILL, false);
+    }
+    let foe = room.foes_seen().next().expect("the foe still there").fighter.body;
+    assert!((foe.z - floor.height_at(foe.x, foe.y)).abs() < 1e-9, "still on the land at {foe:?}");
+}
+
+#[test]
 fn a_node_s_room_bakes_its_paths_and_firing_spots_on_its_land() {
     use ::foes::Spots;
     let floor = land();

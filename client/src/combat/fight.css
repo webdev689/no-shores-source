@@ -1,0 +1,275 @@
+/* The fight's display (client/src/combat/hud.ts), on every page that fights: a layer over the view. */
+.fight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  font-weight: 600;
+  text-shadow: 0 1px 2px #000;
+}
+.fight .own {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  width: 240px;
+  display: grid;
+  gap: 4px;
+}
+.fight .bar {
+  height: 8px;
+  background: #0008;
+  border: 1px solid #000a;
+}
+.fight .bar .fill {
+  height: 100%;
+  width: 100%;
+}
+.fight .health .fill {
+  background: #b8322d;
+}
+.fight .stamina .fill {
+  background: #3fa35b;
+}
+.fight .poise .fill {
+  background: #d9a93a;
+}
+.fight .own .poise {
+  height: 4px;
+}
+.fight .stamina.flash {
+  border-color: #fff;
+  box-shadow: 0 0 8px #fff;
+  animation: blink 0.15s steps(2) infinite;
+}
+@keyframes blink {
+  50% {
+    background: #fff4;
+  }
+}
+.fight .hurt {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  box-shadow: inset 0 0 90px 24px #c41a12;
+}
+.fight .target {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 320px;
+  margin-left: -160px;
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+.fight .target .poise {
+  height: 4px;
+}
+.fight .mark {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #f4e3b0;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #f4e3b0;
+}
+.fight .over > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.fight .crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background:
+    linear-gradient(#f2f2f2, #f2f2f2) center / 2px 2px no-repeat,
+    linear-gradient(#f2f2f2c0, #f2f2f2c0) center / 1px 22px no-repeat,
+    linear-gradient(#f2f2f2c0, #f2f2f2c0) center / 22px 1px no-repeat;
+  filter: drop-shadow(0 0 1px #000);
+}
+.fight .crosshair .charge {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(#ffd95a var(--charge), #ffffff38 var(--charge));
+  mask: radial-gradient(circle, transparent 12px, #000 13px, #000 15px, transparent 16px);
+}
+.fight .crosshair:not(.charging) .charge {
+  display: none;
+}
+.fight .crosshair.full {
+  filter: drop-shadow(0 0 4px #ffd95a);
+}
+.fight .parry::before,
+.fight .parry::after {
+  content: '';
+  position: absolute;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 2px solid #f2f2f2;
+  box-shadow: 0 0 3px #000c;
+}
+.fight .parry::before {
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+}
+.fight .parry::after {
+  width: var(--span);
+  height: var(--span);
+  box-sizing: border-box;
+}
+.fight .parry.now::before,
+.fight .parry.now::after {
+  border-color: #ffd95a;
+  box-shadow: 0 0 8px #ffd95a;
+}
+.fight .parry.iron::before {
+  background: #e0281c;
+  border-color: #fff;
+}
+.fight .parry.iron::after {
+  display: none;
+}
+.fight .foe-bar {
+  translate: -50% -100%;
+  margin-top: -30px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.fight .foe-bar .bar {
+  width: 64px;
+  height: 5px;
+  margin: 2px auto 0;
+}
+.fight .red .fill {
+  background: #d8382c;
+}
+.fight .orange .fill {
+  background: #f08a24;
+}
+.fight .yellow .fill,
+.fight .boss .fill {
+  background: #f5cf3c;
+}
+.fight .alert {
+  color: #ffd95a;
+  margin-right: 4px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.fight .alert:empty {
+  display: none;
+}
+.fight .alert.now {
+  color: #ff5a4a;
+}
+.fight .boss {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: min(560px, 70%);
+  translate: -50% 0;
+  text-align: center;
+}
+.fight .boss .title {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: baseline;
+  margin-bottom: 3px;
+}
+.fight .boss .name {
+  font-size: 16px;
+  color: #f5cf3c;
+}
+.fight .boss .faction,
+.fight .boss .phase {
+  color: #c9d1da;
+}
+.fight .boss .bar {
+  position: relative;
+  height: 10px;
+}
+.fight .boss .bar i {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  background: #000d;
+}
+.fight.bossed .target {
+  top: 66px;
+}
+.fight .word {
+  white-space: nowrap;
+  translate: -50% 0;
+  font-size: 15px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: #000b;
+  text-shadow: none;
+}
+.fight .word.dealt {
+  color: #f2f2f2;
+}
+.fight .word.taken {
+  color: #ff7468;
+}
+.fight .word.great {
+  color: #ffd95a;
+  font-size: 18px;
+}
+.fight .word.good {
+  color: #ffd95a;
+}
+.fight .word.warn {
+  color: #fff;
+  font-size: 18px;
+  background: #a0140ccc;
+  border: 2px solid #fff;
+}
+.fight .word.plain {
+  color: #bfc8d2;
+}
+.fight .arrow {
+  width: 0;
+  height: 0;
+  margin: -12px 0 0 -10px;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 22px solid #ff5a4a;
+  transform-origin: 10px 12px;
+  filter: drop-shadow(0 0 2px #000) drop-shadow(0 0 2px #000);
+}
+.fight .veil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #300a;
+  font-size: 22px;
+}
+.fight [hidden] {
+  display: none;
+}
+
+/* The game's sheet styles its own marks and veil by these names, its marks' border with !important: inside the fight's
+   layer the fight's own hold. */
+.fight .mark {
+  border: 2px solid #f4e3b0 !important;
+}
+.fight .veil {
+  opacity: 1;
+  transition: none;
+  pointer-events: none;
+}

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Overlook</title>
+    <link rel="stylesheet" href="/src/combat/fight.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -131,6 +132,10 @@
       }
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
+      }
+      /* On foot the hints stand over the fight's bars. */
+      #hud:has(> .fight:not([hidden])) .hints {
+        bottom: 64px;
       }
       .status {
         position: absolute;
