@@ -51,7 +51,7 @@ const CELL_PX = 48;
 /** The figure's box: what the screen's body leaves it beside the level, the meter and the power, within these. */
 const FIGURE_LEAST = 240;
 const FIGURE_MOST = 720;
-const FIGURE_AROUND = 230;
+const FIGURE_AROUND = 264;
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 /** What a worn slot's presses do, and a carried piece's. */

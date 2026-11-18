@@ -13,7 +13,7 @@ code:
   - server/accounts/migrations/20261118181357_name_skeletons.sql
   - server/accounts/friends.ts#friendAsk
   - server/accounts/friends.ts#friendsOf
-  - server/accounts/migrations/20261118200000_roster.sql
+  - server/accounts/migrations/20261118151123_roster.sql
   - server/accounts/roster.ts#rosterOf
   - server/accounts/companies.ts#companyAsk
   - server/accounts/guilds.ts#guildAsk

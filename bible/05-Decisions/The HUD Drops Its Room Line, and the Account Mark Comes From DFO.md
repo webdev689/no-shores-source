@@ -39,7 +39,7 @@ of its own for each material, and Destiny 1's three-by-three gear shelf.
 - **Strangers see whether a player is playing or away.**
 - **A block leaves a shared company or guild as it is.**
 - **Anyone may check whether a username exists.**
-- **Names, guild names and mottos follow guidelines and a system**, built with the accounts.
+- **Names, guild names and mottos follow guidelines and a system**: [[Names Follow Guidelines, Checked by the Accounts]].
 - **Rare and Legendary keep their colours.**
 - **The HUD drops its "In the room" line**; the Social tab's Game column shows the players in the room.
 - **Joining and the text sizes are Claude's to decide**, joining as other games do it.
@@ -55,4 +55,5 @@ of its own for each material, and Destiny 1's three-by-three gear shelf.
 | The scale past 1440p | The menu, its cards and the HUD's words at twice their size from 2400 by 1300 | The 1280 by 720 layout doubled keeps every size on the face's grid |
 | The account mark | DFO's profile mark: a round well rimmed in brass, the player's face or a hooded silhouette, a gem filled for an account kept anywhere; pressed, it opens Settings | DFO's own mark, in the menu's top line beside the tabs or a station's name |
 
-Links: [[Interface]], [[Accounts]], [[The Roster and Emblems as Claude Shapes Them]], [[The Audit's Calls Are Claude's]].
+Links: [[Interface]], [[Accounts]], [[Names Follow Guidelines, Checked by the Accounts]],
+[[The Roster and Emblems as Claude Shapes Them]], [[The Audit's Calls Are Claude's]].

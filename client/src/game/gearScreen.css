@@ -1370,10 +1370,21 @@ img.gear-glyph {
   .gear-hint-pair {
     font-size: var(--type-l);
   }
-  .gear-hint-pair kbd.gear-key,
-  .gear-actions kbd.gear-key {
+  .gear-hint-pair kbd.gear-key {
     font-size: var(--type-l);
     line-height: 28px;
+  }
+  /* At the names' size the level's words keep to a line, and the stats' labels drop their wide capitals so all four
+     stand in one row. */
+  .gear-character .gear-power {
+    width: min(100%, 480px);
+  }
+  .gear-character .gear-stat-label {
+    letter-spacing: 1px;
+    text-transform: none;
+  }
+  .gear-character .gear-stat-value {
+    font-size: var(--type-xl);
   }
 }
 /* On a screen past 1440p the menu and its cards stand at twice their size: its layout is 1280x720's, doubled, so every
