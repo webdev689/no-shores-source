@@ -164,7 +164,10 @@ export class FootView {
     });
     this.marks.set(shown.marks);
     const matrix = shifted(fromEye, [-eyeX, -eyeY, -eyeZ]);
-    this.hud.update({ ...fight, matrix, width: viewport.width, height: viewport.height, lost: null }, seconds);
+    this.hud.update(
+      { ...fight, matrix, width: viewport.width, height: viewport.height, lost: null, rejoining: foot.rejoining },
+      seconds,
+    );
     const drawn = blood.drawn;
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },

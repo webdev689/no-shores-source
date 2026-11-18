@@ -199,6 +199,11 @@ export class Foot {
     return new Foot(context, node, boxes, { link, fight, ...rules }, players);
   }
 
+  /** Whether the room's socket closed and the page is joining it again. */
+  get rejoining(): boolean {
+    return this.link.rejoining;
+  }
+
   /** A line on the room the player plays in: their number in it or word that it was lost; nothing alone. */
   get roomNote(): string {
     if (!(this.link instanceof RoomConnection)) return '';

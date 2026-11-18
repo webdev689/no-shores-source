@@ -1,8 +1,7 @@
 /**
- * Where the player is in the game's loop, after Destiny 1's: on foot in a node, back at their ship on the sea, or
- * over an island's side choosing where to land. Travel between them passes through a loading veil, as Destiny's
- * orbit does. On foot and at sea a menu may be open over the play. Pure: the page feeds it what happened and draws
- * what it answers.
+ * Where the player is in the game's loop: on foot in a node, back at their ship on the sea, or over an island's side
+ * choosing where to land. Travel between them passes through a loading veil. On foot and at sea a menu may be open
+ * over the play. Pure: the page feeds it what happened and draws what it answers.
  */
 export type Flow =
   | { readonly mode: 'loading'; readonly words: string; readonly then: Flow }
