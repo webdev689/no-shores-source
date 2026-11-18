@@ -192,13 +192,9 @@ export class Foot {
       connection ?? LocalRoom.openNode(module, nodeText(node, rect, ground, boxes), received, asked.length > 0);
     fight = new Fighting(combat, link);
     for (const foe of asked) fight.ask(foe);
+    // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
+    // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
     players.takeDresses(link.dressed);
-    if (node.spawns.length > 1) {
-      // The room stands each player who joins at the next of the node's spawns in turn; the player starts there too.
-      const [spawnX, spawnY] = node.spawns[(link.player - 1) % node.spawns.length] ?? [x, y];
-      const standing = movement.standing(spawnX, spawnY);
-      walker.player = { ...walker.player, body: standing, previous: standing };
-    }
     return new Foot(context, node, boxes, { link, fight, ...rules }, players);
   }
 
