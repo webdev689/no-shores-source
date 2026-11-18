@@ -4,6 +4,7 @@ import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CLIPMAP_LEVELS, CLIPMAP_QUADS, type ClipLevel } from './clipmap.ts';
+import { GROUND_COLOUR_WGSL, TILE_LAYERS, TILE_M, TILE_TURN, WIDE_TILE_M } from './groundColour.ts';
 /** A rectangle of whole cells, right and bottom exclusive. */
 export interface CellRect {
   readonly left: number;
@@ -73,7 +74,7 @@ export interface TerrainFrame {
   readonly pixelAngle: number;
 }
 
-const UNIFORM_FLOATS = 52 + CLIPMAP_LEVELS * 8;
+const UNIFORM_FLOATS = 56 + CLIPMAP_LEVELS * 8;
 /** The low ground and snow line drawn for a landmass with no biome. */
 const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
 const DEFAULT_SNOW_M = 2300;
@@ -90,6 +91,7 @@ const DEFAULT_SNOW_M = 2300;
 const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
+${GROUND_COLOUR_WGSL}
 
 struct View {
   from_eye: mat4x4f,
@@ -105,6 +107,8 @@ struct View {
   // the woods gather in the groves.
   woods: vec4f,
   world: vec4f,
+  // Where the noise's anchor falls in the tiles, as fractions of a tile: the plain reading, then the wide turned one.
+  tiles: vec4f,
   rings: array<vec4f, ${CLIPMAP_LEVELS * 2}>,
 };
 
@@ -115,6 +119,8 @@ struct View {
 @group(0) @binding(4) var close_heights: texture_2d<f32>;
 @group(0) @binding(5) var close_levels: texture_2d<f32>;
 @group(0) @binding(6) var close_marks: texture_2d<u32>;
+@group(0) @binding(7) var ground_tiles: texture_2d_array<f32>;
+@group(0) @binding(8) var tile_sampler: sampler;
 
 struct Surface {
   @builtin(position) clip: vec4f,
@@ -128,15 +134,6 @@ const QUADS = ${CLIPMAP_QUADS}u;
 const CORNERS = array<vec2u, 6>(vec2u(0u, 0u), vec2u(1u, 0u), vec2u(0u, 1u), vec2u(0u, 1u), vec2u(1u, 0u), vec2u(1u, 1u));
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
 const AMBIENT = 0.35;
-const SAND = vec3f(0.84, 0.76, 0.56);
-// Wet sand: the beach under the swash's reach, and the bed it runs on into.
-const WET = 0.78;
-const SEABED = vec3f(0.50, 0.52, 0.40);
-const DEEP_BED = vec3f(0.24, 0.30, 0.30);
-const MUD = vec3f(0.33, 0.30, 0.21);
-const HIGHLAND = vec3f(0.50, 0.40, 0.27);
-const ROCK = vec3f(0.48, 0.47, 0.45);
-const SNOW = vec3f(0.94, 0.95, 0.97);
 const RIVER = vec3f(0.18, 0.42, 0.72);
 const ROAD = vec3f(0.62, 0.48, 0.30);
 const TOWN = vec3f(0.75, 0.30, 0.22);
@@ -210,84 +207,6 @@ fn vertex_main(@builtin(vertex_index) index: u32, @builtin(instance_index) ring:
   return surface;
 }
 
-// Bare rock: layered in strata a few metres thick that wander with the face, dark seams between them, each layer its
-// own tone, gritty close up, and leaning toward the biome's own ground colour, so a carved cliff reads as stone.
-fn rock_colour(world: vec2f, bed: f32) -> vec3f {
-  let wobble = grove_noise(world, 37.0, 53) * 1.6 + grove_noise(world, 11.0, 59) * 0.5;
-  let layer = fract(bed / 3.4 + wobble);
-  let seam = smoothstep(0.0, 0.07, layer) * (1.0 - smoothstep(0.88, 1.0, layer));
-  let tone = mix(0.8, 1.14, grove_noise(vec2f(bed * 0.29 + wobble, 0.5), 1.0, 61));
-  let grit = mix(0.86, 1.08, grove_noise(world, 2.3, 67));
-  let tint = mix(ROCK, view.ground.rgb * 1.2, 0.07);
-  return tint * tone * grit * mix(0.55, 1.0, seam);
-}
-
-// The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w). Along the painted
-// coast ('coast' metres inland) the low, gentle ground is a beach, darker below the swash's reach.
-fn land_colour(bed: f32, slope: f32, coast: f32, world: vec2f) -> vec3f {
-  let ground = mix(view.ground.rgb, HIGHLAND, smoothstep(200.0, 1600.0, bed));
-  let bare = mix(ground, rock_colour(world, bed), smoothstep(0.3, 0.55, slope));
-  let snowy = mix(bare, SNOW, smoothstep(view.ground.w - 200.0, view.ground.w, bed));
-  let low = 1.0 - smoothstep(1.5, 3.0, bed);
-  let beach = (1.0 - smoothstep(60.0, 140.0, coast)) * low * (1.0 - smoothstep(0.12, 0.3, slope));
-  let wet = (1.0 - smoothstep(0.1, 0.4, bed)) * beach;
-  return mix(snowy, SAND, beach) * mix(1.0, WET, wet);
-}
-
-// The bed under water: wet sand in the shallows, as the beach is at the waterline, giving way to silt and darker
-// ground with depth; mud under fresh water.
-fn bed_colour(depth: f32, slope: f32, fresh: bool) -> vec3f {
-  let sea_floor = mix(mix(SAND * WET, SEABED, smoothstep(1.5, 18.0, depth)), DEEP_BED, smoothstep(18.0, 90.0, depth));
-  return mix(select(sea_floor, MUD, fresh), ROCK * 0.8, smoothstep(0.3, 0.6, slope));
-}
-
-// The scatter's grove field (nature's scatter.ts: hashOf, valueNoise, groveAt), to the bit in its hash, so the woods
-// seen from afar lie where the trees stand near.
-fn grove_hash(column: i32, row: i32, salt: i32) -> u32 {
-  var hash = 0x811c9dc5u;
-  let values = array<i32, 3>(column, row, salt);
-  for (var index = 0; index < 3; index++) {
-    hash = (hash ^ bitcast<u32>(values[index])) * 0x01000193u;
-    hash ^= hash >> 15u;
-    hash *= 0x2c1b3c6du;
-    hash ^= hash >> 12u;
-  }
-  hash = (hash ^ (hash >> 16u)) * 0x297a2d39u;
-  return hash ^ (hash >> 15u);
-}
-
-fn grove_noise(world: vec2f, cell: f32, salt: i32) -> f32 {
-  let grid = world / cell;
-  let base = floor(grid);
-  let share = smoothstep(vec2f(0.0), vec2f(1.0), grid - base);
-  let at = vec2i(base);
-  let corner_00 = f32(grove_hash(at.x, at.y, salt)) / 4294967296.0;
-  let corner_10 = f32(grove_hash(at.x + 1, at.y, salt)) / 4294967296.0;
-  let corner_01 = f32(grove_hash(at.x, at.y + 1, salt)) / 4294967296.0;
-  let corner_11 = f32(grove_hash(at.x + 1, at.y + 1, salt)) / 4294967296.0;
-  let top = mix(corner_00, corner_10, share.x);
-  return mix(top, mix(corner_01, corner_11, share.x), share.y);
-}
-
-fn grove_at(world: vec2f) -> f32 {
-  return 0.55 * grove_noise(world, 560.0, 17) + 0.3 * grove_noise(world, 230.0, 29) + 0.15 * grove_noise(world, 90.0, 41);
-}
-
-// The biome's woods on the land: the forest floor darker under the groves near, where the trees are drawn, and their
-// canopy's colour past where the far trees thin out (1 to 3 km); none on the beach, on ground too steep for trees, or
-// near the snow line. A grove's trees cover the ground thickly from afar, their crowns and sides together.
-fn wooded(colour: vec3f, world: vec2f, bed: f32, slope: f32, distance_to: f32) -> vec3f {
-  if (view.woods.w <= 0.0) { return colour; }
-  let in_grove = smoothstep(0.4, 0.6, grove_at(world));
-  let gather = view.world.z;
-  let density = (1.0 + gather * (2.0 * in_grove - 1.0)) / (1.0 + gather);
-  var cover = 1.0 - exp(-4.0 * view.woods.w * density);
-  cover *= smoothstep(2.0, 2.5, bed) * (1.0 - smoothstep(0.6, 0.75, slope));
-  cover *= 1.0 - smoothstep(view.ground.w - 300.0, view.ground.w - 100.0, bed);
-  let far = smoothstep(1000.0, 3000.0, distance_to);
-  return mix(colour * mix(1.0, 0.72, cover), mix(colour, view.woods.rgb, cover), far);
-}
-
 // Each pixel reads the ground under it, not the mesh: far off a ring's triangles are kilometres across, and only
 // place the pixel. Its light and colour come from the ground itself, and the water draws its edge against it too.
 @fragment
@@ -320,13 +239,14 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let light = caustics(local, view.eye.w) * fine * exp(-max(depth, 0.0) / 9.0) * smoothstep(0.0, 0.4, depth);
   wet += SUN_LIGHT * light * select(0.32, 0.12, fresh);
 
-  var dry = wooded(land_colour(bed, slope, ground.w, view.world.xy + point), view.world.xy + point, bed, slope, reach_to);
+  let world = view.world.xy + point;
+  var dry = wooded(land_colour(bed, slope, ground.w, world, local, normal), world, bed, slope, reach_to);
   let in_close = share > 0.5;
   dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
   let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);
   let town = select(marked(wide_marks, wide, 4u, 4u), marked(close_marks, close, 4u, 4u), in_close);
   let port = select(marked(wide_marks, wide, 5u, 5u), marked(close_marks, close, 5u, 5u), in_close);
-  dry = mix(mix(mix(dry, ROAD, road), TOWN, 0.6 * town), PORT, port);
+  dry = mix(mix(mix(dry, ROAD * tile_grain(DIRT_TILE, local), road), TOWN, 0.6 * town), PORT, port);
 
   var colour = mix(dry, wet, under);
   let direct = max(dot(normal, SUN), 0.0);
@@ -371,6 +291,12 @@ export class TerrainView {
   private readonly ground: readonly [number, number, number];
   private readonly snowM: number;
   private readonly woods: readonly number[];
+  /** The window's north-west corner in world metres. */
+  private readonly corner: readonly [number, number];
+  /** Plain tiles, worn until `wearTiles` is handed painted ones: every grain 1, the land in its flat colours. */
+  private readonly plainTiles: GPUTexture;
+  private tiles: GPUTextureView;
+  private readonly tileSampler: GPUSampler;
   /** The cells for WGSL wide_ground: height, distance from the coast, height carried over it. */
   private readonly wide: GPUTexture;
   private readonly lakes: GPUTexture;
@@ -393,6 +319,27 @@ export class TerrainView {
     this.woods = woods
       ? [...woods.canopy, woods.cover, data.leftM ?? 0, data.topM ?? 0, woods.gather, 0]
       : [0, 0, 0, 0, 0, 0, 0, 0];
+    this.corner = [data.leftM ?? 0, data.topM ?? 0];
+    this.plainTiles = gpu.device.createTexture({
+      size: [1, 1, TILE_LAYERS.length],
+      format: 'rgba8unorm',
+      usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
+    });
+    gpu.device.queue.writeTexture(
+      { texture: this.plainTiles },
+      new Uint8Array(4 * TILE_LAYERS.length).fill(255),
+      { bytesPerRow: 4, rowsPerImage: 1 },
+      [1, 1, TILE_LAYERS.length],
+    );
+    this.tiles = this.plainTiles.createView({ dimension: '2d-array' });
+    this.tileSampler = gpu.device.createSampler({
+      addressModeU: 'repeat',
+      addressModeV: 'repeat',
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmapFilter: 'linear',
+      maxAnisotropy: 8,
+    });
     this.wide = this.texture(data.width, data.height, 'rgba32float');
     this.lakes = this.texture(data.width, data.height, 'rg32float');
     this.marks = this.texture(data.width, data.height, 'r8uint');
@@ -421,6 +368,8 @@ export class TerrainView {
       entries: [
         { binding: 0, resource: { buffer: this.uniforms } },
         ...textures.map((texture, index) => ({ binding: index + 1, resource: (texture ?? this.wide).createView() })),
+        { binding: 7, resource: this.tiles },
+        { binding: 8, resource: this.tileSampler },
       ],
     });
   }
@@ -475,9 +424,16 @@ export class TerrainView {
     this.bindGroup = this.bind();
   }
 
+  /** Wears the ground's painted tiles from now on: an array of TILE_LAYERS' pictures, in that order. */
+  wearTiles(tiles: GPUTextureView): void {
+    this.tiles = tiles;
+    this.bindGroup = this.bind();
+  }
+
   /** Gives the GPU back this view's textures and buffers; the view draws nothing after. */
   destroy(): void {
-    for (const resource of [this.wide, this.lakes, this.marks, this.uniforms, ...(this.close?.textures ?? [])]) {
+    const owned = [this.wide, this.lakes, this.marks, this.plainTiles, this.uniforms];
+    for (const resource of [...owned, ...(this.close?.textures ?? [])]) {
       resource.destroy();
     }
   }
@@ -505,11 +461,24 @@ export class TerrainView {
     const finest = frame.rings[0];
     if (finest) floats.set([finest.corner[0] - eyeX, finest.corner[1] - eyeY, finest.spacing, 0], 40);
     floats.set(this.woods, 44);
+    // The anchor in world metres, in double precision here: the shader reads the tiles from it in single.
+    const [worldX, worldY] = [anchor[0] + this.corner[0], anchor[1] + this.corner[1]];
+    const [cos, sin] = [Math.cos(TILE_TURN), Math.sin(TILE_TURN)];
+    const fraction = (value: number) => value - Math.floor(value);
+    floats.set(
+      [
+        fraction(worldX / TILE_M),
+        fraction(worldY / TILE_M),
+        fraction((cos * worldX - sin * worldY) / WIDE_TILE_M),
+        fraction((sin * worldX + cos * worldY) / WIDE_TILE_M),
+      ],
+      52,
+    );
     for (const [index, ring] of frame.rings.entries()) {
       const [steps, origin] = [finest?.spacing ?? ring.spacing, finest?.corner ?? ring.corner];
       const lattice = [(ring.corner[0] - origin[0]) / steps, (ring.corner[1] - origin[1]) / steps];
-      floats.set([...lattice, ring.spacing / steps, 0], 52 + index * 8);
-      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 56 + index * 8);
+      floats.set([...lattice, ring.spacing / steps, 0], 56 + index * 8);
+      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 60 + index * 8);
     }
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, floats);
   }

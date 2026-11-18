@@ -1,3 +1,4 @@
+import type { CityPainter } from '../city/painter.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
@@ -9,6 +10,7 @@ import type { HullMask } from '../water/hullMask.ts';
 import { waterUnder } from '../water/shore.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
 import { frameOf, fromEyeMatrix, type Shot } from './camera.ts';
+import { groundTiles } from './groundTiles.ts';
 
 /** Anything else drawn with the land, into the same pass: a city, its nature, the figures. Its points are measured
  *  from the eye, which it is handed in world metres. One that casts shadows draws them first, into the sun's map
@@ -50,7 +52,7 @@ export class GameScene {
   private readonly water: WaterView;
   private readonly shadow: ShadowMap;
   private readonly copy: GPURenderPipeline;
-  private terrain: { view: LandView; drawn: TerrainView } | null = null;
+  private terrain: { view: LandView; drawn: TerrainView; tiles: CityPainter } | null = null;
   private close: CloseUp | null = null;
   private shownClose: CloseUp | null = null;
   private pending = false;
@@ -69,10 +71,13 @@ export class GameScene {
     });
   }
 
-  /** Draws this landmass from now on. */
-  setLand(view: LandView, data: TerrainData): void {
+  /** Draws this landmass from now on, wearing its biome's ground tiles. */
+  setLand(view: LandView, data: TerrainData, biome: string | null): void {
     this.terrain?.drawn.destroy();
-    this.terrain = { view, drawn: new TerrainView(this.gpu, data) };
+    this.terrain?.tiles.destroy();
+    const [drawn, tiles] = [new TerrainView(this.gpu, data), groundTiles(this.gpu, biome)];
+    drawn.wearTiles(tiles.view);
+    this.terrain = { view, drawn, tiles };
     dropPatchWater(this.close?.water ?? null);
     [this.close, this.shownClose] = [null, null];
   }

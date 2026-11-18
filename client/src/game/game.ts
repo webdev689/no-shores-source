@@ -117,7 +117,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const biome = biomeOf(opened.id);
     return terrainOf(opened.view, biome ? woodsOf(castOf(biome)) : undefined);
   };
-  scene.setLand(landmass.view, terrainFor(landmass));
+  scene.setLand(landmass.view, terrainFor(landmass), biomeOf(landmass.id));
 
   const input = new Input(canvas);
   const dress = plainDress('human', 0.3);
@@ -544,7 +544,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         landmass = opened;
         drawers.release();
         drawers = drawersOn(opened);
-        scene.setLand(opened.view, terrainFor(opened));
+        scene.setLand(opened.view, terrainFor(opened), biomeOf(opened.id));
         here.setLandmass(opened);
       })
       .catch((error: unknown) => {

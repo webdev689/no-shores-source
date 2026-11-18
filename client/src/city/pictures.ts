@@ -11,7 +11,8 @@ export const COLOUR_LAYERS = { gold: 252, iron: 253, bone: 254, glow: 255 } as c
 /** Every picture is resampled to this square, so one array holds them all. */
 export const LAYER_SIZE = 128;
 
-type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS>;
+/** The materials with a picture of their own; rubble wears the terraces' rubble. */
+type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS | 'rubble'>;
 type Tint = readonly [number, number, number];
 type Choice = readonly [archive: number, record: number, use: PictureUse, tint?: Tint];
 
@@ -207,6 +208,7 @@ export function pictureBook(
   const layerAt = (key: string | undefined): number => (key === undefined ? 0 : (layers.get(key) ?? 0));
   const materials = { ...COLOUR_LAYERS } as Record<SolidMaterial, number>;
   for (const [material, key] of materialKeys) materials[material] = layerAt(key);
+  materials.rubble = layerAt(terraceKey);
   return {
     pictures,
     layerOf: (archive, record) => layerAt(turnOf(archive, record)),
