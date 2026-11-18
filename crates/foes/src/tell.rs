@@ -28,8 +28,8 @@ pub struct Windup {
 
 /// What a foe keeps for its telegraphed blows: when it may throw again, the blow winding up, how many it has wound up
 /// and when it last feinted, its last shape, the room's word on whether its last landed (none until told; a chain may
-/// follow one that did) and how many have chained, the phase it fights in (1 and up), and whether its roar into it
-/// is still to come.
+/// follow one that did) and how many have chained, the phase it fights in (1 and up), and whether its roar into the
+/// next is owed: the next phase's numbers hold only once that roar begins.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Tells {
     pub blow_ready: u64,
@@ -200,8 +200,9 @@ pub fn follow(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> 
     let windup = brain.tells.windup?;
     if matches!(here.fighter.action, Action::Telegraph(_)) {
         if windup.roar && !windup.begun {
-            // The roar is under way at last: no longer owed, its poise refilled, the foes its new phase names called.
+            // The roar is under way at last: its new phase begins, its poise refilled, the foes the phase names called.
             brain.tells.roar = false;
+            brain.tells.phase += 1;
             brain.calls.refill_poise = true;
             brain.calls.crew = now(brain).calls.or(brain.calls.crew);
         }
@@ -264,13 +265,12 @@ fn chain(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> Optio
 }
 
 /// The roar into a new phase, once each, as soon as it is free: at the next phase's share of its health, an iron ring
-/// about its feet, its poise refilled, and the foes the phase names called. One phase at a time, so a blow that cuts
-/// through two still roars twice.
+/// about its feet; as it begins, the phase's numbers hold, its poise is refilled and the foes the phase names called.
+/// One phase at a time, so a blow that cuts through two still roars twice.
 pub fn roar(brain: &mut Brain, here: &Here<'_, '_>) -> Option<TelegraphOrder> {
     let fighter = &here.fighter;
     let next = brain.foe_type.phases(brain.rank).get(usize::from(brain.tells.phase));
     if !brain.tells.roar && next.is_some_and(|next| fighter.health <= fighter.health_max * next.from) {
-        brain.tells.phase += 1;
         brain.tells.roar = true;
     }
     if !brain.tells.roar || !matches!(fighter.action, Action::Idle) {
@@ -280,7 +280,8 @@ pub fn roar(brain: &mut Brain, here: &Here<'_, '_>) -> Option<TelegraphOrder> {
     let windup = combat::ticks(ROAR - IRON_EXTRA);
     let order =
         TelegraphOrder { shape: Shape::Ring, windup, iron: true, feint_at: None, bearing: brain.heading, ahead: 0.0 };
-    brain.tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &now(brain));
+    let roared = brain.foe_type.phase(brain.rank, brain.tells.phase + 1);
+    brain.tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &roared);
     brain.tells.windup = Some(Windup { order, begun: false, ended_at: None, roar: true });
     brain.tells.last = Some(Shape::Ring);
     brain.tells.chained = 0;

@@ -143,6 +143,19 @@ fn a_boss_in_its_last_stand_calls_two_minor_deckhands_to_its_side_within_the_roo
 }
 
 #[test]
+fn a_boss_killed_in_the_step_its_roar_began_calls_no_crew() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let boss = stand(&mut room, THULE, Rank::Boss, 0.0, 0.0, 0.0);
+    if let Some(found) = room.foes.get_mut(&boss) {
+        found.fighter.health = 0.0;
+        found.fighter.action = Action::Dead { elapsed: 0 };
+    }
+    let crew = ::foes::Call { foe_type: DECKHAND, rank: Rank::Minor, count: 2, place: ::foes::Place::Beside };
+    room.call(boss, crew);
+    assert_eq!(room.foes.len(), 1, "its call died with it");
+}
+
+#[test]
 fn a_foes_aimed_gunshot_is_heard_by_a_foe_of_another_side_across_the_room() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let pistoleer = stand(&mut room, PISTOLEER, Rank::Major, 0.0, 0.0, 0.0);

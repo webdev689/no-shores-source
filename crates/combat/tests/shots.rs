@@ -73,6 +73,9 @@ fn a_foe_archers_drawn_arrow_strikes_as_a_quick_shot() {
     assert!(matches!(drawn.action, Action::Draw { elapsed } if elapsed == DRAW_FULL), "{:?}", drawn.action);
     let (_, happenings) = run(drawn, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
     assert!((only_shot(&happenings).1.damage - 18.0).abs() < 1e-9, "a quick shot's 18, never half again");
+    let mighty = Fighter { might: 1.5, ..drawn };
+    let (_, happenings) = run(mighty, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
+    assert!((only_shot(&happenings).1.damage - 27.0).abs() < 1e-9, "times its might, as its blows are");
 }
 
 #[test]

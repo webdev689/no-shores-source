@@ -38,6 +38,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         brain.plan = Plan::Wait;
         brain.ready_at = None;
         brain.slot = None;
+        brain.blocked = 0;
     }
     if let Some(ask) = held(brain, here, board) {
         return ask;

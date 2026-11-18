@@ -93,8 +93,8 @@ pub struct Room {
     pub(crate) groups: BTreeMap<u32, Group>,
     pub(crate) next_group: u32,
     pub(crate) events: Vec<judging::Event>,
-    /// This tick's verdicts (striker, defender) and telegraphed blows ended (foe, found no one, dodged perfectly), for
-    /// the foes' brains.
+    /// The verdicts (striker, defender) and telegraphed blows ended (foe, found no one, dodged perfectly) since the
+    /// foes' brains were last told: one a player's leaving ends between ticks is told at the next.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
     pub(crate) ended_telegraphs: Vec<(FighterId, bool, bool)>,
     /// What the players asked of the foes, in turn.
@@ -254,8 +254,6 @@ impl Room {
     /// or are gone; and every fighter is kept for judging later blows as players saw them.
     pub fn tick(&mut self) {
         self.clock += 1;
-        self.verdicts.clear();
-        self.ended_telegraphs.clear();
         self.step_players();
         self.spawn_asked();
         self.step_foes();

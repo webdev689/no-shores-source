@@ -190,6 +190,31 @@ fn a_roar_knocked_out_of_a_boss_before_it_begins_is_still_owed_and_roared_once_i
 }
 
 #[test]
+fn a_new_phase_s_numbers_hold_only_as_its_roar_begins() {
+    // Thule waits his turn on the ring, his guard up, while two others hold the player's turns.
+    let mut room = Room::new(7).player(PLAYER, 0.0, 0.0, 0.0).foe(10, 12, Boss, 0.0, -4.0, PI).alert(10, PLAYER);
+    let caps = room.director.caps();
+    for holder in [3, 4] {
+        room.board.join(PLAYER, holder, false, 0);
+        assert!(room.board.take(PLAYER, holder, false, 0, u64::MAX, caps));
+    }
+    room.run(150, &mut still(0.0));
+    let might = room.brain(10).might();
+    room.set(10, |boss| boss.health = 0.6 * boss.health_max);
+    let mut owed = 0;
+    while roars(&room, 10).is_empty() {
+        room.step(&mut still(0.0));
+        assert!(room.brain(10).phase() == 1 && room.brain(10).might() == might, "not before its roar");
+        owed += 1;
+        assert!(owed < 600, "it roars in the end");
+    }
+    assert!(owed > 1, "its roar waited on its guard: {owed} ticks");
+    room.run(2, &mut still(0.0));
+    assert!(matches!(room.fighter(10).action, combat::fighter::Action::Telegraph(_)));
+    assert_eq!(room.brain(10).phase(), 2, "the boarding, as its roar begins");
+}
+
+#[test]
 fn a_boss_cut_from_its_first_phase_to_its_last_at_one_blow_still_roars_twice() {
     let mut room = Room::new(3).player(PLAYER, 0.0, 0.0, 0.0).foe(10, 12, Boss, 0.0, -2.5, PI);
     room.run(30, &mut still(0.0));

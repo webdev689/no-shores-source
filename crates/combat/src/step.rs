@@ -417,7 +417,7 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
         // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone.
         let player = next.side.is_players();
         let power = if player { aimed_power(ranged, elapsed) } else { 1.0 };
-        let shot = loose(0, ranged, chest, heading, pitch, power);
+        let shot = loose(0, ranged, chest, heading, pitch, power * next.might);
         return Some(shoot(next, if player { shot } else { by_foe(&shot) }));
     }
     next.action = Action::Draw { elapsed: (elapsed + 1).min(DRAW_FULL) };

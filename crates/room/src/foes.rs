@@ -164,8 +164,10 @@ impl Room {
 
     /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the
     /// caller's foe stands: in pairs, one either side of it, or behind it and either side, each pair farther out.
-    fn call(&mut self, caller: FighterId, call: Call) {
-        let (Some(at), Some(called_type)) = (self.fighter(caller).copied(), foe_type(call.foe_type)) else { return };
+    pub(crate) fn call(&mut self, caller: FighterId, call: Call) {
+        // A caller killed in the same step calls no one.
+        let caller_alive = self.fighter(caller).copied().filter(|at| !at.dead());
+        let (Some(at), Some(called_type)) = (caller_alive, foe_type(call.foe_type)) else { return };
         let foe = self.foes.get(&caller).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));
         let called = foe.map(|foe| Seen::Shouted { from: feet(&at), at: feet(foe) });
         let (back_sin, back_cos) = (libm::sin(at.aim + PI), libm::cos(at.aim + PI));
