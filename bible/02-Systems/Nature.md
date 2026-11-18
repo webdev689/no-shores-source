@@ -3,13 +3,15 @@ type: system
 status: live
 code:
   - client/src/nature/natureView.ts#NatureView
+  - client/src/nature/flora.ts#loadFlora
+  - client/src/nature/forms.ts#formBuffers
+  - client/src/nature/impostor.ts#framesFor
   - client/src/nature/field.ts#NatureField
   - client/src/nature/scatter.ts#scatterTile
   - client/src/nature/ground.ts#landSampler
   - client/src/nature/cast.ts#castOf
   - client/src/nature/coolCasts.ts#COOL_CASTS
   - client/src/nature/warmCasts.ts#WARM_CASTS
-  - client/src/nature/shapes.ts#MeshBuilder
   - client/src/nature/natureShader.ts#NATURE_SHADER
   - client/src/nature/cull.ts#tilesInView
   - client/src/nature/slots.ts#SlotStore
@@ -17,19 +19,20 @@ code:
 # Nature
 
 The trees, plants and rocks that dress each continent's [[Land]], one cast for its one biome
-([[Each Continent Is One Biome]], [[The Continents' Biomes]]). Every mesh is made in code and coloured by its
-vertices ([[Own Work]]), drawn with WebGPU ([[WebGPU Only]]). The same ground grows the same plants for every player.
-The casts are Claude's choices ([[The World Is Claude's to Mold]]).
+([[Each Continent Is One Biome]], [[The Continents' Biomes]]). Every plant is grown in Blender as a detailed model and
+baked into a textured near mesh and sprites for far away ([[Flora]], [[Flora Is Baked From Detailed Models]]), all
+of it by our own code ([[Own Work]]), drawn with WebGPU ([[WebGPU Only]]). The same ground grows the same plants for
+every player. The casts are Claude's choices ([[The World Is Claude's to Mold]]).
 
 ## The casts
 
 Each biome has three to six kinds, each with outlines of its own so they read apart at a distance. Trees come in two
 or three forms a kind; every plant is turned, sized and tinted on its own. Most stand a little shorter than their
-width says and a few half again as tall, and trunks lean a little, a few more. A broadleaf's crown is a smooth core
-with lobes in two layers, a wider, darker ring below and smaller sunlit clumps above, each its own size and shade, so
-its outline is ragged. Swamp cypresses and rainforest trees carry broad, flat tiers instead, wider than they are tall,
-drooping at their edges and stepping in as they rise. Bushes are woody stems, each ending in a tuft of leaves. Leaves
-are shaded as one soft mass over each lobe; only stone shows its facets.
+width says and a few half again as tall, and trunks lean a little, a few more. A broadleaf's branches are grown out
+to a crown of a core and lobes, so its outline is ragged; swamp cypresses and rainforest trees carry broad, flat
+tiers instead, drooping at their edges and stepping in as they rise. Bushes are woody stems, each ending in a tuft of
+leaves. The client's casts (`coolCasts.ts`, `warmCasts.ts`) keep each kind's growth, sizes, shares and number of forms;
+`tools/flora/species.py` names the same kinds and gives each form its shape and colours ([[Flora]]).
 
 | Biome | Kinds |
 |---|---|
@@ -43,7 +46,7 @@ are shaded as one soft mass over each lobe; only stone shows its facets.
 | `swamp` | Cypresses flaring onto dark buttresses under broad drooping tiers, short clumps of dark moss under their edges, mangroves only by water, reeds at the water's edge, marsh ferns |
 | `tundra` | Stunted spruces, dead trees, dwarf shrubs, snowy rocks |
 
-Near trees are 90 to 300 triangles; far ones 20 to 60.
+A near tree is about 600 triangles (900 at most), a shrub 240, grass, ferns and reeds 60, a rock 300; far off each is one quad.
 
 ## Where they grow
 
@@ -73,35 +76,47 @@ width, and from the exact close patch where it reaches, eased in over its outer 
 
 ## Drawing
 
-- **Round the eye.** Tiles are kept round the eye: the tall layer out to 3 km, the low one to 0.9 km. A tile is
+- **Round the eye.** Tiles are kept round the eye: the tall layer out to 6 km, the low one to 0.9 km. A tile is
   scattered once, nearest first, a few milliseconds' worth a frame. Its plants go into slots of a store on the GPU
-  that stay put while the tile is kept, a page of sixteen at a time, and leave when it is let go. When the eye
-  crosses into another tile, or newly scattered tiles arrive (at most four times a second while some still wait),
-  only the list of which slots to draw is made again, and each tile's corner. A changed ground is scattered again
-  tile by tile, the old plants drawn until their tile's turn. From more than 3 km above the ground nothing is drawn
-  or scattered.
-- **Detail.** A tree's near mesh is drawn to 700 m and its far mesh beyond, to 3 km. Shrubs change at 200 m and go at
-  700 m; grass, ferns and reeds go at 160 m. From 1 km far trees thin out to a share kept at the reach (a seventh in
-  the rainforest, a fifth in the woodland, nearly all in the desert), each widened to fill in. On steep ground they
-  thin out further from half a kilometre, so a mountainside reads as trees fading out, not a speckle, and far off a
-  plant's colour leans toward the biome's ground. Moss is drawn to 150 m. Distances are taken from the eye in three
-  dimensions.
+  that stay put while the tile is kept, a page of sixteen at a time, and leave when it is let go. A tile whose nearest
+  point lies past 3 km keeps only the trees drawn that far and only those the thinning leaves, its ground read for
+  no others; it is scattered whole again when the eye comes within 3 km. When the eye crosses into another tile, or
+  newly scattered tiles arrive (at most four times a second while some still wait), only the list of which slots to
+  draw is made again, and each tile's corner. A changed ground is scattered again tile by tile, the old plants drawn
+  until their tile's turn. From more than 8 km above the ground nothing is drawn or scattered.
+- **Loading.** A biome's baked meshes and pictures (`content/nature/flora.json`) are fetched from R2 the first time
+  a landmass of it is drawn; until they have come its plants are not drawn. Its pictures are two texture arrays,
+  albedo with coverage and normal with leaf share, 1024 px layers with six mip levels.
+- **Detail.** Near, a plant is its baked mesh: trunks and limbs as rings wearing the bark picture, which repeats round
+  and along them, and foliage as crossed cards cut out by their pictures' coverage, an edge smoothed across the
+  pixel's samples. Its normal map bends the light across each card and up each furrow, and the ambient occlusion
+  the detailed model casts darkens a crown's inside. Past its near range, a tree's 300 m (a small tree's 220, a
+  rock's 200, a shrub's 120, a tree fern's 150), it is one quad facing the eye over its bounding sphere: the frames
+  of its impostor sheet nearest the view (two azimuths, two elevations) blended by how near each is
+  (`impostor.ts`), lit by their normals turned with the plant. Trees are drawn to 6 km, small trees to 2 km, rocks to
+  1.8 km, shrubs to 700 m; grass, ferns and reeds go at 160 m. From 1 km far trees thin out to a share kept at 3 km
+  and on to the reach (a seventh in the rainforest, a fifth in the woodland, nearly all in the desert), each widened
+  to fill in. On steep ground they thin out further from half a kilometre, so a mountainside reads as trees fading
+  out, not a speckle, and far off a plant's colour leans toward the biome's ground. Moss is drawn to 150 m.
+  Distances are taken from the eye in three dimensions.
 - **No popping.** A plant fades by its samples, not by blending: across the last eighth of the near range the near
-  mesh hands its samples to the far one, each taking exactly what the other leaves, and toward the reach and as the
-  far trees thin out both give theirs up. Four samples and a dither over two pixels make seventeen steps.
+  mesh hands its samples to the far quad, each taking exactly what the other leaves (`handover.ts`), and toward the
+  reach and as the far trees thin out both give theirs up. Four samples and a dither over two pixels make seventeen
+  steps.
 - **Placing.** Each plant is placed from its tile's corner, measured from an anchor beside the eye, so the GPU's
   floats keep their centimetres anywhere in the world. Tiles out of view are culled, and the tiles in view drawn in
   runs, one instanced draw a run.
 - **Light.** As the land is lit, its ambient bounced warm from the ground onto a crown's underside and cool from the
   sky onto its top, with a little sun through the leaves. Gusts roll downwind across the land, each plant rocks on its
-  own beat and its leaves tremble.
+  own beat, bending by its baked wind weights (still at the foot, free at the tips), and its leaves tremble.
 - **Shadows.** In the game the near plants round the eye cast into the sun's near shadow map, swaying as they are
-  drawn, and every plant is lit through the near and far maps ([[Game]]): a tree in another's shade, or a wall's, is
-  in shade.
-- **Woods from afar.** Past where its trees are drawn, a biome's woods are coloured on the land itself (`woodsOf`):
-  its canopy's colour where the grove field puts its groves, as thick as its trees grow, and the forest floor darker
-  under them near. So a forest reads from the sea and over an island's side, and stands where its trees stand.
-- **Contact shade.** Each plant with a far mesh lays a soft dark disc on the ground under it,
+  drawn and cut out by their cards' coverage, and every plant, near or far, is lit through the near and far maps
+  ([[Game]]): a tree in another's shade, or a wall's, is in shade.
+- **Woods from afar.** As its trees' sprites fade out, from 4.8 to 6 km, a biome's woods are coloured on the land
+  itself (`woodsOf`): its canopy's colour (its baked leaves seen from above) where the grove field puts its groves,
+  as thick as its trees grow, and the forest floor darker under them near. So a forest reads from the sea and over an
+  island's side, and stands where its trees stand.
+- **Contact shade.** Each plant drawn far lays a soft dark disc on the ground under it,
   as wide as its crown, leaning a little the way the sun throws shadows and laid on the ground's slope at its foot,
   fading out by half its near range. Trunks darken toward the ground to meet it.
 - **In the frame.** Plants are drawn into the land's pass, four samples a pixel and depth reversed, before the
@@ -109,7 +124,28 @@ width, and from the exact close patch where it reaches, eased in over its outer 
 
 Each frame a page calls `update` with the camera and the ground, then `drawInto` the land's pass after the land.
 
+## What it costs
+
+A frame in headless SwiftShader at 1280 x 720, every tile in reach scattered, at eye height and 60 m up, before the
+baked flora (code-made meshes, near to 700 m, far to 3 km) and with it. Triangles and draw calls are the whole
+frame's, shadows included; the time is SwiftShader's own GPU time, which counts every pixel shaded on the CPU.
+
+| From | Before: triangles, draws, ms | Baked: triangles, draws, ms |
+|---|---|---|
+| The Elder Thicket (woodland), on foot | 4,832,976, 464, 9,376 | 4,767,612, 259, 17,076 |
+| The Elder Thicket, 60 m up | 4,857,852, 488, 8,491 | 4,589,576, 421, 15,286 |
+| The Emerald Tangle (rainforest), on foot | 4,912,076, 747, 9,100 | 4,233,360, 396, 12,719 |
+| The Emerald Tangle, 60 m up | 5,382,482, 856, 15,101 | 4,381,067, 575, 13,861 |
+
+Fewer triangles and draws, but each card and sprite pixel samples its pictures and is cut by their coverage, which
+SwiftShader pays for on the CPU: in the woodland the frame takes about twice as long there.
+
 ## Limits
+
+- On SwiftShader the woodland's frame is slower than the code-made meshes' was (see What it costs); a real GPU's
+  cost is unchecked.
+- The sprites' frames are blended, not morphed, and the swamp's cypresses read flatter and browner far off than
+  near.
 
 - Only the near plants within the near shadow map's square cast; past it the contact shade stands in under each one.
 - Low plants keep off the feet of the tall ones in their own tile only: within a couple of metres of a tile's edge,

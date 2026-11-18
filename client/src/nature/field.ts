@@ -1,7 +1,7 @@
 import { castOf } from './cast.ts';
+import { type FloraForm, formsOf } from './flora.ts';
 import type { Cast, Kind } from './kinds.ts';
 import { formKinds, PLANTED_FLOATS, type ScatterGround, scatterTile, TILE_M } from './scatter.ts';
-import { VERTEX_FLOATS } from './shapes.ts';
 import { PAGE_SHIFT, PAGE_SLOTS, SLOT_FLOATS, SlotStore } from './slots.ts';
 
 /** The ground round the eye, as the caller has it this frame. */
@@ -17,19 +17,24 @@ export interface NatureGround extends ScatterGround {
 
 /** The near mesh crossfades into the far one over this last share of its range. */
 export const LOD_BAND = 0.12;
-/** Far trees thin out from here to their reach, the rest widened to fill in. */
+/** Far trees thin out from here to here (or their reach, if nearer), the rest widened to fill in; past it, as far
+ *  as they are drawn, the same share stands. */
 export const THIN_FROM_M = 1000;
+export const THIN_TO_M = 3000;
 /** While tiles still wait their turn, newly scattered ones are listed at most this often, milliseconds. */
 const REPACK_MS = 250;
 /** The eye stands anywhere in its tile, so a tile's distance from the eye's tile's middle is this uncertain. */
 const SLACK_M = TILE_M * Math.SQRT1_2;
 /** A tile is scattered, and drawn, while its middle lies within a reach and this of the eye's tile's middle. */
 const RING_M = 2 * SLACK_M;
+/** A tile whose nearest point lies past the thinning keeps only what the thinning leaves (scatter.ts `far`), and is
+ *  scattered whole again when the eye comes nearer. */
+const SPARSE_FROM_M = THIN_TO_M + 2 * SLACK_M;
 
 /** The share of a kind's far plants still drawn at a distance: all of them near, `keepAtReach` at its reach. */
 export function keptAt(kind: Kind, keepAtReach: number, distance: number): number {
   if (kind.reachM <= THIN_FROM_M) return 1;
-  const share = Math.min(1, Math.max(0, (distance - THIN_FROM_M) / (kind.reachM - THIN_FROM_M)));
+  const share = Math.min(1, Math.max(0, (distance - THIN_FROM_M) / (Math.min(kind.reachM, THIN_TO_M) - THIN_FROM_M)));
   return 1 - (1 - keepAtReach) * share * share * (3 - 2 * share);
 }
 
@@ -72,6 +77,8 @@ interface Tile {
   readonly tall: Layered;
   low: Layered | null;
   readonly version: number;
+  /** Scattered far off, holding only what the thinning leaves there. */
+  readonly sparse: boolean;
   /** The lowest and highest foot of the tile's plants, both layers', metres: Infinity and -Infinity for none. */
   lowest: number;
   highest: number;
@@ -120,17 +127,14 @@ const keyOf = (tileX: number, tileY: number) => tileX * 4_194_304 + tileY;
 
 /** How tall the cast's tallest plant stands and how far its widest reaches from its foot, metres, at its largest
  *  and widened as much as thinning widens the far ones (natureShader.ts `grow`). */
-function extent(cast: Cast): { top: number; spread: number } {
+function extent(cast: Cast, forms: readonly FloraForm[]): { top: number; spread: number } {
   const grow = 1 / Math.sqrt(Math.max(cast.keepAtReach, 0.05));
+  const kinds = cast.kinds.flatMap((kind) => Array.from({ length: kind.forms }, () => kind));
   let [top, spread] = [0, 0];
-  for (const kind of cast.kinds) {
-    for (const plant of kind.plants) {
-      const { vertices } = plant.near;
-      for (let offset = 0; offset < vertices.length; offset += VERTEX_FLOATS) {
-        top = Math.max(top, (vertices[offset + 2] ?? 0) * kind.sizes[1] * 1.12);
-        spread = Math.max(spread, Math.hypot(vertices[offset] ?? 0, vertices[offset + 1] ?? 0) * kind.sizes[1]);
-      }
-    }
+  for (const [index, form] of forms.entries()) {
+    const largest = kinds[index]?.sizes[1] ?? 1;
+    top = Math.max(top, form.top * largest * 1.12);
+    spread = Math.max(spread, form.spread * largest);
   }
   return { top: top * (1 + (grow - 1) * 0.3), spread: spread * grow };
 }
@@ -221,10 +225,12 @@ export class NatureField {
       const [tileX, tileY] = [tile[0] + across, tile[1] + down];
       const key = keyOf(tileX, tileY);
       let kept = this.kept.get(key);
-      if (!kept || kept.version !== ground.version) {
+      const sparse = distance > SPARSE_FROM_M;
+      if (!kept || kept.version !== ground.version || (kept.sparse && !sparse)) {
         if (kept) this.letGo(kept, false);
         const number = kept?.number ?? this.freeNumbers.pop() ?? this.nextNumber++;
-        const tall = scatterTile(this.cast, 'tall', tileX, tileY, ground);
+        const far = sparse ? { beyondM: THIN_TO_M, keepBelow: this.cast.keepAtReach + 0.05 } : null;
+        const tall = scatterTile(this.cast, 'tall', tileX, tileY, ground, null, far);
         const [lowest, highest] = feet(tall);
         const forms = this.kindOf.length;
         kept = {
@@ -234,6 +240,7 @@ export class NatureField {
           tall: layered(tall, forms, this.store, number),
           low: null,
           version: ground.version,
+          sparse,
           lowest,
           highest,
         };
@@ -262,11 +269,12 @@ export class NatureField {
     this.biome = biome;
     this.cast = castOf(biome);
     this.kindOf = formKinds(this.cast);
-    this.hasFar = this.cast.kinds.flatMap((kind) => kind.plants.map((plant) => !!plant.far));
+    const forms = formsOf(this.cast, biome);
+    this.hasFar = forms.map((form) => !!form.impostor);
     this.runs.length = 0;
     const reachOf = (layer: Kind['layer']) =>
       Math.max(0, ...this.cast.kinds.filter((kind) => kind.layer === layer).map((kind) => kind.reachM));
-    this.reach = { tall: reachOf('tall'), low: reachOf('low'), ...extent(this.cast) };
+    this.reach = { tall: reachOf('tall'), low: reachOf('low'), ...extent(this.cast, forms) };
     this.offsets = offsetsWithin(Math.max(this.reach.tall, this.reach.low));
     const turn = ([across, down]: readonly [number, number, number]) => Math.atan2(down, across);
     this.ring = [...this.offsets].sort((a, b) => turn(a) - turn(b) || a[2] - b[2]);
