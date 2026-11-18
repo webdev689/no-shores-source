@@ -114,7 +114,8 @@ export class FleetSloop extends Afloat {
     lines.push(
       `In the fleet: ${players} other ${players === 1 ? 'ship' : 'ships'}, ${captains.length} ${captains.length === 1 ? 'captain' : 'captains'}. F calls a captain, X sends them off.`,
     );
-    if (this.session.lost) lines.push(`The fleet room is lost: ${this.session.lost}.`);
+    if (this.session.rejoining) lines.push('Reconnecting…');
+    else if (this.session.lost) lines.push(`The fleet room is lost: ${this.session.lost}.`);
     this.messages = this.messages.filter((message) => message.until > now);
     return [...lines, ...this.messages.map((message) => message.text)];
   }

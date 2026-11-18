@@ -121,6 +121,22 @@ pub fn line_of(shot: &Shot, stop: [f64; 3]) -> Shot {
     Shot { velocity, ..*shot }
 }
 
+/// A ball's flight once it has stopped, for every screen's tracer: its last tick's segment, carried to where it
+/// stopped (`line_of`), and the point it left its gun.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Line {
+    pub last: Shot,
+    pub muzzle: [f64; 3],
+}
+
+/// The line of a ball that stopped at `stop` this tick. A ball flies straight, so it left its gun its ticks flown
+/// back along its velocity.
+#[must_use]
+pub fn stopped_line(shot: &Shot, stop: [f64; 3]) -> Line {
+    let back = f64::from(shot.age) * TICK_SECONDS;
+    Line { last: line_of(shot, stop), muzzle: [0, 1, 2].map(|axis| shot.at[axis] - shot.velocity[axis] * back) }
+}
+
 /// What a tick of flight came to: the shot flown on, or where it stopped and the body it struck, if any.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Flight {

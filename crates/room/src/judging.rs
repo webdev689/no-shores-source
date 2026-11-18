@@ -7,7 +7,7 @@ use crate::Room;
 use combat::fighter::{Action, Attack, FighterId};
 use combat::judge::{answered, overreached, suffer};
 use combat::shapes::{LATE, Telegraph};
-use combat::shots::{Flight, fly, line_of};
+use combat::shots::{Flight, fly, stopped_line};
 use combat::strike::reaches;
 use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 
@@ -248,7 +248,7 @@ impl Room {
             if let Flight::Stopped { at, .. } = flight
                 && combat::shots::shot_numbers(shot.ranged).0 <= 0.0
             {
-                self.lines.push(line_of(&shot, at));
+                self.lines.push(stopped_line(&shot, at));
             }
             match flight {
                 Flight::Flying(next) => self.shots.push(next),

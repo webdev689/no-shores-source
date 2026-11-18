@@ -15,6 +15,19 @@ export interface FoeType {
   readonly left: string | null;
 }
 
+/** The pirates' faction's number, as the messages carry it. */
+const PIRATES = 2;
+
+/** The type a foe is shown as: its own; or, from an older room that sends no type, the pirates' type in its role
+ *  (`kind`), as every foe there was. */
+export function shownType(
+  roster: readonly FoeType[],
+  foe: { readonly type: number; readonly kind: number },
+): FoeType | undefined {
+  if (foe.type !== 0) return roster.find((each) => each.type === foe.type);
+  return roster.find((each) => each.faction === PIRATES && each.role === foe.kind);
+}
+
 /** The ranks' names by their numbers, 1 Minor to 5 Boss. */
 export const RANK_NAMES: readonly string[] = ['', 'Minor', 'Major', 'Elite', 'Miniboss', 'Boss'];
 export const BOSS_RANK = 5;

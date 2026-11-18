@@ -76,6 +76,13 @@ fn shots() -> Vec<Shot> {
     vec![loose(12, Ranged::Bow, [3.0, -6.0, 1.1], 0.5, 0.1, 1.0)]
 }
 
+/// Foe 12's ball, six ticks out east from (4, -6, 1.1) at 60 m/s, stopped half a metre into its seventh tick.
+fn lines() -> Vec<Line> {
+    let ball =
+        Shot { ranged: Ranged::Pistolet, at: [10.0, -6.0, 1.1], velocity: [60.0, 0.0, 0.0], age: 6, ..shots()[0] };
+    vec![combat::shots::stopped_line(&ball, [10.5, -6.0, 1.1])]
+}
+
 const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
@@ -129,8 +136,9 @@ fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
     shots: &'snapshot [Shot],
+    lines: &'snapshot [Line],
 ) -> Snapshot<'snapshot> {
-    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots }
+    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines }
 }
 
 /// The dresses a message holds.
@@ -179,6 +187,23 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
 }
 
 #[test]
+fn a_foe_asked_for_by_its_role_alone_is_the_pirates_type_in_that_role() {
+    let asked = |role: u8| {
+        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let controls = Some(builder.create_vector(&[0.0; CONTROLS_FLOATS]));
+        let args = messages::InputArgs { controls, spawn: role, ..Default::default() };
+        let message = messages::Input::create(&mut builder, &args);
+        builder.finish(message, None);
+        read_input(builder.finished_data()).unwrap().spawn
+    };
+    let foe = |foe_type, rank| Some(SpawnAsk::Foe { foe_type, rank });
+    // The pirates' Skirmisher to their Brute and Archer as Majors; their Captain at his first rank, an Elite.
+    let roles: Vec<_> = (1..=5).map(asked).collect();
+    assert_eq!(roles, [foe(13, 2), foe(14, 2), foe(15, 2), foe(16, 2), foe(17, 3)]);
+    assert_eq!((asked(0), asked(6), asked(CLEAR_FOES)), (None, None, Some(SpawnAsk::Clear)));
+}
+
+#[test]
 fn bytes_that_are_not_an_input_and_numbers_of_the_wrong_count_are_refused() {
     assert!(read_input(&[]).is_err());
     assert!(read_input(&[0xff; 7]).is_err());
@@ -224,8 +249,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let plain = flatbuffers::root::<messages::FromRoom>(&plain).unwrap().joined().unwrap();
     assert_eq!((plain.node(), plain.bounds().is_none()), (None, true));
 
-    let (players, foes, shots) = (players(), foes(), shots());
-    let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots));
+    let (players, foes, shots, lines) = (players(), foes(), shots(), lines());
+    let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert_eq!(read.tick(), 1234);
     let fighters: Vec<Fighter> = read
@@ -257,6 +282,14 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let flying = read.shots().unwrap().get(0);
     assert_eq!((flying.owner(), flying.ranged()), (12, 1));
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());
+    assert!(flying.muzzle().is_none(), "a shot still flying carries no muzzle");
+    let stopped = read.shots().unwrap().get(1);
+    let ends = |shot: messages::Flying<'_>| {
+        [shot.at(), shot.velocity(), shot.muzzle()].map(|part| part.map(|numbers| numbers.iter().collect::<Vec<_>>()))
+    };
+    let line = lines[0];
+    let sent = [Some(line.last.at.to_vec()), Some(line.last.velocity.to_vec()), Some(line.muzzle.to_vec())];
+    assert_eq!((stopped.age(), ends(stopped)), (6, sent), "a stopped ball's last segment, and where it left its gun");
     assert!(read.ships().is_none());
 
     let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
@@ -339,9 +372,10 @@ fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
 fn the_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
-    let (players, foes, shots) = (players(), foes(), shots());
+    let (players, foes, shots, lines) = (players(), foes(), shots(), lines());
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE))).unwrap();
-    std::fs::write(format!("{folder}/snapshot.bin"), snapshot_bytes(&snapshot(&players, &foes, &shots))).unwrap();
+    let snapshot = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
+    std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }

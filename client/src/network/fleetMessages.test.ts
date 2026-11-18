@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Orders } from '../../../generated/messages/ts/overlook/wire.ts';
-import { ordersBytes } from './fleetMessages.ts';
+import { commissionOf, ordersBytes } from './fleetMessages.ts';
 import { readFromRoom } from './messages.ts';
 
 const written = (name: string) =>
@@ -102,4 +102,37 @@ test('orders are her helm, her look and its ray, the fire, the brace, a load, wh
   );
   assert.deepEqual([plain.aimLength(), plain.putToSeaLength(), plain.call()], [0, 0, 255]);
   assert.deepEqual([plain.callFaction(), plain.callRank()], [0, 0], 'no captain called, none named');
+});
+
+test('orders never wrap a number past its field: her number, load and call are refused, and her rudder, rung and look are held within what the room takes', () => {
+  const orders = {
+    steer: 3,
+    crab: false,
+    climb: 255,
+    look: { bearing: 400, range: 2e6 },
+    fire: false,
+    brace: false,
+    load: 0,
+    putToSea: null,
+    call: 'none',
+  } as const;
+  const held = Orders.getRootAsOrders(new flatbuffers.ByteBuffer(ordersBytes(1, orders)));
+  assert.deepEqual([held.steer(), held.climb(), Array.from(held.aimArray() ?? [])], [1, 1, [180, 1e5]]);
+  const under = { ...orders, steer: -3, climb: -255, look: { bearing: -400, range: -5 } };
+  const low = Orders.getRootAsOrders(new flatbuffers.ByteBuffer(ordersBytes(1, under)));
+  assert.deepEqual([low.steer(), low.climb(), Array.from(low.aimArray() ?? [])], [-1, -1, [-180, 0]]);
+  assert.throws(() => ordersBytes(-1, orders), RangeError);
+  assert.throws(() => ordersBytes(2 ** 32, orders), RangeError);
+  assert.throws(() => ordersBytes(1, { ...orders, load: 5 }), RangeError);
+  assert.throws(() => ordersBytes(1, { ...orders, steer: Number.NaN }), RangeError);
+  assert.throws(() => ordersBytes(1, { ...orders, look: { bearing: 0, range: 5, ray: [Number.NaN] } }), RangeError);
+  assert.throws(() => ordersBytes(1, { ...orders, putToSea: [Number.POSITIVE_INFINITY, 0, 0] }), RangeError);
+  const calling = { ...orders, call: 'captain' } as const;
+  assert.throws(() => ordersBytes(1, { ...calling, captain: { faction: 258, rank: 2 } }), RangeError);
+  assert.throws(() => ordersBytes(1, { ...calling, captain: { faction: 1, rank: 6 } }), RangeError);
+});
+
+test('an older room’s captain, sent with no faction or rank, reads as a Major of the pirates', () => {
+  assert.deepEqual(commissionOf(0, 0), { faction: 2, rank: 2 });
+  assert.deepEqual(commissionOf(1, 3), { faction: 1, rank: 3 });
 });

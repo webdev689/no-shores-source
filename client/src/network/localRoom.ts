@@ -10,7 +10,9 @@ export class LocalRoom implements RoomLink {
   private carry = 0;
   readonly player: number;
   readonly dressed = [];
-  /** A room in the page is never lost. */
+  /** A room in the page is joined once and never lost. */
+  readonly joins = 1;
+  readonly rejoining = false;
   readonly lost = null;
 
   private constructor(door: RoomDoor, snapshot: (snapshot: Snapshot) => void) {

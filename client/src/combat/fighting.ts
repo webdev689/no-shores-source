@@ -99,7 +99,9 @@ export class Fighting {
   private readonly rules: CombatRules;
   private readonly link: RoomLink;
   private readonly random: () => number;
-  private readonly prediction = new Prediction<Asked>();
+  private prediction = new Prediction<Asked>();
+  /** The link's welcomes the page has followed: one more means the player joined the room again. */
+  private joined: number;
   private fighter: Float64Array | null = null;
   private seen = 0n;
   private view: Glanced[] = [];
@@ -134,7 +136,18 @@ export class Fighting {
     this.rules = rules;
     this.link = link;
     this.random = random;
+    this.joined = link.joins;
     this.stroke = this.roll();
+  }
+
+  /** Follows the link into the room it joined again: a new player there, standing where the room puts them, with
+   *  nothing of the old room kept but what the hands hold and the dress, sent again. */
+  private follow(): void {
+    if (this.link.joins === this.joined) return;
+    this.joined = this.link.joins;
+    [this.prediction, this.fighter, this.seen, this.view, this.sentDress] = [new Prediction(), null, 0n, [], ''];
+    this.foes.clear();
+    this.others.clear();
   }
 
   get player(): number {
@@ -215,6 +228,7 @@ export class Fighting {
   }
 
   private tick(body: Body, controls: Controls): Body {
+    this.follow();
     if (!this.fighter) return body;
     const { pitch } = this.buttons;
     const swing = this.latches.swing.tick(this.buttons.swing);
@@ -257,6 +271,7 @@ export class Fighting {
   /** Takes a room's snapshot: the player's fighter set by the room's word with every input it has not taken stepped on
    *  top; every other player and foe kept, each foe with its glance at the snapshot before; its shots and events. */
   receive(snapshot: Snapshot): void {
+    this.follow();
     const ticks = Math.max(1, Number(snapshot.tick - this.seen));
     this.seen = snapshot.tick;
     const view: Glanced[] = [];

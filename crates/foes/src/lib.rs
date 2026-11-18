@@ -35,7 +35,7 @@ pub use factions::{FACTIONS, Faction, faction};
 pub use noises::Noise;
 pub use ranks::{Call, Place, Rank};
 pub use roles::Role;
-pub use roster::{FoeType, ROSTER, foe_type, spawn};
+pub use roster::{FoeType, ROSTER, foe_type, in_role, spawn};
 
 use dice::Dice;
 use senses::Here;

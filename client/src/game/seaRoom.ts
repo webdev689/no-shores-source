@@ -30,8 +30,11 @@ const COURSE_EVERY_TICKS = 45;
 const SETTLE_TICKS = 60;
 
 export class SeaRoom {
-  readonly own: number;
+  own: number;
   private readonly link: Closable;
+  /** The link's welcomes followed, and whether one more came since the sea last asked: the player joined it again. */
+  private joined: number;
+  private fresh = false;
   private ships: readonly SeenShip[] = [];
   /** The hostile ships at sea: each sailing, and each in a fight among captains alone where the room has her. */
   pirates: readonly SeenPirate[] = [];
@@ -53,7 +56,29 @@ export class SeaRoom {
 
   private constructor(link: Closable) {
     this.link = link;
-    this.own = link.player;
+    [this.own, this.joined] = [link.player, link.joins];
+  }
+
+  /** Follows the link into the sea it joined again: a new player there, with no ship at sea and no course sent. */
+  private follow(): void {
+    if (this.link.joins === this.joined) return;
+    [this.joined, this.own, this.fresh] = [this.link.joins, this.link.player, true];
+    [this.tick, this.courseSentAt, this.waitingCourse] = [null, null, null];
+    [this.waitingFacing, this.leaveWaiting] = [false, false];
+  }
+
+  /** Whether the player joined the sea again since this was last asked, after its socket closed: their ship is to be
+   *  put to sea again where she lies. */
+  rejoined(): boolean {
+    this.follow();
+    const fresh = this.fresh;
+    this.fresh = false;
+    return fresh;
+  }
+
+  /** Whether the link is joining the sea again after its socket closed. */
+  get rejoining(): boolean {
+    return this.link.rejoining;
   }
 
   /** Joins the sea through `open`, which hands on each snapshot, the ship put to sea at `start`, at rest. */
@@ -70,6 +95,7 @@ export class SeaRoom {
   }
 
   private take(snapshot: Snapshot): void {
+    this.follow();
     // A course sent before the room's first word is reckoned from it: the room took it no later.
     if (this.tick === null && this.courseSentAt !== null) this.courseSentAt = Number(snapshot.tick);
     this.tick = Number(snapshot.tick);
@@ -173,8 +199,13 @@ export class SeaRoom {
     this.link.send(ordersBytes(ordersNumbers(orders)));
   }
 
-  /** Lets the room's clock run `seconds`, where the room runs in the page. */
+  /** Lets the room's clock run `seconds`, where the room runs in the page. While the link rejoins, the room's word is
+   *  gone with it: no ship of its is shown, and a fight in it is over, she having left it. */
   pump(seconds: number): void {
+    if (this.link.rejoining) {
+      [this.ships, this.pirates, this.onDeck] = [[], [], null];
+      if (this.fight?.over === null) this.fight = { ...this.fight, over: 'gone', events: [] };
+    }
     this.link.pump(seconds);
   }
 

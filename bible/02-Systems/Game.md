@@ -81,7 +81,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
   weapon, the right button swings or aims, the left button or F guards, parries or fires, V or Mouse5 dodges, and the
   soft lock holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
-  taken. The keys listed name the fight's.
+  taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
+  name the fight's.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the vitals at the bottom left, the target's bars and the boss bar at the top, each foe's name and bar, the
   parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the tracers, the sparks, the
@@ -183,15 +184,21 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   player is predicted on the same ground and corrected by each snapshot, held still while the room says they are dead.
   The warning, the count and death are the room's word. Every other player in the room is shown where the room last
   saw them, in their own dress, and every foe where it last stood.
-  A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
+  A room whose socket closes, for a deploy or a dropped network, is joined again by itself ([[Server]], "The
+  browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
+  joined again, they are a new player there, standing where the room puts them, their dress sent again. A room that
+  sends the player away is lost: the display says so and they play on alone.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
   is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at
   the pace the room last held her to, then draws her to where the room has her. Where the room has her at rest short
   of her voyage's end, a course it would not take, the page heaves her to there. Leaving the helm while a course
-  waits its turn sends the course first, then the leave, so the room takes the course from the helm. A sea room
-  whose link is lost calls the player to the helm, and they sail on alone, the voyage's line saying so. Playing
-  alone, the same sea room runs in the page, so its pirates and fights are the same law.
+  waits its turn sends the course first, then the leave, so the room takes the course from the helm. While the sea
+  room is joined again after its socket closed, the page sails her alone and shows none of its ships, a fight in it
+  over, and the voyage's line says "Reconnecting…"; joined again, the player is called to the helm and she puts to sea
+  where she lies, on her voyage. A sea room that sends the player away is lost: they are called to the helm and sail
+  on alone, the voyage's line saying so. Playing alone, the same sea room runs in the page, so its pirates and
+  fights are the same law.
 
 ## Drawing
 
@@ -239,8 +246,6 @@ In death the world drains to grey, and comes back in colour on respawn or on lea
 - The browser predicts nothing of the edge: a warning, a death or a respawn shows as the room's snapshot says it.
 - The land is drawn a little off the ground bodies stand on, so the fight's marks and blood are drawn 0.12 m over
   where they lie. A telegraphed blow's mark is flat: on a slope, part of it lies under the land.
-- Shots, the aimed shot's crosshair and the tracers meet open ground at 0 m, not the node's land: a shot that misses
-  flies on through a hill.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.

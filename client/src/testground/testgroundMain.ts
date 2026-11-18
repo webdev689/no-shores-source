@@ -172,7 +172,14 @@ async function start(): Promise<void> {
   const roomUrl = given === null ? null : roomAddress(given);
   if (given !== null && !roomUrl)
     throw new Error(`"${given}" is not a room: a room's name is letters, digits and hyphens`);
+  // A link that joined the room again brings every dress there with its welcome.
+  let joins = 1;
   const received = (snapshot: Snapshot) => {
+    if (link.joins !== joins) {
+      joins = link.joins;
+      otherPlayers.takeDresses(link.dressed);
+      status = `Click the view to play. In the room as player ${link.player}.`;
+    }
     otherPlayers.takeDresses(snapshot.dressed);
     fight?.receive(snapshot);
     otherPlayers.seen(snapshot.players, fight?.player ?? null, forge);
@@ -283,6 +290,7 @@ async function start(): Promise<void> {
         firstPerson: inFirstPerson,
         pressed: shown.pressed,
         lost: link.lost,
+        rejoining: link.rejoining,
         parryOpen: fighting.parryOpen,
         crosshair:
           shown.aiming || aimHeld || (shown.ranged && inFirstPerson)

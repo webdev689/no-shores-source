@@ -98,8 +98,10 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
   true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
   comes. Others' come from the room's word, each ball's line from the one snapshot that carries it; a foe's ball, which
-  flies, is one tracer whose head keeps its own speed a tick behind the room's word, with one flash at its muzzle. Where a shot comes
-  to rest it throws six sparks back the way it came.
+  flies, is one tracer whose head keeps its own speed a tick behind the room's word, with one flash at its muzzle,
+  until the snapshot that says it stopped, with the point it left its gun: then its head runs on to where it stopped.
+  A ball first seen where it stopped is drawn from that point. One no snapshot carries on for a second, its shooter
+  sent away, is dropped with no sparks. Where a shot comes to rest it throws six sparks back the way it came.
 - **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
   throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
   `?blood=off` draws none.
@@ -124,7 +126,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   hand, or hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
   a red mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
   ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
-  with `?room=`, that the link to the room was lost and why.
+  with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and
+  why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
   rolled among those that reach the locked foe. Alone, Escape pauses the fight.
@@ -143,7 +146,11 @@ are the room's, the same for everyone in it, and fight whoever is near. Every ot
 room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
-which player this is.
+which player this is. A foe an older room sends with no type is drawn as the pirates' type in its role.
+
+When the room's socket closes, for a deploy or a dropped network, the page joins the room again by itself ([[Server]],
+"The browser's side"): a new player there, standing where the room puts them, their dress and what their hands hold
+kept and sent again.
 
 ## What the figure shows
 

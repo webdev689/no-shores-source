@@ -46,12 +46,14 @@ export interface FleetVessel {
   readonly rank: number;
 }
 
-/** The Sloop's session in a fleet room, as the editor sees it: her number, why the room was lost, the room's clock,
+/** The Sloop's session in a fleet room, as the editor sees it: her number, why the room was lost and whether it is
+ *  being joined again, the room's clock,
  *  her orders owed and her ship predicted, the room's word on her and on every other ship, the balls aloft, her look's
  *  lay, and what happened. */
 export interface FleetSession {
   readonly id: number;
   readonly lost: string | null;
+  readonly rejoining: boolean;
   roomTime(now: number): number;
   advance(seconds: number, input: FleetInput, now: number): void;
   shipFloats(): ShipFloats;

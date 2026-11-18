@@ -121,6 +121,8 @@ export class Foot {
   private readonly otherGlides = new Glides();
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
+  /** The link's welcomes followed: one more means the player joined the room again. */
+  private joined = 1;
 
   private constructor(
     context: FootContext,
@@ -203,6 +205,7 @@ export class Foot {
   /** A line on the room the player plays in: their number in it or word that it was lost; nothing alone. */
   get roomNote(): string {
     if (!(this.link instanceof RoomConnection)) return '';
+    if (this.link.rejoining) return 'Reconnecting…';
     return this.link.open ? `In the room as player ${this.link.player}` : 'The room was lost: playing on alone';
   }
 
@@ -217,13 +220,18 @@ export class Foot {
   ): FootFrame {
     const { walker, movement, forge, groundAt } = this.context;
     const { fight, foes, effects } = this;
+    if (this.link.joins !== this.joined) {
+      // A link that joined its room again brings every dress there with its welcome.
+      this.joined = this.link.joins;
+      this.otherPlayers.takeDresses(this.link.dressed);
+    }
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const camera = () => playerCamera(walker.player, movement, this.boxes);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
       hands: hands && !paused,
-      markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies),
+      markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
     });
     const events = effects.events(fight, seconds);
     const shot = shotOfOrbit(camera(), LENS, groundAt, CAMERA_CLEARANCE_M);
@@ -248,6 +256,7 @@ export class Foot {
           ? screenMuzzle(camera(), aspect, muzzle)
           : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
       origin: shot.eye,
+      groundAt,
     });
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {

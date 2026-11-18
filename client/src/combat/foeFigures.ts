@@ -5,7 +5,7 @@ import { cardStand, type Placed, viewOf } from '../player/figures.ts';
 import { foeDress } from '../player/foeDress.ts';
 import { Glides } from '../player/glide.ts';
 import { likelyMoves, shownMove } from '../player/playerMoves.ts';
-import type { FoeType } from '../rules/roster.ts';
+import { type FoeType, shownType } from '../rules/roster.ts';
 import type { Fighting } from './fighting.ts';
 import type { Flashes } from './flashes.ts';
 import type { MarkedFoe } from './foeBars.ts';
@@ -48,7 +48,7 @@ export class FoeFigures {
   ): CardAt[] {
     const cards: CardAt[] = [];
     for (const kept of fight.foes.values()) {
-      const dress = this.dresses.get(kept.type);
+      const dress = this.dresses.get(shownType(this.roster, kept)?.type ?? kept.type);
       if (!dress) continue;
       let placed = this.figures.get(kept.id);
       if (!placed) {
@@ -82,12 +82,12 @@ export class FoeFigures {
     return [...fight.foes.values()].map((kept) => {
       const figure = this.figures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
-      const type = this.roster.find((each) => each.type === kept.type);
+      const type = shownType(this.roster, kept);
       return {
         ...kept,
         name: type?.name ?? 'Foe',
         faction: type?.factionName ?? '',
-        factionNumber: kept.faction,
+        factionNumber: kept.faction || (type?.faction ?? 0),
         view,
       };
     });

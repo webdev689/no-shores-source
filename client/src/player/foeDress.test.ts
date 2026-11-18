@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { CLOTHING_DYES } from '../forge/dyes.ts';
-import { factionsOf, rankChoices, rosterOf } from '../rules/roster.ts';
+import { factionsOf, rankChoices, rosterOf, shownType } from '../rules/roster.ts';
 import { foeDress } from './foeDress.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
@@ -59,4 +59,14 @@ test('the panel offers a faction, then only the ranks its chosen type comes in',
   assert.deepEqual(ranksOf('Marksman'), [['3', 'Elite']]);
   assert.deepEqual(ranksOf('Captain Brannoc Thule'), [['5', 'Boss']]);
   assert.deepEqual(ranksOf('High Assessor Corvane'), [['5', 'Boss']]);
+});
+
+test('a foe from an older room, sent with no type, is shown as the pirates’ type in its role', () => {
+  assert.deepEqual(
+    [1, 3, 5].map((kind) => shownType(roster, { type: 0, kind })?.type),
+    [13, 15, 17],
+    'the pirates’ Skirmisher, Brute and Captain',
+  );
+  assert.equal(shownType(roster, { type: 4, kind: 3 })?.name, 'Enforcer', 'a type sent is its own');
+  assert.equal(shownType(roster, { type: 0, kind: 0 }), undefined);
 });

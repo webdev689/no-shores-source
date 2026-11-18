@@ -141,8 +141,31 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
     assert!(room.shots().is_empty());
     // Two ticks before the snapshot, as a late timer runs them: the ball's line is kept for it, and sent once.
     let lines = room.take_lines();
-    assert!(lines.len() == 1 && lines[0].owner == player, "{lines:?}");
+    assert!(lines.len() == 1 && lines[0].last.owner == player, "{lines:?}");
     assert!(room.take_lines().is_empty());
+}
+
+#[test]
+fn a_foes_ball_that_stops_is_sent_once_as_its_last_segment_and_its_muzzle() {
+    let mut room = room();
+    let foe = stand(&mut room, 9, 0.0, 0.0);
+    let muzzle = [0.5, -0.5, 1.3];
+    let aimed = combat::shots::loose(foe, combat::Ranged::Pistolet, [0.5, -0.1, 1.3], 0.0, 0.0, 1.0);
+    room.shots.push(combat::shots::by_foe(&combat::Shot { at: muzzle, ..aimed }));
+    let mut ticks = 0;
+    while !room.shots().is_empty() {
+        assert!(room.take_lines().is_empty(), "a ball still flying has no line");
+        room.tick();
+        ticks += 1;
+    }
+    let lines = room.take_lines();
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    let line = lines[0];
+    assert_eq!((line.last.owner, line.last.age), (foe, ticks - 1));
+    line.muzzle.iter().zip(muzzle).for_each(|(sent, true_muzzle)| assert!((sent - true_muzzle).abs() < 1e-9));
+    // It flew north its whole reach, and its last segment ends past it.
+    let end = line.last.at[1] + line.last.velocity[1] * movement::TICK_SECONDS;
+    assert!(end <= muzzle[1] - combat::shots::BALL_REACH, "{end}");
 }
 
 #[test]

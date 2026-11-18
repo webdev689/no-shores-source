@@ -9,8 +9,8 @@ import { Vitals } from './vitals.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
  *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
- *  is the player's own eyes, whether a swing or a dodge was pressed since the last frame, and why the link to the room
- *  was lost (null while it holds). */
+ *  is the player's own eyes, whether a swing or a dodge was pressed since the last frame, why the link to the room
+ *  was lost (null while it holds), and whether it is joining the room again. */
 export interface HudFrame {
   readonly own: FighterView | null;
   readonly foes: readonly MarkedFoe[];
@@ -23,6 +23,7 @@ export interface HudFrame {
   readonly firstPerson: boolean;
   readonly pressed: boolean;
   readonly lost: string | null;
+  readonly rejoining?: boolean;
   /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
   readonly crosshair?: { readonly charge: number | null } | null;
   /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen). */
@@ -110,8 +111,9 @@ export class Hud {
     this.flash(frame, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0);
     const dead = own?.action.kind === 'dead' ? own.action : null;
-    this.veil.hidden = !dead && frame.lost === null;
-    if (frame.lost !== null) this.veil.textContent = `The link to the room was lost: ${frame.lost}.`;
+    this.veil.hidden = !dead && frame.lost === null && !frame.rejoining;
+    if (frame.rejoining) this.veil.textContent = 'Reconnecting…';
+    else if (frame.lost !== null) this.veil.textContent = `The link to the room was lost: ${frame.lost}.`;
     else if (dead)
       this.veil.textContent = `You fell. Standing again in ${Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60)} s`;
     const charge = frame.crosshair?.charge ?? null;

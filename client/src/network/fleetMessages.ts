@@ -22,29 +22,67 @@ export interface FleetOrders {
   readonly captain?: { readonly faction: number; readonly rank: number };
 }
 
+/** A captain's faction and rank as a room sends them; an older room sends 0 for both, and every captain it held was a
+ *  Major of the pirates (2 for each, as the messages number them). */
+export function commissionOf(faction: number, rank: number): { readonly faction: number; readonly rank: number } {
+  return { faction: faction || 2, rank: rank || 2 };
+}
+
 /** The calls as the messages number them. */
 const CALLS: Record<FleetCall, number> = { none: 0, captain: 1, 'send off': 255 };
 
-/** One tick's orders as their bytes, as the schema defines them. */
+/** The farthest a look may lay, metres (crates/room/src/fleet.rs MOST_RANGE_M). */
+const MOST_RANGE_M = 1e5;
+
+/** A whole number from `low` to `high`, as a field of the schema holds it; any other is refused (a RangeError), since
+ *  a number past what its field holds would reach the room as another. */
+export function wholeIn(value: number, low: number, high: number, what: string): number {
+  if (!Number.isInteger(value) || value < low || value > high) throw new RangeError(`${what} is ${value}`);
+  return value;
+}
+
+/** A number held within `low` to `high`, as the room takes it; one that is not a number is refused (a RangeError). */
+export function heldIn(value: number, low: number, high: number, what: string): number {
+  if (Number.isNaN(value)) throw new RangeError(`${what} is not a number`);
+  return Math.min(high, Math.max(low, value));
+}
+
+/** Numbers the room takes only when each is one; any other is refused (a RangeError). */
+function finite(numbers: readonly number[], what: string): number[] {
+  if (!numbers.every(Number.isFinite)) throw new RangeError(`${what} holds a number that is not one`);
+  return [...numbers];
+}
+
+/** One tick's orders as their bytes, as the schema defines them: her rudder, rung and look held within what the room
+ *  takes, and her number, load and call refused outside what their fields hold. */
 export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
-  const look = orders.look ? [orders.look.bearing, orders.look.range, ...(orders.look.ray ?? [])] : [];
+  const { look: laid, captain } = orders;
+  const look = laid
+    ? [
+        heldIn(laid.bearing, -180, 180, "the look's bearing"),
+        heldIn(laid.range, 0, MOST_RANGE_M, "the look's range"),
+        ...finite(laid.ray ?? [], "the look's ray"),
+      ]
+    : [];
   const aim = Orders.createAimVector(builder, look);
-  const putToSea = Orders.createPutToSeaVector(builder, orders.putToSea ? [...orders.putToSea] : []);
+  const put = orders.putToSea ? finite(orders.putToSea, 'where she puts to sea') : [];
+  const putToSea = Orders.createPutToSeaVector(builder, put);
+  const called = orders.call === 'captain';
   const message = Orders.createOrders(
     builder,
-    sequence,
-    orders.steer,
+    wholeIn(sequence, 0, 0xffff_ffff, "the orders' number"),
+    heldIn(orders.steer, -1, 1, 'the rudder'),
     orders.crab,
-    orders.climb,
+    Math.round(heldIn(orders.climb, -1, 1, 'the rung')),
     aim,
     orders.fire,
     orders.brace,
-    orders.load,
+    wholeIn(orders.load, 0, 4, 'the load'),
     putToSea,
     CALLS[orders.call],
-    orders.call === 'captain' ? (orders.captain?.faction ?? 0) : 0,
-    orders.call === 'captain' ? (orders.captain?.rank ?? 0) : 0,
+    called ? wholeIn(captain?.faction ?? 0, 0, 0xff, "the captain's faction") : 0,
+    called ? wholeIn(captain?.rank ?? 0, 0, 5, "the captain's rank") : 0,
   );
   builder.finish(message);
   return builder.asUint8Array().slice();
@@ -171,8 +209,9 @@ export function fleetOf(snapshot: Snapshot): FleetPart {
       target: vessel.target(),
       runOut: vessel.runOut(),
       acknowledged: vessel.acknowledged(),
-      faction: vessel.faction(),
-      rank: vessel.rank(),
+      ...(vessel.captain()
+        ? commissionOf(vessel.faction(), vessel.rank())
+        : { faction: vessel.faction(), rank: vessel.rank() }),
     };
   });
   const balls = Array.from({ length: snapshot.ballsLength() }, (unused, index): AloftBall => {

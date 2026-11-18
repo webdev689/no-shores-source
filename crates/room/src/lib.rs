@@ -25,6 +25,7 @@ pub use players::{
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
 use combat::judge::swing_blow;
+use combat::shots::Line;
 use combat::strike::struck;
 use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
@@ -106,9 +107,8 @@ pub struct Room {
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
     pub(crate) loosed: Vec<FighterId>,
-    /// The balls fired since the last snapshot, each as its whole line: from where it left to where it stopped, in one
-    /// tick of its velocity.
-    pub(crate) lines: Vec<Shot>,
+    /// The balls that stopped since the last snapshot, each as its last segment and the point it left its gun.
+    pub(crate) lines: Vec<Line>,
     /// What the foes share, how hot their fight runs, the routes they walk, the seed their chances are drawn from, the
     /// most it holds, and a node's garrison.
     pub(crate) board: ::foes::Board,
@@ -419,7 +419,7 @@ impl Room {
                 // A player's ball reaches its mark at once: judged among the foes as the player's screen showed them.
                 if self.players.contains_key(&id) && combat::shots::shot_numbers(shot.ranged).0 <= 0.0 {
                     let stop = self.shoot_seen(&shot, view);
-                    self.lines.push(combat::shots::line_of(&shot, stop));
+                    self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
                     self.shots.push(shot);
                 }
@@ -506,9 +506,9 @@ impl Room {
         &self.shots
     }
 
-    /// The balls fired since this was last asked, each as its whole line, to send to everyone once so every screen
-    /// draws its tracer, however many ticks a snapshot follows.
-    pub fn take_lines(&mut self) -> Vec<Shot> {
+    /// The balls that stopped since this was last asked, each as its line, to send to everyone once so every screen
+    /// ends its tracer where it stopped, however many ticks a snapshot follows.
+    pub fn take_lines(&mut self) -> Vec<Line> {
         std::mem::take(&mut self.lines)
     }
 

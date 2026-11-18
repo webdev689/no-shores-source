@@ -198,8 +198,13 @@ export class Sea {
   async enterRoom(open: Parameters<typeof SeaRoom.join>[0]): Promise<void> {
     this.room = await SeaRoom.join(open, this.position, this.passage.pace);
     [this.passage.room, this.roomLost] = [this.room, false];
-    // Put to sea at rest, she is turned as she lies, so the room shows every player her heading.
-    if (!this.passage.sailing) this.room.face(this.heading);
+    this.sendLie(this.room);
+  }
+
+  /** Puts to sea at rest, she is turned as she lies, so the room shows every player her heading; under way, she sails
+   *  on her voyage. */
+  private sendLie(room: SeaRoom): void {
+    if (!this.passage.sailing) room.face(this.heading);
     this.passage.sendVoyage();
   }
 
@@ -414,6 +419,12 @@ export class Sea {
       this.leaveRoom();
       this.roomLost = true;
     }
+    // Joined again after its socket closed, the room has her as a new player: she puts to sea again where she lies.
+    if (this.room?.rejoined()) {
+      this.aboard.drop();
+      this.room.course([this.position], this.passage.pace);
+      this.sendLie(this.room);
+    }
     this.water.swell = input.swell;
     this.room?.pump(dt);
     this.meet(time);
@@ -557,7 +568,8 @@ export class Sea {
 
   private note(): string {
     const lost = this.roomLost ? ' · The sea room was lost: sailing on alone' : '';
-    const room = this.room ? ` · In the sea room as player ${this.room.own}` : lost;
+    const joined = this.room?.rejoining ? ' · Reconnecting…' : ` · In the sea room as player ${this.room?.own}`;
+    const room = this.room ? joined : lost;
     if (this.combat) return `Fighting${room}`;
     if (this.view.kind !== 'sail') return room.slice(3);
     // Off the helm, her helmsman has her while she sails on.

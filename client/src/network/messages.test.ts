@@ -6,7 +6,7 @@ import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
-import { courseBytes, inputBytes, ordersBytes, readFromRoom } from './messages.ts';
+import { courseBytes, inputBytes, ordersBytes, readFromRoom, walkBytes } from './messages.ts';
 import { fightViewOf, ordersNumbers } from './seaFight.ts';
 
 const target = (path: string) => new URL(`../../../target/${path}`, import.meta.url);
@@ -85,6 +85,13 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   arrow?.at.forEach((value, axis) =>
     assert.ok(Math.abs(value - ([3, -6, 1.1][axis] ?? 0) - (along[axis] ?? 0) * 0.4) < 1e-12),
   );
+  assert.equal(arrow?.muzzle, null, 'a shot still flying carries no muzzle');
+  // Foe 12's ball, stopped half a metre into its seventh tick out from (4, -6, 1.1): its last segment and its muzzle.
+  const ball = snapshot.shots[1];
+  assert.deepEqual([ball?.ranged, ball?.age, ball?.at], [3, 6, [10, -6, 1.1]]);
+  assert.ok(Math.abs((ball?.velocity[0] ?? 0) / 60 - 0.5) < 1e-12, 'to where it stopped');
+  ball?.muzzle?.forEach((value, axis) => assert.ok(Math.abs(value - ([4, -6, 1.1][axis] ?? 0)) < 1e-12, `${value}`));
+  assert.ok(ball?.muzzle);
 });
 
 test('the sea’s snapshot the server wrote reads back as its ships, its pirates, its fights and its walkers on deck', async () => {
@@ -182,4 +189,21 @@ test('a course is its points, x then y, and its pace', () => {
 test('bytes that hold no message read as nothing', () => {
   assert.equal(readFromRoom(new Uint8Array()), null);
   assert.equal(readFromRoom(new Uint8Array([1, 2, 3])), null);
+});
+
+test('an input never wraps a number past its field: its number, arms and a foe’s type are refused, and its frame, the tick seen and a foe’s rank are held within range', () => {
+  const look = { anim: 'idle', frame: 70_000, facing: 0 };
+  const parts = { intent: new Float64Array(12), look, arms: 0, seen: 2n ** 70n, spawn: { type: 12, rank: 9 } };
+  const high = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, parts)));
+  assert.deepEqual([high.frame(), high.seen(), high.spawnRank()], [0xffff, 2n ** 64n - 1n, 5]);
+  const under = { ...parts, look: { ...look, frame: -3 }, seen: -1n, spawn: { type: 12, rank: 0 } };
+  const low = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, under)));
+  assert.deepEqual([low.frame(), low.seen(), low.spawnRank()], [0, 0n, 1]);
+  assert.throws(() => inputBytes(2 ** 32, parts), RangeError);
+  assert.throws(() => inputBytes(1.5, parts), RangeError);
+  assert.throws(() => inputBytes(1, { ...parts, arms: -1 }), RangeError);
+  assert.throws(() => inputBytes(1, { ...parts, spawn: { type: 257, rank: 2 } }), RangeError);
+  assert.throws(() => inputBytes(1, { ...parts, look: { ...look, frame: Number.NaN } }), RangeError);
+  assert.throws(() => courseBytes([], 70_000), RangeError);
+  assert.throws(() => walkBytes(-1, [0, 0, 0, 0, 0, 0, 0]), RangeError);
 });

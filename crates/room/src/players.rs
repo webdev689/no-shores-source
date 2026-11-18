@@ -81,6 +81,16 @@ pub enum SpawnAsk {
     Clear,
 }
 
+impl SpawnAsk {
+    /// A foe asked for by its role alone (1 skirmisher to 5 captain, no type), as a page from before the roster asks:
+    /// the pirates' type in that role, a Major, or at its first rank if it comes in none (their Captain an Elite).
+    #[must_use]
+    pub fn by_role(role: u8) -> Option<Self> {
+        let foe_type = ::foes::in_role(::foes::factions::PIRATES, ::foes::Role::from_number(role)?)?;
+        Some(Self::Foe { foe_type: foe_type.number, rank: foe_type.rank_or_first(Some(::foes::Rank::Major)) as u8 })
+    }
+}
+
 impl Input {
     /// Whether its look and dress are within what a room carries, and every number in it is one (the intent's reading
     /// already took a pitch or mark that is none as such).
