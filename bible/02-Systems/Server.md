@@ -312,7 +312,8 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 - Bodies pass through each other; foes keep apart by steering.
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
-  the [[Game]] does both, and asks for no foe and swings no blow.
+  the [[Game]] does both, its fighter predicted on the node's window of the land (`room-wasm`'s `fighter_ground`),
+  and asks for no foe.
 - A node's room bakes its foes' navmesh over its boxes on open ground at 0 m, not on its window of the land.
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.

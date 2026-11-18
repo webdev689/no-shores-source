@@ -9,7 +9,7 @@ import type { Gpu } from '../gpu.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
-import { BODY_HEIGHT } from './crosshair.ts';
+import { BODY_HEIGHT } from '../player/crosshair.ts';
 
 /** The arms code's melee byte for a warhammer (combat's WeaponClass), whose overkill takes DFO's heavy branch. */
 const WARHAMMER = 6;

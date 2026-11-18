@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FlyingShot } from '../network/messages.ts';
-import { MARK_FLOATS } from '../combat/marks.ts';
-import { Tracers, before, figureMuzzle, ribbon } from './tracers.ts';
+import { MARK_FLOATS } from './marks.ts';
+import { type ShotStops, Tracers, before, figureMuzzle, ribbon } from './tracers.ts';
 
 const TICK = 1 / 60;
+/** Open ground at 0 m with nothing on it, as a shot meets it. */
+const open: ShotStops = (from, along) => (from[2] >= 0 && from[2] + along[2] < 0 ? from[2] / -along[2] : 1);
 const eye = [0, 10, 1.5] as const;
 const ball = { ranged: 3, at: [0, 0, 1.5] as const, velocity: [0, -30 / TICK, 0] as const };
 const arrow = { ranged: 1, at: [0, 0, 1.5] as const, velocity: [0, -45, 1] as const };
@@ -41,7 +43,7 @@ test("the player's ball races from the drawn muzzle to where it stopped, then fa
     [0.2, -0.4, 1.4].map((value) => value + 0),
     'from the muzzle',
   );
-  tracers.update(0.5, [], []);
+  tracers.update(0.5, open);
   assert.equal(tracers.mesh(eye, [], 1).length, 0, 'gone');
 });
 
@@ -49,13 +51,13 @@ test("the player's arrow flies and falls until the ground stops it, its trail ou
   const tracers = new Tracers();
   const muzzle = [0.3, -0.5, 1.4] as const;
   tracers.fired([{ ...arrow, velocity: [0, -45, 0] }], () => muzzle);
-  tracers.update(0.05, [], []);
+  tracers.update(0.05, open);
   const flying = tracers.mesh(eye, [], 1);
   const trailStart = flying.slice(0, 3);
   assert.ok(Math.hypot((trailStart[0] ?? 0) - 0.3, (trailStart[2] ?? 0) - 1.4) < 0.2, `out of the bow: ${trailStart}`);
-  tracers.update(2, [], []);
+  tracers.update(2, open);
   assert.ok(tracers.mesh(eye, [], 1).length > 0, 'stopped on the ground, its trail lingers');
-  tracers.update(0.5, [], []);
+  tracers.update(0.5, open);
   assert.equal(tracers.mesh(eye, [], 1).length, 0);
 });
 

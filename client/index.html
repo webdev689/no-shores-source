@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Overlook</title>
+    <link rel="stylesheet" href="/src/combat/hud.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -129,6 +130,16 @@
       }
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
+      }
+      /* The fight's own bars stand at the foot of the view's middle, clear of the keys listed at its left, and the
+         locked foe's under the room's note. */
+      #fight-hud .own {
+        left: 50%;
+        margin-left: -120px;
+        bottom: 22px;
+      }
+      #fight-hud .target {
+        top: 72px;
       }
       .status {
         position: absolute;
@@ -606,6 +617,7 @@
   </head>
   <body>
     <canvas id="game"></canvas>
+    <div id="fight-hud" class="fight-hud" hidden></div>
     <div id="hud"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

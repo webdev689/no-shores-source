@@ -35,6 +35,7 @@ enum Opened {
 thread_local! {
     static OPEN: RefCell<Option<Opened>> = const { RefCell::new(None) };
     static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    static FLOOR: RefCell<Floor> = const { RefCell::new(Floor::Flat) };
 }
 
 /// What became of an input the host handed over.
@@ -138,11 +139,21 @@ pub fn set_course(bytes: &[u8]) -> bool {
     true
 }
 
-/// One tick of a player's fighter as a course's room would take it, on open ground, from its numbers: the fighter,
-/// the intent, the player's number, the arms their hands hold (taken up as the room takes them, `Fighter::holding`),
-/// then every fighter it sees as a number and a glance. Answers the next fighter's
-/// numbers, then, if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its
-/// whole line to where it stops among those seen, in a tick); or none when the numbers are not that.
+/// Keeps the ground a fighter is predicted on: a node's window of the land, from the same JSON the movement door's
+/// `set_ground` takes, so the prediction stands where the node's room stands its bodies. Text that is not a window
+/// leaves open ground at 0 m; answers whether it was one.
+pub fn set_ground(text: &[u8]) -> bool {
+    let ground = serde_json::from_slice::<Ground>(text).ok();
+    let kept = ground.is_some();
+    FLOOR.with(|floor| *floor.borrow_mut() = ground.map_or(Floor::Flat, |ground| Floor::Land(Box::new(ground))));
+    kept
+}
+
+/// One tick of a player's fighter as a course's or a node's room would take it, on the ground kept, from its
+/// numbers: the fighter, the intent, the player's number, the arms their hands hold (taken up as the room takes them,
+/// `Fighter::holding`), then every fighter it sees as a number and a glance. Answers the next fighter's numbers, then,
+/// if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its whole line to where
+/// it stops among those seen, in a tick); or none when the numbers are not that.
 #[must_use]
 pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let floats = floats_of(bytes);
@@ -164,7 +175,8 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let intent = combat::Intent::from_floats(intent);
     let (next, shot) = COURSE.with(|course| {
         let blocks = course.borrow();
-        let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &movement::Flat);
+        let (next, happening) =
+            FLOOR.with(|floor| combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &*floor.borrow()));
         let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
         if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
             return (next, Some(shot));
@@ -448,6 +460,16 @@ pub extern "C" fn room_sloop() -> u64 {
 pub unsafe extern "C" fn fighter_course(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_course(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the ground written at `address` for predicting, as `set_ground` says; 1 if it was a window, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Steps the fighter whose numbers are written at `address` a tick, as `predict` says; answers the next fighter's

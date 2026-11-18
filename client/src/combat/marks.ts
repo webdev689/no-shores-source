@@ -46,12 +46,14 @@ export const MARK_FLOATS = 7;
 type Point = readonly [number, number];
 
 /** The triangles of every telegraphed blow's mark, every arrow and bolt in flight, every spark and the tracers'
- *  vertices `more`, as vertices of MARK_FLOATS numbers. */
+ *  vertices `more`, as vertices of MARK_FLOATS numbers, each place measured from `origin`: far out in the world, a
+ *  place in 32-bit floats is only near the eye exact enough to draw. */
 export function marksMesh(
   telegraphs: readonly TelegraphMark[],
   shots: readonly FlyingShot[],
   sparks: readonly Spark[] = [],
   more: readonly number[] = [],
+  origin: readonly [number, number, number] = [0, 0, 0],
 ): Float32Array {
   const out: number[] = [];
   for (const telegraph of telegraphs) markTelegraph(out, telegraph);
@@ -65,6 +67,8 @@ export function marksMesh(
     markStreak(out, at, velocity, length, SPARK_THICK, [...colour, 1 - cooled * cooled]);
   }
   for (const value of more) out.push(value);
+  for (let start = 0; start + 2 < out.length; start += MARK_FLOATS)
+    for (let axis = 0; axis < 3; axis++) out[start + axis] = (out[start + axis] ?? 0) - (origin[axis] ?? 0);
   return new Float32Array(out);
 }
 

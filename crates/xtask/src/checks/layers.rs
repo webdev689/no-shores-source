@@ -33,6 +33,7 @@ pub const LAYERS: &[Layer] = &[
             "heldmap",
             "ships",
             "plus",
+            "combat",
         ],
     },
     Layer { name: "water", may_import: &["rules"] },

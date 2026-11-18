@@ -29,6 +29,10 @@ export interface CombatRules {
   readonly sizes: CombatSizes;
   /** Keeps these blocks as the course every later prediction moves on. */
   setCourse(blocks: readonly Block[]): void;
+  /** Stands every later prediction on a node's window of the land, from the same JSON the movement rules' setGround
+   *  takes, as the node's room stands its fighters; null, or anything that is not a window, is open ground at 0 m.
+   *  Answers whether a window was set. */
+  setGround(windowJson: string | null): boolean;
   /** The player's fighter one tick on under an intent, taking up `arms` as the room does, among the fighters they
    *  see, and the shot it let go. */
   predict(
@@ -49,6 +53,7 @@ interface FightExports {
   reserve(length: number): number;
   release(address: number, length: number): void;
   fighter_course(address: number, length: number): number;
+  fighter_ground(address: number, length: number): number;
   fighter_predict(address: number, length: number): bigint;
   fighter_arms(address: number, length: number): number;
   fighter_sizes(): number;
@@ -83,6 +88,10 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
         blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
       );
       lend(floatBytes(floats), (address) => exports.fighter_course(address, floats.byteLength));
+    },
+    setGround: (windowJson) => {
+      const text = new TextEncoder().encode(windowJson ?? '');
+      return lend(text, (address) => exports.fighter_ground(address, text.length)) === 1;
     },
     predict: (fighter, intent, id, arms, view) => {
       const floats = new Float64Array(sizes.fighter + sizes.intent + 2 + view.length * (sizes.glance + 1));

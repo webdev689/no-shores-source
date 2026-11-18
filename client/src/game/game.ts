@@ -155,9 +155,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     land,
     walker,
     forge,
-    rooms,
+    rooms: rooms && { url: rooms, module: roomModule },
     session,
-    groundAt: (x, y) => scene.groundAt(x, y),
+    scene,
   };
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
@@ -465,7 +465,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
       : undefined;
-    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures), { after: hands });
+    scene.draw(shown.shot, size, clock, seconds, [...standing([], shown.figures), ...shown.drawers], { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.standing.kind === 'dead' ? HINTS.dead : HINTS.foot);

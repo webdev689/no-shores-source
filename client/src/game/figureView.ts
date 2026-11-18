@@ -69,7 +69,9 @@ const SUN_ACROSS = 0.766;
   // that lies behind that one from the sun is asked of the map from past it, so a figure never shades itself.
   let behind = max(across_of(in.corner) * dot(view.right.xy, LIGHT_ACROSS), 0.0);
   let sun = sunlit(in.from_eye + SUN * (behind / SUN_ACROSS + 0.15), SUN);
-  return vec4f(texel.rgb * mix(SHADED, 1.0, sun), 1.0);
+  // A struck figure flashes white, or red for the player's own, by its share.
+  let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
+  return vec4f(mix(texel.rgb * mix(SHADED, 1.0, sun), flash, card.root.z), 1.0);
 }
 
 // A figure's contact shade: a soft dark disc on the ground at its feet. Where the near shadow map holds the figure's
@@ -239,13 +241,13 @@ export class FigureView implements CardMaker {
     values.set(fromEye);
     values.set([Math.cos(yaw), Math.sin(yaw), 0, 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
-    const groups = figures.map(({ card, x, y, z, flip }, index) => {
+    const groups = figures.map(({ card, x, y, z, flip, flash }, index) => {
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
         ...[x - eye[0], y - eye[1], z - eye[2], flip ? 1 : 0],
         ...[card.width / PX_PER_M, card.height / PX_PER_M, 0, 0],
-        ...[rootX, card.root[1] / PX_PER_M, 0, 0],
+        ...[rootX, card.root[1] / PX_PER_M, flash?.share ?? 0, flash?.red ? 1 : 0],
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;

@@ -174,12 +174,15 @@ export class FirstPerson {
   private drawnMuzzle: readonly [number, number] | null = null;
   private readonly kept = new Map<string, { texture: GPUTexture; picture: Picture } | null>();
   private readonly loading = new Set<string>();
+  /** Picks each swing's direction as a share of DFO's six, as each swing begins; a fight's rules may choose it, and
+   *  may be set to once the first person is open. */
+  strokes: () => number;
 
-  /** `strokes` picks each swing's direction as a share of DFO's six; the fight's rules may choose it. */
   constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random, strokes = random) {
     this.view = view;
     this.source = source;
-    this.hands = new Hands(strokes);
+    this.strokes = strokes;
+    this.hands = new Hands(() => this.strokes());
     this.ride = new RideMotion(random);
   }
 
