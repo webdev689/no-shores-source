@@ -518,15 +518,7 @@ async function start(): Promise<void> {
       const [right, left] = dress.outfit.drawn ? [dress.outfit.right, dress.outfit.left] : [null, null];
       const draws = (anim: string, held: string | null) => forge.draws(dress.body, anim, held);
       // Its likeliest moves, the telegraphed blows' strokes and what a fight holds it to.
-      forge.warm(dress, [
-        ...likelyMoves(right, left, draws),
-        'thrust',
-        'chop',
-        'swing2h',
-        'parry',
-        'hurt',
-        'death',
-      ]);
+      forge.warm(dress, [...likelyMoves(right, left, draws), 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death']);
       const { view: side, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
       const card = forge.card(placed.id, dress, move.anim, side, frameShown, flip);
       const flash = { share: flashes.shareOf(kept.id), red: false };
