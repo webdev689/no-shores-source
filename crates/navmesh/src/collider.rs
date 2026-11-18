@@ -11,7 +11,7 @@ pub enum Rise {
 }
 
 /// A ramp: a footprint (x east, y south, metres) whose top rises in a plane from `low` at the footprint's minimum
-/// the way it `rises` to `high` at its maximum. It is solid from its lower end's height up to the plane.
+/// the way it `rises` to `high` at its maximum. It stands solid from the ground beneath it up to the plane.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ramp {
     pub min_x: f64,
@@ -50,16 +50,6 @@ impl Collider {
         match self {
             Self::Block(block) => block.top,
             Self::Ramp(ramp) => ramp.low.max(ramp.high),
-        }
-    }
-
-    /// Where it is solid from, over ground at `ground`: a block from the ground (or the grid's floor, for a top
-    /// below it), a ramp from its lower end.
-    pub(crate) fn base(&self, ground: f64, floor: f64) -> f64 {
-        match self {
-            Self::Block(block) if block.top < ground => floor,
-            Self::Block(_) => ground,
-            Self::Ramp(ramp) => ramp.low.min(ramp.high),
         }
     }
 

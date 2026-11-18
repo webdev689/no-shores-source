@@ -1,8 +1,8 @@
 //! Firing spots baked with the mesh: covered from a wall standing within reach of the eye, a lane away from it, no
 //! cover from a wall below the eye, no lane out past the bounds' edge, nothing kept where there is neither, and the
-//! spots near a point answered in a fixed order.
+//! spots near a point answered in a fixed order. The ground's own rises cover a spot and shut its lanes as a wall does.
 
-use movement::Block;
+use movement::{Block, Terrain};
 use navmesh::{AGENT, Bounds, NavMesh, Spot};
 
 /// A 40 x 40 m field around the origin: lanes 14 m long fit across its middle.
@@ -99,5 +99,35 @@ fn the_spots_near_a_point_are_those_within_the_radius_row_by_row_from_the_north(
     for pair in near.windows(2) {
         let (first, second) = (pair[0].point, pair[1].point);
         assert!(first[1] < second[1] || (first[1] == second[1] && first[0] < second[0]), "{first:?} before {second:?}");
+    }
+}
+
+/// A terrain made from a function of (x, y).
+struct Ground(fn(f64, f64) -> f64);
+
+impl Terrain for Ground {
+    fn height_at(&self, x: f64, y: f64) -> f64 {
+        (self.0)(x, y)
+    }
+}
+
+#[test]
+fn a_rise_of_the_ground_over_the_eye_covers_a_spot_and_shuts_its_lane_as_a_wall_does() {
+    // A bank of earth 3 m high where the first test stands its wall, on open ground at 0.
+    let bank = Ground(|x, y| if x.abs() <= 4.0 && (-3.0..=-2.5).contains(&y) { 3.0 } else { 0.0 });
+    let spots = every(&NavMesh::bake_on(&[], &bank, FIELD, &AGENT));
+    for spot in within(&spots, [-3.0, -2.5, 3.0, -0.5]) {
+        assert_ne!(spot.cover & NORTH, 0, "the bank is within 2.4 m north: {spot:?}");
+        assert_eq!(spot.lanes & NORTH, 0, "no lane through the bank: {spot:?}");
+        assert_ne!(spot.lanes & SOUTH, 0, "a lane away from it: {spot:?}");
+    }
+    for spot in within(&spots, [-3.0, -0.2, 3.0, 0.2]) {
+        assert_eq!(spot.cover & NORTH, 0, "2.5 m from the bank is past cover's reach: {spot:?}");
+        assert_eq!(spot.lanes & NORTH, 0, "but the bank still shuts the lane: {spot:?}");
+    }
+    let low = Ground(|x, y| if x.abs() <= 4.0 && (-3.0..=-2.5).contains(&y) { 1.2 } else { 0.0 });
+    for spot in within(&every(&NavMesh::bake_on(&[], &low, FIELD, &AGENT)), [-3.0, -2.5, 3.0, -0.5]) {
+        assert_eq!(spot.cover, 0, "the eye sees over a bank of 1.2 m: {spot:?}");
+        assert_ne!(spot.lanes & NORTH, 0, "and down the lane past it: {spot:?}");
     }
 }

@@ -311,3 +311,25 @@ fn a_bosss_crew_comes_alert_to_the_foe_it_fights() {
     }
     panic!("the Boss called no crew");
 }
+
+#[test]
+fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
+    // A long wall, the place behind it, and two starts that left a foe pressed against one of its corners.
+    let wall = Block { min_x: -10.0, min_y: -6.0, max_x: 10.0, max_y: -5.5, top: 2.5 };
+    let place = [0.0, 3.0, 0.0];
+    for start in [[8.0, -6.5, 0.0], [-9.5, -9.0, 0.0]] {
+        let mut room = Room::new(vec![wall], (place[0], place[1]));
+        let start = room.nav.nearest_point(start).expect("the start is on the mesh");
+        let (fighter, brain) =
+            ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], PI);
+        let id = room.next_id();
+        let brain = ::foes::notice(&brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
+        room.foes.insert(id, Foe { fighter, brain });
+        let reached = (0..60 * 30).any(|_| {
+            room.tick();
+            let body = room.foes[&id].fighter.body;
+            combat::sight::apart([body.x, body.y], [place[0], place[1]]) < 1.6
+        });
+        assert!(reached, "from {start:?} it stuck at {:?}", room.foes[&id].fighter.body);
+    }
+}

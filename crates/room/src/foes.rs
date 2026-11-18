@@ -13,9 +13,12 @@ use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
 use combat::shots::{FALL, by_foe, foe_speed, loose, shot_numbers};
 use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_fighter};
+use core::cell::{Cell, RefCell};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::blocks::ground_at;
-use navmesh::NavMesh;
+use movement::{TICK_SECONDS, TUNING};
+use navmesh::{NavMesh, Way};
+use std::collections::BTreeMap;
 
 /// The most foes a course's room holds, and a node's, its garrison and every foe its Bosses call counted; how far
 /// before a player one is stood; how far apart called foes stand either side of their caller, and how far behind it
@@ -53,24 +56,60 @@ pub struct FoeSeen {
     pub fighter: Fighter,
 }
 
+/// A corner nearer a foe's feet than a tick's run is as good as reached, in metres.
+const CORNER_REACHED: f64 = TUNING.run * TICK_SECONDS;
+
+/// A goal off the mesh, and the nearest point the mesh has to it.
+type Placed = ([f64; 3], Option<[f64; 3]>);
+
 /// Routes across the room's navmesh: the next corner on the way, to the nearest point the mesh reaches when the goal
-/// stands off it (a block's top no step reaches), and straight on where the mesh knows no way.
+/// stands off it (a block's top no step reaches), and straight on where the mesh knows no way. Each foe's way is kept
+/// for the next tick, and a goal off the mesh is placed on it once a tick, however many foes walk for it.
 #[derive(Debug)]
 struct MeshRoutes<'mesh> {
     mesh: &'mesh NavMesh,
+    /// The foe thinking now, whose way is walked.
+    asking: Cell<FighterId>,
+    ways: RefCell<BTreeMap<FighterId, Way>>,
+    /// The goals off the mesh this tick, each with the nearest point the mesh has to it.
+    placed: RefCell<Vec<Placed>>,
+}
+
+impl<'mesh> MeshRoutes<'mesh> {
+    fn new(mesh: &'mesh NavMesh, ways: BTreeMap<FighterId, Way>) -> Self {
+        Self { mesh, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
+    }
+
+    fn placed(&self, goal: [f64; 3]) -> Option<[f64; 3]> {
+        let mut placed = self.placed.borrow_mut();
+        let same = |(other, _): &&Placed| other.map(f64::to_bits) == goal.map(f64::to_bits);
+        if let Some(&(_, near)) = placed.iter().find(same) {
+            return near;
+        }
+        let near = self.mesh.nearest_point(goal);
+        placed.push((goal, near));
+        near
+    }
 }
 
 impl ::foes::Routes for MeshRoutes<'_> {
     fn next_point(&self, from: [f64; 3], to: [f64; 3]) -> Option<[f64; 3]> {
-        let path = self.mesh.find_path(from, to).or_else(|| {
-            let reachable = self.mesh.nearest_point(to)?;
-            self.mesh.find_path(from, reachable)
+        let mut ways = self.ways.borrow_mut();
+        let way = ways.entry(self.asking.get()).or_default();
+        let path = self.mesh.find_path_kept(way, from, to).or_else(|| {
+            let reachable = self.placed(to)?;
+            self.mesh.find_path_kept(way, from, reachable)
         });
-        match path {
-            Some(points) => points.get(1).copied().or(Some(to)),
-            None => Some(to),
-        }
+        Some(path.map_or(to, |points| ahead(&points, from, to)))
     }
+}
+
+/// The corner to walk for: the first past the start farther than a tick's run, so a corner underfoot never holds a
+/// foe against a block's corner heading for a goal behind it; the path's end when every corner is that near.
+fn ahead(points: &[[f64; 3]], from: [f64; 3], to: [f64; 3]) -> [f64; 3] {
+    let rest = points.get(1..).unwrap_or_default();
+    let far = |point: &&[f64; 3]| combat::sight::apart([from[0], from[1]], [point[0], point[1]]) > CORNER_REACHED;
+    rest.iter().find(far).or(rest.last()).copied().unwrap_or(to)
 }
 
 /// The firing spots baked with the room's navmesh.
@@ -203,8 +242,8 @@ impl Room {
             .collect();
         let ids: Vec<FighterId> = self.foes.keys().copied().collect();
         let mut intents = Vec::with_capacity(ids.len());
+        let routes = MeshRoutes::new(&self.nav, std::mem::take(&mut self.ways));
         {
-            let routes = MeshRoutes { mesh: &self.nav };
             let spots = MeshSpots { mesh: &self.nav };
             let world = World {
                 tick: self.clock,
@@ -217,9 +256,13 @@ impl Room {
             };
             for id in &ids {
                 let Some(foe) = self.foes.get(id) else { continue };
+                routes.asking.set(*id);
                 intents.push((*id, think(*id, &foe.brain, &mut self.board, &world)));
             }
         }
+        self.ways = routes.ways.into_inner();
+        let foes = &self.foes;
+        self.ways.retain(|id, _| foes.contains_key(id));
         let (mut crews, mut shouts) = (Vec::new(), Vec::new());
         for (id, (mut brain, intent)) in intents {
             let target = brain.target();

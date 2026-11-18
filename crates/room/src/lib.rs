@@ -111,6 +111,8 @@ pub struct Room {
     pub(crate) board: ::foes::Board,
     pub(crate) director: ::foes::Director,
     pub(crate) nav: navmesh::NavMesh,
+    /// Each foe's way over the navmesh, kept from one tick to the next.
+    pub(crate) ways: BTreeMap<FighterId, navmesh::Way>,
     pub(crate) seed: u64,
     pub(crate) foes_most: usize,
     pub(crate) garrison: Vec<garrison::Post>,
@@ -171,6 +173,7 @@ impl Room {
             board: ::foes::Board::default(),
             director: ::foes::Director::default(),
             nav,
+            ways: BTreeMap::new(),
             seed: SEED,
             foes_most: FOES_MOST,
             garrison: Vec::new(),
