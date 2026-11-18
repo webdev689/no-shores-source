@@ -17,10 +17,15 @@
   display: grid;
   gap: 4px;
 }
+/* A bar is the kit's sunk well: dark inside, its bevel lit from below. */
 .fight-hud .bar {
-  height: 8px;
-  background: #0008;
-  border: 1px solid #000a;
+  height: 10px;
+  background: #0c0d10;
+  border: 2px solid;
+  border-color: #25221b #7a7260 #9a9079 #3a352a;
+  box-shadow:
+    0 0 0 1px #050608,
+    inset 2px 2px 0 rgba(0, 0, 0, 0.5);
 }
 .fight-hud .bar .fill {
   height: 100%;

@@ -51,6 +51,27 @@ export function fitIcon(width: number, height: number, box: number, ratio = 1, c
   };
 }
 
+/** How much longer than wide a picture is before it is laid on the diagonal: a blade, a staff, a gun. */
+export const SLIVER = 2.5;
+
+/** A long thin picture laid along its box's diagonal, as Destiny and Enhanced Plus lay weapons: grown by `grown` whole
+ *  pixels, then turned by `turn` radians (a tall one clockwise, a wide one back) and scaled by `scale` of its own
+ *  pixels into a square `room` device pixels a side; null for one that is not long and thin. */
+export function diagonalFit(
+  width: number,
+  height: number,
+  box: number,
+  ratio = 1,
+): { readonly room: number; readonly scale: number; readonly grown: number; readonly turn: number } | null {
+  const [long, short] = [Math.max(width, height), Math.min(width, height)];
+  if (!(short > 0) || !(box > 0) || long / short <= SLIVER) return null;
+  const screen = Number.isFinite(ratio) && ratio > 0 ? Math.min(8, Math.max(0.5, ratio)) : 1;
+  const room = Math.max(1, Math.floor(box * screen));
+  // Turned, it spans (long + short) / sqrt 2 across each side; a margin keeps its ends off the frame.
+  const scale = (room * 0.94 * Math.SQRT2) / (long + short);
+  return { room, scale, grown: Math.max(1, Math.floor(scale)), turn: height > width ? Math.PI / 4 : -Math.PI / 4 };
+}
+
 /** Where a picture's drawn pixels lie, as [west, north, width, height]; null when none is drawn. */
 export function drawnBounds(
   width: number,

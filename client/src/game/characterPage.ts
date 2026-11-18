@@ -46,7 +46,7 @@ export interface PageContext {
 const WEAPONS = [0, 1, 6];
 const ARMOUR = [2, 3, 4, 5];
 /** A slot's picture box, and a flyout cell's, in pixels. */
-const SLOT_PX = 64;
+const SLOT_PX = 72;
 const CELL_PX = 48;
 /** The figure's box: what the screen's body leaves it beside the level, the meter and the power, within these. */
 const FIGURE_LEAST = 240;
@@ -57,11 +57,11 @@ const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 /** What a worn slot's presses do, and a carried piece's. */
 const SLOT_HINTS: readonly Hint[] = [
   ['Click', 'Swap'],
-  ['Right-click', 'Details'],
+  ['Right-click / X', 'Details'],
 ];
 export const CELL_HINTS: readonly Hint[] = [
   ['Click', 'Equip'],
-  ['Right-click', 'Details'],
+  ['Right-click / X', 'Details'],
 ];
 
 /** A tile holding an item's picture, framed in its rarity, or an empty place. */

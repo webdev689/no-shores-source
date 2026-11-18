@@ -136,7 +136,9 @@ export function itemPage(
     named.style.color = ELEMENTS[item.element]?.colour ?? '';
     kind.append(element, named);
   }
-  head.append(make('h2', detail.name, 'gear-item-name'), kind);
+  const name = make('h2', detail.name, 'gear-item-name');
+  name.tabIndex = -1;
+  head.append(name, kind);
   const left = make('div', '', 'gear-item-left');
   if (detail.words) left.append(make('p', detail.words, 'gear-card-words'));
   const main = item.attack

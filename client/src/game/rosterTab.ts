@@ -9,6 +9,7 @@ import {
   type Action,
   PRIVACIES,
   ROWS_A_PAGE,
+  ROWS_LEAST,
   type Row,
   friendRows,
   gameRows,
@@ -20,6 +21,10 @@ import {
 
 /** How often the Roster is asked for again while it is seen, in milliseconds. */
 const LOOK_MS = 15_000;
+/** How much taller a page grows with one more row: a row and the gap under it. */
+const ROW_STEP_PX = 50;
+/** The panel's id, which each row names as what it opens. */
+const PANEL_ID = 'roster-panel';
 /** Why a player may be reported, and its words. */
 const REASONS: readonly (readonly [string, string])[] = [
   ['cheating', 'Cheating'],
@@ -45,11 +50,14 @@ function rowPress(row: Row, chosen: boolean, choose: () => void): HTMLButtonElem
   }
   if (row.leads) sign.append(make('span', '', 'roster-leader'));
   const words = make('span', '', 'roster-words');
-  const name = make('span', row.person.name, 'roster-name');
-  if (row.person.tag) name.append(make('span', ` [${row.person.tag}]`, 'roster-tag'));
+  const name = make('span', '', 'roster-name');
+  name.append(make('span', row.person.name, 'roster-name-text'));
+  if (row.person.tag) name.append(make('span', `[${row.person.tag}]`, 'roster-tag'));
   words.append(name, make('span', row.words, 'roster-status'));
   node.append(sign, words);
   node.setAttribute('aria-label', `${nameWithTag(row.person)}${row.leads ? ', company leader' : ''}, ${row.words}`);
+  node.setAttribute('aria-controls', PANEL_ID);
+  node.setAttribute('aria-expanded', String(chosen));
   node.addEventListener('click', choose);
   return node;
 }
@@ -68,6 +76,7 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
   }
   const columns = make('div', '', 'roster-columns');
   const panel = make('div', '', `roster-panel ${ROLES.panel}`);
+  panel.id = PANEL_ID;
   panel.hidden = true;
   panel.setAttribute('role', 'group');
   const said = make('p', '', 'gear-answer roster-said');
@@ -83,11 +92,17 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
   let busy = false;
   /** How many times the Roster was asked for: only the latest answer is shown. */
   let asked = 0;
+  /** Rows a page: the picture's fourteen where the menu is tall enough, fewer where it is not. */
+  let rowsAPage = ROWS_A_PAGE;
+  let fitting = false;
 
   const keyed = (key: string | null) =>
     key ? columns.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : null;
   const unmark = () => {
-    for (const each of columns.querySelectorAll('.roster-chosen')) each.classList.remove('roster-chosen');
+    for (const each of columns.querySelectorAll('.roster-chosen')) {
+      each.classList.remove('roster-chosen');
+      each.setAttribute('aria-expanded', 'false');
+    }
   };
   const closePanel = () => {
     const focusBack = panel.contains(document.activeElement) ? chosen : null;
@@ -101,13 +116,25 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
   const openPanel = (under: HTMLElement, heading: string, parts: readonly HTMLElement[], from: string, row = false) => {
     chosen = from;
     unmark();
-    if (row) under.classList.add('roster-chosen');
-    panel.replaceChildren(make('p', heading, 'roster-panel-head'), ...parts);
+    if (row) {
+      under.classList.add('roster-chosen');
+      under.setAttribute('aria-expanded', 'true');
+    }
+    // The heading's first line is who or what it is for, larger; the rest is said under it.
+    const [title = '', ...rest] = heading.split('\n');
+    const head = make('div', '', 'roster-panel-head');
+    head.append(make('strong', title), ...rest.map((line) => make('span', line)));
+    panel.replaceChildren(head, ...parts);
     panel.setAttribute('aria-label', heading.replace('\n', ', '));
     panel.hidden = false;
+    // Beside the row, inside the page: over it where there is no room under it.
     const [box, holder] = [under.getBoundingClientRect(), page.getBoundingClientRect()];
-    panel.style.left = `${Math.round(Math.min(box.left - holder.left + box.width * 0.4, holder.width - 300))}px`;
-    panel.style.top = `${Math.round(box.bottom - holder.top + 2)}px`;
+    const seen = page.parentElement?.getBoundingClientRect() ?? holder;
+    const left = Math.min(box.left - holder.left + box.width * 0.4, holder.width - panel.offsetWidth);
+    const below = box.bottom - holder.top + 2;
+    const fitsBelow = box.bottom + 2 + panel.offsetHeight <= seen.bottom;
+    panel.style.left = `${Math.round(Math.max(0, left))}px`;
+    panel.style.top = `${Math.round(fitsBelow ? below : Math.max(0, box.top - holder.top - panel.offsetHeight - 2))}px`;
     panel.querySelector<HTMLElement>('button, input')?.focus();
   };
 
@@ -126,7 +153,7 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     void link
       .social(action.path, action.body ?? {})
       .then((why) => {
-        said.textContent = why ?? '';
+        said.textContent = why ?? `${action.label}: done.`;
         if (why !== null) return;
         closePanel();
         if (action.opens === 'join' && person) goTo(person);
@@ -160,8 +187,10 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
         ),
       );
     }
+    // A held press says so, as the other held presses of the menu do.
+    const label = `Hold to ${action.label.charAt(0).toLowerCase()}${action.label.slice(1)}`;
     return action.held
-      ? heldPress(action.label, () => doing(action, person), action.warn ? 'warn' : 'button')
+      ? heldPress(label, () => doing(action, person), action.warn ? 'warn' : 'button')
       : pressOf(action.label, () => doing(action, person));
   };
 
@@ -169,13 +198,12 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     if (chosen === row.key && !panel.hidden) return closePanel();
     const where = row.person.place === null ? 'Away' : `Playing · ${placeWords(row.person.place)}`;
     chosen = row.key;
-    openPanel(
-      node,
-      `${nameWithTag(row.person)}\n${where}`,
-      row.actions.map((action) => pressFor(action, row.person)),
-      row.key,
-      true,
-    );
+    // Blocking and reporting stand apart, under a rule, from what is done with a player.
+    const parts = row.actions.flatMap((action) => {
+      const press = pressFor(action, row.person);
+      return action.path === 'block' ? [make('hr', '', ROLES.rule), press] : [press];
+    });
+    openPanel(node, `${nameWithTag(row.person)}\n${where}`, parts, row.key, true);
   };
 
   /** A field and its press, in the panel: to add a friend, or invite to the guild. */
@@ -301,7 +329,7 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
 
   const columnOf = (column: Column, rows: readonly Row[], current: Roster): HTMLElement => {
     const section = make('section', '', `roster-column ${ROLES.panel}`);
-    const count = pagesOf(rows);
+    const count = pagesOf(rows, rowsAPage);
     pages[column] = Math.min(pages[column], count - 1);
     const head = make('header', '', 'roster-head');
     const titles = make('div', '', 'roster-titles');
@@ -325,11 +353,13 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       arrow.dataset['key'] = `page-${column}-${key}`;
       arrow.setAttribute('aria-label', `${TITLES[column]}: ${words}`);
       arrow.setAttribute('aria-disabled', String(none));
+      // A column of one page has no other to turn to, so its arrows are not stops for Tab.
+      if (count === 1) arrow.tabIndex = -1;
       return arrow;
     });
     head.append(titles, ...arrows);
     const list = make('ol', '', 'roster-rows');
-    const shown = rows.slice(pages[column] * ROWS_A_PAGE, (pages[column] + 1) * ROWS_A_PAGE);
+    const shown = rows.slice(pages[column] * rowsAPage, (pages[column] + 1) * rowsAPage);
     for (const each of shown) {
       const item = make('li');
       const node = rowPress(each, chosen === each.key, () => choose(each, node));
@@ -337,7 +367,9 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       list.append(item);
     }
     // The page's empty rows stand as Destiny's do, so every column keeps its length.
-    for (let blank = shown.length; blank < ROWS_A_PAGE; blank++) list.append(make('li', '', 'roster-blank'));
+    for (let blank = shown.length; blank < rowsAPage; blank++) list.append(make('li', '', 'roster-blank'));
+    const empty = column === 'friends' ? 'No friends yet.' : column === 'guild' ? 'In no guild yet.' : '';
+    if (rows.length === 0 && empty) list.querySelector('.roster-blank')?.append(make('span', empty, 'gear-hint'));
     section.append(head, topOf(column, current), list);
     return section;
   };
@@ -357,6 +389,20 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     if (current.guests > 0)
       online.textContent += ` · ${current.guests} ${current.guests === 1 ? 'guest' : 'guests'} nearby`;
     keyed(focused ?? null)?.focus();
+    fitRows();
+  }
+
+  /** Fits the rows a page to the menu's height, so the columns never scroll: drawn again once if that changes. */
+  function fitRows(): void {
+    const holder = page.parentElement;
+    if (!holder || fitting) return;
+    const spare = holder.clientHeight - page.offsetHeight;
+    const fits = Math.max(ROWS_LEAST, Math.min(ROWS_A_PAGE, rowsAPage + Math.floor(spare / ROW_STEP_PX)));
+    if (fits === rowsAPage) return;
+    rowsAPage = fits;
+    fitting = true;
+    draw();
+    fitting = false;
   }
 
   /** Back from a player's details to the columns, the focus on the row they were opened from. */
@@ -396,9 +442,14 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       if (mine !== asked) return;
       dispatchEvent(new CustomEvent(ROSTER_HEARD, { detail: answer }));
       if (typeof answer === 'string') {
-        // A Roster already shown stays, the failure said under it; with none, the failure stands in its place.
+        // A Roster already shown stays, the failure said under it; with none, the failure stands in its place, with a
+        // press to ask again.
         if (roster) said.textContent = answer;
-        else if (!details) columns.replaceChildren(make('p', answer, 'gear-hint gear-empty'));
+        else if (!details) {
+          const box = make('div', '', 'gear-empty roster-note');
+          box.append(make('p', answer, 'gear-hint'), pressOf('Try again', look));
+          columns.replaceChildren(box);
+        }
         return;
       }
       roster = answer;
@@ -415,10 +466,16 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
   });
   page.append(columns, panel, said, online);
   look();
+  // A window made taller or shorter fits the rows again.
+  const sized = new ResizeObserver(() => roster && !details && fitRows());
+  window.requestAnimationFrame(() => page.parentElement && sized.observe(page.parentElement));
   // Asked again only while it is seen, and never under a press being held, which a rebuild would let go.
   const timer = window.setInterval(() => {
-    if (!page.isConnected) window.clearInterval(timer);
-    else if (page.checkVisibility() && !document.hidden && panel.hidden && !page.querySelector('.gear-holding')) look();
+    if (!page.isConnected) {
+      window.clearInterval(timer);
+      sized.disconnect();
+    } else if (page.checkVisibility() && !document.hidden && panel.hidden && !page.querySelector('.gear-holding'))
+      look();
   }, LOOK_MS);
   return page;
 }

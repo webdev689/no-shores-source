@@ -59,11 +59,11 @@ const LOOK_MS = 100;
 const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   character: [
     ['Click', 'Swap'],
-    ['Right-click', 'Details'],
+    ['Right-click / X', 'Details'],
   ],
   inventory: [
     ['Click', 'Equip'],
-    ['Right-click', 'Details'],
+    ['Right-click / X', 'Details'],
   ],
   social: [
     ['Click', 'Choose a player'],
@@ -71,7 +71,7 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   ],
   vault: [
     ['Click', 'Put in or take out'],
-    ['Right-click', 'Details'],
+    ['Right-click / X', 'Details'],
   ],
   quartermaster: [['Hold', 'Buy']],
   armsmith: [['Hold', 'Buy']],
@@ -97,6 +97,9 @@ function tabPress(tab: Tab, open: () => void): HTMLButtonElement {
   const { label, key, later } = TAB_PRESSES[tab];
   const node = pressOf('', open, 'button', key);
   node.prepend(make('span', label));
+  // The keycap is shown, and said as the tab's shortcut rather than as part of its name.
+  node.querySelector('kbd')?.setAttribute('aria-hidden', 'true');
+  if (key) node.setAttribute('aria-keyshortcuts', key);
   if (later) node.append(make('span', 'Later', 'gear-tab-later'));
   node.classList.add('gear-tab');
   node.classList.toggle('gear-tab-to-come', later !== undefined);
@@ -128,6 +131,7 @@ export function startGearWindow(
   tabRow.setAttribute('role', 'tablist');
   const title = make('h2', '', 'gear-station-name');
   title.id = 'gear-station-name';
+  title.tabIndex = -1;
   // Under the tabs, the player's banner the whole width of the menu: their emblem, name and power, and their Aurem.
   const banner = make('div', '', 'gear-banner');
   const who = make('div', '', 'gear-who');
@@ -139,11 +143,18 @@ export function startGearWindow(
   answer.setAttribute('role', 'status');
   answer.setAttribute('aria-live', 'polite');
   const body = make('div', '', 'gear-body');
+  body.id = 'gear-body';
   body.setAttribute('role', 'tabpanel');
   const footer = make('div', '', `gear-foot ${ROLES.footer}`);
   const said = make('div', '', 'gear-said');
   const actions = make('div', '', 'gear-actions');
   footer.append(said, actions);
+  // The answer stays where it is, so a screen reader hears it; only the hints beside it change.
+  said.append(answer);
+  const hinted = (hints: readonly Hint[]) => {
+    while (said.lastChild && said.lastChild !== answer) said.lastChild.remove();
+    said.append(hintLine(hints));
+  };
   screen.append(header, body, footer);
   // The world behind the menu, dimmed and softened while it is open.
   const scrim = make('div', '', 'gear-scrim');
@@ -163,6 +174,8 @@ export function startGearWindow(
   let heard: number | null = null;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
+  /** The view the tabs and title were last written for. */
+  let tabbed: View | null = null;
   /** A page that needs no gear, kept while its view and what it shows stay the same. */
   let plain: { key: string; page: HTMLElement } | null = null;
   let pictures: ItemPictures | null = null;
@@ -179,6 +192,7 @@ export function startGearWindow(
     for (const held of screen.querySelectorAll('.gear-holding')) held.dispatchEvent(new PointerEvent('pointercancel'));
   };
   const shut = () => {
+    tabbed = null;
     letGo();
     if (document.activeElement instanceof HTMLElement && screen.contains(document.activeElement))
       document.activeElement.blur();
@@ -211,7 +225,8 @@ export function startGearWindow(
     render();
     // Opened, or moved to a station while the focus was on a page now gone: the tab or the station's first press.
     if (opening || !screen.contains(document.activeElement))
-      (tabs.find((node) => node.dataset['tab'] === wanted) ?? body.querySelector('button'))?.focus();
+      // A station is read from its name, so no ware's card opens over the stall unasked.
+      (tabs.find((node) => node.dataset['tab'] === wanted) ?? (isTab(wanted) ? null : title))?.focus();
   };
   const tabs = TABS.map((name) => {
     // The tab already shown stays shown; Escape or Close shuts the menu.
@@ -220,9 +235,20 @@ export function startGearWindow(
     node.dataset['tab'] = name;
     node.dataset['key'] = `tab-${name}`;
     node.setAttribute('role', 'tab');
+    node.setAttribute('aria-controls', 'gear-body');
     return node;
   });
   tabRow.append(...tabs);
+  // The arrows move between the tabs, each opened as it is reached.
+  tabRow.addEventListener('keydown', (event) => {
+    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    const from = tabs.findIndex((node) => node === document.activeElement);
+    if (step === 0 || from < 0) return;
+    event.preventDefault();
+    const next = tabs[(from + step + tabs.length) % tabs.length];
+    next?.focus();
+    next?.click();
+  });
   const close = pressOf('Close', shut, 'button', 'Esc');
   /** The player's name, for their nameplate, once the accounts give it. */
   let named: string | null = null;
@@ -248,21 +274,27 @@ export function startGearWindow(
 
   /** The header's banner, after Destiny's: the player's emblem behind their name, level and power, and their Aurem
    *  at its end, hidden where the inventory's page shows it. */
+  /** The gear the banner last showed: once the player's emblem is known it stays, though the room's word goes. */
+  let bannerGear: GearState | null = null;
   const ends = (gear: GearState | null) => {
     who.replaceChildren();
     purse.replaceChildren();
-    banner.hidden = !gear;
-    if (!gear) return;
-    const emblem = emblemOf(gear.emblem ?? 0);
+    bannerGear = gear ?? bannerGear;
+    const known = gear ?? bannerGear;
+    // Shown from the first word of who they are on; without the room's word, only the numbers go.
+    banner.hidden = !known && !named;
+    const emblem = emblemOf(known?.emblem ?? 0);
     if (emblem !== bannered) {
       bannered = emblem;
       paintBanner();
     }
+    const level = known ? `Level ${characterOf(known).level}` : '';
+    who.append(make('strong', named ?? level));
+    if (!gear) return;
     who.append(
-      make('strong', named ?? `Level ${characterOf(gear).level}`),
       make(
         'span',
-        `${named ? `Level ${characterOf(gear).level} · ` : ''}Prestige ${gear.prestige} · Defense ${gear.defense}`,
+        `${named ? `${level} · ` : ''}Prestige ${gear.prestige} · Defense ${gear.defense}`,
         'gear-who-power',
       ),
     );
@@ -290,18 +322,24 @@ export function startGearWindow(
 
   function render(): void {
     if (view === null) return;
-    for (const node of tabs) {
-      const chosen = node.dataset['tab'] === view;
-      node.classList.toggle('gear-chosen', chosen);
-      node.setAttribute('aria-selected', String(chosen));
-    }
     const station = isTab(view) ? null : STATIONS[view];
-    tabRow.hidden = station !== null;
-    title.hidden = station === null;
-    title.textContent = station ?? '';
+    // The tabs, title and labels change only with the view, so the menu writes nothing while it stands open.
+    if (view !== tabbed) {
+      tabbed = view;
+      for (const node of tabs) {
+        const chosen = node.dataset['tab'] === view;
+        node.classList.toggle('gear-chosen', chosen);
+        node.setAttribute('aria-selected', String(chosen));
+        // One tab is a stop for Tab; the arrows move between them.
+        node.tabIndex = chosen || (station !== null && node === tabs[0]) ? 0 : -1;
+      }
+      tabRow.hidden = station !== null;
+      title.hidden = station === null;
+      title.textContent = station ?? '';
+      body.setAttribute('aria-labelledby', isTab(view) ? `gear-tab-${view}` : 'gear-station-name');
+    }
     const now = here();
     const gear = now?.gear ?? null;
-    body.setAttribute('aria-labelledby', isTab(view) ? `gear-tab-${view}` : 'gear-station-name');
     if (!ofGear(view)) {
       const page = plainPage(view);
       if (gear !== shownGear) [shownGear] = [gear, ends(gear)];
@@ -309,7 +347,7 @@ export function startGearWindow(
         tip.hide();
         answer.textContent = '';
         body.replaceChildren(page);
-        said.replaceChildren(answer);
+        hinted(HINTS[view] ?? []);
         actions.replaceChildren(close);
       }
       return;
@@ -343,9 +381,11 @@ export function startGearWindow(
     ends(gear);
     if (!now || !gear) {
       answer.textContent = '';
-      const why = now ? 'Loading…' : 'Your gear shows here on foot, when playing online.';
+      // A room lost after the gear showed says so; with none yet, where gear is kept.
+      const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
+      const why = now ? 'Loading…' : (lost ?? 'Your gear shows here on foot, when playing online.');
       body.replaceChildren(make('p', why, 'gear-hint gear-empty'));
-      said.replaceChildren(answer);
+      hinted([]);
       actions.replaceChildren(close);
       return;
     }
@@ -391,7 +431,7 @@ export function startGearWindow(
     // A Vestige opens with a click only at the Reader's counter, so the footer offers it only there.
     const shelfHints = shelf === 'vestiges' && !gear.atReader ? [] : (SHELF_HINTS[shelf] ?? HINTS.inventory);
     const hints = shown ? HINTS.item : view === 'inventory' ? shelfHints : HINTS[view];
-    said.replaceChildren(answer, hintLine(hints ?? []));
+    hinted(hints ?? []);
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null ? [stepBack] : [close]));
     // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it
     // goes back to the item's tile.
@@ -399,7 +439,8 @@ export function startGearWindow(
       key ? screen.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : null;
     const again = found(focused);
     if (shown && !(again && shown.page.contains(again)))
-      (shown.page.querySelector<HTMLElement>('button') ?? shown.presses.querySelector<HTMLElement>('button'))?.focus();
+      // The page is read from its name, so no card opens over it unasked.
+      shown.page.querySelector<HTMLElement>('.gear-item-name')?.focus();
     else (again ?? found(returnTo))?.focus();
   }
 

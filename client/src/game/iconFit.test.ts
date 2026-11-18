@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { drawnBounds, fitIcon } from './iconFit.ts';
+import { diagonalFit, drawnBounds, fitIcon } from './iconFit.ts';
 
 test('a picture grows by whole pixels where that keeps most of its box, else past it and smoothed down once', () => {
   const small = fitIcon(9, 12, 48);
@@ -24,4 +24,15 @@ test('a picture’s drawn pixels are found round its clear margin', () => {
   pixels[(2 * 4 + 1) * 4 + 3] = 255;
   assert.deepEqual(drawnBounds(4, 3, pixels), [1, 1, 2, 2]);
   assert.equal(drawnBounds(4, 3, new Uint8ClampedArray(48)), null);
+});
+
+test("a long thin picture is laid on its box's diagonal, its ends inside it; a stout one is not", () => {
+  const blade = diagonalFit(14, 52, 72);
+  assert.ok(blade);
+  assert.equal(blade.turn, Math.PI / 4, 'a tall one turns clockwise, its point to the upper right');
+  // Turned, it spans (long + short) / sqrt 2 of its scaled pixels each way, inside the box.
+  assert.ok(((14 + 52) * blade.scale) / Math.SQRT2 <= 72);
+  assert.ok(52 * blade.scale > 52 * (72 / 52), 'longer than it stands upright');
+  assert.equal(diagonalFit(60, 12, 72)?.turn, -Math.PI / 4, 'a wide one turns back');
+  assert.equal(diagonalFit(40, 50, 72), null);
 });

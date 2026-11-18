@@ -35,10 +35,14 @@ export function accountPanel(link: AccountLink): HTMLElement {
   const panel = make('div', '', 'gear-account');
   const who = make('p', 'Asking the accounts…');
   const said = make('p', '', 'gear-answer');
+  said.setAttribute('role', 'status');
   const [nameRow, name] = field('Username', 'text', 'username');
   const [passwordRow, password] = field('Password', 'password', 'current-password');
   const presses = make('div', '', 'gear-presses');
-  panel.append(who, nameRow, passwordRow, presses, said);
+  // Signing out stands apart, under a rule, from signing in.
+  const rule = make('hr', '', ROLES.rule);
+  const leaving = make('div', '', 'gear-presses');
+  panel.append(who, nameRow, passwordRow, presses, rule, leaving, said);
   const after = (answer: Account | string, reload: boolean) => {
     if (typeof answer === 'string') said.textContent = answer;
     else if (reload) location.reload();
@@ -77,9 +81,15 @@ export function accountPanel(link: AccountLink): HTMLElement {
       'warn',
     );
     const named = account !== null && account.username !== null;
-    nameRow.hidden = passwordRow.hidden = account === null;
-    const leave = account === null ? [] : account.guest ? [out] : [out, everywhere];
-    presses.replaceChildren(...(named ? [signIn] : [keep, signIn]), discord, ...leave);
+    nameRow.hidden = passwordRow.hidden = rule.hidden = account === null;
+    leaving.replaceChildren(...(account === null ? [] : account.guest ? [out] : [out, everywhere]));
+    // With the accounts out of reach nothing here can work but asking them again.
+    if (account === null) {
+      const again = pressOf('Try again', () => void link.session().then(show));
+      presses.replaceChildren(again);
+      return;
+    }
+    presses.replaceChildren(...(named ? [signIn] : [keep, signIn]), discord);
   };
   void link.session().then((account) => {
     show(account);

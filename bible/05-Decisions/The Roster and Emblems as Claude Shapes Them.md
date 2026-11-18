@@ -18,7 +18,7 @@ is kept; where Overlook must choose, the choice is Claude's, with its reason. Th
 | Gilded | Earned by a Legendary or Atheric piece with every node bought | A Normal piece has one node, bought at level 2; Gilded is a Legendary emblem |
 | The columns | Game, Friends, Guild | Destiny 1's Game, Friends and Clan; "guild" is the owner's word |
 | Game | Invites, then the company, leader first, then the players with a name in the same room; guests counted | The owner's "a split of nearby players"; Destiny 1's Game column put the fireteam first |
-| Rows a page | 14 | The owner's picture shows 14 a column |
+| Rows a page | 14, fewer where the screen is too short to show them without scrolling | The owner's picture shows 14 a column; a column that scrolls loses its head |
 | Order | Playing first, then away, greyed with no emblem, each by name | Destiny 1's roster |
 | A company | 3 at most | Destiny 1's fireteam for patrols and strikes |
 | Privacy | Public, Friends Only, Invite Only, Closed; Friends Only first | Destiny 1's four, and its first setting |

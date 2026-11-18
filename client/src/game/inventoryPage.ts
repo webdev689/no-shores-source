@@ -69,7 +69,7 @@ export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   const what = cell.count === null ? '' : `${cell.count.toLocaleString()} held`;
   node.setAttribute('aria-label', tileLabel(cell.name, cell.item ? cell.rarity : null, what));
   if (item) node.dataset['details'] = '';
-  const hints: Hint[] = [...(cell.press ? [['Click', cell.press.label] as const] : []), ['Right-click', 'Details']];
+  const hints: Hint[] = [...(cell.press ? [['Click', cell.press.label] as const] : []), ['Right-click / X', 'Details']];
   context.tip.over(node, () => (item ? cardNode(cardOf(item), context.picture(item), hints) : cellCard(cell)));
   node.addEventListener('click', () => {
     context.tip.hide();
@@ -85,8 +85,12 @@ export function cellTile(context: PageContext, cell: Cell): HTMLElement {
 }
 
 /** A material in its row: its glyph, its name and its count, its card on hover or focus. */
+/** A shelf's tiles a row. */
+const SHELF_ROW = 10;
+
 function materialRow(context: PageContext, cell: Cell): HTMLElement {
   const row = make('div', '', `gear-material ${ROLES.well}`);
+  row.setAttribute('role', 'listitem');
   row.tabIndex = 0;
   row.dataset['key'] = `cell-${cell.key}`;
   row.classList.toggle('gear-none', !holds(cell));
@@ -120,7 +124,7 @@ function gearTile(
   tile.dataset['key'] = `item-${item.id}`;
   tile.dataset['details'] = '';
   tile.setAttribute('aria-label', tileLabel(itemName(item), item.rarity, isWorn ? 'worn' : 'carried'));
-  const hints: readonly Hint[] = isWorn ? [['Right-click', 'Details']] : CELL_HINTS;
+  const hints: readonly Hint[] = isWorn ? [['Right-click / X', 'Details']] : CELL_HINTS;
   context.tip.over(tile, () => cardNode(cardOf(item, isWorn ? null : worn), context.picture(item), hints));
   tile.addEventListener('click', () => {
     context.tip.hide();
@@ -189,9 +193,19 @@ export function inventoryPage(context: PageContext, tab: string, choose: (tab: s
     return page;
   }
   const cells = inventory.tabs.find((each) => each.id === tab)?.cells ?? [];
-  const grid = make('div', '', tab === 'materials' ? 'gear-list' : 'gear-grid');
-  for (const cell of cells) grid.append(tab === 'materials' ? materialRow(context, cell) : cellTile(context, cell));
-  if (cells.length === 0) grid.append(make('p', 'Nothing here yet.', 'gear-hint gear-empty'));
+  const listed = tab === 'materials';
+  const grid = make('div', '', listed ? 'gear-list' : 'gear-grid');
+  if (listed) grid.setAttribute('role', 'list');
+  for (const cell of cells) grid.append(listed ? materialRow(context, cell) : cellTile(context, cell));
+  if (listed && cells.length === 0) grid.append(make('p', 'Nothing here yet.', 'gear-hint gear-empty'));
+  // A grid's empty places stand as vacant tiles to the end of its row of ten, as the vault's and the Vestiges' do.
+  if (!listed)
+    for (
+      let place = cells.length;
+      place < Math.max(SHELF_ROW, Math.ceil(cells.length / SHELF_ROW) * SHELF_ROW);
+      place++
+    )
+      grid.append(make('div', '', `gear-cell ${ROLES.tile} gear-vacant`));
   page.append(grid);
   return page;
 }

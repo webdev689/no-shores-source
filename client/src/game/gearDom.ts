@@ -10,7 +10,7 @@ import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
 import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 import { elementSvg } from './elementGlyphs.ts';
-import { drawnBounds, fitIcon } from './iconFit.ts';
+import { diagonalFit, drawnBounds, fitIcon } from './iconFit.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */
 export const HOLD_MS = 800;
@@ -33,7 +33,9 @@ export function hintLine(hints: readonly Hint[], className = 'gear-hints'): HTML
   const line = make('p', '', className);
   for (const [key, words] of hints) {
     const hint = make('span', '', 'gear-hint-pair');
-    hint.append(make('kbd', key, 'gear-key'), make('span', words));
+    // Keys that do the same are joined by a slash, each on its own keycap.
+    for (const one of key.split(' / ')) hint.append(make('kbd', one, 'gear-key'));
+    hint.append(make('span', words));
     line.append(hint);
   }
   return line;
@@ -52,6 +54,8 @@ export function heldPress(text: string, held: () => void, role: Role = 'button')
   };
   const begin = () => {
     cancel();
+    // A press that can do nothing does not fill, so it never seems about to act.
+    if (node.getAttribute('aria-disabled') === 'true') return;
     // Restarts the fill's transition from empty.
     void node.offsetWidth;
     node.classList.add('gear-holding');
@@ -88,6 +92,9 @@ export function pictureCanvas(picture: Picture, box: number, cap?: number): HTML
   [own.width, own.height] = [width, height];
   const image = new ImageData(new Uint8ClampedArray(picture.pixels), picture.width);
   own.getContext('2d')?.putImageData(image, -west, -north, west, north, width, height);
+  // An icon long and thin is laid on its tile's diagonal, so a weapon reads at the tile's size; a large picture stands.
+  const laid = cap === undefined ? diagonalFit(width, height, box, devicePixelRatio) : null;
+  if (laid) return diagonalCanvas(canvas, own, laid, box);
   // Grown by whole pixels first, so the one smooth step down never blurs a pixel into its neighbour.
   const grown = document.createElement('canvas');
   [grown.width, grown.height] = [width * fit.grown, height * fit.grown];
@@ -106,6 +113,35 @@ export function pictureCanvas(picture: Picture, box: number, cap?: number): HTML
   canvas.classList.toggle('gear-picture-fitted', fit.smooth);
   canvas.style.width = `${fit.shownWidth}px`;
   canvas.style.height = `${fit.shownHeight}px`;
+  return canvas;
+}
+
+/** A long thin picture grown by whole pixels, then turned onto the diagonal of a square box and smoothed once. */
+function diagonalCanvas(
+  canvas: HTMLCanvasElement,
+  own: HTMLCanvasElement,
+  laid: NonNullable<ReturnType<typeof diagonalFit>>,
+  box: number,
+): HTMLCanvasElement {
+  const grown = document.createElement('canvas');
+  [grown.width, grown.height] = [own.width * laid.grown, own.height * laid.grown];
+  const growing = grown.getContext('2d');
+  if (growing) {
+    growing.imageSmoothingEnabled = false;
+    growing.drawImage(own, 0, 0, grown.width, grown.height);
+  }
+  [canvas.width, canvas.height] = [laid.room, laid.room];
+  const drawing = canvas.getContext('2d');
+  if (drawing) {
+    const [across, down] = [own.width * laid.scale, own.height * laid.scale];
+    drawing.imageSmoothingEnabled = true;
+    drawing.imageSmoothingQuality = 'high';
+    drawing.translate(laid.room / 2, laid.room / 2);
+    drawing.rotate(laid.turn);
+    drawing.drawImage(grown, -across / 2, -down / 2, across, down);
+  }
+  canvas.classList.add('gear-picture-fitted');
+  canvas.style.width = canvas.style.height = `${box}px`;
   return canvas;
 }
 
@@ -316,7 +352,8 @@ export class HoverCard {
   /** Shows `content()` while the pointer is over `anchor` or it holds the focus, beside `beside` (the anchor itself
    *  unless given). */
   over(anchor: HTMLElement, content: () => HTMLElement, beside = anchor): void {
-    const show = () => this.show(beside, content());
+    // An open slot's flyout stands where its card would, so the card waits until it closes.
+    const show = () => anchor.getAttribute('aria-expanded') !== 'true' && this.show(beside, content());
     anchor.setAttribute('aria-describedby', 'gear-tip');
     anchor.addEventListener('pointerenter', show);
     anchor.addEventListener('pointerleave', () => this.hide());

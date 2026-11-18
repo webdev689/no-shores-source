@@ -1,4 +1,5 @@
 import { make } from '../editor/dom.ts';
+import { ROLES } from '../plus/kit.ts';
 import type { AccountLink, Roster } from '../network/accounts.ts';
 import { emblemImage, emblemOf } from './emblemArt.ts';
 import { ACCOUNT_CHANGED, ROSTER_HEARD } from './gearScreen.ts';
@@ -43,7 +44,9 @@ export function startCompanyHud(root: HTMLElement, link: AccountLink | null): vo
     }
     const invite = roster.invites[0];
     if (invite)
-      list.append(make('p', `${invite.name} invites you to their company: answer in Social.`, 'company-invite'));
+      list.append(
+        make('p', `${invite.name} invites you to their company: answer in Social.`, `company-invite ${ROLES.chip}`),
+      );
   };
   const look = () => {
     if (!document.hidden && !unnamed) void link.roster().then(show);

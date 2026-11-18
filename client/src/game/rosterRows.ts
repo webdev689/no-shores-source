@@ -35,6 +35,8 @@ export const PRIVACIES = ['Public', 'Friends Only', 'Invite Only', 'Closed'] as 
 export const COMPANY_MOST = 3;
 /** How many rows a column shows a page. */
 export const ROWS_A_PAGE = 14;
+/** The fewest a page shows, where the screen is too short for fourteen. */
+export const ROWS_LEAST = 6;
 
 /** Where a player is, in words: a node's name, and its seas past calm; at sea; or away. */
 export function placeWords(place: string | null): string {
@@ -174,4 +176,5 @@ export function guildRows(roster: Roster): Row[] {
 }
 
 /** How many pages a column's rows fill, at least one. */
-export const pagesOf = (rows: readonly unknown[]): number => Math.max(1, Math.ceil(rows.length / ROWS_A_PAGE));
+export const pagesOf = (rows: readonly unknown[], perPage = ROWS_A_PAGE): number =>
+  Math.max(1, Math.ceil(rows.length / perPage));

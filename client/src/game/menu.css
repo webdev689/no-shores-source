@@ -76,11 +76,11 @@
   min-width: 0;
 }
 .gear-vault-title {
-  margin: 0 0 8px;
-  font-size: var(--type-m);
+  margin: 0 0 11px;
+  font-size: var(--type-l);
   font-weight: 500;
-  letter-spacing: calc(3em / 22);
-  text-transform: uppercase;
+  letter-spacing: calc(1em / 22);
+  text-transform: none;
   color: var(--brass-lit);
 }
 .gear-vault-shelf + .gear-vault-shelf {

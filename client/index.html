@@ -70,12 +70,21 @@
         letter-spacing: calc(1em / 22);
         font-weight: 500;
       }
+      /* Small words over the sky and the ground are outlined in black, so they read on either. */
+      .place .kind,
+      .hints {
+        text-shadow:
+          -1px 0 #000,
+          1px 0 #000,
+          0 -1px #000,
+          0 1px #000;
+      }
       .place .kind {
         margin-top: 2px;
         font-size: 11px;
         letter-spacing: calc(3em / 22);
         text-transform: uppercase;
-        color: var(--dim);
+        color: var(--ink);
       }
       .vignette {
         position: absolute;
@@ -126,7 +135,7 @@
         bottom: 22px;
         font-size: 11px;
         line-height: 19px;
-        color: var(--dim);
+        color: var(--ink);
       }
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;

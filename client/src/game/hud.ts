@@ -62,6 +62,11 @@ interface MarkNode {
   readonly arrow: HTMLElement;
 }
 
+/** Writes words only when they change: called every frame, the HUD would otherwise rebuild its text each time. */
+function say(node: HTMLElement, text: string): void {
+  if (node.textContent !== text) node.textContent = text;
+}
+
 /** The game's heads-up display: plain elements over the canvas, nothing drawn on the GPU. */
 export class Hud {
   private readonly placeTitle = make('div', '', 'title');
@@ -160,15 +165,16 @@ export class Hud {
 
   /** Names the place the player is in. */
   place(title: string, kind: string): void {
-    this.placeTitle.textContent = title;
-    this.placeKind.textContent = kind;
+    say(this.placeTitle, title);
+    say(this.placeKind, kind);
   }
 
   /** Shows the player's standing against their section's edge: the warning and its count, or death. */
   reach(standing: Standing): void {
-    this.shade.style.opacity = String(vignette(standing, WARNING_SECONDS));
+    const shade = String(vignette(standing, WARNING_SECONDS));
+    if (this.shade.style.opacity !== shade) this.shade.style.opacity = shade;
     this.warning.hidden = standing.kind !== 'warned';
-    if (standing.kind === 'warned') this.count.textContent = countdownText(standing.secondsLeft);
+    if (standing.kind === 'warned') say(this.count, countdownText(standing.secondsLeft));
     this.death.hidden = standing.kind !== 'dead';
     if (standing.kind === 'dead') {
       this.respawn.disabled = !standing.canRespawn;

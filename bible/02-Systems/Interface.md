@@ -75,29 +75,32 @@ so every size is one: 11 for words, 22 for names and titles, 33 to 66 for the nu
 no kerning and no ligature. It is set at one weight, 500, so emphasis is in size and colour; it is never slanted, as
 it has no italic. Shadows under it are hard, a pixel's step.
 
-Four of its glyphs misread and eleven symbols are missing, so a second face, listed first, stands in for just those
-([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]): a 2, a 5, a B and a Z, and the rarities' diamonds, the
-map's house, triangles, skull and anchor. Each is drawn in `face.ts` as rows of cells on Pixelify's grid at its
+Six of its glyphs misread and eleven symbols are missing, so a second face, listed first, stands in for just those
+([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]): a 2, a 5, a B, a Z and square brackets, and the
+rarities' diamonds, the map's house, triangles, skull and anchor. Each is drawn in `face.ts` as rows of cells on Pixelify's grid at its
 weight, and made into a font in the page when it opens (`trueType.ts`), so nothing generated is kept.
 
 ## The menu
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
-the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, keys on
-keycaps, their words twice the size where the menu is wide enough; Journal and Guild marked Later, each a page saying
-what it will hold. Under them, the whole width of the menu, stands the player's banner
+the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
+whole number of pixels wide, their words at the names' size; keys on keycaps where the menu is wide enough; Journal
+and Guild marked Later, each a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
+between tabs. Under them, the whole width of the menu, stands the player's banner
 ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]): their emblem drawn to the banner's width at three times its
 cells, so it is never cut off, their name, level, Prestige and Defense over it, and their Aurem at its end, left blank
-on the Inventory, which shows it. It opens with a short
+on the Inventory, which shows it. Once shown it stays, though the room's word goes; only its numbers wait for it. It opens with a short
 stepped rise; the world behind is dimmed, the pointer is free, the game's keys and the HUD under it rest, and the
-focus stays within it. Escape steps back: an item's page, then a slot's flyout, then the menu. Gear shows as the
+focus stays within it, marked in white. Escape steps back: a page's own step first (the Roster's panel, a player's
+details), then an item's page, then a slot's flyout, then the menu. Gear shows as the
 player's room last sent it ([[Gear]]), built again only when that is new or the player moves within the menu, and
 never while a press is held. Each press is an ask the room answers.
 
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
 - **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped,
-  a weapon in the pose that holds it, fitted to its place as Enhanced Plus fits its icons. Where the forge draws
+  a weapon in the pose that holds it, fitted to its place as Enhanced Plus fits its icons; an icon long and thin (a
+  blade, a staff, a gun) is laid on its tile's diagonal, as Destiny lays weapons, so it reads. Where the forge draws
   nothing of a piece, its slot shows its name's initials. Currencies, materials, Vestiges, nodes and elements are
   small pixel glyphs.
 - **Rarity.** Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal piece's frame is the
@@ -127,14 +130,16 @@ never while a press is held. Each press is an ask the room answers.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
-  Roster"): three columns, Game, Friends and Guild, each a page of fourteen rows with arrows between pages, its empty
-  rows kept so each column keeps its length. Game holds invites to a company, then the company (its leader marked with a
+  Roster"): three columns, Game, Friends and Guild, each a page of fourteen rows, fewer where the screen is too short
+  to show them without scrolling, with arrows between pages; its empty rows kept so each column keeps its length. Game holds invites to a company, then the company (its leader marked with a
   gold corner, or the player alone, who leads their own), then those in the same room; over it the company's privacy.
   Friends holds those asking, then friends playing, those asked, and friends away; over it a press to add a friend.
   Guild holds its members playing, then away, each with their rank, then those invited; over it the guild's name, motto and presses, or, with none, a
   press to found one and the invites. Each row is a player's emblem and its nameplate behind their name and tag, at
-  twice the emblem's cells; one away is grey and bare. Choosing a row opens a panel beside it: who and where, then all
-  that may be done with them, what cannot be undone held. Details shows another player's nameplate, guild, power and
+  twice the emblem's cells; one away is grey and bare. A long name gives way before its tag. Choosing a row opens a
+  panel beside it, or over it near the page's foot: who and where, then all that may be done with them, what cannot
+  be undone held and saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company
+  playing elsewhere can be gone to. Details shows another player's nameplate, guild, power and
   worn pieces. A join goes to them if they are on foot on this landmass. The Roster is asked for again every 15
   seconds while it is seen.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,

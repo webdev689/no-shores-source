@@ -10,12 +10,12 @@ import type { PageContext } from './characterPage.ts';
 import { emblemImage, emblemOf } from './emblemArt.ts';
 import { emblemCard } from './emblemSlot.ts';
 import { type VaultShelf, cardOf, vaultOf } from './gearCards.ts';
-import { cardNode, glyphImage, heldPress, itemIcon, itemMarks, rarityOf, tileLabel } from './gearDom.ts';
+import { cardNode, glyphImage, heldPress, itemIcon, itemMarks, rarityOf } from './gearDom.ts';
 import { vendorsOf } from './gearScreen.ts';
 import { cellTile } from './inventoryPage.ts';
 
 /** A ware's picture box, in pixels. */
-const WARE_PX = 48;
+const WARE_PX = 64;
 
 /** A vendor's stall: their wares of the day, each held to buy, as Destiny's vendors sell. */
 export function vendorPage(context: PageContext, vendor: number): HTMLElement {
@@ -46,8 +46,16 @@ export function vendorPage(context: PageContext, vendor: number): HTMLElement {
     if (!ware.affordable) price.append(make('span', 'Not enough Aurem', 'gear-hint'));
     words.append(price);
     block.append(cell, words);
-    const what = `${ware.kind}, ${ware.price.toLocaleString()} Aurem${ware.affordable ? ', hold to buy' : ''}`;
-    block.setAttribute('aria-label', tileLabel(ware.tile.name, item?.rarity ?? null, what));
+    // Said as it reads: the kind already names its rarity.
+    const said = [
+      ware.tile.name,
+      ware.kind,
+      `level ${ware.level}`,
+      ware.tile.power,
+      `${ware.price.toLocaleString()} Aurem`,
+    ];
+    said.push(ware.affordable ? 'hold to buy' : 'not enough Aurem');
+    block.setAttribute('aria-label', said.filter(Boolean).join(', '));
     if (item) {
       const worn = context.gear.items.find((each) => each.at === WORN + item.bucket) ?? null;
       context.tip.over(block, () => cardNode(cardOf(item, worn), context.picture(item), [['Hold', 'Buy']]));
@@ -104,7 +112,9 @@ function shelfNode(context: PageContext, shelf: VaultShelf, kept: boolean): HTML
   heading.append(make('span', shelf.name), make('span', kept ? `${shelf.held} / ${shelf.most}` : String(shelf.held)));
   const grid = make('div', '', 'gear-grid');
   grid.append(...shelf.cells.map((cell) => cellTile(context, cell)));
-  if (shelf.cells.length === 0) grid.append(make('p', 'None.', 'gear-hint gear-empty'));
+  // Its empty places stand as vacant tiles, as every other shelf's do.
+  for (let place = shelf.cells.length; place < shelf.most; place++)
+    grid.append(make('div', '', `gear-cell ${ROLES.tile} gear-vacant`));
   node.append(heading, grid);
   return node;
 }

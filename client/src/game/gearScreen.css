@@ -56,17 +56,25 @@
 .gear-screen ::selection {
   background: rgba(243, 207, 134, 0.35);
 }
+/* Focus is white, as Destiny marks what is selected, so it never reads as the brass of a chosen tab or a rarity. */
 #hud .gear-screen :focus-visible,
 #hud .gear-tip :focus-visible {
-  outline: 2px solid var(--brass-lit);
+  outline: 2px solid #f2efe6;
   outline-offset: 2px;
+}
+/* Where the menu is wide, names and values stand at the names' size, labels staying at the words'. */
+@media (min-width: 1500px) {
+  .gear-screen,
+  .gear-tip {
+    --type-m: 22px;
+  }
 }
 /* The header: the tabs filling the top, then the player's banner the whole width of the menu. */
 .gear-head {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 18px 8px;
+  padding: 10px 0 0;
   border-bottom: 1px solid transparent;
 }
 /* The banner, after Destiny's: their emblem drawn to its width at three times its cells, so nothing of it is cut,
@@ -76,7 +84,7 @@
   align-items: center;
   justify-content: space-between;
   height: 72px;
-  padding: 0 22px 0 84px;
+  padding: 0 40px 0 102px;
   background: left top no-repeat;
   image-rendering: pixelated;
   text-shadow:
@@ -99,30 +107,42 @@
 .gear-who-power {
   color: rgba(242, 239, 230, 0.8);
 }
+/* The tabs fill the top, each a whole number of pixels wide so the kit's bevels stay sharp. */
 .gear-tabs-top {
   display: flex;
-  gap: 6px;
+  justify-content: space-between;
+  padding: 0 18px;
 }
 #hud .gear-tab {
-  flex: 1 1 0;
+  flex: 0 0 round(down, calc((100% - 36px) / 7), 1px);
   justify-content: center;
   min-width: 0;
   height: 48px;
+  padding: 0 8px;
   display: inline-flex;
   align-items: center;
-  letter-spacing: calc(3em / 22);
+  letter-spacing: calc(1em / 22);
   text-transform: uppercase;
-  font-size: var(--type-s);
+  font-size: var(--type-l);
 }
-/* Where the menu is wide enough, the tabs' words stand at twice the size. */
-@media (min-width: 1500px) {
-  #hud .gear-tab {
-    font-size: var(--type-l);
-    letter-spacing: calc(1em / 22);
+/* On a narrower menu the words keep their size: the keycaps step aside and a tab to come says so under its name. */
+@media (max-width: 1499px) {
+  #hud .gear-tab kbd.gear-key {
+    display: none;
+  }
+  #hud .gear-tab.gear-tab-to-come {
+    flex-direction: column;
+    line-height: 22px;
+  }
+  #hud .gear-tab .gear-tab-later {
+    margin-left: 0;
   }
 }
+/* The chosen tab is a lit press: the kit's brass bevel on its primary ground. */
 #hud .gear-tab.gear-chosen {
   color: var(--brass-lit);
+  border-color: #f3cf86 #7a5424 #5c3f1a #c08a3e;
+  background-color: #2a2217;
   box-shadow: inset 0 -2px 0 var(--brass-lit);
 }
 /* A key on a keycap: square and bevelled, as the kit's stone is. */
@@ -182,8 +202,13 @@ kbd.gear-key {
 .gear-answer {
   color: #f0b545;
 }
+/* Empty, the answer stays in the page as a live region, so its first words are read out; it takes no room. */
 .gear-answer:empty {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 .gear-actions,
 .gear-item-presses {
@@ -263,6 +288,7 @@ img.gear-glyph {
 #hud .gear-slot,
 #hud .gear-cell {
   position: relative;
+  box-sizing: border-box;
   padding: 0;
   display: grid;
   place-items: center;
@@ -290,8 +316,14 @@ img.gear-glyph {
     inset 0 0 16px rgba(var(--rar-rgb, 243, 207, 134), 0.32);
 }
 #hud .gear-slot {
-  width: clamp(76px, 9vh, 104px);
-  height: clamp(76px, 9vh, 104px);
+  width: 88px;
+  height: 88px;
+}
+@media (max-height: 800px) {
+  #hud .gear-slot {
+    width: 77px;
+    height: 77px;
+  }
 }
 #hud .gear-cell {
   width: 64px;
@@ -454,7 +486,7 @@ img.gear-glyph {
   color: var(--faint);
 }
 .gear-slot-item {
-  font-size: var(--type-s);
+  font-size: var(--type-m);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -557,6 +589,7 @@ img.gear-glyph {
   font-size: var(--type-l);
 }
 .gear-meter {
+  box-sizing: border-box;
   width: 100%;
   height: 10px;
   border: 2px solid transparent;
@@ -940,7 +973,7 @@ img.gear-glyph {
 .gear-currency-words {
   display: flex;
   flex-direction: column;
-  line-height: 13px;
+  gap: 2px;
 }
 .gear-currency-words b {
   font-size: var(--type-m);
@@ -957,6 +990,7 @@ img.gear-glyph {
   height: 24px;
 }
 .gear-shelves {
+  align-self: flex-start;
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
@@ -1062,7 +1096,7 @@ img.gear-glyph {
 }
 #hud .gear-ware {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 84px 1fr;
   align-items: center;
   gap: 12px;
   padding: 8px;
@@ -1074,6 +1108,7 @@ img.gear-glyph {
   min-width: 0;
 }
 .gear-ware-words b {
+  font-size: var(--type-m);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -1171,4 +1206,33 @@ img.gear-glyph {
       0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.6),
       inset 0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.3);
   }
+}
+
+/* Where the menu is wide, the shelves' tabs are pressed at the names' size. */
+@media (min-width: 1500px) {
+  #hud .gear-shelf {
+    padding: 11px 22px;
+    font-size: var(--type-l);
+    letter-spacing: calc(1em / 22);
+  }
+}
+/* On a short screen an item's page takes the banner's height back for its nodes. */
+@media (max-height: 800px) {
+  .gear-screen:has(.gear-item-page) .gear-banner {
+    display: none;
+  }
+}
+/* A slot's flyout stands over the level, which waits under it until the flyout closes. */
+.gear-character:has(.gear-flyout) .gear-power {
+  visibility: hidden;
+}
+/* A page's name takes the focus to be read from, without a ring: it is not a control. */
+#hud .gear-station-name:focus,
+#hud .gear-item-name:focus {
+  outline: none;
+}
+/* A ware leads with its picture, as Destiny's kiosks do. */
+#hud .gear-ware .gear-cell {
+  width: 84px;
+  height: 84px;
 }

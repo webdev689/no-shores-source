@@ -42,7 +42,8 @@ export function detailsPage(found: Details, back: () => void): HTMLElement {
   const worn = make('div', '', 'roster-worn');
   for (const piece of found.shown?.worn ?? []) {
     const item = { named: piece.named ?? null, kind: piece.kind, rarity: piece.rarity, name: piece.name };
-    const pieceName = itemName(item);
+    // A piece the page cannot name still shows, by its slot.
+    const pieceName = itemName(item) || capital(SLOTS[piece.slot] ?? 'Piece');
     const tile = make('div', '', `gear-cell ${ROLES.tile}`);
     rarityOf(tile, piece.rarity);
     tile.append(itemIcon(null, pieceName, TILE_PX));

@@ -36,6 +36,9 @@ const DRAWINGS: Record<string, { readonly rows: readonly string[]; readonly base
   B: { rows: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'] },
   // The Z: a flat top and base and a diagonal one cell wide, stepped as the face's own diagonals are.
   Z: { rows: ['#####', '....#', '...#.', '..#..', '.#...', '#....', '#####'] },
+  // Square brackets, square at both ends: Pixelify's own read as round at the names' size.
+  '[': { rows: ['##', '#.', '#.', '#.', '#.', '#.', '##'] },
+  ']': { rows: ['##', '.#', '.#', '.#', '.#', '.#', '##'] },
   '◆': { rows: ['..#..', '.###.', '#####', '.###.', '..#..'], base: 1 },
   '◇': { rows: ['..#..', '.#.#.', '#...#', '.#.#.', '..#..'], base: 1 },
   '◈': { rows: ['..#..', '.#.#.', '#.#.#', '.#.#.', '..#..'], base: 1 },

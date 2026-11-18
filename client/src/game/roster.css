@@ -2,9 +2,9 @@
    its nameplate behind their name, at twice the emblem's cells so its pixels stay whole. The gear screen's sheet gives
    the words, wells and presses it shares. */
 
+/* As tall as its rows, which are as many as the menu has room for, so it never scrolls. */
 .roster {
   position: relative;
-  min-height: 100%;
   padding: 6px 4px 0;
 }
 .roster-columns {
@@ -110,7 +110,10 @@
   color: var(--faint);
 }
 .roster-blank {
+  display: flex;
+  align-items: center;
   height: 46px;
+  padding-left: 14px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(0, 0, 0, 0.22);
 }
@@ -141,13 +144,21 @@
   gap: 2px;
   min-width: 0;
 }
+/* A long name gives way before its guild's tag, which always shows. */
 .roster-name {
-  overflow: hidden;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
   font-size: var(--type-l);
   white-space: nowrap;
+}
+.roster-name-text {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 .roster-tag {
+  flex: none;
   color: rgba(242, 239, 230, 0.7);
 }
 .roster-status {
@@ -161,7 +172,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: 300px;
+  box-sizing: border-box;
+  width: 320px;
   padding: 0 10px 10px;
   background: var(--ground);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
@@ -169,17 +181,40 @@
 .roster-panel[hidden] {
   display: none;
 }
+/* The panel's head: whom it is for, at the names' size, and where they are under it. */
 .roster-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   margin: 0 -10px 6px;
-  padding: 8px 10px;
+  padding: 10px 10px 8px;
   color: var(--faint);
   background: #2f3137;
-  white-space: pre-line;
+}
+.roster-panel-head strong {
+  overflow: hidden;
+  color: var(--word);
+  font-size: var(--type-l);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 #hud .roster-panel .plus-button,
-#hud .roster-panel .plus-primary {
+#hud .roster-panel .plus-primary,
+#hud .roster-panel .plus-warn {
   justify-content: flex-start;
   width: 100%;
+  text-align: left;
+}
+.roster-panel hr {
+  width: 100%;
+  margin: 6px 0;
+}
+.roster-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 .roster-panel input {
   pointer-events: auto;
@@ -295,8 +330,11 @@
 .company-words span {
   color: rgba(242, 239, 230, 0.8);
 }
+/* An invite on the HUD stands on a ground of its own, so it reads over the sky. */
 .company-invite {
+  width: fit-content;
   margin: 4px 0 0;
+  padding: 4px 8px;
   color: var(--warn, #f0b545);
 }
 
