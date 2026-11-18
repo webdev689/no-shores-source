@@ -111,6 +111,8 @@ export type FromRoomMessage =
       readonly player: number;
       readonly dressed: readonly PlayerDress[];
       readonly node: JoinedNode | null;
+      /** The room's protocol: its schema's hash. */
+      readonly protocol: number;
     }
   | ({
       readonly kind: 'snapshot';
@@ -227,7 +229,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const [id, bounds] = [joined.node(), Array.from(joined.boundsArray() ?? [])];
       const [west = 0, north = 0, east = 0, south = 0] = bounds;
       const node = id !== null && bounds.length === 4 ? { id, bounds: [west, north, east, south] as const } : null;
-      return { kind: 'joined', player: joined.player(), dressed, node };
+      return { kind: 'joined', player: joined.player(), dressed, node, protocol: joined.protocol() };
     }
     const gear = message.gear();
     if (gear) return { kind: 'gear', ...gearOf(gear) };

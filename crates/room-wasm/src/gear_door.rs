@@ -157,11 +157,13 @@ pub fn set_day(day: u32) -> bool {
     .unwrap_or(false)
 }
 
-/// Draws a room on land's chances from the host's own secret seed, from its two halves; false with no room on land.
-pub fn reseed(low: u32, high: u32) -> bool {
+/// Draws a room on land's chances from the host's own secret seeds, the loot's and the world's, each from its two
+/// halves; false with no room on land.
+pub fn reseed(seeds: [u32; 4]) -> bool {
+    let whole = |low: u32, high: u32| u64::from(high) << 32 | u64::from(low);
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {
-            room.reseed(u64::from(high) << 32 | u64::from(low));
+            room.reseed(whole(seeds[0], seeds[1]), whole(seeds[2], seeds[3]));
             true
         }
         Opened::Sea(_) | Opened::Fleet(_) => false,
@@ -171,8 +173,8 @@ pub fn reseed(low: u32, high: u32) -> bool {
 
 /// Reseeds the room (`reseed`); 1 if set, 0 if not.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_reseed(low: u32, high: u32) -> u32 {
-    u32::from(reseed(low, high))
+pub extern "C" fn room_reseed(loot_low: u32, loot_high: u32, world_low: u32, world_high: u32) -> u32 {
+    u32::from(reseed([loot_low, loot_high, world_low, world_high]))
 }
 
 /// Sets the room's day (`set_day`); 1 if set, 0 if not.

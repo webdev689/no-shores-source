@@ -99,10 +99,21 @@ fn a_blow_takes_on_its_strikers_perks_as_it_is_struck() {
     staggered.health = staggered.health_max / 3.0;
     room.set_fighter(brute, staggered);
     assert!(close(room.empower(blow, brute, false).damage, blow.damage * 1.05 * 1.15 * 1.3), "Executioner, Undertow");
+    let riposte = combat::judge::swing_blow(
+        player,
+        &striker,
+        &combat::fighter::Attack { swing: combat::fighter::Swing::Riposte(brute), ..attack },
+        brute,
+    );
+    assert!(
+        close(room.empower(riposte, brute, false).damage, riposte.damage * 1.05 * 1.3),
+        "a riposte is no execution"
+    );
     let shot = combat::judge::Blow { kind: combat::BlowKind::Shot(combat::Ranged::Pistolet), ..blow };
-    assert!(close(room.at_range(shot, 4.0).damage, shot.damage * 1.2), "Point Blank");
-    assert!(close(room.at_range(shot, 10.0).damage, shot.damage), "neither near nor far");
-    assert!(close(room.at_range(blow, 4.0).damage, blow.damage), "a swing is no shot");
+    let trim = room.fighter(player).expect("in").trim;
+    assert!(close(Room::at_range(shot, 4.0, &trim).damage, shot.damage * 1.2), "Point Blank");
+    assert!(close(Room::at_range(shot, 10.0, &trim).damage, shot.damage), "neither near nor far");
+    assert!(close(Room::at_range(blow, 4.0, &trim).damage, blow.damage), "a swing is no shot");
 }
 
 #[test]
@@ -135,4 +146,42 @@ fn a_kept_character_comes_back_into_the_room_trimmed() {
     assert_eq!(room.fighter(player).expect("in").trim.swing_stamina, 0.85);
     assert!(!room.restore_character(player, "not a character"));
     assert!(!room.restore_character(player + 1, &gear::Character::starting().to_json()));
+}
+
+#[test]
+fn an_arrow_strikes_with_what_it_was_loosed_with() {
+    let struck_for = |changed_mid_flight: bool, loosed_with: Option<Trim>| {
+        let (mut room, player, brute) = room_with_brute();
+        room.foes.get_mut(&brute).expect("a brute").level = 1;
+        trimmed(&mut room, player, Trim { damage: 1.05, ..Trim::PLAIN });
+        let mut loosed = room.held(player, Slot::MainHand).expect("a player");
+        if let Some(trim) = loosed_with {
+            loosed.trim = trim;
+        }
+        let chest = room.fighter(brute).expect("standing").chest();
+        let arrow = combat::Shot {
+            owner: player,
+            ranged: combat::Ranged::Bow,
+            at: [chest[0], chest[1] + 0.5, chest[2]],
+            velocity: [0.0, -45.0, 0.0],
+            damage: 18.0,
+            weight: 0.5,
+            age: 0,
+        };
+        room.shots.push((arrow, Some(loosed)));
+        if changed_mid_flight {
+            trimmed(&mut room, player, Trim::PLAIN);
+            let found = room.players.get_mut(&player).expect("in");
+            let main = found.character.worn(Slot::MainHand).expect("a sword").id;
+            found.character.items.remove(&main);
+        }
+        let before = room.fighter(brute).expect("standing").health;
+        room.fly_shots();
+        before - room.fighter(brute).expect("standing").health
+    };
+    let kept = struck_for(false, None);
+    assert!(kept > 0.0, "the arrow struck");
+    assert!((struck_for(true, None) - kept).abs() < 1e-9, "a weapon changed while it flies changes nothing of it");
+    let sharper = struck_for(true, Some(Trim { damage: 2.0, ..Trim::PLAIN }));
+    assert!(sharper > kept * 1.5, "it strikes with the trim it was loosed with");
 }

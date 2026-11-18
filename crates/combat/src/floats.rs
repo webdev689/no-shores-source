@@ -270,7 +270,7 @@ impl Fighter {
             kept: kept_of(held),
             blows: count(at(21)),
             might: at(22),
-            trim: Trim::from_floats(combat[COMBAT_FLOATS..].try_into().unwrap_or(&[1.0; TRIM_FLOATS])),
+            trim: combat[COMBAT_FLOATS..].try_into().map_or(Trim::PLAIN, Trim::from_floats),
         }
     }
 }

@@ -5,7 +5,7 @@
  * next) before taking it anyway, so the room that held it learns from its next save that the player went elsewhere.
  */
 
-import type { Db } from './database.ts';
+import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { hashOf } from './secrets.ts';
 
 /** How long a hold lasts past its room's last save. */
@@ -44,11 +44,16 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
           .bind(holder, now() + HOLD_MS, account, now())
     ).first<{ body: string | null }>();
   return {
-    /** The account a session's token is for, its character held for `holder`; null when the token is no session. */
+    /** The account a session's token is for, its character held for `holder`; null when the token is no session, or
+     *  one that lapsed. */
     async claim(token, holder) {
       const session = await database
-        .prepare('UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2 RETURNING account_id')
-        .bind(now(), await hashOf(token))
+        .prepare(
+          `UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2 AND (seen_at >= ?3 OR EXISTS
+           (SELECT 1 FROM accounts WHERE accounts.id = sessions.account_id AND username IS NULL AND discord_id IS NULL))
+           RETURNING account_id`,
+        )
+        .bind(now(), await hashOf(token), now() - SESSION_IDLE_MS)
         .first<{ account_id: string }>();
       if (!session) return null;
       const account = session.account_id;

@@ -1,4 +1,5 @@
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
+import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** A room's snapshot, as a link hands it on. */
 export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
@@ -16,6 +17,8 @@ export interface RoomLink {
   pump(seconds: number): void;
   /** The player's trim, from the room's last word on their gear; none until it sends it. */
   readonly trim?: readonly number[] | null;
+  /** The arms the room lets the player take up, from its last word on their gear; none until it sends it. */
+  readonly arms?: readonly number[] | null;
 }
 
 /** A browser's WebSocket to one room: it joins, sends the player's input for each tick (or, at sea, their ship's
@@ -29,8 +32,9 @@ export class RoomConnection implements RoomLink {
   readonly node: JoinedNode | null;
   /** Why the socket closed, in the server's words where it gave them; null while it is open. */
   lost: string | null = null;
-  /** The player's trim, from the room's last word on their gear. */
+  /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
+  arms: readonly number[] | null = null;
 
   private constructor(socket: WebSocket, welcome: Extract<FromRoomMessage, { kind: 'joined' }>) {
     this.socket = socket;
@@ -63,12 +67,19 @@ export class RoomConnection implements RoomLink {
         if (!(event.data instanceof ArrayBuffer)) return;
         const message = readFromRoom(new Uint8Array(event.data));
         if (message?.kind === 'joined') {
+          if (message.protocol !== PROTOCOL) {
+            socket.close(1000, 'another protocol');
+            reject(new Error('The game was updated. Load the page again.'));
+            loadAgainFor(message.protocol);
+            return;
+          }
           if (session !== null) socket.send(session);
           made = new RoomConnection(socket, message);
           resolve(made);
         } else if (message?.kind === 'snapshot') snapshot(message);
         else if (message?.kind === 'gear') {
           if (made && message.trim) made.trim = message.trim;
+          if (made && message.arms) made.arms = message.arms;
           gear(message);
         }
       });
@@ -97,4 +108,17 @@ export class RoomConnection implements RoomLink {
 
   /** The room runs on its own clock, on the server. */
   pump(): void {}
+}
+
+/** Loads the page again for a room that speaks another protocol, once for each protocol, so a page a deploy left
+ *  behind takes the new one without looping should the two still differ. */
+function loadAgainFor(protocol: number): void {
+  const key = 'overlook.protocol';
+  try {
+    if (globalThis.sessionStorage.getItem(key) === String(protocol)) return;
+    globalThis.sessionStorage.setItem(key, String(protocol));
+    globalThis.location.reload();
+  } catch {
+    // No storage, or no page: the join fails, and says why.
+  }
 }

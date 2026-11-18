@@ -39,6 +39,14 @@ pub struct Blow {
     pub stagger: f64,
 }
 
+impl Blow {
+    /// Whether it is a riposte: the one swing no guard can answer.
+    #[must_use]
+    pub fn riposte(&self) -> bool {
+        matches!(self.kind, BlowKind::Swing(_)) && !self.parryable
+    }
+}
+
 /// What a blow came to.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Verdict {
@@ -143,7 +151,10 @@ pub fn judge(blow: &Blow, defender: &Fighter) -> Verdict {
                 if stamina >= defender.stamina {
                     return Verdict::GuardBroken { damage: taken(defender, blow, behind) * GUARD_BROKEN_TAKEN };
                 }
-                return Verdict::Blocked { damage: blow.damage * chip * blow.through, stamina };
+                return Verdict::Blocked {
+                    damage: blow.damage * chip * blow.through * telegraphed(defender, blow),
+                    stamina,
+                };
             }
         }
     }
@@ -153,12 +164,15 @@ pub fn judge(blow: &Blow, defender: &Fighter) -> Verdict {
 /// A blow's damage as this fighter takes it: more while staggered (but a riposte, the stagger's own answer, does not
 /// count it twice) or overreached; less from behind or telegraphed as its gear trims.
 fn taken(defender: &Fighter, blow: &Blow, behind: bool) -> f64 {
-    let riposte = matches!(blow.kind, BlowKind::Swing(_)) && !blow.parryable;
-    let staggered = if defender.staggered() && !riposte { STAGGER_TAKEN } else { 1.0 };
+    let staggered = if defender.staggered() && !blow.riposte() { STAGGER_TAKEN } else { 1.0 };
     let punished = if defender.punished > 0 { PUNISH_TAKEN } else { 1.0 };
     let from_behind = if behind { defender.trim.behind_taken } else { 1.0 };
-    let telegraphed = if matches!(blow.kind, BlowKind::Telegraph(_)) { defender.trim.telegraph_taken } else { 1.0 };
-    blow.damage * staggered * punished * from_behind * telegraphed
+    blow.damage * staggered * punished * from_behind * telegraphed(defender, blow)
+}
+
+/// What of a telegraphed blow this fighter's gear lets reach them, through a guard or not.
+fn telegraphed(defender: &Fighter, blow: &Blow) -> f64 {
+    if matches!(blow.kind, BlowKind::Telegraph(_)) { defender.trim.telegraph_taken } else { 1.0 }
 }
 
 /// The defender after the verdict.

@@ -32,6 +32,9 @@ pub mod wire {
 
 use wire::overlook::wire as messages;
 
+/// The protocol's version: the schema's hash, which a room's welcome carries.
+pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/messages/rust/version.rs"));
+
 pub mod fleet;
 pub mod gear_wire;
 
@@ -213,7 +216,10 @@ pub fn joined_bytes(player: u32, dressed: &[(PlayerId, &str)], node: Option<(&st
     let dressed = Some(dressed_vector(&mut builder, dressed));
     let bounds = node.map(|(_, bounds)| builder.create_vector(&bounds));
     let node = node.map(|(id, _)| builder.create_string(id));
-    let joined = messages::Joined::create(&mut builder, &messages::JoinedArgs { player, dressed, node, bounds });
+    let joined = messages::Joined::create(
+        &mut builder,
+        &messages::JoinedArgs { player, dressed, node, bounds, protocol: PROTOCOL },
+    );
     let message = messages::FromRoom::create(
         &mut builder,
         &messages::FromRoomArgs { joined: Some(joined), ..Default::default() },

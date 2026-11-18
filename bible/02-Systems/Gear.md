@@ -114,7 +114,7 @@ number is one of [[Gear as Claude Shapes It]].
 
 - **Each island** has a band of foe levels (`gear::world`), rising with the voyage away from Overlook as Destiny 1's
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
-- **The seas** a voyage sets out at raise them: Calm as they are, Rough two levels higher, Storm four, never past
+- **The seas** a voyage sets out at raise them: Calm as they are, Rough two levels higher, Storm three, never past
   level 32; and pay by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
 - A patrol's foes are drawn from its island's band ([[Server]], "A patrol").
 

@@ -100,6 +100,20 @@ fn blows_land_softer_from_behind_or_telegraphed_and_a_tolling_stagger_lasts_long
     assert!((damage - 10.0 * 2.0 / 3.0).abs() < 1e-9, "Barnacle");
     let Verdict::Hit { damage, .. } = judge(&blow(BlowKind::Telegraph(Shape::Slam)), &hide) else { panic!("a hit") };
     assert!((damage - 9.0).abs() < 1e-9, "Hardy");
+    let mut guarded = armed(hide.trim);
+    let mut plain_guard = armed(Trim::PLAIN);
+    for _ in 0..20 {
+        guarded = step_fighter(&guarded, &guarding(0.0), &AROUND).0;
+        plain_guard = step_fighter(&plain_guard, &guarding(0.0), &AROUND).0;
+    }
+    let chip = |fighter: &Fighter, kind: BlowKind| match judge(&blow(kind), fighter) {
+        Verdict::Blocked { damage, .. } => damage,
+        other => panic!("blocked, not {other:?}"),
+    };
+    let slam = BlowKind::Telegraph(Shape::Slam);
+    assert!((chip(&guarded, slam) - chip(&plain_guard, slam) * 0.9).abs() < 1e-9, "Hardy through a guard");
+    let swing = BlowKind::Swing(Stroke::Down);
+    assert!((chip(&guarded, swing) - chip(&plain_guard, swing)).abs() < 1e-12, "and only on a telegraph");
     let full = Fighter { poise: 999.0, poise_max: 10.0, ..player_at(0.0, 0.0) };
     let struck = |stagger: f64| {
         let tolling = Blow { stagger, ..blow(BlowKind::Swing(Stroke::Down)) };

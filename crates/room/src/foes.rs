@@ -110,8 +110,13 @@ impl Room {
         let mut intents = Vec::with_capacity(ids.len());
         {
             let routes = MeshRoutes { mesh: &self.nav };
-            let world =
-                World { tick: self.clock, seed: self.seed, fighters: &noticed, blocks: &self.blocks, routes: &routes };
+            let world = World {
+                tick: self.clock,
+                seed: self.world_seed,
+                fighters: &noticed,
+                blocks: &self.blocks,
+                routes: &routes,
+            };
             for id in &ids {
                 let Some(foe) = self.foes.get(id) else { continue };
                 intents.push((*id, think(*id, &foe.brain, &mut self.board, &world)));
@@ -151,7 +156,7 @@ impl Room {
             let mut shot = loose(id, Ranged::Bow, foe.chest(), telegraph.bearing, pitch, 1.0);
             shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
             shot.damage = shot_numbers(Ranged::Bow).1 * AIMED_DAMAGE * foe.might;
-            self.shots.push(shot);
+            self.shots.push((shot, None));
             self.ended_telegraphs.push((id, false, false));
             return;
         }

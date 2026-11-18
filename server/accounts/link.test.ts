@@ -5,7 +5,7 @@ import { AccountLink, type Kept, LIVE_ACCOUNTS } from '../../client/src/network/
 import { handle } from './accounts.ts';
 import { sqliteForTests } from './sqliteForTests.ts';
 
-function browser() {
+function browser(clock = { now: 7_000_000 }) {
   const database = sqliteForTests();
   const kept = new Map<string, string>();
   const storage: Kept = {
@@ -14,7 +14,7 @@ function browser() {
     removeItem: (key) => void kept.delete(key),
   };
   const ask: typeof fetch = (input, init) =>
-    handle(new Request(input, init), { database, now: () => 7_000_000, discord: null, pages: ['https://page.test'] });
+    handle(new Request(input, init), { database, now: () => clock.now, discord: null, pages: ['https://page.test'] });
   return { storage, link: new AccountLink('https://accounts.test/', storage, ask) };
 }
 
@@ -77,4 +77,21 @@ test('accounts that cannot be reached leave the player signed out', async () => 
   );
   assert.equal(await link.session(), null);
   assert.equal(await link.login('someone', 'long enough'), 'The accounts could not be reached.');
+});
+
+test('a page told its sign-in lapsed says so and plays on as a guest; one may sign out everywhere', async () => {
+  const clock = { now: 7_000_000 };
+  const { link } = browser(clock);
+  await link.session();
+  assert.equal(await link.logoutEverywhere(), 'A guest has no way back in. Add a username or Discord first.');
+  assert.ok(link.token, 'and the guest is kept');
+  await link.register('Wayfarer', 'long enough');
+  clock.now += 31 * 24 * 60 * 60_000;
+  const after = await link.session();
+  assert.equal(after?.guest, true);
+  assert.equal(link.said, 'Your sign-in lapsed after 30 days away. Sign in again.');
+  const back = await link.login('wayfarer', 'long enough');
+  assert.equal(typeof back === 'string' ? back : back.username, 'Wayfarer');
+  assert.equal(await link.logoutEverywhere(), null);
+  assert.equal(link.token, null, 'signed out here too');
 });

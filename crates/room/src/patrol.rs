@@ -147,7 +147,7 @@ impl Room {
             if waiting || self.foes.len() + camp.size > PATROL_FOES {
                 continue;
             }
-            let dice = Dice { seed: self.seed, tick: self.clock, player: nth };
+            let dice = Dice { seed: self.world_seed, tick: self.clock, player: nth };
             for one in (0_u32..).take(camp.size) {
                 let rolled = |offset: u32| dice.roll(Purpose::Patrol, one * 5 + offset);
                 let (angle, out) = (rolled(0) * core::f64::consts::TAU, CAMP_REACH_M * libm::sqrt(rolled(1)));

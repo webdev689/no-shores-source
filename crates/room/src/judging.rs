@@ -110,7 +110,9 @@ impl Room {
         }
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
+        // A blow too far below its foe's level to harm it shares nothing of its kill.
         if let Some(hand) = hand
+            && blow.damage > 0.0
             && matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. })
         {
             self.mark_struck(blow.striker, defender, hand);
@@ -239,7 +241,7 @@ impl Room {
     pub(crate) fn fly_shots(&mut self) {
         let shots = std::mem::take(&mut self.shots);
         let everyone = self.fighters();
-        for shot in shots {
+        for (shot, loosed) in shots {
             let Some(side) = self.fighter(shot.owner).map(|owner| owner.side) else { continue };
             let bodies: Vec<(FighterId, [f64; 3])> = everyone
                 .iter()
@@ -253,9 +255,10 @@ impl Room {
                 self.lines.push(line_of(&shot, at));
             }
             match flight {
-                Flight::Flying(next) => self.shots.push(next),
+                Flight::Flying(next) => self.shots.push((next, loosed)),
                 Flight::Stopped { struck: Some(defender), at } => {
-                    let blow = self.empower(combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]), defender, false);
+                    let blow = combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]);
+                    let blow = self.empower_as(blow, defender, loosed);
                     // An arrow or a bolt covered its speed for each whole tick it flew, and in its last only as far as
                     // it went before it struck.
                     let [east, south, up] = [at[0] - shot.at[0], at[1] - shot.at[1], at[2] - shot.at[2]];
@@ -263,7 +266,7 @@ impl Room {
                     let covered =
                         combat::shots::shot_numbers(shot.ranged).0 * f64::from(shot.age) * movement::TICK_SECONDS
                             + last;
-                    let blow = self.at_range(blow, covered);
+                    let blow = loosed.map_or(blow, |loosed| Self::at_range(blow, covered, &loosed.trim));
                     self.blow_lands(&blow, How::Shot, defender, Check::Shot);
                 }
                 Flight::Stopped { struck: None, .. } => {}
@@ -286,9 +289,12 @@ impl Room {
         if let Some(defender) = struck
             && let Some(then) = self.as_seen(defender, view)
         {
-            let blow = self.empower(combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]), defender, false);
-            let covered = libm::hypot(then.body.x - shot.at[0], then.body.y - shot.at[1]);
-            let blow = self.at_range(blow, covered);
+            let held = self.held(shot.owner, Slot::MainHand);
+            let blow = self.empower_as(combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]), defender, held);
+            // A ball's range is measured as an arrow's: the line it flew to where it struck.
+            let [east, south, up] = [stop[0] - shot.at[0], stop[1] - shot.at[1], stop[2] - shot.at[2]];
+            let covered = libm::sqrt(east * east + south * south + up * up);
+            let blow = held.map_or(blow, |held| Self::at_range(blow, covered, &held.trim));
             self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::MainHand));
         }
         stop

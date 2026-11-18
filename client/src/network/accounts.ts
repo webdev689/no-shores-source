@@ -20,6 +20,8 @@ export interface Kept {
 }
 
 const KEY = 'overlook.session';
+/** What the accounts say of a session its player has not used in a month, which they end. */
+const LAPSED = 'Your sign-in lapsed after 30 days away. Sign in again.';
 /** Where the page keeps the nonce of the Discord sign-in it began, for the tab alone. */
 const NONCE_KEY = 'overlook.discord';
 const TOKEN = /^[0-9a-f]{64}$/;
@@ -130,7 +132,8 @@ export class AccountLink {
     if (this.token) {
       const known = await this.call('GET', '/v1/me');
       if (typeof known !== 'string') return known['account'] as Account;
-      if (known !== 'Not signed in.') return null;
+      if (known !== 'Not signed in.' && known !== LAPSED) return null;
+      if (known === LAPSED) this.said = LAPSED;
       this.kept.removeItem(this.key);
     }
     const guest = this.signedIn(await this.call('POST', '/v1/guest'));
@@ -152,6 +155,14 @@ export class AccountLink {
   async logout(): Promise<void> {
     await this.call('POST', '/v1/logout');
     this.kept.removeItem(this.key);
+  }
+
+  /** Ends every session of an account with a way back in, this one with them; why not, if it cannot. */
+  async logoutEverywhere(): Promise<string | null> {
+    const answer = await this.call('POST', '/v1/logout/everywhere');
+    if (typeof answer === 'string') return answer;
+    this.kept.removeItem(this.key);
+    return null;
   }
 
   /** Where to send the player to sign in or link with Discord, coming back to `back`; the tab keeps a nonce for the

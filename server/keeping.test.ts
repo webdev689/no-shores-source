@@ -203,7 +203,17 @@ test('a leaving player whose release the accounts do not answer has their last s
       return kept.save(account, holder, body);
     },
   };
-  const keeper = new Keeper(flaky, room, 'node-overlook', () => undefined);
+  const waited: number[] = [];
+  const keeper = new Keeper(
+    flaky,
+    room,
+    'node-overlook',
+    () => undefined,
+    (millis) => {
+      waited.push(millis);
+      return Promise.resolve();
+    },
+  );
   assert.equal(
     await keeper.signIn(
       1,
@@ -215,7 +225,54 @@ test('a leaving player whose release the accounts do not answer has their last s
   );
   room.held.set(1, '{"xp":7}');
   await keeper.leave(1);
-  assert.deepEqual(asked, ['release', 'release', 'save']);
+  assert.deepEqual(asked, ['release', 'release', 'release', 'release', 'release', 'save']);
+  assert.deepEqual(waited, [1_000, 4_000, 15_000, 40_000], 'each try after a longer wait, through a minute out');
   const back = await kept.claim(token, 'room-b:1');
   assert.equal(back?.body, '{"xp":7}', 'the last save is kept');
+});
+
+test('a change that changed nothing is not saved again, and a leaving save waits for one under way', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"xp":1}');
+  const saved: string[] = [];
+  let landSave = () => undefined as void;
+  const slow = {
+    ...kept,
+    save: async (account: string, holder: string, body: string) => {
+      saved.push(body);
+      if (body === '{"xp":2}') await new Promise<void>((resolve) => (landSave = resolve));
+      return kept.save(account, holder, body);
+    },
+    release: (account: string, holder: string, body: string | null) => {
+      saved.push(`release ${body}`);
+      return kept.release(account, holder, body);
+    },
+  };
+  const keeper = new Keeper(slow, room, 'node-overlook', () => undefined);
+  await keeper.signIn(
+    1,
+    token,
+    () => clock.now,
+    () => true,
+  );
+  clock.now += SAVE_AFTER_CHANGE_MS;
+  await keeper.due(clock.now);
+  keeper.changed(1);
+  clock.now += SAVE_AFTER_CHANGE_MS;
+  await keeper.due(clock.now);
+  assert.deepEqual(saved, ['{"xp":1}'], 'a refused ask leaves nothing new to save');
+
+  room.held.set(1, '{"xp":2}');
+  keeper.changed(1);
+  clock.now += SAVE_AFTER_CHANGE_MS;
+  const saving = keeper.due(clock.now);
+  room.held.set(1, '{"xp":3}');
+  const leaving = keeper.leave(1);
+  await Promise.resolve();
+  assert.deepEqual(saved, ['{"xp":1}', '{"xp":2}'], 'the release waits for the save under way');
+  landSave();
+  await Promise.all([saving, leaving]);
+  assert.deepEqual(saved, ['{"xp":1}', '{"xp":2}', 'release {"xp":3}']);
+  assert.equal((await kept.claim(token, 'room-b:1'))?.body, '{"xp":3}', 'the newest lands last');
 });

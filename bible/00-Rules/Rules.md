@@ -18,4 +18,4 @@ something DFO Online taught us ([[Lessons from DFO]]). A new rule needs the owne
 | [[Tests Check Behaviour]] | Tests pin what the code does, never where its lines sit | review |
 | [[Short Branches, Green Main]] | Small changes, merged within days; main always passes | CI, review |
 | [[Generated Files Stay Out of Git]] | Renders, bakes and builds live outside git | assets check |
-| [[Versions Are Not Counters]] | Migrations by timestamp, protocol versions by hash | review, later a check |
+| [[Versions Are Not Counters]] | Migrations by timestamp, protocol versions by hash | versions check, review |

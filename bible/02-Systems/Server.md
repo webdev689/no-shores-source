@@ -173,7 +173,8 @@ they choose, all in one fight ([[Naval Combat]]).
   captain's mode, target and sides run out, and a player's last order taken), the balls aloft, what happened in the
   fight since it was last asked, and the fight's clock.
 - A room holds 16 players. Its chances are drawn from one seed, so one room fights the same fight for the same orders.
-  A room on land the servers host is given a seed of its own, random and never sent, so no player can foresee its loot.
+  A room on land the servers host is given two seeds of its own, random and never sent: one its loot is drawn from,
+  and one its foes' choices and its camps are, so what a player sees of the foes tells them nothing of the loot.
 
 ## The bake
 

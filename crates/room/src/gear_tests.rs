@@ -163,8 +163,11 @@ fn asks_are_answered_where_the_player_stands() {
     room.furnish(Some([20.0, 0.0]), vec![ResourceNode { x: 0.0, y: 10.0, resource: 0 }]);
     let player = room.join().expect("a room with space");
     let vestige = Vestige { id: 500, rarity: Rarity::Magic, slot: Slot::Legs, level: 3 };
-    room.players.get_mut(&player).expect("in").character.pick_up(vestige);
-    let identify = Asked::Gear(Ask::Identify { vestige: 500 });
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    character.pick_up(vestige);
+    let picked = *character.vestiges.keys().max().expect("picked up");
+    assert_ne!(picked, 500, "numbered by the character that took it");
+    let identify = Asked::Gear(Ask::Identify { vestige: picked });
     assert_eq!(ask(&mut room, player, 1, identify.clone()), answer_code(Err(Refusal::NotHere)));
     move_to(&mut room, player, 18.0, 0.0);
     assert_eq!(ask(&mut room, player, 2, identify), 0, "within reach of the stall");
@@ -228,8 +231,66 @@ fn a_players_gear_is_theirs_to_be_sent_whenever_it_changes() {
     assert!(!sent(&mut room, player), "an input that asks nothing changes nothing");
     ask(&mut room, player, 2, Asked::Gear(Ask::TakeOff { slot: Slot::Head }));
     assert!(room.take_gear_change(player));
-    ask(&mut room, player, 3, Asked::Gear(Ask::TakeOff { slot: Slot::Torso }));
+    room.players.get_mut(&player).expect("in").gear_changed = true;
     assert!(!room.take_gear_change(player), "not so soon after the last send");
     assert!(sent(&mut room, player), "but once the room may send again");
     assert!(room.player(player).is_some_and(|found| found.character.worn(Slot::Head).is_none()));
+}
+
+#[test]
+fn a_blow_that_cannot_harm_its_foe_shares_nothing_of_its_kill() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let foe = stand(&mut room, ::foes::Kind::Brute, 9, -1.5);
+    let striker = *room.fighter(player).expect("in");
+    let attack = combat::fighter::Attack {
+        stroke: Stroke::Down,
+        elapsed: 0,
+        strike: 24,
+        end: 60,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    };
+    let blow = room.empower(combat::judge::swing_blow(player, &striker, &attack, foe), foe, false);
+    assert_eq!(blow.damage, 0.0, "eight levels below");
+    room.settle(&blow, How::Swing, foe, Verdict::Hit { damage: 0.0, poise: 0.0 }, Some(Slot::MainHand));
+    assert!(room.foes[&foe].struck_by.is_empty(), "no share of a kill it could not help");
+}
+
+#[test]
+fn a_node_whose_resource_is_full_is_left_standing() {
+    let mut room = room();
+    room.furnish(None, vec![ResourceNode { x: 0.0, y: 1.0, resource: 0 }]);
+    let player = room.join().expect("a room with space");
+    let most = gear::character::STOCK_MOST;
+    room.players.get_mut(&player).expect("in").character.materials.add(gear::character::Stuff::Resource(0), most);
+    assert_eq!(ask(&mut room, player, 1, Asked::Gather { node: 0 }), crate::asks::STOCK_FULL);
+    assert!(room.player(player).expect("in").spent.is_empty(), "not spent");
+}
+
+#[test]
+fn asks_wait_their_turn_and_one_that_changes_how_a_player_fights_is_sent_at_once() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    assert!(room.take_gear_change(player), "sent once on joining");
+    for slot in [Slot::Head, Slot::Torso, Slot::Legs] {
+        room.take_ask(player, Asked::Gear(Ask::TakeOff { slot }));
+    }
+    let answered = |room: &Room| room.player(player).expect("in").answered;
+    assert_eq!(answered(&room), 1, "the first at once, the rest held");
+    assert!(!room.take_gear_change(player), "armour changes nothing of the fight, so it waits its turn");
+    for _ in 0..=2 * crate::asks::ASK_EVERY_TICKS {
+        room.tick();
+    }
+    assert_eq!(answered(&room), 3, "each in its turn, none let go");
+    let character = &room.player(player).expect("in").character;
+    assert!([Slot::Head, Slot::Torso, Slot::Legs].iter().all(|slot| character.worn(*slot).is_none()));
+
+    for _ in 0..crate::asks::ASK_EVERY_TICKS {
+        room.tick();
+    }
+    room.players.get_mut(&player).expect("in").gear_changed = true;
+    assert!(room.take_gear_change(player), "sent, so the next must wait");
+    room.take_ask(player, Asked::Gear(Ask::TakeOff { slot: Slot::MainHand }));
+    assert!(room.take_gear_change(player), "a hand emptied changes how they fight: sent at once");
 }

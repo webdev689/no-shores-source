@@ -245,6 +245,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .nodes_for(player)
         .flat_map(|(index, node)| [f64::from(index), node.x, node.y, f64::from(node.resource)])
         .collect();
+    let (to_next, to_next_needs) = character.to_next();
+    let arms: Vec<u32> = room::arms_allowed(character).into_iter().map(combat::Arms::code).collect();
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -264,6 +266,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         nodes: Some(builder.create_vector(&nodes)),
         wares,
         trim: Some(builder.create_vector(&found.trim.to_floats())),
+        to_next,
+        to_next_needs,
+        fruit_growing: character.fruit_growing().unwrap_or(-1.0),
+        arms: Some(builder.create_vector(&arms)),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -125,6 +125,13 @@ export interface GearState {
   readonly wares: readonly GearItem[];
   /** What the player's worn gear trims of the fight's numbers, which their browser predicts them by. */
   readonly trim?: readonly number[];
+  /** How far to their next level, 0 to 1, and what it still takes: XP below level 20, Prestige past it. */
+  readonly toNext?: number;
+  readonly toNextNeeds?: number;
+  /** How far their next Fruit of Dagon has grown, 0 to 1; null until their XP reaches level 20's. */
+  readonly fruitGrowing?: number | null;
+  /** The arms the room lets them take up, by combat's codes; any other it makes bare hands. */
+  readonly arms?: readonly number[];
 }
 
 /** No node chosen in a column, and no resource. */
@@ -216,6 +223,10 @@ export function gearOf(gear: Gear): GearState {
     nodes: nodesOf(Array.from(gear.nodesArray() ?? [])),
     wares,
     trim: Array.from(gear.trimArray() ?? []),
+    toNext: gear.toNext(),
+    toNextNeeds: gear.toNextNeeds(),
+    fruitGrowing: gear.fruitGrowing() < 0 ? null : gear.fruitGrowing(),
+    arms: Array.from(gear.armsArray() ?? []),
   };
 }
 

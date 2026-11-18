@@ -73,7 +73,7 @@ export type Difficulty = 'calm' | 'rough' | 'storm';
 const DIFFICULTY_WORDS: readonly (readonly [Difficulty, string, string])[] = [
   ['calm', 'Calm', 'The island’s foes as they are.'],
   ['rough', 'Rough', 'Foes two levels higher; half again the XP, Aurem and Vestiges.'],
-  ['storm', 'Storm', 'Foes four levels higher; twice the XP, Aurem and Vestiges.'],
+  ['storm', 'Storm', 'Foes three levels higher; twice the XP, Aurem and Vestiges.'],
 ];
 
 export class HeldMap {

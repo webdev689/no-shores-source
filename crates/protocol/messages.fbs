@@ -89,6 +89,8 @@ table Joined {
   dressed: [Dressed];
   node: string;
   bounds: [double];
+  // The protocol's version: the schema's hash, so a page built from another schema knows to load again.
+  protocol: uint;
 }
 
 // One player as the room last stepped them: the number of their last input it took, what their figure showed with
@@ -326,6 +328,14 @@ table Gear {
   // What their worn gear trims of the fight's numbers (combat's Trim, in its order): their fighter in a snapshot
   // leaves it out, and their browser puts it back before it predicts them.
   trim: [double];
+  // How far to their next level, 0 to 1, and what it still takes: XP below level 20, Prestige past it.
+  to_next: double;
+  to_next_needs: uint;
+  // How far their next Fruit of Dagon has grown, 0 to 1; below 0 until their XP reaches level 20's.
+  fruit_growing: double = -1;
+  // The arms the room lets them take up, by combat's codes: their gear's, and with a torch where the main hand
+  // leaves the left free. The room makes any other bare hands.
+  arms: [uint];
 }
 
 // What a room sends: exactly one of these is present.

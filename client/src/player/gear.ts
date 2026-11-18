@@ -29,13 +29,14 @@ export const KINDS = [
 /** The slots, by the gear crate's numbers. */
 export const SLOTS = ['main hand', 'off hand', 'head', 'torso', 'arms', 'legs', 'cloak'] as const;
 /** The rarities, by the gear crate's numbers: each one's name, its colour with the lit and shaded edges of a frame in it
- *  (Enhanced Plus's bevel), its colour's channels, and the pips that mark it. Magic, Rare and Legendary are Enhanced
- *  Plus's own (`RARITY_VARS`), Legendary its orange, so it never reads as Rare's gold. */
+ *  (Enhanced Plus's bevel), the channels its glow is drawn in, and the pips that mark it. The colours are the owner's:
+ *  Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; Magic is Enhanced Plus's own. A Normal
+ *  piece's frame and glow are the kit's plain stone, so it never outshines a finer one. */
 export const RARITIES = [
-  { name: 'Normal', colour: '#e9e4d9', lit: '#f6f3ec', shade: '#6b665c', rgb: '233,228,217', pips: '' },
+  { name: 'Normal', colour: '#e9e4d9', lit: '#a49b85', shade: '#3a352a', rgb: '154,144,121', pips: '' },
   { name: 'Magic', colour: '#6f9ee8', lit: '#b3cdf6', shade: '#34568f', rgb: '111,158,232', pips: '◆' },
-  { name: 'Rare', colour: '#e4c34f', lit: '#f6e398', shade: '#8f7420', rgb: '228,195,79', pips: '◆◆' },
-  { name: 'Legendary', colour: '#e07a2e', lit: '#f7b684', shade: '#8e4518', rgb: '224,122,46', pips: '◆◆◆' },
+  { name: 'Rare', colour: '#e8d84e', lit: '#f7f0a6', shade: '#8c801f', rgb: '232,216,78', pips: '◆◆' },
+  { name: 'Legendary', colour: '#e2a93b', lit: '#f6d38c', shade: '#8a5f17', rgb: '226,169,59', pips: '◆◆◆' },
   { name: 'Atheric', colour: '#4fd8f0', lit: '#b8f2fb', shade: '#1f7486', rgb: '79,216,240', pips: '◈' },
 ] as const;
 /** A column's kind of node, by the gear message's numbers. */
@@ -68,6 +69,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   17: 'It can earn no more XP.',
   100: 'Out of reach, or already gathered.',
   101: 'Only the Test Ground hands out gear.',
+  102: 'You can carry no more of it.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

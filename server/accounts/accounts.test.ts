@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { addressKey } from './accounts.ts';
 import { HOLD_MS, characters } from './characters.ts';
+import { SESSION_IDLE_MS } from './database.ts';
 import { backTo } from './discord.ts';
 import { NO_ONES_PASSWORD, hashPassword, passwordMatches } from './secrets.ts';
 import { PAGE, accounts } from './accountsForTests.ts';
@@ -167,4 +168,41 @@ test('a Discord sign-in comes back only to a page under a listed one, by origin 
   assert.equal(backTo('https://lattymoy.github.io/overlook-sourced/', pages), null);
   assert.equal(backTo('https://evil.example/overlook-source/', pages), null);
   assert.equal(backTo('javascript:alert(1)', pages), null);
+});
+
+test('a session with a way back in lapses after 30 days unseen; a guest is never lost; all may be signed out', async () => {
+  const { deps, clock, ask } = accounts();
+  const kept = characters(deps.database, deps.now, () => Promise.resolve());
+  const guest = (await ask('POST', '/v1/guest')).body['token'] as string;
+  const named = (await ask('POST', '/v1/guest')).body['token'] as string;
+  await ask('POST', '/v1/register', { username: 'Mariner', password: 'long enough' }, named);
+  const elsewhere = (await ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' })).body[
+    'token'
+  ] as string;
+
+  clock.now += SESSION_IDLE_MS - 1;
+  assert.equal((await ask('GET', '/v1/me', undefined, named)).status, 200, 'seen within the month');
+  clock.now += SESSION_IDLE_MS - 1;
+  assert.equal((await ask('GET', '/v1/me', undefined, named)).status, 200, 'each sight keeps it a month more');
+  clock.now += SESSION_IDLE_MS + 1;
+  const lapsed = await ask('GET', '/v1/me', undefined, named);
+  assert.deepEqual(
+    [lapsed.status, lapsed.body['error']],
+    [401, 'Your sign-in lapsed after 30 days away. Sign in again.'],
+  );
+  assert.equal((await ask('GET', '/v1/me', undefined, named)).body['error'], 'Not signed in.', 'and is gone');
+  assert.equal(await kept.claim(elsewhere, 'room-a:1'), null, 'no room takes a lapsed session');
+  assert.ok(await kept.claim(guest, 'room-a:2'), "a guest's token is its only way back, and never lapses");
+  assert.equal((await ask('GET', '/v1/me', undefined, guest)).status, 200);
+
+  const again = (await ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' })).body[
+    'token'
+  ] as string;
+  const other = (await ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' })).body[
+    'token'
+  ] as string;
+  assert.equal((await ask('POST', '/v1/logout/everywhere', undefined, guest)).status, 409, 'a guest would be lost');
+  assert.equal((await ask('POST', '/v1/logout/everywhere', undefined, again)).status, 200);
+  assert.equal((await ask('GET', '/v1/me', undefined, other)).status, 401, 'every session ends');
+  assert.equal((await ask('GET', '/v1/me', undefined, again)).status, 401);
 });

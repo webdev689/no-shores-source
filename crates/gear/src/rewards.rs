@@ -93,7 +93,9 @@ impl Character {
         if self.vestiges_held(false) >= crate::character::VESTIGES_MOST {
             return false;
         }
-        self.vestiges.insert(vestige.id, (vestige, false));
+        // Numbered as it is taken, so a Vestige that fell for a character since replaced takes no number in use.
+        let id = self.take_id();
+        self.vestiges.insert(id, (Vestige { id, ..vestige }, false));
         true
     }
 

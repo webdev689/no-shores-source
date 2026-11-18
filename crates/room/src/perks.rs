@@ -74,25 +74,23 @@ impl Room {
     }
 
     /// The perks a player's blow on a foe takes on as it is struck: Honed on every blow, Executioner on a staggered
-    /// foe, Undertow on one below half its health.
-    pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId) -> Blow {
-        let (Some(striker), Some(foe)) = (self.players.get(&blow.striker), self.fighter(defender)) else { return blow };
-        if !self.foes.contains_key(&defender) {
+    /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health.
+    pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, trim: &Trim) -> Blow {
+        let Some(foe) = self.fighter(defender) else { return blow };
+        if !self.players.contains_key(&blow.striker) || !self.foes.contains_key(&defender) {
             return blow;
         }
-        let trim = &striker.fighter.trim;
-        let staggered = if foe.staggered() { trim.on_staggered } else { 1.0 };
+        let staggered = if foe.staggered() && !blow.riposte() { trim.on_staggered } else { 1.0 };
         let low = if foe.health < foe.health_max / 2.0 { trim.on_low } else { 1.0 };
         Blow { damage: blow.damage * trim.damage * staggered * low, ..blow }
     }
 
-    /// A player's shot by the ground it covered to its mark: Point Blank within 5 m, Long Shot past 20.
-    pub(crate) fn at_range(&self, blow: Blow, covered: f64) -> Blow {
-        let Some(striker) = self.players.get(&blow.striker) else { return blow };
+    /// A player's shot by the ground it covered to its mark and the trim it was loosed with: Point Blank within 5 m,
+    /// Long Shot past 20.
+    pub(crate) fn at_range(blow: Blow, covered: f64, trim: &Trim) -> Blow {
         if !matches!(blow.kind, BlowKind::Shot(_)) {
             return blow;
         }
-        let trim = &striker.fighter.trim;
         let range = if covered <= POINT_BLANK_M {
             trim.point_blank
         } else if covered >= LONG_SHOT_M {

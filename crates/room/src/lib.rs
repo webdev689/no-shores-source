@@ -25,7 +25,7 @@ pub use players::{
     CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
     Shown, VIEW_LAG, WAITING_LIMIT,
 };
-pub use power::{Drop, allowed_arms, gear_arms};
+pub use power::{Drop, allowed_arms, arms_allowed, gear_arms};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
@@ -110,7 +110,8 @@ pub struct Room {
     next_fighter: FighterId,
     pub(crate) players: BTreeMap<PlayerId, Player>,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
-    pub(crate) shots: Vec<Shot>,
+    /// Each with what its player loosed it with; a foe's with nothing.
+    pub(crate) shots: Vec<(Shot, Option<power::Loosed>)>,
     pub(crate) pending: Vec<Pending>,
     pub(crate) groups: BTreeMap<u32, Group>,
     pub(crate) next_group: u32,
@@ -128,10 +129,12 @@ pub struct Room {
     /// The balls fired since the last snapshot, each as its whole line: from where it left to where it stopped, in one
     /// tick of its velocity.
     pub(crate) lines: Vec<Shot>,
-    /// What the foes share, the routes they walk, and the seed their chances are drawn from.
+    /// What the foes share, the routes they walk; the seed the players' loot is drawn from, and apart from it the seed
+    /// the foes' chances and the camps are, since a player sees where a foe stands and what it does.
     pub(crate) board: ::foes::Board,
     pub(crate) nav: navmesh::NavMesh,
     pub(crate) seed: u64,
+    pub(crate) world_seed: u64,
     /// How many rolls the room has made for players, so no two share one, even in one tick.
     pub(crate) rolls: u64,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
@@ -194,6 +197,7 @@ impl Room {
             board: ::foes::Board::default(),
             nav,
             seed: SEED,
+            world_seed: SEED,
             rolls: 0,
             past: VecDeque::new(),
             social: false,
@@ -308,12 +312,13 @@ impl Room {
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
             self.dress_in_turn(id);
+            self.answer_due(id);
             let mut taken = 0;
             while taken < CATCH_UP {
                 let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
                 if let Some(asked) = input.ask.take() {
-                    self.answer(id, asked);
+                    self.take_ask(id, asked);
                 }
                 let view = self.view_at(seen);
                 let Some(found) = self.players.get_mut(&id) else { break };
@@ -450,7 +455,8 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::line_of(&shot, stop));
                 } else {
-                    self.shots.push(shot);
+                    let loosed = self.held(id, gear::Slot::MainHand);
+                    self.shots.push((shot, loosed));
                 }
             }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
@@ -548,9 +554,8 @@ impl Room {
     }
 
     /// The shots in flight.
-    #[must_use]
-    pub fn shots(&self) -> &[Shot] {
-        &self.shots
+    pub fn shots(&self) -> impl Iterator<Item = &Shot> {
+        self.shots.iter().map(|(shot, _)| shot)
     }
 
     /// The balls fired since this was last asked, each as its whole line, to send to everyone once so every screen

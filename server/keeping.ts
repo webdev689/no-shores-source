@@ -19,8 +19,12 @@ export interface KeptRoom {
 /** How soon a change is saved, and how often a character is saved unchanged, to keep the room's hold. */
 export const SAVE_AFTER_CHANGE_MS = 2_000;
 export const SAVE_UNCHANGED_MS = 20_000;
-/** How many times a leaving player's release is asked before their last save is made on its own. */
-const LEAVE_TRIES = 2;
+/** How long a leaving player's release, or a joining player's claim the accounts did not answer, waits before each
+ *  try after the first: through a blip, a redeploy and a minute's outage. Then a leaver's last save is made on its own,
+ *  and a joiner plays on unkept. */
+const LEAVE_WAITS_MS = [1_000, 4_000, 15_000, 40_000];
+const CLAIM_WAITS_MS = [1_000, 4_000];
+const sleep = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
 
 /** A session's token, as a browser sends it. */
 export const TOKEN = /^[0-9a-f]{64}$/;
@@ -31,6 +35,10 @@ interface Held {
   changed: boolean;
   savedAt: number;
   saving: boolean;
+  /** The character as last saved, so a change that changed nothing (a refused ask) is not saved again. */
+  saved: string | null;
+  /** The save under way, which a leaving player's last save waits for so it is never overtaken by an older one. */
+  inFlight: Promise<unknown> | null;
 }
 
 export class Keeper {
@@ -40,12 +48,20 @@ export class Keeper {
   /** Called for a player whose character another room took. */
   private readonly lost: (player: number) => void;
   private readonly held = new Map<number, Held>();
+  private readonly wait: (millis: number) => Promise<void>;
 
-  constructor(characters: Characters | null, room: KeptRoom, name: string, lost: (player: number) => void) {
+  constructor(
+    characters: Characters | null,
+    room: KeptRoom,
+    name: string,
+    lost: (player: number) => void,
+    wait: (millis: number) => Promise<void> = sleep,
+  ) {
     this.characters = characters;
     this.room = room;
     this.name = name;
     this.lost = lost;
+    this.wait = wait;
   }
 
   /** Claims a player's character with their session's token and gives it to them; whether it is now kept. `here`
@@ -54,7 +70,12 @@ export class Keeper {
     const characters = this.characters;
     if (!characters || this.held.has(player) || this.room.character(player) === null) return false;
     const holder = `${this.name}:${crypto.randomUUID()}`;
-    const claimed = await characters.claim(token, holder).catch(() => null);
+    let claimed = await characters.claim(token, holder).catch(() => undefined);
+    for (const millis of CLAIM_WAITS_MS) {
+      if (claimed !== undefined || !here()) break;
+      await this.wait(millis);
+      claimed = await characters.claim(token, holder).catch(() => undefined);
+    }
     if (!claimed) return false;
     const given = claimed.body === null || this.room.restoreCharacter(player, claimed.body);
     if (!here() || !given || this.held.has(player)) {
@@ -69,6 +90,8 @@ export class Keeper {
       changed: claimed.body === null,
       savedAt: now(),
       saving: false,
+      saved: claimed.body,
+      inFlight: null,
     });
     return true;
   }
@@ -88,15 +111,21 @@ export class Keeper {
       if (held.saving || (waited < SAVE_UNCHANGED_MS && !(held.changed && waited >= SAVE_AFTER_CHANGE_MS))) return;
       const body = this.room.character(player);
       if (body === null) return;
-      held.saving = true;
       held.changed = false;
-      const saved = await characters.save(held.account, held.holder, body).catch(() => null);
+      // Unchanged, it is saved only to keep the hold.
+      if (body === held.saved && waited < SAVE_UNCHANGED_MS) return;
+      held.saving = true;
+      const saving = characters.save(held.account, held.holder, body).catch(() => null);
+      held.inFlight = saving;
+      const saved = await saving;
       held.saving = false;
+      held.inFlight = null;
       if (saved === false && this.held.get(player) === held) {
         this.held.delete(player);
         this.lost(player);
       } else if (saved === true) {
         held.savedAt = now;
+        held.saved = body;
       } else {
         // The accounts could not be reached: try again soon.
         held.changed = true;
@@ -106,15 +135,17 @@ export class Keeper {
   }
 
   /** Lets a player's character go with a last save; call it before the room lets the player go. A release the
-   *  accounts did not answer is tried again, then the last save is made on its own, so a moment's outage loses none of
-   *  it: the hold then lapses by itself. */
+   *  accounts did not answer is tried again after a wait, then the last save is made on its own, so an outage of a
+   *  minute loses none of it: the hold then lapses by itself. */
   async leave(player: number): Promise<void> {
     const held = this.held.get(player);
     const characters = this.characters;
     if (!held || !characters) return;
     this.held.delete(player);
+    await held.inFlight;
     const body = this.room.character(player);
-    for (let tried = 0; tried < LEAVE_TRIES; tried++) {
+    for (const millis of [0, ...LEAVE_WAITS_MS]) {
+      if (millis > 0) await this.wait(millis);
       const released = await characters.release(held.account, held.holder, body).catch(() => null);
       if (released !== null) return;
     }

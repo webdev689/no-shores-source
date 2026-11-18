@@ -262,6 +262,27 @@ impl Character {
         power::level(self.xp, self.prestige())
     }
 
+    /// How far the player is to their next level, 0 to 1, and what it still takes: XP below level 20, Prestige past
+    /// it; at the highest, full and nothing.
+    #[must_use]
+    pub fn to_next(&self) -> (f64, u32) {
+        let level = self.level();
+        if level < power::XP_LEVEL_MOST {
+            let (from, to) = (power::xp_for_level(level), power::xp_for_level(level + 1));
+            let share = self.xp.saturating_sub(from) as f64 / (to - from) as f64;
+            return (share.min(1.0), u32::try_from(to.saturating_sub(self.xp)).unwrap_or(u32::MAX));
+        }
+        let Some(needed) = power::PRESTIGE_FOR.get(usize::from(level - power::XP_LEVEL_MOST)) else { return (1.0, 0) };
+        (f64::from(self.prestige()) / f64::from(*needed), needed.saturating_sub(self.prestige()))
+    }
+
+    /// How far the next Fruit of Dagon has grown, 0 to 1; none until the player's XP reaches level 20's.
+    #[must_use]
+    pub fn fruit_growing(&self) -> Option<f64> {
+        let past = self.xp.checked_sub(power::xp_for_level(power::XP_LEVEL_MOST))?;
+        Some((past % FRUIT_XP) as f64 / FRUIT_XP as f64)
+    }
+
     /// The Defense of everything worn: the four armour pieces and a shield.
     #[must_use]
     pub fn defense(&self) -> u32 {
@@ -293,7 +314,7 @@ impl Character {
     /// 20,000 grows a Fruit of Dagon. `weapon` is the hand whose blow earned it, if one did: that weapon earns it, and
     /// every armour piece and shield worn does.
     pub fn earn_xp(&mut self, xp: u32, weapon: Option<Slot>) {
-        let xp = if self.has_trait("scholar") { xp + xp / 10 } else { xp };
+        let xp = if self.has_trait("scholar") { xp.saturating_add(xp / 10) } else { xp };
         self.xp = self.xp.saturating_add(u64::from(xp));
         let past = self.xp.saturating_sub(power::xp_for_level(power::XP_LEVEL_MOST));
         let grown = past / FRUIT_XP;

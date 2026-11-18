@@ -63,16 +63,10 @@ export interface Tile {
   readonly power: string;
 }
 
-/** The levels past XP: each needs the Prestige of the one before and eleven more (Gear as Claude Shapes It). */
+/** The levels XP alone reaches, and the highest. */
 const LEVEL_BY_XP = 20;
 const LEVEL_MOST = 30;
-const PRESTIGE_AT_21 = 21;
-const PRESTIGE_A_LEVEL = 11;
-const FRUIT_XP = 20_000;
 
-/** The XP that reaches a level: 1,000 for each level below it, times that level. */
-export const xpForLevel = (level: number): number => (1000 * (level - 1) * level) / 2;
-const prestigeFor = (level: number): number => PRESTIGE_AT_21 + PRESTIGE_A_LEVEL * (level - 21);
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 const colourOf = (rarity: number) => RARITIES[rarity]?.colour ?? '';
 
@@ -98,20 +92,14 @@ export interface Character {
 }
 
 export function characterOf(state: GearState): Character {
-  const earned = Number(state.xp);
-  const below = state.level < LEVEL_BY_XP;
-  const [toNext, toNextWords] = below
-    ? [
-        (earned - xpForLevel(state.level)) / (1000 * state.level),
-        `${(xpForLevel(state.level + 1) - earned).toLocaleString()} XP to level ${state.level + 1}`,
-      ]
-    : state.level >= LEVEL_MOST
-      ? [1, 'The highest level']
-      : [
-          state.prestige / prestigeFor(state.level + 1),
-          `${prestigeFor(state.level + 1) - state.prestige} more Prestige for level ${state.level + 1}`,
-        ];
-  const past = earned - xpForLevel(LEVEL_BY_XP);
+  const level = state.level;
+  const needs = (state.toNextNeeds ?? 0).toLocaleString();
+  const toNextWords =
+    level >= LEVEL_MOST
+      ? 'The highest level'
+      : level < LEVEL_BY_XP
+        ? `${needs} XP to level ${level + 1}`
+        : `${needs} more Prestige for level ${level + 1}`;
   // A hand holding no weapon (empty, or a shield) has no Attack.
   const hand = (slot: number) => {
     const attack = state.items.find((item) => item.at === WORN + slot)?.attack ?? 0;
@@ -119,13 +107,13 @@ export function characterOf(state: GearState): Character {
   };
   return {
     level: state.level,
-    toNext: Math.min(1, Math.max(0, toNext)),
+    toNext: level >= LEVEL_MOST ? 1 : Math.min(1, Math.max(0, state.toNext ?? 0)),
     toNextWords,
     prestige: state.prestige,
     defense: state.defense,
     attack: [hand(0), hand(1)],
     fruit: state.stocks[4] ?? 0,
-    fruitGrown: past >= 0 ? (past % FRUIT_XP) / FRUIT_XP : null,
+    fruitGrown: state.fruitGrowing ?? null,
     slots: SLOTS.map((name, slot) => {
       const worn = state.items.find((item) => item.at === WORN + slot);
       return { slot, name: capital(name), worn: worn ? tileOf(worn) : null };

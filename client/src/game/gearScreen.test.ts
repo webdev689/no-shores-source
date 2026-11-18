@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { characterOf, itemDetailOf, vendorsOf, xpForLevel } from './gearScreen.ts';
+import { characterOf, itemDetailOf, vendorsOf } from './gearScreen.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -66,16 +66,16 @@ const legendary = item({
   ],
 });
 
-test('a level below 20 counts XP to the next; past it, Prestige; the last is full', () => {
-  assert.equal(xpForLevel(20), 190_000);
-  const low = characterOf(state({ xp: BigInt(xpForLevel(5) + 2_500), level: 5 }));
+test('the level meter is the room’s word: XP to the next below 20, Prestige past it, and the last full', () => {
+  const low = characterOf(state({ level: 5, toNext: 0.5, toNextNeeds: 2_500 }));
   assert.equal(low.toNext, 0.5);
   assert.equal(low.toNextWords, '2,500 XP to level 6');
   assert.equal(low.fruitGrown, null);
-  const high = characterOf(state({ xp: 230_000n, level: 21, prestige: 22 }));
+  const high = characterOf(state({ level: 21, prestige: 22, toNext: 22 / 32, toNextNeeds: 10, fruitGrowing: 0 }));
   assert.equal(high.toNextWords, '10 more Prestige for level 22');
-  assert.equal(high.fruitGrown, 0, 'two Fruits grown, the third begun');
-  assert.equal(characterOf(state({ level: 30, prestige: 120 })).toNext, 1);
+  assert.equal(high.fruitGrown, 0, 'the next Fruit just begun');
+  const last = characterOf(state({ level: 30, prestige: 120 }));
+  assert.deepEqual([last.toNext, last.toNextWords], [1, 'The highest level']);
 });
 
 test('an item’s detail lays out its nodes: bought, to buy once unlocked, and what it may do where it is', () => {

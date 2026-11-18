@@ -8,8 +8,7 @@ code:
   - server/accounts/discord.ts#taken
   - server/accounts/secrets.ts#hashPassword
   - server/accounts/worker.ts#CharacterKeeper
-  - server/accounts/migrations/0001_accounts.sql
-  - server/accounts/migrations/0002_discord_codes.sql
+  - server/accounts/migrations/20261117210000_accounts.sql
   - server/keeping.ts#Keeper
   - client/src/network/accounts.ts#AccountLink
   - crates/gear/src/character.rs#from_json
@@ -47,10 +46,16 @@ they play in holds it while they are there.
   Discord sign-in says it is not set up.
 - **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
   guests and register 10 times an hour, try 20 sign-ins in ten minutes, and start Discord 20 times in ten minutes;
-  one username may be tried 10 times in ten minutes from one address and 100 times from everywhere, so a stranger
-  cannot lock its owner out; one account may take 10 Discord tickets in ten minutes. A name no account could hold is
-  refused before it is kept, and a request's body is read only up to 2 KB. States, tickets and codes past their
-  time are let go.
+  one username may be tried 10 times in ten minutes from one address and 100 times from everywhere; one account may
+  take 10 Discord tickets in ten minutes. Guessing is held down before a lockout is: a flood of guesses from many
+  networks can hold a name's sign-ins for the rest of its ten minutes, while a session already held and Discord still
+  sign its owner in. A name no account could hold is refused before it is kept, and a request's body is read only up
+  to 2 KB, however it is sent. States, tickets and codes past their time are let go.
+- **Sessions lapse, but never a guest's.** A session of an account with a username or Discord lapses once it has
+  gone unseen 30 days (each sight, or a room's claim, keeps it a month more); the page then says so and plays on as a
+  guest until its player signs in again. A guest's session never lapses: its token is the only way back to it. An
+  account with a way back in may sign out everywhere, which ends every session it has; a room already holding its
+  character keeps it until that player leaves.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no
   page acts as a player without holding their token. Discord sends players back only to pages under those listed in
   the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/overlook-source/`, and
@@ -84,6 +89,6 @@ they play in holds it while they are there.
 
 ## Limits
 
-- Sessions do not lapse, and there is no signing out everywhere or changing a password yet.
+- There is no changing a password yet.
 - A sign-in derives PBKDF2 at 100,000 iterations, about 50 ms of CPU: on Cloudflare's Workers Free plan, whose
   limit is 10 ms, it would fail. Untested live.

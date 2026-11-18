@@ -9,4 +9,4 @@ version is computed from what it describes (a hash of the schema), never bumped 
 **Why.** DFO Online's relay reached version 311 and its database 215 migrations, and about 170 commits did nothing but
 renumber them after parallel branches collided.
 
-**Checked by.** Review for now; a check arrives with the first migration or protocol.
+**Checked by.** The versions check, for every `.sql` file in a `migrations/` folder; review for protocol versions.

@@ -105,6 +105,8 @@ export class Fighting {
   private readonly random: () => number;
   private readonly prediction = new Prediction<Asked>();
   private fighter: Float64Array | null = null;
+  /** The trim last laid on the fighter from the room's word on the player's gear. */
+  private trimTaken: readonly number[] | null = null;
   private seen = 0n;
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
@@ -230,6 +232,11 @@ export class Fighting {
 
   private tick(body: Body, controls: Controls): Body {
     if (!this.fighter) return body;
+    // A new word on the player's gear is theirs at once: the trim the room now steps them by.
+    if (this.link.trim && this.link.trim !== this.trimTaken) {
+      this.trimTaken = this.link.trim;
+      this.fighter = trimmed(this.fighter, this.link.trim);
+    }
     const { pitch } = this.buttons;
     const swing = this.latches.swing.tick(this.buttons.swing);
     // The stroke rolled is kept while it reaches; once it does not and another would, it is rolled again.
@@ -246,7 +253,9 @@ export class Fighting {
     ]);
     const dress = this.dressToSend();
     const view = this.view;
-    const arms = this.arms;
+    // Arms the room would not let the player take up are bare hands, as the room makes them.
+    const allowed = this.link.arms;
+    const arms = !allowed || allowed.length === 0 || allowed.includes(this.arms) ? this.arms : 0;
     const asked: Asked = { intent, view, arms, fired: null };
     const sequence = this.prediction.next(asked);
     const spawned = this.spawnsQueued.shift();

@@ -4,7 +4,7 @@
  * (`discord.ts`). Answers are JSON, open to any page: a session travels only as a bearer token, never a cookie.
  */
 
-import type { Db } from './database.ts';
+import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
@@ -96,24 +96,66 @@ async function newAccount(database: Db, now: number, discord: string | null = nu
   return id;
 }
 
-/** The account a request's bearer token is a session of. */
-async function signedIn(request: Request, database: Db): Promise<AccountRow | null> {
+/** Said of a session its account has not used in `SESSION_IDLE_MS`. */
+const LAPSED = 'Your sign-in lapsed after 30 days away. Sign in again.';
+
+/** The account a request's bearer token is a session of, seen now; `LAPSED` if it lapsed, which ends it. */
+async function sessionOf(request: Request, database: Db, now: number): Promise<AccountRow | typeof LAPSED | null> {
   const token = /^Bearer ([0-9a-f]{64})$/.exec(request.headers.get('Authorization') ?? '')?.[1];
   if (!token) return null;
-  return database
+  const hash = await hashOf(token);
+  const row = await database
     .prepare(
-      `SELECT accounts.id, accounts.username, accounts.discord_id FROM sessions
+      `SELECT accounts.id, accounts.username, accounts.discord_id, sessions.seen_at FROM sessions
        JOIN accounts ON accounts.id = sessions.account_id WHERE sessions.token_hash = ?1`,
     )
-    .bind(await hashOf(token))
-    .first<AccountRow>();
+    .bind(hash)
+    .first<AccountRow & { seen_at: number }>();
+  if (!row) return null;
+  const lapsed = (row.username !== null || row.discord_id !== null) && row.seen_at < now - SESSION_IDLE_MS;
+  await database
+    .prepare(
+      lapsed ? 'DELETE FROM sessions WHERE token_hash = ?2' : 'UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2',
+    )
+    .bind(now, hash)
+    .run();
+  return lapsed ? LAPSED : { id: row.id, username: row.username, discord_id: row.discord_id };
+}
+
+/** The account a request's bearer token is a live session of. */
+async function signedIn(request: Request, database: Db, now: number): Promise<AccountRow | null> {
+  const found = await sessionOf(request, database, now);
+  return found === LAPSED ? null : found;
+}
+
+/** A request's body as text, read only up to `BODY_MOST` bytes however it is sent; null past that. */
+async function textOf(request: Request): Promise<string | null> {
+  if (Number(request.headers.get('Content-Length') ?? 0) > BODY_MOST) return null;
+  const reader = request.body?.getReader();
+  if (!reader) return '';
+  const read: Uint8Array[] = [];
+  let size = 0;
+  try {
+    for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+      size += chunk.value.byteLength;
+      if (size > BODY_MOST) {
+        await reader.cancel();
+        return null;
+      }
+      read.push(chunk.value);
+    }
+  } catch {
+    return '';
+  }
+  const whole = new Uint8Array(size);
+  read.reduce((offset, part) => (whole.set(part, offset), offset + part.byteLength), 0);
+  return new TextDecoder().decode(whole);
 }
 
 /** A request's JSON body, read only up to `BODY_MOST` bytes; null if it is longer or not JSON. */
 async function bodyOf(request: Request): Promise<Record<string, unknown> | null> {
-  if (Number(request.headers.get('Content-Length') ?? 0) > BODY_MOST) return null;
-  const text = await request.text().catch(() => '');
-  if (text.length > BODY_MOST) return null;
+  const text = await textOf(request);
+  if (text === null) return null;
   try {
     const read: unknown = JSON.parse(text);
     return typeof read === 'object' && read !== null ? (read as Record<string, unknown>) : null;
@@ -157,7 +199,7 @@ async function finish(request: Request, deps: Deps, now: number): Promise<Respon
       : null;
   if (!came) return refused(400, 'This sign-in has run out. Start it again from the game.');
   if (came.kind === 'link') {
-    const account = await signedIn(request, database);
+    const account = await signedIn(request, database, now);
     if (account?.id !== came.account) return refused(403, 'Discord can be linked only from the account that asked.');
     const linked = await database
       .prepare('UPDATE accounts SET discord_id = ?1 WHERE id = ?2 AND discord_id IS NULL')
@@ -199,6 +241,13 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
         .prepare('DELETE FROM limits WHERE window_start < ?1')
         .bind(now - 24 * 60 * MINUTE)
         .run();
+      await database
+        .prepare(
+          `DELETE FROM sessions WHERE seen_at < ?1 AND account_id IN
+           (SELECT id FROM accounts WHERE username IS NOT NULL OR discord_id IS NOT NULL)`,
+        )
+        .bind(now - SESSION_IDLE_MS)
+        .run();
       const id = await newAccount(database, now);
       return json({
         token: await newSession(database, id, now),
@@ -206,11 +255,12 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
       });
     }
     case 'GET /v1/me': {
-      const account = await signedIn(request, database);
+      const account = await sessionOf(request, database, now);
+      if (account === LAPSED) return refused(401, LAPSED);
       return account ? json({ account: shown(account) }) : refused(401, 'Not signed in.');
     }
     case 'POST /v1/register': {
-      const account = await signedIn(request, database);
+      const account = await signedIn(request, database, now);
       if (!account) return refused(401, 'Not signed in.');
       if (account.username !== null) return refused(409, 'This account already has a username.');
       if (!(await within(database, `register:${address}`, LIMITS.register, now)))
@@ -234,10 +284,10 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
       return json({ account: shown({ ...account, username: given.username }) });
     }
     case 'POST /v1/login': {
-      const given = await nameAndPassword(request);
-      if (!given) return refused(400, 'Give a username and a password.');
       if (!(await within(database, `login:${address}`, LIMITS.login, now)))
         return refused(429, 'Too many tries. Wait a few minutes.');
+      const given = await nameAndPassword(request);
+      if (!given) return refused(400, 'Give a username and a password.');
       // No account holds a name that is not a username, so it is refused before it is kept or hashed.
       if (!USERNAME.test(given.username)) return refused(401, 'That username and password do not match.');
       const key = given.username.toLowerCase();
@@ -262,8 +312,16 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
           .run();
       return json({ ok: true });
     }
+    case 'POST /v1/logout/everywhere': {
+      const account = await signedIn(request, database, now);
+      if (!account) return refused(401, 'Not signed in.');
+      if (account.username === null && account.discord_id === null)
+        return refused(409, 'A guest has no way back in. Add a username or Discord first.');
+      await database.prepare('DELETE FROM sessions WHERE account_id = ?1').bind(account.id).run();
+      return json({ ok: true });
+    }
     case 'POST /v1/discord/ticket': {
-      const account = await signedIn(request, database);
+      const account = await signedIn(request, database, now);
       if (!account) return refused(401, 'Not signed in.');
       if (!(await within(database, `ticket:${account.id}`, LIMITS.ticket, now))) return refused(429, 'Too many tries.');
       return json({ ticket: await ticketFor(database, account.id, now) });

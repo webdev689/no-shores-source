@@ -1,6 +1,7 @@
 import { button, make } from '../editor/dom.ts';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
+import { heldPress } from './gearDom.ts';
 
 function pressOf(text: string, run: () => void, role: Role = 'button'): HTMLButtonElement {
   const node = button(text, run);
@@ -26,7 +27,8 @@ export function accountWords(account: Account): string {
 
 /**
  * The Account tab: who the player is, a username and password to keep a guest by or sign in with, Discord, and
- * signing out. A sign-in or out loads the page again, so its rooms hold the right character.
+ * signing out, here or everywhere, each held as Destiny holds what cannot be undone. A sign-in or out loads the page
+ * again, so its rooms hold the right character.
  */
 export function accountPanel(link: AccountLink): HTMLElement {
   const panel = make('div', '', 'gear-account');
@@ -50,24 +52,30 @@ export function accountPanel(link: AccountLink): HTMLElement {
       },
       'primary',
     );
-    const signIn = pressOf('Sign in', () => {
-      void link.login(name.value, password.value).then((answer) => after(answer, true));
-    });
+    const login = () => void link.login(name.value, password.value).then((answer) => after(answer, true));
+    // A guest who signs in to another account leaves their own behind for good, so that is held, not clicked.
+    const signIn = account?.guest ? heldPress('Hold to sign in, leaving this guest', login) : pressOf('Sign in', login);
     const discord = pressOf(account?.discord ? 'Sign in with Discord' : 'Sign in or link with Discord', () => {
       void link.discord(location.href).then((to) => location.assign(to));
     });
-    const out = pressOf(
-      'Sign out',
-      () => {
-        const lose = account?.guest ? 'A guest who signs out cannot come back. ' : '';
-        if (!confirm(`${lose}Sign out?`)) return;
-        void link.logout().then(() => location.reload());
-      },
+    const out = heldPress(
+      account?.guest ? 'Hold to sign out: a guest cannot come back' : 'Hold to sign out',
+      () => void link.logout().then(() => location.reload()),
+      'warn',
+    );
+    const everywhere = heldPress(
+      'Hold to sign out everywhere',
+      () =>
+        void link.logoutEverywhere().then((why) => {
+          if (why === null) location.reload();
+          else said.textContent = why;
+        }),
       'warn',
     );
     const named = account !== null && account.username !== null;
     nameRow.hidden = passwordRow.hidden = account === null;
-    presses.replaceChildren(...(named ? [signIn] : [keep, signIn]), discord, ...(account ? [out] : []));
+    const leave = account === null ? [] : account.guest ? [out] : [out, everywhere];
+    presses.replaceChildren(...(named ? [signIn] : [keep, signIn]), discord, ...leave);
   };
   void link.session().then((account) => {
     show(account);

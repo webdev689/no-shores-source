@@ -5,6 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
+import { nodeRoom } from './roomNames.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
@@ -17,9 +18,6 @@ interface Env {
 
 /** A day, milliseconds: the vendors' wares change with it. */
 const DAY_MS = 86_400_000;
-
-/** The seas a voyage sets out at, by the room door's numbers. */
-const SEAS = ['calm', 'rough', 'storm'];
 
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
@@ -114,20 +112,19 @@ export class RoomHost extends DurableObject<Env> {
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
     // Every room on land rolls its loot from a seed of its own that no player sees.
-    const [low = 0, high = 0] = crypto.getRandomValues(new Uint32Array(2));
+    const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
+    const seeds = [lootLow, lootHigh, worldLow, worldHigh] as const;
     if (node === undefined)
       return (
         this.room.open(course.start, course.blocks) &&
         this.room.furnish(course.stall, course.resources) &&
-        this.room.reseed(low, high)
+        this.room.reseed(seeds)
       );
-    // `node-<id>--rough` is that node at a voyage's rough seas, a room of its own; a plain name, calm.
-    const [id, seas = 'calm'] = node.split('--');
-    const difficulty = SEAS.indexOf(seas);
-    if (difficulty < 0) return false;
-    const file = await this.env.NODES.fetch(`https://nodes/${id ?? ''}.json`);
-    const opened = file.ok && this.room.openNode(await file.text()) && this.room.difficulty(difficulty);
-    return opened && this.room.reseed(low, high) && this.room.day(Math.floor(Date.now() / DAY_MS));
+    const named = nodeRoom(node);
+    if (!named) return false;
+    const file = await this.env.NODES.fetch(`https://nodes/${named.id}.json`);
+    const opened = file.ok && this.room.openNode(await file.text()) && this.room.difficulty(named.seas);
+    return opened && this.room.reseed(seeds) && this.room.day(Math.floor(Date.now() / DAY_MS));
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
@@ -211,8 +208,9 @@ export class RoomHost extends DurableObject<Env> {
         const gear = held ? this.guarded(() => this.room.gear(held.player), new Uint8Array()) : new Uint8Array();
         if (held && gear.length > 0) this.keeper?.changed(held.player);
         try {
-          socket.send(snapshot);
+          // Gear first, so the browser predicts a change of trim or arms from this snapshot on.
           if (gear.length > 0) socket.send(gear);
+          socket.send(snapshot);
         } catch {
           // A socket that closed between the check and the send misses this snapshot; the rest still get theirs.
         }

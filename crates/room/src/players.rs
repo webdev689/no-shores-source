@@ -127,6 +127,9 @@ pub struct Player {
     /// asks, only so often.
     pub gear_sent: Option<u64>,
     pub asked_at: Option<u64>,
+    /// Asks waiting their turn, oldest first; and whether their gear changes how they fight, so goes at once.
+    pub asks: VecDeque<crate::asks::Asked>,
+    pub gear_urgent: bool,
     /// The answer to their last ask (0 done, else why not), the item a Vestige last opened to, and how many asks
     /// have been answered.
     pub answer: u8,
@@ -163,6 +166,8 @@ impl Player {
             gear_changed: true,
             gear_sent: None,
             asked_at: None,
+            asks: VecDeque::new(),
+            gear_urgent: false,
             answer: 0,
             identified: 0,
             answered: 0,
@@ -210,14 +215,17 @@ impl Room {
     }
 
     /// Whether a player's gear changed since it was last sent and is due to be sent to them alone: at most every
-    /// `GEAR_EVERY_TICKS`, so a page that asks without end cannot flood its socket or slow the room.
+    /// `GEAR_EVERY_TICKS`, so a page that asks without end cannot flood its socket or slow the room; at once when it
+    /// changes how they fight.
     pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
         let clock = self.clock;
         let Some(found) = self.players.get_mut(&player) else { return false };
-        if !found.gear_changed || found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS) {
+        let waiting = found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);
+        if !found.gear_changed || waiting && !found.gear_urgent {
             return false;
         }
         found.gear_changed = false;
+        found.gear_urgent = false;
         found.gear_sent = Some(clock);
         true
     }

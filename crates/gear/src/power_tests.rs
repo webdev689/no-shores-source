@@ -68,3 +68,14 @@ fn a_player_matched_to_a_foe_fells_it_in_the_tuned_blows_at_every_level() {
         assert!((blows - 1.0).abs() < 1e-9, "level {level}: {blows} times the tuned blows");
     }
 }
+
+#[test]
+fn a_character_knows_how_far_it_is_to_its_next_level_and_its_next_fruit() {
+    let mut character = crate::Character::starting();
+    character.xp = xp_for_level(5) + 2_500;
+    assert_eq!(character.to_next(), (0.5, 2_500), "halfway from 10,000 to 15,000");
+    assert_eq!(character.fruit_growing(), None);
+    character.xp = 230_000;
+    assert_eq!(character.to_next(), (0.0, 21), "at 20, the next is Prestige's");
+    assert_eq!(character.fruit_growing(), Some(0.0), "two Fruits grown, the third just begun");
+}

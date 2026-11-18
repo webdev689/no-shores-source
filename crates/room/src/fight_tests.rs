@@ -139,7 +139,7 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
             .iter()
             .any(|event| event.kind == EventKind::Hit && event.how == Some(How::Shot) && event.defender == foe)
     );
-    assert!(room.shots().is_empty());
+    assert!(room.shots().next().is_none());
     // Two ticks before the snapshot, as a late timer runs them: the ball's line is kept for it, and sent once.
     let lines = room.take_lines();
     assert!(lines.len() == 1 && lines[0].owner == player, "{lines:?}");

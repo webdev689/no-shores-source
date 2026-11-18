@@ -64,7 +64,8 @@ do, read aloud as it comes.
   A weapon is drawn in the pose that holds it; a picture larger than its place is scaled down to fit it. Where the
   forge draws nothing of a piece, its slot shows its name's initials, as Enhanced Plus shows a piece without art.
   Currencies, materials, Vestiges and nodes are small pixel glyphs.
-- **Rarity.** Enhanced Plus's own colours: Normal, Magic's blue, Rare's gold, Legendary's orange, Atheric's cyan. A
+- **Rarity.** The owner's colours: Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal
+  piece's frame is the kit's plain stone, so it never outshines a finer one. A
   tile is Enhanced Plus's dark well, its bevel in its rarity's lit and shaded tones and its glow rising from below;
   a card or page takes its rarity's band and colour; pips mark it (◆ to ◈).
 - **Character.** The player's figure large in the middle, as tall as the screen allows, under their level and a meter

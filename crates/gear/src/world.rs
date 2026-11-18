@@ -52,13 +52,14 @@ impl Difficulty {
         }
     }
 
-    /// The levels it adds to every foe.
+    /// The levels it adds to every foe: at most three, so a player at the top of an island's band still strikes the
+    /// foes at its top, four levels being the gap that makes a foe immune.
     #[must_use]
     pub fn levels(self) -> u8 {
         match self {
             Difficulty::Calm => 0,
             Difficulty::Rough => 2,
-            Difficulty::Storm => 4,
+            Difficulty::Storm => 3,
         }
     }
 

@@ -17,6 +17,14 @@ pub const DROP_TICKS: u64 = 7_200;
 pub const PICK_UP_REACH: f64 = 1.5;
 const PICK_UP_HEIGHT: f64 = 2.0;
 
+/// What a player's blow carries of its striker: the Attack of the hand it came from and their trim. An arrow or a bolt
+/// keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Loosed {
+    pub attack: u32,
+    pub trim: combat::Trim,
+}
+
 /// A Vestige lying for one player.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Drop {
@@ -56,14 +64,19 @@ pub fn gear_arms(character: &Character) -> Arms {
     Arms { melee, ranged, off_hand }
 }
 
-/// The arms a player may take up of those they ask for: their gear's, or with a torch in an off hand the main hand
-/// leaves free, or nothing drawn; anything else is bare hands.
+/// The arms a player may take up: their gear's, and with a torch in an off hand the main hand leaves free.
 #[must_use]
-pub fn allowed_arms(asked: Arms, character: &Character) -> Arms {
+pub fn arms_allowed(character: &Character) -> Vec<Arms> {
     let worn = gear_arms(character);
     let free_left = !character.worn(Slot::MainHand).is_some_and(|item| item.kind.two_handed());
     let torch = Arms { off_hand: OffHand::Torch, ..worn };
-    if asked == worn || free_left && asked == torch { asked } else { BARE_HANDS }
+    if free_left { vec![worn, torch] } else { vec![worn] }
+}
+
+/// The arms a player takes up of those they ask for: one allowed, or else bare hands, as with nothing drawn.
+#[must_use]
+pub fn allowed_arms(asked: Arms, character: &Character) -> Arms {
+    if arms_allowed(character).contains(&asked) { asked } else { BARE_HANDS }
 }
 
 /// The foe kinds as the gear's rewards know them, by the foes crate's numbers.
@@ -84,10 +97,20 @@ impl Room {
     /// by their levels. Its poise and the stamina it costs a guard are the weapon's own.
     pub(crate) fn empower(&self, blow: Blow, defender: FighterId, left_hand: bool) -> Blow {
         let hand = if left_hand { Slot::OffHand } else { Slot::MainHand };
-        let times = match (self.players.get(&blow.striker), self.foes.get(&defender)) {
-            (Some(striker), Some(foe)) => {
-                let attack = striker.character.attack(hand).unwrap_or(0);
-                gear::power::by_player(attack, striker.character.level(), foe.level)
+        self.empower_as(blow, defender, self.held(blow.striker, hand))
+    }
+
+    /// What a player strikes with now from `hand`; nothing for a foe.
+    pub(crate) fn held(&self, striker: FighterId, hand: Slot) -> Option<Loosed> {
+        let player = self.players.get(&striker)?;
+        Some(Loosed { attack: player.character.attack(hand).unwrap_or(0), trim: player.fighter.trim })
+    }
+
+    /// A blow as `empower` makes it, a player's by the Attack and trim `held` gives.
+    pub(crate) fn empower_as(&self, blow: Blow, defender: FighterId, held: Option<Loosed>) -> Blow {
+        let times = match (held, self.players.get(&blow.striker), self.foes.get(&defender)) {
+            (Some(held), Some(striker), Some(foe)) => {
+                gear::power::by_player(held.attack, striker.character.level(), foe.level)
             }
             _ => match (self.foes.get(&blow.striker), self.players.get(&defender)) {
                 (Some(foe), Some(player)) => {
@@ -97,7 +120,11 @@ impl Room {
                 _ => 1.0,
             },
         };
-        self.sharpened(Blow { damage: blow.damage * times, ..blow }, defender)
+        let blow = Blow { damage: blow.damage * times, ..blow };
+        match held {
+            Some(held) => self.sharpened(blow, defender, &held.trim),
+            None => blow,
+        }
     }
 
     /// Notes that a player's blow by `hand` landed on a foe, so they share its kill.

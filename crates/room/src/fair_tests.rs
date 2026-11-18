@@ -166,7 +166,7 @@ fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
         };
         let aimed = combat::shapes::Telegraph::begin(&order, [0.0, -ahead, 0.0]);
         room.telegraph_lands(archer, &foe, &aimed);
-        let mut shot = room.shots.pop().expect("an arrow leaves");
+        let (mut shot, _) = room.shots.pop().expect("an arrow leaves");
         let landed = loop {
             match combat::shots::fly(&shot, &[], &[]) {
                 combat::shots::Flight::Flying(next) => shot = next,

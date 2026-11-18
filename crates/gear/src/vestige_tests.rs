@@ -153,7 +153,8 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
     assert_eq!(ISLANDS.last().map(|island| island.2), Some(30), "the last island reaches the highest player");
     assert_eq!(Difficulty::from_name("storm"), Some(Difficulty::Storm));
     assert_eq!(Difficulty::from_name("gale"), None);
-    assert_eq!((Difficulty::Rough.raise(10), Difficulty::Storm.raise(30)), (12, FOE_LEVEL_MOST));
+    assert_eq!((Difficulty::Rough.raise(10), Difficulty::Storm.raise(10)), (12, 13));
+    assert_eq!(Difficulty::Storm.raise(30), FOE_LEVEL_MOST);
     let mut calm = Character::starting();
     let mut storm = Character::starting();
     let paid = calm.reward_kill(Foe::Swordsman, 5, None, Difficulty::Calm, &dice(1));

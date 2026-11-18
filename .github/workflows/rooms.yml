@@ -2,7 +2,7 @@ name: rooms
 
 # Deploys the accounts and then the rooms to Cloudflare with the repository's Cloudflare token: the accounts' Worker
 # over its D1 database (made if it is not there, its migrations applied first, the Discord app's keys handed over when
-# the repository has them), then the rooms (`npm run server:deploy`, which builds what the Worker bundles first), whose
+# the repository has them), then the rooms (built first without the token, then deployed with it alone), whose
 # service binding reaches the accounts. ci.yml calls it from main once the same commit has passed the check, as it
 # publishes the page; it also runs by hand from main, to deploy again.
 on:
@@ -131,7 +131,10 @@ jobs:
           cache: npm
       - name: Install the TypeScript tools
         run: npm ci
+      # The room and its data are built without the token, so no build script or tool run while building can read it.
+      - name: Build the room and its data
+        run: npm run -s schema && npm run -s wasm && npm run -s bake
       - name: Deploy the rooms
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
-        run: npm run -s server:deploy
+        run: npx wrangler deploy --config server/wrangler.jsonc

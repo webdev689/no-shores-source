@@ -3,19 +3,23 @@
 //! and, in the Test Ground alone, grants of gear to try it with. Each answer is kept to send the player with their
 //! gear.
 
-use crate::{PlayerId, Room};
+use crate::{PlayerId, Room, Standing};
 use gear::dice::Dice;
 use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
 
 /// How near the stall a player must stand for a social space's asks, and a resource node for gathering, in metres.
 pub const STALL_REACH: f64 = 4.0;
 pub const NODE_REACH: f64 = 2.5;
-/// How often, in ticks, one player's asks are taken: ten a second.
-pub const ASK_EVERY_TICKS: u64 = 6;
+/// How often, in ticks, one player's asks are answered: five a second, no more often than their gear is sent, so each
+/// answer reaches them before the next is made. How many asks are held for their turn; past those, they are let go.
+pub const ASK_EVERY_TICKS: u64 = crate::players::GEAR_EVERY_TICKS;
+pub const ASKS_HELD: usize = 4;
 /// The answers the room gives beside the gear crate's refusals: a resource node out of reach or already spent, and a
 /// grant asked outside the Test Ground.
 pub const OUT_OF_REACH: u8 = 100;
 pub const NOT_THE_TEST_GROUND: u8 = 101;
+/// The resource a node gives is already at its most, so the node is left standing.
+pub const STOCK_FULL: u8 = 102;
 
 /// What a player asks of their gear.
 #[derive(Clone, Debug, PartialEq)]
@@ -87,20 +91,41 @@ impl Room {
         Dice { seed: self.seed, tick: self.clock ^ (self.rolls << 32), player }
     }
 
-    /// Draws the room's chances from a seed of the host's own, kept from the players: a room on the default seed
-    /// rolls what anyone with its code could foresee.
-    pub fn reseed(&mut self, seed: u64) {
-        self.seed = seed;
+    /// Draws the room's chances from seeds of the host's own, kept from the players: a room on the default seed rolls
+    /// what anyone with its code could foresee. The loot's seed is never the one the foes and camps are drawn from,
+    /// which a player could work back from what they see.
+    pub fn reseed(&mut self, loot: u64, world: u64) {
+        self.seed = loot;
+        self.world_seed = world;
     }
 
-    /// Answers a player's ask, keeping the answer to send them. An ask within `ASK_EVERY_TICKS` of their last is let
-    /// go unanswered: no one presses so fast, and a page that asks without end cannot make the room work for it.
-    pub(crate) fn answer(&mut self, player: PlayerId, asked: Asked) {
+    /// Takes a player's ask: answered now if its turn has come, else held for it, in the order asked. A page that asks
+    /// without end has all but its first few let go, and cannot make the room work faster for it.
+    pub(crate) fn take_ask(&mut self, player: PlayerId, asked: Asked) {
+        let Some(found) = self.players.get_mut(&player) else { return };
+        if found.asks.len() < ASKS_HELD {
+            found.asks.push_back(asked);
+        }
+        self.answer_due(player);
+    }
+
+    /// Answers a player's oldest held ask once `ASK_EVERY_TICKS` have passed since their last was answered.
+    pub(crate) fn answer_due(&mut self, player: PlayerId) {
         let clock = self.clock;
         let Some(found) = self.players.get_mut(&player) else { return };
         if found.asked_at.is_some_and(|asked| clock < asked + ASK_EVERY_TICKS) {
             return;
         }
+        let Some(asked) = found.asks.pop_front() else { return };
+        self.answer(player, asked);
+    }
+
+    /// Answers a player's ask, keeping the answer to send them. One that changes the trim or the arms they fight with
+    /// is sent at once, so their browser predicts them by it.
+    pub(crate) fn answer(&mut self, player: PlayerId, asked: Asked) {
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&player) else { return };
+        let before = (found.trim, crate::power::arms_allowed(&found.character));
         found.asked_at = Some(clock);
         found.identified = 0;
         let here = self.here(player);
@@ -127,6 +152,9 @@ impl Room {
             found.gear_changed = true;
         }
         self.retrim(player);
+        if let Some(found) = self.players.get_mut(&player) {
+            found.gear_urgent |= before != (found.trim, crate::power::arms_allowed(&found.character));
+        }
     }
 
     fn gather(&mut self, player: PlayerId, node: u8) -> u8 {
@@ -135,8 +163,12 @@ impl Room {
         let standing = self.node_standing(usize::from(node));
         let Some(found) = self.players.get_mut(&player) else { return OUT_OF_REACH };
         let far = libm::hypot(fighter.body.x - spot.x, fighter.body.y - spot.y) > NODE_REACH;
-        if found.spent.contains(&node) || far || !standing || fighter.dead() {
+        let dead = fighter.dead() || matches!(found.standing, Standing::Dead { .. });
+        if found.spent.contains(&node) || far || !standing || dead {
             return OUT_OF_REACH;
+        }
+        if found.character.materials.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
+            return STOCK_FULL;
         }
         found.spent.push(node);
         if let (Some(owner), Some(patrol)) = (&found.owner, self.patrol.as_mut()) {
