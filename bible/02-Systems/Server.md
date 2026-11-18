@@ -27,6 +27,7 @@ code:
   - crates/protocol/src/lib.rs#snapshot_bytes
   - crates/room-wasm/src/lib.rs#room_input
   - crates/room-wasm/src/lib.rs#open_node
+  - crates/room/src/garrison.rs#garrisoned
   - server/worker.ts#RoomHost
   - server/roomDoor.ts#startRoomDoor
   - server/wrangler.jsonc
@@ -61,11 +62,14 @@ on Cloudflare.
   exactly as the browser that predicted it did, so a prediction can only differ where the server knows more
   ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
   swing, a guard, a draw or a reload.
-- **Foes:** a player may ask for a foe by its type and rank (the [[Test Ground]]'s panel), one with each input; the
-  room stands it 5 m along the player's aim, which follows their look, on its navmesh, facing them, and holds at most
-  twelve ([[Enemies]]); a Boss's crew comes the same way. Each tick the fight's heat eases and every foe thinks over
-  the room as it stands and steps by the same rules ([[Foes]]), routing and taking cover on a [[Navmesh]] the room
-  bakes from its blocks, over its land, when it opens. The room tells each foe the noises made and its allies'
+- **Foes:** on a course, a player may ask for a foe by its type and rank (the [[Test Ground]]'s panel), one with each
+  input; the room stands it 5 m along the player's aim, which follows their look, on its navmesh, facing them, and
+  holds at most twelve. A node's room takes no ask: as it opens, its node's kind and id stand its garrison, which
+  stands again as it is cleared, and it holds at most 24 ([[Enemies]]). A Boss's called foes come the same way. Each
+  tick the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
+  routing and taking cover on a [[Navmesh]] the room bakes when it opens: a course's over its blocks and 30 m round
+  them; a node's over a 70 m square of its land, its first spawn 15 m inside the square's edge toward the middle of
+  its section's ring, where its garrison stands. The room tells each foe the noises made and its allies'
   shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
@@ -297,7 +301,9 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
   the [[Game]] does both, and asks for no foe and swings no blow.
-- A node's room bakes its foes' navmesh over its boxes on open ground at 0 m, not on its window of the land.
+- A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
+  a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
+  and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.
 - Where a ship puts to sea is the player's word, any point of open sea; the sea room does not yet know which port

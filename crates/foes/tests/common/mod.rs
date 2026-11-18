@@ -12,7 +12,8 @@ use combat::strike::struck;
 use combat::{Fighter, FighterId, Happening, Intent, Surroundings, Verdict, step_fighter};
 use foes::noises::{Noise, landed, running, swing};
 use foes::{
-    Board, Brain, Director, NoSpots, Rank, Routes, Seen, Spot, Spots, Straight, World, foe_type, notice, spawn, think,
+    Board, Brain, Call, Director, NoSpots, Rank, Routes, Seen, Spot, Spots, Straight, World, foe_type, notice, spawn,
+    think,
 };
 use movement::{Block, Controls, standing};
 use navmesh::{AGENT, Bounds, NavMesh};
@@ -44,8 +45,8 @@ pub struct Room {
     pub happenings: Vec<(u64, FighterId, Happening)>,
     /// Every blow judged: tick, striker, defender, verdict.
     pub verdicts: Vec<(u64, FighterId, FighterId, Verdict)>,
-    /// Every call for a crew a foe made: tick and foe.
-    pub crew_calls: Vec<(u64, FighterId)>,
+    /// Every call for foes a foe made: tick, foe and whom it called.
+    pub crew_calls: Vec<(u64, FighterId, Call)>,
     /// Every shout a foe made as it turned alert: tick and foe.
     pub shouts: Vec<(u64, FighterId)>,
     pub shots: Vec<Shot>,
@@ -186,8 +187,8 @@ impl Room {
             if calls.refill_poise {
                 self.set(id, |fighter| fighter.poise = 0.0);
             }
-            if calls.crew {
-                self.crew_calls.push((tick, id));
+            if let Some(call) = calls.crew {
+                self.crew_calls.push((tick, id, call));
             }
             if let Some(at) = calls.shout {
                 self.shouts.push((tick, id));

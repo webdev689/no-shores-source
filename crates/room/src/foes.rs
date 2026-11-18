@@ -2,26 +2,29 @@
 //! Foes of different factions fight each other as they fight players: blows on a foe are judged at once, blows on
 //! players wait for their view; its telegraphed blows land on whoever's feet stand in their shape; its brain is told
 //! what it saw, the noises fighters of other sides made, and its allies' shouts. Players ask for foes from the Test
-//! Ground's panel, and a Boss calls its crew.
+//! Ground's panel, a node's garrison stands as its room opens, and a Boss calls the foes its phase names.
 
 use crate::judging::{Check, Group, How, Pending};
-use crate::{EventKind, PlayerId, Room, SpawnAsk};
+use crate::{EventKind, Room, SpawnAsk};
 use ::foes::noises::{Noise, landed, running, shot, swing};
-use ::foes::roster::CREW;
-use ::foes::{Brain, FoeType, Rank, Seen, World, foe_type, notice, spawn, think};
+use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, World, foe_type, notice, spawn, think};
 use combat::fighter::{FighterId, Side};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
 use combat::shots::{FALL, by_foe, foe_speed, loose, shot_numbers};
 use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_fighter};
-use core::f64::consts::FRAC_PI_2;
+use core::f64::consts::{FRAC_PI_2, PI};
+use movement::blocks::ground_at;
 use navmesh::NavMesh;
 
-/// The most foes a room holds; how far before a player one is stood, and how far either side of a Boss its crew; and
-/// the ask that sends every foe away.
+/// The most foes a course's room holds, and a node's, its garrison and every foe its Bosses call counted; how far
+/// before a player one is stood; how far apart called foes stand either side of their caller, and how far behind it
+/// for those called behind; and the ask that sends every foe away.
 pub const FOES_MOST: usize = 12;
+pub const NODE_FOES_MOST: usize = 24;
 const SPAWN_AHEAD: f64 = 5.0;
 const CREW_BESIDE: f64 = 1.5;
+const CALLED_BEHIND: f64 = 3.0;
 pub const CLEAR_FOES: u8 = 255;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
 const SHAPE_MARGIN: f64 = 2.0;
@@ -121,52 +124,73 @@ impl Room {
             let (Some(foe_type), Some(player)) = (foe_type(number), self.fighter(asker).copied()) else {
                 continue;
             };
-            if self.foes.len() >= FOES_MOST {
+            if self.foes.len() >= self.foes_most {
                 continue;
             }
-            self.stand_foe(foe_type, foe_type.rank_or_first(Rank::from_number(rank)), &player, asker);
+            let rank = foe_type.rank_or_first(Rank::from_number(rank));
+            // Along the player's aim, which follows their look: a body standing still keeps the way it last walked.
+            let (sin, cos) = (libm::sin(player.aim), libm::cos(player.aim));
+            let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
+            let spot = self.nav.nearest_point(ahead).unwrap_or(ahead);
+            let facing = combat::sight::bearing([spot[0], spot[1]], [player.body.x, player.body.y]);
+            self.stand_foe(foe_type, rank, spot, facing, Some(asker));
         }
     }
 
-    fn stand_foe(&mut self, foe_type: &'static FoeType, rank: Rank, player: &Fighter, asker: PlayerId) {
-        // Along the player's aim, which follows their look: a body standing still keeps the way it last walked.
-        let (sin, cos) = (libm::sin(player.aim), libm::cos(player.aim));
-        let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
-        let spot = self.nav.nearest_point(ahead).unwrap_or(ahead);
-        let facing = combat::sight::bearing([spot[0], spot[1]], [player.body.x, player.body.y]);
-        let (fighter, brain) = spawn(foe_type, rank, spot[0], spot[1], facing);
+    /// A new foe of a type at a rank standing at a place found on the navmesh, facing `facing`, and its arrival told as
+    /// `by`'s doing (its own, for none). It stands on the surface its place was found on: a block's top within a step
+    /// of it, else the ground there.
+    pub(crate) fn stand_foe(
+        &mut self,
+        foe_type: &'static FoeType,
+        rank: Rank,
+        at: [f64; 3],
+        facing: f64,
+        by: Option<FighterId>,
+    ) -> FighterId {
+        let (mut fighter, brain) = spawn(foe_type, rank, at[0], at[1], facing);
+        fighter.body.z = ground_at(&self.blocks, &self.floor, at[0], at[1], at[2]);
         let id = self.next_id();
         self.foes.insert(id, Foe { fighter, brain });
-        self.tell(EventKind::Spawned, None, asker, id, 0.0);
+        self.tell(EventKind::Spawned, None, by.unwrap_or(id), id, 0.0);
+        id
     }
 
-    /// A Boss's crew called to its side: two Minor Deckhands, one either side of it, while the room has room for them,
-    /// each alert to where the Boss's foe stands.
-    fn call_crew(&mut self, boss: FighterId) {
-        let (Some(at), Some(crew)) = (self.fighter(boss).copied(), foe_type(CREW)) else { return };
-        let foe = self.foes.get(&boss).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));
+    /// The foes standing alive: a garrison stands again and a Boss calls only while these leave room under the limit,
+    /// so the fallen, lying their ten seconds, never hold them back.
+    pub(crate) fn living_foes(&self) -> usize {
+        self.foes.values().filter(|foe| !foe.fighter.dead()).count()
+    }
+
+    /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the
+    /// caller's foe stands: in pairs, one either side of it, or behind it and either side, each pair farther out.
+    fn call(&mut self, caller: FighterId, call: Call) {
+        let (Some(at), Some(called_type)) = (self.fighter(caller).copied(), foe_type(call.foe_type)) else { return };
+        let foe = self.foes.get(&caller).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));
         let called = foe.map(|foe| Seen::Shouted { from: feet(&at), at: feet(foe) });
-        for side in [-1.0, 1.0] {
-            if self.foes.len() >= FOES_MOST {
+        let (back_sin, back_cos) = (libm::sin(at.aim + PI), libm::cos(at.aim + PI));
+        let behind = if call.place == Place::Behind { CALLED_BEHIND } else { 0.0 };
+        let (from_x, from_y) = (at.body.x + back_sin * behind, at.body.y - back_cos * behind);
+        for index in 0..call.count {
+            if self.living_foes() >= self.foes_most {
                 return;
             }
+            let side = if index % 2 == 0 { -1.0 } else { 1.0 };
+            let out = CREW_BESIDE * f64::from(index / 2 + 1);
             let bearing = at.aim + side * FRAC_PI_2;
             let (sin, cos) = (libm::sin(bearing), libm::cos(bearing));
-            let beside = [at.body.x + sin * CREW_BESIDE, at.body.y - cos * CREW_BESIDE, at.body.z];
+            let beside = [from_x + sin * out, from_y - cos * out, at.body.z];
             let spot = self.nav.nearest_point(beside).unwrap_or(beside);
-            let (fighter, mut brain) = spawn(crew, Rank::Minor, spot[0], spot[1], at.aim);
-            let id = self.next_id();
-            if let Some(called) = called {
-                brain = notice(&brain, id, &called, self.clock);
+            let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
+            if let (Some(called), Some(found)) = (called, self.foes.get_mut(&id)) {
+                found.brain = notice(&found.brain, id, &called, self.clock);
             }
-            self.foes.insert(id, Foe { fighter, brain });
-            self.tell(EventKind::Spawned, None, boss, id, 0.0);
         }
     }
 
     /// The fight's heat eases a tick; every foe thinks over the room as it stands, then steps by its intent; what each
-    /// set off lands as a player's would. A foe roaring into a new phase has its poise refilled, and a Boss's crew comes
-    /// once every foe has stepped.
+    /// set off lands as a player's would. A foe roaring into a new phase has its poise refilled, and the foes it calls
+    /// come once every foe has stepped.
     pub(crate) fn step_foes(&mut self) {
         self.director.step();
         let fighters = self.fighters();
@@ -208,8 +232,8 @@ impl Room {
             if calls.refill_poise {
                 fighter.poise = 0.0;
             }
-            if calls.crew {
-                crews.push(id);
+            if let Some(call) = calls.crew {
+                crews.push((id, call));
             }
             if let Some(at) = calls.shout {
                 shouts.push((id, feet(&fighter), at));
@@ -232,8 +256,8 @@ impl Room {
         for (shouter, from, at) in shouts {
             self.shout(shouter, from, at);
         }
-        for boss in crews {
-            self.call_crew(boss);
+        for (caller, call) in crews {
+            self.call(caller, call);
         }
     }
 

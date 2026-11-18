@@ -14,7 +14,7 @@ use protocol::SeaInput;
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
-use room::{Floor, FoeSeen, PlayerId, Refused, Room, Section, Seen};
+use room::{Floor, FoeSeen, NodeKind, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
 use std::cell::RefCell;
 
@@ -45,10 +45,11 @@ pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
-/// A node's file as the bake writes it; the room reads its section, window, rect and boxes.
+/// A node's file as the bake writes it; the room reads its id, kind, section, window, rect and boxes.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
+    kind: NodeKind,
     ring: Vec<[f64; 2]>,
     spawns: Vec<[f64; 2]>,
     bounds: [f64; 4],
@@ -84,8 +85,9 @@ pub fn open(bytes: &[u8]) -> bool {
     true
 }
 
-/// Opens a new node's room from its file's text: its bodies stand on its window of the ground among its boxes, and
-/// are judged against its section. Answers whether the text was a node with a section and a spawn.
+/// Opens a new node's room from its file's text: its bodies stand on its window of the ground among its boxes, its
+/// kind's garrison stands, and it judges against its section. Answers whether the text was a node with a section and
+/// a spawn.
 pub fn open_node(text: &[u8]) -> bool {
     let Ok(node) = serde_json::from_slice::<NodeFile>(text) else { return false };
     if node.ring.len() < 3 || node.spawns.is_empty() {
@@ -93,7 +95,7 @@ pub fn open_node(text: &[u8]) -> bool {
     }
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
-    let room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
+    let room = Room::garrisoned(Floor::Land(Box::new(node.ground)), blocks.collect(), section, node.kind, &node.id);
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
     true
 }
@@ -521,3 +523,7 @@ mod door_tests;
 #[cfg(test)]
 #[path = "fleet_door_tests.rs"]
 mod fleet_door_tests;
+
+#[cfg(test)]
+#[path = "garrison_door_tests.rs"]
+mod garrison_door_tests;

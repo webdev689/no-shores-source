@@ -24,9 +24,9 @@ code:
 
 Where a foe can walk, and the way there. A room bakes its course into a navmesh once, when it starts; foes then ask
 it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
-steps and numbers, which were project-final's ([[Pick - project-final AI]]). Each room bakes one over its course and
-30 m of ground about it, on its own land where it has some, and its [[Foes]] find their way and their firing spots
-by it.
+steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
+course and 30 m of ground about it; a node's room over a 70 m square of its own land by its first spawn, where its
+garrison stands ([[Enemies]]). Its [[Foes]] find their way and their firing spots by it.
 
 ## How it works
 
@@ -82,7 +82,8 @@ over the [[Test Ground]]'s course by its fingerprint.
 
 ## Limits
 
-- A node's room bakes the 60 m square about its first spawn on its [[Land]], without the city's blocks.
+- A node's room bakes a 70 m square of its [[Land]], its first spawn 15 m inside the square's edge toward the middle
+  of its section, without the city's blocks: a bake's cost grows far faster than its area.
 - Ramps stand from their lower end, not on the ground beneath them; a firing spot's probes see blocks and ramps
   only, never the ground's own rises.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.

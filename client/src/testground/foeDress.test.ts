@@ -15,7 +15,7 @@ const roster = rosterOf(
 );
 
 test("every type in the rules' roster is dressed, holding the roster's own weapons drawn, in the forge's dyes", () => {
-  assert.equal(roster.length, 17);
+  assert.equal(roster.length, 18);
   for (const type of roster) {
     const dress = foeDress(type);
     assert.ok(dress, `${type.name} is dressed`);
@@ -58,4 +58,5 @@ test('the panel offers a faction, then only the ranks its chosen type comes in',
   ]);
   assert.deepEqual(ranksOf('Marksman'), [['3', 'Elite']]);
   assert.deepEqual(ranksOf('Captain Brannoc Thule'), [['5', 'Boss']]);
+  assert.deepEqual(ranksOf('High Assessor Corvane'), [['5', 'Boss']]);
 });
