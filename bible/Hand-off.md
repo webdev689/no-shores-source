@@ -161,6 +161,11 @@ Where the work stands now, for the next session. Each session rewrites this note
     the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
     hit the same way; and plates stay light: only near the crosshair or for foes fought in the last minute, never
     larger, never through a block, none past 60 m.
+  - DFO's compass across the top, with the boss bar and the target's plate under it; the vitals kept in their window
+    at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]); the plates just over a foe's head.
+  - The gear loop fitted in, `main` with #60 merged into #61: the garrisons stand at their island's levels raised by
+    the seas, one Minor, Major or Elite foe in five shielded, never a Boss or a Miniboss, kills paying as #60's camps
+    did, and the camps give way ([[Garrisons Take the Gear Loop's Levels and Shields]]).
 - First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
   ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
   the page and the rooms; tested offline, with a test and a headless Test Ground run.
@@ -236,8 +241,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
 - **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
-  choices in [[Gear as Claude Shapes It]]), is built on pull request #60 and waits on the owner's yes to merge; a
-  merge deploys the accounts, the rooms and the page together. On it: the `gear` crate ([[Gear]]); gear held by the
+  choices in [[Gear as Claude Shapes It]]), is on `main` (#60, merged with the owner's yes); its patrols' camps give
+  way to #61's garrisons when #61 merges. On it: the `gear` crate ([[Gear]]); gear held by the
   rooms, blows by Attack, level and Defense, kills paying XP, Aurem and Vestiges; perks trimming the fight
   ([[Combat]]); accounts on Cloudflare D1 keeping a character between visits ([[Accounts]]); the gear screens after
   Destiny on Enhanced Plus ([[The Gear Screens Follow Destiny, on Enhanced Plus]], [[Interface]]); gear on the
@@ -313,18 +318,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   Settings lists. All thirteen cues are settled: six recordings, the gains' Brass bells and a hold's Shimmer made by
   the synthesiser, and the tab, close and refusal kept as the synthesiser's own.
 - **A fifth audit and design pass are on #60 too**, each finding checked against the code before its fix: F dismantles
-  the piece last pointed at or focused, never one focused earlier; Ctrl, Cmd or Alt with F, leaving the window, or
-  the pointer leaving the piece lets go; the shards fly whole; the focus stays near a dismantled piece; a tab opened
-  lets go of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's
-  character is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none
-  waits to play at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits
-  say CC BY 4.0 and which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check
-  each pick before it goes to R2, and keep each pick's own page in the run. The design pass: the hover card above
-  the footer, the footer and the item page at the names' size on a wide screen, empty Vestige places as dark
-  Vestiges, the vault's rows of ten where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's
-  rows and its count, and a shelf of more than six gains showing only its last six. The `freesound` workflow
-  runs on this push: if it ends red with "Picks not read whole", Freesound's own pages link more than one licence,
-  and `pages/pick-*.html` in its download shows where.
+  the piece last pointed at or focused, never one focused earlier; Ctrl, Cmd or Alt with F, leaving the window, or the
+  pointer leaving the piece lets go; the shards fly whole; the focus stays near a dismantled piece; a tab opened lets go
+  of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's character
+  is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none waits to play
+  at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits say CC BY 4.0 and
+  which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check each pick before it
+  goes to R2, and keep each pick's own page in the run. The design pass: the hover card above the footer, the footer and
+  the item page at the names' size on a wide screen, empty Vestige places as dark Vestiges, the vault's rows of ten
+  where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's rows and its
+  count, and a shelf of more than six gains showing only its last six. The `freesound` workflow runs on this push: if it
+  ends red with "Picks not read whole", Freesound's own pages link more than one licence, and `pages/pick-*.html` in its
+  download shows where.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
