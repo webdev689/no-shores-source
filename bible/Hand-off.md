@@ -195,8 +195,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   5, Z and symbols drawn in code and made into a font in the page; the gauge counting nodes bought; the room serving
   each ask only at its counter; the Social tab as Destiny 1's Roster with blocking, fireteams,
   guilds, reports and details; and 25 emblems, kept and worn, sold by the Tailor, shown on the Roster, the header, the
-  HUD and the Emblem slot. Tested offline: the full check, and headless at 1920×1080 against local rooms and accounts
-  seeded with sixteen players.
+  HUD and the Emblem slot. A group is a fireteam, as the owner named it. The menu's tabs share its whole top, and under
+  them the player's banner runs its full width, drawn to that width so none of it is cut off
+  ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]). Tested offline: the full check, and headless at 1920×1080
+  and 1280×720 against local rooms and accounts seeded with sixteen players.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
