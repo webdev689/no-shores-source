@@ -26,6 +26,21 @@ export const KINDS = [
   'legs',
   'cloak',
 ] as const;
+/** The elements by the gear crate's numbers (0 is none): each one's name, its colour, and its glyph's outline, body
+ *  and light. */
+export const ELEMENTS: readonly ({
+  readonly name: string;
+  readonly colour: string;
+  readonly palette: readonly [string, string, string];
+} | null)[] = [
+  null,
+  { name: 'Blaze', colour: '#ff8a3d', palette: ['#4a1606', '#ff7a2a', '#ffd36a'] },
+  { name: 'Volt', colour: '#5ccbff', palette: ['#0b2a44', '#46beff', '#dcf6ff'] },
+  { name: 'Cosmic', colour: '#b77cff', palette: ['#26093f', '#9c55ff', '#efd9ff'] },
+];
+
+/** A weapon's kind: one that carries Attack, a dagger to a thunderlock (the gear crate's `Kind::weapon`). */
+export const isWeapon = (kind: number): boolean => kind >= 1 && kind <= KINDS.indexOf('thunderlock');
 /** The slots, by the gear crate's numbers. */
 export const SLOTS = ['main hand', 'off hand', 'head', 'torso', 'arms', 'legs', 'cloak'] as const;
 /** The rarities, by the gear crate's numbers: each one's name, its colour with the lit and shaded edges of a frame in it
@@ -60,7 +75,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   8: 'You already carry ten Vestiges.',
   9: 'Only in a social space, or at the stall.',
   10: 'Not where it is: worn, or in the vault.',
-  11: 'Its XP has not reached that column.',
+  11: 'Not unlocked yet: its ring fills as the item is used.',
   12: 'There is no such node.',
   13: 'That node is already bought.',
   14: 'That node is not bought.',
@@ -125,6 +140,17 @@ export function itemNumbers(item: GearItem): string {
   return `${power.join(', ')} · level ${item.level} · XP ${item.xp.toLocaleString()} of ${item.xpMost.toLocaleString()}`;
 }
 
+/** How far an item has grown toward its last column, 0 to 1; null for one that does not grow. */
+export function grown(item: GearItem): number | null {
+  return item.xpMost > 0 ? Math.min(1, item.xp / item.xpMost) : null;
+}
+
+/** Whether every node of an item is bought: it is fully upgraded. */
+export function fullyUpgraded(item: GearItem): boolean {
+  const nodes = item.columns.reduce((total, column) => total + Math.max(1, column.traits.length), 0);
+  return nodes > 0 && item.bought === 2 ** nodes - 1;
+}
+
 /** One node of an item's column as a screen shows it: its name and words, whether it is bought, chosen (or, an
  *  upgrade, bought) and unlocked, what it costs, and what pressing it asks (buy, choose, or nothing). */
 export interface NodeShown {
@@ -162,7 +188,7 @@ export function nodeShown(item: GearItem, column: number, node: number): NodeSho
     bought,
     chosen: bought && (!trait || item.chosen[column] === node),
     unlocked,
-    cost: bought ? 'Bought.' : unlocked ? `Costs ${costs.join(', ')}.` : `Unlocks at ${kind.xp.toLocaleString()} XP.`,
+    cost: bought ? 'Bought.' : unlocked ? `Costs ${costs.join(', ')}.` : 'Its ring fills as the item is used.',
     ask: unlocked ? ask : null,
   };
 }

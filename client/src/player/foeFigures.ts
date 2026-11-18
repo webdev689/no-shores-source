@@ -1,8 +1,10 @@
+import type { FoeShield } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { CardAt, Cards } from './cards.ts';
 import { foeDoing } from './fightMoves.ts';
 import { cardStand, type Placed, viewOf } from './figures.ts';
 import { foeKind } from './foeKinds.ts';
+import { ELEMENTS } from './gear.ts';
 import { Glides } from './glide.ts';
 import { shownMove } from './playerMoves.ts';
 
@@ -12,6 +14,7 @@ export interface FoeSeen {
   readonly id: number;
   readonly kind: number;
   readonly level: number;
+  readonly shield: FoeShield | null;
   readonly view: FighterView;
   readonly before: FighterView | null;
   readonly ticks: number;
@@ -103,12 +106,18 @@ export class FoeFigures {
   }
 
   /** Each foe as the fight's display marks it: named by its kind (and level), where its figure is drawn. */
-  marked(foes: Iterable<FoeSeen>): { readonly id: number; readonly name: string; readonly view: FighterView }[] {
+  marked(foes: Iterable<FoeSeen>): {
+    readonly id: number;
+    readonly name: string;
+    readonly view: FighterView;
+    readonly shield: { readonly left: number; readonly most: number; readonly colour: string } | null;
+  }[] {
     return [...foes].map((kept) => {
       const figure = this.figures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
       const name = foeKind(kept.kind)?.name ?? 'Foe';
-      return { id: kept.id, name: kept.level > 0 ? `${name} ${kept.level}` : name, view };
+      const shield = kept.shield && { ...kept.shield, colour: ELEMENTS[kept.shield.element]?.colour ?? '#fff' };
+      return { id: kept.id, name: kept.level > 0 ? `${name} ${kept.level}` : name, view, shield };
     });
   }
 }

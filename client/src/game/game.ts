@@ -176,8 +176,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let last = performance.now();
   let clock = 0;
 
-  /** Travels through the veil: the flow moves into its loading, `work` readies the place, and the veil lifts once
-   *  its ground is in. A failure stays on the veil, in words. */
   /** A way that failed, tried again with Enter. */
   let retry: (() => void) | null = null;
   /** Runs `work` behind the veil showing `words`; the veil lifts once it is done and the ground has come. A failure
@@ -354,9 +352,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
   };
 
-  const respawn = () => {
-    if (foot?.standing.kind === 'dead' && foot.standing.canRespawn) foot.respawn();
-  };
+  const respawn = () => void (foot?.standing.kind === 'dead' && foot.standing.canRespawn && foot.respawn());
 
   hud.onMark(choose);
   hud.onRespawn(respawn);
@@ -367,7 +363,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onManage(manage);
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
-  startGearWindow(hudRoot, link, () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null));
+  /** The Ship tab's papers: her build, once the naval rules are read, and her voyage while she is at sea. */
+  const shipNow = () => {
+    const build = builtSloop();
+    return build ? shipPanelOf(build, sloop.waterline, flow.mode === 'sea' ? sea : null) : null;
+  };
+  startGearWindow(hudRoot, link, () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null), shipNow);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat) return;
@@ -534,9 +535,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const onSea = flow.mode === 'sea' && !flow.menu;
     const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
     hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
-    const build = aboard.managing ? builtSloop() : null;
-    const voyage = { heading: here.heading, pace: here.paceStep, note: here.voyageNote };
-    hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, sloop.waterline, voyage) : null);
+    hud.shipPanel(onSea && aboard.managing ? shipNow() : null);
     hud.wheelOffer(onSea && aboard.atWheel);
     hud.note(charting ? 'Charting the coast ahead…' : shown.note);
     sinceChart += seconds;

@@ -74,6 +74,8 @@ export interface GearItem {
   readonly columns: readonly GearColumn[];
   /** A vendor's ware's price in Aurem; none for an item held. */
   readonly price: number;
+  /** A weapon's element, by the gear crate's numbers: 0 for none. */
+  readonly element: number;
 }
 
 export interface GearVestige {
@@ -174,6 +176,7 @@ function itemOf(item: GearItemTable): GearItem {
     prestige: item.prestige(),
     columns,
     price: item.price(),
+    element: item.element(),
   };
 }
 

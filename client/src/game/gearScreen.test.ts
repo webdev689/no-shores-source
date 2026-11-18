@@ -23,6 +23,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   prestige: 0,
   columns: [],
   price: 0,
+  element: 0,
   ...fields,
 });
 
@@ -85,7 +86,6 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
     ['Attack', '248'],
     ['Level', '20'],
   ]);
-  assert.equal(detail.xp, 0.05);
   const [upgrade, perk] = detail.columns;
   assert.equal(upgrade?.nodes[0]?.chosen, true);
   assert.equal(upgrade?.nodes[0]?.ask, null, 'an upgrade bought asks nothing');
@@ -101,12 +101,17 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   const carried = itemDetailOf({ ...legendary, at: 0 }, state({ social: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
-    ['Wear', 'Off hand', 'Put in the vault', 'Hold to dismantle'],
+    ['Wear', 'Off hand', 'Hold to dismantle'],
   );
   assert.equal(carried.presses.at(-1)?.role, 'warn');
+  // At the vault's counter, it may be put in; a vaulted one, taken out.
+  const atVault = itemDetailOf({ ...legendary, at: 0 }, state({ social: true }), true);
+  assert.ok(atVault.presses.some((press) => press.label === 'Put in the vault'));
+  const vaulted = itemDetailOf({ ...legendary, at: 1 }, state({ social: true }), true);
+  assert.deepEqual(vaulted.presses[0]?.ask, { kind: ASKS.withdraw, item: legendary.id });
 });
 
-test('the Vendors tab shows each vendor’s wares of the day, bought for their price in Aurem', () => {
+test('each vendor’s stall shows its wares of the day, bought for their price in Aurem', () => {
   const wares = [
     item({ id: 0, kind: 13, rarity: 2, level: 9, price: 2_000 }),
     item({ id: 1, kind: 14, rarity: 1, level: 9, price: 600 }),

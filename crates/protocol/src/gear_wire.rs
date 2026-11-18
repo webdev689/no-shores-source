@@ -184,6 +184,7 @@ fn item_offset<'built>(
         prestige: item.prestige(),
         columns,
         price,
+        element: item.element.map_or(0, |element| element as u8),
     };
     messages::GearItem::create(builder, &args)
 }

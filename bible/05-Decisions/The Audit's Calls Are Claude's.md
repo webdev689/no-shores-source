@@ -23,6 +23,12 @@ among them: those still need the owner ([[Ask Before Deploying]]).
 | Held presses | Dismantle, buying and a node's purchase are held; so are signing out and a guest signing in | Destiny 1 held what could not be undone, and an upgrade |
 | Storm seas | Three levels higher, not four | Four is the gap at which a player's blows do nothing: a player at the top of an island's band must still strike its foes |
 | Rarity colours | The owner's: Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue | [[Gear and Power Follow Destiny 1 Vanilla]] names them; Normal's frame is the kit's plain stone, so it never outshines a finer piece |
-| The typeface | The screens keep the page's own face | Enhanced Plus's face is another author's, which [[Own Work]] keeps out without the owner |
+| The typeface | Replaced: the owner chose [[Pixelify Sans Is Overlook's Font]] | |
+| Its sizes | Whole multiples of its 11 px grid: 11 for words, 22 for names, 33 to 66 for numbers; one weight | Between them it blurs, and its C, G and B run together |
+| Its B | Drawn anew with a square stem, beside DFO's 2 and Z | Its own B is an 8 with a stem and reads as a G |
+| Fully upgraded | Every node of the item bought | Destiny 1's weapon was finished when every node was lit |
+| The Ship tab | The Sloop's papers as Manage shows them, her voyage while at sea | Manage pans to her deck at sea; the menu is everywhere |
+| Friends | Asked by username, accepted by the one asked, ended by either; 100 at most; 30 asks an hour | Destiny's friends are named players; a cap stops a list being flooded |
+| The vault's screen | What it keeps beside what is carried, each in weapons, armour and Vestiges; a click moves a piece | Destiny 1's vault was two columns, a click a move |
 
 Links: [[Gear as Claude Shapes It]], [[Gear]], [[Accounts]], [[Combat]], [[Interface]].

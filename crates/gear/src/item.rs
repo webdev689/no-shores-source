@@ -1,6 +1,7 @@
 //! One item a player holds: what it is, its level, its XP and the nodes bought and chosen; and the power it carries,
 //! a weapon's Attack and armour's Defense and Prestige, each rising by equal steps as its upgrades are bought.
 
+use crate::element::Element;
 use crate::grid::{Column, Cost, column_xp, columns, cost, node_offsets};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
@@ -37,6 +38,9 @@ pub struct Item {
     /// The node chosen in each column, or `NONE_CHOSEN`.
     pub chosen: Vec<u8>,
     pub bucket: Slot,
+    /// A weapon's element, if it was made with one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub element: Option<Element>,
 }
 
 impl Item {
@@ -57,6 +61,7 @@ impl Item {
             bought: 0,
             chosen: Vec::new(),
             bucket,
+            element: None,
         };
         item.chosen = vec![NONE_CHOSEN; item.columns().len()];
         item
@@ -87,6 +92,9 @@ impl Item {
         }
         if self.resource.is_some_and(|resource| usize::from(resource) >= resources) {
             self.resource = None;
+        }
+        if !self.kind.weapon() {
+            self.element = None;
         }
         self
     }

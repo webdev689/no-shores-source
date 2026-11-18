@@ -1,0 +1,20 @@
+/* Overlook's one face is Pixelify Sans, Enhanced Plus's own. Four of its glyphs misread, so a face over just those
+   code points stands first in the stack: its 5 reads as an 8, so Silkscreen's 5 stands in; its 2 and Z are one corner
+   apart, and its B is an 8 with a stem, so a 2, a Z and a B drawn on Pixelify's own grid stand in for them
+   (tools/pixelify_mends.py draws them and writes them below). */
+@import '@fontsource-variable/pixelify-sans';
+
+@font-face {
+  font-family: 'Pixelify Mended';
+  font-display: swap;
+  unicode-range: U+0035;
+  src: url('@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Pixelify Mended';
+  font-display: swap;
+  unicode-range: U+0032, U+0042, U+005A;
+  src: url('data:font/woff2;base64,d09GMgABAAAAAAHAAAoAAAAAA7wAAAF2AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAARAqCNIIMATYCJAMMCwoABCAFeAcqG9cCAJ4F5ZizKpuqzdhEVbw4mJ8IqiFz7/+pVZZeda8OFM5BipNxJownNvj1a9u5Kkhod78SIj7dZB+iXoJo6EQJmcto/Gcq8PPgTd25PNERZJqdpwGH52H0QWLPo4ADihL5uk2HgvVVs33RFx1RTquxUaFoxgC3d0XMuc2X/5/k36EDxJ80Q3pAQka7LNCumEG1aglz9iS/mQWTI7x2AdXoxDXyhkABVKuTizWfQvUcsgaH5+zZrc1UmnA9oV5z9SKXb3G511C9d0Ng1esn+6Kf6j8TbLBgGNAZD5j45o4b4w+yd2OtBT+YjFP84602IwmBFH7EQYXs+57XaaofX/jjZ8v1RBAIhle915zZ8a8650/4W2XVl218f6W2tECyBIKTitKxQtiUQkGHFF/ueEqgmFAHktiqWBIgNCFAUqVJFqVG6NLJ06TRwsPDtFFdaL5r4n+T9TcoqGGuoq2hakFzoKKrrKIsrKJmoq1gSAJRJB0GbQIAAA==')
+    format('woff2');
+}

@@ -1,6 +1,6 @@
-// What the gear screens' smaller parts show, from the player's gear: an item's card (its name, kind, rarity, numbers,
-// traits and, against the piece it would replace, what changes), a slot's flyout of the nine it carries, and the
-// inventory page's currencies and its tabs of cells. The page draws these in the Enhanced Plus kit.
+// What the gear pages' smaller parts show, from the player's gear: an item's card (its name, kind, rarity, numbers,
+// traits and, against the piece it would replace, what changes), a slot's flyout of the nine it carries, the
+// inventory page's currencies and its shelves of cells, and the vault's. The page draws these in the Enhanced Plus kit.
 
 import { ASKS, type GearItem, type GearState, NONE } from '../network/gearMessages.ts';
 import {
@@ -8,10 +8,12 @@ import {
   KINDS,
   RARITIES,
   RESOURCE_COUNT,
+  SLOTS,
   STOCK_NAMES,
   VAULTED,
   WORN,
   itemName,
+  isWeapon,
   itemWords,
   resourceName,
   resourceWords,
@@ -20,9 +22,11 @@ import {
 } from '../player/gear.ts';
 import type { Press } from './gearScreen.ts';
 
-/** How many items a slot carries beside the one worn, and how many Vestiges are carried. */
+/** How many items a slot carries beside the one worn, how many Vestiges are carried, and how many of each the vault
+ *  keeps (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST` and `VAULT_MOST`). */
 export const CARRIED_MOST = 9;
 export const VESTIGES_MOST = 10;
+export const VAULT_MOST = 20;
 /** The XP a Fruit of Dagon gives an item (the gear crate's `FRUIT_ITEM_XP`). */
 const FRUIT_ITEM_XP = 5_000;
 
@@ -36,6 +40,8 @@ export interface Card {
   /** Its main number and what it is. */
   readonly big: { readonly label: string; readonly value: number } | null;
   readonly rows: readonly (readonly [string, string])[];
+  /** A weapon's element, by the gear crate's numbers: 0 for none. */
+  readonly element: number;
   /** Its chosen traits, each with its column's kind, whose glyph marks it. */
   readonly traits: readonly Trait[];
   readonly words: string;
@@ -80,7 +86,6 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
       : null;
   const rows: [string, string][] = [['Level', String(item.level)]];
   if (item.prestige) rows.push(['Prestige', String(item.prestige)]);
-  if (item.xpMost > 0) rows.push(['XP', `${item.xp.toLocaleString()} / ${item.xpMost.toLocaleString()}`]);
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);
@@ -90,6 +95,7 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
     kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(KINDS[item.kind] ?? '')}`,
     big,
     rows,
+    element: item.element,
     traits: traitsShown(item),
     words: itemWords(item),
     compare: worn && worn.id !== item.id ? { replaces: itemName(worn), rows: changes } : null,
@@ -180,48 +186,88 @@ export function inventoryPageOf(state: GearState): InventoryPage {
       tint: index,
     }),
   );
-  const vestige = (vaulted: boolean) =>
-    state.vestiges
-      .filter((each) => each.vaulted === vaulted)
-      .map((each) => {
-        const words = `Holds a level ${each.level} item for the ${['main hand', 'off hand', 'head', 'torso', 'arms', 'legs', 'cloak'][each.slot] ?? ''}. ${
-          state.social ? 'Click to identify it.' : 'It opens in a social space.'
-        }`;
-        return cell(`vestige-${each.id}`, 'vestige', `${RARITIES[each.rarity]?.name ?? ''} Vestige`, {
-          rarity: each.rarity,
-          words: vaulted ? 'In the vault. Click to take it out.' : words,
-          press: vaulted
-            ? { label: 'Take out', ask: { kind: ASKS.withdrawVestige, item: each.id }, role: 'button' }
-            : state.social
-              ? { label: 'Identify', ask: { kind: ASKS.identify, item: each.id }, role: 'primary' }
-              : null,
-          other:
-            !vaulted && state.social
-              ? { label: 'Vault', ask: { kind: ASKS.storeVestige, item: each.id }, role: 'button' }
-              : null,
-        });
-      });
-  const carried = vestige(false);
+  const carried = state.vestiges
+    .filter((each) => !each.vaulted)
+    .map((each) =>
+      vestigeCell(each, `For the ${SLOTS[each.slot] ?? ''}, level ${each.level}.`, {
+        words: state.social ? 'Click to open it.' : 'It opens in a social space.',
+        press: state.social ? { label: 'Open', ask: { kind: ASKS.identify, item: each.id }, role: 'primary' } : null,
+      }),
+    );
   const empties = Array.from({ length: Math.max(0, VESTIGES_MOST - carried.length) }, (unused, place) =>
     cell(`empty-${place}`, 'empty', 'An empty place'),
   );
-  const vault = state.items
-    .filter((item) => item.at === VAULTED)
-    .map((item) =>
-      cell(`item-${item.id}`, 'item', itemName(item), {
-        rarity: item.rarity,
-        item,
-        words: 'In the vault. Click to take it out.',
-        press: { label: 'Take out', ask: { kind: ASKS.withdraw, item: item.id }, role: 'button' },
-      }),
-    );
   return {
     currencies,
     tabs: [
       { id: 'consumables', name: 'Consumables', cells: [fruit] },
       { id: 'materials', name: 'Materials', cells: materials },
       { id: 'vestiges', name: 'Vestiges', cells: [...carried, ...empties] },
-      { id: 'vault', name: 'Vault', cells: state.social ? [...vault, ...vestige(true)] : [] },
     ],
   };
+}
+
+type Vestige = GearState['vestiges'][number];
+
+/** A Vestige's cell: its rarity's name, what it holds, and `fields`' words and presses. */
+function vestigeCell(each: Vestige, holds: string, fields: Partial<Cell>): Cell {
+  const words = [holds, fields.words].filter(Boolean).join(' ');
+  return cell(`vestige-${each.id}`, 'vestige', `${RARITIES[each.rarity]?.name ?? ''} Vestige`, {
+    rarity: each.rarity,
+    ...fields,
+    words,
+  });
+}
+
+/** One shelf of the vault, or of what the player carries beside it: its name, how many it holds of how many. */
+export interface VaultShelf {
+  readonly name: string;
+  readonly held: number;
+  readonly most: number;
+  readonly cells: readonly Cell[];
+}
+
+/** The vault, after Destiny 1's: its weapons, armour and Vestiges, each a click from what the player carries. */
+export interface Vault {
+  readonly kept: readonly VaultShelf[];
+  readonly carried: readonly VaultShelf[];
+}
+
+/** The vault's shelves and the player's, each cell a click to move it across. */
+export function vaultOf(state: GearState): Vault {
+  const shelves = (place: number, most: number): VaultShelf[] => {
+    const moving = place === VAULTED ? 'Take out' : 'Put in the vault';
+    const items = (weapons: boolean) =>
+      state.items
+        .filter((item) => item.at === place && isWeapon(item.kind) === weapons)
+        .map((item) =>
+          cell(`item-${item.id}`, 'item', itemName(item), {
+            rarity: item.rarity,
+            item,
+            press: {
+              label: moving,
+              ask: { kind: place === VAULTED ? ASKS.withdraw : ASKS.store, item: item.id },
+              role: 'button',
+            },
+          }),
+        );
+    const vestiges = state.vestiges
+      .filter((each) => each.vaulted === (place === VAULTED))
+      .map((each) =>
+        vestigeCell(each, `For the ${SLOTS[each.slot] ?? ''}, level ${each.level}.`, {
+          press: {
+            label: moving,
+            ask: { kind: place === VAULTED ? ASKS.withdrawVestige : ASKS.storeVestige, item: each.id },
+            role: 'button',
+          },
+        }),
+      );
+    const [weapons, armour] = [items(true), items(false)];
+    return [
+      { name: 'Weapons', held: weapons.length, most: most || weapons.length, cells: weapons },
+      { name: 'Armour', held: armour.length, most: most || armour.length, cells: armour },
+      { name: 'Vestiges', held: vestiges.length, most: most || VESTIGES_MOST, cells: vestiges },
+    ];
+  };
+  return { kept: shelves(VAULTED, VAULT_MOST), carried: shelves(CARRIED, 0) };
 }

@@ -14,6 +14,7 @@ export function sqliteForTests(): Db {
   const statement = (sql: string, values: readonly SQLInputValue[] = []): Statement => ({
     bind: (...given) => statement(sql, given as SQLInputValue[]),
     first: <T>() => Promise.resolve((sqlite.prepare(sql).get(...values) ?? null) as T | null),
+    all: <T>() => Promise.resolve({ results: sqlite.prepare(sql).all(...values) as T[] }),
     run: () => Promise.resolve({ meta: { changes: Number(sqlite.prepare(sql).run(...values).changes) } }),
   });
   return { prepare: (sql) => statement(sql) };

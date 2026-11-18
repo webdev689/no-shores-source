@@ -47,7 +47,13 @@ pub fn foes() -> Vec<FoeSeen> {
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
-    vec![FoeSeen { foe: 12, kind: 3, fighter: brute, level: 7 }]
+    vec![FoeSeen {
+        foe: 12,
+        kind: 3,
+        fighter: brute,
+        level: 7,
+        shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
+    }]
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -248,6 +254,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let glance: [f64; combat::floats::GLANCE_FLOATS] =
         foe.glance().unwrap().iter().collect::<Vec<_>>().try_into().unwrap();
     assert_eq!((foe.id(), foe.kind(), glance), (12, 3, foes[0].fighter.glance()));
+    assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

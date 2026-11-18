@@ -19,9 +19,17 @@ code:
   - client/src/game/gearDom.ts#HoverCard
   - client/src/game/gearDom.ts#compareNode
   - client/src/game/iconFit.ts#fitIcon
-  - client/src/game/inventoryPage.ts#inventoryPage
   - client/src/game/gearGlyphs.ts#nodeGlyphSvg
   - client/src/game/accountTab.ts#accountPanel
+  - client/src/game/menuPages.ts#shipPage
+  - client/src/game/socialTab.ts#socialPage
+  - client/src/game/stationPages.ts#vaultPage
+  - client/src/game/stationPages.ts#vendorPage
+  - client/src/game/gearDom.ts#itemMarks
+  - client/src/game/gearDom.ts#nodeRing
+  - client/src/game/elementGlyphs.ts#elementSvg
+  - client/src/plus/face.css
+  - tools/pixelify_mends.py
 ---
 # Interface
 
@@ -52,69 +60,77 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.
 
-## The gear window
+## The face
 
-A screen over the game, after Destiny's own ([[The Gear Screens Follow Destiny, on Enhanced Plus]]): Character (I),
-Inventory (O), Vendors and Account as tabs in its header, Character's and Inventory's keys on keycaps, the player's
-level, Prestige and Defense at its left (left blank on Character, which shows them itself) and their Aurem at its
-right (left blank on Inventory, which shows it with the rest). It opens with a short stepped rise; the world behind
-it is dimmed and softened, the pointer is free, the game's keys and the HUD under it rest, a sea fight's too, and the
-focus stays within it. Escape steps back: an item's page, then a slot's flyout, then the screen. It shows the player's
-gear as their room last sent it ([[Gear]]), built again only when that word is new or the player moves within the
-screen, the control that held the focus found again, and never while a press is held. Each press is an ask the room
-answers.
+Every word is set in Pixelify Sans, Enhanced Plus's own face ([[Pixelify Sans Is Overlook's Font]]), served with the
+page. It draws sharp only at whole multiples of its grid, 11 px, so every size is one: 11 for words, 22 for names
+and titles, 33 to 66 for the numbers that lead a page. Letters stand 1/22 of their size apart, which keeps them on
+whole pixels at each size; it is set at one weight, never smoothed, never joined by a ligature, and never slanted,
+since it has no italic. Four of its glyphs misread, so a face over just those stands first: Silkscreen's 5, and a 2,
+a Z and a B drawn on its own grid (`tools/pixelify_mends.py`). Shadows under it are hard, a pixel's step.
 
-- **The footer** is one: at its left the room's answer to the last press, read aloud as it comes, then what the
-  presses and keys do here, each key on a keycap; at its right what may be done: an item's presses on its page, Back
-  while a flyout is open, else Close, each with its key.
-- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it and any
-  speck of it apart from the piece, cropped. A weapon is drawn in the pose that holds it. Each picture is fitted to
-  its place as Enhanced Plus fits its icons: its clear margin trimmed, grown by whole pixels where that keeps most of
-  the room, else past it and smoothed down once, never past four to one, at the screen's own pixel ratio. Where the
-  forge draws nothing of a piece, its slot shows its name's initials. Currencies, materials, Vestiges and nodes are
+## The menu
+
+A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
+the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings in its header, keys on keycaps;
+Journal and Guild marked Later, each a page saying what it will hold. The player's level, Prestige and Defense stand
+at the header's left and their Aurem at its right, each left blank where its page shows it. It opens with a short
+stepped rise; the world behind is dimmed, the pointer is free, the game's keys and the HUD under it rest, and the
+focus stays within it. Escape steps back: an item's page, then a slot's flyout, then the menu. Gear shows as the
+player's room last sent it ([[Gear]]), built again only when that is new or the player moves within the menu, and
+never while a press is held. Each press is an ask the room answers.
+
+- **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
+  do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
+- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped,
+  a weapon in the pose that holds it, fitted to its place as Enhanced Plus fits its icons. Where the forge draws
+  nothing of a piece, its slot shows its name's initials. Currencies, materials, Vestiges, nodes and elements are
   small pixel glyphs.
-- **Rarity.** The owner's colours: Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal
-  piece's frame is the kit's plain stone, so it never outshines a finer one. A tile is Enhanced Plus's dark well, its
-  bevel in its rarity's lit and shaded tones, its glow sunk inside and brighter under the pointer or the focus; a card
-  or page takes its rarity's band and colour; pips mark it (◆ to ◈).
-- **Character.** The player's figure large in the middle, as tall as the screen allows, under their level and a meter
-  to the next (XP below 20, Prestige past it) with its words, both the room's; under the figure, their Attack,
-  Defense, Prestige and Fruit of Dagon. The weapons (main hand, off hand) and the cloak stand to its left, the four
-  armour pieces to its right, their headings level, each slot its item's picture with the slot's name and the item's
-  in its rarity's colour. Hovering or focusing a slot shows its card; a click opens its flyout toward the figure (up
-  from the lowest slots), the nine it may carry in a 3 by 3 grid; a click there wears one.
-- **The card.** An item's name on a band of its rarity, its kind and pips, its picture, its main number large, its
-  level and XP, its chosen traits each beside its column's glyph, its words, and what it changes over the piece it
-  would replace: each number's meter at the lesser, the gain or loss a segment in green or red, the new number and the
-  change beside it. Along its foot, what its presses do, on keycaps: Click to equip, Right-click (or X on a focused
-  piece) for its details. It opens on hover or keyboard focus alike, and goes when what it describes leaves the page.
-- **An item's page** lies over the screen, as Destiny 1's weapon page does, the screen under it out of reach: its name
-  on its rarity's band, its kind, level and pips; its words; its main number large over a meter of it; its Prestige;
-  what it changes over the piece worn, when it is carried; the perks its chosen nodes give, each beside its glyph; and
-  its node grid, each column under a meter of the XP from the column before to its own. Each node is a tile of the
-  kit's stone with its kind's glyph (an upgrade's chevrons, handling's grip, a finish's gem, a perk's star, an
-  Atheric's own sun): sunk while locked, glowing and breathing in its rarity when it can be bought, its glyph brass
-  once bought, set in brass when chosen. A node is bought by holding it, as Destiny 1 held an upgrade, and one bought
-  is chosen by a click; one that can do nothing still takes the focus, so its card says why. Its card stands beside
-  the grid. To the right, the item drawn large on a lit floor. Its presses go to the footer: Back, and what may be
-  done where it is: wear it (or in the off hand), take it off, vault it or take it out, and, held a moment (by the
-  pointer or Enter or Space, the press filling from its foot), feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** The currencies along the top, each named under its count; then shelves in a sunk strip, each
-  counting what it holds and dimmed while it holds nothing: Gear, Destiny 1's own, each slot's row its worn piece and
-  then the nine it carries, a click wearing one and showing the worn one's details; Consumables (Fruit of Dagon);
-  Materials, a list of each island's resource by name and count; Vestiges (ten places); and, in a social space, the
-  vault. A cell's count stands at its foot and its pips beside it. A click does what a cell is for (a Vestige
-  identified, an item taken out); a right-click its other use or the item's page.
-- **Vendors.** In a social space, the Quartermaster's and the Armsmith's wares of the day ([[Gear]], "Vendors"). Each
-  ware is a press held to buy it: its picture, its name in its rarity's colour, its kind, level and power, and its
-  price beside the Aurem glyph, in red with the words when the player cannot pay it; its card shows what it changes
-  over the piece worn in its slot.
-- **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
-  password to keep a guest by, or to sign in with; Discord, and how its last sign-in ended; and signing out, here or
-  everywhere, each held. A guest's sign-in to another account and sign-out are held too, and say the guest is left
-  behind. A sign-in or out loads the page again, so its rooms hold the right character.
-- **Motion** runs in steps, as Enhanced Plus's sigils breathe: the screen's rise, the scrim's fade and a buyable
-  node's glow. With less motion asked for, only the held press's fill moves, as it says how long is left.
+- **Rarity.** Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal piece's frame is the
+  kit's plain stone. A tile is Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a
+  card or page takes its rarity's band; pips mark it.
+- **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
+  corner; a green gauge along its foot that grows as the item earns toward its last column; and, once every node is
+  bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
+- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
+  Attack, Defense, Prestige and Fruit of Dagon. The weapons and the cloak stand to its left, the armour to its right,
+  each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its flyout of the
+  nine it may carry; a click there wears one.
+- **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
+  its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
+  with the gain or loss in green or red. Along its foot what its presses do.
+- **An item's page** lies over the menu, as Destiny 1's weapon page does: its name on its rarity's band, its kind,
+  level, pips and element; its words; its main number large over a meter of it; what it changes over the piece worn;
+  the perks its chosen nodes give; and its node grid. Each node is a tile of the kit's stone with its kind's glyph:
+  sunk while locked, a ring inside it lit as far as the item has grown toward it; glowing when it can be bought; its
+  glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
+  click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
+  it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
+- **Inventory.** The currencies along the top; then shelves, each counting what it holds: Gear, each slot's worn
+  piece and the nine it carries, a click wearing one; Consumables; Materials, a list by name and count; and Vestiges,
+  ten places, a click opening one in a social space.
+- **Ship.** The Sloop's papers, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
+  while she is at sea; her cargo and crew marked Later.
+- **Social** ([[Accounts]], "Friends"): a field to ask another player by username; who has asked, to accept or
+  decline; the friends, each playing or away, a remove held; and whom the player has asked, to cancel. A player needs
+  a username to have friends, and the page says so.
+- **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
+  username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
+- **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only the held press's
+  fill moves.
+
+## The social space's counters
+
+The vault and the vendors keep counters in the social space, as Destiny's keep theirs in the Tower; E at one opens
+its screen in the menu's window, its name where the tabs stand. The Reader of Vestiges opens the inventory at its
+Vestiges.
+
+- **The vault**, after Destiny 1's: what it keeps on the left and what the player carries on the right, each in
+  weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
+  right-click shows its page.
+- **A vendor's stall**: the Quartermaster's armour or the Armsmith's weapons of the day ([[Gear]], "Vendors"). Each
+  ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
+  the player cannot pay it; its card shows what it changes over the piece worn.
 
 ## Limits
 

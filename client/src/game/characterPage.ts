@@ -15,6 +15,7 @@ import {
   cardNode,
   glyphImage,
   itemIcon,
+  itemMarks,
   pictureCanvas,
   rarityOf,
   tileLabel,
@@ -36,6 +37,8 @@ export interface PageContext {
   readonly room: number;
   /** Opens an item's page. */
   readonly inspect: (item: GearItem) => void;
+  /** Whether the player stands at the vault's counter, where an item may be put in or taken out. */
+  readonly atVault: boolean;
 }
 
 /** The slots each side of the figure, by the gear's slot numbers. */
@@ -66,6 +69,7 @@ function tileFor(context: PageContext, item: GearItem | null, box: number, class
   rarityOf(tile, item?.rarity ?? null);
   tile.append(item ? itemIcon(context.picture(item), itemName(item), box) : glyphImage('empty'));
   if (item) {
+    itemMarks(tile, item);
     tile.dataset['key'] = `item-${item.id}`;
     tile.addEventListener('contextmenu', (event) => {
       event.preventDefault();
@@ -98,6 +102,7 @@ export function characterPage(
     const tile = make('button', '', `gear-slot ${ROLES.tile}`);
     rarityOf(tile, worn?.rarity ?? null);
     tile.append(worn ? itemIcon(context.picture(worn), itemName(worn), SLOT_PX) : glyphImage('empty'));
+    if (worn) itemMarks(tile, worn);
     tile.dataset['key'] = `slot-${index}`;
     tile.classList.toggle('gear-open', open === index);
     tile.setAttribute('aria-expanded', String(open === index));

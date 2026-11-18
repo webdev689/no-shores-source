@@ -3,6 +3,7 @@
 
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
+import type { Opening } from './gearScreen.ts';
 import type { StationInfo } from './nodes.ts';
 import { Townsfolk } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -10,18 +11,18 @@ import type { NodeInfo } from './worldData.ts';
 /** How near a counter a player stands to be served, metres. */
 export const SERVED_M = 3;
 
-/** The gear window's tab a station opens, and its words. */
+/** What a station's counter opens in the menu, and its words. */
 export interface Offer {
   readonly words: string;
-  readonly tab: 'inventory' | 'vendors';
+  readonly opens: Opening;
 }
 
 /** What each station that deals with a player offers. */
 const OFFERS: Readonly<Record<string, Offer>> = {
-  reader: { words: 'The Reader of Vestiges: open your Vestiges', tab: 'inventory' },
-  vault: { words: 'Your vault', tab: 'inventory' },
-  quartermaster: { words: 'The Quartermaster: armour for Aurem', tab: 'vendors' },
-  armsmith: { words: 'The Armsmith: weapons for Aurem', tab: 'vendors' },
+  reader: { words: 'The Reader of Vestiges: open your Vestiges', opens: { view: 'inventory', shelf: 'vestiges' } },
+  vault: { words: 'Your vault', opens: { view: 'vault' } },
+  quartermaster: { words: 'The Quartermaster: armour for Aurem', opens: { view: 'quartermaster' } },
+  armsmith: { words: 'The Armsmith: weapons for Aurem', opens: { view: 'armsmith' } },
 };
 
 /** The offer of the station whose counter a player stands at, if one deals with them. */

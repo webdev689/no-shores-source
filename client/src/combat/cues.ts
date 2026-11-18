@@ -12,12 +12,14 @@ export const EVENT = {
   staggered: 7,
   killed: 8,
   feinted: 10,
+  shielded: 12,
+  shieldBroken: 13,
 } as const;
 const HOW = { riposte: 2, counter: 3 };
 
 /** A word's tone: a great or a good turn for the player, the player's own damage, a bad turn for them, a warning, or
  *  one of no side of theirs. */
-export type Tone = 'great' | 'good' | 'dealt' | 'taken' | 'warn' | 'plain';
+export type Tone = 'great' | 'good' | 'dealt' | 'taken' | 'warn' | 'plain' | 'shield';
 
 /** What each event says, and whether it goes the striker's way (else the defender's) and how loudly when it is the
  *  player's: a great turn or a good one. */
@@ -31,6 +33,7 @@ const SAYS: Readonly<
   [EVENT.perfect]: { text: 'Perfect dodge!', striker: false, great: true },
   [EVENT.staggered]: { text: 'Staggered', striker: true, great: true },
   [EVENT.killed]: { text: 'Slain', striker: true, great: true },
+  [EVENT.shieldBroken]: { text: 'Shield broken', striker: true, great: true },
 };
 
 /** A word for what an event came to and its tone, by whether it is good or bad for the player: null for one nothing is
@@ -42,6 +45,9 @@ export function wordOf(event: FightEvent, player: number): { readonly text: stri
     return strikerWins === (side === 'striker') ? good : 'taken';
   };
   if (event.kind === EVENT.feinted) return { text: 'Feint', tone: 'plain' };
+  // What a shield takes is said in its element's colour; a blow it held whole reaches no health to number.
+  if (event.kind === EVENT.shielded) return { text: String(Math.max(1, Math.round(event.amount))), tone: 'shield' };
+  if (event.kind === EVENT.hit && event.amount <= 0) return null;
   if (event.kind === EVENT.hit) {
     const amount = Math.max(1, Math.round(event.amount));
     const special = event.how === HOW.riposte ? 'Riposte' : event.how === HOW.counter ? 'Counter' : null;

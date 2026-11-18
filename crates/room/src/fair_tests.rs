@@ -23,7 +23,7 @@ fn asking(sequence: u32, seen: u64, arms: u32, combat: CombatInput, forward: f64
 fn stand(room: &mut Room, kind: ::foes::Kind, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
     let (fighter, brain) = ::foes::spawn(kind, x, y, core::f64::consts::PI);
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level: 0, struck_by: BTreeMap::new() });
+    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 

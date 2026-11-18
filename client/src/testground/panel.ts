@@ -4,6 +4,7 @@ import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
 import { CLEAR_FOES, FOE_KINDS } from '../player/foeKinds.ts';
+import { ELEMENTS } from '../player/gear.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
  *  speed, whether the player is playing, and a status line. */
@@ -47,7 +48,7 @@ const CONTROLS = [
 /** The Test Ground's panel: the figures, and the chosen one's move, facing and dress. */
 export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: PanelState) => void {
   const garmentFilter = { text: '' };
-  const foeLevel = { value: 0 };
+  const foeLevel = { value: 0, shield: 0 };
   let shown = '';
   const status = make('p', '', 'status');
   const body = make('div');
@@ -114,11 +115,18 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
       list.append(pick);
     }
     const chosen = state.chosen;
+    // A foe asked for names its shield's element above its kind's four bits (crates/room/src/foes.rs SHIELD_SHIFT).
     const foes = FOE_KINDS.map((kind) =>
       button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () =>
-        handlers.fight(kind.number, foeLevel.value),
+        handlers.fight(kind.number | (foeLevel.shield << 4), foeLevel.value),
       ),
     );
+    const shield = make('select');
+    ['No shield', ...ELEMENTS.flatMap((each) => (each ? [`${each.name} shield`] : []))].forEach((name, element) =>
+      shield.append(Object.assign(make('option', name), { value: String(element) })),
+    );
+    shield.value = String(foeLevel.shield);
+    shield.addEventListener('change', () => (foeLevel.shield = Number(shield.value) || 0));
     const level = make('input');
     Object.assign(level, { type: 'number', min: '0', max: '30', value: String(foeLevel.value) });
     level.addEventListener('change', () => {
@@ -127,6 +135,7 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
     body.replaceChildren(
       make('h2', 'Foes'),
       labelled('Level (0: none)', level),
+      labelled('Shield', shield),
       ...foes,
       button('Send every foe away', () => handlers.fight(CLEAR_FOES, 0)),
       make('h2', 'Figures'),

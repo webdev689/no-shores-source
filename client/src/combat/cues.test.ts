@@ -106,3 +106,9 @@ test('an arrow to a point off the screen stands at the edge it lies beyond, poin
   const straightBehind = edgeArrow([0, 0, -1], 800, 600, 20);
   assert.deepEqual([straightBehind?.x, straightBehind?.y], [400, 580]);
 });
+
+test('a shield’s share of a blow is told in its own tone; a blow it held whole numbers no health', () => {
+  assert.deepEqual(said(event(EVENT.shielded, PLAYER, FOE, 1, 42.4)), { text: '42', tone: 'shield' });
+  assert.equal(said(event(EVENT.hit, PLAYER, FOE, 1, 0)), null);
+  assert.deepEqual(said(event(EVENT.shieldBroken, PLAYER, FOE)), { text: 'Shield broken', tone: 'great' });
+});

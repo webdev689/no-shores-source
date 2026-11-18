@@ -32,6 +32,7 @@ fn blow(kind: BlowKind) -> Blow {
         knocks_down: false,
         through: 1.0,
         stagger: 1.0,
+        element: 0,
     }
 }
 

@@ -15,6 +15,9 @@ use navmesh::NavMesh;
 
 /// The most foes a room holds; how far before a player one is stood; and the ask that sends every foe away.
 pub const FOES_MOST: usize = 12;
+/// An ask for a foe names its kind in its low four bits, and in the bits above them the element of a shield it stands
+/// with, 0 for none.
+pub const SHIELD_SHIFT: u8 = 4;
 const SPAWN_AHEAD: f64 = 5.0;
 pub const CLEAR_FOES: u8 = 255;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
@@ -68,18 +71,20 @@ impl Room {
                 self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
                 continue;
             }
-            let (Some(kind), Some(player)) = (Kind::from_number(number), self.fighter(asker).copied()) else {
+            let kind = Kind::from_number(number & ((1 << SHIELD_SHIFT) - 1));
+            let (Some(kind), Some(player)) = (kind, self.fighter(asker).copied()) else {
                 continue;
             };
             if self.foes.len() >= FOES_MOST {
                 continue;
             }
-            self.stand_foe(kind, &player, asker, level);
+            let element = gear::Element::from_number(number >> SHIELD_SHIFT);
+            self.stand_foe(kind, &player, asker, level, element);
         }
     }
 
-    /// Stands a foe before a player, its health its kind's at its level.
-    fn stand_foe(&mut self, kind: Kind, player: &Fighter, asker: PlayerId, level: u8) {
+    /// Stands a foe before a player, its health its kind's at its level, with a whole shield of `element` if one.
+    fn stand_foe(&mut self, kind: Kind, player: &Fighter, asker: PlayerId, level: u8, element: Option<gear::Element>) {
         // Along the player's aim, which follows their look: a body standing still keeps the way it last walked.
         let (sin, cos) = (libm::sin(player.aim), libm::cos(player.aim));
         let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
@@ -91,7 +96,8 @@ impl Room {
         fighter.health_max *= times;
         let id = self.next_id();
         let struck_by = std::collections::BTreeMap::new();
-        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by });
+        let shield = element.map(|element| gear::element::Shield::whole(element, fighter.health_max));
+        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by, shield });
         self.tell(EventKind::Spawned, None, asker, id, 0.0);
     }
 

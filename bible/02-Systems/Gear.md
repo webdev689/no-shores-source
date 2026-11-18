@@ -17,6 +17,9 @@ code:
   - crates/gear/src/catalogue.rs#catalogue
   - crates/gear/src/world.rs#island_levels
   - crates/gear/src/vendor.rs#wares
+  - crates/gear/src/element.rs#rolled
+  - crates/gear/src/element.rs#Shield
+  - crates/room/src/judging.rs#settle
   - crates/gear/src/world.rs#Difficulty
   - crates/room/src/patrol.rs#keep_patrol
   - crates/room/src/power.rs#empower
@@ -100,7 +103,7 @@ number is one of [[Gear as Claude Shapes It]].
   and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a
   parry or a block gives back, with Last Light's reload.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space answers identifying and the vault
-  anywhere in it; the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
+  anywhere in it, while the menu offers the vault only at its counter ([[Interface]]); the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
 
 ## Vendors
 
@@ -112,6 +115,19 @@ number is one of [[Gear as Claude Shapes It]].
   slot's nine. Legendary and Atheric gear is never sold: it is earned.
 - The room sends the day's wares with a player's gear while they stand in a social space, sends them again as the
   day turns, and a purchase is an ask like any other.
+
+## Elements and shields
+
+- **A weapon's element** ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]): Blaze, Volt or Cosmic,
+  or none. It is rolled as the weapon is made, as a Vestige opens or a vendor stocks it, by rarity: one in ten for
+  Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and Atheric; never surely.
+  Armour and shields carry none. A blow carries its weapon's element; a shot keeps the one it was loosed with.
+- **A foe's shield.** One foe in five that a patrol stands carries a shield of an element chosen evenly, holding half
+  its health. While it holds, a blow wears the shield and not the foe: three times as hard with the shield's own
+  element, half as hard with another, as hard as on health with none. What a breaking shield cannot hold reaches
+  health. A shield does not come back.
+- **What is told.** The room tells each blow a shield takes, with what it took, and its breaking; the browser draws a
+  shielded foe's shield over its health in its element's colour, and says what the shield took in that colour.
 
 ## Where foes stand
 
@@ -139,7 +155,7 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 ## Limits
 
 - A weapon's traits work whichever hand strikes, and every trait worn counts once however many pieces give it.
-- The game's gear window ([[Interface]], "The gear window") shows gear on foot in a room; offline, no room keeps
+- The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
 - A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own,

@@ -157,13 +157,21 @@ impl Room {
                 let band = usize::from(patrol.high - patrol.low) + 1;
                 let level = patrol.low + u8::try_from(dice.pick(Purpose::Patrol, one * 5 + 3, band)).unwrap_or(0);
                 let facing = rolled(4) * core::f64::consts::TAU;
-                camp.foes.push(self.stand_patrol_foe(kind, at, facing, self.difficulty.raise(level)));
+                let shielded = |health: f64| gear::element::Shield::rolled(&dice, one, health);
+                camp.foes.push(self.stand_patrol_foe(kind, at, facing, self.difficulty.raise(level), shielded));
             }
         }
         self.patrol = Some(patrol);
     }
 
-    fn stand_patrol_foe(&mut self, kind: Kind, at: [f64; 2], facing: f64, level: u8) -> crate::FighterId {
+    fn stand_patrol_foe(
+        &mut self,
+        kind: Kind,
+        at: [f64; 2],
+        facing: f64,
+        level: u8,
+        shielded: impl Fn(f64) -> Option<gear::element::Shield>,
+    ) -> crate::FighterId {
         let (mut fighter, brain) = spawn(kind, at[0], at[1], facing);
         fighter.body = crate::standing_on(&self.floor, &self.blocks, at[0], at[1]);
         fighter.body.facing = facing;
@@ -171,7 +179,8 @@ impl Room {
         fighter.health *= times;
         fighter.health_max *= times;
         let id = self.next_id();
-        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by: BTreeMap::new() });
+        let shield = shielded(fighter.health_max);
+        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by: BTreeMap::new(), shield });
         self.tell(crate::judging::EventKind::Spawned, None, 0, id, 0.0);
         id
     }

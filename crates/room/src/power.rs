@@ -17,11 +17,12 @@ pub const DROP_TICKS: u64 = 7_200;
 pub const PICK_UP_REACH: f64 = 1.5;
 const PICK_UP_HEIGHT: f64 = 2.0;
 
-/// What a player's blow carries of its striker: the Attack of the hand it came from and their trim. An arrow or a bolt
-/// keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
+/// What a player's blow carries of its striker: the Attack and element of the hand it came from, and their trim. An
+/// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Loosed {
     pub attack: u32,
+    pub element: Option<gear::Element>,
     pub trim: combat::Trim,
 }
 
@@ -103,7 +104,9 @@ impl Room {
     /// What a player strikes with now from `hand`; nothing for a foe.
     pub(crate) fn held(&self, striker: FighterId, hand: Slot) -> Option<Loosed> {
         let player = self.players.get(&striker)?;
-        Some(Loosed { attack: player.character.attack(hand).unwrap_or(0), trim: player.fighter.trim })
+        let character = &player.character;
+        let element = character.worn(hand).and_then(|item| item.element);
+        Some(Loosed { attack: character.attack(hand).unwrap_or(0), element, trim: player.fighter.trim })
     }
 
     /// A blow as `empower` makes it, a player's by the Attack and trim `held` gives.
@@ -120,7 +123,8 @@ impl Room {
                 _ => 1.0,
             },
         };
-        let blow = Blow { damage: blow.damage * times, ..blow };
+        let element = held.and_then(|held| held.element).map_or(0, |element| element as u8);
+        let blow = Blow { damage: blow.damage * times, element, ..blow };
         match held {
             Some(held) => self.sharpened(blow, defender, &held.trim),
             None => blow,

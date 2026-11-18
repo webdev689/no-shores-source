@@ -18,12 +18,13 @@
   --outline: #050608;
   --gain: #74d9a0;
   --loss: #e8968a;
+  /* Pixelify Sans's grid: words at one step, names at two, numbers that lead at three and five. */
   --type-xs: 11px;
-  --type-s: 13px;
-  --type-m: 15px;
-  --type-l: 18px;
-  --type-xl: 32px;
-  --type-xxl: 56px;
+  --type-s: 11px;
+  --type-m: 11px;
+  --type-l: 22px;
+  --type-xl: 33px;
+  --type-xxl: 55px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -74,7 +75,7 @@
 }
 .gear-who strong {
   font-size: var(--type-l);
-  letter-spacing: 0.06em;
+  letter-spacing: calc(1em / 22);
 }
 .gear-tabs-top {
   display: flex;
@@ -83,7 +84,7 @@
 #hud .gear-tab {
   display: inline-flex;
   align-items: center;
-  letter-spacing: 0.12em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   font-size: var(--type-s);
 }
@@ -191,8 +192,8 @@ kbd.gear-key {
   margin: 4px 0 10px;
   padding-bottom: 4px;
   font-size: var(--type-xs);
-  font-weight: normal;
-  letter-spacing: 0.16em;
+  font-weight: 500;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   color: var(--faint);
   border-bottom: 1px solid transparent;
@@ -279,6 +280,65 @@ img.gear-glyph {
 #hud .gear-vacant {
   opacity: 0.55;
 }
+/* A weapon's element: its glyph in the icon's corner, and beside its kind on its card and page. */
+.gear-element {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(1px 1px 0 var(--outline));
+}
+.gear-element svg,
+.gear-element-inline svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.gear-element-inline {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+}
+.gear-element-name {
+  margin-left: 4px;
+}
+/* An item's growth, after Destiny 1: a gauge along the icon's foot that grows as it is used. */
+.gear-gauge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(5, 6, 8, 0.85);
+}
+.gear-gauge-fill {
+  display: block;
+  height: 100%;
+  background: var(--gain);
+}
+/* Fully upgraded, the frame is gilded, as Destiny 2's masterworks are: a gold bevel and a gold light within. */
+#hud .gear-slot.gear-gilded,
+#hud .gear-cell.gear-gilded {
+  border-color: #fbe3a0 #a8741f #a8741f #fbe3a0;
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 10px rgba(242, 196, 92, 0.55),
+    inset 0 0 0 1px rgba(255, 232, 160, 0.6),
+    inset 0 0 14px rgba(242, 196, 92, 0.35);
+}
+/* Its gold catches the light at one corner, stepped as the kit's bevels are, so it is never taken for Rare's yellow. */
+#hud .gear-slot.gear-gilded::after,
+#hud .gear-cell.gear-gilded::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 244, 200, 0.55) 0 6px, transparent 6px),
+    linear-gradient(135deg, rgba(255, 232, 160, 0.25) 0 12px, transparent 12px);
+}
 #hud .gear-vacant img.gear-glyph {
   width: 24px;
   height: 24px;
@@ -290,7 +350,7 @@ img.gear-glyph {
 .gear-count {
   position: absolute;
   right: 4px;
-  bottom: 2px;
+  bottom: 5px;
   font-size: var(--type-xs);
   color: var(--word);
   text-shadow:
@@ -302,7 +362,7 @@ img.gear-glyph {
 .gear-pips {
   position: absolute;
   left: 4px;
-  bottom: 2px;
+  bottom: 5px;
   font-size: var(--type-xs);
   line-height: 1;
   color: var(--rar);
@@ -312,7 +372,7 @@ img.gear-glyph {
 }
 .gear-initials {
   font-size: var(--type-l);
-  letter-spacing: 0.04em;
+  letter-spacing: calc(1em / 22);
   color: var(--rar-hi, var(--word));
 }
 
@@ -360,7 +420,7 @@ img.gear-glyph {
 }
 .gear-slot-name {
   font-size: var(--type-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -393,7 +453,7 @@ img.gear-glyph {
 .gear-flyout-head {
   margin-bottom: 8px;
   font-size: var(--type-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   color: var(--faint);
   white-space: nowrap;
@@ -421,7 +481,7 @@ img.gear-glyph {
 }
 .gear-power-label {
   font-size: var(--type-xs);
-  letter-spacing: 0.24em;
+  letter-spacing: calc(5em / 22);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -460,7 +520,7 @@ img.gear-glyph {
 }
 .gear-stat-label {
   font-size: var(--type-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -504,7 +564,7 @@ img.gear-glyph {
 .gear-card-head h3 {
   margin: 0;
   font-size: var(--type-l);
-  font-weight: normal;
+  font-weight: 500;
   color: var(--rar-hi, var(--word));
 }
 /* A Normal piece's name is white, as its rarity is named; its frame alone is plain stone. */
@@ -534,13 +594,13 @@ img.gear-glyph {
 .gear-card-big strong,
 .gear-item-big strong {
   font-size: var(--type-xl);
-  font-weight: normal;
+  font-weight: 500;
   margin-right: 8px;
 }
 .gear-card-big span,
 .gear-item-big span {
   font-size: var(--type-xs);
-  letter-spacing: 0.14em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -552,7 +612,7 @@ img.gear-glyph {
 }
 .gear-card-stats dt {
   font-size: var(--type-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -579,7 +639,7 @@ img.gear-glyph {
   flex-direction: column;
 }
 .gear-trait-words b {
-  font-weight: normal;
+  font-weight: 500;
   color: var(--brass-lit);
 }
 .gear-trait-words span,
@@ -589,7 +649,6 @@ img.gear-glyph {
 }
 .gear-card-words {
   margin: 4px 0;
-  font-style: italic;
 }
 /* What a piece changes over the one worn: each number's meter, the change a segment in its colour. */
 .gear-compare {
@@ -606,7 +665,7 @@ img.gear-glyph {
 }
 .gear-compare-label {
   font-size: var(--type-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -682,7 +741,7 @@ img.gear-glyph {
 .gear-item-name {
   margin: 0;
   font-size: var(--type-xl);
-  font-weight: normal;
+  font-weight: 500;
   line-height: 1.1;
   color: var(--rar-hi, var(--word));
 }
@@ -725,16 +784,7 @@ img.gear-glyph {
 .gear-item-left > .gear-heading {
   margin-top: 16px;
 }
-.gear-nodes-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-.gear-nodes-xp {
-  letter-spacing: 0.04em;
-  text-transform: none;
-}
-/* The node grid: each column under its own meter of the XP toward it; each node a tile of the kit's stone. */
+/* The node grid: column by column, each node a tile of the kit's stone. */
 .gear-nodes {
   display: flex;
   gap: 14px;
@@ -746,18 +796,6 @@ img.gear-glyph {
   align-items: center;
   gap: 8px;
   width: 48px;
-}
-.gear-node-xp {
-  font-size: var(--type-xs);
-  color: var(--faint);
-}
-.gear-node-reached .gear-node-xp {
-  color: var(--brass-lit);
-}
-.gear-node-well {
-  width: 100%;
-  height: 6px;
-  border: 1px solid transparent;
 }
 /* A node is a press, but its state, not the press's resting look, says what it is. */
 #hud .gear-node.plus-button {
@@ -777,6 +815,20 @@ img.gear-glyph {
   display: block;
   width: 24px;
   height: 24px;
+}
+/* A locked node's ring, round its glyph inside the tile, lit as far as the item has grown toward it. */
+#hud .gear-node {
+  position: relative;
+}
+.gear-node-ring {
+  position: absolute;
+  inset: 0;
+  color: var(--brass-lit);
+}
+.gear-node-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 #hud .gear-node.gear-node-locked {
   border-color: var(--stone-lo) var(--stone-hi) var(--stone-hi) var(--stone-lo);
@@ -863,7 +915,7 @@ img.gear-glyph {
 }
 .gear-currency-words b {
   font-size: var(--type-m);
-  font-weight: normal;
+  font-weight: 500;
 }
 .gear-currency-name {
   font-size: var(--type-xs);
@@ -891,7 +943,7 @@ img.gear-glyph {
   color: var(--word);
   font: inherit;
   font-size: var(--type-s);
-  letter-spacing: 0.1em;
+  letter-spacing: calc(3em / 22);
   text-transform: uppercase;
   cursor: pointer;
   pointer-events: auto;
@@ -940,7 +992,7 @@ img.gear-glyph {
 }
 .gear-material b {
   font-size: var(--type-m);
-  font-weight: normal;
+  font-weight: 500;
 }
 /* The gear shelf: each slot's row, its name and worn piece, then the nine it carries. */
 .gear-gear {
@@ -970,9 +1022,9 @@ img.gear-glyph {
   gap: 6px;
 }
 
-/* The vendors' wares: each ware a press held to buy it, its tile, name, kind and price. */
-.gear-vendor + .gear-vendor {
-  margin-top: 18px;
+/* A vendor's wares: each ware a press held to buy it, its tile, name, kind and price. */
+.gear-vendor {
+  padding: 14px 18px;
 }
 .gear-wares {
   display: grid;
@@ -993,7 +1045,7 @@ img.gear-glyph {
   min-width: 0;
 }
 .gear-ware-words b {
-  font-weight: normal;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1011,7 +1063,7 @@ img.gear-glyph {
 }
 .gear-price b {
   font-size: var(--type-m);
-  font-weight: normal;
+  font-weight: 500;
 }
 .gear-price.gear-short {
   color: var(--loss);

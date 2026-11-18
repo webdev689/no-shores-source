@@ -9,6 +9,13 @@ export interface Account {
   readonly guest: boolean;
 }
 
+/** A player's friends, whether each is playing; who has asked them; and whom they have asked. */
+export interface Friends {
+  readonly friends: readonly { readonly name: string; readonly playing: boolean }[];
+  readonly asking: readonly string[];
+  readonly asked: readonly string[];
+}
+
 /** What a Discord sign-in came back with, in the page's address: a code to take, or no sign-in. */
 export type Came = 'came back' | 'cancelled' | 'failed';
 
@@ -163,6 +170,18 @@ export class AccountLink {
     if (typeof answer === 'string') return answer;
     this.kept.removeItem(this.key);
     return null;
+  }
+
+  /** The player's friends list, or why not. */
+  async friends(): Promise<Friends | string> {
+    const answer = await this.call('GET', '/v1/friends');
+    return typeof answer === 'string' ? answer : (answer as unknown as Friends);
+  }
+
+  /** Asks the player named to be friends, accepts their ask, or ends what is between them; why not, if it cannot. */
+  async befriend(asked: 'ask' | 'accept' | 'remove', name: string): Promise<string | null> {
+    const answer = await this.call('POST', `/v1/friends/${asked}`, { name });
+    return typeof answer === 'string' ? answer : null;
   }
 
   /** Where to send the player to sign in or link with Discord, coming back to `back`; the tab keeps a nonce for the

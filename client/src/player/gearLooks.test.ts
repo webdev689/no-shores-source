@@ -25,6 +25,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   prestige: 0,
   columns: [],
   price: 0,
+  element: 0,
   ...fields,
 });
 const state = (items: GearItem[]): GearState => ({

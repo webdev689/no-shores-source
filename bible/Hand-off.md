@@ -124,6 +124,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 - #60's keys: the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and the repository secrets
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; and the Cloudflare token's leave to edit D1, which CI needs to
   make the accounts' database.
+- For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
+  blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
+  while; and which foes beyond the patrols' carry them.
+- A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
@@ -149,6 +153,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   detailed); a voyage's seas are the client's to name, so a signed ticket from the sea room should name the node and
   the seas a player may join at; Breaches, Elite Dungeons and Missions as loot sources; the wardrobe; a ranged
   weapon's fight on foot untested headless.
+- **The owner's next round is on #60 too**: Pixelify Sans as the one face, its sizes on its 11 px grid and its
+  misreading glyphs mended ([[Pixelify Sans Is Overlook's Font]], [[Interface]], "The face"); the menu's seven tabs,
+  the vault and the vendors moved to their counters, and friends on the Social tab
+  ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]], [[Accounts]], "Friends"); the Plain Text
+  rule, with progress shown on icons and nodes instead of XP counts ([[Text Is Plain]]); and weapon elements with
+  foes' shields ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]], [[Gear]], "Elements and
+  shields"). Tested offline: the full check, headless pictures of every page at 1280×720 and 1920×1080 against
+  local accounts and rooms, the friends list against the local accounts, and a shielded foe in the Test Ground. Not
+  yet seen headless: a blow on a shield in the game, its words and its breaking (the room's tests cover them).
 - The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]), all three parts in review in
   one pull request: the [[Interface]]'s Enhanced Plus kit and the sea bar in it; the Sloop at true scale at the helm;
   Manage, the view over her deck with her panel and stand-in hands; and Leave the helm, the player walking her deck

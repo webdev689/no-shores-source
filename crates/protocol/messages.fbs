@@ -109,13 +109,17 @@ table Seen {
   standing_ticks: uint;
 }
 
-// A foe as the room last stepped it: its number, its kind, a glance at its fighter (combat's glance order), and its
-// level.
+// A foe as the room last stepped it: its number, its kind, a glance at its fighter (combat's glance order), its level,
+// and its shield, if it stands with one: its element (the gear crate's numbers, 0 for none), what it holds still and
+// what it held whole.
 table Foe {
   id: uint;
   kind: ubyte;
   glance: [double];
   level: ubyte;
+  shield_element: ubyte;
+  shield: double;
+  shield_most: double;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -257,7 +261,8 @@ table GearColumn {
 // crate's numbers), its level, the named item it is (empty for a rolled one) or a rolled one's name among its kind's,
 // its island resource (255 for none), whether a Breach's, its XP and the most it earns, the nodes bought (a bit each)
 // and the one chosen in each column (255 none), the slot it is carried with, where it is (0 carried, 1 the vault, 2
-// and on worn in the slot that many less 2), its Attack, Defense and Prestige, and its columns.
+// and on worn in the slot that many less 2), its Attack, Defense and Prestige, its columns, its price at a vendor, and
+// a weapon's element (the gear crate's numbers, 0 for none).
 table GearItem {
   id: uint;
   kind: ubyte;
@@ -278,6 +283,7 @@ table GearItem {
   prestige: uint;
   columns: [GearColumn];
   price: uint;
+  element: ubyte;
 }
 
 // A Vestige a player holds: their number for it, its colour, the slot it holds an item for, that item's level, and

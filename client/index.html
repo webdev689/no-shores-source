@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Overlook</title>
+    <link rel="stylesheet" href="/src/plus/face.css" />
     <link rel="stylesheet" href="/src/combat/hud.css" />
     <style>
       :root {
@@ -15,9 +16,24 @@
         --warn: #f0b545;
         --dead: #d8574a;
         --gold: #f3cf6a;
+        /* Pixelify Sans draws sharp only at whole multiples of its grid, 11 px: one step for words, two for names
+           and titles, three and more for the numbers that lead a page. Never smoothed into grey, never joined by a
+           ligature. */
         font:
-          14px system-ui,
-          sans-serif;
+          500 11px 'Pixelify Mended',
+          'Pixelify Sans Variable',
+          monospace;
+        font-variant-ligatures: none;
+        -webkit-font-smoothing: none;
+      }
+      /* Each letter stands 1/22 of its size from the next, which keeps it on whole pixels at every step of the grid. */
+      :where(*) {
+        letter-spacing: calc(1em / 22);
+      }
+      /* Its strokes are whole pixels only at the one weight: emphasis is in size and colour, never in a heavier
+         stroke. */
+      :where(b, strong, h1, h2, h3, h4, th) {
+        font-weight: 500;
       }
       html,
       body {
@@ -41,7 +57,7 @@
         inset: 0;
         pointer-events: none;
         color: var(--ink);
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+        text-shadow: 1px 1px 0 #000;
       }
       /* The heads-up display wears the Enhanced Plus kit (client/src/plus/), which paints each surface by its role;
          this sheet gives each its room, and each window and press the 2 px border the kit's frame lands on. */
@@ -66,14 +82,14 @@
         top: 22px;
       }
       .place .title {
-        font-size: 26px;
-        letter-spacing: 0.04em;
-        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: calc(1em / 22);
+        font-weight: 500;
       }
       .place .kind {
         margin-top: 2px;
-        font-size: 12px;
-        letter-spacing: 0.16em;
+        font-size: 11px;
+        letter-spacing: calc(3em / 22);
         text-transform: uppercase;
         color: var(--dim);
       }
@@ -93,12 +109,12 @@
       }
       .warning-words {
         font-size: 22px;
-        letter-spacing: 0.22em;
+        letter-spacing: calc(5em / 22);
         text-transform: uppercase;
       }
       .warning .count {
-        font-size: 64px;
-        font-weight: 600;
+        font-size: 66px;
+        font-weight: 500;
         line-height: 1.2;
       }
       .death {
@@ -112,7 +128,7 @@
       }
       .death-words {
         font-size: 44px;
-        letter-spacing: 0.2em;
+        letter-spacing: calc(5em / 22);
         text-transform: uppercase;
         color: var(--dead);
       }
@@ -124,7 +140,7 @@
         position: absolute;
         left: 28px;
         bottom: 22px;
-        font-size: 12px;
+        font-size: 11px;
         line-height: 1.7;
         color: var(--dim);
       }
@@ -175,15 +191,15 @@
       }
       .sea-bar .pace-label {
         font-size: 11px;
-        letter-spacing: 0.16em;
+        letter-spacing: calc(3em / 22);
         text-transform: uppercase;
         color: var(--dim);
       }
       .sea-bar .pace {
         min-width: 44px;
         text-align: center;
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 22px;
+        font-weight: 500;
       }
       #hud .landfall {
         position: absolute;
@@ -191,7 +207,7 @@
         bottom: 94px;
         transform: translateX(-50%);
         padding: 10px 18px;
-        font-size: 16px;
+        font-size: 11px;
       }
       .menu {
         position: absolute;
@@ -207,8 +223,8 @@
         text-shadow: 1px 1px 0 #000;
       }
       .menu-title {
-        font-size: 12px;
-        letter-spacing: 0.16em;
+        font-size: 11px;
+        letter-spacing: calc(3em / 22);
         text-transform: uppercase;
         color: var(--dim);
         margin: -20px -22px 6px;
@@ -228,9 +244,9 @@
       .ship-title {
         margin: 0 -18px 4px;
         padding: 12px 18px 10px;
-        font-size: 17px;
-        letter-spacing: 0.04em;
-        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: calc(1em / 22);
+        font-weight: 500;
         border-bottom: 1px solid transparent;
       }
       .ship-part {
@@ -240,7 +256,7 @@
         margin-bottom: 6px;
         padding-bottom: 4px;
         font-size: 11px;
-        letter-spacing: 0.16em;
+        letter-spacing: calc(3em / 22);
         text-transform: uppercase;
         color: var(--dim);
         border-bottom: 1px solid transparent;
@@ -260,8 +276,8 @@
       .ship-later {
         display: inline-block;
         padding: 2px 10px;
-        font-size: 12px;
-        letter-spacing: 0.08em;
+        font-size: 11px;
+        letter-spacing: calc(3em / 22);
         border: 2px solid transparent;
         color: var(--dim);
       }
@@ -275,7 +291,7 @@
       }
       .menu button {
         text-align: left;
-        font-size: 15px;
+        font-size: 22px;
       }
       .marks {
         position: absolute;
@@ -297,9 +313,7 @@
       .held-mark {
         padding: 0 0 0 9px;
         margin-top: -8px;
-        font:
-          italic 14px Georgia,
-          serif;
+        font-size: 11px;
         color: var(--map-ink);
         white-space: nowrap;
         text-shadow:
@@ -318,8 +332,8 @@
       }
       .held-mark.port {
         font-style: normal;
-        font-weight: 600;
-        letter-spacing: 0.04em;
+        font-weight: 500;
+        letter-spacing: calc(1em / 22);
       }
       .held-mark.port::before {
         background: var(--map-ink);
@@ -385,7 +399,7 @@
       }
       .mark .name {
         top: calc(var(--size) / 2 + 4px);
-        font-weight: 600;
+        font-weight: 500;
       }
       .mark .note {
         top: calc(var(--size) / 2 + 22px);
@@ -398,7 +412,7 @@
         top: -6px;
         width: 12px;
         height: 12px;
-        font-size: 10px;
+        font-size: 11px;
         line-height: 12px;
         text-align: center;
         color: var(--kind, var(--ink));
@@ -454,8 +468,8 @@
         pointer-events: auto;
       }
       .veil-text {
-        font-size: 18px;
-        letter-spacing: 0.3em;
+        font-size: 22px;
+        letter-spacing: calc(5em / 22);
         text-transform: uppercase;
         color: var(--dim);
         animation: breathe 2.4s ease-in-out infinite;

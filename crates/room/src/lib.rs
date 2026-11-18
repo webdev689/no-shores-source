@@ -86,6 +86,8 @@ pub(crate) struct Foe {
     pub brain: ::foes::Brain,
     pub level: u8,
     pub struck_by: BTreeMap<PlayerId, (u64, gear::Slot)>,
+    /// Its shield, if it stands with one: blows take it down before they reach its health.
+    pub shield: Option<gear::element::Shield>,
 }
 
 /// A foe as the room last stepped it.
@@ -95,6 +97,7 @@ pub struct FoeSeen {
     pub kind: u8,
     pub fighter: Fighter,
     pub level: u8,
+    pub shield: Option<gear::element::Shield>,
 }
 
 /// One shared space: its floor and course, where players stand, its section if it is a node's, its clock in ticks, its
@@ -550,6 +553,7 @@ impl Room {
             kind: found.kind,
             fighter: found.fighter,
             level: found.level,
+            shield: found.shield,
         })
     }
 

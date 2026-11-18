@@ -1,4 +1,4 @@
-import type { Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messages.ts';
+import type { FightEvent, FlyingShot, FoeShield, Look, SeenPlayer } from '../network/messages.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
@@ -38,6 +38,7 @@ export interface KeptFoe {
   readonly id: number;
   readonly kind: number;
   readonly level: number;
+  readonly shield: FoeShield | null;
   readonly view: FighterView;
   readonly before: FighterView | null;
   readonly ticks: number;
@@ -328,7 +329,8 @@ export class Fighting {
       const kept = this.foes.get(foe.id);
       const glanced = glanceView(foe.glance);
       const before = kept?.view ?? null;
-      this.foes.set(foe.id, { id: foe.id, kind: foe.kind, level: foe.level, view: glanced, before, ticks });
+      const { kind, level, shield } = foe;
+      this.foes.set(foe.id, { id: foe.id, kind, level, shield, view: glanced, before, ticks });
       view.push({ id: foe.id, glance: foe.glance });
     }
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);

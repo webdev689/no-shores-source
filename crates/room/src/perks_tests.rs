@@ -40,7 +40,7 @@ fn room_with_brute() -> (Room, PlayerId, FighterId) {
     let player = room.join().expect("a room with space");
     let id = room.next_id();
     let (fighter, brain) = ::foes::spawn(::foes::Kind::Brute, 0.0, -1.5, core::f64::consts::PI);
-    room.foes.insert(id, Foe { fighter, kind: 3, brain, level: 0, struck_by: BTreeMap::new() });
+    room.foes.insert(id, Foe { fighter, kind: 3, brain, level: 0, struck_by: BTreeMap::new(), shield: None });
     (room, player, id)
 }
 

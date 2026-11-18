@@ -6,6 +6,7 @@
 
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
+import { friendAsk, friendsOf } from './friends.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
 /** What the API runs on: the database, the clock, the Discord app if its keys are set, and the pages (by origin and
@@ -32,6 +33,7 @@ const LIMITS = {
   nameEverywhere: { most: 100, window: 10 * MINUTE },
   discord: { most: 20, window: 10 * MINUTE },
   ticket: { most: 10, window: 10 * MINUTE },
+  friend: { most: 30, window: 60 * MINUTE },
 } as const;
 /** The most a request's body may hold, in bytes: a username and password, or a code and nonce, are far less. */
 const BODY_MOST = 2048;
@@ -342,6 +344,21 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
     }
     case 'POST /v1/discord/finish':
       return finish(request, deps, now);
+    case 'GET /v1/friends':
+    case 'POST /v1/friends/ask':
+    case 'POST /v1/friends/accept':
+    case 'POST /v1/friends/remove': {
+      const account = await signedIn(request, database, now);
+      if (!account) return refused(401, 'Not signed in.');
+      if (account.username === null) return refused(409, 'Add a username in Settings to have friends.');
+      if (request.method === 'GET') return json(await friendsOf(database, account.id, now));
+      const asked =
+        route === 'POST /v1/friends/ask' ? 'ask' : route === 'POST /v1/friends/accept' ? 'accept' : 'remove';
+      if (asked === 'ask' && !(await within(database, `friend:${account.id}`, LIMITS.friend, now)))
+        return refused(429, 'Too many asks. Wait a while.');
+      const answer = await friendAsk(database, account.id, asked, (await bodyOf(request))?.['name'], now);
+      return json(answer.body, answer.status);
+    }
     default:
       return refused(404, 'No such page.');
   }

@@ -27,6 +27,9 @@ pub enum EventKind {
     Respawned = 9,
     Feinted = 10,
     Spawned = 11,
+    /// A foe's shield took a blow, the amount what it took; and broke under one.
+    Shielded = 12,
+    ShieldBroken = 13,
 }
 
 /// How a blow was struck, for the words a client shows.
@@ -108,6 +111,7 @@ impl Room {
         if before.dead() {
             return;
         }
+        let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
         // A blow too far below its foe's level to harm it shares nothing of its kill.
@@ -147,6 +151,12 @@ impl Room {
                 stroke,
             });
         };
+        if let Some((took, broke)) = shielded {
+            tell(EventKind::Shielded, took);
+            if broke {
+                tell(EventKind::ShieldBroken, 0.0);
+            }
+        }
         tell(kind, amount);
         if after.dead() {
             tell(EventKind::Killed, 0.0);
@@ -154,6 +164,28 @@ impl Room {
             tell(EventKind::Staggered, 0.0);
         }
         self.verdicts.push((blow.striker, defender, verdict));
+    }
+
+    /// The verdict as a foe's shield leaves it: the shield takes the blow's damage first, weighed by the blow's element
+    /// against its own, and only what it could not hold reaches health. With it, what the shield took and whether it
+    /// broke.
+    fn shielded(&mut self, defender: FighterId, blow: &Blow, verdict: Verdict) -> (Verdict, Option<(f64, bool)>) {
+        let Some(shield) = self.foes.get_mut(&defender).and_then(|foe| foe.shield.as_mut()) else {
+            return (verdict, None);
+        };
+        if shield.left <= 0.0 {
+            return (verdict, None);
+        }
+        let (element, held) = (gear::Element::from_number(blow.element), shield.left);
+        let verdict = match verdict {
+            Verdict::Hit { damage, poise } => Verdict::Hit { damage: shield.struck(damage, element), poise },
+            Verdict::Blocked { damage, stamina } => {
+                Verdict::Blocked { damage: shield.struck(damage, element), stamina }
+            }
+            Verdict::GuardBroken { damage } => Verdict::GuardBroken { damage: shield.struck(damage, element) },
+            other => return (other, None),
+        };
+        (verdict, Some((held - shield.left, shield.left <= 0.0)))
     }
 
     pub(crate) fn tell(

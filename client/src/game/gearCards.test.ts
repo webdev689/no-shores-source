@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { cardOf, chosenTraits, flyoutOf, inventoryPageOf, wearIn } from './gearCards.ts';
+import { cardOf, chosenTraits, flyoutOf, inventoryPageOf, vaultOf, wearIn } from './gearCards.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -23,6 +23,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   prestige: 0,
   columns: [],
   price: 0,
+  element: 0,
   ...fields,
 });
 
@@ -56,10 +57,7 @@ test('a card names the item and its kind, its main number, its chosen traits, an
   const card = cardOf(carried, worn);
   assert.equal(card.kind, 'Rare Sword');
   assert.deepEqual(card.big, { label: 'Attack', value: 260 });
-  assert.deepEqual(card.rows, [
-    ['Level', '20'],
-    ['XP', '0 / 9,000'],
-  ]);
+  assert.deepEqual(card.rows, [['Level', '20']], 'its growth is the icon’s gauge, not a count of XP');
   assert.equal(card.traits.length, 1, 'its chosen trait');
   assert.deepEqual(card.compare, { replaces: 'Harbourwarden', rows: [{ label: 'Attack', from: 248, to: 260 }] });
   assert.equal(cardOf(worn, worn).compare, null, 'no comparing a piece with itself');
@@ -78,7 +76,7 @@ test('a slot’s flyout holds its nine places, and a carried blade is worn in th
   assert.deepEqual(wearIn(blade, 1)?.ask, { kind: ASKS.wear, item: 3, slot: 1 });
 });
 
-test('the inventory shows its currencies, and Vestiges open only in a social space; the vault only there', () => {
+test('the inventory shows its currencies, and Vestiges open only in a social space; it has no vault', () => {
   const vestige = { id: 9, rarity: 3, slot: 3, level: 20, vaulted: false };
   const away = inventoryPageOf(state({ aurem: 900, stocks: [4, 5, 6, 7, 2], vestiges: [vestige] }));
   assert.deepEqual(
@@ -97,8 +95,37 @@ test('the inventory shows its currencies, and Vestiges open only in a social spa
   const vestiges = tab(away, 'vestiges');
   assert.equal(vestiges.length, 10, 'ten places');
   assert.equal(vestiges[0]?.press, null, 'not identified away from a social space');
-  assert.deepEqual(tab(away, 'vault'), []);
-  const social = inventoryPageOf(state({ social: true, vestiges: [vestige], items: [item({ id: 5, at: 1 })] }));
+  assert.deepEqual(
+    away.tabs.map((each) => each.id),
+    ['consumables', 'materials', 'vestiges'],
+  );
+  const social = inventoryPageOf(state({ social: true, vestiges: [vestige, { ...vestige, id: 8, vaulted: true }] }));
   assert.deepEqual(tab(social, 'vestiges')[0]?.press?.ask, { kind: ASKS.identify, item: 9 });
-  assert.deepEqual(tab(social, 'vault')[0]?.press?.ask, { kind: ASKS.withdraw, item: 5 });
+  assert.equal(tab(social, 'vestiges')[1]?.glyph, 'empty', 'a vaulted Vestige is not carried');
+});
+
+test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from what is carried', () => {
+  const vault = vaultOf(
+    state({
+      social: true,
+      items: [item({ id: 5, at: 1 }), item({ id: 6, at: 1, kind: 14 }), item({ id: 7, at: 0 }), item({ id: 8, at: 2 })],
+      vestiges: [{ id: 9, rarity: 3, slot: 3, level: 20, vaulted: true }],
+    }),
+  );
+  assert.deepEqual(
+    vault.kept.map((shelf) => [shelf.name, shelf.held, shelf.most]),
+    [
+      ['Weapons', 1, 20],
+      ['Armour', 1, 20],
+      ['Vestiges', 1, 20],
+    ],
+  );
+  assert.deepEqual(vault.kept[0]?.cells[0]?.press?.ask, { kind: ASKS.withdraw, item: 5 });
+  assert.deepEqual(vault.kept[2]?.cells[0]?.press?.ask, { kind: ASKS.withdrawVestige, item: 9 });
+  // What is carried goes in with a click; what is worn is not offered.
+  assert.deepEqual(
+    vault.carried[0]?.cells.map((each) => each.press?.ask),
+    [{ kind: ASKS.store, item: 7 }],
+  );
+  assert.equal(vault.carried[1]?.held, 0);
 });

@@ -1,13 +1,12 @@
-// What the gear screens show, from the player's gear as the room sent it: the Character tab (their level, Prestige,
-// Defense and Attack, and what each slot wears), a slot's choices, an item's detail with its nodes, and the Inventory
-// tab (materials, Vestiges and, in a social space, the vault). The page draws these in the Enhanced Plus kit.
+// What the menu's gear pages show, from the player's gear as the room sent it: the Character tab (their level,
+// Prestige, Defense and Attack, and what each slot wears), a slot's choices, an item's detail with its nodes, and the
+// vendors' wares. The page draws these in the Enhanced Plus kit.
 
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import {
   CARRIED,
-  COLUMNS,
   KINDS,
   type NodeShown,
   RARITIES,
@@ -20,9 +19,19 @@ import {
   wearAsks,
 } from '../player/gear.ts';
 
-/** The gear screen's tabs. */
-export type Tab = 'character' | 'inventory' | 'vendors' | 'account';
-/** The page event that opens the gear screen at a tab, as a station's counter does. */
+/** The menu's tabs, in the owner's order. */
+export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
+export type Tab = (typeof TABS)[number];
+/** The screens a social space's counters open: the vault, and each vendor's stall. */
+export type Station = 'vault' | 'quartermaster' | 'armsmith';
+/** What the menu shows: a tab, or a station's screen. */
+export type View = Tab | Station;
+/** What a counter or a key opens: a view, and the inventory's shelf to open it at. */
+export interface Opening {
+  readonly view: View;
+  readonly shelf?: string;
+}
+/** The page event that opens the menu at a view, as a station's counter does. */
 export const OPEN_AT = 'overlook:gear';
 
 /** Whether the gear screen is open: while it is, the game's own keys and pointer rest. */
@@ -32,9 +41,9 @@ export function setGearScreenOpen(open: boolean): void {
   screenOpen = open;
 }
 
-/** Opens the gear screen at a tab, wherever it was started. */
-export function openGearWindow(tab: Tab): void {
-  dispatchEvent(new CustomEvent<Tab>(OPEN_AT, { detail: tab }));
+/** Opens the menu at a view, wherever it was started. */
+export function openGearWindow(opening: Opening): void {
+  dispatchEvent(new CustomEvent<Opening>(OPEN_AT, { detail: opening }));
 }
 
 /** The player's gear here and the way to ask of it; null where no room keeps gear. */
@@ -121,21 +130,19 @@ export function characterOf(state: GearState): Character {
   };
 }
 
-/** An item's detail: its name and kind, numbers, XP, each column of nodes, its words and what may be done with it. */
+/** An item's detail: its name and kind, numbers, each column of nodes, its words and what may be done with it. */
 export interface ItemDetail {
   readonly name: string;
   readonly colour: string;
   readonly kind: string;
   readonly numbers: readonly (readonly [string, string])[];
-  /** Its XP toward its last column, 0 to 1, and the words for it. */
-  readonly xp: number;
-  readonly xpWords: string;
-  readonly columns: readonly { readonly heading: string; readonly nodes: readonly NodeShown[] }[];
+  readonly columns: readonly { readonly nodes: readonly NodeShown[] }[];
   readonly words: string;
   readonly presses: readonly Press[];
 }
 
-export function itemDetailOf(item: GearItem, state: GearState): ItemDetail {
+/** An item's detail; `atVault`, seen at the vault's counter, where it may be put in or taken out. */
+export function itemDetailOf(item: GearItem, state: GearState, atVault = false): ItemDetail {
   const kind = KINDS[item.kind] ?? '';
   const numbers: [string, string][] = [];
   if (item.attack) numbers.push(['Attack', String(item.attack)]);
@@ -147,8 +154,7 @@ export function itemDetailOf(item: GearItem, state: GearState): ItemDetail {
     presses.push({ label: 'Take off', ask: { kind: ASKS.takeOff, slot: item.at - WORN }, role: 'button' });
   if (item.at === CARRIED) {
     for (const wear of wearAsks(item)) presses.push({ ...wear, role: 'primary' });
-    if (state.social)
-      presses.push({ label: 'Put in the vault', ask: { kind: ASKS.store, item: item.id }, role: 'button' });
+    if (atVault) presses.push({ label: 'Put in the vault', ask: { kind: ASKS.store, item: item.id }, role: 'button' });
     presses.push({
       label: 'Hold to dismantle',
       ask: { kind: ASKS.dismantle, item: item.id },
@@ -156,7 +162,7 @@ export function itemDetailOf(item: GearItem, state: GearState): ItemDetail {
       held: true,
     });
   }
-  if (item.at === VAULTED)
+  if (item.at === VAULTED && atVault)
     presses.push({ label: 'Take out of the vault', ask: { kind: ASKS.withdraw, item: item.id }, role: 'button' });
   if (item.columns.length > 0 && item.xp < item.xpMost && (state.stocks[4] ?? 0) > 0)
     presses.push({
@@ -170,10 +176,7 @@ export function itemDetailOf(item: GearItem, state: GearState): ItemDetail {
     colour: colourOf(item.rarity),
     kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(kind)}${item.breach ? ' · from a Breach' : ''}`,
     numbers,
-    xp: item.xpMost > 0 ? Math.min(1, item.xp / item.xpMost) : 1,
-    xpWords: item.xpMost > 0 ? `XP ${item.xp.toLocaleString()} of ${item.xpMost.toLocaleString()}` : '',
     columns: item.columns.map((column, index) => ({
-      heading: `${COLUMNS[column.kind] ?? ''} · ${column.xp.toLocaleString()} XP`,
       nodes: Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>
         nodeShown(item, index, node),
       ).filter((node): node is NodeShown => node !== null),
@@ -183,7 +186,7 @@ export function itemDetailOf(item: GearItem, state: GearState): ItemDetail {
   };
 }
 
-/** A vendor's ware as the Vendors tab shows it: the item's tile and kind, and its purchase. */
+/** A vendor's ware as its stall shows it: the item's tile and kind, and its purchase. */
 export interface Ware {
   readonly tile: Tile;
   readonly kind: string;
@@ -193,7 +196,7 @@ export interface Ware {
   readonly press: Press;
 }
 
-/** The Vendors tab: the Quartermaster's and the Armsmith's wares of the day, each bought for its price in Aurem. */
+/** The vendors' stalls: the Quartermaster's and the Armsmith's wares of the day, each bought for its price in Aurem. */
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
   const names = ['The Quartermaster', 'The Armsmith'];
   const half = state.wares.length / 2;

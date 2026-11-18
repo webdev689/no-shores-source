@@ -38,7 +38,7 @@ export function useAt(
   ask: (asked: GearAsk) => void,
 ): Use | null {
   const offer = offerAt(stations, x, y);
-  if (offer) return { words: offer.words, run: () => openGearWindow(offer.tab) };
+  if (offer) return { words: offer.words, run: () => openGearWindow(offer.opens) };
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node) return null;
   return { words: `Gather ${resourceName(node.resource)}`, run: () => ask({ kind: ASKS.gather, node: node.index }) };

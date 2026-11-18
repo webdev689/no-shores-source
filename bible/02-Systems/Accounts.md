@@ -9,6 +9,9 @@ code:
   - server/accounts/secrets.ts#hashPassword
   - server/accounts/worker.ts#CharacterKeeper
   - server/accounts/migrations/20261117210000_accounts.sql
+  - server/accounts/migrations/20261118120000_friends.sql
+  - server/accounts/friends.ts#friendAsk
+  - server/accounts/friends.ts#friendsOf
   - server/keeping.ts#Keeper
   - client/src/network/accounts.ts#AccountLink
   - crates/gear/src/character.rs#from_json
@@ -80,6 +83,18 @@ they play in holds it while they are there.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
   that is not kept. The Test Ground's room grants gear to try it, and the sea holds none, so neither keeps
   characters; nor does a page with no session, playing alone, or on a local room server with no `?accounts=`.
+
+## Friends
+
+The menu's Social tab ([[Interface]]) is the friends list, kept by the accounts as Destiny keeps it.
+
+- **By username.** A player with a username asks another by theirs (`POST /v1/friends/ask`), however it is typed;
+  the one asked accepts (`/accept`) or declines, and either may end it after (`/remove`). An account with no username
+  has no friends, and is told to add one in Settings.
+- **One row a pair**, whoever asked: an ask that crosses one already made accepts it. A player keeps at most 100
+  friends and asks, and may ask 30 times an hour.
+- **Playing or away.** `GET /v1/friends` lists the friends, whether each is playing (a room holds their character
+  now), who has asked, and whom the player has asked. The page asks again every 30 seconds while the list is shown.
 
 ## Running it here
 

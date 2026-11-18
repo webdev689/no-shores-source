@@ -3,7 +3,7 @@ type: index
 ---
 # Rules
 
-Ten rules. Each is in force everywhere from the first commit: no baselines, no ratchets, no list of exceptions waiting
+Eleven rules. Each is in force everywhere from the first commit: no baselines, no ratchets, no list of exceptions waiting
 to shrink. Most are checked by `cargo xtask check` ([[Checks]]); the rest are held in review. Each comes from
 something DFO Online taught us ([[Lessons from DFO]]). A new rule needs the owner's agreement.
 
@@ -19,3 +19,4 @@ something DFO Online taught us ([[Lessons from DFO]]). A new rule needs the owne
 | [[Short Branches, Green Main]] | Small changes, merged within days; main always passes | CI, review |
 | [[Generated Files Stay Out of Git]] | Renders, bakes and builds live outside git | assets check |
 | [[Versions Are Not Counters]] | Migrations by timestamp, protocol versions by hash | versions check, review |
+| [[Plain Text]] | Text is easily explained, never AI text, never bloat | review |

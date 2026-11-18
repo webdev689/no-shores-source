@@ -195,7 +195,8 @@ impl Room {
                     return answer_code(Err(Refusal::NoSuchItem));
                 };
                 let bucket = Slot::ALL.into_iter().find(|slot| def.kind.fits(*slot)).unwrap_or(Slot::MainHand);
-                let item = gear::vestige::named_item(character.take_id(), def, bucket);
+                let mut item = gear::vestige::named_item(character.take_id(), def, bucket);
+                item.element = gear::element::rolled(item.kind, item.rarity, &dice);
                 return carry(character, item);
             }
             Grant::Item { kind, rarity, level } => {
@@ -203,7 +204,8 @@ impl Room {
                     return answer_code(Err(Refusal::NoSuchItem));
                 }
                 let bucket = Slot::ALL.into_iter().find(|slot| kind.fits(*slot)).unwrap_or(Slot::MainHand);
-                let item = gear::vestige::rolled(character.take_id(), kind, rarity, bucket, level, &dice);
+                let mut item = gear::vestige::rolled(character.take_id(), kind, rarity, bucket, level, &dice);
+                item.element = gear::element::rolled(kind, rarity, &dice);
                 return carry(character, item);
             }
             Grant::Materials(count) => {

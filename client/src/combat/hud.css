@@ -6,8 +6,8 @@
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  font-weight: 600;
-  text-shadow: 0 1px 2px #000;
+  font-weight: 500;
+  text-shadow: 1px 1px 0 #000;
 }
 .fight-hud .own {
   position: absolute;
@@ -34,6 +34,14 @@
 }
 .fight-hud .poise .fill {
   background: #d9a93a;
+}
+/* A foe's shield over its health, in its element's colour, lit as the element is. */
+.fight-hud .shield .fill {
+  background: var(--element, #fff);
+  box-shadow: 0 0 6px var(--element, #fff);
+}
+.fight-hud .bar[hidden] {
+  display: none;
 }
 .fight-hud .own .poise {
   height: 4px;
@@ -140,15 +148,21 @@
 .fight-hud .parry.iron::after {
   display: none;
 }
+.fight-hud .bars.small {
+  position: absolute;
+  display: grid;
+  gap: 2px;
+  width: 48px;
+  margin-left: -24px;
+}
 .fight-hud .bar.small {
   width: 48px;
   height: 4px;
-  margin-left: -24px;
 }
 .fight-hud .word {
   white-space: nowrap;
   translate: -50% 0;
-  font-size: 15px;
+  font-size: 22px;
   padding: 1px 7px;
   border-radius: 4px;
   background: #000b;
@@ -162,19 +176,22 @@
 }
 .fight-hud .word.great {
   color: #ffd95a;
-  font-size: 18px;
+  font-size: 33px;
 }
 .fight-hud .word.good {
   color: #ffd95a;
 }
 .fight-hud .word.warn {
   color: #fff;
-  font-size: 18px;
+  font-size: 22px;
   background: #a0140ccc;
   border: 2px solid #fff;
 }
 .fight-hud .word.plain {
   color: #bfc8d2;
+}
+.fight-hud .word.shield {
+  color: var(--element, #fff);
 }
 .fight-hud .arrow {
   width: 0;

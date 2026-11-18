@@ -292,7 +292,16 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .iter()
         .map(|foe| {
             let glance = Some(builder.create_vector(&foe.fighter.glance()));
-            let args = messages::FoeArgs { id: foe.foe, kind: foe.kind, glance, level: foe.level };
+            let shield = foe.shield;
+            let args = messages::FoeArgs {
+                id: foe.foe,
+                kind: foe.kind,
+                glance,
+                level: foe.level,
+                shield_element: shield.map_or(0, |shield| shield.element as u8),
+                shield: shield.map_or(0.0, |shield| shield.left),
+                shield_most: shield.map_or(0.0, |shield| shield.most),
+            };
             messages::Foe::create(&mut builder, &args)
         })
         .collect();

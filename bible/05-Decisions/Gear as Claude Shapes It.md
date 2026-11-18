@@ -136,6 +136,19 @@ yet.
 | What and when | Six wares a day each, three Rare and three Magic, at the buyer's level (at most 20), the same for everyone that day | Destiny 1's vendors showed a stock that changed on a schedule; Legendary and Atheric gear stays earned, so the loop of Vestiges keeps its worth |
 | Price | Aurem only: Rare 2,000, Magic 600 | About a tenth of the Aurem cap for a Rare piece, about ten patrols' kills; no marks or reputation, as no faction exists yet |
 
+### Elements and shields
+
+The owner set the elements and how they meet shields ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]);
+these are Claude's numbers for them.
+
+| Choice | Chosen | Why |
+|---|---|---|
+| A weapon's chance of an element | Normal 1 in 10, Magic 1 in 5, Rare 35 in 100, Legendary and Atheric 1 in 2; each element alike | The owner: never surely. Finer weapons are likelier to carry one, so an element is worth chasing |
+| When it is rolled | As the weapon is made: a Vestige opened, a vendor's ware stocked | It is part of what the weapon is, so it never changes |
+| How effective | A blow on a shield: ×3 with its own element, ×0.5 with another, ×1 with none | The owner: very effective, less effective, normal. Three times makes the right element plainly the answer; half makes the wrong one worse than none, as the owner was offered |
+| Who carries a shield | One patrol foe in five, of an element chosen evenly | The owner: sometimes |
+| How much it holds | Half the foe's health; it does not come back | Enough that the right element saves real time, little enough that any weapon breaks it |
+
 ### Vestiges
 
 | Choice | Chosen | Why |

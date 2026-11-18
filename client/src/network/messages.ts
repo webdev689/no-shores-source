@@ -78,6 +78,15 @@ export interface SeenFoe {
   readonly glance: Float64Array;
   /** Its level; 0 for a foe of none, which fights by combat's own numbers. */
   readonly level: number;
+  /** Its shield, if it stands with one: its element (the gear crate's numbers), what it holds still and held whole. */
+  readonly shield: FoeShield | null;
+}
+
+/** A foe's shield: its element, what it holds still, and what it held whole. */
+export interface FoeShield {
+  readonly element: number;
+  readonly left: number;
+  readonly most: number;
 }
 
 /** Something that happened in the fight, as the room numbers it. */
@@ -252,7 +261,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const foe = snapshot.foes(index);
       if (!foe) throw new Error(`snapshot foe ${index} is missing`);
       const glance = whole(foe.glanceArray(), GLANCE_FLOATS, `foe ${index}`);
-      return { id: foe.id(), kind: foe.kind(), glance, level: foe.level() };
+      const element = foe.shieldElement();
+      const shield = element > 0 ? { element, left: foe.shield(), most: foe.shieldMost() } : null;
+      return { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);

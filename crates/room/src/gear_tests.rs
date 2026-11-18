@@ -20,7 +20,7 @@ fn stand(room: &mut Room, kind: ::foes::Kind, level: u8, y: f64) -> FighterId {
     let (mut fighter, brain) = ::foes::spawn(kind, 0.0, y, core::f64::consts::PI);
     fighter.health *= gear::power::foe_health_times(level);
     fighter.health_max = fighter.health;
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by: BTreeMap::new() });
+    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
@@ -293,4 +293,42 @@ fn asks_wait_their_turn_and_one_that_changes_how_a_player_fights_is_sent_at_once
     assert!(room.take_gear_change(player), "sent, so the next must wait");
     room.take_ask(player, Asked::Gear(Ask::TakeOff { slot: Slot::MainHand }));
     assert!(room.take_gear_change(player), "a hand emptied changes how they fight: sent at once");
+}
+
+#[test]
+fn a_shield_takes_blows_before_health_and_its_own_element_breaks_it_fastest() {
+    use gear::element::{Element, MATCHED, MISMATCHED, Shield};
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    // Each blow on a foe stood fresh, its shield whole, so its own answer never spoils the next.
+    let strike = |room: &mut Room, element: Option<Element>, left: f64, from: u32| {
+        room.foes.clear();
+        for _ in 0..120 {
+            room.tick();
+        }
+        let foe = stand(room, ::foes::Kind::Brute, 1, -1.5);
+        room.foes.get_mut(&foe).expect("stood").shield = Some(Shield { left, ..Shield::whole(Element::Volt, 1_000.0) });
+        let character = &mut room.players.get_mut(&player).expect("in").character;
+        for (item, at) in character.items.values_mut() {
+            if *at == gear::At::Worn(Slot::MainHand) {
+                item.element = element;
+            }
+        }
+        let health = room.foes[&foe].fighter.health;
+        let events = chop(room, player, from);
+        let took = events.iter().find(|event| event.kind == EventKind::Shielded).map_or(0.0, |event| event.amount);
+        let broke = events.iter().any(|event| event.kind == EventKind::ShieldBroken);
+        (took, broke, health - room.foes[&foe].fighter.health)
+    };
+    let (plain, broke, harmed) = strike(&mut room, None, 500.0, 1);
+    assert!(plain > 0.0 && !broke);
+    assert_eq!(harmed, 0.0, "nothing reaches its health while the shield holds");
+    let (matched, ..) = strike(&mut room, Some(Element::Volt), 500.0, 31);
+    let (other, ..) = strike(&mut room, Some(Element::Blaze), 500.0, 61);
+    assert!((matched - plain * MATCHED).abs() < 1e-6, "{matched} against {plain}");
+    assert!((other - plain * MISMATCHED).abs() < 1e-6, "{other} against {plain}");
+    // A shield almost gone breaks under the next blow, and the rest of that blow reaches health.
+    let (_, broke, harmed) = strike(&mut room, None, 1.0, 91);
+    assert!(broke);
+    assert!((harmed - (plain - 1.0)).abs() < 1e-6, "{harmed}");
 }

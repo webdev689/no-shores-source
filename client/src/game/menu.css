@@ -1,0 +1,131 @@
+/* The menu's own pages (client/src/game/menuPages.ts, socialTab.ts and stationPages.ts) and its tabs still to come.
+   The gear screen's sheet gives the words, wells and headings they share. */
+
+/* A tab still to come reads as resting, Later under its name. */
+#hud .gear-tab.gear-tab-to-come:not(.gear-chosen) {
+  color: var(--faint);
+}
+.gear-tab-later {
+  margin-left: 6px;
+  font-size: var(--type-xs);
+  color: var(--brass);
+  letter-spacing: calc(1em / 22);
+  text-transform: none;
+}
+/* A station's name stands where the tabs do. */
+.gear-station-name {
+  margin: 0;
+  font-size: var(--type-l);
+  font-weight: 500;
+  letter-spacing: calc(3em / 22);
+  text-transform: uppercase;
+  color: var(--brass-lit);
+  text-align: center;
+}
+.gear-station-name[hidden],
+.gear-tabs-top[hidden] {
+  display: none;
+}
+
+/* A page of the menu: a panel set back from the window's edges. */
+.gear-later,
+.gear-ship,
+.gear-settings,
+.gear-social {
+  max-width: 640px;
+  margin: 24px auto;
+  padding: 18px 22px;
+}
+.gear-later-name,
+.gear-ship-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 10px;
+  font-size: var(--type-l);
+  font-weight: 500;
+}
+.gear-ship-part + .gear-ship-part {
+  margin-top: 14px;
+}
+.gear-ship-part .gear-heading,
+.gear-social-section .gear-heading,
+.gear-vault-shelf .gear-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.gear-ship-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.gear-ship-row b {
+  font-weight: 500;
+}
+
+/* Friends: a field to ask one by name, then each list, a row for each name. */
+.gear-social .gear-field {
+  margin-bottom: 6px;
+}
+.gear-social-section {
+  margin-top: 16px;
+}
+.gear-friend {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+}
+.gear-friend + .gear-friend {
+  margin-top: 6px;
+}
+.gear-friend-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--edge);
+}
+.gear-friend-dot.gear-friend-playing {
+  background: var(--gain);
+  box-shadow: 0 0 6px var(--gain);
+}
+.gear-friend-words {
+  display: flex;
+  flex-direction: column;
+}
+.gear-friend-words b {
+  font-weight: 500;
+}
+.gear-friend-presses {
+  display: flex;
+  gap: 6px;
+}
+
+/* The vault, after Destiny 1's: what it keeps beside what the player carries, each in weapons, armour and Vestiges. */
+.gear-vault {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 14px 18px;
+}
+.gear-vault-side {
+  padding: 14px 16px;
+  min-width: 0;
+}
+.gear-vault-title {
+  margin: 0 0 8px;
+  font-size: var(--type-m);
+  font-weight: 500;
+  letter-spacing: calc(3em / 22);
+  text-transform: uppercase;
+  color: var(--brass-lit);
+}
+.gear-vault-shelf + .gear-vault-shelf {
+  margin-top: 12px;
+}
+.gear-vault-shelf .gear-empty {
+  margin: 4px 0;
+  text-align: left;
+  font-size: var(--type-s);
+}

@@ -1,13 +1,15 @@
 // The gear screens' shared parts, in the Enhanced Plus kit: a press in its role, a press held a moment, a picture drawn
-// crisp into a canvas, a cell's icon (an item's own picture or a glyph), and the hover card beside what it describes,
-// its head in the item's rarity, as Enhanced Plus's card is.
+// crisp into a canvas, a cell's icon (an item's own picture or a glyph) and what it shows of the item's growth, a
+// node's ring, and the hover card beside what it describes, its head in the item's rarity, as Enhanced Plus's card is.
 
 import { button, make } from '../editor/dom.ts';
-import { RARITIES } from '../player/gear.ts';
+import type { GearItem } from '../network/gearMessages.ts';
+import { ELEMENTS, RARITIES, fullyUpgraded, grown } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
-import { glyphSvg, nodeGlyphSvg } from './gearGlyphs.ts';
+import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
+import { elementSvg } from './elementGlyphs.ts';
 import { drawnBounds, fitIcon } from './iconFit.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */
@@ -136,6 +138,45 @@ export function nodeGlyph(kind: number): HTMLElement {
   return glyph;
 }
 
+/** The dark of a ring's part still to grow. */
+const RING_DARK = '#2a2620';
+
+/** A locked node's ring, grown `share` of the way to it. */
+export function nodeRing(share: number): HTMLElement {
+  const ring = make('span', '', 'gear-node-ring');
+  ring.innerHTML = ringSvg(share, RING_DARK);
+  return ring;
+}
+
+/** An element's glyph, named for a screen reader; nothing for none. */
+export function elementGlyph(element: number, className = 'gear-element'): HTMLElement | null {
+  const found = ELEMENTS[element];
+  if (!found) return null;
+  const glyph = make('span', '', className);
+  glyph.innerHTML = elementSvg(element);
+  glyph.setAttribute('role', 'img');
+  glyph.setAttribute('aria-label', found.name);
+  return glyph;
+}
+
+/** What an item's icon shows of it beyond its picture: a weapon's element as a glyph in its corner; and its growth,
+ *  after Destiny 1, a gauge along its foot that grows as the item is used, until, fully upgraded, its frame is gilded
+ *  and the gauge goes. */
+export function itemMarks(tile: HTMLElement, item: GearItem): void {
+  const element = elementGlyph(item.element);
+  if (element) tile.append(element);
+  const share = grown(item);
+  const gilded = fullyUpgraded(item);
+  tile.classList.toggle('gear-gilded', gilded);
+  if (share === null || gilded) return;
+  const gauge = make('span', '', 'gear-gauge');
+  gauge.setAttribute('aria-hidden', 'true');
+  const fill = make('span', '', 'gear-gauge-fill');
+  fill.style.width = `${Math.round(share * 100)}%`;
+  gauge.append(fill);
+  tile.append(gauge);
+}
+
 /** Marks a surface with a rarity, which its frame and glow take their colours from. */
 export function rarityOf(node: HTMLElement, rarity: number | null): void {
   const found = rarity === null ? undefined : RARITIES[rarity];
@@ -202,6 +243,12 @@ export function cardNode(card: Card, picture: Picture | null, hints: readonly Hi
   const meta = make('p', card.kind, 'gear-card-meta');
   const pips = RARITIES[card.rarity]?.pips ?? '';
   if (pips) meta.append(make('span', pips, 'gear-card-pips'));
+  const element = elementGlyph(card.element, 'gear-element-inline');
+  if (element) {
+    const named = make('span', ELEMENTS[card.element]?.name ?? '', 'gear-element-name');
+    named.style.color = ELEMENTS[card.element]?.colour ?? '';
+    meta.append(element, named);
+  }
   head.append(make('h3', card.name), meta);
   node.append(head);
   const body = make('div', '', 'gear-card-body');

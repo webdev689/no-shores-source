@@ -184,7 +184,7 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   display is put away, and the player walks on alone, nothing more sent.
   With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
   makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
-  the gear window ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks.
+  the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies; each voyage's course and pace go
   to it, and every other player's ship is drawn where the room moved it. Playing alone, the same sea room runs in the
   page, so its pirates and fights are the same law.

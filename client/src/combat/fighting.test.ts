@@ -280,7 +280,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     tick,
     players: [],
     dressed: [],
-    foes: [{ id: 7, kind: 2, glance: glance(east), level: 0 }],
+    foes: [{ id: 7, kind: 2, glance: glance(east), level: 0, shield: null }],
     events: [],
     shots: [],
     ships: [],

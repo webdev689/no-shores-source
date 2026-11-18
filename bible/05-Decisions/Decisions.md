@@ -75,6 +75,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pirates Must Be Met at Sea]]
 - [[The Audit's Calls Are Claude's]]
 - [[The Water Is Stylised Realism]]
+- [[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]
+- [[Pixelify Sans Is Overlook's Font]]
+- [[Text Is Plain]]
+- [[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

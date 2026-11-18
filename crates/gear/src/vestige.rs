@@ -4,6 +4,7 @@
 
 use crate::catalogue::{NamedDef, catalogue};
 use crate::dice::{Dice, Purpose};
+use crate::element;
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
@@ -54,16 +55,19 @@ pub fn opens_to(colour: Rarity, level: u8, dice: &Dice) -> Rarity {
 }
 
 /// The item a Vestige of this slot and level makes at this rarity, numbered `id`: a named one of its slot, chosen
-/// evenly, at level 20; or a lesser item of a kind the slot takes, its name and traits rolled.
+/// evenly, at level 20; or a lesser item of a kind the slot takes, its name and traits rolled. A weapon may roll an
+/// element.
 #[must_use]
 pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, dice: &Dice) -> Option<Item> {
-    if rarity.named() {
+    let mut item = if rarity.named() {
         let pool: Vec<&NamedDef> = catalogue().vestige_pool(rarity, slot).collect();
-        return pool.get(dice.pick(Purpose::Which, 0, pool.len())).map(|named| named_item(id, named, slot));
-    }
-    let kinds: Vec<Kind> = slot.kinds().collect();
-    let kind = *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?;
-    Some(rolled(id, kind, rarity, slot, level, dice))
+        named_item(id, pool.get(dice.pick(Purpose::Which, 0, pool.len()))?, slot)
+    } else {
+        let kinds: Vec<Kind> = slot.kinds().collect();
+        rolled(id, *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?, rarity, slot, level, dice)
+    };
+    item.element = element::rolled(item.kind, item.rarity, dice);
+    Some(item)
 }
 
 /// A named item from the catalogue, carried with `bucket`'s items: a cloak at level 1, anything else at 20, its traits
