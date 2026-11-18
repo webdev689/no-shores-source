@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
 import { LOSS_DRAIN, LOSS_HOLD, LOSS_HOLD_MOST, type Loss, stepLoss } from '../plus/barLoss.ts';
-import { findAll, onFakePage } from './page.test.ts';
+import { onFakePage } from './page.test.ts';
 import { calmFor, healthLow, LOW_HEALTH, REST_SECONDS, Vitals, vitalOf, vitalsOf, vitalsWhole } from './vitals.ts';
 
 const fighter: FighterView = {
@@ -39,26 +39,6 @@ test('the panel writes each vital as a percentage of its whole: health of its mo
     },
     'before the fighter comes: full, and no poise taken',
   );
-});
-
-test('the vitals stand in a row, no window round them: poise where DFO’s magicka stands, health in the middle, stamina right', () => {
-  onFakePage((root) => {
-    const vitals = new Vitals(root);
-    vitals.update(fighter, 1 / 60, false, true);
-    assert.equal(vitals.root.className, 'vitals');
-    assert.deepEqual(
-      findAll(root, 'vital').map((bar) => [
-        bar.className.split(' ')[2],
-        bar.children.find((child) => child.className === 'label')?.textContent,
-        bar.children.find((child) => child.className === 'number')?.textContent,
-      ]),
-      [
-        ['poise', 'Poise', '20%'],
-        ['health', 'Health', '75%'],
-        ['stamina', 'Stamina', '42%'],
-      ],
-    );
-  });
 });
 
 test('a percentage is never 0% while anything is left, and never over 100%', () => {

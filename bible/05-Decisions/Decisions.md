@@ -71,6 +71,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bars and the Fight Wear the Plus Kit]]
 - [[Foes Leash to Their Posts and Fall With Their Boss]]
 - [[Plates Stay Light and Bars Do What Enhanced Plus Does]]
+- [[The Vitals Keep Their Panel Under DFO's Compass]]
 - [[The Player's Display Takes DFO's Compass and Bar Layout]]
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]

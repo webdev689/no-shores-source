@@ -7,7 +7,6 @@ import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/
 import { wearKit } from '../plus/kit.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { PLATE_SIZE } from './plateSight.ts';
-import { VITALS_ROW } from './vitals.ts';
 
 const SHEET_ID = 'fight-hud';
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
@@ -113,33 +112,25 @@ ${marks.join('\n')}
 `;
 }
 
-/** The vitals along the foot of the screen, after DFO's Enhanced HUD: three bars side by side and centred, health in
- *  the middle, each naming itself and saying its percentage inside it, a brass clasp at each end. */
+/** The vitals' panel: a carved window of three bars, each naming itself and saying its percentage inside it. */
 function vitalsCss(): string {
-  const { bottom, width, share, height, gap } = VITALS_ROW;
-  const clasp = `linear-gradient(180deg, transparent 0 10px, ${TONES.brassDark} 10px 14px, transparent 14px),
-    linear-gradient(180deg, ${TONES.brassHi} 0 2px, transparent 2px),
-    linear-gradient(90deg, ${TONES.brassHi} 0 2px, ${TONES.brass} 2px 4px, ${TONES.brassLo} 4px 6px)`;
   return `
-.fight-hud .vitals { position: absolute; left: 50%; bottom: ${bottom}px; translate: -50% 0; display: flex;
-  align-items: center; gap: ${gap}px; }
-.fight-hud .vital { display: flex; align-items: center; justify-content: space-between; flex: none;
-  width: min(${width}px, ${share * 100}vw); height: ${height}px; border-width: 2px; }
-.fight-hud .vital::before, .fight-hud .vital::after { content: ''; position: absolute; top: -2px; bottom: -2px; z-index: 2;
-  width: 6px; box-shadow: 0 0 0 1px ${TONES.outline}; background: ${clasp}; }
-.fight-hud .vital::before { left: -6px; }
-.fight-hud .vital::after { right: -6px; }
+.fight-hud .vitals { position: absolute; left: 24px; bottom: 24px; width: 260px; box-sizing: border-box;
+  display: grid; gap: 6px; padding: 9px 10px; border-width: 2px; border-style: solid; }
+.fight-hud .vital { display: flex; align-items: center; justify-content: space-between; height: 20px;
+  border-width: 2px; }
+.fight-hud .vital.poise { height: 16px; }
 .fight-hud .vital.health { --fill: ${FILLS.health}; }
 .fight-hud .vital.stamina { --fill: ${FILLS.stamina}; }
 /* What a vital lost is its own body tone, faint: darker than any band of the fill, never brighter. */
 .fight-hud .vital .lost { background: var(--fill); opacity: 0.35; }
-/* Full and untouched, the row rests: it goes in six steps, and comes back in two at the first change. */
+/* Full and untouched, the panel rests: it goes in six steps, and comes back in two at the first change. */
 .fight-hud .vitals { transition: opacity 120ms steps(2, end); }
 .fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
-.fight-hud .vital .label, .fight-hud .vital .number { position: relative; padding: 0 10px; color: ${TONES.word};
+.fight-hud .vital .label, .fight-hud .vital .number { position: relative; padding: 0 7px; color: ${TONES.word};
   text-shadow: ${HALO}; }
-.fight-hud .vital .label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
-.fight-hud .vital .number { font-size: 12px; font-variant-numeric: tabular-nums; }
+.fight-hud .vital .label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
+.fight-hud .vital .number { font-size: 11px; font-variant-numeric: tabular-nums; }
 .fight-hud .vital.low { animation: fight-low 0.9s steps(1, end) infinite; }
 @keyframes fight-low { 0% { border-color: ${BEVELS.blood}; } 50% { border-color: ${BEVELS.sunk}; } }
 .fight-hud .vital.stamina.flash { box-shadow: 0 0 0 1px #fff, 0 0 8px #fff; animation: fight-blink 0.15s steps(2) infinite; }

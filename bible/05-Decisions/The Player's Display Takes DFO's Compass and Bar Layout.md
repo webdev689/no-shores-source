@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-18
-status: in force
+status: replaced
+replaced_by: "[[The Vitals Keep Their Panel Under DFO's Compass]]"
 ---
 # The Player's Display Takes DFO's Compass and Bar Layout
+
+Its placing of the vitals is replaced by [[The Vitals Keep Their Panel Under DFO's Compass]]; its compass stands.
 
 > Shown the Plus kit's vitals panel at the bottom left: "Note: implement the compass and player bar positioning
 > elements from DFO instead of our current design for the player"

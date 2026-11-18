@@ -7,7 +7,6 @@ import type { FighterView } from '../rules/fighters.ts';
 import { blockedBy, clearOf, veilOf } from './hud.ts';
 import { fightSheetCss } from './hudSheet.ts';
 import { findAll, onFakePage } from './page.test.ts';
-import { VITALS_ROW } from './vitals.ts';
 
 const standing: FighterView = {
   x: 0,
@@ -103,26 +102,6 @@ test('the boss bar and the target’s plate stand in the compass’s column, and
     assert.doesNotMatch(rule(css, selector), /position|top:/, `${selector} is laid by the column, not set apart`);
   }
   assert.equal(PLATES.boss.top, UNDER_COMPASS, 'at sea a Boss ship’s plate stands where the boss bar stands on foot');
-});
-
-test('the vitals stand along the foot as DFO lays them: a centred row 22 px up, bars 190 px or 23% of a narrower screen', () => {
-  const css = fightSheetCss();
-  const { bottom, width, share, height, gap } = VITALS_ROW;
-  assert.deepEqual(VITALS_ROW, { bottom: 22, width: 190, share: 0.23, height: 24, gap: 16 });
-  assert.match(
-    rule(css, '.fight-hud .vitals'),
-    new RegExp(`left: 50%; bottom: ${bottom}px; translate: -50% 0; display: flex;[^}]*gap: ${gap}px`),
-  );
-  assert.match(
-    rule(css, '.fight-hud .vital'),
-    new RegExp(`width: min\\(${width}px, ${share * 100}vw\\); height: ${height}px`),
-  );
-  assert.match(css, /\.fight-hud \.vital::before \{ left: -6px; \}/, 'a brass clasp at the left end');
-  assert.match(css, /\.fight-hud \.vital::after \{ right: -6px; \}/, 'and at the right');
-  // The row with its clasps fits the Test Ground's view, 640 px wide beside its panel on a 960 px screen.
-  const row = (screen: number) => 3 * Math.min(width, share * screen) + 2 * gap + 2 * 4;
-  assert.ok(row(960) <= 640, `${row(960)} px`);
-  assert.ok(row(1920) <= 1920 - 320);
 });
 
 test('a plate’s line is blocked by a block between the eye and the head, never by one beside it or at the head', () => {

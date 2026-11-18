@@ -17,7 +17,6 @@ code:
   - client/src/plus/compass.ts#Compass
   - client/src/plus/compass.ts#compassPlace
   - client/src/plus/compass.ts#markPlace
-  - client/src/combat/vitals.ts#VITALS_ROW
   - client/src/game/seaHud.ts#seaShipMarks
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
@@ -74,9 +73,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   shows; at sea it stands under the compass, and in a sea fight under a Boss ship's plate. On foot the hints stand
   over the vitals; at sea they rise above the offer to dock or go ashore. The edge's warning stands under the
   compass's column.
-- **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's, and stands its parts
-  where DFO's Enhanced HUD does ([[The Player's Display Takes DFO's Compass and Bar Layout]]): the compass at the
-  top's middle, a boss's bar and the target's plate under it, the vitals along the foot. Its bars do what DFO's
+- **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
+  the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does, and keeps the vitals
+  in their own window at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]). Its bars do what DFO's
   Enhanced UI Plus does with them ([[Pick - Enhanced Plus UI]]).
 - **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower screen) and 26 px tall over
   a 2 px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals
@@ -87,13 +86,11 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   on the side to turn toward. She is red while she would take the player (a hostile ship, or a hostile captain in
   the fight), bone for another player's or a captain who is not hostile, and grey once her colours are down; one
   going down has no mark. The compass hides with the view while the held map is up at the helm.
-- **The vitals** are a row centred 22 px over the screen's foot: poise where DFO's magicka stands, health in the
-  middle, stamina where its fatigue does, each bar 190 px wide (23% of a narrower screen) and 24 px tall with its
-  frame, 16 px apart, a brass clasp at each end. Each names itself and writes its percentage inside: never 0% while
-  anything is left. Health at a quarter or less flashes its edge to blood; the stamina flashes white for a swing or a
-  dodge asked with none. Whole and untouched for 4 s (health and stamina short of no whole point, no poise taken),
-  with no foe on the target plate or the boss bar, the row rests out of sight in six steps over 1.2 s; the first
-  point lost or spent brings it back in two.
+- **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
+  writing its percentage inside: never 0% while anything is left. Health at a quarter or less flashes its edge to blood;
+  the stamina flashes white for a swing or a dodge asked with none. Whole and untouched for 4 s (health and stamina
+  short of no whole point, no poise taken), with no foe on the target plate or the boss bar, the window rests out of
+  sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
 - **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
   keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
   ship's, pale. A frame that takes a real bite (1.5% of a vital, 0.5% of a foe's health, 1% of a hull) breaks the
@@ -151,7 +148,7 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.
-- No gamepad or touch layer yet, and so none of DFO's narrow-screen places for the compass and the vitals.
+- No gamepad or touch layer yet, and so none of DFO's narrow-screen places for the compass.
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
   under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
   bar would stand, and at 960 px the bar is as wide as the screen between the place's name and its right edge.

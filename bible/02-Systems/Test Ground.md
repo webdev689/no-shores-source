@@ -66,8 +66,8 @@ zero), how far behind and above, and its zoom. A ticked **Hold the aiming view**
 crosshair, while the sliders move, without a weapon drawn. The place is kept in the browser, and its numbers are
 shown to copy into the game's own (`AIM` in `playerCamera.ts`); **Back to the game's** returns to them.
 
-North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
-and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
+North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump and
+shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
 
 ## Fighting
 
@@ -81,13 +81,13 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   foe away; a foe asked for while the forge still loads is not asked for. Names, factions and hands come from the
   rules' roster through WebAssembly. Each fights by its brain ([[Foes]]) and wears its type's dress ([[Enemies]]): the
   Grey Tithe in grey over leather or iron, the pirates as the foes of each kind were dressed before.
-- **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen
-  when knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air,
-  no weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the
-  jump's rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the
-  jump); the parry's deflect, or a shield's
-  block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
-  wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame, before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
+- **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
+  knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
+  weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
+  rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the jump);
+  the parry's deflect, or a shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed
+  blow's stroke raised through its wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame,
+  before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
   drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
   edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
@@ -109,27 +109,26 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
   view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
-- **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned
-  with the view; poise, health and stamina in a row along the foot, each bar naming itself with its percentage
-  inside, a faint strip holding what a loss took before it drains, the health's edge flashing blood at a quarter or
-  less and the stamina flashing when a swing or a dodge is pressed with none; the soft lock's target marked at its
-  chest; the target's plate (emblem, name, health and poise track) under the compass (below the boss bar while one
-  shows); over each living foe but a Boss, near the crosshair or
-  fought in the last minute, its plate: its faction's emblem, its type's name with an Elite's or a Miniboss's mark,
-  and its health in red, orange or yellow by rank, a "?" while it is suspicious or searching and a "!" for a second
-  as it turns alert, no plate over another's; under the compass, for
-  the nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and
-  its health in yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
+- **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
+  the view; health, stamina and poise in one window at the bottom left, each bar naming itself with its percentage
+  inside, a faint strip holding what a loss took before it drains, the health's edge flashing blood at a quarter or less
+  and the stamina flashing when a swing or a dodge is pressed with none; the soft lock's target marked at its chest; the
+  target's plate (emblem, name, health and poise track) under the compass (below the boss bar while one shows); over
+  each living foe but a Boss, near the crosshair or fought in the last minute, its plate: its faction's emblem, its
+  type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by rank, a "?" while it is
+  suspicious or searching and a "!" for a second as it turns alert, no plate over another's; under the compass, for the
+  nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and its health in
+  yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
   came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
   gold or green when it is good for the player and red when bad; in first person, words about the player under the
-  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over
-  a foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold
-  once a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in
-  hand, or hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
-  a red mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
-  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
-  with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and
-  why.
+  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a
+  foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once
+  a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or
+  hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red
+  mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
+  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player
+  lies dead, how long until they stand again at the start, or, with `?room=`, "Reconnecting…" while the page joins its
+  room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
   rolled among those that reach the locked foe. Alone, Escape pauses the fight.
@@ -165,14 +164,15 @@ The player's figure shows the move the forge draws for what the body does:
 - **Acting:** the cast. A swing strikes one of the owner's blows where the forge draws it with both hands' things: its
   stroke by the swing (down the overhead, up the thrust, any other the side cut) and its hold by the weapon (a sword,
   dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair). A blow's
-  nine frames hold the first until halfway to the blow, run the first four through the last half of that time, show
-  the fifth as it lands, and run the rest over a third of that time after. Where no blow
-  is drawn, a swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. The stroke's frames run through the last half of the swing's wind-up so its last lands with the blow, two
-  fifths of the way through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the
-  follow-through: the figure strikes fast and shows itself open while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
-  right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
-  move whole, a brace's right then left, then its reload where the forge draws one.
+  nine frames hold the first until halfway to the blow, run the first four through the last half of that time, show the
+  fifth as it lands, and run the rest over a third of that time after. Where no blow is drawn, a swing plays one stroke
+  of the weapon's attack, frames 0 to 2, and the next swing frames 3 to 5. The stroke's frames run through the last half
+  of the swing's wind-up so its last lands with the blow, two fifths of the way through a swing by DFO's swing law (a
+  sword's in 0.4 s), and it is held through the follow-through: the figure strikes fast and shows itself open while it
+  recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down,
+  and swings two-handed when swung left or right, where the forge draws it in those. A pair's blows are its two hands'
+  strokes. A shot plays the weapon's own move whole, a brace's right then left, then its reload where the forge draws
+  one.
 - **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each
   have their own. A gun or a crossbow drawn runs with its own run, held at port arms. A bow drawn stands, walks and
   sprints in its own holds, both hands on it, where the forge draws them; else it rests in the left fist.
@@ -225,12 +225,12 @@ A frame is composed in the browser as DFO's game composes it (`composeFrame`):
   set's metal and a garment's grey its dye, each a run of Daggerfall's palette.
 - Then every texel is snapped to the nearest colour of the palette.
 
-The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are
-the other side's, mirrored. A mirrored view with nothing in hand wears each hip piece (a sword's or dagger's sheath, a
-Pistolet's) at the other hip first, so the mirror lays it back at its own; the forge draws a twin of each for that. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
-eye. Its card stands a body's radius, 0.35 m, in front of the
-body's centre toward the eye, so a wall the body touches, or a lip it is going over, does not cut through the flat
-picture.
+The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are the
+other side's, mirrored. A mirrored view with nothing in hand wears each hip piece (a sword's or dagger's sheath, a
+Pistolet's) at the other hip first, so the mirror lays it back at its own; the forge draws a twin of each for that. Each
+frame stands upright on the figure's feet at 62 pixels a metre, turned to face the eye. Its card stands a body's radius,
+0.35 m, in front of the body's centre toward the eye, so a wall the body touches, or a lip it is going over, does not
+cut through the flat picture.
 
 ## Limits
 

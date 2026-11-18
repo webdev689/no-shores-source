@@ -85,7 +85,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
   name the fight's.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
-  display: the compass at the top with the boss bar and the target's plate under it, the vitals along the foot, each
+  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
   foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
   tracers, the sparks, the blood and the flashes. The game's own display stands over it: the place, the keys (over
   the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the top of the screen, and
