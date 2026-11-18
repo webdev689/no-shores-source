@@ -19,6 +19,8 @@ const UNDER_WAY = 4;
 /** How fast a ship's swing as drawn follows her heading's, a share a second; and the most it is taken to be, radians a
  *  second, so a voyage turning onto its next leg at once heels her as a hard turn of the helm would. */
 const SWING = { rate: 3, most: HELM_TURN } as const;
+/** Seconds a ship first seen is taken to have sailed as she is: past setting or furling her sails and trimming them. */
+const FIRST_SEEN_S = 5;
 
 /** The Sloop every ship at sea is, and what draws a fight's balls, arcs and effects. */
 export interface SeaHull {
@@ -98,12 +100,15 @@ export class SeaShips {
     water: SeaWater,
   ): SeaShip[] {
     const riding = (who: string, lies: Lies, place: ShipPlace | null, shade = 1): SeaShip => {
+      const wind = { offDeg: windOff(lies.heading, windBearing), set: lies.underWay };
       let rig = this.rigs.get(who);
       if (!rig) {
         rig = new SailRig(this.hull.sails);
+        // A ship coming into view sails under sails already set, or lies with them furled: none sets them as she comes.
+        rig.step(FIRST_SEEN_S, wind, time);
         this.rigs.set(who, rig);
       }
-      rig.step(seconds, { offDeg: windOff(lies.heading, windBearing), set: lies.underWay }, time);
+      rig.step(seconds, wind, time);
       return { place: place ?? this.placeOf(who, lies, scale, water, seconds, time), rig, shade };
     };
     const sailing = new Set([
