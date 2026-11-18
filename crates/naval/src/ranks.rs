@@ -40,7 +40,7 @@ pub struct Scale {
     pub strikes_at: f64,
 }
 
-/// Every rank's scale, Minor to Boss. A Major is a ship as she was before ranks: every factor 1. The higher ranks
+/// Every rank's scale, Minor to Boss. A Major is the plain ship: every factor 1. The higher ranks
 /// strike later, so a Miniboss's run below 15% comes before her strike.
 pub const SCALES: [Scale; 5] = [
     Scale {
@@ -124,7 +124,7 @@ pub struct Commission {
 }
 
 impl Default for Commission {
-    /// A Major of the pirates: a captain as she was before factions and ranks.
+    /// A Major of the pirates: the plain captain, as a call that names no faction or rank brings.
     fn default() -> Self {
         Self { faction: PIRATES, rank: Rank::Major }
     }
