@@ -95,9 +95,12 @@ pub enum Place {
 
 const FIRST: Phase = Phase { from: 1.0, windup: 1.0, cooldown: 1.0, might: 1.0, chains: 1, adds: &[], calls: None };
 
-/// A Miniboss's second phase, at 35% of its health: quicker, harder, chains of two.
-const MINIBOSS: [Phase; 2] =
-    [FIRST, Phase { from: 0.35, windup: 0.75, cooldown: 0.6, might: 1.25, chains: 2, ..FIRST }];
+/// A Miniboss's two: its first throws the same blows as an Elite more often (cooldowns ×0.8), and its second, at 35% of
+/// its health, is quicker, harder, with chains of two.
+const MINIBOSS: [Phase; 2] = [
+    Phase { cooldown: 0.8, ..FIRST },
+    Phase { from: 0.35, windup: 0.75, cooldown: 0.6, might: 1.25, chains: 2, ..FIRST },
+];
 
 /// Captain Brannoc Thule's three: the blade (sweep and lunge), the boarding at two thirds (charge and leap added,
 /// quicker, chains of two), and the last stand at one third (iron slam and ring added, quicker still, harder, two Minor

@@ -33,6 +33,13 @@ pub const ALERT_PROP: f64 = 12.0;
 pub const SEARCH_REACH: f64 = 1.4;
 pub const SEARCH_T: f64 = 2.6;
 pub const SEARCH_SWEEP: f64 = 2.2;
+/// A garrison foe gives its target up once the target stands this far from its place at its post; walking back, it is
+/// home within HOME_REACHED of its place and facing as it was posted within HOME_FACED, its body squared to that by a
+/// step SQUARING_PACE of a walk.
+pub const LEASH: f64 = 50.0;
+pub const HOME_REACHED: f64 = 0.3;
+pub const HOME_FACED: f64 = 0.01;
+pub const SQUARING_PACE: f64 = 0.001;
 /// Noises: the awareness each adds where it is made, falling away to nothing at its reach. A gun alerts outright
 /// within half its reach; a bow or a crossbow only stirs; a swing, or a blow landing, alerts only at a fighter's elbow;
 /// a runner's feet stir once each RUN_EVERY.

@@ -35,12 +35,21 @@ pub const SAMPLE_TICKS: u64 = 15;
 pub const SAMPLES: usize = (HURT_WINDOW * 60.0) as usize / SAMPLE_TICKS as usize + 1;
 
 /// What a foe's brain asks of its room beyond its fighter's controls: its poise refilled and the foes its phase calls,
-/// as it roars into a new phase, and its shout as it turns alert, passing its allies the place it believes its foe is.
+/// as it roars into a new phase; its shout as it turns alert, passing its allies the place it believes its foe is; and
+/// the health it gets back this tick, walking back to its post.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Calls {
     pub refill_poise: bool,
     pub crew: Option<Call>,
     pub shout: Option<[f64; 3]>,
+    pub heal: f64,
+}
+
+/// A garrison foe's place at its post and the way it faces there.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Home {
+    pub at: [f64; 3],
+    pub facing: f64,
 }
 
 /// A foe's brain: its type and rank, and all it keeps.
@@ -77,6 +86,9 @@ pub struct Brain {
     pub(crate) tells: Tells,
     pub(crate) reactions: Reactions,
     pub(crate) bow: Bow,
+    /// A garrison foe's place at its post, and whether it walks back there, its fight given up.
+    pub(crate) home: Option<Home>,
+    pub(crate) returning: bool,
 }
 
 impl Brain {
@@ -104,7 +116,20 @@ impl Brain {
             tells: Tells { phase: 1, ..Tells::default() },
             reactions: Reactions::default(),
             bow: Bow::default(),
+            home: None,
+            returning: false,
         }
+    }
+
+    /// Posts it at a garrison's place, facing `facing`: from now on it leashes to it.
+    pub fn posted_at(&mut self, at: [f64; 3], facing: f64) {
+        self.home = Some(Home { at, facing });
+    }
+
+    /// Whether it walks back to its post, its fight given up.
+    #[must_use]
+    pub fn returning(&self) -> bool {
+        self.returning
     }
 
     /// Its numbers now: its type's at its rank, in its phase.

@@ -20,14 +20,14 @@ fn sloped() -> Floor {
 }
 
 /// A section 400 m square round the origin, its two spawns near its southern edge.
-fn section() -> Section {
+pub(super) fn section() -> Section {
     Section {
         ring: vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]],
         spawns: vec![[0.0, 180.0], [15.0, 185.0]],
     }
 }
 
-fn node(kind: NodeKind, id: &str) -> Room {
+pub(super) fn node(kind: NodeKind, id: &str) -> Room {
     Room::garrisoned(sloped(), Vec::new(), section(), kind, id)
 }
 
@@ -120,22 +120,22 @@ fn players_join_a_garrisoned_node_at_its_spawns_in_turn_whatever_numbers_its_foe
     assert_eq!(at, [section().spawns[0], section().spawns[1], section().spawns[0]]);
 }
 
-/// Kills every foe of a post's group.
-fn clear(room: &mut Room, post: usize) {
+/// Kills every foe of a post's group still there.
+pub(super) fn clear(room: &mut Room, post: usize) {
     for id in room.garrison[post].standing.clone() {
-        let found = room.foes.get_mut(&id).unwrap();
+        let Some(found) = room.foes.get_mut(&id) else { continue };
         found.fighter.health = 0.0;
         found.fighter.action = Action::Dead { elapsed: 0 };
     }
 }
 
 /// Stands a player at (x, y), looking north and asking nothing.
-fn stand_player(room: &mut Room, player: PlayerId, at: [f64; 2]) {
+pub(super) fn stand_player(room: &mut Room, player: PlayerId, at: [f64; 2]) {
     let found = room.players.get_mut(&player).unwrap();
     found.fighter.body = standing_on(&room.floor, &[], at[0], at[1]);
 }
 
-fn run(room: &mut Room, ticks: u64) {
+pub(super) fn run(room: &mut Room, ticks: u64) {
     for _ in 0..ticks {
         room.tick();
     }
@@ -246,4 +246,91 @@ fn a_foe_asked_for_on_a_platform_stands_on_its_top() {
     run(&mut room, 60);
     let foe = room.foes_seen().next().unwrap();
     assert!((foe.fighter.body.z - 1.6).abs() < 1e-9, "on the platform's top, not inside it: {:?}", foe.fighter.body);
+}
+
+/// The living foes a foe called.
+fn called_by(room: &Room, caller: FighterId) -> Vec<FighterId> {
+    let called = room.foes.iter().filter(|(_, found)| found.caller == Some(caller) && !found.fighter.dead());
+    called.map(|(id, _)| *id).collect()
+}
+
+/// A Boss cut to a third of its health: it roars into each of its phases in turn, calling each one's foes.
+fn into_its_last_phase(room: &mut Room, boss: FighterId) {
+    let found = room.foes.get_mut(&boss).unwrap();
+    found.fighter.health = 0.3 * found.fighter.health_max;
+    run(room, 600);
+}
+
+/// A player's ball of `damage` through a foe's chest from a step south of it, over a tick.
+pub(super) fn shoot(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64) {
+    let body = room.foes[&foe].fighter.body;
+    let from = [body.x, body.y + 1.0, body.z + combat::tuning::CHEST];
+    let mut ball = combat::shots::loose(player, combat::Ranged::Pistolet, from, 0.0, 0.0, 1.0);
+    ball.damage = damage;
+    room.shots.push(ball);
+    run(room, 1);
+}
+
+/// A player's ball through a foe's chest, too heavy for any guard; answers the tick it fell.
+fn shoot_dead(room: &mut Room, player: PlayerId, foe: FighterId) -> u64 {
+    shoot(room, player, foe, 1.0e6);
+    assert!(room.foes[&foe].fighter.dead(), "shot dead");
+    room.clock()
+}
+
+/// A Boss with `calls` foes called falls: they fall in the same tick, each told as slain, and lie their time with it.
+fn falls_with_its_calls(room: &mut Room, player: PlayerId, boss: FighterId, calls: usize) {
+    let called = called_by(room, boss);
+    assert_eq!(called.len(), calls, "every call came");
+    room.take_events();
+    let fell = shoot_dead(room, player, boss);
+    let slain: Vec<FighterId> = room
+        .take_events()
+        .iter()
+        .filter(|event| event.kind == crate::EventKind::Killed && event.tick == fell)
+        .map(|event| event.defender)
+        .collect();
+    for id in called.iter().chain([&boss]) {
+        assert!(slain.contains(id), "{id} slain in the tick its Boss fell: {slain:?}");
+        let fallen = room.foes[id].fighter;
+        assert!(fallen.dead() && fallen.health == 0.0);
+    }
+    run(room, u64::from(combat::tuning::FOE_GONE));
+    assert!(called.iter().chain([&boss]).all(|id| !room.foes.contains_key(id)), "gone once they have lain their time");
+}
+
+#[test]
+fn a_boss_s_called_foes_fall_in_the_tick_it_falls_so_its_next_fight_s_calls_all_come() {
+    for (number, calls) in [(12, 2), (HIGH_ASSESSOR, 4)] {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        let player = room.join().unwrap();
+        // Idle foes off at the far side fill the room but for the Boss and its calls.
+        for index in 0..FOES_MOST - 1 - calls {
+            let at = [index as f64 * 3.0 - 15.0, 25.0, 0.0];
+            room.stand_foe(foe_type(RUNNER).unwrap(), Minor, at, 0.0, None);
+        }
+        let boss = foe_type(number).unwrap();
+        let first = room.stand_foe(boss, Boss, [0.0, -20.0, 0.0], core::f64::consts::PI, None);
+        into_its_last_phase(&mut room, first);
+        falls_with_its_calls(&mut room, player, first, calls);
+        let second = room.stand_foe(boss, Boss, [0.0, -20.0, 0.0], core::f64::consts::PI, None);
+        into_its_last_phase(&mut room, second);
+        assert_eq!(called_by(&room, second).len(), calls, "type {number}: its next fight's calls all come");
+    }
+}
+
+#[test]
+fn corvane_s_called_foes_fall_with_him_in_his_node_and_he_calls_them_all_anew_when_his_group_stands_again() {
+    let mut room = node(NodeKind::Boss, "glade");
+    let player = room.join().unwrap();
+    let corvane = room.garrison[0].standing[0];
+    into_its_last_phase(&mut room, corvane);
+    falls_with_its_calls(&mut room, player, corvane, 4);
+    assert_eq!(room.garrison[0].cleared_at, None, "his escort stands: his group is not cleared");
+    clear(&mut room, 0);
+    run(&mut room, STAND_AGAIN + 1);
+    let again = room.garrison[0].standing[0];
+    assert!(again != corvane && room.garrison[0].cleared_at.is_none(), "his group stood again");
+    into_its_last_phase(&mut room, again);
+    assert_eq!(called_by(&room, again).len(), 4);
 }

@@ -1,5 +1,6 @@
 //! Telegraphed blows and shots: a brute winds up iron slams and never guards; a captain as a Miniboss closes with
-//! charges and leaps, feints and chains, and roars into its second phase once with an iron ring, striking harder after;
+//! charges and leaps, feints and chains, throws more often than an Elite in its first phase, and roars into its second
+//! once with an iron ring, striking harder after;
 //! Thule roars into each of his three phases and calls his crew into the last, Corvane calls his own into each later
 //! one; a Minor throws no telegraphed blow;
 //! an archer kites a player who comes too close, draws and looses, and aims a shot now and then; every shooter draws
@@ -273,4 +274,30 @@ fn each_shooter_draws_its_own_weapon_for_as_long_as_it_takes_and_a_gunner_s_ball
         let [east, south, up] = shot.velocity;
         assert!(((east * east + south * south + up * up).sqrt() - speed).abs() < 1e-9, "type {number}: {shot:?}");
     }
+}
+
+/// Telegraphed blows a minute a Captain of a rank throws in its first phase at a player standing still, over seeded
+/// fights of three minutes each.
+fn first_phase_rate(rank: foes::Rank) -> f64 {
+    const MINUTES: u64 = 3;
+    let seeds = 1..=24_u64;
+    let minutes = (seeds.clone().count() as u64 * MINUTES) as f64;
+    let thrown: usize = seeds
+        .map(|seed| {
+            let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, CAPTAIN, rank, 0.0, -2.5, PI);
+            room.run(MINUTES * 3600, &mut still(0.0));
+            assert_eq!(room.brain(10).phase(), 1, "untouched, it stays in its first phase");
+            room.orders(10).len()
+        })
+        .sum();
+    thrown as f64 / minutes
+}
+
+#[test]
+fn a_miniboss_throws_the_blows_an_elite_does_more_often_in_its_first_phase() {
+    let (elite, miniboss) = (first_phase_rate(Elite), first_phase_rate(Miniboss));
+    // Its feints take the place of chains, which follow only a blow that landed: at the Elite's cooldowns it threw
+    // fewer than the Elite (6.4 a minute to 6.8); at four fifths of them, about 7.5.
+    assert!((6.4..=7.2).contains(&elite), "an Elite: {elite} a minute");
+    assert!((7.0..=8.0).contains(&miniboss) && miniboss >= 1.05 * elite, "a Miniboss: {miniboss} a minute");
 }

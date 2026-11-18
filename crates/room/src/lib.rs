@@ -263,6 +263,7 @@ impl Room {
         self.fly_shots();
         self.judge_waiting();
         self.tell_brains();
+        self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
         self.past.push_back((self.clock, self.fighters()));

@@ -134,7 +134,7 @@ fn turns_at(dominating: bool) -> (usize, f64, f64) {
             let (fighter, brain) =
                 ::foes::spawn(brute, ::foes::Rank::Major, x, y, combat::sight::bearing([x, y], [0.0, 0.0]));
             let id = room.next_id();
-            room.foes.insert(id, Foe { fighter, brain });
+            room.foes.insert(id, Foe { fighter, brain, caller: None });
             id
         })
         .collect();
@@ -237,7 +237,7 @@ fn put(room: &mut Room, x: f64, y: f64, facing: f64) -> FighterId {
     let (fighter, brain) =
         ::foes::spawn(::foes::foe_type(SWORDSMAN).expect("a type"), ::foes::Rank::Major, x, y, facing);
     let id = room.next_id();
-    room.foes.insert(id, Foe { fighter, brain });
+    room.foes.insert(id, Foe { fighter, brain, caller: None });
     id
 }
 
@@ -289,7 +289,7 @@ fn a_bosss_crew_comes_alert_to_the_foe_it_fights() {
     let player = room.join().expect("a room with space");
     let (fighter, brain) = ::foes::spawn(::foes::foe_type(12).expect("the Boss"), ::foes::Rank::Boss, 0.0, -2.5, PI);
     let boss = room.next_id();
-    room.foes.insert(boss, Foe { fighter, brain });
+    room.foes.insert(boss, Foe { fighter, brain, caller: None });
     for sequence in 1..=400 {
         if sequence == 30 {
             let found = room.foes.get_mut(&boss).unwrap();
@@ -325,7 +325,7 @@ fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
             ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], PI);
         let id = room.next_id();
         ::foes::notice(&mut brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
-        room.foes.insert(id, Foe { fighter, brain });
+        room.foes.insert(id, Foe { fighter, brain, caller: None });
         let reached = (0..60 * 30).any(|_| {
             room.tick();
             let body = room.foes[&id].fighter.body;
@@ -344,7 +344,7 @@ fn a_foe_walks_on_off_its_navmesh_to_a_player_standing_past_its_edge_and_strikes
     let (fighter, brain) =
         ::foes::spawn(::foes::foe_type(SWORDSMAN).unwrap(), ::foes::Rank::Minor, 22.0, 0.0, FRAC_PI_2);
     let foe = room.next_id();
-    room.foes.insert(foe, Foe { fighter, brain });
+    room.foes.insert(foe, Foe { fighter, brain, caller: None });
     let (mut closest, mut struck) = (f64::MAX, false);
     for sequence in 1..=600 {
         let input = asking(&room, sequence, None, Controls { yaw: -FRAC_PI_2, ..Controls::default() });
@@ -370,7 +370,7 @@ fn a_foe_sent_to_a_place_atop_a_wall_it_cannot_climb_goes_round_to_its_foot_rath
         ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], -FRAC_PI_2);
     let id = room.next_id();
     ::foes::notice(&mut brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
-    room.foes.insert(id, Foe { fighter, brain });
+    room.foes.insert(id, Foe { fighter, brain, caller: None });
     let reached = (0..60 * 20).any(|_| {
         room.tick();
         let body = room.foes[&id].fighter.body;
@@ -386,7 +386,7 @@ fn a_telegraphed_blow_a_leaving_player_ends_still_tells_its_foe_whether_it_lande
     let enforcer = ::foes::foe_type(4).expect("the Enforcer");
     let (fighter, brain) = ::foes::spawn(enforcer, ::foes::Rank::Elite, 0.0, -2.5, PI);
     let foe = room.next_id();
-    room.foes.insert(foe, Foe { fighter, brain });
+    room.foes.insert(foe, Foe { fighter, brain, caller: None });
     // The one who stays sees each tick at once; the one who leaves lags, so the blow waits on them alone.
     let waits_on_leaver = |room: &Room| {
         room.groups.values().any(|group| group.foe == foe && group.found && group.waiting == 1)

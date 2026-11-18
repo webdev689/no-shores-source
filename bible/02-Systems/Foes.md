@@ -14,6 +14,7 @@ code:
   - crates/foes/src/director.rs#Director
   - crates/foes/src/director.rs#BANDS
   - crates/foes/src/tactics.rs#decide
+  - crates/foes/src/leash.rs#leash
   - crates/foes/src/flank.rs#drift
   - crates/foes/src/react.rs#defend
   - crates/foes/src/tell.rs#throw
@@ -85,6 +86,16 @@ phases) is [[Enemies]].
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
   way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side steer
   apart inside 1.2 m of each other, pushed at up to 0.7 of a walk; nothing is moved but by its own controls.
+- **The leash.** A garrison foe ([[Enemies]]) is leashed to its place at its post
+  ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands 50 m from that place, or off the
+  room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up
+  once no wind-up of its own is under way: its target, its turn, the blow it saw coming and its answer, its hunt, its
+  search, its awareness, and a roar its health no longer calls for. It walks back by the room's routes, healing each
+  tick the share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m,
+  about 9 s), then turns to face as it was posted and stands idle. Walking back it heeds nothing it sees or hears and
+  shows as idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert with
+  the striker as its target; one struck from past its leash it gives up again. A Boss keeps its phase. A foe a player
+  asked for, or one a Boss called, has no post and never leashes.
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
   three shoot at it (the director, below). A holder walks in to its reach, squares up within 22.5 degrees, waits 0.3
   to 0.9 s and swings once; then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn
@@ -175,8 +186,8 @@ s, an elite's ×0.9 as any wind-up, and never under 0.55: long enough for a pers
 that ends without a chain is the holder's turn, spent; one that missed leaves it overreached, and it hands its turn on.
 A shooter's shot is aimed one in three, its line as long as its target is far.
 
-A Minor throws none, and a Major only some of its role's ([[Enemies]]). A Miniboss's second phase and the
-three of each Boss, its own, are [[Enemies]]'.
+A Minor throws none, and a Major only some of its role's ([[Enemies]]). A Miniboss's two phases (its first throws
+more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]'.
 
 ## Limits
 
@@ -184,3 +195,6 @@ three of each Boss, its own, are [[Enemies]]'.
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
 - Flanking stops at 100 degrees, short of a turned back.
+- A garrison foe walks back only once it gives its target up past its leash: one that lost sight of its target, hunted
+  and searched, lets go and stands idle where it searched.
+- Walking back to its post a foe heeds no one, so another player may walk beside it unopposed until they strike it.
