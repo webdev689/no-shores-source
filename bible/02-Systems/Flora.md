@@ -32,8 +32,8 @@ grown in and their seeds, sizes and colours. A form's grower (`growers.py`) make
 - **Rainforest trees and swamp cypresses**: tiers one over another with air between them, each a broad disc of
   crown the trunk's boughs grow into, drooping at its rim and stepping in as they rise, over a trunk flaring onto
   buttress fins. A cypress has four thin tiers from a third of its height, wide gaps between them and moss hanging
-  under each tier's outer half; a giant three deep tiers from half its height; a canopy tree two or three deep tiers
-  close together from a third of its height, so from above their crowns close into one roof.
+  under each tier's outer half; a giant three deep tiers from two fifths of its height; a canopy tree three deep tiers
+  close together from a quarter of its height, so from above and afar their crowns close into one roof.
 - **Buttress fins**: slabs of wood with thickness, thickest at the trunk and thinning to the toe, rounded over their
   top edge and curving a little along the ground.
 - **Firs and spruces**: whorls of seven to nine drooping boughs round a straight trunk, the cone as wide as the
@@ -59,8 +59,9 @@ round a trunk and along it with no seam, and a normal map from its height.
   domes come on top, to 900 at most), a shrub 240, a grass, fern or reed 60, a rock 300. Each corner carries its
   normal (cards take the crown's, so a crown lights as one mass), its tangent for the normal map, its uv, a tint,
   the ambient occlusion the detailed model casts on it (24 rays), and its wind weight, still at the foot and freest
-  at the top and the crown's rim. A card is cut to the rectangle round its picture's leaves, so the GPU shades
-  little air: a spray strung along a bough is pictured turned to lie along its picture.
+  at the top and the crown's rim. A card covers half its group's reach, so a crown is a few leaves deep along a
+  view, not ten, and is cut to the rectangle round its picture's leaves, so the GPU shades little air: a spray strung
+  along a bough is pictured turned to lie along its picture.
 - **The card pictures**: a kind's first form gives its pictures. A spray card shows the form's own sprays round a
   group's middle, grown again alone and seen face on, so its outline is ragged; a frond is laid flat; a tuft is seen
   from two sides; a strand of moss hangs.
