@@ -16,30 +16,30 @@
   "temperate-coast": {
    "layers": [
     {
-     "albedo": "flora/e30f701961b21b466f20b0afdc358d0a3da70a303b53ced3f9cbf40a54619cc0.png",
+     "albedo": "flora/af1748e98c2892a3dcb708edc22e81dc74383fd94bf08f83827e212cb6f5cac5.png",
      "normal": "flora/9e72dbba87bbf766d3891aa70c9196aa419dfe5273e21544270eadddc63a6174.png"
     },
     {
-     "albedo": "flora/51c565ff1804b4dd8f00a05d4b93f3023fbc52c4bcef52e857e9c3af7cbd73d2.png",
+     "albedo": "flora/73d9a7a8e0e6e7b03b6056e257b8fc82c44fb0db05be9b1c34c25681a35ebe38.png",
      "normal": "flora/841abf7dc0a41edc20a7e29e966ccc57bea0e29d5a8b899de355e04da21f4c39.png"
     },
     {
-     "albedo": "flora/92c05bbd1b4b8ae743c2fd24e7c603d29ad998b4ca3eff1f6556a5361edb93ed.png",
+     "albedo": "flora/76a066eb7bf96d55067b416f9180566482e77c0e33703a00602f5c63b0750c3a.png",
      "normal": "flora/6a8a0317e3777281fdb533182a3daffade27acff33f43b5deebf1383303c921b.png"
     },
     {
-     "albedo": "flora/9fb44a0e570ae2c908866f2683295f2fbdb88bb13d9e0afe28bd8031144ae3cd.png",
-     "normal": "flora/38acef0233a2ac7678fc19b8d841acdbb3580ea0639978b125b3395165887570.png"
+     "albedo": "flora/de9782533e40efe8ef36a90f8509370782b7f11f8a6a511c09456936062fc0da.png",
+     "normal": "flora/aec4a13dd3c1b05c9e5be038312afeecc203df41bee42d2edab82ba4a842b65f.png"
     },
     {
-     "albedo": "flora/4043b08989e7c5fdf71900b96ab26d2924675dda6a37b27f8bf8b64e90603e28.png",
-     "normal": "flora/658902baa6dd346067393953c9f2fabb1ddaec63b2ab8e58962d52ad4a528342.png"
+     "albedo": "flora/d77df995f95d9c15b989bb658c952a2c0ad29452b0f1f81ecd8136985cf96c78.png",
+     "normal": "flora/c3f705392ae55bbb534b32640c649be323cdb77f20165b0e4a9329c3b00288af.png"
     }
    ],
    "kinds": {
     "oak": [
      {
-      "mesh": "flora/76069557b7604293e4424c27833bc96db6cad4c81df225c1cbc189540aa62e76.mesh",
+      "mesh": "flora/c3741273525ee8d1e8665d2f20d11a8e64d995cb382dd60a68c8d22ca93881af.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -48,8 +48,8 @@
        0.25,
        0.25
       ],
-      "top": 9.959,
-      "spread": 4.173,
+      "top": 9.778,
+      "spread": 4.074,
       "shade": [
        4.403,
        7.193
@@ -73,13 +73,13 @@
        ]
       },
       "canopy": [
-       0.1798,
-       0.299,
-       0.1125
+       0.1931,
+       0.321,
+       0.1208
       ]
      },
      {
-      "mesh": "flora/42b19f085a5fb8fa00f88f2b1601f617b015a17a74e4dffef6f84e04a796c5e2.mesh",
+      "mesh": "flora/e58e307ff711ec83d19aee902249e0593bf21ba3f6f942419b43602fc62f73ba.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -88,8 +88,8 @@
        0.25,
        0.25
       ],
-      "top": 10.188,
-      "spread": 4.095,
+      "top": 9.912,
+      "spread": 3.939,
       "shade": [
        4.221,
        7.047
@@ -113,15 +113,15 @@
        ]
       },
       "canopy": [
-       0.1788,
-       0.2969,
-       0.112
+       0.1924,
+       0.3196,
+       0.1205
       ]
      }
     ],
     "pine": [
      {
-      "mesh": "flora/f0d1e1a9cf32367228b95d170c70899e3e1bdc29a35c759db3c872f86b74954d.mesh",
+      "mesh": "flora/12e415c1b4cc67f35d2425239abf6f24842ee8dbb34ae0482af9066fe4867bac.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -130,8 +130,8 @@
        0.25,
        0.25
       ],
-      "top": 15.32,
-      "spread": 5.97,
+      "top": 15.225,
+      "spread": 5.8,
       "shade": [
        5.426,
        13.004
@@ -155,13 +155,13 @@
        ]
       },
       "canopy": [
-       0.0973,
-       0.1841,
-       0.1172
+       0.115,
+       0.2183,
+       0.1389
       ]
      },
      {
-      "mesh": "flora/511ce3a5122af8b283ccf3cb4d70bc95f3950c05e985e63c8f79e42361c754c5.mesh",
+      "mesh": "flora/fc47e6fb6c64b77bba7c87c49f84bc8c00ba54a9a71945f0a3628bc6eddb8219.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -170,8 +170,8 @@
        0.25,
        0.25
       ],
-      "top": 15.29,
-      "spread": 6.317,
+      "top": 15.217,
+      "spread": 6.116,
       "shade": [
        5.546,
        13.051
@@ -195,9 +195,9 @@
        ]
       },
       "canopy": [
-       0.0959,
-       0.1826,
-       0.1163
+       0.1137,
+       0.2172,
+       0.1384
       ]
      }
     ],
@@ -277,7 +277,7 @@
     ],
     "gorse": [
      {
-      "mesh": "flora/313b9b403cf55ac360e6065096d6001b50cd3eb2e3da825585a50decf059b99a.mesh",
+      "mesh": "flora/2cb1bfa0797d78bac94ced09a59bfb4d5474fbd0c16ed9b6aeb6581ec93a8ab9.mesh",
       "triangles": 238,
       "layer": 4,
       "bark": [
@@ -286,8 +286,8 @@
        0.25,
        0.25
       ],
-      "top": 1.513,
-      "spread": 1.244,
+      "top": 1.438,
+      "spread": 1.202,
       "shade": [
        1.298,
        0.731
@@ -311,9 +311,9 @@
        ]
       },
       "canopy": [
-       0.2505,
-       0.3153,
-       0.1115
+       0.2665,
+       0.3354,
+       0.1186
       ]
      }
     ],
@@ -343,30 +343,30 @@
   "highland": {
    "layers": [
     {
-     "albedo": "flora/a34967c4d3527b02220a01abaf2e34247cfcad554ea09363f2522239ead2a7c1.png",
+     "albedo": "flora/4125c7829e458a2f546195e41d65cc4678ffae01d698a0a62d7641cf0dc54e9b.png",
      "normal": "flora/d94469d1bf9452f2e51482acd682cd7defed3020d3245fd89a68cf30e5d71453.png"
     },
     {
-     "albedo": "flora/f2b81fb0aa4132d363566b6ede77393f3a6fdd9db56543620ab3ab557da01ddd.png",
+     "albedo": "flora/fca4b901770a5dc591f1cf78c433f8681decd275484a792729c22da3303491f0.png",
      "normal": "flora/6326efec78f0d9af2cca32988c7511e61e26dcbaf814b89f979e0f1c66b6a757.png"
     },
     {
-     "albedo": "flora/6dde6801063ecc3ae0f370099b7093c1df8c3ed8fb85b3f834f6272d65776fca.png",
+     "albedo": "flora/25c673f8c4a79f752e86a10b41a173adf008450ade3dbc6f2e0acab26a0dd4ac.png",
      "normal": "flora/b1836f99b4a9b937078ac1924703e5902e668911c63b4e5f97c20d5cf36211c9.png"
     },
     {
-     "albedo": "flora/8bc80f9588de7ef281895bf64a5443bb3cf16f9eea8a358f133f87618814584f.png",
-     "normal": "flora/fa6b4d3426e39ae79b2d1b4984247db708c8ea71cbfc5e05c719739eb083a0d2.png"
+     "albedo": "flora/16aeeb237b90df5af731a8a0d0bd30df3453e695401e649d2743a328f970e725.png",
+     "normal": "flora/2a09e6b75ee59a5c7c7964c4d6d1bbbd0b9c71e9368c24a9d7bf580f69eef28a.png"
     },
     {
-     "albedo": "flora/ecec426dd6fd1d748b64385b9e68f05287547e46ad113bc1e840a1dd6bf1c162.png",
-     "normal": "flora/a07e464dac603dd18492944ade313029d1c9145f13cee8b8f6c6847b5fffd9b0.png"
+     "albedo": "flora/45a26efacf839780e44b7a21f9b5d0aacfaa80701e23511f49b1ffce193b1d08.png",
+     "normal": "flora/47ce160629661c197570ed0bd790fa438851195d6e3797057bb63f889c10b45b.png"
     }
    ],
    "kinds": {
     "fir": [
      {
-      "mesh": "flora/1146030ee0d202a8a606ac0c6edc6deda3ec21b87155547cedec161241b67853.mesh",
+      "mesh": "flora/a9606978afe8055a428c94389765508656269475be2781dcde80c616645c396b.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -400,13 +400,13 @@
        ]
       },
       "canopy": [
-       0.0807,
-       0.1628,
-       0.1246
+       0.0896,
+       0.1828,
+       0.1399
       ]
      },
      {
-      "mesh": "flora/def2a92eabfa507815da83de89efb7ae99786e6b2495bde103c6e9b58f358b4c.mesh",
+      "mesh": "flora/85b6b19146215919a5f1d35c2c2973266798c60f9b4d79518e4dc9a8e8701c69.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -440,15 +440,15 @@
        ]
       },
       "canopy": [
-       0.0811,
-       0.1629,
-       0.1247
+       0.0899,
+       0.1829,
+       0.1399
       ]
      }
     ],
     "birch": [
      {
-      "mesh": "flora/9affb1e9717677285600ef80e9aae7e4e3f4430c641fdc19df4ae63bd54753a0.mesh",
+      "mesh": "flora/362632c9c5a805000015f74056ed7eb47c695e81b6db53e0a55c3243c5b7c3be.mesh",
       "triangles": 598,
       "layer": 3,
       "bark": [
@@ -457,8 +457,8 @@
        0.25,
        0.25
       ],
-      "top": 10.964,
-      "spread": 2.884,
+      "top": 10.903,
+      "spread": 2.799,
       "shade": [
        2.711,
        8.0
@@ -482,13 +482,13 @@
        ]
       },
       "canopy": [
-       0.3885,
-       0.4947,
-       0.203
+       0.4062,
+       0.5177,
+       0.2116
       ]
      },
      {
-      "mesh": "flora/0201549077112763e1d2294465a1edd7a6ee656573f11d00da29f34893046060.mesh",
+      "mesh": "flora/f69d58728fa7469800bca2130aa49ba544443e8f93e2ccbe58756802fe87ed31.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -497,8 +497,8 @@
        0.25,
        0.25
       ],
-      "top": 11.116,
-      "spread": 2.605,
+      "top": 11.036,
+      "spread": 2.55,
       "shade": [
        2.614,
        7.965
@@ -522,9 +522,9 @@
        ]
       },
       "canopy": [
-       0.3891,
-       0.4951,
-       0.2042
+       0.4068,
+       0.518,
+       0.2128
       ]
      }
     ],
@@ -604,7 +604,7 @@
     ],
     "heather": [
      {
-      "mesh": "flora/99aad5ed8a44e6820d4fca1f36a29b57333637fe17c9fd1529401a9148d36637.mesh",
+      "mesh": "flora/3aa2cad2a44ceb4ad2d230c97ad5b88592ad0bb88a6f4a576145efc725aaecf0.mesh",
       "triangles": 240,
       "layer": 4,
       "bark": [
@@ -613,8 +613,8 @@
        0.25,
        0.25
       ],
-      "top": 0.685,
-      "spread": 0.664,
+      "top": 0.644,
+      "spread": 0.642,
       "shade": [
        0.749,
        0.312
@@ -638,9 +638,9 @@
        ]
       },
       "canopy": [
-       0.281,
-       0.2111,
-       0.239
+       0.3019,
+       0.2268,
+       0.2568
       ]
      }
     ],
@@ -670,34 +670,34 @@
   "woodland": {
    "layers": [
     {
-     "albedo": "flora/d2325a107ad34cfcfc5021bcd9ddaf053f95590fa720444a763c0f2d4739fe34.png",
+     "albedo": "flora/58657ad5d943588de2184dfe32be5484ae9b2613792ea532542417a7f8455f30.png",
      "normal": "flora/d57690f69c3745a7ac92df5957a7c72fb83460633d57085729a383041c8fe064.png"
     },
     {
-     "albedo": "flora/da6d67cd8be35abbc223ce66b818162f8a6430aaaa776739b31ac54ef5bad1db.png",
+     "albedo": "flora/4fb95b4fd5817db047921502c1e3aa18ec81dc82540928d8be8c9c71370867be.png",
      "normal": "flora/68845d5d9ea1dea36b21af1a2726311077c9a2a4a3adf573bbe427ec7941467c.png"
     },
     {
-     "albedo": "flora/7825ba91615fc3ad8e9d694368fce4573c4ad2ede07726d195a246e831ece3f7.png",
+     "albedo": "flora/9af6ab752ddbda920d1c5a7c081acc444af00c2b4ad1a42c0fc8d31cadded088.png",
      "normal": "flora/35097e864fafda064ad22687c5b3506f6123e70a79181cf289ecd8ff38eae8c2.png"
     },
     {
-     "albedo": "flora/bcd163d08edc52e58016de17825c53a308af220b46a23d80323bc48e69a5b91c.png",
+     "albedo": "flora/efce3b21195072ef39677bc884d8ef7f248cbbbc3404a3f55317844d9aac88ea.png",
      "normal": "flora/46bde8f46f53bde930051539b436f734d37a625e3d54a73a959426143133692c.png"
     },
     {
-     "albedo": "flora/9bec4eb0bf6237a8df77e750116eec49a3b363f7ae768332f7cd286292e2e53a.png",
-     "normal": "flora/dee6c615b963e936bba375cd85437d91145e288a2cb09d19732220a81fe51818.png"
+     "albedo": "flora/298e374b1bd43b209ae665fc91143273469be85a4ba20714f647012a90fe0fe3.png",
+     "normal": "flora/958d9e224156e01fadb884acc35c59a2cabc0f0c00c00aaef7660a87dae5c8e8.png"
     },
     {
-     "albedo": "flora/835361593d0ec2788177899be797c1435e173741fac244c9d7628de28de08096.png",
-     "normal": "flora/7b33062a9546e7aca54106601f8883ad025a6ca7c0d55d1b64f4bf7780890e70.png"
+     "albedo": "flora/0b91497d2f18fc28320a81d585cf96ff0b30bef5512e60a3d6151e3f2815c446.png",
+     "normal": "flora/a3b5ee33fe1d907648860c2df53d21b7485e5dccd320403d9a7ab8577d3e6a71.png"
     }
    ],
    "kinds": {
     "oak": [
      {
-      "mesh": "flora/117540f1e318ead7192f600932aea193b0b6cc4c6e03a373fc1f0a3ae7795a8f.mesh",
+      "mesh": "flora/e508f67370e9f87f5654d751bc2ac16a2782e1600af0567fc1cd5ff4a9dad2c7.mesh",
       "triangles": 600,
       "layer": 4,
       "bark": [
@@ -706,8 +706,8 @@
        0.25,
        0.25
       ],
-      "top": 11.687,
-      "spread": 5.266,
+      "top": 11.398,
+      "spread": 5.044,
       "shade": [
        4.819,
        8.263
@@ -731,13 +731,13 @@
        ]
       },
       "canopy": [
-       0.148,
-       0.2727,
-       0.0893
+       0.1597,
+       0.2943,
+       0.0964
       ]
      },
      {
-      "mesh": "flora/e2c85bef05e99c95ce6f8f1b5df9de481082310e3c5e578762765c7f472c354e.mesh",
+      "mesh": "flora/cac60d84a7f62216de6eb13a889a77d04edccb6bf77510eab1e7e3934a330dde.mesh",
       "triangles": 600,
       "layer": 4,
       "bark": [
@@ -746,8 +746,8 @@
        0.25,
        0.25
       ],
-      "top": 11.656,
-      "spread": 4.646,
+      "top": 11.421,
+      "spread": 4.484,
       "shade": [
        4.73,
        8.413
@@ -771,15 +771,15 @@
        ]
       },
       "canopy": [
-       0.1487,
-       0.2732,
-       0.089
+       0.1603,
+       0.2946,
+       0.096
       ]
      }
     ],
     "beech": [
      {
-      "mesh": "flora/0a010b600664204f1cd9738b971199c359e2a49f55c9afff6e72106ea68e4e4b.mesh",
+      "mesh": "flora/8ed561981aa16efdaa7d99662f3d6310be081672a622a93d8c4f36f4af79ec07.mesh",
       "triangles": 600,
       "layer": 4,
       "bark": [
@@ -788,8 +788,8 @@
        0.25,
        0.25
       ],
-      "top": 16.862,
-      "spread": 4.581,
+      "top": 16.756,
+      "spread": 4.409,
       "shade": [
        4.63,
        12.401
@@ -813,13 +813,13 @@
        ]
       },
       "canopy": [
-       0.2059,
-       0.3367,
-       0.111
+       0.2225,
+       0.364,
+       0.1199
       ]
      },
      {
-      "mesh": "flora/85c14940e5aa94b4c9f963f19288b32e13929f55406c95fdc9aaa723071defd9.mesh",
+      "mesh": "flora/691f071faaaf305823fd23290b719717c4c038e46d419d24da26cdbbf30f806c.mesh",
       "triangles": 598,
       "layer": 4,
       "bark": [
@@ -828,8 +828,8 @@
        0.25,
        0.25
       ],
-      "top": 16.852,
-      "spread": 4.584,
+      "top": 16.666,
+      "spread": 4.451,
       "shade": [
        4.682,
        12.315
@@ -853,15 +853,15 @@
        ]
       },
       "canopy": [
-       0.2073,
-       0.339,
-       0.1112
+       0.2237,
+       0.366,
+       0.12
       ]
      }
     ],
     "fir": [
      {
-      "mesh": "flora/6daaa34a25cf07e9271d61c02ff1d84ff4cf6ec1cec84ea919b2d45da64e6466.mesh",
+      "mesh": "flora/f18677b5b87bba2f330dc54c281b893ac2cef8cf792c52fa02df59e520dafd40.mesh",
       "triangles": 600,
       "layer": 5,
       "bark": [
@@ -895,13 +895,13 @@
        ]
       },
       "canopy": [
-       0.0792,
-       0.16,
-       0.1223
+       0.0879,
+       0.1797,
+       0.1372
       ]
      },
      {
-      "mesh": "flora/7b131681de6d3327af951893e1cced1daf407f0d9f9a6d154e8b148fcee7a7cb.mesh",
+      "mesh": "flora/a743c40b664c94d116c2effa5ad9b897fa1f3414a0077dc0c1bfbdd29f1688a7.mesh",
       "triangles": 600,
       "layer": 5,
       "bark": [
@@ -935,9 +935,9 @@
        ]
       },
       "canopy": [
-       0.0793,
-       0.1597,
-       0.1223
+       0.088,
+       0.1795,
+       0.1373
       ]
      }
     ],
@@ -1038,7 +1038,7 @@
     ],
     "hazel": [
      {
-      "mesh": "flora/0930dbad636b9c8eb4fa92763a1a8fd07d257f63e7d2978fbe4d4eb522b14321.mesh",
+      "mesh": "flora/1104e3ec97eb947b7eb3fa55e9990f4daf90fe0e15a4009fdf8f485f6ed46cf0.mesh",
       "triangles": 240,
       "layer": 5,
       "bark": [
@@ -1047,8 +1047,8 @@
        0.25,
        0.25
       ],
-      "top": 2.272,
-      "spread": 1.626,
+      "top": 2.169,
+      "spread": 1.537,
       "shade": [
        1.78,
        1.11
@@ -1072,9 +1072,9 @@
        ]
       },
       "canopy": [
-       0.1709,
-       0.3092,
-       0.1075
+       0.1814,
+       0.3283,
+       0.1142
       ]
      }
     ]
@@ -1083,26 +1083,26 @@
   "steppe": {
    "layers": [
     {
-     "albedo": "flora/d2fe6ea40b806ce5b6c369fafaa440c7ca618c23c77ba2e09bd9bca4a245e146.png",
+     "albedo": "flora/0ba7e860eb2ca3cafd13ccdd7fea313bc740389747b5d972c802c06d8ba240a5.png",
      "normal": "flora/9f708cc86ff56d234df1d1f60b7f39269fe9fe2b728132a546bff9936c04d294.png"
     },
     {
-     "albedo": "flora/4f8acd119d5f31b5b1645e965c0c1c35fb4c8bc50b07a1716203d4a792e5312c.png",
+     "albedo": "flora/0245cf9b4b5e9d3c29697632082d43ce36fea67dd304c849adda85cc773e5c2b.png",
      "normal": "flora/a384680cd741458582bcae9a251b4e7d21874ea603a1dd2a0b7027f2404cff91.png"
     },
     {
-     "albedo": "flora/0eba28ef71be068836a3a29cee166058c91168a858345d581ffcdbdd7d2c9f72.png",
-     "normal": "flora/355b4ed21a669acb7a2cafa61734dc3c23bf42a3ad5f7812cfa7ed565300ccb7.png"
+     "albedo": "flora/19414cf0bd0d7c52677e5168b5d4d729b2d1dd3db174865307f3bcb4fdf39a48.png",
+     "normal": "flora/83c255cbbcd15b4c35f27b52ccc59290db3f44b0b144361d192cdc925a02d21e.png"
     },
     {
-     "albedo": "flora/56861ac8b3885d715d457d87bad1d370cf3817391be43ed004485f034eb2c9f4.png",
-     "normal": "flora/45cb679e6dc0d17221eb4f90e23597b2d56a74bc52be7ddd2515edda63fcf576.png"
+     "albedo": "flora/12288e769c097d3249d7d06a8ba19bb9aedda3b4318359a92f4512ae2b3ccc02.png",
+     "normal": "flora/8eaf6718373fb9ce45f82e6f02e9b08f1488d8e35a203fbc64a36274bc7493ce.png"
     }
    ],
    "kinds": {
     "birch": [
      {
-      "mesh": "flora/98ee367a3bf69f7ab3c929441dc28944f30c3249952cd68e5f1efea3f2c28de1.mesh",
+      "mesh": "flora/2131ef67146b3f96926eb28f36ce88b5be18ca01f05180c29c8496b60d015ec6.mesh",
       "triangles": 598,
       "layer": 2,
       "bark": [
@@ -1111,8 +1111,8 @@
        0.25,
        0.25
       ],
-      "top": 10.188,
-      "spread": 2.416,
+      "top": 10.136,
+      "spread": 2.385,
       "shade": [
        2.525,
        7.509
@@ -1136,13 +1136,13 @@
        ]
       },
       "canopy": [
-       0.4204,
-       0.4968,
-       0.2182
+       0.4397,
+       0.5198,
+       0.2277
       ]
      },
      {
-      "mesh": "flora/46662d91ee2579e0f1d938b55d9ccb9ec7d75741d70db66c93ba0c8adcae375f.mesh",
+      "mesh": "flora/defe39b68cda95b02a96817090b9163c5e1780cf0f7f24eb6abd89ce9183c0ac.mesh",
       "triangles": 600,
       "layer": 2,
       "bark": [
@@ -1151,8 +1151,8 @@
        0.25,
        0.25
       ],
-      "top": 10.463,
-      "spread": 2.405,
+      "top": 10.396,
+      "spread": 2.342,
       "shade": [
        2.458,
        7.168
@@ -1176,9 +1176,9 @@
        ]
       },
       "canopy": [
-       0.4176,
-       0.4951,
-       0.2135
+       0.4366,
+       0.5178,
+       0.2227
       ]
      }
     ],
@@ -1258,7 +1258,7 @@
     ],
     "sagebrush": [
      {
-      "mesh": "flora/4797aa9d001a53357407433416cea84808ed11585db4e6f00beea342a5b6030c.mesh",
+      "mesh": "flora/ae75a2b7d0262558c43a00c5a3f434a9fdb61de47ed1cf04965451db8a47330d.mesh",
       "triangles": 172,
       "layer": 3,
       "bark": [
@@ -1267,8 +1267,8 @@
        0.25,
        0.25
       ],
-      "top": 1.211,
-      "spread": 0.922,
+      "top": 1.148,
+      "spread": 0.857,
       "shade": [
        1.018,
        0.75
@@ -1292,9 +1292,9 @@
        ]
       },
       "canopy": [
-       0.5079,
-       0.5404,
-       0.4217
+       0.5239,
+       0.5575,
+       0.4351
       ]
      }
     ],
@@ -1324,30 +1324,30 @@
   "tundra": {
    "layers": [
     {
-     "albedo": "flora/523d352837fe90bc4989699a9d7246b008e927278e4763ba490127aa004ab273.png",
+     "albedo": "flora/091b229d8f11422f66da5cb0132457f07a09108e4a7b0c9a801d171db13a4695.png",
      "normal": "flora/c34f2d4588dc3b589383a05087d2013c27a94dffd7c8c4cb797da36ad0132679.png"
     },
     {
-     "albedo": "flora/bd8bdebd6dea0ec2f840c526bba6cc718746f13a886f0655c3abbcefe2f44c8c.png",
+     "albedo": "flora/9b95ad0cbf0f28fa0d9d7f9536dd7b5c387fce41fcbcf4558718497e9eb6f2f5.png",
      "normal": "flora/53317f8229624930cd505a3672937f6e0ff47c8cbd5b75a312345f81c214bf01.png"
     },
     {
-     "albedo": "flora/80f8310f2a92ac6648f4414344eeebcb86b918d76aba8a8bef8b6b32b7341a26.png",
+     "albedo": "flora/1f441be9a1f3f1b53e0cf78ef2177ccd46b1238574432528bedd661fcce5dc51.png",
      "normal": "flora/5a92329cfa210961df713ea630fbf5e79680a8e884b061b57ec0107b36a0182c.png"
     },
     {
-     "albedo": "flora/c3e047c326d3d6cb139970fa90f4ebc2fa87842cc1a50daf8f802954efe9e81c.png",
-     "normal": "flora/e46374072f02b61e2e75082ce7b4de92bf7e5a63b077a4de5e534a5df79a8f67.png"
+     "albedo": "flora/dabaf67ee2872a9abe844ad52a70d46837710364e610b8a50ab9bf1a4cec70e3.png",
+     "normal": "flora/8e6fd558660b2a206932eb45a6febba316fa2ba7c622dc8fee7ca045c9a6bdcb.png"
     },
     {
-     "albedo": "flora/23cfb7515395612a1ea761ba30627744a4760ed0b797afc9d460f92aa4f4fa9f.png",
-     "normal": "flora/5c6ea037576311cdba80791e237f399aa839b849706611585f1ae49a097d21a6.png"
+     "albedo": "flora/6697b68f154e5244b66d7f47383455dbcef2de1405bd13d466e59a2f4c207a5f.png",
+     "normal": "flora/8dbd06aa02dc69687ef2eb9353b45d30a4a07a6fcd78cda69351f1f0f11e5e4f.png"
     }
    ],
    "kinds": {
     "spruce": [
      {
-      "mesh": "flora/6c140c6ff435f85af3deeea0c794f3928e7bcb7f0268eb9dc6e893bd364d1be0.mesh",
+      "mesh": "flora/cfb30d7bed9c617d3640fbf7b9c1236fbddb9f68cbe91ccc7897aec08524704a.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -1357,7 +1357,7 @@
        0.25
       ],
       "top": 5.0,
-      "spread": 1.604,
+      "spread": 1.527,
       "shade": [
        1.599,
        1.66
@@ -1381,13 +1381,13 @@
        ]
       },
       "canopy": [
-       0.0857,
-       0.148,
-       0.115
+       0.0945,
+       0.1641,
+       0.1275
       ]
      },
      {
-      "mesh": "flora/4dd5564c9d5c18bff68e027fe8f6458f62d7e9eb97a96603426ac4fd8316051c.mesh",
+      "mesh": "flora/102f7cc5d962038604e9d873bddbb4ba3512271aadbccf25717819c25e30d8e0.mesh",
       "triangles": 600,
       "layer": 3,
       "bark": [
@@ -1397,7 +1397,7 @@
        0.25
       ],
       "top": 5.0,
-      "spread": 1.49,
+      "spread": 1.434,
       "shade": [
        1.591,
        1.677
@@ -1421,9 +1421,9 @@
        ]
       },
       "canopy": [
-       0.0855,
-       0.1482,
-       0.115
+       0.0943,
+       0.1643,
+       0.1274
       ]
      }
     ],
@@ -1577,7 +1577,7 @@
     ],
     "dwarf shrub": [
      {
-      "mesh": "flora/de65f1fc3b9a4701fe16e3d3c9aabbab509010bf8cf40f70796c32d91e39c32b.mesh",
+      "mesh": "flora/5a9affb1106b0d525fbb899230f41a0cf74b1ff8966d90e0c53e852d2eeb390e.mesh",
       "triangles": 190,
       "layer": 4,
       "bark": [
@@ -1586,8 +1586,8 @@
        0.25,
        0.25
       ],
-      "top": 0.387,
-      "spread": 0.631,
+      "top": 0.359,
+      "spread": 0.613,
       "shade": [
        0.682,
        0.17
@@ -1611,9 +1611,9 @@
        ]
       },
       "canopy": [
-       0.3384,
-       0.2237,
-       0.1519
+       0.3654,
+       0.2416,
+       0.1641
       ]
      }
     ]
@@ -1622,20 +1622,20 @@
   "desert": {
    "layers": [
     {
-     "albedo": "flora/bd5d11232ee62b7ff5423af9de9684a10a6d36b12105da88b0a32558f106e543.png",
+     "albedo": "flora/aeb3c8194719de7d761283f9c7b8f565cbf33362f9f367323197c10d36ae2321.png",
      "normal": "flora/9cf6f2be00e4e88939880b9afc9242c7fb9ee5b6e8162fb1681b1477caaeab1f.png"
     },
     {
-     "albedo": "flora/e9a6779498b9e5f8e90a3e860e57f05ab6586a2053f4e1b0f212c17a33a195dd.png",
+     "albedo": "flora/53014bb55f2b4031bfbb0723f429bdedafdbb42380f944e66bb0284427d782f0.png",
      "normal": "flora/dd955037953adceced2e110c9c3b0bffb74f147e88b8df173cae7cc6e2a855c4.png"
     },
     {
-     "albedo": "flora/3b99276382f57d6f1890c6a09b173e4ecf66193fd29e0722149c2a2c5d822e19.png",
+     "albedo": "flora/290724bf7b851f04af8908a924745f05eda945619f622c6575ce7aaba06d5bc1.png",
      "normal": "flora/7eca38fe099962bf21422a837995eb3e2b59019728f05ba224cf4ab23abd0af9.png"
     },
     {
-     "albedo": "flora/051335b7063609a5f058c568a22991f56214d7a3161189972654145d43ccb0a9.png",
-     "normal": "flora/0fc90ef3635bd554275d388763e6e5b3d01b6a532c3139d2bf23b0ab181f01e1.png"
+     "albedo": "flora/23ff884d20e87e38d075c86875391bb88efb42678809c410b1a0067e0b80aae0.png",
+     "normal": "flora/1abb04f48f6cc0e62410b1eb42fb22a91f15d4fb1b0ccafd38cc14bcd1477c12.png"
     }
    ],
    "kinds": {
@@ -1749,9 +1749,9 @@
        ]
       },
       "canopy": [
-       0.3062,
-       0.4339,
-       0.1848
+       0.3091,
+       0.4381,
+       0.1866
       ]
      },
      {
@@ -1789,9 +1789,9 @@
        ]
       },
       "canopy": [
-       0.3028,
-       0.4298,
-       0.1838
+       0.3059,
+       0.4342,
+       0.1857
       ]
      }
     ],
@@ -1871,7 +1871,7 @@
     ],
     "dry shrub": [
      {
-      "mesh": "flora/5add41326c27f6d80e5b76dd4d4dcfb5ecbb3dab806cb888d97c0e4879c1922e.mesh",
+      "mesh": "flora/d5120378fb8172a28bc8a75d02eba894e26ca952a17b983c6f7243689e0f72e9.mesh",
       "triangles": 172,
       "layer": 3,
       "bark": [
@@ -1880,8 +1880,8 @@
        0.25,
        0.25
       ],
-      "top": 1.131,
-      "spread": 0.881,
+      "top": 1.079,
+      "spread": 0.833,
       "shade": [
        0.935,
        0.728
@@ -1905,9 +1905,9 @@
        ]
       },
       "canopy": [
-       0.3462,
-       0.3861,
-       0.2143
+       0.3605,
+       0.402,
+       0.2232
       ]
      }
     ]
@@ -1916,26 +1916,26 @@
   "savanna": {
    "layers": [
     {
-     "albedo": "flora/89ffc905bdf294c211ae1519517fa4b6c8fa32fcd9439de642638bc00bf0f334.png",
+     "albedo": "flora/3e242c7fe6fd74f3ee4e6a7448837d21e9bb542fa64afcc35b31843c92cb5df9.png",
      "normal": "flora/ee205bc758257ffa8ff6c7ddf3c5dabe91a876281cd15ee434f589c20da052cf.png"
     },
     {
-     "albedo": "flora/a3c733d2637a3b28f61f0fb6d41373b0012ae1a4a7948921ba38fe3a9980792c.png",
+     "albedo": "flora/3d0dde4cb17e9dc5e317f0c2a9aea71c0cb69a86241a2f4e33b79577ae13b127.png",
      "normal": "flora/e96b084b0ff011410eae872a9c81a9f6f014c083342c1cb3ff49cadf1ec50945.png"
     },
     {
-     "albedo": "flora/3e468d83928f1704ad675de971150711ce110baaef0b8718ebb03667445cc09e.png",
+     "albedo": "flora/e7ca50eb4db6d7a102893b4f65141e7e0ceb8dd11d8dc5b951b43b66ba077a94.png",
      "normal": "flora/8998babd7ebae19a4de5e765b23883bfc7904af3c17dabba29b191b1e7f8f8ad.png"
     },
     {
-     "albedo": "flora/79ad9ca3a01408bf15ad36e66ba7a5a1c85e06bca008f281c30d34189106c79c.png",
-     "normal": "flora/e0679718413119302fc590f1b4f38c5618da30f750600382e677f024c15a4407.png"
+     "albedo": "flora/c99c5096748ab43702fda956ababad6dcfe339ed896ae5a1a02cbf53573ac3d8.png",
+     "normal": "flora/5d198a15a5bf567fde2f8312e36745a32046a22c35eb28145f1d9574b0593d44.png"
     }
    ],
    "kinds": {
     "acacia": [
      {
-      "mesh": "flora/43623a007074d145146f375b12beab0a2e094c859f1c437fb1324583c07cc9be.mesh",
+      "mesh": "flora/212344d2c398c98a54faaf4ace9027b94c171deaa4351b288cfc518f3e201651.mesh",
       "triangles": 598,
       "layer": 3,
       "bark": [
@@ -1944,8 +1944,8 @@
        0.25,
        0.25
       ],
-      "top": 8.235,
-      "spread": 5.725,
+      "top": 8.07,
+      "spread": 5.565,
       "shade": [
        5.815,
        6.883
@@ -1969,13 +1969,13 @@
        ]
       },
       "canopy": [
-       0.2742,
-       0.3163,
-       0.1321
+       0.2804,
+       0.3237,
+       0.1349
       ]
      },
      {
-      "mesh": "flora/30b2d177ea17d61c4bed98dcfd892c3dabbc2ddc10dac91e75c51e78cf2aa038.mesh",
+      "mesh": "flora/b69edb37b80ec7e47eb38cdfbf3904cb2b7c35172118ee8ad5616f69e40a77f6.mesh",
       "triangles": 598,
       "layer": 3,
       "bark": [
@@ -1984,8 +1984,8 @@
        0.25,
        0.25
       ],
-      "top": 8.55,
-      "spread": 6.042,
+      "top": 8.408,
+      "spread": 5.873,
       "shade": [
        5.891,
        6.9
@@ -2009,15 +2009,15 @@
        ]
       },
       "canopy": [
-       0.2751,
-       0.3172,
-       0.1323
+       0.2809,
+       0.3242,
+       0.1349
       ]
      }
     ],
     "baobab": [
      {
-      "mesh": "flora/37a792d16b07d5fe12de30450259ad747abb5a16665da8acec051935b23d164d.mesh",
+      "mesh": "flora/ba442ccb80d9f3e40d52b6c9cf2127393b153a30d5d202d2ca9d13595958de01.mesh",
       "triangles": 482,
       "layer": 3,
       "bark": [
@@ -2026,8 +2026,8 @@
        0.25,
        0.25
       ],
-      "top": 12.271,
-      "spread": 4.643,
+      "top": 12.215,
+      "spread": 4.568,
       "shade": [
        4.469,
        10.838
@@ -2051,9 +2051,9 @@
        ]
       },
       "canopy": [
-       0.3525,
-       0.3954,
-       0.1913
+       0.3656,
+       0.4106,
+       0.198
       ]
      }
     ],
@@ -2154,7 +2154,7 @@
     ],
     "thorn bush": [
      {
-      "mesh": "flora/8fd4a2e202f580c810603362c70c453147f987cdfdab7d701dd13bbd8b61b77f.mesh",
+      "mesh": "flora/2119495f8e56633cdda1d24a1f02c16ad0176130f04e053d6b19dc03ba4fe093.mesh",
       "triangles": 144,
       "layer": 3,
       "bark": [
@@ -2163,8 +2163,8 @@
        0.25,
        0.25
       ],
-      "top": 1.866,
-      "spread": 1.473,
+      "top": 1.793,
+      "spread": 1.385,
       "shade": [
        1.435,
        1.478
@@ -2188,9 +2188,9 @@
        ]
       },
       "canopy": [
-       0.3178,
-       0.3855,
-       0.1598
+       0.3233,
+       0.3922,
+       0.1626
       ]
      }
     ]
@@ -2199,34 +2199,34 @@
   "rainforest": {
    "layers": [
     {
-     "albedo": "flora/9c300f00cdb5922cb76c1ec3050ff5f9376ed77d5ab6dff15fc1aadb20915140.png",
-     "normal": "flora/5a0a33a4c10e9c94206d0eab80d2c4aff4e837526d1e224b26c9221f9091e5e8.png"
+     "albedo": "flora/726b21bf80b27d744f5ae3ca37fdf333ee97bc770b3773a1c4c5585141f54de9.png",
+     "normal": "flora/21f7f4f2ab63004a0a1d0d55a92cdc6e09f5783cb47410c0e3dd98fe2eefafa8.png"
     },
     {
-     "albedo": "flora/6de6f01f338a6a9ed9783359bd1a66f52af4b87017df9ae9f2ea2b4721a5d6f5.png",
-     "normal": "flora/754dff84dd8895ee2d2493d4cac2b6e5065f74938477d29d18d8c9bfbd5de6ec.png"
+     "albedo": "flora/c5adfcb3f998f9a3e21a370617467c05a438b1458f82fbfffb60c0010575af08.png",
+     "normal": "flora/44cfa8306975830c5ad93cc2c96a37e4a64db21b2548bd542c922f879f79b938.png"
     },
     {
-     "albedo": "flora/94cc58f697f030aa5c89ff6b3930af84e03828ce58766c81e57966130d8acf26.png",
-     "normal": "flora/26de9364b719c4680ad3921f88d285de20253c1729169fc63922905a2c3f38fd.png"
+     "albedo": "flora/4134e78875fe8f62a16387437d4cf2ee5d9b0900ab3cc522c91166a899584732.png",
+     "normal": "flora/a721fcc6a372b6aafdebfb101e5af6d4421c194d82533be4b7e0ac2b6acd7363.png"
     },
     {
-     "albedo": "flora/a2e5a37a5fafe527394e2056ccd6d06df805627e3b122a852e0933cc094b1671.png",
+     "albedo": "flora/b75557fce5a610eade7793422cc1ddf2cecd937f950c727a43ee5341db5d5875.png",
      "normal": "flora/2d1d29eeb4fd311f0ec7152d1a0d4983843dbc7a15ae0bb923448025e4b6d74a.png"
     },
     {
-     "albedo": "flora/5f193b26f45ba968b90b172484efa478fa9543b9b4987af9fcd24d25586e0425.png",
+     "albedo": "flora/d916a34f6e924e891476f2b4b4c214daf06f55508dc0eb9403aab62373fd5930.png",
      "normal": "flora/df86ec44f9434ec311c00a1d80501e2129a5411704746653f705b994a44895c9.png"
     },
     {
-     "albedo": "flora/78963f75119caddd5527a860625389377409212eea6b90d0d9796d999ea42fce.png",
-     "normal": "flora/ad5af5900543d6ab9f3754fc8fbcbd7cf07c12697e6b28375fd2ead626f91f9b.png"
+     "albedo": "flora/9f5b5bf4ba73bc73d2b989a2f7012cd65f0106dd6b2bd71e88cec533fb44d7dc.png",
+     "normal": "flora/f180df2889018ff75e654dcb940ce05318955fef0d203bb42741f2c23d2dfbfa.png"
     }
    ],
    "kinds": {
     "giant": [
      {
-      "mesh": "flora/fc993163338232bfeec70ead289190cfdf1bb99eab6467ec0b8a4a8bcc866c13.mesh",
+      "mesh": "flora/31ca282f432a3d0a169d190382e838783fe13c7f03363c1b1d58a531858fabd5.mesh",
       "triangles": 598,
       "layer": 5,
       "bark": [
@@ -2235,38 +2235,38 @@
        0.25,
        0.25
       ],
-      "top": 39.975,
-      "spread": 9.347,
+      "top": 39.748,
+      "spread": 8.494,
       "shade": [
-       8.722,
-       28.952
+       8.395,
+       27.032
       ],
       "leafy": true,
-      "crown": 19.175,
+      "crown": 18.18,
       "impostor": {
        "layer": 0,
        "top": 0.0,
        "centre": [
+        -0.051,
         -0.089,
-        0.109,
-        20.273
+        20.171
        ],
-       "radius": 21.211,
+       "radius": 21.248,
        "box": [
-        0.2578,
+        0.2656,
         0.0,
-        0.7422,
+        0.7266,
         1.0
        ]
       },
       "canopy": [
-       0.1814,
-       0.3093,
-       0.1107
+       0.192,
+       0.3277,
+       0.1173
       ]
      },
      {
-      "mesh": "flora/1ba3e669a1ab93e670276551b50961bf42042a6c82449d98ef8816eefd4459d1.mesh",
+      "mesh": "flora/4bde773c0789de1092fa55d967487a9c56cfc48912b35cdf6ff6839bfad2ab34.mesh",
       "triangles": 598,
       "layer": 5,
       "bark": [
@@ -2275,41 +2275,41 @@
        0.25,
        0.25
       ],
-      "top": 39.742,
-      "spread": 9.965,
+      "top": 39.993,
+      "spread": 9.185,
       "shade": [
-       9.106,
-       28.612
+       8.719,
+       26.858
       ],
       "leafy": true,
-      "crown": 18.342,
+      "crown": 18.606,
       "impostor": {
        "layer": 0,
        "top": 0.5,
        "centre": [
-        0.078,
-        0.075,
-        20.338
+        0.188,
+        0.03,
+        20.282
        ],
-       "radius": 21.268,
+       "radius": 21.301,
        "box": [
-        0.2578,
+        0.2656,
         0.0,
-        0.7422,
+        0.7344,
         1.0
        ]
       },
       "canopy": [
-       0.1809,
-       0.3093,
-       0.1103
+       0.1918,
+       0.3279,
+       0.1169
       ]
      }
     ],
     "canopy tree": [
      {
-      "mesh": "flora/9a4581d6043bce7b7eb1e36976c0ab05521cc152ccecf5254864b82ff96c6d71.mesh",
-      "triangles": 596,
+      "mesh": "flora/bd188cb37bc003f61031ebd32db367aa953a6a0d3e3f2bcf2fa5e741bc3a4311.mesh",
+      "triangles": 600,
       "layer": 5,
       "bark": [
        0.0,
@@ -2317,23 +2317,23 @@
        0.25,
        0.25
       ],
-      "top": 22.203,
-      "spread": 7.174,
+      "top": 22.018,
+      "spread": 7.61,
       "shade": [
-       6.991,
-       14.544
+       6.864,
+       13.189
       ],
       "leafy": true,
-      "crown": 14.436,
+      "crown": 14.264,
       "impostor": {
        "layer": 1,
        "top": 0.0,
        "centre": [
-        0.406,
-        0.004,
-        11.219
+        0.304,
+        -0.343,
+        11.217
        ],
-       "radius": 12.093,
+       "radius": 11.942,
        "box": [
         0.1719,
         0.0,
@@ -2342,13 +2342,13 @@
        ]
       },
       "canopy": [
-       0.1351,
-       0.2834,
-       0.0879
+       0.1446,
+       0.3014,
+       0.0943
       ]
      },
      {
-      "mesh": "flora/3182828ba2c4ab07cc38bc69806933c178e72c4281968d0693499736b69958e9.mesh",
+      "mesh": "flora/529c59ea79c676a17508c98b4b27893587087ff37bbeccb117695bd5c45b87dc.mesh",
       "triangles": 600,
       "layer": 5,
       "bark": [
@@ -2357,38 +2357,38 @@
        0.25,
        0.25
       ],
-      "top": 17.423,
-      "spread": 8.831,
+      "top": 17.078,
+      "spread": 7.947,
       "shade": [
-       8.08,
-       10.911
+       7.572,
+       9.939
       ],
       "leafy": true,
-      "crown": 16.029,
+      "crown": 15.645,
       "impostor": {
        "layer": 1,
        "top": 0.5,
        "centre": [
-        -0.403,
-        0.045,
-        8.671
+        -0.581,
+        0.286,
+        8.77
        ],
-       "radius": 10.109,
+       "radius": 10.168,
        "box": [
-        0.0547,
-        0.0078,
-        0.9453,
+        0.0859,
+        0.0,
+        0.9219,
         0.9688
        ]
       },
       "canopy": [
-       0.0976,
-       0.2478,
-       0.0803
+       0.1034,
+       0.2628,
+       0.085
       ]
      },
      {
-      "mesh": "flora/e7a927aad9d548373688fb0a758724f1c14d52c7e7264996fe888778d4a2ea80.mesh",
+      "mesh": "flora/829c3963d9e1555a4d62b642bb01c583432ab03ba4b25196aaa9b780286f2783.mesh",
       "triangles": 600,
       "layer": 5,
       "bark": [
@@ -2397,34 +2397,34 @@
        0.25,
        0.25
       ],
-      "top": 14.085,
-      "spread": 6.633,
+      "top": 13.878,
+      "spread": 6.712,
       "shade": [
-       6.229,
-       8.58
+       6.403,
+       7.969
       ],
       "leafy": true,
-      "crown": 13.673,
+      "crown": 13.347,
       "impostor": {
        "layer": 2,
        "top": 0.0,
        "centre": [
-        0.047,
-        0.131,
-        7.167
+        0.148,
+        0.119,
+        7.178
        ],
-       "radius": 8.379,
+       "radius": 7.952,
        "box": [
-        0.0781,
+        0.0391,
         0.0,
-        0.9297,
-        0.9688
+        0.9609,
+        0.9922
        ]
       },
       "canopy": [
-       0.2129,
-       0.3335,
-       0.1039
+       0.2244,
+       0.3531,
+       0.1092
       ]
      }
     ],
@@ -2464,9 +2464,9 @@
        ]
       },
       "canopy": [
-       0.2268,
-       0.4337,
-       0.1345
+       0.2285,
+       0.4372,
+       0.1356
       ]
      },
      {
@@ -2504,9 +2504,9 @@
        ]
       },
       "canopy": [
-       0.2283,
-       0.435,
-       0.1332
+       0.2301,
+       0.4386,
+       0.1343
       ]
      }
     ],
@@ -2546,9 +2546,9 @@
        ]
       },
       "canopy": [
-       0.1844,
-       0.4167,
-       0.1194
+       0.186,
+       0.4204,
+       0.1204
       ]
      },
      {
@@ -2586,15 +2586,15 @@
        ]
       },
       "canopy": [
-       0.1859,
-       0.4177,
-       0.1183
+       0.1877,
+       0.4218,
+       0.1195
       ]
      }
     ],
     "understory": [
      {
-      "mesh": "flora/f3f33618baec740938b446fe7270edda8b32e182206e377b79ecdbab641a98f7.mesh",
+      "mesh": "flora/b6f3a28cf360239b9d99faf294d69ff0decc5262ed61af5bb9ed703c7d24e1f7.mesh",
       "triangles": 238,
       "layer": 5,
       "bark": [
@@ -2603,8 +2603,8 @@
        0.25,
        0.25
       ],
-      "top": 1.861,
-      "spread": 1.422,
+      "top": 1.746,
+      "spread": 1.367,
       "shade": [
        1.528,
        0.852
@@ -2628,9 +2628,9 @@
        ]
       },
       "canopy": [
-       0.1234,
-       0.3059,
-       0.0913
+       0.1315,
+       0.3262,
+       0.0974
       ]
      }
     ]
@@ -2639,22 +2639,22 @@
   "swamp": {
    "layers": [
     {
-     "albedo": "flora/d6082646440e83c9abcc1d625d90236a8882275c7ef271f8e6f608271f30ba93.png",
+     "albedo": "flora/a66a3db330766f10be076fc5394dad9773b11f27f5506ea4a5336f14a3729172.png",
      "normal": "flora/931b31fabe0f74ac5fbbcd95c9c39ef1154770f9c793994c429d45d8f628bc89.png"
     },
     {
-     "albedo": "flora/dc81ef81c67e64b7870214bdf24f58e8326874299061352f9e961de451998525.png",
+     "albedo": "flora/63aa01df80ea95be1f8097a064eaccbf79dc2cd677c58546a4c50e5d760786ec.png",
      "normal": "flora/8769623f57f8a4749566fd855db8d7d5a8458a9d33a3f22d7cc38e63234e978d.png"
     },
     {
-     "albedo": "flora/e05d836b594314bc9006c7cc0a1dc6c003a1cafa2ab0a29185c65f06c742513d.png",
-     "normal": "flora/68b7c3f97475a46dbfdcf906c5dbcfedcfdb212f10cde32c92a27fd837c90a25.png"
+     "albedo": "flora/db34698c57cc5bc33a3ddabc7e07d5560a951ab35754657f161eed5307223adf.png",
+     "normal": "flora/16d93924cc38824537cfcc1877424cb853bd44ead3fded689902d71b1802a260.png"
     }
    ],
    "kinds": {
     "cypress": [
      {
-      "mesh": "flora/ccd970fecdbff1f72c5dd09b5c33b4abc51eb0923fe883236cf490adb8e93497.mesh",
+      "mesh": "flora/8f48380eb772771beb65731bd4752c9e3c21d46c17d9ad0cdcf96fa9a6f8bb1a.mesh",
       "triangles": 838,
       "layer": 2,
       "bark": [
@@ -2663,8 +2663,8 @@
        0.25,
        0.25
       ],
-      "top": 16.04,
-      "spread": 6.681,
+      "top": 15.847,
+      "spread": 6.334,
       "shade": [
        6.191,
        8.732
@@ -2688,13 +2688,13 @@
        ]
       },
       "canopy": [
-       0.1888,
-       0.2475,
-       0.1182
+       0.1998,
+       0.262,
+       0.125
       ]
      },
      {
-      "mesh": "flora/75adf5a549f480042c0952d4e7ed45c661a5ac0543b3d764c7f624a26ad1457b.mesh",
+      "mesh": "flora/da1477502fff0b5c81243419fe645a7f56421c54ccf82dc2bd6d1de350fab671.mesh",
       "triangles": 840,
       "layer": 2,
       "bark": [
@@ -2703,8 +2703,8 @@
        0.25,
        0.25
       ],
-      "top": 16.432,
-      "spread": 7.035,
+      "top": 16.171,
+      "spread": 6.702,
       "shade": [
        6.426,
        8.766
@@ -2728,15 +2728,15 @@
        ]
       },
       "canopy": [
-       0.1883,
-       0.2467,
-       0.1181
+       0.1992,
+       0.2613,
+       0.125
       ]
      }
     ],
     "mangrove": [
      {
-      "mesh": "flora/c48aa113527ed23fc7ae80f4f71e8bb39121a79f4e70a94abe81278daaf8451f.mesh",
+      "mesh": "flora/7eb97055f2e81dd529a1843f8bb52f834dbac6e759b61fbcbd32598af4711dff.mesh",
       "triangles": 600,
       "layer": 2,
       "bark": [
@@ -2745,8 +2745,8 @@
        0.25,
        0.25
       ],
-      "top": 6.402,
-      "spread": 3.28,
+      "top": 6.274,
+      "spread": 3.19,
       "shade": [
        3.35,
        4.538
@@ -2770,13 +2770,13 @@
        ]
       },
       "canopy": [
-       0.1204,
-       0.2441,
-       0.0971
+       0.1293,
+       0.2624,
+       0.1043
       ]
      },
      {
-      "mesh": "flora/dcac6be35db88f2d273ed61d3381c4afb6de5dfbb5ec5ffcb73216bba6c7998f.mesh",
+      "mesh": "flora/ab080a36e8703b68420c8ca0ddd0b986dfeb0e68b6c8615a8af84389c253a38e.mesh",
       "triangles": 598,
       "layer": 2,
       "bark": [
@@ -2785,8 +2785,8 @@
        0.25,
        0.25
       ],
-      "top": 6.245,
-      "spread": 3.658,
+      "top": 6.132,
+      "spread": 3.546,
       "shade": [
        3.58,
        4.537
@@ -2810,9 +2810,9 @@
        ]
       },
       "canopy": [
-       0.1208,
-       0.2449,
-       0.0976
+       0.1296,
+       0.263,
+       0.1048
       ]
      }
     ],

@@ -149,7 +149,7 @@ def groups_of(clusters, count):
         out = unit(sum(cluster.out for cluster in members))
         # A card covers the bulk of its group, not its farthest spray: crossed cards overlapping less leave a crown
         # a few leaves deep along a view rather than ten, which a CPU renderer pays for pixel by pixel.
-        groups.append((centre, out, radius * 0.62))
+        groups.append((centre, out, radius * 0.5))
     return groups
 
 

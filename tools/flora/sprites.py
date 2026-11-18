@@ -92,8 +92,9 @@ def impostor(scene, plant, centre, radius):
                 copies.append(copy)
     lens = camera(scene, (AZIMUTHS * across / 2, -radius * 4, -len(ELEVATIONS) * across / 2), (0, 1, 0), (0, 0, 1),
                   AZIMUTHS * across)
-    # Occlusion over a short reach, so a dense crown darkens in its folds but its mass keeps the leaves' own colour.
-    ao = (0.55, float(np.clip(radius * 0.15, 0.3, 2.0)))
+    # Occlusion lightly and over a short reach, so a dense crown darkens in its folds but its mass keeps the leaves'
+    # own colour: a far fir or pine is the cast's green, not near black.
+    ao = (0.4, float(np.clip(radius * 0.15, 0.3, 2.0)))
     sheet = three(scene, plant, AZIMUTHS * CELL, len(ELEVATIONS) * CELL, ao, 'OBJECT')
     for copy in copies:
         remove(copy)
