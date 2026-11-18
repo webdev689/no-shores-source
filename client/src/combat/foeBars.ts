@@ -60,8 +60,8 @@ export interface PlateViewing {
 /** How high a foe's head stands over its feet, in metres: where its plate's sight and angle are read. */
 const HEAD_M = 1.8;
 
-/** Over each living foe its plate, shown near the crosshair or while fought, laid so none covers another, and across
- *  the top of the screen the boss bar of the Boss in the fight, who shows none over its head. */
+/** Over each living foe its plate, shown near the crosshair or while fought, laid so none covers another, and under
+ *  the compass the boss bar of the Boss in the fight, who shows none over its head. */
 export class FoeBars {
   readonly boss: FoePlate;
   private readonly hud: HTMLElement;
@@ -74,10 +74,11 @@ export class FoeBars {
   /** Each foe's alert state as last seen, and the seconds since it last turned alert. */
   private readonly alerts = new Map<number, { alert: number; since: number }>();
 
-  constructor(hud: HTMLElement, over: HTMLElement) {
+  /** Over figures in `over`, the boss bar in `column`; `hud` is marked while a Boss fights. */
+  constructor(hud: HTMLElement, over: HTMLElement, column: HTMLElement) {
     this.hud = hud;
     this.over = over;
-    this.boss = new FoePlate(hud, 'boss', { words: ['faction', 'phase'], poise: true, remembers: 'found' });
+    this.boss = new FoePlate(column, 'boss', { words: ['faction', 'phase'], poise: true, remembers: 'found' });
     this.boss.root.hidden = true;
     for (const share of PHASE_MARKS) element('i', 'phase-mark', this.boss.health.root).style.left = `${share * 100}%`;
   }

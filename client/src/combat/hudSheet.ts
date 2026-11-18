@@ -2,30 +2,16 @@
 // Enhanced Plus kit paints the windows, troughs, fills and plates by their roles; this sheet gives each its room, and
 // never a colour to a border the kit paints, only its width and style.
 import { PLATES } from '../plus/barLayout.ts';
+import { wearCompass } from '../plus/compass.ts';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
 import { wearKit } from '../plus/kit.ts';
-import { BEVELS, FILLS, TONES } from '../plus/tones.ts';
+import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 
 const SHEET_ID = 'fight-hud';
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
  *  2 px edge. */
 const EMBLEM_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
-/** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a
- *  soft shade past it, so they read over bright sky and every fill. */
-export const HALO = [
-  ...[
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-    [1, 1],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-  ].map(([across, down]) => `${across}px ${down}px 0 ${TONES.outline}`),
-  '0 0 4px rgba(0,0,0,0.6)',
-].join(', ');
 const { overhead, boss } = PLATES;
 
 /** The plates' sheet: an emblem square, a title line and the bars under it, sized for each place a plate stands. */
@@ -107,13 +93,13 @@ ${marks.join('\n')}
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
 .fight-hud .overhead .meter { height: ${overhead.bar}px; }
 
-.fight-hud .target { position: absolute; top: 16px; left: 50%; width: 340px; translate: -50% 0; font-size: 14px; }
+/* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
+   show. */
+.fight-hud .target { width: 340px; font-size: 14px; }
 .fight-hud .target .body { flex: 1; gap: 3px; }
 .fight-hud .target .meter.health { height: 12px; }
-.fight-hud.bossed .target { top: 84px; }
 
-.fight-hud .boss { position: absolute; top: ${boss.top}px; left: 50%; width: min(${boss.width}px, ${boss.share * 100}%);
-  translate: -50% 0; }
+.fight-hud .boss { width: min(${boss.width}px, ${boss.share * 100}%); }
 .fight-hud .boss .body { flex: 1; }
 .fight-hud .boss .title { align-items: baseline; gap: 12px; font-size: 18px; }
 .fight-hud .boss .faction, .fight-hud .boss .phase { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
@@ -233,9 +219,10 @@ export function fightSheetCss(): string {
   return cuesCss() + platesCss() + vitalsCss();
 }
 
-/** Lays the kit's sheet and then the display's on `page`, once each. */
+/** Lays the kit's sheet, the compass's and then the display's on `page`, once each. */
 export function wearFightSheet(page: Document): void {
   wearKit(page);
+  wearCompass(page);
   if (page.getElementById(SHEET_ID)) return;
   const sheet = page.createElement('style');
   sheet.id = SHEET_ID;

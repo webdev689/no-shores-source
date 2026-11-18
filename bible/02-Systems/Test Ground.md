@@ -72,8 +72,8 @@ zero), how far behind and above, and its zoom. A ticked **Hold the aiming view**
 crosshair, while the sliders move, without a weapon drawn. The place is kept in the browser, and its numbers are
 shown to copy into the game's own (`AIM` in `playerCamera.ts`); **Back to the game's** returns to them.
 
-North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
-and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
+North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump and
+shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
 
 ## Fighting
 
@@ -89,13 +89,13 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   for. Names, factions and hands come from the rules' roster through WebAssembly. Each fights by its brain ([[Foes]])
   and wears its type's dress ([[Enemies]]): the Grey Tithe in grey over leather or iron, the pirates as the foes of
   each kind were dressed before.
-- **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen
-  when knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air,
-  no weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the
-  jump's rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the
-  jump); the parry's deflect, or a shield's
-  block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
-  wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame, before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
+- **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
+  knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
+  weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
+  rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the jump);
+  the parry's deflect, or a shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed
+  blow's stroke raised through its wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame,
+  before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
   drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
   edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
@@ -145,26 +145,26 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
   view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
-- **The display.** It lays its own sheet over the [[Interface]]'s kit. Health, stamina and poise in one carved window
-  at the bottom left, each bar naming itself with its percentage inside, a faint strip holding what a loss took before
-  it drains, the health's edge flashing blood at a quarter or less and the stamina flashing when a swing or a dodge is
-  pressed with none; the soft lock's target marked at its chest; the target's plate (emblem, name, health and poise
-  track) at the top (below the boss bar while one shows); over each living foe but a Boss, near the crosshair or
-  fought in the last minute, its plate: its faction's emblem, its type's name with an Elite's or a Miniboss's mark,
-  and its health in red, orange or yellow by rank, a "?" while it is suspicious or searching and a "!" for a second
-  as it turns alert, no plate over another's; across the top of the
-  screen, for the nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and
-  its health in yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
+- **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
+  the view; health, stamina and poise in one window at the bottom left, each bar naming itself with its percentage
+  inside, a faint strip holding what a loss took before it drains, the health's edge flashing blood at a quarter or less
+  and the stamina flashing when a swing or a dodge is pressed with none; the soft lock's target marked at its chest; the
+  target's plate (emblem, name, health and poise track) under the compass (below the boss bar while one shows); over
+  each living foe but a Boss, near the crosshair or fought in the last minute, its plate: its faction's emblem, its
+  type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by rank, a "?" while it is
+  suspicious or searching and a "!" for a second as it turns alert, no plate over another's; under the compass, for the
+  nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and its health in
+  yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
   came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
   gold or green when it is good for the player and red when bad; in first person, words about the player under the
-  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over
-  a foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold
-  once a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in
-  hand, or hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
-  a red mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
-  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
-  with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and
-  why.
+  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a
+  foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once
+  a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or
+  hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red
+  mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
+  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player
+  lies dead, how long until they stand again at the start, or, with `?room=`, "Reconnecting…" while the page joins its
+  room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
   rolled among those that reach the locked foe. Alone, Escape pauses the fight.

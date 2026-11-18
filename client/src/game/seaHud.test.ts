@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import type { FightCaptain, ShipState } from '../rules/fightRules.ts';
+import { seaShipMarks } from './seaHud.ts';
+
+const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
+  ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile }) as unknown as FightCaptain;
+
+test('out of a fight the compass marks every other player’s ship in bone and every hostile one in red', () => {
+  const others = [{ player: 4, x: 10, y: -20, heading: 0, pace: 1 }];
+  const pirates = [{ id: 7, x: -300, y: 40, heading: 1, faction: 2, rank: 3 }];
+  assert.deepEqual(seaShipMarks(null, { others, pirates }), [
+    { x: 10, y: -20, kind: 'ship' },
+    { x: -300, y: 40, kind: 'hostile' },
+  ]);
+  assert.deepEqual(seaShipMarks(null, null), [], 'out of a room, none');
+});
+
+test('in a fight it marks its captains: red while she would take the player, grey once her colours are down, none going down', () => {
+  const captains = [
+    captain(100, 0, 'afloat', true),
+    captain(0, 100, 'afloat', false),
+    captain(50, 50, 'struck', true),
+    captain(60, 60, 'wrecked', true),
+    captain(70, 70, 'sinking', true),
+    captain(80, 80, 'sunk', true),
+  ];
+  const pirates = [{ id: 7, x: -300, y: 40, heading: 1, faction: 2, rank: 3 }];
+  assert.deepEqual(seaShipMarks(captains, { others: [], pirates }), [
+    { x: 100, y: 0, kind: 'hostile' },
+    { x: 0, y: 100, kind: 'ship' },
+    { x: 50, y: 50, kind: 'struck' },
+    { x: 60, y: 60, kind: 'struck' },
+  ]);
+});

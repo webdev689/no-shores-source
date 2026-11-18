@@ -89,11 +89,11 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
   name the fight's.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
-  display: the vitals at the bottom left, the target's bars and the boss bar at the top, each foe's name and bar, the
-  parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the tracers, the sparks, the
-  blood and the flashes. The game's own display stands over it: the place, the keys (over the vitals), the menus
-  and the veil; while a boss's bar or the target's shows, the place's name gives it the top of the screen, and the
-  status line stands under the place's name ([[Interface]]).
+  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
+  foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
+  tracers, the sparks, the blood and the flashes. The game's own display stands over it: the place, the keys (over
+  the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the top of the screen, and
+  the status line stands under the place's name, under the boss's bar ([[Interface]]).
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
@@ -179,6 +179,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   Each figure stands where her deck lies on the swell, drawn as large as she is.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
+- **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
+  It marks each ship within 900 m of hers: the hostile red, other players' bone, a fight's struck captains grey
+  ([[Interface]]). It hides while the held map is up at the helm.
 - **Pirates and the Grey Tithe** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her
   voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says so;
   the page sails its ship at the pace the room sailed her at, drawn to where the room has her. A bold one that comes

@@ -15,8 +15,9 @@ dfo_paths:
   - src/ui/hitNumbers.js
   - src/ui/naval/navalHud.js
   - src/ui/profileBadge.js
-dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the health bars fc2a8e6, on the same branch; the profile mark read
-  at 1c0fd681 (main)
+  - src/scenes/naval/navalHost.js
+dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the health bars, compass and HUD places fc2a8e6, on the same
+  branch; the profile mark read at 1c0fd681 (main)
 ---
 # Pick - Enhanced Plus UI
 
@@ -47,8 +48,19 @@ owner approved it: asked whether to record it as an approved pick, "yes".
 - The bars' readings of Daggerfall's rules: the classic vitals (`hudVitals.js`), magicka and breath, and a number's
   critical strike, backstab, miss and ward; a heal's number, since no player heals yet; and a boss's traits and ward,
   which our foes do not have.
+- The bearing DFO's compass marks took from Daggerfall Unity's compass (`compassMarkerLerp` in `hud.js`). Ours is
+  written from the strip's own law, and puts a mark on the same quarter turn as the points, so it stands under its
+  letter; DFO's spread its marks over half a turn.
 
 ## Our version
+
+The compass and the bars' places come over at the owner's word
+([[The Player's Display Takes DFO's Compass and Bar Layout]]): the compass across the top's middle with the boss bar and
+the target's plate under it (`enhancedHud.js` and its sheets), on the [[Test Ground]] and in the [[Game]] on foot and at
+sea. Of the compass's marks, the sea's ships come over (`navalHost.js`, `compassShips`). The rest have no like here yet:
+the player's own boats on land, a party, a quest, the way out, a profession's nodes, Detect spells, and the world's
+events (a gate, a breach's arch, the sea serpent, a Hollow, a fallen star). The vitals keep the kit's window at the
+bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]).
 
 The style kit and its frame are the [[Interface]]'s roles, and the [[Game]]'s heads-up display wears them
 ([[The Ship Is Managed and Walked From the Sea's Panel]]). The health bars are ported: the vitals, the target plate

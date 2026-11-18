@@ -195,7 +195,7 @@ export class SeaCombat {
   }
 
   /** Every captain in the fight: hers, then any other. */
-  private get captains(): readonly FightCaptain[] {
+  get captains(): readonly FightCaptain[] {
     return [this.last.captain, ...(this.last.others ?? [])];
   }
 

@@ -91,7 +91,7 @@ test('the boss in the fight is the nearest living Boss that is alert or has been
 
 test('in a crowd, plates show near the crosshair and for the foes fought; none behind a block, none past 60 m', () =>
   onFakePage((root) => {
-    const bars = new FoeBars(root, root);
+    const bars = new FoeBars(root, root, root);
     // The eye at the origin, looking north (+y); each foe stands at its bearing from north, metres off.
     const placed = (id: number, degrees: number, metres: number): MarkedFoe => {
       const radians = (degrees * Math.PI) / 180;
@@ -121,7 +121,7 @@ test('in a crowd, plates show near the crosshair and for the foes fought; none b
 
 test('a plate leaving the cone fades out over a quarter of a second, then is gone', () =>
   onFakePage((root) => {
-    const bars = new FoeBars(root, root);
+    const bars = new FoeBars(root, root, root);
     const viewing: PlateViewing = {
       camera: { eye: [0, 0, 1.8], forward: [0, 1, 0], focal: 1 / Math.tan(Math.PI / 6) },
       blocked: () => false,

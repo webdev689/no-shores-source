@@ -216,6 +216,11 @@ export class Sea {
     return this.room !== null;
   }
 
+  /** The other ships the sea room shows round her, every other player's and every hostile one; none out of a room. */
+  get sighted(): Pick<SeaRoom, 'others' | 'pirates'> | null {
+    return this.room;
+  }
+
   /** Leaves the sea room: the player's ship leaves the sea there. */
   leaveRoom(): void {
     this.room?.close();

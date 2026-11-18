@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PLATES } from '../plus/barLayout.ts';
-import { TONES } from '../plus/tones.ts';
+import { Compass, SHIP_MARK_COLOURS, UNDER_COMPASS } from '../plus/compass.ts';
+import { HALO, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { blockedBy, clearOf, veilOf } from './hud.ts';
-import { fightSheetCss, HALO } from './hudSheet.ts';
+import { fightSheetCss } from './hudSheet.ts';
+import { findAll, onFakePage } from './page.test.ts';
 
 const standing: FighterView = {
   x: 0,
@@ -94,6 +96,14 @@ test('the plates on foot are the sizes the sea draws its own at', () => {
   assert.match(rule(css, '.fight-hud .boss'), new RegExp(`width: min\\(${boss.width}px, ${boss.share * 100}%\\)`));
 });
 
+test('the boss bar and the target’s plate stand in the compass’s column, and a Boss ship’s plate where the boss bar does', () => {
+  const css = fightSheetCss();
+  for (const selector of ['.fight-hud .boss', '.fight-hud .target']) {
+    assert.doesNotMatch(rule(css, selector), /position|top:/, `${selector} is laid by the column, not set apart`);
+  }
+  assert.equal(PLATES.boss.top, UNDER_COMPASS, 'at sea a Boss ship’s plate stands where the boss bar stands on foot');
+});
+
 test('a plate’s line is blocked by a block between the eye and the head, never by one beside it or at the head', () => {
   const wall = { minX: -2, minY: 4.8, maxX: 2, maxY: 5.2, top: 4 };
   assert.equal(blockedBy([wall], [0, 0, 1.7], [0, 10, 1.8]), true);
@@ -115,4 +125,68 @@ test('with reduced motion asked for, no piece falls, no word rises and the poise
   assert.match(still, /\.meter \.piece \{ display: none !important; \}/);
   assert.match(still, /\.poise-flash \.poise-fill \{ animation: none; \}/);
   assert.match(still, /\.word \.rise, \.fight-hud \.word\.great \.rise \{ animation-name: fight-word-still; \}/);
+});
+
+test('the compass turns its points with the view and pools its marks: one no longer wanted is hidden, not removed', () => {
+  onFakePage((root) => {
+    const compass = new Compass(root);
+    const points = findAll(root, 'compass-point');
+    assert.deepEqual(
+      points.map((point) => point.textContent),
+      ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
+    );
+    assert.deepEqual(
+      findAll(root, 'cardinal').map((point) => point.textContent),
+      ['N', 'E', 'S', 'W'],
+    );
+    assert.equal(findAll(root, 'compass-needle').length, 1);
+    compass.update(0.02, [0, 0]);
+    const shown = points.filter((point) => !point.hidden);
+    assert.deepEqual(
+      shown.map((point) => [point.textContent, point.style['left']]),
+      [
+        ['N', '42.0%'],
+        ['NE', '92.0%'],
+      ],
+    );
+    compass.update(0.5, [0, 0]);
+    assert.deepEqual(
+      points.filter((point) => !point.hidden).map((point) => point.textContent),
+      ['SE', 'S', 'SW'],
+    );
+    compass.update(
+      0,
+      [0, 0],
+      [
+        { x: 0, y: -300, kind: 'hostile' },
+        { x: 300, y: 0, kind: 'ship' },
+      ],
+    );
+    const marks = findAll(root, 'compass-ship');
+    assert.deepEqual(
+      marks.map((mark) => [mark.hidden, mark.style['left'], mark.style['borderBottomColor']]),
+      [
+        [false, '50.0%', SHIP_MARK_COLOURS.hostile],
+        [false, '100.0%', SHIP_MARK_COLOURS.ship],
+      ],
+    );
+    compass.update(0, [0, 0], [{ x: 0, y: -300, kind: 'struck' }]);
+    assert.equal(findAll(root, 'compass-ship').length, 2, 'the pool is kept');
+    assert.deepEqual(
+      marks.map((mark) => [mark.hidden, mark.style['borderBottomColor']]),
+      [
+        [false, SHIP_MARK_COLOURS.struck],
+        [true, SHIP_MARK_COLOURS.ship],
+      ],
+    );
+    compass.update(
+      0,
+      [0, 0],
+      [
+        { x: 0, y: -300, kind: 'hostile' },
+        { x: 300, y: 0, kind: 'ship' },
+      ],
+    );
+    assert.equal(marks[1]?.hidden, false, 'and shown again');
+  });
 });

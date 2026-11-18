@@ -24,6 +24,22 @@ export const TONES = {
   wordDim: '#e2dccd',
 } as const;
 
+/** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a soft
+ *  shade past it, so they read over bright sky and every fill. */
+export const HALO = [
+  ...[
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [1, 1],
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+  ].map(([across, down]) => `${across}px ${down}px 0 ${TONES.outline}`),
+  '0 0 4px rgba(0,0,0,0.6)',
+].join(', ');
+
 /** The four edges of a bevel, as `border-color` takes them: top, right, bottom, left. */
 export const BEVELS = {
   raised: `${TONES.stoneLit} ${TONES.stoneDim} ${TONES.stoneDark} ${TONES.stoneMid}`,

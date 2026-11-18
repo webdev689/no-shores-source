@@ -1,6 +1,7 @@
 import { button, make } from '../editor/dom.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
+import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
@@ -82,6 +83,9 @@ export class Hud {
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
+  /** The compass at sea, heading its column at the top; on foot the fight's display stands its own there. */
+  private readonly compassColumn = make('div', '', 'compass-column');
+  private readonly seaCompass = new Compass(this.compassColumn);
   /** Each captain's bar over her ship in a fight, drawn afresh each frame. */
   private readonly shipLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   private readonly shipPlates = new ShipPlates();
@@ -112,6 +116,7 @@ export class Hud {
   constructor(root: HTMLElement) {
     root.classList.add('hud');
     wearKit(root.ownerDocument);
+    wearCompass(root.ownerDocument);
     const place = make('div', '', 'place');
     place.append(this.placeTitle, this.placeKind);
     this.warning.append(make('div', 'Return to the area', 'warning-words'), this.count);
@@ -150,6 +155,7 @@ export class Hud {
       this.shade,
       this.shipLayer,
       this.markLayer,
+      this.compassColumn,
       place,
       this.warning,
       this.hintList,
@@ -167,6 +173,7 @@ export class Hud {
     this.seaBar(null);
     this.shipPanel(null);
     this.wheelOffer(false);
+    this.compass(null);
     this.note('');
   }
 
@@ -206,6 +213,19 @@ export class Hud {
   note(text: string): void {
     if (this.status.textContent !== text) this.status.textContent = text;
     this.status.hidden = text === '';
+  }
+
+  /** Turns the compass to `view`'s heading (turns from north) and marks its ships round the player at `from`; null
+   *  hides it. */
+  compass(
+    view: {
+      readonly heading: number;
+      readonly from: readonly [number, number];
+      readonly ships: readonly ShipMark[];
+    } | null,
+  ): void {
+    this.compassColumn.hidden = view === null;
+    if (view) this.seaCompass.update(view.heading, view.from, view.ships);
   }
 
   /** Covers the view with words while a place loads, or lifts the cover. */
