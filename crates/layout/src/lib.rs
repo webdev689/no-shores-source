@@ -20,6 +20,7 @@ pub mod pieces_coast;
 pub mod pieces_land;
 pub mod ring;
 pub mod rocks;
+pub mod run_kits;
 pub mod runs;
 pub mod seat;
 pub mod settle;
@@ -223,6 +224,9 @@ pub fn plan(
             holds: named.clone(),
         }));
         sites.push(sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named });
+    }
+    for run in &runs {
+        run_kits::build(&mut kit, run, &carved);
     }
     rocks::talus(&mut kit, &ring, &paths, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &paths, &carved);

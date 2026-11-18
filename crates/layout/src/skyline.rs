@@ -18,7 +18,7 @@ const UNEVEN_MOST_M: f64 = 1.5;
 const WAY_CLEAR_M: f64 = 45.0;
 
 /// A point on the ground as carved.
-fn carved_at(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
+pub(crate) fn carved_at(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
     kit.height(at) + carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1]))
 }
 
@@ -68,7 +68,7 @@ pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts) {
 }
 
 /// A round tower broken off at its top, its fallen courses round its foot.
-fn tower_stump(kit: &mut Kit, carved: &Sculpts, site: [f64; 2]) {
+pub(crate) fn tower_stump(kit: &mut Kit, carved: &Sculpts, site: [f64; 2]) {
     let across = 5.0 + kit.draw() * 3.5;
     let tall = 6.0 + kit.draw() * 10.0;
     let base = carved_at(kit, carved, site) - 1.5;

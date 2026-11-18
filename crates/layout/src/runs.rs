@@ -166,17 +166,27 @@ fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], draw: &dyn Fn(i64) -
     let wanted_m = between([SHORTEST_M + 20.0, LONGEST_M - 40.0], 3);
     let passage = ((wanted_m - fixed) / gaps).clamp(PASSAGE_M[0], PASSAGE_M[1]);
     let side = if draw(4) < 0.5 { 1.0 } else { -1.0 };
+    // The line runs to each beat's rim, through its middle and out of its rim, so a beat stays flat and only the
+    // passages between rims climb.
     let mut at = ahead(mouth, way, entry + radii[0]);
-    let mut line = vec![mouth, at];
+    let mut line = vec![mouth, ahead(mouth, way, entry), at];
+    let mut flat = vec![false, false, true];
     let mut beats = vec![Beat { at, radius: radii[0], level: 0.0 }];
     for (gap, pair) in radii.windows(2).enumerate() {
         let bend = between(BEND, 20 + gap as i64) * if gap % 2 == 0 { side } else { -side };
         let share = 0.35 + 0.3 * draw(30 + gap as i64);
         let bent = turned(way, bend);
-        let elbow = ahead(at, bent, pair[0] + passage * share);
-        at = ahead(elbow, way, passage * (1.0 - share) + pair[1]);
-        line.extend([elbow, at]);
+        let rim = ahead(at, bent, pair[0]);
+        let elbow = ahead(rim, bent, passage * share);
+        let next_rim = ahead(elbow, way, passage * (1.0 - share));
+        at = ahead(next_rim, way, pair[1]);
+        line.extend([rim, elbow, next_rim, at]);
+        flat.extend([true, false, false, true]);
         beats.push(Beat { at, radius: pair[1], level: 0.0 });
+    }
+    let levels = levels_of(brief.kind, &line, &flat);
+    for beat in &mut beats {
+        beat.level = line.iter().position(|point| *point == beat.at).map_or(0.0, |at| levels[at]);
     }
     let end = radii[count - 1];
     Run {
@@ -184,12 +194,32 @@ fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], draw: &dyn Fn(i64) -
         kind: brief.kind,
         place: brief.place,
         mouth,
-        levels: vec![0.0; line.len()],
+        levels,
         line,
         beats,
         door: ahead(at, way, end),
         facing: way,
     }
+}
+
+/// Each line point's level, a share of the massif's height, by how far along the passages (not the beats, which are
+/// flat: `flat` marks a segment ending in a beat) it lies: a ledge climbs the whole way to the top, a rampart climbs in
+/// its first two fifths and keeps to the top, the rest keep to the floor.
+fn levels_of(kind: RunKind, line: &[[f64; 2]], flat: &[bool]) -> Vec<f64> {
+    let mut climbed = vec![0.0];
+    for (pair, &level) in line.windows(2).zip(&flat[1..]) {
+        let length = if level { 0.0 } else { crate::field::distance(pair[0], pair[1]) };
+        climbed.push(climbed.last().copied().unwrap_or(0.0) + length);
+    }
+    let whole = climbed.last().copied().unwrap_or(0.0).max(1e-9);
+    climbed
+        .iter()
+        .map(|along| match kind {
+            RunKind::Ledge => along / whole,
+            RunKind::Rampart => (along / (0.4 * whole)).min(1.0),
+            _ => 0.0,
+        })
+        .collect()
 }
 
 /// How far a point lies outside a ring, metres (negative inside).
