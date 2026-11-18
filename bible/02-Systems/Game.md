@@ -18,6 +18,9 @@ code:
   - client/src/game/nodes.ts#windowRect
   - client/src/game/seaLaw.ts#continentToOpen
   - client/src/game/seaShips.ts#SeaShips
+  - client/src/game/passage.ts#Passage
+  - client/src/game/seaHelm.ts#clearAhead
+  - client/src/game/seaClose.ts#CloseZoom
   - client/src/game/aboard.ts#Aboard
   - client/src/game/shipPanel.ts#shipPanelOf
   - client/src/game/hints.ts#seaHints
@@ -84,16 +87,29 @@ player comes back at the section's spawn nearest where they fell. A dead body li
 `Sea` is the [[Overworld]] in play. The first return puts the ship off Overlook's harbour: out from the city's middle
 through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left.
 
-- **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures, riding a little on the swell, her sails
-  set while she is under way and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is
-  not to scale: a ship is drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other
-  player's ship is the Sloop too. At the helm every ship is her true size ([[Held Map]]).
+- **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures. Like the World Editor's, she rides the
+  swell the sea draws and heels into her turns ([[Sailing]], "Drawn at sea"). Her sails are set while she is under way
+  and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is not to scale: a ship is
+  drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other player's ship is the Sloop
+  too. At the helm every ship is her true size ([[Held Map]]).
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
+- **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
+  lowest the wheel keeps coming in, a fifth of the way a notch. The eye comes down along the camera's own look to
+  25 m from a point 4.5 m over her waterline, the World Editor's, while every ship eases to her true size. Out goes
+  back from close first. Clicks and marks are taken on the picture as shown.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
   planned says why.
+- **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the sea's own view, close in or not:
+  - A and D turn her at the helm's 10 degrees a second. Under way she takes a course straight on along her new
+    heading; at rest she turns where she lies, and the room turns her too ([[Server]], "The sea").
+  - W sets her sailing straight on. That course reaches up to 20 km, stops 500 m short of the first coast that way, and
+    is set again once under 5 km of it is left. Where a coast stops it short, or less than 200 m lies clear, she comes
+    to rest facing the coast, and the voyage's line says "Land lies ahead."
+  - S heaves her to, as Stop does.
+  - Straight on, the voyage's line says "Sailing straight on"; resumed, she sails on straight along her heading.
 - **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]), a window of the [[Interface]]
   at the foot of the screen in three groups, Navigation, Pace and Ship, holds Map (N), which takes the
   view down to the helm and raises the [[Held Map]], where a destination is set; Stop while under way and Resume
@@ -114,6 +130,10 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **Her hands.** Stand-ins until crew management comes: a human, a felid and a human in plain dress, each walking
   between spots on her deck at 1.3 m/s and standing at each 2 to 7 s, on a leg the deck leaves clear and away from
   her wheel; seeded, so they walk the same however the frames fall.
+- **Seen from any view** ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Her hands always go
+  about her deck. The player stands at her wheel, but at the helm, where the eye is theirs. Off the helm the player
+  walks her deck, with her helmsman at the wheel under way. In a fight they all stand on her as the fight lies her.
+  Each figure stands where her deck lies on the swell, drawn as large as she is.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
 - **Pirates** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her voyage's pace. As one
@@ -182,6 +202,8 @@ shadow or a wall's and never by its own. Its contact shade stays under its feet 
 past the near square leans the way the sun throws one, standing in for it.
 
 At sea each ship's footprint is handed to the water, which keeps out of her hull and foams round her bow under way.
+Under way the player's ship stirs the water's ripples at her bow and quarters, as the World Editor's does, and the
+ripples follow her.
 In death the world drains to grey, and comes back in colour on respawn or on leaving.
 
 ## Limits

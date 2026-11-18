@@ -1,7 +1,7 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
 import { alongNear, type Pace, SHIP_SPEED, sailSpeed, type Voyage } from '../overworld/voyage.ts';
-import { cellHeight, deckToWorld, SLOOP_DECK } from '../ships/deck.ts';
+import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
  *  shore to water `depthM` deep, then `clearM` on, within `farthestM` of the harbour. */
@@ -43,14 +43,10 @@ export function shownScale(overworldScale: number, helmShare: number): number {
   return overworldScale + (1 - overworldScale) * helmShare;
 }
 
-/** Where the eye stands at the helm of a ship drawn at `scale`, the ship riding `heave` metres on the swell. */
-export function helmEye(
-  ship: { readonly x: number; readonly y: number; readonly heading: number },
-  scale: number,
-  heave: number,
-): readonly [number, number, number] {
+/** Where the eye stands at the helm of a ship as she lies, at her size as drawn. */
+export function helmEye(lying: Lying): readonly [number, number, number] {
   const [helmX, helmY] = SLOOP_DECK.helm;
-  return deckToWorld({ ...ship, scale, heave }, helmX, helmY, HELM.eyeM);
+  return deckToWorld(lying, helmX, helmY, HELM.eyeM);
 }
 
 /** A port's icon stands over its harbour at sea within this of it, metres: twice a landing's reach, so a port is seen

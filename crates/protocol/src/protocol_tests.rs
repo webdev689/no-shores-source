@@ -282,6 +282,18 @@ fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
     assert_eq!(read_sea_input(&walk_bytes(12, &controls)), Ok(SeaInput::Walk(12, controls)));
     assert_eq!(read_sea_input(&helm_bytes(true)), Ok(SeaInput::LeaveHelm));
     assert_eq!(read_sea_input(&helm_bytes(false)), Ok(SeaInput::TakeHelm));
+    assert_eq!(read_sea_input(&face_bytes(1.25)), Ok(SeaInput::Face(1.25)));
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let (points, facing) = (Some(builder.create_vector(&[1.0, 2.0])), Some(builder.create_vector(&[0.5])));
+    let args = messages::CourseArgs { points, facing, ..Default::default() };
+    let both = messages::Course::create(&mut builder, &args);
+    builder.finish(both, None);
+    assert!(read_sea_input(builder.finished_data()).is_err(), "a course's legs turn her, not a facing");
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let facing = Some(builder.create_vector(&[0.5, 1.0]));
+    let two = messages::Course::create(&mut builder, &messages::CourseArgs { facing, ..Default::default() });
+    builder.finish(two, None);
+    assert!(read_sea_input(builder.finished_data()).is_err(), "she faces one heading");
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let walk = Some(builder.create_vector(&[1.0, 0.0]));
     let short = messages::Course::create(&mut builder, &messages::CourseArgs { walk, ..Default::default() });

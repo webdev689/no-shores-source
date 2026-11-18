@@ -1,7 +1,15 @@
 // The sea room as the ship sails in it, a server's or the one in the page when playing alone: its course sent when
 // set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, pirate and fight the room
 // last showed, with its word on the player's body on deck.
-import { courseBytes, helmBytes, ordersBytes, type SeenPirate, type SeenShip, walkBytes } from '../network/messages.ts';
+import {
+  courseBytes,
+  faceBytes,
+  helmBytes,
+  ordersBytes,
+  type SeenPirate,
+  type SeenShip,
+  walkBytes,
+} from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { fightViewOf, ordersNumbers } from '../network/seaFight.ts';
 import type { Point2 } from '../overworld/ground.ts';
@@ -107,6 +115,12 @@ export class SeaRoom {
    *  the sea takes waits for a later snapshot, and a newer course takes its place. */
   course(points: readonly Point2[], pace: Pace): void {
     this.waitingCourse = courseBytes(points, pace);
+    this.sendCourse();
+  }
+
+  /** Brings the ship to rest turned to `heading`, radians clockwise from north: sent as a course is, in its turn. */
+  face(heading: number): void {
+    this.waitingCourse = faceBytes(heading);
     this.sendCourse();
   }
 

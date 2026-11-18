@@ -37,8 +37,9 @@ import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
 import type { SeaShip } from './seaShips.ts';
-import { HINTS, seaHints } from './hints.ts';
-import { shipPanelOf, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
+import { HINTS } from './hints.ts';
+import { type SloopBuild, sloopBuildOf } from './shipPanel.ts';
+import { showSeaHud } from './seaHud.ts';
 import { fightControls } from './seaCombat.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
@@ -481,12 +482,23 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
-    const turn = held('turnRight') - held('turnLeft');
-    const tilt = held('lookDown') - held('lookUp');
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu;
-    const wind = scene.land?.swell?.bearing ?? 0;
-    const shown = here.frame(seconds, clock, viewport, turn, tilt, wind, controls, paused);
+    const swell = scene.land?.swell;
+    // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
+    if (!paused && !mapUp())
+      here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
+    const shown = here.frame({
+      seconds,
+      time: clock,
+      viewport,
+      turn: held('turnRight') - held('turnLeft'),
+      tilt: held('lookDown') - held('lookUp'),
+      swell,
+      controls,
+      paused,
+    });
+    for (const stir of shown.stirs) scene.stir(stir);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
     wasWalking = here.aboard.walking;
@@ -512,27 +524,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
         : undefined;
-    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), { hulls: shown.hulls, after });
+    const more = { hulls: shown.hulls, after, focus: shown.focus };
+    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
-    const island = ISLANDS[landmass.id];
-    const atHelm = here.helmView;
-    const { aboard } = here;
-    if (flow.mode === 'landing') hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
-    else if (atHelm) hud.place('At the helm', REGION);
-    else if (aboard.walking) hud.place('Aboard the Sloop', 'Off the helm');
-    else if (aboard.managing) hud.place('Managing the Sloop', REGION);
-    else hud.place('At sea', shown.landfall && island ? `Off ${island}` : REGION);
-    const fighting = here.fight?.lines(clock) ?? null;
-    hud.hints(seaHints({ fighting, landing: flow.mode === 'landing', atHelm, ...aboard.where }));
-    hud.marks(shown.marks);
-    const onSea = flow.mode === 'sea' && !flow.menu;
-    const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
-    hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
-    const build = aboard.managing ? builtSloop() : null;
-    const voyage = { heading: here.heading, pace: here.paceStep, note: here.voyageNote };
-    hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, sloop.waterline, voyage) : null);
-    hud.wheelOffer(onSea && aboard.atWheel);
-    hud.note(charting ? 'Charting the coast ahead…' : shown.note);
+    showSeaHud(hud, here, shown, {
+      landing: flow.mode === 'landing',
+      onSea: flow.mode === 'sea' && !flow.menu,
+      island: ISLANDS[landmass.id],
+      region: REGION,
+      clock,
+      build: builtSloop,
+      waterline: sloop.waterline,
+      charting: charting !== null,
+    });
     sinceChart += seconds;
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     if (!charting && flow.mode === 'sea' && sinceChart >= CHART_EVERY_S) {

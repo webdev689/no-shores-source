@@ -104,6 +104,8 @@ pub fn read_course(bytes: &[u8]) -> Result<(Vec<[f64; 2]>, u16), String> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum SeaInput {
     Course(Vec<[f64; 2]>, u16),
+    /// No points and one heading: she comes to rest turned to it.
+    Face(f64),
     Orders(Orders),
     Walk(u32, Controls),
     LeaveHelm,
@@ -131,6 +133,14 @@ pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
     }
     if let Some(orders) = course.orders() {
         return orders_from(&orders.iter().collect::<Vec<_>>()).map(SeaInput::Orders);
+    }
+    if let Some(facing) = course.facing() {
+        let numbers: Vec<f64> = facing.iter().collect();
+        return match (numbers.as_slice(), course.points().map_or(0, |points| points.len())) {
+            (&[heading], 0) => Ok(SeaInput::Face(heading)),
+            (_, 0) => Err(format!("a ship faces one heading, not {} numbers", numbers.len())),
+            _ => Err("a course's legs turn her: a facing comes with no points".to_owned()),
+        };
     }
     read_course(bytes).map(|(points, pace)| SeaInput::Course(points, pace))
 }
@@ -162,6 +172,17 @@ pub fn walk_bytes(sequence: u32, controls: &Controls) -> Vec<u8> {
 pub fn helm_bytes(leave: bool) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let args = messages::CourseArgs { helm: if leave { 1 } else { 2 }, ..messages::CourseArgs::default() };
+    let course = messages::Course::create(&mut builder, &args);
+    builder.finish(course, None);
+    builder.finished_data().to_vec()
+}
+
+/// A ship at rest turned to a heading, as its bytes, written from Rust for tests.
+#[must_use]
+pub fn face_bytes(heading: f64) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let facing = Some(builder.create_vector(&[heading]));
+    let args = messages::CourseArgs { facing, ..messages::CourseArgs::default() };
     let course = messages::Course::create(&mut builder, &args);
     builder.finish(course, None);
     builder.finished_data().to_vec()

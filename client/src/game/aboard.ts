@@ -24,8 +24,6 @@ const PAN_S = 1.4;
 const MANAGE = { distanceM: 39, pitch: 0.5, turn: -0.6, nearestM: 18, farthestM: 78 } as const;
 /** Her middle, which Manage looks at: on her centre line a little aft, a metre over her deck. */
 const MIDDLE = [0, 1.2, 3] as const;
-/** Figures are drawn once the view is this far down, where she is near enough her true size. */
-const FIGURES_FROM = 0.97;
 /** How near the spot behind her wheel the player stands to take the helm, metres: the sea room's own reach
  *  (crates/room/src/deck.rs `WHEEL_REACH_M`), which judges it. */
 export const WHEEL_REACH_M = 0.8;
@@ -157,11 +155,12 @@ export class Aboard {
     this.distance = Math.min(MANAGE.farthestM, Math.max(MANAGE.nearestM, this.distance * 0.9 ** notches));
   }
 
-  /** One frame aboard, `seconds` on: the crew go about; the view comes down or goes up; on the walk the player steps
-   *  by `controls` (by nothing while `paused`), and the room's word on their body and on the helm is taken. */
+  /** One frame aboard, `seconds` on: the crew go about, seen or not; the view comes down or goes up; on the walk the
+   *  player steps by `controls` (by nothing while `paused`), and the room's word on their body and on the helm is
+   *  taken. */
   step(seconds: number, clock: number, controls: InputFrame, paused: boolean, room: HelmRoom | null): void {
-    if (!this.view) return;
     this.crew.step(seconds);
+    if (!this.view) return;
     const down = Math.min(1, Math.max(0, this.view.at + (this.view.going === 'down' ? seconds : -seconds) / PAN_S));
     this.view = { ...this.view, at: down };
     if (this.view.going === 'up' && down <= 0) {
@@ -225,18 +224,23 @@ export class Aboard {
     return { ...local, eye: deckToWorld(lying, ...local.eye), yaw: local.yaw + lying.heading };
   }
 
-  /** Every figure aboard for an eye at `eye` (world metres), as she lies, once the view is down: the player at her
-   *  wheel in Manage or walking her deck, her helmsman at the wheel while she sails on under him, and her hands. */
-  figures(lying: Lying, eye: readonly [number, number, number], clock: number, underWay: boolean): CardAt[] {
-    const view = this.view;
-    if (!view || smooth01(view.at) < FIGURES_FROM) return [];
+  /** Every figure aboard for an eye at `eye` (world metres), as she `lying` lies, at her size as drawn, from any view:
+   *  the player walking her deck, with her helmsman at the wheel while she sails on under him; else the player at her
+   *  wheel unless the eye is theirs there (`eyeAtHelm`); and her hands. */
+  figures(
+    lying: Lying,
+    eye: readonly [number, number, number],
+    clock: number,
+    underWay: boolean,
+    eyeAtHelm: boolean,
+  ): CardAt[] {
     const { walker, forge } = this.context;
     const [eyeX, eyeY] = worldToDeck(lying, ...eye);
     const shown: CardAt[] = [];
     const lay = (aboard: CardAt | null) => {
       if (!aboard) return;
       const [x, y, z] = deckToWorld(lying, aboard.x, aboard.y, aboard.z);
-      shown.push({ ...aboard, x, y, z });
+      shown.push({ ...aboard, x, y, z, scale: lying.scale });
     };
     const place = (id: number, dress: Dress, anim: string, x: number, y: number, z: number, facing: number) => {
       const { view: side, flip } = viewOf(facing, x, y, eyeX, eyeY);
@@ -246,11 +250,10 @@ export class Aboard {
     };
     const [helmX, helmY] = this.deck.helm;
     const helmZ = cellHeight(this.deck, helmX, helmY) ?? 0;
-    if (view.kind === 'manage') place(walker.you.id, walker.you.dress, 'idle', helmX, helmY, helmZ, 0);
-    else {
+    if (this.view?.kind === 'deck') {
       lay(walker.figure(eyeX, eyeY));
       if (underWay) place(HELMSMAN_ID, this.helmsman, 'idle', helmX, helmY, helmZ, 0);
-    }
+    } else if (!eyeAtHelm) place(walker.you.id, walker.you.dress, 'idle', helmX, helmY, helmZ, 0);
     this.crew.hands.forEach((hand, index) => {
       this.handDresses[index] ??= plainDress(hand.race, hand.tone);
       const dress = this.handDresses[index];

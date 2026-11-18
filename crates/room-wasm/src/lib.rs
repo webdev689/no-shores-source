@@ -208,6 +208,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             let asked = match protocol::read_sea_input(bytes) {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
+                Ok(SeaInput::Face(heading)) => sea.face(player, heading),
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
                 Ok(SeaInput::Walk(sequence, controls)) => {
                     return match sea.walk(player, sequence, controls) {

@@ -100,8 +100,9 @@ on Cloudflare.
 The room named `sea` holds every player's ship. A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s.
 A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
-nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest. A player sets
-one course each half second, and one sooner is dropped: judging a course against the coasts takes up to a few
+nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
+facing when it holds one: the helm turned while she lies still. A player sets one course, facings among them, each half
+second, and one sooner is dropped: judging a course against the coasts takes up to a few
 milliseconds, which no player may ask for every tick. The browser keeps its latest course and sends it once the sea
 will take it, by the room's own tick.
 
@@ -175,7 +176,7 @@ an older reader skips them.
 | Message | From | Holds |
 |---|---|---|
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for, and whether they ask to respawn |
-| Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
+| Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading she faces at rest; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
 | Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |

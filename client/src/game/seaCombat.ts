@@ -10,6 +10,7 @@ import type { FightView } from '../rules/fightRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
+import type { Lying } from '../ships/deck.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
@@ -172,6 +173,15 @@ export class SeaCombat {
       far: seaShot.far,
     };
     return panShot(seaShot, fightShot, smooth01(this.down));
+  }
+
+  /** The player's Sloop as she lies in the fight, at true scale, while she floats; null once she has sunk. */
+  get own(): Lying | null {
+    const vessel = this.last.player;
+    if (vessel.state === 'sunk') return null;
+    const [x = 0, y = 0, heading = 0] = vessel.ship;
+    const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
+    return { x, y, heading, scale: 1, heave, pitch, roll };
   }
 
   /** Both Sloops at true scale, the captain's darker, each with her sails as her rung sets them. */

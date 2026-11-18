@@ -284,6 +284,19 @@ impl Sea {
         Ok(())
     }
 
+    /// Brings a player's ship to rest turned to `heading`, radians clockwise from north: the helm turned while she lies
+    /// still. It takes a course's turn, so it is asked no more often than one.
+    pub fn face(&mut self, player: PlayerId, heading: f64) -> Result<(), CourseRefused> {
+        if !heading.is_finite() {
+            return Err(CourseRefused::BadCourse);
+        }
+        self.course(player, &[], 0)?;
+        let berth = self.berths.get_mut(&player).ok_or(CourseRefused::NoSuchPlayer)?;
+        let sailing = berth.sailing.as_mut().ok_or(CourseRefused::BadCourse)?;
+        sailing.ship.heading = heading.rem_euclid(core::f64::consts::TAU);
+        Ok(())
+    }
+
     /// A fighting player's orders for the ticks to come: her helm, her lay, the fire, the brace and a load. The climb,
     /// the fire and the load act on the next tick alone.
     pub fn orders(&mut self, player: PlayerId, orders: Orders) -> Result<(), CourseRefused> {

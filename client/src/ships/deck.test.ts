@@ -54,7 +54,7 @@ test('a deck crosses to the movement crate as its shape and then its heights, no
 });
 
 test('a point on her deck lies in the world by her heading, her drawn size and the swell under her', () => {
-  const lying = { x: 1000, y: 2000, heading: Math.PI / 2, scale: 2, heave: 0.25 };
+  const lying = { x: 1000, y: 2000, heading: Math.PI / 2, scale: 2, heave: 0.25, pitch: 0, roll: 0 };
   const [x, y, z] = deckToWorld(lying, 0, -1, 0.8);
   assert.ok(
     Math.abs(x - 1002) < 1e-9 && Math.abs(y - 2000) < 1e-9,
@@ -68,9 +68,26 @@ test('a point on her deck lies in the world by her heading, her drawn size and t
   );
 });
 
-test('a point in the world comes back to the same spot on her deck', () => {
-  const lying = { x: 500, y: -300, heading: 2.1, scale: 3, heave: -0.2 };
-  const [x, y, z] = deckToWorld(lying, 0.4, -1.7, 0.9);
-  const back = worldToDeck(lying, x, y, z);
-  [0.4, -1.7, 0.9].forEach((value, axis) => assert.ok(Math.abs((back[axis] ?? 0) - value) < 1e-9));
+test('a point on her deck rises at her bow as it pitches up and sinks to starboard as she heels', () => {
+  const level = { x: 0, y: 0, heading: 0, scale: 1, heave: 0, pitch: 0, roll: 0 };
+  const bow = deckToWorld({ ...level, pitch: 0.1 }, 0, -5, 0)[2];
+  const stern = deckToWorld({ ...level, pitch: 0.1 }, 0, 5, 0)[2];
+  assert.ok(Math.abs(bow - 5 * Math.sin(0.1)) < 1e-12 && Math.abs(stern + 5 * Math.sin(0.1)) < 1e-12, 'her bow up');
+  const starboard = deckToWorld({ ...level, roll: 0.2 }, 2, 0, 0)[2];
+  assert.ok(Math.abs(starboard + 2 * Math.sin(0.2)) < 1e-12, 'her starboard side down');
+  const drawn = deckToWorld({ ...level, pitch: 0.1, scale: 4 }, 0, -5, 0)[2];
+  assert.ok(Math.abs(drawn - 4 * bow) < 1e-12, 'four times as far on a ship drawn four times her size');
+});
+
+test('a point in the world comes back to the same spot on her deck, however she lies', () => {
+  for (const [pitch, roll] of [
+    [0, 0],
+    [0.08, -0.15],
+    [-0.2, 0.3],
+  ] as const) {
+    const lying = { x: 500, y: -300, heading: 2.1, scale: 3, heave: -0.2, pitch, roll };
+    const [x, y, z] = deckToWorld(lying, 0.4, -1.7, 0.9);
+    const back = worldToDeck(lying, x, y, z);
+    [0.4, -1.7, 0.9].forEach((value, axis) => assert.ok(Math.abs((back[axis] ?? 0) - value) < 1e-9));
+  }
 });

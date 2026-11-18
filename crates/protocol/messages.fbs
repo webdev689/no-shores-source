@@ -26,7 +26,8 @@ table Input {
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
-// of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest.
+// of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest,
+// turned to `facing` when it holds one heading (radians clockwise from north).
 // In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the
 // helm, a step of the player's walk on her deck instead: its controls in the movement crate's order and its number,
 // 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2).
@@ -37,6 +38,7 @@ table Course {
   walk: [double];
   walk_sequence: uint;
   helm: ubyte;
+  facing: [double];
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: her helm (the rudder from -1, to port,
