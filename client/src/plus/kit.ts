@@ -23,6 +23,10 @@ export const ROLES = {
   rule: 'plus-rule',
   /** An upright between two parts of a surface, engraved as a rule is. */
   rail: 'plus-rail',
+  /** A bar's trough: a dark ground sunk into its edge, which a 1 px border makes a hairline. */
+  track: 'plus-track',
+  /** A bar's fill, in the colour its surface gives it: lit along its top, shaded along its foot, its leading edge lit. */
+  meter: 'plus-meter',
 } as const;
 
 export type Role = keyof typeof ROLES;
@@ -79,6 +83,12 @@ ${role('footer')} {
   border-top-color: ${TONES.outline};
   background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2));
   box-shadow: inset 0 1px 0 ${TONES.groove}; }
+
+${role('track')} { border-color: ${BEVELS.sunk}; background-color: ${TONES.groundTrack}; box-shadow: ${RING}; }
+${role('meter')} {
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.34) 0 1px, transparent 1px calc(100% - 2px),
+    rgba(0,0,0,0.36) calc(100% - 2px));
+  box-shadow: inset -2px 0 0 rgba(255,255,255,0.42); }
 
 ${role('rule')} { border-bottom-color: rgba(5,6,8,0.6); box-shadow: 0 1px 0 rgba(163,152,128,0.13); }
 ${role('rail')} { border-left-color: rgba(5,6,8,0.75); box-shadow: inset 1px 0 0 rgba(163,152,128,0.13); }

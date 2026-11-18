@@ -136,7 +136,9 @@ Major as before ranks:
 Aim error scales both her lay's long and short and her volley's scatter. A captain sees every player's ship and every
 afloat, unstruck ship of another faction, and chooses, engages and breaks off with them as with a player's; she never
 fights her own faction, and a struck ship is nobody's enemy. Any foe's hit provokes her. Over each captain's ship in a
-fight stands her name above a bar of her hull, red, orange or yellow by rank; a Boss's across the top of the screen.
+fight stands her plate, as a foe's ([[Interface]]): her faction's emblem, and her name, with an Elite's or a
+Miniboss's mark, above a bar of her hull, red, orange or yellow by rank; no plate covers another. A Boss's stands
+across the top of the screen with her faction's name.
 
 ## Ramming
 

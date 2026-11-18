@@ -17,6 +17,7 @@ export const TONES = {
   groundButton: '#1c1f26',
   groundButtonHi: '#262a33',
   groundChip: 'rgba(12,14,18,0.84)',
+  groundTrack: 'rgba(6,7,9,0.8)',
   groove: 'rgba(163,152,128,0.26)',
   word: '#fbf8f0',
   wordDim: '#e2dccd',
@@ -28,4 +29,17 @@ export const BEVELS = {
   raisedSoft: `${TONES.stoneMid} #2e2a21 ${TONES.stoneDark} ${TONES.stoneLo}`,
   sunk: `${TONES.stoneDark} ${TONES.stoneMid} ${TONES.stoneLit} ${TONES.stoneDim}`,
   brass: `${TONES.brassHi} ${TONES.brassLo} #5c3f1a ${TONES.brass}`,
+  /** Stone gone to blood: a warning's edge, lit as the stone is. */
+  blood: '#e0584a #5a130f #3d0d0a #b83a2e',
+} as const;
+
+/** A bar's fill by what it measures: a foe's or a ship's health in the band its rank is drawn in, and the player's
+ *  three vitals. */
+export const FILLS = {
+  red: '#c8382f',
+  orange: '#e07a2a',
+  yellow: '#e8c23a',
+  health: '#b53a2e',
+  stamina: '#2f9152',
+  poise: '#c08a3e',
 } as const;

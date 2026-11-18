@@ -3,7 +3,7 @@ import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
 import { MarkView } from '../ships/markView.ts';
-import { drawShipBars, placeShipBars } from '../ships/shipBars.ts';
+import { ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
@@ -151,6 +151,7 @@ export class LandScene {
   private fleet: FleetScene | null = null;
   /** The picture's overlay, which the editor clears each frame: each captain's bar is drawn on it. */
   private readonly overlay: SVGSVGElement;
+  private readonly shipPlates = new ShipPlates();
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
     this.gpu = gpu;
@@ -329,7 +330,7 @@ export class LandScene {
     const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
     if (bars.length > 0) {
       const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
-      drawShipBars(this.overlay, placeShipBars(bars, screenProjector(seen, size), size.width));
+      this.shipPlates.draw(this.overlay, bars, screenProjector(seen, size), size.width, now / 1000);
     }
     pass.end();
     const copy = encoder.beginRenderPass({

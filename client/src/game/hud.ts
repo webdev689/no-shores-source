@@ -1,6 +1,6 @@
 import { button, make } from '../editor/dom.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
-import { drawShipBars, placeShipBars, type ShipBar } from '../ships/shipBars.ts';
+import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
@@ -79,6 +79,7 @@ export class Hud {
   private readonly markLayer = make('div', '', 'marks');
   /** Each captain's bar over her ship in a fight, drawn afresh each frame. */
   private readonly shipLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  private readonly shipPlates = new ShipPlates();
   private readonly marksShown = new Map<string, MarkNode>();
   private readonly menuNode = make('div', '', `menu ${ROLES.window}`);
   private readonly status = make('div', '', `status ${ROLES.chip}`);
@@ -216,7 +217,7 @@ export class Hud {
       const seen = projectPoint(pose, viewport, [...point]);
       return seen.front ? seen : null;
     };
-    drawShipBars(this.shipLayer, placeShipBars(bars, spot, viewport.width));
+    this.shipPlates.draw(this.shipLayer, bars, spot, viewport.width, performance.now() / 1000);
   }
 
   /** Places the marks on the screen; choosing one calls what `onMark` set. */

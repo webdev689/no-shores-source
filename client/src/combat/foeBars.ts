@@ -1,18 +1,10 @@
+import { BarLayout } from '../plus/barLayout.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { BOSS_RANK, rankBand } from '../rules/roster.ts';
+import { BOSS_RANK } from '../rules/roster.ts';
+import { FoePlate, type MarkedFoe } from './foePlate.ts';
+import { element } from './meter.ts';
 
-/** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
- *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
- *  3 searching). */
-export interface MarkedFoe {
-  readonly id: number;
-  readonly name: string;
-  readonly view: FighterView;
-  readonly rank: number;
-  readonly faction: string;
-  readonly phase: number;
-  readonly alert: number;
-}
+export type { MarkedFoe } from './foePlate.ts';
 
 const ALERT = { suspicious: 1, alert: 2, searching: 3 } as const;
 /** How long a foe that turns alert shows its "!", in seconds. */
@@ -50,59 +42,37 @@ export function bossBarOf(foe: MarkedFoe): { title: string; faction: string; sha
   return { title: foe.name, faction: foe.faction, share, phase: `Phase ${phase} of 3` };
 }
 
-const made = (tag: string, className: string, parent: HTMLElement, text = ''): HTMLElement => {
-  const element = document.createElement(tag);
-  element.className = className;
-  element.textContent = text;
-  parent.append(element);
-  return element;
-};
-const widthOf = (share: number) => `${Math.round(share * 1000) / 10}%`;
+/** An overhead plate's size in CSS pixels, as the display's sheet draws it, for the layout that keeps them apart. */
+export const OVERHEAD = { width: 140, height: 26 } as const;
 
-/** A foe's name over its bar, with its alert's mark. */
-interface Overhead {
-  readonly root: HTMLElement;
-  readonly mark: HTMLElement;
-  readonly name: HTMLElement;
-  readonly fill: HTMLElement;
-}
-
-/** Over each living foe its name above a bar of its health coloured by its rank, and across the top of the screen the
- *  boss bar of the Boss in the fight, who shows none over its head. */
+/** Over each living foe its plate, laid so none covers another, and across the top of the screen the boss bar of the
+ *  Boss in the fight, who shows none over its head. */
 export class FoeBars {
   private readonly hud: HTMLElement;
   private readonly over: HTMLElement;
-  private readonly overheads = new Map<number, Overhead>();
+  private readonly overheads = new Map<number, FoePlate>();
+  private readonly layout = new BarLayout();
   /** Each foe's alert state as last seen, and the seconds since it last turned alert. */
   private readonly alerts = new Map<number, { alert: number; since: number }>();
-  private readonly boss: HTMLElement;
-  private readonly bossName: HTMLElement;
-  private readonly bossFaction: HTMLElement;
-  private readonly bossPhase: HTMLElement;
-  private readonly bossFill: HTMLElement;
+  private readonly boss: FoePlate;
 
   constructor(hud: HTMLElement, over: HTMLElement) {
     this.hud = hud;
     this.over = over;
-    this.boss = made('div', 'boss', hud);
-    this.boss.hidden = true;
-    const title = made('div', 'title', this.boss);
-    this.bossName = made('span', 'name', title);
-    this.bossFaction = made('span', 'faction', title);
-    this.bossPhase = made('span', 'phase', title);
-    const bar = made('div', 'bar', this.boss);
-    this.bossFill = made('div', 'fill', bar);
-    for (const share of PHASE_MARKS) made('i', '', bar).style.left = widthOf(share);
+    this.boss = new FoePlate(hud, 'boss', { words: ['faction', 'phase'] });
+    this.boss.root.hidden = true;
+    for (const share of PHASE_MARKS) element('i', 'phase-mark', this.boss.health.root).style.left = `${share * 100}%`;
   }
 
-  /** Draws the foes' bars, each over the point `spotOf` puts above its head (null off the screen), `seconds` on. */
+  /** Draws the foes' bars, each over the point `spotOf` puts above its head (null off the screen) with how far that is
+   *  from the eye, `seconds` on. */
   update(
     foes: readonly MarkedFoe[],
     own: FighterView | null,
-    spotOf: (view: FighterView) => { readonly x: number; readonly y: number } | null,
+    spotOf: (view: FighterView) => { readonly x: number; readonly y: number; readonly depth: number } | null,
     seconds: number,
   ): void {
-    const shown = new Set<number>();
+    const shown: { foe: MarkedFoe; x: number; y: number; depth: number; since: number }[] = [];
     for (const foe of foes) {
       const was = this.alerts.get(foe.id);
       const turned = foe.alert === ALERT.alert && was?.alert !== ALERT.alert;
@@ -110,44 +80,38 @@ export class FoeBars {
       this.alerts.set(foe.id, { alert: foe.alert, since });
       const spot = spotOf(foe.view);
       if (foe.rank === BOSS_RANK || foe.view.action.kind === 'dead' || !spot) continue;
-      shown.add(foe.id);
-      const overhead = this.overheads.get(foe.id) ?? this.overhead();
-      this.overheads.set(foe.id, overhead);
-      overhead.root.className = `foe-bar ${rankBand(foe.rank)}`;
-      overhead.name.textContent = foe.name;
-      const mark = alertMark(foe.alert, since);
-      overhead.mark.textContent = mark;
-      overhead.mark.className = mark === '!' ? 'alert now' : 'alert';
-      overhead.fill.style.width = widthOf(Math.max(0, foe.view.health / Math.max(1, foe.view.healthMax)));
-      overhead.root.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
+      shown.push({ foe, ...spot, since });
     }
-    for (const [id, overhead] of this.overheads) {
-      if (shown.has(id)) continue;
-      overhead.root.remove();
+    const laid = this.layout.lay(
+      shown.map(({ foe, x, y, depth }) => ({ key: foe.id, x, y, depth, ...OVERHEAD })),
+      seconds,
+    );
+    for (const { foe, x, y, since } of shown) {
+      const plate = this.overheads.get(foe.id) ?? new FoePlate(this.over, 'overhead');
+      this.overheads.set(foe.id, plate);
+      plate.show(foe, seconds, alertMark(foe.alert, since));
+      const place = laid.get(foe.id) ?? { lift: 0, front: 0 };
+      plate.root.style.transform = `translate(${x.toFixed(1)}px, ${(y - place.lift).toFixed(1)}px)`;
+      plate.root.style.zIndex = String(shown.length - place.front);
+    }
+    for (const [id, plate] of this.overheads) {
+      if (laid.has(id)) continue;
+      plate.root.remove();
       this.overheads.delete(id);
     }
     const present = new Set(foes.map((foe) => foe.id));
     for (const id of this.alerts.keys()) if (!present.has(id)) this.alerts.delete(id);
-    this.showBoss(bossInFight(foes, own));
+    this.showBoss(bossInFight(foes, own), seconds);
   }
 
-  private overhead(): Overhead {
-    const root = made('div', 'foe-bar', this.over);
-    const line = made('div', 'name', root);
-    const mark = made('span', 'alert', line);
-    const name = made('span', '', line);
-    const fill = made('div', 'fill', made('div', 'bar', root));
-    return { root, mark, name, fill };
-  }
-
-  private showBoss(boss: MarkedFoe | null): void {
-    this.boss.hidden = !boss;
+  private showBoss(boss: MarkedFoe | null, seconds: number): void {
+    this.boss.root.hidden = !boss;
     this.hud.classList.toggle('bossed', !!boss);
     if (!boss) return;
     const shown = bossBarOf(boss);
-    this.bossName.textContent = shown.title;
-    this.bossFaction.textContent = shown.faction;
-    this.bossPhase.textContent = shown.phase;
-    this.bossFill.style.width = widthOf(shown.share);
+    this.boss.show(boss, seconds);
+    const { faction, phase } = this.boss.words;
+    if (faction && faction.textContent !== shown.faction) faction.textContent = shown.faction;
+    if (phase && phase.textContent !== shown.phase) phase.textContent = shown.phase;
   }
 }
