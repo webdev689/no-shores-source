@@ -22,6 +22,8 @@ pub struct Windup {
     pub begun: bool,
     /// The tick the wind-up ended, while its foe waits on the room's word.
     pub ended_at: Option<u64>,
+    /// Whether it is the roar into a new phase, which stays owed until its wind-up begins.
+    pub roar: bool,
 }
 
 /// What a foe keeps for its telegraphed blows: when it may throw again, the blow winding up, how many it has wound up
@@ -116,7 +118,7 @@ fn order(
         });
     let order = TelegraphOrder { shape, windup, iron, feint_at, bearing, ahead };
     tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &phase);
-    tells.windup = Some(Windup { order, begun: false, ended_at: None });
+    tells.windup = Some(Windup { order, begun: false, ended_at: None, roar: false });
     tells.last = Some(shape);
     if !chain {
         tells.chained = 0;
@@ -197,6 +199,12 @@ pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight) -> Option<Te
 pub fn follow(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> Option<After> {
     let windup = brain.tells.windup?;
     if matches!(here.fighter.action, Action::Telegraph(_)) {
+        if windup.roar && !windup.begun {
+            // The roar is under way at last: no longer owed, its poise refilled and, into the last phase, its crew called.
+            brain.tells.roar = false;
+            brain.calls.refill_poise = true;
+            brain.calls.crew |= brain.tells.phase == 3;
+        }
         brain.tells.windup = Some(Windup { begun: true, ..windup });
         brain.tells.ended = None;
         return None;
@@ -268,14 +276,12 @@ pub fn roar(brain: &mut Brain, here: &Here<'_, '_>) -> Option<TelegraphOrder> {
     if !brain.tells.roar || !matches!(fighter.action, Action::Idle) {
         return None;
     }
-    brain.tells.roar = false;
-    brain.calls.refill_poise = true;
-    brain.calls.crew |= brain.tells.phase == 3;
+    // Owed until its wind-up begins: knocked down or staggered first, it roars once free again.
     let windup = combat::ticks(ROAR - IRON_EXTRA);
     let order =
         TelegraphOrder { shape: Shape::Ring, windup, iron: true, feint_at: None, bearing: brain.heading, ahead: 0.0 };
     brain.tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &now(brain));
-    brain.tells.windup = Some(Windup { order, begun: false, ended_at: None });
+    brain.tells.windup = Some(Windup { order, begun: false, ended_at: None, roar: true });
     brain.tells.last = Some(Shape::Ring);
     brain.tells.chained = 0;
     Some(order)

@@ -179,7 +179,8 @@ pub fn hold(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
     }
     let goal = if brain.bow.peeking { post.fire } else { post.hide };
     let distance = apart(here.at(), flat(goal));
-    if distance > POST_LEAVE {
+    // Near its goal it steps straight there, unless its cover stands between: then it goes round by its routes.
+    if distance > POST_LEAVE || !free(here.world.blocks, here.feet(), goal) {
         let walk = |way: f64| Ask::walking(way, 1.0, distance > RUN_FROM);
         return Some(way_to(here, goal).map_or_else(|| Ask::facing(sight.toward), walk));
     }

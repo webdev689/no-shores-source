@@ -135,3 +135,47 @@ fn only_one_foe_at_a_time_strikes_an_opening_without_its_turn() {
     board.forget(11);
     assert!(board.opening(PLAYER, 12, true), "a foe gone frees it");
 }
+
+/// The tick a pirate skirmisher, alert and fighting a Grey Tithe runner before it, presses a dodge from a bolt loosed
+/// at it from 40 m on tick 10, told to fly at `speed` (0: not told), if it dodges at all.
+fn dodge_pressed(seed: u64, speed: f64) -> Option<u64> {
+    let foe = |number: u8, y: f64, facing: f64| {
+        foes::spawn(foes::foe_type(number).expect("a type of the roster"), Major, 0.0, y, facing)
+    };
+    let (skirmisher, mut brain) = foe(13, 0.0, 0.0);
+    let (runner, _) = foe(1, -2.0, PI);
+    let (bowman, _) = foe(3, -40.0, PI);
+    let fighters = [(1, skirmisher), (2, runner), (3, bowman)];
+    let mut board = foes::Board::default();
+    let shout = foes::Seen::Shouted { from: [0.0, 0.0, 0.0], at: [0.0, -2.0, 0.0] };
+    brain = foes::notice(&brain, 1, &shout, 0);
+    for tick in 1..60 {
+        if tick == 10 {
+            brain = foes::notice(&brain, 1, &foes::Seen::Loosed { by: 3, speed }, tick);
+        }
+        let world = foes::World {
+            tick,
+            seed,
+            fighters: &fighters,
+            blocks: &[],
+            routes: &foes::Straight,
+            spots: &foes::NoSpots,
+            director: foes::Director::default(),
+        };
+        let (next, intent) = foes::think(1, &brain, &mut board, &world);
+        brain = next;
+        if intent.combat.dodge && tick > 10 {
+            return Some(tick);
+        }
+    }
+    None
+}
+
+#[test]
+fn a_foe_times_a_shot_at_it_by_the_speed_the_room_tells_so_an_aimed_one_is_met_in_time() {
+    // A crossbow's aimed bolt flies at 71.5 m/s, a third again its plain one's 55: from 40 m it lands on tick 44.
+    let lands = 10 + combat::ticks(40.0 / 71.5);
+    let pressed: Vec<u64> = (0..60).filter_map(|seed| dodge_pressed(seed, 71.5)).collect();
+    assert!(pressed.len() >= 10, "it dodges some: {pressed:?}");
+    assert!(pressed.iter().all(|tick| *tick + 2 <= u64::from(lands)), "each before the bolt lands: {pressed:?}");
+}

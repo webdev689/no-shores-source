@@ -18,12 +18,14 @@ use combat::{CombatInput, FighterId, Stroke};
 use core::f64::consts::FRAC_PI_2;
 
 /// A blow coming at it: who, when it was seen begun, and the tick it lands (none for a shot, timed by its distance
-/// when it is weighed).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// when it is weighed, by its speed).
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Threat {
     pub by: FighterId,
     pub seen: u64,
     pub lands: Option<u64>,
+    /// A shot's speed as the room told it, 0 when it did not.
+    pub speed: f64,
 }
 
 /// How a foe answers a blow.
@@ -57,13 +59,13 @@ impl Reactions {
     pub fn saw_swing(&mut self, by: FighterId, attack: &Attack, tick: u64) {
         let lands = tick + u64::from(attack.strike.saturating_sub(attack.elapsed));
         if self.threat.and_then(|threat| threat.lands).is_none_or(|sooner| lands < sooner) {
-            self.threat = Some(Threat { by, seen: tick, lands: Some(lands) });
+            self.threat = Some(Threat { by, seen: tick, lands: Some(lands), speed: 0.0 });
         }
     }
 
-    pub fn saw_shot(&mut self, by: FighterId, tick: u64) {
+    pub fn saw_shot(&mut self, by: FighterId, speed: f64, tick: u64) {
         if self.threat.is_none() {
-            self.threat = Some(Threat { by, seen: tick, lands: None });
+            self.threat = Some(Threat { by, seen: tick, lands: None, speed });
         }
     }
 }
@@ -95,7 +97,9 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
         }
         None => {
             let ranged = striker.arms.ranged?;
-            let speed = if striker.side.is_players() { shot_numbers(ranged).0 } else { foe_speed(ranged) };
+            // An aimed shot flies faster than its weapon's plain one: the room's word on its speed comes first.
+            let weapon = if striker.side.is_players() { shot_numbers(ranged).0 } else { foe_speed(ranged) };
+            let speed = if threat.speed > 0.0 { threat.speed } else { weapon };
             if speed <= 0.0 || facing > 0.2 {
                 return None;
             }

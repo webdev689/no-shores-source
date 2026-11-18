@@ -131,6 +131,12 @@ impl Brain {
         core::mem::take(&mut self.calls)
     }
 
+    /// What it is about in its fight.
+    #[must_use]
+    pub fn plan(&self) -> Plan {
+        self.plan
+    }
+
     /// The fighter its soft lock should hold: its chosen target, but while it answers a blow, the one whose blow it
     /// is, so its guard and its dodge face that one.
     #[must_use]
@@ -162,7 +168,7 @@ pub fn notice(brain: &Brain, me: FighterId, seen: &Seen, tick: u64) -> Brain {
     let alert = next.awareness.alert;
     match *seen {
         Seen::Swung { by, attack } if by != me && alert => next.reactions.saw_swing(by, &attack, tick),
-        Seen::Loosed { by } if by != me && alert => next.reactions.saw_shot(by, tick),
+        Seen::Loosed { by, speed } if by != me && alert => next.reactions.saw_shot(by, speed, tick),
         Seen::Struck { by, .. } => {
             next.awareness.level = 1.0;
             // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place.

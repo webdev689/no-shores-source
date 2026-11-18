@@ -324,7 +324,8 @@ impl Room {
             }
             Happening::Loosed(shot) => {
                 self.shots.push(Shot { owner: by, ..shot });
-                self.tell_all(by, Seen::Loosed { by });
+                let speed = libm::sqrt(shot.velocity.iter().map(|part| part * part).sum());
+                self.tell_all(by, Seen::Loosed { by, speed });
                 self.hear(foes::noises::shot(&self.fighter(by), shot.ranged));
             }
             Happening::Feinted(_) | Happening::Dodged | Happening::Guarded { .. } => {}

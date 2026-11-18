@@ -262,3 +262,42 @@ fn the_same_seed_plays_the_same_fight_from_cover() {
     assert_eq!(two_shooters(21), two_shooters(21));
     assert_ne!(two_shooters(21), two_shooters(22));
 }
+
+#[test]
+fn a_shooter_on_the_near_side_of_its_cover_goes_round_it_rather_than_into_it() {
+    let mut room = Room::new(5)
+        .course(vec![wall()])
+        .player(PLAYER, 0.0, 0.0, 0.0)
+        .foe(10, CROSSBOWMAN, Major, -4.0, -12.2, PI)
+        .alert(10, PLAYER);
+    let mut behind = 0;
+    for tick in 0..600 {
+        room.step(&mut watching(10));
+        if tick >= 200 && room.fighter(10).body.y < wall().min_y {
+            behind += 1;
+        }
+    }
+    assert!(behind > 150, "behind its wall for much of the fight, not pressed to its near face: {behind}");
+}
+
+#[test]
+fn a_shooter_backs_off_from_each_bad_hurt_not_only_the_first() {
+    use foes::brain::Plan;
+    let mut room = Room::new(5)
+        .course(vec![wall()])
+        .player(PLAYER, 0.0, 0.0, 0.0)
+        .foe(10, CROSSBOWMAN, foes::Rank::Minor, 0.0, -16.5, PI)
+        .alert(10, PLAYER);
+    room.run(400, &mut watching(10));
+    for hurt in 1..=2 {
+        assert_ne!(room.brain(10).plan(), Plan::Backoff, "its last back-off has run out before hurt {hurt}");
+        room.set(10, |crossbowman| crossbowman.health -= 0.3 * crossbowman.health_max);
+        let mut backed_off = false;
+        for _ in 0..180 {
+            room.step(&mut watching(10));
+            backed_off |= room.brain(10).plan() == Plan::Backoff;
+        }
+        assert!(backed_off, "it backs off from bad hurt {hurt}");
+        room.run(900, &mut watching(10));
+    }
+}

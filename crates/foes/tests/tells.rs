@@ -135,12 +135,27 @@ fn the_boss_roars_into_each_of_its_three_phases_and_calls_its_crew_once_into_the
     assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (2, 3), "the last stand, roared once");
     assert!((room.brain(10).might() - might * 1.25).abs() < 1e-12, "a quarter harder");
     assert_eq!(room.crew_calls.len(), 1, "its crew called");
-    assert_eq!(room.crew_calls[0].0, roars(&room, 10)[1], "as it roars");
+    assert_eq!(room.crew_calls[0].0, roars(&room, 10)[1] + 1, "as its roar begins");
     room.run(1800, &mut still(0.0));
     assert_eq!(roars(&room, 10).len(), 2, "each phase roared once");
     assert_eq!(room.crew_calls.len(), 1, "and its crew called once");
     let orders = room.orders(10);
     assert!(orders.iter().any(|(_, order)| order.shape == Shape::Slam && order.iron), "iron slams: {orders:?}");
+}
+
+#[test]
+fn a_roar_knocked_out_of_a_boss_before_it_begins_is_still_owed_and_roared_once_it_stands() {
+    let mut room = Room::new(8).player(PLAYER, 0.0, 0.0, 0.0).foe(10, 12, Boss, 0.0, -2.5, PI);
+    room.run(30, &mut still(0.0));
+    room.set(10, |boss| boss.health = 0.6 * boss.health_max);
+    while roars(&room, 10).is_empty() {
+        room.step(&mut still(0.0));
+    }
+    // Knocked down by a foe of another side before its brain saw the wind-up begin.
+    room.set(10, |boss| boss.action = combat::fighter::Action::Down { left: 40 });
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (2, 2), "the boarding's roar, ordered again once up");
+    assert!(room.crew_calls.is_empty());
 }
 
 #[test]

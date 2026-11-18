@@ -330,7 +330,13 @@ impl Room {
         let side = |id: &FighterId| self.fighter(*id).map(|fighter| fighter.side);
         let swings: Vec<(FighterId, combat::fighter::Attack, Option<Side>)> =
             swings.into_iter().map(|(by, attack)| (by, attack, side(&by))).collect();
-        let loosed: Vec<(FighterId, Option<Side>)> = loosed.into_iter().map(|by| (by, side(&by))).collect();
+        // Each shot's speed as it flies, the newest of its shooter's: a ball that reaches its mark at once flies none.
+        let speed = |by: FighterId| {
+            let shot = self.shots.iter().rev().find(|shot| shot.owner == by);
+            shot.map_or(0.0, |shot| libm::sqrt(shot.velocity.iter().map(|part| part * part).sum()))
+        };
+        let loosed: Vec<(FighterId, Option<Side>, f64)> =
+            loosed.into_iter().map(|by| (by, side(&by), speed(by))).collect();
         let verdicts = std::mem::take(&mut self.verdicts);
         let ended = std::mem::take(&mut self.ended_telegraphs);
         let tick = self.clock;
@@ -341,8 +347,8 @@ impl Room {
             for (by, attack, _) in swings.iter().filter(|(_, _, by)| hostile(by)) {
                 brain = notice(&brain, *id, &Seen::Swung { by: *by, attack: *attack }, tick);
             }
-            for (by, _) in loosed.iter().filter(|(_, by)| hostile(by)) {
-                brain = notice(&brain, *id, &Seen::Loosed { by: *by }, tick);
+            for (by, _, speed) in loosed.iter().filter(|(_, by, _)| hostile(by)) {
+                brain = notice(&brain, *id, &Seen::Loosed { by: *by, speed: *speed }, tick);
             }
             for (striker, defender, verdict) in &verdicts {
                 if defender == id {

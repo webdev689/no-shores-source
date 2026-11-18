@@ -106,6 +106,10 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     back_off(brain, here, board, &sight, hurt);
     if here.numbers.shooter {
         return if shooting(brain, here, &sight) {
+            // A shooter never passes through the melee's ring, where these run out: they run out here too.
+            if matches!(brain.plan, Plan::Recover | Plan::Backoff) && here.tick() >= brain.until {
+                brain.plan = Plan::Wait;
+            }
             ranged(brain, here, board, &sight)
         } else {
             melee(brain, here, board, &sight)
