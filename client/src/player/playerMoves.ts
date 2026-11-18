@@ -132,8 +132,18 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
 };
 
 /** The owner's blows (the forge's blows.py): a stroke for each way a weapon is held, nine frames, the weapon landing on
- *  the fifth; after it lands, the rest run over three quarters of the time up to it. */
-const BLOW = { frames: 9, lands: 4, recover: 0.75 } as const;
+ *  the fifth. */
+const BLOW = { frames: 9, lands: 4 } as const;
+/** How fast a strike's frames run: the wind-up's in the last half of the time up to the blow, its first frame held
+ *  before; a blow's follow-through over a third of that time after it lands. The blow still lands when the fight's
+ *  rules land it. */
+const STRIKE = { windup: 0.5, recover: 0.35 } as const;
+
+/** How far through its wind-up's frames, 0 to 1, a strike is at `progress` through its swing, landing at `lands`. */
+function woundUp(progress: number, lands: number): number {
+  const start = lands * (1 - STRIKE.windup);
+  return Math.max(0, (progress - start) / Math.max(lands - start, 1e-6));
+}
 /** The hold each weapon strikes in alone: one hand, or both on a haft. */
 const HOLD_OF: Readonly<Record<string, string>> = {
   sword: '1h',
@@ -157,11 +167,11 @@ function blowOf(direction: Direction, right: string | null, left: string | null,
 }
 
 /** A blow's frame `progress` through its swing, which lands `lands` through it: the frames before the landing one
- *  spread up to it, the landing one as it lands, the rest over the recovery, the last held. */
+ *  through the wind-up, the landing one as it lands, the rest over the follow-through, the last held. */
 export function blowFrame(progress: number, lands: number): number {
   const now = Math.max(0, progress);
-  if (lands > 0 && now < lands) return Math.min(BLOW.lands - 1, Math.floor((now / lands) * BLOW.lands));
-  const recover = lands * BLOW.recover;
+  if (lands > 0 && now < lands) return Math.min(BLOW.lands - 1, Math.floor(woundUp(now, lands) * BLOW.lands));
+  const recover = lands * STRIKE.recover;
   if (!(recover > 0)) return BLOW.frames - 1;
   return Math.min(BLOW.frames - 1, BLOW.lands + Math.floor(((now - lands) / recover) * (BLOW.frames - BLOW.lands)));
 }
@@ -171,10 +181,10 @@ export const BLOW_LANDS = 2 / 5;
 
 /** The frame (whole part) of a stroke `span` frames long at `progress` through its swing: the frames run through the
  *  wind-up to land the last on the blow (`lands` through the swing), held through the follow-through, so the figure
- *  strikes as fast as the blow comes and shows itself open while it recovers. */
+ *  strikes fast and shows itself open while it recovers. */
 export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): number {
   if (span <= 1 || progress >= lands) return span - 1;
-  return (Math.max(0, progress) / Math.max(lands, 1e-6)) * (span - 1);
+  return woundUp(progress, lands) * (span - 1);
 }
 
 /**

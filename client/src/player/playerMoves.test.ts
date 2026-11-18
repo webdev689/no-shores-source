@@ -67,11 +67,11 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
     shownMove({ ...doing, blow: { direction, second, progress } }, frames, classic);
   assert.deepEqual(blow('downLeft', false, 0), { anim: 'attack_sword', frame: 0, frameSeconds: 0 });
   assert.deepEqual(blow('downLeft', true, 0.99), { anim: 'attack_sword', frame: 5, frameSeconds: 0 });
-  // The stroke's three frames run through the wind-up, the last landing with the blow (two fifths through the swing,
-  // DFO's law), and hold through the follow-through: a sword's swing is struck in 0.4 s of its second.
+  // The stroke's three frames run through the last half of the wind-up, the last landing with the blow (two fifths
+  // through the swing, DFO's law), and hold through the follow-through: a sword's swing is struck in 0.4 s of its second.
   assert.deepEqual(
-    [0.1, 0.25, 0.39, 0.4, 0.7].map((progress) => blow('downLeft', false, progress).frame),
-    [0, 1, 1, 2, 2],
+    [0.1, 0.2, 0.31, 0.39, 0.4, 0.7].map((progress) => blow('downLeft', false, progress).frame),
+    [0, 0, 1, 1, 2, 2],
   );
   const late = shownMove(
     { ...doing, blow: { direction: 'down', second: false, progress: 0.45, lands: 0.5 } },
@@ -191,10 +191,11 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
     blow: { direction: 'down', second: false, progress: 0 },
   } as const;
   assert.equal(shownMove(guarded, frames, shieldless).anim, 'slash');
-  // Landing two fifths through the swing: four frames up to it, the fifth as it lands, the rest over the recovery.
+  // Landing two fifths through the swing: the first frame held, then four through the last half of the time up to it,
+  // the fifth as it lands, and the rest over a third of that time after.
   assert.deepEqual(
-    [0, 0.2, 0.39, 0.4, 0.55, 0.7, 1].map((progress) => blowFrame(progress, 0.4)),
-    [0, 2, 3, 4, 6, 8, 8],
+    [0, 0.2, 0.31, 0.39, 0.4, 0.45, 0.55, 1].map((progress) => blowFrame(progress, 0.4)),
+    [0, 0, 2, 3, 4, 5, 8, 8],
   );
   assert.equal(blow('down', 'sword_iron', null, 0.4).frame, 4);
   assert.ok(likelyMoves('sword_iron', null, everything).includes('side1h'));
