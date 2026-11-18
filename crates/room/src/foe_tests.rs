@@ -170,3 +170,20 @@ fn the_same_inputs_give_the_same_heat_to_the_bit() {
     let heat = || turns_at(true).2.to_bits();
     assert_eq!(heat(), heat());
 }
+
+#[test]
+fn the_room_answers_the_firing_spots_near_a_point_on_its_course() {
+    use ::foes::Spots;
+    let wall = Block { min_x: -4.0, min_y: -3.0, max_x: 4.0, max_y: -2.5, top: 3.0 };
+    let room = Room::new(vec![wall], (0.0, 6.0));
+    let (centre, radius) = ([0.0, -1.0, 0.0], 3.0);
+    let spots = room.spots().near(centre, radius);
+    for spot in &spots {
+        let (east, south) = (spot.point[0] - centre[0], spot.point[1] - centre[1]);
+        assert!(east * east + south * south <= radius * radius, "{spot:?} is within {radius} m");
+    }
+    let beside: Vec<_> = spots.iter().filter(|spot| spot.point[1] > -2.5 && spot.point[1] < -0.5).collect();
+    assert!(!beside.is_empty(), "spots just south of the wall: {spots:?}");
+    assert!(beside.iter().all(|spot| spot.cover & 1 != 0), "covered from the north: {beside:?}");
+    assert_eq!(spots, room.spots().near(centre, radius), "the same spots in the same order");
+}

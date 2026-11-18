@@ -2,6 +2,7 @@
 
 use crate::collider::Collider;
 use crate::{Agent, Bounds};
+use movement::{Heights, Terrain};
 
 /// Solid voxels in one column, from `bottom` up to `top` (voxels over the grid's floor), and whether the surface on
 /// top is gentle enough to be floor.
@@ -85,22 +86,67 @@ fn cell_range(low: f64, high: f64, origin: f64, cell: f64, cells: usize) -> Opti
     (first <= last).then_some((first as usize, last as usize))
 }
 
-/// Voxelises the ground under every cell of `bounds`, at 0, and the colliders over it.
-pub(crate) fn voxelise(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Heightfield {
+/// The grid's columns across and down: every cell of `bounds`, one at the least.
+fn cells(bounds: Bounds, cell: f64) -> (usize, usize) {
+    let across = ((bounds.max_x - bounds.min_x) / cell).ceil().max(1.0) as usize;
+    let down = ((bounds.max_y - bounds.min_y) / cell).ceil().max(1.0) as usize;
+    (across, down)
+}
+
+/// The ground's height at the centre of every cell of `bounds`, kept as a grid a path and a body read between the
+/// centres. None when the ground answers a height that is not a number.
+pub(crate) fn sample(ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Option<Heights> {
+    let (cell, (cells_x, cells_y)) = (agent.cell_size, cells(bounds, agent.cell_size));
+    let heights = (0..cells_y)
+        .flat_map(|iy| (0..cells_x).map(move |ix| (ix, iy)))
+        .map(|(ix, iy)| {
+            let (x, y) = (bounds.min_x + (ix as f64 + 0.5) * cell, bounds.min_y + (iy as f64 + 0.5) * cell);
+            Some(ground.height_at(x, y))
+        })
+        .collect();
+    Heights::new(bounds.min_x, bounds.min_y, cell, cells_x, cells_y, heights)
+}
+
+/// Whether the ground is gentle enough to walk at a column: its slope, from the heights of the columns either side
+/// each way (or the column itself at the grid's edge), within the agent's.
+fn gentle(heights: &[f64], grid: &Grid, ix: usize, iy: usize, max_slope: f64) -> bool {
+    let at = |ix: usize, iy: usize| heights[ix + iy * grid.cells_x];
+    let (west, east) = (ix.saturating_sub(1), (ix + 1).min(grid.cells_x - 1));
+    let (north, south) = (iy.saturating_sub(1), (iy + 1).min(grid.cells_y - 1));
+    let rise =
+        |low: f64, high: f64, cells: usize| if cells == 0 { 0.0 } else { (high - low) / (cells as f64 * grid.cell) };
+    let along_x = rise(at(west, iy), at(east, iy), east - west);
+    let along_y = rise(at(ix, north), at(ix, south), south - north);
+    along_x * along_x + along_y * along_y <= max_slope * max_slope
+}
+
+/// Voxelises the ground under every cell of `bounds` and the colliders standing on it. Each column's ground is solid
+/// from one voxel under the lowest ground up to the ground's height at its centre, and is floor where it is gentle.
+pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Heightfield {
     let (cell, voxel) = (agent.cell_size, agent.cell_height);
-    let top = colliders.iter().fold(0.0_f64, |tallest, collider| tallest.max(collider.highest()));
-    let min_z = -voxel;
+    let (cells_x, cells_y) = cells(bounds, cell);
+    let mut grid =
+        Grid { cell, voxel, min_x: bounds.min_x, min_y: bounds.min_y, min_z: 0.0, cells_x, cells_y, voxels: 0 };
+    let heights: Vec<f64> = (0..cells_y)
+        .flat_map(|iy| (0..cells_x).map(move |ix| (ix, iy)))
+        .map(|(ix, iy)| {
+            let (x, y) = grid.centre(ix, iy);
+            ground.height_at(x, y)
+        })
+        .collect();
+    let lowest = heights.iter().copied().fold(f64::INFINITY, f64::min);
+    let highest = heights.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let top = colliders.iter().fold(highest, |tallest, collider| tallest.max(collider.highest()));
+    let min_z = lowest - voxel;
     let max_z = top + voxel;
-    let cells_x = ((bounds.max_x - bounds.min_x) / cell).ceil().max(1.0) as usize;
-    let cells_y = ((bounds.max_y - bounds.min_y) / cell).ceil().max(1.0) as usize;
-    let voxels = ((max_z - min_z) / voxel).ceil().max(1.0) as i64;
-    let grid = Grid { cell, voxel, min_x: bounds.min_x, min_y: bounds.min_y, min_z, cells_x, cells_y, voxels };
+    grid.min_z = min_z;
+    grid.voxels = ((max_z - min_z) / voxel).ceil().max(1.0) as i64;
     let mut field = Heightfield { grid, columns: vec![Vec::new(); cells_x * cells_y] };
     for column in 0..cells_x * cells_y {
-        field.add_span(column, min_z, 0.0, true);
+        let walkable = gentle(&heights, &grid, column % cells_x, column / cells_x, agent.max_slope);
+        field.add_span(column, min_z, heights[column], walkable);
     }
     for collider in colliders {
-        let base = collider.base(min_z);
         let walkable = collider.walkable_top(agent.max_slope);
         let [min_x, min_y, max_x, max_y] = collider.footprint();
         let Some((x_first, x_last)) = cell_range(min_x, max_x, grid.min_x, cell, cells_x) else { continue };
@@ -111,7 +157,9 @@ pub(crate) fn voxelise(colliders: &[Collider], bounds: Bounds, agent: &Agent) ->
                 // An edge cell's centre lies off the footprint: sample the top at its nearest point on it.
                 let sample_x = centre_x.clamp(min_x, max_x);
                 let sample_y = centre_y.clamp(min_y, max_y);
-                field.add_span(ix + iy * cells_x, base, collider.surface(sample_x, sample_y), walkable);
+                let column = ix + iy * cells_x;
+                let base = collider.base(heights[column], min_z);
+                field.add_span(column, base, collider.surface(sample_x, sample_y), walkable);
             }
         }
     }

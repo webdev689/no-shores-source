@@ -42,6 +42,19 @@ impl foes::Routes for MeshRoutes<'_> {
     }
 }
 
+/// The firing spots baked with the room's navmesh.
+#[derive(Debug)]
+struct MeshSpots<'mesh> {
+    mesh: &'mesh NavMesh,
+}
+
+impl foes::Spots for MeshSpots<'_> {
+    fn near(&self, point: [f64; 3], radius: f64) -> Vec<foes::Spot> {
+        let near = self.mesh.spots_near(point, radius);
+        near.map(|spot| foes::Spot { point: spot.point, cover: spot.cover, lanes: spot.lanes }).collect()
+    }
+}
+
 /// How far a telegraphed blow's shape reaches from its foe's feet.
 fn shape_reach(telegraph: &Telegraph) -> f64 {
     let shape = combat::shapes::numbers(telegraph.shape);
@@ -54,6 +67,12 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
 }
 
 impl Room {
+    /// The places over the room's course a shooter may fire from.
+    #[must_use]
+    pub fn spots(&self) -> impl foes::Spots + '_ {
+        MeshSpots { mesh: &self.nav }
+    }
+
     /// Stands each foe the players asked for before them, or sends every foe away.
     pub(crate) fn spawn_asked(&mut self) {
         for (asker, number) in std::mem::take(&mut self.spawns) {
