@@ -70,6 +70,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bars and the Fight Wear the Plus Kit]]
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
+- [[The Rooms Deploy When Their Code Changes]]
 - [[The Rooms Deploy on Each Merge]]
 - [[The Ship Is Managed and Walked From the Sea's Panel]]
 - [[The Sloop Is About 18 m Long]]

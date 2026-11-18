@@ -88,10 +88,11 @@ on Cloudflare.
   ticks since they joined, plus a slack of 6 ticks for the network's jitter, and a tick takes at most 3, so no one
   moves faster than real time and one catching up after a stall replays no faster than three times over.
 - **A player whose inputs stop** is stepped standing still once they fall a view's lag (24 ticks) behind, so nothing
-  they were doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend
-  as speed; a body the section killed lies where it fell, but its ticks count the same. Past 30 waiting inputs, the oldest is let go as though taken, so a burst after a stall never breaks the
-  order. The room tick a player says their screen showed moves on at most 4 ticks an input, so they cannot pick the
-  moment they are judged at. A dress change is taken at most once a second.
+  they were doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend as
+  speed; a body the section killed lies where it fell, but its ticks count the same. Past 30 waiting inputs, the oldest
+  is let go as though taken, so a burst after a stall never breaks the order. The room tick a player says their screen
+  showed moves on at most 4 ticks an input, so they cannot pick the moment they are judged at. A dress change is taken
+  at most once a second.
 - **The section:** after each player's inputs a node's room judges their body against the node's section ([[Reach]]):
   inside, warned with a count, or dead. A body dead past the section is still: its inputs are taken without moving it.
   An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn nearest where
@@ -274,11 +275,15 @@ so every decision is Rust and the shell only carries bytes and time.
 
 ## Running it
 
-- **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`.
-  CI deploys it after each merge into `main`, once the same commit has passed the check, as it publishes the page
-  ([[The Rooms Deploy on Each Merge]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret, and
-  only while that commit is still `main`'s head. Without the secret it warns and deploys nothing. It runs by hand
-  from `main` too, and `npm run server:deploy` does the same from a machine that holds the token itself.
+- **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`. CI
+  deploys it after a merge into `main`, once the same commit has passed the check, as it publishes the page ([[The Rooms
+  Deploy When Their Code Changes]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret, only while
+  that commit is still `main`'s head, and only when what the rooms are built from differs from the commit they were last
+  deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content they read, the
+  toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A merge of notes alone
+  deploys nothing. Each deploy is recorded as a deployment to the `rooms` environment, which the next run compares with;
+  with none found, it deploys. Without the secret it warns and deploys nothing. Run by hand from `main`, it deploys
+  whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token itself.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground and the [[Game]] played alone run the same room in its own WebAssembly, ticked by
   the page: the Test Ground's course, a node's room on the window and boxes the page cut, and the sea.
@@ -297,8 +302,8 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
 
 ## Limits
 
-- Each deploy, a merge of notes alone too, starts every room afresh: whoever is in one is dropped and joins again by
-  themselves as a new player, where the room stands them; their place, a fight and its foes are lost. A deployed node's window can lag the edits
+- Each deploy starts every room afresh: whoever is in one is dropped and joins again by themselves as a new player,
+  where the room stands them; their place, a fight and its foes are lost. A deployed node's window can lag the edits
   files until the next merge.
 - A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
