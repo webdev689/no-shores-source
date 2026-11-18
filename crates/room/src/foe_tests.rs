@@ -370,3 +370,36 @@ fn a_telegraphed_blow_a_leaving_player_ends_still_tells_its_foe_whether_it_lande
     }
     panic!("no telegraphed blow waited on the leaving player");
 }
+
+/// How many times the bearings turn back the way they came, ignoring steps under a hundredth of a radian.
+fn turns_back(bearings: &[f64]) -> usize {
+    let steps = bearings.windows(2).map(|pair| combat::sight::wrap(pair[1] - pair[0])).filter(|step| step.abs() > 0.01);
+    let signs: Vec<f64> = steps.map(f64::signum).collect();
+    signs.windows(2).filter(|pair| pair[0] != pair[1]).count()
+}
+
+#[test]
+fn a_foe_walled_off_by_a_guard_that_turns_with_it_steps_round_one_way_rather_than_shake() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let minor = Some(SpawnAsk::Foe { foe_type: SWORDSMAN, rank: 1 });
+    room.input(player, asking(&room, 1, minor, Controls::default())).unwrap();
+    room.tick();
+    let foe = room.foes_seen().next().unwrap().foe;
+    let (mut aims, mut round) = (Vec::new(), Vec::new());
+    for sequence in 2..=1200 {
+        // The player's guard is up and their look follows the foe, as a soft lock does.
+        let (me, them) = (room.players[&player].fighter.body, room.foes[&foe].fighter.body);
+        let yaw = combat::sight::bearing([me.x, me.y], [them.x, them.y]);
+        let mut input = asking(&room, sequence, None, Controls { yaw, ..Controls::default() });
+        input.intent.combat.guard = true;
+        room.input(player, input).unwrap();
+        room.tick();
+        aims.push(room.foes[&foe].fighter.aim);
+        round.push(yaw);
+    }
+    let shakes = aims.windows(61).map(turns_back).max().unwrap_or(0);
+    assert!(shakes <= 4, "its aim turned back and forth {shakes} times in a second");
+    let most = round.windows(61).map(|second| combat::sight::wrap(second[60] - second[0]).abs()).fold(0.0, f64::max);
+    assert!(most > 1.0, "it never stepped round the guard: at most {most} radians in a second");
+}

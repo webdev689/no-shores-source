@@ -253,7 +253,8 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         brain.blocked = 0;
     }
     let mut walled = guarded && brain.blocked >= BLOCKED_ENOUGH;
-    let since = if walled { *brain.walled_at.get_or_insert(tick) } else { tick };
+    let (since, side) =
+        if walled { *brain.walled.get_or_insert_with(|| (tick, open_side(here, sight))) } else { (tick, 1.0) };
     if board.holds(sight.id, here.me, false)
         && let Some(order) = throw(brain, here, sight, reach, walled)
     {
@@ -264,7 +265,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         (brain.blocked, walled) = (0, false);
     }
     if !walled {
-        brain.walled_at = None;
+        brain.walled = None;
     }
     let pressed = here.world.director.pressed();
     let way = (sight.distance > reach).then(|| way_to(here, sight.spot)).flatten();
@@ -290,11 +291,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         *brain.ready_at.get_or_insert_with(|| tick + Here::ticks(here.dice.between(Purpose::SwingDelay, delay)));
     let mut ask = way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, 1.0, sight.toward));
     if walled {
-        // Round toward the side its target's guard faces away from: a blow from outside the guard is not blocked.
-        let from_target = sight.toward + PI;
-        let side = wrap(from_target - sight.fighter.aim);
-        let side = if side > 0.0 || (side == 0.0 && here.me.is_multiple_of(2)) { 1.0 } else { -1.0 };
-        ask = Ask::stepping(from_target + side * FRAC_PI_2, STEP_PACE, sight.toward);
+        ask = Ask::stepping(sight.toward + PI + side * FRAC_PI_2, STEP_PACE, sight.toward);
     }
     let stroke = stroke(here, sight);
     let reaches = sight.distance <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;
@@ -305,6 +302,13 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         brain.ready_at = None;
     }
     ask
+}
+
+/// The side round its target toward which the target's guard faces away from it (1 clockwise, -1 not): a blow from
+/// outside the guard is not blocked. Dead ahead, the side its number picks.
+fn open_side(here: &Here<'_, '_>, sight: &Sight) -> f64 {
+    let side = wrap(sight.toward + PI - sight.fighter.aim);
+    if side > 0.0 || (side == 0.0 && here.me.is_multiple_of(2)) { 1.0 } else { -1.0 }
 }
 
 /// Whether its target's guard is raised and faces it, so a swing from here would be blocked.
