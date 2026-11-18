@@ -4,6 +4,7 @@
 // foes fought in the last minute, either way, keep their plates over their heads whatever the player looks at.
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import { EVENT } from './cues.ts';
 
 /** How long the target stands after the last exchange with it, and the last stretch of that over which it fades, in
  *  seconds. */
@@ -30,6 +31,17 @@ export interface TargetFrame {
 }
 
 const living = (foe: TargetFoe | undefined): foe is TargetFoe => !!foe && foe.view.action.kind !== 'dead';
+/** The events of a blow given and taken, whatever it came to; not a foe standing up at an ask, nor a feint. */
+const BLOWS: ReadonlySet<number> = new Set([
+  EVENT.hit,
+  EVENT.blocked,
+  EVENT.parried,
+  EVENT.guardBroken,
+  EVENT.dodged,
+  EVENT.perfect,
+  EVENT.staggered,
+  EVENT.killed,
+]);
 const windingUpAt = (foe: TargetFoe, player: number) =>
   foe.view.action.kind === 'telegraph' && foe.view.target === player;
 
@@ -53,7 +65,7 @@ export class FoeTarget {
       if (since + seconds >= FOUGHT_SECONDS || !foes.has(id)) this.fought.delete(id);
       else this.fought.set(id, since + seconds);
     }
-    for (const event of frame.events) {
+    for (const event of frame.events.filter((each) => BLOWS.has(each.kind))) {
       const [striker, defender] = [event.striker, event.defender];
       if (striker === frame.player && foes.has(defender)) this.fought.set(defender, 0);
       if (defender === frame.player && foes.has(striker)) this.fought.set(striker, 0);

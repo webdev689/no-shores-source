@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { frameOf, fromEyeMatrix, shifted } from '../game/camera.ts';
 import {
   cameraOf,
   CONE,
@@ -48,16 +47,33 @@ test('a plate shrinks as its figure does and never grows with distance, whole up
   assert.equal(plateScale(0, focal), 1, 'a point on the lens is as near as a point can be');
 });
 
+/** A camera's matrix (clip = matrix × point, column by column) with the Game's clip x, y and w (its depth row left
+ *  plain): an eye at `eye` looking along `yaw` (0 north, a quarter turn east) and `pitch` below the horizon, through
+ *  a lens of `fov` radians. */
+function cameraMatrix(eye: readonly [number, number, number], yaw: number, pitch: number, fov: number, aspect: number) {
+  const forward = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
+  const right = [Math.cos(yaw), Math.sin(yaw), 0];
+  const up = [Math.sin(pitch) * Math.sin(yaw), -Math.sin(pitch) * Math.cos(yaw), Math.cos(pitch)];
+  const focal = 1 / Math.tan(fov / 2);
+  const rows = [right.map((value) => (value * focal) / aspect), up.map((value) => value * focal), forward, forward];
+  const matrix = new Float32Array(16);
+  rows.forEach((row, index) => {
+    const along = (row[0] ?? 0) * eye[0] + (row[1] ?? 0) * eye[1] + (row[2] ?? 0) * eye[2];
+    row.forEach((value, column) => (matrix[column * 4 + index] = value));
+    matrix[12 + index] = -along;
+  });
+  return { matrix, forward };
+}
+
 test('the camera is read off its matrix: where its eye stands, the way it looks and its focal length', () => {
   const shot = { eye: [1200.5, -3400.25, 31] as const, yaw: 0.7, pitch: 0.2, fov: (50 * Math.PI) / 180 };
-  const matrix = shifted(fromEyeMatrix({ ...shot, near: 0.1, far: 1000 }, 16 / 10), [-1200.5, 3400.25, -31]);
+  const { matrix, forward } = cameraMatrix(shot.eye, shot.yaw, shot.pitch, shot.fov, 16 / 10);
   const camera = cameraOf(matrix);
   assert.ok(camera);
   camera.eye.forEach((value, axis) => assert.ok(Math.abs(value - (shot.eye[axis] ?? 0)) < 0.05, `eye ${axis}`));
   assert.ok(Math.abs(camera.focal - 1 / Math.tan(shot.fov / 2)) < 1e-5);
   const ahead = camera.eye.map((value, axis) => value + 10 * (camera.forward[axis] ?? 0)) as [number, number, number];
   assert.ok(offDegrees(camera, ahead) < 0.01, 'a point straight ahead is on the crosshair');
-  const { forward } = frameOf({ ...shot, near: 0.1, far: 1000 });
   forward.forEach((value, axis) => assert.ok(Math.abs(value - (camera.forward[axis] ?? 0)) < 1e-5, `forward ${axis}`));
   assert.equal(cameraOf(new Float32Array(16)), null, 'a matrix that is no camera’s says none');
 });

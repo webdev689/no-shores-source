@@ -77,7 +77,7 @@ export class FoeBars {
   constructor(hud: HTMLElement, over: HTMLElement) {
     this.hud = hud;
     this.over = over;
-    this.boss = new FoePlate(hud, 'boss', { words: ['faction', 'phase'], poise: true, remembers: true });
+    this.boss = new FoePlate(hud, 'boss', { words: ['faction', 'phase'], poise: true, remembers: 'found' });
     this.boss.root.hidden = true;
     for (const share of PHASE_MARKS) element('i', 'phase-mark', this.boss.health.root).style.left = `${share * 100}%`;
   }

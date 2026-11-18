@@ -144,8 +144,8 @@ rank keep pace. Aim error scales both her lay's long and short and her volley's 
 ship and every afloat, unstruck ship of another faction, and chooses, engages and breaks off with them as with a
 player's; she never fights her own faction, and a struck ship is nobody's enemy. Any foe's hit provokes her. Over each
 captain's ship in a fight stands her plate, as a foe's ([[Interface]]): her faction's emblem, and her name, with an
-Elite's or a Miniboss's mark, above a bar of her hull, red, orange or yellow by rank; no plate covers another. A Boss's
-stands across the top of the screen with her faction's name.
+Elite's or a Miniboss's mark, above a bar of her hull, red, orange or yellow by rank, her losses read as a foe's;
+no plate covers another. A Boss's stands across the top of the screen with her faction's name.
 
 ## Ramming
 

@@ -134,7 +134,7 @@ export class Hud {
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
-    this.target = new FoePlate(root, 'target', { poise: true, remembers: true });
+    this.target = new FoePlate(root, 'target', { poise: true, remembers: 'whole' });
     this.foeBars = new FoeBars(root, this.over);
     this.words = new Words(this.over);
     this.veil = element('div', 'veil', root);

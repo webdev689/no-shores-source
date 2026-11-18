@@ -4,8 +4,8 @@
 // Her hull's losses read as a foe's do on foot: a pale strip where the bar stood, a real bite breaking off and falling,
 // and the bar's edge flashing with it.
 
-import { bitten, type Loss, PIECE_LEAST, pieceAt, stepLoss } from '../combat/meter.ts';
 import { BarLayout, PLATES } from '../plus/barLayout.ts';
+import { bitten, type Loss, PIECE_LEAST, pieceAt, stepLoss } from '../plus/barLoss.ts';
 import { EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';

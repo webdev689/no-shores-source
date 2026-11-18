@@ -9,7 +9,12 @@ dfo_paths:
   - src/ui/plus/
   - src/ui/touch/
   - src/ui/menu/
-dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit)
+  - src/ui/barLoss.js
+  - src/ui/hud/hudFoeTarget.js
+  - src/ui/nameCone.js
+  - src/ui/hitNumbers.js
+  - src/ui/naval/navalHud.js
+dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the health bars fc2a8e6, on the same branch
 ---
 # Pick - Enhanced Plus UI
 
@@ -24,6 +29,11 @@ owner approved it: asked whether to record it as an approved pick, "yes".
 - The Enhanced windows and HUD: the main menu, HUD and hotbar, notices, dialogs and pickers, controls, account,
   character creation and sheet, talk, tavern and shop panels, player trade and the death screen. Each comes with its
   seams cut.
+- What the HUD's health bars do: a loss's strip and the piece a bite breaks off (`barLoss.js`), the target bar's foe,
+  its fade, its memory of each foe and its poise track (`enhancedHud.js`, `hudFoeTarget.js`, the track's reading in
+  `src/ai/tactics.js`), the names' cone, size and sight over figures (`nameCone.js`, `src/net/remotePlayers.js`),
+  the damage numbers' words and rise (`hitNumbers.js`), the vitals at rest (`src/ui/uiCalmStyle.js`) and the sea
+  card's hull losses (`navalHud.js`), with the cases their tests pinned.
 
 ## What stays behind
 
@@ -31,9 +41,15 @@ owner approved it: asked whether to record it as an approved pick, "yes".
   art. A window comes over once our own data stands in its place ([[Our Own Keys for Materials, Places and Items]]).
 - The classic service windows the Enhanced skin dresses (`enhancedPort.js`, `enhancedPorts.js`).
 - The Grimoire skin, which dresses the windows with a third-party art pack.
+- The foe bar's blade face, a friend's picture, not our own work.
+- The bars' readings of Daggerfall's rules: the classic vitals (`hudVitals.js`), magicka and breath, and a number's
+  critical strike, backstab, miss and ward; a heal's number, since no player heals yet; and a boss's traits and ward,
+  which our foes do not have.
 
 ## Our version
 
 The style kit and its frame are the [[Interface]]'s roles, and the [[Game]]'s heads-up display wears them
-([[The Ship Is Managed and Walked From the Sea's Panel]]). The themes, the pad, the touch layer and the windows have
-not come over.
+([[The Ship Is Managed and Walked From the Sea's Panel]]). The health bars are ported: the vitals, the target plate
+and the boss bar, the plates over foes and ships' plates do what Enhanced Plus does with them ([[Interface]],
+[[Enemies]], [[Plates Stay Light and Bars Do What Enhanced Plus Does]]). The themes, the pad, the touch layer and the
+windows have not come over.

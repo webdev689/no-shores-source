@@ -119,3 +119,11 @@ test('the foes fought in the last minute, struck or struck by, are known; a minu
   target.step(frameOf(foes), 1);
   assert.equal(target.foughtWith(3), false, 'a minute on, no longer fought');
 });
+
+test('a foe the player asked for, standing up, is neither struck nor fought; nor one feinting at them', () => {
+  const target = new FoeTarget();
+  const SPAWNED = 11;
+  const asked = target.step(frameOf([foe(4)], [struck(PLAYER, 4, SPAWNED), struck(4, PLAYER, EVENT.feinted)]), 0);
+  assert.equal(asked, null);
+  assert.equal(target.foughtWith(4), false);
+});

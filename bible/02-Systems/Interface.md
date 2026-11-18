@@ -18,8 +18,17 @@ code:
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/foePlate.ts#FoePlate
-  - client/src/combat/meter.ts#stepLoss
+  - client/src/plus/barLoss.ts#stepLoss
+  - client/src/plus/barLoss.ts#pieceAt
+  - client/src/combat/foeTarget.ts#FoeTarget
+  - client/src/combat/foePlate.ts#poiseTrackOf
+  - client/src/combat/plateSight.ts#coneWant
+  - client/src/combat/plateSight.ts#plateScale
+  - client/src/combat/plateSight.ts#PlateSight
+  - client/src/combat/hitWords.ts#wordsOf
+  - client/src/plus/kit.ts#motionReduced
   - client/src/ships/shipBars.ts#drawShipBars
+  - client/src/ships/shipBars.ts#HullLosses
 ---
 # Interface
 
@@ -54,16 +63,46 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **Where it is worn.** The [[Game]]'s heads-up display lays the kit's sheet once. The sea bar is a window, its groups
   (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
   the status line is a chip; the menu is a window under a header.
-- **Nothing covers another.** The fight's plates at the top (a boss's bar, the soft lock's) and ships' plates in a
+- **Nothing covers another.** The fight's plates at the top (a boss's bar, the target's) and ships' plates in a
   sea fight take the top from the place's name, which gives way while they show. On foot the status line stands
   under the place's name; in a sea fight, under a Boss ship's plate. At sea the hints rise above the offer to dock
   or go ashore.
-- **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. The vitals are one window
-  at the bottom left, three tracks in it, each naming itself and writing its percentage inside, as DFO's Enhanced HUD
-  did: never 0% while anything is left. After a loss a pale strip holds where the bar stood for 0.55 s (1.2 s at most
-  however the losses keep coming), then drains at 70% of the bar a second. Health at a quarter or less flashes its
-  edge to blood; the stamina flashes white for a swing or a dodge asked with none. With reduced motion asked for,
-  neither blinks: the edge holds blood or white.
+- **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's, and its bars do what
+  DFO's Enhanced UI Plus does with them ([[Pick - Enhanced Plus UI]]). The vitals are one window at the bottom left,
+  three tracks in it, each naming itself and writing its percentage inside: never 0% while anything is left. Health
+  at a quarter or less flashes its edge to blood; the stamina flashes white for a swing or a dodge asked with none.
+  Whole and untouched for 4 s (health and stamina short of no whole point, no poise taken), with no foe on the
+  target plate or the boss bar, the window rests out of sight in six steps over 1.2 s; the first point lost or spent
+  brings it back in two.
+- **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
+  keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
+  ship's, pale. A frame that takes a real bite (1.5% of a vital, 0.5% of a foe's health, 1% of a hull) breaks the
+  span off as a piece that falls in two halves, each in eight hard steps to its turn and eight more down and away,
+  fading (0.56 s, 0.64 s); two pieces fall in turn, so blows in quick succession each have their own. The vitals'
+  health and stamina, the target plate, the boss bar and ships' plates break pieces off; the plates over figures and
+  the poise do not.
+- **The target plate** shows the foe the player is fighting: the one their blow last reached, the one their soft
+  lock takes, or one beginning a telegraphed blow at them (unless they struck another in the last 2 s). It stands 6 s
+  after the last of these, fading over the last 1.5 s, and goes at once when the foe dies; never the Boss the boss
+  bar shows. It remembers the health it last showed of each foe, so one turned back to loses from where its own bar
+  stood, and one first shown is taken as whole, the plate coming with the first blow. The boss bar remembers its
+  Bosses alike, but takes one it first shows as it finds it, as it comes before any blow.
+- **The poise track**, a thin bar under the target's and the boss bar's health: the poise filling toward a break in
+  brass; an iron blow wound up, full and hatched in red, "Iron"; staggered, full and white, "Staggered", flashing as
+  the foe it shows breaks and never as the plate turns onto one already staggered; open after a blow that found no
+  one, a brass edge, "Open". With nothing to say it keeps its room unseen.
+- **Plates over figures are never overbearing.** A foe's shows only within 20 degrees of the crosshair, whole within
+  17 and none past 23, easing in and out over 0.25 s; a plate new on the screen starts where the cone puts it, so
+  none pops in. The foes the player traded a blow with in the last minute show wherever they are. A plate shows
+  for no foe farther than 60 m across the ground, nor one whose head the place's blocks have hidden for 0.15 s; seen
+  again it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does
+  farther off, never growing, its name never under 9 px.
+- **A blow's words** over the world rise and fade over 0.95 s from where each thing happened, fanning up to 36 px
+  either side so a flurry does not stack; a great turn's pops larger and rises farther. What a blow did besides
+  (Staggered, Slain) rides on its number as a small word under it, and the player's blow on a foe winding up that
+  does not break it says "Holds".
+- **Reduced motion.** With it asked for, no piece falls, no word rises (each stands and fades), no edge blinks (it
+  holds blood or white), no flash plays and plates over figures and ships go straight to their places.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
   rings, the words, the arrows), then the plates fixed at the top, then the veil over the whole display: blood while
   the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
@@ -75,7 +114,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   name above a long thin track, the meter in its rank's colour. Over each foe, the soft lock's (with its poise under
   the health) and the boss bar's are this one plate at three sizes. Ships' plates are drawn alike on an SVG, at the
   same sizes (`PLATES`): 140 by 26 px over a figure, and the boss bar 640 px wide at most, three quarters of a
-  narrower screen, its faction after its name.
+  narrower screen, its faction after its name. A ship's hull reads its losses as a foe's health does, and her bar's
+  edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first seen starts whole at her bar.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.
@@ -85,7 +125,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels for now.
-- Of DFO's vitals, the pieces a loss breaks off and drops, and the vitals fading at rest, have not come over.
+- The vitals always rest when whole: DFO's switch for it waits on a settings screen.
+- Only the place's blocks hide a plate: the ground between does not, so a foe over a hill keeps its plate.
+- A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars
   over figures are laid apart.
 - No gamepad or touch layer yet.

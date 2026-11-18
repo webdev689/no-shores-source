@@ -165,13 +165,19 @@ WebAssembly, so names, factions and weapons are read in one place.
   thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a dark trough
   with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before the name
   while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
+- **Plates are never overbearing.** A foe's plate shows near the crosshair, fading in and out at the cone's edge, and
+  always for the foes fought in the last minute; never through a block, nor past 60 m; it shrinks with distance as
+  its figure does ([[Interface]]).
 - **Plates never overlap.** The nearest foe's stays over it, in front; a farther one that would cover it is lifted
   just clear, and the plates hold still from frame to frame ([[Interface]]).
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the
-  screen: its emblem, its name and faction, "Phase n of 3", and its health in yellow marked at 2/3 and 1/3. A Boss
-  has no plate over its head.
-- **The soft lock's foe**: the same plate at the top, with its poise under its health, beneath the boss bar while one
-  shows.
+  screen: its emblem, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
+  track under it. A Boss has no plate over its head.
+- **The target plate**: the foe the player is fighting (struck, locked or winding up at them), the same plate at the
+  top with its poise track under its health, beneath the boss bar while one shows; it fades 6 s after the last
+  exchange ([[Interface]]).
+- **A blow's harm reads** on the target plate and the boss bar as a strip held where the bar stood and a piece
+  breaking off and falling; a blow's number carries what it did besides ([[Interface]]).
 - **Their dress**: the Grey Tithe in grey over leather or iron by role (Runner and Deckhand in leather; Crossbowman
   and Pistoleer women in leather; the Marksman under a grey hooded cloak; Collector and Tithe-Mate iron under a grey
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with

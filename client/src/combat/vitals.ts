@@ -4,7 +4,8 @@
 // target plate, the panel rests out of sight, and the first point lost or spent brings it back at once.
 import { ROLES } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { element, Meter, PIECE_LEAST } from './meter.ts';
+import { PIECE_LEAST } from '../plus/barLoss.ts';
+import { element, Meter } from './meter.ts';
 
 /** Health at or under this share of the whole warns. */
 export const LOW_HEALTH = 0.25;

@@ -71,7 +71,7 @@ test('the poise track: nothing to say at rest, filling toward a break, iron red,
 
 test('the track flashes as its foe breaks into a stagger, never as the plate turns onto one already staggered', () =>
   onFakePage((root) => {
-    const plate = new FoePlate(root, 'target', { poise: true, remembers: true });
+    const plate = new FoePlate(root, 'target', { poise: true, remembers: 'whole' });
     const [track] = findAll(root, 'poise-track');
     const staggered = { action: { kind: 'staggered', left: 30, cause: 'poise' } } as const;
     plate.show(rat(1, { poise: 20, action: windUp(false) }), 0);
@@ -86,7 +86,7 @@ test('the track flashes as its foe breaks into a stagger, never as the plate tur
 
 test('the plate remembers each foe’s health: one turned back to loses from where its bar stood, a new one as whole', () =>
   onFakePage((root) => {
-    const plate = new FoePlate(root, 'target', { remembers: true });
+    const plate = new FoePlate(root, 'target', { remembers: 'whole' });
     const lost = () => findAll(root, 'lost')[0]?.style['width'];
     const pieces = () => findAll(root, 'piece').filter((piece) => !piece.hidden).length;
     plate.show(rat(1, { health: 70 }), 0);
@@ -109,4 +109,14 @@ test('a plate over a figure neither remembers nor breaks off pieces: it reads it
     plate.show(rat(1, { health: 70 }), 0);
     assert.equal(findAll(root, 'lost')[0]?.style['width'], '70%');
     assert.equal(findAll(root, 'piece').length, 0);
+  }));
+
+test('the boss bar, which comes before any blow, takes a Boss it first shows as found, never as a phantom loss', () =>
+  onFakePage((root) => {
+    const plate = new FoePlate(root, 'boss', { remembers: 'found' });
+    plate.show(rat(9, { health: 54 }), 0);
+    assert.equal(findAll(root, 'lost')[0]?.style['width'], '54%');
+    assert.equal(findAll(root, 'piece').filter((piece) => !piece.hidden).length, 0);
+    plate.show(rat(9, { health: 40 }), 1 / 60);
+    assert.equal(findAll(root, 'piece').filter((piece) => !piece.hidden).length, 1, 'a blow seen still breaks off');
   }));

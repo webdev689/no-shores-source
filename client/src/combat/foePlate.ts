@@ -3,7 +3,8 @@
 import { ROLES } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
-import { element, Meter, PIECE_LEAST } from './meter.ts';
+import { PIECE_LEAST } from '../plus/barLoss.ts';
+import { element, Meter } from './meter.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
@@ -63,11 +64,12 @@ class PoiseTrack {
 }
 
 /** What a plate holds besides its emblem, name and health: a poise track under the health; whether its health breaks
- *  off in pieces and remembers each foe's, for a plate that turns from foe to foe; and spans after the name (by their
- *  class) for other words. */
+ *  off in pieces and remembers each foe's, for a plate that turns from foe to foe, taking a foe it first shows as
+ *  whole (a plate that comes with the first blow, after it lands) or as found (one that comes before any blow); and
+ *  spans after the name (by their class) for other words. */
 export interface PlateParts {
   readonly poise?: boolean;
-  readonly remembers?: boolean;
+  readonly remembers?: 'whole' | 'found';
   readonly words?: readonly string[];
 }
 
@@ -82,8 +84,9 @@ export class FoePlate {
   private readonly mark: HTMLElement;
   private readonly poise: PoiseTrack | null;
   /** The share of health the plate last showed of each foe it remembers, so a foe it turns back to loses from where
-   *  its bar stood, and a foe first shown is taken as whole: the plate comes with the first blow, after it lands. */
+   *  its bar stood; and the share a foe first shown is taken at (null for as found). */
   private readonly seen: Map<number, number> | null;
+  private readonly firstSeen: number | null;
   /** The foe the plate showed last, so its bars forget another's losses. */
   private shown: number | null = null;
 
@@ -99,6 +102,7 @@ export class FoePlate {
     this.health = new Meter(body, 'health', { pieceLeast: parts.remembers ? PIECE_LEAST.foe : null });
     this.poise = parts.poise ? new PoiseTrack(body) : null;
     this.seen = parts.remembers ? new Map() : null;
+    this.firstSeen = parts.remembers === 'whole' ? 1 : null;
   }
 
   /** Shows `foe` `seconds` on, with its alert's mark ('' for none). */
@@ -106,7 +110,7 @@ export class FoePlate {
     const share = foe.view.health / Math.max(1, foe.view.healthMax);
     if (this.shown !== foe.id) {
       this.shown = foe.id;
-      this.health.forget(this.seen ? (this.seen.get(foe.id) ?? 1) : null);
+      this.health.forget(this.seen?.get(foe.id) ?? this.firstSeen);
     }
     const { dataset } = this.root;
     if (dataset['band'] !== rankBand(foe.rank)) dataset['band'] = rankBand(foe.rank);
