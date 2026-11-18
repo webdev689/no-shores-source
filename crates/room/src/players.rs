@@ -58,8 +58,8 @@ pub struct Shown {
 
 /// One input from a player: its number; one tick's intent (movement and the fight's buttons); what their figure
 /// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
-/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; and a foe's kind to stand
-/// before them, if they asked for one (the Test Ground's panel); and whether they ask to respawn, dead past a node's
+/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand before them,
+/// or every foe sent away, if they asked (the Test Ground's panel); and whether they ask to respawn, dead past a node's
 /// section.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
@@ -69,8 +69,16 @@ pub struct Input {
     pub dress: Option<String>,
     pub arms: u32,
     pub seen: u64,
-    pub spawn: Option<u8>,
+    pub spawn: Option<SpawnAsk>,
     pub respawn: bool,
+}
+
+/// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
+/// does not come in, or none, takes the type's first), or every foe sent away.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SpawnAsk {
+    Foe { foe_type: u8, rank: u8 },
+    Clear,
 }
 
 impl Input {

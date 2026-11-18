@@ -1,0 +1,147 @@
+//! The roster: every type spawns at each of its ranks on its faction's side, with its own arms and its role's numbers
+//! scaled by its rank, defence shares capped and reaction floored; a rank it does not come in falls back to its first;
+//! each rank throws its own set of telegraphed blows; roles, ranks and factions read back by number.
+
+use combat::arms::{OffHand, Ranged, WeaponClass};
+use combat::fighter::{Side, Weight};
+use combat::shapes::Shape;
+use foes::ranks::{DEFENCE_MOST, REACTION_LEAST, shapes};
+use foes::roster::Domain;
+use foes::{FACTIONS, ROSTER, Rank, Role, faction, foe_type, spawn};
+
+const CLOSE: f64 = 1e-9;
+
+#[test]
+fn every_type_spawns_at_each_of_its_ranks_on_its_factions_side_with_its_numbers_scaled() {
+    let scales = [
+        (Rank::Minor, 0.6, 0.7, 0.9, 0.5),
+        (Rank::Major, 1.0, 1.0, 1.0, 1.0),
+        (Rank::Elite, 2.2, 1.6, 1.15, 1.25),
+        (Rank::Miniboss, 4.0, 2.4, 1.25, 1.4),
+        (Rank::Boss, 7.0, 3.5, 1.35, 1.5),
+    ];
+    for foe in &ROSTER {
+        let role = foes::roles::numbers(foe.role);
+        assert!(!foe.ranks.is_empty(), "{}", foe.name);
+        for &rank in foe.ranks {
+            let (_, health, poise, might, defence) = *scales.iter().find(|scale| scale.0 == rank).unwrap();
+            let (fighter, brain) = spawn(foe, rank, 3.0, -4.0, 1.0);
+            let numbers = brain.numbers();
+            assert_eq!(fighter.side, Side::Faction(foe.faction), "{}", foe.name);
+            assert_eq!((brain.foe_type.number, brain.rank, brain.phase()), (foe.number, rank, 1));
+            assert!((fighter.health_max - role.health * foe.bulk * health).abs() < CLOSE, "{} {rank:?}", foe.name);
+            assert!((fighter.poise_max - role.poise * foe.bulk * poise).abs() < CLOSE, "{} {rank:?}", foe.name);
+            assert!(
+                (fighter.might - role.might * might).abs() < CLOSE && (brain.might() - fighter.might).abs() < CLOSE
+            );
+            assert_eq!(fighter.weight, role.weight);
+            assert_eq!(fighter.arms, combat::arms_of(foe.right, foe.left, true), "{}", foe.name);
+            let shares = [numbers.parry, numbers.block, numbers.dodge];
+            let total: f64 = shares.iter().sum();
+            let wanted = (role.parry + role.block + role.dodge) * defence;
+            assert!(total <= DEFENCE_MOST + CLOSE && (total - wanted.min(DEFENCE_MOST)).abs() < CLOSE);
+            assert!(numbers.reaction >= REACTION_LEAST);
+            assert_eq!((fighter.body.x, fighter.body.y, fighter.body.facing, fighter.aim), (3.0, -4.0, 1.0, 1.0));
+            assert_eq!(brain.target(), None, "a new foe has seen nobody yet");
+        }
+    }
+}
+
+#[test]
+fn spot_checks_of_the_ranks_multipliers_and_caps() {
+    let numbers = |number: u8, rank: Rank| foe_type(number).unwrap().numbers(rank, 1);
+    // A pirate swordsman as a Minor: lighter, slower to answer, half as sure.
+    let minor = numbers(14, Rank::Minor);
+    assert!((minor.health - 42.0).abs() < CLOSE && (minor.poise - 24.5).abs() < CLOSE);
+    assert!((minor.might - 0.9).abs() < CLOSE && minor.reaction == 20);
+    assert!((minor.parry - 0.075).abs() < CLOSE && (minor.block - 0.175).abs() < CLOSE);
+    assert!((minor.dodge - 0.05).abs() < CLOSE && !minor.elite && !minor.feints);
+    // A pirate captain as an Elite: its shares, 0.875 together, scaled down evenly to 0.85; its reaction floored.
+    let elite = numbers(17, Rank::Elite);
+    assert!((elite.health - 880.0).abs() < CLOSE && (elite.poise - 192.0).abs() < CLOSE);
+    assert!((elite.might - 1.38).abs() < CLOSE && elite.reaction == 13);
+    assert!((elite.parry - 0.25 * 1.25 * 0.85 / 0.875).abs() < CLOSE);
+    assert!((elite.parry + elite.block + elite.dodge - 0.85).abs() < CLOSE && elite.elite && !elite.feints);
+    // The Reeve stands at six tenths of a captain; the Boss at seven captains, its shares capped.
+    let reeve = numbers(6, Rank::Elite);
+    assert!((reeve.health - 400.0 * 0.6 * 2.2).abs() < CLOSE && (reeve.poise - 120.0 * 0.6 * 1.6).abs() < CLOSE);
+    let boss = numbers(12, Rank::Boss);
+    assert!((boss.health - 2800.0).abs() < CLOSE && boss.reaction == 13 && boss.feints && boss.phases == 3);
+    assert!((boss.parry + boss.block + boss.dodge - 0.85).abs() < CLOSE);
+    assert_eq!(numbers(17, Rank::Miniboss).phases, 2);
+    // A brute never defends at any rank.
+    let bosun = numbers(10, Rank::Elite);
+    assert_eq!((bosun.parry, bosun.block, bosun.dodge), (0.0, 0.0, 0.0));
+}
+
+#[test]
+fn a_rank_a_type_does_not_come_in_falls_back_to_its_first() {
+    let marksman = foe_type(5).unwrap();
+    assert_eq!(marksman.rank_or_first(Some(Rank::Minor)), Rank::Elite);
+    assert_eq!(spawn(marksman, Rank::Minor, 0.0, 0.0, 0.0).1.rank, Rank::Elite);
+    assert_eq!(spawn(foe_type(12).unwrap(), Rank::Major, 0.0, 0.0, 0.0).1.rank, Rank::Boss);
+    assert_eq!(spawn(foe_type(4).unwrap(), Rank::Boss, 0.0, 0.0, 0.0).1.rank, Rank::Major);
+    assert_eq!(foe_type(1).unwrap().rank_or_first(None), Rank::Minor);
+    assert_eq!(spawn(foe_type(2).unwrap(), Rank::Major, 0.0, 0.0, 0.0).1.rank, Rank::Major, "one it comes in");
+}
+
+#[test]
+fn each_rank_throws_its_own_set_of_telegraphed_blows() {
+    let captain = [Shape::Sweep, Shape::Lunge, Shape::Charge, Shape::Leap];
+    let set = |role: &[Shape], shooter: bool, rank: Rank, phase: u8| shapes(role, shooter, rank, phase).to_vec();
+    assert!(set(&captain, false, Rank::Minor, 1).is_empty());
+    assert_eq!(set(&captain, false, Rank::Major, 1), [Shape::Sweep, Shape::Lunge], "half, the gap-closers left out");
+    assert_eq!(set(&[Shape::Slam, Shape::Sweep], false, Rank::Major, 1), [Shape::Slam]);
+    assert_eq!(set(&[Shape::Lunge], false, Rank::Major, 1), [Shape::Lunge], "half of one, rounded up");
+    assert_eq!(set(&captain, false, Rank::Elite, 1), captain);
+    let swordsman = [Shape::Sweep, Shape::Lunge];
+    assert_eq!(set(&swordsman, false, Rank::Miniboss, 1), captain, "a melee Miniboss adds the gap-closers");
+    assert_eq!(set(&[Shape::Aimed], true, Rank::Miniboss, 1), [Shape::Aimed], "a shooter adds none");
+    assert_eq!(set(&captain, false, Rank::Boss, 1), [Shape::Sweep, Shape::Lunge]);
+    assert_eq!(set(&captain, false, Rank::Boss, 2), captain);
+    let last = [Shape::Sweep, Shape::Lunge, Shape::Charge, Shape::Leap, Shape::Slam, Shape::Ring];
+    assert_eq!(set(&captain, false, Rank::Boss, 3), last);
+    assert_eq!(foe_type(12).unwrap().numbers(Rank::Boss, 3).shapes.to_vec(), last);
+}
+
+#[test]
+fn shooters_hold_their_own_weapons_and_the_marksman_stands_off_farther() {
+    let ranged = |number: u8| spawn(foe_type(number).unwrap(), Rank::Major, 0.0, 0.0, 0.0).0.arms.ranged;
+    assert_eq!(ranged(3), Some(Ranged::Crossbow));
+    assert_eq!(ranged(5), Some(Ranged::Thunderlock));
+    assert_eq!(ranged(9), Some(Ranged::Pistolet));
+    assert_eq!(ranged(16), Some(Ranged::Bow));
+    assert!((foe_type(5).unwrap().numbers(Rank::Elite, 1).standoff - 1.5).abs() < CLOSE);
+    let collector = spawn(foe_type(2).unwrap(), Rank::Major, 0.0, 0.0, 0.0).0.arms;
+    assert_eq!((collector.melee, collector.off_hand), (WeaponClass::Sword, OffHand::Shield));
+    // The hookman's axe takes both hands, so the combat rules leave its shield out of the fight.
+    let hookman = spawn(foe_type(8).unwrap(), Rank::Major, 0.0, 0.0, 0.0).0.arms;
+    assert_eq!((hookman.melee, hookman.off_hand), (WeaponClass::Axe, OffHand::Empty));
+}
+
+#[test]
+fn roles_ranks_types_and_factions_read_back_by_number() {
+    for role in Role::ALL {
+        assert_eq!(Role::from_number(role as u8), Some(role));
+    }
+    assert_eq!((Role::from_number(0), Role::from_number(6)), (None, None));
+    let names: Vec<&str> = Role::ALL.iter().map(|role| role.name()).collect();
+    assert_eq!(names, ["skirmisher", "swordsman", "brute", "archer", "captain"]);
+    for rank in Rank::ALL {
+        assert_eq!(Rank::from_number(rank as u8), Some(rank));
+    }
+    assert_eq!(Rank::from_number(0), None);
+    let numbers: Vec<u8> = ROSTER.iter().map(|foe| foe.number).collect();
+    assert_eq!(numbers, (1..=17).collect::<Vec<u8>>(), "numbered 1 to 17 in order");
+    assert_eq!(foe_type(0), None);
+    let tithe = faction(1).unwrap();
+    assert_eq!((tithe.name, tithe.side()), ("The Grey Tithe", Side::Faction(1)));
+    let land: Vec<&str> = tithe.types(Domain::Land).map(|foe| foe.name).collect();
+    assert_eq!(land, ["Runner", "Collector", "Crossbowman", "Enforcer", "Marksman", "Reeve"]);
+    assert_eq!(tithe.types(Domain::Deck).last().unwrap().name, "Captain Brannoc Thule");
+    let pirates = faction(2).unwrap();
+    assert_eq!(pirates.types(Domain::Land).count(), 0, "pirates are met at sea only");
+    assert_eq!(pirates.types(Domain::Deck).count(), 5);
+    assert_eq!(FACTIONS.len(), 2);
+    assert_eq!(spawn(foe_type(14).unwrap(), Rank::Major, 0.0, 0.0, 0.0).0.weight, Weight::Medium);
+}

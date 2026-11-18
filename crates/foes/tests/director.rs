@@ -8,7 +8,7 @@ use common::{Room, still, swinging};
 use core::f64::consts::PI;
 use foes::director::{DEALT_GAIN, KILL_GAIN, REST};
 use foes::tuning::{PATIENCE, RING_GAP, SWING_DELAY};
-use foes::{Board, Caps, Director, Kind, Pressed};
+use foes::{Board, Caps, Director, Pressed, Rank};
 
 const PLAYER: u32 = 1;
 
@@ -160,7 +160,7 @@ fn waiting_distance(heat: f64) -> f64 {
     room.director = at(heat);
     for index in 0..6_u32 {
         let bearing = (f64::from(index) * 20.0 - 50.0).to_radians();
-        room = room.foe(10 + index, Kind::Swordsman, 7.0 * libm::sin(bearing), -7.0 * libm::cos(bearing), PI);
+        room = room.foe(10 + index, 14, Rank::Major, 7.0 * libm::sin(bearing), -7.0 * libm::cos(bearing), PI);
     }
     let (mut total, mut count) = (0.0, 0.0);
     for tick in 0..600 {

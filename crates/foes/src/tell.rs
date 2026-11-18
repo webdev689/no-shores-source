@@ -1,14 +1,15 @@
 //! Telegraphed blows, as DFO's TELL throws them: who winds one up and when, which shape, how long, whether it is iron,
-//! whether it is a feint, what chains after it, and the boss's roar into its second phase. The brain only orders a
-//! blow; the combat rules wind it up, and the room judges its landing.
+//! whether it is a feint, what chains after it, and the roar into each new phase. The brain only orders a blow; the
+//! combat rules wind it up, and the room judges its landing.
 
 use crate::brain::Brain;
 use crate::dice::Purpose;
+use crate::ranks::{Phase, phase, phases};
 use crate::senses::{Here, Sight};
 use crate::tuning::{
     AIMED_SHARE, BLOW_CHANCE, BLOW_NEAR, CHAIN_CHANCE, CHAIN_LEAST, CHAIN_WINDUP, CLASSIC_TICKS_A_TICK, COOLDOWN_ELITE,
-    COOLDOWN_ORDINARY, FEINT_AT, FEINT_CHANCE, FEINT_GAP, IRON_ELITE, PHASE_CHAINS, PHASE_COOLDOWN, PHASE_TWO,
-    PHASE_WINDUP, ROAR, WINDUP_ELITE, WINDUP_LEAST, WINDUP_VARY, WORD_WAIT,
+    COOLDOWN_ORDINARY, FEINT_AT, FEINT_CHANCE, FEINT_GAP, IRON_ELITE, ROAR, WINDUP_ELITE, WINDUP_LEAST, WINDUP_VARY,
+    WORD_WAIT,
 };
 use combat::fighter::{Action, Weight};
 use combat::shapes::{CHARGE_FROM, IRON_EXTRA, LEAP_FROM, Shape, TelegraphOrder, numbers};
@@ -25,7 +26,8 @@ pub struct Windup {
 
 /// What a foe keeps for its telegraphed blows: when it may throw again, the blow winding up, how many it has wound up
 /// and when it last feinted, its last shape, the room's word on whether its last landed (none until told; a chain may
-/// follow one that did) and how many have chained, and its second phase.
+/// follow one that did) and how many have chained, the phase it fights in (1 and up), and whether its roar into it
+/// is still to come.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Tells {
     pub blow_ready: u64,
@@ -35,7 +37,7 @@ pub struct Tells {
     pub last: Option<Shape>,
     pub ended: Option<bool>,
     pub chained: u32,
-    pub phase_two: bool,
+    pub phase: u8,
     pub roar: bool,
 }
 
@@ -57,24 +59,25 @@ fn chance_a_tick() -> f64 {
     1.0 - libm::pow(1.0 - BLOW_CHANCE, CLASSIC_TICKS_A_TICK)
 }
 
+/// The phase a brain fights in, with its numbers.
+fn now(brain: &Brain) -> Phase {
+    phase(brain.rank, brain.tells.phase)
+}
+
 /// A wind-up's ticks: `base` seconds times U(WINDUP_VARY) when it is drawn (a chain's is not), quicker for an elite and
-/// in a second phase, never under `least`. Iron's extra the combat rules add.
-fn windup_ticks(here: &Here<'_, '_>, tells: &Tells, base: f64, drawn: bool, least: f64) -> u32 {
+/// in a later phase, never under `least`. Iron's extra the combat rules add.
+fn windup_ticks(here: &Here<'_, '_>, phase: &Phase, base: f64, drawn: bool, least: f64) -> u32 {
     let mut seconds = base * if drawn { here.dice.between(Purpose::Windup, WINDUP_VARY) } else { 1.0 };
     if here.numbers.elite {
         seconds *= WINDUP_ELITE;
     }
-    if tells.phase_two {
-        seconds *= PHASE_WINDUP;
-    }
-    combat::ticks(seconds.max(least))
+    combat::ticks((seconds * phase.windup).max(least))
 }
 
-/// Ticks to the next blow after one: by tier, shorter in a second phase.
-fn cooldown(here: &Here<'_, '_>, tells: &Tells) -> u64 {
+/// Ticks to the next blow after one: by tier, shorter in a later phase.
+fn cooldown(here: &Here<'_, '_>, phase: &Phase) -> u64 {
     let range = if here.numbers.elite { COOLDOWN_ELITE } else { COOLDOWN_ORDINARY };
-    let seconds = here.dice.between(Purpose::Cooldown, range) * if tells.phase_two { PHASE_COOLDOWN } else { 1.0 };
-    Here::ticks(seconds)
+    Here::ticks(here.dice.between(Purpose::Cooldown, range) * phase.cooldown)
 }
 
 /// Iron: a heavy body's slam and ring, and one elite blow in three.
@@ -94,11 +97,12 @@ fn order(
     ahead: f64,
     chain: bool,
 ) -> TelegraphOrder {
+    let phase = now(brain);
     let tells = &mut brain.tells;
     let windup = if chain {
-        windup_ticks(here, tells, CHAIN_WINDUP, false, CHAIN_LEAST)
+        windup_ticks(here, &phase, CHAIN_WINDUP, false, CHAIN_LEAST)
     } else {
-        windup_ticks(here, tells, numbers(shape).windup, true, WINDUP_LEAST)
+        windup_ticks(here, &phase, numbers(shape).windup, true, WINDUP_LEAST)
     };
     let iron = iron(here, shape);
     tells.windups += 1;
@@ -111,7 +115,7 @@ fn order(
             combat::ticks(f64::from(whole) * FEINT_AT / 60.0)
         });
     let order = TelegraphOrder { shape, windup, iron, feint_at, bearing, ahead };
-    tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, tells);
+    tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &phase);
     tells.windup = Some(Windup { order, begun: false, ended_at: None });
     tells.last = Some(shape);
     if !chain {
@@ -221,11 +225,11 @@ pub fn follow(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> 
     Some(chained.then(|| chain(brain, here, sight)).flatten().map_or(After::Spent, After::Chain))
 }
 
-/// A chain after a blow that landed, for a foe that chains (an elite): at most one blow after a first (two in a second
-/// phase), the shape DFO's chain law names, quick.
+/// A chain after a blow that landed, for a foe that chains (an elite): at most as many blows after a first as its
+/// phase allows, the shape DFO's chain law names, quick.
 fn chain(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> Option<TelegraphOrder> {
     let sight = sight.filter(|sight| sight.seen)?;
-    let most = if brain.tells.phase_two { PHASE_CHAINS } else { 1 };
+    let most = now(brain).chains;
     let last = brain.tells.last?;
     let shapes: Vec<Shape> = here
         .numbers
@@ -251,22 +255,26 @@ fn chain(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> Optio
     Some(order(brain, here, next, sight.toward, 0.0, true))
 }
 
-/// The boss's roar into its second phase, once, at PHASE_TWO of its health: an iron ring about its feet, wound up as
-/// soon as it is free to.
+/// The roar into a new phase, once each, as soon as it is free: at the next phase's share of its health, an iron ring
+/// about its feet, its poise refilled, and into the last of three, its crew called. One phase at a time, so a blow
+/// that cuts through two still roars twice.
 pub fn roar(brain: &mut Brain, here: &Here<'_, '_>) -> Option<TelegraphOrder> {
     let fighter = &here.fighter;
-    if here.numbers.phase_two && !brain.tells.phase_two && fighter.health <= fighter.health_max * PHASE_TWO {
-        brain.tells.phase_two = true;
+    let next = phases(brain.rank).get(usize::from(brain.tells.phase));
+    if !brain.tells.roar && next.is_some_and(|next| fighter.health <= fighter.health_max * next.from) {
+        brain.tells.phase += 1;
         brain.tells.roar = true;
     }
     if !brain.tells.roar || !matches!(fighter.action, Action::Idle) {
         return None;
     }
     brain.tells.roar = false;
+    brain.calls.refill_poise = true;
+    brain.calls.crew |= brain.tells.phase == 3;
     let windup = combat::ticks(ROAR - IRON_EXTRA);
     let order =
         TelegraphOrder { shape: Shape::Ring, windup, iron: true, feint_at: None, bearing: brain.heading, ahead: 0.0 };
-    brain.tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &brain.tells);
+    brain.tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &now(brain));
     brain.tells.windup = Some(Windup { order, begun: false, ended_at: None });
     brain.tells.last = Some(Shape::Ring);
     brain.tells.chained = 0;

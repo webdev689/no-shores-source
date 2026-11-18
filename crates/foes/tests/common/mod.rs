@@ -3,15 +3,22 @@
 //! what it saw.
 #![allow(dead_code, reason = "each test file uses its own share of these")]
 
-use combat::fighter::{Action, Side};
+use combat::fighter::Action;
 use combat::judge::{answered, judge, overreached, shot_blow, suffer, swing_blow, telegraph_blow};
 use combat::shapes::TelegraphOrder;
 use combat::shots::{Flight, Shot, fly};
 use combat::sight::bearing;
 use combat::strike::struck;
 use combat::{Fighter, FighterId, Happening, Intent, Surroundings, Verdict, step_fighter};
-use foes::{Board, Brain, Director, Kind, Routes, Seen, Straight, World, notice, spawn, think};
+use foes::{Board, Brain, Director, Rank, Routes, Seen, Straight, World, foe_type, notice, spawn, think};
 use movement::{Block, Controls, standing};
+
+/// The pirates' types, the five foes as the Test Ground first had them.
+pub const SKIRMISHER: u8 = 13;
+pub const SWORDSMAN: u8 = 14;
+pub const BRUTE: u8 = 15;
+pub const ARCHER: u8 = 16;
+pub const CAPTAIN: u8 = 17;
 
 /// A player's controls and buttons for a tick, from the room as it stands.
 pub type Script<'a> = &'a mut dyn FnMut(&Room, FighterId) -> Intent;
@@ -31,6 +38,8 @@ pub struct Room {
     pub happenings: Vec<(u64, FighterId, Happening)>,
     /// Every blow judged: tick, striker, defender, verdict.
     pub verdicts: Vec<(u64, FighterId, FighterId, Verdict)>,
+    /// Every call for a crew a foe made: tick and foe.
+    pub crew_calls: Vec<(u64, FighterId)>,
     pub shots: Vec<Shot>,
     /// Players' health kept full, so a long fight goes on.
     pub immortal: bool,
@@ -50,6 +59,7 @@ impl Room {
             intents: Vec::new(),
             happenings: Vec::new(),
             verdicts: Vec::new(),
+            crew_calls: Vec::new(),
             shots: Vec::new(),
             immortal: true,
         }
@@ -65,8 +75,9 @@ impl Room {
         self
     }
 
-    pub fn foe(mut self, id: FighterId, kind: Kind, x: f64, y: f64, facing: f64) -> Self {
-        let (fighter, brain) = spawn(kind, x, y, facing);
+    /// A foe of the type numbered `number` at `rank`.
+    pub fn foe(mut self, id: FighterId, number: u8, rank: Rank, x: f64, y: f64, facing: f64) -> Self {
+        let (fighter, brain) = spawn(foe_type(number).expect("a type of the roster"), rank, x, y, facing);
         self.fighters.push((id, fighter));
         self.brains.push((id, brain));
         self
@@ -141,13 +152,20 @@ impl Room {
                 routes: &*self.routes,
                 director: self.director,
             };
-            let (next, intent) = think(id, &brain, &mut self.board, &world);
+            let (mut next, intent) = think(id, &brain, &mut self.board, &world);
+            let calls = next.take_calls();
+            if calls.refill_poise {
+                self.set(id, |fighter| fighter.poise = 0.0);
+            }
+            if calls.crew {
+                self.crew_calls.push((tick, id));
+            }
             self.brains[index].1 = next;
             intents.push((id, intent));
             self.intents.push((tick, id, intent));
         }
         let players: Vec<FighterId> =
-            self.fighters.iter().filter(|(_, fighter)| fighter.side == Side::Players).map(|(id, _)| *id).collect();
+            self.fighters.iter().filter(|(_, fighter)| fighter.side.is_players()).map(|(id, _)| *id).collect();
         for id in players {
             intents.push((id, script(self, id)));
         }
@@ -181,7 +199,7 @@ impl Room {
         self.fly();
         if self.immortal {
             for (_, fighter) in &mut self.fighters {
-                if fighter.side == Side::Players {
+                if fighter.side.is_players() {
                     fighter.health = fighter.health_max;
                 }
             }

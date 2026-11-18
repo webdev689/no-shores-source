@@ -199,7 +199,7 @@ impl Fighter {
         let riposte = self.riposte.map_or((0.0, 0.0), |(foe, left)| (f64::from(foe) + 1.0, f64::from(left)));
         let (kind, numbers) = action_floats(&self.action);
         let combat = [
-            f64::from(self.side as u8),
+            f64::from(self.side.number()),
             f64::from(self.arms.code()),
             f64::from(self.weight as u8),
             self.health,
@@ -234,7 +234,7 @@ impl Fighter {
         let (body, combat) = floats.split_at(BODY_FLOATS);
         let body = Body::from_floats(body.try_into().unwrap_or(&[0.0; BODY_FLOATS]));
         let at = |index: usize| combat.get(index).copied().unwrap_or_default();
-        let side = if count(at(0)) == 1 { Side::Foes } else { Side::Players };
+        let side = Side::from_number(small(at(0)));
         let weight = [Weight::Light, Weight::Medium, Weight::Heavy, Weight::Massive]
             .into_iter()
             .find(|weight| f64::from(*weight as u8) == at(2))
@@ -284,7 +284,7 @@ impl Fighter {
             body.mode.number(),
             flag(body.crouched),
             self.aim,
-            f64::from(self.side as u8),
+            f64::from(self.side.number()),
             f64::from(self.arms.code()),
             f64::from(self.weight as u8),
             self.health,

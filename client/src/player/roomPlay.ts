@@ -82,7 +82,6 @@ export class RoomPlay {
             look: walker.look,
             arms: 0,
             seen: this.lastTick,
-            spawn: 0,
             respawn: this.respawnAsked,
           };
           const sequence = this.prediction.next(controls);

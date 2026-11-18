@@ -22,7 +22,7 @@ pub fn player_at(x: f64, y: f64) -> Fighter {
 pub fn foe_at(x: f64, y: f64, facing: f64) -> Fighter {
     let mut body = standing(x, y);
     body.facing = facing;
-    let mut fighter = combat::fighter(Side::Foes, body, SWORD, Weight::Medium, 70.0, 35.0);
+    let mut fighter = combat::fighter(Side::Faction(1), body, SWORD, Weight::Medium, 70.0, 35.0);
     fighter.aim = facing;
     fighter
 }

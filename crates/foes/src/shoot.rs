@@ -1,7 +1,8 @@
 //! A shooter's fight, as DFO's tactics have it: a ranged token gates its shot and a shot spends it; without one it
 //! stands off and holds its fire, never circling; a target closing inside its bow's near edge it walks away from, one
-//! burst, and caught or cornered it fights close until it may kite again. It draws by aiming its bow and looses by
-//! pulling the trigger once drawn, aiming high enough for the arrow's fall.
+//! burst, and caught or cornered it fights close until it may kite again. It draws by aiming its own weapon (a bow, a
+//! crossbow or a gun, each its own draw) and looses by pulling the trigger once drawn, aiming high enough for an
+//! arrow's or a bolt's fall.
 
 use crate::board::Board;
 use crate::brain::Brain;
@@ -10,18 +11,19 @@ use crate::senses::{Here, Sight};
 use crate::steer::Ask;
 use crate::tell::aimed;
 use crate::tuning::{
-    KITE_COOLDOWN, KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, RANGED_LEASE, SHOT_GAP, STEP_PACE, SWING_FACE,
+    DRAW_BOW, DRAW_CROSSBOW, DRAW_PISTOLET, DRAW_THUNDERLOCK, KITE_COOLDOWN, KITE_CORNERED, KITE_IN, KITE_MAX,
+    KITE_OUT, RANGED_LEASE, SHOT_GAP, STEP_PACE, SWING_FACE,
 };
 use combat::Ranged;
 use combat::fighter::Action;
 use combat::lock::sees;
-use combat::shots::{DRAW_FULL, toward};
+use combat::shots::toward;
 use combat::sight::{apart, off};
 use core::f64::consts::PI;
 
 /// What a shooter keeps: whether it is kiting and until when, when it may kite again, until when it fights close,
-/// when it may shoot again, and whether it asked to walk last tick and from where (a kite that goes nowhere is
-/// cornered).
+/// when it may shoot again, whether it asked to walk last tick and from where (a kite that goes nowhere is
+/// cornered), and the tick it last raised its weapon from rest, which its draw is counted from.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Bow {
     pub kiting: bool,
@@ -31,6 +33,18 @@ pub struct Bow {
     pub shot_ready: u64,
     pub walked: bool,
     pub from: [f64; 2],
+    pub raised: u64,
+}
+
+/// The ticks a shooter draws its weapon before it looses.
+#[must_use]
+pub fn draw_ticks(ranged: Ranged) -> u64 {
+    Here::ticks(match ranged {
+        Ranged::Bow => DRAW_BOW,
+        Ranged::Crossbow => DRAW_CROSSBOW,
+        Ranged::Pistolet => DRAW_PISTOLET,
+        Ranged::Thunderlock => DRAW_THUNDERLOCK,
+    })
 }
 
 /// The pitch that carries its shot from its chest to its target's, as a player's quick shot is laid: an arrow high
@@ -39,22 +53,28 @@ fn pitch(here: &Here<'_, '_>, sight: &Sight) -> f64 {
     toward(here.fighter.arms.ranged.unwrap_or(Ranged::Bow), here.feet(), sight.spot).1
 }
 
-/// Holding its aim until it has drawn `drawn` ticks, then pulling the trigger; and, from rest, raising its bow when
+/// Holding its aim until it has drawn `drawn` ticks, then pulling the trigger; and, from rest, raising its weapon when
 /// `may` allows. Answers the ask and whether it let a shot go this tick.
-pub fn draw(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, drawn: u32, may: bool) -> (Ask, bool) {
+pub fn draw(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, drawn: u64, may: bool) -> (Ask, bool) {
     let mut ask = Ask::facing(sight.toward);
     ask.combat.pitch = pitch(here, sight);
     let facing = off(brain.heading, sight.toward) <= SWING_FACE / 4.0;
     match here.fighter.action {
-        Action::Draw { elapsed } => {
+        Action::Draw { .. } => {
+            // Counted from its raising, not the draw's own count, which a bow's full charge caps.
             ask.combat.aim = true;
-            ask.combat.shoot = elapsed >= drawn;
+            ask.combat.shoot = here.tick() > brain.bow.raised + drawn;
             if ask.combat.shoot {
                 brain.bow.shot_ready = here.tick() + Here::ticks(here.dice.between(Purpose::ShotGap, SHOT_GAP));
                 return (ask, true);
             }
         }
-        Action::Idle => ask.combat.aim = may && facing && here.tick() >= brain.bow.shot_ready,
+        Action::Idle => {
+            ask.combat.aim = may && facing && here.tick() >= brain.bow.shot_ready;
+            if ask.combat.aim {
+                brain.bow.raised = here.tick();
+            }
+        }
         _ => {}
     }
     (ask, false)
@@ -67,7 +87,7 @@ pub fn shooting(brain: &Brain, here: &Here<'_, '_>, sight: &Sight) -> bool {
     let tick = here.tick();
     here.numbers.shooter
         && tick >= bow.close_until
-        && (sight.distance >= KITE_IN || bow.kiting || tick >= bow.kite_ready)
+        && (sight.distance >= KITE_IN * here.numbers.standoff || bow.kiting || tick >= bow.kite_ready)
 }
 
 /// A shooter's tick at a target it fights by shooting.
@@ -81,7 +101,8 @@ pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: 
     let director = here.world.director;
     let has = board.take(target, me, true, tick, Here::ticks(director.pressed().patience), director.caps());
     let walked = std::mem::take(&mut brain.bow.walked);
-    let close = if brain.bow.kiting { sight.distance < KITE_OUT } else { sight.distance < KITE_IN };
+    let (kite_in, kite_out) = (KITE_IN * here.numbers.standoff, KITE_OUT * here.numbers.standoff);
+    let close = if brain.bow.kiting { sight.distance < kite_out } else { sight.distance < kite_in };
     if close && !matches!(here.fighter.action, Action::Draw { .. }) {
         if !brain.bow.kiting {
             brain.bow.kiting = true;
@@ -118,7 +139,8 @@ pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: 
         ask.combat.telegraph = Some(order);
         return ask;
     }
-    let (ask, loosed) = draw(brain, here, sight, DRAW_FULL, has && clear);
+    let drawn = draw_ticks(here.fighter.arms.ranged.unwrap_or(Ranged::Bow));
+    let (ask, loosed) = draw(brain, here, sight, drawn, has && clear);
     if loosed {
         board.hand_on(target, me, tick);
     }

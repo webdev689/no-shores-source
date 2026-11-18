@@ -50,7 +50,7 @@ pub const CRATES: &[CrateRule] = &[
     },
     CrateRule {
         name: "room-wasm",
-        workspace: &["combat", "land", "movement", "naval", "protocol", "room", "sailing", "world"],
+        workspace: &["combat", "foes", "land", "movement", "naval", "protocol", "room", "sailing", "world"],
         outside: &["serde", "serde_json"],
         door: true,
     },

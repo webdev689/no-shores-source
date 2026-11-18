@@ -194,6 +194,7 @@ dependencies = [
  "bake",
  "city",
  "combat",
+ "foes",
  "land",
  "movement",
  "naval",

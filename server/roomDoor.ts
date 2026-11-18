@@ -49,6 +49,10 @@ export interface RoomDoor {
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
+  /** Every enemy type the rules know, as JSON, in their order: each one's number (`type`), name, faction (`faction`
+   *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
+   *  first), and its right and left forge layers. */
+  roster(): string;
 }
 
 interface RoomExports {
@@ -67,6 +71,7 @@ interface RoomExports {
   room_tick(): void;
   room_snapshot(): bigint;
   room_sloop(): bigint;
+  room_roster(): bigint;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -116,5 +121,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     tick: () => exports.room_tick(),
     snapshot: () => take(exports.room_snapshot()),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
+    roster: () => new TextDecoder().decode(take(exports.room_roster())),
   };
 }

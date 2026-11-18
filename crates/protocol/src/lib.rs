@@ -11,7 +11,7 @@ use naval::fight::Orders;
 use naval::wire::{orders_from, orders_numbers};
 use room::pirates::Pirate;
 use room::sea::Ship;
-use room::{Event, FoeSeen, Input, PlayerId, Seen, Shown, Standing};
+use room::{CLEAR_FOES, Event, FoeSeen, Input, PlayerId, Seen, Shown, SpawnAsk, Standing};
 
 /// The code flatc makes from the schema, into `generated/`, which git leaves out (`npm run schema`).
 #[allow(
@@ -37,8 +37,8 @@ const COMBAT_NUMBERS: usize = INTENT_FLOATS - CONTROLS_FLOATS;
 const NO_FIGHT: [f64; COMBAT_NUMBERS] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f64::NAN, f64::NAN, f64::NAN];
 
 /// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
-/// changed, what their hands hold, the tick their screen showed, a foe asked for, and whether they ask to respawn; or
-/// why they do not read. The bytes come from a player's machine, so the verifier passes them first. An input with no
+/// changed, what their hands hold, the tick their screen showed, a foe asked for (a type and a rank) or every foe sent
+/// away, and whether they ask to respawn; or why they do not read. The bytes come from a player's machine, so the verifier passes them first. An input with no
 /// fight's numbers asks for nothing in the fight.
 pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let input = flatbuffers::root::<messages::Input>(bytes).map_err(|error| error.to_string())?;
@@ -55,7 +55,11 @@ pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let anim = input.anim().unwrap_or_default().to_owned();
     let shown = Shown { anim, frame: input.frame(), facing: input.facing() };
     let dress = input.dress().map(str::to_owned);
-    let spawn = Some(input.spawn()).filter(|kind| *kind != 0);
+    let spawn = match (input.spawn(), input.spawn_type()) {
+        (CLEAR_FOES, _) => Some(SpawnAsk::Clear),
+        (_, 0) => None,
+        (_, foe_type) => Some(SpawnAsk::Foe { foe_type, rank: input.spawn_rank() }),
+    };
     let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
     Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn })
 }
@@ -80,8 +84,16 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
         combat,
         arms: input.arms,
         seen: input.seen,
-        spawn: input.spawn.unwrap_or_default(),
+        spawn: if input.spawn == Some(SpawnAsk::Clear) { CLEAR_FOES } else { 0 },
         respawn: input.respawn,
+        spawn_type: match input.spawn {
+            Some(SpawnAsk::Foe { foe_type, .. }) => foe_type,
+            _ => 0,
+        },
+        spawn_rank: match input.spawn {
+            Some(SpawnAsk::Foe { rank, .. }) => rank,
+            _ => 0,
+        },
     };
     let message = messages::Input::create(&mut builder, &args);
     builder.finish(message, None);
@@ -294,7 +306,17 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .iter()
         .map(|foe| {
             let glance = Some(builder.create_vector(&foe.fighter.glance()));
-            messages::Foe::create(&mut builder, &messages::FoeArgs { id: foe.foe, kind: foe.kind, glance })
+            let args = messages::FoeArgs {
+                id: foe.foe,
+                kind: foe.kind,
+                glance,
+                type_: foe.foe_type,
+                rank: foe.rank,
+                faction: foe.faction,
+                phase: foe.phase,
+                alert: 0,
+            };
+            messages::Foe::create(&mut builder, &args)
         })
         .collect();
     let foes = Some(builder.create_vector(&foes));

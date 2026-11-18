@@ -6,9 +6,9 @@ mod common;
 
 use combat::fighter::Swing;
 use combat::{Happening, Stroke, Verdict};
-use common::{Room, standing_still};
+use common::{BRUTE, Room, SKIRMISHER, SWORDSMAN, standing_still};
 use core::f64::consts::PI;
-use foes::Kind;
+use foes::Rank::Major;
 
 const PLAYER: u32 = 1;
 const SWINGS_AT: u64 = 5;
@@ -22,10 +22,10 @@ fn one_swing(room: &Room, _me: u32) -> combat::Intent {
     intent
 }
 
-/// The room after one swing at a foe of `kind` 1.5 m north of the player: the verdict on the swing, the tick the foe
+/// The room after one swing at a foe of the type numbered `number`, a Major, 1.5 m north of the player: the verdict on the swing, the tick the foe
 /// first pressed its guard or its dodge, and whether it then riposted.
-fn answered(kind: Kind, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
-    let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, kind, 0.0, -1.5, PI);
+fn answered(number: u8, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
+    let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, Major, 0.0, -1.5, PI);
     room.run(120, &mut one_swing);
     let verdict =
         room.verdicts.iter().find(|(_, by, on, _)| *by == PLAYER && *on == 10).map(|(_, _, _, verdict)| *verdict);
@@ -45,7 +45,7 @@ fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripost
     let lands = SWINGS_AT + 24;
     let (mut parried, mut riposted) = (0, 0);
     for seed in 1..=60 {
-        let (verdict, pressed, riposte) = answered(Kind::Swordsman, seed);
+        let (verdict, pressed, riposte) = answered(SWORDSMAN, seed);
         if let Some(pressed) = pressed {
             assert!(pressed >= SWINGS_AT + 16, "never sooner than its reaction time: {pressed}");
         }
@@ -66,9 +66,9 @@ fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripost
 fn a_swordsman_waiting_its_turn_holds_its_shield_up_and_blocks() {
     let mut room = Room::new(3)
         .player(PLAYER, 0.0, 0.0, 0.0)
-        .foe(10, Kind::Swordsman, 0.0, -4.0, PI)
-        .foe(11, Kind::Swordsman, 3.5, 2.0, -PI / 3.0)
-        .foe(12, Kind::Swordsman, -3.5, 2.0, PI / 3.0);
+        .foe(10, SWORDSMAN, Major, 0.0, -4.0, PI)
+        .foe(11, SWORDSMAN, Major, 3.5, 2.0, -PI / 3.0)
+        .foe(12, SWORDSMAN, Major, -3.5, 2.0, PI / 3.0);
     room.run(240, &mut |_, _| standing_still(0.0));
     let guarded_long = [10, 11, 12].iter().any(|foe| {
         let intents = room.foe_intents(*foe);
@@ -81,7 +81,7 @@ fn a_swordsman_waiting_its_turn_holds_its_shield_up_and_blocks() {
 fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch() {
     let mut dodged = 0;
     for seed in 1..=30 {
-        let (verdict, pressed, _) = answered(Kind::Skirmisher, seed);
+        let (verdict, pressed, _) = answered(SKIRMISHER, seed);
         match verdict {
             Some(Verdict::Dodged { perfect }) => {
                 dodged += 1;
@@ -99,7 +99,7 @@ fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch(
 #[test]
 fn a_brute_takes_the_blow() {
     for seed in 1..=10 {
-        let (verdict, pressed, _) = answered(Kind::Brute, seed);
+        let (verdict, pressed, _) = answered(BRUTE, seed);
         assert_eq!(pressed, None);
         assert!(matches!(verdict, Some(Verdict::Hit { .. })), "{verdict:?}");
     }
@@ -109,7 +109,7 @@ fn a_brute_takes_the_blow() {
 fn a_blow_from_behind_is_not_seen_coming() {
     for seed in 1..=20 {
         // The skirmisher faces north, away from the player south of it.
-        let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Skirmisher, 0.0, -1.5, 0.0);
+        let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SKIRMISHER, Major, 0.0, -1.5, 0.0);
         let mut swing_at_its_back = |room: &Room, _me: u32| {
             let mut intent = standing_still(0.0);
             if room.tick == 1 {

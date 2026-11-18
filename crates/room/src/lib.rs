@@ -13,11 +13,11 @@ mod players;
 pub mod sea;
 pub mod threat;
 
-pub use foes::{CLEAR_FOES, FOES_MOST};
+pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen};
 pub use judging::{Event, EventKind, How, how_of};
 pub use players::{
-    CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, VIEW_LAG,
-    WAITING_LIMIT,
+    CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, SpawnAsk,
+    VIEW_LAG, WAITING_LIMIT,
 };
 
 use combat::arms::{Arms, BARE_HANDS};
@@ -26,6 +26,7 @@ use combat::judge::swing_blow;
 use combat::strike::struck;
 use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
+use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
 use land::ground::Ground;
 use movement::blocks::ground_at;
@@ -69,22 +70,6 @@ pub struct Seen {
     pub acknowledged: u32,
 }
 
-/// A foe as the room keeps it: its fighter, its kind's number and its brain.
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) struct Foe {
-    pub fighter: Fighter,
-    pub kind: u8,
-    pub brain: ::foes::Brain,
-}
-
-/// A foe as the room last stepped it.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct FoeSeen {
-    pub foe: FighterId,
-    pub kind: u8,
-    pub fighter: Fighter,
-}
-
 /// One shared space: its floor and course, where players stand, its section if it is a node's, its clock in ticks, its
 /// players and foes in the order of their numbers, shots in flight, the blows waiting on their defenders' views, and
 /// what happened since it was last asked.
@@ -107,8 +92,8 @@ pub struct Room {
     /// the foes' brains.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
     pub(crate) ended_telegraphs: Vec<(FighterId, bool, bool)>,
-    /// Foes the players asked to stand before them: (player, kind).
-    pub(crate) spawns: Vec<(PlayerId, u8)>,
+    /// What the players asked of the foes, in turn.
+    pub(crate) spawns: Vec<(PlayerId, SpawnAsk)>,
     /// Swings begun this tick, for the foes' brains to see.
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
@@ -304,8 +289,8 @@ impl Room {
                 found.fighter = next;
                 found.shown = input.shown;
                 found.remember(seen);
-                if let Some(kind) = input.spawn.filter(|_| self.section.is_none()) {
-                    self.spawns.push((id, kind));
+                if let Some(ask) = input.spawn.filter(|_| self.section.is_none()) {
+                    self.spawns.push((id, ask));
                 }
                 self.happened(id, &next, happening, &view);
             }
@@ -502,11 +487,6 @@ impl Room {
         })
     }
 
-    /// Every foe as the room last stepped it, in the order of their numbers.
-    pub fn foes_seen(&self) -> impl Iterator<Item = FoeSeen> + '_ {
-        self.foes.iter().map(|(&foe, found)| FoeSeen { foe, kind: found.kind, fighter: found.fighter })
-    }
-
     /// The shots in flight.
     #[must_use]
     pub fn shots(&self) -> &[Shot] {
@@ -586,6 +566,10 @@ mod foe_tests;
 #[cfg(test)]
 #[path = "fair_tests.rs"]
 mod fair_tests;
+
+#[cfg(test)]
+#[path = "faction_tests.rs"]
+mod faction_tests;
 
 #[cfg(test)]
 #[path = "node_tests.rs"]

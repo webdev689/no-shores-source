@@ -3,9 +3,9 @@
 //! aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
 use crate::arms::{swing_ticks, weapon};
-use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Side, Swing};
+use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};
 use crate::shapes::Telegraph;
-use crate::shots::{DRAW_FULL, Shot, aimed_power, loose, shot_numbers, toward};
+use crate::shots::{DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
 use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::tuning::{
     AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
@@ -267,7 +267,7 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     if next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
         return Some(dodge(next, intent.controls, around));
     }
-    if let Some(order) = input.telegraph.filter(|_| next.side == Side::Foes) {
+    if let Some(order) = input.telegraph.filter(|_| !next.side.is_players()) {
         let body = next.body;
         next.action = Action::Telegraph(Telegraph::begin(&order, [body.x, body.y, body.z]));
         next.aim = order.bearing;
@@ -415,8 +415,10 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
         let (chest, heading) = (next.chest(), aimed_bearing(next, intent));
         let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
         // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone.
-        let power = if next.side == Side::Foes { 1.0 } else { aimed_power(ranged, elapsed) };
-        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, power)));
+        let player = next.side.is_players();
+        let power = if player { aimed_power(ranged, elapsed) } else { 1.0 };
+        let shot = loose(0, ranged, chest, heading, pitch, power);
+        return Some(shoot(next, if player { shot } else { by_foe(&shot) }));
     }
     next.action = Action::Draw { elapsed: (elapsed + 1).min(DRAW_FULL) };
     None

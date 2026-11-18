@@ -10,22 +10,23 @@ fn room() -> Room {
     Room::new(Vec::new(), (0.0, 0.0))
 }
 
-/// A foe of a kind standing at (x, y), facing south, put straight into the room.
-fn stand(room: &mut Room, kind: ::foes::Kind, x: f64, y: f64) -> FighterId {
+/// A Major of the type numbered `number` standing at (x, y), facing south, put straight into the room.
+fn stand(room: &mut Room, number: u8, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
-    let (fighter, brain) = ::foes::spawn(kind, x, y, core::f64::consts::PI);
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
+    let foe_type = ::foes::foe_type(number).expect("a type of the roster");
+    let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, core::f64::consts::PI);
+    room.foes.insert(id, foes::Foe { fighter, brain });
     id
 }
 
 /// A brute 1.5 m north of the origin: it never guards, parries or dodges.
 fn stand_foe(room: &mut Room) -> FighterId {
-    stand(room, ::foes::Kind::Brute, 0.0, -1.5)
+    stand(room, 15, 0.0, -1.5)
 }
 
 /// A swordsman far out of sight, and a copy of it as though it stood 1.5 m north of the origin, to strike from.
 fn far_foe(room: &mut Room) -> (FighterId, Fighter) {
-    let id = stand(room, ::foes::Kind::Swordsman, 0.0, -60.0);
+    let id = stand(room, 14, 0.0, -60.0);
     let mut near = *room.fighter(id).unwrap();
     near.body = standing(0.0, -1.5);
     near.aim = core::f64::consts::PI;

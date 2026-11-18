@@ -4,8 +4,8 @@ status: live
 code:
   - crates/foes/src/lib.rs#think
   - crates/foes/src/brain.rs#notice
-  - crates/foes/src/kinds.rs#numbers
-  - crates/foes/src/kinds.rs#spawn
+  - crates/foes/src/roles.rs#numbers
+  - crates/foes/src/roster.rs#spawn
   - crates/foes/src/board.rs#Board
   - crates/foes/src/senses.rs#sense
   - crates/foes/src/tactics.rs#decide

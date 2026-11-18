@@ -4,9 +4,9 @@
 mod common;
 
 use combat::{Intent, Stroke};
-use common::{Room, standing_still};
+use common::{BRUTE, Room, SKIRMISHER, SWORDSMAN, standing_still};
 use core::f64::consts::PI;
-use foes::Kind;
+use foes::Rank::Major;
 
 const PLAYER: u32 = 1;
 
@@ -25,9 +25,9 @@ fn fighting_back(room: &Room, me: u32) -> Intent {
 fn fight(seed: u64) -> Vec<(u64, u32, Intent)> {
     let mut room = Room::new(seed)
         .player(PLAYER, 0.0, 0.0, 0.0)
-        .foe(10, Kind::Swordsman, -2.0, -6.0, PI)
-        .foe(11, Kind::Skirmisher, 3.0, -5.0, PI)
-        .foe(12, Kind::Brute, 0.0, 7.0, 0.0);
+        .foe(10, SWORDSMAN, Major, -2.0, -6.0, PI)
+        .foe(11, SKIRMISHER, Major, 3.0, -5.0, PI)
+        .foe(12, BRUTE, Major, 0.0, 7.0, 0.0);
     room.run(600, &mut fighting_back);
     room.intents
 }
