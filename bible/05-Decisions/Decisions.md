@@ -75,6 +75,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]
 - [[Flora Is Baked From Detailed Models]]
 - [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]
+- [[Each Island Has One Patrol Zone, Built of 500 m Combat Spaces]]
+- [[The World Editor Draws the Layouts' Buildings]]
+- [[The Well House's Roof Is Fixed]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

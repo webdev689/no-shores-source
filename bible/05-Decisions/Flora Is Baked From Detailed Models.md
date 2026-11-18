@@ -17,6 +17,9 @@ The owner's answers to the questions that followed:
 >
 > Asked who makes the detailed sources, Blender scripts in the repository or the owner's own models: "You"
 
+Later, asked whether the `flora` workflow should publish only from `main` (it publishes on a push to any branch, as
+the `ships` workflow does): "Best decision"
+
 ## What it settles
 
 - Each biome's plants are made as detailed models with the Blender pipeline, and each is baked two ways: a low-poly
@@ -24,4 +27,5 @@ The owner's answers to the questions that followed:
 - The sprites replace the far meshes and the woods painted on the land.
 - Claude makes the detailed sources, as Blender scripts in the repository ([[Own Work]]); what they bake is published
   to R2 ([[Generated Files on Cloudflare R2]]).
+- Where the `flora` workflow publishes from is Claude's to decide.
 - It builds on [[Which Made-for-DFO Mods Come Over]]: Overlook builds its own trees.

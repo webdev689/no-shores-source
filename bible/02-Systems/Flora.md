@@ -99,8 +99,11 @@ bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13.
 | `python -I tools/flora/publish.py [--baked <folder>]` | Uploads a bake (or bakes first) to R2 under the files' hashes, checks each answers, and writes the manifest |
 | `python -I tools/flora/test_flora.py` | The same seed grows the same bytes; mips keep cover |
 
-The `flora` workflow runs the test and publishes on every change to `tools/flora/`, with the repository's
-Cloudflare token; its log ends with the manifest, which a commit takes into `content/nature/flora.json`. A cloud
+The `flora` workflow runs the test and publishes on every change to `tools/flora/`, on any branch, with the
+repository's Cloudflare token; its log ends with the manifest, which a commit takes into `content/nature/flora.json`.
+It publishes from any branch, not only `main` (Claude's call, [[Flora Is Baked From Detailed Models]]): R2 names each
+object by its hash, so a branch's run overwrites nothing, and a branch must publish its flora for its pictures to
+load before it merges. A cloud
 session publishes from where it is ([[Generated Files on Cloudflare R2]]).
 
 ## Limits
