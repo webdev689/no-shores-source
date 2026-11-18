@@ -153,6 +153,7 @@ function fightByHand() {
   const rules = {
     predict: (fighter: Float64Array) => ({ fighter, fired: control.firing ? shot : null }),
     strokeReach: () => 1,
+    strokeArc: () => 0,
   } as unknown as CombatRules;
   const link = {
     player: 1,

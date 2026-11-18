@@ -36,6 +36,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Aiming Sits Behind the Shoulder and Zooms the View]]
 - [[First-Person Aiming Zooms the Weapon With the View]]
 - [[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]
+- [[The Attack Feel Is Tried in the Test Ground]]
 - [[Come Sail Away's Sailing Comes Over]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]

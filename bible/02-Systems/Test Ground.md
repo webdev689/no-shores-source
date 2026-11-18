@@ -94,6 +94,23 @@ room's word for it, so playing alone and online are the same game.
   `?blood=off` draws none.
 - **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
   the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
+- **The attack feel.** Four effects over the fight's blows, each switched on or off and set by a slider in the panel's
+  **Attack feel**, kept in the browser with its numbers shown to copy ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's
+  rules and their clock never do.
+  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own stroke, landing, reach and width:
+    an overhead comes down, a sweep crosses as wide as it strikes, a slant cuts down and across, a thrust drives out.
+    Each part fades by how long ago the blade passed it and burns by how fast it went, so only the cut glows; a ribbon
+    along the tip turns to the eye, so a cut seen edge on still shows, and a dark rim keeps it clear against the sky.
+    It burns in the weapon's metal (daedric red, steel blue, elven gold), gold for a riposte or a counter; it flares
+    where the blow meets something, stops where a flinch or a dodge cuts it short, and through the eyes crosses the
+    view. Brightness and trail are set.
+  - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a kill
+    0.14 s), the one struck shuddering, then catch up at 1.6 times. Its length is set.
+  - *Camera kick.* The player's blow landing punches the view down and along the stroke, harder for a kill; a blow
+    stopped by a guard knocks it back; a blow landing on the player jolts it and shakes it as hard as the harm; and
+    the view leans into the player's own swing as it lands. Its strength is set.
+  - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
+    a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
   view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
 - **The display.** Health, stamina and poise at the bottom left, the stamina flashing when a swing or a dodge is

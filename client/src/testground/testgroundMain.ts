@@ -6,7 +6,7 @@ import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
-import type { Action } from '../rules/fighters.ts';
+import { type Action, type FighterView, fighterView } from '../rules/fighters.ts';
 import { FIGHT_TICKS, fightOf, foeDoing } from './fightMoves.ts';
 import { foeKind } from './foeKinds.ts';
 import { Glides } from './glide.ts';
@@ -14,6 +14,11 @@ import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { crosshairPoint } from './crosshair.ts';
 import { Flashes } from '../combat/flashes.ts';
+import { CameraKick, kicksOf, leanOf } from '../combat/cameraKick.ts';
+import { EVENT } from '../combat/cues.ts';
+import { HitStops, heldBack } from '../combat/hitStop.ts';
+import { lungeOf } from '../combat/lunge.ts';
+import { type Swing, SwingArcs, type Vector, weaponTint } from '../combat/swingArcs.ts';
 import { Sparks } from '../combat/sparks.ts';
 import { IMPACT_SPARKS, Tracers, figureMuzzle, othersArrows, screenMuzzle } from './tracers.ts';
 import { Hud } from '../combat/hud.ts';
@@ -35,6 +40,7 @@ import { OtherPlayers, RUNNING } from '../player/others.ts';
 import { GALLOP, HIDE_FIGURE_M, STILL, shownDress, strokesAfter } from '../player/walker.ts';
 import { likelyMoves, shownMove } from '../player/playerMoves.ts';
 import { startAimPanel } from './aimPanel.ts';
+import { FEEL, type Feel, startFeelPanel } from './feelPanel.ts';
 import { startPanel } from './panel.ts';
 import { SceneView } from './sceneView.ts';
 
@@ -55,6 +61,17 @@ const guardPose = (action: Action) => {
   if (action.kind !== 'parry') return null;
   return { record: PARRY_RECORD, frame: 1 + Math.min(2, Math.floor((action.elapsed / FIGHT_TICKS.parry) * 3)) };
 };
+/** How brightly a blow's arc flares as it meets something, by what came of it: a kill brightest, a block least. */
+const ARC_FLARE: Readonly<Record<number, number | undefined>> = {
+  [EVENT.hit]: 1,
+  [EVENT.killed]: 1.5,
+  [EVENT.guardBroken]: 1.2,
+  [EVENT.staggered]: 1.1,
+  [EVENT.parried]: 0.7,
+  [EVENT.blocked]: 0.6,
+};
+/** Through the eyes, the player's own lunge carries the eye this share as far as it would carry their figure. */
+const OWN_LUNGE_EYE = 0.5;
 /** What the fight holds the player to, when their weapon neither swings nor shoots. */
 const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
 
@@ -139,6 +156,16 @@ async function start(): Promise<void> {
   startAimPanel(element<HTMLElement>('#panel'), (place, held) => {
     [aimPlace, aimHeld] = [place, held];
   });
+  // The attack feel laid over the fight's blows: the swings' arcs, hit-stops, the camera's kick and the lunge, each
+  // switched and set in the panel.
+  let feel: Feel = FEEL;
+  startFeelPanel(element<HTMLElement>('#panel'), (set) => {
+    feel = set;
+  });
+  const arcs = new SwingArcs();
+  const stops = new HitStops();
+  const kick = new CameraKick();
+  let ownElapsed: number | null = null;
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: typeof player) =>
     playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, COURSE, aimPlace);
@@ -272,6 +299,33 @@ async function start(): Promise<void> {
       const fighter = id === fight.player ? fight.own : (fight.foes.get(id)?.view ?? fight.others.get(id)?.body);
       return fighter ? [fighter.x, fighter.y, fighter.z] : null;
     });
+    // A blow landing holds its fighters still, flares its arc, and kicks the player's view as it lands on or by them.
+    stops.struck(events, feel.stop ? feel.stopLength : 0);
+    stops.update(seconds);
+    for (const event of events) {
+      const flare = event.kind === EVENT.hit && event.amount <= 0 ? 0 : (ARC_FLARE[event.kind] ?? 0);
+      if (flare > 0) arcs.struck(event.striker, flare, clock, stops.lagOf(event.striker));
+    }
+    const ownAttack = own?.action.kind === 'attack' ? own.action : null;
+    if (feel.kick) {
+      const { pushes, trauma } = kicksOf(events, fight.player);
+      for (const push of pushes) kick.push(push, feel.kickStrength);
+      kick.shake(trauma, feel.kickStrength);
+      // The player's own blow leans the view as it lands, met or not.
+      if (ownAttack && ownElapsed !== null && ownElapsed < ownAttack.strike && ownAttack.elapsed >= ownAttack.strike)
+        kick.push(leanOf(ownAttack.stroke), feel.kickStrength);
+    }
+    ownElapsed = ownAttack?.elapsed ?? null;
+    kick.update(seconds);
+    const tick = movement.tickSeconds;
+    /** How far a fighter's figure is driven into its blow, as its drawing shows the blow (held back by a hit-stop). */
+    const lungeAt = (id: number, view: FighterView | null) => {
+      const action = view && heldBack(view, stops.lagOf(id) / tick).action;
+      return feel.lunge && action?.kind === 'attack'
+        ? lungeOf(action.stroke, action.elapsed * tick, action.strike * tick, action.end * tick, feel.lungeDistance)
+        : { ahead: 0, down: 0 };
+    };
+    const ownLunge = lungeAt(fight.player, own);
     const frameTicks = seconds / movement.tickSeconds;
     const body = shownBody(player);
     // Fighting, the figure faces where its arms point.
@@ -279,8 +333,25 @@ async function start(): Promise<void> {
     Object.assign(you, { x: body.x, y: body.y, facing: fighting ? own.aim : player.facing });
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
-    const camera = aimView(player);
+    // The view kicked as the fight's blows land, and through the eyes carried with the player's own lunge.
+    const push = feel.kick ? kick.now : { yaw: 0, pitch: 0, ahead: 0, aside: 0, up: 0 };
+    const eyeLunge = player.view.shown <= HIDE_FIGURE_M ? ownLunge.ahead * OWN_LUNGE_EYE : 0;
+    const camera = kick.kicked(aimView(player), { ...push, ahead: push.ahead + eyeLunge });
     const eye = eyeOf(camera);
+    /** Where a fighter's figure is drawn off where it stands: driven along its aim into its blow, and shuddered across
+     *  the view while a blow it took holds it. */
+    const shift = (id: number, view: FighterView | null): Vector => {
+      const lunge = id === fight.player ? ownLunge : lungeAt(id, view);
+      const aim = view?.aim ?? 0;
+      const shudder = stops.shudderOf(id);
+      return [
+        Math.sin(aim) * lunge.ahead + Math.cos(camera.yaw) * shudder,
+        -Math.cos(aim) * lunge.ahead + Math.sin(camera.yaw) * shudder,
+        -lunge.down,
+      ];
+    };
+    /** Each fighter's feet as its figure is drawn this frame, which its swing's arc follows. */
+    const feet = new Map<number, Vector>();
 
     const drawn: CardAt[] = [];
     // On a wall or a ledge the hands hold on: the weapon is worn, not held.
@@ -315,7 +386,7 @@ async function start(): Promise<void> {
               aimHeld: aiming,
             }
           : { attackHeld: false, attackPressed: begun, attackReleased: false };
-    firstPerson.update(seconds, button, {
+    firstPerson.update(stops.shownSeconds(fight.player, seconds), button, {
       right: outfit.right,
       left: outfit.left,
       armour: { gauntlets: outfit.armour.gauntlets, boots: outfit.armour.boots },
@@ -374,11 +445,14 @@ async function start(): Promise<void> {
     const index = shown.frame ?? Math.floor(clock / Math.max(shown.frameSeconds, 0.01)) % frames;
     fight.look = { anim: shown.anim, frame: index, facing: you.facing };
     fight.dress = JSON.stringify(youDress);
+    const ownShift = shift(fight.player, own);
+    const ownFeet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
+    feet.set(fight.player, ownFeet);
     if (player.view.shown > HIDE_FIGURE_M) {
-      const { view, flip } = viewOf(you.facing, body.x, body.y, eye.x, eye.y);
+      const { view, flip } = viewOf(you.facing, ownFeet[0], ownFeet[1], eye.x, eye.y);
       const card = forge.card(you.id, youDress, shown.anim, view, index, flip);
       const flash = { share: flashes.shareOf(fight.player), red: true };
-      if (card) drawn.push({ card, ...cardStand(body.x, body.y, eye.x, eye.y), z: body.z, flip, flash });
+      if (card) drawn.push({ card, ...cardStand(ownFeet[0], ownFeet[1], eye.x, eye.y), z: ownFeet[2], flip, flash });
     }
     for (const [number, placed] of others) {
       const body = fight.others.get(number)?.body;
@@ -392,6 +466,8 @@ async function start(): Promise<void> {
     }
     otherGlides.keep(new Set(others.keys()));
     const numberOf = new Map([...others].map(([number, placed]) => [placed, number]));
+    const otherViews = new Map<number, FighterView>();
+    for (const [number, seen] of fight.others) if (seen.fighter) otherViews.set(number, fighterView(seen.fighter));
     for (const placed of figures) {
       if (placed === you) continue;
       if (placed.spin) placed.facing = (placed.facing + SPIN * seconds) % (2 * Math.PI);
@@ -401,9 +477,13 @@ async function start(): Promise<void> {
         placed.frame === null ? frameAt(clock, moveFrames, fps) : Math.min(placed.frame, moveFrames - 1);
       const card = forge.card(placed.id, placed.dress, placed.anim, view, shownFrame, flip);
       const flash = { share: flashes.shareOf(numberOf.get(placed) ?? -1), red: false };
-      if (card) drawn.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip, flash });
+      const number = numberOf.get(placed);
+      const moved: Vector = number === undefined ? [0, 0, 0] : shift(number, otherViews.get(number) ?? null);
+      const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
+      if (number !== undefined) feet.set(number, drawnAt);
+      if (card) drawn.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
-    drawn.push(...drawFoes(eye, frameTicks));
+    drawn.push(...drawFoes(eye, frameTicks, shift, feet));
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
@@ -419,6 +499,38 @@ async function start(): Promise<void> {
     for (const impact of tracers.update(seconds, COURSE, bodies)) sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     const traced = tracers.mesh(cameraOf(camera).eye, fight.shots, fight.player);
     scene.setMarks(marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, traced));
+    // Every blow being struck, its arc following its striker's figure as drawn.
+    const swung: Swing[] = [];
+    const swingOf = (id: number, view: FighterView | null, right: string | null, left: string | null, eyes = false) => {
+      const action = view?.action;
+      if (!view || action?.kind !== 'attack') return;
+      swung.push({
+        id,
+        stroke: action.stroke,
+        elapsed: action.elapsed * tick,
+        strike: action.strike * tick,
+        end: action.end * tick,
+        reach: combatRules.strokeReach(view.arms, action.stroke),
+        halfArc: combatRules.strokeArc(action.stroke),
+        aim: view.aim,
+        leftHand: action.leftHand,
+        special: action.swing !== 'plain',
+        tint: weaponTint(action.leftHand ? left : right),
+        firstPerson: eyes,
+      });
+    };
+    swingOf(fight.player, own, outfit.right, outfit.left, inFirstPerson);
+    for (const kept of fight.foes.values()) {
+      const outfitOf = foeKind(kept.kind)?.dress.outfit;
+      swingOf(kept.id, kept.view, outfitOf?.right ?? null, outfitOf?.left ?? null);
+    }
+    for (const [number, view] of otherViews) {
+      const outfitOf = others.get(number)?.dress.outfit;
+      swingOf(number, view, outfitOf?.right ?? null, outfitOf?.left ?? null);
+    }
+    arcs.seen(clock, swung, (id) => feet.get(id) ?? null);
+    const look = { brightness: feel.arc ? feel.arcBrightness : 0, trail: feel.arcTrail };
+    scene.setSwings(arcs.mesh(clock, cameraOf(camera).eye, look, (id) => stops.lagOf(id)));
     blood.frame(seconds, events, fight, camera, canvas.width / Math.max(1, canvas.height));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
       if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
@@ -470,7 +582,12 @@ async function start(): Promise<void> {
 
   /** Every foe's figure, gliding toward where the room last saw it (`frameTicks` the frame's share of ticks) and showing
    *  the move its fight holds it to. */
-  const drawFoes = (eye: { x: number; y: number }, frameTicks: number): CardAt[] => {
+  const drawFoes = (
+    eye: { x: number; y: number },
+    frameTicks: number,
+    shift: (id: number, view: FighterView) => Vector,
+    feet: Map<number, Vector>,
+  ): CardAt[] => {
     const cards: CardAt[] = [];
     for (const kept of fight.foes.values()) {
       const kind = foeKind(kept.kind);
@@ -490,7 +607,8 @@ async function start(): Promise<void> {
         };
         foeFigures.set(kept.id, placed);
       }
-      const { view } = kept;
+      // Its moves as its drawing shows them, held back while a blow landing holds it.
+      const view = heldBack(kept.view, stops.lagOf(kept.id) / movement.tickSeconds);
       const doing = foeDoing(view, kept.before, kind.dress, kept.ticks * movement.tickSeconds);
       const move = shownMove(
         doing,
@@ -523,7 +641,10 @@ async function start(): Promise<void> {
       const { view: side, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
       const card = forge.card(placed.id, kind.dress, move.anim, side, frameShown, flip);
       const flash = { share: flashes.shareOf(kept.id), red: false };
-      if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip, flash });
+      const moved = shift(kept.id, kept.view);
+      const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
+      feet.set(kept.id, drawnAt);
+      if (card) cards.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
     for (const id of foeFigures.keys()) if (!fight.foes.has(id)) foeFigures.delete(id);
     foeGlides.keep(new Set(fight.foes.keys()));

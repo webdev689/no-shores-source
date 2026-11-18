@@ -1,9 +1,7 @@
 import type { Dress } from '../player/dressing.ts';
-import type { Direction, Doing, Fight } from '../player/playerMoves.ts';
+import { type Doing, type Fight, STROKE_DIRECTIONS } from '../player/playerMoves.ts';
 import { type FighterView, type Shape, actionProgress } from '../rules/fighters.ts';
 
-/** The combat crate's strokes 1 to 6 as the first person's directions. */
-export const STROKE_DIRECTIONS: readonly Direction[] = ['down', 'downLeft', 'left', 'right', 'downRight', 'up'];
 /** How long a dodge and a parry's deflect last, and a death's fall, in ticks, as the combat crate times them. */
 export const FIGHT_TICKS = { dodge: 26, parry: 18, death: 48, drawFull: 60 } as const;
 /** The forge's stroke each telegraphed blow is struck with. */

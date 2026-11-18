@@ -128,8 +128,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- A pull request sets the owner's third-person aim, 0.8 m out, 3 m back, 0.25 m up and 1.3 times zoom, as the game's
-  own ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]); tested offline, it waits for the owner's yes to merge.
+- #65 sets the owner's third-person aim, 0.8 m out, 3 m back, 0.25 m up and 1.3 times zoom, as the game's own
+  ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]), and brings the attack feel to the [[Test Ground]]: the
+  swing arc, the hit-stop, the camera kick and the lunge, each a switch and a slider
+  ([[The Attack Feel Is Tried in the Test Ground]]). Tested offline, with tests and headless Test Ground runs; it
+  waits for the owner's yes to merge. Which effects go into the game, and at what settings, is the owner's to say.
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
