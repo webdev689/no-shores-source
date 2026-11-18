@@ -109,14 +109,14 @@ test("ships are drawn at the Overworld's scale on the sea's view and shrink to t
 
 test('at the helm the eye stands behind the wheel of the Sloop as she is drawn, riding the swell with her', () => {
   const heading = Math.PI / 2;
-  const ship = { x: 1000, y: 2000, heading };
+  const ship = { x: 1000, y: 2000, heading, pitch: 0, roll: 0 };
   const aft = SLOOP_DECK.helm[1];
-  const [x, y, z] = helmEye(ship, 1, 0.25);
+  const [x, y, z] = helmEye({ ...ship, scale: 1, heave: 0.25 });
   assert.ok(Math.abs(x - (1000 - aft)) < 1e-9, 'aft of her middle at her helm spot, against her heading east');
   assert.ok(Math.abs(y - 2000) < 1e-9);
   assert.equal(z, HELM.eyeM + 0.25);
   assert.equal(HELM.eyeM, (cellHeight(SLOOP_DECK, ...SLOOP_DECK.helm) ?? NaN) + STANDING_EYE_M, 'a standing eye');
-  const [drawnX, , drawnZ] = helmEye(ship, 12, 0);
+  const [drawnX, , drawnZ] = helmEye({ ...ship, scale: 12, heave: 0 });
   assert.ok(Math.abs(drawnX - (1000 - aft * 12)) < 1e-9, 'on the larger Sloop, its helm further aft');
   assert.equal(drawnZ, HELM.eyeM * 12);
 });

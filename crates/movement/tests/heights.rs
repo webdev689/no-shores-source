@@ -71,3 +71,30 @@ fn a_wall_stands_at_its_cells_edge_so_a_passage_one_cell_wide_is_walked() {
 fn a_shape_whose_cells_overflow_the_count_is_none() {
     assert!(Heights::new(0.0, 0.0, 0.1, usize::MAX, 2, Vec::new()).is_none(), "a count past what a number holds");
 }
+
+/// Ten rows of cells 0.1 m across, a deck's own, three columns wide, its fifth row from the north a wall: one cell
+/// thick, thinner than a run's tick.
+fn walled_deck() -> Heights {
+    let heights = (0..30).map(|index| if index / 3 == 4 { None } else { Some(2.0) }).collect();
+    Heights::new(0.0, 0.0, 0.1, 3, 10, heights).expect("a grid")
+}
+
+#[test]
+fn a_run_never_passes_through_a_wall_one_cell_thick() {
+    let deck = walled_deck();
+    let run = Controls { forward: 1.0, run: true, ..Controls::default() };
+    // From a hair south of the wall, north, at a run: 0.1265 m a tick, longer than the wall is thick.
+    let start = deck.standing(0.15, 0.501);
+    let ran = (0..30).fold(start, |body, _| step_body(&body, &run, &[], &deck, TICK_SECONDS));
+    assert!(ran.y >= 0.5, "stopped south of the wall, not north of it: {}", ran.y);
+    assert!((ran.z - 2.0).abs() < 1e-9, "on the deck still");
+}
+
+#[test]
+fn a_diagonal_never_slips_between_two_walls_meeting_at_a_corner() {
+    // Two cells across, two down: the north-east and south-west cells walls, meeting at the middle.
+    let deck = Heights::new(0.0, 0.0, 0.1, 2, 2, vec![Some(1.0), None, None, Some(1.0)]).expect("a grid");
+    assert!(deck.walled((0.05, 0.05), (0.15, 0.15)), "through the corner where the walls meet");
+    assert!(!deck.walled((0.02, 0.05), (0.08, 0.02)), "within the one cell");
+    assert!(deck.walled((0.05, 0.05), (0.15, 0.05)), "into the wall beside it");
+}

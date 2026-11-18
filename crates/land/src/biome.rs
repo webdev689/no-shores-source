@@ -1,6 +1,6 @@
 //! The nine biomes a continent can be, one each: the climate its land is generated in, the colour of its ground and
 //! its snow line. Each starts from one of World 2.0's climate profiles and one of its biomes' colours, under our own
-//! names (the bible's The Continents' Biomes).
+//! names.
 
 use crate::relief::Climate;
 

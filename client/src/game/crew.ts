@@ -2,7 +2,7 @@
 // pausing at each, each leg one the deck leaves clear, all kept away from her wheel. Seeded, so a voyage's hands move
 // the same however it is drawn. In her own frame.
 import { type Race } from '../player/dressing.ts';
-import { cellHeight, type Deck, deckCells } from '../ships/deck.ts';
+import { cellHeight, cellsReached, type Deck } from '../ships/deck.ts';
 
 /** How many hands stand in for her crew. */
 export const STAND_INS = 3;
@@ -80,7 +80,8 @@ export class Crew {
   constructor(deck: Deck, seed: number) {
     this.deck = deck;
     const [helmX, helmY] = deck.helm;
-    this.spots = deckCells(deck)
+    // Only where a body walks from her helm: never a rail's top beyond a wall.
+    this.spots = cellsReached(deck, helmX, helmY)
       .filter((cell) => Math.hypot(cell.x - helmX, cell.y - helmY) > WHEEL_CLEAR_M)
       .map((cell) => [cell.x, cell.y, cell.z] as const);
     this.walking = LOOKS.slice(0, STAND_INS).map((_look, index) => {

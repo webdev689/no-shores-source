@@ -10,6 +10,7 @@ import type { FightView } from '../rules/fightRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
+import type { Lying } from '../ships/deck.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
@@ -175,6 +176,15 @@ export class SeaCombat {
     return panShot(seaShot, fightShot, smooth01(this.down));
   }
 
+  /** The player's Sloop as she lies in the fight, at true scale, while she floats; null once she has sunk. */
+  get own(): Lying | null {
+    const vessel = this.last.player;
+    if (vessel.state === 'sunk') return null;
+    const [x = 0, y = 0, heading = 0] = vessel.ship;
+    const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
+    return { x, y, heading, scale: 1, heave, pitch, roll };
+  }
+
   /** Both Sloops at true scale, the captain's darker, each with her sails as her rung sets them. */
   ships(seconds: number, time: number, windBearing: number): { place: ShipPlace; rig: SailRig; shade: number }[] {
     return [this.last.player, this.last.captain]
@@ -218,11 +228,14 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     event.preventDefault();
     event.stopImmediatePropagation();
   };
+  // A key let go still reaches the sea's own controls, so none is held there once the fight is over.
   const key = (down: boolean) => (event: KeyboardEvent) => {
     // Under the gear screen the fight takes no key pressed, they are the screen's; a key let go is still the fight's,
     // so nothing it held stays held.
     if (down && gearScreenOpen()) return;
-    if (fight()?.key(event.key.toLowerCase(), down)) taken(event);
+    if (!fight()?.key(event.key.toLowerCase(), down)) return;
+    if (down) taken(event);
+    else event.preventDefault();
   };
   addEventListener('keydown', key(true), { capture: true });
   addEventListener('keyup', key(false), { capture: true });

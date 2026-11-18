@@ -1,7 +1,7 @@
 //! What the rooms read, made at build time. A whole continent's land outgrows a room's memory, so for every node, the
 //! ones drawn in a landmass's edits file and its city's social space, the bake keeps what that node's room needs: its
 //! section and spawns, an exact window of the ground over the section and past it, and the boxes a body runs into
-//! there. See the Server note in the bible.
+//! there.
 
 use city::rmb::Blocks;
 use land::edits::Edits;

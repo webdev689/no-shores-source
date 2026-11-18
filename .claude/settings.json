@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/tools/claude-toolkit/hooks/kit-check.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

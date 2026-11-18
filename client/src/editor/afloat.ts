@@ -1,7 +1,8 @@
-import { headingFrame, type LandView, type Pose, type ShipFloats } from '../rules/landRules.ts';
+import type { LandView, Pose, ShipFloats } from '../rules/landRules.ts';
 import { RUNG_WORDS } from '../ships/helmKeys.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
+import { type Stir, WAKE_WAY, wakeStirs } from '../ships/swellPose.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Orbit } from './orbit.ts';
 
@@ -9,18 +10,8 @@ import type { Orbit } from './orbit.ts';
 const LOOK_AT_M = 4.5;
 /** The helm's rung with her sails set (crates/sailing/src/ship.rs). */
 export const SAILS_RUNG = 2;
-/** Come Sail Away's wake threshold (a quarter of its sailing speed), m/s, and how far she runs between stirrings of
- *  the water at her bow and quarters, metres. */
-const WAKE_WAY = 0.5;
+/** How far she runs between stirrings of the water at her bow and quarters, metres. */
 const WAKE_STEP_M = 0.5;
-
-/** A push on the water's ripples: where (window metres), how wide and how deep. */
-export interface Stir {
-  readonly x: number;
-  readonly y: number;
-  readonly radiusM: number;
-  readonly strength: number;
-}
 
 /** The Sloop as the World Editor shows her, whoever steps her: her numbers and pose as last given, and the run that
  *  owes the water her wake. */
@@ -58,21 +49,7 @@ export class Afloat {
     const owed = this.stirrings > 0;
     this.stirrings = 0;
     if (!owed) return [];
-    const { x, y, heading } = this.place(view, 1);
-    const { forward, starboard } = headingFrame(heading);
-    const [halfLength, halfBeam] = [waterline.lengthM / 2, waterline.beamM / 2];
-    const strength = -0.02 * Math.min(this.way() / 2, 1.5);
-    const stirAt = (along: number, across: number, radiusM: number, share: number): Stir => ({
-      x: x + forward[0] * along + starboard[0] * across,
-      y: y + forward[1] * along + starboard[1] * across,
-      radiusM,
-      strength: strength * share,
-    });
-    return [
-      stirAt(halfLength, 0, 0.6, 1),
-      stirAt(-0.7 * halfLength, -halfBeam, 0.4, 0.5),
-      stirAt(-0.7 * halfLength, halfBeam, 0.4, 0.5),
-    ];
+    return wakeStirs(this.place(view, 1), waterline.lengthM / 2, waterline.beamM / 2, this.way());
   }
 
   /** Her footprint on the water, for the water's surface. */

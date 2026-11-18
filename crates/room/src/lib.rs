@@ -2,7 +2,7 @@
 //! are taken in order and step their fighter one input a tick, never faster than the room's own clock; foes think and
 //! step each tick; blows are judged as their defenders saw them. A node's room stands its fighters on the node's window
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
-//! the room hands it inputs and ticks, and sends out what it sees. See the Server note in the bible.
+//! the room hands it inputs and ticks, and sends out what it sees.
 
 pub mod asks;
 pub mod deck;

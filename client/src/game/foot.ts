@@ -3,7 +3,7 @@ import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
-import type { InputFrame } from '../player/input.ts';
+import { IDLE, type InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera } from '../player/player.ts';
 import type { Others } from '../player/others.ts';
 import type { GearState } from '../network/gearMessages.ts';
@@ -63,16 +63,6 @@ const STRIDE_APART_S = 0.37;
 /** Other players' figures are numbered from here, clear of the player's own, and never twice in the page's life: the
  *  forge keeps each figure's last card by its number, so a number used again would first show another node's figure. */
 let nextOtherId = 100;
-/** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
-export const IDLE: InputFrame = {
-  held: () => false,
-  pressed: () => false,
-  released: () => false,
-  lookX: 0,
-  lookY: 0,
-  wheel: 0,
-  locked: true,
-};
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, what else
  *  is drawn among them (the gear's rings on the ground, a fight's marks), and the keys listed. */

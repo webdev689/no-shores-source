@@ -10,8 +10,8 @@ export const HINTS = {
   ],
   dead: ['Enter or Respawn: back at the nearest spawn'],
   sea: [
-    'Click the sea to sail · Drag to look · Wheel zoom',
-    'N map · [ ] pace · Space stop or resume',
+    'Click the sea to sail · W sail on · A D steer · S heave to',
+    'Drag to look · Wheel zoom · N map · [ ] pace · Space stop or resume',
     'B manage · H leave the helm · M menu',
   ],
   manage: ['Drag to turn round her · Wheel to zoom', 'B back to the sea · M menu'],

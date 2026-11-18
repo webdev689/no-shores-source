@@ -185,7 +185,16 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
 export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, pace, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, numbers, pace, 0, 0, 0, 0, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** A ship brought to rest turned to a heading (radians clockwise from north), as its bytes: the helm turned while she
+ *  lies still. */
+export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(64);
+  const facing = Course.createFacingVector(builder, [heading]);
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing));
   return builder.asUint8Array().slice();
 }
 
@@ -194,14 +203,14 @@ export function courseBytes(points: readonly (readonly [number, number])[], pace
 export function walkBytes(sequence: number, controls: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createWalkVector(builder, [...controls]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, sequence, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, sequence, 0, 0));
   return builder.asUint8Array().slice();
 }
 
 /** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
 export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -209,7 +218,7 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
 export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 

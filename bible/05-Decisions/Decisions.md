@@ -79,6 +79,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pixelify Sans Is Overlook's Font]]
 - [[Text Is Plain]]
 - [[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]
+- [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

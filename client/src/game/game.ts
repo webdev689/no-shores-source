@@ -38,8 +38,8 @@ import { accountOf, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
 import type { SeaShip } from './seaShips.ts';
-import { seaHints } from './hints.ts';
-import { shipPanelOf, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
+import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
+import { showSeaHud } from './seaHud.ts';
 import { fightControls } from './seaCombat.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
@@ -100,10 +100,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const roomModule = fetch(`${base}room.wasm`)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
     .then((bytes) => WebAssembly.compile(bytes));
-  // The Sloop's build as the naval rules hold it, for Manage's panel: read once, the first time it is opened.
+  // The Sloop's build as the naval rules hold it, for Manage's panel: read once when first opened, however it reads.
   let [compiled, sloopBuild]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
   void roomModule.then((module) => (compiled = module)).catch(() => undefined);
-  const builtSloop = () => (compiled ? (sloopBuild ??= sloopBuildOf(sloopBuildText(compiled))) : null);
+  const builtSloop = () =>
+    (compiled && sloopBuild === undefined ? (sloopBuild = sloopBuildOf(sloopBuildText(compiled))) : sloopBuild) ?? null;
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
@@ -165,16 +166,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let heldMap: HeldMap | null = null;
   let foot: Foot | null = null;
   let sea: Sea | null = null;
-  let ready = false;
-  let waited = 0;
+  let [ready, waited] = [false, 0];
   let wasDead = false;
   let wasWalking = false;
   let charting: string | null = null;
   let sinceChart = 0;
   /** Continents that would not open: not tried again this visit. */
   const unchartable = new Set<string>();
-  let last = performance.now();
-  let clock = 0;
+  let [last, clock] = [performance.now(), 0];
 
   /** A way that failed, tried again with Enter. */
   let retry: (() => void) | null = null;
@@ -363,11 +362,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onManage(manage);
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
-  /** The Ship tab's papers: her build, once the naval rules are read, and her voyage while she is at sea. */
-  const shipNow = () => {
-    const build = builtSloop();
-    return build ? shipPanelOf(build, sloop.waterline, flow.mode === 'sea' ? sea : null) : null;
-  };
+  // The Ship tab's papers: her voyage only while she is at sea.
+  const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   startGearWindow(hudRoot, link, () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null), shipNow);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -409,8 +405,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const mapUp = () => heldMap?.shown ?? false;
   canvas.addEventListener('pointerdown', (event) => {
     if (!atSea()) return;
-    // Held to the canvas, so a press let go over a mark or the bar still ends here.
-    canvas.setPointerCapture(event.pointerId);
+    // Held to the canvas, so a press let go over a mark or the bar still ends here; a locked pointer is held already.
+    if (!input.locked) canvas.setPointerCapture(event.pointerId);
     if (mapUp()) heldMap?.pointerDown(event.offsetX, event.offsetY);
     else sea?.pointerDown(event.offsetX, event.offsetY);
   });
@@ -487,12 +483,23 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
-    const turn = held('turnRight') - held('turnLeft');
-    const tilt = held('lookDown') - held('lookUp');
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu;
-    const wind = scene.land?.swell?.bearing ?? 0;
-    const shown = here.frame(seconds, clock, viewport, turn, tilt, wind, controls, paused);
+    const swell = scene.land?.swell;
+    // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
+    if (!paused && !mapUp())
+      here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
+    const shown = here.frame({
+      seconds,
+      time: clock,
+      viewport,
+      turn: held('turnRight') - held('turnLeft'),
+      tilt: held('lookDown') - held('lookUp'),
+      swell,
+      controls,
+      paused,
+    });
+    for (const stir of shown.stirs) scene.stir(stir);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
     wasWalking = here.aboard.walking;
@@ -519,25 +526,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
         : undefined;
-    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), { hulls: shown.hulls, after });
+    const more = { hulls: shown.hulls, after, focus: shown.focus };
+    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
-    const island = ISLANDS[landmass.id];
-    const atHelm = here.helmView;
-    const { aboard } = here;
-    if (flow.mode === 'landing') hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
-    else if (atHelm) hud.place('At the helm', REGION);
-    else if (aboard.walking) hud.place('Aboard the Sloop', 'Off the helm');
-    else if (aboard.managing) hud.place('Managing the Sloop', REGION);
-    else hud.place('At sea', shown.landfall && island ? `Off ${island}` : REGION);
-    const fighting = here.fight?.lines(clock) ?? null;
-    hud.hints(seaHints({ fighting, landing: flow.mode === 'landing', atHelm, ...aboard.where }));
-    hud.marks(shown.marks);
-    const onSea = flow.mode === 'sea' && !flow.menu;
-    const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
-    hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
-    hud.shipPanel(onSea && aboard.managing ? shipNow() : null);
-    hud.wheelOffer(onSea && aboard.atWheel);
-    hud.note(charting ? 'Charting the coast ahead…' : shown.note);
+    showSeaHud(hud, here, shown, {
+      landing: flow.mode === 'landing',
+      onSea: flow.mode === 'sea' && !flow.menu,
+      island: ISLANDS[landmass.id],
+      region: REGION,
+      clock,
+      build: builtSloop,
+      waterline: sloop.waterline,
+      charting: charting !== null,
+    });
     sinceChart += seconds;
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     if (!charting && flow.mode === 'sea' && sinceChart >= CHART_EVERY_S) {

@@ -7,7 +7,6 @@ part materials tools/ships/paint_ship.py sorts them into, with UVs in metres. Wi
 into the working folder (so run it from one outside the repo) and uploads nothing; without, it uploads the .blend and
 the mesh under their hashes and names both, with her waterline, guns, boxes, sails and deck, in
 content/ships/ships.json.
-The format and the ship's frame are in the Sailing note.
 """
 import argparse
 import json
@@ -23,10 +22,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 sys.path.insert(0, HERE)
-from deck import deck_of, mesh_triangles, write_manifest  # noqa: E402
+from deck import MANIFEST, deck_of, mesh_triangles, write_manifest  # noqa: E402
 from r2 import PUBLIC, published, put  # noqa: E402
 
-MANIFEST = os.path.join(os.path.dirname(TOOLS), 'content', 'ships', 'ships.json')
 # The parts the game paints, numbered as her mesh numbers them (client/src/textures/shipPictures.ts).
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
 # The parts a ball strikes as her hull; her spars and guns take none.

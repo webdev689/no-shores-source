@@ -29,12 +29,15 @@ LOWEST_DECK_M = 1.7
 # The room a body takes over its feet: a spar or gun in it, from just above the planks to over a head, keeps it off.
 CLEAR_FROM_M = 0.25
 CLEAR_TO_M = 1.8
+# A cell standing more than this over a neighbour is a wall, centimetres: her rails, her bulwarks and the drop at a
+# raised deck's edge. A tread of her steps rises 13 cm, and stays a way up and down.
+WALL_CM = 30
 # The most a cell stands over a neighbour a body walks to from it, centimetres: a slope a body walks up (the movement
-# crate walks 1.19 m a metre), so a dip in her planks or a raised part of her deck has a way in and out.
+# crate walks 1.19 m a metre), so her steps and a dip in her planks have a way in and out.
 RISE_CM = 8
-# Behind her wheel, where the helm's view stands (client/src/game/seaLaw.ts helmEye) and a player leaving the helm
-# steps onto her deck: metres aft of her middle.
-HELM_AFT_M = 8.1
+# Behind her wheel, where a hand stands to it, the helm's view stands (client/src/game/seaLaw.ts helmEye) and a player
+# leaving the helm steps onto her deck: metres aft of her middle, 0.45 m aft of the wheel at her scale of 3.
+HELM_AFT_M = 7.25
 
 
 def mesh_triangles(data):
@@ -101,6 +104,7 @@ def deck_of(triangles):
             if under is not None and high > under + CLEAR_FROM_M and low < under + CLEAR_TO_M:
                 floor[row][column] = None
     standing = [[None if height is None or height < LOWEST_DECK_M else round(height * 100) for height in line] for line in floor]
+    standing = walled(standing)
     walkable(standing)
     standing_cells = [(row, column) for row, line in enumerate(standing) for column, height in enumerate(line) if height is not None]
     if not standing_cells:
@@ -117,6 +121,23 @@ def deck_of(triangles):
         'heights_cm': [line[left:right] for line in standing[top:bottom]],
         'helm': [0.0, HELM_AFT_M],
     }
+
+
+def walled(heights):
+    """The deck with a wall wherever a cell stands more than `WALL_CM` over a neighbour that holds a height, judged on
+    the heights as measured, so a body is stopped at a rail or a raised deck's edge, never walked up it as a ramp."""
+    def neighbours(row, column):
+        for down, across in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            if 0 <= row + down < len(heights) and 0 <= column + across < len(heights[row]):
+                near = heights[row + down][column + across]
+                if near is not None:
+                    yield near
+
+    return [
+        [None if height is None or any(height > near + WALL_CM for near in neighbours(row, column)) else height
+         for column, height in enumerate(line)]
+        for row, line in enumerate(heights)
+    ]
 
 
 def walkable(heights):
@@ -163,8 +184,8 @@ def main():
         sys.exit(f'the manifest names no ship {name!r}')
     ship['deck'] = deck_of(mesh_triangles(published(manifest, ship['mesh'])))
     write_manifest(manifest)
-    walkable = sum(height is not None for line in ship['deck']['heights_cm'] for height in line)
-    print(f"{name}: a deck of {ship['deck']['columns']} by {ship['deck']['rows']} cells, {walkable} to stand on")
+    cells = sum(height is not None for line in ship['deck']['heights_cm'] for height in line)
+    print(f"{name}: a deck of {ship['deck']['columns']} by {ship['deck']['rows']} cells, {cells} to stand on")
 
 
 if __name__ == '__main__':

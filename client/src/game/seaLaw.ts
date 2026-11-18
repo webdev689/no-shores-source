@@ -1,7 +1,7 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
 import { alongNear, type Pace, SHIP_SPEED, sailSpeed, type Voyage } from '../overworld/voyage.ts';
-import { cellHeight, deckToWorld, SLOOP_DECK } from '../ships/deck.ts';
+import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
  *  shore to water `depthM` deep, then `clearM` on, within `farthestM` of the harbour. */
@@ -43,14 +43,10 @@ export function shownScale(overworldScale: number, helmShare: number): number {
   return overworldScale + (1 - overworldScale) * helmShare;
 }
 
-/** Where the eye stands at the helm of a ship drawn at `scale`, the ship riding `heave` metres on the swell. */
-export function helmEye(
-  ship: { readonly x: number; readonly y: number; readonly heading: number },
-  scale: number,
-  heave: number,
-): readonly [number, number, number] {
+/** Where the eye stands at the helm of a ship as she lies, at her size as drawn. */
+export function helmEye(lying: Lying): readonly [number, number, number] {
   const [helmX, helmY] = SLOOP_DECK.helm;
-  return deckToWorld({ ...ship, scale, heave }, helmX, helmY, HELM.eyeM);
+  return deckToWorld(lying, helmX, helmY, HELM.eyeM);
 }
 
 /** A port's icon stands over its harbour at sea within this of it, metres: twice a landing's reach, so a port is seen
@@ -164,10 +160,19 @@ export interface RoomWord {
 }
 
 /** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
- *  it has her, the room being the law; at the dial's pace while it has not taken her course yet (`room` null). */
-export function followed(voyage: Voyage, travelledM: number, dt: number, dial: Pace, room: RoomWord | null): number {
+ *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the dial's pace, held
+ *  to the pace it last sailed her at (`held`) while she was under way. */
+export function followed(
+  voyage: Voyage,
+  travelledM: number,
+  dt: number,
+  dial: Pace,
+  room: RoomWord | null,
+  held: number | null = null,
+): number {
   const seconds = Math.max(0, dt);
-  if (!room) return travelledM + sailSpeed(dial) * seconds;
+  const asked = held !== null && held > 0 ? Math.min(sailSpeed(dial), SHIP_SPEED * held) : sailSpeed(dial);
+  if (!room) return travelledM + asked * seconds;
   const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
   const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
   return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);

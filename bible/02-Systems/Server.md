@@ -128,8 +128,9 @@ on Cloudflare.
 The room named `sea` holds every player's ship. A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s.
 A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
-nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest. A player sets
-one course each half second, and one sooner is dropped: judging a course against the coasts takes up to a few
+nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
+facing when it holds one: the helm turned while she lies still. A player sets one course, facings among them, each half
+second, and one sooner is dropped: judging a course against the coasts takes up to a few
 milliseconds, which no player may ask for every tick. The browser keeps its latest course and sends it once the sea
 will take it, by the room's own tick.
 
@@ -148,10 +149,13 @@ will take it, by the room's own tick.
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
   out of order or with controls that are not numbers or ask past a whole pace; never more than the ticks since they
-  left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken.
-  Meanwhile her helmsman keeps her course: under way she sails on, at rest she stays, and a course is refused. They
-  take the helm again within 0.8 m of the spot behind her wheel, standing; a bold pirate that meets them calls them to
-  it at once.
+  left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken. One
+  whose steps stop coming is stood out a tick at a time once a view's lag (24 ticks) behind, as on land.
+- **Her helmsman** keeps her course meanwhile: under way she sails on, at rest she stays. A course is refused but one
+  that holds her heading straight on, at her pace (one point, within 0.01 radians of it): the page's course straight
+  on, set again as she nears its end, so she sails on. They take the helm again within 0.8 m of the spot behind her
+  wheel, standing, judged where their steps leave them once the steps the clock allows by then are taken; a bold
+  pirate that meets them calls them to it at once.
 - Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
 
 ## A fleet
@@ -205,7 +209,7 @@ an older reader skips them.
 | Message | From | Holds |
 |---|---|---|
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for and its level, whether they ask to respawn, and an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names |
-| Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
+| Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading she faces at rest; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window, and the protocol's version: the schema's hash, so a page built from another schema loads again, once |
 | Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one); the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |

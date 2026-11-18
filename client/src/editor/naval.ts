@@ -17,7 +17,7 @@ const CAPTAIN_SHADE = 0.55;
 /** Where a ship's numbers hold her rung (crates/sailing/src/floats.rs). */
 const SHIP_RUNG = 7;
 /** A fire's flames rise from this far over her waterline (metres): just over her deck. */
-const DECK_M = 2.4;
+export const DECK_M = 2.4;
 /** A ball is drawn this many times its size, to be seen; the lay's arcs a dot every this many seconds of flight. */
 const BALL_DRAWN = 2;
 const ARC_STEP_S = 0.1;

@@ -1,6 +1,6 @@
 //! A fight's orders and what it shows, as numbers in a fixed order: the sea room's messages carry them, so a fight
 //! crosses as a body does (crates/protocol), and the browser reads them back into its view of the fight
-//! (client/src/network/seaFight.ts). The Server note in the bible lists the order.
+//! (client/src/network/seaFight.ts).
 
 use crate::arms::Side;
 use crate::ballistics::flight;

@@ -3,7 +3,6 @@
 //! stagger, the riposte and the counter, a soft lock that steers a fighter's blows at the foe it fights, the shapes of
 //! foes' telegraphed blows, and shots in flight. A fighter steps by whole ticks of the movement rules, so a server and a
 //! browser predicting its own player step it alike. Who a blow reaches and what it does is the host's to ask, here.
-//! See the Combat note in the bible.
 
 pub mod arms;
 pub mod fighter;

@@ -1,6 +1,6 @@
 use super::*;
 
-const NORTH: Option<[f64; 2]> = Some([0.0, -1.0]);
+const NORTH: [f64; 2] = [0.0, -1.0];
 
 #[test]
 fn a_reach_is_met_along_the_way_and_never_behind_or_beside_it() {
@@ -9,15 +9,11 @@ fn a_reach_is_met_along_the_way_and_never_behind_or_beside_it() {
     assert_eq!(metres_to_reach(0.0, 1_000.0, 750.0, NORTH), f64::INFINITY, "astern");
     assert_eq!(metres_to_reach(0.0, -500.0, 750.0, NORTH), 0.0, "inside, the way leading deeper");
     assert_eq!(metres_to_reach(0.0, 500.0, 750.0, NORTH), f64::INFINITY, "inside, the way leading out");
-    assert!((metres_to_reach(0.0, -1_000.0, 750.0, None) - 250.0).abs() < 1e-9, "at rest: the straight distance");
 }
 
 #[test]
-fn the_ladder_steps_down_by_fives_then_ones() {
-    assert_eq!(
-        [step_down(144.7), step_down(28.9), step_down(5.8), step_down(4.2), step_down(0.3)],
-        [140.0, 25.0, 5.0, 4.0, 1.0]
-    );
+fn the_ladder_steps_down_by_fives() {
+    assert_eq!([step_down(144.7), step_down(28.9), step_down(5.8), step_down(4.2)], [140.0, 25.0, 5.0, 0.0]);
 }
 
 #[test]

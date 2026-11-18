@@ -70,6 +70,15 @@ export function compassOf(heading: number): string {
 const metres = (value: number) => `${value.toFixed(1)} m`;
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
+/** The panel once her build is read, none before: for her build, her measure and her voyage, if she is under one. */
+export function shipPanelOnceBuilt(
+  build: SloopBuild | null,
+  measure: Measure,
+  voyage: Voyaging | null,
+): ShipPanel | null {
+  return build ? shipPanelOf(build, measure, voyage) : null;
+}
+
 /** The panel for her build, her measure and her voyage, if she is under one. Her hurts are not kept between fights,
  *  so she is whole. */
 export function shipPanelOf(build: SloopBuild, measure: Measure, voyage: Voyaging | null): ShipPanel {

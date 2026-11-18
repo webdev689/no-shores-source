@@ -15,6 +15,6 @@ The owner's answers to the questions that followed, on why pirates looked static
 
 ## What it settles
 
-- **Pirates are met on the open sea**, under way as well as at anchor, as the pick's DFO director has them
-  ([[Pick - Sailing and Naval Combat]], [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]). How they come,
-  sail and hold a voyage is in [[Naval Combat]], "At sea".
+- **Pirates spawn on the open sea** and are met there, not one other Sloop standing still
+  ([[Pick - Sailing and Naval Combat]], [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]). How they come
+  and sail is in [[Naval Combat]], "At sea".

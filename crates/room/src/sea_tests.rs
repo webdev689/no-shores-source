@@ -135,6 +135,30 @@ fn an_empty_course_brings_a_ship_to_rest_and_one_who_leaves_takes_their_ship() {
     assert_eq!(sea.clock(), COURSE_EVERY_TICKS + 10);
 }
 
+#[test]
+fn a_ship_is_turned_at_rest_by_her_facing_as_often_as_a_course_and_never_off_the_helm() {
+    let mut sea = sea();
+    let player = sea.join();
+    assert_eq!(sea.face(player, 1.0), Err(CourseRefused::BadCourse), "not at sea yet");
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
+    sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 60).unwrap();
+    ticks(&mut sea, 30);
+    let under_way = ship(&sea, player);
+    assert_eq!(sea.face(player, 1.0), Ok(()));
+    assert_eq!(ship(&sea, player), Ship { heading: 1.0, pace: 0, rate: 0, ..under_way }, "she comes to rest turned");
+    assert_eq!(sea.face(player, 2.0), Err(CourseRefused::TooSoon), "a facing takes a course's turn");
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
+    assert_eq!(sea.face(player, -std::f64::consts::FRAC_PI_2), Ok(()));
+    assert!((ship(&sea, player).heading - 1.5 * std::f64::consts::PI).abs() < 1e-12, "a heading kept in one turn");
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
+    assert_eq!(sea.face(player, f64::NAN), Err(CourseRefused::BadCourse));
+    sea.leave_helm(player).unwrap();
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
+    assert_eq!(sea.face(player, 0.5), Err(CourseRefused::OffTheHelm), "her helmsman keeps her as she lies");
+    ticks(&mut sea, 10);
+    assert_eq!((ship(&sea, player).x, ship(&sea, player).y), (under_way.x, under_way.y), "turning moves her nowhere");
+}
+
 /// A player at rest at sea far off the square continent, a bold pirate `out` metres north of them.
 fn met_at_sea(out: f64) -> (Sea, PlayerId) {
     let mut sea = sea();
@@ -172,6 +196,52 @@ fn a_voyage_eases_down_as_a_pirate_comes_near_along_her_way_and_is_held_by_her_t
     assert!(rates.last().is_some_and(|&rate| rate <= 5), "down to the near-enemy pace by her ring: {rates:?}");
     assert!(sailed[inside].0 > HOSTILE_NEAR_M - 2.0, "into her ring a metre at a time: {} m", sailed[inside].0);
     assert!(sailed[inside + 1..].iter().all(|&(_, rate)| rate == 1), "held to the world's time inside it");
+}
+
+#[test]
+fn a_course_that_zigzags_toward_a_pirate_or_turns_toward_her_at_once_is_held_as_a_straight_one() {
+    // A wary pirate 1640 m north, coming south; 10 m legs north and east by turns, so each tick ends on a leg abeam of
+    // her.
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 90_000.0]], 100).unwrap();
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
+    let zigzag: Vec<[f64; 2]> = (1..=64)
+        .map(|leg| [50_000.0 + f64::from(leg / 2) * 10.0, 90_000.0 - f64::from((leg + 1) / 2) * 10.0])
+        .collect();
+    sea.course(player, &zigzag, 100).unwrap();
+    let pirate = Pirate { id: 1, seed: 7, x: 50_000.0, y: 88_360.0, heading: std::f64::consts::PI, bold: false };
+    sea.pirates.sailing.push(pirate);
+    let mut rates = Vec::new();
+    for _ in 0..30 {
+        sea.tick();
+        rates.push(ship(&sea, player).rate);
+    }
+    assert!(rates.iter().skip(10).all(|&rate| rate < 100), "held as she nears, as a straight course is: {rates:?}");
+    assert!(rates.windows(2).all(|pair| pair[1] <= pair[0]), "easing down, never back up: {rates:?}");
+}
+
+#[test]
+fn a_course_turned_toward_a_pirate_is_held_on_its_first_tick() {
+    // At rest heading north with a wary pirate 1 km south: a course south at once.
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 90_000.0]], 100).unwrap();
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
+    sea.pirates.sailing.push(Pirate { id: 1, seed: 7, x: 50_000.0, y: 91_000.0, heading: 0.0, bold: false });
+    sea.course(player, &[[50_000.0, 99_000.0]], 100).unwrap();
+    sea.tick();
+    assert!(ship(&sea, player).rate < 100, "held on the first tick: x{}", ship(&sea, player).rate);
+}
+
+#[test]
+fn a_facing_a_hair_under_north_is_north() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 90_000.0]], 10).unwrap();
+    ticks(&mut sea, COURSE_EVERY_TICKS as usize);
+    assert_eq!(sea.face(player, -1e-20), Ok(()));
+    assert_eq!(ship(&sea, player).heading, 0.0);
 }
 
 #[test]
@@ -249,6 +319,19 @@ fn a_player_leaves_the_helm_only_at_sea_and_out_of_a_fight_and_walks_while_her_h
     assert_eq!(sea.leave_helm(player), Ok(()));
     assert_eq!(sea.leave_helm(player), Err(HelmRefused::AlreadyThere));
     assert_eq!(next_course(&mut sea, player, &[[60_000.0, 150_000.0]], 10), Err(CourseRefused::OffTheHelm));
+    let on = ship(&sea, player);
+    let ahead = [on.x, on.y - 20_000.0];
+    assert_eq!(next_course(&mut sea, player, &[ahead], 60), Err(CourseRefused::OffTheHelm), "nor the pace");
+    assert_eq!(
+        next_course(&mut sea, player, &[ahead, [on.x, on.y - 30_000.0]], 10),
+        Err(CourseRefused::OffTheHelm),
+        "nor a course of more than one point"
+    );
+    assert_eq!(
+        next_course(&mut sea, player, &[ahead], 10),
+        Ok(()),
+        "straight on along her heading, at her pace: her helmsman sails on"
+    );
     let before = ship(&sea, player);
     let forward = Controls { forward: 1.0, ..Controls::default() };
     for sequence in 1..=30 {

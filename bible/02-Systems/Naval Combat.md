@@ -170,9 +170,11 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]).
   within 1.2 km of that one, a shared sea.
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a pirate comes near along its way: its pace
   is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12 m/s
-  and her 2.4, down DFO's ladder (by fives, then ones), never under ×5. Within 700 m of a pirate of either temper it is
-  held to ×1, the world's own time (`threat.rs`). The room sails each ship at that pace and sends it as her pace; the
-  page sails its own at the room's pace, drawn to where the room has her, and the voyage's line says it is held.
+  and her 2.4, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she
+  would sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a pirate of
+  either temper it is held to ×1, the world's own time (`threat.rs`). The room sails each ship at that pace and sends
+  it as her pace; the page sails its own at the room's pace, drawn to where the room has her, and the voyage's line
+  says it is held.
 - **The meeting.** A bold pirate within 750 m of a player who is not fighting meets them: she leaves the sea and the
   fight begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it
   each tick by the player's orders on the fight of many ships, so her stem may ram the pirate, on waters made from the coasts (open sea, the swell on it, dry land on them), until
@@ -205,6 +207,9 @@ browser predicts its own ship through `room-wasm` by the same steps.
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
   come over. A fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
 - Only a bold pirate takes a player on; DFO's wary captains also fall on a ship they outgun.
+- A pirate sails on the clock of the player nearest her, while another player's voyage is held as if she closed on
+  them at their own: for the few ticks one player is nearest while she bears down on another, she may close faster
+  than that one's hold allows.
 - Her canvas is always drawn, so her sails always take balls; it does not come down as her sail share falls.
 - She cruises on her course until she sees a player's ship; DFO's captains wander between waypoints.
 - No boarding, crew, sounds, flotsam or magazine blast yet: the rest of step 3 of the pick.

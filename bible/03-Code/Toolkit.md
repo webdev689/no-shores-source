@@ -3,6 +3,7 @@ type: reference
 code:
   - tools/claude-toolkit/install-all.sh
   - tools/claude-toolkit/check-tools.sh
+  - tools/claude-toolkit/hooks/kit-check.sh
   - tools/claude-toolkit/workers/run-worker.sh
   - tools/claude-toolkit/workers/brief-common-template.md
 ---
@@ -14,6 +15,9 @@ when to install it and what each session does at its start and end; this note sa
 ## Running the kit
 
 - Call its scripts as `bash x.sh` or `python3 x.py`.
+- A session that starts, resumes or comes back from a compaction in a container without the kit is told so before
+  any work: the repository's `.claude/settings.json` runs `hooks/kit-check.sh` at each start, where nothing the
+  install adds exists yet.
 - After any change to the kit, run `bash tools/claude-toolkit/check-tools.sh --worker` and expect no FAIL line.
 - Everything the install fetches is pinned: a commit's full hash, a version, or rtk's archive by its SHA-256. A
   session holds the owner's keys, so what it runs is what was read when it was pinned. Bump a pin on purpose, after

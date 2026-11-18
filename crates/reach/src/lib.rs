@@ -1,6 +1,6 @@
 //! Where a body may go: a node's section of the land, the warning past its edge, death beyond it, and the respawn.
 //! Judged once a tick, the same on the server and in any browser that predicts it: the maths is + - * /, square root
-//! and comparisons, which every machine rounds alike. See the Reach note in the bible.
+//! and comparisons, which every machine rounds alike.
 
 /// Ticks a second: the rate movement steps bodies at (its `TICK_SECONDS` is 1/60 s).
 pub const TICKS_PER_SECOND: u32 = 60;

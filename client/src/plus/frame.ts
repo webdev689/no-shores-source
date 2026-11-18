@@ -1,7 +1,7 @@
 // The window's carved frame, as a 9-slice picture drawn pixel for pixel and used at 1:1, so it is never scaled: from
 // the outside in, the outline, the lit or shaded stone bevel, an engraved black line and a dark inner lip, with a
 // brass fitting and its rivet at each corner.
-import { TONES, type Tones } from './tones.ts';
+import { TONES } from './tones.ts';
 
 /** Pixels a side of the picture. */
 export const BAND = 12;
@@ -16,42 +16,42 @@ const FITTING = 11;
 const RIVET = 4;
 
 /** A fitting's colour `across` and `down` from the corner's two outer edges, or null where it does not reach. */
-function fittingAt(across: number, down: number, tones: Tones): string | null {
+function fittingAt(across: number, down: number): string | null {
   if (across >= FITTING || down >= FITTING || across + down > FITTING + 4) return null;
   const rim = across === 0 || down === 0 || across === FITTING - 1 || down === FITTING - 1;
-  if (rim || across + down === FITTING + 4) return tones.outline;
+  if (rim || across + down === FITTING + 4) return TONES.outline;
   const inRivet = (from: number) => from >= RIVET && from <= RIVET + 2;
   if (inRivet(across) && inRivet(down)) {
-    if (across === RIVET + 1 && down === RIVET + 1) return tones.brassHi;
-    return across === RIVET || down === RIVET ? tones.brassDark : tones.brassLo;
+    if (across === RIVET + 1 && down === RIVET + 1) return TONES.brassHi;
+    return across === RIVET || down === RIVET ? TONES.brassDark : TONES.brassLo;
   }
-  if (across === 1 || down === 1) return tones.brassHi;
-  if (across === FITTING - 2 || down === FITTING - 2 || across + down === FITTING + 3) return tones.brassLo;
-  return tones.brass;
+  if (across === 1 || down === 1) return TONES.brassHi;
+  if (across === FITTING - 2 || down === FITTING - 2 || across + down === FITTING + 3) return TONES.brassLo;
+  return TONES.brass;
 }
 
 /** The frame as an SVG, `BAND * 2 + 1` pixels square. */
-export function frameSvg(tones: Tones = TONES): string {
+export function frameSvg(): string {
   const size = BAND * 2 + 1;
   // One row of a lit (top or left) and a shaded (bottom or right) edge, outside to in.
   const lit = [
-    tones.outline,
-    tones.stoneHi,
-    tones.stoneLit,
-    tones.stoneMid,
-    tones.stoneLo,
-    tones.outline,
+    TONES.outline,
+    TONES.stoneHi,
+    TONES.stoneLit,
+    TONES.stoneMid,
+    TONES.stoneLo,
+    TONES.outline,
     '#16140f',
     '#0c0d10',
   ];
   const shade = [
-    tones.outline,
-    tones.stoneDark,
-    tones.stoneDim,
+    TONES.outline,
+    TONES.stoneDark,
+    TONES.stoneDim,
     '#443e31',
     '#4f4838',
-    tones.outline,
-    tones.stoneLo,
+    TONES.outline,
+    TONES.stoneLo,
     '#1c1a15',
   ];
   const pixels: string[] = [];
@@ -65,11 +65,8 @@ export function frameSvg(tones: Tones = TONES): string {
       const fromSide = left ? x : size - 1 - x;
       const along = (from: number, litSide: boolean) => (litSide ? lit[from] : shade[from]);
       if ((left || right) && (top || bottom)) {
-        const fitting = fittingAt(fromTop, fromSide, tones);
+        const fitting = fittingAt(fromTop, fromSide);
         if (fitting) paint(x, y, fitting);
-        // Under the fitting's clipped corner the two edges meet in a mitre.
-        else if (fromTop < EDGE && fromSide < EDGE)
-          paint(x, y, fromTop <= fromSide ? along(fromTop, top) : along(fromSide, left));
         else if (fromTop < EDGE) paint(x, y, along(fromTop, top));
         else if (fromSide < EDGE) paint(x, y, along(fromSide, left));
       } else if ((top || bottom) && fromTop < EDGE) paint(x, y, along(fromTop, top));
@@ -80,7 +77,7 @@ export function frameSvg(tones: Tones = TONES): string {
 }
 
 /** The frame as a `border-image`: the picture, its slice, its width and how far it reaches out. */
-export function frameImage(tones: Tones = TONES): string {
-  const url = `url("data:image/svg+xml,${encodeURIComponent(frameSvg(tones))}")`;
+export function frameImage(): string {
+  const url = `url("data:image/svg+xml,${encodeURIComponent(frameSvg())}")`;
   return `${url} ${BAND} / ${BAND}px / ${OUTSET}px stretch`;
 }

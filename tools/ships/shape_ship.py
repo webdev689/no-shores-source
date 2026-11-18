@@ -1,8 +1,10 @@
-"""Shapes the owner's Sloop before she is painted: her size, and a gap and steps down from her quarterdeck.
+"""Shapes the owner's Sloop: her size, and a gap and steps down from her quarterdeck.
 
     <python with bpy> tools/ships/shape_ship.py Sloop.blend Shaped.blend --scale <times>
 
-The model keeps a record of each change it has had, so a run on one already shaped changes nothing.
+Her parts must be painted already, as the published source is: her steps wear the hull and deck parts that
+tools/ships/paint_ship.py names, and painting her again afterwards lays her UVs at her new size. The model keeps a
+record of each change it has had, so a run on one already shaped changes nothing.
 """
 import argparse
 import sys
@@ -131,6 +133,7 @@ def open_quarterdeck(times):
     if scene.get(STEPS_KEY):
         return
     boxes = gaps(times)
+    laid = False
     for item in bpy.data.objects:
         if item.type != 'MESH':
             continue
@@ -139,13 +142,18 @@ def open_quarterdeck(times):
         mesh.transform(item.matrix_world)
         taken = sum(cut(mesh, box) for box in boxes if any(touches(face, box) for face in mesh.faces))
         names = [material.name if material else None for material in item.data.materials]
-        if taken and 'hull' in names and 'deck' in names:
+        if taken:
+            if 'hull' not in names or 'deck' not in names:
+                sys.exit(f'{item.name}: her steps wear her painted hull and deck: paint her (paint_ship.py) first')
             add_steps(mesh, times, (names.index('hull'), names.index('deck')))
             print(f'{item.name}: {taken} faces of her quarterdeck rail taken away, {STEPS} steps laid each side')
+            laid = True
         mesh.normal_update()
         mesh.transform(item.matrix_world.inverted())
         mesh.to_mesh(item.data)
         mesh.free()
+    if not laid:
+        sys.exit("no face of her quarterdeck's rail met its gaps: nothing was opened")
     scene[STEPS_KEY] = True
 
 

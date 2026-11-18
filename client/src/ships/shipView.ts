@@ -1,10 +1,10 @@
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
-import { headingFrame } from '../rules/landRules.ts';
 import { levelsOf } from '../textures/levels.ts';
 import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipPictures.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
+import { shipAxes } from './shipAxes.ts';
 import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 
 /** Where a ship is drawn: her middle in window metres (her height as drawn), her heading (radians clockwise from
@@ -32,22 +32,8 @@ export const FRONT_FACE: GPUFrontFace = 'ccw';
 /** The matrix (column-major, 4 × 4) that turns her own frame (x to her bow, y to starboard, z up) into the world's
  *  (east, south, up): her roll, then her pitch, then her heading. */
 export function shipTurn(heading: number, pitch: number, roll: number): Float32Array<ArrayBuffer> {
-  const flat = headingFrame(heading);
-  const [forward, starboard] = [
-    [...flat.forward, 0],
-    [...flat.starboard, 0],
-  ];
-  const up = [0, 0, 1];
-  const [sinPitch, cosPitch, sinRoll, cosRoll] = [Math.sin(pitch), Math.cos(pitch), Math.sin(roll), Math.cos(roll)];
-  const along = (ahead: number, aside: number, above: number) =>
-    [0, 1, 2].map((axis) => ahead * (forward[axis] ?? 0) + aside * (starboard[axis] ?? 0) + above * (up[axis] ?? 0));
-  const columns = [
-    along(cosPitch, 0, sinPitch),
-    along(sinRoll * sinPitch, cosRoll, -sinRoll * cosPitch),
-    along(-cosRoll * sinPitch, sinRoll, cosRoll * cosPitch),
-  ];
   const turn = new Float32Array(16);
-  columns.forEach((column, index) => turn.set(column, index * 4));
+  shipAxes(heading, pitch, roll).forEach((column, index) => turn.set(column, index * 4));
   turn[15] = 1;
   return turn;
 }

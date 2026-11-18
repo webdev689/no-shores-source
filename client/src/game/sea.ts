@@ -1,10 +1,11 @@
-import { WORLD_FRAME } from '../overworld/discovery.ts';
 import type { Point2, Vec3 } from '../overworld/ground.ts';
 import { flyRig, frameSide, nearestIsland, ringCentre, SIDE, sideNodes } from '../overworld/islandView.ts';
 import {
   type CameraPose,
   ceilingFor,
   FIELD_OF_VIEW,
+  forwardOf,
+  heightBand,
   horizonOf,
   initialCamera,
   type OverworldCamera,
@@ -16,61 +17,40 @@ import {
   type Viewport,
 } from '../overworld/overworldCamera.ts';
 import { dragCamera, keyTurn, type Press, pressAt, pressMove, zoomCamera } from '../overworld/overworldInput.ts';
-import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
+import type { Mark, PlacedMark } from '../overworld/overworldMarks.ts';
 import { pickAt } from '../overworld/overworldPick.ts';
-import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
-import { PACE_DEFAULT, type Pace, secondsLeft, shipAt, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';
+import { type Pace, SHIP_SPEED } from '../overworld/voyage.ts';
 import { lookOf, panShot, type Shot } from './camera.ts';
 import type { ScreenMark } from './hud.ts';
-import { distanceText } from './hudLaw.ts';
 import type { Landmass } from './landmass.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { InputFrame } from '../player/input.ts';
+import type { Swell } from '../rules/landRules.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
+import { type Stir, wakeStirs } from '../ships/swellPose.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { Aboard, type AboardContext } from './aboard.ts';
-import { heaveAt, type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
+import { CloseZoom } from './seaClose.ts';
+import { Passage } from './passage.ts';
+import { seaMarks } from './seaMarks.ts';
+import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
-import {
-  courseAhead,
-  declutter,
-  followed,
-  heldNote,
-  HELM,
-  helmEye,
-  type Landfall,
-  landfallOf,
-  namesShown,
-  PORT_SEEN_M,
-  shownScale,
-  timeText,
-} from './seaLaw.ts';
+import { HELM, helmEye, type Landfall, landfallOf, shownScale } from './seaLaw.ts';
 
-/** The world's frame, metres: every voyage between landmasses is planned over it. */
-const FRAME = { leftM: 0, topM: 0, ...WORLD_FRAME } as const;
-/** How far in from the picture's top and foot a held mark stands, clear of the place's name and, at sea, the sea's
- *  bar. */
-const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } as const;
-/** Marks at sea nearer each other on the picture than this are one: the nearer is shown. */
-const MARK_GAP_PX = 30;
 /** The Overworld is not to scale: a ship is drawn this long, metres, so one reads from the raised view. */
 const SHIP_DRAWN_M = 75;
 /** The view the ship first comes to: lower than DFO's, so the island it lies off stands in it. */
 const FIRST_TILT = (30 * Math.PI) / 180;
 /** Seconds the view takes to fall back from an island's side to the ship. */
 const FLY_BACK_SECONDS = 1.4;
+/** Her wake stirs the ripples only where she is drawn near her own size, the ripples round her a 32 m field, and at
+ *  most as often as they step, seconds. */
+const WAKE = { mostScale: 1.5, everyS: 1 / 60 } as const;
 /** Seconds the view takes to come down to the helm, or go back up from it. */
 const HELM_SECONDS = 1.1;
 /** A mark stands this far over the ground it marks, metres. */
 const MARK_RISE_M = 2;
-
-const REFUSED: Record<RouteRefusal, string> = {
-  outside: 'That lies beyond the charts.',
-  aground: 'The ship is aground.',
-  inland: 'That lies too far inland to sail to.',
-  'no way': 'No water leads there.',
-};
 
 /** Where the view is: over the ship, flying to or from an island's side, or over that side choosing a landing. */
 type SeaView =
@@ -87,8 +67,21 @@ type SeaView =
   /** Coming down to the helm, there, or going back up: `at` how far down, 0 the sea's view, 1 the helm. */
   | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' };
 
-/** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
+/** What one frame at sea is handed: `seconds` on, at world time `time`, on a picture of `viewport` CSS pixels; the
+ *  look keys' `turn` and `tilt`; the sea's `swell`, the steady wind blowing the way it runs; and the controls the
+ *  player walks her deck by, none while `paused`. */
+export interface SeaInput {
+  readonly seconds: number;
+  readonly time: number;
+  readonly viewport: Viewport;
+  readonly turn: number;
+  readonly tilt: number;
+  readonly swell: Swell | undefined;
+  readonly controls: InputFrame;
+  readonly paused: boolean;
+}
 
+/** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
 export interface SeaFrame {
   readonly shot: Shot;
   readonly ships: readonly SeaShip[];
@@ -108,6 +101,9 @@ export interface SeaFrame {
    *  eyes on her deck. */
   readonly figures: readonly CardAt[];
   readonly firstPerson: boolean;
+  /** Where her bow and quarters stir the water's ripples this frame, which follow her (`focus`, world metres). */
+  readonly stirs: readonly Stir[];
+  readonly focus: readonly [number, number];
 }
 
 /**
@@ -118,7 +114,6 @@ export interface SeaFrame {
  */
 export class Sea {
   private landmass: Landmass;
-  private readonly outlines: readonly (readonly Point2[])[];
   /** Her waterline and sails, and what draws a fight's marks; how many times her size she is drawn; each ship's rig
    *  by who sails her. */
   private readonly hull: SeaHull;
@@ -128,27 +123,34 @@ export class Sea {
   readonly aboard: Aboard;
   /** The fight the sea room began for the player, from the pan down to the pan back up. */
   private combat: SeaCombat | null = null;
-  private ship: { x: number; y: number; heading: number };
-  private voyage: Voyage | null = null;
-  /** Where the last voyage set out for, kept while it is stopped short, so it can be resumed. */
-  private destination: Point2 | null = null;
-  private travelled = 0;
-  private pace: Pace = PACE_DEFAULT;
+  /** Where she lies and heads, her voyage and pace dial, and her courses to the sea room. */
+  private readonly passage: Passage;
   private camera: OverworldCamera;
   private seaRig: Rig;
   private view: SeaView = { kind: 'sail' };
   /** How far the view has come down to the helm, eased: 0 the sea's view, 1 at the helm. */
   private helmShare = 0;
+  /** How far the wheel has brought the view in over her, past the Overworld's lowest. */
+  private readonly close = new CloseZoom();
+  /** Seconds since her wake last stirred the water; and whether the sea room's link was lost. */
+  private sinceStir = 0;
+  private roomLost = false;
   private side: readonly Mark[] = [];
   private sideRig: Rig | null = null;
   private press: Press | null = null;
   private room: SeaRoom | null = null;
-  private frameMask: SeaMask | null = null;
   private pose: CameraPose | null = null;
   private viewport: Viewport = { width: 1, height: 1 };
   private placed: PlacedMark[] = [];
   private islandMarks: readonly Mark[] = [];
-  private said = '';
+  /** The sea her ships ride: the swell as last handed, and its depth off the open landmass. */
+  private readonly water: { swell: Swell | undefined; depthAt: (x: number, y: number) => number } = {
+    swell: undefined,
+    depthAt: (x, y) => {
+      const ground = this.landmass.heightAt(x, y);
+      return Number.isFinite(ground) ? Math.max(0, -ground) : Infinity;
+    },
+  };
   chosen: string | null = null;
 
   constructor(
@@ -160,12 +162,11 @@ export class Sea {
     aboard: AboardContext,
   ) {
     this.landmass = landmass;
-    this.outlines = outlines;
     this.hull = hull;
     this.drawn = new SeaShips(hull);
     this.aboard = new Aboard(aboard, SLOOP_DECK);
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
-    this.ship = { x: start[0], y: start[1], heading };
+    this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
     this.camera = { ...initialCamera([start[0], start[1], 0], heading), tilt: FIRST_TILT };
     this.seaRig = this.camera;
     this.setLandmass(landmass);
@@ -173,7 +174,7 @@ export class Sea {
 
   /** Where the ship lies. */
   get position(): Point2 {
-    return [this.ship.x, this.ship.y];
+    return this.passage.position;
   }
 
   /** The landmass drawn and charted from now on. */
@@ -195,8 +196,11 @@ export class Sea {
 
   /** Joins the sea room `open` makes, a server's or the page's own, the ship put to sea where it lies. */
   async enterRoom(open: Parameters<typeof SeaRoom.join>[0]): Promise<void> {
-    this.room = await SeaRoom.join(open, this.position, this.pace);
-    if (this.voyage) this.room.course(courseAhead(this.voyage, this.travelled), this.pace);
+    this.room = await SeaRoom.join(open, this.position, this.passage.pace);
+    [this.passage.room, this.roomLost] = [this.room, false];
+    // Put to sea at rest, she is turned as she lies, so the room shows every player her heading.
+    if (!this.passage.sailing) this.room.face(this.heading);
+    this.passage.sendVoyage();
   }
 
   /** Whether the ship is in the sea room, which judges the helm left and taken. */
@@ -207,7 +211,7 @@ export class Sea {
   /** Leaves the sea room: the player's ship leaves the sea there. */
   leaveRoom(): void {
     this.room?.close();
-    this.room = null;
+    [this.room, this.passage.room] = [null, null];
   }
 
   /** What the ship is offered off the open landmass's coast: to dock at its port, to go ashore, or nothing. */
@@ -220,20 +224,17 @@ export class Sea {
 
   /** Where the ship lies and heads, as the held map shows it. */
   get heading(): number {
-    return this.ship.heading;
+    return this.passage.ship.heading;
   }
 
   /** The voyage's course still ahead, from the ship; none at rest. */
   get course(): Point2[] {
-    return this.voyage ? [this.position, ...courseAhead(this.voyage, this.travelled)] : [];
+    return this.passage.course;
   }
 
   /** A course from the ship to a point, as the held map inks it before setting sail, or why there is none. */
-  planTo(
-    point: Point2,
-  ): { readonly ok: true; readonly points: Point2[] } | { readonly ok: false; readonly why: string } {
-    const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
-    return route.ok ? { ok: true, points: route.points } : { ok: false, why: REFUSED[route.reason] };
+  planTo(point: Point2): ReturnType<Passage['planTo']> {
+    return this.passage.planTo(point);
   }
 
   /** Opens Manage, the view down over her deck, or closes it. */
@@ -282,55 +283,38 @@ export class Sea {
 
   /** Whether a voyage stopped short of its destination can be resumed. */
   get resumable(): boolean {
-    return this.view.kind === 'sail' && !this.voyage && this.destination !== null;
+    return this.view.kind === 'sail' && this.passage.stoppedShort;
   }
 
   /** Stops the ship where it is; the voyage's destination is kept, to be resumed. */
   stop(): void {
-    if (!this.voyage) return;
-    this.voyage = null;
-    this.room?.course([], this.pace);
+    this.passage.stop();
   }
 
-  /** Sets sail again for the destination of the voyage last stopped, from wherever the ship lies now. */
+  /** Sets sail again, straight on or for the destination of the voyage last stopped, from wherever the ship lies. */
   resume(): void {
-    if (this.resumable && this.destination) this.sailTo(this.destination);
+    if (this.resumable) this.passage.resume();
+  }
+
+  /** The helm's keys, as in a fight, from the sea's own view: `steer` (A and D held: -1 to port, 1 to starboard) turns
+   *  her `seconds` on, under way onto a course straight on and at rest where she lies; `ahead` (W pressed) sets her
+   *  sailing straight on; `heaveTo` (S pressed) heaves her to. */
+  helm(steer: number, ahead: boolean, heaveTo: boolean, seconds: number): void {
+    if (this.combat || this.aboard.active || this.view.kind !== 'sail') return;
+    if (heaveTo) this.passage.stop();
+    if (steer) this.passage.steer(steer, seconds);
+    if (ahead && !heaveTo) this.passage.straightOn();
   }
 
   /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
   sailTo(point: Point2): void {
-    const from = this.position;
-    const route = planSeaRoute(this.maskFor(from, point), from, point);
-    if (!route.ok) {
-      this.said = REFUSED[route.reason];
-      return;
-    }
-    this.said = '';
-    this.voyage = voyageOf(route.points);
-    this.destination = point;
-    this.travelled = 0;
-    this.room?.course(courseAhead(this.voyage, 0), this.pace);
-  }
-
-  /** A voyage within the open landmass's window is planned on its fine mask; any other over the whole frame's. */
-  private maskFor(from: Point2, to: Point2): SeaMask {
-    const { mask } = this.landmass;
-    const inside = ([x, y]: Point2) =>
-      x >= mask.leftM &&
-      y >= mask.topM &&
-      x < mask.leftM + mask.width * mask.cellM &&
-      y < mask.topM + mask.height * mask.cellM;
-    if (inside(from) && inside(to)) return mask;
-    this.frameMask ??= maskFromOutlines(this.outlines, FRAME);
-    return this.frameMask;
+    this.passage.sailTo(point);
   }
 
   /** One step of the pace dial: -1 slower, +1 faster. */
   stepPace(direction: number): void {
     // Off the helm the room takes no course, so the dial waits for the player's return to it.
-    if (this.aboard.walking) return;
-    this.pace = stepPace(this.pace, direction);
-    if (this.voyage) this.room?.course(courseAhead(this.voyage, this.travelled), this.pace);
+    if (!this.aboard.walking) this.passage.stepPace(direction);
   }
 
   /** A mark chosen at sea: the ship sails for it, to the water nearest it. */
@@ -355,9 +339,9 @@ export class Sea {
       this.viewport.width / this.viewport.height,
       this.landmass.heightAt,
     );
-    this.voyage = null;
-    this.room?.course([], this.pace);
+    this.passage.stop();
     this.chosen = null;
+    this.close.release();
     this.view = { kind: 'fly', from: this.seaRig, to: this.sideRig, t: 0, seconds: SIDE.flySeconds, then: 'landing' };
     return true;
   }
@@ -409,46 +393,46 @@ export class Sea {
     else if (pick.kind !== 'none') this.sailTo([pick.point[0], pick.point[1]]);
   }
 
-  /** The wheel's notches, positive in, zoom the camera over the ship. */
+  /** The wheel's notches, positive in, zoom the camera over the ship, and past its lowest bring the view in close. */
   zoom(notches: number): void {
     if (this.aboard.active) this.aboard.zoom(notches);
-    else if (this.view.kind === 'sail') this.camera = zoomCamera(this.camera, notches, ceilingFor(null));
+    else if (this.view.kind === 'sail') {
+      const ceiling = ceilingFor(null);
+      const atLowest = this.camera.heightTarget <= heightBand(ceiling)[0] + 1e-6;
+      this.camera = zoomCamera(this.camera, this.close.zoom(notches, atLowest), ceiling);
+    }
   }
 
-  /** One frame at sea, `dt` seconds on, at world time `time`, on a picture of `viewport` CSS pixels, the steady
-   *  wind blowing toward `windBearing` (radians clockwise from north); off the helm the player walks by `controls`,
-   *  by nothing while `paused`. */
-  frame(
-    dt: number,
-    time: number,
-    viewport: Viewport,
-    turn: number,
-    tilt: number,
-    windBearing: number,
-    controls: InputFrame,
-    paused: boolean,
-  ): SeaFrame {
+  /** One frame at sea. */
+  frame(input: SeaInput): SeaFrame {
+    const { seconds: dt, time, viewport } = input;
+    const windBearing = input.swell?.bearing ?? 0;
     this.viewport = viewport;
-    this.room?.pump(dt);
-    if (this.view.kind !== 'helm') this.helmShare = 0;
-    this.meet(time);
-    this.aboard.step(dt, time, controls, paused, this.room);
-    if (this.voyage && !this.combat) {
-      const fix = shipAt(
-        this.voyage,
-        followed(this.voyage, this.travelled, dt, this.pace, this.room?.settledShip ?? null),
-      );
-      this.ship = { x: fix.position[0], y: fix.position[1], heading: fix.heading ?? this.ship.heading };
-      this.travelled = fix.travelledM;
-      if (fix.arrived) [this.voyage, this.destination] = [null, null];
+    // A room whose link was lost says no more: the player is called to the helm and sails on alone.
+    if (this.room?.lost) {
+      this.aboard.drop();
+      this.leaveRoom();
+      this.roomLost = true;
     }
-    if (this.view.kind === 'sail' && !this.aboard.active) this.camera = keyTurn(this.camera, turn, tilt, dt);
-    const { heightAt } = this.landmass;
+    this.water.swell = input.swell;
+    this.room?.pump(dt);
+    this.meet(time);
+    this.aboard.step(dt, time, input.controls, input.paused, this.room);
+    if (!this.combat) this.passage.advance(dt);
+    this.close.step(dt);
+    this.stepHelmView(dt);
+    if (this.view.kind === 'sail' && !this.aboard.active)
+      this.camera = keyTurn(this.camera, input.turn, input.tilt, dt);
+    const scale = shownScale(this.scale, Math.max(this.close.eased, this.helmShare, this.aboard.share));
+    const { ship } = this.passage;
+    const own = { ...ship, underWay: this.passage.sailing };
+    const place = this.drawn.placeOf('own', own, scale, this.water, dt, time);
+    const lying: Lying = { ...ship, scale, heave: place.z, pitch: place.pitch, roll: place.roll };
     const stepped = stepCamera(this.camera, {
-      feet: [this.ship.x, this.ship.y, 0],
+      feet: [ship.x, ship.y, 0],
       dt,
       ceiling: ceilingFor(null),
-      heightAt,
+      heightAt: this.landmass.heightAt,
     });
     this.camera = stepped.camera;
     let shot = stepped.shot;
@@ -458,47 +442,75 @@ export class Sea {
       shot = shotOf(flyRig(this.view.from, this.view.to, t));
       this.view = t < 1 ? { ...this.view, t } : this.view.then === 'landing' ? { kind: 'landing' } : { kind: 'sail' };
     } else if (this.view.kind === 'landing' && this.sideRig) shot = shotOf(this.sideRig);
-    const pose = poseOf(shot, FIELD_OF_VIEW);
-    this.pose = pose;
-    const look = lookOf(pose.forward);
-    const fromShip = Math.hypot(pose.eye[0] - this.ship.x, pose.eye[1] - this.ship.y, pose.eye[2]);
+    const look = lookOf(shot.forward);
+    const fromShip = Math.hypot(shot.eye[0] - ship.x, shot.eye[1] - ship.y, shot.eye[2]);
     const lens = horizonOf({ fogEndM: 28_000, nearM: 2, farM: 60_000 }, 1, fromShip);
-    const seaShot: Shot = { eye: pose.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
+    const overworld: Shot = { eye: shot.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
+    const overShip = this.view.kind !== 'landing';
+    const seaShot = overShip ? this.close.shot(overworld, lying, this.camera.yaw, this.camera.tilt) : overworld;
+    // Clicks and marks are taken on the picture as shown, brought in close or not.
+    const pose = poseOf({ eye: seaShot.eye, forward: forwardOf(seaShot.yaw, -seaShot.pitch) }, FIELD_OF_VIEW);
+    this.pose = pose;
     const combat = this.combat;
-    const fail = (error: unknown) => {
-      this.said = error instanceof Error ? error.message : String(error);
-    };
-    const scale = shownScale(this.scale, Math.max(this.helmShare, this.aboard.share));
-    const lying: Lying = { ...this.ship, scale, heave: heaveAt(time, 0) };
+    const fail = (error: unknown) => this.passage.say(error instanceof Error ? error.message : String(error));
     const shown = combat
       ? combat.frame(dt, time, seaShot, fail)
       : this.view.kind === 'helm'
-        ? this.helmShot(dt, time, seaShot)
+        ? this.helmShot(seaShot, lying)
         : this.aboard.active
           ? this.aboard.shot(seaShot, lying)
           : seaShot;
     if (combat?.done) {
-      this.ship = combat.lying;
+      this.passage.placeAt(combat.lying);
       this.combat = null;
     }
-    const own = { ...this.ship, underWay: this.voyage !== null };
     const others = this.room?.others ?? [];
+    const pirates = this.room?.pirates ?? [];
+    const aboard = combat ? combat.own : lying;
+    const kind = this.view.kind === 'sail' || this.view.kind === 'landing' ? this.view.kind : 'other';
+    const marks = seaMarks(
+      combat || this.aboard.active ? 'other' : kind,
+      this.islandMarks,
+      this.side,
+      this.position,
+      pose,
+      viewport,
+      this.chosen,
+    );
+    this.placed = marks.placed;
     return {
       shot: shown,
       ships: combat
         ? combat.ships(dt, time, windBearing).map((ship) => ({ ...ship }))
-        : this.drawn.ships(dt, time, windBearing, own, others, this.room?.pirates ?? [], scale),
+        : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, pirates, scale, this.water),
       hulls: combat ? combat.hulls(this.hull.waterline) : this.drawn.hulls(own, others, scale),
-      marks: combat || this.aboard.active ? [] : this.marks(pose, viewport),
-      figures: combat ? [] : this.aboard.figures(lying, shown.eye, time, own.underWay),
+      marks: marks.shown,
+      figures: aboard
+        ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, this.helmShare > 0.5)
+        : [],
       firstPerson: !combat && this.aboard.firstPerson,
+      stirs: !combat && own.underWay ? this.wake(lying, dt) : [],
+      focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
       note: this.note(),
       landfall: this.landfall,
-      sailing: this.voyage !== null,
+      sailing: this.passage.sailing,
       resumable: this.resumable,
-      pace: this.pace,
+      pace: this.passage.pace,
       overSide: this.view.kind === 'landing',
     };
+  }
+
+  /** Her bow and quarters stir the water under way, as she is drawn, at a ship's own way: near her own size, where
+   *  the ripples round her hold her, and as often as they step. */
+  private wake(lying: Lying, seconds: number): Stir[] {
+    this.sinceStir += seconds;
+    if (lying.scale > WAKE.mostScale || this.sinceStir < WAKE.everyS) return [];
+    this.sinceStir = 0;
+    const { lengthM, beamM } = this.hull.waterline;
+    return wakeStirs(lying, (lengthM / 2) * lying.scale, (beamM / 2) * lying.scale, SHIP_SPEED).map((stir) => ({
+      ...stir,
+      radiusM: stir.radiusM * lying.scale,
+    }));
   }
 
   /** The fight the sea room began for the player, while it is on screen. */
@@ -513,69 +525,53 @@ export class Sea {
     const first = this.room.takeFight();
     if (!first) return;
     this.aboard.drop();
-    if (this.voyage) this.stop();
+    this.passage.stop();
     if (this.view.kind === 'helm') this.view = { kind: 'sail' };
     this.combat = new SeaCombat(this.room, first, this.hull.marks, this.hull.sails, time);
   }
 
-  /** The view coming down to the helm, there, or going back up, eased between the sea's shot and the helm's. */
-  private helmShot(dt: number, time: number, sea: Shot): Shot {
-    if (this.view.kind !== 'helm') return sea;
-    const step = (this.view.going === 'down' ? dt : -dt) / HELM_SECONDS;
+  /** The view coming down to the helm, there, or going back up, `seconds` on: how far down, eased. */
+  private stepHelmView(seconds: number): void {
+    if (this.view.kind !== 'helm') {
+      this.helmShare = 0;
+      return;
+    }
+    const step = (this.view.going === 'down' ? seconds : -seconds) / HELM_SECONDS;
     const down = Math.min(1, Math.max(0, this.view.at + step));
     this.view = down <= 0 && this.view.going === 'up' ? { kind: 'sail' } : { ...this.view, at: down };
-    const eased = smooth01(down);
-    this.helmShare = eased;
-    // The eye rides the swell with the ship, at the helm of the Sloop as she is drawn while she shrinks to her size.
-    const eye = helmEye(this.ship, shownScale(this.scale, eased), 0.35 * Math.sin(time * 0.9) - 0.4);
-    const helm = { eye, yaw: this.ship.heading, pitch: HELM.pitch, fov: FIELD_OF_VIEW, near: 0.3, far: sea.far };
-    return panShot(sea, helm, eased);
+    this.helmShare = smooth01(down);
   }
 
-  private marks(pose: CameraPose, viewport: Viewport): ScreenMark[] {
-    const ship = this.position;
-    const away = (mark: Mark) => Math.hypot(mark.at[0] - ship[0], mark.at[1] - ship[1]);
-    const shown =
-      this.view.kind === 'sail'
-        ? this.islandMarks.filter((mark) => mark.kind === 'port' && away(mark) <= PORT_SEEN_M)
-        : this.view.kind === 'landing'
-          ? this.side
-          : [];
-    const placed = placeMarks(shown, pose, viewport, 1, this.view.kind === 'sail' ? MARK_EDGES.sea : MARK_EDGES.side);
-    this.placed = this.view.kind === 'sail' ? declutter(placed, MARK_GAP_PX) : placed;
-    const named = namesShown(this.placed);
-    return this.placed.map((placed) => {
-      const mark = shown.find((each) => each.id === placed.id);
-      return {
-        ...placed,
-        note: distanceText(mark ? away(mark) : placed.distance),
-        chosen: placed.id === this.chosen,
-        named: named.has(placed.id) || placed.id === this.chosen,
-      };
-    });
+  /** The view eased between the sea's shot and the helm's, the eye riding her as she lies, shrinking to her size. */
+  private helmShot(sea: Shot, lying: Lying): Shot {
+    const helm = {
+      eye: helmEye(lying),
+      yaw: lying.heading,
+      pitch: HELM.pitch,
+      fov: FIELD_OF_VIEW,
+      near: 0.3,
+      far: sea.far,
+    };
+    return panShot(sea, helm, this.helmShare);
   }
 
   private note(): string {
-    const room = this.room ? ` · In the sea room as player ${this.room.own}` : '';
+    const lost = this.roomLost ? ' · The sea room was lost: sailing on alone' : '';
+    const room = this.room ? ` · In the sea room as player ${this.room.own}` : lost;
     if (this.combat) return `Fighting${room}`;
     if (this.view.kind !== 'sail') return room.slice(3);
     // Off the helm, her helmsman has her while she sails on.
-    const helmsman = this.aboard.walking && this.voyage ? ' · Her helmsman has the helm' : '';
-    return this.voyageNote + helmsman + room;
+    const helmsman = this.aboard.walking && this.passage.sailing ? ' · Her helmsman has the helm' : '';
+    return this.passage.note + helmsman + room;
   }
 
-  /** Where her voyage stands: under way with the way and time to go, hove to short of it, or at anchor. */
+  /** Where her voyage stands: under way, hove to short of it, or at anchor. */
   get voyageNote(): string {
-    if (this.voyage) {
-      const remaining = this.voyage.lengthM - this.travelled;
-      const left = timeText(secondsLeft(this.voyage, this.travelled, this.pace));
-      return `Sailing · ${distanceText(remaining)} to go · ${left}${heldNote(this.pace, this.room?.settledShip ?? null)}`;
-    }
-    return this.said || (this.destination ? 'Hove to' : 'At anchor');
+    return this.passage.note;
   }
 
   /** Her pace dial's step. */
   get paceStep(): Pace {
-    return this.pace;
+    return this.passage.pace;
   }
 }

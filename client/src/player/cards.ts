@@ -13,8 +13,9 @@ export interface Card {
   readonly root: readonly [number, number];
 }
 
-/** One card to draw: where its feet stand (world metres), whether it is mirrored, and how strongly it flashes,
- *  struck (white, or red for the player's own). */
+/** One card to draw: where its feet stand (world metres), whether it is mirrored, how strongly it flashes, struck
+ *  (white, or red for the player's own), and how many times life size it stands (1 unless said: a figure aboard a
+ *  ship drawn larger than life is drawn as large as she is). */
 export interface CardAt {
   readonly card: Card;
   readonly x: number;
@@ -22,6 +23,7 @@ export interface CardAt {
   readonly z: number;
   readonly flip: boolean;
   readonly flash?: { readonly share: number; readonly red: boolean };
+  readonly scale?: number;
 }
 
 /** Whatever turns a composed picture into a card it can draw: the Test Ground's scene, or the game's figures. */

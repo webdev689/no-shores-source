@@ -24,6 +24,17 @@ export type Action = keyof typeof BINDINGS;
 
 /** One frame's input: what is held, what was pressed or let go since the last frame, how far the mouse moved while the
  *  pointer was locked, and the wheel's notches (positive pulled back). */
+/** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
+export const IDLE: InputFrame = {
+  held: () => false,
+  pressed: () => false,
+  released: () => false,
+  lookX: 0,
+  lookY: 0,
+  wheel: 0,
+  locked: true,
+};
+
 export interface InputFrame {
   held(action: Action): boolean;
   pressed(action: Action): boolean;

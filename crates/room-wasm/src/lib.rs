@@ -1,8 +1,8 @@
 //! The room for its Cloudflare host and for a browser playing alone. Each WebAssembly instance keeps one room: a
-//! course's, a node's, the sea's or a fleet's. The host opens it, lets players join and leave, hands it each player's input bytes
-//! as they come, ticks it, and sends out the bytes it answers. A browser also steps its own player's fighter here, by
-//! the same rules, to predict it. The rules stay in the combat and room crates and the messages in the protocol crate.
-//! See the Server and Combat notes in the bible.
+//! course's, a node's, the sea's or a fleet's. The host opens it, lets players join and leave, hands it each player's
+//! input bytes as they come, ticks it, and sends out the bytes it answers. A browser also steps its own player's
+//! fighter here, by the same rules, to predict it. The rules stay in the combat and room crates and the messages in the
+//! protocol crate.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use combat::Fighter;
@@ -233,6 +233,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             let asked = match protocol::read_sea_input(bytes) {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
+                Ok(SeaInput::Face(heading)) => sea.face(player, heading),
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
                 Ok(SeaInput::Walk(sequence, controls)) => {
                     return match sea.walk(player, sequence, controls) {
