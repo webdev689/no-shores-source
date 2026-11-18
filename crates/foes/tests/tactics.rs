@@ -110,14 +110,17 @@ fn the_longest_waiter_takes_a_freed_turn_and_a_foe_past_its_patience_goes_in_reg
     assert_eq!(board.tokens_out(9), (1, 0), "a foe that died gives its turn up");
 }
 
-/// Two swordsmen before a player and a third 3.3 m behind them: the third waits its turn unless the player turns its
-/// back on it.
+/// Two swordsmen before a player and a third 3.3 m behind them, all already alert: the third waits its turn unless the
+/// player turns its back on it.
 fn third_behind(facing: f64) -> Room {
     Room::new(5)
         .player(PLAYER, 0.0, 0.0, facing)
         .foe(10, SWORDSMAN, Major, -0.8, -5.0, PI)
         .foe(11, SWORDSMAN, Major, 0.8, -5.0, PI)
         .foe(12, SWORDSMAN, Major, 0.0, 3.3, 0.0)
+        .alert(10, PLAYER)
+        .alert(11, PLAYER)
+        .alert(12, PLAYER)
 }
 
 #[test]

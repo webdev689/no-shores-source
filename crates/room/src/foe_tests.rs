@@ -224,3 +224,84 @@ fn a_crossbowman_fights_from_behind_the_room_s_cover() {
     }
     assert!(hidden > 150, "and out of the player's sight behind it much of the time: {hidden}");
 }
+
+/// A pirate swordsman put straight into the room at (x, y), facing `facing`.
+fn put(room: &mut Room, x: f64, y: f64, facing: f64) -> FighterId {
+    let (fighter, brain) =
+        ::foes::spawn(::foes::foe_type(SWORDSMAN).expect("a type"), ::foes::Rank::Major, x, y, facing);
+    let id = room.next_id();
+    room.foes.insert(id, Foe { fighter, brain });
+    id
+}
+
+#[test]
+fn the_room_sends_how_alert_each_foe_is_as_it_notices_hunts_searches_and_lets_go() {
+    let wall = Block { min_x: 20.0, min_y: -40.0, max_x: 21.0, max_y: 40.0, top: 4.0 };
+    let mut room = Room::new(vec![wall], (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.input(player, asking(&room, 1, major(SWORDSMAN), Controls::default())).unwrap();
+    room.tick();
+    let mut states: Vec<u8> = Vec::new();
+    for sequence in 2..=900 {
+        if sequence == 60 {
+            // The player slips behind the wall, out of the foe's sight.
+            room.players.get_mut(&player).unwrap().fighter.body.x = 40.0;
+        }
+        room.input(player, asking(&room, sequence, None, Controls::default())).unwrap();
+        room.tick();
+        let alert = room.foes_seen().next().unwrap().alert;
+        if states.last() != Some(&alert) {
+            states.push(alert);
+        }
+    }
+    assert_eq!(states, [1, 2, 3, 1, 0], "suspicious, alert, searching, letting go, idle");
+}
+
+#[test]
+fn a_players_gunshot_alerts_a_foe_across_the_room_whose_shout_wakes_its_ally() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let near = put(&mut room, 0.0, 15.0, PI);
+    let ally = put(&mut room, 0.0, 25.0, PI);
+    let far = put(&mut room, 0.0, 40.0, PI);
+    let pistolet = combat::Arms { ranged: Some(combat::Ranged::Pistolet), ..combat::arms::BARE_HANDS }.code();
+    let shoot = Intent { combat: CombatInput { shoot: true, ..CombatInput::default() }, ..Intent::default() };
+    room.input(player, Input { sequence: 1, intent: shoot, arms: pistolet, seen: 0, ..Input::default() }).unwrap();
+    let alerts =
+        |room: &Room| [near, ally, far].map(|foe| room.foes_seen().find(|seen| seen.foe == foe).unwrap().alert);
+    room.tick();
+    room.tick();
+    assert_eq!(alerts(&room), [3, 1, 0], "15 m off it searches where the shot was; 25 m off it is stirred");
+    room.tick();
+    assert_eq!(alerts(&room), [3, 3, 0], "its shout wakes the ally 10 m off, not one 25 m off");
+}
+
+#[test]
+fn a_bosss_crew_comes_alert_to_the_foe_it_fights() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let (fighter, brain) = ::foes::spawn(::foes::foe_type(12).expect("the Boss"), ::foes::Rank::Boss, 0.0, -2.5, PI);
+    let boss = room.next_id();
+    room.foes.insert(boss, Foe { fighter, brain });
+    for sequence in 1..=400 {
+        if sequence == 30 {
+            let found = room.foes.get_mut(&boss).unwrap();
+            found.fighter.health = 0.3 * found.fighter.health_max;
+        }
+        room.input(player, asking(&room, sequence, None, Controls::default())).unwrap();
+        room.tick();
+        let whole = room.players[&player].fighter.health_max;
+        room.players.get_mut(&player).unwrap().fighter.health = whole;
+        if room.foes.len() > 1 {
+            room.input(player, asking(&room, sequence + 1, None, Controls::default())).unwrap();
+            room.tick();
+            let crew: Vec<u8> = room.foes_seen().filter(|seen| seen.foe != boss).map(|seen| seen.alert).collect();
+            assert!(
+                crew.len() == 2 && crew.iter().all(|alert| *alert >= 2),
+                "alert from their first thought: {crew:?}"
+            );
+            return;
+        }
+    }
+    panic!("the Boss called no crew");
+}

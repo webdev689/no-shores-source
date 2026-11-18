@@ -3,8 +3,10 @@
 //! DFO's Enhanced AI, its tactics and its telegraphed blows, stands here on Overlook's own fight: foes take turns at a
 //! target and ring it, back off, flee and kite, wind up telegraphed blows, and answer blows at them with the guard, the
 //! parry and the dodge, the riposte and the counter. A brain reads its room and asks its fighter for controls and
-//! buttons, a tick at a time; what it is told happened it notes.
+//! buttons, a tick at a time; what it is told happened it notes. It fights only once alert: what it sees and hears
+//! stirs it first.
 
+mod awareness;
 pub mod board;
 pub mod brain;
 mod cover;
@@ -12,6 +14,7 @@ mod dice;
 pub mod director;
 pub mod factions;
 mod flank;
+pub mod noises;
 pub mod ranks;
 mod react;
 pub mod roles;
@@ -23,11 +26,13 @@ mod tactics;
 mod tell;
 pub mod tuning;
 
+pub use awareness::Alertness;
 pub use board::Board;
 pub use brain::{Brain, Calls, notice};
 pub use combat::{Fighter, FighterId, Intent};
 pub use director::{Caps, Director, Pressed};
 pub use factions::{FACTIONS, Faction, faction};
+pub use noises::Noise;
 pub use ranks::Rank;
 pub use roles::Role;
 pub use roster::{FoeType, ROSTER, foe_type, spawn};
@@ -116,6 +121,10 @@ pub enum Seen {
     Landed { on: FighterId, verdict: combat::Verdict },
     /// This foe's telegraphed blow landed: whether it found no one, and whether someone dodged it perfectly.
     TelegraphEnded { missed: bool, perfectly_dodged: bool },
+    /// A noise a fighter made: heeded only when of another side.
+    Heard(Noise),
+    /// An ally standing at `from` turned alert, and shouts the place it believes its foe is.
+    Shouted { from: [f64; 3], at: [f64; 3] },
 }
 
 /// One tick of a foe's thinking: its brain after it, and what it asks of its fighter (controls + combat buttons,
@@ -124,7 +133,9 @@ pub fn think(me: FighterId, brain: &Brain, board: &mut Board, world: &World<'_>)
     let found = world.fighters.iter().find(|(id, _)| *id == me).map(|(_, fighter)| *fighter);
     let Some(fighter) = found.filter(|fighter| !fighter.dead()) else {
         board.forget(me);
-        return (brain.clone(), Intent::default());
+        let mut fallen = brain.clone();
+        fallen.awareness.heard.clear();
+        return (fallen, Intent::default());
     };
     let mut next = brain.clone();
     let here = Here {

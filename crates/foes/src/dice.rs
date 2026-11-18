@@ -21,6 +21,7 @@ pub enum Purpose {
     ShotGap = 13,
     Aimed = 14,
     Press = 15,
+    Search = 16,
     Hide = 24,
 }
 

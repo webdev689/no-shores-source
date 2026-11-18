@@ -1,12 +1,13 @@
-//! What a foe knows: itself and its room this tick, and whom it fights. It sees a fighter of another side within its
-//! range with nothing between their chests; it keeps hunting its target where it last saw it for a while after losing
-//! sight; with no target it takes the nearest it sees.
+//! What a foe knows: itself and its room this tick, and whom it fights. Its target it sees with nothing between their
+//! chests, and hunts where it last saw it for a while after losing sight. With no target, what it sees and hears stirs
+//! its awareness; once alert, it takes the nearest it sees within its range and its arc.
 
 use crate::World;
+use crate::awareness::{latch, stir, strongest, woken};
 use crate::brain::Brain;
 use crate::dice::Dice;
 use crate::roles::Numbers;
-use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE, SIGHT_ARC};
+use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
 use combat::{Fighter, FighterId};
@@ -73,38 +74,81 @@ pub struct Sight {
     pub toward: f64,
 }
 
-/// Its target this tick, chosen or kept, with the brain's memory of it brought up to date.
+/// Its target this tick, chosen or kept, with the brain's memory and awareness brought up to date: a target seen keeps
+/// it fully aware; with none, the strongest sight or noise stirs it, and once alert it takes the nearest it sees.
 pub fn sense(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
+    let heard = core::mem::take(&mut brain.awareness.heard);
+    let called = woken(brain, here, &heard);
+    if let Some(sight) = kept(brain, here) {
+        // Fighting or hunting its target it stays as aware as it was; seeing it, fully.
+        if sight.seen {
+            brain.awareness.level = 1.0;
+        }
+        latch(brain, here, called);
+        return Some(sight);
+    }
+    let seen = in_sight(here);
+    let glimpse = seen.iter().map(|(_, _, other, gain)| (*gain, feet(other))).fold(None, strongest);
+    stir(brain, here, glimpse, &heard);
+    latch(brain, here, called);
+    if !brain.awareness.alert {
+        return None;
+    }
+    let (_, id, other, _) =
+        seen.into_iter().min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))?;
+    brain.target = Some(id);
+    brain.last_seen = Some(feet(&other));
+    brain.seen_at = here.tick();
+    brain.awareness.look = None;
+    Some(sight(here, id, &other, true, brain.last_seen))
+}
+
+fn feet(fighter: &Fighter) -> [f64; 3] {
+    [fighter.body.x, fighter.body.y, fighter.body.z]
+}
+
+/// Its target kept: seen, its place noted; or hunted where it was last seen for a while (a blow from out of sight shows
+/// where it came from). Past that, or once it falls, let go, its last place kept to search.
+fn kept(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     let tick = here.tick();
-    if let Some(target) = brain.target {
-        match here.enemy(target) {
-            Some(other) if sees(here.world.blocks, &here.fighter, other) => {
-                brain.last_seen = Some([other.body.x, other.body.y, other.body.z]);
-                brain.seen_at = tick;
-                return Some(sight(here, target, other, true, brain.last_seen));
-            }
-            Some(other) if tick <= brain.seen_at + Here::ticks(HUNT) => {
-                return Some(sight(here, target, other, false, brain.last_seen));
-            }
-            _ => brain.target = None,
+    let target = brain.target?;
+    match here.enemy(target) {
+        Some(other) if sees(here.world.blocks, &here.fighter, other) => {
+            brain.last_seen = Some(feet(other));
+            brain.seen_at = tick;
+            Some(sight(here, target, other, true, brain.last_seen))
+        }
+        Some(other) if tick <= brain.seen_at + Here::ticks(HUNT) => {
+            let last = *brain.last_seen.get_or_insert_with(|| feet(other));
+            Some(sight(here, target, other, false, Some(last)))
+        }
+        _ => {
+            brain.target = None;
+            brain.awareness.look = None;
+            None
         }
     }
+}
+
+/// Every fighter of another side it sees: within its range, within its arc, nothing between their chests. Each with
+/// its distance, its id and what seeing it adds to awareness this tick: most near and dead ahead, nothing at the edge
+/// of its range or its arc.
+fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64)> {
     let at = here.at();
-    let (_, id, other) = here
-        .world
+    let edge = libm::cos(SIGHT_ARC);
+    here.world
         .fighters
         .iter()
         .filter(|(id, _)| here.enemy(*id).is_some())
-        .map(|(id, other)| (apart(at, [other.body.x, other.body.y]), *id, *other))
-        .filter(|(distance, _, other)| {
-            let ahead = off(here.fighter.aim, bearing(at, [other.body.x, other.body.y])) <= SIGHT_ARC;
-            *distance <= here.range() && ahead && sees(here.world.blocks, &here.fighter, other)
+        .filter_map(|(id, other)| {
+            let distance = apart(at, [other.body.x, other.body.y]);
+            let turn = off(here.fighter.aim, bearing(at, [other.body.x, other.body.y]));
+            let seen = distance <= here.range() && turn <= SIGHT_ARC && sees(here.world.blocks, &here.fighter, other);
+            let ahead = (libm::cos(turn) - edge) / (1.0 - edge);
+            let gain = SIGHT_GAIN * (1.0 - distance / here.range()) * ahead / 60.0;
+            seen.then_some((distance, *id, *other, gain))
         })
-        .min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))?;
-    brain.target = Some(id);
-    brain.last_seen = Some([other.body.x, other.body.y, other.body.z]);
-    brain.seen_at = tick;
-    Some(sight(here, id, &other, true, brain.last_seen))
+        .collect()
 }
 
 fn sight(here: &Here<'_, '_>, id: FighterId, other: &Fighter, seen: bool, last: Option<[f64; 3]>) -> Sight {

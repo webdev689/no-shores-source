@@ -1,8 +1,9 @@
-//! A foe's brain: whom it fights and where it last saw them, the way it faces, what it is about in its fight, and
-//! what it keeps for its telegraphed blows, its answers to blows at it and its bow. And what it notes of what the room
-//! tells it happened.
+//! A foe's brain: whom it fights and where it last saw or heard them, how aware it is, the way it faces, what it is
+//! about in its fight, and what it keeps for its telegraphed blows, its answers to blows at it and its bow. And what it
+//! notes of what the room tells it happened.
 
 use crate::Seen;
+use crate::awareness::Awareness;
 use crate::ranks::{Rank, phase};
 use crate::react::Reactions;
 use crate::roles::{Numbers, Role};
@@ -34,11 +35,12 @@ pub const SAMPLE_TICKS: u64 = 15;
 pub const SAMPLES: usize = (HURT_WINDOW * 60.0) as usize / SAMPLE_TICKS as usize + 1;
 
 /// What a foe's brain asks of its room beyond its fighter's controls: its poise refilled, as it roars into a new phase,
-/// and its crew called to its side.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// its crew called to its side, and its shout as it turns alert, passing its allies the place it believes its foe is.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Calls {
     pub refill_poise: bool,
     pub crew: bool,
+    pub shout: Option<[f64; 3]>,
 }
 
 /// A foe's brain: its type and rank, and all it keeps.
@@ -48,8 +50,10 @@ pub struct Brain {
     pub rank: Rank,
     pub(crate) calls: Calls,
     pub(crate) target: Option<FighterId>,
+    /// Where it believes its foe is: where it last saw its target, or what last stirred it.
     pub(crate) last_seen: Option<[f64; 3]>,
     pub(crate) seen_at: u64,
+    pub(crate) awareness: Awareness,
     /// The bearing it faces and steers by, turning at its own pace.
     pub(crate) heading: f64,
     pub(crate) plan: Plan,
@@ -81,6 +85,7 @@ impl Brain {
             target: None,
             last_seen: None,
             seen_at: 0,
+            awareness: Awareness::default(),
             heading: facing,
             plan: Plan::Wait,
             until: 0,
@@ -149,18 +154,27 @@ impl Brain {
     }
 }
 
-/// What the room tells a foe's brain it saw happen this tick, noted for its next thought.
+/// What the room tells a foe's brain it saw happen this tick, noted for its next thought. Only an alert foe sees a
+/// blow coming; a blow on it alerts it at once.
 #[must_use]
 pub fn notice(brain: &Brain, me: FighterId, seen: &Seen, tick: u64) -> Brain {
     let mut next = brain.clone();
+    let alert = next.awareness.alert;
     match *seen {
-        Seen::Swung { by, attack } if by != me => next.reactions.saw_swing(by, &attack, tick),
-        Seen::Loosed { by } if by != me => next.reactions.saw_shot(by, tick),
-        Seen::Struck { by, .. } if next.target.is_none() => {
-            // The one that strikes it is its foe, as the soft lock takes it.
-            next.target = Some(by);
-            next.seen_at = tick;
+        Seen::Swung { by, attack } if by != me && alert => next.reactions.saw_swing(by, &attack, tick),
+        Seen::Loosed { by } if by != me && alert => next.reactions.saw_shot(by, tick),
+        Seen::Struck { by, .. } => {
+            next.awareness.level = 1.0;
+            // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place.
+            if next.target.is_none() {
+                next.target = Some(by);
+                next.seen_at = tick;
+                next.last_seen = None;
+            }
         }
+        // Its own side's noises it pays no heed; an ally's shout it does.
+        Seen::Heard(noise) if noise.side != brain.foe_type.side() => next.awareness.heard.push(*seen),
+        Seen::Shouted { .. } => next.awareness.heard.push(*seen),
         Seen::Landed { verdict, .. } => {
             next.blocked = if matches!(verdict, Verdict::Blocked { .. }) { next.blocked.saturating_add(1) } else { 0 };
         }
