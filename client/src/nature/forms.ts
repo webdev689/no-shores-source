@@ -5,7 +5,7 @@ import type { Cast } from './kinds.ts';
 /** Each form's detail has its own block of drawing terms, read at a dynamic offset this far apart. */
 export const FORM_BLOCK_BYTES = 256;
 /** The floats of a block the shader reads (natureShader.ts Form). */
-export const FORM_FLOATS = 24;
+export const FORM_FLOATS = 28;
 /** A near mesh with no far one is drawn to its reach: its range is past anything drawn. */
 const NO_FAR_M = 1e9;
 /** A far plant is one quad, two triangles. */
@@ -30,7 +30,7 @@ export interface FormBuffers {
 }
 
 /** A form's terms for one detail: its ranges, crossfade band and detail; its thinning and sway; its contact shade;
- *  its pictures' layer and bark; its sprites' sheet and bounding sphere. */
+ *  its pictures' layer and bark; its sprites' sheet, bounding sphere and the box of the frame they fill. */
 function blockOf(
   form: FloraForm,
   kind: Cast['kinds'][number],
@@ -62,6 +62,7 @@ function blockOf(
     FLORA.frames.cell,
     ...(sprites?.centre ?? [0, 0, 0]),
     0,
+    ...(sprites?.box ?? [0, 0, 1, 1]),
   ];
 }
 

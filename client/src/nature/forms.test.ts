@@ -72,3 +72,20 @@ test("a tree's contact shade spreads as wide as its crown and leans from where i
     if (kind.name === 'oak') assert.ok((radius ?? 0) > 3 && (crownHeight ?? 0) > 5, `${radius} ${crownHeight}`);
   }
 });
+
+test('a far quad covers only the part of its frames the plant fills, or the whole frame when no box is baked', () => {
+  const cast = castOf('woodland');
+  const loaded = loadedOf('woodland');
+  const [first, second] = loaded.forms as FloraForm[];
+  assert.ok(first?.impostor && second?.impostor);
+  const boxed = { ...first, impostor: { ...first.impostor, box: [0.3, 0.1, 0.7, 1] as const } };
+  const unboxed = { ...second, impostor: { ...second.impostor, box: undefined } };
+  const { parts, blocks } = formBuffers(cast, { ...loaded, forms: [boxed, unboxed, ...loaded.forms.slice(2)] });
+  const box = (index: number) => {
+    const far = parts[index]?.[1];
+    assert.ok(far);
+    return [...blocks.subarray((far.block * FORM_BLOCK_BYTES) / 4 + 24, (far.block * FORM_BLOCK_BYTES) / 4 + 28)];
+  };
+  assert.deepEqual(box(0), [0.3, 0.1, 0.7, 1].map(Math.fround));
+  assert.deepEqual(box(1), [0, 0, 1, 1]);
+});

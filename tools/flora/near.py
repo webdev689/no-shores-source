@@ -10,7 +10,7 @@ import bpy  # noqa: F401 (Blender's module brings mathutils with it)
 import mathutils
 import numpy as np
 
-from detail import BARK_TILE_M, frame_of
+from detail import BARK_TILE_M, fin_rows, frame_of, ground_shade
 from grow import UP, unit
 from rocks import rock_surface
 
@@ -104,13 +104,28 @@ def wood(near, model, budget):
             dome = np.array([points[-1] + tip * radii[-1] * 0.6, points[-1] + tip * radii[-1] * 0.95])
             ring_tube(near, np.vstack([points[-1:], dome]), np.array([radii[-1], radii[-1] * 0.7, 0.05]), 12,
                       model.ribs)
-    for turn, height, reach, _ in model.fins:
-        way = np.array([math.cos(turn), math.sin(turn), 0.0])
-        side = np.array([-way[1], way[0], 0.0])
-        foot, top, toe = UP * -0.3, UP * height, way * reach - UP * 0.3
-        bend = way * reach * 0.3 + UP * height * 0.25
-        uv = lambda point: (float(np.dot(point, way)) / BARK_TILE_M, float(point[2]) / BARK_TILE_M)
-        near.quad(*(corner(point, side, uv(point), tint=(0.7,) * 3) for point in (foot, toe, bend, top)))
+    for each in model.fins:
+        fin(near, *each)
+
+
+# The near buttress's cross-section: the detailed one's in five corners.
+NEAR_FIN = ((-1, 0), (-0.8, 0.8), (0, 1), (0.8, 0.8), (1, 0))
+
+
+def fin(near, turn, height, reach, thickness):
+    """A buttress as a slab with thickness, its normals from its own surface, its uv in bark units."""
+    rows, outs = fin_rows(turn, height, reach, thickness, 4, NEAR_FIN)
+    along = np.gradient(rows, axis=0)
+    across = np.gradient(rows, axis=1)
+    normals = np.cross(along, across)
+    grid = []
+    for row, out, facing in zip(rows, outs, normals):
+        around = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(row, axis=0), axis=1))])
+        grid.append([corner(point, normal, (length / BARK_TILE_M, out / BARK_TILE_M), tint=(ground_shade(point[2]),) * 3)
+                     for point, normal, length in zip(row, facing, around)])
+    for low, high in zip(grid[:-1], grid[1:]):
+        for column in range(len(low) - 1):
+            near.quad(low[column], low[column + 1], high[column + 1], high[column])
 
 
 def groups_of(clusters, count):
@@ -132,7 +147,9 @@ def groups_of(clusters, count):
         centre = means[group]
         radius = max(float(np.linalg.norm(cluster.centre - centre)) + cluster.radius for cluster in members)
         out = unit(sum(cluster.out for cluster in members))
-        groups.append((centre, out, radius * 0.85))
+        # A card covers the bulk of its group, not its farthest spray: crossed cards overlapping less leave a crown
+        # a few leaves deep along a view rather than ten, which a CPU renderer pays for pixel by pixel.
+        groups.append((centre, out, radius * 0.62))
     return groups
 
 
@@ -151,15 +168,32 @@ def card_frame(out, roll):
     return across, up
 
 
-def cards(near, model, groups, tiles, normal_of, rng):
-    """Two crossed cards at each group, one facing out of the crown and one square to it, wearing its picture."""
+WHOLE_CARD = ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0))
+
+
+def card_shape(albedo, pad=4):
+    """The uv corners of the rectangle round a card picture's cover (sprites.spray_tile turns a picture so its cover
+    lies along it): a card cut to its leaves has less air for the GPU to shade."""
+    size = albedo.shape[0]
+    rows, columns = np.nonzero(albedo[..., 3] > 0.25)
+    if len(rows) < 3:
+        return WHOLE_CARD
+    left, right = max(0, columns.min() - pad) / size, min(size, columns.max() + 1 + pad) / size
+    top, bottom = max(0, rows.min() - pad) / size, min(size, rows.max() + 1 + pad) / size
+    return ((left, top), (right, top), (right, bottom), (left, bottom))
+
+
+def cards(near, model, groups, tiles, normal_of, rng, shapes=None):
+    """Two crossed cards at each group, one facing out of the crown and one square to it, wearing its picture, each
+    cut to its picture's cover (`shapes`, a tile's uv corners; the whole card when not given)."""
     for index, (centre, out, radius) in enumerate(groups):
         across, up = card_frame(out, rng.uniform(0, math.tau))
         tile = tiles[index % len(tiles)]
+        uvs = (shapes or {}).get(tile, WHOLE_CARD)
         for face_up in (up, unit(np.cross(across, up) * 0.5 + up * 0.5)):
-            square = [centre + (across * x + face_up * y) * radius for x, y in ((-1, 1), (1, 1), (1, -1), (-1, -1))]
-            uvs = ((0, 0), (1, 0), (1, 1), (0, 1))
-            near.quad(*(corner(point, normal_of(point), uv, tile, leaf=1.0) for point, uv in zip(square, uvs)))
+            # The picture's u runs along `across`, its v down `face_up`, the card a square of `radius` either side.
+            points = [centre + (across * (2 * u - 1) + face_up * (1 - 2 * v)) * radius for u, v in uvs]
+            near.quad(*(corner(point, normal_of(point), uv, tile, leaf=1.0) for point, uv in zip(points, uvs)))
 
 
 def strip(near, spine, width, tile, normal_of, leaf=1.0, uv_width=None, side=None):

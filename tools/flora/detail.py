@@ -129,6 +129,16 @@ def leaf_colour(model, rng):
 def spray(surface, model, cluster, rng):
     """A spray of single leaves round a twig's end, facing out of the crown and up to the light."""
     form, length = model.leaf['form'], model.leaf['length']
+    if form == 'needle' and model.leaf.get('tufted'):
+        # A pine's tuft: needles bursting out of a ball round the twig's end, more of them up and out than down.
+        count = int(220 * (cluster.radius / 0.35) ** 2)
+        for _ in range(count):
+            way = unit(rng.normal(0, 1, 3) + cluster.out * 0.7)
+            at = cluster.centre + way * cluster.radius * rng.random() ** 0.5 * 0.7
+            reach = length * rng.uniform(0.7, 1.3)
+            leaf(surface, at, way, unit(np.cross(way, rng.normal(0, 1, 3))), leaf_shape('needle', reach, rng),
+                 leaf_colour(model, rng))
+        return
     if form == 'needle':
         twig = unit(cluster.out * 0.6 + rng.normal(0, 0.3, 3))
         count = int(260 * (cluster.radius / 0.35) ** 2)
@@ -202,15 +212,38 @@ def strands(surface, colour, strip, rng):
                      [[shade, shade]] * len(rows))
 
 
-def fin(surface, turn, height, reach, thickness):
-    """A buttress: a thin wall of wood from up the trunk, curving out along the ground."""
+def fin_rows(turn, height, reach, thickness, stations, section):
+    """A buttress's corners: at each of `stations` places out from the trunk, its cross-section, a slab `thickness`
+    either side at the root thinning to the toe and rounded over its top edge, curving gently along the ground.
+    `section` is the cross-section's (across, up) as shares of the half-thickness and of the edge's height."""
     way = np.array([math.cos(turn), math.sin(turn), 0.0])
     side = np.array([-way[1], way[0], 0.0])
-    profile = [(reach * share, height * (1 - share) ** 2 - 0.3) for share in np.linspace(0, 1, 7)]
-    rows = [[way * out + UP * up - side * thickness * (1 - out / reach), way * out + UP * (up * 0.15 - 0.3),
-             way * out + UP * up + side * thickness * (1 - out / reach)] for out, up in profile]
-    uvs = [[(0, up / BARK_TILE_M), (0.5, 0), (1, up / BARK_TILE_M)] for out, up in profile]
-    tints = [[[ground_shade(up)] * 3] * 3 for _, up in profile]
+    bend = 0.12 * reach * (1 if math.sin(turn * 3) >= 0 else -1)
+    rows, outs = [], []
+    for share in np.linspace(0, 1, stations):
+        out = reach * share
+        edge = height * (1 - share) ** 2 - 0.3
+        half = thickness * (1 - share) ** 0.7 + 0.03
+        middle = way * out + side * bend * math.sin(math.pi * share)
+        rows.append([middle + side * half * across + UP * (-0.3 + (edge + 0.3) * up + half * 0.6 * max(0.0, 1 - abs(across)))
+                     for across, up in section])
+        outs.append(out)
+    return np.array(rows), outs
+
+
+# The detailed buttress's cross-section, from its foot on one side over its top to its foot on the other.
+FIN_SECTION = ((-1, 0), (-1, 0.5), (-0.85, 0.85), (-0.5, 1), (0, 1), (0.5, 1), (0.85, 0.85), (1, 0.5), (1, 0))
+
+
+def fin(surface, turn, height, reach, thickness):
+    """A buttress: a slab of wood with thickness from up the trunk, curving out along the ground, its uv in bark
+    units round its section and along it."""
+    rows, outs = fin_rows(turn, height, reach, thickness, 9, FIN_SECTION)
+    uvs, tints = [], []
+    for row, out in zip(rows, outs):
+        around = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(row, axis=0), axis=1))])
+        uvs.append([(length / BARK_TILE_M, out / BARK_TILE_M) for length in around])
+        tints.append([[ground_shade(point[2])] * 3 for point in row])
     surface.grid(rows, uvs, tints)
 
 

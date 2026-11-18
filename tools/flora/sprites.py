@@ -92,7 +92,8 @@ def impostor(scene, plant, centre, radius):
                 copies.append(copy)
     lens = camera(scene, (AZIMUTHS * across / 2, -radius * 4, -len(ELEVATIONS) * across / 2), (0, 1, 0), (0, 0, 1),
                   AZIMUTHS * across)
-    ao = (0.55, float(np.clip(radius * 0.25, 0.3, 3.0)))
+    # Occlusion over a short reach, so a dense crown darkens in its folds but its mass keeps the leaves' own colour.
+    ao = (0.55, float(np.clip(radius * 0.15, 0.3, 2.0)))
     sheet = three(scene, plant, AZIMUTHS * CELL, len(ELEVATIONS) * CELL, ao, 'OBJECT')
     for copy in copies:
         remove(copy)
@@ -115,8 +116,41 @@ def spray_tile(scene, plant, model, centre, out, radius, rng):
         if limb.level > 0 and float(limb.radii.max()) < 0.045 and near.sum() >= 2:
             tube(twigs, limb.points[near], limb.radii[near], 4)
     made = [surface for surface in (twigs, foliage) if surface.points]
-    aim = (centre + np.asarray(out) * 50, -np.asarray(out), card_up(out), radius * 2)
-    return alone(scene, plant, made, aim)
+    forward, up = -np.asarray(out, float), card_up(out)
+    tile = alone(scene, plant, made, (centre + np.asarray(out) * 50, forward, up, radius * 2))
+    # A spray strung along a bough is seen again turned, so it lies along the picture and its card can be cut to a
+    # narrow rectangle round it (near.card_shape): the camera's up turns either way by the cover's slant.
+    slant = cover_slant(tile[0][..., 3])
+    if slant is None:
+        return tile
+    side = np.cross(forward, up)
+    for turn in (slant, -slant):
+        turned = alone(scene, plant, made, (centre + np.asarray(out) * 50, forward,
+                                            up * math.cos(turn) + side * math.sin(turn), radius * 2))
+        if box_area(turned[0][..., 3]) < box_area(tile[0][..., 3]):
+            tile = turned
+    return tile
+
+
+def cover_slant(alpha):
+    """The angle of a picture's cover's long axis from across it, radians, when the cover is long and slanted."""
+    rows, columns = np.nonzero(alpha > 0.25)
+    if len(rows) < 10:
+        return None
+    values, vectors = np.linalg.eigh(np.cov(np.stack([columns, rows]).astype(float)))
+    if values[1] < 2.5 * max(values[0], 1e-9):
+        return None
+    slant = math.atan2(vectors[1, 1], vectors[0, 1])
+    slant = (slant + math.pi / 2) % math.pi - math.pi / 2
+    return slant if abs(slant) > 0.1 else None
+
+
+def box_area(alpha):
+    """The share of a picture the rectangle round its cover takes."""
+    rows, columns = np.nonzero(alpha > 0.25)
+    if len(rows) == 0:
+        return 1.0
+    return (rows.max() - rows.min() + 1) * (columns.max() - columns.min() + 1) / alpha.size
 
 
 def card_up(out):
@@ -168,6 +202,21 @@ def tuft_tiles(scene, plant, size):
         tiles.append(three(scene, plant, TILE, TILE, (0.4, size * 0.3), 'CAMERA'))
         remove(lens)
     return tiles
+
+
+def box_of(sheet, pad=2):
+    """The part of a frame any frame of the sheet fills, (left, top, right, bottom) as shares of a frame: the far
+    quad covers only that."""
+    albedo, _ = sheet
+    covered = albedo[..., 3] > 0.1
+    rows, columns = covered.shape
+    frames = covered.reshape(rows // CELL, CELL, columns // CELL, CELL).any(axis=(0, 2))
+    filled_rows, filled_columns = np.nonzero(frames)
+    if len(filled_rows) == 0:
+        return [0.0, 0.0, 1.0, 1.0]
+    left, right = max(0, filled_columns.min() - pad), min(CELL, filled_columns.max() + 1 + pad)
+    top, bottom = max(0, filled_rows.min() - pad), min(CELL, filled_rows.max() + 1 + pad)
+    return [round(left / CELL, 4), round(top / CELL, 4), round(right / CELL, 4), round(bottom / CELL, 4)]
 
 
 def canopy_of(sheet):

@@ -122,6 +122,8 @@ fn grove_at(world: vec2f) -> f32 {
 // The biome's woods on the land: the forest floor darker under the groves near, where the trees are drawn, and their
 // canopy's colour as the trees' sprites fade out (4.8 to 6 km, nature's TREE reach); none on the beach, on ground too
 // steep for trees, or near the snow line. A grove's trees cover the ground thickly from afar, crowns and sides together.
+// From 1 km the far trees thin out, each widened to stand in for the rest: the ground between them takes most of the
+// canopy's colour already, so a far wood reads closed rather than as crowns over bare ground.
 fn wooded(colour: vec3f, world: vec2f, bed: f32, slope: f32, distance_to: f32) -> vec3f {
   if (view.woods.w <= 0.0) { return colour; }
   let in_grove = smoothstep(0.4, 0.6, grove_at(world));
@@ -130,7 +132,7 @@ fn wooded(colour: vec3f, world: vec2f, bed: f32, slope: f32, distance_to: f32) -
   var cover = 1.0 - exp(-4.0 * view.woods.w * density);
   cover *= smoothstep(2.0, 2.5, bed) * (1.0 - smoothstep(0.6, 0.75, slope));
   cover *= 1.0 - smoothstep(view.ground.w - 300.0, view.ground.w - 100.0, bed);
-  let far = smoothstep(4800.0, 6000.0, distance_to);
+  let far = max(smoothstep(4800.0, 6000.0, distance_to), 0.7 * smoothstep(1000.0, 3000.0, distance_to));
   return mix(colour * mix(1.0, 0.72, cover), mix(colour, view.woods.rgb, cover), far);
 }
 `;

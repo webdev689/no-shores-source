@@ -36,9 +36,17 @@ def oak(seed, height, crown_at, crown, bark, leaves, trunk=0.42):
                  leaves=leaves, style='furrowed')
 
 
-def tiered(seed, height, base, spread, tiers, trunk, flare, fins, bark, leaves, moss=None):
+def tiered(seed, height, base, spread, tiers, trunk, flare, fins, bark, leaves, moss=None, depth=0.5, droop=1.2,
+           step_in=0.3, spray=0.8, influence=0.6):
+    """A tiered tree: `tiers` discs of crown from `base` (a share of the height) up, each `depth` metres thick either
+    side of its middle, their rims sagging `droop` metres, each `step_in` of the spread narrower at the top."""
     return dict(grow='tiered', seed=seed, height=height, crown_base=base, spread=spread, tiers=tiers, trunk=trunk,
-                flare=flare, fins=fins, bark=bark, leaves=leaves, moss=moss)
+                flare=flare, fins=fins, bark=bark, leaves=leaves, moss=moss, depth=depth, droop=droop,
+                step_in=step_in, spray=spray, influence=influence)
+
+
+# Rainforest canopy trees: deep tiers close together, so from above their crowns read as one closed roof.
+CANOPY = dict(depth=1.7, droop=1.2, step_in=0.2, spray=0.95)
 
 
 def palms(seed, height, bow, fronds, length, bark, leaves):
@@ -110,20 +118,22 @@ BIOMES = {
         ('thorn bush', bush(45, 2.2, 1.5, 6, 0.24, True, (0.36, 0.44, 0.18), (0.3, 0.25, 0.2))),
     ],
     'rainforest': [
-        ('giant', [tiered(seed, 40, 0.7, 9, 3, 0.9, 1.6, 4, (0.4, 0.36, 0.3), (0.22, 0.4, 0.13)) for seed in (16, 117)]),
+        ('giant', [tiered(seed, 40, 0.5, 9, 3, 0.9, 1.6, 4, (0.4, 0.36, 0.3), (0.22, 0.4, 0.13), depth=2.0, droop=1.8,
+                          step_in=0.15, spray=1.0, influence=0.9) for seed in (16, 117)]),
         # Three canopy trees of their own heights, spreads and greens, their flat crowns overlapping.
         ('canopy tree', [
-            tiered(37, 22, 0.6, 7, 2, 0.5, 1.5, 0, (0.42, 0.38, 0.3), (0.17, 0.37, 0.11)),
-            tiered(36, 17, 0.58, 7.5, 2, 0.45, 1.5, 0, (0.38, 0.33, 0.26), (0.12, 0.32, 0.1)),
-            tiered(38, 14, 0.55, 6.5, 2, 0.4, 1.4, 0, (0.36, 0.3, 0.24), (0.27, 0.43, 0.13)),
+            tiered(37, 22, 0.4, 7, 3, 0.5, 1.5, 0, (0.42, 0.38, 0.3), (0.17, 0.37, 0.11), **CANOPY),
+            tiered(36, 17, 0.38, 7.5, 3, 0.45, 1.5, 0, (0.38, 0.33, 0.26), (0.12, 0.32, 0.1), **CANOPY),
+            tiered(38, 14, 0.35, 6.5, 2, 0.4, 1.4, 0, (0.36, 0.3, 0.24), (0.27, 0.43, 0.13), **CANOPY),
         ]),
         ('palm', palms(26, 15, 2.2, 10, 4.8, (0.42, 0.36, 0.28), (0.24, 0.48, 0.14))),
         ('tree fern', [fern(seed, 2.4, (0.2, 0.46, 0.13), 3) for seed in (56, 157)]),
         ('understory', shrub(46, 2.2, 1.6, 4, (0.16, 0.4, 0.12))),
     ],
     'swamp': [
-        ('cypress', [tiered(seed, 16, 0.5, 6.5, 2, 0.5, 2.6, 4, (0.28, 0.22, 0.18), (0.24, 0.32, 0.15),
-                            moss=(0.2, 0.24, 0.17)) for seed in (18, 119)]),
+        ('cypress', [tiered(seed, 16, 0.3, 6.5, 4, 0.5, 2.6, 4, (0.28, 0.22, 0.18), (0.24, 0.32, 0.15),
+                            moss=(0.2, 0.24, 0.17), depth=0.7, droop=1.8, step_in=0.45, spray=0.75)
+                     for seed in (18, 119)]),
         ('mangrove', twice('mangrove', 28, bark=(0.35, 0.28, 0.22), leaves=(0.16, 0.33, 0.13))),
         ('reeds', meadow(58, 2.0, (0.25, 0.4, 0.15), (0.62, 0.55, 0.3), 12)),
         ('marsh fern', [fern(59, 0.8, (0.22, 0.42, 0.16))]),

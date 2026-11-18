@@ -40,6 +40,8 @@ struct Form {
   sprites: vec4f,
   // The bounding sphere's middle from the foot, metres at size 1.
   centre: vec4f,
+  // The part of a frame the sprites fill: left, top, right, bottom, 0..1 of the frame.
+  box: vec4f,
 };
 
 struct Instance {
@@ -59,6 +61,7 @@ struct Instance {
 @group(0) @binding(5) var albedo_map: texture_2d_array<f32>;
 @group(0) @binding(6) var normal_map: texture_2d_array<f32>;
 @group(0) @binding(7) var pictures: sampler;
+@group(0) @binding(8) var cut_pictures: sampler;
 
 struct Vertex {
   @location(0) position: vec3f,
@@ -284,8 +287,7 @@ fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
 fn plant_fragment(shaded: Shaded) -> Drawn {
   let picture = picture_of(shaded.uv, shaded.wraps);
   let layer = i32(form.atlas.x);
-  let albedo = textureSampleGrad(albedo_map, pictures, picture.uv, layer, picture.dx, picture.dy);
-  let mapped = textureSampleGrad(normal_map, pictures, picture.uv, layer, picture.dx, picture.dy).xyz * 2.0 - 1.0;
+  let albedo = textureSampleGrad(albedo_map, cut_pictures, picture.uv, layer, picture.dx, picture.dy);
   let edge = edge_share(albedo.a);
   let pixel = vec2u(shaded.clip.xy);
   let near_mask = coverage(shaded.cover.x, pixel, 0u);
@@ -293,6 +295,8 @@ fn plant_fragment(shaded: Shaded) -> Drawn {
   if (mask == 0u) {
     discard;
   }
+  // The normal is read only for what survives the cut: most of a card's pixels are air.
+  let mapped = textureSampleGrad(normal_map, cut_pictures, picture.uv, layer, picture.dx, picture.dy).xyz * 2.0 - 1.0;
   let normal_axis = normalize(shaded.normal);
   let across = normalize(shaded.tangent.xyz - normal_axis * dot(shaded.tangent.xyz, normal_axis));
   let up = cross(normal_axis, across) * select(-1.0, 1.0, shaded.tangent.w >= 0.0);
@@ -329,7 +333,11 @@ fn sprite_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) whi
     out.clip = NOWHERE;
     return out;
   }
-  let middle = at.foot.from_eye + vec3f(turned(at.turn, form.centre.xy * at.size.xy), form.centre.z * at.size.z);
+  // A far tree widened to stand in for its thinned-out neighbours sinks toward its crown's foot, as their crowns
+  // round it would hide its trunk: a far wood reads as one roof of crowns, not as crowns on bare poles.
+  let stand_in = 1.0 - at.foot.item.look.x / at.size.x;
+  let sink = stand_in * 0.6 * form.shade.y * at.foot.item.look.y;
+  let middle = at.foot.from_eye + vec3f(turned(at.turn, form.centre.xy * at.size.xy), form.centre.z * at.size.z - sink);
   let to_eye = -middle;
   let local = vec3f(turned(vec2f(at.turn.x, -at.turn.y), to_eye.xy), to_eye.z);
   let blender = vec3f(local.x, -local.y, local.z);
@@ -340,7 +348,7 @@ fn sprite_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) whi
   let world_right = vec3f(turned(at.turn, vec2f(right.x, -right.y)), right.z);
   let world_up = vec3f(turned(at.turn, vec2f(up.x, -up.y)), up.z);
   let quad = QUAD;
-  let corner = quad[index];
+  let corner = mix(form.box.xy, form.box.zw, quad[index]);
   let radius = form.sprites.z;
   let point = middle + world_right * (corner.x * 2.0 - 1.0) * radius * at.size.x
     + world_up * (1.0 - corner.y * 2.0) * radius * at.size.z;
@@ -375,19 +383,23 @@ fn frame_uv(column: f32, row: f32, uv: vec2f) -> vec2f {
 @fragment
 fn sprite_fragment(sprite: Sprite) -> Drawn {
   let layer = i32(form.sprites.x);
-  let weights = vec4f((1.0 - sprite.columns.z) * (1.0 - sprite.rows.y), sprite.columns.z * (1.0 - sprite.rows.y),
-    (1.0 - sprite.columns.z) * sprite.rows.y, sprite.columns.z * sprite.rows.y);
-  let places = array<vec2f, 4>(frame_uv(sprite.columns.x, sprite.columns.w, sprite.uv),
-    frame_uv(sprite.columns.y, sprite.columns.w, sprite.uv), frame_uv(sprite.columns.x, sprite.rows.x, sprite.uv),
-    frame_uv(sprite.columns.y, sprite.rows.x, sprite.uv));
-  var albedo = vec4f(0.0);
-  var facing = vec4f(0.0);
-  for (var each = 0; each < 4; each++) {
-    albedo += textureSample(albedo_map, pictures, places[each], layer) * weights[each];
-    facing += textureSample(normal_map, pictures, places[each], layer) * weights[each];
-  }
-  let edge = edge_share(albedo.a);
   let pixel = vec2u(sprite.clip.xy);
+  // The two azimuths either side are blended; of the two elevations each pixel reads one, the nearer outside the
+  // middle third between them and dithered across it, so a far plant costs four reads a pixel, not eight.
+  let dither = array<f32, 4>(0.125, 0.625, 0.875, 0.375);
+  let upper = clamp((sprite.rows.y - 0.5) * 3.0 + 0.5, 0.0, 1.0) > dither[(pixel.x & 1u) + 2u * (pixel.y & 1u)];
+  let row = select(sprite.columns.w, sprite.rows.x, upper);
+  let left = frame_uv(sprite.columns.x, row, sprite.uv);
+  let right = frame_uv(sprite.columns.y, row, sprite.uv);
+  // The gradients come from the quad's own uv, smooth across it, not from the frames' places, which jump where the
+  // dither changes rows: a jump would read the smallest mip there.
+  let dx = dpdx(sprite.uv) * form.sprites.w;
+  let dy = dpdy(sprite.uv) * form.sprites.w;
+  let albedo = mix(textureSampleGrad(albedo_map, pictures, left, layer, dx, dy),
+    textureSampleGrad(albedo_map, pictures, right, layer, dx, dy), sprite.columns.z);
+  let facing = mix(textureSampleGrad(normal_map, pictures, left, layer, dx, dy),
+    textureSampleGrad(normal_map, pictures, right, layer, dx, dy), sprite.columns.z);
+  let edge = edge_share(albedo.a);
   let far_mask = ~coverage(sprite.cover.x, pixel, 0u) & 15u;
   let mask = far_mask & coverage(sprite.cover.y, pixel, 2u) & coverage(edge, pixel, 1u);
   if (mask == 0u) {
@@ -468,7 +480,7 @@ fn plant_cast(vertex: Vertex, @builtin(instance_index) which: u32) -> Caster {
 @fragment
 fn plant_cast_fragment(caster: Caster) {
   let picture = picture_of(caster.uv, caster.wraps);
-  if (textureSampleGrad(albedo_map, pictures, picture.uv, i32(form.atlas.x), picture.dx, picture.dy).a < 0.5) {
+  if (textureSampleGrad(albedo_map, cut_pictures, picture.uv, i32(form.atlas.x), picture.dx, picture.dy).a < 0.5) {
     discard;
   }
 }

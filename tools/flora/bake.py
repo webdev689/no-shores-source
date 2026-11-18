@@ -61,7 +61,8 @@ def nearby(scene, plant, model, form, budget, tiles, pictures, kind, first, rng)
                                                                         np.random.default_rng(index))
                 tiles.append(f'{kind} spray {index}')
         sprays = [tile for tile in tiles if ' spray ' in tile]
-        near_mesh.cards(mesh, model, groups, sprays, near_mesh.crown_normal(model), rng)
+        shapes = {tile: near_mesh.card_shape(pictures[tile][0]) for tile in sprays}
+        near_mesh.cards(mesh, model, groups, sprays, near_mesh.crown_normal(model), rng, shapes)
     if model.fronds:
         if first:
             pictures[f'{kind} frond'], length = sprites.frond_tile(scene, plant, model, np.random.default_rng(5))
@@ -132,7 +133,8 @@ def bake_biome(biome, out, samples):
                 name = f'{kind} {index} impostor'
                 pictures[name] = sprites.impostor(scene, plant, centre, radius)
                 sheets.append(name)
-                entry.update(impostor=name, centre=centre, radius=radius, canopy=sprites.canopy_of(pictures[name]))
+                entry.update(impostor=name, centre=centre, radius=radius, canopy=sprites.canopy_of(pictures[name]),
+                             box=sprites.box_of(pictures[name]))
             forms.append(entry)
             print(f'{biome} {kind} {index}: {mesh.triangles} triangles, {time.time() - started:.0f} s', flush=True)
         groups.append(tiles)
@@ -162,7 +164,7 @@ def bake_biome(biome, out, samples):
             made['impostor'] = dict(layer=sheet_layer, top=top / atlas.LAYER,
                                     centre=[round(float(centre[0]), 3), round(-float(centre[1]), 3),
                                             round(float(centre[2]), 3)],
-                                    radius=round(entry['radius'], 3))
+                                    radius=round(entry['radius'], 3), box=entry['box'])
             made['canopy'] = entry['canopy']
         kinds.setdefault(kind, []).append(made)
     return dict(layers=layers, kinds=kinds)

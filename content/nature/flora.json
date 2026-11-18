@@ -586,34 +586,34 @@
   "woodland": {
    "layers": [
     {
-     "albedo": "flora/b43f296b7145e4bb828da64d744c2c13d9bee2db570e194c0eb7647223339a52.png",
+     "albedo": "flora/d2325a107ad34cfcfc5021bcd9ddaf053f95590fa720444a763c0f2d4739fe34.png",
      "normal": "flora/d57690f69c3745a7ac92df5957a7c72fb83460633d57085729a383041c8fe064.png"
     },
     {
-     "albedo": "flora/494bfed56b8e3366696da97e717dec75bb31a7c5ef0e6619db6e94f30b9353ff.png",
+     "albedo": "flora/da6d67cd8be35abbc223ce66b818162f8a6430aaaa776739b31ac54ef5bad1db.png",
      "normal": "flora/68845d5d9ea1dea36b21af1a2726311077c9a2a4a3adf573bbe427ec7941467c.png"
     },
     {
-     "albedo": "flora/1977c8de405f198a31b795dd3ebb9bd70e888b8b432a3eaf905257494bff8212.png",
-     "normal": "flora/5b663eb95de6fc41aadc10f0630d3bbc427698cd0946ae6cfcc1d0e799de9453.png"
+     "albedo": "flora/7825ba91615fc3ad8e9d694368fce4573c4ad2ede07726d195a246e831ece3f7.png",
+     "normal": "flora/35097e864fafda064ad22687c5b3506f6123e70a79181cf289ecd8ff38eae8c2.png"
     },
     {
-     "albedo": "flora/031bcbc614fbf2db6c52c3a090c542510b6b71da73fba9a1d61ed8b65a2f2f4a.png",
+     "albedo": "flora/bcd163d08edc52e58016de17825c53a308af220b46a23d80323bc48e69a5b91c.png",
      "normal": "flora/46bde8f46f53bde930051539b436f734d37a625e3d54a73a959426143133692c.png"
     },
     {
-     "albedo": "flora/980408088745d7a70a74ece3d9753cf506339225a62414c472b95984b8ece24d.png",
-     "normal": "flora/631e153d7187a16fde9718eabac1a9e52859d1b99d2277f0599484c2067f6776.png"
+     "albedo": "flora/9bec4eb0bf6237a8df77e750116eec49a3b363f7ae768332f7cd286292e2e53a.png",
+     "normal": "flora/dee6c615b963e936bba375cd85437d91145e288a2cb09d19732220a81fe51818.png"
     },
     {
-     "albedo": "flora/cfc798708e67a8a91fd8ac76bbf16ae96c34a92dce7483c3854d2ecc8894dd17.png",
-     "normal": "flora/f3577223aea93676c2128aba8231ddf254750ade2eac5859e6cf147f6c97f257.png"
+     "albedo": "flora/835361593d0ec2788177899be797c1435e173741fac244c9d7628de28de08096.png",
+     "normal": "flora/7b33062a9546e7aca54106601f8883ad025a6ca7c0d55d1b64f4bf7780890e70.png"
     }
    ],
    "kinds": {
     "oak": [
      {
-      "mesh": "flora/6a4e722fe1d9b79b13ec191c80a35214c4e5c13cc914c2ea6fbbf7787c77ca4f.mesh",
+      "mesh": "flora/117540f1e318ead7192f600932aea193b0b6cc4c6e03a373fc1f0a3ae7795a8f.mesh",
       "triangles": 600,
       "layer": 4,
       "bark": [
@@ -622,8 +622,8 @@
        0.25,
        0.25
       ],
-      "top": 12.241,
-      "spread": 5.709,
+      "top": 11.687,
+      "spread": 5.266,
       "shade": [
        4.819,
        8.263
@@ -638,16 +638,22 @@
         0.084,
         5.78
        ],
-       "radius": 6.517
+       "radius": 6.517,
+       "box": [
+        0.0703,
+        0.0,
+        0.9297,
+        0.9922
+       ]
       },
       "canopy": [
-       0.1435,
-       0.2643,
-       0.0866
+       0.148,
+       0.2727,
+       0.0893
       ]
      },
      {
-      "mesh": "flora/2e38a3ea7b625155028f6954e35dfaf48eada1e7d03b87c53c065c4751f64b20.mesh",
+      "mesh": "flora/e2c85bef05e99c95ce6f8f1b5df9de481082310e3c5e578762765c7f472c354e.mesh",
       "triangles": 600,
       "layer": 4,
       "bark": [
@@ -656,8 +662,8 @@
        0.25,
        0.25
       ],
-      "top": 12.106,
-      "spread": 4.96,
+      "top": 11.656,
+      "spread": 4.646,
       "shade": [
        4.73,
        8.413
@@ -672,18 +678,24 @@
         -0.043,
         5.72
        ],
-       "radius": 6.554
+       "radius": 6.554,
+       "box": [
+        0.0859,
+        0.0,
+        0.9141,
+        0.9844
+       ]
       },
       "canopy": [
-       0.1441,
-       0.2648,
-       0.0863
+       0.1487,
+       0.2732,
+       0.089
       ]
      }
     ],
     "beech": [
      {
-      "mesh": "flora/4f9ca457400999d36a22413f2f221d4fbf7b83c35af68edfaaebb37b198041f4.mesh",
+      "mesh": "flora/0a010b600664204f1cd9738b971199c359e2a49f55c9afff6e72106ea68e4e4b.mesh",
       "triangles": 600,
       "layer": 4,
       "bark": [
@@ -692,8 +704,8 @@
        0.25,
        0.25
       ],
-      "top": 17.072,
-      "spread": 4.929,
+      "top": 16.862,
+      "spread": 4.581,
       "shade": [
        4.63,
        12.401
@@ -708,16 +720,22 @@
         -0.075,
         8.644
        ],
-       "radius": 9.263
+       "radius": 9.263,
+       "box": [
+        0.1953,
+        0.0,
+        0.7969,
+        1.0
+       ]
       },
       "canopy": [
-       0.201,
-       0.3287,
-       0.1084
+       0.2059,
+       0.3367,
+       0.111
       ]
      },
      {
-      "mesh": "flora/49a2e678ed7bccc9ad3f5e43d3f24f2c46fad3cc05b5489e9f4e71c243b97041.mesh",
+      "mesh": "flora/85c14940e5aa94b4c9f963f19288b32e13929f55406c95fdc9aaa723071defd9.mesh",
       "triangles": 598,
       "layer": 4,
       "bark": [
@@ -726,8 +744,8 @@
        0.25,
        0.25
       ],
-      "top": 17.21,
-      "spread": 4.848,
+      "top": 16.852,
+      "spread": 4.584,
       "shade": [
        4.682,
        12.315
@@ -742,18 +760,24 @@
         -0.169,
         8.285
        ],
-       "radius": 8.9
+       "radius": 8.9,
+       "box": [
+        0.2031,
+        0.0,
+        0.7969,
+        1.0
+       ]
       },
       "canopy": [
-       0.2025,
-       0.331,
-       0.1086
+       0.2073,
+       0.339,
+       0.1112
       ]
      }
     ],
     "fir": [
      {
-      "mesh": "flora/a9f312544bbf61b2fc73d38d8e0a00c5db23426fe0e12d577a01be2c85166691.mesh",
+      "mesh": "flora/6daaa34a25cf07e9271d61c02ff1d84ff4cf6ec1cec84ea919b2d45da64e6466.mesh",
       "triangles": 600,
       "layer": 5,
       "bark": [
@@ -763,31 +787,37 @@
        0.25
       ],
       "top": 18.0,
-      "spread": 3.521,
+      "spread": 3.653,
       "shade": [
-       3.301,
-       6.617
+       3.658,
+       6.172
       ],
       "leafy": true,
-      "crown": 6.439,
+      "crown": 7.171,
       "impostor": {
        "layer": 2,
        "top": 0.0,
        "centre": [
-        0.125,
-        0.006,
-        8.8
+        -0.151,
+        -0.12,
+        8.857
        ],
-       "radius": 9.403
+       "radius": 9.782,
+       "box": [
+        0.2891,
+        0.0078,
+        0.7109,
+        1.0
+       ]
       },
       "canopy": [
-       0.0889,
-       0.1682,
-       0.1292
+       0.0792,
+       0.16,
+       0.1223
       ]
      },
      {
-      "mesh": "flora/2b522d34da879cc6fe4ab99b2fad52d06d2f394ab21c5cb2461793aead8f0b97.mesh",
+      "mesh": "flora/7b131681de6d3327af951893e1cced1daf407f0d9f9a6d154e8b148fcee7a7cb.mesh",
       "triangles": 600,
       "layer": 5,
       "bark": [
@@ -797,27 +827,33 @@
        0.25
       ],
       "top": 18.0,
-      "spread": 3.718,
+      "spread": 3.674,
       "shade": [
-       3.305,
-       6.655
+       3.697,
+       6.143
       ],
       "leafy": true,
-      "crown": 6.801,
+      "crown": 7.426,
       "impostor": {
        "layer": 2,
        "top": 0.5,
        "centre": [
-        -0.26,
-        0.179,
-        8.8
+        -0.177,
+        0.158,
+        8.86
        ],
-       "radius": 9.416
+       "radius": 9.679,
+       "box": [
+        0.2734,
+        0.0078,
+        0.7188,
+        1.0
+       ]
       },
       "canopy": [
-       0.0883,
-       0.1674,
-       0.1288
+       0.0793,
+       0.1597,
+       0.1223
       ]
      }
     ],
@@ -848,7 +884,13 @@
         0.074,
         0.614
        ],
-       "radius": 1.908
+       "radius": 1.908,
+       "box": [
+        0.0312,
+        0.0547,
+        0.9688,
+        1.0
+       ]
       },
       "canopy": null
      },
@@ -878,7 +920,13 @@
         -0.006,
         0.907
        ],
-       "radius": 2.946
+       "radius": 2.946,
+       "box": [
+        0.0078,
+        0.0391,
+        0.9922,
+        0.9922
+       ]
       },
       "canopy": null
      }
@@ -906,7 +954,7 @@
     ],
     "hazel": [
      {
-      "mesh": "flora/4421914e2eda2d4de34b0f04e39b1fb201771522be1015fadd8a3726358b3363.mesh",
+      "mesh": "flora/0930dbad636b9c8eb4fa92763a1a8fd07d257f63e7d2978fbe4d4eb522b14321.mesh",
       "triangles": 240,
       "layer": 5,
       "bark": [
@@ -915,8 +963,8 @@
        0.25,
        0.25
       ],
-      "top": 2.47,
-      "spread": 1.838,
+      "top": 2.272,
+      "spread": 1.626,
       "shade": [
        1.78,
        1.11
@@ -931,12 +979,18 @@
         -0.096,
         1.016
        ],
-       "radius": 1.948
+       "radius": 1.948,
+       "box": [
+        0.0,
+        0.0078,
+        1.0,
+        0.9844
+       ]
       },
       "canopy": [
-       0.164,
-       0.2967,
-       0.1032
+       0.1709,
+       0.3092,
+       0.1075
       ]
      }
     ]
@@ -1911,35 +1965,35 @@
   "rainforest": {
    "layers": [
     {
-     "albedo": "flora/f95400096e8877f734db0b8146c17987bf39390dae56180d30a2c92b46c208d7.png",
-     "normal": "flora/5d7892b93cd79e7994dbacb4dc6b54b40879c2c0ff33a59595c2d3361301dd3d.png"
+     "albedo": "flora/9c300f00cdb5922cb76c1ec3050ff5f9376ed77d5ab6dff15fc1aadb20915140.png",
+     "normal": "flora/5a0a33a4c10e9c94206d0eab80d2c4aff4e837526d1e224b26c9221f9091e5e8.png"
     },
     {
-     "albedo": "flora/02896d82a8c870bf9d28b2a0a6d176bf0a6ca8f73304ccec424c5234bc63ba46.png",
-     "normal": "flora/efb103b5a3dbd29299ba70624ba55effc43468fb2f9d2c6a8e038c611f5ecf9d.png"
+     "albedo": "flora/6de6f01f338a6a9ed9783359bd1a66f52af4b87017df9ae9f2ea2b4721a5d6f5.png",
+     "normal": "flora/754dff84dd8895ee2d2493d4cac2b6e5065f74938477d29d18d8c9bfbd5de6ec.png"
     },
     {
-     "albedo": "flora/df581b31a47069b44a5f5139a35108b486a3b05beca97aeaac07191483163330.png",
-     "normal": "flora/8428a55a330602c17a90b378a0d31302aaddd4ff29f8ee5215f617bd1cde9c79.png"
+     "albedo": "flora/94cc58f697f030aa5c89ff6b3930af84e03828ce58766c81e57966130d8acf26.png",
+     "normal": "flora/26de9364b719c4680ad3921f88d285de20253c1729169fc63922905a2c3f38fd.png"
     },
     {
-     "albedo": "flora/acbd4fa80e4084f90760db2300b5274f2693b1486680121169503dccace0d655.png",
+     "albedo": "flora/a2e5a37a5fafe527394e2056ccd6d06df805627e3b122a852e0933cc094b1671.png",
      "normal": "flora/2d1d29eeb4fd311f0ec7152d1a0d4983843dbc7a15ae0bb923448025e4b6d74a.png"
     },
     {
-     "albedo": "flora/7d22b5628c847566dbe7204c753cc1d5f281bc26c72d77b0e7bce3b99ad4d1f3.png",
+     "albedo": "flora/5f193b26f45ba968b90b172484efa478fa9543b9b4987af9fcd24d25586e0425.png",
      "normal": "flora/df86ec44f9434ec311c00a1d80501e2129a5411704746653f705b994a44895c9.png"
     },
     {
-     "albedo": "flora/e78d9c1a93e1bbde63f0391a4882fa7f28bbce9bf20bcb119938b2d7a77ffe98.png",
-     "normal": "flora/4ac21b73ad72d5c5856286a79a622ad7745a3bfd4fc65deb18d6af581b665607.png"
+     "albedo": "flora/78963f75119caddd5527a860625389377409212eea6b90d0d9796d999ea42fce.png",
+     "normal": "flora/ad5af5900543d6ab9f3754fc8fbcbd7cf07c12697e6b28375fd2ead626f91f9b.png"
     }
    ],
    "kinds": {
     "giant": [
      {
-      "mesh": "flora/0617f45c0814324cb7494e6cec0045d7e636689b91157eac9033ead8b61939a2.mesh",
-      "triangles": 600,
+      "mesh": "flora/fc993163338232bfeec70ead289190cfdf1bb99eab6467ec0b8a4a8bcc866c13.mesh",
+      "triangles": 598,
       "layer": 5,
       "bark": [
        0.0,
@@ -1947,33 +2001,39 @@
        0.25,
        0.25
       ],
-      "top": 39.687,
-      "spread": 9.637,
+      "top": 39.975,
+      "spread": 9.347,
       "shade": [
-       8.499,
-       33.685
+       8.722,
+       28.952
       ],
       "leafy": true,
-      "crown": 18.231,
+      "crown": 19.175,
       "impostor": {
        "layer": 0,
        "top": 0.0,
        "centre": [
-        0.023,
-        0.01,
-        19.631
+        -0.089,
+        0.109,
+        20.273
        ],
-       "radius": 20.626
+       "radius": 21.211,
+       "box": [
+        0.2578,
+        0.0,
+        0.7422,
+        1.0
+       ]
       },
       "canopy": [
-       0.178,
-       0.3012,
-       0.109
+       0.1814,
+       0.3093,
+       0.1107
       ]
      },
      {
-      "mesh": "flora/9339a632da9bfeba480370621db12f0efd77b06ff164fcf8550912931c7616f8.mesh",
-      "triangles": 600,
+      "mesh": "flora/1ba3e669a1ab93e670276551b50961bf42042a6c82449d98ef8816eefd4459d1.mesh",
+      "triangles": 598,
       "layer": 5,
       "bark": [
        0.0,
@@ -1981,35 +2041,41 @@
        0.25,
        0.25
       ],
-      "top": 39.929,
-      "spread": 10.006,
+      "top": 39.742,
+      "spread": 9.965,
       "shade": [
-       8.403,
-       33.817
+       9.106,
+       28.612
       ],
       "leafy": true,
-      "crown": 17.161,
+      "crown": 18.342,
       "impostor": {
        "layer": 0,
        "top": 0.5,
        "centre": [
-        0.537,
-        0.066,
-        19.734
+        0.078,
+        0.075,
+        20.338
        ],
-       "radius": 20.769
+       "radius": 21.268,
+       "box": [
+        0.2578,
+        0.0,
+        0.7422,
+        1.0
+       ]
       },
       "canopy": [
-       0.1793,
-       0.3032,
-       0.1101
+       0.1809,
+       0.3093,
+       0.1103
       ]
      }
     ],
     "canopy tree": [
      {
-      "mesh": "flora/62e86ad8ce5570e3dee0e748607646521e3fb0ce35d5e3169be2ac577a7307b8.mesh",
-      "triangles": 598,
+      "mesh": "flora/9a4581d6043bce7b7eb1e36976c0ab05521cc152ccecf5254864b82ff96c6d71.mesh",
+      "triangles": 596,
       "layer": 5,
       "bark": [
        0.0,
@@ -2017,32 +2083,38 @@
        0.25,
        0.25
       ],
-      "top": 21.8,
-      "spread": 7.826,
+      "top": 22.203,
+      "spread": 7.174,
       "shade": [
-       6.889,
-       17.116
+       6.991,
+       14.544
       ],
       "leafy": true,
-      "crown": 14.371,
+      "crown": 14.436,
       "impostor": {
        "layer": 1,
        "top": 0.0,
        "centre": [
-        0.414,
-        -0.091,
-        10.834
+        0.406,
+        0.004,
+        11.219
        ],
-       "radius": 12.05
+       "radius": 12.093,
+       "box": [
+        0.1719,
+        0.0,
+        0.8281,
+        1.0
+       ]
       },
       "canopy": [
-       0.1392,
-       0.2809,
-       0.0912
+       0.1351,
+       0.2834,
+       0.0879
       ]
      },
      {
-      "mesh": "flora/f6ec2602283d1484e501df1b1fd9b4ad9ac78e4df7cea6dce9c24e4dfbe25b49.mesh",
+      "mesh": "flora/3182828ba2c4ab07cc38bc69806933c178e72c4281968d0693499736b69958e9.mesh",
       "triangles": 600,
       "layer": 5,
       "bark": [
@@ -2051,33 +2123,39 @@
        0.25,
        0.25
       ],
-      "top": 17.392,
-      "spread": 8.584,
+      "top": 17.423,
+      "spread": 8.831,
       "shade": [
-       7.211,
-       12.912
+       8.08,
+       10.911
       ],
       "leafy": true,
-      "crown": 15.053,
+      "crown": 16.029,
       "impostor": {
        "layer": 1,
        "top": 0.5,
        "centre": [
-        -0.486,
-        0.447,
-        8.521
+        -0.403,
+        0.045,
+        8.671
        ],
-       "radius": 9.889
+       "radius": 10.109,
+       "box": [
+        0.0547,
+        0.0078,
+        0.9453,
+        0.9688
+       ]
       },
       "canopy": [
-       0.0985,
-       0.2426,
-       0.0805
+       0.0976,
+       0.2478,
+       0.0803
       ]
      },
      {
-      "mesh": "flora/7a7e9024d0b66ec8dee4f429aa04464353c18657d3379eb971b6a8684564c253.mesh",
-      "triangles": 598,
+      "mesh": "flora/e7a927aad9d548373688fb0a758724f1c14d52c7e7264996fe888778d4a2ea80.mesh",
+      "triangles": 600,
       "layer": 5,
       "bark": [
        0.0,
@@ -2085,28 +2163,34 @@
        0.25,
        0.25
       ],
-      "top": 14.217,
-      "spread": 7.134,
+      "top": 14.085,
+      "spread": 6.633,
       "shade": [
-       6.373,
-       10.3
+       6.229,
+       8.58
       ],
       "leafy": true,
-      "crown": 12.958,
+      "crown": 13.673,
       "impostor": {
        "layer": 2,
        "top": 0.0,
        "centre": [
-        -0.277,
-        0.543,
-        7.025
+        0.047,
+        0.131,
+        7.167
        ],
-       "radius": 8.406
+       "radius": 8.379,
+       "box": [
+        0.0781,
+        0.0,
+        0.9297,
+        0.9688
+       ]
       },
       "canopy": [
-       0.2076,
-       0.3234,
-       0.1019
+       0.2129,
+       0.3335,
+       0.1039
       ]
      }
     ],
@@ -2137,12 +2221,18 @@
         -0.073,
         7.851
        ],
-       "radius": 9.064
+       "radius": 9.064,
+       "box": [
+        0.1875,
+        0.0,
+        0.8125,
+        0.9844
+       ]
       },
       "canopy": [
-       0.2254,
-       0.431,
-       0.1337
+       0.2268,
+       0.4337,
+       0.1345
       ]
      },
      {
@@ -2171,12 +2261,18 @@
         -0.653,
         7.654
        ],
-       "radius": 8.733
+       "radius": 8.733,
+       "box": [
+        0.1797,
+        0.0,
+        0.8203,
+        1.0
+       ]
       },
       "canopy": [
-       0.2269,
-       0.4323,
-       0.1324
+       0.2283,
+       0.435,
+       0.1332
       ]
      }
     ],
@@ -2207,12 +2303,18 @@
         -0.155,
         1.804
        ],
-       "radius": 4.214
+       "radius": 4.214,
+       "box": [
+        0.0312,
+        0.0234,
+        0.9688,
+        0.9297
+       ]
       },
       "canopy": [
-       0.1834,
-       0.4142,
-       0.1187
+       0.1844,
+       0.4167,
+       0.1194
       ]
      },
      {
@@ -2241,18 +2343,24 @@
         0.147,
         1.822
        ],
-       "radius": 4.304
+       "radius": 4.304,
+       "box": [
+        0.0156,
+        0.0078,
+        0.9844,
+        0.9453
+       ]
       },
       "canopy": [
-       0.1845,
-       0.4145,
-       0.1174
+       0.1859,
+       0.4177,
+       0.1183
       ]
      }
     ],
     "understory": [
      {
-      "mesh": "flora/c062b06dc50066cc41bdd2bd26d1bc03da19cb99f954bfbcd864f8358f5f7081.mesh",
+      "mesh": "flora/f3f33618baec740938b446fe7270edda8b32e182206e377b79ecdbab641a98f7.mesh",
       "triangles": 238,
       "layer": 5,
       "bark": [
@@ -2261,8 +2369,8 @@
        0.25,
        0.25
       ],
-      "top": 2.082,
-      "spread": 1.57,
+      "top": 1.861,
+      "spread": 1.422,
       "shade": [
        1.528,
        0.852
@@ -2277,12 +2385,18 @@
         -0.102,
         0.767
        ],
-       "radius": 1.805
+       "radius": 1.805,
+       "box": [
+        0.0078,
+        0.0078,
+        0.9922,
+        0.9844
+       ]
       },
       "canopy": [
-       0.1196,
-       0.2965,
-       0.0885
+       0.1234,
+       0.3059,
+       0.0913
       ]
      }
     ]
@@ -2291,23 +2405,23 @@
   "swamp": {
    "layers": [
     {
-     "albedo": "flora/a2a5658996df1f97ca06bd22c94eb8ff7f8a6f72e305090d247eb0bab4475817.png",
-     "normal": "flora/25f0d15f79b5c0360e4938b6f4d72c57428b57d61ffc7cc7d87803663bf82c8c.png"
+     "albedo": "flora/d6082646440e83c9abcc1d625d90236a8882275c7ef271f8e6f608271f30ba93.png",
+     "normal": "flora/931b31fabe0f74ac5fbbcd95c9c39ef1154770f9c793994c429d45d8f628bc89.png"
     },
     {
-     "albedo": "flora/33e24f05ffde4fce956e4a656f9d93d62d7aed95b68c7aa77ae17d012a6f6971.png",
+     "albedo": "flora/dc81ef81c67e64b7870214bdf24f58e8326874299061352f9e961de451998525.png",
      "normal": "flora/8769623f57f8a4749566fd855db8d7d5a8458a9d33a3f22d7cc38e63234e978d.png"
     },
     {
-     "albedo": "flora/2ef1a75c372f02db4d707f0b4b100eca406e342ab7e2372a798a026787b7b31b.png",
-     "normal": "flora/e05432a15f008299cf094e11a3f60916d3c2a3c4a38dd7944172a5fa1b6fd4c8.png"
+     "albedo": "flora/e05d836b594314bc9006c7cc0a1dc6c003a1cafa2ab0a29185c65f06c742513d.png",
+     "normal": "flora/68b7c3f97475a46dbfdcf906c5dbcfedcfdb212f10cde32c92a27fd837c90a25.png"
     }
    ],
    "kinds": {
     "cypress": [
      {
-      "mesh": "flora/62657d6256fdc7e31f57f118cc42447a951938b90bc08de4d70ae5b3e01def21.mesh",
-      "triangles": 898,
+      "mesh": "flora/ccd970fecdbff1f72c5dd09b5c33b4abc51eb0923fe883236cf490adb8e93497.mesh",
+      "triangles": 838,
       "layer": 2,
       "bark": [
        0.0,
@@ -2315,33 +2429,39 @@
        0.25,
        0.25
       ],
-      "top": 15.802,
-      "spread": 7.368,
+      "top": 16.04,
+      "spread": 6.681,
       "shade": [
-       6.236,
-       11.475
+       6.191,
+       8.732
       ],
       "leafy": true,
-      "crown": 13.081,
+      "crown": 13.299,
       "impostor": {
        "layer": 0,
        "top": 0.0,
        "centre": [
-        -0.241,
-        -0.537,
-        7.923
+        -0.158,
+        0.041,
+        7.981
        ],
-       "radius": 9.027
+       "radius": 8.88,
+       "box": [
+        0.1094,
+        0.0,
+        0.8906,
+        0.9922
+       ]
       },
       "canopy": [
-       0.1864,
-       0.2426,
-       0.1166
+       0.1888,
+       0.2475,
+       0.1182
       ]
      },
      {
-      "mesh": "flora/df77fe07a06255d5b7698fd7f2c35ac8092444772975e9cee840ada8588f46a5.mesh",
-      "triangles": 898,
+      "mesh": "flora/75adf5a549f480042c0952d4e7ed45c661a5ac0543b3d764c7f624a26ad1457b.mesh",
+      "triangles": 840,
       "layer": 2,
       "bark": [
        0.0,
@@ -2349,34 +2469,40 @@
        0.25,
        0.25
       ],
-      "top": 15.985,
-      "spread": 7.08,
+      "top": 16.432,
+      "spread": 7.035,
       "shade": [
-       6.115,
-       11.283
+       6.426,
+       8.766
       ],
       "leafy": true,
-      "crown": 12.241,
+      "crown": 13.326,
       "impostor": {
        "layer": 0,
        "top": 0.5,
        "centre": [
-        0.56,
-        -0.046,
-        7.821
+        0.143,
+        -0.135,
+        8.053
        ],
-       "radius": 9.543
+       "radius": 8.928,
+       "box": [
+        0.1016,
+        0.0,
+        0.8984,
+        0.9922
+       ]
       },
       "canopy": [
-       0.1855,
-       0.2415,
-       0.116
+       0.1883,
+       0.2467,
+       0.1181
       ]
      }
     ],
     "mangrove": [
      {
-      "mesh": "flora/2bc7553dfb6f70a566c615cb4a20afffeb35b20727ba9d25f6ddfdbede456567.mesh",
+      "mesh": "flora/c48aa113527ed23fc7ae80f4f71e8bb39121a79f4e70a94abe81278daaf8451f.mesh",
       "triangles": 600,
       "layer": 2,
       "bark": [
@@ -2385,8 +2511,8 @@
        0.25,
        0.25
       ],
-      "top": 6.646,
-      "spread": 3.471,
+      "top": 6.402,
+      "spread": 3.28,
       "shade": [
        3.35,
        4.538
@@ -2401,16 +2527,22 @@
         0.016,
         3.091
        ],
-       "radius": 4.34
+       "radius": 4.34,
+       "box": [
+        0.0469,
+        0.0078,
+        0.9531,
+        0.9922
+       ]
       },
       "canopy": [
-       0.1161,
-       0.2353,
-       0.0936
+       0.1204,
+       0.2441,
+       0.0971
       ]
      },
      {
-      "mesh": "flora/4c5649bc02ea55b3be5dc9ac26b358d7224d4760867c3b6c09619ada527b17b5.mesh",
+      "mesh": "flora/dcac6be35db88f2d273ed61d3381c4afb6de5dfbb5ec5ffcb73216bba6c7998f.mesh",
       "triangles": 598,
       "layer": 2,
       "bark": [
@@ -2419,8 +2551,8 @@
        0.25,
        0.25
       ],
-      "top": 6.526,
-      "spread": 3.873,
+      "top": 6.245,
+      "spread": 3.658,
       "shade": [
        3.58,
        4.537
@@ -2435,12 +2567,18 @@
         -0.086,
         3.016
        ],
-       "radius": 4.328
+       "radius": 4.328,
+       "box": [
+        0.0156,
+        0.0,
+        0.9844,
+        0.9844
+       ]
       },
       "canopy": [
-       0.1166,
-       0.2364,
-       0.0943
+       0.1208,
+       0.2449,
+       0.0976
       ]
      }
     ],
