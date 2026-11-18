@@ -208,7 +208,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   from; and the mended glyphs sit on the grid at weight 500.
 - **The owner's answers to the third audit are on #60 too**
   ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]], [[The Roster Follows Destiny 1, With Blocking]],
-  [[Cosmetics Follow Destiny, Emblems First]]): the face's
+  [[Cosmetics Follow Destiny, Shown in Many Places]]): the face's
   5, Z and symbols drawn in code and made into a font in the page; the gauge counting nodes bought; the room serving
   each ask only at its counter; the Social tab as Destiny 1's Roster with blocking, fireteams,
   guilds, reports and details; and 25 emblems, kept and worn, sold by the Tailor, shown on the Roster, the header, the

@@ -21,9 +21,14 @@ While it was being built, calling a group of players by Destiny's word, "firetea
 
 > "Dont call it firewall"
 
-Claude read it as "do not call it a fireteam" and named it a party. Shown that, the owner wrote:
+Claude read it as "do not call it a fireteam" and named it a party. The owner's next message began with the word:
 
-> "Fireteams"
+> "Fireteams Notes: the buttons at the top are too small and should fill the top. The own players emblem/banner
+> should also be below the buttons and spread across the entire UI. The banner should slot in properly and not get
+> cut ofd"
+
+Claude takes its first word as the group's name ([[The Roster and Emblems as Claude Shapes Them]]); the rest is
+[[The Menu's Tabs Fill Its Top, Its Banner Under Them]].
 
 ## What it settles
 
@@ -31,7 +36,6 @@ Claude read it as "do not call it a fireteam" and named it a party. Shown that, 
 - **The friends list is Destiny 1's Roster**, to match the picture's detail: the players nearby split from the rest,
   then friends, the guild's list and the party.
 - **Every function the Roster has comes over.** No exceptions.
-- **A group of players is a fireteam**, as Destiny calls it.
 
 Links: [[The Roster and Emblems as Claude Shapes Them]], [[Accounts]], [[Interface]], [[The Menu Follows Destiny, the Vault and Vendors in the Social Space]],
-[[Cosmetics Follow Destiny, Emblems First]], [[The Face Is Mended Whole, and the Gauge Counts Upgrades]].
+[[Cosmetics Follow Destiny, Shown in Many Places]], [[The Face Is Mended Whole, and the Gauge Counts Upgrades]].

@@ -63,6 +63,8 @@ test('an item is named as the catalogue names it', () => {
   assert.equal(traitOf('ebb').name, 'Ebb');
   assert.equal(answerText(0), '');
   assert.equal(answerText(15), 'You do not have enough for it.');
+  for (let code = 1; code <= 21; code++)
+    assert.ok(!answerText(code).startsWith('Refused'), `the gear crate's refusal ${code} has words`);
 });
 
 test('the hands hold what the gear wears, in its rarity’s metal where the forge draws it', () => {

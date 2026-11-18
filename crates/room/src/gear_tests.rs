@@ -204,6 +204,24 @@ fn a_social_space_serves_each_ask_at_its_own_counter() {
     assert_eq!(ask(&mut room, player, 3, store), 0, "at the vault");
     let vend = Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 0 });
     assert_eq!(ask(&mut room, player, 4, vend), answer_code(Err(Refusal::NotHere)), "no Armsmith here");
+    let emblem = Asked::Gear(Ask::BuyEmblem { emblem: 0 });
+    assert_eq!(ask(&mut room, player, 5, emblem), answer_code(Err(Refusal::NotHere)), "no Tailor here");
+    assert_eq!(crate::asks::counter_for(&Ask::BuyEmblem { emblem: 0 }), Some(CounterKind::Tailor));
+}
+
+#[test]
+fn walking_to_or_from_the_reader_sends_the_gear_again() {
+    use crate::asks::{Counter, CounterKind};
+    let mut room = room();
+    room.counters = Some(vec![Counter { kind: CounterKind::Reader, at: [10.0, 0.0] }]);
+    let player = room.join().expect("a room with space");
+    assert!(sent(&mut room, player), "on joining");
+    assert!(!sent(&mut room, player), "nothing changed");
+    move_to(&mut room, player, 9.0, 0.0);
+    assert!(sent(&mut room, player), "at the Reader, whose Open the page now shows");
+    assert!(!sent(&mut room, player));
+    move_to(&mut room, player, -9.0, 0.0);
+    assert!(sent(&mut room, player), "away again");
 }
 
 #[test]

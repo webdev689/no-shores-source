@@ -14,8 +14,8 @@ libraries, which the owner brought over exactly ([[DFO's Sprite Forge Comes Over
 the forged models, procedural textures and RMB town blocks of DFO's branch `ccr-cab30c1a-oddrwb`, with the
 Daggerfall measures, texture archives and palette they are built on
 ([[Every Island Is Seen Whole and Reached by Nodes]]); DFO's blood with DaggerBlood's numbers and Daggerfall's
-blood red ([[Struck Figures Flash, and DFO's Blood Comes Over]]); and the face Pixelify Sans with Silkscreen's 5, both
-under the SIL Open Font Licence ([[Pixelify Sans Is Overlook's Font]]).
+blood red ([[Struck Figures Flash, and DFO's Blood Comes Over]]); and the face Pixelify Sans, under the SIL Open Font
+Licence ([[Pixelify Sans Is Overlook's Font]]).
 
 **Why.** DFO Online ported other authors' mods and later spent months replacing them with its own work, and one ship
 system came from a decompiled mod with no licence. Overlook starts where DFO ended up ([[Overlook Is Our Own Game]]).

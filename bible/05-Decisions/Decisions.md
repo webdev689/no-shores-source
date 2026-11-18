@@ -82,6 +82,11 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Text Is Plain]]
 - [[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]
 - [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]
+- [[The Face Is Mended Whole, and the Gauge Counts Upgrades]]
+- [[The Roster Follows Destiny 1, With Blocking]]
+- [[Cosmetics Follow Destiny, Shown in Many Places]]
+- [[The Roster and Emblems as Claude Shapes Them]]
+- [[The Menu's Tabs Fill Its Top, Its Banner Under Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

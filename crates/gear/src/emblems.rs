@@ -4,7 +4,7 @@
 //! Destiny's Outfitter did. Their art is the page's; here are what they are and how they are had.
 
 use crate::asks::{Done, Here, Refusal};
-use crate::character::{AUREM_MOST, Character};
+use crate::character::Character;
 use crate::dice::{Dice, Purpose};
 use crate::rarity::Rarity;
 use serde::Deserialize;
@@ -138,7 +138,7 @@ impl Character {
         for id in due {
             self.keep_emblem(&id);
         }
-        if self.items.values().any(|(item, _)| item.fully_upgraded()) {
+        if self.items.values().any(|(item, _)| item.rarity >= Rarity::Legendary && item.fully_upgraded()) {
             self.earn(Deed::FullyUpgraded);
         }
         if !self.keeps_emblem(&self.emblem) {
@@ -172,7 +172,7 @@ impl Character {
         if self.level() < level {
             return Err(Refusal::TooLow);
         }
-        if self.materials.aurem < aurem.min(AUREM_MOST) {
+        if self.materials.aurem < aurem {
             return Err(Refusal::Short);
         }
         self.materials.aurem -= aurem;

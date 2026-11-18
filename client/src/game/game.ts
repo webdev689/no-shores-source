@@ -265,11 +265,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   /** Joins a fireteam member where they play: a node of this landmass at their seas, the ship left where she lies. */
   const joinAt = (place: string): string | null => {
+    // Only on foot or on deck with nothing else under way: never under the map, on the way to the helm, walking the
+    // deck, landing, or while another landmass opens.
+    const free = (flow.mode === 'foot' || flow.mode === 'sea') && !flow.menu;
+    if (!free || heldMap?.shown || mapWanted || sea?.aboard.active || charting)
+      return 'You are in their fireteam. Choose Go to them once nothing else is under way.';
     const where = nodeOfRoom(place);
     const node = where && landmass.nodes.find((each) => each.id === where.id);
     if (!where || !node)
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     const facing = arrivalFacing(node, landmass.plan, null);
+    discovered.nodes([node.id]);
     travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
     return null;
   };

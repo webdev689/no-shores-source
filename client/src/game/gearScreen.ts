@@ -33,6 +33,13 @@ export interface Opening {
 }
 /** The page event that opens the menu at a view, as a station's counter does. */
 export const OPEN_AT = 'overlook:gear';
+/** The event Escape sends the page shown before the menu steps back: a page with a step of its own (a panel, a
+ *  player's details) takes it, cancelling the event, and the menu stays. */
+export const STEP_BACK = 'overlook:step-back';
+/** The event the account's page sends once the player signs in or takes a username, so the banner names them. */
+export const ACCOUNT_CHANGED = 'overlook:account';
+/** The event the Roster sends with each answer it hears, so the fireteam on the HUD need not ask as well. */
+export const ROSTER_HEARD = 'overlook:roster';
 
 /** Whether the gear screen is open: while it is, the game's own keys and pointer rest. */
 let screenOpen = false;

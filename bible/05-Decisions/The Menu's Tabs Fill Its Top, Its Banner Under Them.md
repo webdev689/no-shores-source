@@ -7,8 +7,12 @@ status: in force
 
 Seeing the menu with its tabs in the middle of its header and the player's nameplate at the left, the owner wrote:
 
-> "the buttons at the top are too small and should fill the top. The own players emblem/banner should also be below
-> the buttons and spread across the entire UI. The banner should slot in properly and not get cut ofd"
+> "Fireteams Notes: the buttons at the top are too small and should fill the top. The own players emblem/banner
+> should also be below the buttons and spread across the entire UI. The banner should slot in properly and not get
+> cut ofd"
+
+Its first word names the group of players ([[The Roster Follows Destiny 1, With Blocking]]); the notes after it are
+this decision.
 
 ## What it settles
 
@@ -16,4 +20,4 @@ Seeing the menu with its tabs in the middle of its header and the player's namep
 - **The player's emblem banner stands below them, across the whole menu**, slotted in whole, never cut off.
 
 Links: [[Interface]], [[The Menu Follows Destiny, the Vault and Vendors in the Social Space]],
-[[Cosmetics Follow Destiny, Emblems First]].
+[[Cosmetics Follow Destiny, Shown in Many Places]].

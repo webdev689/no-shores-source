@@ -3,6 +3,7 @@ import type { AccountLink, Person, Roster } from '../network/accounts.ts';
 import { ROLES } from '../plus/kit.ts';
 import { emblemImage, emblemOf, plateEnd } from './emblemArt.ts';
 import { heldPress, pressOf } from './gearDom.ts';
+import { ROSTER_HEARD, STEP_BACK } from './gearScreen.ts';
 import { detailsPage } from './playerDetails.ts';
 import {
   type Action,
@@ -48,7 +49,7 @@ function rowPress(row: Row, chosen: boolean, choose: () => void): HTMLButtonElem
   if (row.person.tag) name.append(make('span', ` [${row.person.tag}]`, 'roster-tag'));
   words.append(name, make('span', row.words, 'roster-status'));
   node.append(sign, words);
-  node.setAttribute('aria-label', `${nameWithTag(row.person)}, ${row.words}`);
+  node.setAttribute('aria-label', `${nameWithTag(row.person)}${row.leads ? ', fireteam leader' : ''}, ${row.words}`);
   node.addEventListener('click', choose);
   return node;
 }
@@ -68,29 +69,55 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
   const columns = make('div', '', 'roster-columns');
   const panel = make('div', '', `roster-panel ${ROLES.panel}`);
   panel.hidden = true;
+  panel.setAttribute('role', 'group');
   const said = make('p', '', 'gear-answer roster-said');
   said.setAttribute('role', 'status');
   const online = make('p', '', 'roster-online');
   let roster: Roster | null = null;
+  /** What opened the panel, by its key: a row, or a column's head press. */
   let chosen: string | null = null;
+  /** The row a player's details were opened from, given the focus again once they close. */
+  let detailedFrom: string | null = null;
   let details: HTMLElement | null = null;
   const pages: Record<Column, number> = { game: 0, friends: 0, guild: 0 };
   let busy = false;
+  /** How many times the Roster was asked for: only the latest answer is shown. */
+  let asked = 0;
 
+  const keyed = (key: string | null) =>
+    key ? columns.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : null;
+  const unmark = () => {
+    for (const each of columns.querySelectorAll('.roster-chosen')) each.classList.remove('roster-chosen');
+  };
   const closePanel = () => {
+    const focusBack = panel.contains(document.activeElement) ? chosen : null;
     panel.hidden = true;
     panel.replaceChildren();
     chosen = null;
+    unmark();
+    keyed(focusBack)?.focus();
   };
-  /** Opens the panel beside `under`, with a heading and its presses. */
-  const openPanel = (under: HTMLElement, heading: string, parts: readonly HTMLElement[]) => {
+  /** Opens the panel beside `under`, with a heading and its presses; `from` is what opened it, marked if a row. */
+  const openPanel = (under: HTMLElement, heading: string, parts: readonly HTMLElement[], from: string, row = false) => {
+    chosen = from;
+    unmark();
+    if (row) under.classList.add('roster-chosen');
     panel.replaceChildren(make('p', heading, 'roster-panel-head'), ...parts);
+    panel.setAttribute('aria-label', heading.replace('\n', ', '));
     panel.hidden = false;
     const [box, holder] = [under.getBoundingClientRect(), page.getBoundingClientRect()];
     panel.style.left = `${Math.round(Math.min(box.left - holder.left + box.width * 0.4, holder.width - 300))}px`;
     panel.style.top = `${Math.round(box.bottom - holder.top + 2)}px`;
     panel.querySelector<HTMLElement>('button, input')?.focus();
   };
+
+  /** Goes to a fireteam member where they play now, as the Roster has them, unless that is here. */
+  const goTo = (person: Person) =>
+    void link.roster().then((fresh) => {
+      const known = typeof fresh === 'string' ? roster : fresh;
+      const place = known?.fireteam?.members.find((each) => each.name === person.name)?.place ?? person.place;
+      if (place && place !== known?.me?.place) said.textContent = travel(place) ?? '';
+    });
 
   /** Asks the Roster something; then, if it was a join, goes to where the player is. */
   const doing = (action: Action, person: Person | null) => {
@@ -100,8 +127,9 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       .social(action.path, action.body ?? {})
       .then((why) => {
         said.textContent = why ?? '';
-        if (why === null && action.opens === 'join' && person?.place) said.textContent = travel(person.place) ?? '';
-        if (why === null) closePanel();
+        if (why !== null) return;
+        closePanel();
+        if (action.opens === 'join' && person) goTo(person);
       })
       .finally(() => {
         busy = false;
@@ -111,33 +139,42 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       });
   };
 
-  const pressFor = (action: Action, person: Person | null): HTMLButtonElement => {
-    if (action.opens === 'details' && person) return pressOf(action.label, () => showDetails(person.name));
-    if (action.opens === 'report' && person)
+  const pressFor = (action: Action, person: Person): HTMLButtonElement => {
+    if (action.opens === 'details') return pressOf(action.label, () => showDetails(person.name));
+    if (action.opens === 'travel')
+      return pressOf(action.label, () => {
+        closePanel();
+        goTo(person);
+      });
+    if (action.opens === 'report') {
+      const from = chosen;
       return pressOf(action.label, () =>
         openPanel(
-          panel.hidden ? page : panel,
+          keyed(from) ?? page,
           `Report ${person.name} for`,
           REASONS.map(([reason, words]) =>
             pressOf(words, () => doing({ label: words, path: 'report', body: { name: person.name, reason } }, person)),
           ),
+          from ?? 'report',
+          from !== null,
         ),
       );
+    }
     return action.held
       ? heldPress(action.label, () => doing(action, person), action.warn ? 'warn' : 'button')
       : pressOf(action.label, () => doing(action, person));
   };
 
   const choose = (row: Row, node: HTMLElement) => {
-    if (chosen === row.key) return closePanel();
-    chosen = row.key;
-    for (const each of columns.querySelectorAll('.roster-chosen')) each.classList.remove('roster-chosen');
-    node.classList.add('roster-chosen');
+    if (chosen === row.key && !panel.hidden) return closePanel();
     const where = row.person.place === null ? 'Away' : `Playing · ${placeWords(row.person.place)}`;
+    chosen = row.key;
     openPanel(
       node,
       `${nameWithTag(row.person)}\n${where}`,
       row.actions.map((action) => pressFor(action, row.person)),
+      row.key,
+      true,
     );
   };
 
@@ -155,31 +192,46 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     return field;
   };
 
+  /** A column's head press, found again by its key when the columns are built anew. */
+  const headPress = (column: Column, words: string, run: (top: HTMLButtonElement) => void): HTMLButtonElement => {
+    const top = pressOf(words, () => run(top));
+    top.dataset['key'] = `top-${column}`;
+    return top;
+  };
+
   /** What heads each column: the fireteam's privacy; adding a friend; the guild, or founding one. */
   const topOf = (column: Column, current: Roster): HTMLElement => {
     if (column === 'game') {
-      const top = pressOf(`Fireteam: ${current.privacy}`, () =>
+      const leading = !current.fireteam || current.fireteam.leader === current.me?.name;
+      return headPress('game', `Fireteam: ${current.privacy}`, (top) =>
         openPanel(
           top,
           'Who may join your fireteam',
-          PRIVACIES.map((privacy, index) =>
-            pressOf(privacy, () => doing({ label: privacy, path: 'fireteam/privacy', body: { privacy: index } }, null)),
-          ),
+          leading
+            ? PRIVACIES.map((privacy, index) => {
+                const press = pressOf(privacy, () =>
+                  doing({ label: privacy, path: 'fireteam/privacy', body: { privacy: index } }, null),
+                );
+                press.setAttribute('aria-pressed', String(privacy === current.privacy));
+                return press;
+              })
+            : [make('p', 'Your fireteam’s leader chooses this.', 'gear-hint')],
+          'top-game',
         ),
       );
-      return top;
     }
-    if (column === 'friends') {
-      const top = pressOf('Add a friend', () =>
-        openPanel(top, 'Add a friend by their username', [
-          fieldFor('Username', 'Ask', (name) => doing({ label: 'Ask', path: 'friend/ask', body: { name } }, null)),
-        ]),
+    if (column === 'friends')
+      return headPress('friends', 'Add a friend', (top) =>
+        openPanel(
+          top,
+          'Add a friend by their username',
+          [fieldFor('Username', 'Ask', (name) => doing({ label: 'Ask', path: 'friend/ask', body: { name } }, null))],
+          'top-friends',
+        ),
       );
-      return top;
-    }
     const guild = current.guild;
     if (!guild) {
-      const top = pressOf('Found a guild', () => {
+      const top = headPress('guild', 'Found a guild', (opener) => {
         const [name, tag] = [make('input', '', ROLES.well), make('input', '', ROLES.well)];
         Object.assign(name, { type: 'text', maxLength: 24, autocomplete: 'off' });
         Object.assign(tag, { type: 'text', maxLength: 4, autocomplete: 'off' });
@@ -190,47 +242,61 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
             { label: 'Found', path: 'guild/found', body: { name: name.value.trim(), tag: tag.value.trim() } },
             null,
           );
-        openPanel(top, 'Found a guild', [
-          make('span', 'Name', 'gear-label'),
-          name,
-          make('span', 'Tag, 2 to 4 letters', 'gear-label'),
-          tag,
-          pressOf('Found', found, 'primary'),
-          ...current.guildInvites.flatMap((invite) => [
-            make('p', `[${invite.tag}] ${invite.name} invites you, from ${invite.from}.`, 'gear-hint'),
-            pressOf(`Join [${invite.tag}]`, () =>
-              doing({ label: 'Join', path: 'guild/accept', body: { tag: invite.tag } }, null),
-            ),
-            pressOf('Decline', () =>
-              doing({ label: 'Decline', path: 'guild/decline', body: { tag: invite.tag } }, null),
-            ),
-          ]),
-        ]);
-      });
-      if (current.guildInvites.length > 0)
-        top.append(make('span', String(current.guildInvites.length), 'roster-count'));
-      return top;
-    }
-    const top = pressOf(`[${guild.tag}] ${guild.name}`, () =>
-      openPanel(top, guild.motto || 'No motto yet.', [
-        make('p', `You are its ${guild.rank.toLowerCase()}.`, 'gear-hint'),
-        ...(guild.rank === 'Member'
-          ? []
-          : [
-              fieldFor('Invite', 'Invite', (name) =>
-                doing({ label: 'Invite', path: 'guild/invite', body: { name } }, null),
+        openPanel(
+          opener,
+          'Found a guild',
+          [
+            make('span', 'Name', 'gear-label'),
+            name,
+            make('span', 'Tag, 2 to 4 letters or digits', 'gear-label'),
+            tag,
+            pressOf('Found', found, 'primary'),
+            ...current.guildInvites.flatMap((invite) => [
+              make('p', `[${invite.tag}] ${invite.name} invites you, from ${invite.from}.`, 'gear-hint'),
+              pressOf(`Join [${invite.tag}]`, () =>
+                doing({ label: 'Join', path: 'guild/accept', body: { tag: invite.tag } }, null),
               ),
-              fieldFor(
-                'Motto',
-                'Set',
-                (motto) => doing({ label: 'Set', path: 'guild/motto', body: { motto } }, null),
-                80,
+              pressOf('Decline', () =>
+                doing({ label: 'Decline', path: 'guild/decline', body: { tag: invite.tag } }, null),
               ),
             ]),
-        heldPress('Hold to leave the guild', () => doing({ label: 'Leave', path: 'guild/leave' }, null), 'warn'),
-      ]),
+          ],
+          'top-guild',
+        );
+      });
+      const invites = current.guildInvites.length;
+      if (invites > 0) {
+        const count = make('span', String(invites), 'roster-count');
+        count.setAttribute('aria-hidden', 'true');
+        top.append(count);
+        top.setAttribute('aria-label', `Found a guild, ${invites} ${invites === 1 ? 'guild invite' : 'guild invites'}`);
+      }
+      return top;
+    }
+    return headPress('guild', `[${guild.tag}] ${guild.name}`, (top) =>
+      openPanel(
+        top,
+        guild.motto || 'No motto yet.',
+        [
+          make('p', `You are its ${guild.rank.toLowerCase()}.`, 'gear-hint'),
+          ...(guild.rank === 'Member'
+            ? []
+            : [
+                fieldFor('Invite', 'Invite', (name) =>
+                  doing({ label: 'Invite', path: 'guild/invite', body: { name } }, null),
+                ),
+                fieldFor(
+                  'Motto',
+                  'Set',
+                  (motto) => doing({ label: 'Set', path: 'guild/motto', body: { motto } }, null),
+                  80,
+                ),
+              ]),
+          heldPress('Hold to leave the guild', () => doing({ label: 'Leave', path: 'guild/leave' }, null), 'warn'),
+        ],
+        'top-guild',
+      ),
     );
-    return top;
   };
 
   const columnOf = (column: Column, rows: readonly Row[], current: Roster): HTMLElement => {
@@ -244,16 +310,24 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       make('span', `Page ${pages[column] + 1} / ${count}`, 'roster-page'),
     );
     const turn = (step: number) => () => {
-      pages[column] = Math.max(0, Math.min(count - 1, pages[column] + step));
+      const to = Math.max(0, Math.min(count - 1, pages[column] + step));
+      if (to === pages[column]) return;
+      pages[column] = to;
       draw();
     };
-    const back = pressOf('◂', turn(-1));
-    const next = pressOf('▸', turn(1));
-    back.setAttribute('aria-label', `${TITLES[column]}: the page before`);
-    next.setAttribute('aria-label', `${TITLES[column]}: the next page`);
-    back.setAttribute('aria-disabled', String(pages[column] === 0));
-    next.setAttribute('aria-disabled', String(pages[column] >= count - 1));
-    head.append(titles, back, next);
+    const arrows = (
+      [
+        ['◂', -1, 'back', 'the page before', pages[column] === 0],
+        ['▸', 1, 'next', 'the next page', pages[column] >= count - 1],
+      ] as const
+    ).map(([glyph, step, key, words, none]) => {
+      const arrow = pressOf(glyph, turn(step));
+      arrow.dataset['key'] = `page-${column}-${key}`;
+      arrow.setAttribute('aria-label', `${TITLES[column]}: ${words}`);
+      arrow.setAttribute('aria-disabled', String(none));
+      return arrow;
+    });
+    head.append(titles, ...arrows);
     const list = make('ol', '', 'roster-rows');
     const shown = rows.slice(pages[column] * ROWS_A_PAGE, (pages[column] + 1) * ROWS_A_PAGE);
     for (const each of shown) {
@@ -282,34 +356,49 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     online.textContent = `${playing} ${playing === 1 ? 'friend' : 'friends'} playing`;
     if (current.guests > 0)
       online.textContent += ` · ${current.guests} ${current.guests === 1 ? 'guest' : 'guests'} nearby`;
-    if (focused) columns.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`)?.focus();
+    keyed(focused ?? null)?.focus();
   }
 
+  /** Back from a player's details to the columns, the focus on the row they were opened from. */
+  const toColumns = () => {
+    details = null;
+    if (roster) draw();
+    else columns.replaceChildren();
+    keyed(detailedFrom)?.focus();
+  };
+
   function showDetails(name: string): void {
+    detailedFrom = chosen;
     closePanel();
     said.textContent = '';
-    details = make('div', 'Loading…', 'gear-hint gear-empty');
+    // Words while it loads, or why it could not, with a way back either way.
+    const note = (words: string) => {
+      const box = make('div', '', 'gear-empty roster-note');
+      box.append(make('p', words, 'gear-hint'), pressOf('Back', toColumns, 'button', 'Esc'));
+      return box;
+    };
+    const loading = note('Loading…');
+    details = loading;
     columns.classList.add('roster-detailed');
-    columns.replaceChildren(details);
+    columns.replaceChildren(loading);
     void link?.details(name).then((found) => {
-      if (!details) return;
-      const shown =
-        typeof found === 'string'
-          ? make('p', found, 'gear-hint gear-empty')
-          : detailsPage(found, () => {
-              details = null;
-              draw();
-            });
-      details.replaceWith(shown);
+      if (details !== loading) return;
+      const shown = typeof found === 'string' ? note(found) : detailsPage(found, toColumns);
+      loading.replaceWith(shown);
       details = shown;
       shown.querySelector<HTMLElement>('button')?.focus();
     });
   }
 
   function look(): void {
+    const mine = ++asked;
     void link?.roster().then((answer) => {
+      if (mine !== asked) return;
+      dispatchEvent(new CustomEvent(ROSTER_HEARD, { detail: answer }));
       if (typeof answer === 'string') {
-        if (!details) columns.replaceChildren(make('p', answer, 'gear-hint gear-empty'));
+        // A Roster already shown stays, the failure said under it; with none, the failure stands in its place.
+        if (roster) said.textContent = answer;
+        else if (!details) columns.replaceChildren(make('p', answer, 'gear-hint gear-empty'));
         return;
       }
       roster = answer;
@@ -318,14 +407,11 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
   }
 
   // Escape closes the panel, or the details, before the menu steps back.
-  page.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
+  page.addEventListener(STEP_BACK, (event) => {
     if (!panel.hidden) closePanel();
-    else if (details) {
-      details = null;
-      draw();
-    } else return;
-    event.stopPropagation();
+    else if (details) toColumns();
+    else return;
+    event.preventDefault();
   });
   page.append(columns, panel, said, online);
   look();

@@ -123,7 +123,7 @@ number is one of [[Gear as Claude Shapes It]].
 
 ## Emblems
 
-An emblem is a cosmetic after Destiny's ([[Cosmetics Follow Destiny, Emblems First]]): a sign and the nameplate it
+An emblem is a cosmetic after Destiny's ([[Cosmetics Follow Destiny, Shown in Many Places]]): a sign and the nameplate it
 heads, shown beside a player's name wherever others see it ([[Interface]], "Emblems"). Its catalogue is
 `content/gear/emblems.json`, numbered by its order on the wire, each with a name, a rarity, words, where it comes from
 and its art (`gear::emblems`).

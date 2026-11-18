@@ -32,6 +32,23 @@ fn a_new_player_keeps_and_wears_the_starting_emblem_and_earns_by_level_and_deed(
 }
 
 #[test]
+fn gilded_is_earned_by_a_legendary_or_atheric_piece_bought_whole_and_no_lesser_one() {
+    let mut character = Character::starting();
+    let (id, (item, _)) = character.items.iter_mut().next().expect("a starting piece");
+    let id = *id;
+    item.bought = (1_u32 << crate::grid::node_offsets(item.columns()).1) - 1;
+    assert!(item.fully_upgraded());
+    character.earn_due();
+    assert!(!character.keeps_emblem("gilded"), "a Normal piece bought whole");
+    let legendary = &mut character.items.get_mut(&id).expect("kept").0;
+    legendary.rarity = crate::rarity::Rarity::Legendary;
+    legendary.bought = (1_u32 << crate::grid::node_offsets(legendary.columns()).1) - 1;
+    assert!(legendary.fully_upgraded());
+    character.earn_due();
+    assert!(character.keeps_emblem("gilded"));
+}
+
+#[test]
 fn an_emblem_is_worn_only_once_kept() {
     let mut character = Character::starting();
     let captain = number_of("captain").expect("in the catalogue");

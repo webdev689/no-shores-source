@@ -169,8 +169,10 @@ export function trueType(family: string, measures: Measures, outlines: readonly 
   head.u32(0).u32(MADE).u32(0).u32(MADE);
   head.u16(xMin).u16(yMin).u16(xMax).u16(yMax).u16(0).u16(6).u16(2).u16(1).u16(0);
   const hhea = new Bytes().u32(0x00010000).u16(measures.ascent).u16(-measures.descent).u16(0);
-  hhea.u16(Math.max(...advances)).u16(Math.min(...drawn.map((glyph) => glyph.box[0])));
-  hhea.u16(Math.min(...drawn.map((glyph, index) => (advances[index] ?? 0) - glyph.box[2]))).u16(xMax);
+  // The side bearings' least are of the glyphs with ink, as the spec has them: an empty glyph has none.
+  const inked = drawn.flatMap((glyph, index) => (glyph.points > 0 ? [[glyph, advances[index] ?? 0] as const] : []));
+  hhea.u16(Math.max(...advances)).u16(Math.min(...inked.map(([glyph]) => glyph.box[0])));
+  hhea.u16(Math.min(...inked.map(([glyph, advance]) => advance - glyph.box[2]))).u16(xMax);
   hhea.u16(1).u16(0).u16(0).u32(0).u32(0).u16(0).u16(glyphs.length);
   const maxp = new Bytes().u32(0x00010000).u16(glyphs.length);
   maxp.u16(Math.max(...drawn.map((glyph) => glyph.points)));

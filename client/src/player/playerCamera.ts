@@ -20,8 +20,10 @@ export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back
  *  hands with it. It eases there and back about as fast as the camera eases. */
 export const AIM = { shoulder: 0.65, back: 1.8, up: 0.25, thirdZoom: 1.15, firstZoom: 1.6, ease: 12 } as const;
 
-/** How far first person's view is zoomed `aim` (0 to 1) of the way into aiming; its hands zoom with it. */
-export const firstPersonZoom = (aim: number): number => 1 + (AIM.firstZoom - 1) * aim;
+/** How far the view is zoomed `aim` (0 to 1) of the way into aiming, in third person once it stands back more than
+ *  `shown` 0.01, else in first; the first person's hands zoom with it. */
+export const aimZoom = (shown: number, aim: number, place: AimPlace = AIM): number =>
+  1 + ((shown > 0.01 ? place.thirdZoom : AIM.firstZoom) - 1) * aim;
 
 /** Where third person's aiming view stands and how far it zooms, as `AIM` has it unless the Test Ground's panel sets
  *  its own. */
@@ -113,7 +115,7 @@ export function cameraOrbit(
     const share = hit >= 1 ? 1 : Math.max(0, hit - CAMERA.clearance / Math.max(length, 1e-6));
     eye = [0, 1, 2].map((axis) => head[axis] + (want[axis] - head[axis]) * share) as unknown as Point;
   }
-  const zoom = third ? 1 + (place.thirdZoom - 1) * aim : firstPersonZoom(aim);
+  const zoom = aimZoom(view.shown, aim, place);
   return {
     targetX: eye[0] + forward[0],
     targetY: eye[1] + forward[1],

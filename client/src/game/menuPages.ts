@@ -54,21 +54,34 @@ export function settingsPage(link: AccountLink | null): HTMLElement {
 function blockedPanel(link: AccountLink): HTMLElement {
   const panel = make('section', '', 'gear-blocked');
   const list = make('div', '', 'gear-blocked-list');
-  panel.append(make('h2', 'Blocked players', `gear-heading ${ROLES.rule}`), list);
-  const show = () =>
+  const said = make('p', '', 'gear-answer');
+  said.setAttribute('role', 'status');
+  panel.append(make('h2', 'Blocked players', `gear-heading ${ROLES.rule}`), list, said);
+  let busy = false;
+  /** Unblocks a player, saying why not if it could not, the focus kept in the list. */
+  const unblock = (name: string, index: number) => {
+    if (busy) return;
+    busy = true;
+    void link.social('unblock', { name }).then((why) => {
+      busy = false;
+      said.textContent = why ?? `${name} is unblocked.`;
+      show(index);
+    });
+  };
+  const show = (focusAt: number | null = null) =>
     void link.roster().then((roster) => {
       if (typeof roster === 'string') return list.replaceChildren(make('p', roster, 'gear-hint'));
+      const presses = roster.blocked.map((name, index) => pressOf('Unblock', () => unblock(name, index)));
       list.replaceChildren(
         ...(roster.blocked.length === 0 ? [make('p', 'None. Block a player from the Roster.', 'gear-hint')] : []),
-        ...roster.blocked.map((name) => {
+        ...roster.blocked.map((name, index) => {
           const row = make('div', '', 'gear-blocked-row');
-          row.append(
-            make('span', name),
-            pressOf('Unblock', () => void link.social('unblock', { name }).then(show)),
-          );
+          presses[index]?.setAttribute('aria-label', `Unblock ${name}`);
+          row.append(make('span', name), presses[index] ?? '');
           return row;
         }),
       );
+      if (focusAt !== null) presses[Math.min(focusAt, presses.length - 1)]?.focus();
     });
   show();
   return panel;

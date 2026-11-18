@@ -111,6 +111,9 @@ test('each player offers what their place in the lists allows, and what cannot b
   const full = roster({ fireteam: { leader: 'Ada', members: [person('Ada'), person('Ben'), person('Cal')] } });
   assert.ok(!labels(full, 'Dee').includes('Invite to fireteam'), 'a full fireteam invites no one');
   assert.ok(labels(full, 'Ben').includes('Remove from fireteam'), 'its leader removes');
+  assert.ok(!labels(full, 'Ben').includes('Go to them'), 'in the same room');
+  assert.ok(labels(full, 'Cal', 'node-saltgrass-downs').includes('Go to them'), 'a member playing elsewhere');
+  assert.ok(!labels(full, 'Cal', null).includes('Go to them'), 'a member away');
 });
 
 test('the Guild column ranks each member, playing first, then those invited', () => {

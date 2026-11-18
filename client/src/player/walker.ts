@@ -11,7 +11,7 @@ import type { InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
 import { likelyMoves, type Shown, shownMove } from './playerMoves.ts';
-import { firstPersonZoom } from './playerCamera.ts';
+import { aimZoom } from './playerCamera.ts';
 
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
@@ -166,7 +166,7 @@ export class Walker {
       yaw: player.yaw,
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
-      zoom: firstPersonZoom(player.aim),
+      zoom: aimZoom(player.view.shown, player.aim),
     });
     const swing = firstPerson.swing;
     const ownFight = own ? fightOf(own) : null;

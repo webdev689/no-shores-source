@@ -13,7 +13,7 @@ const capital = (words: string) => `${words[0]?.toUpperCase() ?? ''}${words.slic
 
 /**
  * Another player's details, as Destiny's Inspect shows them: their nameplate, their guild, where they are (to their
- * friends, party and guild alone), their power, and each piece they wear in its rarity, with its element and gilding.
+ * friends, fireteam and guild alone), their power, and each piece they wear in its rarity, with its element and gilding.
  */
 export function detailsPage(found: Details, back: () => void): HTMLElement {
   const page = make('div', '', `roster-details ${ROLES.panel}`);

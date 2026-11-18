@@ -10,12 +10,14 @@ import { ROLES } from '../plus/kit.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
 import { type Hint, HoverCard, glyphImage, hintLine, pressOf } from './gearDom.ts';
 import {
+  ACCOUNT_CHANGED,
   type GearHere,
   OPEN_AT,
   type Opening,
   type Station,
   TABS,
   type Tab,
+  STEP_BACK,
   type View,
   characterOf,
   setGearScreenOpen,
@@ -224,7 +226,13 @@ export function startGearWindow(
   const close = pressOf('Close', shut, 'button', 'Esc');
   /** The player's name, for their nameplate, once the accounts give it. */
   let named: string | null = null;
-  void link?.session().then((account) => (named = account?.username ?? null));
+  const nameAgain = () =>
+    void link?.session().then((account) => {
+      named = account?.username ?? null;
+      if (view !== null) ends(here()?.gear ?? null);
+    });
+  nameAgain();
+  addEventListener(ACCOUNT_CHANGED, nameAgain);
   startFireteamHud(root, link);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
@@ -421,7 +429,9 @@ export function startGearWindow(
       if (view !== null && !(event.target instanceof Node && screen.contains(event.target))) event.stopPropagation();
       if (key === 'escape') {
         event.preventDefault();
-        back();
+        // The page shown takes the step first when it has one of its own (a panel, a player's details).
+        const step = new Event(STEP_BACK, { cancelable: true });
+        if (body.firstElementChild?.dispatchEvent(step) !== false) back();
         render();
       } else if (key === 'x' && !typing && document.activeElement instanceof HTMLElement) {
         // X shows the focused piece's details, as a right-click does.

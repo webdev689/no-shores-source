@@ -475,5 +475,5 @@ async function start(): Promise<void> {
 start().catch((error: unknown) => {
   const message = error instanceof GpuUnavailable || error instanceof Error ? error.message : String(error);
   document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;font:16px system-ui;padding:24px';
+  document.body.style.cssText = 'color:#ddd;padding:22px';
 });

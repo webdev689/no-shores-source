@@ -26,7 +26,7 @@ export interface Action {
   /** Held, as what cannot be undone is. */
   readonly held?: boolean;
   readonly warn?: boolean;
-  readonly opens?: 'details' | 'report' | 'join';
+  readonly opens?: 'details' | 'report' | 'join' | 'travel';
 }
 
 /** The privacies, in the order the accounts number them. */
@@ -76,6 +76,9 @@ export function actionsFor(roster: Roster, person: Person): Action[] {
   const leading = !roster.fireteam || roster.fireteam.leader === own;
   if (roster.invites.some((each) => each.name === name))
     actions.push({ label: 'Accept fireteam invite', path: 'fireteam/accept', body: named, opens: 'join' });
+  // A member playing elsewhere is gone to without asking the Roster anything: they are in the fireteam already.
+  if (inFireteam && person.place !== null && person.place !== roster.me?.place)
+    actions.push({ label: 'Go to them', opens: 'travel' });
   if (inFireteam && leading) {
     actions.push({ label: 'Make fireteam leader', path: 'fireteam/lead', body: named });
     actions.push({ label: 'Remove from fireteam', path: 'fireteam/kick', body: named, held: true, warn: true });

@@ -43,6 +43,14 @@ test('the mended face is a whole TrueType font: every table where it says, each 
     assert.equal(wordSum(bytes), table.sum, tag);
   }
   assert.equal(wordSum([...font]), 0xb1b0afba);
+  const hhea = tables.get('hhea');
+  assert.ok(hhea);
+  assert.equal(
+    view.getInt16(hhea.offset + 12),
+    60,
+    'the least left bearing is of a glyph with ink, on the first column',
+  );
+  assert.ok(view.getInt16(hhea.offset + 14) < 100, 'the least right bearing, the empty glyph not counted');
 });
 
 test('every code point the face claims maps to a glyph drawn on the grid', () => {

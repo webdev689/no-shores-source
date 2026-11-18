@@ -1,6 +1,7 @@
 import { make } from '../editor/dom.ts';
 import type { AccountLink, Roster } from '../network/accounts.ts';
 import { emblemImage, emblemOf } from './emblemArt.ts';
+import { ACCOUNT_CHANGED, ROSTER_HEARD } from './gearScreen.ts';
 import { placeWords } from './rosterRows.ts';
 
 /** How often the fireteam is asked for while playing, in milliseconds. */
@@ -14,9 +15,16 @@ const LOOK_MS = 20_000;
 export function startFireteamHud(root: HTMLElement, link: AccountLink | null): void {
   if (!link) return;
   const list = make('div', '', 'fireteam-hud');
+  list.setAttribute('role', 'region');
   list.setAttribute('aria-label', 'Your fireteam');
   root.append(list);
+  /** When the Roster was last heard, here or by the Social tab; and whether the account can have one at all. */
+  let heardAt = -Infinity;
+  let unnamed = false;
   const show = (roster: Roster | string) => {
+    heardAt = performance.now();
+    // A guest has no Roster: asked again only once the account changes.
+    unnamed = typeof roster === 'string' && roster.startsWith('Add a username');
     list.replaceChildren();
     if (typeof roster === 'string' || !roster.me) return;
     const own = roster.me.name;
@@ -38,9 +46,15 @@ export function startFireteamHud(root: HTMLElement, link: AccountLink | null): v
       list.append(make('p', `${invite.name} invites you to their fireteam: answer in Social.`, 'fireteam-invite'));
   };
   const look = () => {
-    if (!document.hidden) void link.roster().then(show);
+    if (!document.hidden && !unnamed) void link.roster().then(show);
   };
   look();
-  window.setInterval(look, LOOK_MS);
+  // Asked for only when the Social tab has not heard it lately.
+  window.setInterval(() => performance.now() - heardAt >= LOOK_MS && look(), LOOK_MS);
   addEventListener('overlook:fireteam', look);
+  addEventListener(ROSTER_HEARD, (event) => show((event as CustomEvent<Roster | string>).detail));
+  addEventListener(ACCOUNT_CHANGED, () => {
+    unnamed = false;
+    look();
+  });
 }

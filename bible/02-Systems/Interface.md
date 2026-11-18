@@ -75,7 +75,7 @@ so every size is one: 11 for words, 22 for names and titles, 33 to 66 for the nu
 no kerning and no ligature. It is set at one weight, 500, so emphasis is in size and colour; it is never slanted, as
 it has no italic. Shadows under it are hard, a pixel's step.
 
-Four of its glyphs misread and ten symbols are missing, so a second face, listed first, stands in for just those
+Four of its glyphs misread and eleven symbols are missing, so a second face, listed first, stands in for just those
 ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]): a 2, a 5, a B and a Z, and the rarities' diamonds, the
 map's house, triangles, skull and anchor. Each is drawn in `face.ts` as rows of cells on Pixelify's grid at its
 weight, and made into a font in the page when it opens (`trueType.ts`), so nothing generated is kept.
@@ -131,7 +131,7 @@ never while a press is held. Each press is an ask the room answers.
   rows kept so each column keeps its length. Game holds invites to a fireteam, then the fireteam (its leader marked with a
   gold corner, or the player alone, who leads their own), then those in the same room; over it the fireteam's privacy.
   Friends holds those asking, then friends playing, those asked, and friends away; over it a press to add a friend.
-  Guild holds its members by rank and those invited; over it the guild's name, motto and presses, or, with none, a
+  Guild holds its members playing, then away, each with their rank, then those invited; over it the guild's name, motto and presses, or, with none, a
   press to found one and the invites. Each row is a player's emblem and its nameplate behind their name and tag, at
   twice the emblem's cells; one away is grey and bare. Choosing a row opens a panel beside it: who and where, then all
   that may be done with them, what cannot be undone held. Details shows another player's nameplate, guild, power and
@@ -163,7 +163,7 @@ at its Vestiges. The room serves each ask only at its own counter ([[Gear]], "In
 ## Emblems
 
 An emblem is a sign 24 cells square and the nameplate it heads, 120 by 24, whose left square is the sign's own ground,
-as Destiny's are ([[Cosmetics Follow Destiny, Emblems First]]). Each is drawn in the page from its colours, a pattern
+as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is drawn in the page from its colours, a pattern
 and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the

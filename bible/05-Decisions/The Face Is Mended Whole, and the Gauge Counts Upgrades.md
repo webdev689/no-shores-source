@@ -27,10 +27,13 @@ After the third audit the owner was asked ten questions. Their answers to nine o
 - **A shield of another element takes half of every blow**, whatever the pair.
 - **An icon's gauge counts upgrade progress**, not general XP.
 - **Pixelify Sans is the face of the Test Ground and the editor** as well.
-- **The Z, the weight, the counters and the drawn glyphs are Claude's to decide.** Claude's choices:
+- **The Z, the weight, the counters and the drawn glyphs are Claude's to decide.**
+
+## Claude's calls
 
 | Call | Chosen | Why |
 |---|---|---|
+| The gauge | The share of the item's nodes bought | "Upgrade progress" read as its upgrades bought; XP toward a column counts only once it is spent |
 | The Z | Stepped in cells, a diagonal one cell wide | Pixelify's own diagonals step; the 2's two-cell steps and round top still tell it from the Z |
 | The weight | 500, one weight | The mended glyphs and every size were drawn on its strokes; 400 thins them to less than a cell |
 | The counters | The room serves each ask only at its own counter: a Vestige at the Reader's, the vault at a vault's, a ware at its vendor's | The server is the sole authority; a page could otherwise buy or open from anywhere in the plaza |

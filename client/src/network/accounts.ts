@@ -108,6 +108,8 @@ export class AccountLink {
   private code: string | null = null;
   /** What the last Discord sign-in came to, in words, once the page has taken it. */
   said: string | null = null;
+  /** The session being asked for, while it is. */
+  private asking: Promise<Account | null> | null = null;
 
   constructor(base: string, kept: Kept, ask: typeof fetch = (...given) => fetch(...given), passing: Kept = kept) {
     this.base = base.replace(/\/+$/, '');
@@ -184,8 +186,13 @@ export class AccountLink {
   }
 
   /** The player's account: a Discord sign-in's first, if one came back, then the session held, or else a new guest;
-   *  null if the accounts cannot be reached. */
-  async session(): Promise<Account | null> {
+   *  null if the accounts cannot be reached. Asked twice at once, it is asked once, so no two guests are made. */
+  session(): Promise<Account | null> {
+    this.asking ??= this.sessionNow().finally(() => (this.asking = null));
+    return this.asking;
+  }
+
+  private async sessionNow(): Promise<Account | null> {
     const code = this.code;
     this.code = null;
     if (code !== null) await this.redeem(code);

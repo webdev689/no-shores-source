@@ -95,3 +95,11 @@ test('a page told its sign-in lapsed says so and plays on as a guest; one may si
   assert.equal(await link.logoutEverywhere(), null);
   assert.equal(link.token, null, 'signed out here too');
 });
+
+test('a session asked for twice at once makes one guest, kept by both', async () => {
+  const { link } = browser();
+  const [first, second] = await Promise.all([link.session(), link.session()]);
+  assert.ok(first?.guest);
+  assert.equal(second?.id, first.id);
+  assert.equal((await link.session())?.id, first.id, 'and the next visit is the same guest');
+});

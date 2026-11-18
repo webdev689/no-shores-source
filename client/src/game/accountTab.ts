@@ -2,6 +2,7 @@ import { button, make } from '../editor/dom.ts';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
 import { heldPress } from './gearDom.ts';
+import { ACCOUNT_CHANGED } from './gearScreen.ts';
 
 function pressOf(text: string, run: () => void, role: Role = 'button'): HTMLButtonElement {
   const node = button(text, run);
@@ -41,7 +42,10 @@ export function accountPanel(link: AccountLink): HTMLElement {
   const after = (answer: Account | string, reload: boolean) => {
     if (typeof answer === 'string') said.textContent = answer;
     else if (reload) location.reload();
-    else show(answer);
+    else {
+      show(answer);
+      dispatchEvent(new Event(ACCOUNT_CHANGED));
+    }
   };
   const show = (account: Account | null) => {
     who.textContent = account ? accountWords(account) : 'The accounts cannot be reached: your character is not kept.';
