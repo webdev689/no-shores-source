@@ -5,6 +5,12 @@ code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
   - client/src/testground/aimPanel.ts
+  - client/src/testground/attackFeel.ts#AttackFeel
+  - client/src/testground/feelPanel.ts#startFeelPanel
+  - client/src/combat/swingArcs.ts#SwingArcs
+  - client/src/combat/hitStop.ts#HitStops
+  - client/src/combat/cameraKick.ts#CameraKick
+  - client/src/combat/lunge.ts#lungeOf
   - client/src/player/player.ts#updatePlayer
   - client/src/player/player.ts#shownBody
   - client/src/player/others.ts#showOther
@@ -95,20 +101,23 @@ room's word for it, so playing alone and online are the same game.
 - **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
   the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
 - **The attack feel.** Four effects over the fight's blows, each switched on or off and set by a slider in the panel's
-  **Attack feel**, kept in the browser with its numbers shown to copy ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's
-  rules and their clock never do.
+  **Attack feel**, kept in the browser with its numbers shown to copy
+  ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never
+  do.
   - *Swing arc.* A streak of light along each blow's path, laid from the rules' own stroke, landing, reach and width:
-    an overhead comes down, a sweep crosses as wide as it strikes, a slant cuts down and across, a thrust drives out.
-    Each part fades by how long ago the blade passed it and burns by how fast it went, so only the cut glows; a ribbon
-    along the tip turns to the eye, so a cut seen edge on still shows, and a dark rim keeps it clear against the sky.
-    It burns in the weapon's metal (daedric red, steel blue, elven gold), gold for a riposte or a counter; it flares
-    where the blow meets something, stops where a flinch or a dodge cuts it short, and through the eyes crosses the
-    view. Brightness and trail are set.
-  - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a kill
-    0.14 s), the one struck shuddering, then catch up at 1.6 times. Its length is set.
-  - *Camera kick.* The player's blow landing punches the view down and along the stroke, harder for a kill; a blow
-    stopped by a guard knocks it back; a blow landing on the player jolts it and shakes it as hard as the harm; and
-    the view leans into the player's own swing as it lands. Its strength is set.
+    an overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
+    cuts down and across, and a thrust drives out and flares where it lands. Each part fades by how long ago the blade
+    passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut
+    seen edge on still shows, and a dark rim keeps it clear against the sky. It burns in the weapon's metal (daedric
+    red, steel blue, dwarven gold), gold for a riposte or a counter; it flares where the blow meets something, stops
+    where a flinch or a dodge cuts it short, and through the eyes crosses the view. Brightness and trail are set.
+  - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
+    0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing holds nothing), the one
+    struck shuddering, then catch up at 1.6 times. Its length is set.
+  - *Camera kick.* The player's blow landing punches the view down and along the stroke and shakes it a little, harder
+    for a kill, a stagger or a guard broken; a blow of theirs stopped by a guard knocks the view back; a blow landing
+    on the player jolts it and shakes it as hard as the harm; and the view leans into their own swing as it lands. Its
+    strength is set.
   - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
@@ -158,7 +167,7 @@ The player's figure shows the move the forge draws for what the body does:
   dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair). A blow's
   nine frames hold the first until a quarter of the way to the blow, run the first four through the last three
   quarters of that time, show the fifth as it lands, and run the rest over a little over half that time after
-  ([[Strikes Run Faster, Not Twice as Fast]]). Where no blow
+  ([[Third-Person Strikes Run Faster Than DFO's]]). Where no blow
   is drawn, a swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
   to 5. The stroke's frames run through the last three quarters of the swing's wind-up so its last lands with the
   blow, two fifths of the way through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the

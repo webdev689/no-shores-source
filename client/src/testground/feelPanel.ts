@@ -92,8 +92,12 @@ function keep(feel: Feel): void {
   }
 }
 
-/** Adds the attack feel's panel to `root`: each effect's switch and sliders, the numbers to copy, and a button back to
- *  the feel as made. `onChange` hears the feel at once and after each change. */
+/** A slider's number as shown beside it. */
+const times = (value: number) => `×${value.toFixed(2)}`;
+
+/** Adds the attack feel's panel to `root`: each effect a card, its switch over its sliders (each with its number, dimmed
+ *  while the effect is off), then the numbers to copy and a button back to the feel as made. `onChange` hears the
+ *  feel at once and after each change. */
 export function startFeelPanel(root: HTMLElement, onChange: (feel: Feel) => void): void {
   let feel = kept();
   const line = make('code', feelLine(feel));
@@ -102,42 +106,50 @@ export function startFeelPanel(root: HTMLElement, onChange: (feel: Feel) => void
     line.textContent = feelLine(feel);
     onChange(feel);
   };
-  const switches = new Map<Switch, HTMLInputElement>();
-  const sliders = new Map<Slider, HTMLInputElement>();
-  const rows = EFFECTS.flatMap(([name, label, own]) => {
+  const shows: (() => void)[] = [];
+  const cards = EFFECTS.map(([name, label, own]) => {
     const box = make('input');
     Object.assign(box, { type: 'checkbox', checked: feel[name] });
+    const head = labelled(label, box);
+    head.classList.add('feel-head');
+    const sliders = own.map(([key, text, least, most]) => {
+      const slider = make('input');
+      Object.assign(slider, { type: 'range', min: String(least), max: String(most), step: '0.05' });
+      const number = make('span', '', 'value');
+      slider.addEventListener('input', () => {
+        feel = { ...feel, [key]: Number(slider.value) };
+        number.textContent = times(feel[key]);
+        changed();
+      });
+      const row = labelled(text, slider);
+      row.append(number);
+      return { key, slider, number, row };
+    });
+    const card = make('div', '', 'feel');
+    card.append(head, ...sliders.map((each) => each.row));
+    // The card as the feel has it: its switch, its sliders and numbers, and dimmed while it is off.
+    const show = () => {
+      box.checked = feel[name];
+      card.classList.toggle('off', !feel[name]);
+      for (const { key, slider, number } of sliders) {
+        Object.assign(slider, { value: String(feel[key]), disabled: !feel[name] });
+        number.textContent = times(feel[key]);
+      }
+    };
     box.addEventListener('change', () => {
       feel = { ...feel, [name]: box.checked };
+      show();
       changed();
     });
-    switches.set(name, box);
-    return [
-      labelled(label, box),
-      ...own.map(([key, text, least, most]) => {
-        const slider = make('input');
-        Object.assign(slider, {
-          type: 'range',
-          min: String(least),
-          max: String(most),
-          step: '0.05',
-          value: String(feel[key]),
-        });
-        slider.addEventListener('input', () => {
-          feel = { ...feel, [key]: Number(slider.value) };
-          changed();
-        });
-        sliders.set(key, slider);
-        return labelled(text, slider);
-      }),
-    ];
+    shows.push(show);
+    show();
+    return card;
   });
   const reset = button('Back to as made', () => {
     feel = FEEL;
-    for (const [name, box] of switches) box.checked = feel[name];
-    for (const [key, slider] of sliders) slider.value = String(feel[key]);
+    for (const show of shows) show();
     changed();
   });
-  root.append(make('h2', 'Attack feel'), ...rows, line, reset);
+  root.append(make('h2', 'Attack feel'), ...cards, line, reset);
   onChange(feel);
 }

@@ -121,7 +121,7 @@ Where the work stands now, for the next session. Each session rewrites this note
     and its 118,158 redrawn and new pictures and the roll's 1,200 published to R2 by a helper session on the
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
-    faster, landing with the blow (about 1.4 times DFO's, [[Strikes Run Faster, Not Twice as Fast]]); [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
+    twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
 - First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
   ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
   the page and the rooms; tested offline, with a test and a headless Test Ground run.
@@ -131,9 +131,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - #65 sets the owner's third-person aim, 0.8 m out, 3 m back, 0.25 m up and 1.3 times zoom, as the game's own
   ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]), and brings the attack feel to the [[Test Ground]]: the
   swing arc, the hit-stop, the camera kick and the lunge, each a switch and a slider
-  ([[The Attack Feel Is Tried in the Test Ground]]). Tested offline, with tests and headless Test Ground runs; it
+  ([[The Attack Feel Is Tried in the Test Ground]]), and eases third-person strikes back to about a third faster than
+  DFO's ([[Third-Person Strikes Run Faster Than DFO's]]). Tested offline, with tests and headless Test Ground runs; it
   waits for the owner's yes to merge. Which effects go into the game, and at what settings, is the owner's to say.
-
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
   writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into

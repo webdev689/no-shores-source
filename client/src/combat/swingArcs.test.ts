@@ -67,7 +67,7 @@ test('a blow lands ahead along its aim, its tip most of the way out to its reach
 test('each stroke sweeps its own way: an overhead down, the sweeps across, the slants down and across', () => {
   const travel = (stroke: number) => courseOf(swing({ stroke })).travel;
   const [down, downLeft, left, right, downRight] = [1, 2, 3, 4, 5].map(travel);
-  assert.ok(down && down[2] < -0.9, 'an overhead comes down');
+  assert.ok(down && down[2] < -0.85 && down[0] < -0.3, 'an overhead comes down, slanting from the striking hand');
   assert.ok(left && left[0] < -0.9 && right && right[0] > 0.9, 'aimed north, a sweep left travels west, right east');
   assert.ok(downLeft && downLeft[0] < -0.5 && downLeft[2] < -0.5, 'a slant down and to the left');
   assert.ok(downRight && downRight[0] > 0.5 && downRight[2] < -0.5, 'a slant down and to the right');
@@ -160,4 +160,18 @@ test('a blow cut short stops where it was and fades from there, never sweeping o
   assert.ok(struck.mesh(0.47, [10, 30, 1.6], LOOK).length > 0);
   assert.equal(cut.mesh(0.47, [10, 30, 1.6], LOOK).length, 0);
   assert.equal(cut.count, 0, 'let go');
+});
+
+test('a thrust stabs as it lands, a flare at its tip that shows even end on, and none before', () => {
+  const flares = (time: number) => {
+    const arcs = new SwingArcs();
+    arcs.seen(0, [swing({ stroke: 6, reach: 2.65, halfArc: 20 * DEGREE, elapsed: time })], () => FEET);
+    const mesh = arcs.mesh(0, [10, 30, 1.6], LOOK);
+    let count = 0;
+    for (let vertex = 0; vertex < mesh.length; vertex += SWING_FLOATS) if (mesh[vertex + 6] === PART.flare) count += 1;
+    return count / 6;
+  };
+  assert.equal(flares(0.3), 1, 'its glint alone, still driving');
+  assert.equal(flares(0.45), 2, 'landed: its stab at the tip, beside the glint of its withdrawing head');
+  assert.equal(flares(0.7), 0, 'the stab over');
 });

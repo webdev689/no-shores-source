@@ -69,15 +69,18 @@ const GATHER = 2.2;
 const TAIL_NARROWS = 0.55;
 /** The ribbon along the tip's path, turned to face the eye so a cut seen edge on still shows: this far either side of
  *  the path at the head (metres), narrowing to this share of that by the tail. */
-const RIBBON_M = 0.09;
+const RIBBON_M = 0.12;
 const RIBBON_TAIL = 0.25;
 /** The pivot stands this far ahead of the chest, so a cut sweeps in front of the figure. */
 const AHEAD_M = 0.15;
 /** A thrust's streak: drawn back to this share of the tip before it drives, back to this share after, and this wide
  *  either side (metres). */
-const THRUST = { from: 0.3, back: 0.6, width: 0.085 } as const;
+const THRUST = { from: 0.3, back: 0.6, width: 0.11 } as const;
 /** The head's glint: its size at rest and at full speed (metres), and its strength at full speed. */
 const GLINT = { size: 0.1, grows: 0.14, strength: 0.75 } as const;
+/** A thrust's stab as it lands, which shows even end on: it opens from this size by this much (metres) over its life
+ *  (seconds), from just before the landing, as strong as this at first. */
+const STAB = { size: 0.22, grows: 0.38, before: 0.02, lasts: 0.16, strength: 1.2 } as const;
 /** A struck blow's flare: it opens from this size to this (metres) as it fades over about this long (seconds). */
 const FLARE = { from: 0.3, to: 0.85, fades: 0.08, lasts: 0.3 } as const;
 /** A riposte's or a counter's gold, how much of its colour it takes, and how much brighter it is. */
@@ -98,7 +101,7 @@ interface Path {
   readonly widened: boolean;
 }
 const PATHS: Readonly<Record<Exclude<StrokeDirection, 'up'>, Path>> = {
-  down: { land: [1, 0, -0.3], travel: [0, -0.22, -1], before: 95 * DEGREE, after: 65 * DEGREE, widened: false },
+  down: { land: [1, 0, -0.3], travel: [0, -0.45, -1], before: 95 * DEGREE, after: 65 * DEGREE, widened: false },
   downLeft: { land: [1, 0, -0.25], travel: [0, -1, -1], before: 35 * DEGREE, after: 15 * DEGREE, widened: true },
   downRight: { land: [1, 0, -0.25], travel: [0, 1, -1], before: 35 * DEGREE, after: 15 * DEGREE, widened: true },
   left: { land: [1, 0, -0.12], travel: [0, -1, -0.2], before: 25 * DEGREE, after: 20 * DEGREE, widened: true },
@@ -405,6 +408,12 @@ function layStreak(
       ? add(pivot, course.land, head.along)
       : add(pivot, outward(course, head.along), course.tip);
     layFlare(out, point, GLINT.size + GLINT.grows * head.speed, eye, tint, strength * GLINT.strength * head.speed);
+  }
+  const since = time - course.strike + STAB.before;
+  if (course.thrust && since >= 0 && since < STAB.lasts && course.strike < stopped) {
+    const share = since / STAB.lasts;
+    const point = add(pivot, course.land, course.tip);
+    layFlare(out, point, STAB.size + STAB.grows * share, eye, tint, strength * STAB.strength * (1 - share) ** 2);
   }
 }
 
