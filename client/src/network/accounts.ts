@@ -23,7 +23,7 @@ export interface Person {
 export interface Roster {
   readonly me: Person | null;
   readonly privacy: string;
-  readonly fireteam: { readonly leader: string | null; readonly members: readonly Person[] } | null;
+  readonly company: { readonly leader: string | null; readonly members: readonly Person[] } | null;
   readonly invites: readonly Person[];
   readonly nearby: readonly Person[];
   readonly guests: number;
@@ -244,7 +244,7 @@ export class AccountLink {
     return typeof answer === 'string' ? answer : (answer as unknown as Details);
   }
 
-  /** Asks something of the Roster (`friend/ask`, `fireteam/join`, `guild/promote`, `block`...); why not, if it cannot. */
+  /** Asks something of the Roster (`friend/ask`, `company/join`, `guild/promote`, `block`...); why not, if it cannot. */
   async social(path: string, body: Readonly<Record<string, string | number>> = {}): Promise<string | null> {
     const answer = await this.call('POST', `/v1/social/${path}`, body);
     return typeof answer === 'string' ? answer : null;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { accounts, slowly } from './accountsForTests.ts';
 import { characters } from './characters.ts';
-import { INVITE_MS } from './fireteams.ts';
+import { INVITE_MS } from './companies.ts';
 import type { Details, Roster } from './roster.ts';
 
 /** A world of named players, each one's token, and a way to ask as them. */
@@ -49,7 +49,7 @@ test('a block ends what is between two players, and what the blocked one asks af
   assert.deepEqual((await ada.roster()).blocked, ['Ben']);
   assert.equal((await ben.ask('friend/ask', { name: 'Ada' })).status, 200, 'answered as made');
   assert.deepEqual(names((await ada.roster()).asking), [], 'but never reaches Ada');
-  assert.equal((await ben.ask('fireteam/invite', { name: 'Ada' })).status, 200);
+  assert.equal((await ben.ask('company/invite', { name: 'Ada' })).status, 200);
   assert.deepEqual((await ada.roster()).invites, [], 'nor does an invite');
   assert.equal((await ada.ask('friend/ask', { name: 'Ben' })).status, 409, 'Ada must unblock first');
   assert.equal((await ben.details('Ada')).status, 200, 'Ada is found by the one she blocks, as by anyone');
@@ -58,7 +58,7 @@ test('a block ends what is between two players, and what the blocked one asks af
   assert.deepEqual(names((await ben.roster()).asking), ['Ada']);
 });
 
-test('a fireteam holds three, joined by invite or as its leader allows, and its lead passes on', async () => {
+test('a company holds three, joined by invite or as its leader allows, and its lead passes on', async () => {
   const { player, play } = await world('Ada', 'Ben', 'Cal', 'Dee');
   for (const name of ['Ada', 'Ben', 'Cal', 'Dee']) await play(name, 'node-overlook-social');
   const [ada, ben, cal, dee] = ['Ada', 'Ben', 'Cal', 'Dee'].map(player) as [
@@ -67,45 +67,45 @@ test('a fireteam holds three, joined by invite or as its leader allows, and its 
     ReturnType<typeof player>,
     ReturnType<typeof player>,
   ];
-  assert.equal((await ben.ask('fireteam/join', { name: 'Ada' })).status, 403, "Friends Only: Ben is not Ada's friend");
-  await ada.ask('fireteam/invite', { name: 'Ben' });
+  assert.equal((await ben.ask('company/join', { name: 'Ada' })).status, 403, "Friends Only: Ben is not Ada's friend");
+  await ada.ask('company/invite', { name: 'Ben' });
   assert.deepEqual(names((await ben.roster()).invites), ['Ada']);
-  assert.equal((await ben.ask('fireteam/accept', { name: 'Ada' })).status, 200);
-  const fireteam = (await cal.roster()).fireteam;
-  assert.equal(fireteam, null, 'Cal is not in it');
-  assert.deepEqual(names((await ben.roster()).fireteam?.members ?? []), ['Ada', 'Ben'], 'the leader first');
-  await ada.ask('fireteam/privacy', { privacy: 0 });
-  assert.equal((await cal.ask('fireteam/join', { name: 'Ben' })).status, 200, 'Public: anyone joins');
-  assert.equal((await dee.ask('fireteam/join', { name: 'Ada' })).status, 409, 'three at most');
-  assert.equal((await ben.ask('fireteam/kick', { name: 'Cal' })).status, 403, 'only the leader removes');
-  assert.equal((await ada.ask('fireteam/lead', { name: 'Cal' })).status, 200);
-  await cal.ask('fireteam/kick', { name: 'Ada' });
-  assert.deepEqual(names((await ben.roster()).fireteam?.members ?? []), ['Cal', 'Ben']);
-  await cal.ask('fireteam/leave');
-  assert.equal((await ben.roster()).fireteam, null, 'a fireteam of one ends');
-  await ben.ask('fireteam/privacy', { privacy: 3 });
-  assert.equal((await ada.ask('fireteam/join', { name: 'Ben' })).status, 403, 'Closed');
-  await ben.ask('fireteam/invite', { name: 'Ada' });
-  assert.equal((await ada.ask('fireteam/accept', { name: 'Ben' })).status, 200, 'an invite still stands');
+  assert.equal((await ben.ask('company/accept', { name: 'Ada' })).status, 200);
+  const company = (await cal.roster()).company;
+  assert.equal(company, null, 'Cal is not in it');
+  assert.deepEqual(names((await ben.roster()).company?.members ?? []), ['Ada', 'Ben'], 'the leader first');
+  await ada.ask('company/privacy', { privacy: 0 });
+  assert.equal((await cal.ask('company/join', { name: 'Ben' })).status, 200, 'Public: anyone joins');
+  assert.equal((await dee.ask('company/join', { name: 'Ada' })).status, 409, 'three at most');
+  assert.equal((await ben.ask('company/kick', { name: 'Cal' })).status, 403, 'only the leader removes');
+  assert.equal((await ada.ask('company/lead', { name: 'Cal' })).status, 200);
+  await cal.ask('company/kick', { name: 'Ada' });
+  assert.deepEqual(names((await ben.roster()).company?.members ?? []), ['Cal', 'Ben']);
+  await cal.ask('company/leave');
+  assert.equal((await ben.roster()).company, null, 'a company of one ends');
+  await ben.ask('company/privacy', { privacy: 3 });
+  assert.equal((await ada.ask('company/join', { name: 'Ben' })).status, 403, 'Closed');
+  await ben.ask('company/invite', { name: 'Ada' });
+  assert.equal((await ada.ask('company/accept', { name: 'Ben' })).status, 200, 'an invite still stands');
 });
 
-test('a fireteam lets go of a member away from the game ten minutes', async () => {
+test('a company lets go of a member away from the game ten minutes', async () => {
   const { player, play, clock, kept, tokens } = await world('Ada', 'Ben');
   await play('Ada', 'node-overlook-social');
   await play('Ben', 'node-overlook-social');
-  await player('Ada').ask('fireteam/invite', { name: 'Ben' });
-  await player('Ben').ask('fireteam/accept', { name: 'Ada' });
+  await player('Ada').ask('company/invite', { name: 'Ben' });
+  await player('Ben').ask('company/accept', { name: 'Ada' });
   const ben = await kept.claim(tokens['Ben'] ?? '', 'node-overlook-social:Ben');
   await kept.release(ben?.account ?? '', 'node-overlook-social:Ben', null);
   clock.now += 9 * 60_000;
   await play('Ada', 'node-overlook-social');
-  assert.equal((await player('Ada').roster())?.fireteam?.members.length, 2, 'away nine minutes');
+  assert.equal((await player('Ada').roster())?.company?.members.length, 2, 'away nine minutes');
   clock.now += 2 * 60_000;
   await play('Ada', 'node-overlook-social');
-  assert.equal((await player('Ada').roster()).fireteam, null);
+  assert.equal((await player('Ada').roster()).company, null);
 });
 
-test('the Roster lists those in the same room beside the fireteam, each with where they are and what they wear', async () => {
+test('the Roster lists those in the same room beside the company, each with where they are and what they wear', async () => {
   const { player, play, kept, tokens, ask } = await world('Ada', 'Ben', 'Cal');
   await play('Ada', 'node-overlook-social', 12);
   await play('Ben', 'node-overlook-social', 9);
@@ -188,77 +188,77 @@ test('a block between the joiner and any member keeps them out, by join or by in
   const {
     players: [ada, ben, cal, dee],
   } = await playing('Ada', 'Ben', 'Cal', 'Dee');
-  await ada.ask('fireteam/privacy', { privacy: 0 });
-  await cal.ask('fireteam/join', { name: 'Ada' });
+  await ada.ask('company/privacy', { privacy: 0 });
+  await cal.ask('company/join', { name: 'Ada' });
   await cal.ask('block', { name: 'Ben' });
-  const joined = await ben.ask('fireteam/join', { name: 'Ada' });
+  const joined = await ben.ask('company/join', { name: 'Ada' });
   assert.equal(joined.status, 403, 'Cal, a member, blocks Ben');
-  await ada.ask('fireteam/privacy', { privacy: 3 });
-  assert.deepEqual(joined.body, (await dee.ask('fireteam/join', { name: 'Ada' })).body, 'as a closed fireteam');
-  await ada.ask('fireteam/invite', { name: 'Ben' });
-  assert.equal((await ben.ask('fireteam/accept', { name: 'Ada' })).status, 403, 'nor by an invite');
-  assert.equal((await ben.roster()).fireteam, null);
-  await ada.ask('fireteam/privacy', { privacy: 0 });
+  await ada.ask('company/privacy', { privacy: 3 });
+  assert.deepEqual(joined.body, (await dee.ask('company/join', { name: 'Ada' })).body, 'as a closed company');
+  await ada.ask('company/invite', { name: 'Ben' });
+  assert.equal((await ben.ask('company/accept', { name: 'Ada' })).status, 403, 'nor by an invite');
+  assert.equal((await ben.roster()).company, null);
+  await ada.ask('company/privacy', { privacy: 0 });
   await dee.ask('block', { name: 'Cal' });
-  assert.equal((await dee.ask('fireteam/join', { name: 'Ada' })).status, 403, 'nor one who blocks a member');
+  assert.equal((await dee.ask('company/join', { name: 'Ada' })).status, 403, 'nor one who blocks a member');
 });
 
-test('an invite ends when its sender joins another fireteam', async () => {
+test('an invite ends when its sender joins another company', async () => {
   const {
     players: [ada, ben, cal],
   } = await playing('Ada', 'Ben', 'Cal');
-  await cal.ask('fireteam/privacy', { privacy: 3 });
-  await ada.ask('fireteam/invite', { name: 'Ben' });
-  await cal.ask('fireteam/invite', { name: 'Ada' });
-  await ada.ask('fireteam/accept', { name: 'Cal' });
+  await cal.ask('company/privacy', { privacy: 3 });
+  await ada.ask('company/invite', { name: 'Ben' });
+  await cal.ask('company/invite', { name: 'Ada' });
+  await ada.ask('company/accept', { name: 'Cal' });
   assert.deepEqual((await ben.roster()).invites, []);
-  assert.equal((await ben.ask('fireteam/accept', { name: 'Ada' })).status, 404, "so it opens no way into Cal's");
-  assert.deepEqual(names((await cal.roster()).fireteam?.members ?? []), ['Cal', 'Ada']);
+  assert.equal((await ben.ask('company/accept', { name: 'Ada' })).status, 404, "so it opens no way into Cal's");
+  assert.deepEqual(names((await cal.roster()).company?.members ?? []), ['Cal', 'Ada']);
 });
 
-test('a full fireteam is refused before the one joining leaves their own', async () => {
+test('a full company is refused before the one joining leaves their own', async () => {
   const {
     players: [ada, ben, cal, dee, eve],
   } = await playing('Ada', 'Ben', 'Cal', 'Dee', 'Eve');
-  await ada.ask('fireteam/privacy', { privacy: 0 });
-  await ben.ask('fireteam/join', { name: 'Ada' });
-  await cal.ask('fireteam/join', { name: 'Ada' });
-  await dee.ask('fireteam/invite', { name: 'Eve' });
-  await eve.ask('fireteam/accept', { name: 'Dee' });
-  assert.equal((await eve.ask('fireteam/join', { name: 'Ada' })).status, 409);
-  assert.deepEqual(names((await eve.roster()).fireteam?.members ?? []), ['Dee', 'Eve'], 'still in her own');
+  await ada.ask('company/privacy', { privacy: 0 });
+  await ben.ask('company/join', { name: 'Ada' });
+  await cal.ask('company/join', { name: 'Ada' });
+  await dee.ask('company/invite', { name: 'Eve' });
+  await eve.ask('company/accept', { name: 'Dee' });
+  assert.equal((await eve.ask('company/join', { name: 'Ada' })).status, 409);
+  assert.deepEqual(names((await eve.roster()).company?.members ?? []), ['Dee', 'Eve'], 'still in her own');
 });
 
-test('a leader and a member leaving at once leave no fireteam of one', async () => {
+test('a leader and a member leaving at once leave no company of one', async () => {
   const {
     deps,
     players: [ada, ben, cal],
   } = await playing('Ada', 'Ben', 'Cal');
-  await ada.ask('fireteam/privacy', { privacy: 0 });
-  await ben.ask('fireteam/join', { name: 'Ada' });
-  await cal.ask('fireteam/join', { name: 'Ada' });
+  await ada.ask('company/privacy', { privacy: 0 });
+  await ben.ask('company/join', { name: 'Ada' });
+  await cal.ask('company/join', { name: 'Ada' });
   slowly(deps);
-  await Promise.all([ada.ask('fireteam/leave'), ben.ask('fireteam/leave')]);
-  assert.equal((await cal.roster()).fireteam, null);
+  await Promise.all([ada.ask('company/leave'), ben.ask('company/leave')]);
+  assert.equal((await cal.roster()).company, null);
 });
 
 test('the privacy shown is the leader’s, which is the one that applies', async () => {
   const {
     players: [ada, ben],
   } = await playing('Ada', 'Ben');
-  await ada.ask('fireteam/privacy', { privacy: 0 });
-  await ben.ask('fireteam/join', { name: 'Ada' });
+  await ada.ask('company/privacy', { privacy: 0 });
+  await ben.ask('company/join', { name: 'Ada' });
   assert.equal((await ben.roster()).privacy, 'Public', "Ada's, though Ben's own is Friends Only");
-  await ben.ask('fireteam/leave');
+  await ben.ask('company/leave');
   assert.equal((await ben.roster()).privacy, 'Friends Only', 'his own once alone');
 });
 
-test('a player who leaves the sea stays in the fireteam until away ten minutes', async () => {
+test('a player who leaves the sea stays in the company until away ten minutes', async () => {
   const { player, play, kept, tokens, clock, deps } = await world('Ada', 'Ben');
   await play('Ada', 'node-overlook-social');
   await play('Ben', 'node-overlook-social');
-  await player('Ada').ask('fireteam/invite', { name: 'Ben' });
-  await player('Ben').ask('fireteam/accept', { name: 'Ada' });
+  await player('Ada').ask('company/invite', { name: 'Ben' });
+  await player('Ben').ask('company/accept', { name: 'Ada' });
   const ben = await deps.database.prepare("SELECT id FROM accounts WHERE username = 'Ben'").first<{ id: string }>();
   await kept.release(ben?.id ?? '', 'node-overlook-social:Ben', null);
   for (let reported = 0; reported < 40; reported++) {
@@ -268,12 +268,12 @@ test('a player who leaves the sea stays in the fireteam until away ten minutes',
   }
   await kept.present(tokens['Ben'] ?? '', null);
   clock.now += 5_000;
-  const fireteam = async () => (await player('Ada').roster()).fireteam?.members ?? [];
-  assert.deepEqual(names(await fireteam()), ['Ada', 'Ben'], 'just left, after twenty minutes at sea');
-  assert.equal((await fireteam())[1]?.place, null, 'and no longer there');
+  const company = async () => (await player('Ada').roster()).company?.members ?? [];
+  assert.deepEqual(names(await company()), ['Ada', 'Ben'], 'just left, after twenty minutes at sea');
+  assert.equal((await company())[1]?.place, null, 'and no longer there');
   clock.now += 10 * 60_000;
   await kept.present(tokens['Ada'] ?? '', 'sea');
-  assert.deepEqual(names(await fireteam()), []);
+  assert.deepEqual(names(await company()), []);
 });
 
 test('where a player is shows to no one they did not let: not to whom they asked, nor to a guild inviting them', async () => {
@@ -347,10 +347,10 @@ test("a guild's name keeps its spaces, dashes and apostrophes apart, and its mot
 
 test('an invite past its time is swept away', async () => {
   const { player, clock, ask, deps } = await world('Ada', 'Ben');
-  await player('Ada').ask('fireteam/invite', { name: 'Ben' });
+  await player('Ada').ask('company/invite', { name: 'Ben' });
   clock.now += INVITE_MS + 1;
   await ask('POST', '/v1/guest');
-  const left = await deps.database.prepare('SELECT COUNT(*) AS count FROM fireteam_invites').first<{ count: number }>();
+  const left = await deps.database.prepare('SELECT COUNT(*) AS count FROM company_invites').first<{ count: number }>();
   assert.equal(left?.count, 0);
 });
 

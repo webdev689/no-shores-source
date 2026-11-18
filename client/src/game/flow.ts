@@ -48,11 +48,11 @@ export function next(flow: Flow, happening: Happening): Flow {
         then: { mode: 'foot', node: happening.node, menu: false },
       };
     case 'join':
-      // A fireteam member is joined from wherever the player is, on foot or at sea, as Destiny's join brings them in.
+      // A company member is joined from wherever the player is, on foot or at sea, as Destiny's join brings them in.
       if (flow.mode !== 'foot' && flow.mode !== 'sea') return flow;
       return {
         mode: 'loading',
-        words: `Joining your fireteam at ${happening.name}`,
+        words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node, menu: false },
       };
     case 'back':

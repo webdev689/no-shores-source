@@ -27,7 +27,7 @@ code:
   - client/src/game/playerDetails.ts#detailsPage
   - client/src/game/emblemArt.ts#emblemPixels
   - client/src/game/emblemSlot.ts#emblemSlot
-  - client/src/game/fireteamHud.ts#startFireteamHud
+  - client/src/game/companyHud.ts#startCompanyHud
   - client/src/game/stationPages.ts#vaultPage
   - client/src/game/stationPages.ts#vendorPage
   - client/src/game/gearDom.ts#itemMarks
@@ -128,8 +128,8 @@ never while a press is held. Each press is an ask the room answers.
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
   Roster"): three columns, Game, Friends and Guild, each a page of fourteen rows with arrows between pages, its empty
-  rows kept so each column keeps its length. Game holds invites to a fireteam, then the fireteam (its leader marked with a
-  gold corner, or the player alone, who leads their own), then those in the same room; over it the fireteam's privacy.
+  rows kept so each column keeps its length. Game holds invites to a company, then the company (its leader marked with a
+  gold corner, or the player alone, who leads their own), then those in the same room; over it the company's privacy.
   Friends holds those asking, then friends playing, those asked, and friends away; over it a press to add a friend.
   Guild holds its members playing, then away, each with their rank, then those invited; over it the guild's name, motto and presses, or, with none, a
   press to found one and the invites. Each row is a player's emblem and its nameplate behind their name and tag, at
@@ -137,8 +137,8 @@ never while a press is held. Each press is an ask the room answers.
   that may be done with them, what cannot be undone held. Details shows another player's nameplate, guild, power and
   worn pieces. A join goes to them if they are on foot on this landmass. The Roster is asked for again every 15
   seconds while it is seen.
-- **The fireteam on the heads-up display**: each other member's nameplate under the place's name, with where they are,
-  and an invite waiting; it stands over the veil, so the fireteam shows while the player travels.
+- **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
+  and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
   Under it, the players blocked, each with a press to unblock them.
@@ -167,7 +167,7 @@ as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is d
 and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the
-Roster's rows, the menu's banner, another player's details, the fireteam on the heads-up display, the Emblem slot and
+Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Emblem slot and
 the Tailor's stall.
 
 ## Limits
@@ -178,7 +178,7 @@ the Tailor's stall.
   the game's screens.
 - Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
   pictures on the player's own figure, which is not theirs.
-- A join reaches a fireteam member on foot on the landmass open now; one across the sea, or at sea, is not reached, and
+- A join reaches a company member on foot on the landmass open now; one across the sea, or at sea, is not reached, and
   the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.

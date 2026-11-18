@@ -161,8 +161,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
   while; and which foes beyond the patrols' carry them.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
-  can change any. Open for the owner: a join that loads another landmass, to reach a fireteam member across the sea;
-  names over other players' heads, green for the fireteam, as Destiny 1 shows them; the Guild tab's own page; more
+  can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
+  names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
   emblems and where they come from; whether Overlook should have text chat, which mute would need.
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
@@ -210,9 +210,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]], [[The Roster Follows Destiny 1, With Blocking]],
   [[Cosmetics Follow Destiny, Shown in Many Places]]): the face's
   5, Z and symbols drawn in code and made into a font in the page; the gauge counting nodes bought; the room serving
-  each ask only at its counter; the Social tab as Destiny 1's Roster with blocking, fireteams,
+  each ask only at its counter; the Social tab as Destiny 1's Roster with blocking, companies,
   guilds, reports and details; and 25 emblems, kept and worn, sold by the Tailor, shown on the Roster, the header, the
-  HUD and the Emblem slot. A group is a fireteam, as the owner named it. The menu's tabs share its whole top, and under
+  HUD and the Emblem slot. A group is a company, as the owner named it. The menu's tabs share its whole top, and under
   them the player's banner runs its full width, drawn to that width so none of it is cut off
   ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]). Tested offline: the full check, and headless at 1920×1080
   and 1280×720 against local rooms and accounts seeded with sixteen players.

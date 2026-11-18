@@ -38,7 +38,7 @@ export const OPEN_AT = 'overlook:gear';
 export const STEP_BACK = 'overlook:step-back';
 /** The event the account's page sends once the player signs in or takes a username, so the banner names them. */
 export const ACCOUNT_CHANGED = 'overlook:account';
-/** The event the Roster sends with each answer it hears, so the fireteam on the HUD need not ask as well. */
+/** The event the Roster sends with each answer it hears, so the company on the HUD need not ask as well. */
 export const ROSTER_HEARD = 'overlook:roster';
 
 /** Whether the gear screen is open: while it is, the game's own keys and pointer rest. */

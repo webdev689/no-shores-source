@@ -125,7 +125,7 @@
 .roster-dim .roster-sign {
   background: #232428;
 }
-/* The fireteam's leader: a gold corner on their sign, as Destiny's leader wears. */
+/* The company's leader: a gold corner on their sign, as Destiny's leader wears. */
 .roster-leader {
   position: absolute;
   top: 0;
@@ -264,8 +264,8 @@
   margin-left: 18px;
 }
 
-/* The fireteam on the heads-up display: each other member's nameplate at its own cells, over the veil and under the menu. */
-#hud .fireteam-hud {
+/* The company on the heads-up display: each other member's nameplate at its own cells, over the veil and under the menu. */
+#hud .company-hud {
   position: absolute;
   top: 96px;
   left: 28px;
@@ -274,7 +274,7 @@
   flex-direction: column;
   gap: 4px;
 }
-.fireteam-plate {
+.company-plate {
   position: relative;
   display: flex;
   align-items: center;
@@ -284,7 +284,7 @@
   background: left top / 240px 48px no-repeat;
   image-rendering: pixelated;
 }
-.fireteam-words {
+.company-words {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -292,10 +292,10 @@
     1px 1px 0 #000,
     -1px 0 0 #000;
 }
-.fireteam-words span {
+.company-words span {
   color: rgba(242, 239, 230, 0.8);
 }
-.fireteam-invite {
+.company-invite {
   margin: 4px 0 0;
   color: var(--warn, #f0b545);
 }

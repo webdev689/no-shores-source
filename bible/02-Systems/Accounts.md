@@ -14,7 +14,7 @@ code:
   - server/accounts/friends.ts#friendsOf
   - server/accounts/migrations/20261118200000_roster.sql
   - server/accounts/roster.ts#rosterOf
-  - server/accounts/fireteams.ts#fireteamAsk
+  - server/accounts/companies.ts#companyAsk
   - server/accounts/guilds.ts#guildAsk
   - server/accounts/social.ts#socialAsk
   - server/accounts/people.ts#PERSON
@@ -106,11 +106,11 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
-- **The fireteam**, as Destiny's: three at most, one its leader; a player alone leads their own. A player is
+- **The company**, sized as Destiny's fireteam: three at most, one its leader; a player alone leads their own. A player is
   invited (the invite stands ten minutes, then is let go), or joins as the leader's privacy allows: Public, anyone;
   Friends Only (each player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though
   an invite still stands. The Roster shows the leader's privacy, the one that applies; a member's own applies once they
-  lead. A full fireteam is refused before the player leaves their own, and joining one ends the invites they sent. The
+  lead. A full company is refused before the player leaves their own, and joining one ends the invites they sent. The
   leader makes another the leader or removes them; a leader who leaves hands the lead to the longest there. A member
   away from the game ten minutes leaves it, but never the player asking.
 - **The guild**: a name of 3 to 24 characters, letters and digits starting with a letter, with single spaces, dashes
@@ -120,13 +120,13 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. A founder leaves only once another founds it, or alone, which
   ends it. A hundred at most.
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
-  as sent and never arrives. A block either way between a player and anyone in a fireteam keeps them out of it, by
-  joining or by an invite, answered as a fireteam closed to them. The one blocked sees the blocker's details as a
+  as sent and never arrives. A block either way between a player and anyone in a company keeps them out of it, by
+  joining or by an invite, answered as a company closed to them. The one blocked sees the blocker's details as a
   stranger does, so the block shows nowhere. A blocked player is unblocked from Settings.
 - **Reporting** keeps a player's name, who reported them and why (cheating, a name, harassment, something else) for
   the owner to read in the database, ten a day a player.
-- **The room's own**: the Game column lists the players with a name in the same room beside the fireteam, the guests
-  only counted. Another player's details show what they wear always, and where they are only to their friends, fireteam
+- **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
+  only counted. Another player's details show what they wear always, and where they are only to their friends, company
   and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
 

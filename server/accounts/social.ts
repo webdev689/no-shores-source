@@ -1,13 +1,13 @@
 /**
  * The Roster's routes: the Roster itself, another player's details, and every ask of it: of friends (`friends.ts`),
- * the fireteam (`fireteams.ts`), the guild (`guilds.ts`), and blocking and reporting a player. Each needs a username, as a
+ * the company (`companies.ts`), the guild (`guilds.ts`), and blocking and reporting a player. Each needs a username, as a
  * player is found by theirs.
  */
 
 import type { Db } from './database.ts';
 import { done, friendAsk, said, type Answer } from './friends.ts';
 import { guildAsk } from './guilds.ts';
-import { fireteamAsk } from './fireteams.ts';
+import { companyAsk } from './companies.ts';
 import { accountNamed } from './people.ts';
 import { detailsOf, rosterOf } from './roster.ts';
 
@@ -25,7 +25,7 @@ async function block(database: Db, own: string, them: string, now: number): Prom
     .bind(own, them)
     .run();
   await database
-    .prepare('DELETE FROM fireteam_invites WHERE (from_id = ?1 AND to_id = ?2) OR (from_id = ?2 AND to_id = ?1)')
+    .prepare('DELETE FROM company_invites WHERE (from_id = ?1 AND to_id = ?2) OR (from_id = ?2 AND to_id = ?1)')
     .bind(own, them)
     .run();
   await database
@@ -34,7 +34,7 @@ async function block(database: Db, own: string, them: string, now: number): Prom
     .run();
 }
 
-/** What account `own` asks by `path` (`friend/ask`, `fireteam/join`, `guild/found`, `block`, ...), with its body. */
+/** What account `own` asks by `path` (`friend/ask`, `company/join`, `guild/found`, `block`, ...), with its body. */
 export async function socialAsk(
   database: Db,
   own: string,
@@ -45,7 +45,7 @@ export async function socialAsk(
   const [group = '', asked = ''] = path.split('/');
   if (group === 'friend' && (asked === 'ask' || asked === 'accept' || asked === 'remove'))
     return friendAsk(database, own, asked, given?.['name'], now);
-  if (group === 'fireteam') return fireteamAsk(database, own, asked, given, now);
+  if (group === 'company') return companyAsk(database, own, asked, given, now);
   if (group === 'guild') return guildAsk(database, own, asked, given, now);
   // Blocking, unblocking and reporting take nothing after them, so no other path escapes their limit.
   if (asked !== '') return said(404, 'No such page.');

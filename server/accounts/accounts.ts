@@ -7,7 +7,7 @@
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type AccountRow, HEADERS, LAPSED, bodyOf, json, refused, sessionOf, signedIn, within } from './http.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
-import { INVITE_MS } from './fireteams.ts';
+import { INVITE_MS } from './companies.ts';
 import { socialAsk, socialRead } from './social.ts';
 import { USERNAME } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
@@ -141,7 +141,7 @@ async function social(request: Request, deps: Deps, route: string, now: number):
     return json(answer.body, answer.status);
   }
   const limit = asked === 'report' ? LIMITS.report : LIMITS.social;
-  const reaching = /^(friend\/ask|fireteam\/invite|guild\/invite|guild\/found|report)$/.test(asked ?? '');
+  const reaching = /^(friend\/ask|company\/invite|guild\/invite|guild\/found|report)$/.test(asked ?? '');
   if (reaching && !(await within(database, `${asked === 'report' ? 'report' : 'social'}:${account.id}`, limit, now)))
     return refused(429, 'Too many asks. Wait a while.');
   const answer = await socialAsk(database, account.id, asked ?? '', await bodyOf(request), now);
@@ -165,7 +165,7 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
         .bind(now - 24 * 60 * MINUTE)
         .run();
       await database
-        .prepare('DELETE FROM fireteam_invites WHERE created_at < ?1')
+        .prepare('DELETE FROM company_invites WHERE created_at < ?1')
         .bind(now - INVITE_MS)
         .run();
       await database

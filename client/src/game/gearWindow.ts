@@ -32,7 +32,7 @@ import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
-import { startFireteamHud } from './fireteamHud.ts';
+import { startCompanyHud } from './companyHud.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -233,7 +233,7 @@ export function startGearWindow(
     });
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
-  startFireteamHud(root, link);
+  startCompanyHud(root, link);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
   /** The banner's emblem, drawn again to the banner's width whenever that changes. */

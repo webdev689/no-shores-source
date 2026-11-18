@@ -1,7 +1,7 @@
 import type { Person, Roster } from '../network/accounts.ts';
 
 /**
- * What the Roster's three columns hold, after Destiny 1's: Game (the fireteam, then the players in the same room),
+ * What the Roster's three columns hold, after Destiny 1's: Game (the company, then the players in the same room),
  * Friends and Guild; each player playing first, then those away, greyed, by name. And what may be done with each, as
  * their place in the player's lists allows.
  */
@@ -13,7 +13,7 @@ export interface Row {
   readonly words: string;
   /** Away from the game, or only asked: greyed, with no emblem. */
   readonly dim: boolean;
-  /** The fireteam's leader, marked as Destiny marks theirs. */
+  /** The company's leader, marked as Destiny marks theirs. */
   readonly leads: boolean;
   readonly actions: readonly Action[];
 }
@@ -31,8 +31,8 @@ export interface Action {
 
 /** The privacies, in the order the accounts number them. */
 export const PRIVACIES = ['Public', 'Friends Only', 'Invite Only', 'Closed'] as const;
-/** How many players a fireteam holds. */
-export const FIRETEAM_MOST = 3;
+/** How many players a company holds. */
+export const COMPANY_MOST = 3;
 /** How many rows a column shows a page. */
 export const ROWS_A_PAGE = 14;
 
@@ -66,30 +66,30 @@ export function actionsFor(roster: Roster, person: Person): Action[] {
   const named = { name };
   if (name === own) {
     const own: Action[] = [{ label: 'Details', opens: 'details' }];
-    if (roster.fireteam) own.push({ label: 'Leave fireteam', path: 'fireteam/leave' });
+    if (roster.company) own.push({ label: 'Leave company', path: 'company/leave' });
     if (roster.guild) own.push({ label: 'Leave guild', path: 'guild/leave', held: true, warn: true });
     return own;
   }
   const actions: Action[] = [{ label: 'Details', opens: 'details' }];
-  const fireteam = roster.fireteam?.members ?? [];
-  const inFireteam = fireteam.some((each) => each.name === name);
-  const leading = !roster.fireteam || roster.fireteam.leader === own;
+  const company = roster.company?.members ?? [];
+  const inCompany = company.some((each) => each.name === name);
+  const leading = !roster.company || roster.company.leader === own;
   if (roster.invites.some((each) => each.name === name))
-    actions.push({ label: 'Accept fireteam invite', path: 'fireteam/accept', body: named, opens: 'join' });
-  // A member playing elsewhere is gone to without asking the Roster anything: they are in the fireteam already.
-  if (inFireteam && person.place !== null && person.place !== roster.me?.place)
+    actions.push({ label: 'Accept company invite', path: 'company/accept', body: named, opens: 'join' });
+  // A member playing elsewhere is gone to without asking the Roster anything: they are in the company already.
+  if (inCompany && person.place !== null && person.place !== roster.me?.place)
     actions.push({ label: 'Go to them', opens: 'travel' });
-  if (inFireteam && leading) {
-    actions.push({ label: 'Make fireteam leader', path: 'fireteam/lead', body: named });
-    actions.push({ label: 'Remove from fireteam', path: 'fireteam/kick', body: named, held: true, warn: true });
+  if (inCompany && leading) {
+    actions.push({ label: 'Make company leader', path: 'company/lead', body: named });
+    actions.push({ label: 'Remove from company', path: 'company/kick', body: named, held: true, warn: true });
   }
-  if (!inFireteam && person.place !== null) {
-    actions.push({ label: 'Join fireteam', path: 'fireteam/join', body: named, opens: 'join' });
-    if (leading && Math.max(1, fireteam.length) < FIRETEAM_MOST)
-      actions.push({ label: 'Invite to fireteam', path: 'fireteam/invite', body: named });
+  if (!inCompany && person.place !== null) {
+    actions.push({ label: 'Join company', path: 'company/join', body: named, opens: 'join' });
+    if (leading && Math.max(1, company.length) < COMPANY_MOST)
+      actions.push({ label: 'Invite to company', path: 'company/invite', body: named });
   }
   if (roster.invites.some((each) => each.name === name))
-    actions.push({ label: 'Decline fireteam invite', path: 'fireteam/decline', body: named });
+    actions.push({ label: 'Decline company invite', path: 'company/decline', body: named });
   if (roster.friends.some((each) => each.name === name))
     actions.push({ label: 'Remove friend', path: 'friend/remove', body: named, held: true, warn: true });
   else if (roster.asking.some((each) => each.name === name)) {
@@ -125,22 +125,22 @@ const row = (roster: Roster, person: Person, words: string, dim: boolean, key: s
   person,
   words,
   dim,
-  leads: roster.fireteam?.leader === person.name,
+  leads: roster.company?.leader === person.name,
   actions: actionsFor(roster, person),
 });
 
-/** The Game column: invites to a fireteam, the fireteam (its leader first, or the player alone, who leads their own), then
+/** The Game column: invites to a company, the company (its leader first, or the player alone, who leads their own), then
  *  those in the same room. */
 export function gameRows(roster: Roster): Row[] {
   const self = roster.me;
-  const fireteam = roster.fireteam ? roster.fireteam.members : self ? [self] : [];
+  const company = roster.company ? roster.company.members : self ? [self] : [];
   return [
     ...roster.invites.map((person) =>
-      row(roster, person, 'Invites you to their fireteam', false, `invite-${person.name}`),
+      row(roster, person, 'Invites you to their company', false, `invite-${person.name}`),
     ),
-    ...fireteam.map((person) => ({
+    ...company.map((person) => ({
       ...row(roster, person, placeWords(person.place), person.place === null, `game-${person.name}`),
-      leads: roster.fireteam ? roster.fireteam.leader === person.name : person.name === self?.name,
+      leads: roster.company ? roster.company.leader === person.name : person.name === self?.name,
     })),
     ...ordered(roster.nearby).map((person) => row(roster, person, 'Nearby', false, `game-${person.name}`)),
   ];

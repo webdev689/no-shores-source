@@ -11,8 +11,6 @@ Seeing the menu with its tabs in the middle of its header and the player's namep
 > should also be below the buttons and spread across the entire UI. The banner should slot in properly and not get
 > cut ofd"
 
-Its first word names the group of players ([[The Roster Follows Destiny 1, With Blocking]]); the notes after it are
-this decision.
 
 ## What it settles
 

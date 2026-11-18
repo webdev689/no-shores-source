@@ -1,13 +1,13 @@
 /**
- * The Roster as one player sees it, after Destiny 1's: their fireteam, then the players in the same room; their friends
+ * The Roster as one player sees it, after Destiny 1's: their company, then the players in the same room; their friends
  * and those asking; their guild and its invites; and whom they block. And another player's details, as Destiny's
- * Inspect shows them: what they wear and where they are, if they are friends, in the fireteam or the guild.
+ * Inspect shows them: what they wear and where they are, if they are friends, in the company or the guild.
  */
 
 import type { Db } from './database.ts';
 import { friendsOf } from './friends.ts';
 import { RANKS, guildOf } from './guilds.ts';
-import { INVITE_MS, PRIVACIES, keepPresent, fireteamOf, privacyOf } from './fireteams.ts';
+import { INVITE_MS, PRIVACIES, keepPresent, companyOf, privacyOf } from './companies.ts';
 import { PERSON, type Person, type PersonRow, accountNamed, blocks, shown } from './people.ts';
 
 /** What a room kept of a character for others to see (the gear crate's `shown.rs`). */
@@ -30,7 +30,7 @@ export interface Shown {
   }[];
 }
 
-/** The most players a room lists beside the fireteam: a social space holds a few dozen. */
+/** The most players a room lists beside the company: a social space holds a few dozen. */
 const NEARBY_MOST = 64;
 
 /** A player shown without where they are, to one they have not let see it. */
@@ -55,19 +55,19 @@ export type Details = NonNullable<Awaited<ReturnType<typeof detailsOf>>>;
 export async function rosterOf(database: Db, own: string, now: number) {
   await keepPresent(database, own, now);
   const [self] = await peopleOf(database, [own], now);
-  const fireteam = await fireteamOf(database, own);
+  const company = await companyOf(database, own);
   // The privacy that applies is the leader's; a member's own applies once they lead.
-  const privacy = await privacyOf(database, fireteam?.leader ?? own);
-  const members = fireteam
-    ? await peopleOf(database, [fireteam.leader, ...fireteam.members.filter((id) => id !== fireteam.leader)], now)
+  const privacy = await privacyOf(database, company?.leader ?? own);
+  const members = company
+    ? await peopleOf(database, [company.leader, ...company.members.filter((id) => id !== company.leader)], now)
     : [];
   const { results: invites } = await database
     .prepare(
-      `${PERSON} JOIN fireteam_invites ON fireteam_invites.from_id = accounts.id WHERE fireteam_invites.to_id = ?1 AND fireteam_invites.created_at >= ?3`,
+      `${PERSON} JOIN company_invites ON company_invites.from_id = accounts.id WHERE company_invites.to_id = ?1 AND company_invites.created_at >= ?3`,
     )
     .bind(own, now, now - INVITE_MS)
     .all<PersonRow>();
-  // The players in the same room, beside the fireteam: those with a name, less those they block; guests are counted.
+  // The players in the same room, beside the company: those with a name, less those they block; guests are counted.
   // Found from the characters the room holds and the players it last saw, never by reading every account.
   const room = self?.place ?? null;
   const inRoom = room
@@ -84,7 +84,7 @@ export async function rosterOf(database: Db, own: string, now: number) {
           .all<PersonRow>()
       ).results
     : [];
-  const nearby = inRoom.filter((row) => row.name !== null && !fireteam?.members.includes(row.id));
+  const nearby = inRoom.filter((row) => row.name !== null && !company?.members.includes(row.id));
   const { results: befriended } = await database
     .prepare(
       `SELECT people.*, friends.accepted, friends.asker_id = ?1 AS mine FROM (${PERSON}) AS people
@@ -126,7 +126,7 @@ export async function rosterOf(database: Db, own: string, now: number) {
   return {
     me: self ? shown(self) : null,
     privacy: PRIVACIES[privacy],
-    fireteam: fireteam ? { leader: members[0]?.name ?? null, members: members.map(shown) } : null,
+    company: company ? { leader: members[0]?.name ?? null, members: members.map(shown) } : null,
     invites: invites.map(shown),
     nearby: nearby.map(shown),
     guests: inRoom.filter((row) => row.name === null).length,
@@ -149,7 +149,7 @@ export async function rosterOf(database: Db, own: string, now: number) {
 }
 
 /** Another player's details as account `own` may see them: what they wear always; where they are only to their
- *  friends, fireteam and guild. One who blocks the asker shows them only what a stranger sees, so it tells no one they
+ *  friends, company and guild. One who blocks the asker shows them only what a stranger sees, so it tells no one they
  *  are blocked. A name no one holds is not found. */
 export async function detailsOf(database: Db, own: string, name: string, now: number) {
   const them = await accountNamed(database, name);
@@ -164,7 +164,7 @@ export async function detailsOf(database: Db, own: string, name: string, now: nu
   const close =
     them.id === own ||
     (!(await blocks(database, them.id, own)) &&
-      ((await fireteamOf(database, own))?.members.includes(them.id) ||
+      ((await companyOf(database, own))?.members.includes(them.id) ||
         (guild !== null && (await guildOf(database, own))?.id === guild.id) ||
         (await friendsOf(database, own, now)).friends.some((each) => each.name === them.username)));
   const seen: Person = shown(person);

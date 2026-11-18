@@ -6,7 +6,7 @@
 
 import type { Db } from './database.ts';
 
-/** How long a player not playing stays in a fireteam. */
+/** How long a player not playing stays in a company. */
 export const AWAY_MS = 10 * 60_000;
 /** How long a room's word that a player is there lasts: twice how often it says so. */
 export const PRESENCE_MS = 60_000;

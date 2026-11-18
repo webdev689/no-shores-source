@@ -53,12 +53,12 @@ test('what does not fit the mode changes nothing', () => {
   assert.equal(next(loading, { kind: 'menu' }), loading, 'no menu while the veil is down');
 });
 
-test('a fireteam member is joined from on foot or at sea, never while landing or loading', () => {
+test('a company member is joined from on foot or at sea, never while landing or loading', () => {
   const join = { kind: 'join', node: 'saltgrass-downs', name: 'The Saltgrass Downs' } as const;
   const joined = next({ mode: 'sea', menu: true }, join);
   assert.deepEqual(joined, {
     mode: 'loading',
-    words: 'Joining your fireteam at The Saltgrass Downs',
+    words: 'Joining your company at The Saltgrass Downs',
     then: { mode: 'foot', node: 'saltgrass-downs', menu: false },
   });
   assert.equal(next(joined, join), joined, 'not while loading');

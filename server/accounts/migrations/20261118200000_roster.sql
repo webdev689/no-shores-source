@@ -1,8 +1,8 @@
--- What the Roster keeps, after Destiny 1's: whom each player blocks; fireteams of up to three, each player's fireteam
+-- What the Roster keeps, after Destiny 1's: whom each player blocks; companies of up to three, each player's company
 -- privacy and the invites between them; guilds, their members and invites; reports for the owner to read; and where
 -- a player is in a room that keeps no character (the sea).
 
--- Who may join a player's fireteam: 0 anyone, 1 their friends (Destiny's own first setting), 2 whom they invite,
+-- Who may join a player's company: 0 anyone, 1 their friends (Destiny's own first setting), 2 whom they invite,
 -- 3 no one.
 ALTER TABLE accounts ADD COLUMN privacy INTEGER NOT NULL DEFAULT 1;
 
@@ -14,25 +14,25 @@ CREATE TABLE blocks (
 );
 CREATE INDEX blocks_by_blocked ON blocks (blocked_id);
 
--- A fireteam of two or three; a player alone leads their own, which needs no row. A player is in one at most.
-CREATE TABLE fireteams (
+-- A company of two or three; a player alone leads their own, which needs no row. A player is in one at most.
+CREATE TABLE companies (
   id TEXT PRIMARY KEY,
   leader_id TEXT NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
   created_at INTEGER NOT NULL
 );
-CREATE TABLE fireteam_members (
+CREATE TABLE company_members (
   account_id TEXT PRIMARY KEY REFERENCES accounts (id) ON DELETE CASCADE,
-  fireteam_id TEXT NOT NULL REFERENCES fireteams (id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES companies (id) ON DELETE CASCADE,
   joined_at INTEGER NOT NULL
 );
-CREATE INDEX fireteam_members_by_fireteam ON fireteam_members (fireteam_id);
-CREATE TABLE fireteam_invites (
+CREATE INDEX company_members_by_company ON company_members (company_id);
+CREATE TABLE company_invites (
   from_id TEXT NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
   to_id TEXT NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
   created_at INTEGER NOT NULL,
   PRIMARY KEY (from_id, to_id)
 );
-CREATE INDEX fireteam_invites_by_to ON fireteam_invites (to_id);
+CREATE INDEX company_invites_by_to ON company_invites (to_id);
 
 -- A guild: its name and tag, each unique however it is typed, and its motto. A player is in one at most, at a rank:
 -- 0 its founder, 1 an admin, 2 a member.

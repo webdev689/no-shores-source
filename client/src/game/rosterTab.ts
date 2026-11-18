@@ -49,13 +49,13 @@ function rowPress(row: Row, chosen: boolean, choose: () => void): HTMLButtonElem
   if (row.person.tag) name.append(make('span', ` [${row.person.tag}]`, 'roster-tag'));
   words.append(name, make('span', row.words, 'roster-status'));
   node.append(sign, words);
-  node.setAttribute('aria-label', `${nameWithTag(row.person)}${row.leads ? ', fireteam leader' : ''}, ${row.words}`);
+  node.setAttribute('aria-label', `${nameWithTag(row.person)}${row.leads ? ', company leader' : ''}, ${row.words}`);
   node.addEventListener('click', choose);
   return node;
 }
 
 /**
- * The Social tab as Destiny 1's Roster: three columns, Game (the fireteam under its privacy, then those in the same room),
+ * The Social tab as Destiny 1's Roster: three columns, Game (the company under its privacy, then those in the same room),
  * Friends and Guild, each a page of rows with arrows between pages. Each row is a player's emblem and nameplate behind
  * their name and their guild's tag; choosing one opens a panel beside it with where they are and all that may be done
  * with them. What cannot be undone is held. The Roster is asked for again now and then while it is seen.
@@ -111,11 +111,11 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     panel.querySelector<HTMLElement>('button, input')?.focus();
   };
 
-  /** Goes to a fireteam member where they play now, as the Roster has them, unless that is here. */
+  /** Goes to a company member where they play now, as the Roster has them, unless that is here. */
   const goTo = (person: Person) =>
     void link.roster().then((fresh) => {
       const known = typeof fresh === 'string' ? roster : fresh;
-      const place = known?.fireteam?.members.find((each) => each.name === person.name)?.place ?? person.place;
+      const place = known?.company?.members.find((each) => each.name === person.name)?.place ?? person.place;
       if (place && place !== known?.me?.place) said.textContent = travel(place) ?? '';
     });
 
@@ -134,8 +134,8 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       .finally(() => {
         busy = false;
         look();
-        // The fireteam on the heads-up display hears of it at once.
-        dispatchEvent(new Event('overlook:fireteam'));
+        // The company on the heads-up display hears of it at once.
+        dispatchEvent(new Event('overlook:company'));
       });
   };
 
@@ -199,23 +199,23 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     return top;
   };
 
-  /** What heads each column: the fireteam's privacy; adding a friend; the guild, or founding one. */
+  /** What heads each column: the company's privacy; adding a friend; the guild, or founding one. */
   const topOf = (column: Column, current: Roster): HTMLElement => {
     if (column === 'game') {
-      const leading = !current.fireteam || current.fireteam.leader === current.me?.name;
-      return headPress('game', `Fireteam: ${current.privacy}`, (top) =>
+      const leading = !current.company || current.company.leader === current.me?.name;
+      return headPress('game', `Company: ${current.privacy}`, (top) =>
         openPanel(
           top,
-          'Who may join your fireteam',
+          'Who may join your company',
           leading
             ? PRIVACIES.map((privacy, index) => {
                 const press = pressOf(privacy, () =>
-                  doing({ label: privacy, path: 'fireteam/privacy', body: { privacy: index } }, null),
+                  doing({ label: privacy, path: 'company/privacy', body: { privacy: index } }, null),
                 );
                 press.setAttribute('aria-pressed', String(privacy === current.privacy));
                 return press;
               })
-            : [make('p', 'Your fireteam’s leader chooses this.', 'gear-hint')],
+            : [make('p', 'Your company’s leader chooses this.', 'gear-hint')],
           'top-game',
         ),
       );

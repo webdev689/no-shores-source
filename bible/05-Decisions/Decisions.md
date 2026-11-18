@@ -87,6 +87,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Cosmetics Follow Destiny, Shown in Many Places]]
 - [[The Roster and Emblems as Claude Shapes Them]]
 - [[The Menu's Tabs Fill Its Top, Its Banner Under Them]]
+- [[A Group of Players Is a Company]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

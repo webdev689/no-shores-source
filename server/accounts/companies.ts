@@ -1,5 +1,5 @@
 /**
- * Fireteams, after Destiny 1's: up to three players, one of them its leader. A player alone leads their own. Another
+ * Companies, after Destiny 1's fireteams: up to three players, one of them its leader. A player alone leads their own. Another
  * joins by an invite, or by asking to, as the leader's privacy allows: anyone, the leader's friends, those invited, or
  * no one. The leader can remove a member or hand the lead on; a leader who leaves hands it to the longest there. A
  * member away from the game ten minutes leaves it.
@@ -9,57 +9,55 @@ import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
 import { AWAY_MS, LAST_SEEN, accountNamed, blocks } from './people.ts';
 
-/** The most players a fireteam holds, as Destiny 1's held for a patrol or a strike. */
-export const FIRETEAM_MOST = 3;
+/** The most players a company holds, as Destiny 1's held for a patrol or a strike. */
+export const COMPANY_MOST = 3;
 /** How long an invite stands. */
 export const INVITE_MS = 10 * 60_000;
 /** Who may join: anyone, the leader's friends, those invited, no one. */
 export const PRIVACIES = ['Public', 'Friends Only', 'Invite Only', 'Closed'] as const;
 
-/** A player's fireteam: its id, leader and members, longest there first; null for a player alone. */
-export async function fireteamOf(
+/** A player's company: its id, leader and members, longest there first; null for a player alone. */
+export async function companyOf(
   database: Db,
   account: string,
 ): Promise<{ id: string; leader: string; members: string[] } | null> {
-  const fireteam = await database
+  const company = await database
     .prepare(
-      `SELECT fireteams.id, fireteams.leader_id AS leader FROM fireteam_members
-       JOIN fireteams ON fireteams.id = fireteam_members.fireteam_id WHERE fireteam_members.account_id = ?1`,
+      `SELECT companies.id, companies.leader_id AS leader FROM company_members
+       JOIN companies ON companies.id = company_members.company_id WHERE company_members.account_id = ?1`,
     )
     .bind(account)
     .first<{ id: string; leader: string }>();
-  if (!fireteam) return null;
+  if (!company) return null;
   const { results } = await database
-    .prepare('SELECT account_id FROM fireteam_members WHERE fireteam_id = ?1 ORDER BY joined_at, account_id')
-    .bind(fireteam.id)
+    .prepare('SELECT account_id FROM company_members WHERE company_id = ?1 ORDER BY joined_at, account_id')
+    .bind(company.id)
     .all<{ account_id: string }>();
-  return { ...fireteam, members: results.map((row) => row.account_id) };
+  return { ...company, members: results.map((row) => row.account_id) };
 }
 
-/** Takes a player out of their fireteam: a fireteam left with one ends, and a leader who leaves hands the lead to the
+/** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the
  *  longest there. */
 async function leave(database: Db, account: string): Promise<void> {
-  const fireteam = await fireteamOf(database, account);
-  if (!fireteam) return;
-  await database.prepare('DELETE FROM fireteam_members WHERE account_id = ?1').bind(account).run();
-  // Each step reads what is left as it runs, so two leaving at once still end a fireteam of one and pass its lead.
+  const company = await companyOf(database, account);
+  if (!company) return;
+  await database.prepare('DELETE FROM company_members WHERE account_id = ?1').bind(account).run();
+  // Each step reads what is left as it runs, so two leaving at once still end a company of one and pass its lead.
   const ended = await database
-    .prepare(
-      'DELETE FROM fireteams WHERE id = ?1 AND (SELECT COUNT(*) FROM fireteam_members WHERE fireteam_id = ?1) < 2',
-    )
-    .bind(fireteam.id)
+    .prepare('DELETE FROM companies WHERE id = ?1 AND (SELECT COUNT(*) FROM company_members WHERE company_id = ?1) < 2')
+    .bind(company.id)
     .run();
   if (ended.meta.changes === 1) {
-    await database.prepare('DELETE FROM fireteam_members WHERE fireteam_id = ?1').bind(fireteam.id).run();
+    await database.prepare('DELETE FROM company_members WHERE company_id = ?1').bind(company.id).run();
     return;
   }
   await database
     .prepare(
-      `UPDATE fireteams SET leader_id = (SELECT account_id FROM fireteam_members WHERE fireteam_id = ?1
+      `UPDATE companies SET leader_id = (SELECT account_id FROM company_members WHERE company_id = ?1
        ORDER BY joined_at, account_id LIMIT 1)
-       WHERE id = ?1 AND leader_id NOT IN (SELECT account_id FROM fireteam_members WHERE fireteam_id = ?1)`,
+       WHERE id = ?1 AND leader_id NOT IN (SELECT account_id FROM company_members WHERE company_id = ?1)`,
     )
-    .bind(fireteam.id)
+    .bind(company.id)
     .run();
 }
 
@@ -77,9 +75,9 @@ async function blockedAmong(database: Db, account: string, others: readonly stri
 
 /** Said to one who may not join, whether for the leader's privacy or a block, so it tells no one they are blocked. */
 const closed = (privacy: number): Answer =>
-  said(403, privacy === 1 ? 'Only their friends can join them.' : 'Their fireteam is closed to you.');
+  said(403, privacy === 1 ? 'Only their friends can join them.' : 'Their company is closed to you.');
 
-/** Who may join the fireteam `leader` leads, as its leader set it. */
+/** Who may join the company `leader` leads, as its leader set it. */
 export async function privacyOf(database: Db, leader: string): Promise<number> {
   const row = await database
     .prepare('SELECT privacy FROM accounts WHERE id = ?1')
@@ -88,12 +86,12 @@ export async function privacyOf(database: Db, leader: string): Promise<number> {
   return row?.privacy ?? 1;
 }
 
-/** Lets go of those in a player's fireteam who have been away from the game too long; never the player asking, who is
+/** Lets go of those in a player's company who have been away from the game too long; never the player asking, who is
  *  plainly here. */
 export async function keepPresent(database: Db, account: string, now: number): Promise<void> {
-  const fireteam = await fireteamOf(database, account);
-  if (!fireteam) return;
-  const others = fireteam.members.filter((member) => member !== account);
+  const company = await companyOf(database, account);
+  if (!company) return;
+  const others = company.members.filter((member) => member !== account);
   const { results } = await database
     .prepare(
       `SELECT accounts.id FROM accounts WHERE accounts.id IN (SELECT value FROM json_each(?1)) AND ${LAST_SEEN} < ?2`,
@@ -103,43 +101,43 @@ export async function keepPresent(database: Db, account: string, now: number): P
   for (const { id } of results) await leave(database, id);
 }
 
-/** Puts `joining` in the fireteam `host` is in, made for the host if they lead none; false if it is full. Joining
- *  ends the invites the player had sent, which were for a fireteam they no longer lead. */
+/** Puts `joining` in the company `host` is in, made for the host if they lead none; false if it is full. Joining
+ *  ends the invites the player had sent, which were for a company they no longer lead. */
 async function join(database: Db, joining: string, host: string, now: number): Promise<boolean> {
-  if ((await fireteamOf(database, joining))?.members.includes(host)) return true;
-  // A full fireteam is refused before the player leaves their own.
-  if (((await fireteamOf(database, host))?.members.length ?? 1) >= FIRETEAM_MOST) return false;
+  if ((await companyOf(database, joining))?.members.includes(host)) return true;
+  // A full company is refused before the player leaves their own.
+  if (((await companyOf(database, host))?.members.length ?? 1) >= COMPANY_MOST) return false;
   await leave(database, joining);
-  if (!(await fireteamOf(database, host))) {
+  if (!(await companyOf(database, host))) {
     const id = crypto.randomUUID();
     await database
-      .prepare('INSERT INTO fireteams (id, leader_id, created_at) VALUES (?1, ?2, ?3)')
+      .prepare('INSERT INTO companies (id, leader_id, created_at) VALUES (?1, ?2, ?3)')
       .bind(id, host, now)
       .run();
     const made = await database
-      .prepare('INSERT OR IGNORE INTO fireteam_members (account_id, fireteam_id, joined_at) VALUES (?1, ?2, ?3)')
+      .prepare('INSERT OR IGNORE INTO company_members (account_id, company_id, joined_at) VALUES (?1, ?2, ?3)')
       .bind(host, id, now)
       .run();
     // Another joining at once made the host's first: theirs stands.
-    if (made.meta.changes === 0) await database.prepare('DELETE FROM fireteams WHERE id = ?1').bind(id).run();
+    if (made.meta.changes === 0) await database.prepare('DELETE FROM companies WHERE id = ?1').bind(id).run();
   }
-  const fireteam = await fireteamOf(database, host);
-  if (!fireteam) return false;
+  const company = await companyOf(database, host);
+  if (!company) return false;
   // Counted as it is joined, so two joining at once cannot make it more than full.
   const joined = await database
     .prepare(
-      `INSERT OR IGNORE INTO fireteam_members (account_id, fireteam_id, joined_at) SELECT ?1, ?2, ?3
-       WHERE (SELECT COUNT(*) FROM fireteam_members WHERE fireteam_id = ?2) < ${FIRETEAM_MOST}`,
+      `INSERT OR IGNORE INTO company_members (account_id, company_id, joined_at) SELECT ?1, ?2, ?3
+       WHERE (SELECT COUNT(*) FROM company_members WHERE company_id = ?2) < ${COMPANY_MOST}`,
     )
-    .bind(joining, fireteam.id, now + 1)
+    .bind(joining, company.id, now + 1)
     .run();
   if (joined.meta.changes !== 1) return false;
-  await database.prepare('DELETE FROM fireteam_invites WHERE from_id = ?1').bind(joining).run();
+  await database.prepare('DELETE FROM company_invites WHERE from_id = ?1').bind(joining).run();
   return true;
 }
 
-/** What account `own` asks of the fireteams: of the player named, where it names one. */
-export async function fireteamAsk(
+/** What account `own` asks of the companies: of the player named, where it names one. */
+export async function companyAsk(
   database: Db,
   own: string,
   asked: string,
@@ -156,19 +154,19 @@ export async function fireteamAsk(
   }
   const them = await accountNamed(database, given?.['name']);
   if (!them || them.id === own) return said(404, 'No one by that name is there.');
-  const mine = await fireteamOf(database, own);
+  const mine = await companyOf(database, own);
   const leading = !mine || mine.leader === own;
   switch (asked) {
     case 'invite': {
       if (await blocks(database, own, them.id)) return said(409, 'Unblock them first.');
-      if (!leading) return said(403, "Only your fireteam's leader can invite.");
-      if ((mine?.members.length ?? 1) >= FIRETEAM_MOST) return said(409, 'Your fireteam is full.');
-      if (mine?.members.includes(them.id)) return said(409, 'They are in your fireteam already.');
+      if (!leading) return said(403, "Only your company's leader can invite.");
+      if ((mine?.members.length ?? 1) >= COMPANY_MOST) return said(409, 'Your company is full.');
+      if (mine?.members.includes(them.id)) return said(409, 'They are in your company already.');
       // An invite to one who blocks the inviter is answered as sent, and never reaches them.
       if (await blocks(database, them.id, own)) return done;
       await database
         .prepare(
-          `INSERT INTO fireteam_invites (from_id, to_id, created_at) VALUES (?1, ?2, ?3)
+          `INSERT INTO company_invites (from_id, to_id, created_at) VALUES (?1, ?2, ?3)
            ON CONFLICT (from_id, to_id) DO UPDATE SET created_at = ?3`,
         )
         .bind(own, them.id, now)
@@ -178,18 +176,18 @@ export async function fireteamAsk(
     case 'accept':
     case 'decline': {
       const taken = await database
-        .prepare('DELETE FROM fireteam_invites WHERE from_id = ?1 AND to_id = ?2 RETURNING created_at')
+        .prepare('DELETE FROM company_invites WHERE from_id = ?1 AND to_id = ?2 RETURNING created_at')
         .bind(them.id, own)
         .first<{ created_at: number }>();
       if (asked === 'decline') return done;
       if (!taken || taken.created_at < now - INVITE_MS) return said(404, 'That invite has run out.');
-      const theirs = await fireteamOf(database, them.id);
+      const theirs = await companyOf(database, them.id);
       if (await blockedAmong(database, own, theirs?.members ?? [them.id]))
         return closed(await privacyOf(database, theirs?.leader ?? them.id));
-      return (await join(database, own, them.id, now)) ? done : said(409, 'Their fireteam is full.');
+      return (await join(database, own, them.id, now)) ? done : said(409, 'Their company is full.');
     }
     case 'join': {
-      const theirs = await fireteamOf(database, them.id);
+      const theirs = await companyOf(database, them.id);
       const leader = theirs?.leader ?? them.id;
       if (theirs?.members.includes(own)) return done;
       const members = theirs?.members ?? [them.id];
@@ -203,7 +201,7 @@ export async function fireteamAsk(
         .first<{ yes: number }>();
       const invited = await database
         .prepare(
-          `SELECT 1 AS yes FROM fireteam_invites WHERE to_id = ?1 AND created_at >= ?2
+          `SELECT 1 AS yes FROM company_invites WHERE to_id = ?1 AND created_at >= ?2
            AND from_id IN (SELECT value FROM json_each(?3))`,
         )
         .bind(own, now - INVITE_MS, JSON.stringify(members))
@@ -211,14 +209,14 @@ export async function fireteamAsk(
       const privacy = await privacyOf(database, leader);
       const allowed = !blocked && (privacy === 0 || (privacy === 1 && friends) || (privacy <= 2 && invited));
       if (!allowed) return closed(privacy);
-      return (await join(database, own, them.id, now)) ? done : said(409, 'Their fireteam is full.');
+      return (await join(database, own, them.id, now)) ? done : said(409, 'Their company is full.');
     }
     case 'kick':
     case 'lead': {
-      if (!mine || mine.leader !== own) return said(403, "Only your fireteam's leader can do that.");
-      if (!mine.members.includes(them.id)) return said(404, 'They are not in your fireteam.');
+      if (!mine || mine.leader !== own) return said(403, "Only your company's leader can do that.");
+      if (!mine.members.includes(them.id)) return said(404, 'They are not in your company.');
       if (asked === 'kick') await leave(database, them.id);
-      else await database.prepare('UPDATE fireteams SET leader_id = ?1 WHERE id = ?2').bind(them.id, mine.id).run();
+      else await database.prepare('UPDATE companies SET leader_id = ?1 WHERE id = ?2').bind(them.id, mine.id).run();
       return done;
     }
     default:
