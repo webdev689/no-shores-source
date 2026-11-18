@@ -98,30 +98,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   and hull push; and the World Editor sailing there with `?room=`. A golden trace showed the one-captain fight
   unchanged line for line. Two players and a captain ran 480 s on the local Cloudflare runtime at 57.8 snapshots a
   second, both predictions equal to the room's ships to the bit.
-
-## Waiting on the owner
-
-- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
-  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
-  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
-  `main` ([[The Rooms Deploy on Each Merge]]); the `rooms` workflow can still be run by hand.
-- Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
-  does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
-  owner's to say.
-- #50's open choice: where another player's colour goes on the Sloop. Her drawn size at sea, 75 m, is settled
-  ([[The Sloop Is About 18 m Long]]).
-- #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
-  playing alone; when it happens is the owner's to say.
-- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
-  unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
-  renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
-- Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
-- Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
-  ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-
-## Next
-
-- One pull request in review holds the sea's new work, each part as the owner decided it:
+- The sea's new work, merged to `main` with the owner's yes (#59), which deploys the page and the rooms together,
+  each part as the owner decided it:
   - The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]): the [[Interface]]'s Enhanced
     Plus kit and the sea bar in it; the Sloop at true scale at the helm; Manage, the view over her deck with her panel
     and stand-in hands; and Leave the helm, the player walking her deck ([[Sailing]], "Her deck") with the sea room
@@ -135,11 +113,33 @@ Where the work stands now, for the next session. Each session rewrites this note
     to her at full detail with the World Editor's motion
     ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]; [[Game]], "At sea").
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
-    ones fixed with tests.
-  - Waiting on the owner: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
-    overboard should meet (the deck keeps them aboard for now), whether DFO's Travel Options encounter (a journey
-    stopped near an enemy) or wary pirates falling on a ship they outgun should come over. It changes the sea room's
-    wire, so its merge sends the page and the rooms out together.
+    ones fixed with tests; tested offline.
+
+## Waiting on the owner
+
+- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
+  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
+  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
+  `main` ([[The Rooms Deploy on Each Merge]]); the `rooms` workflow can still be run by hand.
+- Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
+  does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
+  owner's to say.
+- #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
+  overboard should meet (the deck keeps them aboard for now), and whether DFO's Travel Options encounter (a journey
+  stopped near an enemy) or wary pirates falling on a ship they outgun should come over.
+- #50's open choice: where another player's colour goes on the Sloop. Her drawn size at sea, 75 m, is settled
+  ([[The Sloop Is About 18 m Long]]).
+- #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
+  playing alone; when it happens is the owner's to say.
+- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
+  unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
+  renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
+- Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
+- Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
+  ([[The Forge's Renders Will Use daggerfalljs.dev]]).
+
+## Next
+
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
