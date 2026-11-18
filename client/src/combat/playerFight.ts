@@ -34,7 +34,8 @@ export class PlayerFight {
 
   /**
    * One frame: `steps` the fight's movement rules, the room's clock run while `running`, the fight's buttons taken
-   * only while `hands` (the pointer held), and an aimed shot laid on `markOf`'s point (the crosshair's). The buttons:
+   * only while `hands` (the pointer held), an aimed shot laid on `markOf`'s point (the crosshair's), and the first
+   * person's hands zoomed with the view by `zoomOf` once the player has stepped. The buttons:
    * a swing or a shot only with the weapon already out, on foot, the hands free; a guard on foot; a dodge whenever
    * pressed (the rules refuse one in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's button aims
    * it and the guard's fires it, and no guard rises behind it.
@@ -44,7 +45,12 @@ export class PlayerFight {
     steps: MovementRules,
     seconds: number,
     clock: number,
-    { running, hands, markOf }: { running: boolean; hands: boolean; markOf: () => Point | null },
+    {
+      running,
+      hands,
+      markOf,
+      zoomOf,
+    }: { running: boolean; hands: boolean; markOf: () => Point | null; zoomOf: () => number },
   ): PlayerFightFrame {
     const { walker, fight } = this;
     const { player, you } = walker;
@@ -74,7 +80,7 @@ export class PlayerFight {
     if (running) fight.pump(seconds);
     const shown = { own: fight.own, begun: fight.swingsBegun > 0, dropped: fight.drawsDropped > 0, aiming };
     [fight.swingsBegun, fight.drawsDropped] = [0, 0];
-    walker.show(controls, seconds, clock, shown);
+    walker.show(controls, seconds, clock, shown, zoomOf());
     const { outfit } = walker.shownDress;
     const handsKey = `${outfit.right}|${outfit.left}|${outfit.drawn}`;
     if (handsKey !== this.armsKey) {

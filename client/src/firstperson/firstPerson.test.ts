@@ -71,6 +71,21 @@ test('a lone gun stays by its corner however it is aimed, so its muzzle, where a
   assert.equal(person.muzzle, null, 'put away, none');
 });
 
+test('aiming zooms the hands with the view, about the middle of the screen, and the muzzle with them', async () => {
+  const { frame, person } = firstPerson(() => true);
+  const pistolet = { ...standing, right: 'pistolet' };
+  const { quads: plain } = await frame(0.016, pistolet);
+  const [ownX = 0, ownY = 0] = person.muzzle ?? [];
+  const { quads: zoomed } = await frame(0, { ...pistolet, zoom: 2 });
+  const [gun, zoomedGun] = [plain[0], zoomed[0]];
+  assert.ok(gun && zoomedGun);
+  assert.deepEqual(
+    [zoomedGun.x, zoomedGun.y, zoomedGun.width, zoomedGun.height],
+    [160 + (gun.x - 160) * 2, 100 + (gun.y - 100) * 2, gun.width * 2, gun.height * 2],
+  );
+  assert.deepEqual(person.muzzle, [160 + (ownX - 160) * 2, 100 + (ownY - 100) * 2]);
+});
+
 test('a drawn sword rests 60 design pixels below and 40 right of its own place, and strikes from its own; sheathed, nothing shows', async () => {
   const { frame, asked } = firstPerson(wholeFrames);
   const shown = await frame(0.016, standing);

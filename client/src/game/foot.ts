@@ -232,6 +232,7 @@ export class Foot {
       running: true,
       hands: hands && !paused,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
+      zoomOf: () => camera().zoom ?? 1,
     });
     const events = effects.events(fight, seconds);
     const shot = shotOfOrbit(camera(), LENS, groundAt, CAMERA_CLEARANCE_M);

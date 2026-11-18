@@ -116,7 +116,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
 - The [[Test Ground]]'s third-person aim placed by hand, DFO's next forge work with its dodge roll, and faster strikes,
-  merged to `main` with the owner's yes (#62), which deploys the page and the rooms, tested offline:
+  merged to `main` with the owner's yes (#62) and deployed; the live Test Ground serves the aim's panel:
   - the aim's sliders, kept in the browser and shown as numbers;
   - the forge's code exactly but for the were-creatures' ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]),
     and its 118,158 redrawn and new pictures and the roll's 1,200 published to R2 by a helper session on the
@@ -149,6 +149,9 @@ Where the work stands now, for the next session. Each session rewrites this note
     Two headless pages in one room on the local runtime held the same foes at every shared tick.
   - [[Hulls]]: new ships in the Sloop's style, planned, not built
     ([[New Ships Are Planned in the Sloop's Style, After the System]]).
+- First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
+  ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
+  the page and the rooms; tested offline, with a test and a headless Test Ground run.
 
 ## Waiting on the owner
 
@@ -182,6 +185,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
 ## Next
+
+- Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
+  seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
+  not yet known.
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to

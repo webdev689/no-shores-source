@@ -217,6 +217,7 @@ async function start(): Promise<void> {
       running,
       hands: controls.locked,
       markOf: () => crosshairPoint(aimView(player.player), aspect, COURSE, bodies),
+      zoomOf: () => aimView(player.player).zoom ?? 1,
     });
     const own = fighting.own;
     const events = effects.events(fighting, seconds);

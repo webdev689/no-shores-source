@@ -71,7 +71,7 @@ function fightingPlayer() {
   let clock = 0;
   const frame = (input: InputFrame) => {
     clock += TICK;
-    return player.frame(input, steps, TICK, clock, { running: true, hands: true, markOf: () => null });
+    return player.frame(input, steps, TICK, clock, { running: true, hands: true, markOf: () => null, zoomOf: () => 1 });
   };
   return { fighting, walker, shown, frame };
 }
