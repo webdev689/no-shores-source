@@ -7,6 +7,7 @@
 pub mod board;
 pub mod brain;
 mod dice;
+pub mod director;
 pub mod kinds;
 mod react;
 mod senses;
@@ -19,6 +20,7 @@ pub mod tuning;
 pub use board::Board;
 pub use brain::{Brain, notice};
 pub use combat::{Fighter, FighterId, Intent};
+pub use director::{Caps, Director, Pressed};
 pub use kinds::{Kind, spawn};
 
 use dice::Dice;
@@ -40,14 +42,15 @@ impl Routes for Straight {
     }
 }
 
-/// What a foe knows of its room this tick: the room's tick and seed, every fighter by id (alive or not, both sides), and
-/// the course's blocks and routes.
+/// What a foe knows of its room this tick: the room's tick and seed, every fighter by id (alive or not, both sides), the
+/// course's blocks and routes, and the room's director, whose heat sets the turn caps and the aggression bias.
 pub struct World<'a> {
     pub tick: u64,
     pub seed: u64,
     pub fighters: &'a [(FighterId, Fighter)],
     pub blocks: &'a [movement::Block],
     pub routes: &'a dyn Routes,
+    pub director: Director,
 }
 
 impl core::fmt::Debug for World<'_> {
@@ -58,6 +61,7 @@ impl core::fmt::Debug for World<'_> {
             .field("seed", &self.seed)
             .field("fighters", &self.fighters.len())
             .field("blocks", &self.blocks.len())
+            .field("director", &self.director)
             .finish_non_exhaustive()
     }
 }

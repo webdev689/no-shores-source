@@ -116,8 +116,9 @@ pub struct Room {
     /// The balls fired since the last snapshot, each as its whole line: from where it left to where it stopped, in one
     /// tick of its velocity.
     pub(crate) lines: Vec<Shot>,
-    /// What the foes share, the routes they walk, and the seed their chances are drawn from.
+    /// What the foes share, how hot their fight runs, the routes they walk, and the seed their chances are drawn from.
     pub(crate) board: ::foes::Board,
+    pub(crate) director: ::foes::Director,
     pub(crate) nav: navmesh::NavMesh,
     pub(crate) seed: u64,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
@@ -167,6 +168,7 @@ impl Room {
             loosed: Vec::new(),
             lines: Vec::new(),
             board: ::foes::Board::default(),
+            director: ::foes::Director::default(),
             nav,
             seed: SEED,
             past: VecDeque::new(),

@@ -15,8 +15,8 @@ use crate::steer::{Ask, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSING, FLEE, FLEE_SHARE,
-    GUARD_RESERVE, HURT_SHARE, PATIENCE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_GAP, RING_SLACK, RUN_FROM, SLOT_TURN,
-    STALE, STEP_PACE, SWING_DELAY, SWING_FACE,
+    GUARD_RESERVE, HURT_SHARE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM, SLOT_TURN, STALE, STEP_PACE,
+    SWING_FACE,
 };
 use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
@@ -196,7 +196,9 @@ fn back_off(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
 fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Ask {
     let (me, tick) = (here.me, here.tick());
     let reach = weapon(here.fighter.arms.melee).reach;
-    let ring = reach + RING_GAP;
+    let director = here.world.director;
+    let pressed = director.pressed();
+    let ring = reach + pressed.ring_gap;
     board.join(sight.id, me, false, tick);
     let from_target = bearing([sight.spot[0], sight.spot[1]], here.at());
     let back_turned = off(sight.fighter.aim, from_target) > BACK_TURNED;
@@ -207,7 +209,8 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let inside = sight.distance < ring - RING_SLACK && (closing || brain.plan == Plan::Engage);
     let opened = (back_turned && sight.distance <= ring + RING_SLACK) || inside;
     let open = board.opening(sight.id, me, opened && !board.holds(sight.id, me, false));
-    if brain.plan == Plan::Wait && (board.take(sight.id, me, false, tick, Here::ticks(PATIENCE)) || open) {
+    let patience = Here::ticks(pressed.patience);
+    if brain.plan == Plan::Wait && (board.take(sight.id, me, false, tick, patience, director.caps()) || open) {
         brain.plan = Plan::Engage;
     }
     if brain.plan == Plan::Engage && !board.holds(sight.id, me, false) && !open {
@@ -238,10 +241,11 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     {
         return telegraph(brain, order);
     }
+    let pressed = here.world.director.pressed();
     if sight.distance > reach {
         brain.ready_at = None;
         let Some(way) = way_to(here, sight.spot) else { return Ask::facing(sight.toward) };
-        let near = sight.distance <= reach + RING_GAP + RING_SLACK;
+        let near = sight.distance <= reach + pressed.ring_gap + RING_SLACK;
         return if near {
             Ask::stepping(way, 1.0, sight.toward)
         } else {
@@ -254,8 +258,9 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         recover(brain, here, board);
         return Ask::facing(sight.toward);
     }
+    let delay = pressed.swing_delay;
     let ready_at =
-        *brain.ready_at.get_or_insert_with(|| tick + Here::ticks(here.dice.between(Purpose::SwingDelay, SWING_DELAY)));
+        *brain.ready_at.get_or_insert_with(|| tick + Here::ticks(here.dice.between(Purpose::SwingDelay, delay)));
     let mut ask = Ask::facing(sight.toward);
     let stroke = stroke(here, sight);
     let reaches = sight.distance <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;

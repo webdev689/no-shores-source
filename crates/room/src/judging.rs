@@ -107,6 +107,16 @@ impl Room {
         }
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
+        // The fight's heat follows what the players took and what they dealt and killed.
+        let lost = before.health - after.health;
+        if self.players.contains_key(&defender) {
+            self.director.taken(lost);
+        } else if self.players.contains_key(&blow.striker) {
+            self.director.dealt(lost);
+            if after.dead() {
+                self.director.killed();
+            }
+        }
         if let Some(striker) = self.fighter(blow.striker).copied().filter(|striker| !striker.dead()) {
             self.set_fighter(blow.striker, answered(&striker, defender, &verdict));
         }

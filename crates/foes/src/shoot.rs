@@ -10,7 +10,7 @@ use crate::senses::{Here, Sight};
 use crate::steer::Ask;
 use crate::tell::aimed;
 use crate::tuning::{
-    KITE_COOLDOWN, KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, PATIENCE, RANGED_LEASE, SHOT_GAP, STEP_PACE, SWING_FACE,
+    KITE_COOLDOWN, KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, RANGED_LEASE, SHOT_GAP, STEP_PACE, SWING_FACE,
 };
 use combat::Ranged;
 use combat::fighter::Action;
@@ -78,7 +78,8 @@ pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: 
     if board.held_since(target, me).is_some_and(|since| tick > since + Here::ticks(RANGED_LEASE)) {
         board.hand_on(target, me, tick);
     }
-    let has = board.take(target, me, true, tick, Here::ticks(PATIENCE));
+    let director = here.world.director;
+    let has = board.take(target, me, true, tick, Here::ticks(director.pressed().patience), director.caps());
     let walked = std::mem::take(&mut brain.bow.walked);
     let close = if brain.bow.kiting { sight.distance < KITE_OUT } else { sight.distance < KITE_IN };
     if close && !matches!(here.fighter.action, Action::Draw { .. }) {

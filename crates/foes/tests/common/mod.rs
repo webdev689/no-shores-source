@@ -10,7 +10,7 @@ use combat::shots::{Flight, Shot, fly};
 use combat::sight::bearing;
 use combat::strike::struck;
 use combat::{Fighter, FighterId, Happening, Intent, Surroundings, Verdict, step_fighter};
-use foes::{Board, Brain, Kind, Routes, Seen, Straight, World, notice, spawn, think};
+use foes::{Board, Brain, Director, Kind, Routes, Seen, Straight, World, notice, spawn, think};
 use movement::{Block, Controls, standing};
 
 /// A player's controls and buttons for a tick, from the room as it stands.
@@ -22,6 +22,8 @@ pub struct Room {
     pub fighters: Vec<(FighterId, Fighter)>,
     pub brains: Vec<(FighterId, Brain)>,
     pub board: Board,
+    /// The fight's heat, held where a test sets it.
+    pub director: Director,
     pub blocks: Vec<Block>,
     pub routes: Box<dyn Routes>,
     /// Every foe's intent, by tick.
@@ -42,6 +44,7 @@ impl Room {
             fighters: Vec::new(),
             brains: Vec::new(),
             board: Board::default(),
+            director: Director::default(),
             blocks: Vec::new(),
             routes: Box::new(Straight),
             intents: Vec::new(),
@@ -130,8 +133,14 @@ impl Room {
         let mut intents: Vec<(FighterId, Intent)> = Vec::new();
         for index in 0..self.brains.len() {
             let (id, brain) = self.brains[index].clone();
-            let world =
-                World { tick, seed: self.seed, fighters: &self.fighters, blocks: &self.blocks, routes: &*self.routes };
+            let world = World {
+                tick,
+                seed: self.seed,
+                fighters: &self.fighters,
+                blocks: &self.blocks,
+                routes: &*self.routes,
+                director: self.director,
+            };
             let (next, intent) = think(id, &brain, &mut self.board, &world);
             self.brains[index].1 = next;
             intents.push((id, intent));

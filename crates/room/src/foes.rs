@@ -89,9 +89,10 @@ impl Room {
         self.tell(EventKind::Spawned, None, asker, id, 0.0);
     }
 
-    /// Every foe thinks over the room as it stands, then steps by its intent; what each set off lands as a player's
-    /// would.
+    /// The fight's heat eases a tick; every foe thinks over the room as it stands, then steps by its intent; what each
+    /// set off lands as a player's would.
     pub(crate) fn step_foes(&mut self) {
+        self.director.step();
         let fighters = self.fighters();
         // A player just stood again is left be until their grace ends or they strike.
         let clock = self.clock;
@@ -104,8 +105,14 @@ impl Room {
         let mut intents = Vec::with_capacity(ids.len());
         {
             let routes = MeshRoutes { mesh: &self.nav };
-            let world =
-                World { tick: self.clock, seed: self.seed, fighters: &noticed, blocks: &self.blocks, routes: &routes };
+            let world = World {
+                tick: self.clock,
+                seed: self.seed,
+                fighters: &noticed,
+                blocks: &self.blocks,
+                routes: &routes,
+                director: self.director,
+            };
             for id in &ids {
                 let Some(foe) = self.foes.get(id) else { continue };
                 intents.push((*id, think(*id, &foe.brain, &mut self.board, &world)));

@@ -2,6 +2,7 @@
 //! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in
 //! whatever the count.
 
+use crate::director::Caps;
 use combat::FighterId;
 use std::collections::BTreeMap;
 
@@ -60,10 +61,19 @@ impl Board {
         fight.waiting.insert(foe, (since, ranged));
     }
 
-    /// Takes a token of its kind for a waiting foe if one is free and nobody of its kind has waited longer, or, past
-    /// `patience` ticks of waiting, whatever the count. Answers whether it holds one.
-    pub fn take(&mut self, target: FighterId, foe: FighterId, ranged: bool, tick: u64, patience: u64) -> bool {
-        let cap = if ranged { crate::tuning::RANGED_TOKENS } else { crate::tuning::MELEE_TOKENS };
+    /// Takes a token of its kind for a waiting foe if one is free under `caps` and nobody of its kind has waited
+    /// longer, or, past `patience` ticks of waiting, whatever the count. Answers whether it holds one. A holder keeps
+    /// its token when the caps drop, until it hands it on.
+    pub fn take(
+        &mut self,
+        target: FighterId,
+        foe: FighterId,
+        ranged: bool,
+        tick: u64,
+        patience: u64,
+        caps: Caps,
+    ) -> bool {
+        let cap = if ranged { caps.ranged } else { caps.melee };
         let fight = self.fights.entry(target).or_default();
         if fight.tokens(ranged).contains_key(&foe) {
             return true;

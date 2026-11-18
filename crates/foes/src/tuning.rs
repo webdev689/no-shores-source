@@ -3,7 +3,8 @@
 
 const DEGREES: f64 = core::f64::consts::PI / 180.0;
 
-/// How many foes fight one target hand to hand at once, and how many shoot at it.
+/// How many foes fight one target hand to hand at once, and how many shoot at it, in a fight at rest: the director's
+/// heat moves these.
 pub const MELEE_TOKENS: usize = 2;
 pub const RANGED_TOKENS: usize = 2;
 /// A foe fights a target it sees within this; a shooter within this.
