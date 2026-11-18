@@ -9,25 +9,27 @@ fn a_major_is_a_ship_as_she_was_before_ranks() {
     assert_eq!(major.armed(SWIVEL), SWIVEL);
     let scale = Rank::Major.scale();
     assert_eq!([scale.hull, scale.might, scale.reload, scale.aim_error], [1.0; 4]);
-    assert_eq!((scale.always_bold, scale.runs_at), (false, PIRATE_RUNS_AT));
+    assert_eq!((scale.always_bold, scale.runs_at, scale.strikes_at), (false, PIRATE_RUNS_AT, STRUCK_AT));
+    assert_eq!(major.damage(), Damage::new(&PIRATE_SLOOP, false));
 }
 
 #[test]
 fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
-    // Hull, might, reload, aim error, always bold, the share of her hull she runs under.
+    // Hull, might, reload, aim error, always bold, the shares of her hull she runs under and strikes at.
     let table = [
-        (Rank::Minor, [0.6, 0.9, 1.2, 1.3], false, 0.3),
-        (Rank::Major, [1.0, 1.0, 1.0, 1.0], false, 0.3),
-        (Rank::Elite, [1.8, 1.1, 0.9, 0.8], true, 0.3),
-        (Rank::Miniboss, [3.0, 1.2, 0.8, 0.7], true, 0.15),
-        (Rank::Boss, [5.0, 1.3, 0.7, 0.6], true, 0.0),
+        (Rank::Minor, [0.6, 0.9, 1.2, 1.3], false, [0.3, 0.25]),
+        (Rank::Major, [1.0, 1.0, 1.0, 1.0], false, [0.3, 0.25]),
+        (Rank::Elite, [1.8, 1.1, 0.9, 0.8], true, [0.3, 0.2]),
+        (Rank::Miniboss, [3.0, 1.2, 0.8, 0.7], true, [0.15, 0.1]),
+        (Rank::Boss, [5.0, 1.3, 0.7, 0.6], true, [0.0, 0.05]),
     ];
-    for (rank, [hull, might, reload, aim_error], bold, runs_at) in table {
+    for (rank, [hull, might, reload, aim_error], bold, [runs_at, strikes_at]) in table {
         let scale = rank.scale();
         assert_eq!([scale.hull, scale.might, scale.reload, scale.aim_error], [hull, might, reload, aim_error]);
-        assert_eq!((scale.always_bold, scale.runs_at), (bold, runs_at), "{rank:?}");
+        assert_eq!((scale.always_bold, scale.runs_at, scale.strikes_at), (bold, runs_at, strikes_at), "{rank:?}");
         let commission = Commission { faction: GREY_TITHE, rank };
         assert_eq!(commission.build().hull, 264.0 * hull, "{rank:?}");
+        assert_eq!(commission.damage().struck_at, strikes_at, "{rank:?}");
         let gun = commission.armed(SWIVEL);
         assert_eq!([gun.hull, gun.sail, gun.crew], [5.0 * might, 2.0 * might, 2.0 * might]);
         assert_eq!([gun.yaw_spread_deg, gun.pitch_spread_deg], [1.3 * aim_error, 0.8 * aim_error]);

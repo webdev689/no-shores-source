@@ -5,7 +5,7 @@
 use crate::arms::Build;
 use crate::guns::Gun;
 
-/// A captain strikes at this share of her hull left.
+/// A captain strikes at this share of her hull left, a Major's and a Minor's (her rank's otherwise).
 pub const STRUCK_AT: f64 = 0.25;
 /// Seconds from going down to gone.
 pub const SINK_SECONDS: f64 = 22.0;
@@ -128,6 +128,8 @@ pub struct Damage {
     pub sink_t: f64,
     pub last_hit_at: f64,
     pub list_deg: f64,
+    /// The share of her hull she strikes at.
+    pub struck_at: f64,
     player: bool,
 }
 
@@ -148,6 +150,7 @@ impl Damage {
             sink_t: 0.0,
             last_hit_at: f64::NEG_INFINITY,
             list_deg: 0.0,
+            struck_at: STRUCK_AT,
             player,
         }
     }
@@ -260,7 +263,7 @@ impl Damage {
                 // Her fires burn on as she goes down.
                 self.state = State::Sinking;
                 self.sink_t = 0.0;
-            } else if self.state == State::Afloat && self.hull <= self.max_hull * STRUCK_AT {
+            } else if self.state == State::Afloat && self.hull <= self.max_hull * self.struck_at {
                 self.state = State::Struck;
                 self.douse();
             } else if self.state == State::Afloat && self.unmanned() {
@@ -335,7 +338,7 @@ impl Damage {
         if self.state == State::Wrecked && self.hull > self.max_hull * FIELD_REFLOAT {
             self.state = State::Afloat;
         }
-        if self.state == State::Struck && self.hull > self.max_hull * STRUCK_AT && !self.unmanned() {
+        if self.state == State::Struck && self.hull > self.max_hull * self.struck_at && !self.unmanned() {
             self.state = State::Afloat;
         }
         true

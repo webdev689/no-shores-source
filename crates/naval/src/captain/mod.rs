@@ -317,7 +317,10 @@ impl Captain {
     }
 
     fn power(&self, her: &Her) -> Power {
-        Power::captain(&self.build, her.damage.hull_share(), her.damage.crew_share())
+        Power {
+            struck_at: her.damage.struck_at,
+            ..Power::captain(&self.build, her.damage.hull_share(), her.damage.crew_share())
+        }
     }
 
     /// A chase marked: she gives it up, sparing her quarry, after `CHASE_GIVE_UP_S` without closing while still out
