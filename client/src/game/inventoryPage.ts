@@ -86,10 +86,10 @@ export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   return node;
 }
 
-/** A material in its row: its glyph, its name and its count, its card on hover or focus. */
 /** A shelf's tiles a row. */
 const SHELF_ROW = 10;
 
+/** A material in its row: its glyph, its name and its count, its card on hover or focus. */
 function materialRow(context: PageContext, cell: Cell): HTMLElement {
   const row = make('div', '', `gear-material ${ROLES.well}`);
   row.setAttribute('role', 'listitem');
