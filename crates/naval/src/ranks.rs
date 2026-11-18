@@ -3,6 +3,7 @@
 
 use crate::arms::{Build, PIRATE_SLOOP, TITHE_SLOOP};
 use crate::captain::PIRATE_RUNS_AT;
+use crate::damage::{Damage, STRUCK_AT};
 use crate::guns::Gun;
 
 /// The factions by number, as the foes number them: the players' own ships are 0.
@@ -23,8 +24,8 @@ pub enum Rank {
 }
 
 /// What a rank makes of a ship over a Major's: her hull's strength, her guns' harm, their reload, her gunners' aim
-/// error (the lay's error and the volley's scatter), whether she is always bold whatever her seed, and the share of
-/// her hull under which she runs (0: never).
+/// error (the lay's error and the volley's scatter), whether she is always bold whatever her seed, the share of her
+/// hull under which she runs (0: never), and the share at which she strikes.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Scale {
     pub hull: f64,
@@ -33,15 +34,41 @@ pub struct Scale {
     pub aim_error: f64,
     pub always_bold: bool,
     pub runs_at: f64,
+    pub strikes_at: f64,
 }
 
-/// Every rank's scale, Minor to Boss. A Major is a ship as she was before ranks: every factor 1.
+/// Every rank's scale, Minor to Boss. A Major is a ship as she was before ranks: every factor 1. The higher ranks
+/// strike later, so a Miniboss's run below 15% comes before her strike.
 pub const SCALES: [Scale; 5] = [
-    Scale { hull: 0.6, might: 0.9, reload: 1.2, aim_error: 1.3, always_bold: false, runs_at: PIRATE_RUNS_AT },
-    Scale { hull: 1.0, might: 1.0, reload: 1.0, aim_error: 1.0, always_bold: false, runs_at: PIRATE_RUNS_AT },
-    Scale { hull: 1.8, might: 1.1, reload: 0.9, aim_error: 0.8, always_bold: true, runs_at: PIRATE_RUNS_AT },
-    Scale { hull: 3.0, might: 1.2, reload: 0.8, aim_error: 0.7, always_bold: true, runs_at: 0.15 },
-    Scale { hull: 5.0, might: 1.3, reload: 0.7, aim_error: 0.6, always_bold: true, runs_at: 0.0 },
+    Scale {
+        hull: 0.6,
+        might: 0.9,
+        reload: 1.2,
+        aim_error: 1.3,
+        always_bold: false,
+        runs_at: PIRATE_RUNS_AT,
+        strikes_at: STRUCK_AT,
+    },
+    Scale {
+        hull: 1.0,
+        might: 1.0,
+        reload: 1.0,
+        aim_error: 1.0,
+        always_bold: false,
+        runs_at: PIRATE_RUNS_AT,
+        strikes_at: STRUCK_AT,
+    },
+    Scale {
+        hull: 1.8,
+        might: 1.1,
+        reload: 0.9,
+        aim_error: 0.8,
+        always_bold: true,
+        runs_at: PIRATE_RUNS_AT,
+        strikes_at: 0.2,
+    },
+    Scale { hull: 3.0, might: 1.2, reload: 0.8, aim_error: 0.7, always_bold: true, runs_at: 0.15, strikes_at: 0.1 },
+    Scale { hull: 5.0, might: 1.3, reload: 0.7, aim_error: 0.6, always_bold: true, runs_at: 0.0, strikes_at: 0.05 },
 ];
 
 impl Rank {
@@ -91,6 +118,14 @@ impl Commission {
     pub fn build(&self) -> Build {
         let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };
         Build { hull: base.hull * self.rank.scale().hull, ..base }
+    }
+
+    /// Her ship's hurts, sound: her hull as strong as her rank makes it, striking where her rank strikes.
+    #[must_use]
+    pub fn damage(&self) -> Damage {
+        let mut damage = Damage::new(&self.build(), false);
+        damage.struck_at = self.rank.scale().strikes_at;
+        damage
     }
 
     /// A gun as her gunners fire it: its harm by her rank's might, its scatter by her rank's aim error.

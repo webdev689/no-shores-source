@@ -5,7 +5,7 @@
 //! a ram are pushed apart: each out of the other by half the overlap, her way cut by how squarely she drove into it.
 
 use crate::ballistics::Block;
-use crate::damage::{Damage, STRUCK_AT, men, rounded};
+use crate::damage::{Damage, men, rounded};
 
 /// The least closing way (m/s) toward the face a stem meets that rams; under it two hulls bump.
 pub const RAM_SPEED: f64 = 1.6;
@@ -72,7 +72,7 @@ pub fn ram_blow(closing: f64, side: bool, mine: f64, hers: f64) -> f64 {
 /// A hull's line: where she strikes. A ram lands with it as its floor.
 #[must_use]
 pub fn ram_line(damage: &Damage) -> f64 {
-    damage.max_hull * STRUCK_AT
+    damage.max_hull * damage.struck_at
 }
 
 /// The hull a ram may still take from her: down to her line.

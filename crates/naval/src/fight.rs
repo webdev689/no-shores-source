@@ -259,7 +259,10 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
     let damage = &vessel.damage;
     let power = match vessel.command() {
         None => Power::player(&LARGE_BOAT, damage.hull_share()),
-        Some(command) => Power::captain(&command.her.build, damage.hull_share(), damage.crew_share()),
+        Some(command) => Power {
+            struck_at: damage.struck_at,
+            ..Power::captain(&command.her.build, damage.hull_share(), damage.crew_share())
+        },
     };
     Sighting {
         id,
@@ -351,10 +354,10 @@ impl Fight {
     }
 
     /// A captain of `commission` under number `id` in her Sloop at `ship`, cruising on its heading, her temper drawn
-    /// from `seed`, her hull as strong as her rank makes it.
+    /// from `seed`, her hull as strong as her rank makes it and striking where her rank strikes.
     fn enlist(&mut self, id: ShipId, ship: Ship, commission: Commission, seed: u32, waters: &impl Waters, time: f64) {
         let her = Captain::new(commission, seed, ship.heading, &SLOOP_ARMS);
-        let damage = Damage::new(&her.build, false);
+        let damage = commission.damage();
         let command = Command { her, under: sink_depth(seed), struck_at: None, gone: None };
         let vessel = Vessel {
             pose: pose_of(&ship, &SLOOP, waters, time),

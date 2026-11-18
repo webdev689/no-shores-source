@@ -16,7 +16,8 @@ pub const DUEL_RANGE: f64 = 110.0;
 pub const TURN_PER_VOLLEY: f64 = 90.0;
 
 /// A ship's fighting power: her hull's points and share left, her crew's share and men, whether she strikes by her
-/// men, her gunners' skill, her turn (degrees a second) and whether a crew loads her guns.
+/// men, her gunners' skill, her turn (degrees a second), whether a crew loads her guns, and the share of her hull she
+/// strikes at.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Power {
     pub hull_hp: f64,
@@ -27,6 +28,7 @@ pub struct Power {
     pub skill: f64,
     pub turn: f64,
     pub crewed: bool,
+    pub struck_at: f64,
 }
 
 impl Power {
@@ -42,6 +44,7 @@ impl Power {
             skill: build.skill,
             turn: STEER_PEAK,
             crewed: build.crewed,
+            struck_at: STRUCK_AT,
         }
     }
 
@@ -58,6 +61,7 @@ impl Power {
             skill: build.skill,
             turn: STEER_PEAK,
             crewed: true,
+            struck_at: STRUCK_AT,
         }
     }
 }
@@ -83,7 +87,7 @@ pub fn hit_share(arms: &Arms, skill: f64) -> f64 {
     (deep / (2.0 * error)).min(1.0) * (half_length / across).min(1.0)
 }
 
-/// Seconds `one`'s fire takes to make `other` strike: her hull down to a quarter, or her last man if she strikes by
+/// Seconds `one`'s fire takes to make `other` strike: her hull down to her strike, or her last man if she strikes by
 /// her men. Both ships carry `arms`.
 #[must_use]
 pub fn strike_time(one: &Power, other: &Power, arms: &Arms) -> f64 {
@@ -95,7 +99,7 @@ pub fn strike_time(one: &Power, other: &Power, arms: &Arms) -> f64 {
     let hull = hits * SWIVEL.hull * (1.0 + HOLED_BONUS * (WATERLINE_BAND_M / top).min(1.0));
     let men = hits * SWIVEL.crew / SHIP_TOUGHNESS;
     let by_hull =
-        if hull > 0.0 { other.hull_hp * (other.hull_share - STRUCK_AT).max(0.0) / hull } else { f64::INFINITY };
+        if hull > 0.0 { other.hull_hp * (other.hull_share - other.struck_at).max(0.0) / hull } else { f64::INFINITY };
     let by_men = if other.strikes && men > 0.0 { other.crew / men } else { f64::INFINITY };
     by_hull.min(by_men)
 }

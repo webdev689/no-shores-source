@@ -1,5 +1,6 @@
 use super::*;
 use crate::captain::{Mode, Temper};
+use crate::damage::Hurt;
 use crate::gunnery::reload_seconds;
 use crate::guns::SWIVEL;
 use crate::ranks::{GREY_TITHE, PIRATES, Rank};
@@ -110,4 +111,40 @@ fn her_rank_sets_her_hull_arms_her_volley_and_paces_her_reload() {
         return;
     }
     panic!("the Minor never fired");
+}
+
+/// A bold captain of `rank` hulled down to `share` of her hull, a player's Sloop 200 m off her beam: her state, and
+/// her mode after a tick.
+fn hulled(rank: Rank, share: f64) -> (State, Mode) {
+    let mut fight = Fight::new(5);
+    fight.put_to_sea(PLAYER, Ship { rung: 0, ..sloop_at(200.0, 0.0) }, &Open, 0.0);
+    fight.enlist(FIRST, sloop_at(0.0, 0.0), Commission { faction: PIRATES, rank }, 11, &Open, 0.0);
+    let Some(vessel) = fight.ships.get_mut(&FIRST) else { panic!("her ship") };
+    if let Sailor::Captain(command) = &mut vessel.sailor {
+        command.her.temper = Temper::Bold;
+    }
+    let hull = vessel.damage.max_hull - (vessel.damage.max_hull * share).floor();
+    vessel.damage.apply(Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+    tick(&mut fight);
+    let Some(vessel) = fight.vessel(FIRST) else { panic!("her ship") };
+    (vessel.damage.state, command(&fight, FIRST).her.mode)
+}
+
+#[test]
+fn each_rank_runs_and_strikes_at_its_own_share_of_her_hull() {
+    let (afloat, struck) = (State::Afloat, State::Struck);
+    let table = [
+        (Rank::Major, 0.26, (afloat, Mode::Flee)),
+        (Rank::Major, 0.24, (struck, Mode::Struck)),
+        (Rank::Elite, 0.21, (afloat, Mode::Flee)),
+        (Rank::Elite, 0.19, (struck, Mode::Struck)),
+        (Rank::Miniboss, 0.16, (afloat, Mode::Engage)),
+        (Rank::Miniboss, 0.14, (afloat, Mode::Flee)),
+        (Rank::Miniboss, 0.09, (struck, Mode::Struck)),
+        (Rank::Boss, 0.06, (afloat, Mode::Engage)),
+        (Rank::Boss, 0.04, (struck, Mode::Struck)),
+    ];
+    for (rank, share, wanted) in table {
+        assert_eq!(hulled(rank, share), wanted, "{rank:?} at {share}");
+    }
 }
