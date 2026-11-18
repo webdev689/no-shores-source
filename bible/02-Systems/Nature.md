@@ -132,26 +132,30 @@ Each frame a page calls `update` with the camera and the ground, then `drawInto`
 
 ## What it costs
 
-A frame in headless SwiftShader at 1280 x 720, every tile in reach scattered, at eye height and 60 m up, before the
-baked flora (code-made meshes, near to 700 m, far to 3 km) and with it. Triangles and draw calls are the whole
-frame's, shadows included; the time is SwiftShader's own GPU time, which counts every pixel shaded on the CPU.
+A frame in headless SwiftShader at 1280 x 720, every tile in reach scattered, the view held still once two frames in
+a row draw the same, on foot at the node's arrival and 60 m straight up from there: before the baked flora
+(code-made meshes, near to 700 m, far to 3 km) and with it now, measured one after the other. Triangles and draw
+calls are the whole frame's, shadows included; the time is SwiftShader's own GPU time a frame, which counts every
+pixel shaded on the CPU and swings with what else the machine runs, so only a pair measured together compares.
 
 | From | Before: triangles, draws, ms | Baked: triangles, draws, ms |
 |---|---|---|
-| The Elder Thicket (woodland), on foot | 4,832,976, 464, 9,376 | 4,767,612, 259, 17,076 |
-| The Elder Thicket, 60 m up | 4,857,852, 488, 8,491 | 4,589,576, 421, 15,286 |
-| The Emerald Tangle (rainforest), on foot | 4,912,076, 747, 9,100 | 4,233,360, 396, 12,719 |
-| The Emerald Tangle, 60 m up | 5,382,482, 856, 15,101 | 4,381,067, 575, 13,861 |
+| The Elder Thicket (woodland), on foot | 4,899,256, 475, 8,049 | 3,499,493, 384, 10,807 |
+| The Elder Thicket, 60 m up | 4,857,852, 488, 8,106 | 3,620,747, 396, 10,405 |
+| The Emerald Tangle (rainforest), on foot | 5,360,198, 837, 7,292 | 3,304,028, 508, 11,548 |
+| The Emerald Tangle, 60 m up | 5,382,482, 856, 7,276 | 3,277,338, 563, 11,455 |
 
-Fewer triangles and draws, but each card and sprite pixel samples its pictures and is cut by their coverage, which
-SwiftShader pays for on the CPU: in the woodland the frame takes about twice as long there.
+Where the time goes, in the woodland on foot: with every near mesh's pixels cut at once, the frame takes about 60%
+of its time, so the near meshes' cards are most of the rest; their lighting and normal map are little of it, as
+most of a card's pixels are air or hidden behind other cards. So the cards are cut to their leaves, cover half
+their group's reach, read one mip, and read their normal only where leaves survive the cut; sprites cover only the
+box their frames fill and read two frames, not four.
 
 ## Limits
 
-- On SwiftShader the woodland's frame is slower than the code-made meshes' was (see What it costs); a real GPU's
+- On SwiftShader a forest's frame is still slower than the code-made meshes' was (see What it costs); a real GPU's
   cost is unchecked.
-- The sprites' frames are blended, not morphed, and the swamp's cypresses read flatter and browner far off than
-  near.
+- The sprites' frames are blended, not morphed: between two azimuths a far plant shows a soft double image.
 
 - Only the near plants within the near shadow map's square cast; past it the contact shade stands in under each one.
 - Low plants keep off the feet of the tall ones in their own tile only: within a couple of metres of a tile's edge,
