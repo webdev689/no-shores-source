@@ -92,7 +92,7 @@ test('the camera follows its eased boom, but never nearer a sudden wall than the
   assert.ok(followed.boom! > 1 && followed.boom! < Math.hypot(2, 0.5), `${followed.boom}`);
   const eye = eyeOf(cameraOrbit(head, 0, 0, followed, [wall]));
   assert.ok(eye[1] <= 1 - BOOM.closest + 1e-9, `the eye at y ${eye[1]} is short of the wall`);
-  // A view never followed stands clear at once, as before.
+  // A view never followed stands clear at once.
   assert.ok(eyeOf(cameraOrbit(head, 0, 0, third, [wall]))[1] <= 1 - BOOM.clearance + 1e-9);
   // First person keeps no boom.
   assert.equal(
