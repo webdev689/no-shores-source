@@ -164,7 +164,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         skyline::kerb(&mut kit, [x1, y1], [x2, y2], pair[0][4], &carved);
     }
     rocks::talus(&mut kit, &ring, &paths, &carved);
-    rocks::clad(&mut kit, &sculpt.outcrops, &paths);
+    rocks::clad(&mut kit, &sculpt.outcrops, &paths, &carved);
     skyline::rim(&mut kit, &ring, &paths, &carved);
     let spawns = spawns_round(&field, anchor);
     Layout {

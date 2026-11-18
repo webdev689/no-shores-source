@@ -112,15 +112,15 @@ from the sea, fresh water and the claim's edge), then:
    top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing over a
    third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and retaining
    walls along part of the wider basins' feet. Along the cliff tops round the section, every 130 to 210 m where the
-   massif stands over the floor and no way runs out, stand the ruins of an older frontier: round towers broken off
-   at their tops with a few merlons left, and runs of curtain wall in lengths broken to different heights, some
-   buttressed, so the bounds read as a border once held.
-8. **The rock.** Every cliff's foot is walked every 7 m and given a heap of talus where no path runs: a great boulder
-   on the carved face's first ledge, smaller ones round it, scree spilt onto the floor too low to trip on, now and
-   then one of the forged rocks, and every 46 m a slab several metres high broken from the face and leant back on it.
-   Each mesa and spire stands in a ring of rubble pillars against its face, the columns its rock breaks into, tallest
-   round a spire, with boulders fallen at its foot. All of it is the solids' rubble, which wears the ground's stone in
-   the grey the terrain draws its cliffs in.
+   massif stands over the floor, its top level enough to hold one and no way runs out, stand the ruins of an older
+   frontier: round towers broken off at their tops with a few merlons left, and runs of curtain wall in lengths
+   broken to different heights, some buttressed, so the bounds read as a border once held.
+8. **The rock.** Rock fallen from the faces lies on the floor where each face meets it, never up the face, so every
+   stone rests on level ground as if it had rolled there: along the section's edge every 11 m, a third of the way
+   left bare and never by a path, a heap of a boulder or two against the foot, smaller stones by them and scree spilt
+   out onto the floor too low to trip on; and a few such heaps round each mesa's and spire's foot. A face's foot is
+   found by walking in from the section's edge to where the carving no longer raises the floor. All of it is the
+   solids' rubble, which wears the ground's stone in the grey the terrain draws its cliffs in.
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), and where foes hold

@@ -12,6 +12,8 @@ use land::sculpts::Sculpts;
 /// How far apart the rim's ruins stand along the section's edge, and how far back from it, on the cliff tops, metres.
 const RUIN_EVERY_M: f64 = 170.0;
 const RIM_BACK_M: f64 = 26.0;
+/// How much the top may rise and fall under a ruin's spread, metres.
+const UNEVEN_MOST_M: f64 = 1.5;
 /// How far a ruin keeps from a way out through the cliffs (a gorge or a canyon's mouth), metres.
 const WAY_CLEAR_M: f64 = 45.0;
 
@@ -46,7 +48,12 @@ pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts) {
                 .any(|path| path.points.windows(2).any(|pair| off_line(site, pair[0], pair[1]) < WAY_CLEAR_M));
             // Only where the cliff stands: a ruin on low ground past a gorge's mouth would sit in plain view of nothing.
             let standing = carved_at(kit, carved, site) - kit.height(edge);
-            if near_way || ring_holds(ring, site[0], site[1]) || standing < 8.0 {
+            // Only on a top level enough to hold it: a ruin on a slope would stand in the hill, not on it.
+            let heights = [[6.0, 0.0], [-6.0, 0.0], [0.0, 6.0], [0.0, -6.0], [0.0, 0.0]]
+                .map(|[east, south]| carved_at(kit, carved, [site[0] + east, site[1] + south]));
+            let uneven = heights.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+                - heights.iter().copied().fold(f64::INFINITY, f64::min);
+            if near_way || ring_holds(ring, site[0], site[1]) || standing < 8.0 || uneven > UNEVEN_MOST_M {
                 continue;
             }
             if kit.draw() < 0.45 {
