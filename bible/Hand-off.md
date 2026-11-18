@@ -261,8 +261,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   the synthesiser, and is searched no more, and `skip` lists what they already heard. The picks are on R2 and in the
   game: `tools/freesound/publish.py <download>` reads a run's `picks.json` and pick files (each pick read from its own
   page for its exact licence), puts each on R2 by its hash and writes `content/audio/sounds.json`, whose credits
-  Settings lists. Twelve of the thirteen cues are settled; the charge waits on the owner's pick among the candidates on
-  the sheet.
+  Settings lists. All thirteen cues are settled: six recordings, the gains' Brass bells and a hold's Shimmer made by
+  the synthesiser, and the tab, close and refusal kept as the synthesiser's own.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.

@@ -17,6 +17,10 @@ Asked which Freesound licences may be used, the owner chose "CC0 and CC-BY". Ask
 On the sheet the owner then wrote of the gains: "Try to generate a unique consistant sound for each". Asked which
 sounds that meant, the owner chose "The gains only".
 
+Of a hold's sound the owner said: "It shouldnt be this overbearing sound. It should be a slight buildup, but not a sci fi
+charge", then of the airs offered, "Breath, but not a human breath", and picked the Shimmer, noting "Its not an
+electric charge".
+
 ## What it settles
 
 - **Sounds and music may come from Freesound**, under CC0 or CC-BY, never a non-commercial licence: an exception to
@@ -24,6 +28,8 @@ sounds that meant, the owner chose "The gains only".
 - **They take the place of generated sounds** once the owner picks them.
 - **The gains are made by the game's synthesiser**: one family, a distinct sound for each rarity, the rest from
   Freesound.
+- **A hold builds up slightly, never as a sci-fi or electric charge**: high, thin air swelling, made by the
+  synthesiser.
 - **Every sound and piece of music is judged on a test sheet**, a page on claude.ai where each plays beside where it
   is used, its source and its licence, and the owner keeps it or asks for it again.
 - **Freesound is searched from GitHub Actions, with no key**: the search reads Freesound's public pages, as a person

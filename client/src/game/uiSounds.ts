@@ -1,5 +1,5 @@
 // The interface's sounds: a tick as the pointer or the keys reach a control, a press, a tab turned, the menu opened and
-// shut, a hold's charge rising until it acts, an item dismantled or fed, a gain's chime by its rarity, and a refusal.
+// shut, a hold's build-up until it acts, an item dismantled or fed, a gain's chime by its rarity, and a refusal.
 // The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), or one the browser's own
 // synthesiser makes here, which also stands in while a recording loads. One listener hears every press, as DFO's
 // click does, and plays the press only where no sound of its own already played. The volume is the player's, kept in
@@ -36,6 +36,8 @@ const TICKED = `${PRESSABLE}, .gear-cell, .gear-material`;
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
 let noise: AudioBuffer | null = null;
+/** Two seconds of pink noise, softer at the top than white, the stuff of a hold's air. */
+let air: AudioBuffer | null = null;
 /** When the last sound played, so a press that already sounded sounds once. */
 let lastCueAt = -Infinity;
 let lastTickAt = -Infinity;
@@ -72,6 +74,17 @@ function wake(): void {
   noise = context.createBuffer(1, context.sampleRate, context.sampleRate);
   const samples = noise.getChannelData(0);
   for (let index = 0; index < samples.length; index++) samples[index] = Math.random() * 2 - 1;
+  air = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+  const airy = air.getChannelData(0);
+  // White noise filtered to fall away by its pitch, as pink noise does.
+  let [slow, middle, quick] = [0, 0, 0];
+  for (let index = 0; index < airy.length; index++) {
+    const white = Math.random() * 2 - 1;
+    slow = 0.99765 * slow + white * 0.099;
+    middle = 0.963 * middle + white * 0.2965;
+    quick = 0.57 * quick + white * 1.0526;
+    airy[index] = (slow + middle + quick + white * 0.1848) * 0.2;
+  }
 }
 
 /** The synthesiser, if it is awake and may sound now. */
@@ -228,34 +241,45 @@ export function chime(rarity: number): void {
   });
 }
 
-/** A hold's charge: a tone rising over `holdMs` as it is held; the stop it returns lets it fall away at once. */
+/** A hold's build-up, the Shimmer the owner picked: high, thin air swelling over `holdMs` as it is held, glinting
+ *  faster as it nears its end, then gone; the stop it returns lets it fall away at once, let go early. */
 export function charge(holdMs: number): () => void {
   wake();
   lastCueAt = performance.now();
   const now = live();
-  if (!now) return () => undefined;
+  if (!now || !air) return () => undefined;
   const seconds = holdMs / 1000;
-  const voice = now.audio.createOscillator();
-  voice.type = 'sawtooth';
-  voice.frequency.setValueAtTime(110, now.when);
-  voice.frequency.exponentialRampToValueAtTime(360, now.when + seconds);
-  const soft = now.audio.createBiquadFilter();
-  soft.type = 'lowpass';
-  soft.frequency.setValueAtTime(500, now.when);
-  soft.frequency.exponentialRampToValueAtTime(2400, now.when + seconds);
+  const source = now.audio.createBufferSource();
+  source.buffer = air;
+  source.loop = true;
+  const high = now.audio.createBiquadFilter();
+  high.type = 'highpass';
+  high.frequency.setValueAtTime(3000, now.when);
+  high.frequency.exponentialRampToValueAtTime(6000, now.when + seconds);
+  // Its loudness flutters, quickening from seven times a second to fourteen.
+  const flutter = now.audio.createOscillator();
+  flutter.frequency.setValueAtTime(7, now.when);
+  flutter.frequency.linearRampToValueAtTime(14, now.when + seconds);
+  const depth = now.audio.createGain();
+  depth.gain.value = 0.35;
+  const glint = now.audio.createGain();
+  flutter.connect(depth).connect(glint.gain);
   const gain = now.audio.createGain();
   gain.gain.setValueAtTime(0.0001, now.when);
-  gain.gain.exponentialRampToValueAtTime(0.09, now.when + seconds);
-  voice.connect(soft).connect(gain).connect(now.out);
-  voice.start(now.when);
-  voice.stop(now.when + seconds + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.31, now.when + seconds);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now.when + seconds + 0.08);
+  source.connect(high).connect(glint).connect(gain).connect(now.out);
+  for (const voice of [source, flutter]) {
+    voice.start(now.when);
+    voice.stop(now.when + seconds + 0.1);
+  }
   return () => {
     lastCueAt = performance.now();
     const when = now.audio.currentTime;
     gain.gain.cancelScheduledValues(when);
     gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), when);
     gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
-    voice.stop(when + 0.05);
+    for (const voice of [source, flutter]) voice.stop(when + 0.05);
   };
 }
 

@@ -156,8 +156,9 @@ never while a press is held. Each press is an ask the room answers.
   tick, press, step back, opening, dismantle and feed are recordings from Freesound, listed with their credits in
   `content/audio/sounds.json`, kept on R2 and levelled to one peak; the gains are the synthesiser's Brass bells, one
   bell for a Normal or Magic gain, a rising run for a Rare, a longer run over a held chord for a Legendary or
-  Atheric; the tab, the close, the charge and the refusal are the synthesiser's own, which also stands in while a
-  recording loads. One listener hears every press, as DFO's does.
+  Atheric; a hold builds up as the synthesiser's Shimmer, high thin air swelling over the hold and glinting faster
+  toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
+  loads. One listener hears every press, as DFO's does.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
@@ -221,5 +222,5 @@ the Tailor's stall.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - No gamepad or touch layer yet.
-- The sounds are the interface's alone; the world and the music have none yet. The charge waits on the owner's pick.
+- The sounds are the interface's alone; the world and the music have none yet.
 - The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
