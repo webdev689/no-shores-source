@@ -65,7 +65,8 @@ over the [[Test Ground]]'s course by its fingerprint.
 
 ## Limits
 
-- Courses are blocks and ramps on open ground at 0 m; the [[Land]] is not baked yet.
+- Courses are blocks and ramps on open ground at 0 m; the [[Land]] is not baked yet. project-final's ground heightfield
+  is to come ([[project-final's AI Comes Over Onto DFO's]]).
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room: a large open field bakes slowly. The [[Test Ground]]'s

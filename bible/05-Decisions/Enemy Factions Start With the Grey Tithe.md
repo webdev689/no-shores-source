@@ -17,6 +17,8 @@ status: in force
 > Asked what each kind of presence means: "I meant a faction could have a presence at sea/land or one of both. So the
 > Grey Tithe enemy types on sea would be different from those on land"
 
+> Asked whether a faction's enemy types at sea are its ships, the crews fought on deck when boarding, or both: "Both"
+
 > Asked whether factions fight each other where they meet: "They will"
 
 > Asked whether enemy factions are separate from the factions a player joins in Overlook: "Yes"
@@ -26,7 +28,8 @@ status: in force
 ## What it settles
 
 - Each enemy faction has a presence in the world: at sea, on land, or both.
-- A faction's enemy types at sea are not its types on land.
+- A faction's enemy types at sea are not its types on land. At sea they are both its ships and the crews fought on
+  deck when boarding.
 - The Grey Tithe ([[Overlook Is a Shared World After Destiny 1]]) is the first enemy faction, and the work starts with
   it; the others come later. It is present at sea and on land, with different enemy types in each.
 - A faction's presence is fixed for now.
