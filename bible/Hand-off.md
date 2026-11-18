@@ -114,6 +114,14 @@ Where the work stands now, for the next session. Each session rewrites this note
     ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]; [[Game]], "At sea").
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
+- The [[Test Ground]]'s third-person aim placed by hand, DFO's next forge work with its dodge roll, and faster strikes,
+  merged to `main` with the owner's yes (#62), which deploys the page and the rooms, tested offline:
+  - the aim's sliders, kept in the browser and shown as numbers;
+  - the forge's code exactly but for the were-creatures' ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]),
+    and its 118,158 redrawn and new pictures and the roll's 1,200 published to R2 by a helper session on the
+    `overlook-source` environment;
+  - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
+    twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
 
 ## Waiting on the owner
 
@@ -124,6 +132,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
   does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
   owner's to say.
+- #62's: the third-person aim's numbers, once the owner gives them, go into `AIM` in `playerCamera.ts`; no weapon is
+  seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
   overboard should meet (the deck keeps them aboard for now), and whether DFO's Travel Options encounter (a journey
   stopped near an enemy) or wary pirates falling on a ship they outgun should come over.
@@ -140,12 +150,6 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- One pull request in review (#62) holds two of the owner's asks:
-  - the [[Test Ground]]'s third-person aim, placed by hand with sliders, kept in the browser and shown as numbers;
-    the owner's numbers, once given, go into `AIM` in `playerCamera.ts`;
-  - DFO's next forge work ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]): its code exactly but for the
-    were-creatures', its 118,158 redrawn and new pictures and its tables published to R2 by a helper session on the
-    `overlook-source` environment, and the client playing the owner's blows, the bow's own holds and the dodge roll.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
