@@ -36,3 +36,6 @@ bible/.trash/
 .claude/worktrees/
 # Cloudflare's local runtime keeps its rooms' state and logs here while `npm run server` runs.
 .wrangler/
+
+# The design tool's own working folder (its live server and saved critiques), never the repo's.
+.impeccable/

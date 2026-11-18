@@ -116,6 +116,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
   renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
+- #60's questions from the audit: whether Hardy softens a blocked telegraph's chip, whether Executioner is meant on
+  every riposte, whether Opportunist and Slipstream should multiply (1.875 on a counter); how long a session lasts
+  idle; and the Workers plan, since a password sign-in takes about 50 ms of CPU and the Free plan allows 10.
+- CLAUDE.md's step 3 reads `$SHARED_DIR`, which a cloud session's shell never has; the session-start hook already
+  runs the scan on `~/toolkit-data`. Writing the line as `${SHARED_DIR:-$HOME/toolkit-data}/task-observer` waits on
+  the owner's yes.
 - #60's keys: the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and the repository secrets
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; and the Cloudflare token's leave to edit D1, which CI needs to
   make the accounts' database.
@@ -133,10 +139,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   figure; island levels and the voyage's seas ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]);
   patrols with camps and resource spots ([[Server]]); Overlook's stations, vendors, keepers and townsfolk
   ([[Cities]]); the fight on foot in the game; and on the ground, beams over the nodes and Vestiges, with E to use a
-  counter or gather ([[Game]], "On foot"). Tested offline. Its open ends: the patrols look plain (their camps have
-  no tents or fires, and the owner wants them extremely detailed); Breaches, Elite Dungeons and Missions as loot
-  sources; the wardrobe; other players' figures neither glide nor flash on foot; a ranged weapon's fight on foot is
-  untested headless.
+  counter or gather ([[Game]], "On foot"). Then a full audit (accounts, rules and room, combat, the screens' code,
+  the game on foot) and a design pass of the gear screens, every finding fixed with a test where it could be: a
+  session sent only where it belongs, Discord by one-time code, loot rolled from a room's secret seed, kept
+  characters made whole as they are read, asks and gear paced, the trim out of snapshots, and the screens remade on
+  Enhanced Plus's wells and colours with keyboard reach. Tested offline. Its open ends: the patrols look plain (their
+  camps have no tents or fires, and the owner wants them extremely detailed); Breaches, Elite Dungeons and Missions
+  as loot sources; the wardrobe; a shot's perks read as it lands, not as it is loosed; other players' figures
+  neither glide nor flash on foot; a ranged weapon's fight on foot untested headless.
 - The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]), all three parts in review in
   one pull request: the [[Interface]]'s Enhanced Plus kit and the sea bar in it; the Sloop at true scale at the helm;
   Manage, the view over her deck with her panel and stand-in hands; and Leave the helm, the player walking her deck
