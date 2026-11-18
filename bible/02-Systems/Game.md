@@ -88,7 +88,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   display: the vitals at the bottom left, the target's bars and the boss bar at the top, each foe's name and bar, the
   parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the tracers, the sparks, the
   blood and the flashes. The game's own display stands over it: the place, the keys (over the vitals), the menus
-  and the veil; while a boss's bar shows, the place's name gives it the top of the screen.
+  and the veil; while a boss's bar or the target's shows, the place's name gives it the top of the screen, and the
+  status line stands under the place's name ([[Interface]]).
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 

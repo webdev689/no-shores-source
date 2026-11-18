@@ -70,3 +70,10 @@ test('two ships side by side: the nearer’s plate stays over her, the farther�
   assert.equal((nearer?.top ?? 0) + (nearer?.height ?? 0), 300);
   assert.ok((farther?.top ?? 0) + (farther?.height ?? 0) <= (nearer?.top ?? 0), 'the farther stands above, clear');
 });
+
+test('a Boss’s plate is as wide as the boss bar on foot: 640 px at most, three quarters of a narrow picture', () => {
+  const boss = { key: 1, name: 'Captain Brannoc Thule', faction: 1, rank: 5, share: 1, over: [0, 0, 16] } as const;
+  const widthAt = (picture: number) => placeShipBars([boss], () => null, picture, new BarLayout(), Infinity)[0]?.width;
+  assert.equal(widthAt(1920), 640);
+  assert.equal(widthAt(800), 608);
+});

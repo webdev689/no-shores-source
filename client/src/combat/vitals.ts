@@ -40,10 +40,12 @@ export const healthLow = (own: FighterView | null): boolean =>
 
 /** The vitals' panel. */
 export class Vitals {
+  readonly root: HTMLElement;
   private readonly rows: Record<VitalName, { meter: Meter; number: HTMLElement }>;
 
   constructor(parent: HTMLElement) {
     const panel = element('div', `vitals ${ROLES.window}`, parent);
+    this.root = panel;
     const row = ([name, label]: [VitalName, string]) => {
       // Poise drains of itself, so it shows no lost strip.
       const meter = new Meter(panel, `vital ${name}`, name !== 'poise');
