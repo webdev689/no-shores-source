@@ -110,7 +110,9 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   climbs are capsules whose level runs from one share of the massif's height to another along them: on a climb the
   land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
   from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
-  top. The floor's distance counts the climbs, so a section reaches up them.
+  top. The floor's distance counts the climbs, so a section reaches up them. Each sculpt measures its claim's edge
+  once a 32 m bucket: where a bucket lies wholly in the claim or wholly past its fade, the fade is 1 or 0 with no
+  measuring, the same to the bit; a 2 km close-up of carved ground samples in about a quarter of a second.
 
 The land's WebAssembly door gives the browser the same answers.
 

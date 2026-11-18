@@ -51,6 +51,27 @@ pub struct Sculpts {
     reaches: Vec<[f64; 4]>,
     /// Per sculpt, the floors and outcrops whose reach touches each bucket.
     near: Vec<BTreeMap<(i64, i64), Near>>,
+    /// Per sculpt, whether each bucket of its reach lies wholly in its claim (the fade there is 1), wholly past the
+    /// fade (0), or across the claim's edge or fade, where a point is measured: the claim's edge measured once a
+    /// bucket rather than at every point.
+    fades: Vec<Fades>,
+}
+
+/// A sculpt's buckets over its reach, row by row from its north-west bucket: what the fade is in each.
+#[derive(Debug, Clone, Default, PartialEq)]
+struct Fades {
+    west: i64,
+    north: i64,
+    columns: i64,
+    rows: i64,
+    each: Vec<Fade>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Fade {
+    Whole,
+    None,
+    Measured,
 }
 
 fn bucket(value: f64) -> i64 {
@@ -61,12 +82,15 @@ impl From<Vec<Sculpt>> for Sculpts {
     fn from(sculpts: Vec<Sculpt>) -> Self {
         let mut reaches = Vec::new();
         let mut near = Vec::new();
+        let mut fades = Vec::new();
         for sculpt in &sculpts {
             let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
             let [west, north, east, south] = sculpt.claim.iter().fold(start, |[west, north, east, south], &[x, y]| {
                 [west.min(x), north.min(y), east.max(x), south.max(y)]
             });
-            reaches.push([west - FADE_M, north - FADE_M, east + FADE_M, south + FADE_M]);
+            let reach = [west - FADE_M, north - FADE_M, east + FADE_M, south + FADE_M];
+            reaches.push(reach);
+            fades.push(Fades::of(&sculpt.claim, reach));
             let mut map: BTreeMap<(i64, i64), Near> = BTreeMap::new();
             let mut spread = |bounds: [f64; 4], add: &mut dyn FnMut(&mut Near)| {
                 for column in bucket(bounds[0])..=bucket(bounds[2]) {
@@ -91,7 +115,7 @@ impl From<Vec<Sculpt>> for Sculpts {
             }
             near.push(map);
         }
-        Self { sculpts, reaches, near }
+        Self { sculpts, reaches, near, fades }
     }
 }
 
@@ -136,6 +160,44 @@ fn inside_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
         nearest = nearest.min(to_segment(x, y, from, to));
     }
     if inside { nearest } else { -nearest }
+}
+
+impl Fades {
+    /// A claim's buckets over its reach: a bucket whose middle lies further inside the claim than the bucket's half
+    /// diagonal is wholly in it, and one further past it than the fade and that half diagonal is wholly past; there
+    /// the fade is exactly 1 or 0, as `smooth` clamps it.
+    fn of(claim: &[[f64; 2]], [west, north, east, south]: [f64; 4]) -> Self {
+        if claim.len() < 3 {
+            return Self::default();
+        }
+        let (west, north) = (bucket(west), bucket(north));
+        let (columns, rows) = (bucket(east) - west + 1, bucket(south) - north + 1);
+        let half_diagonal = BUCKET_M * std::f64::consts::FRAC_1_SQRT_2 + 1e-6;
+        let each = (0..rows)
+            .flat_map(|row| (0..columns).map(move |column| (column, row)))
+            .map(|(column, row)| {
+                let x = ((west + column) as f64 + 0.5) * BUCKET_M;
+                let y = ((north + row) as f64 + 0.5) * BUCKET_M;
+                let inside = inside_ring(claim, x, y);
+                if inside > half_diagonal {
+                    Fade::Whole
+                } else if inside < -FADE_M - half_diagonal {
+                    Fade::None
+                } else {
+                    Fade::Measured
+                }
+            })
+            .collect();
+        Self { west, north, columns, rows, each }
+    }
+
+    fn at(&self, x: f64, y: f64) -> Fade {
+        let (column, row) = (bucket(x) - self.west, bucket(y) - self.north);
+        if column < 0 || row < 0 || column >= self.columns || row >= self.rows {
+            return Fade::Measured;
+        }
+        self.each[(row * self.columns + column) as usize]
+    }
 }
 
 impl Sculpts {
@@ -221,7 +283,11 @@ impl Sculpts {
             if x < reach[0] || x > reach[2] || y < reach[1] || y > reach[3] {
                 continue;
             }
-            let fade = smooth(-FADE_M, 0.0, inside_ring(&sculpt.claim, x, y));
+            let fade = match self.fades[number].at(x, y) {
+                Fade::Whole => 1.0,
+                Fade::None => 0.0,
+                Fade::Measured => smooth(-FADE_M, 0.0, inside_ring(&sculpt.claim, x, y)),
+            };
             if fade <= 0.0 {
                 continue;
             }
@@ -304,6 +370,26 @@ mod tests {
         assert!(sculpts.floor_distance(120.0, -40.0) < 0.0 && sculpts.floor_distance(185.0, -45.0) < 0.0);
         let lookout = [176.0, 184.0].map(|x| sculpts.raise(x, -36.0, 1000.0));
         assert!((lookout[0] - lookout[1]).abs() < 1.0, "the lookout is flat: {lookout:?}");
+    }
+
+    #[test]
+    fn a_bucket_taken_as_wholly_in_or_past_the_claim_fades_exactly_so_at_every_point() {
+        let claim = vec![[-500.0, -500.0], [500.0, -500.0], [620.0, 300.0], [-500.0, 500.0]];
+        let fades = Fades::of(&claim, [-700.0, -700.0, 800.0, 700.0]);
+        let mut shortcuts = 0;
+        for step_x in -140..160 {
+            for step_y in -140..140 {
+                let (x, y) = (f64::from(step_x) * 5.0 + 0.3, f64::from(step_y) * 5.0 + 0.7);
+                let exact = smooth(-FADE_M, 0.0, inside_ring(&claim, x, y));
+                match fades.at(x, y) {
+                    Fade::Whole => assert_eq!(exact, 1.0, "{x},{y}"),
+                    Fade::None => assert_eq!(exact, 0.0, "{x},{y}"),
+                    Fade::Measured => continue,
+                }
+                shortcuts += 1;
+            }
+        }
+        assert!(shortcuts > 40_000, "most points skip the measuring: {shortcuts}");
     }
 
     #[test]
