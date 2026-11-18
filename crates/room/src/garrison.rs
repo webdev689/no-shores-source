@@ -14,8 +14,8 @@ use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use core::f64::consts::TAU;
 use movement::{Block, Terrain};
-use navmesh::NavMesh;
 use naval::random::Mulberry32;
+use navmesh::NavMesh;
 use reach::{Section, distance_to_ring, inside, respawn_point};
 
 /// How far a node's room bakes its navmesh each way from the square's middle, and how far inside the square's edge its
