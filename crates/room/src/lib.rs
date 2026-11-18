@@ -143,9 +143,13 @@ impl Room {
     fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
         let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
         // A node's room stands no foes yet, so it bakes no navmesh over its city's boxes, which would cost more memory
-        // than a room has: an empty one round its first spawn.
+        // than a room has: an empty one round its first spawn, on its land.
         let walked: &[Block] = if section.is_some() { &[] } else { &blocks };
-        let nav = navmesh::NavMesh::bake(walked, ground_around(walked, first), &navmesh::AGENT);
+        let bounds = ground_around(walked, first);
+        let nav = match &floor {
+            Floor::Flat => navmesh::NavMesh::bake(walked, bounds, &navmesh::AGENT),
+            Floor::Land(_) => navmesh::NavMesh::bake_on(walked, &floor, bounds, &navmesh::AGENT),
+        };
         Room {
             blocks,
             floor,

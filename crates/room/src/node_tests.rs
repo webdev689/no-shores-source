@@ -192,3 +192,17 @@ fn a_node_s_room_stands_no_foe_a_player_asks_for_where_a_course_s_room_does() {
     assert_eq!(foes_after_asking(Room::node(land(), Vec::new(), section())), 0);
     assert_eq!(foes_after_asking(Room::new(Vec::new(), (0.0, 0.0))), 1);
 }
+
+#[test]
+fn a_node_s_room_bakes_its_paths_and_firing_spots_on_its_land() {
+    use ::foes::Spots;
+    let floor = land();
+    let room = Room::node(floor.clone(), Vec::new(), section());
+    let on_land = |x: f64, y: f64| [x, y, floor.height_at(x, y)];
+    let route = room.nav.find_path(on_land(20.0, 20.0), on_land(-20.0, 15.0)).expect("a way across the land");
+    let spots = room.spots().near([20.0, 20.0, 0.0], 5.0);
+    assert!(!spots.is_empty(), "spots on the open land");
+    for [x, y, z] in route.iter().copied().chain(spots.iter().map(|spot| spot.point)) {
+        assert!((z - floor.height_at(x, y)).abs() < 0.05, "{x}, {y} at {z} m stands on the land");
+    }
+}

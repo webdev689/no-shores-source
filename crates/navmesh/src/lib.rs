@@ -1,8 +1,9 @@
-//! Where a foe can walk, and the way there. A navmesh is baked once from a course's blocks over open ground: the
-//! course is voxelised, the floor a body fits on is kept, eroded by the body's radius, split into regions, outlined
-//! and cut into convex polys. A path is an A* over those polys, pulled taut into a few corners. Obstacles laid over
-//! the mesh at run time block the polys they touch. Coordinates are the game's: x east, y south, z up, in metres.
-//! Every number is a 64-bit float and every sum is taken in a fixed order, so every machine bakes and paths alike.
+//! Where a foe can walk, and the way there. A navmesh is baked once from a course's blocks over its ground (open
+//! ground at 0, or any terrain): the course is voxelised, the floor a body fits on is kept, eroded by the body's
+//! radius, split into regions, outlined and cut into convex polys; the places a shooter may fire from are found on it.
+//! A path is an A* over those polys, pulled taut into a few corners. Obstacles laid over the mesh at run time block the
+//! polys they touch. Coordinates are the game's: x east, y south, z up, in metres. Every number is a 64-bit float and
+//! every sum is taken in a fixed order, so every machine bakes and paths alike.
 
 mod collider;
 mod compact;
@@ -15,13 +16,15 @@ mod poly;
 mod raster;
 mod reach;
 mod regions;
+mod spots;
 
 pub use collider::{Collider, Ramp, Rise};
 pub use obstacles::ObstacleId;
 pub use reach::{REACH_LEVEL, Reachable};
+pub use spots::Spot;
 
 use locate::Mesh;
-use movement::{Block, TUNING};
+use movement::{Block, Flat, Heights, TUNING, Terrain};
 use obstacles::Obstacles;
 use path::Waive;
 
@@ -63,14 +66,16 @@ pub struct Bounds {
     pub max_y: f64,
 }
 
-/// A baked navmesh, with the obstacles laid over it.
+/// A baked navmesh, with its ground (none for open ground at 0), its firing spots, and the obstacles laid over it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct NavMesh {
     min_x: f64,
     min_y: f64,
     cell: f64,
     colliders: Vec<Collider>,
+    ground: Option<Heights>,
     mesh: Mesh,
+    spots: Vec<Spot>,
     obstacles: Obstacles,
 }
 
@@ -83,23 +88,50 @@ impl NavMesh {
         Self::bake_colliders(&colliders, bounds, agent)
     }
 
-    /// Bakes from blocks and ramps.
+    /// Bakes a course's blocks standing on a terrain, which may dip below 0, as a seabed does: its height is read at
+    /// every cell's centre, and the ground is floor where its slope is within the agent's. A terrain that answers a
+    /// height that is not a number is baked as open ground at 0.
+    #[must_use]
+    pub fn bake_on(blocks: &[Block], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Self {
+        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent)
+    }
+
+    /// Bakes from blocks and ramps on open ground at 0.
     #[must_use]
     pub fn bake_colliders(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Self {
-        let solid = raster::voxelise(colliders, bounds, agent);
+        Self::baked(colliders, None, bounds, agent)
+    }
+
+    fn baked(colliders: &[Collider], ground: Option<Heights>, bounds: Bounds, agent: &Agent) -> Self {
+        let floor: &dyn Terrain = match &ground {
+            Some(heights) => heights,
+            None => &Flat,
+        };
+        let solid = raster::voxelise(colliders, floor, bounds, agent);
         let mut field = compact::build(&solid, agent);
         regions::partition(&mut field);
+        let spots = spots::bake(&field, colliders, floor, bounds);
         let outlines = contours::build(&field);
         let grid = field.grid;
         let (mut corners, polys) = poly::build(&outlines, grid.cell, grid.voxel);
         // Each corner is lifted onto the true surface nearest its own level, rather than its voxel's rounded top.
         for corner in &mut corners {
             let (x, y) = (grid.min_x + corner.x * grid.cell, grid.min_y + corner.y * grid.cell);
-            corner.z = collider::surface_near(colliders, x, y, Some(corner.z));
+            corner.z = collider::surface_near(colliders, floor, x, y, Some(corner.z));
         }
         let mesh = Mesh::new(corners, polys);
         let obstacles = Obstacles::new(mesh.polys.len());
-        Self { min_x: grid.min_x, min_y: grid.min_y, cell: grid.cell, colliders: colliders.to_vec(), mesh, obstacles }
+        let (min_x, min_y, cell) = (grid.min_x, grid.min_y, grid.cell);
+        Self { min_x, min_y, cell, colliders: colliders.to_vec(), ground, mesh, spots, obstacles }
+    }
+
+    /// The ground the mesh was baked on.
+    fn floor(&self) -> &dyn Terrain {
+        match &self.ground {
+            Some(heights) => heights,
+            None => &Flat,
+        }
     }
 
     /// A path from `from` to `to`: the waypoints from the start to the goal, both included, each on the surface
@@ -148,7 +180,7 @@ impl NavMesh {
 
     /// The height of the surface at (x, y) on a poly's level; the tallest top there with no poly.
     fn height_on(&self, poly: Option<usize>, x: f64, y: f64) -> f64 {
-        collider::surface_near(&self.colliders, x, y, poly.map(|poly| self.mesh.levels[poly]))
+        collider::surface_near(&self.colliders, self.floor(), x, y, poly.map(|poly| self.mesh.levels[poly]))
     }
 
     /// Locate, A* and funnel. A start inside an obstacle walks out through it. A goal reachable only through

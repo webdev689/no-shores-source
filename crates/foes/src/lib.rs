@@ -40,6 +40,22 @@ impl Routes for Straight {
     }
 }
 
+/// A place a shooter may fire from: its point on the walkable surface, and the bearings it has cover from (within
+/// 2.4 m of the eye) and an open lane down (clear 14 m). Bit `n` of each mask is the bearing `n` sixteenths of a turn
+/// clockwise from north.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Spot {
+    pub point: [f64; 3],
+    pub cover: u16,
+    pub lanes: u16,
+}
+
+/// The firing spots over the course: those within `radius` of a point, across, always in the same order. The room
+/// hands in one backed by the spots baked with its navmesh.
+pub trait Spots {
+    fn near(&self, point: [f64; 3], radius: f64) -> Vec<Spot>;
+}
+
 /// What a foe knows of its room this tick: the room's tick and seed, every fighter by id (alive or not, both sides), and
 /// the course's blocks and routes.
 pub struct World<'a> {
