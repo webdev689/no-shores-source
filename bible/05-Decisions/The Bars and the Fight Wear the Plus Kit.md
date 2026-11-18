@@ -11,8 +11,11 @@ status: in force
 > bars (`ships`) using the Plus kit (`plus`), and the Game page (`game`) using the fight code (`combat`): "Yes, add all
 > three (Recommended)"
 
+> Asked whether the fight layer (`combat`) may also import the player layer (`player`) and the editor's camera
+> (`editor`), so the Test Ground and the Game page share one copy of the fight code: "Yes, add both (Recommended)"
+
 ## What it settles
 
 - The player's vitals and the enemies' bars wear the [[Interface]]'s Enhanced Plus kit ([[Enemies]]).
-- The client's layers allow `combat` and `ships` to import `plus`, and `game` to import `combat`
-  ([[Code Map]]).
+- The client's layers allow `combat` and `ships` to import `plus`, `game` to import `combat`, and `combat` to import
+  `player` and `editor` ([[Code Map]]). The Test Ground and the [[Game]] share one copy of the fight code.

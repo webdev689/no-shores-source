@@ -132,6 +132,10 @@
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
       }
+      /* On foot the hints stand over the fight's bars. */
+      #hud:has(> .fight:not([hidden])) .hints {
+        bottom: 64px;
+      }
       .status {
         position: absolute;
         left: 50%;

@@ -18,13 +18,16 @@ code:
   - client/src/forge/compose.ts#composeFrame
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
-  - client/src/testground/blood.ts#TestgroundBlood
+  - client/src/combat/fightBlood.ts#FightBlood
   - client/src/testground/panel.ts#startPanel
-  - client/src/testground/foeDress.ts#foeDress
+  - client/src/player/foeDress.ts#foeDress
   - client/src/combat/foeBars.ts#FoeBars
   - client/src/combat/hudSheet.ts#wearFightSheet
   - client/src/combat/vitals.ts#Vitals
-  - client/src/testground/tracers.ts#Tracers
+  - client/src/combat/tracers.ts#Tracers
+  - client/src/combat/playerFight.ts#PlayerFight
+  - client/src/combat/foeFigures.ts#FoeFigures
+  - client/src/combat/fightEffects.ts#FightEffects
 ---
 # Test Ground
 
@@ -70,7 +73,8 @@ and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks h
 
 The Test Ground plays the [[Combat]] rules in a room, always: alone, the room crate itself runs in the page's
 WebAssembly; with `?room=`, a server's. The page predicts the player's fighter by the room's own rules and takes the
-room's word for it, so playing alone and online are the same game.
+room's word for it, so playing alone and online are the same game. The [[Game]] fights on foot by the same modules:
+the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight's effects and blood, and the display.
 
 - **Foes.** The panel picks a faction, then one of its types (marked land or deck), then one of the ranks that type
   comes in; Spawn stands it 5 m ahead of where the player looks, facing them, at most twelve, and Clear sends every

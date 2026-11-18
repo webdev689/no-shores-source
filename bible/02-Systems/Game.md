@@ -7,6 +7,8 @@ code:
   - client/src/game/game.ts#startGame
   - client/src/game/flow.ts#next
   - client/src/game/foot.ts#Foot
+  - client/src/game/footView.ts#FootView
+  - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/sea.ts#Sea
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
@@ -66,21 +68,34 @@ is `<city id>-social`): a way to look round the world. An id the world does not 
 ## On foot
 
 `Foot` stands the player in one node, as the [[Player]] plays on the [[Test Ground]]: DFO's controls, first and
-third person, the forge's figure and the first person's hands.
+third person, the forge's figure and the first person's hands, and the Test Ground's fight.
 
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
-  there, cut by the land's worker and handed to the movement door, the same ground to the bit as the node's room
-  ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
+  there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
+  as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
 - **The camera** is the player's, held 0.3 m over the ground, with the Test Ground's 50-degree view.
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
   with nothing pressed. Click the view to look round with the mouse.
+- **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,
+  on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
+- **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
+  weapon, the right button swings or aims, the left button or F guards, parries or fires, V or Mouse5 dodges, and the
+  soft lock holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
+  taken. The keys listed name the fight's.
+- **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
+  display: the vitals at the bottom left, the target's bars and the boss bar at the top, each foe's name and bar, the
+  parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the tracers, the sparks, the
+  blood and the flashes. The game's own display stands over it: the place, the keys, the menus and the veil.
+- **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
+  by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 
 ## The edge
 
-Offline, the movement door judges the body against the node's section each tick, by the room's own rules
-([[Reach]]). Past the edge the screen darkens and "Return to the area" counts down 10 s; back inside, it ends. At 0,
-or 60 m past, the player dies: "You died", the pointer is freed, and Respawn is offered after 4 s (or Enter). The
-player comes back at the section's spawn nearest where they fell. A dead body lies still while its standing ticks on.
+The node's room judges the body against the node's section each tick ([[Reach]]). Past the edge the screen darkens and
+"Return to the area" counts down 10 s; back inside, it ends. At 0, or 60 m past, the player dies: "You died", the
+pointer is freed, and Respawn is offered after 4 s (or Enter). The player comes back at the section's spawn nearest
+where they fell. A dead body lies still while its standing ticks on. A player killed in the fight falls, the fight's
+display counts down 4 s, and the room stands them again at the section's spawn nearest where they fell.
 
 ## At sea
 
@@ -164,9 +179,10 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 
 - **On foot** the player joins the node's room, `node-<node id>`, and starts at the spawn the room stands them at,
   each joiner at the next of the node's spawns in turn. The room judges the edge. Each tick's controls go to
-  it with the figure's look, the dress when it changed and a respawn when asked; the player is predicted on the same
-  ground and corrected by each snapshot, held still while the room says they are dead. The warning, the count and
-  death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
+  it with the fight's buttons and arms, the figure's look, the dress when it changed and a respawn when asked; the
+  player is predicted on the same ground and corrected by each snapshot, held still while the room says they are dead.
+  The warning, the count and death are the room's word. Every other player in the room is shown where the room last
+  saw them, in their own dress, and every foe where it last stood.
   A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
@@ -220,7 +236,11 @@ In death the world drains to grey, and comes back in colour on respawn or on lea
 - A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and the ship
   then rests short of it, the page drawing her where the room has her.
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
-- Offline, the edge is judged in the browser; online, the room judges it and the browser predicts nothing of it.
+- The browser predicts nothing of the edge: a warning, a death or a respawn shows as the room's snapshot says it.
+- The land is drawn a little off the ground bodies stand on, so the fight's marks and blood are drawn 0.12 m over
+  where they lie. A telegraphed blow's mark is flat: on a slope, part of it lies under the land.
+- Shots, the aimed shot's crosshair and the tracers meet open ground at 0 m, not the node's land: a shot that misses
+  flies on through a hill.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.

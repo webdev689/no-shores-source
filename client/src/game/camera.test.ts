@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { frameOf, fromEyeMatrix, lookOf, onScreen, panShot, type Shot, shotOfOrbit } from './camera.ts';
+import { frameOf, fromEyeMatrix, lookOf, onScreen, panShot, type Shot, shifted, shotOfOrbit } from './camera.ts';
 
 const shot: Shot = { eye: [1_000_000, 2_000_000, 100], yaw: 0, pitch: 0, fov: Math.PI / 2, near: 1, far: 10_000 };
 const size = { width: 800, height: 400 };
@@ -63,4 +63,17 @@ test("a pan eases its eye and lens across, its bearing the short way round, its 
   const there = panShot(from, to, 1);
   assert.deepEqual([there.eye, there.near, there.far], [to.eye, 0.3, 9_000]);
   assert.ok(Math.abs(there.pitch - to.pitch) < 1e-12 && Math.abs(there.fov - to.fov) < 1e-12, 'at the target');
+});
+
+test('a matrix shifted by an offset takes a point as the point plus the offset, far from the origin as near it', () => {
+  const matrix = fromEyeMatrix(shot, 2);
+  const clip = (through: Float32Array, point: readonly number[]) =>
+    [0, 1, 2, 3].map((row) =>
+      [0, 1, 2, 3].reduce((sum, column) => sum + (through[column * 4 + row] ?? 0) * (point[column] ?? 1), 0),
+    );
+  const fromEye = clip(matrix, [3, -40, 2]);
+  const world = clip(shifted(matrix, [-shot.eye[0], -shot.eye[1], -shot.eye[2]]), [1_000_003, 1_999_960, 102]);
+  world.forEach((value, index) => assert.ok(Math.abs(value - (fromEye[index] ?? 0)) < 0.05, `${value}`));
+  const near = clip(shifted(matrix, [1, 2, 0.5]), [2, -42, 1.5]);
+  near.forEach((value, index) => assert.ok(Math.abs(value - (fromEye[index] ?? 0)) < 1e-4, `${value}`));
 });

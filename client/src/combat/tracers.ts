@@ -3,8 +3,8 @@ import type { FlyingShot } from '../network/messages.ts';
 import { rayHit } from '../player/playerCamera.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
-import { bodyHit } from './crosshair.ts';
-import { markArrow } from '../combat/marks.ts';
+import { bodyHit } from '../player/crosshair.ts';
+import { markArrow } from './marks.ts';
 
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number, number];

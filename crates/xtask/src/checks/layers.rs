@@ -44,7 +44,7 @@ pub const LAYERS: &[Layer] = &[
         name: "testground",
         may_import: &["rules", "network", "forge", "editor", "firstperson", "player", "combat"],
     },
-    Layer { name: "combat", may_import: &["rules", "network", "plus"] },
+    Layer { name: "combat", may_import: &["rules", "network", "plus", "player", "editor"] },
     Layer { name: "firstperson", may_import: &["forge"] },
     Layer { name: "overworld", may_import: &[] },
     Layer { name: "textures", may_import: &[] },

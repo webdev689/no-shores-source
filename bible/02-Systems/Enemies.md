@@ -22,7 +22,8 @@ code:
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/combat/foeBars.ts#FoeBars
   - client/src/combat/foeBars.ts#bossInFight
-  - client/src/testground/foeDress.ts#foeDress
+  - client/src/player/foeDress.ts#foeDress
+  - client/src/combat/foeFigures.ts#FoeFigures
   - client/src/testground/panel.ts#startPanel
 ---
 # Enemies
@@ -110,8 +111,9 @@ Each Boss: 1,120 health, 210 poise. Thule fights with an ebony sword, Corvane wi
 ## In a room
 
 On a course, a player asks the room for a foe by type and rank (a rank the type does not come in takes its first);
-the room stands it 5 m before them. A node's room stands its garrison as it opens ([[Server]]). Every foe stands on
-the surface its place on the navmesh was found on: a block's top within a step of it, else the ground. The room sends
+the room stands it 5 m before them. A node's room stands its garrison as it opens ([[Server]]) and takes no such
+ask, but one a page playing alone runs is told to take them, for trying a fight on the node's land ([[Game]],
+`?spawn=`). Every foe stands on the surface its place on the navmesh was found on: a block's top within a step of it, else the ground. The room sends
 each foe's type, rank, faction, phase and alert state. The rules hand the browser the roster through WebAssembly, so
 names, factions and weapons are read in one place.
 
@@ -158,6 +160,7 @@ names, factions and weapons are read in one place.
   grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the pirates as the Test Ground's foes
   were dressed.
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
+- **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 
 ## Limits
 

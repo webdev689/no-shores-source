@@ -70,9 +70,9 @@ struct MarkOut {
 `;
 
 /**
- * Blood drawn in the Test Ground's scene: the ring of marks in one draw a range (oldest first, so the newest lies on
- * top), then the chunks and droplets in flight as upright billboards. Blended, tested against the scene's depth and
- * writing none, drawn before the figures so a body stands over its own blood.
+ * Blood drawn in a page's scene, `samples` to a pixel: the ring of marks in one draw a range (oldest first, so the
+ * newest lies on top), then the chunks and droplets in flight as upright billboards. Blended, tested against the
+ * scene's depth and writing none, drawn before the figures so a body stands over its own blood.
  */
 export class BloodView {
   private readonly gpu: Gpu;
@@ -93,6 +93,7 @@ export class BloodView {
     gpu: Gpu,
     capacity: number,
     depth: { readonly format: GPUTextureFormat; readonly compare: GPUCompareFunction },
+    samples = 1,
   ) {
     this.gpu = gpu;
     const { device } = gpu;
@@ -131,6 +132,7 @@ export class BloodView {
       // A mark on a ceiling is seen from behind its own normal.
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: { format: depth.format, depthWriteEnabled: false, depthCompare: depth.compare },
+      multisample: { count: samples },
     });
     const buffer = (size: number, usage: number) =>
       device.createBuffer({ size, usage: usage | BUFFER_USAGE.copyDestination });
@@ -198,6 +200,13 @@ export class BloodView {
       .forEach((drop, index) => billboard(this.chunks + index, drop.position, DROP_QUAD, WHITE, full));
     const used = (this.chunks + this.droplets) * QUAD_FLOATS;
     if (used > 0) queue.writeBuffer(this.billboardBuffer, 0, this.billboardFloats.subarray(0, used));
+  }
+
+  /** Lets go of the blood's buffers and pictures; it draws nothing after. */
+  destroy(): void {
+    for (const buffer of [this.sceneBuffer, this.ringBuffer, this.billboardBuffer, this.indexBuffer]) buffer.destroy();
+    this.ranges = [];
+    [this.chunks, this.droplets] = [0, 0];
   }
 
   /** Records the blood's draws into the scene's pass. */

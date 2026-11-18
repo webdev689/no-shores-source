@@ -4,7 +4,7 @@ import type { Action, FighterView } from '../rules/fighters.ts';
 import { fightOf, foeDoing } from './fightMoves.ts';
 import { foeDress } from './foeDress.ts';
 import type { FoeType } from '../rules/roster.ts';
-import { shownMove } from '../player/playerMoves.ts';
+import { shownMove } from './playerMoves.ts';
 
 const standing: FighterView = {
   x: 0,

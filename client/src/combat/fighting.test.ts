@@ -166,7 +166,7 @@ function fightByHand() {
   const word = (acknowledged: number, shots: readonly FlyingShot[] = []) => {
     tick += 1n;
     const fighter = new Float64Array(FIGHTER_FLOATS);
-    const seen = { player: 1, acknowledged, fighter };
+    const seen = { player: 1, acknowledged, fighter, standing: { kind: 'inside' } };
     fighting.receive({
       kind: 'snapshot',
       tick,

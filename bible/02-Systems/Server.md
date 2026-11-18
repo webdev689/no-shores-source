@@ -269,7 +269,8 @@ so every decision is Rust and the shell only carries bytes and time.
   only while that commit is still `main`'s head. Without the secret it warns and deploys nothing. It runs by hand
   from `main` too, and `npm run server:deploy` does the same from a machine that holds the token itself.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
-- **In the page**, the Test Ground played alone runs the same room in its own WebAssembly, ticked by the page.
+- **In the page**, the Test Ground and the [[Game]] played alone run the same room in its own WebAssembly, ticked by
+  the page: the Test Ground's course, a node's room on the window and boxes the page cut, and the sea.
 
 Measured on the deployed rooms with two browsers in one room: 60.0 ticks a second; snapshots 16.2 ms apart at the
 median, 59 ms at the 99th in a hundred and 84 ms at the most; the room taking a player's input about 4 ticks after it
@@ -300,7 +301,8 @@ was sent; and every snapshot of a player matching that player's inputs replayed 
 - Bodies pass through each other; foes keep apart by steering.
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
-  the [[Game]] does both, and asks for no foe and swings no blow.
+  the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
+  is told to (`take_foe_asks`).
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
   a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
   and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).

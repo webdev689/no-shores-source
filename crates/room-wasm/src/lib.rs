@@ -33,6 +33,7 @@ enum Opened {
 thread_local! {
     static OPEN: RefCell<Option<Opened>> = const { RefCell::new(None) };
     static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    static FLOOR: RefCell<Floor> = const { RefCell::new(Floor::Flat) };
 }
 
 /// What became of an input the host handed over.
@@ -128,7 +129,30 @@ pub fn set_course(bytes: &[u8]) -> bool {
     true
 }
 
-/// One tick of a player's fighter as a course's room would take it, on open ground, from its numbers: the fighter,
+/// Keeps a node's window of the ground for predicting a fighter without a room, from its JSON as the land's worker cuts
+/// it; empty text keeps open ground. Answers whether the text was ground or empty.
+pub fn set_ground(text: &[u8]) -> bool {
+    let floor = if text.is_empty() {
+        Some(Floor::Flat)
+    } else {
+        serde_json::from_slice::<Ground>(text).ok().map(|ground| Floor::Land(Box::new(ground)))
+    };
+    let kept = floor.is_some();
+    FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor.unwrap_or(Floor::Flat));
+    kept
+}
+
+/// Lets the open room take players' asks for foes, as a course's room does; a node's room otherwise takes none.
+pub fn take_foe_asks() {
+    with_open(|opened| {
+        if let Opened::Land { room, .. } = opened {
+            room.take_foe_asks();
+        }
+    });
+}
+
+/// One tick of a player's fighter as a room would take it, on the ground kept (open ground unless set), from its
+/// numbers: the fighter,
 /// the intent, the player's number, the arms their hands hold (taken up as the room takes them, `Fighter::holding`),
 /// then every fighter it sees as a number and a glance. Answers the next fighter's
 /// numbers, then, if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its
@@ -153,22 +177,24 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let fighter = Fighter::from_floats(fighter).holding(combat::Arms::from_code(whole(*arms)));
     let intent = combat::Intent::from_floats(intent);
     let (next, shot) = COURSE.with(|course| {
-        let blocks = course.borrow();
-        let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &movement::Flat);
-        let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
-        if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
-            return (next, Some(shot));
-        }
-        let bodies: Vec<(u32, [f64; 3])> = view
-            .iter()
-            .filter(|(_, other)| other.side != fighter.side && !other.dead())
-            .map(|(other, seen)| (*other, [seen.body.x, seen.body.y, seen.body.z]))
-            .collect();
-        let stop = match combat::shots::fly(&shot, &blocks, &bodies) {
-            combat::shots::Flight::Stopped { at, .. } => at,
-            combat::shots::Flight::Flying(flown) => flown.at,
-        };
-        (next, Some(combat::shots::line_of(&shot, stop)))
+        FLOOR.with(|floor| {
+            let (blocks, floor) = (course.borrow(), floor.borrow());
+            let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &*floor);
+            let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
+            if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
+                return (next, Some(shot));
+            }
+            let bodies: Vec<(u32, [f64; 3])> = view
+                .iter()
+                .filter(|(_, other)| other.side != fighter.side && !other.dead())
+                .map(|(other, seen)| (*other, [seen.body.x, seen.body.y, seen.body.z]))
+                .collect();
+            let stop = match combat::shots::fly(&shot, &blocks, &bodies) {
+                combat::shots::Flight::Stopped { at, .. } => at,
+                combat::shots::Flight::Flying(flown) => flown.at,
+            };
+            (next, Some(combat::shots::line_of(&shot, stop)))
+        })
     });
     let mut floats = next.to_floats().to_vec();
     if let Some(shot) = shot {
@@ -451,6 +477,22 @@ pub extern "C" fn room_roster() -> u64 {
 pub unsafe extern "C" fn fighter_course(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_course(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the ground written at `address` for predicting; 1 if it was ground or empty, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Lets the open room take players' asks for foes; see `take_foe_asks`.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_take_foe_asks() {
+    take_foe_asks();
 }
 
 /// Steps the fighter whose numbers are written at `address` a tick, as `predict` says; answers the next fighter's

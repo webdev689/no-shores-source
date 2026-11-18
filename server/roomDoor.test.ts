@@ -191,6 +191,22 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
 });
 
+test('a node’s room stands the foes a player asks for only once a page playing alone tells it to', () => {
+  const foesAfterAsking = (told: boolean) => {
+    const room = startRoomDoor(compiled);
+    assert.equal(room.openNode(nodeFile().text), true);
+    if (told) room.takeFoeAsks();
+    const player = room.join();
+    const spawn = { type: 2, rank: 1 };
+    room.input(player, inputBytes(1, { intent: walk, look: walking, arms: 0, seen: 0n, spawn }));
+    room.tick();
+    const snapshot = readFromRoom(room.snapshot());
+    return snapshot?.kind === 'snapshot' ? snapshot.foes.map((foe) => foe.type) : [];
+  };
+  assert.deepEqual(foesAfterAsking(false), []);
+  assert.deepEqual(foesAfterAsking(true), [2]);
+});
+
 test('the sea sails the course a browser writes, refuses one across land, and shows each ship', () => {
   const room = startRoomDoor(compiled);
   const square = [

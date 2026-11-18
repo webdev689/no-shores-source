@@ -82,6 +82,8 @@ pub struct Room {
     pub(crate) floor: Floor,
     spawn_points: Vec<(f64, f64)>,
     section: Option<Section>,
+    /// Whether players' asks for foes are taken: a course's room takes them, a node's only once told to.
+    takes_foe_asks: bool,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     /// How many players have joined: the next stands at the spawn this many turns on.
@@ -153,6 +155,7 @@ impl Room {
             blocks,
             floor,
             spawn_points,
+            takes_foe_asks: section.is_none(),
             section,
             clock: 0,
             next_fighter: 1,
@@ -197,6 +200,12 @@ impl Room {
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
+    }
+
+    /// Takes players' asks for foes from now on, as a course's room does: a node's room run in a page playing alone,
+    /// where the page asks for foes to fight on the node's land. A server's node room never takes them.
+    pub fn take_foe_asks(&mut self) {
+        self.takes_foe_asks = true;
     }
 
     /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
@@ -308,7 +317,7 @@ impl Room {
                 found.fighter = next;
                 found.shown = input.shown;
                 found.remember(seen);
-                if let Some(ask) = input.spawn.filter(|_| self.section.is_none()) {
+                if let Some(ask) = input.spawn.filter(|_| self.takes_foe_asks) {
                     self.spawns.push((id, ask));
                 }
                 self.happened(id, &next, happening, &view);

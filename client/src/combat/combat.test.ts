@@ -58,3 +58,11 @@ test('an iron blow’s edge is drawn twice, the second inside the first: its sha
     asides.add(Math.round(Math.abs((iron[index + 1] ?? 0) - 2) * 100) / 100);
   assert.ok(asides.has(0.6) && asides.has(0.4), [...asides].join(' '));
 });
+
+test('marks are laid from an origin, so a mark far out in the world keeps its centimetres', () => {
+  const far = { ...lunge(40, false), origin: [1_000_001, 2_000_002, 0.5] as const };
+  const near = marksMesh([lunge(40, false)], []);
+  const laid = marksMesh([far], [], [], [], [1_000_000, 2_000_000, 0]);
+  assert.equal(laid.length, near.length);
+  laid.forEach((value, index) => assert.ok(Math.abs(value - (near[index] ?? 0)) < 1e-4, `at ${index}: ${value}`));
+});

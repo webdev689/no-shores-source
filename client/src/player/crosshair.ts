@@ -1,5 +1,5 @@
 import { type Orbit, rayAt } from '../editor/orbit.ts';
-import { rayHit } from '../player/playerCamera.ts';
+import { rayHit } from './playerCamera.ts';
 import type { Block } from '../rules/movementRules.ts';
 
 type Point = readonly [number, number, number];

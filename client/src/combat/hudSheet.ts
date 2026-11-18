@@ -140,6 +140,9 @@ function cuesCss(): string {
   filter: drop-shadow(0 0 2px #000) drop-shadow(0 0 2px #000); }
 .fight-hud .veil { position: absolute; inset: 0; display: grid; place-items: center; background: #300a;
   font-size: 22px; }
+/* A page whose own sheet styles .mark and .veil for its map (the Game's) must not reach the fight's. */
+.fight-hud .mark { border: 2px solid #f4e3b0 !important; }
+.fight-hud .veil { opacity: 1; transition: none; pointer-events: none; }
 `;
 }
 

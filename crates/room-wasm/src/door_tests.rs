@@ -1,5 +1,5 @@
 use super::*;
-use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
+use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};
 use protocol::wire::overlook::wire as messages;
 use room::sea::Ship;
 use serde_json::{Value, json};
@@ -209,4 +209,28 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     assert!(predict(&bytes_of(&[1.0, 2.0])).is_empty());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword.code());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\nworn"), combat::arms::BARE_HANDS.code());
+}
+
+#[test]
+fn a_browser_predicts_a_fighter_on_a_node_s_ground_as_its_room_steps_it() {
+    let file = node_file();
+    let ground = file["ground"].to_string();
+    assert!(!set_ground(b"not ground"));
+    assert!(set_ground(ground.as_bytes()));
+    assert!(set_course(&bytes_of(&[-5.0, -8.0, 5.0, -7.0, 13.0])));
+    let floor = Floor::Land(Box::new(serde_json::from_str(&ground).unwrap()));
+    let fighter = combat::fighter::player(room::standing_on(&floor, &[], 30.0, -40.0), combat::arms::BARE_HANDS);
+    let controls = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
+    let intent = combat::Intent { controls, ..combat::Intent::default() };
+    let mut numbers: Vec<f64> = fighter.to_floats().to_vec();
+    numbers.extend(intent.to_floats());
+    numbers.extend([1.0, f64::from(combat::arms::BARE_HANDS.code())]);
+    let course = [Block::from_floats(&[-5.0, -8.0, 5.0, -7.0, 13.0])];
+    let (expected, _) = combat::player_tick(1, &fighter, &intent, &[], &course, &floor);
+    let next = Fighter::from_floats(floats_of(&predict(&bytes_of(&numbers))).as_slice().try_into().unwrap());
+    assert_eq!(next, expected, "stepped on the land, 10 m up");
+    assert_eq!(next.body.z.to_bits(), floor.height_at(next.body.x, next.body.y).to_bits());
+    assert!(set_ground(b""));
+    let flat = Fighter::from_floats(floats_of(&predict(&bytes_of(&numbers))).as_slice().try_into().unwrap());
+    assert_ne!(flat.body.z.to_bits(), next.body.z.to_bits(), "open ground again once the ground is let go");
 }

@@ -1,4 +1,4 @@
-import type { Dress } from '../player/dressing.ts';
+import type { Dress } from './dressing.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import type { FoeType } from '../rules/roster.ts';
 
