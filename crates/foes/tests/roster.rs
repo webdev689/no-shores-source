@@ -29,8 +29,8 @@ fn every_type_spawns_at_each_of_its_ranks_on_its_factions_side_with_its_numbers_
             let numbers = brain.numbers();
             assert_eq!(fighter.side, Side::Faction(foe.faction), "{}", foe.name);
             assert_eq!((brain.foe_type.number, brain.rank, brain.phase()), (foe.number, rank, 1));
-            assert!((fighter.health_max - role.health * foe.bulk * health).abs() < CLOSE, "{} {rank:?}", foe.name);
-            assert!((fighter.poise_max - role.poise * foe.bulk * poise).abs() < CLOSE, "{} {rank:?}", foe.name);
+            assert!((fighter.health_max - role.health * health).abs() < CLOSE, "{} {rank:?}", foe.name);
+            assert!((fighter.poise_max - role.poise * poise).abs() < CLOSE, "{} {rank:?}", foe.name);
             assert!(
                 (fighter.might - role.might * might).abs() < CLOSE && (brain.might() - fighter.might).abs() < CLOSE
             );
@@ -58,15 +58,14 @@ fn spot_checks_of_the_ranks_multipliers_and_caps() {
     assert!((minor.dodge - 0.05).abs() < CLOSE && !minor.elite && !minor.feints);
     // A pirate captain as an Elite: its shares, 0.875 together, scaled down evenly to 0.85; its reaction floored.
     let elite = numbers(17, Rank::Elite);
-    assert!((elite.health - 880.0).abs() < CLOSE && (elite.poise - 192.0).abs() < CLOSE);
+    assert!((elite.health - 352.0).abs() < CLOSE && (elite.poise - 96.0).abs() < CLOSE);
     assert!((elite.might - 1.38).abs() < CLOSE && elite.reaction == 13);
     assert!((elite.parry - 0.25 * 1.25 * 0.85 / 0.875).abs() < CLOSE);
     assert!((elite.parry + elite.block + elite.dodge - 0.85).abs() < CLOSE && elite.elite && !elite.feints);
-    // The Reeve stands at six tenths of a captain; the Boss at seven captains, its shares capped.
-    let reeve = numbers(6, Rank::Elite);
-    assert!((reeve.health - 400.0 * 0.6 * 2.2).abs() < CLOSE && (reeve.poise - 120.0 * 0.6 * 1.6).abs() < CLOSE);
+    // The Reeve is a captain of the Grey Tithe, as a pirate captain is; the Boss seven captains, its shares capped.
+    assert_eq!(numbers(6, Rank::Elite), foes::roles::Numbers { right: "mace_iron", left: "shield_kite_iron", ..elite });
     let boss = numbers(12, Rank::Boss);
-    assert!((boss.health - 2800.0).abs() < CLOSE && boss.reaction == 13 && boss.feints && boss.phases == 3);
+    assert!((boss.health - 1120.0).abs() < CLOSE && boss.reaction == 13 && boss.feints && boss.phases == 3);
     assert!((boss.parry + boss.block + boss.dodge - 0.85).abs() < CLOSE);
     assert_eq!(numbers(17, Rank::Miniboss).phases, 2);
     // A brute never defends at any rank.

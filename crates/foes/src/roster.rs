@@ -41,7 +41,6 @@ pub struct FoeType {
     pub right: &'static str,
     pub left: &'static str,
     pub ranks: &'static [Rank],
-    pub bulk: f64,
     pub standoff: f64,
 }
 
@@ -60,23 +59,22 @@ const fn row(
     left: &'static str,
     ranks: &'static [Rank],
 ) -> FoeType {
-    FoeType { number, faction, name, domain, role, right, left, ranks, bulk: 1.0, standoff: 1.0 }
+    FoeType { number, faction, name, domain, role, right, left, ranks, standoff: 1.0 }
 }
 
-/// Every type. A leader under a captain stands at six tenths of a captain's bulk; the marksman stands off half as far
-/// again as an archer.
+/// Every type. The marksman stands off half as far again as an archer.
 pub const ROSTER: [FoeType; 17] = [
     row(1, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(2, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
     row(3, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
     row(4, GREY_TITHE, Land, "Enforcer", Brute, "warhammer_iron", "", HEAVY),
     FoeType { standoff: 1.5, ..row(5, GREY_TITHE, Land, "Marksman", Archer, "thunderlock", "", &[Rank::Elite]) },
-    FoeType { bulk: 0.6, ..row(6, GREY_TITHE, Land, "Reeve", Captain, "mace_iron", "shield_kite_iron", LEADER) },
+    row(6, GREY_TITHE, Land, "Reeve", Captain, "mace_iron", "shield_kite_iron", LEADER),
     row(7, GREY_TITHE, Deck, "Deckhand", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
-    row(8, GREY_TITHE, Deck, "Hookman", Swordsman, "axe_iron", "shield_round_iron", LOW),
+    row(8, GREY_TITHE, Deck, "Hookman", Swordsman, "axe_iron", "", LOW),
     row(9, GREY_TITHE, Deck, "Pistoleer", Archer, "pistolet", "", LOW),
     row(10, GREY_TITHE, Deck, "Bosun", Brute, "warhammer_iron", "", HEAVY),
-    FoeType { bulk: 0.6, ..row(11, GREY_TITHE, Deck, "Tithe-Mate", Captain, "sword_steel", "", LEADER) },
+    row(11, GREY_TITHE, Deck, "Tithe-Mate", Captain, "sword_steel", "", LEADER),
     row(12, GREY_TITHE, Deck, "Captain Brannoc Thule", Captain, "sword_ebony", "", &[Rank::Boss]),
     row(13, PIRATES, Deck, "Skirmisher", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(14, PIRATES, Deck, "Swordsman", Swordsman, "sword_steel", "shield_kite_steel", LOW),
@@ -111,14 +109,7 @@ impl FoeType {
     #[must_use]
     pub fn base(&self) -> Numbers {
         let role = numbers(self.role);
-        Numbers {
-            right: self.right,
-            left: self.left,
-            health: role.health * self.bulk,
-            poise: role.poise * self.bulk,
-            standoff: self.standoff,
-            ..role
-        }
+        Numbers { right: self.right, left: self.left, standoff: self.standoff, ..role }
     }
 
     /// Its numbers at a rank, in phase `phase_number` (1 and up).

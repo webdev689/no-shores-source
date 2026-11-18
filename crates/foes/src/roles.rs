@@ -170,8 +170,8 @@ pub fn numbers(role: Role) -> Numbers {
             ..PLAIN
         },
         Role::Captain => Numbers {
-            health: 400.0,
-            poise: 120.0,
+            health: 160.0,
+            poise: 60.0,
             weight: Weight::Heavy,
             might: 1.2,
             reaction: 14,
