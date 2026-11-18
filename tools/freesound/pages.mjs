@@ -26,9 +26,16 @@ export function resultsOf(html) {
 /** The licence a sound's page links to, as the sheet names it, or null for one not allowed: only CC0 and
  *  Attribution, never non-commercial or Sampling+. */
 export function licenceOf(html) {
-  const found = html.match(/creativecommons\.org\/(publicdomain\/zero|licenses\/[a-z+-]+)\//);
+  return licenceLinkOf(html)?.name ?? null;
+}
+
+/** The licence a sound's page links to, by name and its own address with its version, as a credit cites it; null for
+ *  one not allowed. */
+export function licenceLinkOf(html) {
+  const found = html.match(/creativecommons\.org\/(publicdomain\/zero|licenses\/[a-z+-]+)\/(\d\.\d)\//);
   if (!found) return null;
-  return found[1] === 'publicdomain/zero' ? 'CC0' : found[1] === 'licenses/by' ? 'CC-BY' : null;
+  const name = found[1] === 'publicdomain/zero' ? 'CC0' : found[1] === 'licenses/by' ? 'CC-BY' : null;
+  return name && { name, url: `https://creativecommons.org/${found[1]}/${found[2]}/` };
 }
 
 /** A sound's high-quality preview on Freesound's own CDN, or null. */

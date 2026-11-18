@@ -8,7 +8,7 @@
 //     node tools/freesound/candidates.mjs [out-folder]
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { licenceOf, previewOf, resultsOf, titleOf } from './pages.mjs';
+import { licenceLinkOf, licenceOf, previewOf, resultsOf, titleOf } from './pages.mjs';
 
 const SITE = 'https://freesound.org';
 /** How many candidates each cue offers, and how many results are looked at to find them. */
@@ -41,10 +41,37 @@ async function page(url) {
   return (await fetched(url))?.text() ?? null;
 }
 
+/** A picked sound, read from its own page for its credit, its preview kept as `picks/<cue>.mp3`. */
+async function pickOf(cue) {
+  const id = String(cue.picked);
+  const sound = await page(`${SITE}/s/${id}/`);
+  const licence = sound && licenceLinkOf(sound);
+  const preview = sound && previewOf(sound, id);
+  const author = sound?.match(new RegExp(`/people/([A-Za-z0-9_.@+-]{1,80})/sounds/${id}/`))?.[1] ?? null;
+  const pick = { id: cue.id, freesound: Number(id), name: sound ? titleOf(sound, id) : null, author, licence, preview };
+  const audio = preview ? await fetched(preview) : null;
+  if (audio) {
+    mkdirSync(join(out, 'picks'), { recursive: true });
+    writeFileSync(join(out, 'picks', `${cue.id}.mp3`), Buffer.from(await audio.arrayBuffer()));
+  }
+  console.log(`${cue.id}: picked ${id}, ${pick.name} by ${author}, ${licence?.url ?? 'no allowed licence found'}`);
+  return {
+    ...pick,
+    page: author ? `${SITE}/people/${author}/sounds/${id}/` : null,
+    file: audio ? `picks/${cue.id}.mp3` : null,
+  };
+}
+
+const picks = [];
 const report = [];
 for (const cue of wanted.cues) {
-  // A cue the owner settled on the sound sheet is searched no more; what they already heard is passed over.
-  if (cue.picked || cue.keep || cue.made) continue;
+  // A cue the owner picked a sound for is searched no more: its pick is read for its credit and its preview kept.
+  if (cue.picked) {
+    picks.push(await pickOf(cue));
+    continue;
+  }
+  // One kept or made by the game is searched no more; what the owner already heard is passed over.
+  if (cue.keep || cue.made) continue;
   const heard = new Set((cue.skip ?? []).map(String));
   const [least, most] = cue.seconds;
   const search = (filter) =>
@@ -89,8 +116,12 @@ for (const cue of wanted.cues) {
   report.push({ id: cue.id, use: cue.use, query: cue.query, candidates });
 }
 writeFileSync(join(out, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
-// A search that kept nothing at all fails the run, so a refusal or a changed page shows; its pages are still kept.
-if (report.every((cue) => cue.candidates.length === 0)) {
+writeFileSync(join(out, 'picks.json'), `${JSON.stringify(picks, null, 2)}\n`);
+// A search that kept nothing at all, or a pick not read whole, fails the run, so a refusal or a changed page shows.
+if (
+  picks.some((pick) => !pick.licence || !pick.file) ||
+  (report.length > 0 && report.every((cue) => cue.candidates.length === 0))
+) {
   console.log('No candidates for any cue: read pages/ in the download to see why.');
   process.exitCode = 1;
 }
