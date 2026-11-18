@@ -20,6 +20,15 @@ export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back
  *  hands still. It eases there and back about as fast as the camera eases. */
 export const AIM = { shoulder: 0.65, back: 1.8, up: 0.25, thirdZoom: 1.15, firstZoom: 1.6, ease: 12 } as const;
 
+/** Where third person's aiming view stands and how far it zooms, as `AIM` has it unless the Test Ground's panel sets
+ *  its own. */
+export interface AimPlace {
+  readonly shoulder: number;
+  readonly back: number;
+  readonly up: number;
+  readonly thirdZoom: number;
+}
+
 /** How far into its aiming view a camera is, 0 to 1, eased toward aiming or not over `seconds`. */
 export function aimEased(share: number, aiming: boolean, seconds: number): number {
   return share + ((aiming ? 1 : 0) - share) * Math.min(1, seconds * AIM.ease);
@@ -71,8 +80,8 @@ export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number
 }
 
 /** The camera as an orbit the scene draws from: at the head in first person; behind it and up in third, pulled in
- *  short of any block between; and `aim` (0 to 1) of the way into aiming's view, over the right shoulder and zoomed.
- *  `pitch` is how far it looks down, negative looking up. */
+ *  short of any block between; and `aim` (0 to 1) of the way into aiming's view, at `place` over the shoulder and
+ *  zoomed. `pitch` is how far it looks down, negative looking up. */
 export function cameraOrbit(
   head: Point,
   yaw: number,
@@ -80,6 +89,7 @@ export function cameraOrbit(
   view: ViewMode,
   blocks: readonly Block[],
   aim = 0,
+  place: AimPlace = AIM,
 ): Orbit {
   const forward: Point = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
   const up: Point = [Math.sin(pitch) * Math.sin(yaw), -Math.sin(pitch) * Math.cos(yaw), Math.cos(pitch)];
@@ -90,7 +100,7 @@ export function cameraOrbit(
     const behind = (axis: 0 | 1 | 2) =>
       head[axis] - forward[axis] * view.shown + up[axis] * CAMERA.up * Math.min(1, view.shown / CAMERA.back);
     const shoulder = (axis: 0 | 1 | 2) =>
-      head[axis] + right[axis] * AIM.shoulder - forward[axis] * AIM.back + up[axis] * AIM.up;
+      head[axis] + right[axis] * place.shoulder - forward[axis] * place.back + up[axis] * place.up;
     const want: Point = [0, 1, 2].map(
       (axis) => behind(axis as 0 | 1 | 2) + (shoulder(axis as 0 | 1 | 2) - behind(axis as 0 | 1 | 2)) * aim,
     ) as unknown as Point;
@@ -100,7 +110,7 @@ export function cameraOrbit(
     const share = hit >= 1 ? 1 : Math.max(0, hit - CAMERA.clearance / Math.max(length, 1e-6));
     eye = [0, 1, 2].map((axis) => head[axis] + (want[axis] - head[axis]) * share) as unknown as Point;
   }
-  const zoom = 1 + ((third ? AIM.thirdZoom : AIM.firstZoom) - 1) * aim;
+  const zoom = 1 + ((third ? place.thirdZoom : AIM.firstZoom) - 1) * aim;
   return {
     targetX: eye[0] + forward[0],
     targetY: eye[1] + forward[1],

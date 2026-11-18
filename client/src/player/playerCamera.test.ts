@@ -47,4 +47,12 @@ test('aiming in third person stands the camera over the right shoulder and zooms
   assert.equal(cameraOrbit(head, 0, 0, third, []).zoom, 1, 'not aiming, no zoom');
   assert.equal(cameraOrbit(head, 0, 0, { ...third, shown: 0 }, [], 1).zoom, AIM.firstZoom);
   assert.ok(aimEased(0, true, 0.05) > 0.5 && aimEased(0, true, 0.05) < 1, 'it eases in');
+  const placed = cameraOrbit(head, 0, 0, third, [], 1, { shoulder: -0.4, back: 3, up: 0.6, thirdZoom: 2 });
+  assert.deepEqual(
+    [placed.targetX, placed.targetY + 1, placed.targetZ - 1.7, placed.zoom ?? 1].map(
+      (value) => Math.round(value * 1e9) / 1e9,
+    ),
+    [-0.4, 3, 0.6, 2],
+    'a place of its own: left of the head, farther back, higher, zoomed more',
+  );
 });

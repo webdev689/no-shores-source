@@ -7,8 +7,9 @@ Everything in the repository is made by us, or made by our tools from sources in
 only as a Cargo or npm dependency we agree to add, its licence read when it is added. No other author's art, sound,
 models, words or data, and nothing of Bethesda's.
 
-The exceptions are the sprite forge, its renders and the CC0 motion in nine of its moves, which the owner brought
-over exactly ([[DFO's Sprite Forge Comes Over Exactly]]); Daggerfall's palette and dye colours, read into a table
+The exceptions are the sprite forge, its renders and the CC0 motion in its moves from Quaternius's and KayKit's
+libraries, which the owner brought over exactly ([[DFO's Sprite Forge Comes Over Exactly]],
+[[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]); Daggerfall's palette and dye colours, read into a table
 ([[The Player Plays as in DFO]]); Come Sail Away's sailing as DFO ported it ([[Come Sail Away's Sailing Comes Over]]);
 the forged models, procedural textures and RMB town blocks of DFO's branch `ccr-cab30c1a-oddrwb`, with the
 Daggerfall measures, texture archives and palette they are built on

@@ -6,7 +6,7 @@ import { cardStand, type Placed, viewOf } from './figures.ts';
 import { foeKind } from './foeKinds.ts';
 import { ELEMENTS } from './gear.ts';
 import { Glides } from './glide.ts';
-import { shownMove } from './playerMoves.ts';
+import { likelyMoves, shownMove } from './playerMoves.ts';
 
 /** A foe as a room's fight keeps it: its number, kind and level (0 for none), the room's glance at it now and at the
  *  snapshot before, and the room ticks between the two. */
@@ -29,8 +29,9 @@ export interface FoeClock {
   readonly tickSeconds: number;
 }
 
-/** The moves a foe's figure is composed in ahead of time, so its first swing is drawn as it begins. */
-const FOE_MOVES = ['idle', 'walk', 'run', 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death', 'jump'];
+/** The moves a foe's figure is composed in ahead of time beside its likeliest, so its first swing is drawn as it
+ *  begins: the telegraphed blows' strokes and what a fight holds it to. */
+const FOE_MOVES = ['thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death'];
 /** Foes' figures are numbered down from here, clear of every player's, and never twice in the page's life: the forge
  *  keeps each figure's last card by its number. */
 let nextFoeId = -1;
@@ -90,7 +91,10 @@ export class FoeFigures {
       const frameShown = move.frame ?? Math.floor(time.clock / Math.max(move.frameSeconds, 0.01)) % moveFrames;
       const [x, y, z] = this.glides.follow(kept.id, [view.x, view.y, view.z], time.roomTick, time.frameTicks);
       Object.assign(placed, { x, y, z, facing: view.facing, anim: move.anim, frame: frameShown });
-      forge.warm(kind.dress, FOE_MOVES);
+      const { outfit } = kind.dress;
+      const [right, left] = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
+      const draws = (anim: string, held: string | null) => forge.draws(kind.dress.body, anim, held);
+      forge.warm(kind.dress, [...likelyMoves(right, left, draws), ...FOE_MOVES]);
       const { view: side, flip } = viewOf(placed.facing, x, y, eye.x, eye.y);
       const card = forge.card(placed.id, kind.dress, move.anim, side, frameShown, flip);
       const flash = { share: flashOf(kept.id), red: false };

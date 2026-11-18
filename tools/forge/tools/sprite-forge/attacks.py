@@ -1,7 +1,7 @@
 """The forge's own attacks, beside Daggerfall's two: a thrust, an overhead chop and a two-handed swing, six frames
 each, keyed in body space as the one-handed moves are (onehand.py) and the same in every view. They are own moves
 (poses.py `OWN`): every look draws them in its own archive, its weapon in its fist, and the game swings with them
-(src/characters/enemy/foeOwnMoves.js).
+(src/characters/enemy/foeOwnMoves.js). The blows a player swings are blows.py's.
 
 Each key: (the right fist, the weapon's line up from it), the chest's turn and lean, and the legs. A one-handed weapon's
 edge leads its stroke: down the chop, across the swing; a thrust's flat lies level. The two-handed swing holds the left
@@ -14,7 +14,7 @@ import poses
 from onehand import GUARD, SWORD_GUARD, sword
 
 ATTACKS = {'thrust': 6, 'chop': 6, 'swing2h': 6}
-TWO_HANDS = 0.16   # the left fist up the haft from the right, metres
+TWO_HANDS = 0.28   # the right fist up the haft from the left at its foot, metres: apart, as a war axe is held
 
 # the legs: the weight back as the blow winds up, thrown onto the bent left knee as it lands, the right driving behind
 BACK = {'thigh_L': (-14, -8, -12), 'shin_L': (8, 0, 0), 'thigh_R': (6, 10, 16), 'shin_R': (32, 0, 0)}

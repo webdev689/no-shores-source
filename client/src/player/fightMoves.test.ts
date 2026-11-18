@@ -60,19 +60,22 @@ test('a fighter’s action holds its figure to the forge’s own moves', () => {
   assert.deepEqual(swinging.blow, { direction: 'up', second: true, progress: 0.5, lands: 0.4 });
 });
 
-test('a dodge shows the jump only in the air, rising, at the top and falling by the body; landed, the figure stands', () => {
+test("a foe's dodge rolls through its span where the forge draws the roll; else the jump shows only in the air", () => {
   const dress = FOE_KINDS.find((kind) => kind.name === 'Swordsman')?.dress;
   assert.ok(dress);
-  const frames = (anim: string) => ({ jump: 3 })[anim] ?? 1;
-  const hop = (elapsed: number, z: number, zBefore: number, mode: FighterView['mode']) => {
+  const frames = (anim: string) => ({ jump: 3, roll: 6 })[anim] ?? 1;
+  const hop = (elapsed: number, z: number, zBefore: number, mode: FighterView['mode'], roll = false) => {
     const dodging = { ...standing, mode, z, action: { kind: 'dodge', elapsed, toward: [1, 0] } as Action };
-    return shownMove(foeDoing(dodging, { ...dodging, z: zBefore }, dress, 1 / 60), frames, () => true);
+    const draws = (anim: string) => roll || anim !== 'roll';
+    return shownMove(foeDoing(dodging, { ...dodging, z: zBefore }, dress, 1 / 60), frames, draws);
   };
+  assert.deepEqual(hop(9, 0.4, 0.4, 'air', true), { anim: 'roll', frame: 2, frameSeconds: 0 });
+  assert.equal(hop(20, 0, 0, 'ground', true).anim, 'roll', 'its last ticks on the ground roll on');
   assert.deepEqual(hop(2, 0.1, 0.05, 'air'), { anim: 'jump', frame: 0, frameSeconds: 0 });
   assert.equal(hop(9, 0.4, 0.4, 'air').frame, 1);
   assert.equal(hop(16, 0.1, 0.15, 'air').frame, 2);
   const resting = shownMove(foeDoing(standing, standing, dress, 1 / 60), frames, () => true);
-  assert.deepEqual(hop(20, 0, 0, 'ground'), resting, 'its last ticks are on the ground');
+  assert.deepEqual(hop(20, 0, 0, 'ground'), resting, 'with no roll, its last ticks are on the ground');
 });
 
 test('a foe that moved over a snapshot of several ticks walks at its own pace, not their sum', () => {
