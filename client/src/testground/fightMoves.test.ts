@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { fightOf, foeDoing } from './fightMoves.ts';
-import { FOE_KINDS } from './foeKinds.ts';
+import { foeDress } from './foeDress.ts';
+import type { FoeType } from '../rules/roster.ts';
 import { shownMove } from '../player/playerMoves.ts';
 
 const standing: FighterView = {
@@ -24,6 +25,18 @@ const standing: FighterView = {
   action: { kind: 'idle' },
 };
 const doing = (action: Action) => ({ ...standing, action });
+/** The pirates' swordsman, with a sword and a kite shield, as the rules' roster has it. */
+const swordsman: FoeType = {
+  type: 14,
+  name: 'Swordsman',
+  faction: 2,
+  factionName: 'Pirates',
+  domain: 'deck',
+  role: 2,
+  ranks: [1, 2],
+  right: 'sword_steel',
+  left: 'shield_kite_steel',
+};
 const lunge = (elapsed: number, iron: boolean): Action => ({
   kind: 'telegraph',
   shape: 'lunge',
@@ -39,7 +52,7 @@ const lunge = (elapsed: number, iron: boolean): Action => ({
 test('a fighter’s action holds its figure to the forge’s own moves', () => {
   const draws = () => true;
   const frames = (anim: string) => ({ death: 6, jump: 3, parry: 3, thrust: 6 })[anim] ?? 1;
-  const dress = FOE_KINDS.find((kind) => kind.name === 'Swordsman')?.dress;
+  const dress = foeDress(swordsman);
   assert.ok(dress);
   const shown = (action: Action) => shownMove(foeDoing(doing(action), null, dress, 1 / 60), frames, draws);
   assert.deepEqual(shown({ kind: 'dead', elapsed: 24 }), { anim: 'death', frame: 3, frameSeconds: 0 });
@@ -60,7 +73,7 @@ test('a fighter’s action holds its figure to the forge’s own moves', () => {
 });
 
 test('a dodge shows the jump only in the air, rising, at the top and falling by the body; landed, the figure stands', () => {
-  const dress = FOE_KINDS.find((kind) => kind.name === 'Swordsman')?.dress;
+  const dress = foeDress(swordsman);
   assert.ok(dress);
   const frames = (anim: string) => ({ jump: 3 })[anim] ?? 1;
   const hop = (elapsed: number, z: number, zBefore: number, mode: FighterView['mode']) => {
@@ -75,7 +88,7 @@ test('a dodge shows the jump only in the air, rising, at the top and falling by 
 });
 
 test('a foe that moved over a snapshot of several ticks walks at its own pace, not their sum', () => {
-  const dress = FOE_KINDS.find((kind) => kind.name === 'Swordsman')?.dress;
+  const dress = foeDress(swordsman);
   assert.ok(dress);
   // Walking at 3 m/s: 0.15 m over the three ticks between two snapshots.
   const walked = foeDoing({ ...standing, x: 0.15 }, standing, dress, 3 / 60);

@@ -8,7 +8,8 @@ import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import type { Action } from '../rules/fighters.ts';
 import { FIGHT_TICKS, fightOf, foeDoing } from './fightMoves.ts';
-import { foeKind } from './foeKinds.ts';
+import { foeDress } from './foeDress.ts';
+import { rosterOf } from '../rules/roster.ts';
 import { Glides } from './glide.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
@@ -80,6 +81,9 @@ async function start(): Promise<void> {
   );
   const combatRules = startCombatRules(roomModule);
   combatRules.setCourse(COURSE);
+  // Each foe's name and hands are the rules' roster's; its type's dress is made once.
+  const roster = rosterOf(roomModule);
+  const dresses = new Map(roster.map((type) => [type.type, foeDress(type)]));
   const input = new Input(canvas);
   let status = 'Reading the forge…';
   let fps = 6;
@@ -106,7 +110,7 @@ async function start(): Promise<void> {
   let cards: Cards | null = null;
   // Declared before the panel: a foe asked for while the forge loads is not asked for.
   let fight: Fighting | null = null;
-  const showPanel = startPanel(element<HTMLElement>('#panel'), {
+  const showPanel = startPanel(element<HTMLElement>('#panel'), roster, {
     add: () => {
       const ahead = 3;
       const x = player.body.x + Math.sin(player.yaw) * ahead;
@@ -420,7 +424,8 @@ async function start(): Promise<void> {
     const foesMarked = [...fight.foes.values()].map((kept) => {
       const figure = foeFigures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
-      return { id: kept.id, name: foeKind(kept.kind)?.name ?? 'Foe', view };
+      const type = roster.find((each) => each.type === kept.type);
+      return { ...kept, name: type?.name ?? 'Foe', faction: type?.factionName ?? '', view };
     });
     const matrix = viewProjection(camera, canvas.width / Math.max(1, canvas.height));
     hud.update(
@@ -461,8 +466,8 @@ async function start(): Promise<void> {
   const drawFoes = (eye: { x: number; y: number }, frameTicks: number): CardAt[] => {
     const cards: CardAt[] = [];
     for (const kept of fight.foes.values()) {
-      const kind = foeKind(kept.kind);
-      if (!kind) continue;
+      const dress = dresses.get(kept.type);
+      if (!dress) continue;
       let placed = foeFigures.get(kept.id);
       if (!placed) {
         placed = {
@@ -471,7 +476,7 @@ async function start(): Promise<void> {
           y: kept.view.y,
           z: 0,
           facing: 0,
-          dress: kind.dress,
+          dress,
           anim: 'idle',
           frame: null,
           spin: false,
@@ -479,13 +484,13 @@ async function start(): Promise<void> {
         foeFigures.set(kept.id, placed);
       }
       const { view } = kept;
-      const doing = foeDoing(view, kept.before, kind.dress, kept.ticks * movement.tickSeconds);
+      const doing = foeDoing(view, kept.before, dress, kept.ticks * movement.tickSeconds);
       const move = shownMove(
         doing,
-        (anim) => forge.frames(kind.dress.body, anim),
-        (anim, held) => forge.draws(kind.dress.body, anim, held),
+        (anim) => forge.frames(dress.body, anim),
+        (anim, held) => forge.draws(dress.body, anim, held),
       );
-      const moveFrames = forge.frames(kind.dress.body, move.anim);
+      const moveFrames = forge.frames(dress.body, move.anim);
       const frameShown = move.frame ?? Math.floor(clock / Math.max(move.frameSeconds, 0.01)) % moveFrames;
       const [x, y, z] = foeGlides.follow(kept.id, [view.x, view.y, view.z], fight.roomTick, frameTicks);
       Object.assign(placed, {
@@ -496,9 +501,9 @@ async function start(): Promise<void> {
         anim: move.anim,
         frame: frameShown,
       });
-      forge.warm(kind.dress, ['idle', 'walk', 'run', 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death', 'jump']);
+      forge.warm(dress, ['idle', 'walk', 'run', 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death', 'jump']);
       const { view: side, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
-      const card = forge.card(placed.id, kind.dress, move.anim, side, frameShown, flip);
+      const card = forge.card(placed.id, dress, move.anim, side, frameShown, flip);
       const flash = { share: flashes.shareOf(kept.id), red: false };
       if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eye.x, eye.y), z: placed.z, flip, flash });
     }

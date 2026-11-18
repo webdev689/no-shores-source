@@ -74,3 +74,41 @@ test("a figure's muzzle stands ahead of its chest and a little to its right", ()
   const [x, y, z] = figureMuzzle([0, 0, 0], 0);
   assert.ok(x > 0 && y < 0 && z > 1);
 });
+
+test("a foe's travelling ball is one tracer moving out, with one flash at its muzzle, however many ticks carry it", () => {
+  const tracers = new Tracers();
+  const flashVertices = (mesh: readonly number[]) => {
+    let count = 0;
+    for (let vertex = 0; vertex < mesh.length; vertex += MARK_FLOATS)
+      if (Math.abs((mesh[vertex + 4] ?? 0) - 0.78) < 1e-6 && Math.abs((mesh[vertex + 5] ?? 0) - 0.35) < 1e-6) count++;
+    return count;
+  };
+  // A ball at 70 m/s as each tick's snapshot carries it: at its place after `age` ticks of flight.
+  const carried = (age: number): FlyingShot => ({
+    owner: 7,
+    ranged: 3,
+    at: [0, -70 * TICK * age, 1.5],
+    velocity: [0, -70, 0],
+    age,
+  });
+  const oneLine = 2 * (6 + 12) * MARK_FLOATS;
+  let flashed = 0;
+  let farthest = 0;
+  for (let age = 1; age <= 30; age++) {
+    tracers.seen([carried(age)], 1);
+    const mesh = tracers.mesh(eye, [], 1);
+    assert.ok(flashVertices(mesh) <= 6, 'one flash at most');
+    if (flashVertices(mesh) > 0) flashed++;
+    else assert.equal(mesh.length, oneLine, `one tracer at tick ${age}`);
+    for (let vertex = 1; vertex < mesh.length; vertex += MARK_FLOATS) farthest = Math.min(farthest, mesh[vertex] ?? 0);
+    tracers.update(TICK, [], []);
+  }
+  assert.ok(flashed >= 1 && flashed <= 4, `the muzzle flashed once, for its moment: ${flashed} frames`);
+  assert.ok(farthest < -25 && farthest > -40, `its head went with the ball: ${farthest}`);
+  // It stops on its next tick, short of its next place: one impact there, then it fades and is gone.
+  tracers.seen([{ ...carried(30), velocity: [0, -30, 0] }], 1);
+  const impacts = [...tracers.update(0.2, [], []), ...tracers.update(0.5, [], [])];
+  assert.equal(impacts.length, 1);
+  assert.ok(Math.abs((impacts[0]?.at[1] ?? 0) - (-70 * TICK * 30 - 0.5)) < 1e-6, `${impacts[0]?.at}`);
+  assert.equal(tracers.mesh(eye, [], 1).length, 0);
+});

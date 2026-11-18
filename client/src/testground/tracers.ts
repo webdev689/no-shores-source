@@ -14,9 +14,10 @@ const TICK = 1 / 60;
 const FALL = 6;
 /** The guns' numbers, as the combat crate numbers its ranged weapons: a Pistolet and a Thunderlock fire balls. */
 const BALLS = new Set([3, 4]);
-/** A ball's tracer: its head races out this fast (m/s), slower than the ball so the eye can follow it, with a streak
- *  this long behind it (metres) that stays at the end once there and fades over this long (seconds), the whole line
- *  faintly behind it; a flash at the muzzle lasts this long and is this wide (metres). */
+/** A ball's tracer: its head races out this fast (m/s), slower than a ball that reaches its mark at once so the eye can
+ *  follow it (a travelling ball's goes at the ball's own pace), with a streak this long behind it (metres) that stays
+ *  at the end once there and fades over this long (seconds), the whole line faintly behind it; a flash at the muzzle
+ *  lasts this long and is this wide (metres). */
 const BALL = { speed: 350, streak: 6, fade: 0.3, trace: 0.22, flash: 0.06, flashSize: 0.16 } as const;
 /** An arrow's trail: this long of its flight (seconds) behind it, lingering this long once it stops; a shot's trail
  *  comes out of the drawn bow or barrel and joins its true flight within this long. */
@@ -33,11 +34,16 @@ export interface Impact {
   readonly back: readonly [number, number];
 }
 
-/** A ball's line, from its muzzle to where it stopped, seconds after it was fired. */
+/** A ball's line, from its muzzle to the farthest it is known to reach, seconds after it was fired, and how fast its
+ *  head follows it (m/s). One from the room keeps whose it is and the ticks it had flown when the room last carried it
+ *  on: a foe's ball travels, and each tick's snapshot carries it a tick farther. */
 interface Line {
   readonly from: Point;
-  readonly to: Point;
+  to: Point;
   age: number;
+  readonly speed: number;
+  readonly owner: number | null;
+  ticks: number;
 }
 
 /** The player's own arrow or bolt, flown here as the rules fly it: where it left their weapon, where the rules
@@ -116,18 +122,35 @@ export class Tracers {
   fired(shots: readonly Fired[], muzzleOf: (shot: Fired) => Point): void {
     for (const shot of shots) {
       const muzzle = muzzleOf(shot);
-      if (BALLS.has(shot.ranged)) this.lines.push({ from: muzzle, to: add(shot.at, shot.velocity, TICK), age: 0 });
+      const to = add(shot.at, shot.velocity, TICK);
+      if (BALLS.has(shot.ranged))
+        this.lines.push({ from: muzzle, to, age: 0, speed: BALL.speed, owner: null, ticks: 0 });
       else
         this.flights.push({ muzzle, launch: shot.at, at: shot.at, velocity: shot.velocity, flown: 0, stopped: null });
     }
   }
 
-  /** Everyone else's balls, from the shots of snapshots each handed over once (Fighting's takeShots), each line coming
-   *  in the one snapshot after it was fired. */
+  /** Everyone else's balls, from the shots of snapshots each handed over once (Fighting's takeShots). A ball that
+   *  reaches its mark at once comes whole in the one snapshot after it was fired; one that travels comes a tick's
+   *  length in each, carrying its owner's line on, and its first, from its muzzle back along its flight, fires it. */
   seen(shots: readonly FlyingShot[], player: number): void {
     for (const shot of shots) {
       if (shot.owner === player || !BALLS.has(shot.ranged)) continue;
-      this.lines.push({ from: shot.at, to: add(shot.at, shot.velocity, TICK), age: 0 });
+      const to = add(shot.at, shot.velocity, TICK);
+      const carried = shot.age > 0 && this.lines.find((line) => line.owner === shot.owner && line.ticks <= shot.age);
+      if (carried) {
+        Object.assign(carried, { to, ticks: shot.age });
+        continue;
+      }
+      this.lines.push({
+        from: add(shot.at, shot.velocity, -shot.age * TICK),
+        to,
+        // Its head a tick behind where the room has it, so a snapshot come late does not stall it.
+        age: Math.max(0, shot.age - 1) * TICK,
+        speed: Math.min(BALL.speed, Math.hypot(...shot.velocity)),
+        owner: shot.owner,
+        ticks: shot.age,
+      });
     }
   }
 
@@ -171,9 +194,9 @@ export class Tracers {
     return impacts;
   }
 
-  /** When a ball's head reaches where it stopped, seconds after it was fired. */
+  /** When a ball's head reaches the farthest it is known to reach, seconds after it was fired. */
   private arrival(line: Line): number {
-    return Math.hypot(...minus(line.to, line.from)) / BALL.speed;
+    return Math.hypot(...minus(line.to, line.from)) / line.speed;
   }
 
   /** The tracers' triangles as seen from `eye`, with the player's own arrows and everyone else's arrows' trails (from
@@ -206,7 +229,7 @@ export class Tracers {
     const length = Math.hypot(...minus(line.to, line.from));
     if (length < 1e-6) return;
     const along = (distance: number) => add(line.from, minus(line.to, line.from), distance / length);
-    const head = Math.min(length, line.age * BALL.speed);
+    const head = Math.min(length, line.age * line.speed);
     const tail = Math.max(0, head - BALL.streak);
     const fade = 1 - Math.max(0, line.age - this.arrival(line)) / BALL.fade;
     const point = (distance: number, ribbonOf: typeof CORE, share: number) => ({

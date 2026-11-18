@@ -1,4 +1,4 @@
-import type { FoeAsk, Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messages.ts';
+import type { FoeAsk, Look, FightEvent, FlyingShot, SeenFoe, SeenPlayer } from '../network/messages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
@@ -29,11 +29,9 @@ export function strokesReaching(apart: number | null, reach: (stroke: number) =>
   return reaching.length > 0 ? reaching : [...STROKES];
 }
 
-/** A foe as the page keeps it: its kind, the room's glance at it now and at the snapshot before, and the room ticks
- *  between the two. */
-export interface KeptFoe {
-  readonly id: number;
-  readonly kind: number;
+/** A foe as the page keeps it: as the room sent it (its role, type, rank, faction, phase and alert), the room's glance
+ *  at it now and at the snapshot before, and the room ticks between the two. */
+export interface KeptFoe extends Omit<SeenFoe, 'glance'> {
   readonly view: FighterView;
   readonly before: FighterView | null;
   readonly ticks: number;
@@ -271,8 +269,8 @@ export class Fighting {
     for (const foe of snapshot.foes) {
       present.add(foe.id);
       const kept = this.foes.get(foe.id);
-      const glanced = glanceView(foe.glance);
-      this.foes.set(foe.id, { id: foe.id, kind: foe.kind, view: glanced, before: kept?.view ?? null, ticks });
+      const { glance, ...seen } = foe;
+      this.foes.set(foe.id, { ...seen, view: glanceView(glance), before: kept?.view ?? null, ticks });
       view.push({ id: foe.id, glance: foe.glance });
     }
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);

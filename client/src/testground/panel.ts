@@ -4,7 +4,7 @@ import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
 import type { FoeAsk } from '../network/messages.ts';
-import { FOE_KINDS } from './foeKinds.ts';
+import { type FoeType, factionsOf, rankChoices } from '../rules/roster.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
  *  speed, whether the player is playing, and a status line. */
@@ -45,12 +45,65 @@ const CONTROLS = [
   'The wheel moves between first and third person; Mouse4 switches straight.',
 ];
 
-/** The Test Ground's panel: the figures, and the chosen one's move, facing and dress. */
-export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: PanelState) => void {
+/** The foes the panel stands: a faction, one of its types (with where it is met) and one of the ranks that type comes
+ *  in, each list following the one before; then spawn one, or send every foe away. */
+function foeControls(roster: readonly FoeType[], fight: PanelHandlers['fight']): HTMLElement {
+  const section = make('div');
+  const factions = factionsOf(roster);
+  let [faction] = factions[0] ?? [0];
+  let type = roster.find((each) => each.faction === faction);
+  let rank = type?.ranks[0] ?? 0;
+  const show = () => {
+    const types = roster.filter((each) => each.faction === faction);
+    const typeOptions = types.map((each) => [String(each.type), `${each.name} (${each.domain})`] as const);
+    section.replaceChildren(
+      labelled(
+        'Faction',
+        choice(
+          factions.map(([number, name]) => [String(number), name] as const),
+          String(faction),
+          (value) => {
+            faction = Number(value);
+            type = roster.find((each) => each.faction === faction);
+            rank = type?.ranks[0] ?? 0;
+            show();
+          },
+        ),
+      ),
+      labelled(
+        'Type',
+        choice(typeOptions, String(type?.type ?? ''), (value) => {
+          type = types.find((each) => each.type === Number(value));
+          rank = type?.ranks[0] ?? 0;
+          show();
+        }),
+      ),
+      labelled(
+        'Rank',
+        choice(type ? rankChoices(type) : [], String(rank), (value) => {
+          rank = Number(value);
+        }),
+      ),
+      button('Spawn', () => type && fight({ type: type.type, rank })),
+      button('Clear', () => fight('clear')),
+    );
+  };
+  show();
+  return section;
+}
+
+/** The Test Ground's panel: the foes to stand from the rules' `roster`, the figures, and the chosen one's move, facing
+ *  and dress. */
+export function startPanel(
+  root: HTMLElement,
+  roster: readonly FoeType[],
+  handlers: PanelHandlers,
+): (state: PanelState) => void {
   const garmentFilter = { text: '' };
   let shown = '';
   const status = make('p', '', 'status');
   const body = make('div');
+  const foes = foeControls(roster, handlers.fight);
   root.append(make('h1', 'Test Ground'), ...CONTROLS.map((line) => make('p', line, 'hint')), body, status);
 
   const moving = (state: PanelState, placed: Placed): HTMLElement[] => {
@@ -114,13 +167,9 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
       list.append(pick);
     }
     const chosen = state.chosen;
-    const foes = FOE_KINDS.map((kind) =>
-      button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () => handlers.fight(kind.ask)),
-    );
     body.replaceChildren(
       make('h2', 'Foes'),
-      ...foes,
-      button('Send every foe away', () => handlers.fight('clear')),
+      foes,
       make('h2', 'Figures'),
       list,
       button('Add a figure ahead', handlers.add),
