@@ -148,3 +148,94 @@ fn each_rank_runs_and_strikes_at_its_own_share_of_her_hull() {
         assert_eq!(hulled(rank, share), wanted, "{rank:?} at {share}");
     }
 }
+
+/// The first captain of a fight with her commission changed to `commission`, nothing else.
+fn recommissioned(fight: &Fight, commission: Commission) -> Fight {
+    let mut changed = fight.clone();
+    if let Some(Sailor::Captain(command)) = changed.ships.get_mut(&FIRST).map(|vessel| &mut vessel.sailor) {
+        command.her.commission = commission;
+    }
+    changed
+}
+
+#[test]
+fn a_captain_sizes_up_another_by_her_whole_rank_her_guns_and_reload_too() {
+    let fight = two_captains(Commission { faction: GREY_TITHE, rank: Rank::Boss }, elite(PIRATES));
+    let major = recommissioned(&fight, Commission { faction: GREY_TITHE, rank: Rank::Major });
+    let reckoned = |fight: &Fight| fight.sightings(SECOND).iter().find(|seen| seen.id == FIRST).map(|seen| seen.power);
+    let (Some(boss), Some(major)) = (reckoned(&fight), reckoned(&major)) else { panic!("she sees the other") };
+    let scale = Rank::Boss.scale();
+    assert_eq!((boss.might, boss.reload), (scale.might, scale.reload));
+    assert_eq!(boss.hull_hp, major.hull_hp, "one hull, told apart by her guns alone");
+    assert!(
+        crate::captain::odds::odds(&boss, &major, &crate::arms::SLOOP_ARMS) > 1.0,
+        "a Boss's guns outgun a Major's"
+    );
+}
+
+#[test]
+fn the_fights_fingerprint_holds_each_captains_commission_and_strike_share() {
+    let fight = two_captains(elite(GREY_TITHE), elite(PIRATES));
+    let other_faction = recommissioned(&fight, elite(PIRATES));
+    let other_rank = recommissioned(&fight, Commission { faction: GREY_TITHE, rank: Rank::Boss });
+    let mut other_strike = fight.clone();
+    if let Some(vessel) = other_strike.ships.get_mut(&FIRST) {
+        vessel.damage.struck_at = 0.5;
+    }
+    for (changed, what) in [(other_faction, "faction"), (other_rank, "rank"), (other_strike, "strike share")] {
+        assert_ne!(changed.numbers(), fight.numbers(), "her {what}");
+    }
+}
+
+/// Ticks a fight until a captain is no longer afloat, ten minutes at most: the one who is not, and her hull's share.
+fn fought_out(fight: &mut Fight) -> Option<(ShipId, f64)> {
+    for _ in 0..10 * 60 * 60 {
+        tick(fight);
+        let mut beaten = fight.ships.iter().filter(|(_, vessel)| vessel.damage.state != State::Afloat);
+        if let Some((id, vessel)) = beaten.next() {
+            return Some((*id, vessel.damage.hull_share()));
+        }
+    }
+    None
+}
+
+#[test]
+fn her_men_are_as_many_as_her_hull_makes_them_so_a_boss_outlasts_a_minor() {
+    for rank in Rank::ALL {
+        let build = Commission { faction: PIRATES, rank }.build();
+        assert_eq!(build.crew, (10.0 * rank.scale().hull).round(), "{rank:?}");
+    }
+    let (boss, minor) = (Rank::Boss, Rank::Minor);
+    for (first, second, beaten) in [(boss, minor, SECOND), (minor, boss, FIRST)] {
+        let mut fight = two_captains(
+            Commission { faction: GREY_TITHE, rank: first },
+            Commission { faction: PIRATES, rank: second },
+        );
+        let (struck, share) = fought_out(&mut fight).expect("one gives in within ten minutes");
+        assert_eq!(struck, beaten, "the Minor gives in, at {share:.2} of her hull");
+        let Some(other) = fight.vessel(FIRST + SECOND - beaten) else { panic!("the Boss") };
+        assert!(other.damage.fighting() && other.damage.crew_share() > 0.5, "the Boss fights on, her men mostly whole");
+    }
+}
+
+#[test]
+fn a_captain_of_a_higher_rank_runs_down_a_wary_one_sailing_away_at_the_same_point_of_sail() {
+    // A Boss, and 400 m abeam a wary Minor cruising off south-east: at one pace, the Boss sailed beside her and gave
+    // up; her rank's way brings her up.
+    let mut fight = Fight::new(5);
+    fight.enlist(FIRST, sloop_at(0.0, 0.0), Commission { faction: GREY_TITHE, rank: Rank::Boss }, 11, &Open, 0.0);
+    let away = Ship { heading: 141f64.to_radians(), ..sloop_at(400.0, 0.0) };
+    fight.enlist(SECOND, away, Commission { faction: PIRATES, rank: Rank::Minor }, 12, &Open, 0.0);
+    if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&SECOND).map(|vessel| &mut vessel.sailor) {
+        command.her.temper = Temper::Wary;
+    }
+    for _ in 0..10 * 60 * 60 {
+        let hit = tick(&mut fight)
+            .into_iter()
+            .any(|event| matches!(event, Event::Shot(ShotEvent::Hit { shooter: FIRST, target: SECOND, .. })));
+        if hit {
+            return;
+        }
+    }
+    panic!("the Boss never brought her guns to bear");
+}

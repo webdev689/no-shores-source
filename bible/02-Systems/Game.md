@@ -141,7 +141,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says
   so; the page sails its ship at the pace the room sailed her at, drawn to where the room has her. A bold one that
   comes within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight at true
-  scale, her name over a bar of her hull coloured by her rank, then back up when it ends.
+  scale, her name over a bar of her hull coloured by her rank, then back up when it ends. Ships of two factions that
+  meet fight each other, drawn at sea where the room has them; coming within 750 m of such a fight joins it the same
+  way, every captain in it under her own bar.
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 

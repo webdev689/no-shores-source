@@ -104,11 +104,12 @@ export interface FightLay {
 }
 
 /** The fight as the rules answer it (crates/land-wasm/src/fight.rs). Ships are numbered 0 the player, 1 the captain;
- *  each ball aloft is its place and radius. */
+ *  at sea, any other captains in the fight follow (from 2); each ball aloft is its place and radius. */
 export interface FightView {
   readonly clock: number;
   readonly player: FightVessel;
   readonly captain: FightCaptain;
+  readonly others?: readonly FightCaptain[];
   readonly balls: readonly (readonly [number, number, number, number])[];
   readonly lay: FightLay | null;
   readonly events: readonly FightEvent[];

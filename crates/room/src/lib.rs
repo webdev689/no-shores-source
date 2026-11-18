@@ -4,6 +4,7 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees.
 
+pub mod clash;
 pub mod deck;
 pub mod fleet;
 mod foes;

@@ -6,6 +6,7 @@ import course from '../content/testground/course.json' with { type: 'json' };
 // check its bodies with the browser's own steps.
 import { type Look, type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
+import { fightViewOf } from '../client/src/network/seaFight.ts';
 import { startFleetRules } from '../client/src/rules/fleetRules.ts';
 import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
@@ -220,6 +221,33 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
   assert.equal(ships.length, 1, 'only the ship whose course was taken is at sea');
   assert.deepEqual([ships[0]?.player, ships[0]?.x, ships[0]?.heading, ships[0]?.pace], [first, 50_000, 0, 10]);
   assert.ok(Math.abs((ships[0]?.y ?? 0) - (150_000 - 120)) < 1e-6, 'a second north at 10 × 12 m/s');
+});
+
+test('a sea where rivals clash and a player joins them snapshots to the fingerprint the crate holds natively', () => {
+  // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH).
+  const room = startRoomDoor(compiled);
+  const square = [
+    [100_000, 100_000],
+    [200_000, 100_000],
+    [200_000, 200_000],
+    [100_000, 200_000],
+  ];
+  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 51), true);
+  const player = room.join();
+  assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
+  let hash = 0xcbf2_9ce4_8422_2325n;
+  let others = 0;
+  for (let tick = 1; tick <= 16_000; tick++) {
+    room.tick();
+    if (tick % 60 !== 0) continue;
+    const bytes = room.snapshot();
+    for (const byte of bytes) hash = ((hash ^ BigInt(byte)) * 0x0100_0000_01b3n) & 0xffff_ffff_ffff_ffffn;
+    const snapshot = readFromRoom(bytes);
+    const fight = snapshot?.kind === 'snapshot' ? snapshot.fights[0] : undefined;
+    if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
+  }
+  assert.equal(others, 1, 'the player fights both rivals');
+  assert.equal(hash.toString(16).padStart(16, '0'), '10588ee6d25f0534');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {

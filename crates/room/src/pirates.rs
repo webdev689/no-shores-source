@@ -3,8 +3,9 @@
 //! hostile ship stands her on the ring round their ship, clear of every player, crossing their waters on a slant. Her
 //! seed is her temper, her faction and her rank. She sails on at a Sloop's way, on the clock of the player she sails by
 //! (their voyage's pace, real time where another player shares those waters), and goes once no player is near. A bold
-//! one that comes within sight of a player who is not fighting takes them on. One stream, seeded as the sea opens,
-//! draws every chance in a fixed order, so a sea is the same given the same seed and courses.
+//! one that comes within sight of a player who is not fighting takes them on, and one in sight of a ship of another
+//! faction meets her. One stream, seeded as the sea opens, draws every chance in a fixed order, so a sea is the same
+//! given the same seed and courses.
 
 use crate::PlayerId;
 use naval::captain::course::heading_to;
@@ -52,13 +53,15 @@ pub struct Pirate {
     pub bold: bool,
 }
 
-/// The pirates at sea and each player's wait for their next roll.
+/// The pirates at sea, each player's wait for their next roll, and each pair of ships that fought and both sailed on,
+/// by their numbers.
 #[derive(Debug)]
 pub struct Pirates {
     draws: Mulberry32,
     next_id: u32,
     waits: BTreeMap<PlayerId, f64>,
     pub sailing: Vec<Pirate>,
+    parted: Vec<[u32; 2]>,
 }
 
 #[cfg(test)]
@@ -110,7 +113,13 @@ impl Pirates {
     /// An empty sea, its chances drawn from `seed`.
     #[must_use]
     pub fn new(seed: u32) -> Self {
-        Self { draws: Mulberry32::new(seed), next_id: 1, waits: BTreeMap::new(), sailing: Vec::new() }
+        Self {
+            draws: Mulberry32::new(seed),
+            next_id: 1,
+            waits: BTreeMap::new(),
+            sailing: Vec::new(),
+            parted: Vec::new(),
+        }
     }
 
     /// One tick of `seconds`. `ships` is each player's ship at sea, with whether they are fighting and the clock their
@@ -176,6 +185,50 @@ impl Pirates {
             }
         }
         met
+    }
+
+    /// Ships back at sea from a fight among them, where it left them: any two of them have parted.
+    pub fn back_from_clash(&mut self, ships: Vec<Pirate>) {
+        for (index, one) in ships.iter().enumerate() {
+            self.parted.extend(ships[index + 1..].iter().map(|other| [one.id, other.id]));
+        }
+        self.sailing.extend(ships);
+    }
+
+    /// Each bold ship in turn meets the nearest ship of another faction within her sight, neither met already: both
+    /// leave the sea for their fight, the bold one first. Ships of one faction never meet, nor two that parted until
+    /// they have been out of each other's sight.
+    pub fn meet_rivals(&mut self) -> Vec<[Pirate; 2]> {
+        let at = |id: u32| self.sailing.iter().find(|pirate| pirate.id == id).map(|pirate| [pirate.x, pirate.y]);
+        let in_sight = |[one, other]: [u32; 2]| {
+            at(one).zip(at(other)).is_some_and(|(one, other)| apart(one, other) <= ENGAGE_RANGE)
+        };
+        let parted: Vec<[u32; 2]> = self.parted.iter().copied().filter(|&pair| in_sight(pair)).collect();
+        self.parted = parted;
+        let mut pairs: Vec<[u32; 2]> = Vec::new();
+        for one in self.sailing.iter().filter(|pirate| pirate.bold) {
+            let taken = |id: u32| pairs.iter().flatten().any(|&met| met == id);
+            if taken(one.id) {
+                continue;
+            }
+            let faction = one.commission().faction;
+            let rival = self
+                .sailing
+                .iter()
+                .filter(|other| !taken(other.id) && other.commission().faction != faction)
+                .filter(|other| !self.parted.iter().any(|pair| pair.contains(&one.id) && pair.contains(&other.id)))
+                .map(|other| (other.id, apart([one.x, one.y], [other.x, other.y])))
+                .filter(|&(_, off)| off <= ENGAGE_RANGE)
+                .min_by(|first, second| first.1.total_cmp(&second.1));
+            if let Some((rival, _)) = rival {
+                pairs.push([one.id, rival]);
+            }
+        }
+        let mut take = |id: u32| {
+            let at = self.sailing.iter().position(|pirate| pirate.id == id);
+            at.map(|at| self.sailing.remove(at))
+        };
+        pairs.into_iter().filter_map(|[one, rival]| Some([take(one)?, take(rival)?])).collect()
     }
 }
 

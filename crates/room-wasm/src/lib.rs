@@ -278,7 +278,13 @@ pub fn snapshot() -> Vec<u8> {
             let fights: Vec<_> = sea.fight_views().collect();
             let aboard: Vec<(u32, u32, movement::Body)> =
                 sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
-            protocol::sea_snapshot_bytes(sea.clock(), &sea.ships().collect::<Vec<_>>(), sea.pirates(), &fights, &aboard)
+            protocol::sea_snapshot_bytes(
+                sea.clock(),
+                &sea.ships().collect::<Vec<_>>(),
+                &sea.pirates(),
+                &fights,
+                &aboard,
+            )
         }
         Opened::Fleet(fleet) => {
             let happened = fleet.take_events();

@@ -265,6 +265,8 @@ impl Captain {
             .position(|mode| *mode == self.mode);
         let ship = |ship: Option<ShipId>| ship.map_or(-1.0, f64::from);
         let mut numbers = vec![
+            f64::from(self.commission.faction),
+            f64::from(self.commission.rank.number()),
             mode.unwrap_or(0) as f64,
             flag(self.temper == Temper::Bold),
             f64::from(self.seed),
@@ -313,13 +315,24 @@ impl Captain {
         if self.temper == Temper::Bold || enemy.wrecked || enemy.hull_share < GRAPPLE_HULL {
             return true;
         }
-        odds(&self.power(her), &enemy.power, her.arms) >= WARY_ODDS
+        odds(&self.power(her.damage), &enemy.power, her.arms) >= WARY_ODDS
     }
 
-    fn power(&self, her: &Her) -> Power {
+    /// The share of her way her canvas gives her: what her hurts leave it, by her rank's way.
+    fn way_share(&self, her: &Her) -> f64 {
+        her.damage.way_share() * self.commission.rank.scale().way
+    }
+
+    /// Her fighting power as her hurts leave it: her hull and her strike as her rank sets them, and her guns' harm
+    /// and reload as her rank paces them.
+    #[must_use]
+    pub fn power(&self, damage: &Damage) -> Power {
+        let scale = self.commission.rank.scale();
         Power {
-            struck_at: her.damage.struck_at,
-            ..Power::captain(&self.build, her.damage.hull_share(), her.damage.crew_share())
+            struck_at: damage.struck_at,
+            might: scale.might,
+            reload: scale.reload,
+            ..Power::captain(&self.build, damage.hull_share(), damage.crew_share())
         }
     }
 
@@ -454,7 +467,7 @@ impl Captain {
         }
         seen = seen && chosen.is_some_and(|(enemy, _)| self.wreck_on(enemy.wrecked, enemy.id));
         let threat = self.threat(her, sightings);
-        let outgunned = threat.is_some_and(|threat| odds(&threat.power, &self.power(her), her.arms) > 1.0);
+        let outgunned = threat.is_some_and(|threat| odds(&threat.power, &self.power(her.damage), her.arms) > 1.0);
         let runs = (her.damage.hull_share() < self.commission.rank.scale().runs_at && (threat.is_some() || seen))
             || (self.temper == Temper::Wary && outgunned);
         let enemy = chosen.filter(|_| seen).map(|(enemy, _)| enemy);
@@ -502,7 +515,7 @@ impl Captain {
     }
 
     fn lookout(&self, her: &Her) -> land::Lookout {
-        let own = pace(her.hull, her.wind, her.damage.way_share());
+        let own = pace(her.hull, her.wind, self.way_share(her));
         let length = her.arms.hull[1][0] - her.arms.hull[0][0];
         // Her turning circle at her own pace: a ship lying still is about to gather way.
         let paced = Ship { rung: SAILS_SET, ahead: own, abeam: 0.0, ..*her.ship };
@@ -518,9 +531,10 @@ impl Captain {
         let error = self.avoid.helm_error(wrap(want - her.ship.heading));
         let command = (error / (4.0 * TURN_TAU) + lead).clamp(-most, most);
         let (forward, _) = frame(her.ship.heading);
-        let sail_way = pace(her.hull, her.wind, her.damage.way_share()) * point_of_sail(off_run_deg(forward, her.wind));
-        let asked = self.sails * pace(her.hull, her.wind, her.damage.way_share());
-        let ways = [(0_i8, 0.0), (1, HANDLING.move_speed_oar), (SAILS_SET, sail_way)];
+        let sail_way = pace(her.hull, her.wind, self.way_share(her)) * point_of_sail(off_run_deg(forward, her.wind));
+        let asked = self.sails * pace(her.hull, her.wind, self.way_share(her));
+        let ways =
+            [(0_i8, 0.0), (1, HANDLING.move_speed_oar * self.commission.rank.scale().way), (SAILS_SET, sail_way)];
         let rung =
             ways.into_iter()
                 .filter(|(rung, _)| *rung != SAILS_SET || her.damage.sail > 0.0)

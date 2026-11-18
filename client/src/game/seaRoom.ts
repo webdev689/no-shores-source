@@ -33,7 +33,7 @@ export class SeaRoom {
   readonly own: number;
   private readonly link: Closable;
   private ships: readonly SeenShip[] = [];
-  /** The pirates at sea, none of them in a fight. */
+  /** The hostile ships at sea: each sailing, and each in a fight among captains alone where the room has her. */
   pirates: readonly SeenPirate[] = [];
   /** The room's last word on the player's body on deck, off the helm (the number of their last step it took), or
    *  null while they hold it; and how many words it has sent, so each is taken once. */
@@ -81,7 +81,8 @@ export class SeaRoom {
     this.words += 1;
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     if (own) {
-      this.fight = fightViewOf(own.view, { name: shipName(own.faction), faction: own.faction, rank: own.rank });
+      const who = { name: shipName(own.faction), faction: own.faction, rank: own.rank };
+      this.fight = fightViewOf(own.view, who, shipName);
       this.events.push(...this.fight.events);
     } else if (this.fight?.over === null) this.fight = null;
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.

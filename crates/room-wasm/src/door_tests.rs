@@ -157,6 +157,32 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     assert!(ships[0].1.y < 150_000.0);
 }
 
+/// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
+pub const SEA_CLASH_HASH: &str = "10588ee6d25f0534";
+
+#[test]
+fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
+    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 51));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
+    for tick in 1..=16_000 {
+        room_tick();
+        with_open(|opened| {
+            if let Opened::Sea(sea) = opened {
+                clashed |= !sea.clashes().is_empty();
+                three |= sea.fights().any(|(_, fought)| fought.fight.ships.len() == 3);
+            }
+        });
+        if tick % 60 == 0 {
+            hash = snapshot().iter().fold(hash, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x0100_0000_01b3));
+        }
+    }
+    assert!(clashed && three, "rivals clashed, and the player joined them");
+    assert_eq!(format!("{hash:016x}"), SEA_CLASH_HASH);
+}
+
 #[test]
 fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms() {
     assert!(set_course(&bytes_of(&[-5.0, -4.0, 5.0, -1.0, 2.3])));
