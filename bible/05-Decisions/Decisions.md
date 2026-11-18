@@ -64,6 +64,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Enemies Come in Five Ranks, After Destiny]]
 - [[Enemy Factions Start With the Grey Tithe]]
 - [[project-final's AI Comes Over Onto DFO's]]
+- [[New Ships Are Planned in the Sloop's Style, After the System]]
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
 - [[The Rooms Deploy on Each Merge]]
