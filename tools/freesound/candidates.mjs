@@ -22,13 +22,23 @@ const out = process.argv[2] ?? 'freesound-candidates';
 const wanted = JSON.parse(readFileSync(new URL('../../content/audio/freesound.json', import.meta.url), 'utf8'));
 const pause = () => new Promise((done) => setTimeout(done, PAUSE_MS));
 
+/** An answer that came back well, or null with the reason logged. */
+async function fetched(url) {
+  await pause();
+  try {
+    const answer = await fetch(url, { headers });
+    if (answer.ok) return answer;
+    console.log(`  ${answer.status} for ${url}: ${(await answer.text()).slice(0, 200).replace(/\s+/g, ' ')}`);
+  } catch (error) {
+    // One request failing is logged and passed over: the rest of the search still runs.
+    console.log(`  no answer from ${url}: ${error.cause?.code ?? error.message}`);
+  }
+  return null;
+}
+
 /** A page's text, or null with the reason logged. */
 async function page(url) {
-  await pause();
-  const answer = await fetch(url, { headers });
-  if (answer.ok) return answer.text();
-  console.log(`  ${answer.status} for ${url}: ${(await answer.text()).slice(0, 200).replace(/\s+/g, ' ')}`);
-  return null;
+  return (await fetched(url))?.text() ?? null;
 }
 
 const report = [];
@@ -58,9 +68,8 @@ for (const cue of wanted.cues) {
     if (!licence) continue;
     const preview = previewOf(sound, id);
     if (!preview) continue;
-    await pause();
-    const audio = await fetch(preview, { headers });
-    if (!audio.ok) continue;
+    const audio = await fetched(preview);
+    if (!audio) continue;
     const file = `${id}.mp3`;
     writeFileSync(join(out, cue.id, file), Buffer.from(await audio.arrayBuffer()));
     candidates.push({
@@ -76,3 +85,8 @@ for (const cue of wanted.cues) {
   report.push({ id: cue.id, use: cue.use, query: cue.query, candidates });
 }
 writeFileSync(join(out, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
+// A search that kept nothing at all fails the run, so a refusal or a changed page shows; its pages are still kept.
+if (report.every((cue) => cue.candidates.length === 0)) {
+  console.log('No candidates for any cue: read pages/ in the download to see why.');
+  process.exitCode = 1;
+}

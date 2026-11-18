@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: 22
       - name: Test the page reader
-        run: node --test tools/freesound/
+        run: node --test tools/freesound/pages.test.mjs
       - name: Find the candidates
         run: node tools/freesound/candidates.mjs freesound-candidates
       # Kept even when the search stops partway, with the pages it read, so a refusal or a changed page can be read.
