@@ -16,8 +16,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+    # The token reaches only the two steps that check it and publish: npm ci and pip run others' install scripts.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +29,8 @@ jobs:
       # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
       - name: Check the token is set
         id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
           else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
@@ -40,6 +41,8 @@ jobs:
       # waterline, 0.4 m up that model, is 1.2 m up her.
       - name: Paint and publish the Sloop
         if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: |
           source=$(node -p "const m = require('./content/ships/ships.json'); m.base + m.ships.sloop.source")
           curl -sSfo "$RUNNER_TEMP/sloop.blend" "$source"

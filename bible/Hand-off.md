@@ -138,14 +138,11 @@ Where the work stands now, for the next session. Each session rewrites this note
     ones fixed with tests.
   - Waiting on the owner: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
     overboard should meet (the deck keeps them aboard for now), whether DFO's Travel Options encounter (a journey
-    stopped near an enemy) or wary pirates falling on a ship they outgun should come over, and whether the kit's
-    four roles nothing wears yet (panel, warn, tile, well) stay. It changes the sea room's wire, so its merge sends
-    the page and the rooms out together.
+    stopped near an enemy) or wary pirates falling on a ship they outgun should come over. It changes the sea room's
+    wire, so its merge sends the page and the rooms out together.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
-  as the rule already says; the `ships` workflow's Cloudflare token given to its publishing step alone, not the whole
-  job; whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to R2 as a bake; and the
-  kit's `cloud-setup-script.sh` as the `overlook-source` environment's setup script, which only the owner can add.
-  Until then the repository's SessionStart hook says when the kit is missing (`.claude/settings.json`).
+  as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
+  R2 as a bake.
 - A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
   larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
   wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare
