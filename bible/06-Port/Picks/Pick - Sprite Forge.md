@@ -32,7 +32,8 @@ composes a figure from them.
 
 - The forge's code, fitted tables, keys and models, exactly, in `tools/forge/` in DFO's own layout, but for DFO's newer
   werewolf and wereboar work ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
-- Its 127,253 strips and its five tables as they are, published to R2 ([[DFO's Sprite Forge Comes Over Exactly]]).
+- Its strips, first-person frames and pictures (160,227 in all) and its tables as they are, published to R2
+  ([[DFO's Sprite Forge Comes Over Exactly]]).
   The first-person art it makes outside the studio comes too; the other authors' mod art on DFO's main does not.
 - From DFO's audit branch, the 1,101 renders the sprites branch left for a later release: the item and prop pictures
   (`items`, `rri`, `standins`, `survival`, `fish`, `foraging`, `festival`, `particles`, `coffer`, `weirkey`,
