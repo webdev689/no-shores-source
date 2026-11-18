@@ -140,17 +140,7 @@ impl Room {
 
     fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
         let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        // A node's room bakes its navmesh over its land by its first spawn, where its garrison stands, and never over
-        // its city's boxes or its whole section, which would cost more time and memory than a room has.
-        let (walked, middle, around): (&[Block], (f64, f64), f64) = match &section {
-            Some(section) => (&[], garrison::ground_middle(section, first), garrison::NODE_AROUND),
-            None => (&blocks, first, GROUND_AROUND),
-        };
-        let bounds = ground_around(walked, middle, around);
-        let nav = match &floor {
-            Floor::Flat => navmesh::NavMesh::bake(walked, bounds, &navmesh::AGENT),
-            Floor::Land(_) => navmesh::NavMesh::bake_on(walked, &floor, bounds, &navmesh::AGENT),
-        };
+        let nav = garrison::baked(&floor, &blocks, first, section.as_ref());
         Room {
             blocks,
             floor,
@@ -560,26 +550,6 @@ impl Room {
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
-/// Open ground a course's navmesh covers beyond its blocks and its spawn, each way.
-const GROUND_AROUND: f64 = 30.0;
-
-/// The ground a room's navmesh covers: the blocks and the spawn, and `around` metres of open ground round them.
-fn ground_around(blocks: &[Block], spawn: (f64, f64), around: f64) -> navmesh::Bounds {
-    let start = navmesh::Bounds { min_x: spawn.0, min_y: spawn.1, max_x: spawn.0, max_y: spawn.1 };
-    let covered = blocks.iter().fold(start, |bounds, block| navmesh::Bounds {
-        min_x: bounds.min_x.min(block.min_x),
-        min_y: bounds.min_y.min(block.min_y),
-        max_x: bounds.max_x.max(block.max_x),
-        max_y: bounds.max_y.max(block.max_y),
-    });
-    navmesh::Bounds {
-        min_x: covered.min_x - around,
-        min_y: covered.min_y - around,
-        max_x: covered.max_x + around,
-        max_y: covered.max_y + around,
-    }
-}
-
 #[cfg(test)]
 #[path = "room_tests.rs"]
 mod room_tests;

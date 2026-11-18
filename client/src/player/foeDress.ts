@@ -29,8 +29,8 @@ const clothes = (
 
 /** Each type's clothes by its number. The Grey Tithe wear grey cloth, over leather when they skirmish or shoot and
  *  over iron when they stand and fight; their captain is in steel from head to foot under a long grey cloak, and their
- *  High Assessor in iron from head to foot under a grey surcoat and a long grey cloak. The pirates wear what the Test
- *  Ground's five foes always wore. */
+ *  High Assessor in iron from head to foot under a grey surcoat and a long grey cloak. The pirates wear the Test
+ *  Ground's five foes' clothes. */
 const CLOTHES: Readonly<Record<number, Clothes>> = {
   1: clothes(
     'male',

@@ -188,25 +188,26 @@ the panel reads "Laying the ... guns: on target.", only when an unscattered ball
 
 ## At sea
 
-The sea room ([[Server]]) sails pirates among the players' ships on the [[Overworld]]: DFO's director, trimmed to
-pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), the Grey Tithe beside them.
+The sea room ([[Server]]) sails hostile ships among the players' on the [[Overworld]]: DFO's director, trimmed to
+pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), the Grey Tithe's beside them.
 
-- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s. While fewer
-  than two pirates sail within 1.9 km of them, a roll brings a ship 0.8 of the time, and she is hostile 0.3 of that
-  (DFO's open sea: 30 of its factions' 100); no other ship sails yet. By her seed half of those sail for the Grey Tithe
-  and half are pirates, a Minor 0.3 of the time, a Major 0.5 and an Elite 0.2. The rolls wait real seconds, and are
-  drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its own),
-  so each sea sends its pirates in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
+- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
+  falls due while they fight comes as the fight ends. While fewer than two hostile ships sail within 1.9 km of them, a
+  roll brings a ship 0.8 of the time, and she is hostile 0.3 of that (DFO's open sea: 30 of its factions' 100); no other
+  ship sails yet. By her seed half of those sail for the Grey Tithe and half are pirates, a Minor 0.3 of the time, a
+  Major 0.5 and an Elite 0.2. The rolls wait real seconds, and are drawn from a seed the sea takes as it opens (the
+  server's from the runtime's random numbers, the page's from its own), so each sea sends its ships in an order of its
+  own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Where.** On the ring 650 to 1000 m round their ship, no nearer than 450 m to any player, where open water lies
   between, heading across their waters on a slant; she sails on at 2.4 m/s, going about at land, and goes once no
   player is within 1.9 km. Her seed sets her faction, rank and temper: an Elite is always bold, any other one in four.
 - **Her clock.** As DFO's sea keeps the world's time, she sails on the clock of the player nearest her: their
   voyage's pace (144 m/s at ×60), the world's own while they lie at rest, and real time where another player sails
   within 1.2 km of that one, a shared sea.
-- **The voyage held.** As DFO holds a fast journey, a voyage eases down as a pirate comes near along its way: its pace
-  is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12 m/s
-  and her 2.4, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she would
-  sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a pirate of either
+- **The voyage held.** As DFO holds a fast journey, a voyage eases down as a hostile ship comes near along its way: its
+  pace is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12
+  m/s and her 2.4, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she would
+  sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a hostile ship of either
   temper, sailing or in a fight among captains, it is held to ×1, the world's own time (`threat.rs`). The room sails
   each ship at that pace and sends it as her pace; the page sails its own at the room's pace, drawn to where the room
   has her, and the voyage's line says it is held.
@@ -219,16 +220,16 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **Joining.** A player not fighting who comes within 750 m of any ship of such a fight joins it: their Sloop heaves
   to there and is put into it, and its captains choose whom to fight by their own law, the one each fights reckoned
   nearer.
-- **The meeting.** A bold pirate within 750 m of a player who is not fighting meets them: she leaves the sea and the
-  fight begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it
-  each tick by the player's orders on the fight of many ships, so her stem may ram the pirate, on waters made from the
-  coasts (open sea, the swell on it, dry land on them), until she sinks or is gone; its last view is shown once, and the
-  player sails on from where it left them.
+- **The meeting.** A bold ship within 750 m of a player who is not fighting meets them: she leaves the sea and the fight
+  begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it each tick
+  by the player's orders on the fight of many ships, so her stem may ram the captain's, on waters made from the coasts
+  (open sea, the swell on it, dry land on them), until she sinks or is gone; its last view is shown once, and the player
+  sails on from where it left them.
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop at true scale, and the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
-  Every captain in it is drawn with her name over a bar of her hull. Then the view pans back up. Pirates at sea are
-  drawn as the Overworld's ships are, darker, those fighting each other where the room has them.
+  Every captain in it is drawn with her name over a bar of her hull. Then the view pans back up. Hostile ships at sea
+  are drawn as the Overworld's ships are, darker, those fighting each other where the room has them.
 
 ## In a fleet room
 

@@ -13,7 +13,8 @@ use ::foes::{Rank, foe_type};
 use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use core::f64::consts::TAU;
-use movement::Terrain;
+use movement::{Block, Terrain};
+use navmesh::NavMesh;
 use naval::random::Mulberry32;
 use reach::{Section, distance_to_ring, inside, respawn_point};
 
@@ -123,6 +124,41 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
             let escort = (0..4).map(|_| ESCORT[index(draws, ESCORT.len())]);
             vec![alone(core::iter::once((HIGH_ASSESSOR, Boss)).chain(escort).collect())]
         }
+    }
+}
+
+/// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, and never over
+/// its city's boxes or its whole section, which would cost more time and memory than a room has; a course's room over
+/// its blocks and the open ground round them.
+pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
+    let (walked, middle, around): (&[Block], (f64, f64), f64) = match section {
+        Some(section) => (&[], ground_middle(section, first), NODE_AROUND),
+        None => (blocks, first, GROUND_AROUND),
+    };
+    let bounds = ground_around(walked, middle, around);
+    match floor {
+        Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
+        Floor::Land(_) => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
+    }
+}
+
+/// Open ground a course's navmesh covers beyond its blocks and its spawn, each way.
+const GROUND_AROUND: f64 = 30.0;
+
+/// The ground a room's navmesh covers: the blocks and the spawn, and `around` metres of open ground round them.
+fn ground_around(blocks: &[Block], spawn: (f64, f64), around: f64) -> navmesh::Bounds {
+    let start = navmesh::Bounds { min_x: spawn.0, min_y: spawn.1, max_x: spawn.0, max_y: spawn.1 };
+    let covered = blocks.iter().fold(start, |bounds, block| navmesh::Bounds {
+        min_x: bounds.min_x.min(block.min_x),
+        min_y: bounds.min_y.min(block.min_y),
+        max_x: bounds.max_x.max(block.max_x),
+        max_y: bounds.max_y.max(block.max_y),
+    });
+    navmesh::Bounds {
+        min_x: covered.min_x - around,
+        min_y: covered.min_y - around,
+        max_x: covered.max_x + around,
+        max_y: covered.max_y + around,
     }
 }
 
