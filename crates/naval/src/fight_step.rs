@@ -102,7 +102,9 @@ impl Fight {
         let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
         let is_water = |x, y| floats(waters, x, y, time);
         let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
-        let pull = sailing::ship::Pull { sail: vessel.damage.way_share(), oars: 1.0 };
+        // Her rank's way pulls her sails and her oars alike.
+        let way = command.her.commission.rank.scale().way;
+        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, &SLOOP, wind, waters, time, TICK_SECONDS, pull);
         let afloat = pose_of(&vessel.ship, &SLOOP, waters, time);
         let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
@@ -205,18 +207,20 @@ impl Fight {
         }
     }
 
-    /// A captain who has sunk leaves the fight, as does one past every player's ship and not fighting.
+    /// A captain who has sunk leaves the fight, as does one past every ship she may fight (each player's, and each
+    /// afloat captain's of another faction) and not fighting.
     fn see_off(&mut self, events: &mut Vec<Event>) {
-        let players: Vec<[f64; 2]> = self
+        let foes: Vec<(Flag, [f64; 2])> = self
             .ships
             .values()
-            .filter(|vessel| vessel.command().is_none())
-            .map(|vessel| [vessel.ship.x, vessel.ship.y])
+            .filter(|vessel| vessel.command().is_none_or(|_| vessel.in_fight() && vessel.damage.fighting()))
+            .map(|vessel| (vessel.flag(), [vessel.ship.x, vessel.ship.y]))
             .collect();
         for id in self.ids(true) {
             let Some(vessel) = self.ships.get_mut(&id) else { continue };
-            let at = [vessel.ship.x, vessel.ship.y];
-            let nearest = players.iter().map(|player| distance(at, *player)).fold(f64::INFINITY, f64::min);
+            let (at, own) = ([vessel.ship.x, vessel.ship.y], vessel.flag());
+            let apart = foes.iter().filter(|(flag, _)| *flag != own).map(|(_, foe)| distance(at, *foe));
+            let nearest = apart.fold(f64::INFINITY, f64::min);
             let sunk = vessel.damage.state == State::Sunk;
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
             let end = if sunk {

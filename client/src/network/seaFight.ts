@@ -51,9 +51,13 @@ export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 /** A captain the room has not named: a Major of the pirates. */
 const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 };
 
-/** The fight a sea room's numbers show, its captain `who` (a Major of the pirates unless told); throws where the
- *  numbers run short or name nothing. */
-export function fightViewOf(numbers: ArrayLike<number>, who: Commissioned = PIRATE_MAJOR): FightView {
+/** The fight a sea room's numbers show, its captain `who` (a Major of the pirates unless told) and each other captain
+ *  named by her faction (`nameOf`); throws where the numbers run short or name nothing. */
+export function fightViewOf(
+  numbers: ArrayLike<number>,
+  who: Commissioned = PIRATE_MAJOR,
+  nameOf: (faction: number) => string = () => 'Sloop',
+): FightView {
   let read = 0;
   const next = (): number => {
     if (read >= numbers.length) throw new Error('a fight’s numbers run short');
@@ -84,14 +88,21 @@ export function fightViewOf(numbers: ArrayLike<number>, who: Commissioned = PIRA
       braced: next() === 1,
     },
   });
+  // A captain's Sloop, then her mode, whether she is hostile to the player, and her sides run out.
+  const commanded = (commission: Commissioned): FightCaptain => {
+    const her = vessel();
+    const mode = named(MODES);
+    const hostile = next() === 1;
+    return { ...her, ...commission, mode, hostile, run_out: SIDES.filter(() => next() === 1) };
+  };
   const clock = next();
   const over = named(OVER);
   const player = vessel();
-  const her = vessel();
-  const mode = named(MODES);
-  const hostile = next() === 1;
-  const runOut = SIDES.filter(() => next() === 1);
-  const captain: FightCaptain = { ...her, ...who, mode, hostile, run_out: runOut };
+  const captain = commanded(who);
+  const others = Array.from({ length: next() }, () => {
+    const [faction, rank] = [next(), next()];
+    return commanded({ name: nameOf(faction), faction, rank });
+  });
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
   // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.
   const stop = (): FightEnd | null => {
@@ -135,5 +146,5 @@ export function fightViewOf(numbers: ArrayLike<number>, who: Commissioned = PIRA
     }
   });
   if (read !== numbers.length) throw new Error('a fight’s numbers run on past its view');
-  return { clock, player, captain, balls, lay, events, over, fingerprint: '' };
+  return { clock, player, captain, others, balls, lay, events, over, fingerprint: '' };
 }

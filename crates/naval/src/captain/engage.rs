@@ -16,7 +16,7 @@ impl Captain {
         let range = self.build.range_m.max(self.dead_zone);
         let reach = lay(ship, her.pose, her.arms, Side::Starboard, her.guns.load, 0.0, None).reach;
         let vel = self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship));
-        let own = pace(her.hull, her.wind, her.damage.way_share());
+        let own = pace(her.hull, her.wind, self.way_share(her));
         let (me, them) = ([ship.x, ship.y], [enemy.ship.x, enemy.ship.y]);
         if apart > (range * CLOSE_FROM).max(reach) {
             self.present = None;

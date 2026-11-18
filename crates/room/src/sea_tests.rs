@@ -1,6 +1,8 @@
 use super::*;
+use crate::clash::tests::at_sea;
 use crate::pirates::Pirate;
 use naval::fight::{CAPTAIN, End, HOSTILE_NEAR_M, Sailor};
+use naval::ranks::{GREY_TITHE, Rank};
 
 /// A ship of a fight, by its number.
 fn sailed(fight: &Fight, id: naval::shots::ShipId) -> sailing::ship::Ship {
@@ -383,4 +385,75 @@ fn a_ship_met_at_sea_fights_under_her_own_faction_and_rank() {
     let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
     assert_eq!(captain.map(|command| command.her.commission), Some(commission));
     assert_eq!(sea.fight_views().map(|(_, _, shown)| shown).collect::<Vec<_>>(), [commission]);
+}
+
+/// A player at rest at (50 km, 50 km), and 1 km north of them two ships 400 m apart heading north: a bold Elite of
+/// the Grey Tithe, then one of `second`, bold or not as asked. Neither is within sight of the player.
+fn rivals_at_sea(second: Commission, bold: bool) -> (Sea, PlayerId) {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    sea.pirates.sailing.extend([at_sea(1, elite, 49_800.0, true), at_sea(2, second, 50_200.0, bold)]);
+    for pirate in &mut sea.pirates.sailing {
+        pirate.y = 49_000.0;
+    }
+    (sea, player)
+}
+
+#[test]
+fn rival_ships_meet_at_sea_with_no_player_near_fight_where_the_fight_has_them_and_the_winner_sails_on() {
+    let (mut sea, player) = rivals_at_sea(Commission::default(), false);
+    sea.tick();
+    assert_eq!(sea.clashes().len(), 1, "they met");
+    assert!(sea.pirates.sailing.is_empty() && sea.fights().next().is_none(), "they left the sea, with no player");
+    ticks(&mut sea, 120);
+    assert!(sea.clashes()[0].fight.clock > 1.9, "the fight they began goes on: none of them left it");
+    let fought: Vec<[f64; 2]> =
+        sea.clashes()[0].fight.ships.values().map(|vessel| [vessel.ship.x, vessel.ship.y]).collect();
+    let shown: Vec<[f64; 2]> = sea.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect();
+    assert_eq!(shown, fought, "shown at sea where the fight has them");
+    assert_eq!(sea.pirates().iter().map(|pirate| pirate.id).collect::<Vec<_>>(), [1, 2]);
+    let Some(loser) = sea.clashes[0].fight.ships.get_mut(&(CAPTAIN + 1)) else { panic!("the second ship") };
+    let hull = loser.damage.hull - loser.damage.max_hull * 0.2;
+    loser.damage.apply(naval::damage::Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+    sea.tick();
+    assert!(sea.clashes().is_empty(), "the second struck");
+    let sailing: Vec<(u32, [f64; 2])> =
+        sea.pirates.sailing.iter().map(|pirate| (pirate.id, [pirate.x, pirate.y])).collect();
+    assert_eq!(sailing.len(), 1);
+    assert_eq!(sailing[0].0, 1, "the winner sails on");
+    assert!(sea.fights().next().is_none() && ship(&sea, player).pace == 0, "the player never fought");
+}
+
+#[test]
+fn a_player_who_comes_within_sight_of_a_clash_joins_it_and_its_captains_choose_whom_to_fight() {
+    let (mut sea, player) = rivals_at_sea(Commission::default(), false);
+    sea.tick();
+    next_course(&mut sea, player, &[[50_000.0, 49_200.0]], 5).unwrap();
+    for _ in 0..60 * 60 {
+        sea.tick();
+        if sea.fights().next().is_some() {
+            break;
+        }
+    }
+    let (fighting, fought) = sea.fights().next().expect("she joined the fight");
+    assert_eq!((fighting, fought.fight.ships.len()), (player, 3), "her Sloop, and both captains");
+    assert!(sea.clashes().is_empty() && sea.pirates().is_empty(), "the fight is hers now");
+    assert_eq!((sailed(&fought.fight, PLAYER).rung, ship(&sea, player).pace), (0, 0), "hove to");
+    let others_at = 2 + 2 * naval::wire::VESSEL_NUMBERS + 4;
+    let views: Vec<Vec<f64>> = sea.fight_views().map(|(_, view, _)| view).collect();
+    assert_eq!(views[0][others_at..others_at + 3], [1.0, 2.0, 2.0], "her view shows the other: the pirates' Major");
+    sea.tick();
+    let fought = &sea.fights().next().expect("the fight goes on").1.fight;
+    let elite = fought.vessel(CAPTAIN).and_then(Vessel::command).map(|command| command.her.target());
+    assert_eq!(elite, Some(Some(CAPTAIN + 1)), "the Elite holds her nearer rival against the player");
+}
+
+#[test]
+fn ships_of_one_faction_never_meet_at_sea() {
+    let (mut sea, _) = rivals_at_sea(Commission { faction: GREY_TITHE, rank: Rank::Major }, true);
+    ticks(&mut sea, 600);
+    assert!(sea.clashes().is_empty());
+    assert_eq!(sea.pirates.sailing.len(), 2);
 }

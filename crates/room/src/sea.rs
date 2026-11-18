@@ -2,11 +2,13 @@
 //! steps, and no course crosses a continent's coast. It moves ships by + - * / and square root, finds a heading with
 //! the pure-Rust arctangent, and judges a course against the coasts in whole metres, so every machine agrees. Pirates
 //! sail among the ships (`pirates`); a bold one that meets a player fights them, at true scale, by the naval crate's
-//! law, on waters made from the coasts, until she sinks or is gone, while the player's orders steer and fire. A player
+//! law, on waters made from the coasts, until she sinks or is gone, while the player's orders steer and fire. One that
+//! meets a rival fights her there with no player (`clash`), and a player who comes near that fight joins it. A player
 //! may leave the helm and walk their ship's deck (`deck`), her helmsman keeping her course, and take it again at the
 //! wheel.
 
 use crate::PlayerId;
+use crate::clash::{Clash, sighted, sloop, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates};
 use crate::threat::held_pace;
@@ -138,7 +140,8 @@ impl Waters for CoastWaters<'_> {
 }
 
 /// The sea: the continents' coasts, its clock in ticks, each player's ship once it has put to sea, the pirates, each
-/// player's fight, the deck every ship has, and each player off the helm walking it.
+/// player's fight and each fight among captains alone, the deck every ship has, and each player off the helm walking
+/// it.
 #[derive(Debug)]
 pub struct Sea {
     coasts: Vec<Coast>,
@@ -150,6 +153,7 @@ pub struct Sea {
     berths: BTreeMap<PlayerId, Berth>,
     pirates: Pirates,
     fights: BTreeMap<PlayerId, SeaFight>,
+    clashes: Vec<Clash>,
 }
 
 /// A point to the nearest whole metre, or None for one that is not a number or lies outside the world's frame.
@@ -184,6 +188,7 @@ impl Sea {
             berths: BTreeMap::new(),
             pirates: Pirates::new(seed),
             fights: BTreeMap::new(),
+            clashes: Vec::new(),
         }
     }
 
@@ -331,9 +336,10 @@ impl Sea {
 
     /// One tick: each ship out of a fight sails on along its course by its pace's distance, turning onto each leg as
     /// it comes to it, and comes to rest at its course's end; each player off the helm takes the steps due; each fight
-    /// steps, its player's ship where the fight has her; the pirates sail, come and go, and a bold one that meets a
-    /// player begins their fight, calling them to the helm. A fight that ended is shown for one tick, then gone, its
-    /// player at rest where it left them.
+    /// steps, its player's ship where the fight has her, and each clash; the pirates sail, come and go, a bold one that
+    /// meets a player begins their fight, calling them to the helm, one that meets a rival begins a clash, and a player
+    /// who comes within sight of a clash joins it. A fight that ended is shown for one tick, then gone, its player at
+    /// rest where it left them.
     pub fn tick(&mut self) {
         self.clock += 1;
         for aboard in self.aboard.values_mut() {
@@ -341,7 +347,7 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         self.fights.retain(|_, fought| fought.fight.over().is_none());
-        let pirates: Vec<[f64; 2]> = self.pirates.sailing.iter().map(|pirate| [pirate.x, pirate.y]).collect();
+        let pirates: Vec<[f64; 2]> = self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
@@ -368,6 +374,8 @@ impl Sea {
                 sailing.course.clear();
             }
         }
+        let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
+        step_clashes(&mut self.clashes, &mut self.pirates, &players, (&waters, wind, time));
         // Each player's waters run at the pace they sail, the world's own time at rest.
         let ships: Vec<(PlayerId, [f64; 2], bool, f64)> = self
             .ships()
@@ -384,27 +392,24 @@ impl Sea {
             }
         });
         for (player, pirate) in met {
-            let Some(sailing) = self.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut()) else {
-                continue;
-            };
-            sailing.course.clear();
-            (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-            let at = |x: f64, y: f64, heading: f64, rung: i8| sailing::ship::Ship {
-                x,
-                y,
-                heading,
-                ahead: 0.0,
-                abeam: 0.0,
-                turn: 0.0,
-                sail_way: 0.0,
-                rung,
-            };
+            let Some(own) = heave_to(&mut self.berths, &mut self.aboard, player) else { continue };
             // She has hove to: the player sets her sails; the pirate comes on under hers.
-            let own = at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0);
-            let captain = at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
+            let captain = sloop(pirate.x, pirate.y, pirate.heading, SAILS_SET);
             let fight = Fight::meet(own, captain, pirate.commission(), pirate.seed, &waters, time);
             self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
-            self.aboard.remove(&player);
+        }
+        for met in self.pirates.meet_rivals() {
+            self.clashes.push(Clash::begin(met, &waters, time));
+        }
+        for &(player, at, _, _) in &ships {
+            if self.fights.contains_key(&player) {
+                continue;
+            }
+            let Some(clash) = sighted(&mut self.clashes, at) else { continue };
+            let Some(own) = heave_to(&mut self.berths, &mut self.aboard, player) else { continue };
+            let mut fight = clash.fight;
+            fight.put_to_sea(PLAYER, own, &waters, time);
+            self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
         }
     }
 
@@ -420,10 +425,17 @@ impl Sea {
         self.clock
     }
 
-    /// The pirates at sea, none of them in a fight.
+    /// The hostile ships at sea: each sailing, then each in a clash, where its fight has her. None in a player's fight.
     #[must_use]
-    pub fn pirates(&self) -> &[Pirate] {
-        &self.pirates.sailing
+    pub fn pirates(&self) -> Vec<Pirate> {
+        let clashing = self.clashes.iter().flat_map(Clash::ships);
+        self.pirates.sailing.iter().copied().chain(clashing).collect()
+    }
+
+    /// Each fight among captains alone at sea, in the order they began.
+    #[must_use]
+    pub fn clashes(&self) -> &[Clash] {
+        &self.clashes
     }
 
     /// Each player's fight, in the order of their number.
@@ -447,6 +459,19 @@ impl Sea {
 /// Orders for a fight just begun: the helm amidships, no lay, nothing fired, braced or loaded.
 const QUIET: Orders =
     Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
+
+/// Brings a player's ship to rest for a fight, calling them to the helm: her Sloop, hove to where she lies.
+fn heave_to(
+    berths: &mut BTreeMap<PlayerId, Berth>,
+    aboard: &mut BTreeMap<PlayerId, Aboard>,
+    player: PlayerId,
+) -> Option<sailing::ship::Ship> {
+    let sailing = berths.get_mut(&player)?.sailing.as_mut()?;
+    sailing.course.clear();
+    (sailing.ship.pace, sailing.ship.rate) = (0, 0);
+    aboard.remove(&player);
+    Some(sloop(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0))
+}
 
 /// Whether a point lies on a continent.
 fn on_land(coasts: &[Coast], point: Point) -> bool {

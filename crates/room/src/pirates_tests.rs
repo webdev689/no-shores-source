@@ -156,3 +156,22 @@ fn a_ships_faction_and_rank_come_from_her_seed_by_their_shares() {
     }
     assert_eq!(commission_at_sea(77), commission_at_sea(77), "one seed, one commission");
 }
+
+#[test]
+fn a_bold_ship_meets_the_nearest_rival_in_sight_and_two_that_parted_meet_only_once_out_of_sight() {
+    use crate::clash::tests::at_sea;
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    let major = Commission::default();
+    let friend = Commission { faction: GREY_TITHE, rank: Rank::Major };
+    let ships = [at_sea(1, elite, 0.0, true), at_sea(2, friend, 100.0, true), at_sea(3, major, 700.0, false)];
+    let mut pirates = Pirates { sailing: ships.to_vec(), ..Pirates::default() };
+    let met: Vec<[u32; 2]> = pirates.meet_rivals().iter().map(|pair| pair.map(|pirate| pirate.id)).collect();
+    assert_eq!(met, [[1, 3]], "her own faction's ship is no rival");
+    let mut pirates = Pirates::default();
+    pirates.back_from_clash(vec![ships[0], Pirate { x: 400.0, ..ships[2] }]);
+    assert!(pirates.meet_rivals().is_empty(), "they parted");
+    pirates.sailing[1].x = 800.0;
+    assert!(pirates.meet_rivals().is_empty(), "out of sight");
+    pirates.sailing[1].x = 400.0;
+    assert_eq!(pirates.meet_rivals().len(), 1, "in sight again, they meet again");
+}

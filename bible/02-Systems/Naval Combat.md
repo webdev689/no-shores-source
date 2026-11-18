@@ -38,6 +38,8 @@ code:
   - crates/naval/src/ranks.rs#SCALES
   - crates/naval/src/ranks.rs#Commission
   - crates/room/src/pirates.rs#commission_at_sea
+  - crates/room/src/clash.rs#Clash
+  - crates/naval/src/fight.rs#among
   - client/src/ships/shipBars.ts#placeShipBars
 ---
 # Naval Combat
@@ -51,9 +53,9 @@ Broadsides, and rams, between players' Sloops and pirate captains' Sloops: DFO's
 A fight holds any number of ships by number, each sailed by a player's orders or by a captain's mind, and flying the
 players' flag or the pirates'. Each tick, in this order: each player's ship steps once for each of her orders taken
 (late orders catch up; with none she lies as she was, riding the swell), each captain steers and sails, hulls that
-overlap are pushed apart, each player's stem may ram, the guns load, the captains fire and then the players, the
-balls fly, fires burn and sinking ships go down, each player's hands mend her, and a captain who has sunk, or lies
-past every player's ship and is not fighting, leaves the fight. A player's step under her hurts is one pure function
+overlap are pushed apart, each player's stem may ram, the guns load, the captains fire and then the players, the balls
+fly, fires burn and sinking ships go down, each player's hands mend her, and a captain who has sunk, or lies past every
+ship she may fight and is not fighting, leaves the fight. A player's step under her hurts is one pure function
 (`sail_hurt`), which a browser predicting her runs too.
 
 ## How it works
@@ -102,10 +104,11 @@ law the wind's eye costs her 0.55 of her way, so she never tacks.
 
 - **Whom she fights.** A pirate is bold one time in four by her seed. A bold one takes on a player she sees within
   750 m; a wary one only a wreck, a hull nearly gone, or a ship she outguns 5 to 4 by DFO's fighting power (the time
-  each takes to make the other strike). Struck by a player, she is hostile to that ship for 5 minutes. Of the ships
-  she would fight and does not spare, she takes the nearest, the one she already fights reckoned a fifth nearer (as
-  DFO ranks them), and runs from the nearest that struck her within 320 m. What she remembers of a chase, a wreck,
-  her mark's way and the side she presented is let go when she marks another ship.
+  each takes to make the other strike, by each ship's whole rank: her hull and men, her guns' harm and reload). Struck
+  by a player, she is hostile to that ship for 5 minutes. Of the ships she would fight and does not spare, she takes
+  the nearest, the one she already fights reckoned a fifth nearer (as DFO ranks them), and runs from the nearest that
+  struck her within 320 m. What she remembers of a chase, a wreck, her mark's way and the side she presented is let go
+  when she marks another ship.
 - **Her course.** She bends round every hull about her, the bends of each summed, as DFO's traffic does. Far off,
   she steers to intercept. A ship running from her she runs down astern, then sheers out to
   its beam. Otherwise she brings the side that costs least to bear on where her balls will meet him, bent off the beam
@@ -116,7 +119,8 @@ law the wind's eye costs her 0.55 of her way, so she never tacks.
   long unfired, or that loses its mark, is run in. She never fires on a wreck.
 - **When she breaks off.** Any pirate runs under 30% of her hull; a wary one runs from a ship that outguns her. A chase
   that gains nothing in 150 s is given up, and a wreck left after 30 s. She leaves the fight when she has sunk, or lies
-  past 1.9 km from every player's ship and is not fighting; the editor's fight ends when its one captain leaves.
+  past 1.9 km from every ship she may fight (each player's, and each afloat captain's of another faction) and is not
+  fighting; the editor's fight ends when its one captain leaves.
 
 ## Ranks and factions
 
@@ -125,18 +129,22 @@ Every captain sails for a faction at a rank ([[Enemies Come in Five Ranks, After
 the Pirate Sloop. Until the planned hulls are built every rank sails the Sloop's ([[Hulls]]). Her rank scales her, a
 Major as before ranks:
 
-| Rank | Hull | Gun damage | Reload | Aim error | Temper | Runs | Strikes |
-|---|---|---|---|---|---|---|---|
-| Minor | ×0.6 | ×0.9 | ×1.2 | ×1.3 | by her seed | under 30% | at 25% |
-| Major | ×1 | ×1 | ×1 | ×1 | by her seed | under 30% | at 25% |
-| Elite | ×1.8 | ×1.1 | ×0.9 | ×0.8 | always bold | under 30% | at 20% |
-| Miniboss | ×3 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
-| Boss | ×5 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
+| Rank | Hull and men | Way | Gun damage | Reload | Aim error | Temper | Runs | Strikes |
+|---|---|---|---|---|---|---|---|---|
+| Minor | ×0.6 | ×0.9 | ×0.9 | ×1.2 | ×1.3 | by her seed | under 30% | at 25% |
+| Major | ×1 | ×1 | ×1 | ×1 | ×1 | by her seed | under 30% | at 25% |
+| Elite | ×1.8 | ×1.1 | ×1.1 | ×0.9 | ×0.8 | always bold | under 30% | at 20% |
+| Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
+| Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
 
-Aim error scales both her lay's long and short and her volley's scatter. A captain sees every player's ship and every
-afloat, unstruck ship of another faction, and chooses, engages and breaks off with them as with a player's; she never
-fights her own faction, and a struck ship is nobody's enemy. Any foe's hit provokes her. Over each captain's ship in a
-fight stands her name above a bar of her hull, red, orange or yellow by rank; a Boss's across the top of the screen.
+Her men are as many as her hull makes them (6 to 50, whole men), so hull and men give out in the same proportion at
+every rank: a hull hit takes a man or two, and her men give out at about four fifths of her hull, as a Major's do. Her
+way pulls her canvas and her oars alike, so a higher rank runs down a lower one, and a Boss outlasts a Minor; two of one
+rank keep pace. Aim error scales both her lay's long and short and her volley's scatter. A captain sees every player's
+ship and every afloat, unstruck ship of another faction, and chooses, engages and breaks off with them as with a
+player's; she never fights her own faction, and a struck ship is nobody's enemy. Any foe's hit provokes her. Over each
+captain's ship in a fight stands her name above a bar of her hull, red, orange or yellow by rank; a Boss's across the
+top of the screen.
 
 ## Ramming
 
@@ -195,11 +203,20 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   within 1.2 km of that one, a shared sea.
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a pirate comes near along its way: its pace
   is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12 m/s
-  and her 2.4, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she
-  would sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a pirate of
-  either temper it is held to ×1, the world's own time (`threat.rs`). The room sails each ship at that pace and sends
-  it as her pace; the page sails its own at the room's pace, drawn to where the room has her, and the voyage's line
-  says it is held.
+  and her 2.4, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she would
+  sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a pirate of either
+  temper, sailing or in a fight among captains, it is held to ×1, the world's own time (`threat.rs`). The room sails
+  each ship at that pace and sends it as her pace; the page sails its own at the room's pace, drawn to where the room
+  has her, and the voyage's line says it is held.
+- **Rivals meet** (`clash.rs`). A bold ship within 750 m of a ship of another faction, neither in a fight, meets the
+  nearest: both leave the sea and fight there with no player, on the fight of many ships, which the room steps each
+  tick. Each ship stays where the fight has her, and the snapshot shows her among the ships at sea there. The fight
+  lasts while one of them fights on; then one who struck, sank or runs leaves the sea, and the rest sail on from where
+  it left them. Two that sailed on meet again only once out of each other's sight. A fight with no ship within 1.9 km
+  of a player leaves the sea, as a ship does. Ships of one faction never meet.
+- **Joining.** A player not fighting who comes within 750 m of any ship of such a fight joins it: their Sloop heaves
+  to there and is put into it, and its captains choose whom to fight by their own law, the one each fights reckoned
+  nearer.
 - **The meeting.** A bold pirate within 750 m of a player who is not fighting meets them: she leaves the sea and the
   fight begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it
   each tick by the player's orders on the fight of many ships, so her stem may ram the pirate, on waters made from the coasts (open sea, the swell on it, dry land on them), until
@@ -207,7 +224,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop at true scale, and the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
-  Then the view pans back up. Pirates at sea are drawn as the Overworld's ships are, darker.
+  Every captain in it is drawn with her name over a bar of her hull. Then the view pans back up. Pirates at sea are
+  drawn as the Overworld's ships are, darker, those fighting each other where the room has them.
 
 ## In a fleet room
 
@@ -228,8 +246,11 @@ browser predicts its own ship through `room-wasm` by the same steps.
 ## Limits
 
 - Every captain sails a Sloop, of either faction at any rank; no other classes, and no ambient traffic.
-- At sea, outside a fight, captains of different factions pass each other by: the sea room sails them as points, and
-  each fight holds one captain. A wary captain reckons a ship's rank only by her hull.
+- At sea a fight holds one player at most: a player joins only a fight among captains, and a ship at sea never joins
+  a fight already under way. In the game's fight only the first captain's fires and DFO's messages show.
+- A captain's men give out at about four fifths of her hull at every rank, so her rank's run and strike shares of her
+  hull are seldom reached; striking at them would take men who stand more blows, a Major's too.
+- Two captains of one rank keep pace: a bold one gives up the chase of a wary one sailing away after 150 s.
 - Players' balls do not strike other players' ships, and players do not ram one another.
 - At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port) and no notoriety. A voyage near a
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not

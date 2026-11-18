@@ -117,6 +117,12 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
     [0, null, [0, 0, 0], [0, -700, 3]],
   );
   assert.deepEqual([fight.player.state, fight.captain.mode, fight.player.guns.load], ['afloat', 'cruise', 'round']);
+  const other = fightViewOf(fights[0]?.view ?? [], named, (faction) => `of ${faction}`).others?.[0];
+  assert.deepEqual(
+    [other?.name, other?.faction, other?.rank, other?.ship.slice(0, 3), other?.mode],
+    ['of 2', 2, 3, [400, -700, 0.5], 'cruise'],
+    'a pirates’ Elite fights too',
+  );
   assert.deepEqual([fight.lay?.side, fight.lay?.launches.length, fight.lay?.ends.length], ['starboard', 3, 3]);
   assert.ok((fight.lay?.radius ?? 0) > 0, 'the landing zone has a size');
   assert.ok(

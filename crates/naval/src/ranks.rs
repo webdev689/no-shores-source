@@ -1,5 +1,6 @@
 //! Whom a captain sails for and her rank: the factions by number, each one's Sloop, and what each rank makes of her
-//! ship over a Major's (her hull, her guns' harm and reload, her gunners' aim, her boldness), kept in one table.
+//! ship over a Major's (her hull and men, her way, her guns' harm and reload, her gunners' aim, her boldness), kept in
+//! one table.
 
 use crate::arms::{Build, PIRATE_SLOOP, TITHE_SLOOP};
 use crate::captain::PIRATE_RUNS_AT;
@@ -23,12 +24,14 @@ pub enum Rank {
     Boss = 5,
 }
 
-/// What a rank makes of a ship over a Major's: her hull's strength, her guns' harm, their reload, her gunners' aim
-/// error (the lay's error and the volley's scatter), whether she is always bold whatever her seed, the share of her
-/// hull under which she runs (0: never), and the share at which she strikes.
+/// What a rank makes of a ship over a Major's: her hull's strength and her men alike (so hull and men give out in the
+/// same proportion at every rank), the way her canvas gives her, her guns' harm, their reload, her gunners' aim error
+/// (the lay's error and the volley's scatter), whether she is always bold whatever her seed, the share of her hull
+/// under which she runs (0: never), and the share at which she strikes.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Scale {
     pub hull: f64,
+    pub way: f64,
     pub might: f64,
     pub reload: f64,
     pub aim_error: f64,
@@ -42,6 +45,7 @@ pub struct Scale {
 pub const SCALES: [Scale; 5] = [
     Scale {
         hull: 0.6,
+        way: 0.9,
         might: 0.9,
         reload: 1.2,
         aim_error: 1.3,
@@ -51,6 +55,7 @@ pub const SCALES: [Scale; 5] = [
     },
     Scale {
         hull: 1.0,
+        way: 1.0,
         might: 1.0,
         reload: 1.0,
         aim_error: 1.0,
@@ -60,6 +65,7 @@ pub const SCALES: [Scale; 5] = [
     },
     Scale {
         hull: 1.8,
+        way: 1.1,
         might: 1.1,
         reload: 0.9,
         aim_error: 0.8,
@@ -67,8 +73,26 @@ pub const SCALES: [Scale; 5] = [
         runs_at: PIRATE_RUNS_AT,
         strikes_at: 0.2,
     },
-    Scale { hull: 3.0, might: 1.2, reload: 0.8, aim_error: 0.7, always_bold: true, runs_at: 0.15, strikes_at: 0.1 },
-    Scale { hull: 5.0, might: 1.3, reload: 0.7, aim_error: 0.6, always_bold: true, runs_at: 0.0, strikes_at: 0.05 },
+    Scale {
+        hull: 3.0,
+        way: 1.2,
+        might: 1.2,
+        reload: 0.8,
+        aim_error: 0.7,
+        always_bold: true,
+        runs_at: 0.15,
+        strikes_at: 0.1,
+    },
+    Scale {
+        hull: 5.0,
+        way: 1.3,
+        might: 1.3,
+        reload: 0.7,
+        aim_error: 0.6,
+        always_bold: true,
+        runs_at: 0.0,
+        strikes_at: 0.05,
+    },
 ];
 
 impl Rank {
@@ -113,12 +137,13 @@ impl Commission {
         CAPTAIN_FACTIONS.contains(&faction).then_some(Commission { faction, rank })
     }
 
-    /// Her faction's Sloop, her hull as strong as her rank makes it.
+    /// Her faction's Sloop, her hull as strong and her men as many as her rank makes them.
     #[must_use]
     pub fn build(&self) -> Build {
         let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };
-        // Whole points, as every blow takes, so a hull never shows a fraction of one left.
-        Build { hull: (base.hull * self.rank.scale().hull).round(), ..base }
+        let scale = self.rank.scale().hull;
+        // Whole points and whole men, as every blow takes, so neither ever shows a fraction left.
+        Build { hull: (base.hull * scale).round(), crew: (base.crew * scale).round(), ..base }
     }
 
     /// Her ship's hurts, sound: her hull as strong as her rank makes it, striking where her rank strikes.

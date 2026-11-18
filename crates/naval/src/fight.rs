@@ -259,10 +259,7 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
     let damage = &vessel.damage;
     let power = match vessel.command() {
         None => Power::player(&LARGE_BOAT, damage.hull_share()),
-        Some(command) => Power {
-            struck_at: damage.struck_at,
-            ..Power::captain(&command.her.build, damage.hull_share(), damage.crew_share())
-        },
+        Some(command) => command.her.power(damage),
     };
     Sighting {
         id,
@@ -353,6 +350,17 @@ impl Fight {
         fight
     }
 
+    /// A fight among captains already at sea, with no player in it: each of `captains` (her Sloop cruising on its
+    /// heading, her commission and her seed) under a number from `CAPTAIN` on, in turn, and every chance of the fight
+    /// drawn from the first one's seed.
+    pub fn among(captains: &[(Ship, Commission, u32)], waters: &impl Waters, time: f64) -> Fight {
+        let mut fight = Fight::new(captains.first().map_or(0, |&(_, _, seed)| seed));
+        for (&(ship, commission, seed), id) in captains.iter().zip(CAPTAIN..) {
+            fight.enlist(id, ship, commission, seed, waters, time);
+        }
+        fight
+    }
+
     /// A captain of `commission` under number `id` in her Sloop at `ship`, cruising on its heading, her temper drawn
     /// from `seed`, her hull as strong as her rank makes it and striking where her rank strikes.
     fn enlist(&mut self, id: ShipId, ship: Ship, commission: Commission, seed: u32, waters: &impl Waters, time: f64) {
@@ -415,7 +423,7 @@ impl Fight {
                 Some(End::Sunk) => 1.0,
                 Some(End::Gone) => 2.0,
             };
-            numbers.extend([command.struck_at.unwrap_or(-1.0), command.under, gone]);
+            numbers.extend([command.struck_at.unwrap_or(-1.0), vessel.damage.struck_at, command.under, gone]);
             numbers.extend(command.her.numbers());
         }
         for ball in &self.balls {
