@@ -22,4 +22,4 @@ stands.
   ([[Test Ground]]).
 - **The aim pose.** A figure aiming a gun holds its shot's aimed frame, before it fires ([[Test Ground]]).
 - **First person.** The weapon on screen stays where it is drawn; the view zooms instead, so a tracer leaves its
-  muzzle ([[First Person]]).
+  muzzle ([[First Person]]). Replaced by [[First-Person Aiming Zooms the Weapon With the View]].

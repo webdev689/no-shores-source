@@ -77,8 +77,8 @@ it while it reloads is the blade's.
 ### Shooting
 
 The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not
-while aiming, where each shot takes a fresh pull as the rules ask. Aiming leaves the weapon where it is drawn and zooms the view, so a tracer
-starts at its muzzle ([[Aiming Sits Behind the Shoulder and Zooms the View]]). A shot plays its frames
+while aiming, where each shot takes a fresh pull as the rules ask. Aiming zooms the weapon with the view, about the middle of the
+screen, and its muzzle with it, so a tracer starts where it is drawn ([[First-Person Aiming Zooms the Weapon With the View]]). A shot plays its frames
 at its own rate, then the weapon reloads:
 
 | | Frames | A second | Leaves on | Reload | Kick | Dips |
