@@ -69,7 +69,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
   the page's own windows. An arrow to a threat off the screen that would fall on the vitals stands just above them.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
-  round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky.
+  round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky. The
+  [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.
 - **A foe's plate**, after the owner's reference: its faction's emblem in a chip square at the left; to its right its
   name above a long thin track, the meter in its rank's colour. Over each foe, the soft lock's (with its poise under
   the health) and the boss bar's are this one plate at three sizes. Ships' plates are drawn alike on an SVG, at the
