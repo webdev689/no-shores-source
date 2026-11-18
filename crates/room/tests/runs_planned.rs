@@ -202,3 +202,37 @@ fn a_ledge_climbs_to_the_top() {
         }
     });
 }
+
+/// Points every 2 m along a run's line.
+fn along(run: &layout::runs::Run) -> Vec<[f64; 2]> {
+    let mut points = Vec::new();
+    for pair in run.line.windows(2) {
+        let steps = (layout::field::distance(pair[0], pair[1]) / 2.0).ceil().max(1.0) as usize;
+        for step in 0..steps {
+            let share = step as f64 / steps as f64;
+            points.push([pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share]);
+        }
+    }
+    points
+}
+
+#[test]
+fn a_building_runs_ceilings_stand_clear_and_its_passages_are_roofed() {
+    each_run(&|laid, run, floor| {
+        if !run.kind.building() {
+            return;
+        }
+        let mut roofed = 0;
+        let points = along(run);
+        for &at in &points {
+            let ground = floor(at);
+            let over: Vec<&[f64; 6]> =
+                laid.boxes.iter().filter(|b| off_box(at, b) < 0.4 && b[5] > ground + 0.4 && b[5] < ground + 12.0).collect();
+            for b in &over {
+                assert!(b[5] >= ground + 2.6, "{}: {}'s ceiling at {at:?} is {} m up", laid.id, run.name, b[5] - ground);
+            }
+            roofed += usize::from(!over.is_empty());
+        }
+        assert!(roofed * 2 >= points.len(), "{}: {} is roofed over {roofed} of {} points", laid.id, run.name, points.len());
+    });
+}

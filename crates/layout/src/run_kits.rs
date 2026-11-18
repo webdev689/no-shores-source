@@ -40,6 +40,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     if run.kind == RunKind::Rampart {
         rampart_wall(kit, run, carved);
     }
+    crate::run_halls::build(kit, run, carved);
     door(kit, run, carved);
     let ground: Vec<f64> =
         kit.into.solids[first..].iter().map(|solid| carved_at(kit, carved, [solid.at[0], solid.at[1]])).collect();
@@ -186,9 +187,25 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, raised: Option
             let ground = carved_at(kit, carved, at);
             // Tall enough to crouch behind wherever the floor rises toward a passage.
             let tall = 1.5 + kit.draw() * 0.4;
-            if run.kind == RunKind::Gorge || run.kind.building() {
+            if matches!(run.kind, RunKind::Gorge | RunKind::Mine) {
                 let size = [across, across * (0.7 + kit.draw() * 0.3), tall];
                 stone(kit, Shape::Dome { sides: 7 }, [at[0], at[1], ground], size, 0.1);
+            } else if run.kind == RunKind::Keep {
+                // A keep's stores: crates stacked in twos.
+                let turn = kit.draw() * std::f64::consts::TAU;
+                let crate_m = [1.3, 1.3, 1.3];
+                kit.solid(
+                    Solid::upright(Shape::Block, [at[0], at[1], ground - 0.1], crate_m, Material::Timber).turned(turn),
+                );
+                let top = [at[0] + 0.3, at[1] - 0.2, ground + 1.2];
+                kit.solid(Solid::upright(Shape::Block, top, [1.1, 1.1, 1.0], Material::Timber).turned(turn + 0.4));
+            } else if run.kind == RunKind::Undercroft {
+                // An undercroft's tombs: a stone coffin on a plinth.
+                let turn = kit.draw() * std::f64::consts::TAU;
+                kit.solid(
+                    Solid::upright(Shape::Block, [at[0], at[1], ground - 0.2], [2.4, 1.1, 1.5], Material::Stone)
+                        .turned(turn),
+                );
             } else {
                 let size = [across, 0.9, tall];
                 let block = Solid::upright(Shape::Block, [at[0], at[1], ground - 0.3], size, Material::Stone);
@@ -313,12 +330,46 @@ fn door(kit: &mut Kit, run: &Run, carved: &Sculpts) {
         Material::Stone,
     );
     kit.solid(frame.turned(turn));
-    let leaf = Solid::upright(Shape::Block, [at[0], at[1], floor - 0.3], [width + 0.4, 0.5, 6.5], Material::Timber);
-    kit.solid(leaf.turned(turn));
-    for band in [1.4, 3.1, 4.8] {
-        let iron =
-            Solid::upright(Shape::Block, [at[0], at[1], floor + band], [width + 0.3, 0.62, 0.22], Material::Iron);
-        kit.solid(iron.turned(turn));
+    match run.kind {
+        // A mine's door is an iron grate: bars too close for a body to pass, between two rails.
+        RunKind::Mine => {
+            let across = [-way[1], way[0]];
+            let bars = (width / 0.3).floor() as i32;
+            for bar in 0..=bars {
+                let along = ahead(at, across, f64::from(bar) * 0.3 - width / 2.0);
+                kit.solid(Solid::upright(
+                    Shape::Column { sides: 6, top: 1.0 },
+                    [along[0], along[1], floor - 0.3],
+                    [0.12, 0.12, 6.6],
+                    Material::Iron,
+                ));
+            }
+            for rail in [0.2, 6.0] {
+                let iron =
+                    Solid::upright(Shape::Block, [at[0], at[1], floor + rail], [width + 0.3, 0.2, 0.2], Material::Iron);
+                kit.solid(iron.turned(turn));
+            }
+        }
+        // An undercroft's is a crypt's sealed slab of stone.
+        RunKind::Undercroft => {
+            let slab =
+                Solid::upright(Shape::Block, [at[0], at[1], floor - 0.3], [width + 0.4, 0.7, 6.5], Material::Stone);
+            kit.solid(slab.turned(turn));
+        }
+        _ => {
+            let leaf =
+                Solid::upright(Shape::Block, [at[0], at[1], floor - 0.3], [width + 0.4, 0.5, 6.5], Material::Timber);
+            kit.solid(leaf.turned(turn));
+            for band in [1.4, 3.1, 4.8] {
+                let iron = Solid::upright(
+                    Shape::Block,
+                    [at[0], at[1], floor + band],
+                    [width + 0.3, 0.62, 0.22],
+                    Material::Iron,
+                );
+                kit.solid(iron.turned(turn));
+            }
+        }
     }
     if run.beats.last().is_some_and(|end| end.level > 0.8) {
         let across = [-way[1], way[0]];
