@@ -276,3 +276,22 @@ test("an open building's doorways let a body's sight straight through, from eith
     }
   }
 });
+
+test("an open building's rooms show its windows: each is laid again on the lining's face, facing in", () => {
+  const table = buildingTable;
+  const glassFaces = (model: ForgedModel, glass: readonly number[]) =>
+    model.parts
+      .filter((part) => part.archive === glass[0] && part.record === glass[1])
+      .reduce((sum, part) => sum + part.count / 3, 0);
+  let checked = 0;
+  for (const id of idsOf(table).filter((each) => table[each].glass)) {
+    const glass = table[id].glass!;
+    const [closed, open] = [buildingModel(table, id), buildingModel(table, id, { open: true })];
+    if (!closed || !open || !glassFaces(closed, glass)) continue;
+    // A window beside a doorway can be trimmed by the doorway's cut, so nearly every window, not each.
+    const [outside, both] = [glassFaces(closed, glass), glassFaces(open, glass)];
+    assert.ok(both >= outside * 1.9, `${id}: a window inside for (nearly) each outside: ${both} of ${2 * outside}`);
+    checked++;
+  }
+  assert.ok(checked > 20, `buildings with windows checked: ${checked}`);
+});
