@@ -5,13 +5,12 @@
 //! inside the ring is open to anyone. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers
 //! blows at it first, then takes the openings it is given.
 
-use crate::awareness::look;
 use crate::board::Board;
 use crate::brain::{Brain, Plan};
 use crate::cover::{leave_post, unseen};
 use crate::dice::Purpose;
 use crate::flank::drift;
-use crate::leash::leash;
+use crate::leash::{leash, unoccupied};
 use crate::react::{defend, opening};
 use crate::senses::{Here, Sight, sense};
 use crate::shoot::{ranged, shooting};
@@ -36,8 +35,12 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     if let Some(ask) = leash(brain, here, board) {
         return ask;
     }
-    let before = brain.target;
+    let (before, was_alert) = (brain.target, brain.awareness.alert);
     let sight = sense(brain, here);
+    if sight.is_some() {
+        // Something to fight: any walk home is over.
+        brain.returning = None;
+    }
     if brain.target != before {
         board.forget(me);
         brain.plan = Plan::Wait;
@@ -71,7 +74,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     }
     let Some(sight) = sight else {
         brain.plan = Plan::Wait;
-        return look(brain, here);
+        return unoccupied(brain, here, was_alert);
     };
     if let Some(ask) = flee(brain, here, board, &sight) {
         return ask;

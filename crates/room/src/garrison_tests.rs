@@ -249,13 +249,13 @@ fn a_foe_asked_for_on_a_platform_stands_on_its_top() {
 }
 
 /// The living foes a foe called.
-fn called_by(room: &Room, caller: FighterId) -> Vec<FighterId> {
+pub(super) fn called_by(room: &Room, caller: FighterId) -> Vec<FighterId> {
     let called = room.foes.iter().filter(|(_, found)| found.caller == Some(caller) && !found.fighter.dead());
     called.map(|(id, _)| *id).collect()
 }
 
 /// A Boss cut to a third of its health: it roars into each of its phases in turn, calling each one's foes.
-fn into_its_last_phase(room: &mut Room, boss: FighterId) {
+pub(super) fn into_its_last_phase(room: &mut Room, boss: FighterId) {
     let found = room.foes.get_mut(&boss).unwrap();
     found.fighter.health = 0.3 * found.fighter.health_max;
     run(room, 600);

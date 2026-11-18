@@ -15,6 +15,7 @@ code:
   - crates/foes/src/director.rs#BANDS
   - crates/foes/src/tactics.rs#decide
   - crates/foes/src/leash.rs#leash
+  - crates/foes/src/leash.rs#unoccupied
   - crates/foes/src/flank.rs#drift
   - crates/foes/src/react.rs#defend
   - crates/foes/src/tell.rs#throw
@@ -94,8 +95,13 @@ phases) is [[Enemies]].
   tick the share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m,
   about 9 s), then turns to face as it was posted and stands idle. Walking back it heeds nothing it sees or hears and
   shows as idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert with
-  the striker as its target; one struck from past its leash it gives up again. A Boss keeps its phase. A foe a player
-  asked for, or one a Boss called, has no post and never leashes.
+  the striker as its target; one struck from past its leash it gives up again. A foe a player asked for, or one a Boss
+  called, has no post and never leashes.
+- **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds
+  back first) walks home the same way, healing (from 20 m, about 5 s). On this walk it heeds what it sees and hears
+  as ever: they raise its awareness, and once it is alert it takes its target or searches again; short of that it
+  walks on home, so a passing stir never leaves it standing short of its post. Either walk home takes a Boss or a
+  Miniboss back to its first phase, and the foes it called fall ([[Enemies]]).
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
   three shoot at it (the director, below). A holder walks in to its reach, squares up within 22.5 degrees, waits 0.3
   to 0.9 s and swings once; then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn
@@ -195,6 +201,7 @@ more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
 - Flanking stops at 100 degrees, short of a turned back.
-- A garrison foe walks back only once it gives its target up past its leash: one that lost sight of its target, hunted
-  and searched, lets go and stands idle where it searched.
-- Walking back to its post a foe heeds no one, so another player may walk beside it unopposed until they strike it.
+- A foe only stirred, never alert, walks up to 3 m toward the stir and stays where it stopped: only a search's end
+  or a leash walks a garrison foe home.
+- Walking back to its post after a leash a foe heeds no one, so another player may walk beside it unopposed until they
+  strike it.

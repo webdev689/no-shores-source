@@ -1,8 +1,9 @@
 //! A garrison foe leashed to its post: it gives its target up 50 m from its place there or off the room's navmesh,
 //! walks back healing, heeds no one on its way but a blow, and stands idle at its place again; a foe with no post
-//! never does.
+//! never does. A Boss or a Miniboss that leashes goes back to its first phase, its called foes falling; and a garrison
+//! foe whose search finds no one walks home as well, heeding what it sees on the way.
 
-use super::garrison_tests::{node, run, section, shoot, stand_player};
+use super::garrison_tests::{called_by, into_its_last_phase, node, run, section, shoot, stand_player};
 use super::*;
 use crate::{Input, PlayerId};
 use ::foes::tuning::{HOME_REACHED, LEASH};
@@ -125,16 +126,21 @@ fn a_garrison_foe_chased_50_m_from_its_post_walks_back_healing_heeds_no_one_and_
         let middle = healths[healths.len() / 2];
         assert!(healths[0] < middle && middle < most, "{kind:?}: healing as it goes, not at once");
         run(&mut room, 600);
-        for (id, place, facing) in &posted {
-            let fighter = room.foes[id].fighter;
-            assert!(!room.foes[id].brain.returning(), "{kind:?}: home");
-            assert!(apart(feet(&room, *id), flat(*place)) <= HOME_REACHED + 0.05, "{kind:?}: at its place");
-            let squared = [fighter.body.facing, fighter.aim].map(|bearing| wrap(bearing - facing).abs() < 0.02);
-            assert_eq!(squared, [true, true], "{kind:?}: its body and its arms face as it was posted");
-            assert!(fighter.health == fighter.health_max && alert(&room, *id) == 0, "{kind:?}: whole and idle");
-        }
+        stands_home(&room, &posted, kind);
         assert_eq!(room.garrison[0].standing, standing, "{kind:?}: its group's record is its own still");
         assert_eq!(room.garrison[0].cleared_at, None);
+    }
+}
+
+/// Every foe of the group home: at its place, its body and its arms facing as it was posted, whole and idle.
+fn stands_home(room: &Room, posted: &[Posted], kind: NodeKind) {
+    for (id, place, facing) in posted {
+        let fighter = room.foes[id].fighter;
+        assert!(!room.foes[id].brain.returning(), "{kind:?}: home");
+        assert!(apart(feet(room, *id), flat(*place)) <= HOME_REACHED + 0.05, "{kind:?}: at its place");
+        let squared = [fighter.body.facing, fighter.aim].map(|bearing| wrap(bearing - facing).abs() < 0.02);
+        assert_eq!(squared, [true, true], "{kind:?}: its body and its arms face as it was posted");
+        assert!(fighter.health == fighter.health_max && alert(room, *id) == 0, "{kind:?}: whole and idle");
     }
 }
 
@@ -191,4 +197,99 @@ fn a_blow_on_a_garrison_foe_walking_back_brings_it_back_to_the_fight() {
     assert_eq!((room.foes[&first].brain.target(), alert(&room, first)), (Some(player), 2));
     run(&mut room, 60);
     assert_eq!(room.foes[&first].brain.target(), Some(player), "and fights on");
+}
+
+#[test]
+fn a_boss_or_a_miniboss_that_leashes_goes_back_to_its_first_phase_its_called_foes_fall_and_its_next_fight_is_fresh() {
+    for (kind, calls) in [(NodeKind::Boss, 4), (NodeKind::Dungeon, 0)] {
+        let mut room = node(kind, "glade");
+        let player = room.join().unwrap();
+        let (leader, place, _) = group(&room)[0];
+        into_its_last_phase(&mut room, leader);
+        let last = room.foes[&leader].brain.phase();
+        let called = called_by(&room, leader);
+        assert!(last > 1 && called.len() == calls, "{kind:?}: in phase {last}, {} called", called.len());
+        provoke(&mut room, player);
+        room.take_events();
+        let to = point_at(&room, place, LEASH + 1.0, true);
+        stand_player(&mut room, player, to);
+        run(&mut room, 1);
+        let slain: Vec<FighterId> = room.take_events().iter().map(|event| event.defender).collect();
+        let brain = &room.foes[&leader].brain;
+        assert!(brain.returning() && brain.phase() == 1, "{kind:?}: its first phase as its leash begins");
+        assert!(called.iter().all(|id| room.foes[id].fighter.dead() && slain.contains(id)), "its called foes fall");
+        let fresh = ::foes::spawn(brain.foe_type, brain.rank, 0.0, 0.0, 0.0).1;
+        assert_eq!((brain.numbers(), brain.might()), (fresh.numbers(), fresh.might()), "its first phase's numbers");
+        let away = point_at(&room, place, 80.0, false);
+        stand_player(&mut room, player, away);
+        run(&mut room, 1200);
+        assert!(!room.foes[&leader].brain.returning() && room.foes[&leader].brain.phase() == 1, "{kind:?}: home");
+        assert_eq!(room.foes[&leader].fighter.might, fresh.might(), "it strikes as in its first phase");
+        into_its_last_phase(&mut room, leader);
+        assert_eq!(room.foes[&leader].brain.phase(), last, "{kind:?}: every phase comes again");
+        assert_eq!(called_by(&room, leader).len(), calls, "{kind:?}: and every call");
+    }
+}
+
+/// A patrol's first group, hurt and led 20 m from its post by a player who then leaves: its foes lose them and search.
+fn searching() -> (Room, Vec<Posted>) {
+    let mut room = node(NodeKind::Patrol, "glade");
+    let player = room.join().unwrap();
+    provoke(&mut room, player);
+    let posted = group(&room);
+    for (id, _, _) in &posted {
+        let fighter = &mut room.foes.get_mut(id).unwrap().fighter;
+        fighter.health = 0.7 * fighter.health_max;
+    }
+    let out = point_at(&room, room.garrison[0].at, 20.0, true);
+    stand_player(&mut room, player, out);
+    for _ in 0..180 {
+        whole(&mut room, player);
+        run(&mut room, 1);
+    }
+    room.leave(player);
+    (room, posted)
+}
+
+#[test]
+fn a_garrison_foe_whose_search_finds_no_one_walks_home_healing_and_stands_idle_there() {
+    let (mut room, posted) = searching();
+    let (first, place, _) = posted[0];
+    let (mut searched, mut healths, mut farthest) = (false, Vec::new(), 0.0_f64);
+    for _ in 0..2400 {
+        run(&mut room, 1);
+        searched |= alert(&room, first) == 3;
+        if room.foes[&first].brain.returning() {
+            assert!(searched, "it searched first");
+            healths.push(room.foes[&first].fighter.health);
+            farthest = farthest.max(apart(feet(&room, first), flat(place)));
+        }
+        if !healths.is_empty() && posted.iter().all(|(id, _, _)| !room.foes[id].brain.returning()) {
+            break;
+        }
+    }
+    assert!(farthest > 10.0, "it walked home from where it searched: {farthest} m");
+    assert!(healths.windows(2).all(|pair| pair[1] >= pair[0]) && healths[0] < healths[healths.len() / 2]);
+    run(&mut room, 300);
+    stands_home(&room, &posted, NodeKind::Patrol);
+}
+
+#[test]
+fn a_garrison_foe_walking_home_from_its_search_takes_a_player_it_sees_on_the_way() {
+    let (mut room, posted) = searching();
+    let (first, place, _) = posted[0];
+    for _ in 0..2400 {
+        if room.foes[&first].brain.returning() && apart(feet(&room, first), flat(place)) > 6.0 {
+            break;
+        }
+        run(&mut room, 1);
+    }
+    assert!(room.foes[&first].brain.returning(), "on its way home");
+    let player = room.join().unwrap();
+    let toward = bearing(feet(&room, first), flat(place));
+    let [x, y] = feet(&room, first);
+    stand_player(&mut room, player, [x + libm::sin(toward) * 5.0, y - libm::cos(toward) * 5.0]);
+    run(&mut room, 60);
+    assert_eq!(room.foes[&first].brain.target(), Some(player), "it sees them and turns on them");
+    assert!(!room.foes[&first].brain.returning());
 }

@@ -263,9 +263,12 @@ impl Room {
         }
     }
 
-    /// The foes a Boss called fall with it, in the tick it falls, as any foe falls: each fight with it starts clean.
+    /// The foes a Boss called fall with it, in the tick it falls or turns to walk home to its post, as any foe falls:
+    /// each fight with it starts clean.
     pub(crate) fn fall_with_callers(&mut self) {
-        let fallen = |caller: &FighterId| self.foes.get(caller).is_none_or(|found| found.fighter.dead());
+        let fallen = |caller: &FighterId| {
+            self.foes.get(caller).is_none_or(|found| found.fighter.dead() || found.brain.returning())
+        };
         let falling: Vec<(FighterId, FighterId)> = self
             .foes
             .iter()
@@ -283,8 +286,8 @@ impl Room {
     }
 
     /// The fight's heat eases a tick; every foe thinks over the room as it stands, then steps by its intent; what each
-    /// set off lands as a player's would. A foe roaring into a new phase has its poise refilled, one walking back to its
-    /// post heals, and the foes a foe calls come once every foe has stepped.
+    /// set off lands as a player's would. A foe roaring into a new phase has its poise refilled, one walking back to
+    /// its post heals, and the foes a foe calls come once every foe has stepped.
     pub(crate) fn step_foes(&mut self) {
         self.director.step();
         let fighters = self.fighters();

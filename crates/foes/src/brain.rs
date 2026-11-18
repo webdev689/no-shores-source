@@ -52,6 +52,14 @@ pub struct Home {
     pub facing: f64,
 }
 
+/// Why a garrison foe walks back to its post: its target led it past its leash, when it heeds nothing on the way but a
+/// blow; or its search found no one, when it heeds what it sees and hears as ever.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Homeward {
+    Leashed,
+    Searched,
+}
+
 /// A foe's brain: its type and rank, and all it keeps.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Brain {
@@ -86,9 +94,9 @@ pub struct Brain {
     pub(crate) tells: Tells,
     pub(crate) reactions: Reactions,
     pub(crate) bow: Bow,
-    /// A garrison foe's place at its post, and whether it walks back there, its fight given up.
+    /// A garrison foe's place at its post, and why it walks back there, if it does.
     pub(crate) home: Option<Home>,
-    pub(crate) returning: bool,
+    pub(crate) returning: Option<Homeward>,
 }
 
 impl Brain {
@@ -117,7 +125,7 @@ impl Brain {
             reactions: Reactions::default(),
             bow: Bow::default(),
             home: None,
-            returning: false,
+            returning: None,
         }
     }
 
@@ -126,10 +134,10 @@ impl Brain {
         self.home = Some(Home { at, facing });
     }
 
-    /// Whether it walks back to its post, its fight given up.
+    /// Whether it walks back to its post, its fight given up or its search let go.
     #[must_use]
     pub fn returning(&self) -> bool {
-        self.returning
+        self.returning.is_some()
     }
 
     /// Its numbers now: its type's at its rank, in its phase.

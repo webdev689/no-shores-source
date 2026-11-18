@@ -102,6 +102,9 @@ elite tier is [[Foes]]' (quicker wind-ups and cooldowns, one blow in three iron,
   faces, alert toward its foe, while the room's living foes leave room under its limit. When the Boss falls, the foes
   it called fall in the same tick, each told as slain, and lie their ten seconds as any foe does: each fight with it
   starts clean, and every phase's call comes. Called foes have no post: they never leash ([[Foes]]).
+- **A garrison's Boss or Miniboss walking home** to its post, leashed or its search let go, goes back to its first
+  phase as the walk begins: its numbers, blows and chains are that phase's, a roar owed is dropped, and the foes it
+  called fall as at its death. Its next fight has every phase and call again.
 - **Captain Brannoc Thule's**:
   1. **The blade**: sweep and lunge, feints, chains of one.
   2. **The boarding**: adds charge and leap; wind-ups ×0.85, cooldowns ×0.8, chains of two.
@@ -146,8 +149,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   farthest from the nearest spawn. A group stands 2.5 m round its post, each foe facing outward, a leader in the
   middle facing the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
-  place at its post or off the room's navmesh, and walks back there, healing as it goes, to stand idle again
-  ([[Foes]]). It is still its group's: a leash never clears a group or stands it again.
+  place at its post or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
+  whose search finds no one walks back the same way ([[Foes]]). It is still its group's: a walk home never clears a
+  group or stands it again.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
