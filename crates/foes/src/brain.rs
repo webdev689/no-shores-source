@@ -69,9 +69,11 @@ pub struct Brain {
     pub(crate) sampled: u64,
     /// When, in reach, it may swing.
     pub(crate) ready_at: Option<u64>,
-    /// Its swings blocked running by a guard still raised, and since when that guard has walled it off.
+    /// Its swings blocked running by a guard still raised; since when that guard has walled it off, and the side it
+    /// steps round to (1 clockwise about its target, -1 not), chosen as the wall begins so a guard turning with it
+    /// never flips it.
     pub(crate) blocked: u8,
-    pub(crate) walled_at: Option<u64>,
+    pub(crate) walled: Option<(u64, f64)>,
     pub(crate) tells: Tells,
     pub(crate) reactions: Reactions,
     pub(crate) bow: Bow,
@@ -98,7 +100,7 @@ impl Brain {
             sampled: 0,
             ready_at: None,
             blocked: 0,
-            walled_at: None,
+            walled: None,
             tells: Tells { phase: 1, ..Tells::default() },
             reactions: Reactions::default(),
             bow: Bow::default(),

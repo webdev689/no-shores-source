@@ -76,7 +76,10 @@ polys filed near the point.
 (about 0.13 m), so a corner underfoot never holds it against a block's corner, heading for a goal behind the block.
 Each foe keeps its way, the corridor of polys its last path ran through, and walks it again while its goal stays
 within 1 m of the one it was found for and no obstacle changes, as long as the foe stands on the corridor and the goal
-on its last poly or one beside it. A goal off the mesh is placed on it once a tick, however many foes walk for it.
+on its last poly or one beside it. A goal off the mesh is placed on it once a tick, however many foes walk for it: at
+its nearest point, or, for a goal high on a block's top with no floor near its level, at the point nearest the ground
+beneath it, so a foe goes round to the block's foot rather than walk into its side. A foe that stands as near a goal
+off the mesh as the mesh reaches walks on to it straight, so a player past the mesh's edge is followed there.
 
 **Firing spots** are baked with the mesh, for shooters to fight from ([[Foes]]). On a lattice of 1.6 m over the
 walkable surface, each point is probed along 16 bearings (each a sixteenth of a turn, clockwise from north) at an eye

@@ -10,6 +10,7 @@ fn room() -> Room {
 
 const SWORDSMAN: u8 = 14;
 const BRUTE: u8 = 15;
+const SKIRMISHER: u8 = 13;
 
 /// An ask for a Major of the type numbered `number`.
 fn major(number: u8) -> Option<SpawnAsk> {
@@ -335,6 +336,50 @@ fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
 }
 
 #[test]
+fn a_foe_walks_on_off_its_navmesh_to_a_player_standing_past_its_edge_and_strikes_them() {
+    // The room's navmesh reaches 30 m round its spawn; the player stands 3 m past its eastern edge.
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.players.get_mut(&player).unwrap().fighter.body.x = 33.0;
+    let (fighter, brain) =
+        ::foes::spawn(::foes::foe_type(SWORDSMAN).unwrap(), ::foes::Rank::Minor, 22.0, 0.0, FRAC_PI_2);
+    let foe = room.next_id();
+    room.foes.insert(foe, Foe { fighter, brain });
+    let (mut closest, mut struck) = (f64::MAX, false);
+    for sequence in 1..=600 {
+        let input = asking(&room, sequence, None, Controls { yaw: -FRAC_PI_2, ..Controls::default() });
+        room.input(player, input).unwrap();
+        room.tick();
+        struck |= room.take_events().iter().any(|event| event.striker == foe && event.defender == player);
+        let whole = room.players[&player].fighter.health_max;
+        room.players.get_mut(&player).unwrap().fighter.health = whole;
+        let (me, them) = (room.players[&player].fighter.body, room.foes[&foe].fighter.body);
+        closest = closest.min(combat::sight::apart([me.x, me.y], [them.x, them.y]));
+    }
+    assert!(closest < 2.0 && struck, "it came no nearer than {closest} m, and struck: {struck}");
+}
+
+#[test]
+fn a_foe_sent_to_a_place_atop_a_wall_it_cannot_climb_goes_round_to_its_foot_rather_than_into_its_end() {
+    // Its foe last seen standing on the wall, just over its northern face; the foe off the wall's eastern end.
+    let wall = Block { min_x: -8.0, min_y: -0.5, max_x: 8.0, max_y: 0.5, top: 2.5 };
+    let place = [0.0, -0.4, 2.5];
+    let mut room = Room::new(vec![wall], (0.0, 30.0));
+    let start = room.nav.nearest_point([14.0, 0.0, 0.0]).expect("the start is on the mesh");
+    let (fighter, mut brain) =
+        ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], -FRAC_PI_2);
+    let id = room.next_id();
+    ::foes::notice(&mut brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
+    room.foes.insert(id, Foe { fighter, brain });
+    let reached = (0..60 * 20).any(|_| {
+        room.tick();
+        let body = room.foes[&id].fighter.body;
+        combat::sight::apart([body.x, body.y], [place[0], place[1]]) < 1.4
+    });
+    assert!(reached, "it stuck at {:?}", room.foes[&id].fighter.body);
+}
+
+#[test]
 fn a_telegraphed_blow_a_leaving_player_ends_still_tells_its_foe_whether_it_landed() {
     let mut room = room();
     let (stays, leaves) = (room.join().expect("a room"), room.join().expect("with space"));
@@ -369,4 +414,106 @@ fn a_telegraphed_blow_a_leaving_player_ends_still_tells_its_foe_whether_it_lande
         }
     }
     panic!("no telegraphed blow waited on the leaving player");
+}
+
+/// How many times the bearings turn back the way they came, ignoring steps under a hundredth of a radian.
+fn turns_back(bearings: &[f64]) -> usize {
+    let steps = bearings.windows(2).map(|pair| combat::sight::wrap(pair[1] - pair[0])).filter(|step| step.abs() > 0.01);
+    let signs: Vec<f64> = steps.map(f64::signum).collect();
+    signs.windows(2).filter(|pair| pair[0] != pair[1]).count()
+}
+
+#[test]
+fn a_foe_walled_off_by_a_guard_that_turns_with_it_steps_round_one_way_rather_than_shake() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let minor = Some(SpawnAsk::Foe { foe_type: SWORDSMAN, rank: 1 });
+    room.input(player, asking(&room, 1, minor, Controls::default())).unwrap();
+    room.tick();
+    let foe = room.foes_seen().next().unwrap().foe;
+    let (mut aims, mut round) = (Vec::new(), Vec::new());
+    for sequence in 2..=1200 {
+        // The player's guard is up and their look follows the foe, as a soft lock does.
+        let (me, them) = (room.players[&player].fighter.body, room.foes[&foe].fighter.body);
+        let yaw = combat::sight::bearing([me.x, me.y], [them.x, them.y]);
+        let mut input = asking(&room, sequence, None, Controls { yaw, ..Controls::default() });
+        input.intent.combat.guard = true;
+        room.input(player, input).unwrap();
+        room.tick();
+        aims.push(room.foes[&foe].fighter.aim);
+        round.push(yaw);
+    }
+    let shakes = aims.windows(61).map(turns_back).max().unwrap_or(0);
+    assert!(shakes <= 4, "its aim turned back and forth {shakes} times in a second");
+    let most = round.windows(61).map(|second| combat::sight::wrap(second[60] - second[0]).abs()).fold(0.0, f64::max);
+    assert!(most > 1.0, "it never stepped round the guard: at most {most} radians in a second");
+}
+
+#[test]
+fn a_foe_backing_off_from_a_target_that_follows_it_walks_out_rather_than_shake() {
+    for (number, pace) in [(SWORDSMAN, 0.3), (SWORDSMAN, 0.2), (SKIRMISHER, 0.3), (SKIRMISHER, 0.2), (BRUTE, 0.3)] {
+        let mut room = room();
+        let player = room.join().expect("a room with space");
+        room.input(player, asking(&room, 1, major(number), Controls::default())).unwrap();
+        room.tick();
+        let foe = room.foes_seen().next().unwrap().foe;
+        let mut sequence = 2;
+        while !matches!(room.foes[&foe].fighter.action, Action::Attack(_)) {
+            room.input(player, asking(&room, sequence, None, Controls::default())).unwrap();
+            room.tick();
+            sequence += 1;
+        }
+        let whole = room.foes[&foe].fighter.health_max;
+        // Hurt as it swings, it backs off; the player follows it at a slow walk, 3 m back, looking at it.
+        room.foes.get_mut(&foe).unwrap().fighter.health -= 0.3 * whole;
+        let mut aims = Vec::new();
+        for _ in 0..300 {
+            let (me, them) = (room.players[&player].fighter.body, room.foes[&foe].fighter.body);
+            let yaw = combat::sight::bearing([me.x, me.y], [them.x, them.y]);
+            let forward = if combat::sight::apart([me.x, me.y], [them.x, them.y]) > 3.0 { pace } else { 0.0 };
+            let input = asking(&room, sequence, None, Controls { forward, yaw, ..Controls::default() });
+            room.input(player, input).unwrap();
+            room.tick();
+            sequence += 1;
+            let whole = room.players[&player].fighter.health_max;
+            room.players.get_mut(&player).unwrap().fighter.health = whole;
+            aims.push(room.foes[&foe].fighter.aim);
+        }
+        let shakes = aims.windows(61).map(turns_back).max().unwrap_or(0);
+        assert!(shakes <= 4, "type {number} at {pace}: its aim turned back and forth {shakes} times in a second");
+    }
+}
+
+#[test]
+fn a_shooter_caught_by_a_target_that_follows_it_fights_close_a_while_rather_than_shake() {
+    const CROSSBOWMAN: u8 = 3;
+    for pace in [0.2, 0.25, 0.3, 0.4] {
+        let mut room = room();
+        let player = room.join().expect("a room with space");
+        room.input(player, asking(&room, 1, major(CROSSBOWMAN), Controls::default())).unwrap();
+        room.tick();
+        let foe = room.foes_seen().next().unwrap().foe;
+        let mut aims = Vec::new();
+        // The player walks after it, looking at it, and swings at it within reach, till it falls.
+        for sequence in 2..=1500 {
+            let Some(them) = room.foes.get(&foe).filter(|found| !found.fighter.dead()).map(|found| found.fighter.body)
+            else {
+                break;
+            };
+            let me = room.players[&player].fighter.body;
+            let yaw = combat::sight::bearing([me.x, me.y], [them.x, them.y]);
+            let apart = combat::sight::apart([me.x, me.y], [them.x, them.y]);
+            let forward = if apart > 1.6 { pace } else { 0.0 };
+            let mut input = asking(&room, sequence, None, Controls { forward, yaw, ..Controls::default() });
+            input.intent.combat.attack = (apart < 2.0 && sequence % 45 == 0).then_some(Stroke::Down);
+            room.input(player, input).unwrap();
+            room.tick();
+            let whole = room.players[&player].fighter.health_max;
+            room.players.get_mut(&player).unwrap().fighter.health = whole;
+            aims.extend(room.foes.get(&foe).map(|found| found.fighter.aim));
+        }
+        assert!(aims.len() > 600, "at {pace}: the fight lasts");
+        let shakes = aims.windows(61).map(turns_back).max().unwrap_or(0);
+        assert!(shakes <= 4, "at {pace}: its aim turned back and forth {shakes} times in a second");
+    }
 }

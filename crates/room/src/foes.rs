@@ -16,7 +16,7 @@ use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_figh
 use core::cell::{Cell, RefCell};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::blocks::ground_at;
-use movement::{TICK_SECONDS, TUNING};
+use movement::{TICK_SECONDS, TUNING, Terrain};
 use navmesh::{NavMesh, Way};
 use std::collections::BTreeMap;
 
@@ -63,11 +63,13 @@ const CORNER_REACHED: f64 = TUNING.run * TICK_SECONDS;
 type Placed = ([f64; 3], Option<[f64; 3]>);
 
 /// Routes across the room's navmesh: the next corner on the way, to the nearest point the mesh reaches when the goal
-/// stands off it (a block's top no step reaches), and straight on where the mesh knows no way. Each foe's way is kept
-/// for the next tick, and a goal off the mesh is placed on it once a tick, however many foes walk for it.
+/// stands off it (a block's top no step reaches, or the ground beneath one too high for any floor near it), and
+/// straight on where the mesh knows no way. Each foe's way is kept for the next tick, and a goal off the mesh is placed
+/// on it once a tick, however many foes walk for it.
 #[derive(Debug)]
 struct MeshRoutes<'mesh> {
     mesh: &'mesh NavMesh,
+    floor: &'mesh crate::Floor,
     /// The foe thinking now, whose way is walked.
     asking: Cell<FighterId>,
     ways: RefCell<BTreeMap<FighterId, Way>>,
@@ -76,8 +78,8 @@ struct MeshRoutes<'mesh> {
 }
 
 impl<'mesh> MeshRoutes<'mesh> {
-    fn new(mesh: &'mesh NavMesh, ways: BTreeMap<FighterId, Way>) -> Self {
-        Self { mesh, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
+    fn new(mesh: &'mesh NavMesh, floor: &'mesh crate::Floor, ways: BTreeMap<FighterId, Way>) -> Self {
+        Self { mesh, floor, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
     }
 
     fn placed(&self, goal: [f64; 3]) -> Option<[f64; 3]> {
@@ -86,7 +88,9 @@ impl<'mesh> MeshRoutes<'mesh> {
         if let Some(&(_, near)) = placed.iter().find(same) {
             return near;
         }
-        let near = self.mesh.nearest_point(goal);
+        // A goal high on a block whose top no step reaches has no floor near its level: the ground beneath it does.
+        let beneath = || self.mesh.nearest_point([goal[0], goal[1], self.floor.height_at(goal[0], goal[1])]);
+        let near = self.mesh.nearest_point(goal).or_else(beneath);
         placed.push((goal, near));
         near
     }
@@ -96,10 +100,17 @@ impl ::foes::Routes for MeshRoutes<'_> {
     fn next_point(&self, from: [f64; 3], to: [f64; 3]) -> Option<[f64; 3]> {
         let mut ways = self.ways.borrow_mut();
         let way = ways.entry(self.asking.get()).or_default();
-        let path = self.mesh.find_path_kept(way, from, to).or_else(|| {
-            let reachable = self.placed(to)?;
-            self.mesh.find_path_kept(way, from, reachable)
-        });
+        if let Some(points) = self.mesh.find_path_kept(way, from, to) {
+            return Some(ahead(&points, from, to));
+        }
+        let Some(reachable) = self.placed(to) else { return Some(to) };
+        // Standing as near the goal as the mesh reaches, or nearer, the foe walks on to it straight, off the mesh:
+        // turned back to the mesh's edge each time it stepped past it, it would shake there out of its target's reach.
+        let apart = |point: [f64; 3]| combat::sight::apart([point[0], point[1]], [to[0], to[1]]);
+        if apart(from) <= apart(reachable) + CORNER_REACHED {
+            return Some(to);
+        }
+        let path = self.mesh.find_path_kept(way, from, reachable);
         Some(path.map_or(to, |points| ahead(&points, from, to)))
     }
 
@@ -254,7 +265,7 @@ impl Room {
             .collect();
         let ids: Vec<FighterId> = self.foes.keys().copied().collect();
         let mut intents = Vec::with_capacity(ids.len());
-        let routes = MeshRoutes::new(&self.nav, std::mem::take(&mut self.ways));
+        let routes = MeshRoutes::new(&self.nav, &self.floor, std::mem::take(&mut self.ways));
         {
             let spots = MeshSpots { mesh: &self.nav };
             let world = World {

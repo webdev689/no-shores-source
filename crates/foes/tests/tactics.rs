@@ -167,3 +167,30 @@ fn a_skirmisher_below_a_fifth_of_its_health_runs_once() {
     room.run(1200, &mut watching(10));
     assert!(room.distance(PLAYER, 10) < 4.0, "its run spent, it comes back and does not run again");
 }
+
+#[test]
+fn a_shooter_whose_target_walks_off_at_the_edge_of_its_range_closes_in_and_shoots_rather_than_stop_and_start() {
+    const CROSSBOWMAN: u8 = 3;
+    let room = Room::new(4).player(PLAYER, 0.0, 0.0, PI).foe(10, CROSSBOWMAN, Major, 0.0, -51.0, PI);
+    let mut room = room.alert(10, PLAYER);
+    // The player walks straight off, away from it, along the edge of its range.
+    let mut walking_off = |_: &Room, _: u32| combat::Intent {
+        controls: movement::Controls { forward: 1.0, yaw: PI, ..movement::Controls::default() },
+        ..combat::Intent::default()
+    };
+    let mut moved = Vec::new();
+    for _ in 0..1200 {
+        let before = room.fighter(10).body;
+        room.step(&mut walking_off);
+        let after = room.fighter(10).body;
+        moved.push(libm::hypot(after.x - before.x, after.y - before.y) > 0.01);
+    }
+    let starts = moved.windows(61).map(|second| second.windows(2).filter(|pair| pair[0] != pair[1]).count());
+    let most = starts.max().unwrap_or(0);
+    assert!(most <= 4, "it stopped and started {most} times in a second");
+    let loosed = room
+        .happenings
+        .iter()
+        .filter(|(_, by, happening)| *by == 10 && matches!(happening, combat::Happening::Loosed(_)));
+    assert!(loosed.count() >= 2, "it shoots its target as it closes on it");
+}
