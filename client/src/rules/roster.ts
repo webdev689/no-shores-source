@@ -19,6 +19,13 @@ export interface FoeType {
 export const RANK_NAMES: readonly string[] = ['', 'Minor', 'Major', 'Elite', 'Miniboss', 'Boss'];
 export const BOSS_RANK = 5;
 
+/** The colour a rank's bar is drawn in, for foes and ships alike: a Minor's red, a Major's orange, an Elite's, a
+ *  Miniboss's and a Boss's yellow. */
+export type RankBand = 'red' | 'orange' | 'yellow';
+export function rankBand(rank: number): RankBand {
+  return rank <= 1 ? 'red' : rank === 2 ? 'orange' : 'yellow';
+}
+
 interface RosterRow {
   readonly type: number;
   readonly name: string;

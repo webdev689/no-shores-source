@@ -1,5 +1,5 @@
 import type { FighterView } from '../rules/fighters.ts';
-import { BOSS_RANK } from '../rules/roster.ts';
+import { BOSS_RANK, rankBand } from '../rules/roster.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
@@ -12,12 +12,6 @@ export interface MarkedFoe {
   readonly faction: string;
   readonly phase: number;
   readonly alert: number;
-}
-
-/** The colour of a foe's bar by its rank: a Minor's red, a Major's orange, an Elite's and a Miniboss's yellow. */
-export type BarColour = 'red' | 'orange' | 'yellow';
-export function barColour(rank: number): BarColour {
-  return rank <= 1 ? 'red' : rank === 2 ? 'orange' : 'yellow';
 }
 
 const ALERT = { suspicious: 1, alert: 2, searching: 3 } as const;
@@ -119,7 +113,7 @@ export class FoeBars {
       shown.add(foe.id);
       const overhead = this.overheads.get(foe.id) ?? this.overhead();
       this.overheads.set(foe.id, overhead);
-      overhead.root.className = `foe-bar ${barColour(foe.rank)}`;
+      overhead.root.className = `foe-bar ${rankBand(foe.rank)}`;
       overhead.name.textContent = foe.name;
       const mark = alertMark(foe.alert, since);
       overhead.mark.textContent = mark;

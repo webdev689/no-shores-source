@@ -1,6 +1,8 @@
 // The bars over captains' ships: each one's name over a bar of her hull coloured by her rank, or a Boss's name and
 // hull across the top of the screen; drawn on an SVG laid over the picture.
 
+import { rankBand } from '../rules/roster.ts';
+
 /** The factions whose captains sail, by their numbers (crates/naval/src/ranks.rs), each with her Sloop's name. */
 export const SHIP_FACTIONS = [
   { faction: 1, name: 'The Grey Tithe', ship: 'Tithe Sloop' },
@@ -9,7 +11,6 @@ export const SHIP_FACTIONS = [
 /** The ranks by their numbers, 1 to 5. */
 export const RANKS = ['Minor', 'Major', 'Elite', 'Miniboss', 'Boss'] as const;
 export const PIRATES = 2;
-export const MAJOR = 2;
 const BOSS = 5;
 /** A bar's colours by rank: Minor red, Major orange, the rest yellow; and its trough. */
 const RED = '#c8382f';
@@ -30,8 +31,7 @@ export function shipName(faction: number): string {
 
 /** A rank's bar colour: Minor red, Major orange, Elite and Miniboss yellow; a Boss's bar yellow too. */
 export function rankColour(rank: number): string {
-  if (rank <= 1) return RED;
-  return rank === MAJOR ? ORANGE : YELLOW;
+  return { red: RED, orange: ORANGE, yellow: YELLOW }[rankBand(rank)];
 }
 
 /** A captain's ship as her bar shows her: her name, her rank, the share of her hull left, and the point over her in
