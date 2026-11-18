@@ -45,6 +45,12 @@ pub const BLOW_REACH: f64 = 15.0;
 pub const RUN_LOUDNESS: f64 = 0.42;
 pub const RUN_REACH: f64 = 8.0;
 pub const RUN_EVERY: f64 = 0.5;
+/// Heard through a block, a noise carries this share of its loudness and its reach.
+pub const MUFFLED: f64 = 0.5;
+/// A foe with no target hears the stir of a foe of another faction, this much a second at its feet, out to this far:
+/// enough that two factions left apart beyond sight find each other in the end.
+pub const PRESENCE_LOUDNESS: f64 = 0.2;
+pub const PRESENCE_REACH: f64 = 60.0;
 
 /// The ring the waiting stand on: this far outside their reach, with this much give either side. A waiting foe circles
 /// at this share of its walk toward its place on the ring, which drifts this far round a second away from its target's
@@ -75,16 +81,19 @@ pub const FLEE_SHARE: f64 = 0.2;
 pub const FLEE: f64 = 8.0;
 
 /// A shooter closer than KITE_IN walks out to KITE_OUT, one burst of at most KITE_MAX, and not again for
-/// KITE_COOLDOWN; caught or cornered it fights close for KITE_CORNERED. A ranged token held this long unused goes on.
+/// KITE_COOLDOWN; between the two it shoots. Caught (its target inside KITE_CAUGHT as its burst ends, or while it may
+/// not kite) or cornered, it fights close for KITE_CORNERED. A ranged token held this long unused goes on.
 pub const KITE_IN: f64 = 6.0;
 pub const KITE_OUT: f64 = 7.0;
-pub const KITE_MAX: f64 = 2.0;
+pub const KITE_MAX: f64 = 3.0;
+pub const KITE_CAUGHT: f64 = 2.5;
 pub const KITE_COOLDOWN: f64 = 8.0;
 pub const KITE_CORNERED: f64 = 3.0;
 pub const RANGED_LEASE: f64 = 5.0;
 
 /// A shooter's post, from the firing spots within POST_SEEK of it that have cover to fall back behind. It likes its
 /// target at its weapon's band of distances (near and far, times its standoff) and pays: NEAR_WEIGHT a metre walked,
+/// ASIDE_WEIGHT a metre of its post's step aside (walked out and back each shot),
 /// BAND_WEIGHT a metre outside its band (more than a walk, so it walks to its band), up to FLANK_WEIGHT for a place
 /// before its target's face; it earns up to COVER_WEIGHT for cover full on its target's bearing. No post within
 /// POST_GAP of another shooter's.
@@ -94,20 +103,30 @@ pub const BAND_CROSSBOW: (f64, f64) = (12.0, 20.0);
 pub const BAND_PISTOLET: (f64, f64) = (8.0, 12.0);
 pub const BAND_THUNDERLOCK: (f64, f64) = (14.0, 24.0);
 pub const NEAR_WEIGHT: f64 = 1.5;
+pub const ASIDE_WEIGHT: f64 = 3.0;
 pub const BAND_WEIGHT: f64 = 3.0;
 pub const COVER_WEIGHT: f64 = 3.0;
 pub const FLANK_WEIGHT: f64 = 2.5;
 pub const POST_GAP: f64 = 3.0;
-/// At its post a shooter steps this far aside, out to fire or back to hide; it hides between these after a shot or a
-/// look, and looks out at most PEEK unless it is drawing. Its target this far from where it picked, it picks again;
+/// At its post a shooter steps aside the shortest of these that turns its stance about, in strides of ASIDE_STRIDE,
+/// out to fire or back to hide; it hides between these after a shot or a look, and looks out at most PEEK unless it
+/// is drawing. Its target this far from where it picked, it picks again;
 /// farther than POST_LEAVE from where it would stand, it walks back by the routes; finding no post, it seeks again
 /// only after POST_RETRY.
-pub const STEP_ASIDE: f64 = 1.2;
+pub const STEP_ASIDE: (f64, f64) = (0.6, 2.0);
+pub const ASIDE_STRIDE: f64 = 0.2;
 pub const HIDE: (f64, f64) = (1.5, 2.5);
 pub const PEEK: f64 = 1.5;
 pub const REPICK: f64 = 4.0;
 pub const POST_LEAVE: f64 = 2.5;
 pub const POST_RETRY: f64 = 0.5;
+/// A standing body's eye over its feet: cover hides a shooter only from its eye to its chest, and it fires only with
+/// both lines clear.
+pub const EYE: f64 = 1.6;
+/// A pick weighs the spots by their cost with a straight walk, cheapest first, and works out the stances of at most
+/// POST_TRIES of them and the routed walk of at most ROUTE_TRIES: the rest cost no less.
+pub const POST_TRIES: usize = 24;
+pub const ROUTE_TRIES: usize = 6;
 
 /// Walking somewhere, a foe turns first and steps only within this of its way, so no foe walks backwards.
 pub const WALK_FACE: f64 = 45.0 * DEGREES;
@@ -129,8 +148,12 @@ pub const SWING_FACE: f64 = 22.5 * DEGREES;
 pub const SWING_DELAY: (f64, f64) = (0.3, 0.9);
 /// A foe that guards keeps this much stamina for its guard when it swings.
 pub const GUARD_RESERVE: f64 = 30.0;
-/// Blocked this many times running by a guard still raised, a foe stops swinging into it.
+/// Blocked this many times running by a guard still raised and facing it, a foe stops swinging into it and steps
+/// round toward the guard's open side; walled off this long, it chops at the guard again. Its swing's beat, begun in
+/// reach, runs on while its target sways out to this much past it.
 pub const BLOCKED_ENOUGH: u8 = 2;
+pub const WALLED: f64 = 2.0;
+pub const SWING_SLACK: f64 = 0.3;
 
 /// Telegraphed blows: DFO's one in ten a classic tick of 1/16 s for a holder in reach off its cooldown, with no other
 /// wind-up within BLOW_NEAR of its target; and the cooldowns between one foe's blows by tier.

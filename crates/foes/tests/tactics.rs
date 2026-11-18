@@ -138,18 +138,20 @@ fn a_player_who_turns_their_back_on_a_waiting_foe_is_open_to_it() {
 fn a_foe_that_loses_a_quarter_of_its_health_in_moments_backs_off_to_a_farther_ring() {
     let mut room = Room::new(11).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -3.0, PI);
     room.run(60, &mut still(0.0));
+    while swinging(&room.fighter(10)) {
+        room.step(&mut still(0.0));
+    }
+    let hurt_at = room.tick;
     room.set(10, |fighter| fighter.health -= 0.3 * fighter.health_max);
-    let swung_before = room.swings(10).len();
     let mut farthest: f64 = 0.0;
     for _ in 0..120 {
         room.step(&mut still(0.0));
         farthest = farthest.max(room.distance(PLAYER, 10));
     }
     assert!(farthest >= 1.8 + 1.5 + 2.0 - 0.6, "out to its farther ring: {farthest}");
-    let late_swings = room.swings(10).iter().filter(|tick| **tick > 62).count();
-    assert!(room.swings(10).len() - swung_before == late_swings && late_swings == 0, "and it does not swing");
+    assert!(room.swings(10).iter().all(|tick| *tick < hurt_at), "and it does not swing");
     room.run(600, &mut still(0.0));
-    assert!(room.swings(10).iter().any(|tick| *tick > 180), "then it comes back to fight");
+    assert!(room.swings(10).iter().any(|tick| *tick > hurt_at + 120), "then it comes back to fight");
 }
 
 #[test]

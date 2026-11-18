@@ -37,6 +37,7 @@ use movement::{Block, Body, Terrain, standing};
 use players::Player;
 use reach::respawn_point;
 pub use reach::{Section, Standing};
+use std::borrow::Cow;
 use std::collections::{BTreeMap, VecDeque};
 
 /// The ground a room's fighters stand on: open ground at 0 m, or a node's window of the land.
@@ -95,8 +96,8 @@ pub struct Room {
     pub(crate) groups: BTreeMap<u32, Group>,
     pub(crate) next_group: u32,
     pub(crate) events: Vec<judging::Event>,
-    /// This tick's verdicts (striker, defender) and telegraphed blows ended (foe, found no one, dodged perfectly), for
-    /// the foes' brains.
+    /// The verdicts (striker, defender) and telegraphed blows ended (foe, found no one, dodged perfectly) since the
+    /// foes' brains were last told: one a player's leaving ends between ticks is told at the next.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
     pub(crate) ended_telegraphs: Vec<(FighterId, bool, bool)>,
     /// What the players asked of the foes, in turn.
@@ -256,8 +257,6 @@ impl Room {
     /// or are gone; and every fighter is kept for judging later blows as players saw them.
     pub fn tick(&mut self) {
         self.clock += 1;
-        self.verdicts.clear();
-        self.ended_telegraphs.clear();
         self.step_players();
         self.spawn_asked();
         self.step_foes();
@@ -278,6 +277,8 @@ impl Room {
     /// killed lies still: its inputs are taken without moving it, and one asking to respawn, once the section allows,
     /// stands it at the spawn nearest where it fell. Then each player is judged against the section.
     fn step_players(&mut self) {
+        // The kept views are lent to each input, not copied: they stand aside while the players step.
+        let past = std::mem::take(&mut self.past);
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
             self.dress_in_turn(id);
@@ -285,7 +286,8 @@ impl Room {
             while taken < CATCH_UP {
                 let Some((input, seen)) = self.next_input(id) else { break };
                 taken += 1;
-                let view = self.view_at(seen);
+                let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
+                let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
                 if let Standing::Dead { .. } = found.standing {
                     found.shown = input.shown;
@@ -320,6 +322,7 @@ impl Room {
                 found.standing = found.standing.tick(section, body.x, body.y);
             }
         }
+        self.past = past;
     }
 
     /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
@@ -465,14 +468,6 @@ impl Room {
     pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
         let players = self.players.iter().map(|(id, found)| (*id, found.fighter));
         players.chain(self.foes.iter().map(|(id, foe)| (*id, foe.fighter))).collect()
-    }
-
-    /// Every fighter as it stood after the tick `tick`, while the room still keeps it; else as it is now.
-    pub(crate) fn view_at(&self, tick: u64) -> Vec<(FighterId, Fighter)> {
-        self.past
-            .iter()
-            .find(|(kept, _)| *kept == tick)
-            .map_or_else(|| self.fighters(), |(_, fighters)| fighters.clone())
     }
 
     /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,

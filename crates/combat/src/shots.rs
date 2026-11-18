@@ -1,10 +1,11 @@
-//! Shots: an arrow or a bolt flies, falling a little, until it meets a block or a body; a player's gun's ball reaches its
-//! mark at once along its line, a foe's flies straight at its own speed. A body is an upright cylinder from its feet.
+//! Shots: an arrow or a bolt flies, falling a little, until it meets a block, the ground or a body; a player's gun's
+//! ball reaches its mark at once along its line, a foe's flies straight at its own speed. A body is an upright
+//! cylinder from its feet.
 
 use crate::arms::Ranged;
 use crate::fighter::FighterId;
 use crate::tuning::{BODY_HEIGHT, BODY_RADIUS};
-use movement::{Block, TICK_SECONDS};
+use movement::{Block, TICK_SECONDS, Terrain};
 
 /// A shot in flight: what shot it, where it is and how fast it goes (m and m/s), what it does when it lands, and how
 /// many ticks it has flown.
@@ -127,10 +128,40 @@ pub enum Flight {
     Stopped { at: [f64; 3], struck: Option<FighterId> },
 }
 
-/// One tick of a shot's flight among the blocks and the bodies (`(id, feet)`), its owner's left out. A player's ball
-/// crosses its whole reach in this one tick.
+/// The ground is probed along a flight at least this often across it, metres; and at most this many times a tick.
+const GROUND_STEP: f64 = 1.0;
+const GROUND_PROBES: f64 = 256.0;
+
+/// How far along the segment (0 to 1) it goes into the ground, if it does: in the first stretch between probes where it
+/// sinks below the ground, sinking toward it, where it meets the ground's line across that stretch. On level ground
+/// that is where the segment crosses the ground's height.
+fn into_ground(terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+    let (east, south) = (to[0] - from[0], to[1] - from[1]);
+    let across = (east * east + south * south).sqrt();
+    let probes = (across / GROUND_STEP).ceil().clamp(1.0, GROUND_PROBES) as u32;
+    let ground = terrain.height_at(from[0], from[1]);
+    let mut before = (0.0, ground, from[2] - ground);
+    for probe in 1..=probes {
+        let share = f64::from(probe) / f64::from(probes);
+        let at = if probe == probes { to } else { [0, 1, 2].map(|axis| from[axis] + (to[axis] - from[axis]) * share) };
+        let ground = terrain.height_at(at[0], at[1]);
+        let above = at[2] - ground;
+        if above < 0.0 && before.2 > above {
+            // The ground's line across this stretch, carried out to the segment's ends.
+            let slope = (ground - before.1) / (share - before.0);
+            let (start, end) = (before.1 - slope * before.0, before.1 + slope * (1.0 - before.0));
+            let (first, last) = (from[2] - start, to[2] - end);
+            return Some(first / (first - last));
+        }
+        before = (share, ground, above);
+    }
+    None
+}
+
+/// One tick of a shot's flight among the blocks, over the ground, and among the bodies (`(id, feet)`), its owner's
+/// left out. A player's ball crosses its whole reach in this one tick.
 #[must_use]
-pub fn fly(shot: &Shot, blocks: &[Block], bodies: &[(FighterId, [f64; 3])]) -> Flight {
+pub fn fly(shot: &Shot, blocks: &[Block], terrain: &dyn Terrain, bodies: &[(FighterId, [f64; 3])]) -> Flight {
     let falls = shot_numbers(shot.ranged).0 > 0.0;
     let fall = if falls { FALL * TICK_SECONDS } else { 0.0 };
     let velocity = [shot.velocity[0], shot.velocity[1], shot.velocity[2] - fall];
@@ -140,7 +171,7 @@ pub fn fly(shot: &Shot, blocks: &[Block], bodies: &[(FighterId, [f64; 3])]) -> F
         shot.at[2] + velocity[2] * TICK_SECONDS,
     ];
     let wall = blocks.iter().filter_map(|block| entry(block, shot.at, to)).fold(f64::INFINITY, f64::min);
-    let ground = if to[2] < 0.0 && shot.at[2] > to[2] { shot.at[2] / (shot.at[2] - to[2]) } else { f64::INFINITY };
+    let ground = into_ground(terrain, shot.at, to).unwrap_or(f64::INFINITY);
     let body = bodies
         .iter()
         .filter(|(id, _)| *id != shot.owner)

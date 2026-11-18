@@ -333,3 +333,40 @@ fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
         assert!(reached, "from {start:?} it stuck at {:?}", room.foes[&id].fighter.body);
     }
 }
+
+#[test]
+fn a_telegraphed_blow_a_leaving_player_ends_still_tells_its_foe_whether_it_landed() {
+    let mut room = room();
+    let (stays, leaves) = (room.join().expect("a room"), room.join().expect("with space"));
+    let enforcer = ::foes::foe_type(4).expect("the Enforcer");
+    let (fighter, brain) = ::foes::spawn(enforcer, ::foes::Rank::Elite, 0.0, -2.5, PI);
+    let foe = room.next_id();
+    room.foes.insert(foe, Foe { fighter, brain });
+    // The one who stays sees each tick at once; the one who leaves lags, so the blow waits on them alone.
+    let waits_on_leaver = |room: &Room| {
+        room.groups.values().any(|group| group.foe == foe && group.found && group.waiting == 1)
+            && room.pending.iter().any(|pending| pending.defender == leaves)
+    };
+    for sequence in 1..=1800 {
+        room.input(stays, asking(&room, sequence, None, Controls::default())).unwrap();
+        room.tick();
+        for player in [stays, leaves] {
+            let whole = room.players[&player].fighter.health_max;
+            room.players.get_mut(&player).unwrap().fighter.health = whole;
+        }
+        if waits_on_leaver(&room) {
+            room.leave(leaves);
+            // Told at the next tick, it acts on the word at its thought after.
+            for next in 1..=2 {
+                room.input(stays, asking(&room, sequence + next, None, Controls::default())).unwrap();
+                room.tick();
+            }
+            let found = &room.foes[&foe];
+            let told = found.brain.plan() == ::foes::brain::Plan::Recover
+                || matches!(found.fighter.action, Action::Telegraph(_));
+            assert!(told, "told its blow landed, it chains or its turn is spent at once");
+            return;
+        }
+    }
+    panic!("no telegraphed blow waited on the leaving player");
+}

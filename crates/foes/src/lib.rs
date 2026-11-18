@@ -44,6 +44,12 @@ use senses::Here;
 /// way. The room hands in one backed by its navmesh.
 pub trait Routes {
     fn next_point(&self, from: [f64; 3], to: [f64; 3]) -> Option<[f64; 3]>;
+
+    /// How far the way from one place to another walks across the ground, or None when there is no way: a straight
+    /// line unless the routes know better.
+    fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        Some(combat::sight::apart([from[0], from[1]], [to[0], to[1]]))
+    }
 }
 
 /// A straight line: open ground, and tests.

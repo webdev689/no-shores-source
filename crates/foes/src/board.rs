@@ -1,6 +1,7 @@
 //! What the foes of a room share: for each target, who holds the turns to fight it hand to hand and to shoot at it,
 //! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in
-//! whatever the count. And the posts shooters hold, so no two take one place.
+//! whatever the count. And the posts shooters hold, so no two take one place, and the tick one last picked a post, so
+//! only one picks a tick.
 
 use crate::director::Caps;
 use combat::FighterId;
@@ -33,6 +34,7 @@ impl Fight {
 pub struct Board {
     fights: BTreeMap<FighterId, Fight>,
     posts: BTreeMap<FighterId, [f64; 3]>,
+    picked: Option<u64>,
 }
 
 impl Board {
@@ -143,6 +145,13 @@ impl Board {
     /// A shooter holds the spot at `point` as its post.
     pub fn claim(&mut self, foe: FighterId, point: [f64; 3]) {
         self.posts.insert(foe, point);
+    }
+
+    /// Whether a shooter may pick a post this tick: one a tick in a room, so the work of picking spreads over ticks.
+    pub fn may_pick(&mut self, tick: u64) -> bool {
+        let may = self.picked != Some(tick);
+        self.picked = Some(tick);
+        may
     }
 
     /// A shooter gives its post up.

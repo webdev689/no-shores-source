@@ -254,7 +254,7 @@ impl Room {
     pub fn tell(&mut self, id: FighterId, seen: Seen) {
         let tick = self.tick;
         if let Some((_, brain)) = self.brains.iter_mut().find(|(other, _)| *other == id) {
-            *brain = notice(brain, id, &seen, tick);
+            notice(brain, id, &seen, tick);
         }
     }
 
@@ -343,7 +343,7 @@ impl Room {
                 .filter(|(id, other)| *id != shot.owner && other.side != side && !other.dead())
                 .map(|(id, other)| (*id, [other.body.x, other.body.y, other.body.z]))
                 .collect();
-            match fly(&shot, &self.blocks, &bodies) {
+            match fly(&shot, &self.blocks, &movement::Flat, &bodies) {
                 Flight::Flying(next) => self.shots.push(next),
                 Flight::Stopped { struck: Some(defender), .. } => {
                     let blow = shot_blow(&shot, [shot.at[0], shot.at[1]]);
@@ -387,6 +387,16 @@ impl Routes for Mesh {
     fn next_point(&self, from: [f64; 3], to: [f64; 3]) -> Option<[f64; 3]> {
         let path = self.0.find_path(from, to).or_else(|| self.0.find_path(from, self.0.nearest_point(to)?));
         Some(path.and_then(|points| points.get(1).copied()).unwrap_or(to))
+    }
+
+    fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        let points = self.0.find_path(from, to)?;
+        Some(
+            points
+                .windows(2)
+                .map(|pair| combat::sight::apart([pair[0][0], pair[0][1]], [pair[1][0], pair[1][1]]))
+                .sum(),
+        )
     }
 }
 

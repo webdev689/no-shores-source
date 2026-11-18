@@ -23,6 +23,7 @@ pub enum Purpose {
     Press = 15,
     Search = 16,
     Hide = 24,
+    PostAim = 25,
 }
 
 /// One foe's dice for one tick.

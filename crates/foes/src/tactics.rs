@@ -8,7 +8,7 @@
 use crate::awareness::look;
 use crate::board::Board;
 use crate::brain::{Brain, Plan};
-use crate::cover::unseen;
+use crate::cover::{leave_post, unseen};
 use crate::dice::Purpose;
 use crate::flank::drift;
 use crate::react::{defend, opening};
@@ -19,11 +19,12 @@ use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSING, FLEE, FLEE_SHARE,
     GUARD_RESERVE, HURT_SHARE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE,
+    SWING_SLACK, WALLED,
 };
 use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, off, wrap};
-use combat::tuning::BODY_RADIUS;
+use combat::tuning::{BODY_RADIUS, guard_of};
 use combat::{CombatInput, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
 
@@ -38,6 +39,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         brain.plan = Plan::Wait;
         brain.ready_at = None;
         brain.slot = None;
+        brain.blocked = 0;
     }
     if let Some(ask) = held(brain, here, board) {
         return ask;
@@ -112,6 +114,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
             }
             ranged(brain, here, board, &sight)
         } else {
+            leave_post(brain, board, me);
             melee(brain, here, board, &sight)
         };
     }
@@ -239,24 +242,36 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
 }
 
 /// In to strike: a holder may wind up a telegraphed blow; otherwise it walks into reach, squares up, waits its beat
-/// and swings. Out of stamina for a swing and its guard, it hands its turn on.
+/// and swings, its beat kept while its target sways about the edge of its reach. Walled by a guard that blocked it
+/// twice, it steps round toward the guard's open side, and chops at it again once WALLED has passed. Out of stamina
+/// for a swing and its guard, it hands its turn on.
 fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight, reach: f64) -> Ask {
     let tick = here.tick();
     let fighter = &here.fighter;
-    let guarded = sight.fighter.guarding().is_some();
+    let guarded = guard_toward(here, sight);
     if !guarded {
         brain.blocked = 0;
     }
-    let walled = guarded && brain.blocked >= BLOCKED_ENOUGH;
+    let mut walled = guarded && brain.blocked >= BLOCKED_ENOUGH;
+    let since = if walled { *brain.walled_at.get_or_insert(tick) } else { tick };
     if board.holds(sight.id, here.me, false)
         && let Some(order) = throw(brain, here, sight, reach, walled)
     {
         return telegraph(brain, order);
     }
+    if walled && tick >= since + Here::ticks(WALLED) {
+        // Its way round found nothing: it chops at the guard again, to break it or to make it pay.
+        (brain.blocked, walled) = (0, false);
+    }
+    if !walled {
+        brain.walled_at = None;
+    }
     let pressed = here.world.director.pressed();
-    if sight.distance > reach {
+    let way = (sight.distance > reach).then(|| way_to(here, sight.spot)).flatten();
+    // Its beat begins in reach; a sway past the edge of its reach and back does not start it over.
+    if sight.distance > reach + SWING_SLACK || (sight.distance > reach && brain.ready_at.is_none()) {
         brain.ready_at = None;
-        let Some(way) = way_to(here, sight.spot) else { return Ask::facing(sight.toward) };
+        let Some(way) = way else { return Ask::facing(sight.toward) };
         let near = sight.distance <= reach + pressed.ring_gap + RING_SLACK;
         return if near {
             Ask::stepping(way, 1.0, sight.toward)
@@ -273,7 +288,14 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let delay = pressed.swing_delay;
     let ready_at =
         *brain.ready_at.get_or_insert_with(|| tick + Here::ticks(here.dice.between(Purpose::SwingDelay, delay)));
-    let mut ask = Ask::facing(sight.toward);
+    let mut ask = way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, 1.0, sight.toward));
+    if walled {
+        // Round toward the side its target's guard faces away from: a blow from outside the guard is not blocked.
+        let from_target = sight.toward + PI;
+        let side = wrap(from_target - sight.fighter.aim);
+        let side = if side > 0.0 || (side == 0.0 && here.me.is_multiple_of(2)) { 1.0 } else { -1.0 };
+        ask = Ask::stepping(from_target + side * FRAC_PI_2, STEP_PACE, sight.toward);
+    }
     let stroke = stroke(here, sight);
     let reaches = sight.distance <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;
     let free = matches!(fighter.action, Action::Idle | Action::Guard { .. });
@@ -283,6 +305,13 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         brain.ready_at = None;
     }
     ask
+}
+
+/// Whether its target's guard is raised and faces it, so a swing from here would be blocked.
+fn guard_toward(here: &Here<'_, '_>, sight: &Sight) -> bool {
+    let (arc, _, _) = guard_of(sight.fighter.arms.off_hand);
+    let toward_me = bearing([sight.fighter.body.x, sight.fighter.body.y], here.at());
+    sight.fighter.guarding().is_some() && off(sight.fighter.aim, toward_me) <= arc
 }
 
 /// The stroke a swing takes: a chop into a raised guard, a sweep across two or more, a thrust at the edge of reach,
@@ -297,7 +326,7 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
         .world
         .fighters
         .iter()
-        .filter(|(id, _)| here.enemy(*id).is_some())
+        .filter(|(_, other)| here.hostile(other))
         .filter(|(_, other)| {
             let there = [other.body.x, other.body.y];
             apart(here.at(), there) <= reach && off(sight.toward, bearing(here.at(), there)) <= side

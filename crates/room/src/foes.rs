@@ -102,6 +102,16 @@ impl ::foes::Routes for MeshRoutes<'_> {
         });
         Some(path.map_or(to, |points| ahead(&points, from, to)))
     }
+
+    fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        let points = self.mesh.find_path(from, to)?;
+        Some(
+            points
+                .windows(2)
+                .map(|pair| combat::sight::apart([pair[0][0], pair[0][1]], [pair[1][0], pair[1][1]]))
+                .sum(),
+        )
+    }
 }
 
 /// The corner to walk for: the first past the start farther than a tick's run, so a corner underfoot never holds a
@@ -203,8 +213,10 @@ impl Room {
 
     /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the
     /// caller's foe stands: in pairs, one either side of it, or behind it and either side, each pair farther out.
-    fn call(&mut self, caller: FighterId, call: Call) {
-        let (Some(at), Some(called_type)) = (self.fighter(caller).copied(), foe_type(call.foe_type)) else { return };
+    pub(crate) fn call(&mut self, caller: FighterId, call: Call) {
+        // A caller killed in the same step calls no one.
+        let caller_alive = self.fighter(caller).copied().filter(|at| !at.dead());
+        let (Some(at), Some(called_type)) = (caller_alive, foe_type(call.foe_type)) else { return };
         let foe = self.foes.get(&caller).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));
         let called = foe.map(|foe| Seen::Shouted { from: feet(&at), at: feet(foe) });
         let (back_sin, back_cos) = (libm::sin(at.aim + PI), libm::cos(at.aim + PI));
@@ -222,7 +234,7 @@ impl Room {
             let spot = self.nav.nearest_point(beside).unwrap_or(beside);
             let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
             if let (Some(called), Some(found)) = (called, self.foes.get_mut(&id)) {
-                found.brain = notice(&found.brain, id, &called, self.clock);
+                notice(&mut found.brain, id, &called, self.clock);
             }
         }
     }
@@ -311,7 +323,7 @@ impl Room {
         let (shouted, tick) = (Seen::Shouted { from, at }, self.clock);
         for (id, foe) in &mut self.foes {
             if *id != shouter && foe.fighter.side == side {
-                foe.brain = notice(&foe.brain, *id, &shouted, tick);
+                notice(&mut foe.brain, *id, &shouted, tick);
             }
         }
     }
@@ -407,37 +419,29 @@ impl Room {
         let verdicts = std::mem::take(&mut self.verdicts);
         let ended = std::mem::take(&mut self.ended_telegraphs);
         let tick = self.clock;
-        for (id, foe) in &mut self.foes {
-            let mut brain = foe.brain.clone();
+        for (id, Foe { fighter, brain }) in &mut self.foes {
             // Only a blow from another side is a threat to answer: an ally's would only crowd it out.
-            let hostile = |by: &Option<Side>| by.is_some_and(|by| by != foe.fighter.side);
+            let hostile = |by: &Option<Side>| by.is_some_and(|by| by != fighter.side);
             for (by, attack, _) in swings.iter().filter(|(_, _, by)| hostile(by)) {
-                brain = notice(&brain, *id, &Seen::Swung { by: *by, attack: *attack }, tick);
+                notice(brain, *id, &Seen::Swung { by: *by, attack: *attack }, tick);
             }
             for (by, _, speed) in loosed.iter().filter(|(_, by, _)| hostile(by)) {
-                brain = notice(&brain, *id, &Seen::Loosed { by: *by, speed: *speed }, tick);
+                notice(brain, *id, &Seen::Loosed { by: *by, speed: *speed }, tick);
             }
             for (striker, defender, verdict) in &verdicts {
                 if defender == id {
-                    brain = notice(&brain, *id, &Seen::Struck { by: *striker, verdict: *verdict }, tick);
+                    notice(brain, *id, &Seen::Struck { by: *striker, verdict: *verdict }, tick);
                 } else if striker == id {
-                    brain = notice(&brain, *id, &Seen::Landed { on: *defender, verdict: *verdict }, tick);
+                    notice(brain, *id, &Seen::Landed { on: *defender, verdict: *verdict }, tick);
                 }
             }
             for noise in &noises {
-                brain = notice(&brain, *id, &Seen::Heard(*noise), tick);
+                notice(brain, *id, &Seen::Heard(*noise), tick);
             }
-            for (foe_id, missed, perfectly_dodged) in &ended {
-                if foe_id == id {
-                    brain = notice(
-                        &brain,
-                        *id,
-                        &Seen::TelegraphEnded { missed: *missed, perfectly_dodged: *perfectly_dodged },
-                        tick,
-                    );
-                }
+            for (_, missed, perfectly_dodged) in ended.iter().filter(|(foe, _, _)| foe == id) {
+                let seen = Seen::TelegraphEnded { missed: *missed, perfectly_dodged: *perfectly_dodged };
+                notice(brain, *id, &seen, tick);
             }
-            foe.brain = brain;
         }
     }
 

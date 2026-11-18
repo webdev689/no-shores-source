@@ -69,8 +69,9 @@ pub struct Brain {
     pub(crate) sampled: u64,
     /// When, in reach, it may swing.
     pub(crate) ready_at: Option<u64>,
-    /// Its swings blocked running by a guard still raised.
+    /// Its swings blocked running by a guard still raised, and since when that guard has walled it off.
     pub(crate) blocked: u8,
+    pub(crate) walled_at: Option<u64>,
     pub(crate) tells: Tells,
     pub(crate) reactions: Reactions,
     pub(crate) bow: Bow,
@@ -97,6 +98,7 @@ impl Brain {
             sampled: 0,
             ready_at: None,
             blocked: 0,
+            walled_at: None,
             tells: Tells { phase: 1, ..Tells::default() },
             reactions: Reactions::default(),
             bow: Bow::default(),
@@ -160,32 +162,30 @@ impl Brain {
     }
 }
 
-/// What the room tells a foe's brain it saw happen this tick, noted for its next thought. Only an alert foe sees a
-/// blow coming; a blow on it alerts it at once.
-#[must_use]
-pub fn notice(brain: &Brain, me: FighterId, seen: &Seen, tick: u64) -> Brain {
-    let mut next = brain.clone();
-    let alert = next.awareness.alert;
+/// What the room tells a foe's brain it saw happen this tick, noted in place for its next thought. Only an alert foe
+/// sees a blow coming; a blow on it alerts it at once.
+pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
+    let alert = brain.awareness.alert;
     match *seen {
-        Seen::Swung { by, attack } if by != me && alert => next.reactions.saw_swing(by, &attack, tick),
-        Seen::Loosed { by, speed } if by != me && alert => next.reactions.saw_shot(by, speed, tick),
+        Seen::Swung { by, attack } if by != me && alert => brain.reactions.saw_swing(by, &attack, tick),
+        Seen::Loosed { by, speed } if by != me && alert => brain.reactions.saw_shot(by, speed, tick),
         Seen::Struck { by, .. } => {
-            next.awareness.level = 1.0;
+            brain.awareness.level = 1.0;
             // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place.
-            if next.target.is_none() {
-                next.target = Some(by);
-                next.seen_at = tick;
-                next.last_seen = None;
+            if brain.target.is_none() {
+                brain.target = Some(by);
+                brain.seen_at = tick;
+                brain.last_seen = None;
             }
         }
         // Its own side's noises it pays no heed; an ally's shout it does.
-        Seen::Heard(noise) if noise.side != brain.foe_type.side() => next.awareness.heard.push(*seen),
-        Seen::Shouted { .. } => next.awareness.heard.push(*seen),
+        Seen::Heard(noise) if noise.side != brain.foe_type.side() => brain.awareness.heard.push(*seen),
+        Seen::Shouted { .. } => brain.awareness.heard.push(*seen),
         Seen::Landed { verdict, .. } => {
-            next.blocked = if matches!(verdict, Verdict::Blocked { .. }) { next.blocked.saturating_add(1) } else { 0 };
+            brain.blocked =
+                if matches!(verdict, Verdict::Blocked { .. }) { brain.blocked.saturating_add(1) } else { 0 };
         }
-        Seen::TelegraphEnded { missed, .. } => next.tells.ended = Some(!missed),
+        Seen::TelegraphEnded { missed, .. } => brain.tells.ended = Some(!missed),
         _ => {}
     }
-    next
 }

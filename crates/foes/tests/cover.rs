@@ -141,6 +141,25 @@ fn it_picks_again_when_its_target_moves_behind_a_block() {
 }
 
 #[test]
+fn shooters_of_a_room_pick_their_posts_one_a_tick() {
+    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5 };
+    let mut room = Room::new(7)
+        .course(vec![long])
+        .player(PLAYER, 0.0, 0.0, 0.0)
+        .foe(10, CROSSBOWMAN, Major, 6.0, -16.0, PI)
+        .foe(11, CROSSBOWMAN, Major, -6.0, -16.0, PI)
+        .alert(10, PLAYER)
+        .alert(11, PLAYER);
+    let mut held = vec![room.board.posts_but(0).count()];
+    for _ in 0..120 {
+        room.step(&mut still(0.0));
+        held.push(room.board.posts_but(0).count());
+    }
+    assert_eq!(held.last(), Some(&2), "both take a post: {held:?}");
+    assert!(held.windows(2).all(|pair| pair[1] <= pair[0] + 1), "one a tick: {held:?}");
+}
+
+#[test]
 fn two_shooters_never_share_a_post() {
     // A wall 8 m long squarely before the player: either end hides a post, the east end nearer both shooters.
     let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5 };
@@ -300,4 +319,80 @@ fn a_shooter_backs_off_from_each_bad_hurt_not_only_the_first() {
         assert!(backed_off, "it backs off from bad hurt {hurt}");
         room.run(900, &mut watching(10));
     }
+}
+
+#[test]
+fn a_shooter_caught_and_fighting_close_gives_its_post_up() {
+    let mut room = crossbowman_by_the_wall(5);
+    room.run(400, &mut watching(10));
+    assert_eq!(room.board.posts_but(0).count(), 1, "it holds a post");
+    // The player keeps a step from it, on its open side: it cannot outwalk them.
+    for _ in 0..600 {
+        let at = room.fighter(10).body;
+        let east = if at.x < -4.0 { -1.0 } else { 1.0 };
+        room.set(PLAYER, |player| (player.body.x, player.body.y) = (at.x + east, at.y));
+        room.step(&mut watching(10));
+    }
+    assert!(!room.swings(10).is_empty(), "caught, it fights close");
+    assert_eq!(room.board.posts_but(0).count(), 0, "and its post is free for another");
+}
+
+/// Routes as the room's, but any way to a place west of x = 0 walks four times as far, as round a fence.
+struct WestIsFar(Box<dyn foes::Routes>);
+
+impl foes::Routes for WestIsFar {
+    fn next_point(&self, from: [f64; 3], to: [f64; 3]) -> Option<[f64; 3]> {
+        self.0.next_point(from, to)
+    }
+
+    fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        self.0.length(from, to).map(|walk| if to[0] < 0.0 { walk * 4.0 } else { walk })
+    }
+}
+
+/// The side of the line to the player a crossbowman fights from, between walls either side, starting nearer the west
+/// one: the mean of its x over its fight.
+fn side_it_takes(west_is_far: bool) -> f64 {
+    let east = Block { min_x: 2.0, max_x: 6.0, ..wall() };
+    let mut room = Room::new(5).course(vec![wall(), east]).player(PLAYER, 0.0, 0.0, 0.0).foe(
+        10,
+        CROSSBOWMAN,
+        Major,
+        -1.0,
+        -15.0,
+        PI,
+    );
+    if west_is_far {
+        let routes = std::mem::replace(&mut room.routes, Box::new(foes::Straight));
+        room.routes = Box::new(WestIsFar(routes));
+    }
+    room.run(300, &mut watching(10));
+    let mut sum = 0.0;
+    for _ in 0..600 {
+        room.step(&mut watching(10));
+        sum += room.fighter(10).body.x;
+    }
+    sum / 600.0
+}
+
+#[test]
+fn a_post_s_walk_is_costed_by_the_route_there_not_a_straight_line() {
+    assert!(side_it_takes(false) < -1.0, "the west wall is nearer");
+    assert!(side_it_takes(true) > 1.0, "but not when the way round to it is long");
+}
+
+#[test]
+fn a_shooter_at_its_post_steps_out_to_aim_whenever_its_turn_is_an_aimed_shot() {
+    let mut room = crossbowman_by_the_wall(6);
+    let mut aimed_out = 0;
+    for _ in 0..3600 {
+        let seen = line(&room, 10, PLAYER);
+        room.step(&mut watching(10));
+        let intent = room.foe_intents(10).last().expect("it thought").1;
+        if intent.combat.telegraph.is_some_and(|order| order.shape == combat::shapes::Shape::Aimed) {
+            assert!(seen, "it aims out on the line");
+            aimed_out += 1;
+        }
+    }
+    assert!(aimed_out >= 3, "a third of its turns are aimed shots from its post: {aimed_out} in a minute");
 }
