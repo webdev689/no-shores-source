@@ -1,13 +1,15 @@
 //! The tactics brain, DFO's, standing on Overlook's fight: whom a foe fights and whether it is its turn. Two foes a
 //! target fight it hand to hand and two shoot at it; the rest stand on a ring just outside their reach and circle
-//! slowly. A holder walks in and strikes, hops back after its blow and hands its turn to whoever waited longest; one
+//! round to its flanks. A holder walks in and strikes, hops back after its blow and hands its turn to whoever waited longest; one
 //! that waited past its patience goes in anyway, and a target that turns its back or walks inside the ring is open to
 //! anyone. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers blows at it first, then takes
 //! the openings it is given.
 
 use crate::board::Board;
 use crate::brain::{Brain, Plan};
+use crate::cover::unseen;
 use crate::dice::Purpose;
+use crate::flank::drift;
 use crate::react::{defend, opening};
 use crate::senses::{Here, Sight, sense};
 use crate::shoot::{ranged, shooting};
@@ -15,8 +17,7 @@ use crate::steer::{Ask, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSING, FLEE, FLEE_SHARE,
-    GUARD_RESERVE, HURT_SHARE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM, SLOT_TURN, STALE, STEP_PACE,
-    SWING_FACE,
+    GUARD_RESERVE, HURT_SHARE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE,
 };
 use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
@@ -66,6 +67,12 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         return Ask::default();
     };
     if let Some(ask) = flee(brain, here, board, &sight) {
+        return ask;
+    }
+    // A shooter out of sight behind its own post's cover hid there on purpose: it keeps to its post.
+    if !sight.seen
+        && let Some(ask) = unseen(brain, here, board, &sight)
+    {
         return ask;
     }
     if !sight.seen {
@@ -324,7 +331,7 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     if sight.distance < ring - RING_SLACK {
         return Ask::facing(sight.toward);
     }
-    let slot = wrap(brain.slot.unwrap_or(away) + SLOT_TURN / 60.0);
+    let slot = drift(here, sight, brain.slot.unwrap_or(away), ring);
     brain.slot = Some(slot);
     let gap = wrap(slot - away);
     let mut ask = if gap.abs() < 0.2 {

@@ -19,11 +19,13 @@ pub const STALE: f64 = 1.5;
 pub const SIGHT_ARC: f64 = 90.0 * DEGREES;
 
 /// The ring the waiting stand on: this far outside their reach, with this much give either side. A waiting foe circles
-/// at this share of its walk toward its place on the ring, which drifts this far round a second.
+/// at this share of its walk toward its place on the ring, which drifts this far round a second away from its target's
+/// face, out to FLANK_ARC either side of it: short of the turned back that would open the target to it.
 pub const RING_GAP: f64 = 1.5;
 pub const RING_SLACK: f64 = 0.6;
 pub const CIRCLE_PACE: f64 = 0.4;
-pub const SLOT_TURN: f64 = 0.15;
+pub const SLOT_TURN: f64 = 0.4;
+pub const FLANK_ARC: f64 = 100.0 * DEGREES;
 /// Stepping back out of reach, at this share of a walk.
 pub const STEP_PACE: f64 = 0.7;
 /// After its blow a foe hops back at most this long, then holds its ground for between these before it waits again.
@@ -52,6 +54,32 @@ pub const KITE_MAX: f64 = 2.0;
 pub const KITE_COOLDOWN: f64 = 8.0;
 pub const KITE_CORNERED: f64 = 3.0;
 pub const RANGED_LEASE: f64 = 5.0;
+
+/// A shooter's post, from the firing spots within POST_SEEK of it that have cover to fall back behind. It likes its
+/// target at its weapon's band of distances (near and far, times its standoff) and pays: NEAR_WEIGHT a metre walked,
+/// BAND_WEIGHT a metre outside its band (more than a walk, so it walks to its band), up to FLANK_WEIGHT for a place
+/// before its target's face; it earns up to COVER_WEIGHT for cover full on its target's bearing. No post within
+/// POST_GAP of another shooter's.
+pub const POST_SEEK: f64 = 11.0;
+pub const BAND_BOW: (f64, f64) = (10.0, 18.0);
+pub const BAND_CROSSBOW: (f64, f64) = (12.0, 20.0);
+pub const BAND_PISTOLET: (f64, f64) = (8.0, 12.0);
+pub const BAND_THUNDERLOCK: (f64, f64) = (14.0, 24.0);
+pub const NEAR_WEIGHT: f64 = 1.5;
+pub const BAND_WEIGHT: f64 = 3.0;
+pub const COVER_WEIGHT: f64 = 3.0;
+pub const FLANK_WEIGHT: f64 = 2.5;
+pub const POST_GAP: f64 = 3.0;
+/// At its post a shooter steps this far aside, out to fire or back to hide; it hides between these after a shot or a
+/// look, and looks out at most PEEK unless it is drawing. Its target this far from where it picked, it picks again;
+/// farther than POST_LEAVE from where it would stand, it walks back by the routes; finding no post, it seeks again
+/// only after POST_RETRY.
+pub const STEP_ASIDE: f64 = 1.2;
+pub const HIDE: (f64, f64) = (1.5, 2.5);
+pub const PEEK: f64 = 1.5;
+pub const REPICK: f64 = 4.0;
+pub const POST_LEAVE: f64 = 2.5;
+pub const POST_RETRY: f64 = 0.5;
 
 /// Walking somewhere, a foe turns first and steps only within this of its way, so no foe walks backwards.
 pub const WALK_FACE: f64 = 45.0 * DEGREES;

@@ -198,3 +198,29 @@ fn the_room_answers_the_firing_spots_near_a_point_on_its_course() {
     assert!(beside.iter().all(|spot| spot.cover & 1 != 0), "covered from the north: {beside:?}");
     assert_eq!(spots, room.spots().near(centre, radius), "the same spots in the same order");
 }
+
+#[test]
+fn a_crossbowman_fights_from_behind_the_room_s_cover() {
+    const CROSSBOWMAN: u8 = 3;
+    let wall = Block { min_x: -6.0, min_y: -13.5, max_x: -2.0, max_y: -13.0, top: 2.5 };
+    let mut room = Room::new(vec![wall], (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.input(player, asking(&room, 1, major(CROSSBOWMAN), Controls::default())).unwrap();
+    room.tick();
+    let foe = room.foes_seen().next().unwrap().foe;
+    let mut hidden = 0;
+    for sequence in 2..1200 {
+        room.input(player, asking(&room, sequence, None, Controls::default())).unwrap();
+        room.tick();
+        let (crossbowman, them) = (*room.fighter(foe).unwrap(), *room.fighter(player).unwrap());
+        if sequence > 600 {
+            assert!(
+                (crossbowman.body.y + 14.7).abs() < 1.0 && crossbowman.body.x < 0.0,
+                "by the wall: {:?}",
+                crossbowman.body
+            );
+            hidden += usize::from(!combat::sight::clear_line(&room.blocks, crossbowman.chest(), them.chest()));
+        }
+    }
+    assert!(hidden > 150, "and out of the player's sight behind it much of the time: {hidden}");
+}

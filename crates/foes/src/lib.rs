@@ -7,9 +7,11 @@
 
 pub mod board;
 pub mod brain;
+mod cover;
 mod dice;
 pub mod director;
 pub mod factions;
+mod flank;
 pub mod ranks;
 mod react;
 pub mod roles;
@@ -65,14 +67,26 @@ pub trait Spots {
     fn near(&self, point: [f64; 3], radius: f64) -> Vec<Spot>;
 }
 
+/// No spots anywhere: open ground, and tests.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct NoSpots;
+
+impl Spots for NoSpots {
+    fn near(&self, _point: [f64; 3], _radius: f64) -> Vec<Spot> {
+        Vec::new()
+    }
+}
+
 /// What a foe knows of its room this tick: the room's tick and seed, every fighter by id (alive or not, both sides), the
-/// course's blocks and routes, and the room's director, whose heat sets the turn caps and the aggression bias.
+/// course's blocks, routes and firing spots, and the room's director, whose heat sets the turn caps and the aggression
+/// bias.
 pub struct World<'a> {
     pub tick: u64,
     pub seed: u64,
     pub fighters: &'a [(FighterId, Fighter)],
     pub blocks: &'a [movement::Block],
     pub routes: &'a dyn Routes,
+    pub spots: &'a dyn Spots,
     pub director: Director,
 }
 
