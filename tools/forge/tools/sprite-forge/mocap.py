@@ -9,7 +9,9 @@ clips plays the one `--clip` names. The captures are read from outside the repo 
 carried by the directions of the captured bones, never their lengths, so the forge's own proportions stay: each trunk
 and leg joint is turned until its bone points as the captured one does, and each arm is solved to the captured wrist
 by the forge's IK (`rig.solve_arm`). `--bake <name> --pick 3,10` writes those frames' joint turns and the body's
-travel as the forge's keys (specs/moves.json, poses.py `MOVES`), for a clip whose licence lets them go in (CC0)."""
+travel as the forge's keys (specs/moves.json, poses.py `MOVES`), for a clip whose licence lets them go in (CC0). A
+frame number with a fraction (`9.4`) reads an armature clip between its keys, as Blender interpolates them: a blow
+whose weapon crosses straight ahead between two keys is caught there."""
 import argparse
 import json
 import math
@@ -115,8 +117,10 @@ def cmu_frames(asf, amc):
     return out
 
 
-# Humanoid rigs by their bone names: the bone whose head each landmark is ('head_top' is the head bone's tip, or the
-# named end bone). Mixamo's (FBX), Rigify's deform bones and the Unreal mannequin's (Quaternius's libraries, glTF).
+# Humanoid rigs by their bone names: the bone whose head each landmark is (a name ending `>` its tip; 'head_top' is the
+# head bone's tip, or the named end bone). Mixamo's (FBX), Rigify's deform bones, the Unreal mannequin's (Quaternius's
+# libraries, glTF) and KayKit's (Kay Lousberg's Character Animations, glTF). KayKit's has no neck bone and no thumb:
+# its neck is the chest's tip, and its thumb is laid along its weapon slot's +Y, the way its blade runs (`slot`).
 def _rig(trunk, limb, top=None):
     out = dict(trunk)
     for s, side in (('L', 0), ('R', 1)):
@@ -141,7 +145,16 @@ RIGS = {
                    {n: (f'{b}_l', f'{b}_r') for n, b in (
                        ('hip', 'thigh'), ('knee', 'calf'), ('ankle', 'foot'), ('toe', 'ball'), ('shoulder', 'upperarm'),
                        ('elbow', 'lowerarm'), ('wrist', 'hand'), ('hand', 'middle_01'), ('thumb', 'thumb_02'))}),
+    'kaykit': _rig({'pelvis': 'hips', 'spine': 'spine', 'chest': 'chest', 'neck': 'chest>', 'head': 'head'},
+                   {n: (f'{b}.l', f'{b}.r') for n, b in (
+                       ('hip', 'upperleg'), ('knee', 'lowerleg'), ('ankle', 'foot'), ('toe', 'toes'),
+                       ('shoulder', 'upperarm'), ('elbow', 'lowerarm'), ('wrist', 'wrist'), ('hand', 'hand'),
+                       ('slot', 'handslot'))}),
 }
+SLOT_THUMB = 0.05   # metres from the hand along a weapon slot's +Y, where a rig without a thumb lays one
+# Degrees a rig's arms are turned in toward the body. KayKit's wide, round body hangs its arms about 25 degrees further
+# out than a man's; the turn fades out on a wrist raised toward the shoulder's height or laid across the body.
+ARMS_IN = {'kaykit': 26.0}
 
 
 def armature_frames(path, frames, clip=''):
@@ -162,7 +175,7 @@ def armature_frames(path, frames, clip=''):
         bpy.ops.import_scene.fbx(filepath=path, automatic_bone_orientation=True)
     arm = next(ob for ob in bpy.context.scene.objects if ob.type == 'ARMATURE')
     names = {b.name.split(':')[-1]: b for b in arm.pose.bones}
-    rig = next((r for r in RIGS.values() if r['pelvis'] in names and r['hip_L'] in names), None)
+    kind, rig = next(((n, r) for n, r in RIGS.items() if r['pelvis'] in names and r['hip_L'] in names), (None, None))
     if rig is None:
         raise SystemExit(f'{path}: no known rig among its bones ({", ".join(list(names)[:12])}, ...)')
     if clip:
@@ -181,18 +194,55 @@ def armature_frames(path, frames, clip=''):
         frames = list(range(lo, hi + 1))
     out = []
     for f in frames:
-        bpy.context.scene.frame_set(f)
+        whole = math.floor(f)
+        bpy.context.scene.frame_set(int(whole), subframe=float(f - whole))
         pts = {}
         for k, name in rig.items():
-            if name and name in names:
-                pts[k] = np.array((arm.matrix_world @ names[name].head)[:])
+            bone, tip = (name[:-1], True) if name and name.endswith('>') else (name, False)
+            if bone and bone in names and not k.startswith('slot_'):
+                pts[k] = np.array((arm.matrix_world @ (names[bone].tail if tip else names[bone].head))[:])
+        for s in 'LR':   # a weapon slot's +Y is its blade's way, its +X its edge's: the thumb laid along the blade
+            slot = names.get(rig.get(f'slot_{s}') or '')
+            if slot is not None and f'hand_{s}' in pts:
+                axes = (arm.matrix_world @ slot.matrix).to_3x3()
+                way, edge = np.array(axes.col[1].normalized()[:]), np.array(axes.col[0].normalized()[:])
+                pts[f'thumb_{s}'] = pts[f'hand_{s}'] + way * SLOT_THUMB
+                pts[f'blade_{s}'], pts[f'edge_{s}'] = pts[f'hand_{s}'] + way, pts[f'hand_{s}'] + edge
         top = names.get(rig['head_top']) if rig['head_top'] else None   # else the head's tip, which an importer may set
         pts['head_top'] = np.array((arm.matrix_world @ (top.head if top else names[rig['head']].tail))[:])
         for s in 'LR':   # a rig without fingers: the hand bone's tip is the hand
             if f'hand_{s}' not in pts:
                 pts[f'hand_{s}'] = np.array((arm.matrix_world @ names[rig[f'wrist_{s}']].tail)[:])
             pts.setdefault(f'thumb_{s}', pts[f'hand_{s}'])
-        out.append(pts)
+        out.append(arms_in(pts, ARMS_IN.get(kind, 0.0)))
+    return out
+
+
+def _ease(a, b, x):
+    t = min(max((x - a) / (b - a), 0.0), 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def arms_in(pts, deg):
+    """Each arm turned `deg` toward the body about the chest's forward line through its shoulder, in full where it
+    hangs out to the side, fading out as it is laid across the body or its wrist raised toward the shoulder's height."""
+    if not deg:
+        return pts
+    out = dict(pts)
+    left = _unit(pts['shoulder_L'] - pts['shoulder_R'])
+    up = _unit(pts['neck'] - pts['chest'])
+    up = _unit(up - left * (up @ left))
+    for s, side in (('L', left), ('R', -left)):
+        sh = pts[f'shoulder_{s}']
+        d = pts[f'wrist_{s}'] - sh
+        ab = math.degrees(math.atan2(d @ side, -(d @ up)))   # out from the body's side, seen from the front
+        drop = -(_unit(d) @ up)   # the wrist's fall below the shoulder: 1 hanging, 0 level
+        t = math.radians(deg * _ease(0.0, 35.0, ab) * _ease(0.3, 0.6, drop))
+        k = np.cross(up, side)   # the turn's axis: from out toward down
+        for n in ('elbow', 'wrist', 'hand', 'thumb', 'blade', 'edge'):
+            if f'{n}_{s}' in pts:
+                v = pts[f'{n}_{s}'] - sh
+                out[f'{n}_{s}'] = sh + v * math.cos(t) + np.cross(k, v) * math.sin(t) + k * (k @ v) * (1 - math.cos(t))
     return out
 
 
@@ -288,7 +338,7 @@ def retarget(pts, yaw=0.0):
         thumb = P[f'thumb_{s}'] - wr
         thumb = thumb - hand * (thumb @ hand)
         back = np.cross(thumb, hand) if s == 'L' else np.cross(hand, thumb)
-        solve_arm(pose, s, Vector(target), Vector(R0 @ pole if np.linalg.norm(pole) > 1e-4 else R0 @ np.array([0, 1, 0])),
+        solve_arm(pose, s, Vector(target), Vector(R0 @ pole if np.linalg.norm(pole) > 1e-4 else R0 @ np.array([0, 1, 0])), girdle=False,
                   hand_dir=Vector(R0 @ hand), hand_up=Vector(R0 @ back) if np.linalg.norm(back) > 1e-6 else None)
     poses.grounded(pose)
     return pose
@@ -297,7 +347,8 @@ def retarget(pts, yaw=0.0):
 def bake(caught):
     """A clip's frames as keys the forge plays (poses.py `MOVES`): each joint's local turn (a quaternion, w first) and
     the body's travel over the ground from where it stood, in the forge's metres. `caught` are face_front's frames, laid
-    over the first frame's pelvis so the travel stays."""
+    over the first frame's pelvis so the travel stays. A rig with weapon slots gives each hand's blade and edge too
+    (`blade_R`, `edge_R`: ways in body space), so a weapon lies as the capture held it (poses.py `captured_blade`)."""
     from rig import rest
     import poses
     tall = rest('pelvis').z / max(caught[0]['pelvis'][2], 1e-6)   # the capture's hips at the forge's height
@@ -307,6 +358,10 @@ def bake(caught):
         poses.grounded_body(pose, arms=True)
         key = {j: [round(v, 5) for v in q] for j, q in sorted(pose.quat.items())}
         key['travel'] = [round(float(pts['pelvis'][0] * tall), 4), round(float(pts['pelvis'][1] * tall), 4)]
+        for s in 'LR':
+            if f'blade_{s}' in pts:
+                for k in ('blade', 'edge'):
+                    key[f'{k}_{s}'] = [round(float(v), 4) for v in _unit(pts[f'{k}_{s}'] - pts[f'hand_{s}'])]
         out.append(key)
     return out
 
@@ -338,6 +393,22 @@ def stick(pts, w=120, h=150, side=False, k=None):
     return img
 
 
+def frame_list(spec):
+    """`--frames` read: each number, a run "first-last:step", a sub-frame with its fraction ("9.4"), or None for
+    "all". A whole number stays an int."""
+    if spec == 'all':
+        return None
+    frames = []
+    for part in spec.split(','):
+        if '.' in part:
+            frames.append(float(part))
+            continue
+        run, _, step = part.partition(':')
+        first, _, last = run.partition('-')
+        frames += list(range(int(first), int(last or first) + 1, int(step or 1)))
+    return frames
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--asf', default='')
@@ -346,7 +417,7 @@ def main():
     ap.add_argument('--clip', default='', help="the clip to play from a file of many (a glTF library's)")
     ap.add_argument('--frames', default='1',
                     help='frame numbers, comma-separated, a run "first-last:step" (AMC frames count from 1), '
-                         'or "all": every frame of a clip')
+                         'a sub-frame "9.4" of an armature clip, or "all": every frame of a clip')
     ap.add_argument('--views', default='0,1,2', help="the sprites' views to render (0 front .. 4 back)")
     ap.add_argument('--out', required=True, help='a contact sheet (PNG), a row a frame; or a .gif, the frames played')
     ap.add_argument('--ms', type=int, default=50, help="with a .gif, each frame's time")
@@ -357,12 +428,11 @@ def main():
     ap.add_argument('--pick', default='', help="with --bake: the frames to keep, counted from 0 over those read")
     ap.add_argument('--mirror', action='store_true', help="the clip left for right: its other arm does what it shows")
     args = ap.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
-    frames = [] if args.frames != 'all' else None
-    for part in (args.frames.split(',') if frames is not None else []):
-        run, _, step = part.partition(':')
-        first, _, last = run.partition('-')
-        frames += list(range(int(first), int(last or first) + 1, int(step or 1)))
+    frames = frame_list(args.frames)
     if args.amc:
+        if any(f != int(f) for f in frames or ()):
+            raise SystemExit('a sub-frame reads an armature clip (--fbx), never AMC')
+        frames = None if frames is None else [int(f) for f in frames]
         every = cmu_frames(args.asf, args.amc)
         caught = every[::2] if frames is None else [every[min(f, len(every)) - 1] for f in frames]
     else:
@@ -374,7 +444,9 @@ def main():
         turn, origin = heading(caught[0]), caught[0]['pelvis'] * np.array([1, 1, 0])
         keys = json.load(open(args.keys)) if os.path.exists(args.keys) else {}
         pick = [int(i) for i in args.pick.split(',')] if args.pick else list(range(len(caught)))
-        keys[args.bake] = {'clip': args.clip or os.path.basename(args.amc or args.fbx), 'picked': pick,
+        # the clip's own frame numbers where they were named, a sub-frame's fraction kept
+        picked = pick if frames is None else [frames[i] for i in pick]
+        keys[args.bake] = {'clip': args.clip or os.path.basename(args.amc or args.fbx), 'picked': picked,
                            'source': args.source, 'keys': bake([face_front(caught[i], turn, origin) for i in pick])}
         caught = pick
         with open(args.keys, 'w') as f:

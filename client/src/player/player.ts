@@ -1,7 +1,17 @@
 import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import type { InputFrame } from './input.ts';
-import { aimEased, cameraOrbit, eased, FIRST_PERSON, scrolled, toggled, type ViewMode } from './playerCamera.ts';
+import {
+  AIM,
+  type AimPlace,
+  aimEased,
+  cameraOrbit,
+  eased,
+  FIRST_PERSON,
+  scrolled,
+  toggled,
+  type ViewMode,
+} from './playerCamera.ts';
 
 /** The player: their body, where they look, how the camera is held, whether they ride, their weapon out or away, and
  *  the cast or chosen move playing. The first person's weapon swings; this only readies it. */
@@ -133,9 +143,14 @@ export function shownBody(player: Player): Body {
   };
 }
 
-/** The camera the scene draws the player's frame from. */
-export function playerCamera(player: Player, movement: MovementRules, blocks: readonly Block[]): Orbit {
+/** The camera the scene draws the player's frame from, its aiming view at `place`. */
+export function playerCamera(
+  player: Player,
+  movement: MovementRules,
+  blocks: readonly Block[],
+  place: AimPlace = AIM,
+): Orbit {
   const body = shownBody(player);
   const head = [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
-  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim);
+  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place);
 }

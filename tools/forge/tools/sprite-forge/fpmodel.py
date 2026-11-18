@@ -79,6 +79,13 @@ CLIMB = {
     'fingers': 1.0,      # the fingers' length against the hand's
     'slim': 1.0,         # and their girth
 }
+CLAWS = {
+    'arm_r': 1.0,        # the pelt's girth
+    'hand': 1.0,         # the hand's size
+    'thumb': 1.0,        # the thumb's girth against the hand's
+    'fingers': 1.0,      # the fingers' length against the hand's
+    'slim': 1.0,         # and their girth
+}
 SHAPE = {}
 ROWS = 64   # rings along the blade
 WRIST = fparm.WRIST             # elbow to wrist
@@ -426,6 +433,31 @@ WEAPONS['castarm'] = dict(WEAPONS['climbarm'], joints={'arm': fphand.JOINTS + fp
                                                             slim=S.get('slim'))})
 
 
+# a werecreature's claws (WEAPON11): the right arm in its pelt, a claw past every finger (fpclaws.py), the fingers free
+# to open and curl each its own way, as the casting hand's
+def _beast_arm(side):
+    return lambda S: fparm.arm(S['hand'], S['arm_r'], side, outfit=fparm.BEAST, cuff=S.get('cuff'), thumb=S.get('thumb'),
+                               fingers=S.get('fingers'), slim=S.get('slim'),
+                               armour=lambda k, r, cuff_z: _claws(k, r, cuff_z, S))
+
+
+WEAPONS['claws'] = {'parts': {'claw': _beast_arm('R'), 'clawl': _beast_arm('L')},   # the right arm; the left's strikes
+                    'mats': fparm.mats(fparm.BEAST) + ('claw', 'pad', 'paw'), 'shape': CLAWS,
+                    'arms': {'claw': ('R', 'hand'), 'clawl': ('L', 'hand')},
+                    'length': lambda S, part: WRIST + fphand.KNUCKLES * S['hand'],
+                    'girth': lambda S, part: 0.11 * S['arm_r'],
+                    'root_r': lambda S, part: 0.056 * S['arm_r'],
+                    'joints': {'claw': fphand.JOINTS + fphand.CURLS, 'clawl': fphand.JOINTS + fphand.CURLS},
+                    # an open hand's outline is much the same from its back and its palm, and small steps never turn
+                    # it over or hook its fingers: each fit also searches its side, its fingers' bend and its wrist
+                    'grid': {'roll': tuple(range(0, 360, 30)), 'knuckle': (0.0, 40.0, 80.0), 'fold': (0.0, 50.0, 100.0),
+                             'wrist': (-35.0, 0.0, 35.0)},
+                    # Daggerfall's red-brown darks are its fur's shadows as well as the pads, and nothing here is tan:
+                    # a class weighed there would turn the palm to the eye wherever the fur is shaded. So the outline,
+                    # the claws and the light; the claws blurred, as a claw a pixel off is a near miss, not a miss
+                    'weights': {'sil': 0.6, 5: 0.3, 'light': 0.3}, 'soft': {5: 1.5}}
+
+
 # the held map (HELDMAP): the sheet and both arms one part, made again at each pose's joints (fpheld.py)
 WEAPONS['heldmap'] = {'parts': {'held': fpheld.part}, 'mats': fpheld.MATS, 'shape': fpheld.SHAPE, 'posed': fpheld.posed,
                       'length': lambda S, part: fpheld.length(S), 'girth': lambda S, part: S['sheet_w'],
@@ -593,6 +625,12 @@ def build(weapon, M, S=None):
     return out
 
 
+def _claws(k, r, cuff_z, S):
+    import fpclaws
+    return fpclaws.claws(k, r, cuff_z, claw=2, bed=3, paw=4, long=S.get('fingers') or 1.0, slim=S.get('slim') or 1.0,
+                         thumb=S.get('thumb') or 1.0)
+
+
 def palette():
     """The weapons' materials. A metal is grey: in the game every grey is the metal the dye recolours. The arm's sleeve
     is drawn in that band too, so it is grey, and dyed as Daggerfall's is."""
@@ -631,6 +669,15 @@ def palette():
         # satin sheen on its knuckles (a hard one snaps to a palette's pinks)
         'gauntlet': _leather('gauntlet', (0.22, 0.14, 0.055), (0.4, 0.27, 0.12), scale=70.0, rough=0.62, crease=0.86,
                              period=0.022, width=0.08, bump=0.15, ridge_lift=0.03, patches=0.05, rings=0.0),
+        # a werecreature's pelt, dark brown and mottled, its forearm's and its hand's alike; its claws grey, in the band
+        # Daggerfall draws them in; their nail beds pink
+        'fur': _leather('fur', (0.1, 0.055, 0.03), (0.3, 0.17, 0.08), scale=90.0, rough=0.85, crease=0.3,
+                        period=0.012, width=0.06, bump=0.4, ridge_lift=0.05, patches=0.2, rings=0.0),
+        'pelt': _leather('pelt', (0.1, 0.055, 0.03), (0.3, 0.17, 0.08), scale=90.0, rough=0.85, crease=0.3,
+                         period=0.012, width=0.06, bump=0.4, ridge_lift=0.05, patches=0.2, rings=0.0),
+        'claw': _diffuse(materials.plain('claw', (0.3, 0.3, 0.3), rough=0.35)),
+        'pad': _diffuse(materials.plain('pad', (0.45, 0.22, 0.24), rough=0.6)),
+        'paw': _diffuse(materials.plain('paw', (0.035, 0.026, 0.022), rough=0.5)),
         # the dagger's grip, wrapped in the glove's leather: its own material, so it is drawn with the dagger
         'dagger_grip': _leather('dagger_grip', (0.22, 0.14, 0.055), (0.4, 0.27, 0.12), scale=70.0, rough=0.62,
                                 crease=0.86, period=0.022, width=0.08, bump=0.15, ridge_lift=0.03, patches=0.05, rings=0.0),

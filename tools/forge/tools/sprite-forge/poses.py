@@ -13,7 +13,7 @@ import re
 from mathutils import Matrix, Vector
 
 from gear import STAFF_FIST, STAFF_HANDS, STAFF_POLE, STAFF_REACH, STAFF_TOP, SWORD_TIP, bow_tips
-from rig import Pose, reach, rest, solve_arm
+from rig import JOINTS, Pose, reach, rehinge, rest, solve_arm
 
 # A frame's fitted adjustment (fit.py): joint rotations added to its keys ('rot'), the body's turn ('turn'), the axe
 # grip and haft ('grip', 'haft', body space), the attack's fist and axe head on screen ('fist', 'head'), the axe's
@@ -476,26 +476,37 @@ def hurt(frame, view, yaw, rest=False):
 
 # The bow: full draw, held, loose, lowered. The archer stands side-on to the shot, the bow arm out along the body's
 # left (+X) toward the target, in every view; drawn, that arm is straight. Keys: (left fist, bow's up direction, draw
-# in metres, arrow nocked)
+# in metres, arrow nocked); a full draw's is None, as far as DRAW_FIST asks
 BOW_KEYS = [
-    ((0.86, -0.04, 1.47), (0.0, 0.0, 1.0), 0.58, True),
-    ((0.86, -0.04, 1.48), (0.04, 0.0, 1.0), 0.60, True),
+    ((0.86, -0.16, 1.48), (0.0, 0.0, 1.0), None, True),
+    ((0.86, -0.16, 1.48), (0.04, 0.0, 1.0), None, True),
     ((0.60, -0.10, 1.34), (0.35, 0.0, 1.0), 0.02, False),
     ((0.36, -0.22, 1.02), (0.8, 0.0, 0.6), 0.0, False),
 ]
 BOW_TURN = -90   # the body's front a quarter turn right of the shot
+# Drawn, the string fist comes back before the right shoulder (DRAW_FIST, metres along the body's +X), its elbow
+# straight out to the side at the shoulder's height (DRAW_POLE): from behind, both arms one level line, as
+# Daggerfall's archer draws. Back to the jaw, the elbow could only tuck in behind the head or rise over it
+DRAW_FIST = -0.20
+DRAW_POLE = (-1.0, 0.0, 0.0)
+# Loosed and lowered, the string fist is off the string: before the chest, its elbow still out to the side, then
+# down at the right hip, its elbow out behind. (fist in body space, elbow's pole)
+BOW_RIGHT = [None, None, ((-0.05, -0.28, 1.30), (-1.0, 0.3, 0.0)), ((-0.26, -0.10, 1.02), (-0.6, 1.0, 0.0))]
 
 
 def bow(frame, view, yaw):
+    global _adj
     at, up, draw, nocked = BOW_KEYS[frame]
     at, up = _plus(at, 'grip'), _plus(up, 'haft')
-    draw = max(0.0, draw + _adj.get('draw', 0.0))   # how far the string is drawn back, the fit's to lengthen
+    full = draw is None
+    if not full:
+        draw = max(0.0, draw + _adj.get('draw', 0.0))   # how far the string is drawn back, the fit's to lengthen
     p = stance({
         'pelvis': (0, 0, 0), 'spine': (2, 0, 0), 'chest': (0, 0, 0),
-        'neck': (4, 0, 30), 'head': (-6, 0, 30),
+        'neck': (4, 0, 30), 'head': (-4, 0, 30),
         'thigh_L': (-16, -12, -10), 'shin_L': (8, 0, 0), 'foot_L': (6, 0, 14),
         'thigh_R': (18, 12, 8), 'shin_R': (12, 0, 0), 'foot_R': (2, 0, -8),
-        'clav_R': (0, 4, 0),
+        **({} if full else {'clav_R': (0, 4, 0)}),
     }, yaw + BOW_TURN)
     R = root_matrix(p)
     rot = R.to_3x3()
@@ -503,14 +514,24 @@ def bow(frame, view, yaw):
     bow_m = frame_matrix(at_w, up_w, rot @ Vector((0, 1, 0)))
     string_rest = bow_m @ (sum(bow_tips(), Vector()) / 2)   # the braced string's middle
     back = (rot @ Vector((-1, 0, 0))).normalized()
-    held, _, _ = grip(p, 'R', R.inverted() @ (string_rest + back * (draw + 0.03)), (0, 0, 1), (-1, 0.4, 0.5),
-                      knuckles=(1, 0, 0))
+    # the string arm is keyed, never fitted: a fit's swivel would turn its elbow back in across the chest
+    fit, _adj = _adj, {k: v for k, v in _adj.items() if k != 'elbow_R'}
+    if full:   # drawn to DRAW_FIST
+        draw = max(0.0, (R @ Vector((DRAW_FIST, 0.0, 0.0)) - string_rest).dot(back) - 0.03)
+    if nocked:
+        held, _, _ = grip(p, 'R', R.inverted() @ (string_rest + back * (draw + 0.03)), (0, 0, 1), DRAW_POLE,
+                          knuckles=(1, 0, 0))
+    else:
+        fist, pole = BOW_RIGHT[frame]
+        grip(p, 'R', fist, (0, 0, 1), pole)
+    _adj = fit
     # nocked, the string is where the fist holds it; loosed, the fist has let it go
     nock = held - back * 0.03 if nocked else string_rest + back * draw
     # the limbs bend as far as the string is drawn back from its rest
     gear = {'bow': bow_m, 'nock': nock, 'draw': max(0.0, (nock - string_rest).dot(back))}
-    if nocked:
-        gear['arrow'] = nock - back * 0.80
+    if nocked:   # past the bow by a hand however long the draw
+        brace = (string_rest - bow_m.translation).dot(back)
+        gear['arrow'] = nock - back * max(0.80, gear['draw'] + brace + 0.12)
     return p, gear
 
 
@@ -631,12 +652,23 @@ def captured(name, frame, yaw):
     key = moves()[name]['keys'][frame]
     p = Pose(yaw=yaw + _adj.get('turn', 0.0))
     for j, q in key.items():
-        if j != 'travel':
+        if j in JOINTS:   # a key's travel, and the ways a captured weapon lay (`captured_blade`), are no joint's
             p.quat[j] = Quaternion(q)
     tx, ty = key['travel']
     p.root_loc = Matrix.Rotation(math.radians(p.yaw), 3, 'Z') @ Vector((tx, ty, 0.0))
+    for s in 'LR':   # baked by turns, each arm rolled onto its elbow's hinge where it is
+        rehinge(p, s)
     grounded_body(p, arms=True)
     return p
+
+
+def captured_blade(name, frame, side='R'):
+    """The way the captured weapon in `side`'s fist ran and its edge faced in frame `frame` of `name` (body space), or
+    None where the capture had no weapon slot (mocap.py `bake`)."""
+    key = moves()[name]['keys'][frame]
+    if f'blade_{side}' not in key:
+        return None
+    return tuple(key[f'blade_{side}']), tuple(key[f'edge_{side}'])
 
 
 def in_hand(pose, side='R'):

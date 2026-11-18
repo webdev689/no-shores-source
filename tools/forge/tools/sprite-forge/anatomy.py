@@ -7,8 +7,10 @@ on the right side outward is 180. Heights are metres from the ground, the arm's 
 Both bodies stand on the one skeleton (rig.py), so every key, grip and fitted adjustment fits either: Daggerfall's
 women fighters are as tall as its men. They differ in the flesh: the woman's waist is narrower and her hips wider,
 she has a bust for pectorals, slimmer limbs with softer muscles, and a finer face."""
+import math
+
 import numpy as np
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 from body import Skinned, blob, blob_mesh, bone, chain_centre, coords, ramp, vloft
 from rig import arm_z, rest
@@ -135,7 +137,11 @@ def torso_weights(p):
     seat = SEAT_RIDE * ramp(p[:, 1], 0.04, 0.12) * (1 - ramp(z, 0.84, 0.95))
     thigh_l, thigh_r = seat * ramp(p[:, 0], -0.02, 0.04), seat * ramp(-p[:, 0], -0.02, 0.04)
     pelvis = 1 - ramp(z, 1.0, 1.08) - thigh_l - thigh_r
-    return np.stack([pelvis, spine, chest, neck, thigh_l, thigh_r], axis=1)
+    # the shoulder's top past the neck rides the collarbone, as the trapezius and the shoulder blade's spine do
+    top = CLAV_TORSO * ramp(ax, 0.10, 0.19) * ramp(z, 1.34, 1.43)
+    clav_l, clav_r = top * (p[:, 0] > 0), top * (p[:, 0] < 0)
+    chest = chest * (1 - top)
+    return np.stack([pelvis, spine, chest, neck, thigh_l, thigh_r, clav_l, clav_r], axis=1)
 
 
 def arm_weights(p):
@@ -167,6 +173,12 @@ VOXEL = 0.006    # the remesh's cell: under half a pixel at the sprites' scale
 DECIMATE = 0.3   # the share of the remesh's faces kept: where the surface is flat they are many more than it needs
 FILLET = 0.035   # how far from where two pieces meet the crease is rounded
 EASE = 6   # the voxels' last easing, in rounds: enough to lose their steps, few enough to keep a muscle's crease
+# Each arm is spread SPREAD degrees from the side while the pieces are fused, then turned back down by its own
+# weights: fused hanging, the arm sinks into the torso's side and the armpit fills solid, so a raised arm drags a
+# sheet of torso after it. The shoulder's weights are eased over SEAM_EASE rounds where the torso meets the arm.
+SPREAD = 35.0
+SEAM_EASE = 40
+CLAV_TORSO = 0.6   # the share of the collarbone in the torso's skin over the shoulder
 
 
 def _weights(joints, w):
@@ -181,7 +193,8 @@ def _pieces(M):
     """Each piece: (name, mesh in rest space, weights of points over JOINTS, axis of points or None)."""
     muscles = [m if len(m) > 5 else (*m, SHARP['torso']) for m in TORSO_MUSCLES]
     out = [('torso', vloft('torso', TORSO, torso_centre, n=48, muscles=muscles),
-            lambda p: _weights(['pelvis', 'spine', 'chest', 'neck', 'thigh_L', 'thigh_R'], torso_weights(p)), None)]
+            lambda p: _weights(['pelvis', 'spine', 'chest', 'neck', 'thigh_L', 'thigh_R', 'clav_L', 'clav_R'],
+                               torso_weights(p)), None)]
     for s, x in (('L', 1.0), ('R', -1.0)):
         pts = [rest(f'uarm_{s}') + Vector((-0.03 * x, 0, 0.06)), rest(f'uarm_{s}'), rest(f'farm_{s}'), rest(f'hand_{s}')]
         out.append((f'arm_{s}', vloft(f'arm_{s}', ARM, chain_centre(pts), n=36, muscles=arm_muscles(x)),
@@ -272,6 +285,42 @@ def _distances(co, meshes):
     return out
 
 
+def _spread(side, k=1.0):
+    """The turn spreading arm `side` out from the side, `k` of SPREAD, about its shoulder."""
+    j = rest(f'uarm_{side}')
+    sign = 1.0 if side == 'L' else -1.0
+    return Matrix.Translation(j) @ Matrix.Rotation(math.radians(-SPREAD * sign * k), 4, 'Y') @ Matrix.Translation(-j)
+
+
+def _hang_arms(co, pieces, spread):
+    """The fused body's points, fused with its arms spread, turned back down: each by its share of the arm it lies on
+    (the upper arm's and the forearm's weights), the torso where it is the torso's."""
+    d = _distances(co, spread)
+    a = np.exp(-(d - d.min(axis=1, keepdims=True)) / 0.004)
+    alpha = a / a.sum(axis=1, keepdims=True)
+    out = co.copy()
+    for s in 'LR':
+        k = [n for n, _, _, _ in pieces].index(f'arm_{s}')
+        back = np.array(_spread(s, -1.0))
+        down = co @ back[:3, :3].T + back[:3, 3]
+        w = arm_weights(down)
+        share = alpha[:, k] * (w[:, 1] + w[:, 2])
+        out += share[:, None] * (down - co)
+    return out
+
+
+def _ease_weights(w, edges, mask, rounds):
+    """The weights eased over the mesh where `mask` holds: a seam a vertex wide becomes a blend some fingers wide."""
+    n = len(w)
+    i, j = edges[:, 0], edges[:, 1]
+    deg = np.maximum(np.bincount(i, minlength=n) + np.bincount(j, minlength=n), 1)[:, None]
+    m = mask[:, None].astype(float)
+    for _ in range(rounds):
+        s = np.stack([np.bincount(i, w[j, k], n) + np.bincount(j, w[i, k], n) for k in range(w.shape[1])], 1)
+        w = w + 0.5 * m * (s / deg - w)
+    return w / np.maximum(w.sum(axis=1, keepdims=True), 1e-9)
+
+
 def build(M, hand_blobs, rigid, hang, cuts=()):
     """The naked body as one skinned mesh fused from its pieces, and its hands (open, or closed round a grip), rigid on
     the hand joints: (body Skinned, [(hand object, joint)], {side: {'open': ob, 'fist': ob}}). The mesh is cut along
@@ -280,22 +329,37 @@ def build(M, hand_blobs, rigid, hang, cuts=()):
     piece a vertex lies on, blended where pieces meet."""
     import bpy
     pieces = sorted(_pieces(M), key=lambda pc: PIECES.index(pc[0]))
-    me = _union([m for _, m, _, _ in pieces])
+    spread = []
+    for name, m, _, _ in pieces:
+        if name.startswith('arm_'):
+            m = m.copy()
+            m.transform(_spread(name[-1]))
+        spread.append(m)
+    me = _union(spread)
     co = coords(me)
     edges = np.array([e.vertices[:] for e in me.edges], dtype=np.int64)
-    d = _distances(co, [m for _, m, _, _ in pieces])
+    d = _distances(co, spread)
     two = np.sort(d, axis=1)[:, 1]
     # fill the creases where pieces meet (a plain Laplacian fills a concave crease), then ease the voxels everywhere
     co = _smooth(co, edges, 1 - ramp(two, 0.0, FILLET), 30, mu=0.0)
     co = _smooth(co, edges, np.full(len(co), 0.5), EASE)
     me.vertices.foreach_set('co', co.ravel())
     me.update()
-    me = _bisect(_decimate(me, DECIMATE), cuts)
+    me = _decimate(me, DECIMATE)
+    me.vertices.foreach_set('co', _hang_arms(coords(me), pieces, spread).ravel())
+    me.update()
+    for m, piece in zip(spread, pieces):
+        if m is not piece[1]:
+            bpy.data.meshes.remove(m)
+    me = _bisect(me, cuts)
     co = coords(me)
     d = _distances(co, [m for _, m, _, _ in pieces])
     a = np.exp(-(d - d.min(axis=1, keepdims=True)) / 0.004)
     alpha = a / a.sum(axis=1, keepdims=True)
     w = sum(alpha[:, k:k + 1] * fn(co) for k, (_, _, fn, _) in enumerate(pieces))
+    edges = np.array([e.vertices[:] for e in me.edges], dtype=np.int64)
+    shoulder = (np.abs(co[:, 0]) > 0.10) & (co[:, 2] > 1.20) & (co[:, 2] < 1.56)
+    w = _ease_weights(w, edges, shoulder, SEAM_EASE)
     axes = [ax for _, _, _, ax in pieces]
 
     def axis(p, alpha=alpha):

@@ -23,6 +23,11 @@ SHAPE = {
     'brace': 0.16,       # the braced string's distance from the grip
     'draw_len': 0.25,    # how far back a full draw pulls the nock past the brace
     'recurve': 0.0,      # radians the last share of each limb turns forward
+    'limb': 1.0,         # the limbs' width and thickness past the grip, a share of the fitted stave's
+    'wrap': 1.0,         # the grip's wrap and collars, a share of the fitted stave's
+    'swell': 1.0,        # the share a metal's make keeps of its own stave's swell and its sleeves' flare (bows.py)
+    'grip_cap': 1.3,     # the grip's dressing held near this many times the wrap's girth (bows.py `grip`)
+    'ornament': 1.0,     # a make's horns, blades and studs, this many times their own size (bows.py `limb`)
     'grip_len': 0.11,    # the wrap's length
     'fist_z': 0.0,       # where the bow fist's middle sits up the wrap
     'rest_z': 0.0,       # and where the arrow lies on it, over the fist
@@ -151,14 +156,15 @@ def _limbs(S, draw, straight=False):
         pts, ang = _bend(S, 0.0)
     out = []
     t = np.linspace(0.0, 1.0, len(pts))
-    a = S['bow_w'] / 2 * (1.0 - 0.6 * t)
-    b = S['bow_t'] / 2 * (1.0 - 0.45 * t)
+    a = S['bow_w'] / 2 * (1.0 - 0.6 * t) * S.get('limb', 1.0)
+    b = S['bow_t'] / 2 * (1.0 - 0.45 * t) * S.get('limb', 1.0)
     look = bows.look(S.get('metal'))   # each metal's own make (bows.py), Daggerfall's plain bow for none
     span = min(bows.SEEN, S['bow_len'] - riser(S))   # a short bow's make drawn up its shorter limb
     for sign in (1.0, -1.0):   # the upper limb, then the lower mirrored through the grip
         c = np.stack([np.zeros(len(pts)), pts[:, 0], sign * pts[:, 1]], axis=1)
         w = np.stack([np.zeros(len(pts)), np.cos(ang), sign * np.sin(ang)], axis=1)   # the limb's own back
         out += [(v, q, STUFF[k]) for v, q, k in bows.limb(look, c, w, a, b, (1.0, 0.0, 0.0), span=span,
+                                                          swell=S.get('swell', 1.0), ornament=S.get('ornament', 1.0),
                                                           riser=riser(S))]
     g = S['grip_len'] / 2
     z = np.linspace(-g, g, 16)
@@ -166,7 +172,7 @@ def _limbs(S, draw, straight=False):
     v, q = loft(np.stack(along(z), axis=1), np.tile([1.0, 0.0, 0.0], (16, 1)), np.tile([0.0, 1.0, 0.0], (16, 1)),
                 np.full(16, wrap_r(S)), np.full(16, wrap_r(S)), n=16, caps=(True, True))   # round, as a grip is
     out.append((v, q, WRAP))
-    out += [(v, q, STUFF[k]) for v, q, k in bows.grip(look, wrap_r(S), g)]
+    out += [(v, q, STUFF[k]) for v, q, k in bows.grip(look, wrap_r(S), g, S.get('grip_cap', bows.CAP))]
     for end in (-1.0, 1.0) if look.get('collars', True) else ():
         # a rounded collar binding each end of the wrap, as Daggerfall's dark rings are
         cz = np.linspace(-1.0, 1.0, 9)
@@ -185,18 +191,18 @@ def stave_r(S, z):
     g, z = S['grip_len'] / 2, np.abs(np.asarray(z, float))
     bulge = np.sqrt(np.clip(1.0 - ((z - g) / COLLAR_HALF) ** 2, 0.0, 1.0))
     r = np.where(z < g + COLLAR_HALF, wrap_r(S) + (collar_r(S) - wrap_r(S)) * bulge * (z > g - COLLAR_HALF),
-                 S['bow_w'] / 2)
+                 S['bow_w'] / 2 * S.get('limb', 1.0))
     return r + GLOVE
 
 
 def wrap_r(S):
     """The grip's wrap's radius."""
-    return S['bow_w'] * 0.54
+    return S['bow_w'] * 0.54 * S.get('wrap', 1.0)
 
 
 def collar_r(S):
     """A collar's radius at its widest."""
-    return S['bow_w'] * 0.72
+    return S['bow_w'] * 0.72 * S.get('wrap', 1.0)
 
 
 def _tube(pts, r, n=6):
@@ -450,7 +456,7 @@ def grip(S):
     round with nothing of the hand in it, found for the hand's and the wrap's own sizes. Gives the hand's joints, the
     posed hand, and the stave's line in the arm's space (a point, and its way from the index's end to the little
     finger's)."""
-    key = (*_arm_key(S, 'L'), S['bow_w'], S['grip_len'], S['fist_z'])
+    key = (*_arm_key(S, 'L'), S['bow_w'], S.get('wrap', 1.0), S['grip_len'], S['fist_z'])
     if key in _GRIPS:
         return _GRIPS[key]
     v = _rest_arm(S, 'L')[0]
