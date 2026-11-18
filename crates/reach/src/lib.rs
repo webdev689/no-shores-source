@@ -89,7 +89,8 @@ pub fn distance_outside(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
 }
 
 /// The distance from (x, y) to the ring's nearest edge, inside or out; infinite for a ring with no points.
-fn distance_to_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
+#[must_use]
+pub fn distance_to_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
     let edges = ring.iter().enumerate().map(|(index, &from)| (from, ring[(index + 1) % ring.len()]));
     edges.map(|(from, to)| distance_to_edge(from, to, x, y)).fold(f64::INFINITY, f64::min)
 }

@@ -73,11 +73,16 @@ test('the roster reads from the rules: every enemy type with its name, faction, 
     ranks: number[];
     right: string;
   }[];
-  assert.equal(roster.length, 17);
+  assert.equal(roster.length, 18);
   const thule = roster.find((entry) => entry.type === 12);
   assert.deepEqual(
     [thule?.name, thule?.faction_name, thule?.ranks, thule?.right],
     ['Captain Brannoc Thule', 'The Grey Tithe', [5], 'sword_ebony'],
+  );
+  const corvane = roster.find((entry) => entry.type === 18);
+  assert.deepEqual(
+    [corvane?.name, corvane?.faction_name, corvane?.ranks, corvane?.right],
+    ['High Assessor Corvane', 'The Grey Tithe', [5], 'flail_iron'],
   );
 });
 

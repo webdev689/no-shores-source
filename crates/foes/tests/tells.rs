@@ -1,6 +1,7 @@
 //! Telegraphed blows and shots: a brute winds up iron slams and never guards; a captain as a Miniboss closes with
 //! charges and leaps, feints and chains, and roars into its second phase once with an iron ring, striking harder after;
-//! the Boss roars into each of its three phases and calls its crew into the last; a Minor throws no telegraphed blow;
+//! Thule roars into each of his three phases and calls his crew into the last, Corvane calls his own into each later
+//! one; a Minor throws no telegraphed blow;
 //! an archer kites a player who comes too close, draws and looses, and aims a shot now and then; every shooter draws
 //! its own weapon as long as that weapon takes.
 
@@ -11,6 +12,8 @@ use combat::shapes::Shape;
 use common::{ARCHER, BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, still, watching};
 use core::f64::consts::PI;
 use foes::Rank::{Boss, Major, Miniboss, Minor};
+use foes::roster::HIGH_ASSESSOR;
+use foes::{Call, Place};
 
 const PLAYER: u32 = 1;
 
@@ -141,6 +144,34 @@ fn the_boss_roars_into_each_of_its_three_phases_and_calls_its_crew_once_into_the
     assert_eq!(room.crew_calls.len(), 1, "and its crew called once");
     let orders = room.orders(10);
     assert!(orders.iter().any(|(_, order)| order.shape == Shape::Slam && order.iron), "iron slams: {orders:?}");
+}
+
+#[test]
+fn corvane_holds_his_shield_up_then_summons_crossbowmen_behind_him_and_collectors_to_his_sides() {
+    let mut room = Room::new(8).player(PLAYER, 0.0, 0.0, 0.0).foe(10, HIGH_ASSESSOR, Boss, 0.0, -2.5, PI);
+    room.run(900, &mut still(0.0));
+    let might = 1.2 * 1.35;
+    assert_eq!(room.brain(10).phase(), 1);
+    let guarded = room.foe_intents(10).iter().filter(|(_, intent)| intent.combat.guard).count();
+    assert!(guarded > 60, "the levy: his shield up while he waits, though no blow comes ({guarded} ticks)");
+    let levy = room.orders(10);
+    assert!(levy.iter().all(|(_, order)| matches!(order.shape, Shape::Sweep | Shape::Lunge)), "{levy:?}");
+    room.set(10, |boss| boss.health = 0.6 * boss.health_max);
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (1, 2), "the summons, roared once");
+    let crossbowmen = Call { foe_type: 3, rank: Minor, count: 2, place: Place::Behind };
+    assert_eq!(room.crew_calls.iter().map(|call| call.2).collect::<Vec<_>>(), [crossbowmen]);
+    assert_eq!(room.crew_calls[0].0, roars(&room, 10)[0] + 1, "as its roar begins");
+    assert!((room.brain(10).might() - might).abs() < 1e-12, "no harder yet");
+    room.run(1800, &mut still(0.0));
+    let summons = room.orders(10);
+    assert!(summons.iter().any(|(_, order)| order.shape == Shape::Slam && order.iron), "iron slams: {summons:?}");
+    room.set(10, |boss| boss.health = 0.3 * boss.health_max);
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (2, 3), "the seizure, roared once");
+    let collectors = Call { foe_type: 2, rank: Major, count: 2, place: Place::Beside };
+    assert_eq!(room.crew_calls.iter().map(|call| call.2).collect::<Vec<_>>(), [crossbowmen, collectors]);
+    assert!((room.brain(10).might() - might * 1.25).abs() < 1e-12, "a quarter harder");
 }
 
 #[test]

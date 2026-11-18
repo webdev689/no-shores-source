@@ -5,9 +5,9 @@
 use combat::arms::{OffHand, Ranged, WeaponClass};
 use combat::fighter::{Side, Weight};
 use combat::shapes::Shape;
-use foes::ranks::{DEFENCE_MOST, REACTION_LEAST, shapes};
-use foes::roster::Domain;
-use foes::{FACTIONS, ROSTER, Rank, Role, faction, foe_type, spawn};
+use foes::ranks::{CORVANE, DEFENCE_MOST, Phase, REACTION_LEAST, THULE, shapes};
+use foes::roster::{COLLECTOR, CROSSBOWMAN, DECKHAND, Domain, HIGH_ASSESSOR};
+use foes::{Call, FACTIONS, Place, ROSTER, Rank, Role, faction, foe_type, spawn};
 
 const CLOSE: f64 = 1e-9;
 
@@ -87,7 +87,8 @@ fn a_rank_a_type_does_not_come_in_falls_back_to_its_first() {
 #[test]
 fn each_rank_throws_its_own_set_of_telegraphed_blows() {
     let captain = [Shape::Sweep, Shape::Lunge, Shape::Charge, Shape::Leap];
-    let set = |role: &[Shape], shooter: bool, rank: Rank, phase: u8| shapes(role, shooter, rank, phase).to_vec();
+    let set =
+        |role: &[Shape], shooter: bool, rank: Rank, phase: u8| shapes(role, shooter, rank, &THULE, phase).to_vec();
     assert!(set(&captain, false, Rank::Minor, 1).is_empty());
     assert_eq!(set(&captain, false, Rank::Major, 1), [Shape::Sweep, Shape::Lunge], "half, the gap-closers left out");
     assert_eq!(set(&[Shape::Slam, Shape::Sweep], false, Rank::Major, 1), [Shape::Slam]);
@@ -101,6 +102,42 @@ fn each_rank_throws_its_own_set_of_telegraphed_blows() {
     let last = [Shape::Sweep, Shape::Lunge, Shape::Charge, Shape::Leap, Shape::Slam, Shape::Ring];
     assert_eq!(set(&captain, false, Rank::Boss, 3), last);
     assert_eq!(foe_type(12).unwrap().numbers(Rank::Boss, 3).shapes.to_vec(), last);
+    let corvane = |phase: u8| foe_type(HIGH_ASSESSOR).unwrap().numbers(Rank::Boss, phase).shapes.to_vec();
+    assert_eq!(corvane(1), [Shape::Sweep, Shape::Lunge], "the levy");
+    assert_eq!(corvane(2), [Shape::Sweep, Shape::Lunge, Shape::Slam], "the summons adds the slam");
+    let seizure = [Shape::Sweep, Shape::Lunge, Shape::Slam, Shape::Charge, Shape::Leap, Shape::Ring];
+    assert_eq!(corvane(3), seizure, "the seizure adds the charge, the leap and the ring");
+}
+
+#[test]
+fn thule_fights_in_the_phases_he_always_had_and_corvane_in_his_own() {
+    let thule = foe_type(12).unwrap();
+    assert_eq!(thule.boss_phases, &THULE);
+    let numbers = |phase: &Phase| (phase.from, phase.windup, phase.cooldown, phase.might, phase.chains);
+    let deckhands = Call { foe_type: DECKHAND, rank: Rank::Minor, count: 2, place: Place::Beside };
+    assert_eq!(
+        THULE.map(|phase| numbers(&phase)),
+        [(1.0, 1.0, 1.0, 1.0, 1), (2.0 / 3.0, 0.85, 0.8, 1.0, 2), (1.0 / 3.0, 0.75, 0.6, 1.25, 2)]
+    );
+    assert_eq!(THULE.map(|phase| phase.calls), [None, None, Some(deckhands)], "his crew into his last stand");
+    let corvane = foe_type(HIGH_ASSESSOR).unwrap();
+    assert_eq!((corvane.name, corvane.faction, corvane.domain), ("High Assessor Corvane", 1, Domain::Land));
+    assert_eq!(
+        (corvane.role, corvane.ranks, corvane.right, corvane.left),
+        (Role::Captain, &[Rank::Boss][..], "flail_iron", "shield_kite_iron")
+    );
+    assert_eq!(corvane.boss_phases, &CORVANE);
+    assert_eq!(
+        CORVANE.map(|phase| numbers(&phase)),
+        [(1.0, 1.0, 1.0, 1.0, 1), (2.0 / 3.0, 0.85, 1.0, 1.0, 1), (1.0 / 3.0, 0.85, 0.6, 1.25, 1)]
+    );
+    let crossbowmen = Call { foe_type: CROSSBOWMAN, rank: Rank::Minor, count: 2, place: Place::Behind };
+    let collectors = Call { foe_type: COLLECTOR, rank: Rank::Major, count: 2, place: Place::Beside };
+    assert_eq!(CORVANE.map(|phase| phase.calls), [None, Some(crossbowmen), Some(collectors)]);
+    let (fighter, brain) = spawn(corvane, Rank::Boss, 0.0, 0.0, 0.0);
+    assert_eq!((fighter.arms.melee, fighter.arms.off_hand), (WeaponClass::Flail, OffHand::Shield));
+    assert!((fighter.health_max - 1120.0).abs() < CLOSE && (fighter.poise_max - 210.0).abs() < CLOSE);
+    assert_eq!((brain.numbers().phases, foe_type(17).unwrap().numbers(Rank::Miniboss, 1).phases), (3, 2));
 }
 
 #[test]
@@ -131,12 +168,12 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
     }
     assert_eq!(Rank::from_number(0), None);
     let numbers: Vec<u8> = ROSTER.iter().map(|foe| foe.number).collect();
-    assert_eq!(numbers, (1..=17).collect::<Vec<u8>>(), "numbered 1 to 17 in order");
+    assert_eq!(numbers, (1..=18).collect::<Vec<u8>>(), "numbered 1 to 18 in order");
     assert_eq!(foe_type(0), None);
     let tithe = faction(1).unwrap();
     assert_eq!((tithe.name, tithe.side()), ("The Grey Tithe", Side::Faction(1)));
     let land: Vec<&str> = tithe.types(Domain::Land).map(|foe| foe.name).collect();
-    assert_eq!(land, ["Runner", "Collector", "Crossbowman", "Enforcer", "Marksman", "Reeve"]);
+    assert_eq!(land, ["Runner", "Collector", "Crossbowman", "Enforcer", "Marksman", "Reeve", "High Assessor Corvane"]);
     assert_eq!(tithe.types(Domain::Deck).last().unwrap().name, "Captain Brannoc Thule");
     let pirates = faction(2).unwrap();
     assert_eq!(pirates.types(Domain::Land).count(), 0, "pirates are met at sea only");

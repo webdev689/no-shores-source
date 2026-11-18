@@ -7,13 +7,14 @@
 pub mod deck;
 pub mod fleet;
 mod foes;
+mod garrison;
 mod judging;
 pub mod pirates;
 mod players;
 pub mod sea;
 pub mod threat;
 
-pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen};
+pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};
 pub use players::{
     CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, SpawnAsk,
@@ -29,6 +30,7 @@ use combat::{Fighter, Happening, Shot, Verdict, player_tick};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
 use land::ground::Ground;
+pub use land::sites::NodeKind;
 use movement::blocks::ground_at;
 use movement::{Block, Body, Terrain, standing};
 use players::Player;
@@ -81,6 +83,8 @@ pub struct Room {
     section: Option<Section>,
     pub(crate) clock: u64,
     next_fighter: FighterId,
+    /// How many players have joined: the next stands at the spawn this many turns on.
+    joins: usize,
     pub(crate) players: BTreeMap<PlayerId, Player>,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
     pub(crate) shots: Vec<Shot>,
@@ -101,11 +105,14 @@ pub struct Room {
     /// The balls fired since the last snapshot, each as its whole line: from where it left to where it stopped, in one
     /// tick of its velocity.
     pub(crate) lines: Vec<Shot>,
-    /// What the foes share, how hot their fight runs, the routes they walk, and the seed their chances are drawn from.
+    /// What the foes share, how hot their fight runs, the routes they walk, the seed their chances are drawn from, the
+    /// most it holds, and a node's garrison.
     pub(crate) board: ::foes::Board,
     pub(crate) director: ::foes::Director,
     pub(crate) nav: navmesh::NavMesh,
     pub(crate) seed: u64,
+    pub(crate) foes_most: usize,
+    pub(crate) garrison: Vec<garrison::Post>,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
     past: VecDeque<(u64, Vec<(FighterId, Fighter)>)>,
 }
@@ -128,10 +135,13 @@ impl Room {
 
     fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
         let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        // A node's room stands no foes yet, so it bakes no navmesh over its city's boxes, which would cost more memory
-        // than a room has: an empty one round its first spawn, on its land.
-        let walked: &[Block] = if section.is_some() { &[] } else { &blocks };
-        let bounds = ground_around(walked, first);
+        // A node's room bakes its navmesh over its land by its first spawn, where its garrison stands, and never over
+        // its city's boxes or its whole section, which would cost more time and memory than a room has.
+        let (walked, middle, around): (&[Block], (f64, f64), f64) = match &section {
+            Some(section) => (&[], garrison::ground_middle(section, first), garrison::NODE_AROUND),
+            None => (&blocks, first, GROUND_AROUND),
+        };
+        let bounds = ground_around(walked, middle, around);
         let nav = match &floor {
             Floor::Flat => navmesh::NavMesh::bake(walked, bounds, &navmesh::AGENT),
             Floor::Land(_) => navmesh::NavMesh::bake_on(walked, &floor, bounds, &navmesh::AGENT),
@@ -143,6 +153,7 @@ impl Room {
             section,
             clock: 0,
             next_fighter: 1,
+            joins: 0,
             players: BTreeMap::new(),
             foes: BTreeMap::new(),
             shots: Vec::new(),
@@ -160,6 +171,8 @@ impl Room {
             director: ::foes::Director::default(),
             nav,
             seed: SEED,
+            foes_most: FOES_MOST,
+            garrison: Vec::new(),
             past: VecDeque::new(),
         }
     }
@@ -170,7 +183,7 @@ impl Room {
         id
     }
 
-    /// A body standing at a spawn: on the ground in a node's room, at 0 m on a course.
+    /// A body standing at a spawn or a foe's place: on the ground in a node's room, at 0 m on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
         if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { standing(x, y) }
     }
@@ -188,7 +201,8 @@ impl Room {
             return None;
         }
         let id = self.next_id();
-        let turn = (id as usize).saturating_sub(1) % self.spawn_points.len().max(1);
+        let turn = self.joins % self.spawn_points.len().max(1);
+        self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
         let fighter = player(self.stand(spawn), BARE_HANDS);
         self.players.insert(id, Player::new(fighter, self.clock));
@@ -248,6 +262,7 @@ impl Room {
         self.judge_waiting();
         self.tell_brains();
         self.raise_the_dead();
+        self.keep_garrison();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {
             self.past.pop_front();
@@ -529,13 +544,14 @@ impl Room {
     }
 }
 
-/// The seed every room's chances are drawn from: one room plays the same fight for the same inputs.
+/// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
+/// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
-/// Open ground a navmesh covers beyond the course's blocks and the spawn, each way.
+/// Open ground a course's navmesh covers beyond its blocks and its spawn, each way.
 const GROUND_AROUND: f64 = 30.0;
 
-/// The ground a room's navmesh covers: the course's blocks and the spawn, and open ground around them.
-fn ground_around(blocks: &[Block], spawn: (f64, f64)) -> navmesh::Bounds {
+/// The ground a room's navmesh covers: the blocks and the spawn, and `around` metres of open ground round them.
+fn ground_around(blocks: &[Block], spawn: (f64, f64), around: f64) -> navmesh::Bounds {
     let start = navmesh::Bounds { min_x: spawn.0, min_y: spawn.1, max_x: spawn.0, max_y: spawn.1 };
     let covered = blocks.iter().fold(start, |bounds, block| navmesh::Bounds {
         min_x: bounds.min_x.min(block.min_x),
@@ -544,10 +560,10 @@ fn ground_around(blocks: &[Block], spawn: (f64, f64)) -> navmesh::Bounds {
         max_y: bounds.max_y.max(block.max_y),
     });
     navmesh::Bounds {
-        min_x: covered.min_x - GROUND_AROUND,
-        min_y: covered.min_y - GROUND_AROUND,
-        max_x: covered.max_x + GROUND_AROUND,
-        max_y: covered.max_y + GROUND_AROUND,
+        min_x: covered.min_x - around,
+        min_y: covered.min_y - around,
+        max_x: covered.max_x + around,
+        max_y: covered.max_y + around,
     }
 }
 

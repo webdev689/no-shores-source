@@ -156,7 +156,7 @@ holder's turn, spent; one that missed leaves it overreached, and it hands its tu
 three, its line as long as its target is far.
 
 A Minor throws none, and a Major only some of its role's ([[Enemies]]). A Miniboss's second phase and the
-Boss's three are [[Enemies]]'.
+three of each Boss, its own, are [[Enemies]]'.
 
 ## Limits
 

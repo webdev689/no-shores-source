@@ -9,8 +9,13 @@ code:
   - crates/foes/src/roster.rs#spawn
   - crates/foes/src/ranks.rs#ranked
   - crates/foes/src/ranks.rs#phases
+  - crates/foes/src/ranks.rs#Call
   - crates/foes/src/tell.rs#roar
   - crates/room/src/foes.rs#spawn_asked
+  - crates/room/src/foes.rs#call
+  - crates/room/src/garrison.rs#groups
+  - crates/room/src/garrison.rs#stand_garrison
+  - crates/room/src/garrison.rs#keep_garrison
   - crates/room-wasm/src/roster_door.rs#roster_json
   - client/src/rules/roster.ts#rankBand
   - client/src/combat/foeBars.ts#FoeBars
@@ -33,8 +38,11 @@ factions fight each other as they fight players, and never their own side.
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|
-| 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
+| 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
 | 2 | Pirates | at sea | | Skirmisher, Swordsman, Brute, Archer, Captain | Pirate Sloop |
+
+The Grey Tithe holds the land: a garrison of its foes stands in every node but the social spaces, on every continent
+(below). The pirates hold no land.
 
 ## The roster
 
@@ -56,6 +64,7 @@ ranks listed. Its numbers are its role's as a Major; its rank scales them.
 | 11 | Tithe-Mate | Captain | `sword_steel` | | Elite, Miniboss |
 | 12 | Captain Brannoc Thule | Captain | `sword_ebony` | | Boss |
 | 13–17 | The pirates' Skirmisher, Swordsman, Brute, Archer, Captain | as named | the Test Ground's foes' arms | | Minor and Major; the Brute Major and Elite; the Captain Elite and Miniboss |
+| 18 | High Assessor Corvane | Captain | `flail_iron` | `shield_kite_iron` | Boss |
 
 The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 130, 70; Archer 50, 18; Captain 160,
 60 (with [[Foes]]' other numbers for each).
@@ -75,24 +84,56 @@ elite tier is [[Foes]]' (quicker wind-ups and cooldowns, one blow in three iron,
 
 - **A Miniboss's second phase**, at 35% of its health: a roar, then wind-ups ×0.75, cooldowns ×0.6, might ×1.25, and
   chains of two.
-- **The Boss's three phases**, changing at 2/3 and 1/3 of its health:
+- **A Boss's three phases** are its type's own, changing at 2/3 and 1/3 of its health. A phase may call foes: it
+  names their type, their rank, how many, and whether they stand beside the Boss (in pairs, 1.5 m either side, each
+  pair 1.5 m farther out) or behind it (3 m back, then the same either side). Called foes face the way the Boss
+  faces, alert toward its foe, while the room's living foes leave room under its limit.
+- **Captain Brannoc Thule's**:
   1. **The blade**: sweep and lunge, feints, chains of one.
   2. **The boarding**: adds charge and leap; wind-ups ×0.85, cooldowns ×0.8, chains of two.
   3. **The last stand**: adds slam and ring, both iron; wind-ups ×0.75, cooldowns ×0.6, might ×1.25 more, chains of
-     two; and it calls its crew: two Minor Deckhands stand 1.5 m either side of it, alert, counted against the room's
-     limit of foes.
+     two; and he calls his crew: two Minor Deckhands beside him.
+- **High Assessor Corvane's**:
+  1. **The levy**: sweep and lunge, feints, chains of one; his shield up while he waits his turn.
+  2. **The summons**: adds the slam, iron; wind-ups ×0.85; and he calls two Minor Crossbowmen behind him.
+  3. **The seizure**: adds charge, leap and ring; wind-ups ×0.85, cooldowns ×0.6, might ×1.25 more, chains of one;
+     and he calls two Major Collectors beside him.
 
   Each change of phase is a roar of 1.2 s (an iron ring about its feet) as soon as it is free, owed until its wind-up
-  begins (a foe knocked down first roars once it stands), and as it begins its poise is refilled and, into the last
-  phase, its crew called. Phases advance one at a time, so a blow that cuts through two roars twice.
+  begins (a foe knocked down first roars once it stands), and as it begins its poise is refilled and the foes its
+  phase names called. Phases advance one at a time, so a blow that cuts through two roars twice.
 
-Captain Brannoc Thule as the Boss: 1,120 health, 210 poise.
+Each Boss: 1,120 health, 210 poise. Thule fights with an ebony sword, Corvane with an iron flail and a kite shield.
 
 ## In a room
 
-A player asks the room for a foe by type and rank (a rank the type does not come in takes its first); the room stands
-it 5 m before them. The room sends each foe's type, rank, faction, phase and alert state ([[Server]]). The rules hand
-the browser the roster through WebAssembly, so names, factions and weapons are read in one place.
+On a course, a player asks the room for a foe by type and rank (a rank the type does not come in takes its first);
+the room stands it 5 m before them. A node's room stands its garrison as it opens ([[Server]]). Every foe stands on
+the surface its place on the navmesh was found on: a block's top within a step of it, else the ground. The room sends
+each foe's type, rank, faction, phase and alert state. The rules hand the browser the roster through WebAssembly, so
+names, factions and weapons are read in one place.
+
+**A garrison** is a node's groups of the Grey Tithe's land foes, by the node's kind:
+
+| Kind | Groups |
+|---|---|
+| Patrol area | three or four groups of two to four, each foe a Runner, Collector or Crossbowman, Minor or Major |
+| Mission | the same, and a group of an Elite Enforcer and an Elite Reeve |
+| Dungeon | three or four groups of two to four Majors and Elites (a Runner, Collector, Crossbowman or Enforcer Major; an Enforcer or Marksman Elite), and a Reeve as a Miniboss alone at the farthest post |
+| World boss | High Assessor Corvane at the farthest post, with four Majors about him (Runners, Collectors, Crossbowmen or Enforcers) |
+| Social space | none |
+
+- **Who stands where** is drawn from the room's seed, the course's mixed with the node's id, so every machine stands
+  the same garrison in the same places.
+- **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
+  mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
+  farthest from the nearest spawn. A group stands 2.5 m round its post, each foe facing outward, a leader in the
+  middle facing the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+- **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places, 120 s later, once
+  no player stands within 40 m of its post and the room's living foes leave room for all of it.
+- **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
+  Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
+  hold them back.
 
 ## On screen
 
@@ -104,11 +145,15 @@ the browser the roster through WebAssembly, so names, factions and weapons are r
   and Pistoleer women in leather; the Marksman under a grey hooded cloak; Collector and Tithe-Mate iron under a grey
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with
   a grey sash; the Reeve in iron with a grey surcoat and cloak; Thule in full steel plate, a grey surcoat and a long
-  grey cloak); the pirates as the Test Ground's foes were dressed.
+  grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the pirates as the Test Ground's foes
+  were dressed.
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 
 ## Limits
 
-- A faction's presence is fixed and not yet placed in the world: foes stand only where a player asks for them.
-- No boss on land yet, and only the Sloop's hull for every rank of ship ([[Hulls]]).
+- A garrison stands within its room's navmesh, a 70 m square by the first spawn, never across the whole section:
+  baking a section's whole ring costs more time and memory than a room has. A foe that chases a player off the mesh
+  walks straight.
+- A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
+- Only the Sloop's hull for every rank of ship ([[Hulls]]).
 - The Hookman's axe takes both hands, so he carries no shield.

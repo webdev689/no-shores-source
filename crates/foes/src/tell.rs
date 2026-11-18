@@ -4,7 +4,7 @@
 
 use crate::brain::Brain;
 use crate::dice::Purpose;
-use crate::ranks::{Phase, phase, phases};
+use crate::ranks::Phase;
 use crate::senses::{Here, Sight};
 use crate::tuning::{
     AIMED_SHARE, BLOW_CHANCE, BLOW_NEAR, CHAIN_CHANCE, CHAIN_LEAST, CHAIN_WINDUP, CLASSIC_TICKS_A_TICK, COOLDOWN_ELITE,
@@ -63,7 +63,7 @@ fn chance_a_tick() -> f64 {
 
 /// The phase a brain fights in, with its numbers.
 fn now(brain: &Brain) -> Phase {
-    phase(brain.rank, brain.tells.phase)
+    brain.foe_type.phase(brain.rank, brain.tells.phase)
 }
 
 /// A wind-up's ticks: `base` seconds times U(WINDUP_VARY) when it is drawn (a chain's is not), quicker for an elite and
@@ -200,10 +200,10 @@ pub fn follow(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> 
     let windup = brain.tells.windup?;
     if matches!(here.fighter.action, Action::Telegraph(_)) {
         if windup.roar && !windup.begun {
-            // The roar is under way at last: no longer owed, its poise refilled and, into the last phase, its crew called.
+            // The roar is under way at last: no longer owed, its poise refilled, the foes its new phase names called.
             brain.tells.roar = false;
             brain.calls.refill_poise = true;
-            brain.calls.crew |= brain.tells.phase == 3;
+            brain.calls.crew = now(brain).calls.or(brain.calls.crew);
         }
         brain.tells.windup = Some(Windup { begun: true, ..windup });
         brain.tells.ended = None;
@@ -264,11 +264,11 @@ fn chain(brain: &mut Brain, here: &Here<'_, '_>, sight: Option<&Sight>) -> Optio
 }
 
 /// The roar into a new phase, once each, as soon as it is free: at the next phase's share of its health, an iron ring
-/// about its feet, its poise refilled, and into the last of three, its crew called. One phase at a time, so a blow
-/// that cuts through two still roars twice.
+/// about its feet, its poise refilled, and the foes the phase names called. One phase at a time, so a blow that cuts
+/// through two still roars twice.
 pub fn roar(brain: &mut Brain, here: &Here<'_, '_>) -> Option<TelegraphOrder> {
     let fighter = &here.fighter;
-    let next = phases(brain.rank).get(usize::from(brain.tells.phase));
+    let next = brain.foe_type.phases(brain.rank).get(usize::from(brain.tells.phase));
     if !brain.tells.roar && next.is_some_and(|next| fighter.health <= fighter.health_max * next.from) {
         brain.tells.phase += 1;
         brain.tells.roar = true;

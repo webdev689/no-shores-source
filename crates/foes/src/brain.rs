@@ -4,7 +4,7 @@
 
 use crate::Seen;
 use crate::awareness::Awareness;
-use crate::ranks::{Rank, phase};
+use crate::ranks::{Call, Rank};
 use crate::react::Reactions;
 use crate::roles::{Numbers, Role};
 use crate::roster::FoeType;
@@ -34,12 +34,12 @@ pub enum Plan {
 pub const SAMPLE_TICKS: u64 = 15;
 pub const SAMPLES: usize = (HURT_WINDOW * 60.0) as usize / SAMPLE_TICKS as usize + 1;
 
-/// What a foe's brain asks of its room beyond its fighter's controls: its poise refilled, as it roars into a new phase,
-/// its crew called to its side, and its shout as it turns alert, passing its allies the place it believes its foe is.
+/// What a foe's brain asks of its room beyond its fighter's controls: its poise refilled and the foes its phase calls,
+/// as it roars into a new phase, and its shout as it turns alert, passing its allies the place it believes its foe is.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Calls {
     pub refill_poise: bool,
-    pub crew: bool,
+    pub crew: Option<Call>,
     pub shout: Option<[f64; 3]>,
 }
 
@@ -123,7 +123,7 @@ impl Brain {
     /// What its fighter's blows are multiplied by now (a later phase strikes harder).
     #[must_use]
     pub fn might(&self) -> f64 {
-        self.numbers().might * phase(self.rank, self.tells.phase).might
+        self.numbers().might * self.foe_type.phase(self.rank, self.tells.phase).might
     }
 
     /// What it asks of its room since it was last asked, taken once.

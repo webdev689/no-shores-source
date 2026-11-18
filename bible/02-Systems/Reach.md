@@ -9,6 +9,7 @@ code:
   - crates/reach/src/lib.rs#respawn_point
   - crates/reach/src/lib.rs#WARNING_TICKS
   - crates/room/src/lib.rs#tick
+  - crates/room/src/garrison.rs#SPAWN_CLEAR
 ---
 # Reach
 
@@ -47,6 +48,12 @@ An input asking to respawn is granted only once the standing offers it, and stan
 nearest spawn. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
 the browser shows what the room says; it does not judge. Offline, with no room, the [[Game]] judges its player by
 these same rules, run in the browser through the movement door.
+
+## Foes in a section
+
+A node's room stands its garrison inside its section, at least 25 m from every spawn and 10 m inside its edge, on the
+navmesh it bakes by its first spawn; a cleared group stands again only once no player is within 40 m of its post
+([[Enemies]]). Foes are never judged against the section: one that chases a player past the edge follows them.
 
 ## Limits
 

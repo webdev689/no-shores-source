@@ -33,7 +33,7 @@ pub use combat::{Fighter, FighterId, Intent};
 pub use director::{Caps, Director, Pressed};
 pub use factions::{FACTIONS, Faction, faction};
 pub use noises::Noise;
-pub use ranks::Rank;
+pub use ranks::{Call, Place, Rank};
 pub use roles::Role;
 pub use roster::{FoeType, ROSTER, foe_type, spawn};
 

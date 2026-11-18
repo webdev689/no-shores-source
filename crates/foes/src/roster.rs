@@ -1,10 +1,11 @@
 //! The enemy types, every faction's: each a number the wire carries, its faction, the name over its bar, where it is
 //! met (on land or on a deck), the role it fights in, the forge layers in its hands (so the client dresses it alike),
-//! the ranks it comes in, and what it changes of its role's numbers. And a new foe of a type, at a rank.
+//! the ranks it comes in, what it changes of its role's numbers, and a Boss's own phases. And a new foe of a type, at
+//! a rank.
 
 use crate::brain::Brain;
 use crate::factions::{GREY_TITHE, PIRATES, faction};
-use crate::ranks::{Rank, ranked};
+use crate::ranks::{CORVANE, Phase, Rank, THULE, phase, phases, ranked};
 use crate::roles::{Numbers, Role, numbers};
 use Domain::{Deck, Land};
 use Role::{Archer, Brute, Captain, Skirmisher, Swordsman};
@@ -29,8 +30,8 @@ impl Domain {
 }
 
 /// An enemy type: its number, faction, name, domain, role, right and left forge layers, the ranks it comes in (the
-/// first its plainest), what its role's health and poise are multiplied by, and how many times a plain shooter's
-/// distance it stands off at.
+/// first its plainest), how many times a plain shooter's distance it stands off at, and the phases it fights in as a
+/// Boss (none for a type that is never one).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeType {
     pub number: u8,
@@ -42,6 +43,7 @@ pub struct FoeType {
     pub left: &'static str,
     pub ranks: &'static [Rank],
     pub standoff: f64,
+    pub boss_phases: &'static [Phase],
 }
 
 const LOW: &[Rank] = &[Rank::Minor, Rank::Major];
@@ -59,32 +61,55 @@ const fn row(
     left: &'static str,
     ranks: &'static [Rank],
 ) -> FoeType {
-    FoeType { number, faction, name, domain, role, right, left, ranks, standoff: 1.0 }
+    FoeType { number, faction, name, domain, role, right, left, ranks, standoff: 1.0, boss_phases: &[] }
 }
 
-/// Every type. The marksman stands off half as far again as an archer.
-pub const ROSTER: [FoeType; 17] = [
-    row(1, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
-    row(2, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
-    row(3, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
-    row(4, GREY_TITHE, Land, "Enforcer", Brute, "warhammer_iron", "", HEAVY),
-    FoeType { standoff: 1.5, ..row(5, GREY_TITHE, Land, "Marksman", Archer, "thunderlock", "", &[Rank::Elite]) },
-    row(6, GREY_TITHE, Land, "Reeve", Captain, "mace_iron", "shield_kite_iron", LEADER),
-    row(7, GREY_TITHE, Deck, "Deckhand", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
+/// The numbers of the types the rules name elsewhere: in a garrison, or called by a Boss.
+pub const RUNNER: u8 = 1;
+pub const COLLECTOR: u8 = 2;
+pub const CROSSBOWMAN: u8 = 3;
+pub const ENFORCER: u8 = 4;
+pub const MARKSMAN: u8 = 5;
+pub const REEVE: u8 = 6;
+pub const DECKHAND: u8 = 7;
+pub const HIGH_ASSESSOR: u8 = 18;
+
+/// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases.
+pub const ROSTER: [FoeType; 18] = [
+    row(RUNNER, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
+    row(COLLECTOR, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
+    row(CROSSBOWMAN, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
+    row(ENFORCER, GREY_TITHE, Land, "Enforcer", Brute, "warhammer_iron", "", HEAVY),
+    FoeType { standoff: 1.5, ..row(MARKSMAN, GREY_TITHE, Land, "Marksman", Archer, "thunderlock", "", &[Rank::Elite]) },
+    row(REEVE, GREY_TITHE, Land, "Reeve", Captain, "mace_iron", "shield_kite_iron", LEADER),
+    row(DECKHAND, GREY_TITHE, Deck, "Deckhand", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(8, GREY_TITHE, Deck, "Hookman", Swordsman, "axe_iron", "", LOW),
     row(9, GREY_TITHE, Deck, "Pistoleer", Archer, "pistolet", "", LOW),
     row(10, GREY_TITHE, Deck, "Bosun", Brute, "warhammer_iron", "", HEAVY),
     row(11, GREY_TITHE, Deck, "Tithe-Mate", Captain, "sword_steel", "", LEADER),
-    row(12, GREY_TITHE, Deck, "Captain Brannoc Thule", Captain, "sword_ebony", "", &[Rank::Boss]),
+    FoeType {
+        boss_phases: &THULE,
+        ..row(12, GREY_TITHE, Deck, "Captain Brannoc Thule", Captain, "sword_ebony", "", &[Rank::Boss])
+    },
     row(13, PIRATES, Deck, "Skirmisher", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(14, PIRATES, Deck, "Swordsman", Swordsman, "sword_steel", "shield_kite_steel", LOW),
     row(15, PIRATES, Deck, "Brute", Brute, "warhammer_iron", "", HEAVY),
     row(16, PIRATES, Deck, "Archer", Archer, "bow_short_iron", "", LOW),
     row(17, PIRATES, Deck, "Captain", Captain, "sword_ebony", "", LEADER),
+    FoeType {
+        boss_phases: &CORVANE,
+        ..row(
+            HIGH_ASSESSOR,
+            GREY_TITHE,
+            Land,
+            "High Assessor Corvane",
+            Captain,
+            "flail_iron",
+            "shield_kite_iron",
+            &[Rank::Boss],
+        )
+    },
 ];
-
-/// The type the Boss calls to its side in its last stand.
-pub const CREW: u8 = 7;
 
 /// The type a number names, or none.
 #[must_use]
@@ -115,7 +140,19 @@ impl FoeType {
     /// Its numbers at a rank, in phase `phase_number` (1 and up).
     #[must_use]
     pub fn numbers(&self, rank: Rank, phase_number: u8) -> Numbers {
-        ranked(&self.base(), rank, phase_number)
+        ranked(&self.base(), rank, self.boss_phases, phase_number)
+    }
+
+    /// The phases it fights in at a rank, the first at full health.
+    #[must_use]
+    pub fn phases(&self, rank: Rank) -> &'static [Phase] {
+        phases(self.boss_phases, rank)
+    }
+
+    /// Its phase `number` (1 and up) at a rank; past its last, its last.
+    #[must_use]
+    pub fn phase(&self, rank: Rank, number: u8) -> Phase {
+        phase(self.boss_phases, rank, number)
     }
 }
 
