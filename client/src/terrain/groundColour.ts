@@ -48,6 +48,11 @@ const PAVING_TILE = 5;
 // How sharply one class gives way to the next by their grains (meet), how much higher bare rock stands than what
 // grows over it, and how far snow lies in a tile's hollows before its rises.
 const MEET_DEPTH = 0.2;
+// The weights of a colour's light; how much of a grain's own hue the ground keeps; and how much of the climate's
+// stone's hue bare rock takes.
+const LUMA = vec3f(0.3, 0.59, 0.11);
+const GRAIN_HUE = 0.3;
+const STONE_HUE = 0.6;
 const ROCK_STANDS = 0.15;
 const SNOW_SETTLES = 0.1;
 // A path's trodden earth and a street's stone, under their tiles' grain.
@@ -61,7 +66,21 @@ fn tile_grain(layer: i32, at: vec2f) -> vec3f {
   let mean = max(textureSampleLevel(ground_tiles, tile_sampler, vec2f(0.5), layer, 16.0).rgb, vec3f(0.02));
   let plain = textureSample(ground_tiles, tile_sampler, view.tiles.xy + at / TILE_M, layer).rgb;
   let wide = textureSample(ground_tiles, tile_sampler, view.tiles.zw + TURN * at / WIDE_TILE_M, layer).rgb;
-  return clamp(plain / mean, vec3f(0.0), vec3f(2.5)) * mix(vec3f(1.0), clamp(wide / mean, vec3f(0.0), vec3f(2.0)), 0.55);
+  return grain_of(plain, mean, 2.5) * mix(vec3f(1.0), grain_of(wide, mean, 2.0), 0.55);
+}
+
+// A texel over its tile's mean, mostly by its light: a channel a dark tile holds little of would otherwise swing
+// wildly from texel to texel and speckle the ground with colours the tile never shows.
+fn grain_of(texel: vec3f, mean: vec3f, most: f32) -> vec3f {
+  let light = dot(texel, LUMA) / max(dot(mean, LUMA), 0.02);
+  return clamp(mix(vec3f(light), texel / mean, GRAIN_HUE), vec3f(0.0), vec3f(most));
+}
+
+// The climate's stone: the stone tile's mean, brought to bare rock's light, so a desert's cliffs are sandstone and a
+// temperate coast's grey.
+fn stone_tint() -> vec3f {
+  let mean = max(textureSampleLevel(ground_tiles, tile_sampler, vec2f(0.5), STONE_TILE, 16.0).rgb, vec3f(0.02));
+  return mix(ROCK, mean * dot(ROCK, LUMA) / max(dot(mean, LUMA), 0.02), STONE_HUE);
 }
 
 // The stone tile on a cliff, cast from the three axes and blended by how the ground faces, so a face is not
@@ -74,7 +93,7 @@ fn stone_grain(at: vec2f, bed: f32, normal: vec3f) -> vec3f {
   let flat = textureSample(ground_tiles, tile_sampler, view.tiles.xy + at / TILE_M, STONE_TILE).rgb;
   var weights = pow(abs(normal), vec3f(4.0));
   weights /= weights.x + weights.y + weights.z;
-  return clamp((across * weights.x + along * weights.y + flat * weights.z) / mean, vec3f(0.0), vec3f(2.5));
+  return grain_of(across * weights.x + along * weights.y + flat * weights.z, mean, 2.5);
 }
 
 // Bare rock: layered in strata a few metres thick that wander with the face, dark seams between them, each layer its
@@ -85,7 +104,7 @@ fn rock_colour(world: vec2f, bed: f32) -> vec3f {
   let seam = smoothstep(0.0, 0.07, layer) * (1.0 - smoothstep(0.88, 1.0, layer));
   let tone = mix(0.8, 1.14, grove_noise(vec2f(bed * 0.29 + wobble, 0.5), 1.0, 61));
   let grit = mix(0.86, 1.08, grove_noise(world, 2.3, 67));
-  let tint = mix(ROCK, view.ground.rgb * 1.2, 0.07);
+  let tint = mix(stone_tint(), view.ground.rgb * 1.2, 0.07);
   return tint * tone * grit * mix(0.55, 1.0, seam);
 }
 
@@ -114,7 +133,7 @@ fn land_colour(bed: f32, slope: f32, coast: f32, world: vec2f, at: vec2f, normal
 
 // How high a grain stands, from its light: a tile's stones and tufts are painted lit from above, its gaps dark.
 fn raised(grain: vec3f) -> f32 {
-  return dot(grain, vec3f(0.3, 0.59, 0.11)) - 1.0;
+  return dot(grain, LUMA) - 1.0;
 }
 
 // One class (rgb, height in w) meeting the next by 'share': across the meeting, the next shows first where it stands

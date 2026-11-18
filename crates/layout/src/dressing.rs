@@ -16,7 +16,7 @@ use city::solids::{Material, Shape};
 const STEP_M: f64 = 2.0;
 const MILESTONE_EVERY_M: f64 = 160.0;
 const SCENE_EVERY_M: f64 = 130.0;
-const LANTERN_EVERY_M: f64 = 26.0;
+const LANTERN_EVERY_M: f64 = 42.0;
 /// How far past a settlement's reach its lanterns and its drystone walls run, metres.
 const LANTERN_REACH_M: f64 = 70.0;
 const WALL_REACH_M: f64 = 170.0;

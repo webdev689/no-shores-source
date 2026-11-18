@@ -199,7 +199,10 @@ biome's colour and takes its tile's grain over it (`groundColour.ts`), a tile to
 again 34 m wide and turned so its repeats do not line up, and cast from three sides on cliffs so a face is not
 smeared. One class gives way to the next by their grains' heights (each grain's light, as the tiles are painted lit
 from above): stones show through the grass first as a slope steepens, bare rock standing a little proud of it, and
-snow settles in the hollows before it covers the rises. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
+snow settles in the hollows before it covers the rises. A grain is mostly its texel's light over its tile's, with
+a little of its hue, so a dark tile's thin channels never speckle the ground with colours it does not show. Bare rock
+takes its climate's stone's hue at rock's own light (sandstone in a desert, grey on a temperate coast), and the
+layouts' rubble is brought to the same colour. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
 painted, and in the World Editor, the class is its plain colour. The layouts' paths and streets are painted on it
 too ([[Layouts]], "In the browser"), in the dirt's and the town paving's grain.
 

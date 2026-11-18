@@ -181,11 +181,23 @@ fn gate(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     kit.prop(sign, ahead(middle, toward, -7.0, 0.35), yaw + 180.0);
 }
 
-/// A lantern on a post: a timber post and a glowing cage on it.
+/// A lantern on a post: a timber post, an iron foot, a small flame-lit glass and an iron cap over it.
 pub fn lantern(kit: &mut Kit, at: [f64; 2], height: f64) {
-    kit.stand(Shape::Column { sides: 6, top: 1.0 }, at, [0.18, 0.18, height], 0.0, Material::Timber, 0.3);
+    kit.stand(Shape::Column { sides: 6, top: 1.0 }, at, [0.16, 0.16, height], 0.0, Material::Timber, 0.3);
     let top = kit.height(at) - 0.3 + height;
-    kit.solid(Solid::upright(Shape::Block, [at[0], at[1], top], [0.36, 0.36, 0.42], Material::Glow));
+    kit.solid(Solid::upright(Shape::Block, [at[0], at[1], top], [0.3, 0.3, 0.05], Material::Iron));
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 6, top: 0.9 },
+        [at[0], at[1], top + 0.05],
+        [0.2, 0.2, 0.26],
+        Material::Glow,
+    ));
+    kit.solid(Solid::upright(
+        Shape::Pyramid { top: 0.25 },
+        [at[0], at[1], top + 0.31],
+        [0.34, 0.34, 0.16],
+        Material::Iron,
+    ));
 }
 
 /// A watchtower on the heights: a round stone tower, battlemented, with a fire burning on its top, a stair of stones

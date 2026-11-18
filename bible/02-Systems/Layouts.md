@@ -90,7 +90,7 @@ from the sea, fresh water and the claim's edge), then:
    joined to the nearest that is. Bridges carry paths over rivers.
    Along every way, beside it and clear of every other way and of what stands: a signpost where it leaves a place and
    where it reaches one; a milestone every 160 m between the places; a scene every 80 to 180 m (a cart broken down
-   with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 26 m
+   with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m
    along the ways within 70 m of a settlement (a hamlet, farm, keep, landing, camp, dock or mill), side to side; and
    drystone walls along both sides of the tracks within 170 m of a hamlet or farm, broken by gaps, with fallen stones.
 6. **The land carved.** Each area becomes a basin 32 m wider than its reach and each path a canyon (15 m either side

@@ -67,9 +67,15 @@ const TERRACES: Readonly<Record<Climate, Choice>> = {
   swamp: [409, 1, 'wall', [1.2, 1.2, 1.15]],
 };
 
-/** Natural rock (boulders, slabs, the pillars round outcrops, drystone): the temperate ground's stone, lightened to
- *  the grey the terrain draws its cliffs in (groundColour.ts ROCK), so the rock fallen from a cliff matches it. */
-const RUBBLE: Choice = [302, 3, 'floor', [1.5, 1.47, 1.36]];
+/** Natural rock (boulders, scree, drystone): each climate's ground stone, brought to the colour the terrain draws
+ *  its cliffs in (groundColour.ts stone_tint: the stone's hue at bare rock's light), so the rock fallen from a cliff
+ *  matches it; the gains are each stone tile's mean against that colour. */
+const RUBBLE: Readonly<Record<Climate, Choice>> = {
+  temperate: [302, 3, 'floor', [1.48, 1.47, 1.42]],
+  desert: [2, 3, 'floor', [1.02, 1.16, 1.39]],
+  mountain: [102, 3, 'floor', [1.81, 1.78, 1.8]],
+  swamp: [402, 3, 'floor', [2.37, 2.05, 2.48]],
+};
 
 const CLIMATE_OF_BASE: readonly [number, Climate][] = [
   [400, 'swamp'],
@@ -181,7 +187,7 @@ export function pictureBook(
   for (const [material, choice] of Object.entries(MATERIALS[climate.climate]) as [Pictured, Choice][])
     materialKeys.set(material, chosen(choice));
   const terraceKey = chosen(TERRACES[climate.climate]);
-  const rubbleKey = chosen(RUBBLE);
+  const rubbleKey = chosen(RUBBLE[climate.climate]);
   const turnOf = (archive: number, record: number): string =>
     `${climateArchive(archive, record, climate.climate, climate.season)}.${record}`;
   for (const each of wants) {
