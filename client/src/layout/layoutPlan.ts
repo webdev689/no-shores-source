@@ -45,16 +45,16 @@ export function tileUvs(byte: number, blockTurns: number): [number, number][] {
     [1, 1],
     [0, 1],
   ];
-  return square.map(([u, v]) => {
+  return square.map(([across, down]) => {
     switch (turns % 4) {
       case 1:
-        return [1 - v, u];
+        return [1 - down, across];
       case 2:
-        return [1 - u, 1 - v];
+        return [1 - across, 1 - down];
       case 3:
-        return [v, 1 - u];
+        return [down, 1 - across];
       default:
-        return [u, v];
+        return [across, down];
     }
   });
 }
@@ -105,8 +105,8 @@ export function pathDecals(path: LaidPath): Decal[] {
     const [startV, endV] = [travelled / PICTURE_M, (travelled + length) / PICTURE_M];
     travelled += length;
     if (overWater(from) || overWater(to)) continue;
-    const side = (point: readonly [number, number], k2: number, sign: number, height: number) =>
-      [point[0] + across[k2][0] * half * sign, point[1] + across[k2][1] * half * sign, height] as const;
+    const side = (point: readonly [number, number], place: number, sign: number, height: number) =>
+      [point[0] + across[place][0] * half * sign, point[1] + across[place][1] * half * sign, height] as const;
     const width = (2 * half) / PICTURE_M;
     decals.push({
       corners: [
@@ -163,7 +163,12 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
   ];
   if (!spots.length) return null;
   const [west, north, east, south] = spots.reduce(
-    ([w, n, e, s], [x, y]) => [Math.min(w, x), Math.min(n, y), Math.max(e, x), Math.max(s, y)],
+    ([west, north, east, south], [x, y]) => [
+      Math.min(west, x),
+      Math.min(north, y),
+      Math.max(east, x),
+      Math.max(south, y),
+    ],
     [Infinity, Infinity, -Infinity, -Infinity],
   );
   const centre = [(west + east) / 2, (north + south) / 2] as const;

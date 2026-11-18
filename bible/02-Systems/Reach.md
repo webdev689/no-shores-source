@@ -15,7 +15,9 @@ code:
 Where a body may go on an island. A node (a social space, a patrol area, a mission, a dungeon or a world boss) holds
 one section of an island's land; the rest of the island is seen and never reached
 ([[Every Island Is Seen Whole and Reached by Nodes]]). Past the section's edge the player is warned to go back, then
-dies and is asked to respawn. The times and distances are Claude's choices ([[The World as Claude Shapes It]]).
+dies and is asked to respawn. The times and distances are Claude's choices ([[The World as Claude Shapes It]]). A drawn
+node's section is its layout's, traced round the floor its carving leaves, so its edge is the foot of its cliffs and
+walls ([[Layouts]]).
 
 ## How it works
 

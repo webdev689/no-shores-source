@@ -73,7 +73,14 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
   }
   const view =
     request.kind === 'open'
-      ? rules.open(request.layoutText, request.id, request.editsText, request.keep, request.rmbText, request.buildersText)
+      ? rules.open(
+          request.layoutText,
+          request.id,
+          request.editsText,
+          request.keep,
+          request.rmbText,
+          request.buildersText,
+        )
       : request.kind === 'settle'
         ? rules.settle()
         : rules.setEdits(request.editsText);

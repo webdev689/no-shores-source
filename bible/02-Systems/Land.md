@@ -101,7 +101,12 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   gathered keeps the level the flood gave it, so it crosses a lake at the lake's surface. Hand-carved
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).
-- A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder.
+- A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder. A layout's paths are laid
+  as roads after the land is made (`add_roads`), each point of a course 8 m from the next.
+- A layout's sculpt carves the land round its patrol area or instance ([[Layouts]]): its network's floor (basins and
+  canyons) is left as it is and everything else in its claim is raised into a massif with stepped cliffs, fading back
+  to the land over 140 m past the claim. It is applied to the land before the towns, rivers and roads, never raises
+  the sea or the 35 m of strand inland from the coast, and only raises: the coast stays where it was painted.
 
 The land's WebAssembly door gives the browser the same answers.
 
@@ -116,7 +121,8 @@ node at build time, for the room, and every browser predicting with it, to read.
 - the 1 km cells any point in it reads: from the cell before the one its spline starts in to two after, of the land,
   the coast's distance, the heights carried over the coast and the lakes' levels. A cut grid keeps the whole grid's
   corner and its cells' numbers (`first_column`, `first_row`), so a point finds its cell by the same sums;
-- each river and road with a segment within its reach of the rect, whole, and each town within 150 m of it.
+- each river and road with a segment within its reach of the rect, whole, each town within 150 m of it, and each
+  sculpt and pad reaching into it.
 
 Inside the rect, the window's `height_at` and `water_at` give the same bits as the whole ground's. A ground saves to
 JSON and loads to the same bits; its course index is not saved but built again on load, and a saved ground whose

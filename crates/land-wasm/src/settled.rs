@@ -9,9 +9,9 @@ use land::landmass::Landmass;
 use layout::Layout;
 use layout::book::{Book, Measure, RmbBlock};
 use layout::brief::{Brief, Briefs};
-use std::collections::BTreeMap;
 use serde_json::{Value, json};
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 
 /// The RMB blocks the open landmass was opened with, what its layouts are built with, its city's plan, or why it
 /// could not be planned, and its layouts.
@@ -51,14 +51,19 @@ pub fn book_from(request: &Value) -> Result<(Book, Briefs), String> {
         }
         let read: BTreeMap<String, Measure> =
             serde_json::from_value(table.clone()).map_err(|error| format!("a forged table: {error}"))?;
-        read.into_iter().map(|(id, measure)| id.parse().map(|id| (id, measure)).map_err(|_| format!("a model id {id}"))).collect()
+        read.into_iter()
+            .map(|(id, measure)| id.parse().map(|id| (id, measure)).map_err(|_| format!("a model id {id}")))
+            .collect()
     };
     book.buildings = measures(&request["forged"]["buildings"])?;
     book.props = measures(&request["forged"]["props"])?;
     let briefs = if request["briefs"].is_null() {
         Briefs::default()
     } else {
-        Briefs(serde_json::from_value::<BTreeMap<String, Brief>>(request["briefs"].clone()).map_err(|error| format!("the briefs: {error}"))?)
+        Briefs(
+            serde_json::from_value::<BTreeMap<String, Brief>>(request["briefs"].clone())
+                .map_err(|error| format!("the briefs: {error}"))?,
+        )
     };
     Ok((book, briefs))
 }
@@ -124,7 +129,8 @@ pub fn boxes_json(request: &[u8]) -> String {
     let found = read(request).and_then(|request| rect_of(&request)).map(|bounds| {
         CITY.with(|city| {
             let city = city.borrow();
-            let mut boxes = city.plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
+            let mut boxes =
+                city.plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
             boxes.extend(city.layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
             json!({ "boxes": boxes }).to_string()
         })

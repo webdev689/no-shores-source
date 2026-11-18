@@ -4,12 +4,12 @@
 //! there.
 
 use city::rmb::Blocks;
-use layout::book::Book;
-use layout::brief::Briefs;
 use land::edits::Edits;
 use land::ground::Ground;
 use land::landmass::generate;
 use land::sites::NodeKind;
+use layout::book::Book;
+use layout::brief::Briefs;
 use serde::Serialize;
 use world::layout::Continent;
 
@@ -94,7 +94,12 @@ pub struct Builders {
 /// Every node of a continent, drawn and social, generated with its edits, its city settled on the land and every
 /// drawn node's layout laid on it: a drawn node's section, spawns and boxes are its layout's. Fails for edits that
 /// break their rules or a city that cannot be planned.
-pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks, builders: &Builders) -> Result<Vec<NodeFile>, String> {
+pub fn nodes_of(
+    continent: &Continent,
+    edits: Edits,
+    blocks: &Blocks,
+    builders: &Builders,
+) -> Result<Vec<NodeFile>, String> {
     let mut landmass = generate(continent, edits)?;
     if let Some(problem) = landmass.problems().first() {
         return Err(format!("{}: {}: {}", continent.id, problem.subject, problem.message));
@@ -113,8 +118,10 @@ pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks, builders: 
         |points: &[world::geometry::Point]| points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
     let drawn = landmass.edits.nodes.iter().map(|node| {
         let laid = layouts.iter().find(|layout| layout.id == node.id && layout.ring.len() >= 3);
-        let (ring, spawns) =
-            laid.map_or_else(|| (whole(&node.ring), whole(&node.spawns)), |layout| (layout.ring.clone(), layout.spawns.clone()));
+        let (ring, spawns) = laid.map_or_else(
+            || (whole(&node.ring), whole(&node.spawns)),
+            |layout| (layout.ring.clone(), layout.spawns.clone()),
+        );
         cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns)
     });
     let social = plan.as_ref().map(|plan| {
@@ -141,9 +148,13 @@ mod tests {
 
     fn glade() -> (NodeFile, world::layout::Layout) {
         let layout = world::layout::parse(SQUARE).unwrap();
-        let mut nodes =
-            nodes_of(&layout.continents[0], land::edits::parse(GLADE).unwrap(), &Blocks::default(), &Builders::default())
-                .unwrap();
+        let mut nodes = nodes_of(
+            &layout.continents[0],
+            land::edits::parse(GLADE).unwrap(),
+            &Blocks::default(),
+            &Builders::default(),
+        )
+        .unwrap();
         assert_eq!(nodes.len(), 1);
         (nodes.remove(0), layout)
     }
@@ -154,7 +165,12 @@ mod tests {
         assert_eq!((node.id.as_str(), node.continent.as_str(), node.kind), ("glade", "square", NodeKind::Patrol));
         assert_eq!(node.bounds, bounds_of(&node.ring), "the window covers the laid section and its margin");
         let [west, north, east, south] = node.bounds;
-        assert!(west >= 259_900.0 - 100.0 && east <= 261_100.0 + 100.0 && north >= 359_900.0 - 100.0 && south <= 361_100.0 + 100.0);
+        assert!(
+            west >= 259_900.0 - 100.0
+                && east <= 261_100.0 + 100.0
+                && north >= 359_900.0 - 100.0
+                && south <= 361_100.0 + 100.0
+        );
         let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
         let _ = layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
         for (x, y) in [(260_500.25, 360_500.75), (259_950.5, 361_050.5)] {

@@ -162,10 +162,12 @@ each node's ground at build time: it generates every continent with its edits, s
 `generated/nodes/index.json`. It reads the RMB index in `content/world/rmb/index.json` when there is one; with none,
 a city has the same pads and walls.
 
-A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
+A drawn node's section, spawns and boxes are its layout's: the bake settles every layout on its landmass after its
+city ([[Layouts]]), so the window is cut from the carved land. A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
 ring's bounds and 100 m past them, beyond the 60 m where a body dies); the exact window of the ground over that rect,
-city terraces included; and the boxes of the city a body runs into there, each with its top and its underside. The bake takes about 8 s for the nine
-continents' 99 nodes, a few at a time, and writes about 0.44 MB in all, 145 KB compressed. `server`, `server:bundle`
+city terraces and the layouts' carving included; and the boxes of the city and the layouts a body runs into there,
+each with its top and its underside. The bake takes about 15 s for the nine continents' 99 nodes, a few at a time, and
+writes about 10.7 MB in all, a patrol area's file the largest at about half a megabyte (its rooms' boxes). `server`, `server:bundle`
 and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
 called `index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.
 

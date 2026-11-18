@@ -48,6 +48,7 @@ it answers. `game.ts` wires the rest and keeps the flow; each mode is its own mo
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
+| On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
 
 The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
 A way that fails stays on the veil, saying why, and Enter tries it again.
@@ -61,7 +62,8 @@ the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet
 looking 17° down over the parapet onto the city, the harbour and the sea.
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
-is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook.
+is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook. With `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's
+spawn, offline: a way to look at one place.
 
 ## On foot
 
@@ -181,7 +183,8 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]). The game adds the
 open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView` ([[Cities]]), drawn in
 its continent's climate once the forged models' tables and the RMB blocks its plan names have come from the pages'
-`world/` folder; the blocks are kept for every later city. Its nature is the nature layer's `NatureView`
+`world/` folder; the blocks are kept for every later city. Its nodes' layouts within 4 km of the eye are drawn by another `CityView` ([[Layouts]], "In the browser"), and each drawn
+node's section and spawns are its layout's. Its nature is the nature layer's `NatureView`
 ([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
 (`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture.
 The land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.

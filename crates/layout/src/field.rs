@@ -73,7 +73,8 @@ pub fn distance(from: [f64; 2], to: [f64; 2]) -> f64 {
 #[must_use]
 pub fn bounds_of(ring: &[[f64; 2]]) -> [f64; 4] {
     let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
-    ring.iter().fold(start, |[west, north, east, south], &[x, y]| [west.min(x), north.min(y), east.max(x), south.max(y)])
+    ring.iter()
+        .fold(start, |[west, north, east, south], &[x, y]| [west.min(x), north.min(y), east.max(x), south.max(y)])
 }
 
 impl Field {
@@ -114,7 +115,8 @@ impl Field {
         }
         for row in 0..rows {
             for column in 0..columns {
-                let across = |from: usize, to: usize| (field.height[to] - field.height[from]) / (CELL_M * (to - from) as f64);
+                let across =
+                    |from: usize, to: usize| (field.height[to] - field.height[from]) / (CELL_M * (to - from) as f64);
                 let rise = |low: usize, high: usize, at: usize, step: usize| {
                     let (back, ahead) = (at.saturating_sub(step).max(low), (at + step).min(high));
                     if ahead > back { across(back, ahead) * step as f64 } else { 0.0 }

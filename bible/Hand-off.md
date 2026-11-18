@@ -115,6 +115,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
 
+- On pull request #PR from branch `ccr-0f4acf2e-wd3195`, tested offline, not merged, as the owner decided it
+  ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]): every patrol area and instance laid out
+  ([[Layouts]]) from its brief (all 90 written): places scored on the land, a loop of tracks and footpaths, RMB
+  hamlets, farms, ruins, keeps, graveyards, covens and caves seated building by building, set pieces of forged props
+  and stone, sites for events, beacons, resources and foes; the land carved into basins and canyons under stepped
+  cliffs with mesas and spires, the bounds rock, after the Cosmodrome; a great ruined wall with its breach, a viaduct
+  with a fallen span, retaining walls and talus; every shop, hall, temple, tavern and house walked into, lined,
+  floored, stair'd and furnished; each instance moved beside its patrol area behind a gate the player goes through on
+  foot (E). The bake and the land's worker settle them alike; native and WebAssembly runs over a carved patrol
+  area agree to the bit. Movement blocks gained an underside, so a body walks under decks and lintels and up stairs
+  ([[Movement]]).
+
 ## Waiting on the owner
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
@@ -138,7 +150,16 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
+- #PR: merging deploys the page and the rooms. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
+  look (textured, not palette-snapped) was Claude's call, as the owner left it.
+- Private mission instances with invites ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]):
+  an instance's room is still a node's shared room until the server makes rooms per party.
+
 ## Next
+
+- The layouts' open ends ([[Layouts]], "Limits"): the World Editor planning and showing them, soft edges for a
+  block's streets, a spatial index for the movement rules' thousands of boxes, the third-person camera kept inside
+  rooms, and the activities that will stand on the sites (public events, beacons, resource nodes, foes).
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to

@@ -92,7 +92,8 @@ fn rooms_of(measure: &Measure) -> Option<Plan<'_>> {
     for wing in &measure.plan {
         let base = wing.low.unwrap_or(measure.min[1]);
         for rect in &wing.rects {
-            let [column0, row0, column1, row1] = [rect[0], rect[1], rect[2], rect[3]].map(|value| value.max(0.0) as usize);
+            let [column0, row0, column1, row1] =
+                [rect[0], rect[1], rect[2], rect[3]].map(|value| value.max(0.0) as usize);
             let top = rect.get(4).copied().unwrap_or(wing.eaves);
             let room = Room {
                 cells: [column0, row0, column1.min(columns), row1.min(rows)],
@@ -166,7 +167,10 @@ pub fn build(kit: &mut Kit, seated: &mut Seated, book: &Book) -> Option<Built> {
             climb(&frame, room, stair, &mut built);
         }
     }
-    let main = rooms.iter().filter(|(room, wing)| walked(room, wing)).max_by(|(first, _), (second, _)| area(first).total_cmp(&area(second)));
+    let main = rooms
+        .iter()
+        .filter(|(room, wing)| walked(room, wing))
+        .max_by(|(first, _), (second, _)| area(first).total_cmp(&area(second)));
     if let Some((room, _)) = main {
         let stair = stair_room.map(|index| stair_of(&rooms[index].0, &measure.doors));
         furnish(kit, &frame, room, &measure.doors, stair, seated.purpose);
@@ -248,20 +252,23 @@ fn line(frame: &Frame, plan: &Plan, doors: &[Door], built: &mut Built) {
                 _ => runs.push(span),
             }
         }
-        let (at, outward, base, top) = (line_at as f64 / 1000.0, outward as f64, base as f64 / 1000.0, top as f64 / 1000.0);
+        let (at, outward, base, top) =
+            (line_at as f64 / 1000.0, outward as f64, base as f64 / 1000.0, top as f64 / 1000.0);
         let inner = at - outward * (INSET_M + LINING_M / 2.0);
         let thick = [inner - LINING_M / 2.0, inner + LINING_M / 2.0];
         let floors = floors_of(&Room { cells: [0; 4], xs: [0.0; 2], zs: [0.0; 2], base, top });
         let gaps = doors_in(doors, along_x, at, outward);
         for (storey, &floor) in floors.iter().enumerate() {
             let ceiling = floors.get(storey + 1).map_or(top - CEILING_M, |&next| next - SLAB_M);
-            let here: Vec<&([f64; 2], f64, f64)> = gaps.iter().filter(|(_, sill, _)| *sill > floor - 0.4 && *sill < floor + 0.8).collect();
+            let here: Vec<&([f64; 2], f64, f64)> =
+                gaps.iter().filter(|(_, sill, _)| *sill > floor - 0.4 && *sill < floor + 0.8).collect();
             for run in &runs {
                 let mut pieces = vec![*run];
                 for (span, _, door_top) in &here {
                     pieces = pieces.into_iter().flat_map(|piece| cut(piece, *span)).collect();
                     if span[0] < run[1] && span[1] > run[0] && *door_top < ceiling - 0.05 {
-                        let lintel = wall(frame, along_x, [span[0].max(run[0]), span[1].min(run[1])], thick, *door_top, ceiling);
+                        let lintel =
+                            wall(frame, along_x, [span[0].max(run[0]), span[1].min(run[1])], thick, *door_top, ceiling);
                         built.boxes.push(box_of(&lintel));
                         built.solids.push(lintel);
                     }
@@ -315,7 +322,8 @@ fn stair_of(room: &Room, doors: &[Door]) -> Stair {
 fn climb(frame: &Frame, room: &Room, stair: Stair, built: &mut Built) {
     let steps = (STOREY_M / RISE_M).round() as usize;
     for step in 0..steps {
-        let along = [stair.start + stair.way * step as f64 * RUN_M, stair.start + stair.way * (step + 1) as f64 * RUN_M];
+        let along =
+            [stair.start + stair.way * step as f64 * RUN_M, stair.start + stair.way * (step + 1) as f64 * RUN_M];
         let (xs, zs) = if stair.along_x { (along, stair.side) } else { (stair.side, along) };
         let tread = room.base + (step + 1) as f64 * RISE_M;
         let solid = frame.block(xs, zs, room.base, tread, Material::Timber);
@@ -397,7 +405,10 @@ fn furnish(kit: &mut Kit, frame: &Frame, room: &Room, doors: &[Door], stair: Opt
             let on_stair = stair.is_some_and(|stair| {
                 let length = (STOREY_M / RISE_M).round() * RUN_M;
                 let (along, across) = if stair.along_x { (at[0], at[1]) } else { (at[1], at[0]) };
-                along > stair.start - 0.8 && along < stair.start + length + 0.8 && across > stair.side[0] - 0.9 && across < stair.side[1] + 0.9
+                along > stair.start - 0.8
+                    && along < stair.start + length + 0.8
+                    && across > stair.side[0] - 0.9
+                    && across < stair.side[1] + 0.9
             });
             if !by_door && !on_stair {
                 slots.push((at, facing));
@@ -412,7 +423,12 @@ fn furnish(kit: &mut Kit, frame: &Frame, room: &Room, doors: &[Door], stair: Opt
         let toward = [turned[0] - world[0], turned[1] - world[1]];
         let yaw = crate::pieces::yaw_toward(toward);
         let reach = (measure.max[0] - measure.min[0]).max(measure.max[2] - measure.min[2]) / 2.0;
-        kit.prop_at(model, [world[0], world[1], floor - measure.min[1]], yaw, [world[0] - reach, world[1] - reach, world[0] + reach, world[1] + reach]);
+        kit.prop_at(
+            model,
+            [world[0], world[1], floor - measure.min[1]],
+            yaw,
+            [world[0] - reach, world[1] - reach, world[0] + reach, world[1] + reach],
+        );
     };
     let picked = slots.len().min(along_walls.len());
     for (number, &model) in along_walls.iter().take(picked).enumerate() {

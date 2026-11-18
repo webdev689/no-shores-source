@@ -44,7 +44,9 @@ fn builders(root: &Path) -> Result<Builders, String> {
         let mut files: Vec<PathBuf> = std::fs::read_dir(&rmb)
             .map_err(|error| format!("{}: {error}", rmb.display()))?
             .filter_map(|entry| entry.ok().map(|entry| entry.path()))
-            .filter(|path| path.extension().is_some_and(|extension| extension == "json") && !path.ends_with("index.json"))
+            .filter(|path| {
+                path.extension().is_some_and(|extension| extension == "json") && !path.ends_with("index.json")
+            })
             .collect();
         files.sort();
         for file in files {
@@ -66,7 +68,11 @@ fn builders(root: &Path) -> Result<Builders, String> {
 }
 
 /// Each continent's nodes, generated a few continents at a time; the nodes come back in the layout's order.
-fn every_node(continents: Vec<(Continent, String)>, blocks: &Blocks, builders: &Builders) -> Result<Vec<NodeFile>, String> {
+fn every_node(
+    continents: Vec<(Continent, String)>,
+    blocks: &Blocks,
+    builders: &Builders,
+) -> Result<Vec<NodeFile>, String> {
     let count = continents.len();
     let queue = Mutex::new(continents.into_iter().enumerate().collect::<VecDeque<_>>());
     let baked = Mutex::new(Vec::with_capacity(count));

@@ -1,8 +1,6 @@
 // A landmass's node layouts as the layout crate serialises them (the land worker hands them over as JSON), and what
 // the game reads off them: each node's section and spawns, and which layouts stand near a point.
 import type { Pad, Solid } from '../city/plan.ts';
-import type { NodeInfo } from '../game/worldData.ts';
-import { ringMiddle } from '../game/worldData.ts';
 
 type Point = readonly [number, number];
 
@@ -65,13 +63,25 @@ export interface NodeLayout {
 /** The track's and the footpath's widths, metres, as the layout crate lays them. */
 export const PATH_WIDTH_M = { track: 4.5, footpath: 2.6 } as const;
 
+/** A node as the game holds it: its id, its section, its spawns and its section's middle. */
+interface Placed {
+  readonly id: string;
+  readonly ring: readonly Point[];
+  readonly spawns: readonly Point[];
+  readonly centre: Point;
+}
+
 /** The drawn nodes with each laid node's section and spawns in place of the ring it was drawn with. */
-export function laidNodes(drawn: readonly NodeInfo[], layouts: readonly NodeLayout[]): NodeInfo[] {
+export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: readonly NodeLayout[]): Node[] {
   const byId = new Map(layouts.map((layout) => [layout.id, layout]));
   return drawn.map((node) => {
     const laid = byId.get(node.id);
     if (!laid || laid.ring.length < 3 || !laid.spawns.length) return node;
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre: ringMiddle(laid.ring) };
+    const sum = laid.ring.reduce((total, point) => [total[0] + point[0], total[1] + point[1]] as const, [
+      0, 0,
+    ] as const);
+    const centre = [sum[0] / laid.ring.length, sum[1] / laid.ring.length] as const;
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre };
   });
 }
 
@@ -83,12 +93,12 @@ export function layoutBounds(layout: NodeLayout): [number, number, number, numbe
 }
 
 /** The layouts whose section comes within `reach` metres of a point (by their bounds), in their order. */
-export function layoutsNear(layouts: readonly NodeLayout[], at: Point, reach: number): NodeLayout[] {
+export function layoutsNear(layouts: readonly NodeLayout[], spot: Point, reach: number): NodeLayout[] {
   return layouts.filter((layout) => {
     if (layout.ring.length < 3) return false;
     const [west, north, east, south] = layoutBounds(layout);
-    const across = Math.max(west - at[0], 0, at[0] - east);
-    const down = Math.max(north - at[1], 0, at[1] - south);
+    const across = Math.max(west - spot[0], 0, spot[0] - east);
+    const down = Math.max(north - spot[1], 0, spot[1] - south);
     return Math.hypot(across, down) <= reach;
   });
 }

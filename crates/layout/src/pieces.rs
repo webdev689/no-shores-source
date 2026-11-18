@@ -79,7 +79,12 @@ impl Kit<'_> {
         }
         let Some(measure) = self.book.measure(model, false) else { return };
         let (sine, cosine) = sin_cos(yaw.to_radians());
-        let corners = [[measure.min[0], measure.min[2]], [measure.max[0], measure.max[2]], [measure.min[0], measure.max[2]], [measure.max[0], measure.min[2]]];
+        let corners = [
+            [measure.min[0], measure.min[2]],
+            [measure.max[0], measure.max[2]],
+            [measure.min[0], measure.max[2]],
+            [measure.max[0], measure.min[2]],
+        ];
         let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
         let footprint = corners.iter().fold(start, |[west, north, east, south], &[x, z]| {
             let (world_x, world_y) = (at[0] + x * cosine + z * sine, at[1] + x * sine - z * cosine);
@@ -185,14 +190,29 @@ fn tower(kit: &mut Kit, area: &Area) {
     let middle = area.at;
     let base = kit.height(middle) - 1.0;
     let height = 15.0 + kit.draw() * 5.0;
-    kit.solid(Solid::upright(Shape::Column { sides: 16, top: 0.86 }, [middle[0], middle[1], base], [7.0, 7.0, height], Material::Stone));
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 16, top: 0.86 },
+        [middle[0], middle[1], base],
+        [7.0, 7.0, height],
+        Material::Stone,
+    ));
     let top = base + height;
     for merlon in 0..8 {
         let at = ahead(middle, [0.0, -1.0], 2.65, f64::from(merlon) * std::f64::consts::FRAC_PI_4);
         kit.solid(Solid::upright(Shape::Block, [at[0], at[1], top], [1.0, 1.0, 1.1], Material::Stone));
     }
-    kit.solid(Solid::upright(Shape::Column { sides: 8, top: 0.7 }, [middle[0], middle[1], top], [1.6, 1.6, 0.7], Material::Iron));
-    kit.solid(Solid::upright(Shape::Pyramid { top: 0.0 }, [middle[0], middle[1], top + 0.7], [1.2, 1.2, 1.4], Material::Glow));
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 8, top: 0.7 },
+        [middle[0], middle[1], top],
+        [1.6, 1.6, 0.7],
+        Material::Iron,
+    ));
+    kit.solid(Solid::upright(
+        Shape::Pyramid { top: 0.0 },
+        [middle[0], middle[1], top + 0.7],
+        [1.2, 1.2, 1.4],
+        Material::Glow,
+    ));
     for stone in 0..7 {
         let angle = f64::from(stone) * 0.9 + kit.draw() * 0.4;
         let at = ahead(middle, [0.0, -1.0], 9.0 + kit.draw() * 6.0, angle);

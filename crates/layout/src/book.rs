@@ -70,7 +70,8 @@ pub struct Book {
 impl Book {
     /// Adds one of the RMB table's block files: a JSON list of blocks.
     pub fn add_blocks(&mut self, text: &str) -> Result<(), String> {
-        let blocks: Vec<RmbBlock> = serde_json::from_str(text).map_err(|error| format!("an RMB block file: {error}"))?;
+        let blocks: Vec<RmbBlock> =
+            serde_json::from_str(text).map_err(|error| format!("an RMB block file: {error}"))?;
         for block in blocks {
             self.blocks.insert(block.name.clone(), block);
         }
@@ -121,7 +122,8 @@ fn decode_base64(text: &str) -> Vec<u8> {
     sextets
         .chunks(4)
         .flat_map(|chunk| {
-            let bits = chunk.iter().fold(0_u32, |bits, &sextet| (bits << 6) | u32::from(sextet)) << (6 * (4 - chunk.len()));
+            let bits =
+                chunk.iter().fold(0_u32, |bits, &sextet| (bits << 6) | u32::from(sextet)) << (6 * (4 - chunk.len()));
             let bytes = [(bits >> 16) as u8, (bits >> 8) as u8, bits as u8];
             bytes.into_iter().take(chunk.len().saturating_sub(1))
         })
@@ -142,8 +144,10 @@ mod tests {
     #[test]
     fn blocks_and_measures_are_read_from_their_tables() {
         let mut book = Book::default();
-        book.add_blocks(r#"[{"name":"FARMAA00.RMB","buildings":[[520,54.4,28.65,0,90,21,0]],"props":[],"ground":"AgIC"}]"#)
-            .unwrap();
+        book.add_blocks(
+            r#"[{"name":"FARMAA00.RMB","buildings":[[520,54.4,28.65,0,90,21,0]],"props":[],"ground":"AgIC"}]"#,
+        )
+        .unwrap();
         book.buildings = Book::measures(r#"{"520": {"min":[-5,0,-3],"max":[5,4,3],"grid":[1,1]}}"#).unwrap();
         assert_eq!(book.family(&["FARM"]).len(), 1);
         assert_eq!(book.measure(520, true).map(|measure| measure.max[0]), Some(5.0));

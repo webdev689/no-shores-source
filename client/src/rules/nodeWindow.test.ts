@@ -12,7 +12,7 @@ const built = (name: string) =>
 const content = (path: string) => readFile(new URL(`../../../content/world/${path}`, import.meta.url), 'utf8');
 
 /** The room crate's agreement test holds the same fingerprint, nodes, rects and scripts (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = 'a50b7e725835a33f';
+const NODE_RUN_HASH = 'ed8693b13e32caba';
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];
@@ -31,7 +31,7 @@ const RUNS: readonly { node: string; bounds: Rect; script: readonly Phase[] }[] 
   },
   {
     node: 'emerald-tangle',
-    bounds: [489_111, 2_279_145, 490_942, 2_280_864],
+    bounds: [489_190.5, 2_279_231.5, 490_895.5, 2_280_067],
     script: [
       [600, 1, 0, 0, true, false],
       [600, 1, 0, Math.PI / 2, true, false],
@@ -60,10 +60,11 @@ test('the runs over two nodes’ windows, cut by the land’s door, move to the 
   ]);
   const editsText = await content('land/continent-6.json');
   land.open(await content('layout.json'), 'continent-6', editsText, true);
-  const nodes = (JSON.parse(editsText) as { nodes: { id: string; spawns: [number, number][] }[] }).nodes;
+  // A drawn node's spawns are its layout's, as the room's file and the game take them.
+  const laid = JSON.parse(land.layouts()) as { id: string; spawns: [number, number][] }[];
   const plan = JSON.parse(land.cityPlan() ?? 'null') as { id: string; social: { spawns: [number, number][] } } | null;
   const spawnOf = (node: string) =>
-    node === `${plan?.id}-social` ? plan?.social.spawns[0] : nodes.find((each) => each.id === node)?.spawns[0];
+    node === `${plan?.id}-social` ? plan?.social.spawns[0] : laid.find((each) => each.id === node)?.spawns[0];
   const bodies: Body[] = [];
   for (const { node, bounds, script } of RUNS) {
     assert.equal(standOnNode(land, movement, bounds), true, `${node}'s window`);

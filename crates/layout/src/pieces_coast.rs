@@ -21,13 +21,21 @@ fn boardwalk(kit: &mut Kit, from: [f64; 2], seaward: [f64; 2], reach: f64, width
         if below < -3.0 {
             break;
         }
-        kit.solid(Solid::upright(Shape::Block, [at[0], at[1], deck - 0.25], [width, 2.05, 0.25], Material::Timber).turned(turn));
+        kit.solid(
+            Solid::upright(Shape::Block, [at[0], at[1], deck - 0.25], [width, 2.05, 0.25], Material::Timber)
+                .turned(turn),
+        );
         if step % 2 == 0 {
             let across = [-seaward[1], seaward[0]];
             for side in [-0.5, 0.5] {
                 let pile = [at[0] + across[0] * width * side, at[1] + across[1] * width * side];
                 let bottom = below.min(deck) - 1.0;
-                kit.solid(Solid::upright(Shape::Column { sides: 6, top: 1.0 }, [pile[0], pile[1], bottom], [0.35, 0.35, deck + 0.9 - bottom], Material::Timber));
+                kit.solid(Solid::upright(
+                    Shape::Column { sides: 6, top: 1.0 },
+                    [pile[0], pile[1], bottom],
+                    [0.35, 0.35, deck + 0.9 - bottom],
+                    Material::Timber,
+                ));
             }
         }
         end = at;
@@ -50,7 +58,8 @@ pub fn landing(kit: &mut Kit, area: &Area, seaward: [f64; 2]) {
     lantern(kit, ahead(middle, toward, 6.0, 0.9), 4.2);
     lantern(kit, ahead(middle, toward, 6.0, -0.9), 4.2);
     for crate_number in 0..6 {
-        let at = ahead(middle, toward, -9.0 - f64::from(crate_number % 3) * 0.9, 1.6 + f64::from(crate_number / 3) * 0.12);
+        let at =
+            ahead(middle, toward, -9.0 - f64::from(crate_number % 3) * 0.9, 1.6 + f64::from(crate_number / 3) * 0.12);
         let model = kit.pick(&model::CRATES);
         let yaw = kit.draw() * 30.0;
         kit.prop(model, at, yaw);
@@ -66,7 +75,8 @@ pub fn dock(kit: &mut Kit, area: &Area, seaward: [f64; 2]) {
     let end = boardwalk(kit, middle, toward, JETTY_M * 1.4, 4.0);
     lantern(kit, end, 3.0);
     for crate_number in 0..10 {
-        let at = ahead(middle, toward, -5.0 - f64::from(crate_number % 4) * 0.9, -1.2 + f64::from(crate_number / 4) * 0.3);
+        let at =
+            ahead(middle, toward, -5.0 - f64::from(crate_number % 4) * 0.9, -1.2 + f64::from(crate_number / 4) * 0.3);
         let model = kit.pick(&model::CRATES);
         let yaw = kit.draw() * 90.0;
         kit.prop(model, at, yaw);
@@ -86,12 +96,26 @@ pub fn wreck(kit: &mut Kit, area: &Area, seaward: [f64; 2]) {
     for rib in 0..6 {
         let at = ahead(middle, toward, 16.0 + f64::from(rib) * 2.4, -0.4);
         let base = kit.height(at) - 0.6;
-        let rib_solid = Solid { roll: 0.5, ..Solid::upright(Shape::Arch { opening: 0.9 }, [at[0], at[1], base], [6.0, 0.4, 3.0], Material::Timber) };
+        let rib_solid = Solid {
+            roll: 0.5,
+            ..Solid::upright(Shape::Arch { opening: 0.9 }, [at[0], at[1], base], [6.0, 0.4, 3.0], Material::Timber)
+        };
         kit.solid(rib_solid.turned(along));
     }
     let mast = ahead(middle, toward, -14.0, 0.7);
     let base = kit.height(mast) - 0.2;
-    kit.solid(Solid { lean: 1.35, ..Solid::upright(Shape::Column { sides: 8, top: 0.8 }, [mast[0], mast[1], base], [0.6, 0.6, 16.0], Material::Timber) }.turned(along + 0.6));
+    kit.solid(
+        Solid {
+            lean: 1.35,
+            ..Solid::upright(
+                Shape::Column { sides: 8, top: 0.8 },
+                [mast[0], mast[1], base],
+                [0.6, 0.6, 16.0],
+                Material::Timber,
+            )
+        }
+        .turned(along + 0.6),
+    );
     fire(kit, ahead(middle, toward, -18.0, -0.6), 1.4);
 }
 
@@ -100,11 +124,31 @@ pub fn lighthouse(kit: &mut Kit, area: &Area) {
     let middle = area.at;
     let base = kit.height(middle) - 1.0;
     let height = 22.0 + kit.draw() * 6.0;
-    kit.solid(Solid::upright(Shape::Column { sides: 16, top: 0.7 }, [middle[0], middle[1], base], [7.0, 7.0, height], Material::Plaster));
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 16, top: 0.7 },
+        [middle[0], middle[1], base],
+        [7.0, 7.0, height],
+        Material::Plaster,
+    ));
     let top = base + height;
-    kit.solid(Solid::upright(Shape::Column { sides: 16, top: 1.0 }, [middle[0], middle[1], top], [6.2, 6.2, 0.4], Material::Stone));
-    kit.solid(Solid::upright(Shape::Column { sides: 8, top: 1.0 }, [middle[0], middle[1], top + 0.4], [3.0, 3.0, 2.6], Material::Glow));
-    kit.solid(Solid::upright(Shape::Dome { sides: 12 }, [middle[0], middle[1], top + 3.0], [3.6, 3.6, 1.8], Material::Iron));
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 16, top: 1.0 },
+        [middle[0], middle[1], top],
+        [6.2, 6.2, 0.4],
+        Material::Stone,
+    ));
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 8, top: 1.0 },
+        [middle[0], middle[1], top + 0.4],
+        [3.0, 3.0, 2.6],
+        Material::Glow,
+    ));
+    kit.solid(Solid::upright(
+        Shape::Dome { sides: 12 },
+        [middle[0], middle[1], top + 3.0],
+        [3.6, 3.6, 1.8],
+        Material::Iron,
+    ));
     let hut = ahead(middle, [0.0, 1.0], 9.0, kit.draw() * 6.0);
     let hut_base = kit.height(hut) - 0.3;
     kit.solid(Solid::upright(Shape::Block, [hut[0], hut[1], hut_base], [5.0, 4.0, 2.8], Material::Stone));
@@ -115,7 +159,13 @@ pub fn lighthouse(kit: &mut Kit, area: &Area) {
 /// their masts snapped and their timbers, crates and rigging strewn between them, a fire where scavengers camp.
 pub fn hulks(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let middle = area.at;
-    let hulls: [(u32, f64, f64); 5] = [(model::GREAT_SHIP, 0.0, 0.0), (model::SHIP, 38.0, 1.1), (model::SHIP, 42.0, 3.4), (model::GREAT_SHIP, 55.0, 4.9), (model::SHIP, 30.0, 2.3)];
+    let hulls: [(u32, f64, f64); 5] = [
+        (model::GREAT_SHIP, 0.0, 0.0),
+        (model::SHIP, 38.0, 1.1),
+        (model::SHIP, 42.0, 3.4),
+        (model::GREAT_SHIP, 55.0, 4.9),
+        (model::SHIP, 30.0, 2.3),
+    ];
     for (number, &(hull, out, angle)) in hulls.iter().enumerate() {
         let at = ahead(middle, toward, out.min(area.radius * 0.7), angle + kit.draw() * 0.3);
         let yaw = yaw_toward(toward) + 40.0 * number as f64 + kit.draw() * 50.0;
@@ -127,7 +177,18 @@ pub fn hulks(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
         let lean = 1.0 + kit.draw() * 0.5;
         let turn = kit.draw() * std::f64::consts::TAU;
         let length = 10.0 + kit.draw() * 8.0;
-        kit.solid(Solid { lean, ..Solid::upright(Shape::Column { sides: 8, top: 0.8 }, [at[0], at[1], base], [0.55, 0.55, length], Material::Timber) }.turned(turn));
+        kit.solid(
+            Solid {
+                lean,
+                ..Solid::upright(
+                    Shape::Column { sides: 8, top: 0.8 },
+                    [at[0], at[1], base],
+                    [0.55, 0.55, length],
+                    Material::Timber,
+                )
+            }
+            .turned(turn),
+        );
     }
     for plank in 0..24 {
         let at = ahead(middle, toward, kit.draw() * area.radius * 0.8, f64::from(plank) * 0.27);

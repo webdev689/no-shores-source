@@ -38,6 +38,7 @@ decision, made in the same change as its entry here.
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
 | `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
+| `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
 | `client/src/city/` | The city layer: a port city's plan drawn on WebGPU with the forged models and the procedural textures, whole near the eye, as masses and hulls further out, its solids and ground plates at every distance ([[Cities]]) |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
@@ -47,6 +48,7 @@ decision, made in the same change as its entry here.
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
+| `crates/layout` | The [[Layouts]] of patrol areas and instances: areas, paths, carved land, RMB villages, set pieces, great works, walk-in rooms, sites and sections |
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks, and the paths across it |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |

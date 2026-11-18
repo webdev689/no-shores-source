@@ -48,8 +48,11 @@ fn between_areas(areas: &[Area], at: [f64; 2]) -> bool {
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
 /// longest path's, the retaining walls and the talus.
 pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], ring: &[[f64; 2]], rise: f64) {
-    let mut runs: Vec<(Tier, Run)> =
-        paths.iter().filter_map(|path| longest_run(path).map(|run| (path.tier, run))).filter(|(_, run)| run.2 > 50.0 && between_areas(areas, run.0)).collect();
+    let mut runs: Vec<(Tier, Run)> = paths
+        .iter()
+        .filter_map(|path| longest_run(path).map(|run| (path.tier, run)))
+        .filter(|(_, run)| run.2 > 50.0 && between_areas(areas, run.0))
+        .collect();
     runs.sort_by(|first, second| second.1.2.total_cmp(&first.1.2));
     let wall = runs.iter().find(|(tier, _)| *tier == Tier::Track).or(runs.first()).copied();
     if let Some((tier, (middle, way, _))) = wall {
@@ -60,7 +63,9 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], ring: &[[f64; 2]], r
     if let Some((tier, (middle, way, _))) = runs.iter().find(apart) {
         viaduct(kit, *middle, *way, *tier, rise);
     }
-    for area in areas.iter().filter(|area| area.radius >= 60.0 && !matches!(area.kind, AreaKind::Wilds | AreaKind::Arena)) {
+    for area in
+        areas.iter().filter(|area| area.radius >= 60.0 && !matches!(area.kind, AreaKind::Wilds | AreaKind::Arena))
+    {
         retaining(kit, area, paths);
     }
     talus(kit, ring, paths);
@@ -85,23 +90,50 @@ fn great_wall(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: 
     for side in [-1.0, 1.0] {
         let length = reach - breach;
         let centre = ahead(middle, across, side * (breach + length / 2.0), 0.0);
-        kit.solid(Solid::upright(Shape::Block, [centre[0], centre[1], floor - 3.0], [WALL_THICK_M, length, top - floor + 3.0], Material::Stone).turned(turn));
+        kit.solid(
+            Solid::upright(
+                Shape::Block,
+                [centre[0], centre[1], floor - 3.0],
+                [WALL_THICK_M, length, top - floor + 3.0],
+                Material::Stone,
+            )
+            .turned(turn),
+        );
         // The breach's broken edge: courses stepping back from the gap, each lower than the last.
         for course in 0..5 {
             let at = ahead(middle, across, side * (breach + 1.5 + f64::from(course) * 1.6), 0.0);
             let height = (top - floor) * (0.25 + 0.15 * f64::from(course));
-            kit.solid(Solid::upright(Shape::Block, [at[0], at[1], floor - 1.0], [WALL_THICK_M + 0.6, 3.2, height], Material::Stone).turned(turn));
+            kit.solid(
+                Solid::upright(
+                    Shape::Block,
+                    [at[0], at[1], floor - 1.0],
+                    [WALL_THICK_M + 0.6, 3.2, height],
+                    Material::Stone,
+                )
+                .turned(turn),
+            );
         }
         for buttress in 0..((length / 9.0) as u32) {
             let along = breach + 6.0 + f64::from(buttress) * 9.0;
             for face in [-1.0, 1.0] {
                 let at = ahead(ahead(middle, across, side * along, 0.0), way, face * (WALL_THICK_M / 2.0 + 1.0), 0.0);
-                kit.solid(Solid::upright(Shape::Block, [at[0], at[1], floor - 2.0], [2.2, 2.0, top - floor - 4.0], Material::Trim).turned(turn));
+                kit.solid(
+                    Solid::upright(
+                        Shape::Block,
+                        [at[0], at[1], floor - 2.0],
+                        [2.2, 2.0, top - floor - 4.0],
+                        Material::Trim,
+                    )
+                    .turned(turn),
+                );
             }
         }
         for merlon in 0..((length / 3.0) as u32) {
             let at = ahead(middle, across, side * (breach + 6.0 + f64::from(merlon) * 3.0), 0.0);
-            kit.solid(Solid::upright(Shape::Block, [at[0], at[1], top], [WALL_THICK_M, 1.4, 1.8], Material::Stone).turned(turn));
+            kit.solid(
+                Solid::upright(Shape::Block, [at[0], at[1], top], [WALL_THICK_M, 1.4, 1.8], Material::Stone)
+                    .turned(turn),
+            );
         }
     }
     for _ in 0..14 {
@@ -132,17 +164,46 @@ fn viaduct(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64
         let along = -reach + f64::from(pier) * (2.0 * reach / f64::from(spans));
         let at = ahead(middle, across, along, 0.0);
         if along.abs() > tier.width() / 2.0 + PIER_M {
-            kit.solid(Solid::upright(Shape::Block, [at[0], at[1], floor - 2.0], [DECK_M, PIER_M, deck - floor + 2.0], Material::Stone).turned(turn));
+            kit.solid(
+                Solid::upright(
+                    Shape::Block,
+                    [at[0], at[1], floor - 2.0],
+                    [DECK_M, PIER_M, deck - floor + 2.0],
+                    Material::Stone,
+                )
+                .turned(turn),
+            );
         }
         if pier < spans && pier != fallen {
             let next = ahead(middle, across, along + reach / f64::from(spans), 0.0);
             let arch_rise = (deck - floor) * 0.45;
-            let arch = Solid::upright(Shape::Arch { opening: 0.7 }, [next[0], next[1], deck - arch_rise], [2.0 * reach / f64::from(spans), DECK_M, arch_rise], Material::Stone);
+            let arch = Solid::upright(
+                Shape::Arch { opening: 0.7 },
+                [next[0], next[1], deck - arch_rise],
+                [2.0 * reach / f64::from(spans), DECK_M, arch_rise],
+                Material::Stone,
+            );
             kit.solid(arch.turned(turn + std::f64::consts::FRAC_PI_2));
-            kit.solid(Solid::upright(Shape::Block, [next[0], next[1], deck - 0.8], [DECK_M + 0.8, 2.0 * reach / f64::from(spans), 0.8], Material::Paving).turned(turn));
+            kit.solid(
+                Solid::upright(
+                    Shape::Block,
+                    [next[0], next[1], deck - 0.8],
+                    [DECK_M + 0.8, 2.0 * reach / f64::from(spans), 0.8],
+                    Material::Paving,
+                )
+                .turned(turn),
+            );
             for side in [-1.0, 1.0] {
                 let rail = ahead(next, way, side * (DECK_M / 2.0 + 0.2), 0.0);
-                kit.solid(Solid::upright(Shape::Block, [rail[0], rail[1], deck], [0.5, 2.0 * reach / f64::from(spans), 1.1], Material::Trim).turned(turn));
+                kit.solid(
+                    Solid::upright(
+                        Shape::Block,
+                        [rail[0], rail[1], deck],
+                        [0.5, 2.0 * reach / f64::from(spans), 1.1],
+                        Material::Trim,
+                    )
+                    .turned(turn),
+                );
             }
         }
     }

@@ -58,12 +58,15 @@ test('on foot the player goes through a gate into an instance and back out, neve
   const into = next(foot, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true });
   assert.equal(into.mode === 'loading' && into.words, 'Entering The Burned Mill');
   assert.deepEqual(next(into, { kind: 'loaded' }), { mode: 'foot', node: 'burned-mill', menu: false });
-  const back = next({ mode: 'foot', node: 'burned-mill', menu: false }, {
-    kind: 'pass',
-    node: 'saltgrass-downs',
-    name: 'The Saltgrass Downs',
-    into: false,
-  });
+  const back = next(
+    { mode: 'foot', node: 'burned-mill', menu: false },
+    {
+      kind: 'pass',
+      node: 'saltgrass-downs',
+      name: 'The Saltgrass Downs',
+      into: false,
+    },
+  );
   assert.equal(back.mode === 'loading' && back.words, 'Returning to The Saltgrass Downs');
   const menu: Flow = { ...foot, menu: true };
   assert.equal(next(menu, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true }), menu);

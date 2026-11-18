@@ -22,12 +22,15 @@ const PATH_STEP_M: f64 = 8.0;
 #[must_use]
 pub fn links_of(nodes: &[Node]) -> BTreeMap<String, Vec<Link>> {
     let patrols: Vec<&Node> = nodes.iter().filter(|node| node.kind == NodeKind::Patrol).collect();
-    let square = |from: [f64; 2], to: [f64; 2]| (to[0] - from[0]) * (to[0] - from[0]) + (to[1] - from[1]) * (to[1] - from[1]);
+    let square =
+        |from: [f64; 2], to: [f64; 2]| (to[0] - from[0]) * (to[0] - from[0]) + (to[1] - from[1]) * (to[1] - from[1]);
     let mut links: BTreeMap<String, Vec<Link>> = BTreeMap::new();
     for node in nodes.iter().filter(|node| !matches!(node.kind, NodeKind::Patrol | NodeKind::Social)) {
         let middle = middle_of(node);
         let nearest = patrols.iter().min_by(|first, second| {
-            square(middle_of(first), middle).total_cmp(&square(middle_of(second), middle)).then(first.id.cmp(&second.id))
+            square(middle_of(first), middle)
+                .total_cmp(&square(middle_of(second), middle))
+                .then(first.id.cmp(&second.id))
         });
         if let Some(patrol) = nearest {
             links.entry(node.id.clone()).or_default().push(Link { id: patrol.id.clone(), towards: middle_of(patrol) });
@@ -96,7 +99,8 @@ mod tests {
     use world::geometry::Point;
 
     fn node(id: &str, kind: NodeKind, x: i64) -> Node {
-        let ring = vec![Point { x, y: 0 }, Point { x: x + 100, y: 0 }, Point { x: x + 100, y: 100 }, Point { x, y: 100 }];
+        let ring =
+            vec![Point { x, y: 0 }, Point { x: x + 100, y: 0 }, Point { x: x + 100, y: 100 }, Point { x, y: 100 }];
         Node { id: id.into(), kind, name: id.into(), ring, spawns: vec![Point { x: x + 50, y: 50 }] }
     }
 

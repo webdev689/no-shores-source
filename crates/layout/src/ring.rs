@@ -137,7 +137,11 @@ fn neighbours(at: usize, columns: usize, rows: usize) -> impl Iterator<Item = us
 pub fn traced(field: &Field, cells: &[bool]) -> Vec<[f64; 2]> {
     let (columns, rows) = (field.columns, field.rows);
     let kept = |column: isize, row: isize| {
-        column >= 0 && row >= 0 && (column as usize) < columns && (row as usize) < rows && cells[row as usize * columns + column as usize]
+        column >= 0
+            && row >= 0
+            && (column as usize) < columns
+            && (row as usize) < rows
+            && cells[row as usize * columns + column as usize]
     };
     // Each edge between a kept cell and an unkept one, from corner to corner, keyed by its start.
     let mut next_of = std::collections::BTreeMap::new();
@@ -173,8 +177,10 @@ pub fn traced(field: &Field, cells: &[bool]) -> Vec<[f64; 2]> {
             break;
         }
     }
-    let world: Vec<[f64; 2]> =
-        corners.iter().map(|&(column, row)| [field.west + column as f64 * CELL_M, field.north + row as f64 * CELL_M]).collect();
+    let world: Vec<[f64; 2]> = corners
+        .iter()
+        .map(|&(column, row)| [field.west + column as f64 * CELL_M, field.north + row as f64 * CELL_M])
+        .collect();
     let mut open = world.clone();
     open.push(world[0]);
     let mut ring = simplified(&open, CELL_M * 1.6);

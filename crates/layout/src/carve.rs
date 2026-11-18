@@ -88,7 +88,9 @@ fn outcrops(areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec
     for area in areas {
         let (count, inner, outer) = match area.kind {
             AreaKind::Wilds | AreaKind::Arena => (5, 0.35, 0.85),
-            AreaKind::Gate | AreaKind::Entrance | AreaKind::Landing | AreaKind::Tower | AreaKind::Lighthouse => (0, 0.0, 0.0),
+            AreaKind::Gate | AreaKind::Entrance | AreaKind::Landing | AreaKind::Tower | AreaKind::Lighthouse => {
+                (0, 0.0, 0.0)
+            }
             _ if area.radius >= 60.0 => (2, 1.05, 1.25),
             _ => (0, 0.0, 0.0),
         };
@@ -105,14 +107,17 @@ fn outcrops(areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec
             let tall = if spire { 12.0 + next() * 10.0 } else { 5.0 + next() * 9.0 };
             let clear_of_paths = paths.iter().all(|path| {
                 let half = if path.tier == Tier::Track { TRACK_HALF_M } else { FOOTPATH_HALF_M };
-                path.points.windows(2).all(|pair| crate::paths::off_line(at, pair[0], pair[1]) > half * 0.5 + radius * 1.4 + 3.0)
+                path.points
+                    .windows(2)
+                    .all(|pair| crate::paths::off_line(at, pair[0], pair[1]) > half * 0.5 + radius * 1.4 + 3.0)
             });
             let clear_of_buildings = seating.buildings.iter().chain(seating.props.iter()).all(|seated| {
                 let [west, north, east, south] = seated.footprint;
                 let margin = radius * 1.4 + 3.0;
                 at[0] < west - margin || at[0] > east + margin || at[1] < north - margin || at[1] > south + margin
             });
-            let clear_of_others = found.iter().all(|other| distance([other[0], other[1]], at) > (other[2] + radius) * 1.5 + 6.0);
+            let clear_of_others =
+                found.iter().all(|other| distance([other[0], other[1]], at) > (other[2] + radius) * 1.5 + 6.0);
             let clear_of_middle = distance(at, area.at) > radius * 1.4 + 10.0;
             if clear_of_paths && clear_of_buildings && clear_of_others && clear_of_middle {
                 found.push([at[0], at[1], radius, tall]);

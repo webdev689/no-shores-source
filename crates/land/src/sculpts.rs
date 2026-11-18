@@ -94,7 +94,8 @@ impl From<Sculpts> for Vec<Sculpt> {
 fn to_segment(x: f64, y: f64, from: [f64; 2], to: [f64; 2]) -> f64 {
     let (span_x, span_y) = (to[0] - from[0], to[1] - from[1]);
     let length = span_x * span_x + span_y * span_y;
-    let along = if length > 0.0 { (((x - from[0]) * span_x + (y - from[1]) * span_y) / length).clamp(0.0, 1.0) } else { 0.0 };
+    let along =
+        if length > 0.0 { (((x - from[0]) * span_x + (y - from[1]) * span_y) / length).clamp(0.0, 1.0) } else { 0.0 };
     let (dx, dy) = (x - from[0] - span_x * along, y - from[1] - span_y * along);
     (dx * dx + dy * dy).sqrt()
 }
@@ -191,7 +192,8 @@ impl Sculpts {
                 let stratum = climbed.floor();
                 let stepped = (stratum + smooth(0.55, 1.0, climbed - stratum)) / STRATA;
                 let rise = sculpt.rise * (0.7 + 0.45 * (0.5 + 0.5 * fbm(sculpt.seed ^ 0x51, x / 230.0, y / 230.0, 3)));
-                let rough = 4.0 * fbm(sculpt.seed ^ 0x77, x / 48.0, y / 48.0, 3) * smooth(0.0, 1.0, off / (2.0 * CLIFF_RUN_M));
+                let rough =
+                    4.0 * fbm(sculpt.seed ^ 0x77, x / 48.0, y / 48.0, 3) * smooth(0.0, 1.0, off / (2.0 * CLIFF_RUN_M));
                 height = rise * stepped + rough.max(-2.0) * stepped;
             }
             if let Some((_, outcrops)) = self.near[number].get(&(bucket(x), bucket(y))) {

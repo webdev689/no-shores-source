@@ -1,9 +1,3 @@
-import { FirstPerson } from '../firstperson/firstPerson.ts';
-import type { Colours } from '../forge/compose.ts';
-import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
-import type { ForgeLooks } from '../forge/looks.ts';
-import type { HairColours, RaceSkins } from '../forge/skins.ts';
-import { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
 import { coastField } from '../heldmap/coastField.ts';
 import { HeldMap } from '../heldmap/heldMap.ts';
@@ -11,7 +5,7 @@ import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import { wheelNotches } from '../overworld/overworldInput.ts';
-import { type CardAt, Cards } from '../player/cards.ts';
+import type { CardAt } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
@@ -33,7 +27,8 @@ import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { loadLandTexts } from './landTexts.ts';
-import { type Passage, passageAt } from '../layout/passage.ts';
+import { askedArrival, type GateWay, gateWay } from './gates.ts';
+import { openForge } from './openForge.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
@@ -59,26 +54,6 @@ const REGION = 'The Pale Expanse';
 const GROUND_WAIT_S = 20;
 /** How often the sea looks for another continent's coast nearby, seconds. */
 const CHART_EVERY_S = 1;
-
-/** The forge's figures and the first person's hands, read from the forge's published renders. */
-async function openForge(
-  gpu: Gpu,
-  figures: FigureView,
-): Promise<{ forge: Cards; firstPerson: FirstPerson; store: ForgeStore }> {
-  const store = await ForgeStore.open();
-  const [looks, skins, hair, dyes] = await Promise.all([
-    store.table<ForgeLooks>('looks'),
-    store.table<RaceSkins>('skins'),
-    store.table<HairColours>('hair'),
-    store.table<DyeTable>('dyes'),
-  ]);
-  const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
-  return {
-    forge: new Cards(figures, store, looks, colours, dyes),
-    firstPerson: await FirstPerson.open(gpu, store),
-    store,
-  };
-}
 
 /** The words under a place's name: its kind, and its island's name where it has one. */
 function placeWords(node: NodeInfo): string {
@@ -250,15 +225,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const arrived = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
   if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
-  // `&spawn=<east>,<south>[,<bearing in degrees>]` stands the arrival there instead: a way to look at one place.
-  const spawnAsked = new URLSearchParams(location.search).get('spawn')?.split(',').map(Number) ?? [];
-  const spawnAt = spawnAsked.length >= 2 && spawnAsked.every(Number.isFinite) ? spawnAsked : null;
-  const firstNode = spawnAt ? { ...arrived, spawns: [[spawnAt[0], spawnAt[1]] as const] } : arrived;
-  const firstFacing = spawnAt?.[2] === undefined ? null : (spawnAt[2] * Math.PI) / 180;
+  const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
   if (flow.mode === 'loading')
-    behindVeil(flow.words, () =>
-      goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, landmass.plan, null)),
-    );
+    behindVeil(flow.words, () => goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, landmass.plan, null)));
 
   const landAt = (id: string) => {
     discovered.nodes([id]);
@@ -465,15 +434,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
 
   /** The way through the gate the player stands in, if any, and going through it to the node it leads to. */
-  let passage: Passage | null = null;
+  let through: GateWay | null = null;
   const goThrough = () => {
-    const through = passage;
-    const node = through && landmass.nodes.find((each) => each.id === through.to);
-    if (!through || !node || flow.mode !== 'foot') return;
-    const arriving = { ...node, spawns: [through.arrive] };
-    travel({ kind: 'pass', node: node.id, name: node.name, into: through.into }, () =>
-      goFoot(arriving, bearingTo(through.arrive, node.centre)),
-    );
+    const way = through;
+    if (way && flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
   };
   hud.onPassage(goThrough);
 
@@ -488,8 +452,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures), { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
-    passage = paused ? null : passageAt(landmass.layouts, landmass.nodes, here.node.id, [body.x, body.y]);
-    hud.passageOffer(passage && `${passage.into ? 'Enter' : 'Return to'} ${passage.name}  E`);
+    through = paused ? null : gateWay(landmass, here.node.id, [body.x, body.y]);
+    hud.passageOffer(through?.offer ?? null);
     hud.hints(shown.standing.kind === 'dead' ? HINTS.dead : HINTS.foot);
     hud.marks([]);
     hud.seaBar(null);

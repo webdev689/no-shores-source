@@ -1,6 +1,6 @@
 //! A node's room and a browser predicting it step bodies alike on the node's window of the land: these runs over the
 //! real windows and boxes of two nodes of the rainforest continent, Mistfall's social space on its city's terraces
-//! and a patrol area on open land, are fingerprinted here, natively as the room steps them, and by the client's test
+//! and a patrol area on its carved land, are fingerprinted here, natively as the room steps them, and by the client's test
 //! of the same runs through WebAssembly (nodeWindow.test.ts lists the same nodes, rects and scripts, and cuts each
 //! window with the land's own door).
 
@@ -11,7 +11,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use std::path::Path;
 
 /// Both tests hold this value; a change to the land, the city or the moves changes it in both, on purpose.
-pub const NODE_RUN_HASH: &str = "a50b7e725835a33f";
+pub const NODE_RUN_HASH: &str = "ed8693b13e32caba";
 
 /// Ticks, then forward, sideways, yaw, run, and jump on the first tick only.
 type Phase = (usize, f64, f64, f64, bool, bool);
@@ -40,7 +40,7 @@ const RUNS: [Run; 2] = [
     // North over open land, east, a jump, then back south-west.
     Run {
         node: "emerald-tangle",
-        bounds: [489_111.0, 2_279_145.0, 490_942.0, 2_280_864.0],
+        bounds: [489_190.5, 2_279_231.5, 490_895.5, 2_280_067.0],
         script: &[
             (600, 1.0, 0.0, 0.0, true, false),
             (600, 1.0, 0.0, FRAC_PI_2, true, false),
@@ -57,7 +57,9 @@ fn rainforest_nodes() -> Vec<bake::NodeFile> {
     let continent = layout.continents.iter().find(|continent| continent.id == "continent-6");
     let edits = land::edits::parse(&read("land/continent-6.json")).expect("the rainforest's edits parse");
     let blocks = city::rmb::Blocks::default();
-    bake::nodes_of(continent.expect("the rainforest is continent-6"), edits, &blocks).expect("the rainforest bakes")
+    let builders = bake::Builders::default();
+    bake::nodes_of(continent.expect("the rainforest is continent-6"), edits, &blocks, &builders)
+        .expect("the rainforest bakes")
 }
 
 fn run_over(node: &bake::NodeFile, script: &[Phase]) -> Vec<Body> {

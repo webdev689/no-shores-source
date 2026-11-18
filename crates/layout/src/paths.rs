@@ -176,7 +176,8 @@ pub fn find(
 /// A way of cells as a smooth line: its corners cut twice (Chaikin), its ends kept where they were asked for.
 #[must_use]
 pub fn smoothed(field: &Field, cells: &[usize], from: [f64; 2], to: [f64; 2]) -> Vec<[f64; 2]> {
-    let mut points: Vec<[f64; 2]> = cells.iter().map(|&at| field.centre(at % field.columns, at / field.columns)).collect();
+    let mut points: Vec<[f64; 2]> =
+        cells.iter().map(|&at| field.centre(at % field.columns, at / field.columns)).collect();
     if let Some(first) = points.first_mut() {
         *first = from;
     }
@@ -245,7 +246,10 @@ pub fn crossings(field: &Field, cells: &[usize]) -> Vec<[[f64; 2]; 2]> {
         if !dry && wet {
             entered = Some(pair[0]);
         }
-        if dry && !wet && let Some(bank) = entered.take() {
+        if dry
+            && !wet
+            && let Some(bank) = entered.take()
+        {
             let centre = |at: usize| field.centre(at % field.columns, at / field.columns);
             found.push([centre(bank), centre(pair[1])]);
         }

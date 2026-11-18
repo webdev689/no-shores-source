@@ -89,7 +89,9 @@ fn wants(kind: AreaKind, land: &Reading, radius: f64) -> Option<f64> {
         AreaKind::Wreck => bell(land.to_sea, 0.0, 30.0, 50.0) * 0.8 + flat(6.0) * 0.2,
         AreaKind::Mill => bell(land.to_fresh, 8.0, 40.0, 60.0) * 0.7 + flat(8.0) * 0.3,
         AreaKind::Causeway => bell(land.to_fresh, 0.0, 30.0, 80.0) * 0.6 + flat(5.0) * 0.4,
-        AreaKind::Quarry | AreaKind::Cave => bell(land.slope, 0.35, 0.9, 0.3) * 0.7 + (land.relief / 20.0).min(1.0) * 0.3,
+        AreaKind::Quarry | AreaKind::Cave => {
+            bell(land.slope, 0.35, 0.9, 0.3) * 0.7 + (land.relief / 20.0).min(1.0) * 0.3
+        }
         AreaKind::Entrance | AreaKind::Gate => flat(8.0),
     };
     (score > 0.0).then_some(score)
@@ -162,10 +164,8 @@ pub fn place(
     for row in (1..field.rows.saturating_sub(1)).step_by(2) {
         for column in (1..field.columns.saturating_sub(1)).step_by(2) {
             let at = field.centre(column, row);
-            let nearest = placed
-                .iter()
-                .map(|area| distance(area.at, at) - area.radius - radius)
-                .fold(f64::INFINITY, f64::min);
+            let nearest =
+                placed.iter().map(|area| distance(area.at, at) - area.radius - radius).fold(f64::INFINITY, f64::min);
             if nearest < GAP_M {
                 continue;
             }

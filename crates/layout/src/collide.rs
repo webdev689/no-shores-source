@@ -50,7 +50,8 @@ pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
         .into_iter()
         .map(|found| {
             let [west, north, east, south, top, bottom] = found;
-            let (down, up) = (|value: f64| (value * 100.0).floor() / 100.0, |value: f64| (value * 100.0).ceil() / 100.0);
+            let (down, up) =
+                (|value: f64| (value * 100.0).floor() / 100.0, |value: f64| (value * 100.0).ceil() / 100.0);
             [down(west), down(north), up(east), up(south), up(top), down(bottom)]
         })
         .collect()

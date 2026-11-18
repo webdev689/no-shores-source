@@ -63,10 +63,21 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
         match area.kind {
             AreaKind::Landing | AreaKind::Entrance => sites.push(site(SiteKind::Landing, area.at, area.radius, None)),
             AreaKind::Gate => sites.push(site(SiteKind::Gate, area.at, area.radius, area.leads_to.clone())),
-            AreaKind::Wilds | AreaKind::Arena => sites.push(site(SiteKind::Event, area.at, area.radius, Some(area.name.clone()))),
+            AreaKind::Wilds | AreaKind::Arena => {
+                sites.push(site(SiteKind::Event, area.at, area.radius, Some(area.name.clone())))
+            }
             _ => {}
         }
-        if matches!(area.kind, AreaKind::Camp | AreaKind::Ruin | AreaKind::Keep | AreaKind::Coven | AreaKind::Cave | AreaKind::Wreck | AreaKind::Arena) {
+        if matches!(
+            area.kind,
+            AreaKind::Camp
+                | AreaKind::Ruin
+                | AreaKind::Keep
+                | AreaKind::Coven
+                | AreaKind::Cave
+                | AreaKind::Wreck
+                | AreaKind::Arena
+        ) {
             sites.push(site(SiteKind::Foes, area.at, area.radius * 0.8, Some(area.name.clone())));
         }
         if matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance) {
@@ -78,7 +89,8 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
             let angle = std::f64::consts::TAU * (f64::from(turn) / 12.0 + rand01(seed, &[number as i64, 11]));
             let (sine, cosine) = land::exact::sin_cos(angle);
             let at = [area.at[0] + sine * area.radius * 0.85, area.at[1] - cosine * area.radius * 0.85];
-            let apart = sites.iter().filter(|other| other.kind == SiteKind::Beacon).all(|other| distance(other.at, at) > 40.0);
+            let apart =
+                sites.iter().filter(|other| other.kind == SiteKind::Beacon).all(|other| distance(other.at, at) > 40.0);
             if clear(field, seating, at) && apart {
                 sites.push(site(SiteKind::Beacon, at, 3.0, None));
                 placed += 1;
@@ -104,7 +116,10 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
             let off = 18.0 + rand01(seed, &[count, 5]) * (RESOURCE_OFF_M - 18.0);
             let at = [pair[1][0] - south / length * off * side, pair[1][1] + east / length * off * side];
             let resources = sites.iter().filter(|other| other.kind == SiteKind::Resource).count();
-            if resources < RESOURCE_MOST && clear(field, seating, at) && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6) {
+            if resources < RESOURCE_MOST
+                && clear(field, seating, at)
+                && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6)
+            {
                 sites.push(site(SiteKind::Resource, at, 2.0, Some(resource_at(field, at).to_owned())));
             }
         }

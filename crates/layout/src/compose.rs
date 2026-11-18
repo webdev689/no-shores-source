@@ -19,7 +19,9 @@ fn families(kind: AreaKind, blocks: u8) -> Vec<&'static [&'static str]> {
     const SHOPS: &[&str] = &["GENR", "ALCH", "ARMR", "WEAP", "CLOT", "PAWN"];
     match kind {
         AreaKind::Hamlet if blocks <= 1 => vec![ONE_BLOCK_TOWNS],
-        AreaKind::Hamlet => [&["TVRN"][..], &["RESI"], SHOPS, &["TEMP"]].into_iter().take(usize::from(blocks.min(4))).collect(),
+        AreaKind::Hamlet => {
+            [&["TVRN"][..], &["RESI"], SHOPS, &["TEMP"]].into_iter().take(usize::from(blocks.min(4))).collect()
+        }
         AreaKind::Farm => vec![&["FARM"]],
         AreaKind::Ruin => vec![&["RUIN"]],
         AreaKind::Keep => vec![&["CAST"]],
@@ -75,7 +77,8 @@ fn offset(cell: [f64; 2], turns: u8) -> [f64; 2] {
 /// Stands every area's blocks, an area at a time in the order placed, into one seating.
 #[must_use]
 pub fn stand(areas: &[Area], blocks_wanted: &[u8], book: &Book, ground: &Ground, field: &Field, seed: u32) -> Seating {
-    let section: Vec<bool> = (0..field.columns * field.rows).map(|at| field.claimed[at] && field.inside[at] >= 12.0).collect();
+    let section: Vec<bool> =
+        (0..field.columns * field.rows).map(|at| field.claimed[at] && field.inside[at] >= 12.0).collect();
     let mut seating = Seating::default();
     let mut used: BTreeSet<String> = BTreeSet::new();
     for (number, area) in areas.iter().enumerate() {
@@ -84,7 +87,8 @@ pub fn stand(areas: &[Area], blocks_wanted: &[u8], book: &Book, ground: &Ground,
             .iter()
             .enumerate()
             .filter_map(|(slot, prefixes)| {
-                let family: Vec<&RmbBlock> = book.family(prefixes).into_iter().filter(|block| !used.contains(&block.name)).collect();
+                let family: Vec<&RmbBlock> =
+                    book.family(prefixes).into_iter().filter(|block| !used.contains(&block.name)).collect();
                 if family.is_empty() {
                     return None;
                 }
@@ -102,7 +106,8 @@ pub fn stand(areas: &[Area], blocks_wanted: &[u8], book: &Book, ground: &Ground,
         // A hamlet's blocks stand apart, across lanes and greens of their own width, a little out of line: a village
         // grown a house at a time, never a grid.
         let spread = |slot: usize, axis: i64| {
-            let draw = |salt: i64| f64::from(hash32(&[i64::from(seed), number as i64, slot as i64, salt]) % 1000) / 1000.0;
+            let draw =
+                |salt: i64| f64::from(hash32(&[i64::from(seed), number as i64, slot as i64, salt]) % 1000) / 1000.0;
             (1.0 + (LANE_M + LANE_WANDER_M * draw(axis)) / BLOCK_M, (draw(axis + 7) - 0.5) * 2.0 * OUT_OF_LINE_M)
         };
         let mut best: Option<(f64, u8)> = None;
@@ -112,7 +117,13 @@ pub fn stand(areas: &[Area], blocks_wanted: &[u8], book: &Book, ground: &Ground,
                 .zip(cells)
                 .enumerate()
                 .map(|(slot, (block, cell))| {
-                    let at = cluster_point(area.at, [cell[0] - middle[0], cell[1] - middle[1]], spread(slot, 0), spread(slot, 1), turns);
+                    let at = cluster_point(
+                        area.at,
+                        [cell[0] - middle[0], cell[1] - middle[1]],
+                        spread(slot, 0),
+                        spread(slot, 1),
+                        turns,
+                    );
                     (0..4).map(|own| fit(book, block, field, &section, at, own)).fold(0.0, f64::max)
                 })
                 .sum();
@@ -122,7 +133,13 @@ pub fn stand(areas: &[Area], blocks_wanted: &[u8], book: &Book, ground: &Ground,
         }
         let Some((_, turns)) = best else { continue };
         for (slot, (block, cell)) in chosen.iter().zip(cells).enumerate() {
-            let at = cluster_point(area.at, [cell[0] - middle[0], cell[1] - middle[1]], spread(slot, 0), spread(slot, 1), turns);
+            let at = cluster_point(
+                area.at,
+                [cell[0] - middle[0], cell[1] - middle[1]],
+                spread(slot, 0),
+                spread(slot, 1),
+                turns,
+            );
             // Each block takes the quarter turn the land holds best, so neighbours face their own ways.
             let own = (0..4_u8)
                 .map(|own| (fit(book, block, field, &section, at, own), own))

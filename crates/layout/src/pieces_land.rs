@@ -11,12 +11,24 @@ pub fn mill(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let middle = area.at;
     let turn = turn_along(toward);
     let base = kit.height(middle) - 0.6;
-    kit.solid(Solid::upright(Shape::Block, [middle[0], middle[1], base], [9.0, 12.0, 6.8], Material::Stone).turned(turn));
-    kit.solid(Solid::upright(Shape::Gable, [middle[0], middle[1], base + 6.8], [9.8, 12.8, 4.2], Material::Roof).turned(turn));
+    kit.solid(
+        Solid::upright(Shape::Block, [middle[0], middle[1], base], [9.0, 12.0, 6.8], Material::Stone).turned(turn),
+    );
+    kit.solid(
+        Solid::upright(Shape::Gable, [middle[0], middle[1], base + 6.8], [9.8, 12.8, 4.2], Material::Roof).turned(turn),
+    );
     let across = [-toward[1], toward[0]];
     let wheel = [middle[0] + across[0] * 5.6, middle[1] + across[1] * 5.6];
     let axle = kit.height(wheel) + 0.3;
-    let wheel_solid = Solid { roll: std::f64::consts::FRAC_PI_2, ..Solid::upright(Shape::Column { sides: 14, top: 1.0 }, [wheel[0], wheel[1], axle], [7.0, 7.0, 1.2], Material::Timber) };
+    let wheel_solid = Solid {
+        roll: std::f64::consts::FRAC_PI_2,
+        ..Solid::upright(
+            Shape::Column { sides: 14, top: 1.0 },
+            [wheel[0], wheel[1], axle],
+            [7.0, 7.0, 1.2],
+            Material::Timber,
+        )
+    };
     kit.solid(wheel_solid.turned(turn));
     for stone in 0..2 {
         let at = ahead(middle, toward, 9.0, 0.4 + f64::from(stone) * 0.5);
@@ -52,7 +64,15 @@ pub fn quarry(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
         let at = ahead(middle, toward, -6.0 - f64::from(step) * 4.0, 0.0);
         let base = kit.height(at) - 2.0;
         let width = 18.0 - f64::from(step) * 2.5;
-        kit.solid(Solid::upright(Shape::Block, [at[0], at[1], base], [width, 3.6, 3.0 + f64::from(step) * 1.6], Material::Stone).turned(turn));
+        kit.solid(
+            Solid::upright(
+                Shape::Block,
+                [at[0], at[1], base],
+                [width, 3.6, 3.0 + f64::from(step) * 1.6],
+                Material::Stone,
+            )
+            .turned(turn),
+        );
     }
     for block in 0..6 {
         let at = ahead(middle, toward, 4.0 + kit.draw() * 6.0, -1.0 + f64::from(block) * 0.4);
@@ -63,7 +83,10 @@ pub fn quarry(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let crane = ahead(middle, toward, 2.0, 0.9);
     kit.stand(Shape::Column { sides: 6, top: 0.9 }, crane, [0.5, 0.5, 7.5], 0.0, Material::Timber, 0.3);
     let beam_base = kit.height(crane) + 6.6;
-    let beam = Solid { lean: std::f64::consts::FRAC_PI_2 - 0.2, ..Solid::upright(Shape::Block, [crane[0], crane[1], beam_base], [0.35, 0.35, 6.0], Material::Timber) };
+    let beam = Solid {
+        lean: std::f64::consts::FRAC_PI_2 - 0.2,
+        ..Solid::upright(Shape::Block, [crane[0], crane[1], beam_base], [0.35, 0.35, 6.0], Material::Timber)
+    };
     kit.solid(beam.turned(turn));
     let cart = kit.pick(&model::CARTS);
     kit.prop(cart, ahead(middle, toward, 6.0, -1.1), yaw_toward(toward));
@@ -84,16 +107,37 @@ pub fn bones(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
         let at = ahead(middle, toward, f64::from(rib) * 3.6 - 10.0, 0.0);
         let base = kit.height(at) - 1.5;
         let span = 13.0 - (f64::from(rib) - 3.0).abs() * 1.4;
-        let rib_solid = Solid { lean: 0.08 * (f64::from(rib) - 3.0), ..Solid::upright(Shape::Arch { opening: 0.92 }, [at[0], at[1], base], [span, 0.9, span * 0.75], Material::Bone) };
+        let rib_solid = Solid {
+            lean: 0.08 * (f64::from(rib) - 3.0),
+            ..Solid::upright(
+                Shape::Arch { opening: 0.92 },
+                [at[0], at[1], base],
+                [span, 0.9, span * 0.75],
+                Material::Bone,
+            )
+        };
         kit.solid(rib_solid.turned(along + std::f64::consts::FRAC_PI_2));
     }
     let skull = ahead(middle, toward, 18.0, 0.0);
     let base = kit.height(skull) - 1.2;
-    kit.solid(Solid::upright(Shape::Dome { sides: 14 }, [skull[0], skull[1], base], [7.0, 9.0, 4.5], Material::Bone).turned(along));
+    kit.solid(
+        Solid::upright(Shape::Dome { sides: 14 }, [skull[0], skull[1], base], [7.0, 9.0, 4.5], Material::Bone)
+            .turned(along),
+    );
     let across = [-toward[1], toward[0]];
     for side in [-1.0, 1.0] {
-        let root = [skull[0] + across[0] * 2.8 * side + toward[0] * 3.0, skull[1] + across[1] * 2.8 * side + toward[1] * 3.0];
-        let tusk = Solid { lean: 0.9, roll: 0.25 * side, ..Solid::upright(Shape::Column { sides: 8, top: 0.15 }, [root[0], root[1], base + 1.0], [1.1, 1.1, 9.0], Material::Bone) };
+        let root =
+            [skull[0] + across[0] * 2.8 * side + toward[0] * 3.0, skull[1] + across[1] * 2.8 * side + toward[1] * 3.0];
+        let tusk = Solid {
+            lean: 0.9,
+            roll: 0.25 * side,
+            ..Solid::upright(
+                Shape::Column { sides: 8, top: 0.15 },
+                [root[0], root[1], base + 1.0],
+                [1.1, 1.1, 9.0],
+                Material::Bone,
+            )
+        };
         kit.solid(tusk.turned(along));
     }
     for bone in 0..6 {
@@ -118,12 +162,18 @@ pub fn causeway(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
         }
         let at = ahead(middle, toward, f64::from(span) * 6.0, 0.0);
         let ground = kit.height(at).min(deck - 0.5);
-        kit.solid(Solid::upright(Shape::Block, [at[0], at[1], ground - 0.5], [3.4, 2.0, deck - ground], Material::Stone).turned(turn));
+        kit.solid(
+            Solid::upright(Shape::Block, [at[0], at[1], ground - 0.5], [3.4, 2.0, deck - ground], Material::Stone)
+                .turned(turn),
+        );
         kit.solid(Solid::upright(Shape::Block, [at[0], at[1], deck], [4.6, 6.0, 0.35], Material::Paving).turned(turn));
         let across = [-toward[1], toward[0]];
         for side in [-1.0, 1.0] {
             let rail = [at[0] + across[0] * 2.15 * side, at[1] + across[1] * 2.15 * side];
-            kit.solid(Solid::upright(Shape::Block, [rail[0], rail[1], deck + 0.35], [0.3, 6.0, 0.9], Material::Stone).turned(turn));
+            kit.solid(
+                Solid::upright(Shape::Block, [rail[0], rail[1], deck + 0.35], [0.3, 6.0, 0.9], Material::Stone)
+                    .turned(turn),
+            );
         }
     }
 }
@@ -158,15 +208,26 @@ pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
     let span = length + 6.0;
     let middle = [(start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0];
     let turn = turn_along(way);
-    kit.solid(Solid::upright(Shape::Block, [middle[0], middle[1], deck - 0.35], [width + 1.0, span, 0.35], Material::Timber).turned(turn));
+    kit.solid(
+        Solid::upright(Shape::Block, [middle[0], middle[1], deck - 0.35], [width + 1.0, span, 0.35], Material::Timber)
+            .turned(turn),
+    );
     let across = [-way[1], way[0]];
     for side in [-1.0, 1.0] {
-        let rail = [middle[0] + across[0] * (width / 2.0 + 0.4) * side, middle[1] + across[1] * (width / 2.0 + 0.4) * side];
-        kit.solid(Solid::upright(Shape::Block, [rail[0], rail[1], deck], [0.2, span, 1.0], Material::Timber).turned(turn));
+        let rail =
+            [middle[0] + across[0] * (width / 2.0 + 0.4) * side, middle[1] + across[1] * (width / 2.0 + 0.4) * side];
+        kit.solid(
+            Solid::upright(Shape::Block, [rail[0], rail[1], deck], [0.2, span, 1.0], Material::Timber).turned(turn),
+        );
         for pile in 0..=(span / 4.0) as u32 {
             let at = ahead([rail[0], rail[1]], way, f64::from(pile) * 4.0 - span / 2.0, 0.0);
             let bottom = kit.height(at).min(deck) - 1.5;
-            kit.solid(Solid::upright(Shape::Column { sides: 6, top: 1.0 }, [at[0], at[1], bottom], [0.4, 0.4, deck + 1.1 - bottom], Material::Timber));
+            kit.solid(Solid::upright(
+                Shape::Column { sides: 6, top: 1.0 },
+                [at[0], at[1], bottom],
+                [0.4, 0.4, deck + 1.1 - bottom],
+                Material::Timber,
+            ));
         }
     }
 }

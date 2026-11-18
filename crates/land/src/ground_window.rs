@@ -39,8 +39,19 @@ impl TryFrom<SavedGround> for Ground {
         if lake_level.len() != land.data.len() {
             return Err("the lake levels must hold one level for each cell".to_owned());
         }
-        let mut ground =
-            Ground { land, lake_level, rivers, roads, towns, coast, across, pads, sculpts, seed, index: BTreeMap::new() };
+        let mut ground = Ground {
+            land,
+            lake_level,
+            rivers,
+            roads,
+            towns,
+            coast,
+            across,
+            pads,
+            sculpts,
+            seed,
+            index: BTreeMap::new(),
+        };
         ground.index_courses();
         Ok(ground)
     }

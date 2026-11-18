@@ -104,8 +104,11 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         let toward = unit(linked.map_or(heart, |link| link.towards), area.at, field.seaward);
         pieces::build(&mut kit, area, toward, field.seaward);
     }
-    let hubs: Vec<[f64; 2]> =
-        areas.iter().zip(&wanted).map(|(area, &blocks)| if blocks > 0 { hub(&seating, area.at) } else { area.at }).collect();
+    let hubs: Vec<[f64; 2]> = areas
+        .iter()
+        .zip(&wanted)
+        .map(|(area, &blocks)| if blocks > 0 { hub(&seating, area.at) } else { area.at })
+        .collect();
     let blocked = blocked_by(&field, &seating);
     let paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
     keep_props_off(&mut seating, &paths);
@@ -122,7 +125,9 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         .filter_map(|area| {
             let linked = area.leads_to.as_ref().and_then(|id| links.iter().find(|link| &link.id == id));
             match (area.kind, linked) {
-                (AreaKind::Gate | AreaKind::Entrance, Some(link)) => Some((area.at, unit(link.towards, area.at, field.seaward))),
+                (AreaKind::Gate | AreaKind::Entrance, Some(link)) => {
+                    Some((area.at, unit(link.towards, area.at, field.seaward)))
+                }
                 (AreaKind::Landing, _) if field.seaward != [0.0, 0.0] => Some((area.at, field.seaward)),
                 _ => None,
             }
@@ -158,7 +163,12 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
 fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: u32) -> (Vec<Area>, Vec<u8>) {
     let mut areas: Vec<Area> = Vec::new();
     let mut wanted: Vec<u8> = Vec::new();
-    let mut put = |areas: &mut Vec<Area>, kind: AreaKind, name: &str, blocks: u8, leads_to: Option<String>, pull: &dyn Fn([f64; 2]) -> f64| {
+    let mut put = |areas: &mut Vec<Area>,
+                   kind: AreaKind,
+                   name: &str,
+                   blocks: u8,
+                   leads_to: Option<String>,
+                   pull: &dyn Fn([f64; 2]) -> f64| {
         let radius = radius_of(kind, blocks);
         if let Some(at) = place(field, kind, radius, areas, seed ^ areas.len() as u32, pull) {
             areas.push(Area { kind, name: name.to_owned(), at, radius, leads_to });
@@ -209,7 +219,13 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
 fn unit(to: [f64; 2], from: [f64; 2], otherwise: [f64; 2]) -> [f64; 2] {
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     let length = (east * east + south * south).sqrt();
-    if length > 1e-6 { [east / length, south / length] } else if otherwise == [0.0, 0.0] { [0.0, -1.0] } else { otherwise }
+    if length > 1e-6 {
+        [east / length, south / length]
+    } else if otherwise == [0.0, 0.0] {
+        [0.0, -1.0]
+    } else {
+        otherwise
+    }
 }
 
 /// The cells a path may not cross: under a building, a set piece's solid or a large prop, and a metre and a half
@@ -220,8 +236,13 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         let [west, north, east, south, _, _] = solid.bounds();
         [west, north, east, south]
     });
-    let large_props = seating.props.iter().map(|prop| prop.footprint).filter(|print| (print[2] - print[0]) * (print[3] - print[1]) > 6.0);
-    let prints: Vec<[f64; 4]> = seating.buildings.iter().map(|building| building.footprint).chain(solids).chain(large_props).collect();
+    let large_props = seating
+        .props
+        .iter()
+        .map(|prop| prop.footprint)
+        .filter(|print| (print[2] - print[0]) * (print[3] - print[1]) > 6.0);
+    let prints: Vec<[f64; 4]> =
+        seating.buildings.iter().map(|building| building.footprint).chain(solids).chain(large_props).collect();
     // A cell is blocked where its middle stands under something, or a metre from it.
     for [west, north, east, south] in prints {
         let column_of = |x: f64| ((x - field.west) / CELL_M - 0.5).ceil().max(0.0) as usize;
@@ -254,7 +275,14 @@ fn keep_props_off(seating: &mut Seating, paths: &[Path]) {
 
 /// The paths joining a layout's areas. A patrol area's areas are joined by tracks along a tree of the shortest links
 /// and footpaths closing a loop or two; its gates by a footpath from the nearest area. An instance's run in a chain.
-fn lay_paths(field: &Field, areas: &[Area], hubs: &[[f64; 2]], blocked: &Blocked, patrol: bool, seed: u32) -> Vec<Path> {
+fn lay_paths(
+    field: &Field,
+    areas: &[Area],
+    hubs: &[[f64; 2]],
+    blocked: &Blocked,
+    patrol: bool,
+    seed: u32,
+) -> Vec<Path> {
     let mut laid = vec![false; field.columns * field.rows];
     let mut links: Vec<(usize, usize, Tier)> = Vec::new();
     if patrol {
@@ -286,13 +314,24 @@ fn lay_paths(field: &Field, areas: &[Area], hubs: &[[f64; 2]], blocked: &Blocked
     let lay = |from: usize, to: usize, tier: Tier, laid: &mut Vec<bool>, paths: &mut Vec<Path>| {
         let (start, end) = (hubs[from], hubs[to]);
         // A way too steep for its tier is laid as a footpath, then as a stepped way, rather than not at all.
-        let tries = [(tier, tier.steepest()), (Tier::Footpath, Tier::Footpath.steepest()), (Tier::Footpath, crate::paths::STEPPED)];
-        let found = tries.iter().find_map(|&(tier, steepest)| find(field, [start, end], steepest, laid, blocked, seed).map(|cells| (tier, cells)));
+        let tries = [
+            (tier, tier.steepest()),
+            (Tier::Footpath, Tier::Footpath.steepest()),
+            (Tier::Footpath, crate::paths::STEPPED),
+        ];
+        let found = tries.iter().find_map(|&(tier, steepest)| {
+            find(field, [start, end], steepest, laid, blocked, seed).map(|cells| (tier, cells))
+        });
         let Some((tier, cells)) = found else { return false };
         for &cell in &cells {
             laid[cell] = true;
         }
-        paths.push(Path { tier, points: smoothed(field, &cells, start, end), crossings: crossings(field, &cells), heights: Vec::new() });
+        paths.push(Path {
+            tier,
+            points: smoothed(field, &cells, start, end),
+            crossings: crossings(field, &cells),
+            heights: Vec::new(),
+        });
         true
     };
     for (from, to, tier) in links {
@@ -307,7 +346,9 @@ fn lay_paths(field: &Field, areas: &[Area], hubs: &[[f64; 2]], blocked: &Blocked
             continue;
         }
         let mut others: Vec<usize> = (0..areas.len()).filter(|&other| root(&group, other) == root(&group, 0)).collect();
-        others.sort_by(|&first, &second| distance(areas[first].at, areas[area].at).total_cmp(&distance(areas[second].at, areas[area].at)));
+        others.sort_by(|&first, &second| {
+            distance(areas[first].at, areas[area].at).total_cmp(&distance(areas[second].at, areas[area].at))
+        });
         for other in others {
             if lay(other, area, Tier::Footpath, &mut laid, &mut paths) {
                 let (first, second) = (root(&group, area), root(&group, other));
@@ -325,7 +366,9 @@ fn spawns_round(field: &Field, at: [f64; 2]) -> Vec<[f64; 2]> {
     offsets
         .iter()
         .map(|offset| [at[0] + offset[0], at[1] + offset[1]])
-        .filter(|point| field.cell_of(point[0], point[1]).is_some_and(|(column, row)| field.walkable(field.index(column, row))))
+        .filter(|point| {
+            field.cell_of(point[0], point[1]).is_some_and(|(column, row)| field.walkable(field.index(column, row)))
+        })
         .chain(std::iter::once(at))
         .take(3)
         .collect()

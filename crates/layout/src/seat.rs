@@ -154,7 +154,10 @@ pub fn fit(book: &Book, block: &RmbBlock, field: &Field, section: &[bool], at: [
             let origin = turned([row[1], row[2]], at, turns);
             let print = footprint(measure, origin, row[4] + 90.0 * f64::from(turns));
             let corners = [[print[0], print[1]], [print[2], print[1]], [print[2], print[3]], [print[0], print[3]]];
-            let flat = corners.iter().map(|&[x, y]| field.height_near(x, y)).fold((f64::INFINITY, f64::NEG_INFINITY), |range, height| (range.0.min(height), range.1.max(height)));
+            let flat = corners
+                .iter()
+                .map(|&[x, y]| field.height_near(x, y))
+                .fold((f64::INFINITY, f64::NEG_INFINITY), |range, height| (range.0.min(height), range.1.max(height)));
             (corners.iter().all(|&corner| holds(field, section, corner)) && flat.1 - flat.0 <= SEAT_RELIEF_M)
                 .then(|| (print[2] - print[0]) * (print[3] - print[1]))
         })
@@ -216,7 +219,12 @@ pub fn seat(
     let level_at = |x: f64, y: f64| {
         standing
             .iter()
-            .find(|seated| x >= seated.footprint[0] && x <= seated.footprint[2] && y >= seated.footprint[1] && y <= seated.footprint[3])
+            .find(|seated| {
+                x >= seated.footprint[0]
+                    && x <= seated.footprint[2]
+                    && y >= seated.footprint[1]
+                    && y <= seated.footprint[3]
+            })
             .map_or_else(|| ground.height_at(x, y), |seated| seated.at[2])
     };
     let mut props = Vec::new();
@@ -226,7 +234,9 @@ pub fn seat(
             continue;
         }
         let yaw = (row[4] + quarter) % 360.0;
-        let print = book.measure(row[0] as u32, false).map_or([origin[0], origin[1], origin[0], origin[1]], |measure| footprint(measure, origin, yaw));
+        let print = book
+            .measure(row[0] as u32, false)
+            .map_or([origin[0], origin[1], origin[0], origin[1]], |measure| footprint(measure, origin, yaw));
         props.push(Seated {
             model: row[0] as u32,
             at: [origin[0], origin[1], level_at(origin[0], origin[1]) + row[3]],
@@ -301,7 +311,13 @@ mod tests {
 
     #[test]
     fn a_footprint_turned_a_quarter_swaps_its_width_and_depth() {
-        let measure = crate::book::Measure { min: [-5.0, 0.0, -2.0], max: [5.0, 4.0, 2.0], grid: None, plan: Vec::new(), doors: Vec::new() };
+        let measure = crate::book::Measure {
+            min: [-5.0, 0.0, -2.0],
+            max: [5.0, 4.0, 2.0],
+            grid: None,
+            plan: Vec::new(),
+            doors: Vec::new(),
+        };
         let straight = footprint(&measure, [0.0, 0.0], 0.0);
         let quarter = footprint(&measure, [0.0, 0.0], 90.0);
         assert!((straight[2] - straight[0] - 10.0).abs() < 1e-9 && (straight[3] - straight[1] - 4.0).abs() < 1e-9);

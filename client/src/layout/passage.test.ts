@@ -1,20 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { NodeInfo } from '../game/worldData.ts';
 import type { NodeLayout } from './layouts.ts';
 import { passageAt } from './passage.ts';
 
 const layout = (id: string, areas: NodeLayout['areas']): NodeLayout =>
   ({ id, areas, ring: [], spawns: [] }) as unknown as NodeLayout;
-const node = (id: string, name: string): NodeInfo => ({
-  id,
-  kind: 'patrol',
-  name,
-  continent: 'one',
-  ring: [],
-  spawns: [[0, 0]],
-  centre: [0, 0],
-});
+const node = (id: string, name: string) => ({ id, name, spawns: [[0, 0]] as const, centre: [0, 0] as const });
 
 test('a gate leads into its instance at its way in, and the way in back out to the gate', () => {
   const layouts = [

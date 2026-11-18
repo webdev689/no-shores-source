@@ -97,7 +97,8 @@ fn every_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
             "ring": [[260000, 360000], [261000, 360000], [261000, 361000], [260000, 361000]], "spawns": [[260500, 360500]] }] }"#;
     let layout = world::layout::parse(square).unwrap();
     let edits = land::edits::parse(edits).unwrap();
-    let nodes = bake::nodes_of(&layout.continents[0], edits, &city::rmb::Blocks::default()).unwrap();
+    let nodes = bake::nodes_of(&layout.continents[0], edits, &city::rmb::Blocks::default(), &bake::Builders::default())
+        .unwrap();
     assert_eq!(nodes.iter().map(|node| node.id.as_str()).collect::<Vec<_>>(), ["glade", "harbour-social"]);
     for node in nodes {
         assert!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), "{} opens", node.id);
