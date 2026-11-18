@@ -30,9 +30,11 @@ import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figure
 import { cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { CAST_SECONDS, newPlayer, playerCamera, shownBody, updatePlayer } from '../player/player.ts';
+import { AIM, type AimPlace } from '../player/playerCamera.ts';
 import { OtherPlayers, RUNNING } from '../player/others.ts';
 import { GALLOP, HIDE_FIGURE_M, STILL, shownDress, strokesAfter } from '../player/walker.ts';
 import { likelyMoves, shownMove } from '../player/playerMoves.ts';
+import { startAimPanel } from './aimPanel.ts';
 import { startPanel } from './panel.ts';
 import { SceneView } from './sceneView.ts';
 
@@ -131,6 +133,12 @@ async function start(): Promise<void> {
     },
     fight: (kind) => fight?.ask(kind),
   });
+  // Third person's aiming view where the panel places it; held there while the box is ticked, to place it by eye.
+  let aimPlace: AimPlace = AIM;
+  let aimHeld = false;
+  startAimPanel(element<HTMLElement>('#panel'), (place, held) => {
+    [aimPlace, aimHeld] = [place, held];
+  });
   const panelState = (looks: ForgeLooks, hair: HairColours, line: string) => ({
     looks,
     hair,
@@ -222,7 +230,9 @@ async function start(): Promise<void> {
       (placed) => [placed.x, placed.y, placed.z] as const,
     );
     const aspect = canvas.width / Math.max(1, canvas.height);
-    const mark = aiming ? crosshairPoint(playerCamera(player, movement, COURSE), aspect, COURSE, bodies) : null;
+    const mark = aiming
+      ? crosshairPoint(playerCamera(player, movement, COURSE, aimPlace), aspect, COURSE, bodies)
+      : null;
     // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the
     // other is held is a fresh press.
     fight.press({
@@ -268,7 +278,7 @@ async function start(): Promise<void> {
     Object.assign(you, { x: body.x, y: body.y, facing: fighting ? own.aim : player.facing });
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
-    const camera = playerCamera(player, movement, COURSE);
+    const camera = playerCamera(aimHeld ? { ...player, aim: 1 } : player, movement, COURSE, aimPlace);
     const eye = eyeOf(camera);
 
     const drawn: CardAt[] = [];
@@ -438,7 +448,7 @@ async function start(): Promise<void> {
         lost: link.lost,
         parryOpen: fight.parryOpen,
         crosshair:
-          aiming || (ranged && inFirstPerson)
+          aiming || aimHeld || (ranged && inFirstPerson)
             ? {
                 charge:
                   you.dress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw'

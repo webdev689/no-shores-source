@@ -4,6 +4,7 @@ status: live
 code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
+  - client/src/testground/aimPanel.ts
   - client/src/player/player.ts#updatePlayer
   - client/src/player/player.ts#shownBody
   - client/src/player/others.ts#showOther
@@ -50,6 +51,11 @@ Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves
 short of a wall. Aiming a ranged weapon, it eases behind the right shoulder, 0.65 m out, 1.8 m back and 0.25 m up from
 the head, and zooms in 1.15 times; in first person the view zooms in 1.6 times and the hands keep still
 ([[Aiming Sits Behind the Shoulder and Zooms the View]]).
+
+The panel's **Third-person aim** places that view by hand: sliders for how far right of the head it stands (left below
+zero), how far behind and above, and its zoom. A ticked **Hold the aiming view** keeps the camera there, with the
+crosshair, while the sliders move, without a weapon drawn. The place is kept in the browser, and its numbers are
+shown to copy into the game's own (`AIM` in `playerCamera.ts`); **Back to the game's** returns to them.
 
 North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
 and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
