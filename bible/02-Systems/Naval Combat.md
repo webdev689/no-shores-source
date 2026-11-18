@@ -229,7 +229,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
   Every captain in it is drawn with her name over a bar of her hull. Then the view pans back up. Hostile ships at sea
-  are drawn as the Overworld's ships are, darker, those fighting each other where the room has them.
+  are drawn as the Overworld's ships are, darker, those fighting each other where the room has them. A ship that
+  comes into view is drawn under the sails she sails by, already set (`seaShips.ts`).
 
 ## In a fleet room
 
