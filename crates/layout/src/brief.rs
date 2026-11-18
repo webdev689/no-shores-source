@@ -68,6 +68,44 @@ pub struct AreaBrief {
     pub blocks: Option<u8>,
 }
 
+/// What a run is: one in the open (a gorge, a ledge up a face, a rampart along the top) or through a large building
+/// (a keep, a mine, an undercroft).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RunKind {
+    Gorge,
+    Ledge,
+    Rampart,
+    Keep,
+    Mine,
+    Undercroft,
+}
+
+impl RunKind {
+    /// Whether the run passes through a large building rather than open ground.
+    #[must_use]
+    pub const fn building(self) -> bool {
+        matches!(self, Self::Keep | Self::Mine | Self::Undercroft)
+    }
+}
+
+/// Where a run goes: into the zone's own rock, or out past its edge into the land beyond.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RunPlace {
+    Rock,
+    Beyond,
+}
+
+/// One linear combat area a brief asks for, breaking off its zone.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RunBrief {
+    pub name: String,
+    pub kind: RunKind,
+    pub place: RunPlace,
+}
+
 /// A node's brief.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -75,6 +113,8 @@ pub struct Brief {
     /// One line on the place's character, for whoever shapes it next.
     pub theme: String,
     pub areas: Vec<AreaBrief>,
+    #[serde(default)]
+    pub runs: Vec<RunBrief>,
 }
 
 /// Every node's brief, by node id.
@@ -102,7 +142,7 @@ fn plain(kind: land::sites::NodeKind) -> Brief {
         NodeKind::Patrol => vec![area(AreaKind::Landing, "The Landing"), area(AreaKind::Wilds, "The Wilds")],
         _ => vec![area(AreaKind::Entrance, "The Way In"), area(AreaKind::Arena, "The Heart")],
     };
-    Brief { theme: String::new(), areas }
+    Brief { theme: String::new(), areas, runs: Vec::new() }
 }
 
 #[cfg(test)]
@@ -121,6 +161,19 @@ mod tests {
         assert_eq!(downs.areas[1].kind, AreaKind::Hamlet);
         assert_eq!(downs.areas[1].blocks, Some(3));
         assert_eq!(briefs.of("elsewhere", NodeKind::Mission).areas[0].kind, AreaKind::Entrance);
+    }
+
+    #[test]
+    fn saltmeres_zones_have_three_runs_each_of_both_kinds_and_places() {
+        let text = include_str!("../../../content/world/briefs.json");
+        let briefs = Briefs::parse(text).unwrap_or_default();
+        for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors"] {
+            let runs = briefs.of(id, NodeKind::Patrol).runs;
+            assert_eq!(runs.len(), 3, "{id}");
+            assert!(runs.iter().any(|run| run.kind.building()) && runs.iter().any(|run| !run.kind.building()), "{id}");
+            assert!(runs.iter().any(|run| run.place == RunPlace::Rock), "{id}");
+            assert!(runs.iter().any(|run| run.place == RunPlace::Beyond), "{id}");
+        }
     }
 
     #[test]
