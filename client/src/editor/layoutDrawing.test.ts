@@ -42,6 +42,7 @@ const DOWNS: LayoutMarks = {
     { kind: 'event', at: [300, 300], radius: 60 },
     { kind: 'foes', at: [300, 300], radius: 60 },
   ],
+  runs: [],
 };
 
 /** A 2D map `metresPerPixel` metres a pixel. */
@@ -86,4 +87,26 @@ test('3D: a path stands at its laid heights, and the rest on the ground', () => 
   layoutMarks([DOWNS], project, new Labels());
   assert.ok(asked.includes(5) && asked.includes(7));
   assert.ok(asked.includes(undefined));
+});
+
+test('a run is drawn along its line, its beats as rings and its door as a dot, and named by what it is', () => {
+  const run = {
+    name: 'The Chalk Adit',
+    kind: 'mine',
+    place: 'rock',
+    line: [
+      [200, 200],
+      [260, 260],
+      [320, 300],
+    ] as [number, number][],
+    beats: [{ at: [260, 260] as [number, number], radius: 20 }],
+    door: [340, 310] as [number, number],
+  };
+  const labels = new Labels();
+  const plain = layoutMarks([DOWNS], map(1), new Labels());
+  const drawn = layoutMarks([{ ...DOWNS, runs: [run] }], map(1), labels);
+  assert.equal(drawn.below.length, plain.below.length + 2, 'its line and its beat');
+  assert.equal(drawn.dots.length, plain.dots.length + 1, 'its door');
+  const names = labels.marks.flatMap((mark) => (mark.shape === 'label' ? [mark.text] : []));
+  assert.ok(names.includes('The Chalk Adit · mine'));
 });

@@ -58,7 +58,36 @@ test("a layout's marks keep what the editor draws and leave its buildings, solid
       },
     ],
     sites: [{ kind: 'gate', at: [90, 90], radius: 40, holds: 'mill' }],
+    runs: [],
   });
+});
+
+test("a layout's runs are marked by their name, kind, place, line, beats and door", () => {
+  const run = {
+    name: 'The Chalk Adit',
+    kind: 'mine',
+    place: 'rock',
+    mouth: [10, 10],
+    line: [
+      [10, 10],
+      [40, 40],
+    ],
+    levels: [0, 0],
+    beats: [{ at: [40, 40], radius: 22, level: 0 }],
+    door: [60, 60],
+    facing: [0.7, 0.7],
+  };
+  const [marks] = layoutMarksOf(JSON.stringify([{ ...LAID, runs: [run] }]));
+  assert.deepEqual(marks?.runs, [
+    {
+      name: 'The Chalk Adit',
+      kind: 'mine',
+      place: 'rock',
+      line: run.line,
+      beats: [{ at: [40, 40], radius: 22 }],
+      door: [60, 60],
+    },
+  ]);
 });
 
 test('no layouts, or text that is not a list, has no marks', () => {

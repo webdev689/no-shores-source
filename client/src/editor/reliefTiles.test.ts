@@ -20,6 +20,7 @@ const layout = (ring: [number, number][]): LayoutMarks => ({
   areas: [],
   paths: [],
   sites: [],
+  runs: [],
 });
 const DOWNS = layout([
   [10_000, 10_000],

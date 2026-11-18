@@ -37,7 +37,7 @@ test('the ground is painted again each time the eye moves on, and the city built
     layouts,
     4000,
     1500,
-    (near, at) => moves.push(`${names(near)}@${at[0]}`),
+    (near, spot) => moves.push(`${names(near)}@${spot[0]}`),
     (near) => builds.push(names(near)),
   );
   follow([0, 0], false);

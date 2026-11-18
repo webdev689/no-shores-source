@@ -16,6 +16,7 @@ const square = (id: string, west: number): LayoutMarks => ({
   areas: [],
   paths: [],
   sites: [],
+  runs: [],
 });
 
 const MARKS = [square('downs', 0), square('mill', 20_000)];

@@ -26,7 +26,15 @@ const SITE_COLOURS: Record<string, string> = {
   beacon: '#5ee0ff',
   resource: '#9be36b',
   foes: '#ff4d4d',
+  objective: '#ffd84d',
+  door: '#ff9f1c',
 };
+/** A run's colour by whether it runs in the open or through a building, and the thinnest its line is drawn, pixels. */
+const RUN_COLOURS = { open: '#ff7a3d', building: '#d45cff' } as const;
+const BUILDING_RUNS = new Set(['keep', 'mine', 'undercroft']);
+const RUN_THINNEST_PX = 3;
+/** A run's width either side of its line, metres, as the layout crate cuts its narrowest kind. */
+const RUN_HALF_M = 2.5;
 /** The layout crate's widths, metres, the colours of the two tiers of way, and the thinnest each is drawn, pixels,
  *  so a way stays seen from afar and a track still reads wider than a footpath. */
 const PATHS = {
@@ -41,6 +49,8 @@ export const LAYOUT_LEGEND: readonly (readonly [string, string])[] = [
   ['Track', PATHS.track.colour],
   ['Footpath', PATHS.footpath.colour],
   ['Section', RING_COLOUR],
+  ['Run in the open', RUN_COLOURS.open],
+  ['Run through a building', RUN_COLOURS.building],
   ...Object.entries(SITE_COLOURS).map(
     ([kind, colour]) => [`${kind[0]?.toUpperCase()}${kind.slice(1)} site`, colour] as const,
   ),
@@ -109,6 +119,23 @@ export function layoutMarks(
       );
       const width = Math.max(thinnestPx, Math.round(widthM * pixelsPerMetre * 10) / 10);
       if (way.box) below.push({ shape: 'line', path: way.path, colour, width, casing: true });
+    }
+    for (const run of layout.runs) {
+      const colour = BUILDING_RUNS.has(run.kind) ? RUN_COLOURS.building : RUN_COLOURS.open;
+      const way = pathThrough(
+        run.line.map(([x, y]) => project(x, y)),
+        false,
+      );
+      const width = Math.max(RUN_THINNEST_PX, Math.round(2 * RUN_HALF_M * pixelsPerMetre * 10) / 10);
+      if (way.box) below.push({ shape: 'line', path: way.path, colour, width, casing: true });
+      for (const beat of run.beats) {
+        const edge = pathThrough(circle(project, beat.at, beat.radius));
+        if (edge.box) below.push({ shape: 'line', path: edge.path, colour, width: 1.5, dash: '3 3' });
+      }
+      const door = project(...run.door);
+      if (door) dots.push({ shape: 'dot', ...door, radius: 5, fill: SITE_COLOURS.door ?? colour, stroke: '#000000cc' });
+      const mouth = run.line[0] && project(...run.line[0]);
+      if (mouth) labels.place(mouth.x, mouth.y - 8, `${run.name} · ${run.kind}`, colour);
     }
     below.push({ shape: 'line', path: outline.path, colour: RING_COLOUR, width: 1.5, dash: '6 4' });
     for (const area of areas) {

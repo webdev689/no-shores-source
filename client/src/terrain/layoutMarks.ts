@@ -28,7 +28,18 @@ export interface SiteMarkOfLayout {
   readonly holds?: string;
 }
 
-/** A node's layout as the editor draws it: its section ring, areas, paths and sites. */
+/** A run breaking off a zone: its name, kind (gorge, ledge, rampart, keep, mine, undercroft), place (rock or beyond),
+ *  its line, its beats and its sealed door. */
+export interface RunMark {
+  readonly name: string;
+  readonly kind: string;
+  readonly place: string;
+  readonly line: readonly Point[];
+  readonly beats: readonly { readonly at: Point; readonly radius: number }[];
+  readonly door: Point;
+}
+
+/** A node's layout as the editor draws it: its section ring, areas, paths, sites and runs. */
 export interface LayoutMarks {
   readonly id: string;
   readonly kind: string;
@@ -37,6 +48,7 @@ export interface LayoutMarks {
   readonly areas: readonly AreaMark[];
   readonly paths: readonly PathMark[];
   readonly sites: readonly SiteMarkOfLayout[];
+  readonly runs: readonly RunMark[];
 }
 
 interface Laid {
@@ -47,13 +59,14 @@ interface Laid {
   readonly areas: readonly (Omit<AreaMark, 'leadsTo'> & { readonly leads_to?: string })[];
   readonly paths: readonly PathMark[];
   readonly sites: readonly SiteMarkOfLayout[];
+  readonly runs?: readonly (RunMark & { readonly beats: readonly { readonly at: Point; readonly radius: number }[] })[];
 }
 
 /** The marks of the layouts in the land worker's layouts JSON (a list as the layout crate writes it). */
 export function layoutMarksOf(text: string): LayoutMarks[] {
   const laid = JSON.parse(text) as unknown;
   if (!Array.isArray(laid)) return [];
-  return (laid as Laid[]).map(({ id, kind, name, ring, areas, paths, sites }) => ({
+  return (laid as Laid[]).map(({ id, kind, name, ring, areas, paths, sites, runs }) => ({
     id,
     kind,
     name,
@@ -71,6 +84,14 @@ export function layoutMarksOf(text: string): LayoutMarks[] {
       at,
       radius,
       ...(holds === undefined ? {} : { holds }),
+    })),
+    runs: (runs ?? []).map(({ name: runName, kind: runKind, place, line, beats, door }) => ({
+      name: runName,
+      kind: runKind,
+      place,
+      line,
+      beats: beats.map(({ at, radius }) => ({ at, radius })),
+      door,
     })),
   }));
 }
