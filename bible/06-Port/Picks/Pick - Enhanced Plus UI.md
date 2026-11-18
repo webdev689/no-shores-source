@@ -41,7 +41,7 @@ owner approved it: asked whether to record it as an approved pick, "yes".
   art. A window comes over once our own data stands in its place ([[Our Own Keys for Materials, Places and Items]]).
 - The classic service windows the Enhanced skin dresses (`enhancedPort.js`, `enhancedPorts.js`).
 - The Grimoire skin, which dresses the windows with a third-party art pack.
-- The foe bar's blade face, a friend's picture, not our own work.
+- The foe bar's blade face, another person's picture, not our own work.
 - The bars' readings of Daggerfall's rules: the classic vitals (`hudVitals.js`), magicka and breath, and a number's
   critical strike, backstab, miss and ward; a heal's number, since no player heals yet; and a boss's traits and ward,
   which our foes do not have.
