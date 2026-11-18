@@ -45,6 +45,11 @@ const STONE_TILE = 2;
 const SNOW_TILE = 3;
 const SAND_TILE = 4;
 const PAVING_TILE = 5;
+// How sharply one class gives way to the next by their grains (meet), how much higher bare rock stands than what
+// grows over it, and how far snow lies in a tile's hollows before its rises.
+const MEET_DEPTH = 0.2;
+const ROCK_STANDS = 0.15;
+const SNOW_SETTLES = 0.1;
 // A path's trodden earth and a street's stone, under their tiles' grain.
 const PATH_EARTH = vec3f(0.47, 0.38, 0.27);
 const PAVING_STONE = vec3f(0.60, 0.58, 0.54);
@@ -86,17 +91,42 @@ fn rock_colour(world: vec2f, bed: f32) -> vec3f {
 
 // The low ground is the biome's (view.ground.rgb); snow lies above its snow line (view.ground.w). Along the painted
 // coast ('coast' metres inland) the low, gentle ground is a beach, darker below the swash's reach.
-// Each class wears its ground tile's grain (tile_grain), the rock its stone cast on the face (stone_grain).
+// Each class wears its ground tile's grain (tile_grain), the rock its stone cast on the face (stone_grain), and one
+// class gives way to the next by their grains' heights (meet): stones show through the grass first as a slope
+// steepens, snow settles in the hollows before it covers the rises.
 fn land_colour(bed: f32, slope: f32, coast: f32, world: vec2f, at: vec2f, normal: vec3f) -> vec3f {
-  let grass = view.ground.rgb * tile_grain(GRASS_TILE, at);
-  let ground = mix(grass, HIGHLAND * tile_grain(DIRT_TILE, at), smoothstep(200.0, 1600.0, bed));
-  let rock = rock_colour(world, bed) * stone_grain(at, bed, normal);
-  let bare = mix(ground, rock, smoothstep(0.3, 0.55, slope));
-  let snowy = mix(bare, SNOW * tile_grain(SNOW_TILE, at), smoothstep(view.ground.w - 200.0, view.ground.w, bed));
+  let grass_grain = tile_grain(GRASS_TILE, at);
+  let dirt_grain = tile_grain(DIRT_TILE, at);
+  let stone = stone_grain(at, bed, normal);
+  let snow_grain = tile_grain(SNOW_TILE, at);
+  let sand_grain = tile_grain(SAND_TILE, at);
+  var land = vec4f(view.ground.rgb * grass_grain, raised(grass_grain));
+  land = meet(land, vec4f(HIGHLAND * dirt_grain, raised(dirt_grain)), smoothstep(200.0, 1600.0, bed));
+  land = meet(land, vec4f(rock_colour(world, bed) * stone, raised(stone) + ROCK_STANDS), smoothstep(0.3, 0.55, slope));
+  let snow_line = smoothstep(view.ground.w - 200.0, view.ground.w, bed);
+  land = meet(land, vec4f(SNOW * snow_grain, SNOW_SETTLES - raised(snow_grain)), snow_line);
   let low = 1.0 - smoothstep(1.5, 3.0, bed);
   let beach = (1.0 - smoothstep(60.0, 140.0, coast)) * low * (1.0 - smoothstep(0.12, 0.3, slope));
   let wet = (1.0 - smoothstep(0.1, 0.4, bed)) * beach;
-  return mix(snowy, SAND * tile_grain(SAND_TILE, at), beach) * mix(1.0, WET, wet);
+  land = meet(land, vec4f(SAND * sand_grain, raised(sand_grain)), beach);
+  return land.rgb * mix(1.0, WET, wet);
+}
+
+// How high a grain stands, from its light: a tile's stones and tufts are painted lit from above, its gaps dark.
+fn raised(grain: vec3f) -> f32 {
+  return dot(grain, vec3f(0.3, 0.59, 0.11)) - 1.0;
+}
+
+// One class (rgb, height in w) meeting the next by 'share': across the meeting, the next shows first where it stands
+// higher than the first, within MEET_DEPTH, so the edge follows the grains rather than fading evenly. Its height
+// carries on into the next meeting.
+fn meet(first: vec4f, next: vec4f, share: f32) -> vec4f {
+  if (share <= 0.0) { return first; }
+  if (share >= 1.0) { return next; }
+  let top = max(first.w + 1.0 - share, next.w + share) - MEET_DEPTH;
+  let first_weight = max(first.w + 1.0 - share - top, 0.0);
+  let next_weight = max(next.w + share - top, 0.0);
+  return (first * first_weight + next * next_weight) / max(first_weight + next_weight, 1e-4);
 }
 
 // The paths and streets painted on the land (GroundPaint): each channel's distance from its edge, with a noise on it so

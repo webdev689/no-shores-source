@@ -196,7 +196,9 @@ off the page's thread by the city's painter: the terrain set's grass on the low 
 roads, its stone on bare rock, its winter grass under snow and the desert's sand on beaches. Each class keeps its
 biome's colour and takes its tile's grain over it (`groundColour.ts`), a tile to 6.4 m as Daggerfall laid them, read
 again 34 m wide and turned so its repeats do not line up, and cast from three sides on cliffs so a face is not
-smeared. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
+smeared. One class gives way to the next by their grains' heights (each grain's light, as the tiles are painted lit
+from above): stones show through the grass first as a slope steepens, bare rock standing a little proud of it, and
+snow settles in the hollows before it covers the rises. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
 painted, and in the World Editor, the class is its plain colour. The layouts' paths and streets are painted on it
 too ([[Layouts]], "In the browser"), in the dirt's and the town paving's grain.
 
