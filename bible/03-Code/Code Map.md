@@ -89,13 +89,12 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 
 Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and
 `water` (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`),
-`ships` (imports `rules`, and the water's sun and samples), `editor` (imports `rules`, `water`, `terrain` and
-`ships`), `combat` (imports `rules` and `network`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
+`ships` (imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain` and
+`ships`), `combat` (imports `rules`, `network` and `plus`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
 the editor's camera), `testground` (imports what `player` does, `player` itself, `combat` and the editor's panel
 helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap`
 (imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers), `plus` (imports
-nothing) and `game`
-(imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
+nothing) and `game` (imports the layers it wires, `combat` among them; [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
 
 ## The Rust crates
 

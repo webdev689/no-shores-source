@@ -67,6 +67,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[project-final's AI Comes Over Onto DFO's]]
 - [[New Ships Are Planned in the Sloop's Style, After the System]]
 - [[The Enemies as Claude Builds Them]]
+- [[The Bars and the Fight Wear the Plus Kit]]
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
 - [[The Rooms Deploy on Each Merge]]
