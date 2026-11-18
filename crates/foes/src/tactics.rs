@@ -1,9 +1,9 @@
-//! The tactics brain, DFO's, standing on Overlook's fight: whom a foe fights and whether it is its turn. Two foes a
-//! target fight it hand to hand and two shoot at it; the rest stand on a ring just outside their reach and circle
-//! round to its flanks. A holder walks in and strikes, hops back after its blow and hands its turn to whoever waited longest; one
-//! that waited past its patience goes in anyway, and a target that turns its back or walks inside the ring is open to
-//! anyone. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers blows at it first, then takes
-//! the openings it is given.
+//! The tactics brain, DFO's, standing on Overlook's fight: whom a foe fights and whether it is its turn. As many foes a
+//! target as the director allows fight it hand to hand and shoot at it; the rest stand on a ring just outside their
+//! reach and circle round to its flanks. A holder walks in and strikes, hops back after its blow and hands its turn to
+//! whoever waited longest; one that waited past its patience goes in anyway, and a target that turns its back or walks
+//! inside the ring is open to anyone. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers
+//! blows at it first, then takes the openings it is given.
 
 use crate::awareness::look;
 use crate::board::Board;

@@ -64,7 +64,8 @@ phases) is [[Enemies]].
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
-- **Awareness.** A foe knows of a fighter of another side by a level from 0 to 1. Sight raises it by up to 5 a second,
+- **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it,
+  and it believes that thing's place. Sight of a fighter of another side raises it by up to 5 a second,
   scaled by how near (1 at its feet, nothing at its range: 14 m, a shooter's 51.2 m) and how nearly ahead (nothing at
   90 degrees off its facing), with nothing between their chests. Noises raise it by their loudness, less with
   distance, to nothing at their reach: a gunshot 2.0 to 40 m, a bow or crossbow 0.7 to 10 m, a swing or a blow landing
@@ -82,8 +83,8 @@ phases) is [[Enemies]].
   the striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
-  way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes steer apart inside
-  1.2 m of each other, pushed at up to 0.7 of a walk; nothing is moved but by its own controls.
+  way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side steer
+  apart inside 1.2 m of each other, pushed at up to 0.7 of a walk; nothing is moved but by its own controls.
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
   three shoot at it (the director, below). A holder walks in to its reach, squares up within 22.5 degrees, waits 0.3
   to 0.9 s and swings once; then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn
@@ -169,9 +170,9 @@ blades feint one wind-up in five, cut at 0.55 of it and never two within three w
 gap-closer, a chain or a shot never feints. Once the room says the blow landed on someone (it judges each player as
 their screen showed it, so the foe stands its ground up to half a second for the word), it is followed, 35% of the time
 for an elite, by a chained blow: a sweep then a lunge, a lunge or a slam then a sweep, a ring then a slam, wound up 0.6
-s (never under 0.55): long enough for a person who was just struck to react. A blow that ends without a chain is the
-holder's turn, spent; one that missed leaves it overreached, and it hands its turn on. A shooter's shot is aimed one in
-three, its line as long as its target is far.
+s, an elite's ×0.9 as any wind-up, and never under 0.55: long enough for a person who was just struck to react. A blow
+that ends without a chain is the holder's turn, spent; one that missed leaves it overreached, and it hands its turn on.
+A shooter's shot is aimed one in three, its line as long as its target is far.
 
 A Minor throws none, and a Major only some of its role's ([[Enemies]]). A Miniboss's second phase and the
 three of each Boss, its own, are [[Enemies]]'.
