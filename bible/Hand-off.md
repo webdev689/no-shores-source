@@ -213,9 +213,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - The layouts' open ends ([[Layouts]], "Limits"): the World Editor's drawing of their buildings, props and solids
   (the owner's to allow: the editor's layer may not import the city's), replanning only the layouts a change
-  touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes). The well
-  house (props 43202 and 43204) draws its roof 1.8 m over its posts, which stop at the eaves under the ridge: running
-  them up to the ridge breaks the Prop Forge's pin to DFO's props, to the bit, so it is the owner's to allow.
+  touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes).
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
