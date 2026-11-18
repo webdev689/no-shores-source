@@ -36,7 +36,7 @@ import { seaMarks } from './seaMarks.ts';
 import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
-import { HELM, helmEye, type Landfall, landfallOf, shownScale } from './seaLaw.ts';
+import { HELM, helmEye, type Landfall, landfallOf, pictureAt, shownScale } from './seaLaw.ts';
 
 /** The Overworld is not to scale: a ship is drawn this long, metres, so one reads from the raised view. */
 const SHIP_DRAWN_M = 75;
@@ -114,8 +114,8 @@ export interface SeaFrame {
  */
 export class Sea {
   private landmass: Landmass;
-  /** Her waterline and sails, and what draws a fight's marks; how many times her size she is drawn; each ship's rig
-   *  by who sails her. */
+  /** Her waterline and sails, and what draws a fight's marks; how many times her size she is drawn on the sea's view;
+   *  each ship's rig by who sails her. */
   private readonly hull: SeaHull;
   private readonly scale: number;
   private readonly drawn: SeaShips;
@@ -434,11 +434,11 @@ export class Sea {
     this.stepHelmView(dt);
     if (this.view.kind === 'sail' && !this.aboard.active)
       this.camera = keyTurn(this.camera, input.turn, input.tilt, dt);
-    const scale = shownScale(this.scale, Math.max(this.close.eased, this.helmShare, this.aboard.share));
     const { ship } = this.passage;
     const own = { ...ship, underWay: this.passage.sailing };
-    const place = this.drawn.placeOf('own', own, scale, this.water, dt, time);
-    const lying: Lying = { ...ship, scale, heave: place.z, pitch: place.pitch, roll: place.roll };
+    // Every view near her is laid on her at her own size; she is drawn as large as the eye's distance calls for.
+    const truePlace = this.drawn.placeOf('own', own, 1, this.water, dt, time);
+    const trueLying: Lying = { ...ship, scale: 1, heave: truePlace.z, pitch: truePlace.pitch, roll: truePlace.roll };
     const stepped = stepCamera(this.camera, {
       feet: [ship.x, ship.y, 0],
       dt,
@@ -458,19 +458,29 @@ export class Sea {
     const lens = horizonOf({ fogEndM: 28_000, nearM: 2, farM: 60_000 }, 1, fromShip);
     const overworld: Shot = { eye: shot.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
     const overShip = this.view.kind !== 'landing';
-    const seaShot = overShip ? this.close.shot(overworld, lying, this.camera.yaw, this.camera.tilt) : overworld;
+    const seaShot = overShip ? this.close.shot(overworld, trueLying, this.camera.yaw, this.camera.tilt) : overworld;
     // Clicks and marks are taken on the picture as shown, brought in close or not.
     const pose = poseOf({ eye: seaShot.eye, forward: forwardOf(seaShot.yaw, -seaShot.pitch) }, FIELD_OF_VIEW);
     this.pose = pose;
     const combat = this.combat;
     const fail = (error: unknown) => this.passage.say(error instanceof Error ? error.message : String(error));
+    const aboardShot = this.aboard.target(trueLying);
+    const down =
+      this.view.kind === 'helm'
+        ? { near: this.helmShot(trueLying, seaShot.far), share: this.helmShare }
+        : aboardShot && { near: aboardShot, share: this.aboard.share };
     const shown = combat
       ? combat.frame(dt, time, seaShot, fail)
-      : this.view.kind === 'helm'
-        ? this.helmShot(seaShot, lying)
-        : this.aboard.active
-          ? this.aboard.shot(seaShot, lying)
-          : seaShot;
+      : down
+        ? panShot(seaShot, down.near, down.share)
+        : seaShot;
+    const closest = this.close.closest(overworld, trueLying, this.camera.yaw, this.camera.tilt);
+    const { near, share } = down ?? { near: closest, share: this.close.eased };
+    const atHer = (view: Shot) => pictureAt(view, [ship.x, ship.y, 0]);
+    const scale = shownScale(this.scale, { seaM: atHer(overworld), shownM: atHer(shown), nearM: atHer(near), share });
+    // Asked again no time on, her swing stands: she is posed on the swell at the size she is drawn.
+    const place = scale === 1 ? truePlace : this.drawn.placeOf('own', own, scale, this.water, 0, time);
+    const lying: Lying = { ...ship, scale, heave: place.z, pitch: place.pitch, roll: place.roll };
     if (combat?.done) {
       this.passage.placeAt(combat.lying);
       this.combat = null;
@@ -553,17 +563,9 @@ export class Sea {
     this.helmShare = smooth01(down);
   }
 
-  /** The view eased between the sea's shot and the helm's, the eye riding her as she lies, shrinking to her size. */
-  private helmShot(sea: Shot, lying: Lying): Shot {
-    const helm = {
-      eye: helmEye(lying),
-      yaw: lying.heading,
-      pitch: HELM.pitch,
-      fov: FIELD_OF_VIEW,
-      near: 0.3,
-      far: sea.far,
-    };
-    return panShot(sea, helm, this.helmShare);
+  /** The helm's view, the eye behind her wheel riding her as she lies, looking along her heading. */
+  private helmShot(lying: Lying, far: number): Shot {
+    return { eye: helmEye(lying), yaw: lying.heading, pitch: HELM.pitch, fov: FIELD_OF_VIEW, near: 0.3, far };
   }
 
   private note(): string {
