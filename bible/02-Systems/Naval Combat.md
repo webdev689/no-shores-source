@@ -35,6 +35,10 @@ code:
   - crates/room/src/pirates.rs#Pirates
   - crates/room/src/threat.rs#held_pace
   - client/src/game/seaCombat.ts#SeaCombat
+  - crates/naval/src/ranks.rs#SCALES
+  - crates/naval/src/ranks.rs#Commission
+  - crates/room/src/pirates.rs#commission_at_sea
+  - client/src/ships/shipBars.ts#placeShipBars
 ---
 # Naval Combat
 
@@ -114,6 +118,26 @@ law the wind's eye costs her 0.55 of her way, so she never tacks.
   that gains nothing in 150 s is given up, and a wreck left after 30 s. She leaves the fight when she has sunk, or lies
   past 1.9 km from every player's ship and is not fighting; the editor's fight ends when its one captain leaves.
 
+## Ranks and factions
+
+Every captain sails for a faction at a rank ([[Enemies Come in Five Ranks, After Destiny]],
+[[Enemy Factions Start With the Grey Tithe]], [[Enemies]]): the Grey Tithe's ship is the Tithe Sloop, the pirates'
+the Pirate Sloop. Until the planned hulls are built every rank sails the Sloop's ([[Hulls]]). Her rank scales her, a
+Major as before ranks:
+
+| Rank | Hull | Gun damage | Reload | Aim error | Temper | Runs | Strikes |
+|---|---|---|---|---|---|---|---|
+| Minor | ×0.6 | ×0.9 | ×1.2 | ×1.3 | by her seed | under 30% | at 25% |
+| Major | ×1 | ×1 | ×1 | ×1 | by her seed | under 30% | at 25% |
+| Elite | ×1.8 | ×1.1 | ×0.9 | ×0.8 | always bold | under 30% | at 20% |
+| Miniboss | ×3 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
+| Boss | ×5 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
+
+Aim error scales both her lay's long and short and her volley's scatter. A captain sees every player's ship and every
+afloat, unstruck ship of another faction, and chooses, engages and breaks off with them as with a player's; she never
+fights her own faction, and a struck ship is nobody's enemy. Any foe's hit provokes her. Over each captain's ship in a
+fight stands her name above a bar of her hull, red, orange or yellow by rank; a Boss's across the top of the screen.
+
 ## Ramming
 
 DFO's law of the ram. A player's stem, 1 m above her waterline at her bow, strikes the hull of a ship of another flag
@@ -155,12 +179,13 @@ the panel reads "Laying the ... guns: on target.", only when an unscattered ball
 ## At sea
 
 The sea room ([[Server]]) sails pirates among the players' ships on the [[Overworld]]: DFO's director, trimmed to
-pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]).
+pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), the Grey Tithe beside them.
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s. While
   fewer than two pirates sail within 1.9 km of them, a roll brings a ship 0.8 of the time, and she is a pirate 0.3 of
-  that (DFO's open sea: 30 of its factions' 100); no other ship sails yet. The rolls wait real seconds, and are drawn
-  from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its own), so
+  that (DFO's open sea: 30 of its factions' 100); no other ship sails yet. By her seed half of those sail for the Grey
+  Tithe and half are pirates, a Minor 0.3 of the time, a Major 0.5 and an Elite 0.2. The rolls wait real seconds, and
+  are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its own), so
   each sea sends its pirates in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Where.** On the ring 650 to 1000 m round their ship, no nearer than 450 m to any player, where open water lies
   between, heading across their waters on a slant; she sails on at 2.4 m/s, going about at land, and goes once no
@@ -188,8 +213,9 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]).
 
 With `?room=` in the World Editor's address, Sail joins a fleet room ([[Server]]) instead, on the open sea: every
 player's Sloop and every captain called in fight in one fight, the room's. F calls a captain onto the ring round her
-(four at most in a room), X sends them all off. Her lay's arcs are laid in the browser by the same functions the room
-fires by (`preview`), among the ships the room last showed.
+(four at most in a room), of the faction and rank chosen in the panel (the pirates' Major if none), X sends them all
+off. Captains of different factions fight each other there as they fight players. Her lay's arcs are laid in the
+browser by the same functions the room fires by (`preview`), among the ships the room last showed.
 
 ## One crate, every machine
 
@@ -201,9 +227,9 @@ browser predicts its own ship through `room-wasm` by the same steps.
 
 ## Limits
 
-- Captains are Pirate Sloops: no other factions or classes, and no ambient traffic; at sea, pirates alone. Ships have
-  no ranks yet ([[Enemies Come in Five Ranks, After Destiny]]), and the Grey Tithe does not sail yet
-  ([[Enemy Factions Start With the Grey Tithe]]).
+- Every captain sails a Sloop, of either faction at any rank; no other classes, and no ambient traffic.
+- At sea, outside a fight, captains of different factions pass each other by: the sea room sails them as points, and
+  each fight holds one captain. A wary captain reckons a ship's rank only by her hull.
 - Players' balls do not strike other players' ships, and players do not ram one another.
 - At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port) and no notoriety. A voyage near a
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not

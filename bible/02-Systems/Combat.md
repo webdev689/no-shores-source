@@ -2,6 +2,8 @@
 type: system
 status: live
 code:
+  - crates/combat/src/fighter.rs#Side
+  - crates/combat/src/shots.rs#foe_speed
   - crates/combat/src/step.rs#step_fighter
   - crates/combat/src/judge.rs#judge
   - crates/combat/src/judge.rs#suffer
@@ -23,8 +25,9 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 
 - **One crate for every machine.** The `combat` crate holds the rules, beside [[Movement]]'s, and steps a fighter in
   the same whole ticks of 1/60 s. A fighter is a body and everything a fight keeps for it: what it holds, health,
-  stamina, poise, what it is doing, its aim and its soft lock's target. What a fighter does to others is the host's
-  to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
+  stamina, poise, what it is doing, its aim and its soft lock's target, and its side: the players', or an enemy
+  faction's by its number ([[Enemies]]); fighters of different sides are each other's foes. What a fighter does to
+  others is the host's to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
 - **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer or
   staff, fists with nothing drawn, or a bow, crossbow, pistolet or thunderlock. The left hand holds a shield, a second
   blade (the pair's blows take turns between the hands), a torch, or nothing; a two-handed weapon leaves it empty.
@@ -138,7 +141,8 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   power at none to half again at a full second; a foe's drawn shot strikes as a quick one. Letting the aim go lowers
   the weapon unfired.
 - **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block or a body
-  stops it; a pistolet's or thunderlock's ball reaches 60 m along its line at once. A body is an upright cylinder
+  stops it; a pistolet's or thunderlock's ball reaches 60 m along its line at once from a player's gun, and flies from a
+  foe's, at 70 m/s and 110 m/s, so it can be dodged. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
   one coming down over a head meets its top.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a

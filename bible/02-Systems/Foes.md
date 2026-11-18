@@ -5,63 +5,97 @@ code:
   - crates/foes/src/lib.rs#think
   - crates/foes/src/brain.rs#notice
   - crates/foes/src/roles.rs#numbers
-  - crates/foes/src/roster.rs#spawn
   - crates/foes/src/board.rs#Board
   - crates/foes/src/senses.rs#sense
+  - crates/foes/src/awareness.rs#stir
+  - crates/foes/src/awareness.rs#latch
+  - crates/foes/src/awareness.rs#look
+  - crates/foes/src/noises.rs#Noise
+  - crates/foes/src/director.rs#Director
+  - crates/foes/src/director.rs#BANDS
   - crates/foes/src/tactics.rs#decide
+  - crates/foes/src/flank.rs#drift
   - crates/foes/src/react.rs#defend
   - crates/foes/src/tell.rs#throw
   - crates/foes/src/shoot.rs#ranged
+  - crates/foes/src/shoot.rs#draw_ticks
+  - crates/foes/src/cover.rs#hold
+  - crates/foes/src/board.rs#claim
+  - crates/foes/src/lib.rs#NoSpots
   - crates/foes/src/steer.rs#controls
   - crates/foes/src/tuning.rs#MELEE_TOKENS
+  - crates/foes/src/tuning.rs#POST_SEEK
   - crates/room/src/foes.rs#step_foes
   - crates/room/src/foes.rs#tell_brains
+  - crates/room/src/foes.rs#noises
+  - crates/room/src/foes.rs#shout
+  - crates/room/src/judging.rs#settle
 ---
 # Foes
 
-The foes a player fights, and the brain each fights with: DFO's Enhanced AI, its tactics and its telegraphed blows,
-built upon so foes use the guard, the parry and the dodge of [[Combat]] too
-([[Combat Is Soulframe's, With DFO's Enhanced AI]], [[Pick - Enhanced AI]]).
+The brain every foe fights with: DFO's Enhanced AI, its tactics and its telegraphed blows, built upon so foes use the
+guard, the parry and the dodge of [[Combat]] too ([[Combat Is Soulframe's, With DFO's Enhanced AI]],
+[[Pick - Enhanced AI]]), with project-final's perception, cover, flanking and combat director on top
+([[project-final's AI Comes Over Onto DFO's]], [[Pick - project-final AI]]). Who the foes are (factions, types, ranks,
+phases) is [[Enemies]].
 
 ## How it works
 
 - **One crate for every machine.** The `foes` crate stands on the `combat` crate's rules. Each tick the room hands a
-  foe's brain what it knows (the room's tick and seed, every fighter, the course's blocks, and routes, which the room's
-  [[Navmesh]] gives), and the brain asks its fighter for controls and buttons, as a player's keys would, telegraphed blows
-  included; the combat rules carry them out. What the room saw happen (a swing begun, a shot loosed, a blow landed on
-  it or by it, its telegraphed blow's landing) it tells the brain, which notes it for its next thought. The foes of a
-  room share a board of turns. Chance comes from a hash of the room's seed, the tick, the foe and what is being
-  decided, so the same seed plays the same fight.
-- **The kinds.** Each holds real forge layers, so the client dresses it alike. Reaction is the ticks from seeing a
-  swing begin to answering it; the shares say how often it parries, blocks or dodges a swing at it, the rest it takes.
+  foe's brain what it knows (the room's tick and seed, every fighter, the course's blocks, routes and firing spots,
+  which the room's [[Navmesh]] gives, and the room's director), and the brain asks its fighter for controls and
+  buttons, as a player's keys would, telegraphed blows included; the combat rules carry them out. What the room saw
+  happen (a swing begun, a shot loosed, a blow landed on it or by it, its telegraphed blow's landing, a noise, an
+  ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
+  Chance comes from a hash of the room's seed, the tick, the foe and what is being decided, so the same seed plays the
+  same fight.
+- **Roles.** Every type of foe fights as one of five roles; its rank scales the role's numbers ([[Enemies]]). Reaction
+  is the ticks from seeing a swing begin to answering it; the shares say how often it parries, blocks or dodges a swing
+  at it, the rest it takes. As a Major:
 
-| Kind | Holds | Health | Poise | Weight | Might | Reaction | Parry / block / dodge | Telegraphed blows |
-|---|---|---|---|---|---|---|---|---|
-| Skirmisher | `dagger_iron`, `dagger_iron_l` | 45 | 18 | light | 1.0 | 15 | 5% / - / 45% | lunge |
-| Swordsman | `sword_steel`, `shield_kite_steel` | 70 | 35 | medium | 1.0 | 16 | 15% / 35% / 10% | sweep, lunge |
-| Brute | `warhammer_iron` | 130 | 70 | heavy | 1.1 | - | - / - / - | slam (iron), sweep |
-| Archer | `bow_short_iron` | 50 | 18 | light | 1.0 | 18 | - / - / 25% | aimed shot |
-| Captain | `sword_ebony` | 400 | 120 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
+| Role | Health | Poise | Weight | Might | Reaction | Parry / block / dodge | Its telegraphed blows |
+|---|---|---|---|---|---|---|---|
+| Skirmisher | 45 | 18 | light | 1.0 | 15 | 5% / - / 45% | lunge |
+| Swordsman | 70 | 35 | medium | 1.0 | 16 | 15% / 35% / 10% | sweep, lunge |
+| Brute | 130 | 70 | heavy | 1.1 | - | - / - / - | slam (iron), sweep |
+| Archer | 50 | 18 | light | 1.0 | 18 | - / - / 25% | aimed shot |
+| Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
-  A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s. The captain is the boss: elite, it
-  throws its blade's whole set, feints and chains, and has a second phase.
-- **Senses.** A foe notices a fighter of another side within 14 m (a shooter 51.2 m), within 90 degrees of where it
-  faces (DFO's half round), with no block between their chests, and takes the nearest it notices, or the one that
-  strikes it. Seen farther off, it is pursued, not fought. Out of sight, its target is hunted where it was last seen
-  for 5 s, then let go, and its turn at it is kept 1.5 s (DFO's stale lease). The foe's soft lock holds its target,
-  but while it answers a blow, the striker. A player just stood again is left be for 3 s, unless they strike first.
+  A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
+- **Awareness.** A foe knows of a fighter of another side by a level from 0 to 1. Sight raises it by up to 5 a second,
+  scaled by how near (1 at its feet, nothing at its range: 14 m, a shooter's 51.2 m) and how nearly ahead (nothing at
+  90 degrees off its facing), with nothing between their chests. Noises raise it by their loudness, less with
+  distance, to nothing at their reach: a gunshot 2.0 to 40 m, a bow or crossbow 0.7 to 10 m, a swing or a blow landing
+  1.0 to 15 m (heard where it lands), a fighter running 0.42 to 8 m each half second. Sound passes blocks; a foe pays
+  no heed to its own side's noises. With nothing stirring the level bleeds 0.16 a second, but not while it fights or
+  hunts. Above 0.02 a foe is **suspicious**: it turns and walks up to 3 m toward what stirred it. At 1 it is
+  **alert**: it shouts once, waking allies within 12 m toward that place, and takes the nearest it sees, or the one
+  that strikes it (a blow alerts at once). Seen farther off than its range, a target is pursued, not fought. Out of
+  sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease); then it
+  **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s,
+  then lets go, and its level bleeds back to idle. The foe's soft lock holds its target, but while it answers a blow,
+  the striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
   way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes steer apart inside
   1.2 m of each other, pushed at up to 0.7 of a walk; nothing is moved but by its own controls.
-- **Turns and the ring.** Two foes a target fight it hand to hand at once and two shoot at it. A holder walks in to its
-  reach, squares up within 22.5 degrees, waits 0.3 to 0.9 s and swings once; then it hops back for at most 0.4 s, holds
-  its ground 0.8 to 1.6 s, and hands its turn on: the foe that has waited longest goes next, and one that has waited 6 s
-  goes in whatever the count. The rest stand on a ring 1.5 m outside their reach, with 0.6 m of give, and circle it
-  slowly toward their own place on it, which starts where each stood and drifts 0.15 radians a second. A target who
-  turns its back on a waiting foe (more than 110 degrees) near the ring, or walks in on one inside the ring's near
-  edge, is open to it without a turn, but to one such foe at a time, and it goes on fighting while the target stays
-  that close. A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does.
+- **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
+  three shoot at it (the director, below). A holder walks in to its reach, squares up within 22.5 degrees, waits 0.3
+  to 0.9 s and swings once; then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn
+  on: the foe that has waited longest goes next, and one that has waited 6 s goes in whatever the count. The rest stand
+  on a ring 1.5 m outside their reach, with 0.6 m of give, and circle it slowly toward their own place on it, which
+  starts where each stood and **flanks**: it drifts 0.4 radians a second away from where the target faces, out to 100
+  degrees either side of its face, and stops short of the next foe on the ring (dead ahead, it takes a side by its
+  number). A target who turns its back on a waiting foe (more than 110 degrees) near the ring, or walks in on one
+  inside the ring's near edge, is open to it without a turn, but to one such foe at a time, and it goes on fighting
+  while the target stays that close. A foe that blocks holds its guard up on the ring while it waits its turn, as a
+  shield-bearer does. A holder going in takes the shortest way.
+- **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
+  health players take from foes and 0.09 for each foe they kill, falls 0.006 for each point a player loses (three
+  times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
+  hand and one shooting, from 0.25 two and two, from 0.6 three and two, from 0.85 three and three; a holder keeps its
+  turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay and the ring's
+  gap by its share. A dominating player meets more foes at once; one being beaten, fewer.
 - **Swings.** A chop into a raised guard, a sweep when two or more stand in reach before it, a thrust at the edge of
   reach, otherwise a slash, chop or thrust by chance. A foe that guards keeps 30 stamina for its guard; short of a swing
   and that, it hands its turn on. Blocked twice running by a guard still raised, it stops swinging into it and winds up
@@ -70,53 +104,64 @@ built upon so foes use the guard, the parry and the dodge of [[Combat]] too
   down: the iron blow already punished that), are struck at once with a chop.
 - **Backing off and running.** A quarter of its health lost inside 3 s, or, for a foe that guards or dodges, its poise
   four fifths full: it hands its turn on and walks out to a ring 2 m farther for 2 s, at most once in 10 s.
-- **Shooters.** A ranged turn gates a shot and a shot spends it; held 5 s unused it goes on. Without one an archer stands
-  off and holds its fire, never circling. It aims its bow and draws for a full second, aiming up for the arrow's
-  fall, then pulls the trigger, 0.5 to 1.5 s between shots: its arrows strike as a quick shot does, never half again
-  as a player's aimed shot does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A target inside 6 m it walks away
-  from, one burst of at most 2 s, out to 7 m; caught or cornered, it fights close with its fists for 3 s, and kites
-  again only 8 s after.
+- **Shooters.** A shooter shoots its own weapon: a bow drawn 1.0 s, a crossbow 1.3 s, a pistolet 1.2 s, a thunderlock
+  1.5 s, aiming up for a bolt's or arrow's fall, 0.5 to 1.5 s between shots; its shots strike as a player's quick shot
+  does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A foe's gun ball flies at 70 m/s (pistolet) or 110 m/s
+  (thunderlock), so it can be read and dodged, where a player's reaches its mark at once. A ranged turn gates a shot
+  and a shot spends it; held 5 s unused it goes on.
+- **Cover.** With cover near, a shooter takes a **post**: among the firing spots within 11 m that have cover, one where
+  either the spot hides it from where it believes its target is and a step of 1.2 m aside has the line, or the other way
+  round. It scores each by 1.5 a metre to walk there, 3 a metre outside its weapon's band of distance (bow 10 to 18 m,
+  crossbow 12 to 20, pistolet 8 to 12, thunderlock 14 to 24, a Marksman's half as far again), less up to 3 as its cover
+  faces its target squarely, and up to 2.5 more the nearer it stands before its target's face; never nearer its target
+  than 7 m (a Marksman's 10.5) nor within 3 m of another's post; the lowest wins. At its post it hides 1.5 to 2.5 s,
+  then looks out for up to 1.5 s (longer while drawing); with its turn it draws behind cover, steps out, looses only on
+  a clear line and falls back to reload; hurt, it hides as it backs off. It picks again when its target moves 4 m from
+  where it picked, when the line from its firing point closes or its hiding point opens; looking out and finding no one,
+  it picks once more where it believes its target is, and failing again, hunts. Out of sight behind its own cover, it
+  keeps its post. With no cover near it fights in the open: without a turn it stands off and holds its fire, never
+  circling; a target inside 6 m it walks away from, one burst of at most 2 s, out to 7 m (a Marksman's 9 and 10.5);
+  caught or cornered, it fights close with its fists for 3 s, and kites again only 8 s after.
 
 ## Answers to blows
 
-A foe answers as a person would, no faster and no surer. Seeing a player's swing begin at it (the striker within its
+A foe answers as a person would, no faster and no surer. Alert and seeing a swing begin at it (the striker within its
 reach and a metre, aiming at it, and in front of it: a blow from more than 110 degrees off its facing is not seen
-coming), it waits its reaction time (14 to 20 ticks, a person's 230 to 330 ms), then decides once, by its kind's shares
-and what it is doing. A parry presses the guard 2 to 14 ticks before the blow lands, by the dice, as a person's timing
-wanders: within 12 the window spans the landing, earlier it has closed and the guard only blocks; never later than 2
-ticks before. A block raises the guard only if its window will have closed before the blow lands (raised later it
-would parry, which a block is not), or keeps one already held; too late for that, it takes the blow. A dodge hops
-aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing it can only dodge.
-A shot loosed at it is timed by its distance: a shield-bearer blocks it, others may dodge it. Only a player's swing or
-shot is weighed, never an ally's. Waiting on an answer, a foe does not swing; while it answers, it faces the striker.
-The room judges a player's blow against a foe where the player's screen showed it but guarding and dodging as it is
-now ([[Server]]), so these answers count the same at any lag.
+coming), it waits its reaction time (13 to 22 ticks by its role and rank, a person's 220 to 370 ms), then decides once,
+by its own shares and what it is doing. A parry presses the guard 2 to 14 ticks before the blow lands, by the dice, as a
+person's timing wanders: within 12 the window spans the landing, earlier it has closed and the guard only blocks; never
+later than 2 ticks before. A block raises the guard only if its window will have closed before the blow lands (raised
+later it would parry, which a block is not), or keeps one already held; too late for that, it takes the blow. A dodge
+hops aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing it can only
+dodge. A shot loosed at it is timed by its distance: a shield-bearer blocks it, others may dodge it. Only the swing or
+shot of a fighter of another side is weighed, never an ally's. Waiting on an answer, a foe does not swing; while it
+answers, it faces the striker. The room judges a player's blow against a foe where the player's screen showed it but
+guarding and dodging as it is now ([[Server]]), so these answers count the same at any lag.
 
 ## Telegraphed blows
 
 DFO's TELL. A holder of a melee turn, free, off its cooldown and seen to its target, with no other wind-up within 20 m
 of that target, winds one up with DFO's one in ten a classic tick of 1/16 s, here 2.8% a tick (81% a second). In reach
-(and half a metre) it picks among its blows of reach; out of it, a charge from 5 to 12 m along a lane clear of blocks
-or a leap from 3 to 9 m at its target's feet. Its wind-up is the shape's times 0.9 to 1.25, an elite's times 0.9,
-never under 0.6 s; the combat rules add iron's 0.2 s. A heavy body's slam and ring are iron, and an elite's blow is
-iron one time in three. Its cooldown is 8 to 15 s, an elite's 6 to 11, from the end of the wind-up. The captain's
+(and half a metre) it picks among its blows of reach; out of it, a charge from 5 to 12 m along a lane clear of blocks or
+a leap from 3 to 9 m at its target's feet. Its wind-up is the shape's times 0.9 to 1.25, an elite's times 0.9, never
+under 0.6 s; the combat rules add iron's 0.2 s. A heavy body's slam and ring are iron, and an elite's blow is iron one
+time in three. Its cooldown is 8 to 15 s, an elite's 6 to 11, from the end of the wind-up. A Miniboss's or a Boss's
 blades feint one wind-up in five, cut at 0.55 of it and never two within three wind-ups, and swing at once after; a
-gap-closer, a chain or a shot never feints. Once the room says the blow landed on someone (it judges each player as their screen showed it,
-so the foe stands its ground up to half a second for the word), it is followed, 35% of the time for an elite, by a
-chained blow: a sweep then a lunge, a lunge or a slam then a sweep, a ring then a slam, wound up 0.6 s (never under
-0.55): long enough for a person who was just struck to react. A blow that ends without a chain is the holder's turn, spent; one that missed leaves it overreached, and
-it hands its turn on. An archer's shot is aimed one in three, its line as long as its target is far.
+gap-closer, a chain or a shot never feints. Once the room says the blow landed on someone (it judges each player as
+their screen showed it, so the foe stands its ground up to half a second for the word), it is followed, 35% of the time
+for an elite, by a chained blow: a sweep then a lunge, a lunge or a slam then a sweep, a ring then a slam, wound up 0.6
+s (never under 0.55): long enough for a person who was just struck to react. A blow that ends without a chain is the
+holder's turn, spent; one that missed leaves it overreached, and it hands its turn on. A shooter's shot is aimed one in
+three, its line as long as its target is far.
 
-**The captain's second phase.** At 35% of its health, once, as soon as it is free: a roar of 1.2 s, an iron ring about
-its feet; then its wind-ups are three quarters as long, its cooldowns six tenths, its blows a quarter harder (its
-might 1.5), and it chains up to two blows after a first.
+A Minor throws none, and a Major only some of its role's ([[Enemies]]). A Miniboss's second phase and the
+Boss's three are [[Enemies]]'.
 
 ## Limits
 
-- Foes do not seek a line around a block to shoot past it, nor flank; out of sight they walk to where the target was.
-  project-final's perception, cover, flanking and director are to come ([[project-final's AI Comes Over Onto DFO's]]).
 - A foe answers one blow at a time: a second swing seen while it answers the first is not weighed.
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
-- Foes have no ranks, names or factions yet: the kinds stand for all of them
-  ([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]]).
+- Cover is judged by lines from chest to chest, the step aside is always 1.2 m, a post's walk is costed in a straight
+  line, and from a post an aimed shot comes only when its turn arrives while it looks out.
+- Flanking stops at 100 degrees, short of a turned back. Sound is not stopped by blocks.
