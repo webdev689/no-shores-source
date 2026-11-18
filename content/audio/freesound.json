@@ -1,0 +1,18 @@
+{
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the test sheet.",
+  "cues": [
+    { "id": "ui.hover", "use": "The pointer or the keys reach a control", "query": "ui hover tick", "seconds": [0.02, 0.3] },
+    { "id": "ui.press", "use": "A button is pressed", "query": "ui click button", "seconds": [0.03, 0.5] },
+    { "id": "ui.back", "use": "A step back", "query": "ui back click soft", "seconds": [0.05, 0.6] },
+    { "id": "ui.tab", "use": "A tab of the menu turned", "query": "ui swipe whoosh short", "seconds": [0.1, 0.8] },
+    { "id": "ui.open", "use": "The menu opens", "query": "menu open whoosh", "seconds": [0.2, 1.5] },
+    { "id": "ui.close", "use": "The menu shuts", "query": "menu close whoosh", "seconds": [0.2, 1.5] },
+    { "id": "ui.refused", "use": "The room refuses a press", "query": "ui error denied", "seconds": [0.1, 1.0] },
+    { "id": "hold.charge", "use": "A hold charging, 0.6 to 1.8 seconds", "query": "charge up riser", "seconds": [0.6, 3.0] },
+    { "id": "hold.dismantle", "use": "A piece dismantled", "query": "crystal shatter", "seconds": [0.2, 1.5] },
+    { "id": "hold.feed", "use": "A Fruit of Dagon fed to an item", "query": "magic absorb chime", "seconds": [0.3, 2.0] },
+    { "id": "gain.common", "use": "A Normal or Magic gain", "query": "item pickup", "seconds": [0.1, 1.0] },
+    { "id": "gain.rare", "use": "A Rare gain", "query": "reward chime", "seconds": [0.3, 2.0] },
+    { "id": "gain.legendary", "use": "A Legendary or Atheric gain", "query": "rare loot sparkle", "seconds": [0.5, 3.0] }
+  ]
+}

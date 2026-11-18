@@ -1,0 +1,42 @@
+name: freesound
+
+# Finds candidates on Freesound for the sounds wanted in content/audio/freesound.json, whenever that list or this tool
+# changes: each cue's first few CC0 or CC-BY sounds of its length, their previews and who made them, kept as the run's
+# download for the audio test sheet. Freesound refuses Claude's cloud machines, so the search runs here, with the
+# repository's FREESOUND_TOKEN.
+on:
+  push:
+    paths: [content/audio/freesound.json, tools/freesound/**, .github/workflows/freesound.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      # Without the key there is nothing to search with: the run says so and stops, rather than failing.
+      - name: Check the key is set
+        id: key
+        env:
+          FREESOUND_TOKEN: ${{ secrets.FREESOUND_TOKEN }}
+        run: |
+          if [ -n "$FREESOUND_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no FREESOUND_TOKEN secret: nothing is searched"; fi
+      - name: Find the candidates
+        if: steps.key.outputs.set == 'true'
+        env:
+          FREESOUND_TOKEN: ${{ secrets.FREESOUND_TOKEN }}
+        run: node tools/freesound/candidates.mjs freesound-candidates
+      - uses: actions/upload-artifact@v4
+        if: steps.key.outputs.set == 'true'
+        with:
+          name: freesound-candidates
+          path: freesound-candidates
+          retention-days: 30
