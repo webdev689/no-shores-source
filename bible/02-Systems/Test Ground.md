@@ -109,15 +109,16 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
   view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
-- **The display.** It lays its own sheet over the [[Interface]]'s kit. Health, stamina and poise in one carved window
-  at the bottom left, each bar naming itself with its percentage inside, a faint strip holding what a loss took before
-  it drains, the health's edge flashing blood at a quarter or less and the stamina flashing when a swing or a dodge is
-  pressed with none; the soft lock's target marked at its chest; the target's plate (emblem, name, health and poise
-  track) at the top (below the boss bar while one shows); over each living foe but a Boss, near the crosshair or
+- **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned
+  with the view; poise, health and stamina in a row along the foot, each bar naming itself with its percentage
+  inside, a faint strip holding what a loss took before it drains, the health's edge flashing blood at a quarter or
+  less and the stamina flashing when a swing or a dodge is pressed with none; the soft lock's target marked at its
+  chest; the target's plate (emblem, name, health and poise track) under the compass (below the boss bar while one
+  shows); over each living foe but a Boss, near the crosshair or
   fought in the last minute, its plate: its faction's emblem, its type's name with an Elite's or a Miniboss's mark,
   and its health in red, orange or yellow by rank, a "?" while it is suspicious or searching and a "!" for a second
-  as it turns alert, no plate over another's; across the top of the
-  screen, for the nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and
+  as it turns alert, no plate over another's; under the compass, for
+  the nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and
   its health in yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
   came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
   gold or green when it is good for the player and red when bad; in first person, words about the player under the

@@ -2,30 +2,17 @@
 // Enhanced Plus kit paints the windows, troughs, fills and plates by their roles; this sheet gives each its room, and
 // never a colour to a border the kit paints, only its width and style.
 import { PLATES } from '../plus/barLayout.ts';
+import { wearCompass } from '../plus/compass.ts';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
 import { wearKit } from '../plus/kit.ts';
-import { BEVELS, FILLS, TONES } from '../plus/tones.ts';
+import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { PLATE_SIZE } from './plateSight.ts';
+import { VITALS_ROW } from './vitals.ts';
 
 const SHEET_ID = 'fight-hud';
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
  *  2 px edge. */
 const EMBLEM_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
-/** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a
- *  soft shade past it, so they read over bright sky and every fill. */
-export const HALO = [
-  ...[
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-    [1, 1],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-  ].map(([across, down]) => `${across}px ${down}px 0 ${TONES.outline}`),
-  '0 0 4px rgba(0,0,0,0.6)',
-].join(', ');
 const { overhead, boss } = PLATES;
 
 /** The plates' sheet: an emblem square, a title line and the bars under it, sized for each place a plate stands. */
@@ -107,13 +94,13 @@ ${marks.join('\n')}
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
 .fight-hud .overhead .meter { height: ${overhead.bar}px; }
 
-.fight-hud .target { position: absolute; top: 16px; left: 50%; width: 340px; translate: -50% 0; font-size: 14px; }
+/* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
+   show. */
+.fight-hud .target { width: 340px; font-size: 14px; }
 .fight-hud .target .body { flex: 1; gap: 3px; }
 .fight-hud .target .meter.health { height: 12px; }
-.fight-hud.bossed .target { top: 84px; }
 
-.fight-hud .boss { position: absolute; top: ${boss.top}px; left: 50%; width: min(${boss.width}px, ${boss.share * 100}%);
-  translate: -50% 0; }
+.fight-hud .boss { width: min(${boss.width}px, ${boss.share * 100}%); }
 .fight-hud .boss .body { flex: 1; }
 .fight-hud .boss .title { align-items: baseline; gap: 12px; font-size: 18px; }
 .fight-hud .boss .faction, .fight-hud .boss .phase { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
@@ -126,25 +113,33 @@ ${marks.join('\n')}
 `;
 }
 
-/** The vitals' panel: a carved window of three bars, each naming itself and saying its percentage inside it. */
+/** The vitals along the foot of the screen, after DFO's Enhanced HUD: three bars side by side and centred, health in
+ *  the middle, each naming itself and saying its percentage inside it, a brass clasp at each end. */
 function vitalsCss(): string {
+  const { bottom, width, share, height, gap } = VITALS_ROW;
+  const clasp = `linear-gradient(180deg, transparent 0 10px, ${TONES.brassDark} 10px 14px, transparent 14px),
+    linear-gradient(180deg, ${TONES.brassHi} 0 2px, transparent 2px),
+    linear-gradient(90deg, ${TONES.brassHi} 0 2px, ${TONES.brass} 2px 4px, ${TONES.brassLo} 4px 6px)`;
   return `
-.fight-hud .vitals { position: absolute; left: 24px; bottom: 24px; width: 260px; box-sizing: border-box;
-  display: grid; gap: 6px; padding: 9px 10px; border-width: 2px; border-style: solid; }
-.fight-hud .vital { display: flex; align-items: center; justify-content: space-between; height: 20px;
-  border-width: 2px; }
-.fight-hud .vital.poise { height: 16px; }
+.fight-hud .vitals { position: absolute; left: 50%; bottom: ${bottom}px; translate: -50% 0; display: flex;
+  align-items: center; gap: ${gap}px; }
+.fight-hud .vital { display: flex; align-items: center; justify-content: space-between; flex: none;
+  width: min(${width}px, ${share * 100}vw); height: ${height}px; border-width: 2px; }
+.fight-hud .vital::before, .fight-hud .vital::after { content: ''; position: absolute; top: -2px; bottom: -2px; z-index: 2;
+  width: 6px; box-shadow: 0 0 0 1px ${TONES.outline}; background: ${clasp}; }
+.fight-hud .vital::before { left: -6px; }
+.fight-hud .vital::after { right: -6px; }
 .fight-hud .vital.health { --fill: ${FILLS.health}; }
 .fight-hud .vital.stamina { --fill: ${FILLS.stamina}; }
 /* What a vital lost is its own body tone, faint: darker than any band of the fill, never brighter. */
 .fight-hud .vital .lost { background: var(--fill); opacity: 0.35; }
-/* Full and untouched, the panel rests: it goes in six steps, and comes back in two at the first change. */
+/* Full and untouched, the row rests: it goes in six steps, and comes back in two at the first change. */
 .fight-hud .vitals { transition: opacity 120ms steps(2, end); }
 .fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
-.fight-hud .vital .label, .fight-hud .vital .number { position: relative; padding: 0 7px; color: ${TONES.word};
+.fight-hud .vital .label, .fight-hud .vital .number { position: relative; padding: 0 10px; color: ${TONES.word};
   text-shadow: ${HALO}; }
-.fight-hud .vital .label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
-.fight-hud .vital .number { font-size: 11px; font-variant-numeric: tabular-nums; }
+.fight-hud .vital .label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
+.fight-hud .vital .number { font-size: 12px; font-variant-numeric: tabular-nums; }
 .fight-hud .vital.low { animation: fight-low 0.9s steps(1, end) infinite; }
 @keyframes fight-low { 0% { border-color: ${BEVELS.blood}; } 50% { border-color: ${BEVELS.sunk}; } }
 .fight-hud .vital.stamina.flash { box-shadow: 0 0 0 1px #fff, 0 0 8px #fff; animation: fight-blink 0.15s steps(2) infinite; }
@@ -233,9 +228,10 @@ export function fightSheetCss(): string {
   return cuesCss() + platesCss() + vitalsCss();
 }
 
-/** Lays the kit's sheet and then the display's on `page`, once each. */
+/** Lays the kit's sheet, the compass's and then the display's on `page`, once each. */
 export function wearFightSheet(page: Document): void {
   wearKit(page);
+  wearCompass(page);
   if (page.getElementById(SHEET_ID)) return;
   const sheet = page.createElement('style');
   sheet.id = SHEET_ID;

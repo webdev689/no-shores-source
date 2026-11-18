@@ -1,8 +1,7 @@
-// The player's vitals as one panel at the bottom left, in DFO's Enhanced HUD manner: a carved window holding three
-// labelled bars, each with its name and its percentage written inside it, the health's frame flashing blood when it
-// runs low and the stamina's when a swing or a dodge is asked of it with none. Full and untouched, with no foe on the
-// target plate, the panel rests out of sight, and the first point lost or spent brings it back at once.
-import { ROLES } from '../plus/kit.ts';
+// The player's vitals along the foot of the screen, as DFO's Enhanced HUD lays its three: side by side and centred,
+// health in the middle, each bar with its name and its percentage written inside it, the health's frame flashing blood
+// when it runs low and the stamina's when a swing or a dodge is asked of it with none. Full and untouched, with no foe
+// on the target plate, the row rests out of sight, and the first point lost or spent brings it back at once.
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { element, Meter } from './meter.ts';
@@ -10,11 +9,16 @@ import { element, Meter } from './meter.ts';
 /** Health at or under this share of the whole warns. */
 export const LOW_HEALTH = 0.25;
 
+/** The row, in CSS pixels: how far up from the screen's foot it stands, each bar's width (at most `width`, or `share`
+ *  of a narrower screen) and height with its frame, and the gap between two bars. */
+export const VITALS_ROW = { bottom: 22, width: 190, share: 0.23, height: 24, gap: 16 } as const;
+
 export type VitalName = 'health' | 'stamina' | 'poise';
+/** Left to right: poise where DFO's magicka stands, health in the middle, stamina where its fatigue does. */
 const VITALS: readonly [VitalName, string][] = [
+  ['poise', 'Poise'],
   ['health', 'Health'],
   ['stamina', 'Stamina'],
-  ['poise', 'Poise'],
 ];
 /** The stamina a fighter has in all (crates/combat/src/tuning.rs). */
 const STAMINA_WHOLE = 100;
@@ -40,7 +44,7 @@ export function vitalsOf(own: FighterView | null): Record<VitalName, { share: nu
 export const healthLow = (own: FighterView | null): boolean =>
   !!own && own.health > 0 && own.health / Math.max(1, own.healthMax) <= LOW_HEALTH;
 
-/** How long the vitals stand full and untouched before the panel rests, in seconds. */
+/** How long the vitals stand full and untouched before the row rests, in seconds. */
 export const REST_SECONDS = 4;
 
 /** Whether every vital is whole: health and stamina short of no whole point, and no whole point of poise taken. */
@@ -51,19 +55,19 @@ export const vitalsWhole = (own: FighterView | null): boolean =>
 export const calmFor = (was: number, whole: boolean, targeted: boolean, seconds: number): number =>
   whole && !targeted ? was + Math.max(0, seconds) : 0;
 
-/** The vitals' panel. */
+/** The vitals' row. */
 export class Vitals {
   readonly root: HTMLElement;
   private readonly rows: Record<VitalName, { meter: Meter; number: HTMLElement }>;
   private calm = 0;
 
   constructor(parent: HTMLElement) {
-    const panel = element('div', `vitals ${ROLES.window}`, parent);
-    this.root = panel;
+    const bars = element('div', 'vitals', parent);
+    this.root = bars;
     const row = ([name, label]: [VitalName, string]) => {
       // Poise drains of itself, so it shows no lost strip and breaks off nothing.
       const drains = name === 'poise';
-      const meter = new Meter(panel, `vital ${name}`, {
+      const meter = new Meter(bars, `vital ${name}`, {
         lossShown: !drains,
         pieceLeast: drains ? null : PIECE_LEAST.vital,
       });

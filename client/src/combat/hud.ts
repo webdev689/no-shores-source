@@ -2,6 +2,7 @@ import type { FightEvent } from '../network/messages.ts';
 import { rayHit } from '../player/playerCamera.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
+import { Compass, headingOf } from '../plus/compass.ts';
 import { edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
@@ -44,7 +45,7 @@ const RESPAWN_TICKS = 240;
 /** How long the stamina bar flashes for a swing or a dodge asked with none, and the screen's edge for a blow taken. */
 const FLASH_SECONDS = 0.45;
 /** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels; and how far clear of the
- *  vitals' panel it stands where it would fall on it: half an arrow, the panel's frame and a little more. */
+ *  vitals' row it stands where it would fall on it: half an arrow, a bar's frame and a little more. */
 const ARROW_INSET = 28;
 const ARROW_CLEAR = 22;
 /** A parry ring's span as a blow begins and as it lands (its fixed inner ring's), in CSS pixels; and how high over
@@ -106,6 +107,7 @@ export function blockedBy(
 export class Hud {
   private readonly root: HTMLElement;
   private readonly vitals: Vitals;
+  private readonly compass: Compass;
   private readonly target: FoePlate;
   private readonly mark: HTMLElement;
   private readonly over: HTMLElement;
@@ -126,7 +128,8 @@ export class Hud {
     wearFightSheet(root.ownerDocument);
     root.classList.add('fight-hud');
     this.root = root;
-    // Back to front: what stands over the world, then the plates fixed at the top over it, then the veil over all.
+    // Back to front: what stands over the world, then the compass's column at the top over it (the compass, the boss
+    // bar, the target's plate), then the veil over all.
     this.hurt = element('div', 'hurt', root);
     this.vitals = new Vitals(root);
     this.mark = element('div', 'mark', root);
@@ -134,8 +137,10 @@ export class Hud {
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
-    this.target = new FoePlate(root, 'target', { poise: true, remembers: 'whole' });
-    this.foeBars = new FoeBars(root, this.over);
+    const column = element('div', 'compass-column', root);
+    this.compass = new Compass(column);
+    this.foeBars = new FoeBars(root, this.over, column);
+    this.target = new FoePlate(column, 'target', { poise: true, remembers: 'whole' });
     this.words = new Words(this.over);
     this.veil = element('div', 'veil', root);
   }
@@ -167,6 +172,7 @@ export class Hud {
       blocked: (from, to) => blockedBy(blocks, from, to),
       fought: (id) => this.foeTarget.foughtWith(id),
     };
+    if (viewing.camera) this.compass.update(headingOf(viewing.camera.forward));
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
@@ -234,21 +240,21 @@ export class Hud {
   }
 
   /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
-   *  ends, standing clear of the vitals' panel. */
+   *  ends, standing clear of the vitals' row. */
   private pointAtThreats(frame: HudFrame): void {
     const shown = new Set<number>();
-    let panel: { left: number; top: number; right: number; bottom: number } | null = null;
+    let row: { left: number; top: number; right: number; bottom: number } | null = null;
     for (const { id, view } of frame.foes) {
       if (!threatens(view, frame.player)) continue;
       const clip = clipOf(frame.matrix, [view.x, view.y, view.z + 1.1]);
       const edge = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
       if (!edge) continue;
-      if (!panel) {
+      if (!row) {
         const [box, origin] = [this.vitals.root.getBoundingClientRect(), this.root.getBoundingClientRect()];
         const [left, top] = [box.left - origin.left, box.top - origin.top];
-        panel = { left, top, right: left + box.width, bottom: top + box.height };
+        row = { left, top, right: left + box.width, bottom: top + box.height };
       }
-      const spot = clearOf(edge, panel, ARROW_CLEAR);
+      const spot = clearOf(edge, row, ARROW_CLEAR);
       shown.add(id);
       const arrow = this.arrows.get(id) ?? element('div', 'arrow', this.over);
       this.arrows.set(id, arrow);
