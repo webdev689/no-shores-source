@@ -317,6 +317,8 @@ impl Room {
         shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
         shot.damage = shot_numbers(ranged).1 * AIMED_DAMAGE * foe.might;
         self.shots.push(shot);
+        // Loosed like any shot: heard, and seen coming by the foes of other sides it may strike.
+        self.loosed.push(id);
         self.ended_telegraphs.push((id, false, false));
     }
 

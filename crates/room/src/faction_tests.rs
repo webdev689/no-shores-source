@@ -9,6 +9,7 @@ use combat::shapes::{Shape, Telegraph, TelegraphOrder};
 use core::f64::consts::PI;
 
 const COLLECTOR: u8 = 2;
+const PISTOLEER: u8 = 9;
 const DECKHAND: u8 = 7;
 const THULE: u8 = 12;
 const PIRATE_SKIRMISHER: u8 = 13;
@@ -139,4 +140,20 @@ fn a_boss_in_its_last_stand_calls_two_minor_deckhands_to_its_side_within_the_roo
         run(&mut room, 600);
         assert_eq!(room.foes.len(), others + 1 + crew, "called once");
     }
+}
+
+#[test]
+fn a_foes_aimed_gunshot_is_heard_by_a_foe_of_another_side_across_the_room() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let pistoleer = stand(&mut room, PISTOLEER, Rank::Major, 0.0, 0.0, 0.0);
+    let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 25.0, PI);
+    let gunner = *room.fighter(pistoleer).unwrap();
+    let aimed =
+        TelegraphOrder { shape: Shape::Aimed, windup: 60, iron: false, feint_at: None, bearing: 0.0, ahead: 20.0 };
+    room.telegraph_lands(pistoleer, &gunner, &Telegraph::begin(&aimed, [0.0, 0.0, 0.0]));
+    room.tell_brains();
+    let alert = |room: &Room| room.foes_seen().find(|seen| seen.foe == pirate).unwrap().alert;
+    assert_eq!(alert(&room), 0, "heard, it stirs at its next thought");
+    room.tick();
+    assert!(alert(&room) >= 1, "the shot 25 m off, behind it, stirs it");
 }
