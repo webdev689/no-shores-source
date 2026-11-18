@@ -335,6 +335,26 @@ fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
 }
 
 #[test]
+fn a_foe_sent_to_a_place_atop_a_wall_it_cannot_climb_goes_round_to_its_foot_rather_than_into_its_end() {
+    // Its foe last seen standing on the wall, just over its northern face; the foe off the wall's eastern end.
+    let wall = Block { min_x: -8.0, min_y: -0.5, max_x: 8.0, max_y: 0.5, top: 2.5 };
+    let place = [0.0, -0.4, 2.5];
+    let mut room = Room::new(vec![wall], (0.0, 30.0));
+    let start = room.nav.nearest_point([14.0, 0.0, 0.0]).expect("the start is on the mesh");
+    let (fighter, mut brain) =
+        ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], -FRAC_PI_2);
+    let id = room.next_id();
+    ::foes::notice(&mut brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
+    room.foes.insert(id, Foe { fighter, brain });
+    let reached = (0..60 * 20).any(|_| {
+        room.tick();
+        let body = room.foes[&id].fighter.body;
+        combat::sight::apart([body.x, body.y], [place[0], place[1]]) < 1.4
+    });
+    assert!(reached, "it stuck at {:?}", room.foes[&id].fighter.body);
+}
+
+#[test]
 fn a_telegraphed_blow_a_leaving_player_ends_still_tells_its_foe_whether_it_landed() {
     let mut room = room();
     let (stays, leaves) = (room.join().expect("a room"), room.join().expect("with space"));

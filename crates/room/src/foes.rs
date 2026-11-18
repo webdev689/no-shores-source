@@ -16,7 +16,7 @@ use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_figh
 use core::cell::{Cell, RefCell};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::blocks::ground_at;
-use movement::{TICK_SECONDS, TUNING};
+use movement::{TICK_SECONDS, TUNING, Terrain};
 use navmesh::{NavMesh, Way};
 use std::collections::BTreeMap;
 
@@ -63,11 +63,13 @@ const CORNER_REACHED: f64 = TUNING.run * TICK_SECONDS;
 type Placed = ([f64; 3], Option<[f64; 3]>);
 
 /// Routes across the room's navmesh: the next corner on the way, to the nearest point the mesh reaches when the goal
-/// stands off it (a block's top no step reaches), and straight on where the mesh knows no way. Each foe's way is kept
-/// for the next tick, and a goal off the mesh is placed on it once a tick, however many foes walk for it.
+/// stands off it (a block's top no step reaches, or the ground beneath one too high for any floor near it), and
+/// straight on where the mesh knows no way. Each foe's way is kept for the next tick, and a goal off the mesh is placed
+/// on it once a tick, however many foes walk for it.
 #[derive(Debug)]
 struct MeshRoutes<'mesh> {
     mesh: &'mesh NavMesh,
+    floor: &'mesh crate::Floor,
     /// The foe thinking now, whose way is walked.
     asking: Cell<FighterId>,
     ways: RefCell<BTreeMap<FighterId, Way>>,
@@ -76,8 +78,8 @@ struct MeshRoutes<'mesh> {
 }
 
 impl<'mesh> MeshRoutes<'mesh> {
-    fn new(mesh: &'mesh NavMesh, ways: BTreeMap<FighterId, Way>) -> Self {
-        Self { mesh, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
+    fn new(mesh: &'mesh NavMesh, floor: &'mesh crate::Floor, ways: BTreeMap<FighterId, Way>) -> Self {
+        Self { mesh, floor, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
     }
 
     fn placed(&self, goal: [f64; 3]) -> Option<[f64; 3]> {
@@ -86,7 +88,9 @@ impl<'mesh> MeshRoutes<'mesh> {
         if let Some(&(_, near)) = placed.iter().find(same) {
             return near;
         }
-        let near = self.mesh.nearest_point(goal);
+        // A goal high on a block whose top no step reaches has no floor near its level: the ground beneath it does.
+        let beneath = || self.mesh.nearest_point([goal[0], goal[1], self.floor.height_at(goal[0], goal[1])]);
+        let near = self.mesh.nearest_point(goal).or_else(beneath);
         placed.push((goal, near));
         near
     }
@@ -254,7 +258,7 @@ impl Room {
             .collect();
         let ids: Vec<FighterId> = self.foes.keys().copied().collect();
         let mut intents = Vec::with_capacity(ids.len());
-        let routes = MeshRoutes::new(&self.nav, std::mem::take(&mut self.ways));
+        let routes = MeshRoutes::new(&self.nav, &self.floor, std::mem::take(&mut self.ways));
         {
             let spots = MeshSpots { mesh: &self.nav };
             let world = World {
