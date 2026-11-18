@@ -133,6 +133,18 @@ impl Field {
         field
     }
 
+    /// Takes the cells within a capsule (`[x1, y1, x2, y2, half]`, a sculpt's wing) into the claim, and measures again
+    /// how far inside it each cell lies.
+    pub fn claim_more(&mut self, [x1, y1, x2, y2, half]: [f64; 5]) {
+        for at in 0..self.claimed.len() {
+            let centre = self.centre(at % self.columns, at / self.columns);
+            if crate::paths::off_line(centre, [x1, y1], [x2, y2]) <= half {
+                self.claimed[at] = true;
+            }
+        }
+        self.inside = chamfer(self.columns, self.rows, |at| !self.claimed[at]);
+    }
+
     /// A cell's index.
     #[must_use]
     pub const fn index(&self, column: usize, row: usize) -> usize {

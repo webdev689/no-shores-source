@@ -26,6 +26,10 @@ pub enum SiteKind {
     Resource,
     /// Where foes hold ground.
     Foes,
+    /// A run's end arena, where a mission's objective will stand; the site names the run.
+    Objective,
+    /// A run's sealed door, where a mission goes on; the site names the run.
+    Door,
 }
 
 /// A site: what it is for, where, how much ground it takes, and what it holds or leads to.

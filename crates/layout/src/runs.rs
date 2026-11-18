@@ -43,6 +43,16 @@ pub struct Setting<'a> {
     pub avoid: &'a [Vec<[f64; 2]>],
 }
 
+/// How far either side of its line a run of a kind is cut, metres: a gorge widest, a ledge and a gallery narrowest.
+#[must_use]
+pub const fn half_of(kind: RunKind) -> f64 {
+    match kind {
+        RunKind::Gorge => 3.5,
+        RunKind::Keep => 3.0,
+        RunKind::Ledge | RunKind::Rampart | RunKind::Mine | RunKind::Undercroft => 2.5,
+    }
+}
+
 /// A run's length from mouth to door, metres, at the least and the most.
 pub const SHORTEST_M: f64 = 200.0;
 pub const LONGEST_M: f64 = 400.0;
@@ -63,6 +73,8 @@ const INSIDE_M: f64 = 30.0;
 const OUT_PAST_M: f64 = 80.0;
 /// How far a run past the edge keeps from the sea, metres: the strand and more.
 const SEA_CLEAR_M: f64 = 50.0;
+/// How much rock stands behind a run's door, metres.
+const BACKED_M: f64 = 40.0;
 /// The headings tried from each area.
 const HEADINGS: u32 = 24;
 
@@ -198,6 +210,18 @@ fn fits(setting: &Setting, run: &Run, taken: &[[f64; 7]]) -> bool {
     }
     let beyond = run.place == RunPlace::Beyond;
     if beyond && off_ring(setting.claim, run.door) < OUT_PAST_M {
+        return false;
+    }
+    // A door leads on into the massif: rock stands behind it, no floor, climb or other run within its reach.
+    let backed = (1..=10).all(|step| {
+        let at = ahead(run.door, run.facing, BACKED_M * f64::from(step) / 10.0);
+        let clear = taken.iter().all(|capsule| {
+            crate::paths::off_line(at, [capsule[0], capsule[1]], [capsule[2], capsule[3]]) - capsule[4]
+                > land::sculpts::CLIFF_RUN_M
+        });
+        clear && setting.bare.floor_distance(at[0], at[1]) > land::sculpts::CLIFF_RUN_M
+    });
+    if !backed {
         return false;
     }
     let mut points: Vec<([f64; 2], f64, f64)> =

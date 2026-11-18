@@ -103,11 +103,20 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
     let nodes: Vec<Node> = landmass.edits.nodes.iter().filter(|node| node.kind != NodeKind::Social).cloned().collect();
     let links = links_of(&nodes);
     let rise = crate::carve::rise_of(landmass.biome.map(|biome| biome.key));
+    let claims: Vec<Vec<[f64; 2]>> =
+        nodes.iter().map(|node| node.ring.iter().map(|point| [point.x as f64, point.y as f64]).collect()).collect();
     let mut layouts: Vec<Layout> = nodes
         .iter()
-        .map(|node| {
+        .enumerate()
+        .map(|(number, node)| {
             let linked = links.get(&node.id).map_or(&[][..], Vec::as_slice);
-            plan(node, &landmass.surface, &briefs.of(&node.id, node.kind), linked, book, rise)
+            let avoid: Vec<Vec<[f64; 2]>> = claims
+                .iter()
+                .enumerate()
+                .filter(|&(other, _)| other != number)
+                .map(|(_, claim)| claim.clone())
+                .collect();
+            plan(node, &landmass.surface, &briefs.of(&node.id, node.kind), linked, book, rise, &avoid)
         })
         .collect();
     landmass.surface.sculpts = Sculpts::from(layouts.iter().map(|layout| layout.sculpt.clone()).collect::<Vec<_>>());

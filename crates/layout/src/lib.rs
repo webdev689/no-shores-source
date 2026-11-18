@@ -38,8 +38,10 @@ use land::ground::Ground;
 use land::sites::{Node, NodeKind};
 use serde::Serialize;
 
-/// How far past its claim a layout reads the land, metres.
+/// How far past its claim a layout reads the land, metres, and how far for its runs past the edge: as far as a run
+/// reaches out, a whole number of cells further, so the two grids' cells lie alike.
 const MARGIN_M: f64 = 40.0;
+const RUNS_MARGIN_M: f64 = MARGIN_M + 52.0 * CELL_M;
 
 /// Another node a layout leads to or comes from: its id and the middle of its claim.
 #[derive(Debug, Clone, PartialEq)]
@@ -61,6 +63,9 @@ pub struct Layout {
     pub areas: Vec<Area>,
     pub paths: Vec<Path>,
     pub sites: Vec<sites::Site>,
+    /// The linear combat areas breaking off a patrol area.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub runs: Vec<runs::Run>,
     #[serde(flatten)]
     pub seating: Seating,
     /// How the layout carves its land.
@@ -84,9 +89,18 @@ pub fn middle_of(node: &Node) -> [f64; 2] {
 }
 
 /// Plans a node's layout on the ground from its brief: for a patrol area, `links` are the instances its gates lead
-/// to; for an instance, the patrol area it is entered from.
+/// to; for an instance, the patrol area it is entered from. `avoid` are the other nodes' claims, which its runs past
+/// its edge keep clear of.
 #[must_use]
-pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &Book, rise: f64) -> Layout {
+pub fn plan(
+    node: &Node,
+    ground: &Ground,
+    brief: &Brief,
+    links: &[Link],
+    book: &Book,
+    rise: f64,
+    avoid: &[Vec<[f64; 2]>],
+) -> Layout {
     let seed = seed_of(0x1A70, &node.id);
     let field = Field::read(ground, &claim_of(node), MARGIN_M);
     let patrol = node.kind == NodeKind::Patrol;
@@ -124,7 +138,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         }
     }
     dressing::dress(&mut kit, &areas, &paths);
-    let sites = sites::mark(&field, &areas, &paths, &seating, seed);
+    let mut sites = sites::mark(&field, &areas, &paths, &seating, seed);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x51E5, draws: 0, into: &mut seating };
     marks::build(&mut kit, &sites);
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);
@@ -144,10 +158,31 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
     let pockets: Vec<[f64; 2]> =
         sites.iter().filter(|site| site.kind == sites::SiteKind::Resource).map(|site| site.at).collect();
     let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets };
-    let sculpt = carve::carve(&field, claim_of(node), network, &seating, rise, seed);
+    let mut sculpt = carve::carve(&field, claim_of(node), network, &seating, rise, seed);
+    // The runs are cut into the rock the carving left, and a run past the edge is read on a wider field, the claim
+    // carried out round it by its wing.
+    let claim = claim_of(node);
+    let beyond = brief.runs.iter().any(|run| run.place == brief::RunPlace::Beyond);
+    let mut wide = (patrol && beyond).then(|| Field::read(ground, &claim, RUNS_MARGIN_M));
+    let runs = if patrol && !brief.runs.is_empty() {
+        let bare = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
+        let field = wide.as_ref().unwrap_or(&field);
+        let setting = runs::Setting { field, claim: &claim, areas: &areas, bare: &bare, taken: &sculpt.climbs, avoid };
+        runs::find(&setting, &brief.runs, seed)
+    } else {
+        Vec::new()
+    };
+    sculpt.runs = runs.iter().flat_map(|run| runs::capsules(run, runs::half_of(run.kind))).collect();
+    sculpt.wings = runs.iter().filter_map(|run| runs::wing(run, &claim)).collect();
+    if let Some(wide) = &mut wide {
+        for &wing in &sculpt.wings {
+            wide.claim_more(wing);
+        }
+    }
+    let reach = wide.as_ref().unwrap_or(&field);
     let carved = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
-    let cells = ring::section_cells(&field, &|x, y| carved.floor_distance(x, y), anchor);
-    let ring = ring::traced(&field, &cells);
+    let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor);
+    let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, rise);
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
@@ -165,6 +200,30 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
         skyline::kerb(&mut kit, [x1, y1], [x2, y2], pair[0][4], &carved);
     }
+    // Each run is walked as a footpath, foes hold its beats, and its end and door are marked for the missions to come.
+    for run in &runs {
+        paths.push(paths::Path {
+            tier: Tier::Footpath,
+            points: run.line.clone(),
+            crossings: Vec::new(),
+            heights: Vec::new(),
+        });
+        let named = Some(run.name.clone());
+        let (end, held) = run.beats.split_last().map_or((None, &[][..]), |(end, held)| (Some(end), held));
+        sites.extend(held.iter().map(|beat| sites::Site {
+            kind: sites::SiteKind::Foes,
+            at: beat.at,
+            radius: beat.radius,
+            holds: None,
+        }));
+        sites.extend(end.map(|end| sites::Site {
+            kind: sites::SiteKind::Objective,
+            at: end.at,
+            radius: end.radius,
+            holds: named.clone(),
+        }));
+        sites.push(sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named });
+    }
     rocks::talus(&mut kit, &ring, &paths, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &paths, &carved);
     skyline::rim(&mut kit, &ring, &paths, &carved);
@@ -181,6 +240,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         areas,
         paths,
         sites,
+        runs,
         seating,
         sculpt,
         boxes: Vec::new(),
