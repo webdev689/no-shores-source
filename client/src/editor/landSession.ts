@@ -1,6 +1,9 @@
 import type { FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Brush, Helm, LandPatch, LandView, ShipFloats } from '../rules/landRules.ts';
 import type { CloseGround, LandWorker, Sailed } from '../terrain/landClient.ts';
+import type { LandTexts } from '../terrain/landTexts.ts';
+import type { LayoutMarks } from '../terrain/layoutMarks.ts';
+import { downloadJson } from './dom.ts';
 import type { LandState } from './landPanel.ts';
 import { markCells, type Places } from './marks.ts';
 
@@ -24,6 +27,8 @@ export interface Landmass {
   state: LandState;
   view: LandView | null;
   marks: Uint8Array | null;
+  /** Its nodes' layouts as last settled on it; none until it is opened for shaping. */
+  layouts: readonly LayoutMarks[];
   savedText: string | null;
   history: string[];
   at: number;
@@ -46,6 +51,8 @@ export class LandSession {
   storageFailed = false;
   private readonly worker: LandWorker;
   private readonly layoutText: string;
+  /** What the land is settled with besides its edits, so the editor carves it and lays its layouts as the game does. */
+  private readonly texts: Promise<LandTexts>;
   private openId = '';
   private closed = false;
   private queue: Promise<unknown> = Promise.resolve();
@@ -53,12 +60,21 @@ export class LandSession {
   /** The places last read, by the text they were read from: every frame draws them, and a file can be large. */
   private read = { text: '', places: {} as Places };
 
-  constructor(worker: LandWorker, layoutText: string) {
+  constructor(worker: LandWorker, layoutText: string, texts: Promise<LandTexts>) {
     this.worker = worker;
     this.layoutText = layoutText;
+    this.texts = texts;
     const ids = (JSON.parse(layoutText) as { continents: { id: string }[] }).continents.map(({ id }) => id);
     for (const id of ids)
-      this.landmasses.set(id, { state: 'waiting', view: null, marks: null, savedText: null, history: [], at: 0 });
+      this.landmasses.set(id, {
+        state: 'waiting',
+        view: null,
+        marks: null,
+        layouts: [],
+        savedText: null,
+        history: [],
+        at: 0,
+      });
   }
 
   /** Stops the session: work still queued does nothing, so a newer session's worker calls are never overtaken. */
@@ -79,6 +95,12 @@ export class LandSession {
   private show(landmass: Landmass, view: LandView): void {
     landmass.view = view;
     landmass.marks = markCells(view, editsOf(landmass));
+  }
+
+  /** Shows the open landmass's land as the worker settled it, and its layouts as they were planned again there. */
+  private async settled(landmass: Landmass, view: LandView): Promise<void> {
+    this.show(landmass, view);
+    landmass.layouts = await this.worker.layoutMarks();
   }
 
   /** A landmass's places, as its edits stand now. */
@@ -102,7 +124,7 @@ export class LandSession {
       const { text } = await this.worker.write();
       // A change that changed nothing is no undo step.
       if (text !== landmass.history[landmass.at]) this.record(landmass, id, text);
-      this.show(landmass, view);
+      await this.settled(landmass, view);
       return landmass;
     });
   }
@@ -158,7 +180,11 @@ export class LandSession {
       }
       const nowText = landmass.history[landmass.at] ?? EMPTY_EDITS;
       try {
-        this.show(landmass, await this.worker.open(this.layoutText, id, nowText, keep));
+        // A preview is not settled (the worker settles only the landmass it keeps open), so it needs no texts.
+        const { rmbText, buildersText } = keep ? await this.texts : { rmbText: null, buildersText: null };
+        const view = await this.worker.open(this.layoutText, id, nowText, keep, rmbText, buildersText);
+        if (keep) await this.settled(landmass, view);
+        else this.show(landmass, view);
         landmass.state = 'ready';
         if (keep) this.openId = id;
       } catch (error) {
@@ -197,7 +223,7 @@ export class LandSession {
     return this.then(async () => {
       const landmass = this.landmasses.get(id);
       if (!landmass || this.openId !== id) return null;
-      this.show(landmass, await this.worker.settle());
+      await this.settled(landmass, await this.worker.settle());
       const { text } = await this.worker.write();
       this.record(landmass, id, text);
       return landmass;
@@ -211,7 +237,7 @@ export class LandSession {
       const text = landmass?.history[(landmass?.at ?? 0) + direction];
       if (!landmass || text === undefined || this.openId !== id) return null;
       landmass.at += direction;
-      this.show(landmass, await this.worker.setEdits(text));
+      await this.settled(landmass, await this.worker.setEdits(text));
       this.keep(id, text);
       return landmass;
     });
@@ -233,6 +259,17 @@ export class LandSession {
       }
       return written.text;
     });
+  }
+
+  /** Saves a landmass's edits: under `npm run dev` into content/world/land/, else as a download. Answers what it
+   *  did, for the status line. */
+  async save(id: string): Promise<string> {
+    const text = await this.written(id);
+    const url = `${import.meta.env.BASE_URL}world/land/${encodeURIComponent(id)}.json`;
+    const answer = import.meta.env.DEV ? await fetch(url, { method: 'PUT', body: text }).catch(() => null) : null;
+    if (answer?.ok) return `Saved content/world/land/${id}.json.`;
+    downloadJson(text, `${id}.json`);
+    return `Downloaded ${id}.json. Put it in content/world/land/ to keep it.`;
   }
 
   /** The open landmass's exact ground over a grid and its breakers' field, for the close-up; null when another is

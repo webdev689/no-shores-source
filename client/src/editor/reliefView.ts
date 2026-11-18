@@ -4,6 +4,7 @@ import { stillLevels } from '../water/shore.ts';
 import { SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import type { Camera } from './camera.ts';
 import type { CellRect } from './landMask.ts';
+import { MOST_TILES, TILE_SAMPLES, TILE_STEPS, type Tile } from './reliefTiles.ts';
 
 /** The low ground and snow line drawn for a landmass with no biome. */
 const DEFAULT_GROUND = [0.33, 0.52, 0.29] as const;
@@ -21,7 +22,9 @@ export interface ReliefScene {
 }
 
 /** One full-screen pass over a landmass's window: the seabed by depth, the land by height under a hillshade, lakes,
- *  each cell's mark (rivers, roads, towns, ports), the frame's edge and the brush. */
+ *  each cell's mark (rivers, roads, towns, ports), the frame's edge and the brush; where a tile of the exact ground
+ *  is kept (reliefTiles.ts), the finest one over a pixel is drawn instead, its cliffs in rock, faded into the 1 km
+ *  land at the kept tiles' edge. */
 const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 
@@ -35,7 +38,7 @@ struct View {
   metres_per_pixel: f32,
   cell_m: f32,
   brush_radius: f32,
-  unused: f32,
+  tile_count: f32,
   ground: vec4f,
 };
 
@@ -43,6 +46,12 @@ struct View {
 @group(0) @binding(1) var heights: texture_2d<f32>;
 @group(0) @binding(2) var lakes: texture_2d<f32>;
 @group(0) @binding(3) var marks: texture_2d<u32>;
+// Each tile's samples (height, fresh water's surface) and marks, one layer a tile; and each tile's first inner
+// sample in metres from the view's centre, its step and its layer.
+@group(0) @binding(4) var tile_ground: texture_2d_array<f32>;
+@group(0) @binding(5) var tile_marks: texture_2d_array<u32>;
+@group(0) @binding(6) var<storage, read> tile_table: array<vec4f, ${MOST_TILES}>;
+const TILE_STEPS = ${TILE_STEPS}.0;
 
 const OUTSIDE = vec3f(0.05, 0.05, 0.06);
 const OPEN_SEA = vec3f(0.06, 0.13, 0.23);
@@ -71,6 +80,81 @@ fn land_colour(height: f32) -> vec3f {
   colour = mix(colour, high, smoothstep(600.0, 1500.0, height));
   colour = mix(colour, rock, smoothstep(1500.0, 2200.0, height));
   return mix(colour, snow, smoothstep(view.ground.w, view.ground.w + 400.0, height));
+}
+
+// The finest tile over a point, metres from the view's centre, or -1.
+fn tile_over(offset: vec2f) -> i32 {
+  var best = -1;
+  var best_step = 1e9;
+  for (var index = 0; index < i32(view.tile_count); index++) {
+    let tile = tile_table[index];
+    let at = (offset - tile.xy) / tile.z;
+    if (all(at >= vec2f(0.0)) && all(at <= vec2f(TILE_STEPS)) && tile.z < best_step) {
+      best = index;
+      best_step = tile.z;
+    }
+  }
+  return best;
+}
+
+// A tile's height and water at a point in its steps from its first inner sample, between the four samples round it.
+fn tile_at(layer: i32, at: vec2f) -> vec2f {
+  let last = vec2i(textureDimensions(tile_ground)) - 1;
+  let base = floor(at) + 1.0;
+  let fraction = at + 1.0 - base;
+  let corner = vec2i(base);
+  let a = textureLoad(tile_ground, clamp(corner, vec2i(0), last), layer, 0).rg;
+  let b = textureLoad(tile_ground, clamp(corner + vec2i(1, 0), vec2i(0), last), layer, 0).rg;
+  let c = textureLoad(tile_ground, clamp(corner + vec2i(0, 1), vec2i(0), last), layer, 0).rg;
+  let d = textureLoad(tile_ground, clamp(corner + vec2i(1, 1), vec2i(0), last), layer, 0).rg;
+  return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
+}
+
+fn tile_marked(layer: i32, at: vec2f, first: u32, last: u32) -> f32 {
+  let top = vec2i(textureDimensions(tile_marks)) - 1;
+  let base = floor(at) + 1.0;
+  let fraction = at + 1.0 - base;
+  var cover = 0.0;
+  for (var corner_index = 0; corner_index < 4; corner_index++) {
+    let offset = vec2i(corner_index & 1, corner_index >> 1);
+    let mark = textureLoad(tile_marks, clamp(vec2i(base) + offset, vec2i(0), top), layer, 0).r;
+    let share = mix(1.0 - fraction.x, fraction.x, f32(offset.x)) * mix(1.0 - fraction.y, fraction.y, f32(offset.y));
+    cover += select(0.0, share, mark >= first && mark <= last);
+  }
+  return smoothstep(0.3, 0.7, cover);
+}
+
+// The exact ground's colour over a tile, and how much of it shows: all of it inside the kept tiles, fading out over
+// their last 48 m so a tile's edge never shows as a seam.
+fn exact_colour(offset: vec2f, pixel_m: f32) -> vec4f {
+  let found = tile_over(offset);
+  if (found < 0) { return vec4f(0.0); }
+  let tile = tile_table[found];
+  let layer = i32(tile.w);
+  let at = (offset - tile.xy) / tile.z;
+  let here = tile_at(layer, at);
+  let height = here.x;
+  let slope = vec2f(
+    tile_at(layer, at + vec2f(1.0, 0.0)).x - tile_at(layer, at - vec2f(1.0, 0.0)).x,
+    tile_at(layer, at + vec2f(0.0, 1.0)).x - tile_at(layer, at - vec2f(0.0, 1.0)).x,
+  ) / (2.0 * tile.z);
+  let across = max(length(slope) * pixel_m, 1e-3);
+  let normal = normalize(vec3f(-slope, 1.0));
+  let shade = clamp(dot(normal, normalize(vec3f(-1.0, -1.0, 1.2))), 0.0, 1.0);
+  // A face steeper than one in one is a carved cliff: rock, as the terrain lays it.
+  var land = mix(land_colour(max(height, 0.0)), vec3f(0.50, 0.48, 0.46), smoothstep(0.6, 1.2, length(slope)));
+  land = land * (0.4 + 0.8 * shade);
+  land = mix(land, LAKE, smoothstep(-0.25, 0.25, (here.y - height) / across) * select(0.0, 1.0, here.y > 0.0));
+  land = mix(mix(mix(land, ROAD, tile_marked(layer, at, 3u, 3u)), TOWN, 0.6 * tile_marked(layer, at, 4u, 4u)), PORT, tile_marked(layer, at, 5u, 5u));
+  let sea = mix(SHALLOW, OPEN_SEA, smoothstep(0.0, 300.0, -height));
+  let colour = mix(sea, land, smoothstep(-0.5, 0.5, height / across));
+  var inside = 0.0;
+  for (var ring = 1; ring <= 3; ring++) {
+    let reach = f32(ring) * 16.0;
+    inside += f32(tile_over(offset + vec2f(reach, 0.0)) >= 0) + f32(tile_over(offset - vec2f(reach, 0.0)) >= 0);
+    inside += f32(tile_over(offset + vec2f(0.0, reach)) >= 0) + f32(tile_over(offset - vec2f(0.0, reach)) >= 0);
+  }
+  return vec4f(colour, inside / 12.0);
 }
 
 @fragment
@@ -102,6 +186,8 @@ fn fragment_main(@builtin(position) pixel: vec4f) -> @location(0) vec4f {
   land = mix(land, RIVER, 0.85 * marked(marks, at, 1u, 2u));
   land = mix(mix(mix(land, ROAD, marked(marks, at, 3u, 3u)), TOWN, 0.6 * marked(marks, at, 4u, 4u)), PORT, marked(marks, at, 5u, 5u));
   var colour = mix(sea, land, smoothstep(-0.5, 0.5, height / across));
+  let exact = exact_colour((pixel.xy - view.viewport * 0.5) * step, pixel_m);
+  colour = mix(colour, exact.rgb, exact.a);
   let ring = 1.0 - smoothstep(0.0, pixel_m * 1.2, abs(distance(world, view.brush) - view.brush_radius));
   colour = mix(colour, vec3f(1.0), select(0.0, ring, view.brush_radius > 0.0));
   return vec4f(colour, 1.0);
@@ -123,12 +209,25 @@ export function heightAt(view: LandView, x: number, y: number): number | null {
   return view.heights[j * view.width + i] ?? null;
 }
 
+/** The cursor's readout: where it points, and the height of the 1 km cell there or the sea's depth. */
+export function readoutAt(view: LandView | null, world: { readonly x: number; readonly y: number } | null): string {
+  const ground = view && world ? heightAt(view, world.x, world.y) : null;
+  if (!world || ground === null) return '';
+  const kilometres = (metres: number) => Math.round(metres / 1000).toLocaleString('en-US');
+  const where = `${kilometres(world.x)} km east, ${kilometres(world.y)} km south`;
+  return `${where} · ${ground >= 0 ? `${Math.round(ground)} m` : `sea, ${Math.round(-ground)} m deep`}`;
+}
+
 /** Draws one landmass's relief with WebGPU: three textures of its cells, one full-screen pass. */
 export class ReliefView {
   private readonly gpu: Gpu;
   private readonly uniforms: GPUBuffer;
   private readonly pipeline: GPURenderPipeline;
   private textures: { heights: GPUTexture; lakes: GPUTexture; marks: GPUTexture } | null = null;
+  /** The exact ground's tiles, one layer a slot, and where each kept one lies. */
+  private readonly tileGround: GPUTexture;
+  private readonly tileMarks: GPUTexture;
+  private readonly tileTable: GPUBuffer;
   private bindGroup: GPUBindGroup | null = null;
   private land: LandView | null = null;
   /** The lakes' still water (shore.ts stillLevels), made again when the whole window is sent. */
@@ -138,6 +237,14 @@ export class ReliefView {
     this.gpu = gpu;
     const { device } = gpu;
     this.uniforms = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
+    const layers = [TILE_SAMPLES, TILE_SAMPLES, MOST_TILES];
+    const usage = TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination;
+    this.tileGround = device.createTexture({ size: layers, format: 'rg32float', usage });
+    this.tileMarks = device.createTexture({ size: layers, format: 'r8uint', usage });
+    this.tileTable = device.createBuffer({
+      size: MOST_TILES * 16,
+      usage: BUFFER_USAGE.storage | BUFFER_USAGE.copyDestination,
+    });
     const module = device.createShaderModule({ code: SHADER });
     this.pipeline = device.createRenderPipeline({
       layout: 'auto',
@@ -167,6 +274,9 @@ export class ReliefView {
         { binding: 1, resource: this.textures.heights.createView() },
         { binding: 2, resource: this.textures.lakes.createView() },
         { binding: 3, resource: this.textures.marks.createView() },
+        { binding: 4, resource: this.tileGround.createView({ dimension: '2d-array' }) },
+        { binding: 5, resource: this.tileMarks.createView({ dimension: '2d-array' }) },
+        { binding: 6, resource: { buffer: this.tileTable } },
       ],
     });
     this.land = land;
@@ -206,15 +316,47 @@ export class ReliefView {
     }
   }
 
-  /** Draws one frame into the canvas, `width` by `height` pixels. */
-  draw(scene: ReliefScene, width: number, height: number): void {
+  /** Sends a tile of the exact ground to its slot. */
+  layTile(tile: Tile): void {
+    const { patch, slot } = tile;
+    const ground = new Float32Array(patch.width * patch.height * 2);
+    for (let index = 0; index < patch.width * patch.height; index++) {
+      ground[index * 2] = patch.heights[index] ?? 0;
+      ground[index * 2 + 1] = patch.water[index] ?? 0;
+    }
+    const { queue } = this.gpu.device;
+    const size = [patch.width, patch.height, 1];
+    queue.writeTexture(
+      { texture: this.tileGround, origin: [0, 0, slot] },
+      ground,
+      { bytesPerRow: patch.width * 8 },
+      size,
+    );
+    queue.writeTexture(
+      { texture: this.tileMarks, origin: [0, 0, slot] },
+      patch.marks,
+      { bytesPerRow: patch.width },
+      size,
+    );
+  }
+
+  /** Draws one frame into the canvas, `width` by `height` pixels, with the kept tiles of the exact ground. */
+  draw(scene: ReliefScene, width: number, height: number, tiles: readonly Tile[] = []): void {
     const { device, context } = this.gpu;
     const land = this.land;
+    // Each tile's place from the view's centre is worked out here in full precision: the shader's world positions
+    // are only good to a quarter metre this far from the frame's corner.
+    const table = new Float32Array(MOST_TILES * 4);
+    const shownTiles = tiles.slice(0, MOST_TILES);
+    shownTiles.forEach(({ left, top, step, slot }, index) =>
+      table.set([left - scene.camera.centreX, top - scene.camera.centreY, step, slot], index * 4),
+    );
+    device.queue.writeBuffer(this.tileTable, 0, table);
     const floats = new Float32Array(20);
     floats.set([scene.camera.centreX, scene.camera.centreY, width, height]);
     if (land) floats.set([land.leftM, land.topM, land.width * land.cellM, land.height * land.cellM], 4);
     floats.set([scene.frameWidthM, scene.frameHeightM, scene.brushX, scene.brushY], 8);
-    floats.set([scene.camera.metresPerPixel, land?.cellM ?? 1000, scene.brushRadiusM, 0], 12);
+    floats.set([scene.camera.metresPerPixel, land?.cellM ?? 1000, scene.brushRadiusM, shownTiles.length], 12);
     floats.set([...(land?.ground ?? DEFAULT_GROUND), land?.snowM ?? DEFAULT_SNOW_M], 16);
     device.queue.writeBuffer(this.uniforms, 0, floats);
     const encoder = device.createCommandEncoder();

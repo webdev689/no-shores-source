@@ -2,6 +2,7 @@ import type { FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Brush, GroundPatch, Helm, LandPatch, LandView, Pose, ShipFloats } from '../rules/landRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { ShoreField } from '../water/shore.ts';
+import type { LayoutMarks } from './layoutMarks.ts';
 
 /** What the page asks the land worker. */
 export type LandRequest =
@@ -16,6 +17,7 @@ export type LandRequest =
     }
   | { readonly kind: 'city' }
   | { readonly kind: 'layouts' }
+  | { readonly kind: 'layout-marks' }
   | { readonly kind: 'window'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'boxes'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'dab'; readonly brush: Brush; readonly point: readonly [number, number]; readonly starts: boolean }
@@ -63,6 +65,7 @@ export interface LandAnswer {
   /** A city's plan or a window of the ground, as JSON; null for a landmass with no city. */
   readonly text?: string | null;
   readonly boxes?: readonly Block[];
+  readonly marks?: readonly LayoutMarks[];
   readonly shore?: ShoreField;
   readonly sailed?: Sailed;
   readonly fight?: FightView;
@@ -85,6 +88,8 @@ export interface LandWorker {
   cityPlan(): Promise<string | null>;
   /** The open landmass's nodes' layouts, as a JSON list. */
   layouts(): Promise<string>;
+  /** What the World Editor draws of them, cut down in the worker so the page never parses the rest. */
+  layoutMarks(): Promise<readonly LayoutMarks[]>;
   /** The open landmass's exact ground over a rect (west, north, east, south) as JSON, and the city's boxes there. */
   window(rect: readonly [number, number, number, number]): Promise<string>;
   boxes(rect: readonly [number, number, number, number]): Promise<readonly Block[]>;
@@ -143,6 +148,7 @@ export function startLandWorker(): LandWorker {
       view({ kind: 'open', layoutText, id, editsText, keep, rmbText, buildersText }),
     cityPlan: async () => (await ask({ kind: 'city' })).text ?? null,
     layouts: async () => (await ask({ kind: 'layouts' })).text ?? '[]',
+    layoutMarks: async () => (await ask({ kind: 'layout-marks' })).marks ?? [],
     window: async (rect) => {
       const { text } = await ask({ kind: 'window', rect });
       if (typeof text !== 'string') throw new Error('the land worker answered no window');

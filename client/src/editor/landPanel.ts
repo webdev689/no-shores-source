@@ -1,4 +1,5 @@
 import { button, make } from './dom.ts';
+import { LAYOUT_LEGEND } from './layoutDrawing.ts';
 import { buildSitePanel, type SitePanelHandlers, type SitePanelView } from './sitePanel.ts';
 
 /** How far along a landmass's land is. */
@@ -71,6 +72,8 @@ export interface LandPanelView extends SitePanelView {
   readonly view: '2d' | '3d';
   readonly walking: boolean;
   readonly sailing: boolean;
+  /** Whether the nodes' layouts are drawn over both views. */
+  readonly layouts: boolean;
   readonly exaggeration: number;
   readonly cursor: string;
   /** A fight's lines: both ships, the guns, the warning to brace, and what happened. */
@@ -84,6 +87,7 @@ export interface LandPanelHandlers extends SitePanelHandlers {
   view(view: '2d' | '3d'): void;
   walk(): void;
   sail(): void;
+  layouts(): void;
   exaggeration(times: number): void;
   tool(tool: LandTool): void;
   radius(kilometres: number): void;
@@ -160,7 +164,17 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   const solid = button('3D view (V)', () => handlers.view('3d'));
   const walk = button('Walk (G)', () => handlers.walk());
   const sail = button('Sail (B)', () => handlers.sail());
-  views.append(flat, solid, walk, sail);
+  const layouts = button('Layouts (L)', () => handlers.layouts());
+  views.append(flat, solid, walk, sail, layouts);
+  const legend = make('p', '', 'hint');
+  legend.append(
+    ...LAYOUT_LEGEND.map(([name, colour]) => {
+      const key = make('span', `■ ${name}`);
+      // An item never breaks across lines, so each name stays beside its colour.
+      Object.assign(key.style, { color: colour, display: 'inline-block', marginRight: '0.8em' });
+      return key;
+    }),
+  );
   const walkHint = make(
     'p',
     'Walking: W A S D to move, Shift to run, C to dive, Space to rise, drag to look round, G to stop.',
@@ -178,7 +192,7 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       ' a captain and X sends them all off.',
     'hint',
   );
-  root.append(views, walkHint, sailHint, fightHint);
+  root.append(views, legend, walkHint, sailHint, fightHint);
 
   const exaggerationLabel = make('label', '', 'brush');
   const exaggeration = make('input');
@@ -255,6 +269,8 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       walk.classList.toggle('active', view.walking);
       walkHint.hidden = !view.walking;
       sail.classList.toggle('active', view.sailing);
+      layouts.classList.toggle('active', view.layouts);
+      legend.hidden = !view.layouts;
       sailHint.hidden = !view.sailing;
       fightHint.hidden = !view.sailing;
       exaggerationLabel.hidden = view.view !== '3d';

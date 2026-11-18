@@ -1,26 +1,12 @@
 import type { LandView } from '../rules/landRules.ts';
 import { splineAt } from '../water/spline.ts';
 import { screenProjector } from './closeUp.ts';
+import type { LayoutMarks } from '../terrain/layoutMarks.ts';
+import { layoutMarks } from './layoutDrawing.ts';
 import type { Places } from './marks.ts';
 import type { Orbit } from './orbit.ts';
+import { type Box, Labels, pathThrough, type Project, type SiteMark, span } from './screenMarks.ts';
 import { NODE_COLOURS, WALL_RADIUS_M } from './sites.ts';
-
-/** A world point on the screen, or null where it cannot be drawn (behind the 3D camera). */
-export type Project = (x: number, y: number) => { readonly x: number; readonly y: number } | null;
-
-/** One thing drawn over a view for the port city and the nodes, in screen pixels. */
-export type SiteMark =
-  | { readonly shape: 'wall'; readonly path: string }
-  | { readonly shape: 'section'; readonly path: string; readonly colour: string; readonly whole: boolean }
-  | {
-      readonly shape: 'dot';
-      readonly x: number;
-      readonly y: number;
-      readonly radius: number;
-      readonly fill: string;
-      readonly stroke: string;
-    }
-  | { readonly shape: 'label'; readonly x: number; readonly y: number; readonly text: string; readonly colour: string };
 
 /** A node smaller than this on screen, pixels across, is drawn as a dot so it stays seen. */
 const DOT_BELOW_PX = 10;
@@ -30,68 +16,27 @@ const SPAWNS_FROM_PX = 40;
 const WALL_FROM_PX = 14;
 const WALL_POINTS = 96;
 const CITY_COLOUR = '#fff1c2';
-/** A label's box: about 6.6 pixels a character of the 12 px font, and its height. */
-const CHARACTER_PX = 6.6;
-const LABEL_PX = 14;
-
-interface Box {
-  readonly left: number;
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
-}
-
-const span = (box: Box) => Math.max(box.right - box.left, box.bottom - box.top);
-
-/** An SVG path round a ring of projected points, broken where one cannot be drawn, with the box round those that
- *  can; `whole` when every point was drawn. */
-function pathThrough(ring: readonly ReturnType<Project>[]): { path: string; whole: boolean; box: Box | null } {
-  const gapAt = ring.findIndex((point) => point === null);
-  const whole = gapAt < 0;
-  // Started at a gap, the ring's edge from its last point back to its first is drawn with the rest.
-  const points = whole ? ring : [...ring.slice(gapAt), ...ring.slice(0, gapAt)];
-  let path = '';
-  let gap = true;
-  let box: Box | null = null;
-  for (const point of points) {
-    if (!point) {
-      gap = true;
-      continue;
-    }
-    path += `${gap ? 'M' : 'L'}${point.x.toFixed(1)},${point.y.toFixed(1)}`;
-    gap = false;
-    box = box
-      ? {
-          left: Math.min(box.left, point.x),
-          top: Math.min(box.top, point.y),
-          right: Math.max(box.right, point.x),
-          bottom: Math.max(box.bottom, point.y),
-        }
-      : { left: point.x, top: point.y, right: point.x, bottom: point.y };
-  }
-  return { path: whole ? `${path}Z` : path, whole, box };
-}
+/** How far off the screen, in screens from its middle, a 3D point is still drawn. */
+const OFF_SCREEN_REACH = 4;
 
 /**
  * What to draw for a landmass's port city and nodes through `project`: the city's marker, name and wall; each node's
  * section in its kind's colour, or a dot when it is too small to see, its name and, when it is large enough, its
- * spawns. Labels are placed city first, then the nodes largest on screen first, and one that would cover another is
- * left out, so names stay readable however far the view is zoomed out.
+ * spawns; then each node's layout (layoutDrawing.ts). Labels are placed city first, then the nodes largest on screen
+ * first, then the layouts', and one that would cover another is left out, so names stay readable however far the
+ * view is zoomed out; none is laid over a box in `keepClear`.
  */
-export function siteMarks(places: Places, project: Project): SiteMark[] {
+export function siteMarks(
+  places: Places,
+  project: Project,
+  layouts: readonly LayoutMarks[] = [],
+  keepClear: readonly Box[] = [],
+): SiteMark[] {
   const below: SiteMark[] = [];
   const dots: SiteMark[] = [];
-  const labels: SiteMark[] = [];
-  const taken: Box[] = [];
-  const label = (x: number, y: number, text: string, colour: string) => {
-    const half = (text.length * CHARACTER_PX) / 2 + 2;
-    const box = { left: x - half, top: y - LABEL_PX + 3, right: x + half, bottom: y + 3 };
-    const covers = (other: Box) =>
-      box.left < other.right && other.left < box.right && box.top < other.bottom && other.top < box.bottom;
-    if (taken.some(covers)) return;
-    taken.push(box);
-    labels.push({ shape: 'label', x, y, text, colour });
-  };
+  const labels = new Labels();
+  for (const box of keepClear) labels.keepClear(box);
+  const label = (x: number, y: number, text: string, colour: string) => labels.place(x, y, text, colour);
   const { city } = places;
   if (city) {
     const [centreX, centreY] = city.centre;
@@ -106,7 +51,7 @@ export function siteMarks(places: Places, project: Project): SiteMark[] {
       dots.push({ shape: 'dot', x: centre.x, y: centre.y, radius: 6, fill: CITY_COLOUR, stroke: '#1b1b1b' });
       label(centre.x, centre.y - 11, city.name, CITY_COLOUR);
       // No node's name is laid over the city's marker.
-      taken.push({ left: centre.x - 8, top: centre.y - 8, right: centre.x + 8, bottom: centre.y + 8 });
+      labels.keepClear({ left: centre.x - 8, top: centre.y - 8, right: centre.x + 8, bottom: centre.y + 8 });
     }
   }
   const nodes = (places.nodes ?? [])
@@ -126,24 +71,31 @@ export function siteMarks(places: Places, project: Project): SiteMark[] {
       }
     label(middle.x, small ? middle.y - 7 : box.top - 5, node.name, colour);
   }
-  return [...below, ...dots, ...labels];
+  const laid = layoutMarks(layouts, project, labels);
+  return [...below, ...laid.below, ...dots, ...laid.dots, ...labels.marks];
 }
 
-/** Projects world points onto the 3D view: on the land as drawn, its heights `shownHeight` times, the sea level
- *  where the ground lies under it. */
+/** Projects world points onto the 3D view: on the land as drawn (the exact ground where `exact` knows it, else the
+ *  1 km land's), its heights `shownHeight` times, the sea level where the ground lies under it. */
 export function groundProjector(
   view: LandView,
   orbit: Orbit,
   size: { readonly width: number; readonly height: number },
   shownHeight: number,
+  exact: (x: number, y: number) => number | null = () => null,
 ): Project {
   const toScreen = screenProjector(orbit, size);
-  return (x, y) => {
+  // A point just in front of the camera lands millions of pixels out; a dashed line through it makes the browser
+  // lay millions of dashes and kills the page. Off this reach a line is broken instead, out of sight.
+  const reach = OFF_SCREEN_REACH * Math.max(size.width, size.height);
+  return (x, y, height) => {
     const [windowX, windowY] = [x - view.leftM, y - view.topM];
     const gridX = windowX / view.cellM - 0.5;
     const gridY = windowY / view.cellM - 0.5;
-    const ground = splineAt(view.heights, view.width, view.height, gridX, gridY);
-    return toScreen([windowX, windowY, Math.max(0, ground) * shownHeight]);
+    const ground = height ?? exact(x, y) ?? splineAt(view.heights, view.width, view.height, gridX, gridY);
+    const point = toScreen([windowX, windowY, Math.max(0, ground) * shownHeight]);
+    const near = point && Math.abs(point.x - size.width / 2) < reach && Math.abs(point.y - size.height / 2) < reach;
+    return near ? point : null;
   };
 }
 
@@ -164,7 +116,17 @@ export function drawSites(svg: SVGSVGElement, marks: readonly SiteMark[]): void 
         'stroke-width': 1.5,
         'stroke-dasharray': '7 5',
       });
-    else if (mark.shape === 'section')
+    else if (mark.shape === 'line') {
+      const line = { 'd': mark.path, 'fill': 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' };
+      if (mark.casing) add('path', { ...line, 'stroke': '#000000a0', 'stroke-width': mark.width + 2 });
+      add('path', {
+        ...line,
+        'fill': mark.fill ?? 'none',
+        'stroke': mark.colour,
+        'stroke-width': mark.width,
+        ...(mark.dash ? { 'stroke-dasharray': mark.dash } : {}),
+      });
+    } else if (mark.shape === 'section')
       add('path', {
         'd': mark.path,
         'fill': mark.whole ? `${mark.colour}30` : 'none',

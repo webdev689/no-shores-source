@@ -141,6 +141,13 @@ streets and yards, and the paths as ribbons of dirt), on a grid of cells just la
 plates. Nature keeps off the buildings' yards and each place's open ground. The terrain lays carved cliffs in strata
 of rock.
 
+## In the World Editor
+
+The editor's land worker opens a landmass with the same texts as the game's, so its ground is the game's to the bit,
+carved, and its layouts are the game's. After each stroke, place change, undo or redo the worker settles the land and
+plans the layouts again, and hands the page only their plans (`layoutMarksOf`): sections, areas, paths and sites,
+about 0.2 MB for continent 1 against 12.6 MB of whole layouts.
+
 ## Limits
 
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
@@ -148,6 +155,9 @@ of rock.
 - A patrol area full of rooms holds three thousand boxes or so; the movement rules test them one by one.
 - A block's streets are pictures laid in squares of 6.4 m with hard edges.
 - Only the third-person camera's distance is kept from the land; indoors it can stand outside the walls.
-- The World Editor does not plan layouts yet: it shows the land as generated, uncarved.
+- The World Editor shows the layouts' plans and the carved land, not their buildings, props and solids: those are
+  drawn by the city layer, which the editor's layer may not import ([[World Editor]]). After every change all of a
+  landmass's layouts are planned again, not only those it touches: about 1.5 s for continent 1's ten, in the land's
+  worker.
 - A set piece stands on the land as it was before the paths' beds were laid, so a prop beside a path can stand a
   hand high or low.

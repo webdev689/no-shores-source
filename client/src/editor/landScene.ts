@@ -205,9 +205,13 @@ export class LandScene {
   /** The ground's height at a world point: exact where the close-up reaches, the 1 km land's elsewhere; the sea's
    *  still surface over the sea. */
   private groundAt(id: string, view: LandView, x: number, y: number): number {
+    return Math.max(0, this.exactGround(id, x, y) ?? heightAt(view, x, y) ?? 0);
+  }
+
+  /** The exact ground's height at a world point, where the current close-up reaches; null elsewhere. */
+  exactGround(id: string, x: number, y: number): number | null {
     const close = this.current(id);
-    const exact = close ? groundUnder(close.patch, x, y) : null;
-    return Math.max(0, exact ?? heightAt(view, x, y) ?? 0);
+    return close ? groundUnder(close.patch, x, y) : null;
   }
 
   /** What the walker or the Sloop is doing and where, for the panel. */

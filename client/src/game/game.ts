@@ -26,7 +26,7 @@ import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
-import { loadLandTexts } from './landTexts.ts';
+import { loadLandTexts } from '../terrain/landTexts.ts';
 import { askedArrival, type GateWay, gateWay } from './gates.ts';
 import { openForge } from './openForge.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
