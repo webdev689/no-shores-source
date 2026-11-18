@@ -49,10 +49,13 @@ const FLASH_SECONDS = 0.45;
 const ARROW_INSET = 28;
 const ARROW_CLEAR = 22;
 /** A parry ring's span as a blow begins and as it lands (its fixed inner ring's), in CSS pixels; and how high over
- *  the foe's feet it stands, in metres, a foe's name and bar standing just above it. */
+ *  the foe's feet it stands, in metres, above the foe's plate. */
 const RING_WIDEST = 56;
 const RING_CLOSED = 14;
 const RING_HEIGHT = 2.5;
+/** How high over a foe's feet its plate's foot stands, in metres: just over its head (a body is 1.8 m tall), under
+ *  where its parry ring closes, so the plate reads as the foe's own and the ring stays clear above it. */
+const PLATE_OVER_M = 1.9;
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
 function clipOf(matrix: Float32Array, point: readonly [number, number, number]): [number, number, number] {
@@ -160,7 +163,7 @@ export class Hud {
     this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
     this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
     const overHead = (view: FighterView) => {
-      const point = [view.x, view.y, view.z + RING_HEIGHT] as const;
+      const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
       const spot = project(frame.matrix, point, frame.width, frame.height);
       return spot && { ...spot, depth: clipOf(frame.matrix, point)[2] };
     };

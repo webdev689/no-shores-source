@@ -160,11 +160,12 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 ## On screen
 
-- **Over each foe**, where the parry ring stands, its plate in the [[Interface]]'s kit: its faction's emblem in a
-  square at the left (the Grey Tithe's balance, the pirates' skull), and to its right its type's name above a long
-  thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a dark trough
-  with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before the name
-  while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
+- **Over each foe**, just over its head (1.9 m over its feet, under where the parry ring closes), its plate in the
+  [[Interface]]'s kit: its faction's emblem in a square at the left (the Grey Tithe's balance, the pirates' skull), and
+  to its right its type's name above a long thin bar of its health, red for a Minor, orange for a Major, yellow for an
+  Elite and a Miniboss, over a dark trough with a hairline edge. An Elite has one brass chevron beside its name, a
+  Miniboss two. A "?" stands before the name while it is suspicious or searching, and a "!" for a second when it turns
+  alert ([[Foes]]).
 - **Plates are never overbearing.** A foe's plate shows near the crosshair, fading in and out at the cone's edge, and
   always for the foes fought in the last minute; never through a block, nor past 60 m; it shrinks with distance as
   its figure does ([[Interface]]).
