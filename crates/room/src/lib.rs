@@ -578,25 +578,18 @@ impl Room {
 /// The seed every room's chances are drawn from: one room plays the same fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
-mod room_tests;
-
+mod fair_tests;
 #[cfg(test)]
 mod fight_tests;
-
 #[cfg(test)]
 mod foe_tests;
-
-#[cfg(test)]
-mod fair_tests;
-
-#[cfg(test)]
-mod node_tests;
-
 #[cfg(test)]
 mod gear_tests;
-
 #[cfg(test)]
-mod perks_tests;
-
+mod node_tests;
 #[cfg(test)]
 mod patrol_tests;
+#[cfg(test)]
+mod perks_tests;
+#[cfg(test)]
+mod room_tests;

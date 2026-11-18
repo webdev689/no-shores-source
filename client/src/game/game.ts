@@ -499,7 +499,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.mode === 'sea') discovered.lookout(here.position);
     if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
       mapWanted = false;
-      mapOf().open(viewport, here.position, dress.outfit.armour.gauntlets ?? null, discovered.discovery.charted);
+      const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
+      mapOf().open(viewport, here.position, hands, discovered.discovery.charted);
     }
     // The map's scene is gathered only while the map is up.
     const mapFrame = heldMap?.shown
@@ -590,8 +591,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         syncMenu();
       }
     }
-    // At most one frame waits on the GPU while the next is drawn: a GPU that falls behind slows the frames instead of
-    // queueing work without end, which stalls every tab and the browser itself.
+    // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
     const previous = inFlight;
     inFlight = gpu.device.queue.onSubmittedWorkDone();
     void previous.then(() => requestAnimationFrame(frame));

@@ -34,6 +34,6 @@ owner approved it: asked whether to record it as an approved pick, "yes".
 
 ## Our version
 
-The style kit and its frame came over first, as the [[Interface]]'s roles, and the [[Game]]'s heads-up display wears
+The style kit and its frame are ported as the [[Interface]]'s roles, and the [[Game]]'s heads-up display wears
 them ([[The Ship Is Managed and Walked From the Sea's Panel]]). The themes, the pad, the touch layer and the windows
 are still to come.

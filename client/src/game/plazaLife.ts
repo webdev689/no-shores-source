@@ -34,10 +34,15 @@ export function offerAt(stations: readonly StationInfo[], x: number, y: number):
   return null;
 }
 
+/** How far a person walks before the floor under them is found again, in metres. */
+const FLOOR_STEP_M = 0.5;
+
 /** The figures of a social space's people, kept among those drawn while the player is there. */
 export class PlazaLife {
   private readonly folk: Townsfolk;
   private readonly figures = new Map<number, Placed>();
+  /** Where each person's floor was last found: it is found again only once they have walked a step from there. */
+  private readonly floored = new Map<number, readonly [number, number]>();
   private readonly others: Others;
   private readonly floor: (x: number, y: number) => number | null;
 
@@ -64,7 +69,11 @@ export class PlazaLife {
       this.figures.set(person.id, placed);
       placed.x = person.x;
       placed.y = person.y;
-      placed.z = this.floor(person.x, person.y) ?? placed.z;
+      const [floorX, floorY] = this.floored.get(person.id) ?? [Infinity, Infinity];
+      if (Math.hypot(person.x - floorX, person.y - floorY) > FLOOR_STEP_M) {
+        placed.z = this.floor(person.x, person.y) ?? placed.z;
+        this.floored.set(person.id, [person.x, person.y]);
+      }
       placed.facing = person.facing;
       placed.anim = person.walking ? 'walk' : 'idle';
     }
@@ -74,5 +83,6 @@ export class PlazaLife {
   close(): void {
     for (const placed of this.figures.values()) this.others.remove(placed);
     this.figures.clear();
+    this.floored.clear();
   }
 }

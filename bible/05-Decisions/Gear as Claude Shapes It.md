@@ -38,7 +38,7 @@ rules carry them out is [[Gear]].
 | A blow's damage, by Attack | Times 1.07 for each of the foe's levels, up to the foe level Attack ÷ 15 (level 20 at 300), and one more for each level the player has past 20 | Destiny 1, as players measured it; past 20, Prestige carries the reach, so a matched player still fells a foe in the tuned blows |
 | The level gap | A player level with or above the foe strikes in full; one level below, 0.67; two, 0.56; three, 0.47; four or more, not at all | Destiny 1, as players measured it. Being above earns no bonus |
 | A foe's health | Its kind's, times 1.07 for each of its levels | So a player matched in level and Attack fells a foe in as many blows as combat is tuned for at every level |
-| Defense | Each armour piece has a defense level: its item level times its rarity's share (as Attack's) without Prestige, or 20 + its Prestige ÷ 3 with it. Its Defense is 45 times that times its slot's share: head 0.275, torso 0.30, arms 0.225, legs 0.20, a shield 0.15 more | Destiny 1's raid armour at 30: helm 372, gauntlets 304, chest 406, legs 270, which those shares give |
+| Defense | Each armour piece has a defense level: its item level times its rarity's share (as Attack's) without Prestige, or 20 + its Prestige ÷ 3 with it. Its Defense is 45 times that times its slot's share: head 0.275, torso 0.30, arms 0.225, legs 0.20, a shield 0.15 more | Destiny 1's raid armour at 30: helm 372, gauntlets 304, chest 406, legs 270, which those shares give within a point |
 | What Defense does | The player's defense level is their Defense ÷ 45. A foe's blow strikes 1.07 times harder for each of its levels above that | The same rule as Attack's, turned round: Destiny 1's Defense scaled against the attacker's level |
 | A foe above the player | Its blows strike a quarter harder for each level the player is below it, up to double at four | Destiny 1's higher foes struck harder; its numbers were never measured |
 | Poise and stamina | Unchanged by gear's power | Power is about who wins the exchange of health, not how a body moves |
@@ -64,7 +64,7 @@ offers a trait twice.
 | Magic's handling or perk; its upgrade | 200 Aurem; 300 Aurem and 1 fragment | Destiny 1: lesser items cost glimmer, and their damage nodes parts |
 | Rare's handling or perk; its upgrade | 400 Aurem and 1 fragment; 600 Aurem and 3 fragments | As above, dearer |
 | A Legendary's or Atheric's handling or perk | 800 Aurem, 2 fragments and 5 of its island's resource | Destiny 1: legendaries asked for a planet's material |
-| Their first upgrades | 1,000 Aurem, 5 fragments and 10 of the resource | As above |
+| A weapon's first upgrades | 1,000 Aurem, 5 fragments and 10 of the resource; an armour piece's upgrades are all among its last three | As above |
 | Their last three upgrades | 1,500 Aurem and 6 Essence each, 18 an item | Destiny 1 at launch: the last three nodes, 6 Ascendant materials each |
 | An Atheric's own node | 1,000 Aurem and 1 Essence | Destiny 1's exotics needed Ascendant materials at launch |
 
@@ -126,7 +126,7 @@ yet.
 | Islands' foe levels | 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26, 26–30, from Overlook's island outward | Destiny 1's worlds climbed as its players did, Earth to Mars; nine islands spread a player's 30 levels so each is worth visiting in turn |
 | The seas | Calm, Rough and Storm: foes 0, 2 or 3 levels higher, never past 32; XP, Aurem and Vestige chance ×1, ×1.5 or ×2 | The owner: a harder voyage pays better and scales its foes. Claude's numbers: a player at the top of an island's band strikes its Storm foes at 0.47, its Rough ones at 0.56; four higher would be the gap that makes a foe immune |
 | A patrol's foes | Six camps from the node's name, 150 m apart and 80 m from spawns, two or three foes each within 8 m; a cleared camp stands again 45 s on, once no player is within 40 m; skirmishers 3, swordsmen 3, archers 2, brutes 1 by weight | Fights at known places across a 1.7 km section, so a route can be planned through them, as Destiny's patrol zones hold their enemies at known spots; captains are for bosses |
-| A patrol's nodes | Twelve spots from the node's name, 60 m apart; a third standing at once, the next third every 3 minutes, each gathered once a turn by each player | The owner: nodes at several spots so a farm has routes; a turn long enough to walk a route |
+| A patrol's nodes | Twelve spots from the node's name, 60 m apart; a third standing at once, the next third every 3 minutes, each gathered once a turn by each player | The owner: nodes at several spots so a farm has routes. Claude's: a turn long enough to walk a route |
 
 ### Vendors
 
@@ -134,7 +134,7 @@ yet.
 |---|---|---|
 | Who sells | The Quartermaster armour, the Armsmith weapons and shields, in each social space's arcades | The owner: proper vendor stations, as the Tower's |
 | What and when | Six wares a day each, three Rare and three Magic, at the buyer's level (at most 20), the same for everyone that day | Destiny 1's vendors showed a stock that changed on a schedule; Legendary and Atheric gear stays earned, so the loop of Vestiges keeps its worth |
-| Price | Aurem only: Rare 2,000, Magic 600 | About a tenth of the Aurem cap for a Rare piece, a few patrols' kills; no marks or reputation yet, as factions come later |
+| Price | Aurem only: Rare 2,000, Magic 600 | About a tenth of the Aurem cap for a Rare piece, about ten patrols' kills; no marks or reputation, as no faction exists yet |
 
 ### Vestiges
 
@@ -145,7 +145,7 @@ yet.
 | What it holds | One slot (main hand, off hand, head, torso, arms or legs), shown on it, evenly; its item's level is the foe's, at most 20 | Destiny 1's engrams named their slot |
 | Where it lies | Where the foe fell, for 2 minutes, seen by its player alone; walked within 1.5 m, it is picked up | Destiny 1's loot was each player's own |
 | What it opens to | Normal: Normal 85, Magic 15. Magic: Normal 20, Magic 70, Rare 10. Rare: Magic 25, Rare 65, Legendary 10. Legendary: Rare 60, Legendary 35, Atheric 5. Atheric: Legendary 20, Atheric 80; never above what its level could drop (Legendary from 18, Atheric from 20), the share above going to the best it may | The owner: a Vestige can open below its colour. Destiny 1 at launch: about one Legendary engram in three opened Legendary. The level gate keeps Legendaries from the first islands, as the drops do |
-| Where it opens | At a stall in each social space, free | The owner: identified in an island's social space. Destiny 1's Cryptarch decoded engrams for nothing |
+| Where it opens | Anywhere in a social space, free; the Reader of Vestiges' counter opens the inventory | The owner: identified in an island's social space. Destiny 1's Cryptarch decoded engrams for nothing |
 | What a Legendary or Atheric is | One of the named items of its slot, evenly; always level 20 | Destiny 1's legendaries and exotics were named items with set perks |
 | What a lesser item is | Its kind's own, with its handling and perks rolled | Destiny 1's lesser items rolled their perks |
 | What activities give | Each of the owner's four (Patrol, Missions, Elite Dungeons, Breaches) gives its own Vestiges on completion, the Breaches the best and their Legendaries alone carrying Prestige to 30, set when each is built | The owner: "Best loot. Highest prestige drops" |
@@ -159,9 +159,9 @@ yet.
 | Aurem from a kill | For each player who struck it: the kind's own (5, 6, 8, 15, a captain 120) times (5 + its level) ÷ 10 | A little from every fight, as Destiny 1's glimmer |
 | Dismantling | Normal: 20 Aurem. Magic: 50 Aurem and a fragment. Rare: 100 Aurem and 2 fragments, 3 at level 20. Legendary: 200 Aurem, 3 fragments and 2 or 3 Essence. Atheric: 300 Aurem, 5 fragments and 2 Essence. Either gives back a third of the Essence spent on it | Destiny 1: parts and materials from lesser items, Ascendant materials from the best, little of what was spent |
 | Each island's resource | Saltmere, Brineglass; Cairnwatch's, Cairn Iron; Elmhaven's, Heartwood Resin; Sunspire's, Sunstone; Goldreach's, Goldgrass Seed; Mistfall's, Mistbloom; Windmere's, Windthistle; Fenhallow's, Bog Pearl; Rimeholt's, Rimecrystal | Each read from its continent's biome. An item's nodes ask for one island's resource, named on it |
-| Gathering | A resource node gives 3 of its resource and is spent for that player until they leave | Destiny 1: a node came back after the player left the area |
+| Gathering | A resource node gives 3 of its resource, 4 with Forager, and is spent for that player's account until the nodes' turn passes; on the Test Ground, until they leave. One whose resource is at its most is left standing | Destiny 1: a node came back after a while |
 | What a player carries | One equipped and 9 more in each slot; 10 Vestiges | Destiny 1 at launch |
-| The vault | 20 weapons, 20 armour and cloaks, 20 Vestiges, reached in a social space | Destiny 1 at launch: 20, 20 and 20, in the Tower |
+| The vault | 20 weapons, 20 armour, shields and cloaks, 20 Vestiges, reached in a social space | Destiny 1 at launch: 20, 20 and 20, in the Tower |
 
 ### Wearing
 
@@ -169,9 +169,9 @@ yet.
 |---|---|---|
 | What an item needs | Its level or more; a Legendary or Atheric, level 20 | Destiny 1 |
 | Atheric | One Atheric in the hands (a shield counts there) and one in the armour at a time | Destiny 1's exotic rule: one exotic weapon and one exotic armour piece |
-| Hands | A dagger, sword, mace or flail goes in either hand; an axe, warhammer, staff, bow, crossbow or thunderlock takes both, so the off hand is emptied; a shield goes in the off hand only | Combat's two-handed weapons, and a bow, crossbow or long gun needs both hands |
+| Hands | A dagger, sword, mace or flail goes in either hand; an axe, warhammer, staff, bow, crossbow or thunderlock takes both, so the off hand is emptied; a pistolet goes in the main hand only, leaving the off hand; a shield goes in the off hand only | Combat's two-handed weapons, and a bow, crossbow or long gun needs both hands |
 | The starting kit | A level 1 Normal sword, and Normal armour of level 1 for each slot | Destiny 1 starts a Guardian in its plainest gear |
-| The cloak | Its slot holds one; until there are factions, cloaks belong to none | The owner: factions come later |
+| The cloak | Its slot holds one; until there are factions, cloaks belong to none | Claude's: no faction exists yet |
 | Clothing | Every garment is armour of its piece, the everyday ones Normal and Magic, the heavier sets Rare and above; no toggle | The owner: clothing is armour, with a wardrobe later ([[Clothing Is Armour, With a Wardrobe Later]]) |
 | How it looks | Normal and Magic are clothes (Magic adds a tunic or vest, tall boots, a leather helm and gloves); Rare is chain, steel or iron; Legendary silver, elven, dwarven or the knights'; Atheric daedric, ebony, adamantium or mithril; a cloak is casual, formal from Rare | Rarer gear should read as rarer at a glance, as Destiny's does, with the forge's own sets in order of their worth |
 

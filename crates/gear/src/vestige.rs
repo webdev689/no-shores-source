@@ -15,8 +15,7 @@ pub const ATHERIC_FROM: u8 = 20;
 const FROM_FOES: [u32; 5] = [55, 33, 10, 2, 0];
 /// A Vestige's colour from a boss.
 const FROM_BOSSES: [u32; 5] = [0, 20, 55, 22, 3];
-/// What a Vestige of each colour opens to, in 100: it can open below its own colour, as the owner set, and rarely
-/// above it.
+/// What a Vestige of each colour opens to, in 100: it can open below its own colour, and rarely above it.
 const OPENS: [[u32; 5]; 5] =
     [[85, 15, 0, 0, 0], [20, 70, 10, 0, 0], [0, 25, 65, 10, 0], [0, 0, 60, 35, 5], [0, 0, 0, 20, 80]];
 

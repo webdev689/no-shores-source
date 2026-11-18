@@ -31,3 +31,26 @@ test('an item’s picture is what it adds to the figure, cropped round it on a c
   const helm = addedBy(taller, lower);
   assert.deepEqual([helm?.width, helm?.height], [1, 1], 'only the new row is the helm');
 });
+
+test('a speck of the figure apart from the piece is left out of its picture', () => {
+  const body = [200, 150, 120, 255];
+  const coat = [60, 70, 140, 255];
+  const marked: [number, number, number[]][] = [];
+  for (let row = 4; row < 12; row++) for (let column = 4; column < 12; column++) marked.push([column, row, coat]);
+  marked.push([0, 0, [230, 180, 150, 255]]);
+  const added = addedBy(picture(16, 16, body, marked), picture(16, 16, body));
+  assert.deepEqual([added?.width, added?.height], [8, 8], 'the collar’s fleck far from the coat is dropped');
+});
+
+test('a piece in one, as a weapon is, keeps its parts near its largest and lets go of one standing away', () => {
+  const body = [200, 150, 120, 255];
+  const steel = [180, 190, 210, 255];
+  const marked: [number, number, number[]][] = [];
+  for (let row = 1; row < 13; row++) marked.push([2, row, steel]);
+  marked.push([2, 15, [90, 60, 30, 255]], [3, 15, [90, 60, 30, 255]]);
+  for (let step = 0; step < 4; step++) marked.push([12 + step, 2 + step, [90, 60, 30, 255]]);
+  const worn = picture(18, 17, body, marked);
+  assert.deepEqual([addedBy(worn, picture(18, 17, body))?.width], [14], 'a coat keeps every part');
+  const sword = addedBy(worn, picture(18, 17, body), true);
+  assert.deepEqual([sword?.width, sword?.height], [2, 15], 'a sword keeps its grip below the blade, not the sheath');
+});

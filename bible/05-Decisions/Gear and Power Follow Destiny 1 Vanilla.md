@@ -115,9 +115,8 @@ its nodes, and a node's card listing its costs as held against needed.
   - **One type per weapon.** Each weapon kind is a single type, with no archetypes within it.
   - **Armour:** head, torso, arms and legs.
   - **The cloak** is cosmetic and adds to its faction's reputation while worn.
-  - **Clothing** is no longer single found items. It comes in sets of clothing pieces, earned or bought, and a toggle
-    shows the armour or takes it off over the clothing. Replaced: every piece of clothing is armour, with a wardrobe
-    later ([[Clothing Is Armour, With a Wardrobe Later]]).
+  - **Clothing** is settled by [[Clothing Is Armour, With a Wardrobe Later]], which replaced what this note first said
+    of it.
 - **Nodes.** Each item has nodes that are levelled up to raise its power, at a cost, and that carry its perks. An item
   unlocks its nodes as it earns XP. Armour earns XP too: this replaces "Armor does not have XP" in
   [[Overlook Is a Shared World After Destiny 1]].
@@ -134,4 +133,5 @@ its nodes, and a node's card listing its costs as held against needed.
     boss, as Destiny's raids. They give the best loot and the highest Prestige.
 - **The screens** are DFO's Enhanced Plus UI adapted to Overlook, with Destiny 1 as the reference: a character tab, an
   inventory tab and the rest ([[Pick - Enhanced Plus UI]]).
-- **Later:** Marks, vendors, factions and their reputation are still to be discussed.
+- **Later:** Marks, factions and their reputation are still to be discussed; the vendors are
+  [[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]'s.

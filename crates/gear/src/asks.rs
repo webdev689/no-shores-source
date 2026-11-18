@@ -1,5 +1,5 @@
 //! What a player asks of their gear, and the rules each ask must pass: wearing and taking off, buying and choosing
-//! nodes, dismantling, identifying a Vestige and feeding an item a Fruit of Dagon anywhere; the vault and identifying
+//! nodes, dismantling and feeding an item a Fruit of Dagon anywhere; identifying a Vestige, the vault and the vendors
 //! only in a social space. An ask refused changes nothing.
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};

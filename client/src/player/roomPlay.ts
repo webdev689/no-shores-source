@@ -4,6 +4,7 @@ import { Prediction } from '../network/prediction.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import { type Controls, type MovementRules, floatsOfControls } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
+import type { Placed } from './figures.ts';
 import { OtherPlayers, type Others } from './others.ts';
 import type { Walker } from './walker.ts';
 
@@ -88,6 +89,11 @@ export class RoomPlay {
   }
 
   /** A node's room's word on its node: its id and the rect its window of the ground was cut to. */
+  /** Each other player's figure, by their number. */
+  get othersPlaced(): ReadonlyMap<number, Placed> {
+    return this.others.placed;
+  }
+
   get node(): JoinedNode | null {
     return this.connection?.node ?? null;
   }

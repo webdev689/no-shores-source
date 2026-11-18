@@ -6,18 +6,35 @@ import { button, make } from '../editor/dom.ts';
 import { RARITIES } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
-import type { Card, Glyph } from './gearCards.ts';
+import type { Card, Glyph, Trait } from './gearCards.ts';
 import { glyphSvg, nodeGlyphSvg } from './gearGlyphs.ts';
+import { drawnBounds, fitIcon } from './iconFit.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */
 export const HOLD_MS = 800;
 /** How far the hover card stands from what it describes, and from the screen's edge. */
 const TIP_GAP = 10;
 
-export function pressOf(text: string, run: () => void, role: Role = 'button'): HTMLButtonElement {
+/** What a press or a key does, as a line of keycaps shows it: the key, then its words. */
+export type Hint = readonly [key: string, words: string];
+
+/** A press in its role; with `key`, the key that does it too, on a keycap. */
+export function pressOf(text: string, run: () => void, role: Role = 'button', key = ''): HTMLButtonElement {
   const node = button(text, run);
   node.classList.add(ROLES[role]);
+  if (key) node.append(make('kbd', key, 'gear-key'));
   return node;
+}
+
+/** A line of what the presses and keys do, each key on a keycap. */
+export function hintLine(hints: readonly Hint[], className = 'gear-hints'): HTMLElement {
+  const line = make('p', '', className);
+  for (const [key, words] of hints) {
+    const hint = make('span', '', 'gear-hint-pair');
+    hint.append(make('kbd', key, 'gear-key'), make('span', words));
+    line.append(hint);
+  }
+  return line;
 }
 
 /** A press that acts only once held down for a moment, by the pointer or by Enter or Space, its fill showing how long
@@ -38,7 +55,8 @@ export function heldPress(text: string, held: () => void, role: Role = 'button')
     node.classList.add('gear-holding');
     timer = window.setTimeout(() => {
       node.classList.remove('gear-holding');
-      held();
+      // A press built over while it was held is gone, and does nothing: its page shows the gear anew.
+      if (node.isConnected && node.getAttribute('aria-disabled') !== 'true') held();
     }, HOLD_MS);
   };
   node.addEventListener('pointerdown', begin);
@@ -55,19 +73,37 @@ export function heldPress(text: string, held: () => void, role: Role = 'button')
   return node;
 }
 
-/** A canvas showing a picture in a box of `box` pixels: at a whole multiple of its size, its pixels kept square, or,
- *  where it is larger than the box, scaled down to fit it. */
-export function pictureCanvas(picture: Picture, box: number): HTMLCanvasElement {
+/** A canvas showing a picture in a box of `box` CSS pixels, its clear margin trimmed, fitted as Enhanced Plus fits
+ *  its icons (`fitIcon`) and drawn at the screen's own pixel ratio. */
+export function pictureCanvas(picture: Picture, box: number, cap?: number): HTMLCanvasElement {
   const canvas = make('canvas', '', 'gear-picture');
-  canvas.width = picture.width;
-  canvas.height = picture.height;
-  canvas.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(picture.pixels), picture.width), 0, 0);
-  const largest = Math.max(picture.width, picture.height);
-  const scale = largest > box ? box / largest : Math.floor(box / largest);
-  if (largest > box) canvas.classList.add('gear-picture-fitted');
-  canvas.style.width = `${Math.round(picture.width * scale)}px`;
-  canvas.style.height = `${Math.round(picture.height * scale)}px`;
   canvas.setAttribute('aria-hidden', 'true');
+  const whole = [0, 0, picture.width, picture.height] as const;
+  const [west, north, width, height] = drawnBounds(picture.width, picture.height, picture.pixels) ?? whole;
+  const fit = fitIcon(width, height, box, devicePixelRatio, cap);
+  if (!fit) return canvas;
+  const own = document.createElement('canvas');
+  [own.width, own.height] = [width, height];
+  const image = new ImageData(new Uint8ClampedArray(picture.pixels), picture.width);
+  own.getContext('2d')?.putImageData(image, -west, -north, west, north, width, height);
+  // Grown by whole pixels first, so the one smooth step down never blurs a pixel into its neighbour.
+  const grown = document.createElement('canvas');
+  [grown.width, grown.height] = [width * fit.grown, height * fit.grown];
+  const growing = grown.getContext('2d');
+  if (growing) {
+    growing.imageSmoothingEnabled = false;
+    growing.drawImage(own, 0, 0, grown.width, grown.height);
+  }
+  [canvas.width, canvas.height] = [fit.width, fit.height];
+  const drawing = canvas.getContext('2d');
+  if (drawing) {
+    drawing.imageSmoothingEnabled = fit.smooth;
+    drawing.imageSmoothingQuality = 'high';
+    drawing.drawImage(grown, 0, 0, fit.width, fit.height);
+  }
+  canvas.classList.toggle('gear-picture-fitted', fit.smooth);
+  canvas.style.width = `${fit.shownWidth}px`;
+  canvas.style.height = `${fit.shownHeight}px`;
   return canvas;
 }
 
@@ -121,14 +157,52 @@ export function tileLabel(name: string, rarity: number | null, what = ''): strin
   return said ? `${name}, ${said}` : name;
 }
 
+/** How far each number's meter reaches, for what a piece changes over the one it would replace. */
+const MOST: Readonly<Record<string, number>> = { Attack: 300, Defense: 450, Prestige: 30 };
+
+/** What a piece changes over the one it would replace, as Destiny's card shows it: each number's meter at the lesser
+ *  of the two, the rest of the greater a segment gained or lost, and the new number with the change beside it. */
+export function compareNode(compare: NonNullable<Card['compare']>): HTMLElement {
+  const block = make('div', '', 'gear-compare');
+  block.append(make('p', `Replaces ${compare.replaces}`, 'gear-card-meta'));
+  for (const row of compare.rows) {
+    const change = row.to - row.from;
+    const most = Math.max(MOST[row.label] ?? 0, row.from, row.to, 1);
+    const line = make('div', '', `gear-compare-row ${change > 0 ? 'up' : change < 0 ? 'down' : 'same'}`);
+    const well = make('div', '', `gear-compare-well ${ROLES.well}`);
+    const kept = make('div', '', 'gear-compare-kept');
+    kept.style.width = `${(Math.min(row.from, row.to) / most) * 100}%`;
+    const moved = make('div', '', 'gear-compare-moved');
+    moved.style.width = `${(Math.abs(change) / most) * 100}%`;
+    well.append(kept, moved);
+    const sign = change > 0 ? '+' : change < 0 ? '−' : '';
+    const value = make('span', String(row.to), 'gear-compare-value');
+    if (change !== 0) value.append(make('small', ` ${sign}${Math.abs(change)}`));
+    line.append(make('span', row.label, 'gear-compare-label'), well, value);
+    block.append(line);
+  }
+  return block;
+}
+
+/** A trait as a card or a page lists it: its column's glyph, its name and its words. */
+export function traitNode(trait: Trait): HTMLElement {
+  const line = make('div', '', 'gear-card-trait');
+  const words = make('div', '', 'gear-trait-words');
+  words.append(make('b', trait.name), make('span', trait.words));
+  line.append(nodeGlyph(trait.kind), words);
+  return line;
+}
+
 /** An item's hover card: its name on a band of its rarity, its kind and pips, its picture large, its main number, its
  *  rows, its traits and words, what it changes over the piece it would replace, and what may be done with it. */
-export function cardNode(card: Card, picture: Picture | null, hint: string): HTMLElement {
+export function cardNode(card: Card, picture: Picture | null, hints: readonly Hint[]): HTMLElement {
   const node = make('div', '', `gear-card ${ROLES.panel}`);
   rarityOf(node, card.rarity);
   const head = make('div', '', 'gear-card-head');
+  const meta = make('p', card.kind, 'gear-card-meta');
   const pips = RARITIES[card.rarity]?.pips ?? '';
-  head.append(make('h3', card.name), make('p', `${card.kind}${pips ? `  ${pips}` : ''}`, 'gear-card-meta'));
+  if (pips) meta.append(make('span', pips, 'gear-card-pips'));
+  head.append(make('h3', card.name), meta);
   node.append(head);
   const body = make('div', '', 'gear-card-body');
   if (picture) {
@@ -143,27 +217,11 @@ export function cardNode(card: Card, picture: Picture | null, hint: string): HTM
   }
   const stats = make('dl', '', 'gear-card-stats');
   for (const [label, value] of card.rows) stats.append(make('dt', label), make('dd', value));
-  body.append(stats);
-  for (const trait of card.traits) {
-    const line = make('div', '', 'gear-card-trait');
-    line.append(make('b', trait.name), make('span', trait.words));
-    body.append(line);
-  }
+  body.append(stats, ...card.traits.map(traitNode));
   if (card.words) body.append(make('p', card.words, 'gear-card-words'));
-  if (card.compare) {
-    const compare = make('div', '', 'gear-card-compare');
-    compare.append(make('p', `Replaces ${card.compare.replaces}`, 'gear-card-meta'));
-    for (const row of card.compare.rows) {
-      const change = row.to - row.from;
-      const line = make('div', '', `gear-card-change ${change > 0 ? 'up' : change < 0 ? 'down' : 'same'}`);
-      const sign = change > 0 ? '+' : change < 0 ? '−' : '';
-      line.append(make('span', row.label), make('span', `${row.from} → ${row.to}  ${sign}${Math.abs(change)}`));
-      compare.append(line);
-    }
-    body.append(compare);
-  }
+  if (card.compare) body.append(compareNode(card.compare));
   node.append(body);
-  if (hint) node.append(make('p', hint, 'gear-card-hint'));
+  if (hints.length > 0) node.append(hintLine(hints, 'gear-card-hint'));
   return node;
 }
 
@@ -171,6 +229,10 @@ export function cardNode(card: Card, picture: Picture | null, hint: string): HTM
  *  keyboard focus alike. */
 export class HoverCard {
   private readonly tip: HTMLElement;
+  /** The card's own element, which stays in reach while the screen it serves is open. */
+  get node(): HTMLElement {
+    return this.tip;
+  }
   private anchor: HTMLElement | null = null;
 
   constructor(root: HTMLElement) {

@@ -85,23 +85,25 @@ third person, the forge's figure and the first person's hands.
   weapon is out (Z), left button or F guards, and V dodges; with a bow, a crossbow or a gun the right button aims
   and the left fires, onto the crosshair's point over the node's ground. The arms are what the figure's hands
   hold. The lock turns the body to its foe, the first person swings as the fight's rules begin each swing, and the
-  figure shows what the fight holds it to. Each foe is drawn in its kind's dress (`FoeFigures`), gliding between
-  snapshots. Struck figures flash, sparks fly where a guard meets a blow, shots leave tracers, and telegraphed blows
+  figure shows what the fight holds it to. Each foe is drawn in its kind's dress (`FoeFigures`), and it and every
+  other player glide between snapshots. Struck figures flash, sparks fly where a guard meets a blow, shots leave tracers, and telegraphed blows
   are marked on the ground (`FightMarks`). The fight's display (`#fight-hud`, drawn by `combat/hud.css`, the Test
   Ground's sheet too) shows the player's health, stamina and poise, the locked foe's bars, the parry rings and the
   words over the fight. Offline, with no room, the player only walks. If the room is lost, the fight is let go and
-  the player walks on alone, the section's edge judged by the same rules here, where they stand; dead, they lie
-  until Respawn as offline.
+  the player walks on alone, the section's edge judged by the same rules here, taking up where the room's word left
+  them: warned, the warning runs on; dead, they lie until Respawn, their time running on, as offline.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
   plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
-  landward lane, clear of the portico's steps. The fight never takes them for targets.
+  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
+  is found again only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`): a brass ring at each counter that deals with the player; at each resource node they
   may still gather, a sea-green ring under a beam 40 m tall, seen across the patrol, so a route can be planned through
   them; and at each Vestige lying for them, a ring and a beam in its rarity's colour, picked up by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter it opens the gear screen at its tab (the
   Reader and the vault at Inventory, the Quartermaster and the Armsmith at Vendors); within 2.5 m of a node it asks the
-  room to gather it. Neither is offered while a menu is up or the player lies dead.
+  room to gather it. Neither is offered while a menu is up or the player lies dead, past the edge or felled by a
+  foe.
 
 ## The edge
 

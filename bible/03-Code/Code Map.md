@@ -92,9 +92,8 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 `ships`), `combat` (imports `rules` and `network`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
 the editor's camera), `testground` (imports what `player` does, `player` itself, `combat` and the editor's panel
 helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap`
-(imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers), `plus` (imports
-nothing) and `game`
-(imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
+(imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page helpers), `plus`
+(imports nothing) and `game` (imports the layers it wires, `combat` among them). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
 
 ## The Rust crates
 
@@ -108,11 +107,11 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement`
   and `libm`; `reach`, which uses no other crate; and `gear`, which may use `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `land`, `movement`,
-  `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use `combat`,
-  `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `gear`, `land`,
+  `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use
+  `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
   the Cloudflare shell in `server/`, and for a browser playing alone or predicting its ship in a fleet, reading a
-  node's baked file and the layout with `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
+  node's baked file and the layout with `gear`, `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
   `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are

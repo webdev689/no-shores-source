@@ -48,7 +48,7 @@ export class ItemPictures {
   /** Each item's dresses and pose, worked out once for the gear message it came in and the body it is worn on. */
   private readonly looks = new WeakMap<
     GearItem,
-    { body: Dress; key: string; worn: Dress; bare: Dress; anim: string }
+    { body: Dress; key: string; worn: Dress; bare: Dress; anim: string; onePiece: boolean }
   >();
 
   constructor(forge: Cards) {
@@ -60,13 +60,13 @@ export class ItemPictures {
   pictureOf(item: GearItem, body: Dress, ready: () => void): Picture | null {
     const look = this.lookOf(item, body);
     if (!look) return null;
-    const { key, worn, bare, anim } = look;
+    const { key, worn, bare, anim, onePiece } = look;
     if (this.kept.has(key)) return this.kept.get(key) ?? null;
     if (!this.asked.has(key)) {
       this.asked.add(key);
       Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)])
         .then(([withIt, without]) => {
-          this.kept.set(key, withIt && without ? addedBy(withIt, without) : null);
+          this.kept.set(key, withIt && without ? addedBy(withIt, without, onePiece) : null);
           ready();
         })
         .catch(() => this.asked.delete(key));
@@ -75,7 +75,10 @@ export class ItemPictures {
   }
 
   /** The dresses an item's picture is drawn from: the body wearing it alone, and bare; and the pose that holds it. */
-  private lookOf(item: GearItem, body: Dress): { key: string; worn: Dress; bare: Dress; anim: string } | null {
+  private lookOf(
+    item: GearItem,
+    body: Dress,
+  ): { key: string; worn: Dress; bare: Dress; anim: string; onePiece: boolean } | null {
     const known = this.looks.get(item);
     if (known && known.body === body) return known;
     const wardrobe = this.forge.wardrobe(body.body);
@@ -91,7 +94,8 @@ export class ItemPictures {
     const held = worn.outfit.left ?? worn.outfit.right;
     const wanted = slot <= 1 ? (HELD_IN[kind] ?? 'guard') : 'idle';
     const anim = this.forge.draws(body.body, wanted, held) ? wanted : 'idle';
-    const look = { body, key: JSON.stringify([worn, bare, anim]), worn, bare, anim };
+    // A weapon or a shield is one piece: anything else the figure shows with it (a sheath at the hip) is not it.
+    const look = { body, key: JSON.stringify([worn, bare, anim]), worn, bare, anim, onePiece: slot <= 1 };
     this.looks.set(item, look);
     return look;
   }

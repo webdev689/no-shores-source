@@ -21,11 +21,12 @@
 .use-prompt-key {
   min-width: 22px;
   padding: 1px 6px;
-  border: 1px solid #f3cf86;
+  border: 1px solid;
+  border-color: #f3cf86 #8a5f17 #8a5f17 #f3cf86;
   border-bottom-width: 3px;
-  border-radius: 3px;
+  border-radius: 0;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   text-align: center;
   color: #f3cf86;
   background: rgba(192, 138, 62, 0.15);

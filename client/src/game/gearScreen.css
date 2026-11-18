@@ -1,6 +1,7 @@
 /* The gear screen (client/src/game/gearWindow.ts and its pages): the kit (client/src/plus/) paints each surface by
    its role; this sheet gives each its room, and the rest Enhanced Plus draws: a tile's well and its rarity's bevel and
-   glow from below, a card's band in its rarity, the cell's count and pips, the chosen tab, the meters, the nodes. */
+   glow, a card's band in its rarity, the cell's count and pips, the chosen tab, the meters, the nodes. One scale of
+   type runs through it, and what moves moves in steps, as Enhanced Plus's sigils breathe. */
 
 .gear-screen,
 .gear-tip,
@@ -12,6 +13,17 @@
   --ground: #0e1013;
   --well: #101216;
   --edge: #4a463d;
+  --stone-hi: #6d6252;
+  --stone-lo: #231e18;
+  --outline: #050608;
+  --gain: #74d9a0;
+  --loss: #e8968a;
+  --type-xs: 11px;
+  --type-s: 13px;
+  --type-m: 15px;
+  --type-l: 18px;
+  --type-xl: 32px;
+  --type-xxl: 56px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -35,6 +47,7 @@
   flex-direction: column;
   border: 2px solid transparent;
   color: var(--word);
+  font-size: var(--type-s);
   text-shadow: 1px 1px 0 #000;
   pointer-events: auto;
   z-index: 20;
@@ -60,11 +73,10 @@
   flex-direction: column;
 }
 .gear-who strong {
-  font-size: 18px;
+  font-size: var(--type-l);
   letter-spacing: 0.06em;
 }
-.gear-tabs-top,
-.gear-tabs {
+.gear-tabs-top {
   display: flex;
   gap: 6px;
 }
@@ -73,30 +85,34 @@
   align-items: center;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: 13px;
+  font-size: var(--type-s);
 }
 #hud .gear-tab.gear-chosen {
   color: var(--brass-lit);
   box-shadow: inset 0 -2px 0 var(--brass-lit);
 }
+/* A key on a keycap: square and bevelled, as the kit's stone is. */
 kbd.gear-key {
-  margin-left: 10px;
+  margin-left: 8px;
   min-width: 18px;
   padding: 0 5px;
-  border: 1px solid var(--edge);
+  border: 1px solid;
+  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
   border-bottom-width: 2px;
-  border-radius: 3px;
+  border-radius: 0;
+  background: #16181d;
   font: inherit;
-  font-size: 11px;
+  font-size: var(--type-xs);
   line-height: 16px;
   text-align: center;
-  color: var(--faint);
+  color: var(--word);
   letter-spacing: 0;
+  text-transform: none;
 }
 .gear-tab-count {
   margin-left: 8px;
   color: var(--faint);
-  font-size: 11px;
+  font-size: var(--type-xs);
 }
 .gear-purse {
   justify-self: end;
@@ -105,19 +121,7 @@ kbd.gear-key {
   gap: 6px;
 }
 .gear-purse b {
-  font-size: 16px;
-}
-.gear-said {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  min-width: 0;
-}
-.gear-answer {
-  color: #f0b545;
-}
-.gear-answer:empty {
-  display: none;
+  font-size: var(--type-m);
 }
 .gear-body {
   position: relative;
@@ -128,28 +132,65 @@ kbd.gear-key {
   scrollbar-color: var(--edge) transparent;
   scrollbar-width: thin;
 }
+/* One footer: the room's answer and what the presses and keys do; what may be done, to the right. */
 .gear-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   padding: 8px 16px;
   border-top: 1px solid transparent;
+}
+.gear-said {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.gear-answer {
+  color: #f0b545;
+}
+.gear-answer:empty {
+  display: none;
+}
+.gear-actions,
+.gear-item-presses {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.gear-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+}
+.gear-hint-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--faint);
+  font-size: var(--type-s);
+}
+.gear-hint-pair kbd.gear-key {
+  margin-left: 0;
 }
 .gear-hint,
 .gear-card-meta {
   color: var(--faint);
-  font-size: 12px;
+  font-size: var(--type-s);
 }
 .gear-empty {
   margin: 48px auto;
   max-width: 420px;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--type-m);
 }
 .gear-heading {
   margin: 4px 0 10px;
   padding-bottom: 4px;
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-weight: normal;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -170,12 +211,23 @@ img.gear-glyph {
 .gear-chip {
   display: inline-block;
   padding: 1px 8px;
-  border: 1px solid var(--edge);
-  font-size: 12px;
+  border: 1px solid;
+  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
+  font-size: var(--type-xs);
   color: var(--word);
 }
+/* A press the player cannot use now still takes the focus, so its card says why; it reads as resting. */
+#hud .plus-button[aria-disabled='true'],
+#hud .plus-primary[aria-disabled='true'] {
+  border-color: rgba(125, 116, 96, 0.3);
+  background-color: rgba(12, 14, 18, 0.6);
+  background-image: none;
+  cursor: not-allowed;
+  translate: none;
+}
 
-/* A tile: Enhanced Plus's dark well, its bevel and its glow from below in its rarity, or plain stone without one. */
+/* A tile: Enhanced Plus's dark well, its bevel in its rarity and its glow sunk inside, brighter under the pointer;
+   plain stone without one. */
 #hud .gear-slot,
 #hud .gear-cell {
   position: relative;
@@ -183,28 +235,46 @@ img.gear-glyph {
   display: grid;
   place-items: center;
   border: 2px solid;
-  border-color: var(--rar-hi, #6d6252) var(--rar-lo, #231e18) var(--rar-lo, #231e18) var(--rar-hi, #6d6252);
+  border-color: var(--rar-hi, var(--stone-hi)) var(--rar-lo, var(--stone-lo)) var(--rar-lo, var(--stone-lo))
+    var(--rar-hi, var(--stone-hi));
   background:
     radial-gradient(ellipse at 50% 115%, rgba(var(--rar-rgb, 120, 110, 90), 0.3), transparent 68%), var(--well);
+  box-shadow:
+    0 0 0 1px var(--outline),
+    inset 0 0 0 1px rgba(var(--rar-rgb, 120, 110, 90), 0.3),
+    inset 0 0 12px rgba(var(--rar-rgb, 120, 110, 90), 0.2);
   color: var(--word);
 }
 #hud button.gear-slot:hover,
 #hud button.gear-cell:hover,
-#hud div.gear-cell[tabindex]:hover {
+#hud button.gear-slot:focus-visible,
+#hud button.gear-cell:focus-visible {
   border-color: var(--rar, var(--brass-lit));
   background-color: #171a20;
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 9px rgba(var(--rar-rgb, 243, 207, 134), 0.6),
+    inset 0 0 0 1px rgba(var(--rar-rgb, 243, 207, 134), 0.45),
+    inset 0 0 16px rgba(var(--rar-rgb, 243, 207, 134), 0.32);
 }
 #hud .gear-slot {
-  width: 84px;
-  height: 84px;
+  width: clamp(76px, 9vh, 104px);
+  height: clamp(76px, 9vh, 104px);
 }
 #hud .gear-cell {
   width: 64px;
   height: 64px;
 }
+#hud .gear-cell.gear-worn {
+  width: 84px;
+  height: 84px;
+}
 #hud .gear-slot.gear-open {
-  border-color: var(--brass-lit);
-  box-shadow: inset 0 0 0 2px var(--brass-lit);
+  border-color: var(--brass-lit) var(--brass) var(--brass) var(--brass-lit);
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 12px rgba(var(--rar-rgb, 243, 207, 134), 0.55),
+    inset 0 0 0 1px rgba(var(--rar-rgb, 243, 207, 134), 0.45);
 }
 #hud .gear-vacant {
   opacity: 0.55;
@@ -213,35 +283,47 @@ img.gear-glyph {
   width: 24px;
   height: 24px;
 }
-.gear-cell.gear-none {
+.gear-cell.gear-none,
+.gear-material.gear-none {
   opacity: 0.6;
 }
 .gear-count {
   position: absolute;
-  right: 5px;
-  bottom: 3px;
-  font-size: 12px;
+  right: 4px;
+  bottom: 2px;
+  font-size: var(--type-xs);
   color: var(--word);
+  text-shadow:
+    -1px 0 0 var(--outline),
+    1px 0 0 var(--outline),
+    0 -1px 0 var(--outline),
+    0 1px 0 var(--outline);
 }
 .gear-pips {
   position: absolute;
-  left: 5px;
-  bottom: 3px;
-  font-size: 10px;
+  left: 4px;
+  bottom: 2px;
+  font-size: var(--type-xs);
+  line-height: 1;
   color: var(--rar);
+  text-shadow:
+    1px 1px 0 var(--outline),
+    0 0 4px rgba(var(--rar-rgb, 120, 110, 90), 0.7);
 }
 .gear-initials {
-  font-size: 18px;
+  font-size: var(--type-l);
   letter-spacing: 0.04em;
   color: var(--rar-hi, var(--word));
 }
 
-/* The character page: the weapons and cloak, the figure, the armour. */
+/* The character page: the weapons and cloak, the figure, the armour, their headings level. */
 .gear-character {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.25fr) minmax(220px, 1fr);
   gap: 24px;
-  align-items: center;
+  align-items: start;
+  align-content: center;
+  min-height: 100%;
 }
 .gear-side {
   display: flex;
@@ -253,6 +335,9 @@ img.gear-glyph {
 }
 .gear-side .gear-heading {
   align-self: stretch;
+}
+.gear-character > .gear-side:first-child .gear-heading {
+  text-align: right;
 }
 .gear-slot-holder {
   position: relative;
@@ -274,19 +359,19 @@ img.gear-glyph {
   text-align: right;
 }
 .gear-slot-name {
-  font-size: 11px;
+  font-size: var(--type-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--faint);
 }
 .gear-slot-item {
-  font-size: 13px;
+  font-size: var(--type-s);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 180px;
 }
-/* A slot's flyout opens toward the figure, never off the screen's edge. */
+/* A slot's flyout opens toward the figure, and upward from each side's lowest slot, never off the screen's edge. */
 .gear-flyout {
   position: absolute;
   top: -8px;
@@ -294,6 +379,10 @@ img.gear-glyph {
   padding: 10px;
   border: 2px solid transparent;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+.gear-side > .gear-slot-holder:last-child .gear-flyout {
+  top: auto;
+  bottom: -8px;
 }
 .gear-character > .gear-side:first-child .gear-flyout {
   left: calc(100% + 10px);
@@ -303,7 +392,7 @@ img.gear-glyph {
 }
 .gear-flyout-head {
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: var(--type-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--faint);
@@ -331,18 +420,18 @@ img.gear-glyph {
   width: min(100%, 300px);
 }
 .gear-power-label {
-  font-size: 11px;
+  font-size: var(--type-xs);
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--faint);
 }
 .gear-power-level {
-  font-size: 56px;
+  font-size: var(--type-xxl);
   line-height: 1;
-  color: #f3cf6a;
+  color: var(--brass-lit);
 }
 .gear-power-next {
-  font-size: 12px;
+  font-size: var(--type-s);
 }
 .gear-figure-stand {
   display: grid;
@@ -370,13 +459,13 @@ img.gear-glyph {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 .gear-stat-label {
-  font-size: 11px;
+  font-size: var(--type-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--faint);
 }
 .gear-stat-value {
-  font-size: 18px;
+  font-size: var(--type-l);
 }
 .gear-meter {
   width: 100%;
@@ -398,9 +487,11 @@ img.gear-glyph {
 #hud .gear-tip .gear-card {
   background: var(--ground);
   border: 2px solid;
-  border-color: var(--rar-hi, #6d6252) var(--rar-lo, #231e18) var(--rar-lo, #231e18) var(--rar-hi, #6d6252);
+  border-color: var(--rar-hi, var(--stone-hi)) var(--rar-lo, var(--stone-lo)) var(--rar-lo, var(--stone-lo))
+    var(--rar-hi, var(--stone-hi));
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
   color: var(--word);
+  font-size: var(--type-s);
   text-shadow: 1px 1px 0 #000;
 }
 .gear-card-head {
@@ -412,13 +503,22 @@ img.gear-glyph {
 }
 .gear-card-head h3 {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--type-l);
   font-weight: normal;
-  color: var(--rar-hi, #f6f3ec);
+  color: var(--rar-hi, var(--word));
+}
+/* A Normal piece's name is white, as its rarity is named; its frame alone is plain stone. */
+.gear-card[data-rarity='normal'] .gear-card-head h3,
+.gear-item-page[data-rarity='normal'] .gear-item-name {
+  color: var(--rar);
 }
 .gear-card-head .gear-card-meta {
   margin: 3px 0 0;
-  color: #e6e0d2;
+  color: var(--word);
+}
+.gear-card-pips {
+  margin-left: 8px;
+  color: var(--rar, var(--faint));
 }
 .gear-card-body {
   padding: 10px 12px;
@@ -433,13 +533,13 @@ img.gear-glyph {
 }
 .gear-card-big strong,
 .gear-item-big strong {
-  font-size: 32px;
+  font-size: var(--type-xl);
   font-weight: normal;
   margin-right: 8px;
 }
 .gear-card-big span,
 .gear-item-big span {
-  font-size: 11px;
+  font-size: var(--type-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--faint);
@@ -451,7 +551,7 @@ img.gear-glyph {
   margin: 8px 0;
 }
 .gear-card-stats dt {
-  font-size: 11px;
+  font-size: var(--type-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--faint);
@@ -460,51 +560,94 @@ img.gear-glyph {
   margin: 0;
   text-align: right;
 }
+/* A trait: its column's glyph beside its name and words. */
 .gear-card-trait {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   padding: 4px 0;
 }
-.gear-card-trait b {
+.gear-card-trait .gear-node-glyph,
+.gear-card-trait .gear-node-glyph svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  color: var(--brass-lit);
+}
+.gear-trait-words {
+  display: flex;
+  flex-direction: column;
+}
+.gear-trait-words b {
   font-weight: normal;
   color: var(--brass-lit);
 }
-.gear-card-trait span,
+.gear-trait-words span,
 .gear-card-words {
-  font-size: 12px;
+  font-size: var(--type-s);
   color: var(--faint);
 }
 .gear-card-words {
   margin: 4px 0;
   font-style: italic;
 }
-.gear-card-compare {
-  margin-top: 8px;
-  padding-top: 6px;
+/* What a piece changes over the one worn: each number's meter, the change a segment in its colour. */
+.gear-compare {
+  margin-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
-.gear-card-change {
-  display: flex;
-  justify-content: space-between;
+.gear-compare-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 72px;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
 }
-.gear-card-change.up {
-  color: #74d9a0;
-}
-.gear-card-change.down {
-  color: #e8968a;
-}
-.gear-card-change.same {
+.gear-compare-label {
+  font-size: var(--type-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--faint);
+}
+.gear-compare-well {
+  display: flex;
+  height: 8px;
+  border: 2px solid transparent;
+}
+.gear-compare-kept {
+  background: linear-gradient(180deg, #e9e0c0, #c9bf9c);
+}
+.gear-compare-row.up .gear-compare-moved {
+  background: var(--gain);
+}
+.gear-compare-row.down .gear-compare-moved {
+  background: rgba(232, 150, 138, 0.45);
+}
+.gear-compare-value {
+  text-align: right;
+}
+.gear-compare-value small {
+  font-size: var(--type-xs);
+}
+.gear-compare-row.up small {
+  color: var(--gain);
+}
+.gear-compare-row.down small {
+  color: var(--loss);
 }
 .gear-card-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin: 0;
   padding: 7px 12px 8px;
-  font-size: 12px;
-  color: var(--faint);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: var(--type-s);
+  color: var(--faint);
 }
 
-/* An item's page, laid over the screen, hiding it: Destiny 1's weapon page. */
+/* An item's page, laid over the screen, hiding it: Destiny 1's weapon page, its name on its rarity's band. */
 #hud .gear-screen .gear-item-page {
   background:
     radial-gradient(ellipse 50% 60% at 76% 46%, rgba(var(--rar-rgb, 120, 110, 90), 0.1), transparent 70%), var(--ground);
@@ -517,13 +660,16 @@ img.gear-glyph {
   flex-direction: column;
   border: 2px solid transparent;
 }
+.gear-item-head {
+  padding: 14px 24px 12px;
+}
 .gear-item-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(380px, 1.1fr) 1fr;
-  gap: 24px;
-  padding: 18px 24px;
+  grid-template-columns: minmax(380px, 660px) 1fr;
+  gap: 32px;
+  padding: 14px 24px 18px;
   overflow: auto;
   scrollbar-color: var(--edge) transparent;
   scrollbar-width: thin;
@@ -535,27 +681,27 @@ img.gear-glyph {
 }
 .gear-item-name {
   margin: 0;
-  font-size: 32px;
+  font-size: var(--type-xl);
   font-weight: normal;
   line-height: 1.1;
-  color: var(--rar);
+  color: var(--rar-hi, var(--word));
 }
 .gear-item-kind {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 6px 0 4px;
-  color: var(--faint);
+  margin: 6px 0 0;
+  color: var(--word);
 }
-.gear-item-pips {
-  color: var(--rar);
+.gear-item-kind .gear-card-pips {
+  margin-left: 0;
 }
 .gear-item-big {
-  margin: 12px 0 6px;
+  margin: 8px 0 6px;
 }
 .gear-item-big strong {
-  font-size: 52px;
+  font-size: var(--type-xxl);
   line-height: 1;
 }
 .gear-bar {
@@ -565,18 +711,16 @@ img.gear-glyph {
   gap: 10px;
   margin: 4px 0;
 }
+.gear-bar.gear-bar-bare {
+  grid-template-columns: 1fr;
+}
 .gear-bar-label {
-  font-size: 12px;
+  font-size: var(--type-s);
   color: var(--faint);
 }
 .gear-bar-value {
-  font-size: 13px;
+  font-size: var(--type-s);
   text-align: right;
-}
-.gear-item-perks {
-  margin: 0 0 6px;
-  padding: 0;
-  list-style: none;
 }
 .gear-item-left > .gear-heading {
   margin-top: 16px;
@@ -590,100 +734,88 @@ img.gear-glyph {
   letter-spacing: 0.04em;
   text-transform: none;
 }
+/* The node grid: each column under its own meter of the XP toward it; each node a tile of the kit's stone. */
 .gear-nodes {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   align-self: flex-start;
-}
-.gear-node-track {
-  height: 8px;
-  border: 2px solid transparent;
-}
-.gear-node-columns {
-  display: flex;
-  gap: 16px;
 }
 .gear-node-column {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  min-width: 46px;
+  width: 48px;
 }
 .gear-node-xp {
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: var(--faint);
 }
 .gear-node-reached .gear-node-xp {
   color: var(--brass-lit);
 }
-#hud .gear-node {
+.gear-node-well {
+  width: 100%;
+  height: 6px;
+  border: 1px solid transparent;
+}
+/* A node is a press, but its state, not the press's resting look, says what it is. */
+#hud .gear-node.plus-button {
   width: 44px;
   height: 44px;
   padding: 0;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  border: 2px solid #6d6556;
-  background: #1c1f26;
-  color: #d8cfae;
+  border: 2px solid;
+  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
+  background: var(--well);
+  color: var(--brass-lit);
   cursor: pointer;
 }
 .gear-node-glyph,
 .gear-node-glyph svg {
   display: block;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
-#hud .gear-node:hover:not(:disabled) {
-  border-color: var(--brass-lit);
-}
-#hud .gear-node-open {
-  border-color: var(--rar, var(--brass-lit));
-  background:
-    radial-gradient(circle, rgba(var(--rar-rgb, 243, 207, 134), 0.24), rgba(var(--rar-rgb), 0.06) 70%), #1c1f26;
-  color: var(--rar-hi, var(--brass-lit));
-}
-#hud .gear-node-bought {
-  border-color: var(--brass-lit);
-  color: var(--brass-lit);
-}
-#hud .gear-node-chosen {
-  border-color: #f6dca4;
-  background: linear-gradient(180deg, #e2b86a, #b07a32);
-  color: #1a120a;
-}
-#hud .gear-node-locked {
-  border-color: #3a372f;
-  background: #15171b;
+#hud .gear-node.gear-node-locked {
+  border-color: var(--stone-lo) var(--stone-hi) var(--stone-hi) var(--stone-lo);
+  background: #0b0c0f;
   color: #6a6458;
   cursor: default;
 }
+#hud .gear-node.gear-node-open {
+  border-color: var(--rar-hi, var(--brass-lit)) var(--rar-lo, var(--brass)) var(--rar-lo, var(--brass))
+    var(--rar-hi, var(--brass-lit));
+  color: var(--rar-hi, var(--brass-lit));
+  box-shadow:
+    0 0 8px rgba(var(--rar-rgb, 243, 207, 134), 0.45),
+    inset 0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.25);
+}
+#hud .gear-node.gear-node-chosen {
+  border-color: #f6dca4 #8a5f17 #8a5f17 #f6dca4;
+  background: linear-gradient(180deg, #e2b86a, #b07a32);
+  color: #1a120a;
+  box-shadow: 0 0 0 1px var(--outline);
+  cursor: default;
+}
+#hud .gear-node.plus-button:hover:not([aria-disabled='true']) {
+  border-color: var(--brass-lit);
+}
 .gear-item-art {
   display: grid;
-  place-items: center;
+  place-items: end center;
   min-height: 0;
+  padding-bottom: 10%;
   background:
-    radial-gradient(ellipse 36% 7% at 50% 84%, rgba(var(--rar-rgb, 120, 110, 90), 0.4), transparent 72%),
-    radial-gradient(circle at 50% 48%, rgba(var(--rar-rgb, 120, 110, 90), 0.14), transparent 58%);
+    radial-gradient(ellipse 36% 7% at 50% 92%, rgba(var(--rar-rgb, 120, 110, 90), 0.4), transparent 72%),
+    radial-gradient(circle at 50% 55%, rgba(var(--rar-rgb, 120, 110, 90), 0.14), transparent 58%);
 }
 .gear-item-art canvas {
   filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.6));
 }
-.gear-item-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-  padding: 10px 16px;
-  border-top: 1px solid transparent;
-}
-.gear-item-footer > :first-child {
-  margin-right: auto;
-}
 
-/* A press held to act: its fill runs along its foot while it is held. */
+/* A press held to act: it fills from its foot while it is held, a band along the foot over a wash of its colour. */
 #hud .gear-held {
   position: relative;
   overflow: hidden;
@@ -692,20 +824,21 @@ img.gear-glyph {
   content: '';
   position: absolute;
   left: 0;
+  top: 0;
   bottom: 0;
   width: 0;
-  height: 3px;
-  background: var(--brass-lit);
+  background: linear-gradient(0deg, var(--brass-lit) 0 3px, rgba(243, 207, 134, 0.18) 3px);
+  pointer-events: none;
 }
 #hud .plus-warn.gear-held::after {
-  background: #e8968a;
+  background: linear-gradient(0deg, var(--loss) 0 3px, rgba(232, 150, 138, 0.18) 3px);
 }
 #hud .gear-held.gear-holding::after {
   width: 100%;
   transition: width var(--hold, 800ms) linear;
 }
 
-/* The inventory: the currencies along its head, its shelves, its grid. */
+/* The inventory: the currencies along its head, its shelves in a well, then the gear, a list or a grid. */
 .gear-inventory {
   display: flex;
   flex-direction: column;
@@ -729,23 +862,48 @@ img.gear-glyph {
   line-height: 1.15;
 }
 .gear-currency-words b {
-  font-size: 15px;
+  font-size: var(--type-m);
   font-weight: normal;
 }
 .gear-currency-name {
-  font-size: 11px;
+  font-size: var(--type-xs);
   color: var(--faint);
 }
 .gear-currency img.gear-glyph,
-.gear-purse img.gear-glyph {
+.gear-purse img.gear-glyph,
+.gear-price img.gear-glyph {
   width: 24px;
   height: 24px;
 }
-#hud .gear-shelf {
-  font-size: 12px;
-  letter-spacing: 0.08em;
+.gear-shelves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px 6px;
+  border: 2px solid transparent;
 }
-#hud .gear-shelf.gear-bare {
+#hud .gear-shelf {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border: 0;
+  background: none;
+  color: var(--word);
+  font: inherit;
+  font-size: var(--type-s);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+}
+#hud .gear-shelf:hover {
+  color: var(--brass-lit);
+}
+#hud .gear-shelf.gear-chosen {
+  color: var(--brass-lit);
+  box-shadow: inset 0 -2px 0 var(--brass-lit);
+}
+#hud .gear-shelf.gear-bare:not(.gear-chosen) {
   color: var(--faint);
 }
 .gear-grid {
@@ -753,37 +911,81 @@ img.gear-glyph {
   grid-template-columns: repeat(auto-fill, 64px);
   gap: 6px;
 }
-.gear-grid > .gear-empty {
+.gear-grid > .gear-empty,
+.gear-list > .gear-empty {
   grid-column: 1 / -1;
 }
+.gear-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+.gear-material {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 8px;
+  border: 2px solid transparent;
+}
+.gear-material img.gear-glyph {
+  width: 32px;
+  height: 32px;
+}
+.gear-material-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gear-material b {
+  font-size: var(--type-m);
+  font-weight: normal;
+}
+/* The gear shelf: each slot's row, its name and worn piece, then the nine it carries. */
+.gear-gear {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gear-gear-row {
+  display: grid;
+  grid-template-columns: 150px 84px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+.gear-gear-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  min-width: 0;
+}
+.gear-gear-label .gear-slot-item {
+  max-width: 150px;
+}
+.gear-gear-carried {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 
-/* The vendors' wares: each its tile, its name and kind, and its price held to buy. */
+/* The vendors' wares: each ware a press held to buy it, its tile, name, kind and price. */
 .gear-vendor + .gear-vendor {
   margin-top: 18px;
 }
 .gear-wares {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px 14px;
 }
-.gear-ware {
+#hud .gear-ware {
   display: grid;
   grid-template-columns: 64px 1fr;
-  grid-template-areas: 'cell words' 'cell buy';
-  align-items: start;
-  gap: 6px 12px;
-  padding: 6px 0;
-}
-.gear-ware > .gear-cell {
-  grid-area: cell;
-}
-.gear-ware > .gear-ware-words {
-  grid-area: words;
-}
-.gear-ware > button {
-  grid-area: buy;
-  justify-self: start;
-  white-space: nowrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  text-align: left;
 }
 .gear-ware-words {
   display: flex;
@@ -797,8 +999,25 @@ img.gear-glyph {
   text-overflow: ellipsis;
 }
 .gear-ware-power {
-  font-size: 12px;
+  font-size: var(--type-s);
   color: var(--word);
+}
+.gear-price {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--brass-lit);
+}
+.gear-price b {
+  font-size: var(--type-m);
+  font-weight: normal;
+}
+.gear-price.gear-short {
+  color: var(--loss);
+}
+.gear-price.gear-short .gear-hint {
+  color: var(--loss);
 }
 
 /* The account. */
@@ -820,6 +1039,7 @@ img.gear-glyph {
   padding: 6px 8px;
   font: inherit;
   color: var(--word);
+  background: var(--well);
   border: 2px solid transparent;
   caret-color: var(--brass-lit);
 }
@@ -831,6 +1051,43 @@ img.gear-glyph {
 }
 .gear-label {
   color: var(--faint);
-  font-size: 12px;
+  font-size: var(--type-s);
   min-width: 72px;
+}
+
+/* What moves, moves in steps, as Enhanced Plus's sigils breathe; with less motion asked for, nothing does but the
+   hold's fill, which says how long is left. */
+@media (prefers-reduced-motion: no-preference) {
+  #hud .gear-screen:not([hidden]) {
+    animation: gear-in 160ms steps(4, end);
+  }
+  #hud .gear-scrim:not([hidden]) {
+    animation: gear-fade 200ms steps(4, end);
+  }
+  #hud .gear-node-open {
+    animation: gear-breathe 2.4s steps(6, end) infinite alternate;
+  }
+}
+@keyframes gear-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes gear-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes gear-breathe {
+  from {
+    box-shadow:
+      0 0 4px rgba(var(--rar-rgb, 243, 207, 134), 0.35),
+      inset 0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.2);
+  }
+  to {
+    box-shadow:
+      0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.6),
+      inset 0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.3);
+  }
 }

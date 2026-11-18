@@ -36,7 +36,7 @@ jobs:
       - name: Install Blender's module and the TypeScript tools
         if: steps.token.outputs.set == 'true'
         run: pip install bpy==5.3.0 && npm ci
-      # She stands three times her model as the owner made it, her quarterdeck opened with steps down, so her
+      # She stands three times her source model, her quarterdeck opened with steps down, so her
       # waterline, 0.4 m up that model, is 1.2 m up her.
       - name: Paint and publish the Sloop
         if: steps.token.outputs.set == 'true'

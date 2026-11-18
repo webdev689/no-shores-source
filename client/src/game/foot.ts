@@ -2,6 +2,7 @@ import { marksMesh } from '../combat/marks.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
+import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera } from '../player/player.ts';
 import type { Others } from '../player/others.ts';
@@ -57,6 +58,8 @@ const OVER_THE_PARAPET = 0.3;
 const BEATS_A_SECOND = 10;
 /** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
 const OTHERS_FPS = 6;
+/** How far apart in time two figures' steps are, by their numbers, in seconds. */
+const STRIDE_APART_S = 0.37;
 /** Other players' figures are numbered from here, clear of the player's own, and never twice in the page's life: the
  *  forge keeps each figure's last card by its number, so a number used again would first show another node's figure. */
 let nextOtherId = 100;
@@ -130,6 +133,8 @@ export class Foot {
   private reach: Reach = { kind: 'inside' };
   /** Whether the room was lost, and the player walks on alone by the reach rules. */
   private alone = false;
+  /** Other players' figures, gliding between snapshots. */
+  private readonly glides = new Glides();
 
   private constructor(
     context: FootContext,
@@ -173,10 +178,11 @@ export class Foot {
     if (this.alone || !this.room || this.room.connected) return;
     this.alone = true;
     this.fought?.leave();
-    const { movement, walker } = this.context;
-    movement.setSection({ ring: this.node.ring, spawns: this.node.spawns });
-    const { body } = walker.player;
-    this.reach = this.room.standing.kind === 'dead' ? this.room.standing : movement.reachTick(body.x, body.y);
+    const { movement } = this.context;
+    // The edge is judged on from the room's last word: a body dead stays dead, its time running on.
+    const last = this.room.standing;
+    this.reach = last.kind === 'warned' ? { kind: 'warned', ticksLeft: last.ticks } : last;
+    movement.setSection({ ring: this.node.ring, spawns: this.node.spawns, standing: this.reach });
     this.rules = this.reachRules();
   }
 
@@ -185,7 +191,7 @@ export class Foot {
     const { movement, walker, rooms } = context;
     const combat = rooms ? combatRulesOf(await rooms.module) : null;
     const rect = windowRect(node.ring);
-    let boxes = await standOn(context, rect, combat);
+    const boxes = await standOn(context, rect, combat);
     movement.setSection(rooms ? null : { ring: node.ring, spawns: node.spawns });
     const [x, y] = node.spawns[0] ?? node.centre;
     const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
@@ -201,6 +207,7 @@ export class Foot {
       remove: (other) => {
         const index = list.indexOf(other);
         if (index >= 0) list.splice(index, 1);
+        context.forge.forget(other.id);
       },
     });
     const others = listedIn(placed);
@@ -211,15 +218,34 @@ export class Foot {
           await context.session,
         )
       : null;
-    // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
-    const bounds = room?.node?.bounds;
+    // A room joined is let go if anything after fails, so no second join finds the first still moving the player.
     try {
-      if (bounds && bounds.some((value, index) => Math.abs(value - (rect[index] ?? 0)) > 0.5))
-        boxes = await standOn(context, bounds, combat);
+      return await Foot.settle(context, node, rect, boxes, combat, room, [placed, folk], listedIn);
     } catch (error) {
       room?.close();
       throw error;
     }
+  }
+
+  /** Stands a player joined to a node's room (or none) in it: the ground the room names, their spawn, their fight and
+   *  a social space's people. */
+  private static async settle(
+    context: FootContext,
+    node: NodeInfo,
+    rect: Rect,
+    stood: readonly Block[],
+    combat: CombatRules | null,
+    room: RoomPlay | null,
+    [placed, folk]: Placed[][],
+    listedIn: (list: Placed[]) => Others,
+  ): Promise<Foot> {
+    const { movement, walker } = context;
+    const [x, y] = node.spawns[0] ?? node.centre;
+    let boxes = stood;
+    // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
+    const bounds = room?.node?.bounds;
+    if (bounds && bounds.some((value, index) => Math.abs(value - (rect[index] ?? 0)) > 0.5))
+      boxes = await standOn(context, bounds, combat);
     if (room && node.spawns.length > 1) {
       // The room stands each player who joins at the next of the node's spawns in turn; the player starts there too.
       const [spawnX, spawnY] = node.spawns[(room.player - 1) % node.spawns.length] ?? [x, y];
@@ -289,19 +315,33 @@ export class Foot {
     }
     this.ground.moved([anchorX - shot.eye[0], anchorY - shot.eye[1], -shot.eye[2]]);
     const { x, y } = walker.player.body;
-    // E does nothing while a menu is up or the player lies dead.
-    const able = !paused && this.standing.kind !== 'dead';
+    // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
+    const felled = this.fought?.fight.own?.action.kind === 'dead';
+    const able = !paused && this.standing.kind !== 'dead' && !felled;
     this.using = able ? useAt(x, y, stations, gear, (asked) => this.room?.askGear(asked)) : null;
     const figures: CardAt[] = [];
     const own = walker.figure(eyeX, eyeY);
     if (own) figures.push(fought ? { ...own, flash: fought.ownFlash } : own);
+    // Other players glide between the room's snapshots and flash when struck, as foes do.
+    const players = new Map([...(this.room?.othersPlaced ?? [])].map(([number, placed]) => [placed, number]));
+    const ticks = { roomTick: fought?.fight.roomTick ?? 0, frameTicks: seconds / movement.tickSeconds };
     for (const placed of this.others.flat()) {
-      const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eyeX, eyeY);
+      const number = players.get(placed);
+      const [shownX, shownY, shownZ] =
+        number === undefined || !fought
+          ? [placed.x, placed.y, placed.z]
+          : this.glides.follow(number, [placed.x, placed.y, placed.z], ticks.roomTick, ticks.frameTicks);
+      const flash = number === undefined || !fought ? undefined : { share: fought.flashOf(number), red: false };
+      const { view, flip } = viewOf(placed.facing, shownX, shownY, eyeX, eyeY);
       const frames = forge.frames(placed.dress.body, placed.anim);
-      const frame = placed.frame === null ? frameAt(clock, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
+      // Each figure keeps a step of its own, so a crowd never walks in step.
+      const own = clock + placed.id * STRIDE_APART_S;
+      const frame = placed.frame === null ? frameAt(own, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
       const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip);
-      if (card) figures.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip });
+      if (card)
+        figures.push({ card, ...cardStand(shownX, shownY, eyeX, eyeY), z: shownZ, flip, ...(flash ? { flash } : {}) });
     }
+    this.glides.keep(new Set(players.values()));
     figures.push(...foes);
     const standing = this.standing;
     this.prompt?.show(this.using?.words ?? null);

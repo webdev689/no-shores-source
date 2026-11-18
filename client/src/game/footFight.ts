@@ -162,6 +162,11 @@ export class FootFight {
     return cards;
   }
 
+  /** How strongly fighter `id`'s figure flashes, struck. */
+  flashOf(id: number): number {
+    return this.flashes.shareOf(id);
+  }
+
   /** How strongly the player's own figure flashes, struck. */
   get ownFlash(): { readonly share: number; readonly red: boolean } {
     return { share: this.flashes.shareOf(this.fight.player), red: true };

@@ -11,6 +11,7 @@ import { startFleetRules } from '../client/src/rules/fleetRules.ts';
 import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
+import { PROTOCOL } from '../generated/messages/ts/version.ts';
 
 const built = (name: string) =>
   readFile(new URL(`../target/wasm32-unknown-unknown/release/${name}.wasm`, import.meta.url)).catch(() => {
@@ -37,7 +38,15 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.equal(room.tickSeconds, 1 / 60);
   assert.equal(room.open(course.start, course.blocks), true);
   const [first, second] = [room.join(), room.join()];
-  assert.deepEqual(readFromRoom(room.joined(first)), { kind: 'joined', player: first, dressed: [], node: null });
+  // The room speaks the protocol the page was built from: the same schema's hash.
+  const protocol = PROTOCOL;
+  assert.deepEqual(readFromRoom(room.joined(first)), {
+    kind: 'joined',
+    player: first,
+    dressed: [],
+    node: null,
+    protocol,
+  });
   assert.equal(room.input(first, asking(1, walk, walking, '{"body":"male"}')), 'taken');
   for (let sequence = 2; sequence <= 30; sequence++)
     assert.equal(room.input(first, asking(sequence, walk, walking)), 'taken');
@@ -64,6 +73,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     player: third,
     dressed: [{ player: first, dress: '{"body":"male"}' }],
     node: null,
+    protocol,
   });
 });
 
@@ -142,7 +152,13 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.equal(room.openNode(text), true);
   const [first, second] = [room.join(), room.join()];
   const node = { id: 'glade', bounds: [-150, -150, 150, 150] };
-  assert.deepEqual(readFromRoom(room.joined(first)), { kind: 'joined', player: first, dressed: [], node });
+  assert.deepEqual(readFromRoom(room.joined(first)), {
+    kind: 'joined',
+    player: first,
+    dressed: [],
+    node,
+    protocol: PROTOCOL,
+  });
   // The browser stands bodies on the same ground and boxes, and finds the same bodies, to the bit.
   const movement = await startMovementRules(await built('movement_wasm'));
   assert.equal(movement.setGround(ground), true);

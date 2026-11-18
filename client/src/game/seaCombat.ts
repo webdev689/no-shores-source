@@ -219,8 +219,9 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     event.stopImmediatePropagation();
   };
   const key = (down: boolean) => (event: KeyboardEvent) => {
-    // Under the gear screen the fight takes no keys: they are the screen's.
-    if (gearScreenOpen()) return;
+    // Under the gear screen the fight takes no key pressed, they are the screen's; a key let go is still the fight's,
+    // so nothing it held stays held.
+    if (down && gearScreenOpen()) return;
     if (fight()?.key(event.key.toLowerCase(), down)) taken(event);
   };
   addEventListener('keydown', key(true), { capture: true });

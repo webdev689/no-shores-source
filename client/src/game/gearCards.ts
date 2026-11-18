@@ -36,7 +36,8 @@ export interface Card {
   /** Its main number and what it is. */
   readonly big: { readonly label: string; readonly value: number } | null;
   readonly rows: readonly (readonly [string, string])[];
-  readonly traits: readonly { readonly name: string; readonly words: string }[];
+  /** Its chosen traits, each with its column's kind, whose glyph marks it. */
+  readonly traits: readonly Trait[];
   readonly words: string;
   readonly compare: {
     readonly replaces: string;
@@ -44,12 +45,30 @@ export interface Card {
   } | null;
 }
 
+/** A trait an item gives: its name, its words, and its column's kind (`COLUMNS`). */
+export interface Trait {
+  readonly name: string;
+  readonly words: string;
+  readonly kind: number;
+}
+
 /** The traits an item gives now: each column's chosen one, once bought. */
 export function chosenTraits(item: GearItem): string[] {
+  return traitsOf(item).map(({ id }) => id);
+}
+
+/** Each chosen trait's id and its column's kind. */
+function traitsOf(item: GearItem): { readonly id: string; readonly kind: number }[] {
   return item.columns.flatMap((column, index) => {
     const chosen = item.chosen[index] ?? NONE;
-    return chosen === NONE ? [] : [column.traits[chosen] ?? ''].filter(Boolean);
+    const id = chosen === NONE ? '' : (column.traits[chosen] ?? '');
+    return id ? [{ id, kind: column.kind }] : [];
   });
+}
+
+/** The traits an item gives now, as its card and page list them. */
+export function traitsShown(item: GearItem): Trait[] {
+  return traitsOf(item).map(({ id, kind }) => ({ ...traitOf(id), kind }));
 }
 
 /** An item's card; against `worn`, the piece it would replace, what changes. */
@@ -71,7 +90,7 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
     kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(KINDS[item.kind] ?? '')}`,
     big,
     rows,
-    traits: chosenTraits(item).map(traitOf),
+    traits: traitsShown(item),
     words: itemWords(item),
     compare: worn && worn.id !== item.id ? { replaces: itemName(worn), rows: changes } : null,
   };

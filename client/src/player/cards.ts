@@ -29,8 +29,10 @@ export interface CardMaker {
   card(pixels: Uint8Array, width: number, height: number, root: readonly [number, number]): Card;
 }
 
-/** Composed frames kept on the GPU before all are let go and composed again as asked. */
+/** Composed frames kept on the GPU before the least lately asked for are let go, to be composed again as asked. */
 const KEPT_CARDS = 4000;
+/** How many are kept once the least lately asked for are let go. */
+const KEPT_AFTER = 3000;
 /** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
 const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
 /** The forge's views of a figure. */
@@ -113,6 +115,11 @@ export class Cards {
     const figure = { ...dressed, gear: (flip && mirroredGear(gear, anim, layers, holding)) || gear };
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);
     const kept = this.kept.get(key);
+    if (kept !== undefined) {
+      // Asked again, it is kept the longest of all.
+      this.kept.delete(key);
+      this.kept.set(key, kept);
+    }
     if (kept !== undefined || this.composing.has(key)) return kept ?? null;
     this.composing.add(key);
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
@@ -153,13 +160,24 @@ export class Cards {
     }
   }
 
+  /** Lets go of a figure that has left: the last card it showed is no longer kept for it. */
+  forget(id: number): void {
+    this.last.delete(id);
+  }
+
   /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. Past the most
-   *  kept, every card is let go here, before a frame asks for any: none handed out this frame is destroyed under it. */
+   *  kept, the cards least lately asked for are let go here, before a frame asks for any, so none handed out this frame
+   *  is destroyed under it; a figure whose last card goes shows nothing until its next is composed. */
   pump(): void {
     if (this.kept.size > KEPT_CARDS) {
-      for (const old of this.kept.values()) old?.texture.destroy();
-      this.kept.clear();
-      this.last.clear();
+      const gone = new Set<Card>();
+      for (const [key, card] of this.kept) {
+        if (this.kept.size <= KEPT_AFTER) break;
+        this.kept.delete(key);
+        if (card) gone.add(card);
+      }
+      for (const [id, card] of this.last) if (gone.has(card)) this.last.delete(id);
+      for (const card of gone) card.texture.destroy();
     }
     for (let started = 0; started < WARM_A_TICK && this.composing.size < WARM_UNDER_WAY; started++) {
       const next = this.queued.shift();

@@ -21,6 +21,8 @@ const IDLE = 0;
 const DRAW = 10;
 /** The most bytes of dress the room takes (room's DRESS_LIMIT); a longer one is refused as no input at all. */
 const DRESS_LIMIT = 4096;
+/** The most shots and events kept for the next frame to show. */
+const QUEUED_MOST = 256;
 const STROKES = [1, 2, 3, 4, 5, 6] as const;
 
 /** The strokes, 1 to 6, whose reach (`reach`, feet to a body's middle) takes in a target `apart` metres away; all six
@@ -332,8 +334,9 @@ export class Fighting {
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);
     this.view = view;
     this.shots = snapshot.shots;
-    this.shotsReceived.push(...snapshot.shots);
-    this.events.push(...snapshot.events);
+    // Kept only so many: a hidden tab draws no frame to take them, and on its return the newest are enough.
+    this.shotsReceived = [...this.shotsReceived, ...snapshot.shots].slice(-QUEUED_MOST);
+    this.events = [...this.events, ...snapshot.events].slice(-QUEUED_MOST);
   }
 
   /** Lets the room's clock run, for a room in the page. */

@@ -9,8 +9,18 @@ import { RARITIES, SLOTS, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
 import { cardOf, flyoutOf, wearIn } from './gearCards.ts';
-import { type HoverCard, cardNode, glyphImage, itemIcon, pictureCanvas, rarityOf, tileLabel } from './gearDom.ts';
+import {
+  type Hint,
+  type HoverCard,
+  cardNode,
+  glyphImage,
+  itemIcon,
+  pictureCanvas,
+  rarityOf,
+  tileLabel,
+} from './gearDom.ts';
 import { characterOf } from './gearScreen.ts';
+import { LARGE_CAP } from './iconFit.ts';
 
 /** What a page of the gear screen draws from: the gear, the way to ask of it, the card, the pictures, and the height
  *  the screen gives it. */
@@ -36,10 +46,19 @@ const SLOT_PX = 64;
 const CELL_PX = 48;
 /** The figure's box: what the screen's body leaves it beside the level, the meter and the power, within these. */
 const FIGURE_LEAST = 240;
-const FIGURE_MOST = 560;
+const FIGURE_MOST = 720;
 const FIGURE_AROUND = 230;
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
+/** What a worn slot's presses do, and a carried piece's. */
+const SLOT_HINTS: readonly Hint[] = [
+  ['Click', 'Its nine'],
+  ['Right-click', 'Details'],
+];
+export const CELL_HINTS: readonly Hint[] = [
+  ['Click', 'Equip'],
+  ['Right-click', 'Details'],
+];
 
 /** A tile holding an item's picture, framed in its rarity, or an empty place. */
 function tileFor(context: PageContext, item: GearItem | null, box: number, className: string): HTMLElement {
@@ -90,7 +109,8 @@ export function characterPage(
         tip.hide();
         context.inspect(worn);
       });
-      tip.over(tile, () => cardNode(cardOf(worn), context.picture(worn), 'Click: its nine · Right-click: inspect'));
+      tile.dataset['details'] = '';
+      tip.over(tile, () => cardNode(cardOf(worn), context.picture(worn), SLOT_HINTS));
     }
     const label = make('div', '', 'gear-slot-words');
     label.append(make('span', name, 'gear-slot-name'));
@@ -114,11 +134,8 @@ export function characterPage(
             tip.hide();
             if (wear) context.ask(wear.ask);
           });
-          tip.over(
-            cell,
-            () => cardNode(cardOf(item, worn), context.picture(item), 'Click: equip · Right-click: inspect'),
-            flyout,
-          );
+          cell.dataset['details'] = '';
+          tip.over(cell, () => cardNode(cardOf(item, worn), context.picture(item), CELL_HINTS), flyout);
         }
         grid.append(cell);
       }
@@ -151,7 +168,8 @@ export function characterPage(
   const stand = make('div', '', 'gear-figure-stand');
   const box = Math.min(FIGURE_MOST, Math.max(FIGURE_LEAST, context.room - FIGURE_AROUND));
   stand.style.height = `${box}px`;
-  stand.append(context.figure ? pictureCanvas(context.figure, box) : make('span', 'Drawing…', 'gear-hint'));
+  const drawn = context.figure ? pictureCanvas(context.figure, box, LARGE_CAP) : make('span', 'Drawing…', 'gear-hint');
+  stand.append(drawn);
   const stats = make('div', '', 'gear-stats');
   const [main, off] = character.attack;
   stats.append(

@@ -93,7 +93,11 @@ export class FoeFigures {
       const flash = { share: flashOf(kept.id), red: false };
       if (card) cards.push({ card, ...cardStand(x, y, eye.x, eye.y), z, flip, flash });
     }
-    for (const id of this.figures.keys()) if (!present.has(id)) this.figures.delete(id);
+    for (const [id, placed] of this.figures)
+      if (!present.has(id)) {
+        this.figures.delete(id);
+        forge.forget(placed.id);
+      }
     this.glides.keep(present);
     return cards;
   }

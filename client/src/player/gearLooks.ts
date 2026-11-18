@@ -1,6 +1,5 @@
-// What the player's worn gear looks like on their figure: every garment is armour (Clothing Is Armour, With a Wardrobe
-// Later), so a Normal or Magic piece is drawn as clothes and a Rare or finer one as an armour set, the finer the
-// rarer; the cloak is a cloak; the hands hold what the gear wears. Each item keeps its look by its own name.
+// What the player's worn gear looks like on their figure: every garment is armour, so a Normal or Magic piece is drawn
+// as clothes and a Rare or finer one as an armour set, the finer the rarer; the cloak is a cloak; the hands hold what the gear wears. Each item keeps its look by its own name.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';

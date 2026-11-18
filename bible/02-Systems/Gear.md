@@ -52,8 +52,10 @@ number is one of [[Gear as Claude Shapes It]].
   a weapon is gripped or fired), finish (how any weapon is balanced), perks and an Atheric's own. Each column
   unlocks when the item's XP reaches it; one node of each trait column is chosen among those bought, the first bought
   chosen at once. Upgrades raise Attack, or Defense and Prestige, by equal steps to the item's most. A node costs
-  Aurem; lesser upgrades fragments; a Legendary's or Atheric's nodes its island's resource, and its last three
-  upgrades 6 Essence each.
+  Aurem, and more as the rarity rises: a Magic's upgrades a fragment, a Rare's nodes one and its upgrades three; a
+  Legendary's or Atheric's handling, finish and perks 2 fragments and 5 of its island's resource, a weapon's upgrades
+  before its last three 5 fragments and 10 of the resource, and its last three upgrades (every upgrade of an armour
+  piece) 6 Essence each; an Atheric's own, 1 Essence ([[Gear as Claude Shapes It]]).
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
   each, to the weapon whose blow last landed and to every armour piece and shield worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
@@ -87,9 +89,10 @@ number is one of [[Gear as Claude Shapes It]].
 - **Hands.** A player holds only what their gear puts in their hands, or a torch beside a one-handed weapon; the
   browser draws the hands from the gear worn, in a metal its rarity likes.
 - **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the hand that
-  struck it (a shot is the main hand's), a foe's on a player by the player's Defense, each by the two levels. A foe
-  of level 0 fights by combat's own numbers.
-- **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds, and lays each one's
+  struck it (a shot is the main hand's, as it was when the shot was loosed), a foe's on a player by the player's
+  Defense, each by the two levels. A foe of level 0 fights by combat's own numbers.
+- **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
+  levels below, a blow does nothing and shares nothing), and lays each one's
   Vestige where it fell, seen by them alone, for two minutes, under a beam in its rarity's colour ([[Game]], "On
   foot"). Walking within 1.5 m picks it up.
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so

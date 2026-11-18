@@ -87,17 +87,21 @@ on Cloudflare.
 - **Gear** ([[Gear]]): each player holds their gear while they are in the room, the starting kit as they join (in a
   node's room, their own kept character once their session is given, [[Accounts]]), and
   only what it puts in their hands (or a torch beside a one-handed weapon): any other arms asked for are bare hands.
-  Every blow is made with its power: a player's on a foe by the Attack of the hand that struck and their levels, a
-  foe's on a player by the player's Defense and their levels. A foe's kill pays every player whose blow landed on it
-  in its last ten seconds, each their own XP and Aurem and perhaps a Vestige, which lies where the foe fell for them
+  Every blow is made with its power: a player's on a foe by the Attack of the hand that struck and their levels (an
+  arrow's or a bolt's by the Attack and perks it was loosed with), a foe's on a player by the player's Defense and
+  their levels. A foe's kill pays every player whose blow landed on it in its last ten seconds and could harm it, each their own XP and Aurem and perhaps a Vestige, which lies where the foe fell for them
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
   them. A social space's room answers a social space's asks (identifying a Vestige, the vault) anywhere in it; the
   Test Ground's course within 4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
-  rejoins. A room takes one player's asks ten times a second at most and lets go of any sooner, and sends their gear
-  five times a second at most, so a page that asks without end cannot flood its socket or slow the room. Only the
-  Test Ground's room hands out gear to try the loop with.
+  rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
+  nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
+  turn and letting go of any past those; and sends their gear five times a second at most, so each answer reaches
+  them before the next is made and a page that asks without end cannot flood its socket or slow the room. A change to
+  how they fight (their trim, or the arms their gear allows) is sent at once, and before the snapshot, so their
+  browser predicts them by it from that snapshot on. Only the Test Ground's room hands out gear to try the loop
+  with.
 - **The dead** stand again, whole, after four seconds, at the spawn nearest where they fell, and the foes leave them be
   for three more unless they strike first; a dead foe is gone after ten.
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
@@ -203,7 +207,7 @@ an older reader skips them.
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for and its level, whether they ask to respawn, and an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called or every one sent off |
-| Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
+| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window, and the protocol's version: the schema's hash, so a page built from another schema loads again, once |
 | Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind, a glance at its fighter and its level; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
@@ -228,7 +232,7 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, and each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules); their Vestiges and those lying for them; the resource nodes they have spent; whether they stand where a social space's asks are answered; the answer to their last ask; and their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, and each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules); their Vestiges and those lying for them; the resource nodes they have spent; whether they stand where a social space's asks are answered; the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; and how far they are to their next level and their next Fruit of Dagon |
 
 ## The host
 

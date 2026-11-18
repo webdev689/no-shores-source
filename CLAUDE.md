@@ -23,7 +23,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
    Read any FAIL line it prints.
 2. Read `bible/03-Code/Toolkit.md` (how to use each tool and worker) and `bible/Hand-off.md`.
 3. Run `graphify update .`, then task-observer's scan:
-   `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh $SHARED_DIR/task-observer`.
+   `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
 4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project . --apply` (say so if
    Gemini is unreachable), then rewrite `bible/Hand-off.md`.
 

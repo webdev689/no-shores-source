@@ -79,9 +79,9 @@ def deck_of(triangles):
     floor = [[None] * columns for _ in range(rows)]
 
     def cells(corners):
-        xs, ys = [corner[0] for corner in corners], [corner[1] for corner in corners]
-        for row in range(max(0, int((min(ys) - north) / CELL_M)), min(rows, int((max(ys) - north) / CELL_M) + 1)):
-            for column in range(max(0, int((min(xs) - west) / CELL_M)), min(columns, int((max(xs) - west) / CELL_M) + 1)):
+        corner_xs, corner_ys = [corner[0] for corner in corners], [corner[1] for corner in corners]
+        for row in range(max(0, int((min(corner_ys) - north) / CELL_M)), min(rows, int((max(corner_ys) - north) / CELL_M) + 1)):
+            for column in range(max(0, int((min(corner_xs) - west) / CELL_M)), min(columns, int((max(corner_xs) - west) / CELL_M) + 1)):
                 yield row, column
 
     for corners, part, rise in walk:
@@ -102,12 +102,12 @@ def deck_of(triangles):
                 floor[row][column] = None
     standing = [[None if height is None or height < LOWEST_DECK_M else round(height * 100) for height in line] for line in floor]
     walkable(standing)
-    on = [(row, column) for row, line in enumerate(standing) for column, height in enumerate(line) if height is not None]
-    if not on:
+    standing_cells = [(row, column) for row, line in enumerate(standing) for column, height in enumerate(line) if height is not None]
+    if not standing_cells:
         sys.exit('her mesh has no deck to stand on')
     # Round the deck, with a cell to spare on each side, so every edge of it meets a wall in the grid.
-    top, bottom = max(0, min(row for row, _ in on) - 1), min(rows, max(row for row, _ in on) + 2)
-    left, right = max(0, min(column for _, column in on) - 1), min(columns, max(column for _, column in on) + 2)
+    top, bottom = max(0, min(row for row, _ in standing_cells) - 1), min(rows, max(row for row, _ in standing_cells) + 2)
+    left, right = max(0, min(column for _, column in standing_cells) - 1), min(columns, max(column for _, column in standing_cells) + 2)
     return {
         'cell_m': CELL_M,
         'west_m': round(west + left * CELL_M, 4),

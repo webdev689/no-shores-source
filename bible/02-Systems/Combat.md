@@ -88,8 +88,9 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   dodge with a weapon drawn) and a guard's blow cost; how fast stamina comes back, and again below half health; a
   reload's time, a bow's draw to full power and the pace kept while aiming; what its blows do (a riposte, a counter,
   an aimed shot, the poise they fill, what a guard lets through and pays, how long a stagger they cause lasts); and how
-  blows land on it (the poise they fill, and again with a weapon drawn; from behind; telegraphed). Nothing trimmed is
-  these numbers; a foe's never are. A snapshot leaves the trim out of each fighter; the room sends a player theirs
+  blows land on it (the poise they fill, and again with a weapon drawn; from behind; telegraphed, through a guard as
+  well). Nothing trimmed is these numbers; a foe's never are. A riposte is the stagger's own answer: the stagger's
+  extra harm, and a striker's trim on a staggered foe, never count in it. A snapshot leaves the trim out of each fighter; the room sends a player theirs
   with their gear, and their browser puts it back before it predicts them. A fighter stood again after death keeps
   its trim.
 - **Numbers that are none.** A look, a push or a pitch that is not a number is never taken: the look keeps the aim.

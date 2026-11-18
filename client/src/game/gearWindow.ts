@@ -7,7 +7,18 @@ import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
 import { accountPanel } from './accountTab.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
-import { HoverCard, cardNode, glyphImage, heldPress, itemIcon, pressOf, rarityOf, tileLabel } from './gearDom.ts';
+import {
+  type Hint,
+  HoverCard,
+  cardNode,
+  glyphImage,
+  heldPress,
+  hintLine,
+  itemIcon,
+  pressOf,
+  rarityOf,
+  tileLabel,
+} from './gearDom.ts';
 import { cardOf } from './gearCards.ts';
 import { type GearHere, OPEN_AT, type Tab, characterOf, setGearScreenOpen, vendorsOf } from './gearScreen.ts';
 import { inventoryPage } from './inventoryPage.ts';
@@ -25,19 +36,39 @@ const TABS: readonly (readonly [Tab, string, string])[] = [
 const LOOK_MS = 100;
 /** A ware's picture box, in pixels. */
 const WARE_PX = 48;
-/** What the footer says each tab's presses do. */
-const HINTS: Readonly<Record<Tab, string>> = {
-  character: 'Click a slot: its nine · Right-click: inspect · Esc: back',
-  inventory: 'Click: use · Right-click: inspect or vault · Esc: back',
-  vendors: 'Hold a price to buy · Esc: back',
-  account: 'Esc: back',
+/** What the footer says each tab's presses and keys do, and an item's page's. */
+const HINTS: Readonly<Record<Tab | 'item', readonly Hint[]>> = {
+  character: [
+    ['Click', 'Its nine'],
+    ['Right-click', 'Details'],
+  ],
+  inventory: [
+    ['Click', 'Equip'],
+    ['Right-click', 'Details'],
+  ],
+  vendors: [['Hold', 'Buy']],
+  account: [],
+  item: [
+    ['Hold', 'Buy a node'],
+    ['Click', 'Choose one bought'],
+  ],
+};
+
+/** What the inventory's shelves' presses do, where they differ from its gear's. */
+const SHELF_HINTS: Readonly<Record<string, readonly Hint[]>> = {
+  consumables: [['Hover', 'What it does']],
+  materials: [['Hover', 'Where it is from']],
+  vestiges: [
+    ['Click', 'Identify'],
+    ['Right-click', 'Vault'],
+  ],
+  vault: [['Click', 'Take out']],
 };
 
 /** A tab's press: its name, and the key that opens it on a keycap. */
 function tabPress(label: string, key: string, open: () => void): HTMLButtonElement {
-  const node = pressOf('', open);
-  node.append(make('span', label));
-  if (key) node.append(make('kbd', key, 'gear-key'));
+  const node = pressOf('', open, 'button', key);
+  node.prepend(make('span', label));
   node.classList.add('gear-tab');
   return node;
 }
@@ -53,6 +84,7 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
   const screen = make('div', '', `gear-screen ${ROLES.window}`);
   screen.hidden = true;
   screen.setAttribute('role', 'dialog');
+  screen.setAttribute('aria-modal', 'true');
   screen.setAttribute('aria-label', 'Gear');
   const header = make('div', '', `gear-head ${ROLES.header}`);
   const who = make('div', '', 'gear-who');
@@ -66,10 +98,9 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
   answer.setAttribute('aria-live', 'polite');
   const body = make('div', '', 'gear-body');
   const footer = make('div', '', `gear-foot ${ROLES.footer}`);
-  const hint = make('span', '', 'gear-hint');
   const said = make('div', '', 'gear-said');
-  said.append(answer, hint);
-  footer.append(said);
+  const actions = make('div', '', 'gear-actions');
+  footer.append(said, actions);
   screen.append(header, body, footer);
   // The world behind the screen, dimmed and softened while it is open.
   const scrim = make('div', '', 'gear-scrim');
@@ -78,7 +109,7 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
   const tip = new HoverCard(root);
   let tab: Tab | null = null;
   let slot: number | null = null;
-  let shelf = 'consumables';
+  let shelf = 'gear';
   let inspecting: number | null = null;
   /** The gear and the state of the screen it was last built for. */
   let shownGear: GearState | null = null;
@@ -90,10 +121,16 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
   const redraw = () => drawn++;
 
+  /** The HUD's other parts, out of reach of the keys and a screen reader while the screen is open. */
+  const beneath = (asleep: boolean) => {
+    for (const part of root.children)
+      if (part instanceof HTMLElement && part !== screen && part !== scrim && part !== tip.node) part.inert = asleep;
+  };
   const shut = () => {
     tab = null;
     screen.hidden = scrim.hidden = true;
     setGearScreenOpen(false);
+    beneath(false);
     tip.hide();
   };
   /** Escape's one step back: the item's page, then the flyout, then the screen. */
@@ -104,11 +141,14 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
   };
   const open = (wanted: Tab) => {
     if (tab === wanted) return shut();
+    const opening = tab === null;
     [tab, slot, inspecting, account, shownGear] = [wanted, null, null, null, null];
     screen.hidden = scrim.hidden = false;
     setGearScreenOpen(true);
+    beneath(true);
     document.exitPointerLock();
     render();
+    if (opening) tabs.find((node) => node.dataset['tab'] === wanted)?.focus();
   };
   const tabs = TABS.map(([name, label, key]) => {
     const node = tabPress(label, key, () => open(name));
@@ -118,7 +158,8 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
     return node;
   });
   tabRow.append(...tabs);
-  footer.append(pressOf('Close  Esc', shut));
+  const close = pressOf('Close', shut, 'button', 'Esc');
+  const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
   const vendorsView = (context: PageContext): HTMLElement[] => {
     if (!context.gear.social)
@@ -131,27 +172,30 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
       for (const ware of vendor.wares) {
         const nth = place++;
         const item = context.gear.wares[nth];
-        const block = make('div', '', 'gear-ware');
+        // The ware itself is held to buy it, as Destiny's vendors are; one the player cannot pay for says so.
+        const block = heldPress('', () => context.ask(ware.press.ask));
+        block.classList.add('gear-ware');
+        block.dataset['key'] = `buy-${nth}`;
+        if (!ware.affordable) block.setAttribute('aria-disabled', 'true');
         const cell = make('div', '', `gear-cell ${ROLES.tile}`);
         rarityOf(cell, item?.rarity ?? null);
         cell.append(item ? itemIcon(context.picture(item), ware.tile.name, WARE_PX) : glyphImage('empty'));
-        if (item) {
-          cell.tabIndex = 0;
-          cell.dataset['key'] = `ware-${nth}`;
-          cell.setAttribute('aria-label', tileLabel(ware.tile.name, item.rarity, ware.kind));
-          const worn = context.gear.items.find((each) => each.at === WORN + item.bucket) ?? null;
-          tip.over(cell, () => cardNode(cardOf(item, worn), context.picture(item), ''));
-        }
         const words = make('div', '', 'gear-ware-words');
         const name = make('b', ware.tile.name);
         name.style.color = ware.tile.colour;
         words.append(name, make('span', `${ware.kind} · level ${ware.level}`, 'gear-hint'));
         if (ware.tile.power) words.append(make('span', ware.tile.power, 'gear-ware-power'));
-        const buy = heldPress(ware.press.label, () => context.ask(ware.press.ask), ware.press.role);
-        buy.dataset['key'] = `buy-${nth}`;
-        buy.disabled = !ware.affordable;
-        if (!ware.affordable) buy.title = 'Not enough Aurem';
-        block.append(cell, words, buy);
+        const price = make('span', '', `gear-price${ware.affordable ? '' : ' gear-short'}`);
+        price.append(glyphImage('aurem'), make('b', ware.price.toLocaleString()));
+        if (!ware.affordable) price.append(make('span', 'Not enough Aurem', 'gear-hint'));
+        words.append(price);
+        block.append(cell, words);
+        const what = `${ware.kind}, ${ware.price.toLocaleString()} Aurem${ware.affordable ? ', hold to buy' : ''}`;
+        block.setAttribute('aria-label', tileLabel(ware.tile.name, item?.rarity ?? null, what));
+        if (item) {
+          const worn = context.gear.items.find((each) => each.at === WORN + item.bucket) ?? null;
+          tip.over(block, () => cardNode(cardOf(item, worn), context.picture(item), [['Hold', 'Buy']]));
+        }
         wares.append(block);
       }
       section.append(wares);
@@ -166,13 +210,14 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
       node.classList.toggle('gear-chosen', chosen);
       node.setAttribute('aria-selected', String(chosen));
     }
-    hint.textContent = inspecting !== null ? 'Esc: back to the screen' : HINTS[tab];
     if (tab === 'account') {
       if (!account) {
         account = link ? accountPanel(link) : make('p', 'This page keeps no account: it plays alone.', 'gear-hint');
         answer.textContent = '';
         tip.hide();
         body.replaceChildren(account);
+        said.replaceChildren(answer);
+        actions.replaceChildren(close);
       }
       return;
     }
@@ -194,7 +239,9 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
     }
     // Built again only when the room's word on the gear is new, or the player moved within the screen.
     const state = JSON.stringify([tab, slot, shelf, inspecting, drawn, now === null]);
-    if (pressing || (gear === shownGear && state === shownState)) {
+    // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
+    const holding = pressing || screen.querySelector('.gear-holding') !== null;
+    if (holding || (gear === shownGear && state === shownState)) {
       tip.keep();
       return;
     }
@@ -215,8 +262,10 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
       make('strong', `Level ${character.level}`),
       make('span', `Prestige ${gear.prestige} · Defense ${gear.defense}`, 'gear-hint'),
     );
-    // The character page shows the level itself; the header keeps its place, so the tabs stay centred.
+    // The character page shows the level itself, and the inventory its Aurem; the header keeps their places, so the
+    // tabs stay centred.
     who.style.visibility = tab === 'character' ? 'hidden' : '';
+    purse.style.visibility = tab === 'inventory' ? 'hidden' : '';
     purse.replaceChildren(
       glyphImage('aurem'),
       make('b', gear.aurem.toLocaleString()),
@@ -249,10 +298,16 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
     // Under an item's page, the screen is out of reach of the pointer, the keys and a screen reader.
     for (const under of page) under.inert = shown !== null;
-    body.replaceChildren(...page, ...(shown ? [shown] : []));
-    const again = focused ? body.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`) : null;
-    if (shown && !shown.contains(document.activeElement)) shown.querySelector<HTMLElement>('button')?.focus();
-    else again?.focus();
+    body.replaceChildren(...page, ...(shown ? [shown.page] : []));
+    // One footer: what the presses and keys do here, the room's answer, and what may be done: an item's presses on its
+    // page, else a step back while a flyout is open, else closing the screen.
+    const hints = shown ? HINTS.item : tab === 'inventory' ? (SHELF_HINTS[shelf] ?? HINTS.inventory) : HINTS[tab];
+    said.replaceChildren(answer, hintLine(hints));
+    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null ? [stepBack] : [close]));
+    const again = focused ? screen.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`) : null;
+    if (again) again.focus();
+    else if (shown && !shown.page.contains(document.activeElement))
+      shown.page.querySelector<HTMLElement>('button')?.focus();
   }
 
   // A press is never lost to a new build under it: none is made while one is held down.
@@ -281,6 +336,11 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
         event.preventDefault();
         back();
         render();
+      } else if (key === 'x' && !typing && document.activeElement instanceof HTMLElement) {
+        // X shows the focused piece's details, as a right-click does.
+        if (document.activeElement.dataset['details'] === undefined) return;
+        event.preventDefault();
+        document.activeElement.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
       } else if (opens && !event.repeat) {
         event.preventDefault();
         open(key === 'i' ? 'character' : 'inventory');

@@ -68,28 +68,28 @@ def touches(face, box):
     )
 
 
-def cut(bm, box):
+def cut(mesh, box):
     """Cuts every face that meets `box` along its six sides, takes away what is inside, and closes the cut ends."""
     low, high = box
     for axis in range(3):
         for value, sign in ((low[axis], -1), (high[axis], 1)):
-            near = [face for face in bm.faces if touches(face, box)]
+            near = [face for face in mesh.faces if touches(face, box)]
             geom = list({element for face in near for element in (*face.verts, *face.edges)}) + near
             normal = Vector((0, 0, 0))
             normal[axis] = sign
             point = Vector((0, 0, 0))
             point[axis] = value
-            bmesh.ops.bisect_plane(bm, geom=geom, plane_co=point, plane_no=normal)
-    gone = [face for face in bm.faces if inside(face.calc_center_median(), box)]
-    bmesh.ops.delete(bm, geom=gone, context='FACES')
+            bmesh.ops.bisect_plane(mesh, geom=geom, plane_co=point, plane_no=normal)
+    gone = [face for face in mesh.faces if inside(face.calc_center_median(), box)]
+    bmesh.ops.delete(mesh, geom=gone, context='FACES')
     on_box = [
         edge
-        for edge in bm.edges
+        for edge in mesh.edges
         if edge.is_boundary and all(touches_side(vertex.co, box) for vertex in edge.verts)
     ]
     # Each cut end is closed facing into the cut, away from what is left of the rail.
     middle = (low + high) / 2
-    for face in bmesh.ops.holes_fill(bm, edges=on_box, sides=0)['faces']:
+    for face in bmesh.ops.holes_fill(mesh, edges=on_box, sides=0)['faces']:
         face.normal_update()
         if face.normal.dot(middle - face.calc_center_median()) < 0:
             face.normal_flip()
@@ -104,7 +104,7 @@ def touches_side(point, box):
     )
 
 
-def add_steps(bm, times, materials):
+def add_steps(mesh, times, materials):
     """Steps down from her quarterdeck's planks to her deck at each gap, forward of it; the top one reaches back under
     what is left of the rail, so no sliver of deck lies between them."""
     hull, deck = materials
@@ -117,12 +117,12 @@ def add_steps(bm, times, materials):
             high = Vector((FRONT_X + (step + 1) * STEP_X, high_y, top)) * times
             middle, span = (low + high) / 2, high - low
             shape = Matrix.Translation(middle) @ Matrix.Diagonal((*span, 1.0))
-            made = bmesh.ops.create_cube(bm, size=1.0, matrix=shape)['verts']
+            made = bmesh.ops.create_cube(mesh, size=1.0, matrix=shape)['verts']
             for face in {face for vertex in made for face in vertex.link_faces}:
                 face.normal_update()
                 face.material_index = deck if face.normal.z > 0.7 else hull
             under = [face for vertex in made for face in vertex.link_faces if face.normal.z < -0.7]
-            bmesh.ops.delete(bm, geom=list(set(under)), context='FACES')
+            bmesh.ops.delete(mesh, geom=list(set(under)), context='FACES')
 
 
 def open_quarterdeck(times):
@@ -134,18 +134,18 @@ def open_quarterdeck(times):
     for item in bpy.data.objects:
         if item.type != 'MESH':
             continue
-        bm = bmesh.new()
-        bm.from_mesh(item.data)
-        bm.transform(item.matrix_world)
-        taken = sum(cut(bm, box) for box in boxes if any(touches(face, box) for face in bm.faces))
+        mesh = bmesh.new()
+        mesh.from_mesh(item.data)
+        mesh.transform(item.matrix_world)
+        taken = sum(cut(mesh, box) for box in boxes if any(touches(face, box) for face in mesh.faces))
         names = [material.name if material else None for material in item.data.materials]
         if taken and 'hull' in names and 'deck' in names:
-            add_steps(bm, times, (names.index('hull'), names.index('deck')))
+            add_steps(mesh, times, (names.index('hull'), names.index('deck')))
             print(f'{item.name}: {taken} faces of her quarterdeck rail taken away, {STEPS} steps laid each side')
-        bm.normal_update()
-        bm.transform(item.matrix_world.inverted())
-        bm.to_mesh(item.data)
-        bm.free()
+        mesh.normal_update()
+        mesh.transform(item.matrix_world.inverted())
+        mesh.to_mesh(item.data)
+        mesh.free()
     scene[STEPS_KEY] = True
 
 
