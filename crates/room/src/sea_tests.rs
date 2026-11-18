@@ -201,7 +201,7 @@ fn a_voyage_eases_down_as_a_pirate_comes_near_along_her_way_and_is_held_by_her_t
 #[test]
 fn a_course_that_zigzags_toward_a_pirate_or_turns_toward_her_at_once_is_held_as_a_straight_one() {
     // A wary pirate 1640 m north, coming south; 10 m legs north and east by turns, so each tick ends on a leg abeam of
-    // her, as her heading was judged before.
+    // her.
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 90_000.0]], 100).unwrap();

@@ -7,14 +7,12 @@ import type { ShipCamera, ShipPlace, ShipView } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { FleetInput, FleetVessel } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
-import { aimCameraOf, arcsOf, lookOf, type MarkDrawer } from './naval.ts';
+import { aimCameraOf, arcsOf, DECK_M, lookOf, type MarkDrawer } from './naval.ts';
 import type { Orbit } from './orbit.ts';
 
 /** A captain's Sloop is drawn this light, another player's this: the same model as hers. */
 const CAPTAIN_SHADE = 0.55;
 const OTHER_SHADE = 0.85;
-/** A fire's flames rise from this far over her waterline (metres): just over her deck. */
-const DECK_M = 2.4;
 /** A ball is drawn this many times its size, to be seen. */
 const BALL_DRAWN = 2;
 const BALL = [0.12, 0.12, 0.12] as const;

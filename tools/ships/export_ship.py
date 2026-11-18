@@ -22,10 +22,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 sys.path.insert(0, HERE)
-from deck import deck_of, mesh_triangles, write_manifest  # noqa: E402
+from deck import MANIFEST, deck_of, mesh_triangles, write_manifest  # noqa: E402
 from r2 import PUBLIC, published, put  # noqa: E402
 
-MANIFEST = os.path.join(os.path.dirname(TOOLS), 'content', 'ships', 'ships.json')
 # The parts the game paints, numbered as her mesh numbers them (client/src/textures/shipPictures.ts).
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
 # The parts a ball strikes as her hull; her spars and guns take none.

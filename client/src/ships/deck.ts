@@ -61,21 +61,6 @@ export function cellHeight(deck: Deck, x: number, y: number): number | null {
   return deck.heights[row * deck.columns + column] ?? null;
 }
 
-/** Each cell a body stands on, as its centre on her deck and its height. */
-export function deckCells(deck: Deck): { readonly x: number; readonly y: number; readonly z: number }[] {
-  return deck.heights.flatMap((height, index) =>
-    height === null
-      ? []
-      : [
-          {
-            x: deck.west + ((index % deck.columns) + 0.5) * deck.cell,
-            y: deck.north + (Math.floor(index / deck.columns) + 0.5) * deck.cell,
-            z: height,
-          },
-        ],
-  );
-}
-
 /** Each cell a body walks to from (x, y), from cell to cell across their edges, as its centre on her deck and its
  *  height: her walls and the rail tops beyond them left out. */
 export function cellsReached(

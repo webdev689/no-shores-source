@@ -1,7 +1,7 @@
 // How a ship is drawn riding the sea the page draws: her pose from the swell under her bow, stern, sides and middle,
 // her heel into a turn, and the stirrings of her wake. The editor's ship takes the same pose from the rules; the
 // Overworld's are drawn from the browser's swell, so this is for drawing, never for a rule.
-import type { Swell } from '../rules/landRules.ts';
+import { headingFrame, type Swell } from '../rules/landRules.ts';
 import { swellHeight } from '../water/swell.ts';
 
 /** Come Sail Away's handling under sail (crates/sailing/src/helm.rs `HANDLING`): her way, m/s, and her swing, degrees a
@@ -33,12 +33,6 @@ export interface Stir {
   readonly strength: number;
 }
 
-/** Her forward and starboard ways, east and south. */
-function frameOf(heading: number): { readonly forward: [number, number]; readonly starboard: [number, number] } {
-  const [sine, cosine] = [Math.sin(heading), Math.cos(heading)];
-  return { forward: [sine, -cosine], starboard: [cosine, sine] };
-}
-
 /** Her pose on the swell at `time`, her waterline `halfLength` and `halfBeam` as drawn, the sea `depthAt` a point deep
  *  (Infinity off the charts): the mean of the water under her bow, stern, sides and middle, and its slope along and
  *  across her (crates/sailing/src/pose.rs `pose_of`). Still water without a swell. */
@@ -51,7 +45,7 @@ export function poseOnSwell(
   time: number,
 ): SwellPose {
   if (!swell) return { heave: 0, pitch: 0, roll: 0 };
-  const { forward, starboard } = frameOf(lies.heading);
+  const { forward, starboard } = headingFrame(lies.heading);
   const levelAt = (along: number, across: number) => {
     const x = lies.x + forward[0] * along + starboard[0] * across;
     const y = lies.y + forward[1] * along + starboard[1] * across;
@@ -81,7 +75,7 @@ export function turnHeel(turn: number, way: number): number {
 /** Where her bow and quarters stir the water, her waterline `halfLength` and `halfBeam` as drawn, deeper the more way
  *  (m/s) she makes. */
 export function wakeStirs(lies: Lies, halfLength: number, halfBeam: number, way: number): Stir[] {
-  const { forward, starboard } = frameOf(lies.heading);
+  const { forward, starboard } = headingFrame(lies.heading);
   const strength = -0.02 * Math.min(way / 2, 1.5);
   const stirAt = (along: number, across: number, radiusM: number, share: number): Stir => ({
     x: lies.x + forward[0] * along + starboard[0] * across,

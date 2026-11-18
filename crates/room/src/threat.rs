@@ -14,13 +14,11 @@ pub const FOE_PACE: f64 = 5.0;
 /// A pirate's reach: her sight, past the ring inside which she holds the voyage.
 const REACH_M: f64 = if ENGAGE_RANGE > HOSTILE_NEAR_M { ENGAGE_RANGE } else { HOSTILE_NEAR_M };
 
-/// Metres along `way` (a unit vector east and south; none for a ship at rest) before a point `east` and `south` of the
-/// ship is within `reach`: none inside it while the way leads deeper, and infinity where the way passes it by or it
-/// lies behind. With no way, the straight distance to the reach's edge.
+/// Metres along `way` (a unit vector east and south) before a point `east` and `south` of the ship is within `reach`:
+/// none inside it while the way leads deeper, and infinity where the way passes it by or it lies behind.
 #[must_use]
-pub fn metres_to_reach(east: f64, south: f64, reach: f64, way: Option<[f64; 2]>) -> f64 {
+pub fn metres_to_reach(east: f64, south: f64, reach: f64, [way_east, way_south]: [f64; 2]) -> f64 {
     let apart = (east * east + south * south).sqrt();
-    let Some([way_east, way_south]) = way else { return (apart - reach).max(0.0) };
     let along = east * way_east + south * way_south;
     if apart <= reach {
         return if along >= 0.0 { 0.0 } else { f64::INFINITY };
@@ -33,10 +31,10 @@ pub fn metres_to_reach(east: f64, south: f64, reach: f64, way: Option<[f64; 2]>)
     if enter >= 0.0 { enter } else { f64::INFINITY }
 }
 
-/// A rate down DFO's ladder of paces: whole fives, and whole ones under five; never under 1.
+/// A rate down DFO's ladder of paces, by whole fives: none under five, where `held_pace` keeps to `FOE_PACE`.
 #[must_use]
 pub fn step_down(rate: f64) -> f64 {
-    if rate >= 5.0 { libm::floor(rate / 5.0) * 5.0 } else { libm::floor(rate).max(1.0) }
+    libm::floor(rate / 5.0) * 5.0
 }
 
 /// The pace a ship set to `pace` sails at, at `at` heading `heading` (radians clockwise from north), with pirates at
@@ -46,7 +44,7 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
     if pace == 0 {
         return 0;
     }
-    let way = Some([libm::sin(heading), -libm::cos(heading)]);
+    let way = [libm::sin(heading), -libm::cos(heading)];
     let closing = SHIP_SPEED_M_S + PIRATE_WAY_M_S;
     let (mut ratio, mut held) = (f64::INFINITY, false);
     for [x, y] in pirates {

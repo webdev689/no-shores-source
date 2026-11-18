@@ -168,11 +168,12 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
-  is taken 20 ticks after her course is sent, a round trip's allowance: until then the page sails her at the pace the
-  room last held her to, then draws her to where the room has her. Where the room has her at rest short of her
-  voyage's end, a course it would not take, the page heaves her to there. A sea room whose link is lost calls the
-  player to the helm, and they sail on alone, the voyage's line saying so. Playing alone, the same sea room runs in
-  the page, so its pirates and fights are the same law.
+  is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at
+  the pace the room last held her to, then draws her to where the room has her. Where the room has her at rest short
+  of her voyage's end, a course it would not take, the page heaves her to there. Leaving the helm while a course
+  waits its turn sends the course first, then the leave, so the room takes the course from the helm. A sea room
+  whose link is lost calls the player to the helm, and they sail on alone, the voyage's line saying so. Playing
+  alone, the same sea room runs in the page, so its pirates and fights are the same law.
 
 ## Drawing
 

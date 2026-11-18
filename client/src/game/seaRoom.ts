@@ -24,8 +24,9 @@ type Closable = RoomLink & { close?(): void };
  *  `COURSE_EVERY_TICKS`), and a quarter second more keeps the network's jitter from bringing two closer than that. */
 const COURSE_EVERY_TICKS = 45;
 /** The ticks after a course is sent before the room's word is taken as having taken it: a round trip's allowance, so a
- *  snapshot already on its way with the course before is never read as the room's answer. */
-const SETTLE_TICKS = 20;
+ *  snapshot already on its way with the course before is never read as the room's answer.
+ *  shortcut: a round trip over 1 s still reads the old word; the room naming the course it took would end the guess. */
+const SETTLE_TICKS = 60;
 
 export class SeaRoom {
   readonly own: number;
@@ -46,6 +47,8 @@ export class SeaRoom {
   private courseSentAt: number | null = null;
   private waitingCourse: ReturnType<typeof courseBytes> | null = null;
   private waitingFacing = false;
+  /** The helm left while a course waited: sent just after it, so the room takes the course from the helm. */
+  private leaveWaiting = false;
 
   private constructor(link: Closable) {
     this.link = link;
@@ -140,17 +143,21 @@ export class SeaRoom {
     if (sent !== null && (this.tick === null || this.tick < sent + COURSE_EVERY_TICKS)) return;
     this.link.send(waiting);
     [this.waitingCourse, this.waitingFacing, this.courseSentAt] = [null, false, this.tick ?? 0];
+    if (this.leaveWaiting) this.leaveHelm();
   }
 
   /** The player leaves the helm, to walk her deck while her helmsman keeps her course: a facing still waiting to be
-   *  sent is let go, since the room turns no ship off the helm. */
+   *  sent is let go, since the room turns no ship off the helm, and a course still waiting is sent first, since the
+   *  helmsman takes none that turns her. */
   leaveHelm(): void {
     if (this.waitingFacing) [this.waitingCourse, this.waitingFacing] = [null, false];
-    this.link.send(helmBytes(true));
+    this.leaveWaiting = this.waitingCourse !== null;
+    if (!this.leaveWaiting) this.link.send(helmBytes(true));
   }
 
   /** The player takes the helm again, at her wheel. */
   takeHelm(): void {
+    this.leaveWaiting = false;
     this.link.send(helmBytes(false));
   }
 

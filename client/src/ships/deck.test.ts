@@ -4,7 +4,6 @@ import {
   cellHeight,
   cellsReached,
   type Deck,
-  deckCells,
   deckFloats,
   deckOf,
   deckToWorld,
@@ -12,17 +11,19 @@ import {
   worldToDeck,
 } from './deck.ts';
 
+const standingCells = (deck: Deck) => deck.heights.filter((height) => height !== null).length;
+
 test("the Sloop's deck reads from the manifest, and behind her wheel is deck", () => {
   const [x, y] = SLOOP_DECK.helm;
   const height = cellHeight(SLOOP_DECK, x, y);
   assert.ok(height !== null && height > 1.5 && height < 3.6, `her planks over her waterline: ${height}`);
   assert.equal(cellHeight(SLOOP_DECK, 5, 0), null, 'off her side is no deck');
-  assert.ok(deckCells(SLOOP_DECK).length > 500, 'room to walk');
+  assert.ok(standingCells(SLOOP_DECK) > 500, 'room to walk');
 });
 
 test('from the spot behind her wheel a walker reaches her main deck, and never the top of a rail', () => {
   const reached = cellsReached(SLOOP_DECK, ...SLOOP_DECK.helm);
-  const standing = deckCells(SLOOP_DECK).length;
+  const standing = standingCells(SLOOP_DECK);
   assert.ok(reached.length > 0.9 * standing, `${reached.length} of ${standing} cells`);
   assert.ok(
     reached.some((cell) => cell.z < 1.85 && cell.y < 0),

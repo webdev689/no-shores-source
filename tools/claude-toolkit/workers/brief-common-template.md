@@ -60,7 +60,8 @@ Before finishing, ALWAYS (even for a one-line diff or no diff at all; audit.py f
 it; with no diff, run verification-before-completion and say "no diff" on the reviewer and ponytail lines):
 Skill superpowers:verification-before-completion, the reviewer sub-agent, then Skill ponytail:ponytail-review on
 your diff. The reviewer is ONE Agent call (general-purpose) on `git diff <base>...HEAD`: correctness, project rules,
-tests; fix what is real (one fix round). Then:
+tests; fix what is real (one fix round). A cloud clone holds only the working branch, so `<base>` is `origin/main`
+(or another `origin/` ref), never a bare `main`. Then:
 1. Commit in your worktree. Commit trailer: <the session's attribution lines>.
 2. Report to <reports dir>/<item>.md, then a final reply under 15 lines: Status (DONE | DONE_WITH_CONCERNS | BLOCKED),
    commits, test summary, what a user now sees, concerns, the INBOX line, one line per tool (serena, graphify, claude-mem, headroom,

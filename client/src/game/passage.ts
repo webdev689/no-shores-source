@@ -5,6 +5,7 @@ import { WORLD_FRAME } from '../overworld/discovery.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
 import { PACE_DEFAULT, type Pace, secondsLeft, shipAt, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';
+import type { Lies } from '../ships/swellPose.ts';
 import { distanceText } from './hudLaw.ts';
 import { AHEAD, clearAhead, HELM_TURN, turned } from './seaHelm.ts';
 import { courseAhead, followed, heldNote, timeText } from './seaLaw.ts';
@@ -24,19 +25,12 @@ const REFUSED: Record<RouteRefusal, string> = {
  *  again from there, metres. */
 const DRIFT_M = 30;
 
-/** Where the ship lies and heads, radians clockwise from north. */
-export interface Lie {
-  readonly x: number;
-  readonly y: number;
-  readonly heading: number;
-}
-
 export class Passage {
   private readonly outlines: readonly (readonly Point2[])[];
   /** The open landmass's fine sea mask, for a voyage within its window. */
   private readonly landmassMask: () => SeaMask;
   private frameMask: SeaMask | null = null;
-  private lie: Lie;
+  private lie: Lies;
   private voyage: Voyage | null = null;
   /** Where the last voyage set out for, kept while it is stopped short, so it can be resumed; and whether it is the
    *  helm's, straight on along her heading, set again as she nears its end. */
@@ -55,7 +49,7 @@ export class Passage {
   }
 
   /** Where she lies and heads. */
-  get ship(): Lie {
+  get ship(): Lies {
     return this.lie;
   }
 
@@ -89,7 +83,7 @@ export class Passage {
   }
 
   /** Where a fight left her. */
-  placeAt(lie: Lie): void {
+  placeAt(lie: Lies): void {
     this.lie = lie;
   }
 

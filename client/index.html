@@ -43,11 +43,13 @@
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
       }
       /* The heads-up display wears the Enhanced Plus kit (client/src/plus/), which paints each surface by its role;
-         this sheet gives each its room, and each window and press the 2 px border the kit's frame lands on. */
+         this sheet gives each its room, and each window and press the 2 px border the kit's frame lands on. A rule here
+         that outranks the kit's sets a border's width and style only, never its colour. */
       #hud button {
         pointer-events: auto;
         font: inherit;
-        border: 2px solid transparent;
+        border-width: 2px;
+        border-style: solid;
         border-radius: 0;
         padding: 7px 14px;
         cursor: pointer;
@@ -160,7 +162,8 @@
       }
       .sea-group + .sea-group {
         padding-left: 18px;
-        border-left: 1px solid transparent;
+        border-left-width: 1px;
+        border-left-style: solid;
       }
       .sea-bar .pace-label {
         font-size: 11px;

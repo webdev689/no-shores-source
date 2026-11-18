@@ -5,9 +5,12 @@ import { LocalRoom } from '../network/localRoom.ts';
 import { courseBytes, helmBytes, walkBytes } from '../network/messages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import { type Body, type Controls, floatsOf, floatsOfControls, startMovementRules } from '../rules/movementRules.ts';
+import type { Cards } from '../player/cards.ts';
 import type { Walker } from '../player/walker.ts';
 import { deckFloats, SLOOP_DECK } from '../ships/deck.ts';
+import { Aboard, type HelmRoom } from './aboard.ts';
 import { DeckWalk } from './deckWalk.ts';
+import { IDLE } from './foot.ts';
 import { STANDING_EYE_M } from './seaLaw.ts';
 
 const built = (name: string) =>
@@ -133,4 +136,33 @@ test("the page corrects its walk to the room's word, once, stepping again the st
   walker.player = { ...walker.player, body: rules.standing(...SLOOP_DECK.helm) };
   walk.correct();
   assert.deepEqual(floatsOf(walker.player.body), floatsOf(rules.standing(...SLOOP_DECK.helm)), 'a word is taken once');
+});
+
+test("off the helm the page waits on the room's word: with none in 2 s it takes the helm back, and goes up once the room gives it", () => {
+  const asked: string[] = [];
+  const room: HelmRoom & { onDeck: { acknowledged: number; body: Body } | null } = {
+    onDeck: null,
+    words: 0,
+    walk: () => undefined,
+    leaveHelm: () => asked.push('leave'),
+    takeHelm: () => asked.push('take'),
+  };
+  const walker = { player: { view: 'third' }, frame: () => undefined } as unknown as Walker;
+  const aboard = new Aboard({ movement: rules, walker, forge: {} as Cards }, SLOOP_DECK);
+  const frames = (count: number) => {
+    for (let frame = 0; frame < count; frame++) aboard.step(1 / 60, frame / 60, IDLE, false, room);
+  };
+  aboard.leaveHelm(room);
+  frames(125);
+  assert.deepEqual(asked, ['leave', 'take'], 'no word in 2 s: the leave is taken back');
+  frames(90);
+  assert.equal(aboard.active, false, 'and the view has gone back up');
+  aboard.leaveHelm(room);
+  room.onDeck = { acknowledged: 0, body: walker.player.body };
+  frames(10);
+  assert.equal(aboard.walking, true, 'its word: the player walks');
+  room.onDeck = null;
+  frames(90);
+  assert.equal(aboard.active, false, 'the room has them at the helm again: the view has gone back up');
+  assert.deepEqual(asked, ['leave', 'take', 'leave'], 'and nothing more was asked of it');
 });

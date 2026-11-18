@@ -13,8 +13,6 @@ export const SAILS_RUNG = 2;
 /** How far she runs between stirrings of the water at her bow and quarters, metres. */
 const WAKE_STEP_M = 0.5;
 
-export type { Stir };
-
 /** The Sloop as the World Editor shows her, whoever steps her: her numbers and pose as last given, and the run that
  *  owes the water her wake. */
 export class Afloat {

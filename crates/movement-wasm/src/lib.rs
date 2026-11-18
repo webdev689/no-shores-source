@@ -37,6 +37,10 @@ impl Terrain for OnLand {
             OnLand::Deck(deck) => deck.height_at(x, y),
         }
     }
+
+    fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
+        matches!(self, OnLand::Deck(deck) if deck.walled(from, to))
+    }
 }
 
 /// The numbers in little-endian bytes.
@@ -330,7 +334,9 @@ mod tests {
 
     #[test]
     fn on_a_ships_deck_a_body_stands_and_walks_its_heights_as_the_movement_crate_steps_it() {
-        let deck = Heights::new(-1.0, -2.0, 0.5, 4, 8, vec![Some(0.8); 32]).unwrap();
+        // A wall one cell thick across her, thinner than a run's tick, at 0.0 to 0.1 m.
+        let heights = (0..800).map(|index| if index / 20 == 20 { None } else { Some(0.8) }).collect();
+        let deck = Heights::new(-1.0, -2.0, 0.1, 20, 40, heights).unwrap();
         set_course(&[]);
         assert!(set_heights(&bytes_of(&deck.to_floats())));
         assert_eq!(stood_at(0.25, 1.0), deck.standing(0.25, 1.0), "on her planks, facing her bow");
@@ -347,7 +353,7 @@ mod tests {
             body = Body::from_floats(stepped.as_slice().try_into().unwrap());
             assert_eq!(body, expected, "to the bit, as the sea room steps it");
         }
-        assert!(body.y > -2.0, "stopped at her bow: {}", body.y);
+        assert!(body.y >= 0.1, "stopped at the wall, not through it: {}", body.y);
         assert!(!set_heights(&[]), "no grid is open ground");
         assert_eq!(stood_at(0.25, 1.0), standing(0.25, 1.0));
     }

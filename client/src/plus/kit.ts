@@ -36,7 +36,7 @@ export const ROLES = {
 export type Role = keyof typeof ROLES;
 
 /** The id of the kit's sheet in a page. */
-export const KIT_STYLE_ID = 'plus-kit';
+const KIT_STYLE_ID = 'plus-kit';
 
 /** The stone grain every window ground carries: a 4 px checker at 2%. */
 const GRAIN = 'repeating-conic-gradient(rgba(255,255,255,0.022) 0 25%, transparent 0 50%) 0 0 / 4px 4px';
