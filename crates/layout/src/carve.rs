@@ -107,9 +107,11 @@ pub fn carve(field: &Field, claim: Vec<[f64; 2]>, network: Network, seating: &Se
         rise,
         seed,
         climbs: Vec::new(),
+        runs: Vec::new(),
+        wings: Vec::new(),
     }]);
     let climbs = climbs(field, areas, &bare, rise, seed);
-    Sculpt { claim, floors, outcrops, rise, seed, climbs }
+    Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new() }
 }
 
 /// How steep a climb rises at most (a rise a metre, for the massif's tallest), its half-width, its lookout's reach,

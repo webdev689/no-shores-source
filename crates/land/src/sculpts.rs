@@ -27,7 +27,8 @@ const WANDER: f64 = 0.35;
 /// half-width; a basin is a capsule of no length), the outcrops raised on that floor (`[x, y, radius, height]`), the
 /// massif's height and its noise's seed, and its climbs: ways cut up the massif's faces and flats on its top, each a
 /// capsule `[x1, y1, x2, y2, half, from, to]` whose level runs from `from` to `to` of the massif's height along it (0
-/// the floor, 1 the top), a lookout one of no length.
+/// the floor, 1 the top), a lookout one of no length. Its runs are cut into the rock as its climbs are, and its wings
+/// (`[x1, y1, x2, y2, half]`) carry its claim past its ring, so the massif stands round a run that leaves it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Sculpt {
     pub claim: Vec<[f64; 2]>,
@@ -37,10 +38,14 @@ pub struct Sculpt {
     pub seed: u32,
     #[serde(default)]
     pub climbs: Vec<[f64; 7]>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub runs: Vec<[f64; 7]>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub wings: Vec<[f64; 5]>,
 }
 
-/// The floors, the outcrops and the climbs near one bucket, by their places in a sculpt's lists.
-type Near = (Vec<u32>, Vec<u32>, Vec<u32>);
+/// The floors, the outcrops, the climbs and the runs near one bucket, by their places in a sculpt's lists.
+type Near = (Vec<u32>, Vec<u32>, Vec<u32>, Vec<u32>);
 
 /// Every sculpt on a ground, indexed by bucket so a point finds only the shapes near it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -88,9 +93,15 @@ impl From<Vec<Sculpt>> for Sculpts {
             let [west, north, east, south] = sculpt.claim.iter().fold(start, |[west, north, east, south], &[x, y]| {
                 [west.min(x), north.min(y), east.max(x), south.max(y)]
             });
+            let [west, north, east, south] =
+                sculpt.wings.iter().fold([west, north, east, south], |[west, north, east, south], wing| {
+                    let [x1, y1, x2, y2, half] = *wing;
+                    let near = [x1.min(x2) - half, y1.min(y2) - half, x1.max(x2) + half, y1.max(y2) + half];
+                    [west.min(near[0]), north.min(near[1]), east.max(near[2]), south.max(near[3])]
+                });
             let reach = [west - FADE_M, north - FADE_M, east + FADE_M, south + FADE_M];
             reaches.push(reach);
-            fades.push(Fades::of(&sculpt.claim, reach));
+            fades.push(Fades::of(&sculpt.claim, &sculpt.wings, reach));
             let mut map: BTreeMap<(i64, i64), Near> = BTreeMap::new();
             let mut spread = |bounds: [f64; 4], add: &mut dyn FnMut(&mut Near)| {
                 for column in bucket(bounds[0])..=bucket(bounds[2]) {
@@ -112,6 +123,11 @@ impl From<Vec<Sculpt>> for Sculpts {
                 let reach = half + CLIFF_RUN_M;
                 let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
                 spread(bounds, &mut |entry| entry.2.push(number as u32));
+            }
+            for (number, &[x1, y1, x2, y2, half, ..]) in sculpt.runs.iter().enumerate() {
+                let reach = half + CLIFF_RUN_M;
+                let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
+                spread(bounds, &mut |entry| entry.3.push(number as u32));
             }
             near.push(map);
         }
@@ -148,6 +164,14 @@ fn face(off: f64) -> f64 {
     (stratum + smooth(0.55, 1.0, climbed - stratum)) / STRATA
 }
 
+/// How far a point lies inside a claim (positive) or outside it (negative): in its ring, or in the wing that carries
+/// it furthest.
+fn inside_claim(ring: &[[f64; 2]], wings: &[[f64; 5]], x: f64, y: f64) -> f64 {
+    wings.iter().fold(inside_ring(ring, x, y), |inside, &[x1, y1, x2, y2, half]| {
+        inside.max(half - to_segment(x, y, [x1, y1], [x2, y2]))
+    })
+}
+
 /// How far a point lies inside a ring (positive) or outside it (negative), by its nearest edge.
 fn inside_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
     let mut inside = false;
@@ -166,7 +190,7 @@ impl Fades {
     /// A claim's buckets over its reach: a bucket whose middle lies further inside the claim than the bucket's half
     /// diagonal is wholly in it, and one further past it than the fade and that half diagonal is wholly past; there
     /// the fade is exactly 1 or 0, as `smooth` clamps it.
-    fn of(claim: &[[f64; 2]], [west, north, east, south]: [f64; 4]) -> Self {
+    fn of(claim: &[[f64; 2]], wings: &[[f64; 5]], [west, north, east, south]: [f64; 4]) -> Self {
         if claim.len() < 3 {
             return Self::default();
         }
@@ -178,7 +202,7 @@ impl Fades {
             .map(|(column, row)| {
                 let x = ((west + column) as f64 + 0.5) * BUCKET_M;
                 let y = ((north + row) as f64 + 0.5) * BUCKET_M;
-                let inside = inside_ring(claim, x, y);
+                let inside = inside_claim(claim, wings, x, y);
                 if inside > half_diagonal {
                     Fade::Whole
                 } else if inside < -FADE_M - half_diagonal {
@@ -224,7 +248,7 @@ impl Sculpts {
     /// floors' wander there; infinity where no floor is near.
     fn off_floor(&self, number: usize, x: f64, y: f64) -> f64 {
         let sculpt = &self.sculpts[number];
-        let Some((floors, _, _)) = self.near[number].get(&(bucket(x), bucket(y))) else { return f64::INFINITY };
+        let Some((floors, ..)) = self.near[number].get(&(bucket(x), bucket(y))) else { return f64::INFINITY };
         let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(sculpt.seed, x / 70.0, y / 70.0, 2));
         floors
             .iter()
@@ -235,17 +259,17 @@ impl Sculpts {
             .fold(f64::INFINITY, f64::min)
     }
 
-    /// How far a point lies off the nearest climb of a sculpt (metres, negative on it), and that climb's level there
-    /// as a share of the massif's height; infinity where none is near.
+    /// How far a point lies off the nearest climb or run of a sculpt (metres, negative on it), and its level there as
+    /// a share of the massif's height; infinity where none is near.
     fn off_climb(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
         let sculpt = &self.sculpts[number];
-        let Some((_, _, climbs)) = self.near[number].get(&(bucket(x), bucket(y))) else {
+        let Some((_, _, climbs, runs)) = self.near[number].get(&(bucket(x), bucket(y))) else {
             return (f64::INFINITY, 1.0);
         };
+        let climbs = climbs.iter().map(|&climb| &sculpt.climbs[climb as usize]);
         climbs
-            .iter()
-            .map(|&climb| {
-                let [x1, y1, x2, y2, half, from, to] = sculpt.climbs[climb as usize];
+            .chain(runs.iter().map(|&run| &sculpt.runs[run as usize]))
+            .map(|&[x1, y1, x2, y2, half, from, to]| {
                 let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
                 (distance - half, from + (to - from) * along)
             })
@@ -286,7 +310,7 @@ impl Sculpts {
             let fade = match self.fades[number].at(x, y) {
                 Fade::Whole => 1.0,
                 Fade::None => 0.0,
-                Fade::Measured => smooth(-FADE_M, 0.0, inside_ring(&sculpt.claim, x, y)),
+                Fade::Measured => smooth(-FADE_M, 0.0, inside_claim(&sculpt.claim, &sculpt.wings, x, y)),
             };
             if fade <= 0.0 {
                 continue;
@@ -311,7 +335,7 @@ impl Sculpts {
                 let beside = height.min(level + (rise - level) * face(off_climb.max(0.0)));
                 height = level + (beside - level) * smooth(0.0, CLIMB_EDGE_M, off_climb);
             }
-            if let Some((_, outcrops, _)) = self.near[number].get(&(bucket(x), bucket(y))) {
+            if let Some((_, outcrops, ..)) = self.near[number].get(&(bucket(x), bucket(y))) {
                 for &outcrop in outcrops {
                     let [middle_x, middle_y, radius, tall] = sculpt.outcrops[outcrop as usize];
                     let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(sculpt.seed ^ outcrop, x / 9.0, y / 9.0, 2));
@@ -340,7 +364,46 @@ mod tests {
             rise: 30.0,
             seed: 7,
             climbs: vec![[60.0, -40.0, 180.0, -40.0, 4.0, 0.0, 1.0], [180.0, -40.0, 180.0, -40.0, 10.0, 1.0, 1.0]],
+            runs: vec![[-200.0, -300.0, 100.0, -300.0, 4.0, 0.0, 0.0], [-200.0, 300.0, 100.0, 300.0, 4.0, 0.0, 1.0]],
+            wings: Vec::new(),
         }])
+    }
+
+    #[test]
+    fn a_wing_carries_the_massif_past_the_ring() {
+        let sculpts = Sculpts::from(vec![Sculpt {
+            claim: vec![[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0], [-50.0, 50.0]],
+            floors: vec![[0.0, 0.0, 0.0, 0.0, 20.0]],
+            outcrops: Vec::new(),
+            rise: 30.0,
+            seed: 3,
+            climbs: Vec::new(),
+            runs: Vec::new(),
+            wings: vec![[50.0, 0.0, 350.0, 0.0, 40.0]],
+        }]);
+        let beyond = sculpts.raise(300.0, 30.0, 1000.0);
+        assert!(beyond > 15.0, "the massif stands 250 m past the ring along the wing: {beyond}");
+        assert_eq!(sculpts.raise(300.0, 200.0, 1000.0), 0.0, "and the land beside the wing is as it was");
+    }
+
+    #[test]
+    fn a_run_is_cut_at_its_level() {
+        let sculpts = sculpt();
+        assert_eq!(sculpts.raise(0.0, -300.0, 1000.0), 0.0, "a run on the floor's level is cut to it");
+        assert!(sculpts.floor_distance(0.0, -300.0) < 0.0, "and is floor");
+        assert!(sculpts.raise(0.0, -340.0, 1000.0) > 15.0, "the rock stands over it either side");
+        let top = sculpts.raise(100.0, 300.0, 1000.0);
+        assert!(top > 18.0, "a run rising to the top ends on it: {top}");
+    }
+
+    #[test]
+    fn a_sculpt_without_runs_or_wings_writes_neither() {
+        let text = serde_json::to_string(&Vec::<Sculpt>::from(sculpt())).unwrap_or_default();
+        assert!(text.contains("\"runs\""), "the fixture's runs are written");
+        let mut bare: Vec<Sculpt> = sculpt().into();
+        bare[0].runs.clear();
+        let text = serde_json::to_string(&bare).unwrap_or_default();
+        assert!(!text.contains("runs") && !text.contains("wings"), "{text}");
     }
 
     #[test]
@@ -375,7 +438,7 @@ mod tests {
     #[test]
     fn a_bucket_taken_as_wholly_in_or_past_the_claim_fades_exactly_so_at_every_point() {
         let claim = vec![[-500.0, -500.0], [500.0, -500.0], [620.0, 300.0], [-500.0, 500.0]];
-        let fades = Fades::of(&claim, [-700.0, -700.0, 800.0, 700.0]);
+        let fades = Fades::of(&claim, &[], [-700.0, -700.0, 800.0, 700.0]);
         let mut shortcuts = 0;
         for step_x in -140..160 {
             for step_y in -140..140 {
