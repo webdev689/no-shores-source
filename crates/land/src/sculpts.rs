@@ -18,6 +18,8 @@ pub const FADE_M: f64 = 140.0;
 const STRAND_M: f64 = 35.0;
 /// How far a climb's edge runs from its level to the land beside it, metres.
 const CLIMB_EDGE_M: f64 = 2.0;
+/// How far past the nearest of a run's capsules another still sways its level, metres.
+const RUN_BLEND_M: f64 = 3.0;
 /// A bucket's side, metres, for finding the shapes near a point.
 const BUCKET_M: f64 = 32.0;
 /// How much a floor's edge wanders out from its stated reach, as a share: never in, so what was placed stays on it.
@@ -260,20 +262,33 @@ impl Sculpts {
     }
 
     /// How far a point lies off the nearest climb or run of a sculpt (metres, negative on it), and its level there as
-    /// a share of the massif's height; infinity where none is near.
+    /// a share of the massif's height; infinity where none is near. A run's capsules meet at its bends at levels that
+    /// differ off its line, so its level is a blend of its near capsules', weighted by how near each is: the land then
+    /// climbs round a bend without a step. A climb is one capsule and its lookout, at one level where they meet.
     fn off_climb(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
         let sculpt = &self.sculpts[number];
         let Some((_, _, climbs, runs)) = self.near[number].get(&(bucket(x), bucket(y))) else {
             return (f64::INFINITY, 1.0);
         };
-        let climbs = climbs.iter().map(|&climb| &sculpt.climbs[climb as usize]);
-        climbs
-            .chain(runs.iter().map(|&run| &sculpt.runs[run as usize]))
-            .map(|&[x1, y1, x2, y2, half, from, to]| {
-                let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
-                (distance - half, from + (to - from) * along)
-            })
-            .fold((f64::INFINITY, 1.0), |nearest, each| if each.0 < nearest.0 { each } else { nearest })
+        let measured = |capsule: &[f64; 7]| {
+            let [x1, y1, x2, y2, half, from, to] = *capsule;
+            let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
+            (distance - half, from + (to - from) * along)
+        };
+        let climb = climbs
+            .iter()
+            .map(|&climb| measured(&sculpt.climbs[climb as usize]))
+            .fold((f64::INFINITY, 1.0), |nearest, each| if each.0 < nearest.0 { each } else { nearest });
+        let parts: Vec<(f64, f64)> = runs.iter().map(|&run| measured(&sculpt.runs[run as usize])).collect();
+        let nearest = parts.iter().map(|part| part.0).fold(f64::INFINITY, f64::min);
+        if !nearest.is_finite() || climb.0 <= nearest {
+            return climb;
+        }
+        let (sum, weight) = parts.iter().fold((0.0, 0.0), |(sum, weight), &(off, level)| {
+            let near = (1.0 - (off - nearest) / RUN_BLEND_M).max(0.0);
+            (sum + near * level, weight + near)
+        });
+        (nearest, sum / weight)
     }
 
     /// How far a point lies off the nearest sculpt's floor or climb, metres: negative on it, infinity far from any.
@@ -367,6 +382,36 @@ mod tests {
             runs: vec![[-200.0, -300.0, 100.0, -300.0, 4.0, 0.0, 0.0], [-200.0, 300.0, 100.0, 300.0, 4.0, 0.0, 1.0]],
             wings: Vec::new(),
         }])
+    }
+
+    #[test]
+    fn a_run_climbing_round_a_bend_rises_without_a_step() {
+        let bent = Sculpts::from(vec![Sculpt {
+            claim: vec![[-500.0, -500.0], [500.0, -500.0], [500.0, 500.0], [-500.0, 500.0]],
+            floors: Vec::new(),
+            outcrops: Vec::new(),
+            rise: 30.0,
+            seed: 7,
+            climbs: Vec::new(),
+            runs: vec![[0.0, 0.0, 0.0, 20.0, 2.5, 0.2, 0.4], [0.0, 20.0, 14.0, 34.0, 2.5, 0.4, 0.6]],
+            wings: Vec::new(),
+        }]);
+        // Along each passage 1.5 m either side of its line, where the step was, through the bend.
+        for [x1, y1, x2, y2] in [[0.0_f64, 0.0, 0.0, 20.0], [0.0, 20.0, 14.0, 34.0]] {
+            let length = ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)).sqrt();
+            let (way, across) = ([(x2 - x1) / length, (y2 - y1) / length], [-(y2 - y1) / length, (x2 - x1) / length]);
+            for side in [1.5, -1.5] {
+                let point =
+                    |along: f64| [x1 + way[0] * along + across[0] * side, y1 + way[1] * along + across[1] * side];
+                let mut last = bent.raise(point(0.0)[0], point(0.0)[1], 1000.0);
+                for step in 1..=(length / 0.25) as i32 {
+                    let at = point(f64::from(step) * 0.25);
+                    let now = bent.raise(at[0], at[1], 1000.0);
+                    assert!((now - last).abs() < 0.2, "a step of {} m at {at:?}", now - last);
+                    last = now;
+                }
+            }
+        }
     }
 
     #[test]

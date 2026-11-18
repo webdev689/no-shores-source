@@ -73,6 +73,9 @@ const INSIDE_M: f64 = 30.0;
 const OUT_PAST_M: f64 = 80.0;
 /// How far a run past the edge keeps from the sea, metres: the strand and more.
 const SEA_CLEAR_M: f64 = 50.0;
+/// How far past the end arena's rim a run's door stands, metres: where the rock's face rises (the land crate's face
+/// stays level for about the first quarter of its run).
+const DOOR_OUT_M: f64 = 4.0;
 /// How much rock stands behind a run's door, metres.
 const BACKED_M: f64 = 40.0;
 /// The headings tried from each area.
@@ -197,14 +200,20 @@ fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], draw: &dyn Fn(i64) -
         levels,
         line,
         beats,
-        door: ahead(at, way, end),
+        // At the foot of the face behind the end arena, past the flat its floor's edge leaves before the rock rises.
+        door: ahead(at, way, end + DOOR_OUT_M),
         facing: way,
     }
 }
 
+/// The level a climbing run's end arena is cut at: far enough below the massif's top that the face behind its door
+/// rises in ledges too steep to climb (a lower face's ledges can be walked up).
+const END_LEVEL: f64 = 0.55;
+
 /// Each line point's level, a share of the massif's height, by how far along the passages (not the beats, which are
-/// flat: `flat` marks a segment ending in a beat) it lies: a ledge climbs the whole way to the top, a rampart climbs in
-/// its first two fifths and keeps to the top, the rest keep to the floor.
+/// flat: `flat` marks a segment ending in a beat) it lies: a ledge climbs the whole way to a little over half the
+/// massif's height, a rampart climbs to the top in its first two fifths, keeps to it and drops into a cut at its end;
+/// the rest keep to the floor.
 fn levels_of(kind: RunKind, line: &[[f64; 2]], flat: &[bool]) -> Vec<f64> {
     let mut climbed = vec![0.0];
     for (pair, &level) in line.windows(2).zip(&flat[1..]) {
@@ -215,8 +224,11 @@ fn levels_of(kind: RunKind, line: &[[f64; 2]], flat: &[bool]) -> Vec<f64> {
     climbed
         .iter()
         .map(|along| match kind {
-            RunKind::Ledge => along / whole,
-            RunKind::Rampart => (along / (0.4 * whole)).min(1.0),
+            RunKind::Ledge => END_LEVEL * along / whole,
+            RunKind::Rampart => {
+                let down = ((along / whole - 0.8) / 0.2).clamp(0.0, 1.0);
+                (along / (0.4 * whole)).min(1.0) - (1.0 - END_LEVEL) * down
+            }
             _ => 0.0,
         })
         .collect()

@@ -137,7 +137,16 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
     landmass.surface.pads = Pads::from(pads);
     let roads: Vec<(Vec<(f64, f64)>, f64)> = layouts
         .iter()
-        .flat_map(|layout| layout.paths.iter().map(|path| (dense(&path.points, PATH_STEP_M), path.tier.width())))
+        .flat_map(|layout| {
+            // A run's floor is carved to its level along its line, so its way needs no bed: a bed averaged over
+            // its points would step where its beats' flat floors meet its ramps.
+            let carved = |path: &&crate::paths::Path| layout.runs.iter().any(|run| run.line == path.points);
+            layout
+                .paths
+                .iter()
+                .filter(move |path| !carved(path))
+                .map(|path| (dense(&path.points, PATH_STEP_M), path.tier.width()))
+        })
         .collect();
     landmass.surface.add_roads(&roads);
     let ground = &landmass.surface;

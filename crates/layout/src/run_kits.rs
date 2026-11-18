@@ -371,12 +371,4 @@ fn door(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             }
         }
     }
-    if run.beats.last().is_some_and(|end| end.level > 0.8) {
-        let across = [-way[1], way[0]];
-        for side in [1.0, -1.0] {
-            let wing = ahead(at, across, side * (width / 2.0 + 1.5 + 4.0));
-            let wall = Solid::upright(Shape::Block, [wing[0], wing[1], floor - 0.5], [8.0, 1.8, 7.0], Material::Stone);
-            kit.solid(wall.turned(turn_along(across)));
-        }
-    }
 }
