@@ -167,7 +167,7 @@ fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
         room.telegraph_lands(archer, &foe, &aimed);
         let mut shot = room.shots.pop().expect("an arrow leaves");
         let landed = loop {
-            match combat::shots::fly(&shot, &[], &[]) {
+            match combat::shots::fly(&shot, &[], &movement::Flat, &[]) {
                 combat::shots::Flight::Flying(next) => shot = next,
                 combat::shots::Flight::Stopped { at, .. } => break at,
             }

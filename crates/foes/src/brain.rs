@@ -182,7 +182,8 @@ pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
         Seen::Heard(noise) if noise.side != brain.foe_type.side() => brain.awareness.heard.push(*seen),
         Seen::Shouted { .. } => brain.awareness.heard.push(*seen),
         Seen::Landed { verdict, .. } => {
-            brain.blocked = if matches!(verdict, Verdict::Blocked { .. }) { brain.blocked.saturating_add(1) } else { 0 };
+            brain.blocked =
+                if matches!(verdict, Verdict::Blocked { .. }) { brain.blocked.saturating_add(1) } else { 0 };
         }
         Seen::TelegraphEnded { missed, .. } => brain.tells.ended = Some(!missed),
         _ => {}

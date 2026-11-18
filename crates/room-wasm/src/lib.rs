@@ -164,7 +164,7 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
             .filter(|(_, other)| other.side != fighter.side && !other.dead())
             .map(|(other, seen)| (*other, [seen.body.x, seen.body.y, seen.body.z]))
             .collect();
-        let stop = match combat::shots::fly(&shot, &blocks, &bodies) {
+        let stop = match combat::shots::fly(&shot, &blocks, &movement::Flat, &bodies) {
             combat::shots::Flight::Stopped { at, .. } => at,
             combat::shots::Flight::Flying(flown) => flown.at,
         };

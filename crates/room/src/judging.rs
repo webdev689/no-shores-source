@@ -244,7 +244,7 @@ impl Room {
                 .filter(|(_, fighter)| fighter.side != side && !fighter.dead())
                 .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
                 .collect();
-            let flight = fly(&shot, &self.blocks, &bodies);
+            let flight = fly(&shot, &self.blocks, &self.floor, &bodies);
             if let Flight::Stopped { at, .. } = flight
                 && combat::shots::shot_numbers(shot.ranged).0 <= 0.0
             {
@@ -269,7 +269,7 @@ impl Room {
             .filter(|(id, fighter)| self.foes.contains_key(id) && !fighter.dead())
             .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
             .collect();
-        let (stop, struck) = match fly(shot, &self.blocks, &bodies) {
+        let (stop, struck) = match fly(shot, &self.blocks, &self.floor, &bodies) {
             Flight::Stopped { at, struck } => (at, struck),
             Flight::Flying(next) => (next.at, None),
         };

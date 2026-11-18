@@ -343,7 +343,7 @@ impl Room {
                 .filter(|(id, other)| *id != shot.owner && other.side != side && !other.dead())
                 .map(|(id, other)| (*id, [other.body.x, other.body.y, other.body.z]))
                 .collect();
-            match fly(&shot, &self.blocks, &bodies) {
+            match fly(&shot, &self.blocks, &movement::Flat, &bodies) {
                 Flight::Flying(next) => self.shots.push(next),
                 Flight::Stopped { struck: Some(defender), .. } => {
                     let blow = shot_blow(&shot, [shot.at[0], shot.at[1]]);

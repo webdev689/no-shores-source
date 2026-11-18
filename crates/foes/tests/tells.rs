@@ -115,7 +115,8 @@ fn a_shooter_stood_close_kites_out_to_its_ring_and_shoots_rather_than_punching()
     for (number, rank) in [(MARKSMAN, Elite), (3, Major), (9, Minor)] {
         let mut room = Room::new(2).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -5.0, PI);
         room.run(1800, &mut watching(10));
-        let loosed = room.happenings.iter().filter(|(_, by, happening)| *by == 10 && matches!(happening, Happening::Loosed(_)));
+        let loosed =
+            room.happenings.iter().filter(|(_, by, happening)| *by == 10 && matches!(happening, Happening::Loosed(_)));
         assert!(loosed.count() + room.orders(10).len() >= 8, "type {number} shoots");
         assert!(room.swings(10).is_empty(), "type {number} never punches a player it has outwalked");
     }

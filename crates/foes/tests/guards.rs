@@ -64,10 +64,8 @@ fn a_foe_walled_off_by_a_guard_steps_round_to_its_open_side_and_strikes_there() 
 /// A swordsman whose last two swings at one player were blocked turns, that one fallen, on another who guards: the
 /// ticks to its first swing at the second.
 fn first_swing_at_a_new_guard(blocked_before: bool) -> Option<u64> {
-    let mut room = Room::new(3)
-        .player(2, 0.0, 1.5, 0.0)
-        .player(PLAYER, 0.6, 1.4, 0.0)
-        .foe(10, SWORDSMAN, Minor, 0.0, 0.0, PI);
+    let mut room =
+        Room::new(3).player(2, 0.0, 1.5, 0.0).player(PLAYER, 0.6, 1.4, 0.0).foe(10, SWORDSMAN, Minor, 0.0, 0.0, PI);
     room.immortal = false;
     room.set(2, |fallen| fallen.action = Action::Dead { elapsed: 0 });
     room.set(PLAYER, |guard| (guard.action, guard.aim) = (Action::Guard { elapsed: 40, window: 12 }, -0.4));
@@ -93,7 +91,8 @@ fn a_foe_turning_on_a_new_target_meets_its_guard_afresh() {
 
 #[test]
 fn a_foe_keeps_its_swing_s_beat_while_its_target_sways_about_the_edge_of_its_reach() {
-    let mut room = Room::new(4).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Minor, 0.0, -1.7, PI).alert(10, PLAYER);
+    let mut room =
+        Room::new(4).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Minor, 0.0, -1.7, PI).alert(10, PLAYER);
     let reach = 1.8;
     for tick in 0..240_u64 {
         // A fifth of a second just inside its reach, then one just outside, by turns.
