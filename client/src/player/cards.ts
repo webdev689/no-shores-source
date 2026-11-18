@@ -72,12 +72,19 @@ export class Cards {
     return this.composing.size;
   }
 
-  /** A figure's frame as plain pixels, for a page to draw rather than the scene: composed now, never kept. */
-  async picture(dress: Dress, anim: string, view: number, frame = 0): Promise<Picture | null> {
-    const figure = figureOf(dress, this.looks.bodies[dress.body]?.layers ?? {}, anim);
+  /** A figure's frame as plain pixels, for a page to draw rather than the scene: composed now, never kept. Given
+   *  `alone`, one of its layers, that layer is drawn by itself: a weapon in hand whole, with no hand over its grip. */
+  async picture(dress: Dress, anim: string, view: number, frame = 0, alone?: string): Promise<Picture | null> {
+    const own = this.looks.bodies[dress.body];
+    const figure = figureOf(dress, own?.layers ?? {}, anim);
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
     const strip = (path: string) => this.store.strip(path);
-    const composed = await composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, strip);
+    // The forge renders each layer by itself; read as a body that draws that layer alone, it stacks nothing else.
+    const looks =
+      alone && own
+        ? { ...this.looks, bodies: { [dress.body]: { ...own, layers: { [alone]: own.layers[alone] ?? [] } } } }
+        : this.looks;
+    const composed = await composeFrame(figure, anim, view, frame, looks, this.colours, ramps, strip);
     return (
       composed && {
         width: composed.width,
