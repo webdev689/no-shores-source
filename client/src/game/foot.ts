@@ -52,6 +52,8 @@ const CAMERA_CLEARANCE_M = 0.3;
 /** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
  *  arrival looks out over the City. */
 const OVER_THE_PARAPET = 0.3;
+/** How often a second the rings on the ground are laid again, for their beat. */
+const BEATS_A_SECOND = 10;
 /** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
 const OTHERS_FPS = 6;
 /** Other players' figures are numbered from here, clear of the player's own, and never twice in the page's life: the
@@ -111,21 +113,27 @@ export class Foot {
   private readonly room: RoomPlay | null;
   /** The gear the figure was last dressed in. */
   private dressedIn: GearState | null = null;
-  private readonly others: readonly Placed[];
+  /** Every other figure drawn: the room's players, then a social space's people. */
+  private readonly others: readonly (readonly Placed[])[];
   private readonly fought: FootFight | null;
   private readonly plaza: PlazaLife | null;
   /** The gear's rings on the ground, and what E does where the player stands. */
   private readonly ground: FightMarks;
   private using: Use | null = null;
-  private readonly rules: MovementRules;
+  /** The gear and the beat the rings were last laid for. */
+  private ringsFor: GearState | null = null;
+  private ringBeat = -1;
+  private rules: MovementRules;
   private reach: Reach = { kind: 'inside' };
+  /** Whether the room was lost, and the player walks on alone by the reach rules. */
+  private alone = false;
 
   private constructor(
     context: FootContext,
     node: NodeInfo,
     boxes: readonly Block[],
     room: RoomPlay | null,
-    others: readonly Placed[],
+    others: readonly (readonly Placed[])[],
     fought: FootFight | null,
     plaza: PlazaLife | null,
   ) {
@@ -137,18 +145,34 @@ export class Foot {
     this.fought = fought;
     this.plaza = plaza;
     this.ground = new FightMarks(context.scene.gpu);
-    const { movement } = context;
-    this.rules = room
-      ? room.rules(fought?.fight ?? null)
-      : {
-          ...movement,
-          // A dead body is still, as the room keeps it; its standing still ticks, so Respawn comes in time.
-          step: (body, controls) => {
-            const next = this.reach.kind === 'dead' ? body : movement.step(body, controls);
-            this.reach = movement.reachTick(next.x, next.y);
-            return next;
-          },
-        };
+    this.rules = room ? room.rules(fought?.fight ?? null) : this.reachRules();
+  }
+
+  /** The rules a player walks by with no room: the movement door's, which judge the edge each tick by the room's own
+   *  rules. A dead body is still, as the room keeps it; its standing still ticks, so Respawn comes in time. */
+  private reachRules(): MovementRules {
+    const { movement } = this.context;
+    return {
+      ...movement,
+      step: (body, controls) => {
+        const next = this.reach.kind === 'dead' ? body : movement.step(body, controls);
+        this.reach = movement.reachTick(next.x, next.y);
+        return next;
+      },
+    };
+  }
+
+  /** Once the room is lost, the player walks on alone: the fight is let go once, and the section judged here, where
+   *  they stand now, by the same rules the room judged it by. */
+  private goAlone(): void {
+    if (this.alone || !this.room || this.room.connected) return;
+    this.alone = true;
+    this.fought?.leave();
+    const { movement, walker } = this.context;
+    movement.setSection({ ring: this.node.ring, spawns: this.node.spawns });
+    const { body } = walker.player;
+    this.reach = this.room.standing.kind === 'dead' ? this.room.standing : movement.reachTick(body.x, body.y);
+    this.rules = this.reachRules();
   }
 
   /** Lands the player in a node at its first spawn, facing `facing`, keeping how they hold the camera. */
@@ -161,18 +185,20 @@ export class Foot {
     const [x, y] = node.spawns[0] ?? node.centre;
     const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
     walker.player = node.kind === 'social' ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
-    const placed: Placed[] = [];
-    const others: Others = {
+    // The room's players, whom the fight may strike, and a social space's people, whom it never does, are kept apart.
+    const [placed, folk]: Placed[][] = [[], []];
+    const listedIn = (list: Placed[]): Others => ({
       place: (dress, x, y, facing) => {
         const other = { id: nextOtherId++, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
-        placed.push(other);
+        list.push(other);
         return other;
       },
       remove: (other) => {
-        const index = placed.indexOf(other);
-        if (index >= 0) placed.splice(index, 1);
+        const index = list.indexOf(other);
+        if (index >= 0) list.splice(index, 1);
       },
-    };
+    });
+    const others = listedIn(placed);
     const room = rooms
       ? await RoomPlay.join(
           rooms.url(nodeRoom(node, seas)),
@@ -199,8 +225,9 @@ export class Foot {
     const fightContext = { walker, forge: context.forge, movement, scene: context.scene, others: placed };
     const fought =
       combat && link ? new FootFight({ ...fightContext, rules: combat, link, root: fightDisplay() }) : null;
-    const plaza = node.kind === 'social' ? new PlazaLife(node, others, (x, y) => movement.standing(x, y).z) : null;
-    return new Foot(context, node, boxes, room, placed, fought, plaza);
+    const floor = (x: number, y: number) => movement.standing(x, y).z;
+    const plaza = node.kind === 'social' ? new PlazaLife(node, listedIn(folk), floor) : null;
+    return new Foot(context, node, boxes, room, [placed, folk], fought, plaza);
   }
 
   /** Dresses the player's figure in their gear as their room last sent it, once it changes. */
@@ -235,25 +262,35 @@ export class Foot {
     const { walker, movement, forge, scene } = this.context;
     this.dressInGear();
     const played = paused ? IDLE : { ...controls, locked: true };
-    // Once the room is lost the player walks on alone, and fights no more.
-    const fought = this.room?.connected ? this.fought : null;
-    if (this.fought && !fought) this.fought.leave();
+    this.goAlone();
+    const fought = this.alone ? null : this.fought;
     walker.frame(played, this.rules, seconds, clock, fought?.press(played, this.boxes));
     const groundAt = (x: number, y: number) => scene.groundAt(x, y);
     const shot = shotOfOrbit(playerCamera(walker.player, movement, this.boxes), LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
     const foes = fought?.frame(played, seconds, clock, shot, this.boxes) ?? [];
     this.plaza?.frame(seconds);
-    const gear = this.room?.connected ? this.room.gear : null;
+    const gear = this.alone ? null : (this.room?.gear ?? null);
     const stations = this.node.stations ?? [];
-    const floor = (x: number, y: number) => movement.standing(x, y).z;
-    this.ground.set(marksMesh([], [], [], groundRings(gear, stations, floor, clock), shot.eye));
+    // The rings are laid about the node's middle only when the gear changes or their beat steps on, and drawn from
+    // the eye wherever it moves.
+    const [anchorX, anchorY] = this.node.centre;
+    const beat = Math.floor(clock * BEATS_A_SECOND);
+    if (gear !== this.ringsFor || beat !== this.ringBeat) {
+      [this.ringsFor, this.ringBeat] = [gear, beat];
+      const floor = (x: number, y: number) => movement.standing(x, y).z;
+      const rings = groundRings(gear, stations, floor, beat / BEATS_A_SECOND);
+      this.ground.set(marksMesh([], [], [], rings, [anchorX, anchorY, 0]));
+    }
+    this.ground.moved([anchorX - shot.eye[0], anchorY - shot.eye[1], -shot.eye[2]]);
     const { x, y } = walker.player.body;
-    this.using = useAt(x, y, stations, gear, (asked) => this.room?.askGear(asked));
+    // E does nothing while a menu is up or the player lies dead.
+    const able = !paused && this.standing.kind !== 'dead';
+    this.using = able ? useAt(x, y, stations, gear, (asked) => this.room?.askGear(asked)) : null;
     const figures: CardAt[] = [];
     const own = walker.figure(eyeX, eyeY);
     if (own) figures.push(fought ? { ...own, flash: fought.ownFlash } : own);
-    for (const placed of this.others) {
+    for (const placed of this.others.flat()) {
       const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eyeX, eyeY);
       const frames = forge.frames(placed.dress.body, placed.anim);
       const frame = placed.frame === null ? frameAt(clock, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
@@ -274,14 +311,14 @@ export class Foot {
 
   /** Where the player stands with the section's edge: the room's word online, the reach rules' offline. */
   get standing(): Standing {
-    const standing = this.room?.standing ?? this.reach;
+    const standing = this.room && !this.alone ? this.room.standing : this.reach;
     if (standing.kind === 'inside') return standingOf('inside', 0);
     return standingOf(standing.kind, 'ticksLeft' in standing ? standing.ticksLeft : standing.ticks);
   }
 
   /** Asks to come back at the section's spawn nearest where the player died, once Respawn is offered. */
   respawn(): void {
-    if (this.room) {
+    if (this.room && !this.alone) {
       this.room.askRespawn();
       return;
     }

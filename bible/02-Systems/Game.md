@@ -88,15 +88,18 @@ third person, the forge's figure and the first person's hands.
   snapshots. Struck figures flash, sparks fly where a guard meets a blow, shots leave tracers, and telegraphed blows
   are marked on the ground (`FightMarks`). The fight's display (`#fight-hud`, drawn by `combat/hud.css`, the Test
   Ground's sheet too) shows the player's health, stamina and poise, the locked foe's bars, the parry rings and the
-  words over the fight. Offline, with no room, the player only walks.
+  words over the fight. Offline, with no room, the player only walks. If the room is lost, the fight is let go and
+  the player walks on alone, the section's edge judged by the same rules here, where they stand; dead, they lie
+  until Respawn as offline.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
-  plaza, seeded by the plaza so they walk the same each visit, online or not.
+  plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
+  landward lane, clear of the portico's steps. The fight never takes them for targets.
 - **On the ground** (`footGear`): a brass ring at each counter that deals with the player; at each resource node they
   may still gather, a sea-green ring under a beam 40 m tall, seen across the patrol, so a route can be planned through
   them; and at each Vestige lying for them, a ring and a beam in its rarity's colour, picked up by walking over it.
 - **E** uses what is within reach, listed first among the keys: at a counter it opens the gear screen at its tab (the
   Reader and the vault at Inventory, the Quartermaster and the Armsmith at Vendors); within 2.5 m of a node it asks the
-  room to gather it.
+  room to gather it. Neither is offered while a menu is up or the player lies dead.
 
 ## The edge
 
@@ -165,7 +168,8 @@ its landmark over the city, as on arriving. Escape flies back down.
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, and starts at the spawn the room stands them at,
+- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder seas `node-<node id>--rough`
+  or `--storm` (a social space is one room at any seas), and starts at the spawn the room stands them at,
   each joiner at the next of the node's spawns in turn. The room judges the edge. Each tick's input goes to it from
   the fight: the controls and the fight's buttons, the figure's look, its arms, the dress when it changed, the
   gear's asks and a respawn when asked. The player's fighter is predicted by the combat rules from `room.wasm`,

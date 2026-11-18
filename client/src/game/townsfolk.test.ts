@@ -47,3 +47,24 @@ test('the townsfolk walk the open lanes and stop at the stations and the parapet
   assert.ok(counters.size >= 2, 'customers come to the counters');
   assert.ok(looked, 'someone looks out over the city');
 });
+
+test('with every arcade staffed, no one walks onto the portico’s steps going to a counter or back', () => {
+  const columns = [-105, -90, -75, -60, -45, -39, 39, 45, 60, 75, 90, 105];
+  const stations = columns.map((across) => ({
+    kind: 'smith',
+    keeper: [1000 + across, 1946.6] as const,
+    counter: [1000 + across, 1948.4] as const,
+  }));
+  for (const seed of [3, 5, 8]) {
+    const folk = new Townsfolk({ ...PLAZA, stations }, seed);
+    let served = 0;
+    for (let tick = 0; tick < 60 * 900; tick += 15) {
+      for (const person of folk.step(0.25).slice(stations.length)) {
+        const [toward, across] = [person.y - 2000, person.x - 1000];
+        assert.ok(!(toward < -42 && Math.abs(across) < 26), `on the portico: ${across}, ${toward}`);
+        if (toward < -48) served += 1;
+      }
+    }
+    assert.ok(served > 0, 'and customers still reach the counters');
+  }
+});

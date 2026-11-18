@@ -49,8 +49,9 @@ war, and a click on it sets the ship's destination.
   sail (Enter), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **The seas.** Beside Set sail the card offers the voyage's difficulty, Calm, Rough or Storm
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or four
-  levels higher, paying half again or twice the XP, Aurem and Vestiges. The node landed at is joined at those seas
-  ([[Server]], "The host").
+  levels higher, paying half again or twice the XP, Aurem and Vestiges. The seas picked are the voyage's only once the
+  player sets sail with them; letting the destination go lets them go too. The node landed at is joined at the
+  voyage's seas ([[Server]], "The host").
 - **Turning back.** Escape on the way down to the helm turns the view back before the map is raised.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation

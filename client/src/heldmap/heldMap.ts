@@ -89,8 +89,10 @@ export class HeldMap {
   private ink: Rect = { x: 0, y: 0, width: 1, height: 1 };
   private press: { x: number; y: number; view: View; panning: boolean } | null = null;
   private choice: Choice | null = null;
-  /** The difficulty the next voyage sets out at, chosen on the card. */
+  /** The difficulty the voyage set out at: what the card showed when the player set sail. */
   difficulty: Difficulty = 'calm';
+  /** The difficulty chosen on the card, kept only once the player sets sail with it. */
+  private picked: Difficulty = 'calm';
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
@@ -209,13 +211,17 @@ export class HeldMap {
 
   /** Sets sail for the destination chosen, if it has a course. */
   setSail(): void {
-    if (this.choice?.course.ok) this.close(this.choice.at);
+    if (!this.choice?.course.ok) return;
+    this.difficulty = this.picked;
+    this.close(this.choice.at);
   }
 
-  /** Escape: the choice is let go first, then the map lowered. */
+  /** Escape: the choice is let go first, with the seas picked on its card, then the map lowered. */
   escape(): void {
-    if (this.choice) this.choice = null;
-    else this.close();
+    if (this.choice) {
+      this.choice = null;
+      this.picked = this.difficulty;
+    } else this.close();
   }
 
   /** One frame, `dt` seconds on: the map's rise, its view and its marks laid out, and what its view draws, device
@@ -323,7 +329,7 @@ export class HeldMap {
     this.card.hidden = !choice;
     if (!choice) return;
     const words = choice.course.ok ? `Set a course for ${choice.name}` : choice.course.why;
-    const shape = `${words} ${this.difficulty}`;
+    const shape = `${words} ${this.picked}`;
     if (this.card.dataset['words'] !== shape) {
       this.card.dataset['words'] = shape;
       const sail = button('Set sail  Enter', () => this.setSail());
@@ -332,8 +338,8 @@ export class HeldMap {
       const seas = make('div', '', 'held-card-seas');
       seas.hidden = !choice.course.ok;
       for (const [difficulty, label, said] of DIFFICULTY_WORDS) {
-        const pick = button(label, () => (this.difficulty = difficulty));
-        pick.classList.add(ROLES[difficulty === this.difficulty ? 'primary' : 'button']);
+        const pick = button(label, () => (this.picked = difficulty));
+        pick.classList.add(ROLES[difficulty === this.picked ? 'primary' : 'button']);
         pick.title = said;
         seas.append(pick);
       }

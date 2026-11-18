@@ -1,7 +1,8 @@
 // The people of a social space, as the Tower's: a keeper behind each station's counter, and townsfolk walking the
 // plaza's open lanes, stopping at the stations and at the seaward parapet to look over the city. Seeded, so a visit's
 // people move the same however its frames fall. Each walks only the lanes the courtyard leaves clear: before the
-// arcades, either side of the obelisk's plinth and its braziers, and inside the benches.
+// arcades, either side of the obelisk's plinth and its braziers, and inside the benches; to a counter and back, along
+// the landward lane to its column first, so no one crosses the portico's steps.
 
 import type { Dress, Race } from '../player/dressing.ts';
 import type { Outfit } from '../forge/outfit.ts';
@@ -127,8 +128,10 @@ interface Walker {
   readonly id: number;
   readonly dress: Dress;
   at: [number, number];
-  /** Where they head on the lanes' grid, or a stop off it, and the grid point they leave the stop by. */
+  /** Where they head on the lanes' grid, or a stop off it, and the grid point they leave the stop by; and the points
+   *  still to walk to after `to` before they stop. */
   to: [number, number];
+  ahead: [number, number][];
   lane: [number, number];
   pause: number;
   facing: number;
@@ -174,6 +177,7 @@ export class Townsfolk {
         dress: dressOf(index + 1, null, this.random),
         at: [start[0], start[1]],
         to: [start[0], start[1]],
+        ahead: [],
         lane,
         pause: this.random() * PAUSE_S.lane[1],
         facing: this.random() * 2 * Math.PI,
@@ -185,6 +189,12 @@ export class Townsfolk {
 
   private pick(count: number): number {
     return Math.min(count - 1, Math.floor(this.random() * count));
+  }
+
+  /** How far across the plaza a point of the world stands, metres. */
+  private acrossOf(point: Point): number {
+    const [seaX, seaY] = this.seaward;
+    return (point[0] - this.middle[0]) * -seaY + (point[1] - this.middle[1]) * seaX;
   }
 
   /** A point of the plaza's frame in the world. */
@@ -199,9 +209,9 @@ export class Townsfolk {
     const [row, column] = walker.lane;
     const station = this.stations[this.pick(Math.max(1, this.stations.length))];
     if (row === 0 && station && this.random() < TO_STATION) {
-      const [seaX, seaY] = this.seaward;
-      const across = (station.counter[0] - this.middle[0]) * -seaY + (station.counter[1] - this.middle[1]) * seaX;
-      walker.to = this.world(AT_COUNTER, across);
+      const across = this.acrossOf(station.counter);
+      walker.to = this.world(TOWARD[0], across);
+      walker.ahead = [this.world(AT_COUNTER, across)];
       walker.stop = 'station';
       return;
     }
@@ -239,12 +249,20 @@ export class Townsfolk {
         const [east, south] = [walker.to[0] - walker.at[0], walker.to[1] - walker.at[1]];
         const distance = Math.hypot(east, south);
         if (distance < 1e-6) {
+          const onward = walker.ahead.shift();
+          if (onward) {
+            walker.to = onward;
+            continue;
+          }
           if (walker.stop !== 'lane') {
             // Back to the lane they left by, after a while at the counter or the parapet.
             const [low, high] = PAUSE_S[walker.stop];
             walker.pause = low + this.random() * (high - low);
             walker.facing = walker.stop === 'view' ? bearingTo([0, 0], this.seaward) : bearingTo(this.seaward, [0, 0]);
-            walker.to = this.world(TOWARD[walker.lane[0]] ?? 0, ACROSS[walker.lane[1]] ?? 0);
+            const back = this.world(TOWARD[walker.lane[0]] ?? 0, ACROSS[walker.lane[1]] ?? 0);
+            // From a counter, back up to the landward lane at its column before along it.
+            walker.to = walker.stop === 'station' ? this.world(TOWARD[0], this.acrossOf(walker.at)) : back;
+            walker.ahead = walker.stop === 'station' ? [back] : [];
             walker.stop = 'lane';
           } else {
             walker.pause = PAUSE_S.lane[0] + this.random() * (PAUSE_S.lane[1] - PAUSE_S.lane[0]);
