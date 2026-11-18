@@ -143,6 +143,16 @@ fn a_boss_in_its_last_stand_calls_two_minor_deckhands_to_its_side_within_the_roo
 }
 
 #[test]
+fn foes_of_two_factions_left_apart_beyond_sight_find_each_other_and_fight() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let tithe = stand(&mut room, COLLECTOR, Rank::Major, 0.0, -18.0, 0.0);
+    let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 18.0, PI);
+    let events = run(&mut room, 60 * 60);
+    let fought = |striker, defender| between(&events, striker, defender).next().is_some();
+    assert!(fought(tithe, pirate) || fought(pirate, tithe), "36 m apart, back to back, they meet in a minute");
+}
+
+#[test]
 fn a_boss_killed_in_the_step_its_roar_began_calls_no_crew() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let boss = stand(&mut room, THULE, Rank::Boss, 0.0, 0.0, 0.0);

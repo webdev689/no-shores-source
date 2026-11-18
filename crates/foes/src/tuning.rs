@@ -45,6 +45,12 @@ pub const BLOW_REACH: f64 = 15.0;
 pub const RUN_LOUDNESS: f64 = 0.42;
 pub const RUN_REACH: f64 = 8.0;
 pub const RUN_EVERY: f64 = 0.5;
+/// Heard through a block, a noise carries this share of its loudness and its reach.
+pub const MUFFLED: f64 = 0.5;
+/// A foe with no target hears the stir of a foe of another faction, this much a second at its feet, out to this far:
+/// enough that two factions left apart beyond sight find each other in the end.
+pub const PRESENCE_LOUDNESS: f64 = 0.2;
+pub const PRESENCE_REACH: f64 = 60.0;
 
 /// The ring the waiting stand on: this far outside their reach, with this much give either side. A waiting foe circles
 /// at this share of its walk toward its place on the ring, which drifts this far round a second away from its target's

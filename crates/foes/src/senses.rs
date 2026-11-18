@@ -6,6 +6,7 @@ use crate::World;
 use crate::awareness::{latch, stir, strongest, woken};
 use crate::brain::Brain;
 use crate::dice::Dice;
+use crate::noises::stir_of;
 use crate::roles::Numbers;
 use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
 use combat::lock::sees;
@@ -95,6 +96,7 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     }
     let seen = in_sight(here);
     let glimpse = seen.iter().map(|(_, _, other, gain)| (*gain, feet(other))).fold(None, strongest);
+    let glimpse = stirring(here).fold(glimpse, strongest);
     stir(brain, here, glimpse, &heard);
     latch(brain, here, called);
     if !brain.awareness.alert {
@@ -107,6 +109,12 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     brain.seen_at = here.tick();
     brain.awareness.look = None;
     Some(sight(here, id, &other, true, brain.last_seen))
+}
+
+/// The stir of every foe of another side it hears, each with what it adds and where.
+fn stirring<'here>(here: &'here Here<'_, '_>) -> impl Iterator<Item = (f64, [f64; 3])> + 'here {
+    let heard = |other: &Fighter| stir_of(other).map(|noise| (noise.heard_at(here.feet(), here.world.blocks), noise.at));
+    here.world.fighters.iter().filter(|(_, other)| here.hostile(other)).filter_map(move |(_, other)| heard(other))
 }
 
 fn feet(fighter: &Fighter) -> [f64; 3] {

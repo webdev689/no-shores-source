@@ -1,5 +1,6 @@
 //! A foe's senses: it comes to know of a player by sight, sooner near and dead ahead than far or at the edge of its
-//! sight, and by what it hears, a gun farther than a bow, but never its own side's noises; stirred, it turns and walks
+//! sight, and by what it hears, a gun farther than a bow and anything through a block half as far, but never its own
+//! side's noises; stirred, it turns and walks
 //! a few metres toward what stirred it, and with nothing more its awareness bleeds back to nothing; alert, it fights and
 //! wakes its allies near it; a blow alerts it at once; out of sight, it hunts, searches the last place it knew, and
 //! lets go.
@@ -91,27 +92,24 @@ fn a_foe_facing_away_does_not_notice_a_player_behind_it_until_a_noise() {
     assert_eq!((room.brain(10).target(), room.brain(10).alertness()), (Some(PLAYER), Alert), "it turned and saw");
 }
 
-/// A player 8 m south of a foe facing north, away, a wall between them; the player swings once at tick 30.
-fn behind_a_wall() -> (Room, impl FnMut(&Room, u32) -> Intent) {
-    let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -8.0, 0.0);
-    room.blocks.push(Block { min_x: -4.0, min_y: -2.0, max_x: 4.0, max_y: -1.5, top: 3.0 });
-    let swing_once = |room: &Room, _: u32| {
-        let mut intent = standing_still(0.0);
-        intent.combat.attack = (room.tick == 30).then_some(Stroke::Down);
-        intent
-    };
-    (room, swing_once)
+/// A foe 30 m north of a player, facing away, told of the player's gunshot after half a second: near enough to be
+/// stirred by it, too far to see the player once it turns.
+fn a_far_shot() -> Room {
+    let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -30.0, 0.0);
+    room.run(30, &mut still(0.0));
+    room.hear(shot(&room.fighter(PLAYER), Ranged::Pistolet));
+    room.step(&mut still(0.0));
+    room
 }
 
 #[test]
 fn a_suspicious_foe_turns_and_walks_a_few_metres_toward_a_noise() {
-    let (mut room, mut script) = behind_a_wall();
-    room.run(32, &mut script);
+    let mut room = a_far_shot();
     assert_eq!(room.brain(10).alertness(), Suspicious);
-    room.run(120, &mut script);
+    room.run(120, &mut still(0.0));
     let foe = room.fighter(10);
-    let walked = apart([0.0, -8.0], [foe.body.x, foe.body.y]);
-    assert!((2.5..=3.5).contains(&walked) && foe.body.y > -8.0, "a few metres toward the noise: {walked}");
+    let walked = apart([0.0, -30.0], [foe.body.x, foe.body.y]);
+    assert!((2.5..=3.5).contains(&walked) && foe.body.y > -30.0, "a few metres toward the noise: {walked}");
     let toward = bearing([foe.body.x, foe.body.y], [0.0, 0.0]);
     assert!(off(foe.aim, toward) < 0.1, "facing where it heard it: {} against {toward}", foe.aim);
     assert_eq!(room.brain(10).target(), None, "it never saw the player");
@@ -119,13 +117,12 @@ fn a_suspicious_foe_turns_and_walks_a_few_metres_toward_a_noise() {
 
 #[test]
 fn with_nothing_stirring_awareness_bleeds_back_to_idle() {
-    let (mut room, mut script) = behind_a_wall();
-    room.run(32, &mut script);
+    let mut room = a_far_shot();
     let stirred = room.brain(10).awareness();
-    assert!((stirred - (1.0 - 8.0 / 15.0)).abs() < 1e-9, "a swing 8 m off: {stirred}");
-    room.run(60, &mut script);
+    assert!((stirred - 2.0 * (1.0 - 30.0 / 40.0)).abs() < 1e-9, "a gunshot 30 m off: {stirred}");
+    room.run(60, &mut still(0.0));
     assert!((stirred - room.brain(10).awareness() - 0.16).abs() < 1e-9, "0.16 a second");
-    room.run(150, &mut script);
+    room.run(240, &mut still(0.0));
     assert_eq!((room.brain(10).alertness(), room.brain(10).awareness()), (Idle, 0.0));
 }
 
@@ -189,6 +186,25 @@ fn a_blow_alerts_a_foe_at_once_to_its_striker_and_it_shouts() {
     room.step(&mut still(0.0));
     assert_eq!((room.brain(10).target(), room.brain(10).alertness()), (Some(PLAYER), Alert));
     assert_eq!(room.shouts, [(30, 10)]);
+}
+
+/// How a foe facing away, `distance` north of a player's gunshot, is stirred by it, with a wall between or none.
+fn stirred_through(distance: f64, walled: bool) -> foes::Alertness {
+    let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -distance, 0.0);
+    if walled {
+        room.blocks = vec![Block { min_x: -5.0, min_y: -3.5, max_x: 5.0, max_y: -3.0, top: 2.5 }];
+    }
+    room.hear(shot(&room.fighter(PLAYER), Ranged::Pistolet));
+    room.step(&mut still(0.0));
+    room.brain(10).alertness()
+}
+
+#[test]
+fn a_noise_through_a_block_carries_half_as_loud_and_half_as_far() {
+    assert_eq!(stirred_through(15.0, false), Searching, "a gun 15 m off in the open alerts it");
+    assert_eq!(stirred_through(15.0, true), Suspicious, "through a wall it only stirs it");
+    assert_eq!(stirred_through(25.0, false), Suspicious, "25 m off in the open it stirs it");
+    assert_eq!(stirred_through(25.0, true), Idle, "and through a wall reaches no farther than 20 m");
 }
 
 #[test]
