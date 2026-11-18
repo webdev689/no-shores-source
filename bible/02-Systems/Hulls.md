@@ -10,9 +10,9 @@ code:
 ---
 # Hulls
 
-The ships Overlook will sail beyond the Sloop, one for each rank of ship
-([[Enemies Come in Five Ranks, After Destiny]]), made in Blender in her style
-([[New Ships Are Planned in the Sloop's Style, After the System]]). Only the Sloop is built ([[Sailing]]): until the others are, both factions' captains sail her at every rank
+The ships Overlook may sail beyond the Sloop, planned in her style, one for each rank of ship
+([[Enemies Come in Five Ranks, After Destiny]], [[New Ships Are Planned in the Sloop's Style, After the System]]).
+Only the Sloop is built ([[Sailing]]): until the others are, both factions' captains sail her at every rank
 ([[Naval Combat]], "Ranks and factions").
 
 ## The Sloop's style
@@ -54,6 +54,6 @@ The owner's to pick; nothing below is decided.
 - **Square sails**: the game bellies and swings only gaff sails and staysails. The hull rules already know square
   and lateen sails.
 - **A ship's hull, everywhere**: the sailing and fight code, the rooms and the browser hold the Sloop alone, by
-  `SLOOP` in about 140 places; each must carry which hull a ship is.
+  `SLOOP` in about 25 places outside tests; each must carry which hull a ship is.
 - **The ram**: a ram bow that strikes harder than a stem.
 - **Its drawn size on the [[Overworld]]**.

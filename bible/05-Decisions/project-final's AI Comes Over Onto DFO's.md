@@ -14,8 +14,7 @@ director, plus the navmesh's terrain input: "Yes"
 
 ## What it settles
 
-- DFO's Enhanced AI stays the brain of the [[Foes]], and the [[Navmesh]] stays as it is.
-- project-final's AI comes over on top of it ([[Pick - project-final AI]]): its perception (sight and hearing, the
-  last place a target was seen and the search for it, waking allies), its cover and firing spots worked out from the
-  navmesh, its flanking, and its combat director.
+- DFO's Enhanced AI stays the brain of the [[Foes]], and the [[Navmesh]] stays DFO's.
+- project-final's AI comes over on top of it ([[Pick - project-final AI]]): its sensing, its cover and firing spots,
+  its flanking, and its combat director.
 - The navmesh takes project-final's ground heightfield, so it can be baked over the [[Land]].

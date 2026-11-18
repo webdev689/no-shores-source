@@ -13,6 +13,6 @@ status: in force
 
 ## What it settles
 
-- New ships are made in Blender, in the Sloop's style ([[Hulls]]).
+- New ships keep the Sloop's style, and are to be made in Blender ([[Hulls]]).
 - For now they are planned, not built: the enemy system comes first ([[Enemies Come in Five Ranks, After Destiny]],
   [[Enemy Factions Start With the Grey Tithe]], [[project-final's AI Comes Over Onto DFO's]]).

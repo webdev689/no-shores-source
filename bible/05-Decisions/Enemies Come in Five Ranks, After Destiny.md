@@ -39,7 +39,6 @@ status: in force
 | Boss | The boss bar | | Three phases, each with its own mechanics |
 
 - An enemy's bar is over its head, with its name within its faction: the name is what tells an Elite from a Miniboss.
-- A rank changes how a foe defends as well as its health and telegraphs, in the most detailed way: those details are
-  Claude's calls, recorded in [[Foes]] as they are built.
+- A rank changes how a foe defends as well as its health and telegraphs, in the most detailed way ([[Enemies]]).
 - Ships at sea have ranks too ([[Naval Combat]]).
 - The factions the names belong to: [[Enemy Factions Start With the Grey Tithe]].

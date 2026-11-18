@@ -44,19 +44,19 @@ code:
 ---
 # Naval Combat
 
-Broadsides, and rams, between players' Sloops and pirate captains' Sloops: DFO's naval combat, rebuilt in Rust
-([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one captain alone in the
-[[World Editor]], or with other players in a fleet room on the [[Server]].
+Broadsides, and rams, between players' Sloops and the captains' Sloops of the enemy factions: DFO's naval combat,
+rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one captain
+alone in the [[World Editor]], or with other players in a fleet room on the [[Server]].
 
 ## The fight
 
 A fight holds any number of ships by number, each sailed by a player's orders or by a captain's mind, and flying the
-players' flag or the pirates'. Each tick, in this order: each player's ship steps once for each of her orders taken
-(late orders catch up; with none she lies as she was, riding the swell), each captain steers and sails, hulls that
-overlap are pushed apart, each player's stem may ram, the guns load, the captains fire and then the players, the balls
-fly, fires burn and sinking ships go down, each player's hands mend her, and a captain who has sunk, or lies past every
-ship she may fight and is not fighting, leaves the fight. A player's step under her hurts is one pure function
-(`sail_hurt`), which a browser predicting her runs too.
+players' flag or a faction's (the Grey Tithe's or the pirates'). Each tick, in this order: each player's ship steps once
+for each of her orders taken (late orders catch up; with none she lies as she was, riding the swell), each captain
+steers and sails, hulls that overlap are pushed apart, each player's stem may ram, the guns load, the captains fire and
+then the players, the balls fly, fires burn and sinking ships go down, each player's hands mend her, and a captain who
+has sunk, or lies past every ship she may fight and is not fighting, leaves the fight. A player's step under her hurts
+is one pure function (`sail_hurt`), which a browser predicting her runs too.
 
 ## How it works
 
@@ -83,32 +83,32 @@ ship she may fight and is not fighting, leaves the fight. A player's step under 
   of those balls meets her, canvas or hull. Its landing zone's radius is DFO's: half the width the crew scatters the
   gun's yaw across at the splashes' mean range (at least 2 m wide), and never under 1.6 m.
 - **What stops a ball** is the first hull of another flag, water or ground it meets: a player's ball passes through
-  another player's ship, and a pirate's through another pirate's. A ball tears through any canvas it crosses
+  another player's ship, and a captain's through any ship of her own faction. A ball tears through any canvas it crosses
   (once a ship) and flies on. The water is the swell's surface under it, and the ground the land's, sampled every 4 m.
 - **The harm** of a ball is DFO's: by where it struck (holed within 1.1 m of the water under it, 40% more; the hull
   above; the canvas), 85 to 115% by its own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
-- **A ship** has hull, canvas and men. A captain strikes at a quarter of her hull or with no men left, and goes down
-  over 22 s at none, listing and trimming by her seed and settling slowly, then fast. The rest of the volley that made
-  her strike cannot sink her. The player's Sloop is wrecked at none, never sunk: no sail sets, her oars pull 35%,
-  her guns are silent. Fires (three at most) burn hull, canvas and men for 15 s. Bare poles leave 35% of her way.
-  Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. Unhurt for 15 s,
-  with no ship within 700 m that would take her, her hands mend her to half, and a wreck floats again past 15%.
+- **A ship** has hull, canvas and men. A captain strikes at her rank's share of her hull (a Major's quarter) or with no
+  men left, and goes down over 22 s at none, listing and trimming by her seed and settling slowly, then fast. The rest
+  of the volley that made her strike cannot sink her. The player's Sloop is wrecked at none, never sunk: no sail sets,
+  her oars pull 35%, her guns are silent. Fires (three at most) burn hull, canvas and men for 15 s. Bare poles leave 35%
+  of her way. Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. Unhurt for 15
+  s, with no ship within 700 m that would take her, her hands mend her to half, and a wreck floats again past 15%.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
 
 ## The captain
 
-She sails a Sloop under the player's own helm, so her pace is the player's. She sees every player's ship and keeps,
-for each, whether it struck her lately and whether she spares it. DFO's captain commands a swing and a
-share of sail; here the swing is a share of her rudder and the sail the rung whose way is nearest. Under the ladder's
-law the wind's eye costs her 0.55 of her way, so she never tacks.
+She sails a Sloop under the player's own helm, so her pace is the player's. She sees every ship she may fight (each
+player's, and each afloat captain's of another faction) and keeps, for each, whether it struck her lately and whether
+she spares it. DFO's captain commands a swing and a share of sail; here the swing is a share of her rudder and the sail
+the rung whose way is nearest. Under the ladder's law the wind's eye costs her 0.55 of her way, so she never tacks.
 
-- **Whom she fights.** A pirate is bold one time in four by her seed. A bold one takes on a player she sees within
-  750 m; a wary one only a wreck, a hull nearly gone, or a ship she outguns 5 to 4 by DFO's fighting power (the time
-  each takes to make the other strike, by each ship's whole rank: her hull and men, her guns' harm and reload). Struck
-  by a player, she is hostile to that ship for 5 minutes. Of the ships she would fight and does not spare, she takes
-  the nearest, the one she already fights reckoned a fifth nearer (as DFO ranks them), and runs from the nearest that
-  struck her within 320 m. What she remembers of a chase, a wreck, her mark's way and the side she presented is let go
-  when she marks another ship.
+- **Whom she fights.** A captain is bold one time in four by her seed, an Elite and above always. A bold one takes on a
+  ship she may fight within 750 m; a wary one only a wreck, a hull nearly gone, or a ship she outguns 5 to 4 by DFO's
+  fighting power (the time each takes to make the other strike, by each ship's whole rank: her hull and men, her guns'
+  harm and reload). Struck by a ship, she is hostile to it for 5 minutes. Of the ships she would fight and does not
+  spare, she takes the nearest, the one she already fights reckoned a fifth nearer (as DFO ranks them), and runs from
+  the nearest that struck her within 320 m. What she remembers of a chase, a wreck, her mark's way and the side she
+  presented is let go when she marks another ship.
 - **Her course.** She bends round every hull about her, the bends of each summed, as DFO's traffic does. Far off,
   she steers to intercept. A ship running from her she runs down astern, then sheers out to
   its beam. Otherwise she brings the side that costs least to bear on where her balls will meet him, bent off the beam
@@ -117,17 +117,17 @@ law the wind's eye costs her 0.55 of her way, so she never tacks.
 - **Her guns.** A side loaded, in reach, near her beam, bearing soon and whose lay would strike runs out: the tell.
   It fires no sooner than 1.3 s on, within her gunners' window, long or short by their want of skill. One run out too
   long unfired, or that loses its mark, is run in. She never fires on a wreck.
-- **When she breaks off.** Any pirate runs under 30% of her hull; a wary one runs from a ship that outguns her. A chase
-  that gains nothing in 150 s is given up, and a wreck left after 30 s. She leaves the fight when she has sunk, or lies
-  past 1.9 km from every ship she may fight (each player's, and each afloat captain's of another faction) and is not
-  fighting; the editor's fight ends when its one captain leaves.
+- **When she breaks off.** A captain runs below her rank's share of her hull (a Major's 30%); a wary one runs from a
+  ship that outguns her. A chase that gains nothing in 150 s is given up, and a wreck left after 30 s. She leaves the
+  fight when she has sunk, or lies past 1.9 km from every ship she may fight (each player's, and each afloat captain's
+  of another faction) and is not fighting; the editor's fight ends when its one captain leaves.
 
 ## Ranks and factions
 
 Every captain sails for a faction at a rank ([[Enemies Come in Five Ranks, After Destiny]],
 [[Enemy Factions Start With the Grey Tithe]], [[Enemies]]): the Grey Tithe's ship is the Tithe Sloop, the pirates'
 the Pirate Sloop. Until the planned hulls are built every rank sails the Sloop's ([[Hulls]]). Her rank scales her, a
-Major as before ranks:
+Major at the numbers of the rest of this note:
 
 | Rank | Hull and men | Way | Gun damage | Reload | Aim error | Temper | Runs | Strikes |
 |---|---|---|---|---|---|---|---|---|
@@ -173,9 +173,10 @@ whole bring the Pirate Sloop to strike.
 
 While sailing, `F` calls a pirate captain onto the ring 650 to 1000 m round the Sloop, where the water floats her,
 heading across her waters on a slant; `F` again sends her off. The fight then steps the Sloop in her helm's place.
-Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the look's
-bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
-lookReach), unless the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a left click holds fire, the wheel changes shot, and `C` braces.
+Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the look's bearing
+picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's lookReach), unless
+the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a left click holds
+fire, the wheel changes shot, and `C` braces.
 
 Her Sloop is drawn darker from the same model, and the water cuts her footprint as it does the player's. The balls,
 the lay's arcs, and each event's flash and smoke, spray and ripples, splinters, dust, and fire aboard
@@ -190,15 +191,15 @@ the panel reads "Laying the ... guns: on target.", only when an unscattered ball
 The sea room ([[Server]]) sails pirates among the players' ships on the [[Overworld]]: DFO's director, trimmed to
 pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), the Grey Tithe beside them.
 
-- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s. While
-  fewer than two pirates sail within 1.9 km of them, a roll brings a ship 0.8 of the time, and she is a pirate 0.3 of
-  that (DFO's open sea: 30 of its factions' 100); no other ship sails yet. By her seed half of those sail for the Grey
-  Tithe and half are pirates, a Minor 0.3 of the time, a Major 0.5 and an Elite 0.2. The rolls wait real seconds, and
-  are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its own), so
-  each sea sends its pirates in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
+- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s. While fewer
+  than two pirates sail within 1.9 km of them, a roll brings a ship 0.8 of the time, and she is hostile 0.3 of that
+  (DFO's open sea: 30 of its factions' 100); no other ship sails yet. By her seed half of those sail for the Grey Tithe
+  and half are pirates, a Minor 0.3 of the time, a Major 0.5 and an Elite 0.2. The rolls wait real seconds, and are
+  drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its own),
+  so each sea sends its pirates in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Where.** On the ring 650 to 1000 m round their ship, no nearer than 450 m to any player, where open water lies
   between, heading across their waters on a slant; she sails on at 2.4 m/s, going about at land, and goes once no
-  player is within 1.9 km. Her seed is her temper: one in four is bold.
+  player is within 1.9 km. Her seed sets her faction, rank and temper: an Elite is always bold, any other one in four.
 - **Her clock.** As DFO's sea keeps the world's time, she sails on the clock of the player nearest her: their
   voyage's pace (144 m/s at ×60), the world's own while they lie at rest, and real time where another player sails
   within 1.2 km of that one, a shared sea.
@@ -220,8 +221,9 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   nearer.
 - **The meeting.** A bold pirate within 750 m of a player who is not fighting meets them: she leaves the sea and the
   fight begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it
-  each tick by the player's orders on the fight of many ships, so her stem may ram the pirate, on waters made from the coasts (open sea, the swell on it, dry land on them), until
-  she sinks or is gone; its last view is shown once, and the player sails on from where it left them.
+  each tick by the player's orders on the fight of many ships, so her stem may ram the pirate, on waters made from the
+  coasts (open sea, the swell on it, dry land on them), until she sinks or is gone; its last view is shown once, and the
+  player sails on from where it left them.
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop at true scale, and the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
