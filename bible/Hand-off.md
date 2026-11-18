@@ -244,6 +244,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   rooms (the feed showed its Aurem and fragments), and pictures at 1920×1080 and 2560×1440. The sounds were counted as
   they played, not heard: the owner should listen for their level and character. A ware bought at the
   Quartermaster's counter, and a Vestige opened at the Reader's, were not walked to headless.
+- **Sounds come from Freesound** ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the owner judges every
+  sound and piece of music on the sound sheet, https://claude.ai/artifact/YT29RAFbgdPRLByLUVC7nh (private to them),
+  marking each Keep, Redo or a candidate picked, with a note; the marks are its store's `marks` collection, read with
+  ArtifactData. Candidates come from the `freesound` workflow on GitHub's machines, with no key: it reads Freesound's
+  public pages for the cues in `content/audio/freesound.json` and keeps each cue's first four CC0 or Attribution
+  previews as the run's download. Next: the candidates onto the sheet; the picks hosted on R2 and played by the game
+  in place of the synthesiser's cues, with a credits page for each Attribution sound.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
