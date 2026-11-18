@@ -127,8 +127,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   area agree to the bit. Movement blocks gained an underside, so a body walks under decks and lintels and up stairs
   ([[Movement]]). Deeper detail since: talus heaps, leant slabs and scree at every cliff's foot and rubble pillars round
   each mesa and spire; along every way signposts, milestones, wayside scenes, lanterns near settlements and drystone
-  walls by the farms and hamlets; the land wearing its climate's painted ground tiles instead of flat colour
-  ([[Game]], "The ground's pictures").
+  walls by the farms and hamlets; the land wearing its climate's painted ground tiles instead of flat colour, its
+  classes meeting by their grains ([[Game]], "The ground's pictures"); the paths and streets painted into the terrain
+  with worn, wandering edges in place of hard quads; a middle ground (8 km every 16 m) so the carving shows as far as
+  the layouts are drawn; every piece re-seated on the ground as the roads lay it; ruins of an older frontier on the
+  cliff tops, a natural arch over a canyon; climbs cut up the cliffs to lookouts, so a patrol area has heights; a
+  pocket off its path for each resource, and beacons, ore, salvage, herbs and timber each standing as a place.
+  From the movement worker: a spatial index under the movement rules (same answers to the bit, a tick 2.5 times
+  faster natively), the third-person camera kept off walls and inside rooms, `&view=first` for pictures, and rooms
+  every body can walk into and up (`crates/room/tests/rooms_walked.rs`).
 - Also on #63, from a worker branch: the flora baked from detailed Blender models ([[Flora Is Baked From Detailed
   Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, 153 objects on R2. Its frame on
   SwiftShader is about 1.8 times slower in the woodland; the cost on a real GPU is unchecked. Its weak spots are listed

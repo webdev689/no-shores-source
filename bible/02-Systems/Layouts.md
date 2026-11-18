@@ -104,7 +104,7 @@ from the sea, fresh water and the claim's edge), then:
    the basin's floor really ends, a straight way 7 m wide turned out from along its edge, rising at most 0.3 a metre,
    boring into the rock as it climbs so its face stands over it and its drop falls to the floor, clear of every
    other floor and well inside the claim; at its top a flat 22 m across, with a broken parapet but where the climb
-   arrives and a brazier glowing on a plinth. Each climb is walked as a footpath, and the section takes in the climbs
+   arrives and a brazier glowing on a plinth; a low drystone kerb runs along the climb's drop, broken here and there. Each climb is walked as a footpath, and the section takes in the climbs
    and the lookouts, so a patrol area has its heights as well as its floor.
 7. **The great works**, across and along the canyons, so they make the ways and the bounds: a colossal ruined wall of
    ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed and

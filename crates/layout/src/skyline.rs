@@ -162,6 +162,35 @@ pub fn lookout(kit: &mut Kit, at: [f64; 2], toward: [f64; 2], carved: &Sculpts) 
     ));
 }
 
+/// A low kerb of drystone along a climb's drop, from a little way up it to its top, broken here and there, so the way
+/// reads as made and a body keeps to it.
+pub fn kerb(kit: &mut Kit, from: [f64; 2], to: [f64; 2], half: f64, carved: &Sculpts) {
+    let length = distance(from, to);
+    if length < 1.0 {
+        return;
+    }
+    let way = [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+    let middle = [(from[0] + to[0]) / 2.0, (from[1] + to[1]) / 2.0];
+    let side_of = |side: f64| [middle[0] - way[1] * side * (half + 4.0), middle[1] + way[0] * side * (half + 4.0)];
+    // The drop is the side whose land beside the climb lies lower.
+    let (left, right) = (carved_at(kit, carved, side_of(1.0)), carved_at(kit, carved, side_of(-1.0)));
+    let side = if left < right { 1.0 } else { -1.0 };
+    let mut along = 8.0;
+    while along < length {
+        let at = [
+            from[0] + way[0] * along - way[1] * side * (half - 0.4),
+            from[1] + way[1] * along + way[0] * side * (half - 0.4),
+        ];
+        along += 3.4;
+        if kit.draw() < 0.15 {
+            continue;
+        }
+        let base = carved_at(kit, carved, at) - 0.2;
+        let size = [0.6, 3.4, 0.75 + kit.draw() * 0.2];
+        kit.solid(Solid::upright(Shape::Block, [at[0], at[1], base], size, Material::Rubble).turned(turn_along(way)));
+    }
+}
+
 /// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet in the cliffs either
 /// side, its crown a little over the massif's top, boulders fallen at its feet; the way runs under it.
 pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64) {

@@ -161,6 +161,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
             .collect();
         paths.push(paths::Path { tier: paths::Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() });
         skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
+        skyline::kerb(&mut kit, [x1, y1], [x2, y2], pair[0][4], &carved);
     }
     rocks::talus(&mut kit, &ring, &paths, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &paths);
