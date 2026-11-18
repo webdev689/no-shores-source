@@ -115,7 +115,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
 
-- On pull request #PR from branch `ccr-0f4acf2e-wd3195`, tested offline, not merged, as the owner decided it
+- On pull request #63 from branch `ccr-0f4acf2e-wd3195`, tested offline, not merged, as the owner decided it
   ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]): every patrol area and instance laid out
   ([[Layouts]]) from its brief (all 90 written): places scored on the land, a loop of tracks and footpaths, RMB
   hamlets, farms, ruins, keeps, graveyards, covens and caves seated building by building, set pieces of forged props
@@ -150,7 +150,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
-- #PR: merging deploys the page and the rooms. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
+- #63: merging deploys the page and the rooms. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
   look (textured, not palette-snapped) was Claude's call, as the owner left it.
 - Private mission instances with invites ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]):
   an instance's room is still a node's shared room until the server makes rooms per party.
