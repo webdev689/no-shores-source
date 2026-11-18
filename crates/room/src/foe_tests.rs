@@ -320,10 +320,10 @@ fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
     for start in [[8.0, -6.5, 0.0], [-9.5, -9.0, 0.0]] {
         let mut room = Room::new(vec![wall], (place[0], place[1]));
         let start = room.nav.nearest_point(start).expect("the start is on the mesh");
-        let (fighter, brain) =
+        let (fighter, mut brain) =
             ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], PI);
         let id = room.next_id();
-        let brain = ::foes::notice(&brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
+        ::foes::notice(&mut brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
         room.foes.insert(id, Foe { fighter, brain });
         let reached = (0..60 * 30).any(|_| {
             room.tick();
