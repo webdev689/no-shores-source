@@ -64,23 +64,23 @@ phases) is [[Enemies]].
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
-- **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it,
-  and it believes that thing's place. Sight of a fighter of another side raises it by up to 5 a second,
-  scaled by how near (1 at its feet, nothing at its range: 14 m, a shooter's 51.2 m) and how nearly ahead (nothing at
-  90 degrees off its facing), with nothing between their chests. Noises raise it by their loudness, less with
-  distance, to nothing at their reach: a gunshot 2.0 to 40 m, a bow or crossbow 0.7 to 10 m, a swing or a blow landing
-  1.0 to 15 m (heard where it lands), a fighter running 0.42 to 8 m each half second. A noise whose line from it to
-  the foe's chest passes through a block carries half as loud and half as far. A foe pays no heed to its own side's
-  noises. With no target, a foe hears the stir of every foe of another faction, 0.2 a second at its feet to nothing at
-  60 m (halved through a block, as any noise), so two factions left apart beyond sight find each other; a player
-  makes no such stir. With nothing stirring the level bleeds 0.16 a second, but not while it fights or hunts. Above
-  0.02 a foe is **suspicious**: it turns and walks up to 3 m toward what stirred it. At 1 it is **alert**: it shouts
-  once, waking allies within 12 m toward that place, and takes the nearest it sees, or the one that strikes it (a
-  blow alerts at once). Seen farther off than its range, a target is pursued, not fought. Out of
+- **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it, and
+  it believes that thing's place. Sight of a fighter of another side raises it by up to 5 a second, scaled by how near
+  (1 at its feet, nothing at its range: 14 m, a shooter's 51.2 m) and how nearly ahead (nothing at 90 degrees off its
+  facing), with nothing between their chests. Noises raise it by their loudness, less with distance, to nothing at their
+  reach: a gunshot 2.0 to 40 m, a bow or crossbow 0.7 to 10 m, a swing or a blow landing 1.0 to 15 m (heard where it
+  lands), a fighter running 0.42 to 8 m each half second. A noise whose line from it to the foe's chest passes through a
+  block carries half as loud and half as far. A foe pays no heed to its own side's noises. With no target, a foe hears
+  the stir of every foe of another faction, 0.2 a second at its feet to nothing at 60 m (halved through a block, as any
+  noise), so two factions left apart beyond sight find each other; a player makes no such stir. With nothing stirring
+  the level bleeds 0.16 a second, but not while it fights or hunts. Above 0.02 a foe is **suspicious**: it turns and
+  walks up to 3 m toward what stirred it. At 1 it is **alert**: it shouts once, waking allies within 12 m toward that
+  place, and takes the nearest it sees, or the one that strikes it (a blow alerts at once). Seen farther off than its
+  range, a target is pursued, not fought; a shooter pursuing one walks on until it stands 6 m inside its range. Out of
   sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease); then it
-  **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s,
-  then lets go, and its level bleeds back to idle. The foe's soft lock holds its target, but while it answers a blow,
-  the striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
+  **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s, then
+  lets go, and its level bleeds back to idle. The foe's soft lock holds its target, but while it answers a blow, the
+  striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
   way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side steer
@@ -105,14 +105,15 @@ phases) is [[Enemies]].
 - **Swings.** A chop into a raised guard, a sweep when two or more stand in reach before it, a thrust at the edge of
   reach, otherwise a slash, chop or thrust by chance. Its wait before a swing begins in reach and runs on while its
   target sways out to 0.3 m past it. A foe that guards keeps 30 stamina for its guard; short of a swing and that, it
-  hands its turn on. Blocked twice running by a guard still raised and facing it, it stops swinging into it: it winds
-  up a telegraphed blow if it may, else steps round toward the side the guard faces away from, at 0.7 of a walk, and
-  strikes from outside the guard; walled off 2 s, it chops at the guard again. A new target starts its count afresh. A
-  foe's riposte after its own parry, its counter after a perfect dodge, and, in its turn, a swing at a target spent in
-  its own swing's follow-through, staggered or tending a bow (not one knocked down: the iron blow already punished
-  that), are struck at once with a chop.
+  hands its turn on. Blocked twice running by a guard still raised and facing it, it stops swinging into it: it winds up
+  a telegraphed blow if it may, else steps round toward the side the guard faced away from as it was walled, at 0.7 of a
+  walk, keeping to that side, and strikes from outside the guard; walled off 2 s, it chops at the guard again. A new
+  target starts its count afresh. A foe's riposte after its own parry, its counter after a perfect dodge, and, in its
+  turn, a swing at a target spent in its own swing's follow-through, staggered or tending a bow (not one knocked down:
+  the iron blow already punished that), are struck at once with a chop.
 - **Backing off and running.** A quarter of its health lost inside 3 s, or, for a foe that guards or dodges, its poise
-  four fifths full: it hands its turn on and walks out to a ring 2 m farther for 2 s, at most once in 10 s.
+  four fifths full: it hands its turn on and walks out to a ring 2 m farther, then holds it facing its target, for 2
+  s in all, at most once in 10 s.
 - **Shooters.** A shooter shoots its own weapon: a bow drawn 1.0 s, a crossbow 1.3 s, a pistolet 1.2 s, a thunderlock
   1.5 s, aiming up for a bolt's or arrow's fall, 0.5 to 1.5 s between shots; its shots strike as a player's quick shot
   does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A foe's gun ball flies at 70 m/s (pistolet) or 110 m/s

@@ -357,6 +357,10 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
 fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -> Ask {
     let tick = here.tick();
     let away = sight.toward + PI;
+    if brain.plan == Plan::Backoff && sight.distance >= ring - RING_SLACK {
+        // Out at its farther ring its walk out is over: a target that follows it turns it to face them, not back.
+        brain.hop_until = brain.hop_until.min(tick);
+    }
     if sight.distance < ring - RING_SLACK && tick < brain.hop_until {
         return if brain.plan == Plan::Backoff {
             Ask::walking(away, STEP_PACE, false)
