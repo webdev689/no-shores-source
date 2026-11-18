@@ -117,3 +117,5 @@ might 1.5), and it chains up to two blows after a first.
 - A foe answers one blow at a time: a second swing seen while it answers the first is not weighed.
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
+- Foes have no ranks, names or factions yet: the kinds stand for all of them
+  ([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]]).

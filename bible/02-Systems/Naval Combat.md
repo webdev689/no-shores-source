@@ -201,7 +201,9 @@ browser predicts its own ship through `room-wasm` by the same steps.
 
 ## Limits
 
-- Captains are Pirate Sloops: no other factions or classes, and no ambient traffic; at sea, pirates alone.
+- Captains are Pirate Sloops: no other factions or classes, and no ambient traffic; at sea, pirates alone. Ships have
+  no ranks yet ([[Enemies Come in Five Ranks, After Destiny]]), and the Grey Tithe does not sail yet
+  ([[Enemy Factions Start With the Grey Tithe]]).
 - Players' balls do not strike other players' ships, and players do not ram one another.
 - At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port) and no notoriety. A voyage near a
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not

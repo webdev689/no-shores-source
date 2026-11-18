@@ -68,6 +68,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sloop Is About 18 m Long]]
 - [[Pirates Must Be Met at Sea]]
 - [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]
+- [[Enemies Come in Five Ranks, After Destiny]]
+- [[Enemy Factions Start With the Grey Tithe]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
