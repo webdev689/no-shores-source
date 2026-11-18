@@ -44,7 +44,8 @@ pub const CHASE_GAIN: f64 = 0.1;
 pub const CLOSE_FROM: f64 = 1.8;
 /// A wrecked player she does not board is left after this long.
 pub const WRECK_SPARE_S: f64 = 30.0;
-/// A pirate runs under this share of her hull; a wary one takes a prize under this share, or at these odds.
+/// A captain of an ordinary rank runs under this share of her hull (`ranks::SCALES`); a wary one takes a prize
+/// under this share, or at these odds.
 pub const PIRATE_RUNS_AT: f64 = 0.3;
 pub const GRAPPLE_HULL: f64 = 0.35;
 pub const WARY_ODDS: f64 = 1.25;

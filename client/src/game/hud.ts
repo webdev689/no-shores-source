@@ -1,4 +1,6 @@
 import { button, make } from '../editor/dom.ts';
+import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
+import { drawShipBars, placeShipBars, type ShipBar } from '../ships/shipBars.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
@@ -75,6 +77,8 @@ export class Hud {
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
+  /** Each captain's bar over her ship in a fight, drawn afresh each frame. */
+  private readonly shipLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   private readonly marksShown = new Map<string, MarkNode>();
   private readonly menuNode = make('div', '', `menu ${ROLES.window}`);
   private readonly status = make('div', '', `status ${ROLES.chip}`);
@@ -135,8 +139,10 @@ export class Hud {
     // Each group after the first stands behind an engraved rail.
     for (const group of groups.slice(1)) group.classList.add(ROLES.rail);
     this.sea.append(...groups);
+    Object.assign(this.shipLayer.style, { position: 'absolute', inset: '0', width: '100%', height: '100%' });
     root.append(
       this.shade,
+      this.shipLayer,
       this.markLayer,
       place,
       this.warning,
@@ -199,6 +205,18 @@ export class Hud {
   veil(text: string | null): void {
     this.veilNode.classList.toggle('shown', text !== null);
     if (text !== null) this.veilText.textContent = text;
+  }
+
+  /** Each captain's bar over her ship (world metres) as `pose` sees the picture; none out of a fight. */
+  shipBars(bars: readonly ShipBar[], pose: CameraPose): void {
+    this.shipLayer.replaceChildren();
+    if (bars.length === 0) return;
+    const viewport = { width: this.shipLayer.clientWidth, height: this.shipLayer.clientHeight };
+    const spot = (point: readonly [number, number, number]) => {
+      const seen = projectPoint(pose, viewport, [...point]);
+      return seen.front ? seen : null;
+    };
+    drawShipBars(this.shipLayer, placeShipBars(bars, spot, viewport.width));
   }
 
   /** Places the marks on the screen; choosing one calls what `onMark` set. */

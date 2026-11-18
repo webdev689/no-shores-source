@@ -104,14 +104,22 @@ test('two players put to sea in a fleet, see each other, and each predicts her o
   assert.equal(first.shipFloats()[7], 2, 'sails set by two climbs');
 });
 
-test('a captain called by one player is seen by both, and a look abeam lays its guns', () => {
+test('a captain called by one player is seen by both, of the faction and rank called, and a look abeam lays', () => {
   const fleet = new Fleet(2);
   const first = fleet.join([200_000, 300_000, 0]);
   const second = fleet.join([200_060, 300_020, 0]);
   fleet.tick();
-  fleet.tick((play) => (play === first ? { ...NOTHING, call: 'captain' } : NOTHING));
+  const elite = { faction: 1, rank: 3 };
+  fleet.tick((play) => (play === first ? { ...NOTHING, call: 'captain', captain: elite } : NOTHING));
   for (let tick = 0; tick < 6; tick++) fleet.tick();
-  for (const play of [first, second]) assert.equal(play.others().filter((vessel) => vessel.captain).length, 1);
+  for (const play of [first, second]) {
+    const captains = play.others().filter((vessel) => vessel.captain);
+    assert.deepEqual(
+      captains.map((vessel) => [vessel.faction, vessel.rank]),
+      [[1, 3]],
+      'a Grey Tithe Elite',
+    );
+  }
   const lay = first.lay({ bearing: 90, range: 80 }, 1);
   assert.equal(lay?.side, 'starboard');
   assert.equal(lay?.launches.length, 3);

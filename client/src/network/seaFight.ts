@@ -46,8 +46,14 @@ export function ordersNumbers(orders: FightOrders): number[] {
   ];
 }
 
-/** The fight a sea room's numbers show; throws where the numbers run short or name nothing. */
-export function fightViewOf(numbers: ArrayLike<number>): FightView {
+/** Who a fight's captain is: her name, her faction and her rank. */
+export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
+/** A captain the room has not named: a Major of the pirates. */
+const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 };
+
+/** The fight a sea room's numbers show, its captain `who` (a Major of the pirates unless told); throws where the
+ *  numbers run short or name nothing. */
+export function fightViewOf(numbers: ArrayLike<number>, who: Commissioned = PIRATE_MAJOR): FightView {
   let read = 0;
   const next = (): number => {
     if (read >= numbers.length) throw new Error('a fight’s numbers run short');
@@ -85,7 +91,7 @@ export function fightViewOf(numbers: ArrayLike<number>): FightView {
   const mode = named(MODES);
   const hostile = next() === 1;
   const runOut = SIDES.filter(() => next() === 1);
-  const captain: FightCaptain = { ...her, name: 'Pirate Sloop', mode, hostile, run_out: runOut };
+  const captain: FightCaptain = { ...her, ...who, mode, hostile, run_out: runOut };
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
   // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.
   const stop = (): FightEnd | null => {

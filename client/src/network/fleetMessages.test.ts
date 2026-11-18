@@ -32,6 +32,15 @@ test('a fleet snapshot the server wrote reads back as its ships and what happene
   assert.deepEqual(first?.hurts, { hull: 240, maxHull: 240, sail: 96, maxSail: 96, crew: 0, maxCrew: 0 });
   assert.deepEqual([first?.state, first?.load, fleet.vessels[2]?.mode], ['afloat', 1, 'cruise']);
   assert.deepEqual(
+    fleet.vessels.map((vessel) => [vessel.faction, vessel.rank]),
+    [
+      [0, 0],
+      [0, 0],
+      [1, 3],
+    ],
+    'players’ ships, then a Grey Tithe Elite',
+  );
+  assert.deepEqual(
     fleet.naval.map((event) => [event.tick, event.kind, event.ship, event.detail]),
     [
       [7n, 'muzzle', 3, 0],
@@ -66,6 +75,7 @@ test('orders are her helm, her look and its ray, the fire, the brace, a load, wh
     load: 3,
     putToSea: [200_000, 300_000, 1.25],
     call: 'captain',
+    captain: { faction: 1, rank: 4 },
   });
   const orders = Orders.getRootAsOrders(new flatbuffers.ByteBuffer(bytes));
   assert.deepEqual(
@@ -74,6 +84,7 @@ test('orders are her helm, her look and its ray, the fire, the brace, a load, wh
   );
   assert.deepEqual(Array.from(orders.aimArray() ?? []), [-97.5, 64.25, ...ray]);
   assert.deepEqual([Array.from(orders.putToSeaArray() ?? []), orders.call()], [[200_000, 300_000, 1.25], 1]);
+  assert.deepEqual([orders.callFaction(), orders.callRank()], [1, 4], 'a Miniboss of the Grey Tithe called');
   const plain = Orders.getRootAsOrders(
     new flatbuffers.ByteBuffer(
       ordersBytes(2, {
@@ -90,4 +101,5 @@ test('orders are her helm, her look and its ray, the fire, the brace, a load, wh
     ),
   );
   assert.deepEqual([plain.aimLength(), plain.putToSeaLength(), plain.call()], [0, 0, 255]);
+  assert.deepEqual([plain.callFaction(), plain.callRank()], [0, 0], 'no captain called, none named');
 });

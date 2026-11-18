@@ -9,6 +9,7 @@ import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { FightView } from '../rules/fightRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
+import { barOver, type ShipBar } from '../ships/shipBars.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { Lying } from '../ships/deck.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
@@ -212,6 +213,13 @@ export class SeaCombat {
   draw(pass: GPURenderPassEncoder, camera: ShipCamera, now: number): void {
     const eye = [camera.eye[0] - this.window.leftM, camera.eye[1] - this.window.topM, camera.eye[2]] as const;
     this.naval.draw(pass, this.window, 1, { fromEye: camera.fromEye, eye }, null, now, null);
+  }
+
+  /** The captain's bar over her masthead, in world metres at true scale, while she floats. */
+  bars(): ShipBar[] {
+    const { captain } = this.last;
+    const bar = barOver({ ...captain, maxHull: captain.max_hull }, { leftM: 0, topM: 0 }, 1);
+    return bar ? [bar] : [];
   }
 
   /** The panel's lines: both ships' hurts and her guns, the broadside warning, and DFO's messages. */

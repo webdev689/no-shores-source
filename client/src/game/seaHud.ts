@@ -1,5 +1,6 @@
 // What the heads-up display shows at sea each frame: where the player is, the keys for what they are doing, the marks,
-// the sea's bar, Manage's panel, the offer at her wheel, and the voyage's line.
+// a captain's bar in a fight, the sea's bar, Manage's panel, the offer at her wheel, and the voyage's line.
+import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import { seaHints } from './hints.ts';
 import type { Hud } from './hud.ts';
@@ -33,6 +34,8 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const fighting = here.fight?.lines(state.clock) ?? null;
   hud.hints(seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
   hud.marks(shown.marks);
+  const { eye, yaw, pitch, fov } = shown.shot;
+  hud.shipBars(here.fight?.bars() ?? [], poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
   hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
   const build = aboard.managing ? state.build() : null;

@@ -33,6 +33,7 @@ export interface SessionInput {
   readonly brace: boolean;
   readonly loadSteps: number;
   readonly call: 'none' | 'captain' | 'send off';
+  readonly captain?: { readonly faction: number; readonly rank: number };
 }
 
 /**
@@ -51,7 +52,7 @@ export class FleetSession {
   private fires = 0;
   private loadSteps = 0;
   private climbs: number[] = [];
-  private calls: SessionInput['call'][] = [];
+  private calls: Pick<SessionInput, 'call' | 'captain'>[] = [];
   private lastLook: FleetLook | null = null;
   /** The load she last asked for and the orders that asked, until the room has taken them. */
   private loadAsked: { readonly load: number; readonly sequence: number } | null = null;
@@ -153,7 +154,7 @@ export class FleetSession {
     this.climbs.push(...input.climbs);
     if (input.fire) this.fires++;
     if (input.look) this.lastLook = input.look;
-    if (input.call !== 'none') this.calls.push(input.call);
+    if (input.call !== 'none') this.calls.push({ call: input.call, captain: input.captain });
     this.loadSteps += input.loadSteps;
     this.owed = Math.min(this.owed + seconds, MOST_OWED_TICKS * TICK_SECONDS);
     const time = this.roomTime(now);
@@ -166,6 +167,7 @@ export class FleetSession {
       // A press on top of one the room has not taken yet steps from that one.
       const loaded = this.loadAsked?.load ?? this.own()?.load ?? 1;
       const load = step === 0 ? 0 : ((loaded - 1 + step + LOADS.length) % LOADS.length) + 1;
+      const { call, captain } = this.calls.shift() ?? { call: 'none' };
       const orders: FleetOrders = {
         steer: input.steer,
         crab: input.crab,
@@ -175,7 +177,8 @@ export class FleetSession {
         brace: input.brace,
         load,
         putToSea: this.start,
-        call: this.calls.shift() ?? 'none',
+        call,
+        ...(captain ? { captain } : {}),
       };
       const sequence = this.prediction.next(orders);
       if (load !== 0) this.loadAsked = { load, sequence };
@@ -205,7 +208,7 @@ export class FleetSession {
     const load = this.own()?.load ?? 1;
     const sighted = (vessel: SeenVessel): LaySighted => ({
       id: vessel.id,
-      pirate: vessel.captain,
+      flag: vessel.faction,
       ship: vessel.ship,
       pose: vessel.pose,
       afloat: vessel.state !== 'sunk',
@@ -213,7 +216,7 @@ export class FleetSession {
     const { heave, pitch, roll, aground } = this.pose;
     const own: LaySighted = {
       id: this.id,
-      pirate: false,
+      flag: 0,
       ship: this.ship,
       pose: [heave, pitch, roll, aground ? 1 : 0],
       afloat: true,

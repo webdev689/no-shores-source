@@ -24,6 +24,8 @@ const captain: FightCaptain = {
   crew: 10,
   max_crew: 10,
   name: 'Pirate Sloop',
+  faction: 2,
+  rank: 2,
   mode: 'engage',
   hostile: true,
   run_out: [],
