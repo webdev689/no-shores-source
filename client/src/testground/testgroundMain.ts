@@ -43,7 +43,7 @@ import { OtherPlayers, RUNNING } from '../player/others.ts';
 import { GALLOP, HIDE_FIGURE_M, STILL, shownDress, strokesAfter } from '../player/walker.ts';
 import { likelyMoves, shownMove } from '../player/playerMoves.ts';
 import { startAimPanel } from './aimPanel.ts';
-import { AttackFeel } from './attackFeel.ts';
+import { AttackFeel, type DrawnFigure } from './attackFeel.ts';
 import { startPanel } from './panel.ts';
 import { SceneView } from './sceneView.ts';
 
@@ -293,9 +293,9 @@ async function start(): Promise<void> {
     const eyes = player.view.shown <= HIDE_FIGURE_M;
     const camera = feel.camera(aimView(player), fight.player, own, eyes, aiming || aimHeld || (ranged && eyes));
     const eye = eyeOf(camera);
-    // Each figure drawn off where it stands by the attack feel; its feet as drawn, which its swing's arc follows.
+    // Each figure drawn off where it stands by the attack feel; each fighter's figure as drawn, which its arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, camera.yaw);
-    const feet = new Map<number, Vector>();
+    const figuresDrawn = new Map<number, DrawnFigure>();
 
     const drawn: CardAt[] = [];
     // On a wall or a ledge the hands hold on: the weapon is worn, not held.
@@ -391,9 +391,9 @@ async function start(): Promise<void> {
     fight.dress = JSON.stringify(youDress);
     const ownShift = shift(fight.player, own);
     const ownFeet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
-    feet.set(fight.player, ownFeet);
     if (player.view.shown > HIDE_FIGURE_M) {
       const { view, flip } = viewOf(you.facing, ownFeet[0], ownFeet[1], eye.x, eye.y);
+      figuresDrawn.set(fight.player, { feet: ownFeet, anim: shown.anim, flip });
       const card = forge.card(you.id, youDress, shown.anim, view, index, flip);
       const flash = { share: flashes.shareOf(fight.player), red: true };
       if (card) drawn.push({ card, ...cardStand(ownFeet[0], ownFeet[1], eye.x, eye.y), z: ownFeet[2], flip, flash });
@@ -424,11 +424,11 @@ async function start(): Promise<void> {
       const number = numberOf.get(placed);
       const moved: Vector = number === undefined ? [0, 0, 0] : shift(number, otherViews.get(number) ?? null);
       const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
-      if (number !== undefined) feet.set(number, drawnAt);
+      if (number !== undefined) figuresDrawn.set(number, { feet: drawnAt, anim: placed.anim, flip });
       if (card) drawn.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
     const time = { clock, roomTick: fight.roomTick, frameTicks, tickSeconds: movement.tickSeconds };
-    const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, feet };
+    const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn };
     drawn.push(...foeFigures.cards(fight.foes.values(), eye, time, (id) => flashes.shareOf(id), foeFeel));
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
@@ -449,13 +449,13 @@ async function start(): Promise<void> {
     scene.setMarks(
       marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, [...traced, ...rings]),
     );
-    // Every blow being struck, its arc following its striker's figure as drawn.
+    // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (outfitOf: Dress['outfit'] | undefined) => ({
       right: outfitOf?.right ?? null,
       left: outfitOf?.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: own, right: outfit.right, left: outfit.left, eyes: inFirstPerson },
+      { id: fight.player, view: own, right: outfit.right, left: outfit.left },
       ...[...fight.foes.values()].map((kept) => ({
         id: kept.id,
         view: kept.view,
@@ -463,7 +463,7 @@ async function start(): Promise<void> {
       })),
       ...[...otherViews].map(([number, view]) => ({ id: number, view, ...handsOf(others.get(number)?.dress.outfit) })),
     ];
-    scene.setSwings(feel.arcsMesh(clock, strikers, feet, cameraOf(camera).eye));
+    scene.setSwings(feel.arcsMesh(clock, strikers, figuresDrawn, cameraOf(camera).eye, inFirstPerson));
     blood.frame(seconds, events, fight, camera, canvas.width / Math.max(1, canvas.height));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
       if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);

@@ -37,22 +37,39 @@ test('a strike frame lasts 0.199 s for a sword, quicker for a dagger, slower for
   assert.equal(swingFrameSeconds('warhammer').toFixed(3), (0.199 * 1.06 * 1.06).toFixed(3));
 });
 
-test('a click swings once: five frames a tick each, the blow on frame 2, then rest', () => {
+/** Plays a click's swing in small steps: each frame shown as it changes and when, when its blow landed, how many
+ *  blows landed, and when the swing ended. */
+function shownThrough(machine: WeaponMachine, seconds: number) {
+  const shown: { record: number; frame: number; at: number }[] = [];
+  let [elapsed, landed, blows] = [0, -1, 0];
+  machine.update(0, press);
+  shown.push({ record: machine.record, frame: machine.frame, at: 0 });
+  while (machine.busy && elapsed < seconds) {
+    elapsed += 0.002;
+    if (machine.update(0.002, none).blow) [landed, blows] = [elapsed, blows + 1];
+    const last = shown.at(-1);
+    if (last?.record !== machine.record || last.frame !== machine.frame)
+      shown.push({ record: machine.record, frame: machine.frame, at: elapsed });
+  }
+  return { shown, landed, blows, ended: elapsed };
+}
+
+test("a click swings once, faster than DFO's frames: the blow's frame as the rules land it, then rest", () => {
   const machine = new WeaponMachine('sword', always('right'));
   const tick = swingFrameSeconds('sword');
-  machine.update(0.01, press);
-  assert.deepEqual([machine.record, machine.frame], [RECORD_OF.right, 0]);
-  const steps = run(machine, 5, tick, none);
+  const { shown, landed, ended } = shownThrough(machine, 2);
   assert.deepEqual(
-    steps.map((step) => step.frame),
-    [1, 2, 3, 4, 0],
+    shown.map(({ record, frame }) => [record, frame]),
+    [0, 1, 2, 3, 4].map((frame) => [RECORD_OF.right, frame]).concat([[0, 0]]),
   );
-  assert.deepEqual(
-    steps.map((step) => step.events.blow?.direction ?? null),
-    [null, 'right', null, null, null],
-  );
-  assert.equal(machine.record, 0);
-  assert.equal(machine.busy, false);
+  // The wind-up's last frame only through the last stretch before the blow; the blow's frame as it lands.
+  const shownAt = (frame: number) => shown.find((each) => each.frame === frame && each.record !== 0)?.at ?? -1;
+  assert.ok(shownAt(1) > 1.2 * tick && shownAt(1) < 2 * tick, `frame 1 at ${shownAt(1)}`);
+  assert.ok(Math.abs(shownAt(2) - 2 * tick) < 0.005 && Math.abs(landed - 2 * tick) < 0.005, `landed at ${landed}`);
+  // Followed through in a little over half the time to the blow, at rest while the swing runs out on DFO's clock.
+  const rest = shown.at(-1)?.at ?? -1;
+  assert.ok(Math.abs(rest - 2 * tick * 1.55) < 0.005, `at rest at ${rest}`);
+  assert.ok(Math.abs(ended - 5 * tick) < 0.005, `swing ended at ${ended}`);
 });
 
 test('the blow lands two frame-times after the click, whatever the frame rate', () => {
@@ -83,14 +100,12 @@ test('holding the button swings again as each blow ends, a fresh direction each 
 
 test('bare hands strike to the left up and back down: 0 1 2 3 4 2 1 0, one blow', () => {
   const machine = new WeaponMachine('fists', always('left'));
-  const tick = swingFrameSeconds('fists');
-  machine.update(0.01, press);
-  const frames = [machine.frame];
-  const steps = run(machine, 8, tick, none);
-  frames.push(...steps.map((step) => step.frame));
-  assert.deepEqual(frames, [0, 1, 2, 3, 4, 2, 1, 0, 0]);
-  assert.equal(steps.filter((step) => step.events.blow).length, 1);
-  assert.ok(steps[1]?.events.blow);
+  const { shown, blows } = shownThrough(machine, 4);
+  assert.deepEqual(
+    shown.filter(({ record }) => record !== 0).map(({ frame }) => frame),
+    [0, 1, 2, 3, 4, 2, 1, 0],
+  );
+  assert.equal(blows, 1);
   assert.equal(machine.busy, false);
 });
 

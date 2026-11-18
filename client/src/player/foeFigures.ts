@@ -30,11 +30,15 @@ export interface FoeClock {
 }
 
 /** How a frame's attack feel moves a foe as drawn: its moves held back while a blow landing holds it, its figure
- *  shifted off where it stands, and where its feet were drawn, which its swing's arc follows. */
+ *  shifted off where it stands, and each figure as drawn (its feet, its move and whether it is flipped), which its
+ *  swing's arc follows. */
 export interface FoeFeel {
   held(id: number, view: FighterView): FighterView;
   shift(id: number, view: FighterView): readonly [number, number, number];
-  readonly feet: Map<number, readonly [number, number, number]>;
+  readonly drawn: Map<
+    number,
+    { readonly feet: readonly [number, number, number]; readonly anim: string; readonly flip: boolean }
+  >;
 }
 
 /** The moves a foe's figure is composed in ahead of time beside its likeliest, so its first swing is drawn as it
@@ -110,7 +114,7 @@ export class FoeFigures {
       const flash = { share: flashOf(kept.id), red: false };
       const [movedX, movedY, movedZ] = feel ? feel.shift(kept.id, kept.view) : [0, 0, 0];
       const drawnAt = [x + movedX, y + movedY, z + movedZ] as const;
-      feel?.feet.set(kept.id, drawnAt);
+      feel?.drawn.set(kept.id, { feet: drawnAt, anim: move.anim, flip });
       if (card) cards.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
     for (const [id, placed] of this.figures)

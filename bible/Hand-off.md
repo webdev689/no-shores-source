@@ -125,15 +125,23 @@ Where the work stands now, for the next session. Each session rewrites this note
 - First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
   ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
   the page and the rooms; tested offline, with a test and a headless Test Ground run.
+- #65 sets the owner's third-person aim, 0.8 m out, 3 m back, 0.25 m up and 1.3 times zoom, as the game's own
+  ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]), brings the attack feel to the [[Test Ground]] (the swing
+  arc, the hit-stop, the camera kick and the lunge, each a switch and a slider;
+  [[The Attack Feel Is Tried in the Test Ground]]), eases third-person strikes back to about a third faster than DFO's
+  ([[Third-Person Strikes Run Faster Than DFO's]]), and keeps a drawn sword and its sheath on their own sides in a
+  mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
+  the rooms.
 
 ## Waiting on the owner
 
-- #65 sets the owner's third-person aim, 0.8 m out, 3 m back, 0.25 m up and 1.3 times zoom, as the game's own
-  ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]), and brings the attack feel to the [[Test Ground]]: the
-  swing arc, the hit-stop, the camera kick and the lunge, each a switch and a slider
-  ([[The Attack Feel Is Tried in the Test Ground]]), and eases third-person strikes back to about a third faster than
-  DFO's ([[Third-Person Strikes Run Faster Than DFO's]]). Tested offline, with tests and headless Test Ground runs; it
-  waits for the owner's yes to merge. Which effects go into the game, and at what settings, is the owner's to say.
+- The next pull request stops drawing swing arcs in first person, speeds up first-person strikes to the third-person
+  figure's pace, and sends each arc the way its striker's figure is drawn swinging or thrusting, mirrored with a
+  mirrored figure ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). Tested offline, with
+  tests and headless Test Ground runs; it waits for the owner's yes to merge.
+- Which of the attack feel's effects go into the game, and at what settings, is the owner's to say.
+- A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
+  draws none in the left fist there. Whether the forge should, is the owner's to say.
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
   writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
