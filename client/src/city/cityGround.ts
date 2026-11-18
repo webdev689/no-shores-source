@@ -63,9 +63,11 @@ export function groundPlates(
   paving: number,
 ): { tops: Float32Array; tiles: Uint8Array; width: number } {
   const side = sideOf(plan);
-  const width = side * TILES;
-  const tiles = new Uint8Array(width * width * 2);
   const byPlace = platedCells(plan);
+  // A plan of placed pieces alone (a layout's) has no plates: its tile texture is one texel, not the grid's whole
+  // square, which for layouts spread over kilometres runs to many megabytes and past the device's texture limit.
+  const width = byPlace.size ? side * TILES : 1;
+  const tiles = new Uint8Array(width * width * 2);
   const levelled = [...byPlace.values()];
   const tops = new Float32Array(levelled.length * 18);
   const paved = (column: number, row: number): boolean => {

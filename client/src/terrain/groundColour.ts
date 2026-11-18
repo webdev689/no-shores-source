@@ -25,6 +25,8 @@ export interface GroundPaint {
 export const TILE_M = 6.4;
 export const WIDE_TILE_M = 33.9;
 export const TILE_TURN = 0.61;
+/** The square fine detail repeats in, metres (groundColour's `fine_noise`). */
+export const FINE_SQUARE_M = 1024;
 
 export const GROUND_COLOUR_WGSL = /* wgsl */ `
 const SAND = vec3f(0.84, 0.76, 0.56);
@@ -98,12 +100,12 @@ fn stone_grain(at: vec2f, bed: f32, normal: vec3f) -> vec3f {
 
 // Bare rock: layered in strata a few metres thick that wander with the face, dark seams between them, each layer its
 // own tone, gritty close up, and leaning toward the biome's own ground colour, so a carved cliff reads as stone.
-fn rock_colour(world: vec2f, bed: f32) -> vec3f {
-  let wobble = grove_noise(world, 37.0, 53) * 1.6 + grove_noise(world, 11.0, 59) * 0.5;
+fn rock_colour(at: vec2f, bed: f32) -> vec3f {
+  let wobble = fine_noise(at, 32.0, 53) * 1.6 + fine_noise(at, 8.0, 59) * 0.5;
   let layer = fract(bed / 3.4 + wobble);
   let seam = smoothstep(0.0, 0.07, layer) * (1.0 - smoothstep(0.88, 1.0, layer));
   let tone = mix(0.8, 1.14, grove_noise(vec2f(bed * 0.29 + wobble, 0.5), 1.0, 61));
-  let grit = mix(0.86, 1.08, grove_noise(world, 2.3, 67));
+  let grit = mix(0.86, 1.08, fine_noise(at, 2.0, 67));
   let tint = mix(stone_tint(), view.ground.rgb * 1.2, 0.07);
   return tint * tone * grit * mix(0.55, 1.0, seam);
 }
@@ -113,15 +115,14 @@ fn rock_colour(world: vec2f, bed: f32) -> vec3f {
 // Each class wears its ground tile's grain (tile_grain), the rock its stone cast on the face (stone_grain), and one
 // class gives way to the next by their grains' heights (meet): stones show through the grass first as a slope
 // steepens, snow settles in the hollows before it covers the rises.
-fn land_colour(bed: f32, slope: f32, coast: f32, world: vec2f, at: vec2f, normal: vec3f) -> vec3f {
+fn land_colour(bed: f32, slope: f32, coast: f32, at: vec2f, normal: vec3f, dirt_grain: vec3f) -> vec3f {
   let grass_grain = tile_grain(GRASS_TILE, at);
-  let dirt_grain = tile_grain(DIRT_TILE, at);
   let stone = stone_grain(at, bed, normal);
   let snow_grain = tile_grain(SNOW_TILE, at);
   let sand_grain = tile_grain(SAND_TILE, at);
   var land = vec4f(view.ground.rgb * grass_grain, raised(grass_grain));
   land = meet(land, vec4f(HIGHLAND * dirt_grain, raised(dirt_grain)), smoothstep(200.0, 1600.0, bed));
-  land = meet(land, vec4f(rock_colour(world, bed) * stone, raised(stone) + ROCK_STANDS), smoothstep(0.3, 0.55, slope));
+  land = meet(land, vec4f(rock_colour(at, bed) * stone, raised(stone) + ROCK_STANDS), smoothstep(0.3, 0.55, slope));
   let snow_line = smoothstep(view.ground.w - 200.0, view.ground.w, bed);
   land = meet(land, vec4f(SNOW * snow_grain, SNOW_SETTLES - raised(snow_grain)), snow_line);
   let low = 1.0 - smoothstep(1.5, 3.0, bed);
@@ -151,16 +152,19 @@ fn meet(first: vec4f, next: vec4f, share: f32) -> vec4f {
 // The paths and streets painted on the land (GroundPaint): each channel's distance from its edge, with a noise on it so
 // an edge wanders as a trodden one does, soft across a pixel; a path paler in its middle and darker at its edges,
 // where the grass is worn into it. Read only where a painting lies (view.paint.w), and only on dry land.
-fn painted(colour: vec3f, point: vec2f, at: vec2f, footprint: f32) -> vec3f {
-  let earth = PATH_EARTH * tile_grain(DIRT_TILE, at);
+fn painted(colour: vec3f, point: vec2f, at: vec2f, footprint: f32, dirt_grain: vec3f) -> vec3f {
+  let earth = PATH_EARTH * dirt_grain;
   let stones = PAVING_STONE * tile_grain(PAVING_TILE, at);
   let uv = (point - view.paint.xy) * view.paint.z / vec2f(textureDimensions(ground_paint));
   let held = view.paint.w > 0.5 && all(uv >= vec2f(0.0)) && all(uv <= vec2f(1.0));
   let reach = (textureSampleLevel(ground_paint, paint_sampler, uv, 0.0).rg * 255.0 - 128.0) / 32.0;
-  let ragged = (grove_noise(point, 1.3, 83) - 0.5) * 0.9 + (grove_noise(point, 0.45, 89) - 0.5) * 0.35;
-  let soft = max(0.15, footprint);
-  let dirt = smoothstep(-soft, soft, reach.x + ragged) * select(0.0, 1.0, held);
-  let paving = smoothstep(-soft, soft, reach.y + ragged * 0.5) * select(0.0, 1.0, held);
+  let ragged = (fine_noise(at, 1.0, 83) - 0.5) * 0.9 + (fine_noise(at, 0.5, 89) - 0.5) * 0.35;
+  // The edge stays well inside the 4 m the paint reaches, so ground no path is near never takes its colour; a way
+  // fades out where it is thinner than a pixel's footprint rather than shimmering.
+  let soft = clamp(footprint, 0.15, 2.0);
+  let shown = select(0.0, 1.0 - smoothstep(2.0, 6.0, footprint), held);
+  let dirt = smoothstep(-soft, soft, reach.x + ragged) * shown;
+  let paving = smoothstep(-soft, soft, reach.y + ragged * 0.5) * shown;
   let worn = mix(0.8, 1.06, smoothstep(0.0, 1.4, reach.x));
   return mix(mix(colour, earth * worn, dirt), stones, paving);
 }
@@ -198,6 +202,23 @@ fn grove_noise(world: vec2f, cell: f32, salt: i32) -> f32 {
   let corner_11 = f32(grove_hash(at.x + 1, at.y + 1, salt)) / 4294967296.0;
   let top = mix(corner_00, corner_10, share.x);
   return mix(top, mix(corner_01, corner_11, share.x), share.y);
+}
+
+// A noise for detail no coarser than a few tens of metres, read from the point's offset from the anchor (at) and
+// the anchor's place in a 1024 m square (view.fine), so it is exact in single precision anywhere in the world; it
+// repeats every 1024 m, as its cells (which divide 1024) wrap round the square.
+fn fine_noise(at: vec2f, cell: f32, salt: i32) -> f32 {
+  let grid = (view.fine.xy + at) / cell;
+  let base = floor(grid);
+  let share = smoothstep(vec2f(0.0), vec2f(1.0), grid - base);
+  let period = i32(round(${FINE_SQUARE_M.toFixed(1)} / cell));
+  let low = (vec2i(base) % period + period) % period;
+  let high = (low + 1) % period;
+  let corner_00 = f32(grove_hash(low.x, low.y, salt)) / 4294967296.0;
+  let corner_10 = f32(grove_hash(high.x, low.y, salt)) / 4294967296.0;
+  let corner_01 = f32(grove_hash(low.x, high.y, salt)) / 4294967296.0;
+  let corner_11 = f32(grove_hash(high.x, high.y, salt)) / 4294967296.0;
+  return mix(mix(corner_00, corner_10, share.x), mix(corner_01, corner_11, share.x), share.y);
 }
 
 fn grove_at(world: vec2f) -> f32 {

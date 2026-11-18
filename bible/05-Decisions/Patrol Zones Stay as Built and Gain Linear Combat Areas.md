@@ -24,6 +24,10 @@ The owner's answers to the questions that followed:
 > continues later, at least one in the open and one through a large building, open in patrol and named so missions
 > can use them; (2) runs that leave the zone past its edge into land beyond it, as the gates to instances do; or (3)
 > the zone's existing ways shaped into linear fights: "1 and 2"
+>
+> Asked to approve the design (three runs a zone, none under the land, the detail pass free to reshape basins,
+> canyons, outcrops and great works but not a zone's areas, paths and gates) and whether Saltmere's three zones come
+> first for the owner to look at: "Approve; Saltmere first (Recommended)"
 
 ## What it settles
 
@@ -34,6 +38,8 @@ The owner's answers to the questions that followed:
 - **Linear combat areas break off the zones**: some in open space, some through larger buildings. They prepare the
   zones for mission areas. Some are cut into the zone's own rock, and some leave the zone past its edge into land
   beyond it.
+- **Saltmere's three zones first** (the Saltgrass Downs, the Gullwing Vale and the Driftwood Moors): their runs and
+  detail are built and shown to the owner before the other 24.
 - [[The World Editor Draws the Layouts' Buildings]], [[The Well House's Roof Is Fixed]] and the flora workflow's
   publishing ([[Flora Is Baked From Detailed Models]]) stand.
 

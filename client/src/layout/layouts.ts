@@ -102,3 +102,27 @@ export function layoutsNear(layouts: readonly NodeLayout[], spot: Point, reach: 
     return Math.hypot(across, down) <= reach;
   });
 }
+
+/** How a frame's layouts follow the eye: once it has moved `regather` metres from where they were last gathered, the
+ *  layouts within `reach` are gathered again and `moved` told; `changed` is told when the set of them differs from the
+ *  set last built, once `ready` (whatever builds them has come). Called once a frame before anything is drawn. */
+export function layoutFollower(
+  layouts: readonly NodeLayout[],
+  reach: number,
+  regather: number,
+  moved: (near: readonly NodeLayout[], at: Point) => void,
+  changed: (near: readonly NodeLayout[]) => void,
+): (eye: Point, ready: boolean) => void {
+  let [gatheredAt, near, built]: [Point | null, readonly NodeLayout[], string | null] = [null, [], null];
+  return (eye, ready) => {
+    if (!gatheredAt || Math.hypot(eye[0] - gatheredAt[0], eye[1] - gatheredAt[1]) >= regather) {
+      gatheredAt = [eye[0], eye[1]];
+      near = layoutsNear(layouts, gatheredAt, reach);
+      moved(near, gatheredAt);
+    }
+    const names = near.map((layout) => layout.id).join(',');
+    if (!ready || names === built) return;
+    built = names;
+    changed(near);
+  };
+}

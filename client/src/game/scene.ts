@@ -19,6 +19,9 @@ import { groundTiles } from './groundTiles.ts';
 export interface Drawer {
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
   castInto?(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
+  /** Called once a frame before anything is recorded, for work that replaces what the frame draws with (a texture,
+   *  a bind group): done mid-frame it would swap them under passes already recorded. */
+  prepare?(shot: Shot): void;
 }
 
 /** Where the exact ground round a point comes from: the land worker's sampler. */
@@ -211,6 +214,7 @@ export class GameScene {
     const terrain = this.terrain;
     if (!terrain) return;
     const { view, drawn } = terrain;
+    for (const drawer of drawers) drawer.prepare?.(shot);
     const origin = [view.leftM, view.topM] as const;
     const local: Shot = { ...shot, eye: [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] };
     const fromEye = fromEyeMatrix(shot, size.width / size.height);

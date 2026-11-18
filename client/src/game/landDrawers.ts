@@ -3,7 +3,7 @@ import { blockFiles, parseBlockFile, type RmbBlock } from '../city/blocks.ts';
 import type { CityTables } from '../city/cityBuild.ts';
 import { CityView } from '../city/cityView.ts';
 import { cityClimate } from '../city/plan.ts';
-import { layoutsNear, type NodeLayout } from '../layout/layouts.ts';
+import { layoutFollower, type NodeLayout } from '../layout/layouts.ts';
 import { planOfLayouts } from '../layout/layoutPlan.ts';
 import { paintOfLayouts } from './groundPaint.ts';
 import { landSampler } from '../nature/ground.ts';
@@ -36,42 +36,32 @@ const LAYOUT_REGATHER_M = 1500;
  *  to see. */
 const PAINT_REACH_M = 2500;
 
-/** Draws the layouts near the eye with the city layer, gathered again once the eye has moved on. */
+/** Draws the layouts near the eye with the city layer, followed before each frame: the ground under them is painted
+ *  again each time the eye has moved on (`painted`), and the city built again when the layouts near the eye change
+ *  and its tables have come (`rebuilt`). */
 function layoutDrawer(
   gpu: Gpu,
   layouts: readonly NodeLayout[],
   biome: string | null,
   assets: Promise<CityAssets | null>,
-  regathered: (near: readonly NodeLayout[], eye: readonly [number, number]) => void,
+  painted: (near: readonly NodeLayout[], eye: readonly [number, number]) => void,
+  rebuilt: () => void,
 ): { drawer: Drawer; view: CityView; release(): void } {
   const view = new CityView(gpu);
   let tables: CityTables | null = null;
-  let [gatheredAt, gathered]: [readonly [number, number] | null, string] = [null, ''];
   void assets.then((loaded) => (tables = loaded?.tables ?? null));
-  const gather = (eye: readonly [number, number, number]) => {
-    if (!tables) return;
-    if (gatheredAt && Math.hypot(eye[0] - gatheredAt[0], eye[1] - gatheredAt[1]) < LAYOUT_REGATHER_M) return;
-    gatheredAt = [eye[0], eye[1]];
-    const near = layoutsNear(layouts, gatheredAt, LAYOUT_REACH_M);
-    const names = near.map((layout) => layout.id).join(',');
-    if (names === gathered) return;
-    gathered = names;
+  const follow = layoutFollower(layouts, LAYOUT_REACH_M, LAYOUT_REGATHER_M, painted, (near) => {
     const plan = planOfLayouts(near);
-    if (plan) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
+    if (plan && tables) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
     else view.clear();
-    regathered(near, gatheredAt);
-  };
+    rebuilt();
+  });
   return {
     view,
     drawer: {
-      castInto: (pass, fromEye, shot, time, shadow) => {
-        gather(shot.eye);
-        view.castInto(pass, fromEye, shot, time, shadow);
-      },
-      drawInto: (pass, fromEye, shot, time, shadow) => {
-        gather(shot.eye);
-        view.drawInto(pass, fromEye, shot, time, shadow);
-      },
+      prepare: (shot) => follow([shot.eye[0], shot.eye[1]], tables !== null),
+      castInto: (pass, fromEye, shot, time, shadow) => view.castInto(pass, fromEye, shot, time, shadow),
+      drawInto: (pass, fromEye, shot, time, shadow) => view.drawInto(pass, fromEye, shot, time, shadow),
     },
     release: () => view.clear(),
   };
@@ -151,10 +141,15 @@ export function landDrawers(
       .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
   }
   const laid = landmass.layouts.length
-    ? layoutDrawer(gpu, landmass.layouts, biome, assets, (near, eye) => {
-        version += 1;
-        scene.paintGround(paintOfLayouts(near, eye, PAINT_REACH_M, [landmass.view.leftM, landmass.view.topM]));
-      })
+    ? layoutDrawer(
+        gpu,
+        landmass.layouts,
+        biome,
+        assets,
+        (near, eye) =>
+          scene.paintGround(paintOfLayouts(near, eye, PAINT_REACH_M, [landmass.view.leftM, landmass.view.topM])),
+        () => (version += 1),
+      )
     : null;
   // The pads are kept clear from the first frame; the city's and the layouts' solids and yards too once built.
   const cleared = (x: number, y: number) =>

@@ -4,7 +4,15 @@ import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CLIPMAP_LEVELS, CLIPMAP_QUADS, type ClipLevel } from './clipmap.ts';
-import { GROUND_COLOUR_WGSL, type GroundPaint, TILE_LAYERS, TILE_M, TILE_TURN, WIDE_TILE_M } from './groundColour.ts';
+import {
+  FINE_SQUARE_M,
+  GROUND_COLOUR_WGSL,
+  type GroundPaint,
+  TILE_LAYERS,
+  TILE_M,
+  TILE_TURN,
+  WIDE_TILE_M,
+} from './groundColour.ts';
 /** A rectangle of whole cells, right and bottom exclusive. */
 export interface CellRect {
   readonly left: number;
@@ -74,7 +82,7 @@ export interface TerrainFrame {
   readonly pixelAngle: number;
 }
 
-const UNIFORM_FLOATS = 64 + CLIPMAP_LEVELS * 8;
+const UNIFORM_FLOATS = 68 + CLIPMAP_LEVELS * 8;
 /** How far inland of the painted coast the middle ground is eased in from, metres: nearer the coast the 1 km land
  *  is the water's own, so the land drawn there keeps to it. */
 const MIDDLE_FROM_COAST_M = [150, 400] as const;
@@ -117,6 +125,9 @@ struct View {
   paint: vec4f,
   // The middle ground (showMiddle): the eye from its corner, metres, its step, and whether it is shown.
   middle: vec4f,
+  // The noise's anchor in a 1024 m square, metres: fine detail is read from it and the point's offset, both exact in
+  // single precision, where a world coordinate of millions of metres steps by half a metre.
+  fine: vec4f,
   rings: array<vec4f, ${CLIPMAP_LEVELS * 2}>,
 };
 
@@ -270,14 +281,16 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   wet += SUN_LIGHT * light * select(0.32, 0.12, fresh);
 
   let world = view.world.xy + point;
-  var dry = wooded(land_colour(bed, slope, ground.w, world, local, normal), world, bed, slope, reach_to);
+  // The dirt's grain is read once a pixel: the land, the roads and the paths all wear it.
+  let dirt_grain = tile_grain(DIRT_TILE, local);
+  var dry = wooded(land_colour(bed, slope, ground.w, local, normal, dirt_grain), world, bed, slope, reach_to);
   let in_close = share > 0.5;
   dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
   let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);
   let town = select(marked(wide_marks, wide, 4u, 4u), marked(close_marks, close, 4u, 4u), in_close);
   let port = select(marked(wide_marks, wide, 5u, 5u), marked(close_marks, close, 5u, 5u), in_close);
-  dry = mix(mix(mix(dry, ROAD * tile_grain(DIRT_TILE, local), road), TOWN, 0.6 * town), PORT, port);
-  dry = painted(dry, point, local, footprint);
+  dry = mix(mix(mix(dry, ROAD * dirt_grain, road), TOWN, 0.6 * town), PORT, port);
+  dry = painted(dry, point, local, footprint, dirt_grain);
 
   var colour = mix(dry, wet, under);
   let direct = max(dot(normal, SUN), 0.0);
@@ -552,13 +565,15 @@ export class TerrainView {
       52,
     );
     floats.set(this.paintPlace, 56);
+    const square = (value: number) => value - Math.floor(value / FINE_SQUARE_M) * FINE_SQUARE_M;
+    floats.set([square(worldX), square(worldY), 0, 0], 64);
     const middle = this.middlePlace;
     floats.set(middle ? [eyeX - middle.corner[0], eyeY - middle.corner[1], middle.step, 1] : [0, 0, 1, 0], 60);
     for (const [index, ring] of frame.rings.entries()) {
       const [steps, origin] = [finest?.spacing ?? ring.spacing, finest?.corner ?? ring.corner];
       const lattice = [(ring.corner[0] - origin[0]) / steps, (ring.corner[1] - origin[1]) / steps];
-      floats.set([...lattice, ring.spacing / steps, 0], 64 + index * 8);
-      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 68 + index * 8);
+      floats.set([...lattice, ring.spacing / steps, 0], 68 + index * 8);
+      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 72 + index * 8);
     }
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, floats);
   }
