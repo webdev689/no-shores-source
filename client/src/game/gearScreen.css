@@ -273,7 +273,8 @@ kbd.gear-key {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   padding: 8px 16px;
   border-top: 1px solid transparent;
 }
@@ -1265,8 +1266,8 @@ img.gear-glyph {
   border: 2px solid transparent;
 }
 .gear-material img.gear-glyph {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
 }
 .gear-material-name {
   flex: 1;
@@ -1292,9 +1293,14 @@ img.gear-glyph {
   grid-template-columns: repeat(5, 64px);
   gap: 6px;
 }
+#hud .gear-vestige-place {
+  opacity: 1;
+}
 #hud .gear-vestige-place img.gear-glyph {
-  filter: grayscale(1) brightness(0.8);
-  opacity: 0.55;
+  width: 36px;
+  height: 36px;
+  filter: grayscale(1) brightness(0.6);
+  opacity: 0.35;
 }
 
 /* A vendor's wares: each ware a press held to buy it, its tile, name, kind and price. */
@@ -1351,6 +1357,9 @@ img.gear-glyph {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+/* Its fields keep to a form's width; its rule runs the panel's, as the sections' do. */
+.gear-account .gear-field {
   max-width: 520px;
 }
 .gear-field {
@@ -1465,12 +1474,45 @@ img.gear-glyph {
   .gear-character .gear-heading,
   .gear-flyout-head,
   .gear-who-power,
-  .gear-hint-pair {
+  .gear-foot .gear-hint-pair,
+  #hud .gear-foot button,
+  #hud .gear-shelf .gear-tab-count,
+  .gear-item-page
+    :is(
+      .gear-card-words,
+      .gear-card-meta,
+      .gear-bar-label,
+      .gear-bar-value,
+      .gear-compare-label,
+      .gear-compare-value,
+      .gear-trait-words,
+      .gear-trait-words span,
+      .gear-heading
+    ),
+  .gear-item-kind {
     font-size: var(--type-l);
   }
-  .gear-hint-pair kbd.gear-key {
+  .gear-foot kbd.gear-key,
+  #hud .gear-tab kbd.gear-key {
     font-size: var(--type-l);
     line-height: 28px;
+  }
+  /* The item's words take the room the names' size needs, its bars' labels with them. */
+  .gear-item-body {
+    grid-template-columns: minmax(380px, 880px) 1fr;
+  }
+  .gear-item-page .gear-bar:not(.gear-bar-bare) {
+    grid-template-columns: 110px 1fr 64px;
+  }
+  .gear-item-page .gear-compare-row {
+    grid-template-columns: 110px 1fr 96px;
+  }
+  /* Three wares a row, so a name keeps to its line; a vault's twenty places in two whole rows of ten. */
+  .gear-wares {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .gear-vault .gear-grid {
+    grid-template-columns: repeat(10, 64px);
   }
   /* At the names' size the level's words keep to a line, and the stats' labels drop their wide capitals so all four
      stand in one row. */

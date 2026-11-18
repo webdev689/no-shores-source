@@ -252,20 +252,25 @@ never while a press is held. Each press is an ask the room answers.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
-  into shards of its rarity and a fed one gives off a ring; let go early, nothing happens.
+  into shards of its rarity and a fed one gives off a ring; let go early, nothing happens. F dismantles the carried
+  piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
+  or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
   shows a pickup: a row each, its picture in a well of its rarity, its name and how many. Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
-  once, for its rarest gain.
+  once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
+  word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
+  claimed.
 - **Sounds.** Every control makes a sound: a tick as the pointer or the keys reach it, a press, a step back, a tab
   turned, the menu opened and shut, a hold's charge rising, a dismantle, a feed, a gain's chime by its rarity, a
   refusal. Each is the owner's pick on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the
   tick, press, step back, opening, dismantle and feed are recordings from Freesound, listed with their credits in
-  `content/audio/sounds.json`, kept on R2 and levelled to one peak; the gains are the synthesiser's Brass bells, one
+  `content/audio/sounds.json`, kept on R2 and levelled to one peak and one loudness; the gains are the synthesiser's Brass bells, one
   bell for a Normal or Magic gain, a rising run for a Rare, a longer run over a held chord for a Legendary or
   Atheric; a hold builds up as the synthesiser's Shimmer, high thin air swelling over the hold and glinting faster
   toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
-  loads. One listener hears every press, as DFO's does.
+  loads. One listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
+  browsers ask.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
@@ -299,7 +304,8 @@ its Vestiges at the top. The room serves each ask only at its own counter ([[Gea
 
 - **The vault**, after Destiny 1's: what it keeps on the left and what the player carries on the right, each in
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
-  right-click shows its page.
+  right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row,
+  an empty place a dark Vestige, as the inventory's.
 - **A vendor's stall**: the Quartermaster's armour or the Armsmith's weapons of the day ([[Gear]], "Vendors"). Each
   ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
   the player cannot pay it; its card shows what it changes over the piece worn.

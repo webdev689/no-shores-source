@@ -12,7 +12,8 @@ import { emblemImage, emblemOf } from './emblemArt.ts';
 import { type Gain, gainsOf } from './gains.ts';
 import { glyphImage, itemIcon, rarityOf } from './gearDom.ts';
 import type { GearHere } from './gearScreen.ts';
-import { ItemPictures } from './itemPictures.ts';
+import type { ItemPictures } from './itemPictures.ts';
+import type { Cards } from '../player/cards.ts';
 import { chime } from './uiSounds.ts';
 
 /** How long a row stays, how long it takes to leave, and how many stand at once, the oldest leaving first. */
@@ -21,6 +22,9 @@ const LEAVE_MS = 400;
 const ROWS_MOST = 6;
 /** How often the gear is looked at, in milliseconds. */
 const LOOK_MS = 100;
+/** How long after a room first gives the player's gear its changes are not gains: a room holds a starting character
+ *  until the player's own is claimed, a claim waiting on another room for up to some seconds. */
+const SETTLE_MS = 10_000;
 /** A row's picture box, in pixels. */
 const ICON_PX = 36;
 
@@ -32,15 +36,20 @@ interface Row {
   timer: number;
 }
 
-/** Starts the feed in `root`, watching the gear `here` gives; the feed itself, which the menu leaves readable. */
-export function startAcquiredFeed(root: HTMLElement, here: () => GearHere | null): HTMLElement {
+/** Starts the feed in `root`, watching the gear `here` gives, its pieces drawn by `picturesOf`'s; the feed itself,
+ *  which the menu leaves readable. */
+export function startAcquiredFeed(
+  root: HTMLElement,
+  here: () => GearHere | null,
+  picturesOf: (forge: Cards) => ItemPictures,
+): HTMLElement {
   const feed = make('div', '', 'acquired');
   feed.setAttribute('role', 'log');
   feed.setAttribute('aria-label', 'Acquired');
   root.append(feed);
   const rows = new Map<string, Row>();
   let last: GearState | null = null;
-  let pictures: ItemPictures | null = null;
+  let since = 0;
 
   const leave = (key: string, row: Row) => {
     rows.delete(key);
@@ -55,7 +64,7 @@ export function startAcquiredFeed(root: HTMLElement, here: () => GearHere | null
   const iconOf = (gain: Gain, row: () => HTMLElement | undefined): HTMLElement => {
     const now = here();
     if (gain.item) {
-      if (now?.forge && !pictures) pictures = new ItemPictures(now.forge);
+      const pictures = now?.forge ? picturesOf(now.forge) : null;
       const item = gain.item;
       const drawn = () => {
         const picture = pictures && now?.dress ? pictures.pictureOf(item, now.dress, () => swap()) : null;
@@ -109,13 +118,15 @@ export function startAcquiredFeed(root: HTMLElement, here: () => GearHere | null
 
   window.setInterval(() => {
     const gear = here()?.gear ?? null;
-    // A room left or joined starts afresh: what it first says the player holds is not a gain.
+    // A room left or joined starts afresh: what it first says the player holds is not a gain, nor the character it
+    // gives them once theirs is claimed.
     if (!gear || !last) {
       last = gear;
+      since = performance.now();
       return;
     }
     if (gear === last) return;
-    const gains = gainsOf(last, gear);
+    const gains = performance.now() - since < SETTLE_MS ? [] : gainsOf(last, gear);
     last = gear;
     if (gains.length === 0) return;
     gains.forEach(show);

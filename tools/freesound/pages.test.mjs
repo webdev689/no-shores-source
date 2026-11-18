@@ -27,7 +27,13 @@ test("a sound's preview is its own, on Freesound's CDN", () => {
 });
 
 test("a sound's title is read plainly", () => {
-  assert.equal(titleOf('<meta property="og:title" content="Click &amp; Pop by kwahmah_02">', '1'), 'Click & Pop');
+  assert.equal(
+    titleOf('<meta property="og:title" content="Click &amp; Pop by kwahmah_02">', '1', 'kwahmah_02'),
+    'Click & Pop',
+  );
+  // Only the author's own name is taken off, never a title's last words.
+  assert.equal(titleOf('<meta property="og:title" content="Drive by car by someone">', '4', 'someone'), 'Drive by car');
+  assert.equal(titleOf('<title>Freesound - Drive by car</title>', '5', 'someone'), 'Drive by car');
   assert.equal(titleOf('<title>UI Tick - Freesound</title>', '2'), 'UI Tick');
   assert.equal(titleOf('', '3'), 'Sound 3');
 });
@@ -42,4 +48,14 @@ test("a credit cites the licence's own address and version", () => {
     url: 'https://creativecommons.org/publicdomain/zero/1.0/',
   });
   assert.equal(licenceLinkOf('<a href="https://creativecommons.org/licenses/by-nc/3.0/">'), null);
+});
+
+test('a page that links more than one licence gives none, whichever comes first', () => {
+  const words = '<p>Mine is <a href="https://creativecommons.org/publicdomain/zero/1.0/">free</a></p>';
+  const box = '<a href="https://creativecommons.org/licenses/by-nc/4.0/">Attribution NonCommercial</a>';
+  assert.equal(licenceLinkOf(words + box), null);
+  assert.equal(licenceLinkOf(box + words), null);
+  // The same licence linked twice is still that licence.
+  const twice = '<a href="https://creativecommons.org/licenses/by/4.0/">';
+  assert.equal(licenceOf(twice + twice), 'CC-BY');
 });

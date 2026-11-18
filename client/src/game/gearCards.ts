@@ -218,11 +218,13 @@ function vestigeCell(each: Vestige, holds: string, fields: Partial<Cell>): Cell 
   });
 }
 
-/** One shelf of the vault, or of what the player carries beside it: its name, how many it holds of how many. */
+/** One shelf of the vault, or of what the player carries beside it: its name, how many it holds of how many (0 where
+ *  only each slot's flyout caps it), and whether it holds Vestiges. */
 export interface VaultShelf {
   readonly name: string;
   readonly held: number;
   readonly most: number;
+  readonly vestiges: boolean;
   readonly cells: readonly Cell[];
 }
 
@@ -263,9 +265,9 @@ export function vaultOf(state: GearState): Vault {
       );
     const [weapons, armour] = [items(true), items(false)];
     return [
-      { name: 'Weapons', held: weapons.length, most: most || weapons.length, cells: weapons },
-      { name: 'Armour', held: armour.length, most: most || armour.length, cells: armour },
-      { name: 'Vestiges', held: vestiges.length, most: most || VESTIGES_MOST, cells: vestiges },
+      { name: 'Weapons', held: weapons.length, most, vestiges: false, cells: weapons },
+      { name: 'Armour', held: armour.length, most, vestiges: false, cells: armour },
+      { name: 'Vestiges', held: vestiges.length, most: most || VESTIGES_MOST, vestiges: true, cells: vestiges },
     ];
   };
   return { kept: shelves(VAULTED, VAULT_MOST), carried: shelves(CARRIED, 0) };

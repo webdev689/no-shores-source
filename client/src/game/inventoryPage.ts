@@ -117,6 +117,13 @@ function materialRow(context: PageContext, cell: Cell): HTMLElement {
   return row;
 }
 
+/** An empty place for a Vestige: a dark one stands in it. */
+export function vestigePlace(): HTMLElement {
+  const place = make('div', '', `gear-cell ${ROLES.tile} gear-vacant gear-vestige-place`);
+  place.append(glyphImage('vestige'));
+  return place;
+}
+
 /** The Vestiges carried: their name and how many of the ten are held, then a place for each, an empty one a dark
  *  Vestige, as Destiny 2's engrams stand. */
 function vestigeShelf(context: PageContext, vestiges: ReturnType<typeof inventoryPageOf>['vestiges']): HTMLElement {
@@ -130,9 +137,7 @@ function vestigeShelf(context: PageContext, vestiges: ReturnType<typeof inventor
       grid.append(cellTile(context, cell));
       continue;
     }
-    const place = make('div', '', `gear-cell ${ROLES.tile} gear-vacant gear-vestige-place`);
-    place.append(glyphImage('vestige'));
-    grid.append(place);
+    grid.append(vestigePlace());
   }
   section.append(heading, grid);
   return section;

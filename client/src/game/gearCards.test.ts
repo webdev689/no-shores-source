@@ -131,4 +131,9 @@ test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from
     [{ kind: ASKS.store, item: 7 }],
   );
   assert.equal(vault.carried[1]?.held, 0);
+  // What is carried has no cap of its own but the Vestiges' ten: each slot's flyout caps the rest.
+  assert.deepEqual(
+    vault.carried.map((shelf) => shelf.most),
+    [0, 0, 10],
+  );
 });

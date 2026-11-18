@@ -12,7 +12,7 @@ import { emblemCard } from './emblemSlot.ts';
 import { type VaultShelf, cardOf, vaultOf } from './gearCards.ts';
 import { cardNode, glyphImage, heldPress, itemIcon, itemMarks, rarityOf } from './gearDom.ts';
 import { vendorsOf } from './gearScreen.ts';
-import { cellTile } from './inventoryPage.ts';
+import { cellTile, vestigePlace } from './inventoryPage.ts';
 
 /** A ware's picture box, in pixels. */
 const WARE_PX = 64;
@@ -107,15 +107,19 @@ export function tailorPage(context: PageContext): HTMLElement {
 }
 
 /** One shelf: its name and how full it is, then its cells, or a word that it is empty. */
-function shelfNode(context: PageContext, shelf: VaultShelf, kept: boolean): HTMLElement {
+function shelfNode(context: PageContext, shelf: VaultShelf): HTMLElement {
   const node = make('section', '', 'gear-vault-shelf');
   const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
-  heading.append(make('span', shelf.name), make('span', kept ? `${shelf.held} / ${shelf.most}` : String(shelf.held)));
-  const grid = make('div', '', 'gear-grid');
+  heading.append(
+    make('span', shelf.name),
+    make('span', shelf.most ? `${shelf.held}/${shelf.most}` : String(shelf.held)),
+  );
+  // Vestiges stand five a row, as the inventory's do; the rest in rows as wide as the menu gives them.
+  const grid = make('div', '', shelf.vestiges ? 'gear-vestige-grid' : 'gear-grid');
   grid.append(...shelf.cells.map((cell) => cellTile(context, cell)));
   // Its empty places stand as vacant tiles, as every other shelf's do.
   for (let place = shelf.cells.length; place < shelf.most; place++)
-    grid.append(make('div', '', `gear-cell ${ROLES.tile} gear-vacant`));
+    grid.append(shelf.vestiges ? vestigePlace() : make('div', '', `gear-cell ${ROLES.tile} gear-vacant`));
   node.append(heading, grid);
   return node;
 }
@@ -124,11 +128,11 @@ function shelfNode(context: PageContext, shelf: VaultShelf, kept: boolean): HTML
 export function vaultPage(context: PageContext): HTMLElement {
   const vault = vaultOf(context.gear);
   const page = make('div', '', 'gear-vault');
-  const side = (title: string, shelves: readonly VaultShelf[], kept: boolean) => {
+  const side = (title: string, shelves: readonly VaultShelf[]) => {
     const column = make('div', '', `gear-vault-side ${ROLES.panel}`);
-    column.append(make('h2', title, 'gear-vault-title'), ...shelves.map((shelf) => shelfNode(context, shelf, kept)));
+    column.append(make('h2', title, 'gear-vault-title'), ...shelves.map((shelf) => shelfNode(context, shelf)));
     return column;
   };
-  page.append(side('In the vault', vault.kept, true), side('Carried', vault.carried, false));
+  page.append(side('In the vault', vault.kept), side('Carried', vault.carried));
   return page;
 }
