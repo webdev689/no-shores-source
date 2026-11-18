@@ -36,7 +36,7 @@ fn a_foe_notices_only_what_lies_ahead_of_it_as_dfos_do() {
 #[test]
 fn a_foe_does_not_see_through_a_block() {
     let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Swordsman, 0.0, -10.0, PI);
-    room.blocks.push(Block { min_x: -3.0, min_y: -5.5, max_x: 3.0, max_y: -4.5, top: 3.0 });
+    room.blocks.push(Block { min_x: -3.0, min_y: -5.5, max_x: 3.0, max_y: -4.5, top: 3.0, bottom: 0.0 });
     room.run(60, &mut still(0.0));
     assert_eq!(room.brain(10).target(), None);
     assert!(room.fighter(10).body.y < -9.9, "and stays where it stands");
@@ -45,7 +45,7 @@ fn a_foe_does_not_see_through_a_block() {
 #[test]
 fn a_foe_hunts_where_it_last_saw_its_target_for_a_while_then_lets_it_go() {
     let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Swordsman, 0.0, -10.0, PI);
-    room.blocks.push(Block { min_x: 10.0, min_y: -15.0, max_x: 12.0, max_y: 5.0, top: 4.0 });
+    room.blocks.push(Block { min_x: 10.0, min_y: -15.0, max_x: 12.0, max_y: 5.0, top: 4.0, bottom: 0.0 });
     room.run(30, &mut still(0.0));
     room.set(PLAYER, |player| player.body.x = 20.0);
     room.run(200, &mut still(0.0));

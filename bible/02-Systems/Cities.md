@@ -103,9 +103,9 @@ same to the bit wherever it is sampled, and a window cut round the social space 
 The landmark and the works are solids: blocks, columns, domes, pyramids, gables and arches, each with its place,
 size, turn, lean and roll, dressed in a material the browser pictures from the city's climate. `boxes_within` gives
 every solid reaching into a rectangle as a box square to the world, which is what a node's room stands bodies
-against ([[Server]]). A box stands from the ground up, so a solid whose underside is 2.5 m or more over the plaza's
-floor (a roof, a lintel, a hung lamp) is overhead and left out: a body walks under it. A leaning or rolled solid's box
-reaches round its base and as far as its top swings out.
+against ([[Server]]). A box keeps the solid's underside, so a roof, a lintel or a hung lamp over the floor is a box a
+body walks under ([[Movement]]). A leaning or rolled solid's box reaches round its base and as far as its top swings
+out.
 
 ## How it is drawn
 

@@ -42,12 +42,12 @@ pub struct Agent {
     pub cell_height: f64,
 }
 
-/// Overlook's body: its radius and step from the movement rules, standing about 1.8 m. Cells are DFO's 0.25 m. A
+/// Overlook's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
 /// voxel is half the step, so a step is two voxels as in DFO, and the welding of corners within two voxels still
 /// joins the floors on either side of every step a body climbs.
 pub const AGENT: Agent = Agent {
     radius: TUNING.radius,
-    height: 1.8,
+    height: TUNING.height,
     climb: TUNING.step,
     max_slope: 0.7,
     cell_size: 0.25,
@@ -75,11 +75,13 @@ pub struct NavMesh {
 }
 
 impl NavMesh {
-    /// Bakes the walkable surface of a course: its blocks standing on open ground at 0 across `bounds`. The parts
-    /// of it that no walk joins to the largest are left out.
+    /// Bakes the walkable surface of a course: its blocks on open ground at 0 across `bounds`. A block whose underside
+    /// is a body's height or more over the ground is overhead, walked under, and no obstacle. The parts of it that no
+    /// walk joins to the largest are left out.
     #[must_use]
     pub fn bake(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
-        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
+        let colliders: Vec<Collider> =
+            blocks.iter().filter(|block| block.bottom < agent.height).copied().map(Collider::from).collect();
         Self::bake_colliders(&colliders, bounds, agent)
     }
 

@@ -28,8 +28,8 @@ pub struct NodeFile {
     /// The window's rect: west, north, east and south.
     pub bounds: [f64; 4],
     pub ground: Ground,
-    /// The boxes a body runs into within the rect: west, north, east, south and top.
-    pub boxes: Vec<[f64; 5]>,
+    /// The boxes a body runs into within the rect: west, north, east, south, top and underside.
+    pub boxes: Vec<city::collision::Box2>,
 }
 
 /// What a node's index lists of it.

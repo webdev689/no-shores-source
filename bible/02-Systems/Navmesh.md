@@ -29,7 +29,9 @@ their way by it.
 
 1. **Voxels.** The ground at 0 m across the room's bounds, and every block (or ramp) standing on it, is cut into
    columns of 0.25 m cells. Each column holds its solid spans, in voxels of 0.25 m up. A block marks every cell its
-   footprint touches, so a thin wall never leaks.
+   footprint touches, so a thin wall never leaks. A block whose underside is a body's height (1.8 m) or more over
+   the ground is overhead, a bridge or an upper floor a foe walks under, and is left out; any lower block is solid
+   from the ground up ([[Movement]]).
 2. **Walkable floor.** The top of each solid span is floor where a body has 1.8 m of headroom and the slope is
    0.7 or less. Floor links to the floor beside it within a step (0.5 m, two voxels). The floor is then eroded by
    the body's radius (0.35 m), so a path's centre keeps clear of every wall and drop.
@@ -66,6 +68,7 @@ over the [[Test Ground]]'s course by its fingerprint.
 ## Limits
 
 - Courses are blocks and ramps on open ground at 0 m; the [[Land]] is not baked yet.
+- An overhead block is left out whole, so a foe walks under an upper floor but never paths onto it.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room: a large open field bakes slowly. The [[Test Ground]]'s

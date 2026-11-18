@@ -108,7 +108,7 @@ function nodeFile(): { text: string; ground: string } {
     ],
   };
   const named = { id: 'glade', kind: 'patrol', name: 'The Glade', continent: 'square', ...section };
-  const file = { ...named, bounds: [-150, -150, 150, 150], ground, boxes: [[-5, -8, 5, -7, 13]] };
+  const file = { ...named, bounds: [-150, -150, 150, 150], ground, boxes: [[-5, -8, 5, -7, 13, 12]] };
   return { text: JSON.stringify(file), ground: JSON.stringify(ground) };
 }
 
@@ -145,7 +145,7 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   // The browser stands bodies on the same ground and boxes, and finds the same bodies, to the bit.
   const movement = await startMovementRules(await built('movement_wasm'));
   assert.equal(movement.setGround(ground), true);
-  movement.setCourse([{ minX: -5, minY: -8, maxX: 5, maxY: -7, top: 13 }]);
+  movement.setCourse([{ minX: -5, minY: -8, maxX: 5, maxY: -7, top: 13, bottom: 12 }]);
   room.tick();
   const joined = readFromRoom(room.snapshot());
   const bodies = joined?.kind === 'snapshot' ? joined.players.map((seen) => floatsOf(seen.body)) : [];

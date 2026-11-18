@@ -31,7 +31,7 @@ test('third person sits behind the head and up; a wall between pulls it in', () 
   assert.ok(
     Math.abs((eye[0] ?? 0) - 0) < 1e-9 && Math.abs((eye[1] ?? 0) - 2) < 1e-9 && Math.abs((eye[2] ?? 0) - 2.2) < 1e-9,
   );
-  const wall = { minX: -5, maxX: 5, minY: 1, maxY: 1.5, top: 5 };
+  const wall = { minX: -5, maxX: 5, minY: 1, maxY: 1.5, top: 5, bottom: 0 };
   assert.ok(Math.abs(rayHit([0, 0, 1.7], [0, 2, 2.2], [wall]) - 0.5) < 1e-9);
   const pulled = cameraOrbit([0, 0, 1.7], 0, 0, view, [wall]);
   assert.ok(pulled.targetY + 1 < 1, `${pulled.targetY + 1} is short of the wall`);

@@ -52,7 +52,7 @@ struct NodeFile {
     spawns: Vec<[f64; 2]>,
     bounds: [f64; 4],
     ground: Ground,
-    boxes: Vec<[f64; 5]>,
+    boxes: Vec<[f64; BLOCK_FLOATS]>,
 }
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {

@@ -164,7 +164,7 @@ a city has the same pads and walls.
 
 A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
 ring's bounds and 100 m past them, beyond the 60 m where a body dies); the exact window of the ground over that rect,
-city terraces included; and the boxes of the city a body runs into there. The bake takes about 8 s for the nine
+city terraces included; and the boxes of the city a body runs into there, each with its top and its underside. The bake takes about 8 s for the nine
 continents' 99 nodes, a few at a time, and writes about 0.44 MB in all, 145 KB compressed. `server`, `server:bundle`
 and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
 called `index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.

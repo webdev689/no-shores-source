@@ -275,10 +275,10 @@ export class SceneView implements CardMaker {
     return { buffer: slot.buffer, group: slot.group };
   }
 
-  /** The blocks the scene stands on the ground, each a box from the ground to its top. */
+  /** The blocks the scene stands, each a box from its underside to its top. */
   setBlocks(blocks: readonly Block[]): void {
     const faces: [number, number, number, number[][]][] = [];
-    for (const { minX, minY, maxX, maxY, top } of blocks) {
+    for (const { minX, minY, maxX, maxY, top, bottom } of blocks) {
       faces.push([
         0,
         0,
@@ -295,8 +295,8 @@ export class SceneView implements CardMaker {
         -1,
         0,
         [
-          [minX, minY, 0],
-          [maxX, minY, 0],
+          [minX, minY, bottom],
+          [maxX, minY, bottom],
           [maxX, minY, top],
           [minX, minY, top],
         ],
@@ -306,8 +306,8 @@ export class SceneView implements CardMaker {
         1,
         0,
         [
-          [maxX, maxY, 0],
-          [minX, maxY, 0],
+          [maxX, maxY, bottom],
+          [minX, maxY, bottom],
           [minX, maxY, top],
           [maxX, maxY, top],
         ],
@@ -317,8 +317,8 @@ export class SceneView implements CardMaker {
         0,
         0,
         [
-          [minX, maxY, 0],
-          [minX, minY, 0],
+          [minX, maxY, bottom],
+          [minX, minY, bottom],
           [minX, minY, top],
           [minX, maxY, top],
         ],
@@ -328,10 +328,21 @@ export class SceneView implements CardMaker {
         0,
         0,
         [
-          [maxX, minY, 0],
-          [maxX, maxY, 0],
+          [maxX, minY, bottom],
+          [maxX, maxY, bottom],
           [maxX, maxY, top],
           [maxX, minY, top],
+        ],
+      ]);
+      faces.push([
+        0,
+        0,
+        -1,
+        [
+          [minX, minY, bottom],
+          [minX, maxY, bottom],
+          [maxX, maxY, bottom],
+          [maxX, minY, bottom],
         ],
       ]);
     }

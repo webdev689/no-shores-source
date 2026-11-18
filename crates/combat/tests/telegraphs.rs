@@ -121,7 +121,7 @@ fn a_quick_charge_runs_its_lane_and_no_further() {
 fn a_shapes_blow_stops_at_a_wall_and_does_not_reach_a_body_high_above() {
     let ring = Telegraph::begin(&order(Shape::Ring, 40, 0.0, 0.0), [0.0, 0.0, 0.0]);
     assert!(ring.strikes([0.0, -3.0, 0.0], &[]));
-    let wall = [movement::Block { min_x: -1.0, min_y: -2.2, max_x: 1.0, max_y: -2.0, top: 3.0 }];
+    let wall = [movement::Block { min_x: -1.0, min_y: -2.2, max_x: 1.0, max_y: -2.0, top: 3.0, bottom: 0.0 }];
     assert!(!ring.strikes([0.0, -3.0, 0.0], &wall), "behind a wall");
     assert!(!ring.strikes([0.0, -3.0, 3.0], &[]), "up on a block three metres high");
 }

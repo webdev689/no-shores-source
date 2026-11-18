@@ -1,10 +1,11 @@
-/** A block of a room's course: its footprint (x east, y south, metres) and its top. */
+/** A block of a room's course: its footprint (x east, y south, metres), its top and its underside. */
 export interface CourseBlock {
   readonly minX: number;
   readonly minY: number;
   readonly maxX: number;
   readonly maxY: number;
   readonly top: number;
+  readonly bottom: number;
 }
 
 /** What became of a player's input: the room took it, or why not. At sea, `too soon` is a second course in one tick,
@@ -99,7 +100,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const numbers = [
         spawn.x,
         spawn.y,
-        ...blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
+        ...blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]),
       ];
       const bytes = new Uint8Array(new Float64Array(numbers).buffer);
       return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;

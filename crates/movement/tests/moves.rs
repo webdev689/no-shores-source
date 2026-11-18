@@ -28,7 +28,7 @@ fn close(actual: f64, expected: f64, within: f64) {
 }
 
 fn block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> Block {
-    Block { min_x, min_y, max_x, max_y, top }
+    Block { min_x, min_y, max_x, max_y, top, bottom: 0.0 }
 }
 
 const FORWARD: fn(&mut Controls) = |controls| controls.forward = 1.0;

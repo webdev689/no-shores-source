@@ -50,7 +50,7 @@ type Point = readonly [number, number, number];
 export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number {
   let nearest = 1;
   for (const block of blocks) {
-    const low = [block.minX, block.minY, 0];
+    const low = [block.minX, block.minY, block.bottom];
     const high = [block.maxX, block.maxY, block.top];
     let enter = 0;
     let leave = 1;

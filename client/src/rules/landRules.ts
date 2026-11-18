@@ -372,9 +372,16 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     boxes: (west, north, east, south) => {
       const answer = JSON.parse(
         takeText(exports, send(exports.land_boxes, JSON.stringify({ west, north, east, south }))),
-      ) as { boxes?: [number, number, number, number, number][]; error?: string };
+      ) as { boxes?: [number, number, number, number, number, number][]; error?: string };
       if (answer.error !== undefined) throw new Error(answer.error);
-      return (answer.boxes ?? []).map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top }));
+      return (answer.boxes ?? []).map(([minX, minY, maxX, maxY, top, bottom]) => ({
+        minX,
+        minY,
+        maxX,
+        maxY,
+        top,
+        bottom,
+      }));
     },
     cityPlan: () => {
       const text = takeText(exports, exports.land_city_plan());

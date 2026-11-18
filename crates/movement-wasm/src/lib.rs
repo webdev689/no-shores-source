@@ -261,8 +261,11 @@ mod tests {
 
     #[test]
     fn a_step_through_the_door_is_the_movement_crates_step() {
-        let ledge = Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3 };
-        assert_eq!(set_course(&bytes_of(&[ledge.min_x, ledge.min_y, ledge.max_x, ledge.max_y, ledge.top])), 1);
+        let ledge = Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3, bottom: 0.0 };
+        assert_eq!(
+            set_course(&bytes_of(&[ledge.min_x, ledge.min_y, ledge.max_x, ledge.max_y, ledge.top, ledge.bottom])),
+            1
+        );
         let controls = Controls { forward: 1.0, yaw: 0.3, run: true, ..Controls::default() };
         let mut body = standing(0.5, 0.2);
         for _ in 0..30 {

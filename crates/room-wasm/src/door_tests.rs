@@ -21,7 +21,7 @@ fn node_file() -> Value {
         "ground": { "land": grid(10.0), "lake_level": vec![0.0; 16], "rivers": [], "roads": [], "towns": [],
             "coast": grid(5000.0), "across": grid(-50.0),
             "pads": [{ "bounds": [-10.0, -10.0, 10.0, 10.0], "level": 12.0 }], "seed": 7 },
-        "boxes": [[-5.0, -8.0, 5.0, -7.0, 13.0]] })
+        "boxes": [[-5.0, -8.0, 5.0, -7.0, 13.0, 12.0]] })
 }
 
 /// The players in a snapshot, read back through the protocol crate's generated code.
@@ -47,13 +47,13 @@ fn walk_input(sequence: u32, walk: &[f64; 7]) -> Vec<u8> {
 fn a_course_that_is_not_whole_blocks_does_not_open() {
     assert!(!open(&bytes_of(&[1.0])));
     assert!(!open(&bytes_of(&[0.0, 0.0, 1.0, 2.0])));
-    assert!(open(&bytes_of(&[0.0, 2.0, -5.0, -4.0, 5.0, -1.0, 2.3])));
+    assert!(open(&bytes_of(&[0.0, 2.0, -5.0, -4.0, 5.0, -1.0, 2.3, 0.0])));
 }
 
 #[test]
 fn players_join_send_inputs_and_are_seen_as_the_movement_rules_step_them() {
-    let ledge = [-5.0, -4.0, 5.0, -1.0, 2.3];
-    assert!(open(&bytes_of(&[0.0, 2.0, ledge[0], ledge[1], ledge[2], ledge[3], ledge[4]])));
+    let ledge = [-5.0, -4.0, 5.0, -1.0, 2.3, 0.0];
+    assert!(open(&bytes_of(&[0.0, 2.0, ledge[0], ledge[1], ledge[2], ledge[3], ledge[4], ledge[5]])));
     let (first, second) = (room_join(), room_join());
     let walk = [1.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0];
     assert_eq!(input(first, &walk_input(1, &walk)), TAKEN);
@@ -159,7 +159,7 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
 
 #[test]
 fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms() {
-    assert!(set_course(&bytes_of(&[-5.0, -4.0, 5.0, -1.0, 2.3])));
+    assert!(set_course(&bytes_of(&[-5.0, -4.0, 5.0, -1.0, 2.3, 0.0])));
     let fighter = combat::fighter::player(standing(0.0, 2.0), combat::arms::BARE_HANDS);
     let controls = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
     let intent = combat::Intent { controls, ..combat::Intent::default() };
@@ -168,7 +168,7 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     numbers.push(1.0);
     let sword = combat::arms_of("sword_iron", "shield_kite_steel", true);
     numbers.push(f64::from(sword.code()));
-    let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3])];
+    let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3, 0.0])];
     let (expected, _) = combat::player_tick(1, &fighter.holding(sword), &intent, &[], &course, &Flat);
     let next = floats_of(&predict(&bytes_of(&numbers)));
     assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected, "at rest, she takes up the sword");

@@ -8,7 +8,7 @@ use movement::Block;
 use navmesh::{AGENT, Bounds, Collider, NavMesh, Ramp, Rise};
 
 fn block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> Block {
-    Block { min_x, min_y, max_x, max_y, top }
+    Block { min_x, min_y, max_x, max_y, top, bottom: 0.0 }
 }
 
 /// A 20 x 20 m field of open ground around the origin.
@@ -196,4 +196,13 @@ fn the_same_course_bakes_and_paths_the_same_twice() {
     assert_eq!(first, second);
     let ends = ([-5.0, 0.0, 0.0], [5.0, 0.0, 1.0]);
     assert_eq!(first.find_path(ends.0, ends.1), second.find_path(ends.0, ends.1));
+}
+
+#[test]
+fn a_bridge_over_a_bodys_head_is_walked_under_and_a_wall_from_the_ground_is_not() {
+    let bridge = Block { bottom: AGENT.height, ..block(-1.0, -10.0, 1.0, 10.0, AGENT.height + 0.3) };
+    let route = path(&bake(&[bridge]), [-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]);
+    assert_eq!(route.len(), 2, "straight under it: {route:?}");
+    let low = Block { bottom: AGENT.height - 0.1, ..bridge };
+    assert!(bake(&[low]).find_path([-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]).is_none(), "a body's head meets it");
 }

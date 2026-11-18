@@ -1,6 +1,6 @@
 //! One step of a body: the rules for each way it can be held.
 
-use crate::blocks::{Block, WallAhead, ground_at, slide, wall_ahead};
+use crate::blocks::{Block, WallAhead, ceiling_at, ground_at, slide, under_ceiling, wall_ahead};
 use crate::body::{Body, Controls, Mode, Over, TUNING};
 use crate::terrain::Terrain;
 use std::f64::consts::PI;
@@ -30,15 +30,25 @@ fn pace_of(crouched: bool, controls: &Controls) -> f64 {
     }
 }
 
+/// Whether a body has room to stand at a point with its feet at `z`.
+fn room_to_stand(blocks: &[Block], x: f64, y: f64, z: f64) -> bool {
+    ceiling_at(blocks, x, y, z) - TUNING.height >= z
+}
+
 /// Starts a mantle up onto a lip, or a vault over a low, thin block: the body goes over it in time with its rise.
-fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool) -> Body {
+/// None where there is no room to stand over the lip, under a floor above it.
+fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool, blocks: &[Block]) -> Option<Body> {
     let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let rise = ahead.block.top - body.z;
-    let reach_over = if vault { ahead.depth + TUNING.radius * 2.0 + 0.2 } else { TUNING.radius + 0.3 };
+    let onto = TUNING.radius + 0.3;
+    if !room_to_stand(blocks, body.x + dir_x * onto, body.y + dir_y * onto, ahead.block.top) {
+        return None;
+    }
+    let reach_over = if vault { ahead.depth + TUNING.radius * 2.0 + 0.2 } else { onto };
     let to = [body.x + dir_x * reach_over, body.y + dir_y * reach_over, if vault { body.z } else { ahead.block.top }];
     // DFO's mantle time at middling skill: (0.25 + 0.22 rise)(1.3 - 0.5 skill).
     let seconds = (0.25 + 0.22 * rise.max(0.0)) * 1.05;
-    Body {
+    Some(Body {
         mode: if vault { Mode::Vault } else { Mode::Mantle },
         over: Some(Over { from: [body.x, body.y, body.z], to, progress: 0.0, seconds }),
         vx: 0.0,
@@ -47,7 +57,7 @@ fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool) -> Body {
         lip: ahead.block.top,
         facing: bearing,
         ..*body
-    }
+    })
 }
 
 /// Whether a lip `rise` over the feet, on a block `depth` deep, is vaulted rather than mantled.
@@ -78,7 +88,7 @@ pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &d
     let wish_y = -cos * controls.forward + sin * controls.sideways;
     let wish = Wish { x: wish_x, y: wish_y, length: (wish_x * wish_x + wish_y * wish_y).sqrt() };
     match body.mode {
-        Mode::Mantle | Mode::Vault => going_over(body, seconds),
+        Mode::Mantle | Mode::Vault => going_over(body, blocks, seconds),
         Mode::Hang | Mode::Climb => on_wall(body, controls, blocks, terrain, seconds),
         Mode::Air => in_air(body, controls, blocks, terrain, seconds, wish),
         Mode::Ground => on_ground(body, controls, blocks, terrain, seconds, wish),
@@ -86,7 +96,7 @@ pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &d
 }
 
 /// Mantling or vaulting: along the way at its pace, rising first and then going over, so it never cuts the lip.
-fn going_over(body: &Body, seconds: f64) -> Body {
+fn going_over(body: &Body, blocks: &[Block], seconds: f64) -> Body {
     let Some(over) = body.over else { return Body { mode: Mode::Ground, ..*body } };
     let progress = (over.progress + seconds / over.seconds).min(1.0);
     let along = |axis: usize| over.from[axis] + (over.to[axis] - over.from[axis]) * progress;
@@ -95,7 +105,9 @@ fn going_over(body: &Body, seconds: f64) -> Body {
     } else {
         over.from[2] + (over.to[2] - over.from[2]) * (progress * 1.6).min(1.0)
     };
-    let next = Body { x: along(0), y: along(1), z, over: Some(Over { progress, ..over }), moving: true, ..*body };
+    let (x, y) = (along(0), along(1));
+    let z = under_ceiling(blocks, x, y, body.z, z, body.height());
+    let next = Body { x, y, z, over: Some(Over { progress, ..over }), moving: true, ..*body };
     if progress >= 1.0 { Body { mode: Mode::Ground, over: None, z: over.to[2], grounded: 0.0, ..next } } else { next }
 }
 
@@ -114,8 +126,11 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Ter
         let (back_x, back_y) = (-libm::sin(body.facing) * 3.0, libm::cos(body.facing) * 3.0);
         return Body { mode: Mode::Air, vx: back_x, vy: back_y, vz: TUNING.jump, moving: false, ..*body };
     }
-    if controls.forward > 0.0 && lip_above <= TUNING.hang + 0.01 {
-        return go_over(body, &ahead, body.facing, false);
+    if controls.forward > 0.0
+        && lip_above <= TUNING.hang + 0.01
+        && let Some(over) = go_over(body, &ahead, body.facing, false, blocks)
+    {
+        return over;
     }
     let (along_x, along_y) = (libm::cos(body.facing), libm::sin(body.facing));
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
@@ -125,7 +140,8 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Ter
     let (x, y) = if wall_ahead(blocks, &moved, body.facing).is_some() { (moved.x, moved.y) } else { (body.x, body.y) };
     let mut z = body.z;
     if climbing {
-        z = (z + controls.forward * TUNING.climb * seconds).max(terrain.height_at(x, y));
+        let climbed = (z + controls.forward * TUNING.climb * seconds).max(terrain.height_at(x, y));
+        z = under_ceiling(blocks, x, y, z, climbed, body.height());
     }
     let mode = if climbing && ahead.block.top - z <= TUNING.hang { Mode::Hang } else { body.mode };
     if mode == Mode::Hang {
@@ -138,9 +154,14 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Ter
 /// In the air: falling under gravity, exactly for a constant pull so a jump's apex does not hang on the tick, and
 /// catching a lip in reach when pressed into a wall.
 fn in_air(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64, wish: Wish) -> Body {
-    let fall_speed = body.vz - TUNING.gravity * seconds;
-    let z = body.z + body.vz * seconds - 0.5 * TUNING.gravity * seconds * seconds;
+    let mut fall_speed = body.vz - TUNING.gravity * seconds;
+    let rising = body.z + body.vz * seconds - 0.5 * TUNING.gravity * seconds * seconds;
     let (x, y) = slide(blocks, terrain, body, body.vx * seconds, body.vy * seconds);
+    // The head meets a ceiling: the rise stops there and its upward speed ends.
+    let z = under_ceiling(blocks, x, y, body.z, rising, body.height());
+    if z < rising {
+        fall_speed = fall_speed.min(0.0);
+    }
     let crouch = ease(body.crouch, if body.crouched { 1.0 } else { 0.0 }, seconds);
     let moved = Body { x, y, z, ..*body };
     if wish.length > 0.0
@@ -152,19 +173,22 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terr
         // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
         let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, terrain, x, y, body.z);
         if rise <= TUNING.vault || low_lip {
-            return go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead));
+            if let Some(over) = go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead), blocks) {
+                return over;
+            }
+        } else {
+            return Body {
+                z: ahead.block.top - TUNING.hang,
+                mode: Mode::Hang,
+                lip: ahead.block.top,
+                facing: controls.yaw,
+                vx: 0.0,
+                vy: 0.0,
+                vz: 0.0,
+                moving: false,
+                ..moved
+            };
         }
-        return Body {
-            z: ahead.block.top - TUNING.hang,
-            mode: Mode::Hang,
-            lip: ahead.block.top,
-            facing: controls.yaw,
-            vx: 0.0,
-            vy: 0.0,
-            vz: 0.0,
-            moving: false,
-            ..moved
-        };
     }
     let ground = ground_at(blocks, terrain, x, y, body.z);
     if z <= ground {
@@ -183,7 +207,9 @@ fn on_ground(
     seconds: f64,
     wish: Wish,
 ) -> Body {
-    let crouched = if controls.crouch { !body.crouched } else { body.crouched };
+    // A crouched body stands up only where there is room over its head.
+    let stand_up = controls.crouch && body.crouched && room_to_stand(blocks, body.x, body.y, body.z);
+    let crouched = if controls.crouch && !body.crouched { true } else { body.crouched && !stand_up };
     let crouch = ease(body.crouch, if crouched { 1.0 } else { 0.0 }, seconds);
     let facing = if wish.length > 0.0 { libm::atan2(wish.x, -wish.y) } else { body.facing };
     let pace = pace_of(crouched, controls);
@@ -201,8 +227,10 @@ fn on_ground(
     if controls.jump && grounded >= TUNING.grounded_to_jump && !controls.mounted {
         let ahead = if controls.forward > 0.0 { wall_ahead(blocks, &next, controls.yaw) } else { None };
         // A lip in reach from the ground is vaulted if low and thin, else mantled; a higher one is caught in the air.
-        if let Some(ahead) = ahead.filter(|ahead| ahead.block.top - next.z <= TUNING.reach) {
-            return go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead));
+        if let Some(ahead) = ahead.filter(|ahead| ahead.block.top - next.z <= TUNING.reach)
+            && let Some(over) = go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead), blocks)
+        {
+            return over;
         }
         let lift = TUNING.jump * if crouched { TUNING.crouched_jump } else { 1.0 };
         return Body {
@@ -210,7 +238,7 @@ fn on_ground(
             vz: lift,
             vx: vx * 1.05,
             vy: vy * 1.05,
-            crouched: false,
+            crouched: crouched && !room_to_stand(blocks, x, y, ground),
             grounded: 0.0,
             ..next
         };

@@ -4,7 +4,7 @@
 use crate::body::{Body, TUNING};
 use crate::terrain::{Terrain, too_steep};
 
-/// A block standing on the ground: its footprint (x east, y south, metres) and its top.
+/// A block: its footprint (x east, y south, metres), its top, and its underside.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Block {
     pub min_x: f64,
@@ -12,6 +12,9 @@ pub struct Block {
     pub max_x: f64,
     pub max_y: f64,
     pub top: f64,
+    /// Its underside: the ground's height where it stands, or below it, for a block from the ground up; over the
+    /// ground for a floor, a bridge or a roof a body walks under.
+    pub bottom: f64,
 }
 
 impl Block {
@@ -29,9 +32,34 @@ pub fn ground_at(blocks: &[Block], terrain: &dyn Terrain, x: f64, y: f64, z: f64
         .fold(terrain.height_at(x, y), |ground, block| if block.top > ground { block.top } else { ground })
 }
 
-/// The first block standing in the way at a point: one whose top is above a step over `z`.
-fn blocking_at(blocks: &[Block], x: f64, y: f64, z: f64) -> Option<&Block> {
-    blocks.iter().find(|block| block.holds(x, y, TUNING.radius) && block.top > z + TUNING.step)
+/// The first block in the way at a point of a body `height` tall with its feet at `z`.
+fn blocking_at(blocks: &[Block], x: f64, y: f64, z: f64, height: f64) -> Option<&Block> {
+    blocks.iter().find(|block| block.holds(x, y, TUNING.radius) && in_the_way(block, z, height))
+}
+
+/// Whether a block overlaps the column of a body `height` tall with its feet at `z`: its top over a step above the
+/// feet, its underside below the head. Written as `bottom - height < z` so a head clamped to `bottom - height` is
+/// exactly clear of it.
+fn in_the_way(block: &Block, z: f64, height: f64) -> bool {
+    block.top > z + TUNING.step && block.bottom - height < z
+}
+
+/// The lowest underside over a body with its feet at `z` at a point, within its radius: of the blocks whose
+/// underside is over a step above the feet, so neither the ground nor a wall beside it; infinite when none is.
+#[must_use]
+pub fn ceiling_at(blocks: &[Block], x: f64, y: f64, z: f64) -> f64 {
+    blocks
+        .iter()
+        .filter(|block| block.holds(x, y, TUNING.radius) && block.bottom > z + TUNING.step)
+        .fold(f64::INFINITY, |lowest, block| if block.bottom < lowest { block.bottom } else { lowest })
+}
+
+/// The feet of a body `height` tall rising from `from` towards `to` at a point, stopped where its head meets a
+/// ceiling; never below `from`.
+#[must_use]
+pub fn under_ceiling(blocks: &[Block], x: f64, y: f64, from: f64, to: f64, height: f64) -> f64 {
+    let highest = ceiling_at(blocks, x, y, from) - height;
+    if to > highest { highest.max(from) } else { to }
 }
 
 /// A block ahead of a body, and how deep it runs the way the body faces.
@@ -46,7 +74,7 @@ pub struct WallAhead {
 pub fn wall_ahead(blocks: &[Block], body: &Body, bearing: f64) -> Option<WallAhead> {
     let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let probe = TUNING.radius + 0.15;
-    let block = *blocking_at(blocks, body.x + dir_x * probe, body.y + dir_y * probe, body.z)?;
+    let block = *blocking_at(blocks, body.x + dir_x * probe, body.y + dir_y * probe, body.z, body.height())?;
     let depth = if dir_x.abs() > dir_y.abs() { block.max_x - block.min_x } else { block.max_y - block.min_y };
     Some(WallAhead { block, depth })
 }
@@ -68,7 +96,7 @@ pub fn slide(blocks: &[Block], terrain: &dyn Terrain, body: &Body, move_x: f64, 
 /// The move an axis at a time, each axis taken where no block, nor the terrain if one is given, stops it.
 fn along_axes(blocks: &[Block], terrain: Option<&dyn Terrain>, body: &Body, move_x: f64, move_y: f64) -> (f64, f64) {
     let open = |from: (f64, f64), to: (f64, f64), run: f64| {
-        blocking_at(blocks, to.0, to.1, body.z).is_none()
+        blocking_at(blocks, to.0, to.1, body.z, body.height()).is_none()
             && terrain.is_none_or(|terrain| !too_steep(terrain, body.z, from, to, run))
     };
     let (mut x, mut y) = (body.x, body.y);

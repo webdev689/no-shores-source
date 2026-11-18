@@ -13,7 +13,7 @@ const compiled = new WebAssembly.Module(
     throw new Error('room_wasm.wasm is not built: run `npm run wasm` first');
   }),
 );
-const COURSE = [{ minX: -3, minY: -8, maxX: 3, maxY: -7, top: 1.2 }];
+const COURSE = [{ minX: -3, minY: -8, maxX: 3, maxY: -7, top: 1.2, bottom: 0 }];
 /** The arms codes of a sword with a shield and of a bow, as the combat crate packs them. */
 const SWORD_AND_SHIELD = 2 | (1 << 16);
 const BOW = 1 << 8;

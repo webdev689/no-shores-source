@@ -13,7 +13,7 @@ const looking = (pitch: number) => ({
 });
 
 test('the crosshair lies on the first body its line meets, before a block behind it', () => {
-  const block = { minX: -2, minY: -21, maxX: 2, maxY: -20, top: 4 };
+  const block = { minX: -2, minY: -21, maxX: 2, maxY: -20, top: 4, bottom: 0 };
   const [x, y, z] = crosshairPoint(looking(0), 1, [block], [[0, -10, 0]]);
   assert.ok(Math.abs(x) < 1e-9 && Math.abs(y + 9.65) < 1e-6 && Math.abs(z - 1.5) < 1e-6, `${x}, ${y}, ${z}`);
   const [, wall] = crosshairPoint(looking(0), 1, [block], []);

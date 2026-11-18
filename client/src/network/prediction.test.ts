@@ -9,7 +9,7 @@ const moduleBytes = await readFile(MODULE).catch(() => {
   throw new Error('movement_wasm.wasm is not built: run `npm run wasm` first');
 });
 const rules = await startMovementRules(moduleBytes);
-rules.setCourse([{ minX: -5, minY: -4, maxX: 5, maxY: -1, top: 2.3 }]);
+rules.setCourse([{ minX: -5, minY: -4, maxX: 5, maxY: -1, top: 2.3, bottom: 0 }]);
 const step = (body: Body, controls: Controls) => rules.step(body, controls);
 const still: Controls = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
 const script: Controls[] = Array.from({ length: 40 }, (unused, tick) => ({
