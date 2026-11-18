@@ -5,19 +5,19 @@
 use crate::World;
 use crate::brain::Brain;
 use crate::dice::Dice;
-use crate::kinds::KindNumbers;
+use crate::roles::Numbers;
 use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE, SIGHT_ARC};
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
 use combat::{Fighter, FighterId};
 
-/// A foe in its room this tick: its id, its fighter, the room, its kind's numbers and its dice.
+/// A foe in its room this tick: its id, its fighter, the room, its numbers and its dice.
 #[derive(Clone, Copy, Debug)]
 pub struct Here<'a, 'w> {
     pub me: FighterId,
     pub fighter: Fighter,
     pub world: &'a World<'w>,
-    pub numbers: KindNumbers,
+    pub numbers: Numbers,
     pub dice: Dice,
 }
 

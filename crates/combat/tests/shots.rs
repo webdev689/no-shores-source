@@ -1,11 +1,12 @@
 //! Shots: a quick shot from the hip at once, at the soft lock's foe; an aimed one half again as hard, a bow's charged
 //! by its aiming; no guard behind a ranged weapon; an arrow flying and falling until a block or a body stops it; a
-//! gun's ball reaching its mark at once; and the number layout every fighter crosses in.
+//! player's gun's ball reaching its mark at once and a foe's flying at its gun's speed; and the number layout every
+//! fighter crosses in.
 
 mod common;
 
 use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
-use combat::fighter::Action;
+use combat::fighter::{Action, Side};
 use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
 use combat::shots::{AIMED_POWER, DRAW_FULL, Flight, fly, loose};
 use combat::{CombatInput, Fighter, Happening, Intent, Stroke, player_tick};
@@ -206,6 +207,38 @@ fn a_ball_reaches_its_mark_along_its_line_in_one_tick() {
 }
 
 #[test]
+fn a_foes_ball_flies_at_its_guns_own_speed_so_it_can_be_dodged() {
+    for (ranged, speed) in [(Ranged::Pistolet, 70.0), (Ranged::Thunderlock, 110.0)] {
+        let mut gunner = foe_at(0.0, 0.0, PI);
+        gunner.arms = Arms { melee: WeaponClass::Fists, ranged: Some(ranged), off_hand: OffHand::Empty };
+        let (drawn, _) = run(gunner, asking(PI, AIMING), 30, None);
+        let (_, happenings) = run(drawn, asking(PI, CombatInput { shoot: true, ..AIMING }), 1, None);
+        let mut ball = only_shot(&happenings).1;
+        let [east, south, up] = ball.velocity;
+        assert!(((east * east + south * south + up * up).sqrt() - speed).abs() < 1e-9, "{ranged:?}: {ball:?}");
+        let target = [(2, [0.0, 30.0, 0.0])];
+        let mut ticks = 0;
+        let struck = loop {
+            ticks += 1;
+            match fly(&ball, &[], &target) {
+                Flight::Flying(next) => ball = next,
+                Flight::Stopped { struck, .. } => break struck,
+            }
+        };
+        assert_eq!(struck, Some(2), "{ranged:?}");
+        let flown = 30.0 / speed * 60.0;
+        assert!((f64::from(ticks) - flown).abs() <= 1.0, "{ranged:?} took {ticks} ticks to fly 30 m, not {flown}");
+    }
+    let mut ball = combat::shots::by_foe(&loose(1, Ranged::Pistolet, [0.0, 0.0, 1.1], PI, 0.0, 1.0));
+    let mut ticks = 0;
+    while let Flight::Flying(next) = fly(&ball, &[], &[]) {
+        ball = next;
+        ticks += 1;
+    }
+    assert!((50..=52).contains(&ticks), "it falls spent at its reach of 60 m: {ticks} ticks");
+}
+
+#[test]
 fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as_plain() {
     let (mut fighter, _) =
         run(player_at(1.25, -3.5), common::swinging(0.3, Stroke::DownLeft), 7, Some([2.0, -5.0, 1.1]));
@@ -229,6 +262,11 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
         ..fighter
     };
     assert_eq!(Fighter::from_floats(&telegraphing.to_floats()), telegraphing);
+    for side in [Side::Players, Side::Faction(1), Side::Faction(2)] {
+        let sided = Fighter { side, ..telegraphing };
+        assert_eq!(Fighter::from_floats(&sided.to_floats()), sided, "a side crosses as one number");
+        assert_eq!(Fighter::from_glance(&sided.glance()).side, side);
+    }
     let intent = Intent {
         controls: Controls { forward: 1.0, sideways: -0.5, yaw: 2.0, run: true, ..Controls::default() },
         combat: CombatInput {

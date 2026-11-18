@@ -8,9 +8,10 @@ namespace overlook.wire;
 // With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
 // their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
 // 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
-// combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
-// (0 none; 255 sends every foe away), and whether they ask to respawn, dead past a node's section. New fields go at
-// the end, so old readers skip them.
+// combat's arms code, the room tick of the last snapshot the screen showed, 255 to send every foe away (else 0), and
+// whether they ask to respawn, dead past a node's section. Then a foe to stand before the player: its type's number in
+// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). New
+// fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -23,6 +24,8 @@ table Input {
   seen: ulong;
   spawn: ubyte;
   respawn: bool;
+  spawn_type: ubyte;
+  spawn_rank: ubyte;
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
@@ -91,11 +94,19 @@ table Seen {
   standing_ticks: uint;
 }
 
-// A foe as the room last stepped it: its number, its kind, and a glance at its fighter (combat's glance order).
+// A foe as the room last stepped it: its number, its role (1 skirmisher, 2 swordsman, 3 brute, 4 archer, 5 captain), a
+// glance at its fighter (combat's glance order), its type's number in the roster, its rank (1 Minor to 5 Boss), its
+// faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle, 1 suspicious, 2 alert, 3
+// searching).
 table Foe {
   id: uint;
   kind: ubyte;
   glance: [double];
+  type: ubyte;
+  rank: ubyte;
+  faction: ubyte;
+  phase: ubyte;
+  alert: ubyte;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck

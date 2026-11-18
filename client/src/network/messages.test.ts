@@ -60,6 +60,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [foe?.id, foe?.kind, brute.health, brute.healthMax, brute.target, brute.side],
     [12, 3, 90, 130, 9, 'foes'],
   );
+  // A pirate brute of the Elite rank in its first phase; how alert it is waits for its senses.
+  assert.deepEqual([foe?.type, foe?.rank, foe?.faction, foe?.phase, foe?.alert], [15, 3, 2, 1, 0]);
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   assert.deepEqual(
     snapshot.events.map((event) => [
@@ -136,7 +138,7 @@ test('a fighting ship’s orders cross as the naval crate’s numbers', () => {
 test('an input is its number, its controls and fight buttons in the combat crate’s order, its look, its arms, the tick seen, a foe asked for, a dress if given, and a respawn', () => {
   const intent = new Float64Array([1, -0.5, 0.3, 1, 0, 1, 0, 6, 1, 0, 1, -0.2]);
   const look = { anim: 'ride_gallop', frame: 3, facing: -1.5 };
-  const parts = { intent, look, arms: 0x10002, seen: 977n, spawn: 3 };
+  const parts = { intent, look, arms: 0x10002, seen: 977n, spawn: { type: 12, rank: 5 } };
   const input = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(inputBytes(42, { ...parts, dress: '{"body":"female"}', respawn: true })),
   );
@@ -145,11 +147,13 @@ test('an input is its number, its controls and fight buttons in the combat crate
   assert.deepEqual(Array.from(input.combatArray() ?? []), [6, 1, 0, 1, -0.2]);
   assert.deepEqual(
     [input.anim(), input.frame(), input.facing(), input.dress(), input.arms(), input.seen(), input.spawn()],
-    ['ride_gallop', 3, -1.5, '{"body":"female"}', 0x10002, 977n, 3],
+    ['ride_gallop', 3, -1.5, '{"body":"female"}', 0x10002, 977n, 0],
   );
-  assert.equal(input.respawn(), true);
-  const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, parts)));
-  assert.deepEqual([plain.dress(), plain.respawn()], [null, false]);
+  assert.deepEqual([input.spawnType(), input.spawnRank(), input.respawn()], [12, 5, true]);
+  const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, { ...parts, spawn: undefined })));
+  assert.deepEqual([plain.dress(), plain.respawn(), plain.spawn(), plain.spawnType()], [null, false, 0, 0]);
+  const clearing = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(2, { ...parts, spawn: 'clear' })));
+  assert.deepEqual([clearing.spawn(), clearing.spawnType()], [255, 0]);
 });
 
 test('a course is its points, x then y, and its pace', () => {

@@ -1,4 +1,5 @@
-//! How foes think, the same on the server and in every browser: the kinds of foe, and the brain each fights with.
+//! How foes think, the same on the server and in every browser: the factions, their enemy types, the roles and ranks
+//! they come in, and the brain each fights with.
 //! DFO's Enhanced AI, its tactics and its telegraphed blows, stands here on Overlook's own fight: foes take turns at a
 //! target and ring it, back off, flee and kite, wind up telegraphed blows, and answer blows at them with the guard, the
 //! parry and the dodge, the riposte and the counter. A brain reads its room and asks its fighter for controls and
@@ -7,8 +8,11 @@
 pub mod board;
 pub mod brain;
 mod dice;
-pub mod kinds;
+pub mod factions;
+pub mod ranks;
 mod react;
+pub mod roles;
+pub mod roster;
 mod senses;
 mod shoot;
 mod steer;
@@ -17,9 +21,12 @@ mod tell;
 pub mod tuning;
 
 pub use board::Board;
-pub use brain::{Brain, notice};
+pub use brain::{Brain, Calls, notice};
 pub use combat::{Fighter, FighterId, Intent};
-pub use kinds::{Kind, spawn};
+pub use factions::{FACTIONS, Faction, faction};
+pub use ranks::Rank;
+pub use roles::Role;
+pub use roster::{FoeType, ROSTER, foe_type, spawn};
 
 use dice::Dice;
 use senses::Here;
@@ -90,7 +97,7 @@ pub fn think(me: FighterId, brain: &Brain, board: &mut Board, world: &World<'_>)
         me,
         fighter,
         world,
-        numbers: kinds::numbers(brain.kind),
+        numbers: brain.numbers(),
         dice: Dice { seed: world.seed, tick: world.tick, foe: me },
     };
     let ask = tactics::decide(&mut next, &here, board);

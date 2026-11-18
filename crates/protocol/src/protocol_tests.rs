@@ -40,14 +40,15 @@ pub fn players() -> Vec<Seen> {
     ]
 }
 
-/// The foe the client's test expects: a brute, foe 12, staggered with 40 of its 130 health gone.
+/// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
+/// staggered with 40 of its 130 health gone.
 pub fn foes() -> Vec<FoeSeen> {
     let warhammer = Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
-    let mut brute = fighter(Side::Foes, standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
+    let mut brute = fighter(Side::Faction(2), standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
-    vec![FoeSeen { foe: 12, kind: 3, fighter: brute }]
+    vec![FoeSeen { foe: 12, kind: 3, foe_type: 15, rank: 3, faction: 2, phase: 1, fighter: brute }]
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -154,10 +155,12 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         dress: Some("dressed".to_owned()),
         arms: Arms { melee: WeaponClass::Dagger, ranged: None, off_hand: OffHand::Shield }.code(),
         seen: 977,
-        spawn: Some(3),
+        spawn: Some(SpawnAsk::Foe { foe_type: 12, rank: 5 }),
         respawn: true,
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
+    let clearing = Input { spawn: Some(SpawnAsk::Clear), ..input(2, Controls::default()) };
+    assert_eq!(read_input(&input_bytes(&clearing)).unwrap(), clearing);
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
     let asked = (plain.dress, plain.spawn, plain.intent.combat, plain.respawn);
     assert_eq!(asked, (None, None, CombatInput::default(), false));
@@ -240,6 +243,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let glance: [f64; combat::floats::GLANCE_FLOATS] =
         foe.glance().unwrap().iter().collect::<Vec<_>>().try_into().unwrap();
     assert_eq!((foe.id(), foe.kind(), glance), (12, 3, foes[0].fighter.glance()));
+    let named = (foe.type_(), foe.rank(), foe.faction(), foe.phase(), foe.alert());
+    assert_eq!(named, (15, 3, 2, 1, 0), "its type, rank, faction and phase cross; alert waits for perception");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

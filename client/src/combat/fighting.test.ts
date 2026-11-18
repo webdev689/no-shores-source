@@ -73,8 +73,8 @@ test('every foe asked for comes, one with each input, even two asked for within 
   fight = fighting;
   const steps = fighting.steps(movement);
   const held = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
-  fighting.ask(1);
-  fighting.ask(3);
+  fighting.ask({ type: 13, rank: 2 });
+  fighting.ask({ type: 15, rank: 2 });
   for (let tick = 0; tick < 4; tick += 1) {
     steps.step({} as Body, held);
     room.pump(TICK);
@@ -264,7 +264,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     tick,
     players: [],
     dressed: [],
-    foes: [{ id: 7, kind: 2, glance: glance(east) }],
+    foes: [{ id: 7, kind: 2, glance: glance(east), type: 14, rank: 2, faction: 2, phase: 1, alert: 0 }],
     events: [],
     shots: [],
     ships: [],

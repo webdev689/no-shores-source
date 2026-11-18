@@ -185,7 +185,8 @@ fn a_room_with_no_section_never_judges_its_bodies() {
 fn a_node_s_room_stands_no_foe_a_player_asks_for_where_a_course_s_room_does() {
     let foes_after_asking = |mut room: Room| {
         let player = room.join().unwrap();
-        room.input(player, Input { sequence: 1, spawn: Some(1), ..Input::default() }).unwrap();
+        let spawn = Some(SpawnAsk::Foe { foe_type: 13, rank: 2 });
+        room.input(player, Input { sequence: 1, spawn, ..Input::default() }).unwrap();
         room.tick();
         room.foes_seen().count()
     };

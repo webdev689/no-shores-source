@@ -102,14 +102,8 @@ pub const WORD_WAIT: f64 = 0.5;
 /// An archer's shots aimed, one in this.
 pub const AIMED_SHARE: f64 = 1.0 / 3.0;
 
-/// The boss's second phase: at this share of its health, once, a roar this long as an iron ring; then its wind-ups and
-/// cooldowns shortened by these, its blows harder by this, and its chains this long.
-pub const PHASE_TWO: f64 = 0.35;
+/// Into each new phase, a roar this long, as an iron ring.
 pub const ROAR: f64 = 1.2;
-pub const PHASE_WINDUP: f64 = 0.75;
-pub const PHASE_COOLDOWN: f64 = 0.6;
-pub const PHASE_MIGHT: f64 = 1.25;
-pub const PHASE_CHAINS: u32 = 2;
 
 /// Answering a blow: a parry or a dodge is pressed between these many ticks before it lands, by the dice, as a
 /// person's timing wanders: early in that span a parry's window has closed (it blocks instead) and a dodge is past its
@@ -123,3 +117,9 @@ pub const THREAT_MARGIN: f64 = 1.0;
 
 /// A shooter waits between these after a shot.
 pub const SHOT_GAP: (f64, f64) = (0.5, 1.5);
+/// A shooter draws this long before it looses, by its weapon: a bow a second; a crossbow and the guns longer, so a
+/// player reads the draw before the flash.
+pub const DRAW_BOW: f64 = 1.0;
+pub const DRAW_CROSSBOW: f64 = 1.3;
+pub const DRAW_PISTOLET: f64 = 1.2;
+pub const DRAW_THUNDERLOCK: f64 = 1.5;

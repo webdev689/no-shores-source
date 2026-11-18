@@ -20,6 +20,7 @@ use std::cell::RefCell;
 
 mod deck_door;
 mod fleet_door;
+mod roster_door;
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]
@@ -426,6 +427,12 @@ pub extern "C" fn room_snapshot() -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_sloop() -> u64 {
     hand_over(deck_door::sloop_build_json().into_bytes())
+}
+
+/// Every enemy type the rules know, as JSON (`roster_door::roster_json`).
+#[unsafe(no_mangle)]
+pub extern "C" fn room_roster() -> u64 {
+    hand_over(roster_door::roster_json().into_bytes())
 }
 
 /// Keeps the course written at `address` for predicting; 1 if it was one, 0 if not.

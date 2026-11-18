@@ -1,4 +1,4 @@
-import type { Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messages.ts';
+import type { FoeAsk, Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
@@ -107,7 +107,7 @@ export class Fighting {
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
   private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
-  private readonly spawnsQueued: number[] = [];
+  private readonly spawnsQueued: FoeAsk[] = [];
   private sentDress = '';
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
    *  Daggerfall Unity's click chooses among all six, and again once used. */
@@ -158,10 +158,10 @@ export class Fighting {
     if (buttons.dodge) this.latches.dodge.press();
   }
 
-  /** Asks the room to stand a foe of this kind before the player (or to send every foe away): one ask an input, in the
-   *  order asked. */
-  ask(kind: number): void {
-    this.spawnsQueued.push(kind);
+  /** Asks the room to stand a foe of a type and a rank before the player (or to send every foe away): one ask an
+   *  input, in the order asked. */
+  ask(foe: FoeAsk): void {
+    this.spawnsQueued.push(foe);
   }
 
   /** The movement rules as the page's tick loop steps them, but each tick's body the fighter's: its intent sent to the
@@ -227,7 +227,7 @@ export class Fighting {
     const arms = this.arms;
     const asked: Asked = { intent, view, arms, fired: null };
     const sequence = this.prediction.next(asked);
-    const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnsQueued.shift() ?? 0 };
+    const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnsQueued.shift() };
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;

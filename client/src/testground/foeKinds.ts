@@ -1,11 +1,12 @@
 import type { Dress } from '../player/dressing.ts';
 
-/** A kind of foe, as the foes crate numbers them, and the dress its figure wears: its weapons are the ones its rules
- *  fight with. */
+/** A kind of foe, as the foes crate numbers its roles, the dress its figure wears (its weapons are the ones its rules
+ *  fight with), and the pirates' type of that role and the rank the panel asks for. */
 export interface FoeKind {
   readonly number: number;
   readonly name: string;
   readonly dress: Dress;
+  readonly ask: { readonly type: number; readonly rank: number };
 }
 
 const human = (body: string, tone: number, outfit: Dress['outfit']): Dress => ({ body, race: 'human', tone, outfit });
@@ -14,6 +15,7 @@ export const FOE_KINDS: readonly FoeKind[] = [
   {
     number: 1,
     name: 'Skirmisher',
+    ask: { type: 13, rank: 2 },
     dress: human('male', 0.45, {
       armour: { cuirass: 'leather', gauntlets: 'leather', boots: 'leather' },
       garments: ['shirt_short_v', 'breeches', 'hood'],
@@ -27,6 +29,7 @@ export const FOE_KINDS: readonly FoeKind[] = [
   {
     number: 2,
     name: 'Swordsman',
+    ask: { type: 14, rank: 2 },
     dress: human('male', 0.25, {
       armour: { helm: 'chain', cuirass: 'chain', gauntlets: 'chain', greaves: 'chain', boots: 'chain' },
       garments: ['shirt_long_v', 'breeches'],
@@ -40,6 +43,7 @@ export const FOE_KINDS: readonly FoeKind[] = [
   {
     number: 3,
     name: 'Brute',
+    ask: { type: 15, rank: 2 },
     dress: human('male', 0.7, {
       armour: { pauldrons: 'iron', cuirass: 'iron', greaves: 'iron', boots: 'iron' },
       garments: ['breeches'],
@@ -53,6 +57,7 @@ export const FOE_KINDS: readonly FoeKind[] = [
   {
     number: 4,
     name: 'Archer',
+    ask: { type: 16, rank: 2 },
     dress: human('female', 0.35, {
       armour: { cuirass: 'leather', boots: 'leather' },
       garments: ['shirt_short_v', 'breeches'],
@@ -66,6 +71,7 @@ export const FOE_KINDS: readonly FoeKind[] = [
   {
     number: 5,
     name: 'Captain',
+    ask: { type: 17, rank: 3 },
     dress: human('male', 0.55, {
       armour: {
         helm: 'ebony',
@@ -87,6 +93,3 @@ export const FOE_KINDS: readonly FoeKind[] = [
 
 /** The kind a number names, if any. */
 export const foeKind = (number: number): FoeKind | undefined => FOE_KINDS.find((kind) => kind.number === number);
-
-/** The number a panel sends to send every foe away. */
-export const CLEAR_FOES = 255;

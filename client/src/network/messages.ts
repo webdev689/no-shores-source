@@ -70,12 +70,26 @@ export interface JoinedNode {
   readonly bounds: readonly [number, number, number, number];
 }
 
-/** A foe as a room last stepped it: its number, its kind's number, and a glance at its fighter. */
+/** A foe as a room last stepped it: its number, its role's number (`kind`), a glance at its fighter, its type's number
+ *  in the rules' roster, its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1 to 3), and how
+ *  alert it is (0 idle, 1 suspicious, 2 alert, 3 searching). */
 export interface SeenFoe {
   readonly id: number;
   readonly kind: number;
   readonly glance: Float64Array;
+  readonly type: number;
+  readonly rank: number;
+  readonly faction: number;
+  readonly phase: number;
+  readonly alert: number;
 }
+
+/** A foe a player asks the room to stand before them: a type's number in the roster and a rank (one the type does not
+ *  come in takes its first); or every foe sent away. */
+export type FoeAsk = { readonly type: number; readonly rank: number } | 'clear';
+
+/** The number an input's `spawn` carries to send every foe away. */
+const CLEAR_FOES = 255;
 
 /** Something that happened in the fight, as the room numbers it. */
 export interface FightEvent {
@@ -123,15 +137,15 @@ export type FromRoomMessage =
     } & FleetPart);
 
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
- *  shows, their dress when it changed, what their hands hold, the room tick their screen showed, a foe's kind to stand
- *  before them (0 for none), and whether they ask to respawn, dead past a node's section. */
+ *  shows, their dress when it changed, what their hands hold, the room tick their screen showed, what they ask of the
+ *  foes (none if nothing), and whether they ask to respawn, dead past a node's section. */
 export interface InputParts {
   readonly intent: Float64Array;
   readonly look: Look;
   readonly dress?: string;
   readonly arms: number;
   readonly seen: bigint;
-  readonly spawn: number;
+  readonly spawn?: FoeAsk | undefined;
   readonly respawn?: boolean;
 }
 
@@ -153,8 +167,13 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
   Input.addCombat(builder, combat);
   Input.addArms(builder, parts.arms);
   Input.addSeen(builder, parts.seen);
-  Input.addSpawn(builder, parts.spawn);
+  const spawn = parts.spawn;
+  Input.addSpawn(builder, spawn === 'clear' ? CLEAR_FOES : 0);
   Input.addRespawn(builder, parts.respawn ?? false);
+  if (spawn !== undefined && spawn !== 'clear') {
+    Input.addSpawnType(builder, spawn.type);
+    Input.addSpawnRank(builder, spawn.rank);
+  }
   builder.finish(Input.endInput(builder));
   return builder.asUint8Array().slice();
 }
@@ -246,7 +265,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const foes = Array.from({ length: snapshot.foesLength() }, (unused, index) => {
       const foe = snapshot.foes(index);
       if (!foe) throw new Error(`snapshot foe ${index} is missing`);
-      return { id: foe.id(), kind: foe.kind(), glance: whole(foe.glanceArray(), GLANCE_FLOATS, `foe ${index}`) };
+      const glance = whole(foe.glanceArray(), GLANCE_FLOATS, `foe ${index}`);
+      const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
+      return { id: foe.id(), kind: foe.kind(), glance, ...named, alert: foe.alert() };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);

@@ -26,7 +26,6 @@ const asking = (sequence: number, intent: Float64Array, look: Look, dress?: stri
     look,
     arms: 0,
     seen: 0n,
-    spawn: 0,
     respawn,
     ...(dress === undefined ? {} : { dress }),
   });
@@ -64,6 +63,22 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     dressed: [{ player: first, dress: '{"body":"male"}' }],
     node: null,
   });
+});
+
+test('the roster reads from the rules: every enemy type with its name, faction, ranks and hands', () => {
+  const roster = JSON.parse(startRoomDoor(compiled).roster()) as {
+    type: number;
+    name: string;
+    faction_name: string;
+    ranks: number[];
+    right: string;
+  }[];
+  assert.equal(roster.length, 17);
+  const thule = roster.find((entry) => entry.type === 12);
+  assert.deepEqual(
+    [thule?.name, thule?.faction_name, thule?.ranks, thule?.right],
+    ['Captain Brannoc Thule', 'The Grey Tithe', [5], 'sword_ebony'],
+  );
 });
 
 test('a player who leaves is no longer seen, and each room is a room of its own', () => {

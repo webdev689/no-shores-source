@@ -1,5 +1,5 @@
-//! Shots: an arrow or a bolt flies, falling a little, until it meets a block or a body; a gun's ball reaches its mark
-//! at once along its line. A body is an upright cylinder from its feet.
+//! Shots: an arrow or a bolt flies, falling a little, until it meets a block or a body; a player's gun's ball reaches its
+//! mark at once along its line, a foe's flies straight at its own speed. A body is an upright cylinder from its feet.
 
 use crate::arms::Ranged;
 use crate::fighter::FighterId;
@@ -34,6 +34,38 @@ pub fn shot_numbers(ranged: Ranged) -> (f64, f64, f64, u32) {
 /// An arrow or a bolt falls this fast; a ball reaches this far.
 pub const FALL: f64 = 6.0;
 pub const BALL_REACH: f64 = 60.0;
+
+/// How fast a foe's shot flies: an arrow or a bolt as anyone's, but a ball slowly enough that a player who reads the
+/// draw and the flash can dodge it, where a player's own reaches its mark at once.
+#[must_use]
+pub fn foe_speed(ranged: Ranged) -> f64 {
+    match ranged {
+        Ranged::Pistolet => 70.0,
+        Ranged::Thunderlock => 110.0,
+        Ranged::Bow | Ranged::Crossbow => shot_numbers(ranged).0,
+    }
+}
+
+/// A shot as a foe looses it: an arrow or a bolt as it is; a ball along the same line at a foe's speed.
+#[must_use]
+pub fn by_foe(shot: &Shot) -> Shot {
+    if shot_numbers(shot.ranged).0 > 0.0 {
+        return *shot;
+    }
+    let [east, south, up] = shot.velocity;
+    let speed = (east * east + south * south + up * up).sqrt();
+    let scale = if speed > 0.0 { foe_speed(shot.ranged) / speed } else { 0.0 };
+    Shot { velocity: shot.velocity.map(|along| along * scale), ..*shot }
+}
+
+/// Whether a ball has flown its whole reach by the end of this tick: a player's, crossing it at once, in its first; a
+/// foe's slower one after many. A hair is allowed for the last bits of a reach crossed in one tick, and a flight that
+/// is not a number is spent.
+fn ball_spent(shot: &Shot) -> bool {
+    let [east, south, up] = shot.velocity;
+    let flown = f64::from(shot.age + 1) * (east * east + south * south + up * up).sqrt() * TICK_SECONDS;
+    flown.is_nan() || flown >= BALL_REACH * (1.0 - 1e-9)
+}
 /// An aimed shot strikes this many times as hard as a quick one: a gun's or a crossbow's at once, a bow's once it has
 /// been aimed this many ticks, and by its share of them before.
 pub const AIMED_POWER: f64 = 1.5;
@@ -95,8 +127,8 @@ pub enum Flight {
     Stopped { at: [f64; 3], struck: Option<FighterId> },
 }
 
-/// One tick of a shot's flight among the blocks and the bodies (`(id, feet)`), its owner's left out. A ball crosses
-/// its whole reach in this one tick.
+/// One tick of a shot's flight among the blocks and the bodies (`(id, feet)`), its owner's left out. A player's ball
+/// crosses its whole reach in this one tick.
 #[must_use]
 pub fn fly(shot: &Shot, blocks: &[Block], bodies: &[(FighterId, [f64; 3])]) -> Flight {
     let falls = shot_numbers(shot.ranged).0 > 0.0;
@@ -128,7 +160,7 @@ pub fn fly(shot: &Shot, blocks: &[Block], bodies: &[(FighterId, [f64; 3])]) -> F
     match body {
         Some((share, id)) if share <= stop => Flight::Stopped { at: point(share), struck: Some(id) },
         _ if stop <= 1.0 => Flight::Stopped { at: point(stop), struck: None },
-        _ if !falls || shot.age >= FLIGHT_TICKS => Flight::Stopped { at: to, struck: None },
+        _ if (!falls && ball_spent(shot)) || shot.age >= FLIGHT_TICKS => Flight::Stopped { at: to, struck: None },
         _ => Flight::Flying(Shot { at: to, velocity, age: shot.age + 1, ..*shot }),
     }
 }

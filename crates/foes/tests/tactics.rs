@@ -5,9 +5,10 @@
 mod common;
 
 use combat::fighter::Action;
-use common::{Room, still, swinging, watching};
+use common::{Room, SKIRMISHER, SWORDSMAN, still, swinging, watching};
 use core::f64::consts::PI;
-use foes::{Board, Kind};
+use foes::Board;
+use foes::Rank::Major;
 
 const PLAYER: u32 = 1;
 
@@ -17,7 +18,7 @@ fn in_a_fight(fighter: &combat::Fighter) -> bool {
 
 #[test]
 fn a_lone_swordsman_walks_to_a_player_and_swings_in_reach() {
-    let mut room = Room::new(7).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Swordsman, 0.0, -8.0, PI);
+    let mut room = Room::new(7).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -8.0, PI);
     let mut closest = f64::MAX;
     let mut first_swing = None;
     for _ in 0..300 {
@@ -39,7 +40,7 @@ fn four_swordsmen(seed: u64) -> Room {
     for (index, degrees) in [-30.0_f64, -10.0, 10.0, 30.0].into_iter().enumerate() {
         let bearing = degrees.to_radians();
         let id = 10 + u32::try_from(index).expect("four foes");
-        room = room.foe(id, Kind::Swordsman, 6.0 * libm::sin(bearing), -6.0 * libm::cos(bearing), PI);
+        room = room.foe(id, SWORDSMAN, Major, 6.0 * libm::sin(bearing), -6.0 * libm::cos(bearing), PI);
     }
     room
 }
@@ -113,9 +114,9 @@ fn the_longest_waiter_takes_a_freed_turn_and_a_foe_past_its_patience_goes_in_reg
 fn third_behind(facing: f64) -> Room {
     Room::new(5)
         .player(PLAYER, 0.0, 0.0, facing)
-        .foe(10, Kind::Swordsman, -0.8, -5.0, PI)
-        .foe(11, Kind::Swordsman, 0.8, -5.0, PI)
-        .foe(12, Kind::Swordsman, 0.0, 3.3, 0.0)
+        .foe(10, SWORDSMAN, Major, -0.8, -5.0, PI)
+        .foe(11, SWORDSMAN, Major, 0.8, -5.0, PI)
+        .foe(12, SWORDSMAN, Major, 0.0, 3.3, 0.0)
 }
 
 #[test]
@@ -131,7 +132,7 @@ fn a_player_who_turns_their_back_on_a_waiting_foe_is_open_to_it() {
 
 #[test]
 fn a_foe_that_loses_a_quarter_of_its_health_in_moments_backs_off_to_a_farther_ring() {
-    let mut room = Room::new(11).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Swordsman, 0.0, -3.0, PI);
+    let mut room = Room::new(11).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -3.0, PI);
     room.run(60, &mut still(0.0));
     room.set(10, |fighter| fighter.health -= 0.3 * fighter.health_max);
     let swung_before = room.swings(10).len();
@@ -149,7 +150,7 @@ fn a_foe_that_loses_a_quarter_of_its_health_in_moments_backs_off_to_a_farther_ri
 
 #[test]
 fn a_skirmisher_below_a_fifth_of_its_health_runs_once() {
-    let mut room = Room::new(2).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Skirmisher, 0.0, -2.5, PI);
+    let mut room = Room::new(2).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SKIRMISHER, Major, 0.0, -2.5, PI);
     room.run(30, &mut watching(10));
     room.set(10, |fighter| fighter.health = 0.15 * fighter.health_max);
     room.run(30, &mut watching(10));

@@ -3,7 +3,8 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
-import { CLEAR_FOES, FOE_KINDS } from './foeKinds.ts';
+import type { FoeAsk } from '../network/messages.ts';
+import { FOE_KINDS } from './foeKinds.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
  *  speed, whether the player is playing, and a status line. */
@@ -29,8 +30,8 @@ export interface PanelHandlers {
   fps(value: number): void;
   /** Plays a move once on the player. */
   act(anim: string): void;
-  /** Stands a foe of this kind before the player, or sends every foe away. */
-  fight(kind: number): void;
+  /** Stands a foe of a type and a rank before the player, or sends every foe away. */
+  fight(foe: FoeAsk): void;
 }
 
 /** DFO's controls, as the hint lists them. */
@@ -114,14 +115,12 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
     }
     const chosen = state.chosen;
     const foes = FOE_KINDS.map((kind) =>
-      button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () =>
-        handlers.fight(kind.number),
-      ),
+      button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () => handlers.fight(kind.ask)),
     );
     body.replaceChildren(
       make('h2', 'Foes'),
       ...foes,
-      button('Send every foe away', () => handlers.fight(CLEAR_FOES)),
+      button('Send every foe away', () => handlers.fight('clear')),
       make('h2', 'Figures'),
       list,
       button('Add a figure ahead', handlers.add),

@@ -3,11 +3,13 @@
 //! tells it happened.
 
 use crate::Seen;
-use crate::kinds::{Kind, numbers};
+use crate::ranks::{Rank, phase};
 use crate::react::Reactions;
+use crate::roles::{Numbers, Role};
+use crate::roster::FoeType;
 use crate::shoot::Bow;
 use crate::tell::Tells;
-use crate::tuning::{HURT_WINDOW, PHASE_MIGHT};
+use crate::tuning::HURT_WINDOW;
 use combat::{FighterId, Verdict};
 
 /// What a foe is about in its fight.
@@ -31,10 +33,20 @@ pub enum Plan {
 pub const SAMPLE_TICKS: u64 = 15;
 pub const SAMPLES: usize = (HURT_WINDOW * 60.0) as usize / SAMPLE_TICKS as usize + 1;
 
-/// A foe's brain.
+/// What a foe's brain asks of its room beyond its fighter's controls: its poise refilled, as it roars into a new phase,
+/// and its crew called to its side.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Calls {
+    pub refill_poise: bool,
+    pub crew: bool,
+}
+
+/// A foe's brain: its type and rank, and all it keeps.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Brain {
-    pub kind: Kind,
+    pub foe_type: &'static FoeType,
+    pub rank: Rank,
+    pub(crate) calls: Calls,
     pub(crate) target: Option<FighterId>,
     pub(crate) last_seen: Option<[f64; 3]>,
     pub(crate) seen_at: u64,
@@ -61,9 +73,11 @@ pub struct Brain {
 }
 
 impl Brain {
-    pub(crate) fn new(kind: Kind, facing: f64) -> Self {
+    pub(crate) fn new(foe_type: &'static FoeType, rank: Rank, facing: f64) -> Self {
         Brain {
-            kind,
+            foe_type,
+            rank,
+            calls: Calls::default(),
             target: None,
             last_seen: None,
             seen_at: 0,
@@ -74,20 +88,42 @@ impl Brain {
             backoff_ready: 0,
             fled: false,
             slot: None,
-            health: [numbers(kind).health; SAMPLES],
+            health: [foe_type.numbers(rank, 1).health; SAMPLES],
             sampled: 0,
             ready_at: None,
             blocked: 0,
-            tells: Tells::default(),
+            tells: Tells { phase: 1, ..Tells::default() },
             reactions: Reactions::default(),
             bow: Bow::default(),
         }
     }
 
-    /// What its fighter's blows are multiplied by now (a boss's second phase strikes harder).
+    /// Its numbers now: its type's at its rank, in its phase.
+    #[must_use]
+    pub fn numbers(&self) -> Numbers {
+        self.foe_type.numbers(self.rank, self.tells.phase)
+    }
+
+    #[must_use]
+    pub fn role(&self) -> Role {
+        self.foe_type.role
+    }
+
+    /// The phase it fights in: 1, then 2 and 3 for those that have them.
+    #[must_use]
+    pub fn phase(&self) -> u8 {
+        self.tells.phase
+    }
+
+    /// What its fighter's blows are multiplied by now (a later phase strikes harder).
     #[must_use]
     pub fn might(&self) -> f64 {
-        numbers(self.kind).might * if self.tells.phase_two { PHASE_MIGHT } else { 1.0 }
+        self.numbers().might * phase(self.rank, self.tells.phase).might
+    }
+
+    /// What it asks of its room since it was last asked, taken once.
+    pub fn take_calls(&mut self) -> Calls {
+        core::mem::take(&mut self.calls)
     }
 
     /// The fighter its soft lock should hold: its chosen target, but while it answers a blow, the one whose blow it

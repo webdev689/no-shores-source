@@ -129,7 +129,7 @@ async function start(): Promise<void> {
       const seconds = (cards?.frames(you.dress.body, anim) ?? 1) * ACT_FRAME;
       player = { ...player, act: { anim, elapsed: 0, seconds } };
     },
-    fight: (kind) => fight?.ask(kind),
+    fight: (foe) => fight?.ask(foe),
   });
   const panelState = (looks: ForgeLooks, hair: HairColours, line: string) => ({
     looks,
