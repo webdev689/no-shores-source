@@ -1,5 +1,5 @@
 use super::*;
-use crate::arms::SLOOP_ARMS;
+use crate::arms::{PIRATE_SLOOP, SLOOP_ARMS};
 use crate::ballistics::Ball;
 use crate::captain::Temper;
 use crate::damage::{Hurt, Zone};

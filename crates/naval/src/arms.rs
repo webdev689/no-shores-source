@@ -99,6 +99,9 @@ pub const LARGE_BOAT: Build =
 pub const PIRATE_SLOOP: Build =
     Build { name: "Pirate Sloop", hull: 264.0, sail: 96.0, crew: 10.0, skill: 0.45, range_m: 50.0, crewed: true };
 
+/// The Grey Tithe's Sloop: the pirates' class under the Tithe's colours, until it has hulls of its own.
+pub const TITHE_SLOOP: Build = Build { name: "Tithe Sloop", ..PIRATE_SLOOP };
+
 /// No battery bears within this of her bow or her stern, degrees: the Sloop has guns only along her sides.
 pub const BOW_ARC_DEG: f64 = 35.0;
 pub const STERN_ARC_DEG: f64 = 40.0;

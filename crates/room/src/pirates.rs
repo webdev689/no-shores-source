@@ -1,16 +1,17 @@
-//! Pirates at sea, from DFO's director trimmed to pirates alone. Each player at sea rolls for a ship half a minute
-//! after reaching the water and then every minute to two and a half; a roll that draws a pirate stands her on the ring
-//! round their ship, clear of every player, crossing their waters on a slant. She sails on at a Sloop's way, on the
-//! clock of the player she sails by (their voyage's pace, real time where another player shares those waters), and
-//! goes once no player is near. A bold one that comes within sight of a player who is not fighting takes them on. One
-//! stream, seeded as the sea opens, draws every chance in a fixed order, so a sea is the same given the same seed and
-//! courses.
+//! Hostile ships at sea, pirates and the Grey Tithe's, from DFO's director trimmed to them alone. Each player at sea
+//! rolls for a ship half a minute after reaching the water and then every minute to two and a half; a roll that draws a
+//! hostile ship stands her on the ring round their ship, clear of every player, crossing their waters on a slant. Her
+//! seed is her temper, her faction and her rank. She sails on at a Sloop's way, on the clock of the player she sails by
+//! (their voyage's pace, real time where another player shares those waters), and goes once no player is near. A bold
+//! one that comes within sight of a player who is not fighting takes them on. One stream, seeded as the sea opens,
+//! draws every chance in a fixed order, so a sea is the same given the same seed and courses.
 
 use crate::PlayerId;
 use naval::captain::course::heading_to;
-use naval::captain::{ENGAGE_RANGE, Temper, temper_of};
+use naval::captain::{ENGAGE_RANGE, Temper, temper_for};
 use naval::fight::{DESPAWN_BEYOND, SPAWN_RING, SPAWN_TRIES};
 use naval::random::Mulberry32;
+use naval::ranks::{Commission, GREY_TITHE, PIRATES, Rank};
 use std::collections::BTreeMap;
 use std::f64::consts::TAU;
 
@@ -18,10 +19,16 @@ use std::f64::consts::TAU;
 /// (seconds).
 pub const FIRST_ROLL_S: f64 = 30.0;
 pub const ROLL_EVERY_S: [f64; 2] = [60.0, 140.0];
-/// A roll's chance of a ship, and of that ship being a pirate (DFO's open sea: 30 of its factions' 100); any other
+/// A roll's chance of a ship, and of that ship being hostile (DFO's open sea: 30 of its factions' 100); any other
 /// ship does not sail here.
 pub const SHIP_CHANCE: f64 = 0.8;
 pub const PIRATE_SHARE: f64 = 0.3;
+/// Of the hostile ships, this share are the Grey Tithe's and the rest pirates; and the ranks they come in, by their
+/// shares.
+pub const TITHE_SHARE: f64 = 0.5;
+pub const RANKS_AT_SEA: [(Rank, f64); 3] = [(Rank::Minor, 0.3), (Rank::Major, 0.5), (Rank::Elite, 0.2)];
+const FACTION_SALT: u32 = 0x3c6e_f372;
+const RANK_SALT: u32 = 0xa54f_f53a;
 /// No roll launches while this many pirates sail within `DESPAWN_BEYOND` of the player (DFO's default density).
 pub const DENSITY: usize = 2;
 /// A pirate stands no nearer than this to any player (metres).
@@ -33,8 +40,8 @@ pub const SHARE_M: f64 = 1_200.0;
 #[cfg(test)]
 const STREAM_SEED: u32 = 0x5ea_9a7e;
 
-/// A pirate at sea: her number in the room, her seed (her temper, and every chance of her fight), where she is and
-/// her heading (radians clockwise from north).
+/// A hostile ship at sea, a pirate's or the Grey Tithe's: her number in the room, her seed (her temper, faction and
+/// rank, and every chance of her fight), where she is and her heading (radians clockwise from north).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Pirate {
     pub id: u32,
@@ -58,6 +65,27 @@ pub struct Pirates {
 impl Default for Pirates {
     fn default() -> Self {
         Self::new(STREAM_SEED)
+    }
+}
+
+/// A hostile ship's faction and rank by her seed's own draws, as her temper is by another.
+#[must_use]
+pub fn commission_at_sea(seed: u32) -> Commission {
+    let faction = if Mulberry32::new(seed ^ FACTION_SALT).draw() < TITHE_SHARE { GREY_TITHE } else { PIRATES };
+    let roll = Mulberry32::new(seed ^ RANK_SALT).draw();
+    let mut below = 0.0;
+    let rank = RANKS_AT_SEA.iter().find(|(_, share)| {
+        below += share;
+        roll < below
+    });
+    Commission { faction, rank: rank.map_or(Rank::Elite, |(rank, _)| *rank) }
+}
+
+impl Pirate {
+    /// Her faction and rank (`commission_at_sea`).
+    #[must_use]
+    pub fn commission(&self) -> Commission {
+        commission_at_sea(self.seed)
     }
 }
 
@@ -141,7 +169,7 @@ impl Pirates {
                 }
                 let slant = if self.draws.draw() < 0.5 { 1.0 } else { -1.0 } * (0.6 + self.draws.draw() * 0.9);
                 let heading = (heading_to(at, ship) + slant).rem_euclid(TAU);
-                let bold = matches!(temper_of(seed), Temper::Bold);
+                let bold = matches!(temper_for(commission_at_sea(seed), seed), Temper::Bold);
                 self.sailing.push(Pirate { id: self.next_id, seed, x: at[0], y: at[1], heading, bold });
                 self.next_id += 1;
                 break;

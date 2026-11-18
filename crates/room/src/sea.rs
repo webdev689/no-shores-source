@@ -13,7 +13,8 @@ use crate::threat::held_pace;
 use core::f64::consts::{PI, TAU};
 use land::sea::{FULL_DEPTH_M, Swell};
 use movement::{Controls, TICK_SECONDS};
-use naval::fight::{Event, Fight, Orders, PLAYER};
+use naval::fight::{CAPTAIN, Event, Fight, Orders, PLAYER, Vessel};
+use naval::ranks::Commission;
 use naval::wire::view_numbers;
 use sailing::ship::{Helm, SAILS_SET};
 use sailing::waters::{Spot, Waters, steady_wind};
@@ -401,7 +402,7 @@ impl Sea {
             // She has hove to: the player sets her sails; the pirate comes on under hers.
             let own = at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0);
             let captain = at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
-            let fight = Fight::meet(own, captain, pirate.seed, &waters, time);
+            let fight = Fight::meet(own, captain, pirate.commission(), pirate.seed, &waters, time);
             self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
             self.aboard.remove(&player);
         }
@@ -431,12 +432,14 @@ impl Sea {
     }
 
     /// Each player's fight as their browser shows it (the naval crate's numbers), its lay over the fight's waters
-    /// now, in the order of their number.
-    pub fn fight_views(&self) -> impl Iterator<Item = (PlayerId, Vec<f64>)> + '_ {
+    /// now, and her captain's commission, in the order of their number.
+    pub fn fight_views(&self) -> impl Iterator<Item = (PlayerId, Vec<f64>, Commission)> + '_ {
         let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
         let time = self.clock as f64 * TICK_SECONDS;
         self.fights.iter().map(move |(player, fought)| {
-            (*player, view_numbers(&fought.fight, &fought.events, fought.orders.aim.as_ref(), &waters, time))
+            let view = view_numbers(&fought.fight, &fought.events, fought.orders.aim.as_ref(), &waters, time);
+            let captain = fought.fight.vessel(CAPTAIN).and_then(Vessel::command);
+            (*player, view, captain.map_or_else(Commission::default, |command| command.her.commission))
         })
     }
 }

@@ -1,6 +1,7 @@
 use super::*;
 use crate::damage::Hurt;
 use crate::ram::{Flat, overlap};
+use crate::ranks::Commission;
 use sailing::waters::Spot;
 
 /// Deep, still water everywhere.
@@ -32,7 +33,7 @@ fn bow_to_side(south: f64, way: f64) -> Fight {
     let mut fight = Fight::new(11);
     let player = Ship { x: 0.0, y: south, heading: 0.0, ahead: way, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 1 };
     fight.put_to_sea(PLAYER, player, &Open, 0.0);
-    fight.call_captain(CAPTAIN, &player, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    fight.call_captain(CAPTAIN, &player, Commission::default(), &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
     let her = fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain"));
     her.ship = Ship {
         x: 0.0,

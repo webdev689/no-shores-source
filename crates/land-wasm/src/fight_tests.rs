@@ -46,6 +46,7 @@ fn a_fight_begins_with_a_captain_on_the_ring_round_the_sloop() {
     let (x, y) = (captain[0].as_f64().unwrap_or(0.0) - 180_000.0, captain[1].as_f64().unwrap_or(0.0) - 360_000.0);
     assert!((650.0..=1000.0).contains(&(x * x + y * y).sqrt()));
     assert_eq!(begun["captain"]["name"], "Pirate Sloop");
+    assert_eq!((&begun["captain"]["faction"], &begun["captain"]["rank"]), (&json!(2), &json!(2)), "a Major of the pirates");
     assert_eq!(begun["player"]["max_hull"], 240.0);
     assert_eq!(begun["over"], Value::Null);
 }

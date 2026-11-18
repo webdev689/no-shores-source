@@ -373,3 +373,14 @@ fn a_player_who_leaves_the_room_leaves_her_deck_too() {
     assert_eq!(sea.aboard().count(), 0);
     assert_eq!(sea.take_helm(player), Err(HelmRefused::NoSuchPlayer));
 }
+
+#[test]
+fn a_ship_met_at_sea_fights_under_her_own_faction_and_rank() {
+    let (mut sea, _) = met_at_sea(700.0);
+    let commission = sea.pirates()[0].commission();
+    sea.tick();
+    let (_, fought) = sea.fights().next().expect("a fight");
+    let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
+    assert_eq!(captain.map(|command| command.her.commission), Some(commission));
+    assert_eq!(sea.fight_views().map(|(_, _, shown)| shown).collect::<Vec<_>>(), [commission]);
+}
