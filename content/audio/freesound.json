@@ -1,5 +1,5 @@
 {
-  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the test sheet.",
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number) or keeps the game's own sound, and is searched no more; `skip` lists the candidates already heard there.",
   "cues": [
     {
       "id": "ui.hover",
@@ -8,7 +8,8 @@
       "seconds": [
         0.02,
         0.4
-      ]
+      ],
+      "picked": 871921
     },
     {
       "id": "ui.press",
@@ -17,7 +18,8 @@
       "seconds": [
         0.03,
         0.5
-      ]
+      ],
+      "picked": 213148
     },
     {
       "id": "ui.back",
@@ -26,6 +28,12 @@
       "seconds": [
         0.05,
         0.8
+      ],
+      "skip": [
+        464912,
+        565133,
+        652499,
+        833054
       ]
     },
     {
@@ -35,6 +43,11 @@
       "seconds": [
         0.1,
         0.8
+      ],
+      "skip": [
+        592444,
+        786514,
+        878248
       ]
     },
     {
@@ -44,6 +57,13 @@
       "seconds": [
         0.1,
         1.5
+      ],
+      "skip": [
+        467599,
+        537031,
+        537035,
+        878251,
+        878253
       ]
     },
     {
@@ -53,6 +73,13 @@
       "seconds": [
         0.1,
         1.5
+      ],
+      "skip": [
+        467598,
+        587834,
+        672943,
+        872717,
+        878251
       ]
     },
     {
@@ -62,15 +89,21 @@
       "seconds": [
         0.1,
         1.0
-      ]
+      ],
+      "keep": true
     },
     {
       "id": "hold.charge",
       "use": "A hold charging, 0.6 to 1.8 seconds",
-      "query": "charge up riser",
+      "query": "energy charge",
       "seconds": [
         0.6,
         3.0
+      ],
+      "skip": [
+        555060,
+        850227,
+        878599
       ]
     },
     {
@@ -80,6 +113,12 @@
       "seconds": [
         0.2,
         2.0
+      ],
+      "skip": [
+        444134,
+        686849,
+        753899,
+        814954
       ]
     },
     {
@@ -89,24 +128,42 @@
       "seconds": [
         0.3,
         2.5
+      ],
+      "skip": [
+        817466,
+        859301,
+        875968,
+        879801
       ]
     },
     {
       "id": "gain.common",
       "use": "A Normal or Magic gain",
-      "query": "item pickup",
+      "query": "collect item",
       "seconds": [
         0.1,
         1.0
+      ],
+      "skip": [
+        678384,
+        678385,
+        822565,
+        878311
       ]
     },
     {
       "id": "gain.rare",
       "use": "A Rare gain",
-      "query": "reward chime",
+      "query": "achievement chime",
       "seconds": [
         0.3,
-        2.0
+        2.5
+      ],
+      "skip": [
+        810753,
+        810754,
+        810755,
+        878448
       ]
     },
     {
@@ -116,6 +173,13 @@
       "seconds": [
         0.5,
         3.0
+      ],
+      "skip": [
+        377254,
+        462095,
+        511485,
+        856641,
+        878614
       ]
     }
   ]

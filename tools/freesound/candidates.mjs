@@ -43,6 +43,9 @@ async function page(url) {
 
 const report = [];
 for (const cue of wanted.cues) {
+  // A cue the owner settled on the sound sheet is searched no more; what they already heard is passed over.
+  if (cue.picked || cue.keep) continue;
+  const heard = new Set((cue.skip ?? []).map(String));
   const [least, most] = cue.seconds;
   const search = (filter) =>
     `${SITE}/search/?${new URLSearchParams({ q: cue.query, f: filter, s: 'Automatic by relevance' })}`;
@@ -61,6 +64,7 @@ for (const cue of wanted.cues) {
   const candidates = [];
   for (const { author, id } of results.slice(0, LOOKED_AT)) {
     if (candidates.length >= OFFERED) break;
+    if (heard.has(id)) continue;
     const address = `${SITE}/people/${author}/sounds/${id}/`;
     const sound = await page(address);
     if (!sound) continue;
