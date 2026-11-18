@@ -125,7 +125,7 @@ yet.
 |---|---|---|
 | Islands' foe levels | 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26, 26–30, from Overlook's island outward | Destiny 1's worlds climbed as its players did, Earth to Mars; nine islands spread a player's 30 levels so each is worth visiting in turn |
 | The seas | Calm, Rough and Storm: foes 0, 2 or 4 levels higher, never past 32; XP, Aurem and Vestige chance ×1, ×1.5 or ×2 | The owner: a harder voyage pays better and scales its foes. Two and four keep a matched player above the four-level gap that makes a foe immune |
-| A patrol's foes | Eight kept up, one stood every 3 s, 25 m from players and 30 m from spawns; skirmishers 3, swordsmen 3, archers 2, brutes 1 by weight | Enough to find a fight anywhere in a 1.7 km section without crowding an arrival; captains are for bosses |
+| A patrol's foes | Six camps from the node's name, 150 m apart and 80 m from spawns, two or three foes each within 8 m; a cleared camp stands again 45 s on, once no player is within 40 m; skirmishers 3, swordsmen 3, archers 2, brutes 1 by weight | Fights at known places across a 1.7 km section, so a route can be planned through them, as Destiny's patrol zones hold their enemies at known spots; captains are for bosses |
 | A patrol's nodes | Twelve spots from the node's name, 60 m apart; a third standing at once, the next third every 3 minutes, each gathered once a turn by each player | The owner: nodes at several spots so a farm has routes; a turn long enough to walk a route |
 
 ### Vendors

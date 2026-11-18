@@ -216,9 +216,10 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     room_tick();
     let bytes = snapshot();
     let foes = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap().foes().unwrap();
-    assert_eq!(foes.len(), 1, "the first foe at once");
-    let level = foes.get(0).level();
-    assert!((5..=8).contains(&level), "the island's 1 to 4, four higher in a storm: {level}");
+    assert!(foes.len() >= 2, "its camps stand at once");
+    for foe in foes {
+        assert!((5..=8).contains(&foe.level()), "the island's 1 to 4, four higher in a storm: {}", foe.level());
+    }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
     assert_eq!(nodes.len(), 4 * 4, "a third of its twelve spots, four numbers each");

@@ -67,9 +67,11 @@ on Cloudflare.
   for it ([[Gear]]).
   Each tick every foe thinks over the room as it stands and steps by the same rules ([[Foes]]), routing on a
   [[Navmesh]] the room bakes from its blocks when it opens, and straight across open ground where it knows no way.
-- **A patrol** (a patrol node's room) keeps eight foes up of its island's band of levels ([[Gear]], "Where foes
-  stand"), raised by its seas: skirmishers, swordsmen and archers, now and then a brute, each stood inside its
-  section, 25 m from every player and 30 m from every spawn, one every three seconds while it has fewer. Its island's
+- **A patrol** (a patrol node's room) has six camps of its island's foes ([[Gear]], "Where foes stand"), at places
+  laid out from the node's name, the same every time, 150 m apart and 80 m from every spawn: each of two or three
+  foes (skirmishers, swordsmen and archers, now and then a brute) within 8 m of its middle, at its island's levels
+  raised by its seas. A camp stands whole as the first player arrives; once all its foes have fallen it waits 45 s,
+  and then stands again only while no player is within 40 m of it. Its island's
   resource stands at twelve spots laid out from the node's name, the same every time, 60 m apart; a third of them hold
   a node at once, the next third every three minutes, and each player may gather each node once while it stands. A
   kill pays by the room's seas.

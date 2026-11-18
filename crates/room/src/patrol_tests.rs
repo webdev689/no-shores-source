@@ -2,7 +2,7 @@
 //! resource nodes take turns at spots laid out the same every time.
 
 use super::*;
-use crate::patrol::{GROUPS, PATROL_FOES, ROTATE_TICKS, SPOTS};
+use crate::patrol::{CAMP_CLEAR_M, CAMPS, GROUPS, PATROL_FOES, REFILL_TICKS, ROTATE_TICKS, SPOTS};
 use gear::Difficulty;
 
 const SPAWN: [f64; 2] = [0.0, 0.0];
@@ -17,25 +17,58 @@ fn patrol(difficulty: Difficulty) -> (Room, PlayerId) {
 }
 
 #[test]
-fn a_patrol_stands_its_foes_one_at_a_time_away_from_players_and_spawns() {
+fn a_patrol_stands_its_camps_whole_at_their_places_at_its_levels() {
     let (mut room, player) = patrol(Difficulty::Rough);
+    let (again, _) = patrol(Difficulty::Rough);
+    let camps = room.patrol.as_ref().expect("a patrol").camps.clone();
+    assert_eq!(camps.len(), CAMPS);
+    assert_eq!(camps, again.patrol.expect("a patrol").camps, "the same places every time");
     room.tick();
-    assert_eq!(room.foes.len(), 1, "the first at once");
-    for _ in 0..180 {
-        room.tick();
-    }
-    assert_eq!(room.foes.len(), 2, "then one every three seconds");
     let you = room.fighter(player).expect("in").body;
-    for foe in room.foes.values() {
-        let at = foe.fighter.body;
-        assert!(libm::hypot(at.x - you.x, at.y - you.y) >= 25.0 - 1.0, "clear of the player");
-        assert!(libm::hypot(at.x - SPAWN[0], at.y - SPAWN[1]) >= 30.0 - 1.0, "clear of the spawn");
-        assert!((3..=6).contains(&foe.level), "the island's 1 to 4, two higher rough: {}", foe.level);
+    let camps = room.patrol.as_ref().expect("a patrol").camps.clone();
+    let standing: usize = camps.iter().map(|camp| camp.foes.len()).sum();
+    assert_eq!(standing, room.foes.len());
+    assert!((2..=PATROL_FOES).contains(&standing), "{standing} foes");
+    for camp in camps.iter().filter(|camp| !camp.foes.is_empty()) {
+        assert_eq!(camp.foes.len(), camp.size, "a camp stands whole");
+        assert!(libm::hypot(camp.at[0] - you.x, camp.at[1] - you.y) >= CAMP_CLEAR_M);
+        for id in &camp.foes {
+            let foe = &room.foes[id];
+            let at = foe.fighter.body;
+            assert!(libm::hypot(at.x - camp.at[0], at.y - camp.at[1]) <= 8.0 + 1e-9, "at its camp");
+            assert!((3..=6).contains(&foe.level), "the island's 1 to 4, two higher rough: {}", foe.level);
+        }
     }
-    for _ in 0..(PATROL_FOES as u64 * 180) {
+}
+
+#[test]
+fn a_cleared_camp_stands_again_after_its_wait_and_only_with_no_one_near() {
+    let (mut room, player) = patrol(Difficulty::Calm);
+    room.tick();
+    let camp =
+        room.patrol.as_ref().expect("a patrol").camps.iter().position(|camp| !camp.foes.is_empty()).expect("one");
+    let at = room.patrol.as_ref().expect("a patrol").camps[camp].at;
+    for id in room.patrol.as_ref().expect("a patrol").camps[camp].foes.clone() {
+        room.foes.remove(&id);
+    }
+    room.tick();
+    let fallen_at = room.clock;
+    // Someone stands in the empty camp as its wait runs out: it stays empty while they are there.
+    let mut there = *room.fighter(player).expect("in");
+    there.body.x = at[0];
+    there.body.y = at[1];
+    while room.clock < fallen_at + REFILL_TICKS + 60 {
+        room.set_fighter(player, there);
         room.tick();
     }
-    assert!(room.foes.len() <= PATROL_FOES, "never more than it keeps");
+    assert!(room.patrol.as_ref().expect("a patrol").camps[camp].foes.is_empty(), "not while watched");
+    let mut away = there;
+    away.body.x = 0.0;
+    away.body.y = 0.0;
+    room.set_fighter(player, away);
+    room.tick();
+    let refilled = &room.patrol.as_ref().expect("a patrol").camps[camp];
+    assert_eq!(refilled.foes.len(), refilled.size, "whole again once no one is near");
 }
 
 #[test]
