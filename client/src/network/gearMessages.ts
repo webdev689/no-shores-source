@@ -17,6 +17,8 @@ export const ASKS = {
   storeVestige: 10,
   withdrawVestige: 11,
   vend: 12,
+  wearEmblem: 13,
+  buyEmblem: 14,
   gather: 20,
   grantVestige: 30,
   grantNamed: 31,
@@ -117,7 +119,8 @@ export interface GearState {
   readonly vestiges: readonly GearVestige[];
   readonly drops: readonly GearDrop[];
   readonly spent: readonly number[];
-  readonly social: boolean;
+  /** Whether they stand where a Vestige opens: the Reader's counter, or the Test Ground's stall. */
+  readonly atReader: boolean;
   readonly answer: number;
   readonly identified: number;
   readonly answered: number;
@@ -134,6 +137,11 @@ export interface GearState {
   readonly fruitGrowing?: number | null;
   /** The arms the room lets them take up, by combat's codes; any other it makes bare hands. */
   readonly arms?: readonly number[];
+  /** The emblems they keep and the one they wear, by their place in content/gear/emblems.json; and in a social
+   *  space, those the Tailor sells today. */
+  readonly emblems?: readonly number[];
+  readonly emblem?: number;
+  readonly emblemsSold?: readonly number[];
 }
 
 /** No node chosen in a column, and no resource. */
@@ -219,7 +227,7 @@ export function gearOf(gear: Gear): GearState {
     vestiges,
     drops,
     spent: Array.from(gear.spentArray() ?? []),
-    social: gear.social(),
+    atReader: gear.atReader(),
     answer: gear.answer(),
     identified: gear.identified(),
     answered: gear.answered(),
@@ -230,6 +238,9 @@ export function gearOf(gear: Gear): GearState {
     toNextNeeds: gear.toNextNeeds(),
     fruitGrowing: gear.fruitGrowing() < 0 ? null : gear.fruitGrowing(),
     arms: Array.from(gear.armsArray() ?? []),
+    emblems: Array.from(gear.emblemsArray() ?? []),
+    emblem: gear.emblem(),
+    emblemsSold: Array.from(gear.emblemsSoldArray() ?? []),
   };
 }
 

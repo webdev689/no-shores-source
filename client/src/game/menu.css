@@ -1,4 +1,5 @@
-/* The menu's own pages (client/src/game/menuPages.ts, socialTab.ts and stationPages.ts) and its tabs still to come.
+/* The menu's own pages (client/src/game/menuPages.ts and stationPages.ts) and its tabs still to come; the Roster has
+   its own sheet (roster.css).
    The gear screen's sheet gives the words, wells and headings they share. */
 
 /* A tab still to come reads as resting, Later under its name. */
@@ -30,8 +31,7 @@
 /* A page of the menu: a panel set back from the window's edges. */
 .gear-later,
 .gear-ship,
-.gear-settings,
-.gear-social {
+.gear-settings {
   max-width: 640px;
   margin: 24px auto;
   padding: 18px 22px;
@@ -49,7 +49,6 @@
   margin-top: 14px;
 }
 .gear-ship-part .gear-heading,
-.gear-social-section .gear-heading,
 .gear-vault-shelf .gear-heading {
   display: flex;
   justify-content: space-between;
@@ -62,44 +61,6 @@
 }
 .gear-ship-row b {
   font-weight: 500;
-}
-
-/* Friends: a field to ask one by name, then each list, a row for each name. */
-.gear-social .gear-field {
-  margin-bottom: 6px;
-}
-.gear-social-section {
-  margin-top: 16px;
-}
-.gear-friend {
-  display: grid;
-  grid-template-columns: 10px 1fr auto;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
-}
-.gear-friend + .gear-friend {
-  margin-top: 6px;
-}
-.gear-friend-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--edge);
-}
-.gear-friend-dot.gear-friend-playing {
-  background: var(--gain);
-  box-shadow: 0 0 6px var(--gain);
-}
-.gear-friend-words {
-  display: flex;
-  flex-direction: column;
-}
-.gear-friend-words b {
-  font-weight: 500;
-}
-.gear-friend-presses {
-  display: flex;
-  gap: 6px;
 }
 
 /* The vault, after Destiny 1's: what it keeps beside what the player carries, each in weapons, armour and Vestiges. */
@@ -128,4 +89,15 @@
   margin: 4px 0;
   text-align: left;
   font-size: var(--type-s);
+}
+
+/* The players blocked, under the account: a name and its press on each line. */
+.gear-blocked {
+  margin-top: 18px;
+}
+.gear-blocked-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
 }

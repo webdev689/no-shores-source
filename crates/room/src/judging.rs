@@ -155,6 +155,10 @@ impl Room {
             tell(EventKind::Shielded, took);
             if broke {
                 tell(EventKind::ShieldBroken, 0.0);
+                if let Some(found) = self.players.get_mut(&blow.striker) {
+                    found.character.earn(gear::emblems::Deed::ShieldBroken);
+                    found.gear_changed = true;
+                }
             }
         }
         tell(kind, amount);

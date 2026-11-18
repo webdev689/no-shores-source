@@ -1,5 +1,6 @@
 import './gearScreen.css';
 import './menu.css';
+import './roster.css';
 import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
@@ -26,8 +27,10 @@ import { ItemPictures } from './itemPictures.ts';
 export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
-import { socialPage } from './socialTab.ts';
-import { vaultPage, vendorPage } from './stationPages.ts';
+import { rosterPage } from './rosterTab.ts';
+import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
+import { emblemImage, emblemOf, plateEnd } from './emblemArt.ts';
+import { startPartyHud } from './partyHud.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -44,6 +47,7 @@ const STATIONS: Readonly<Record<Station, string>> = {
   vault: 'The Vault',
   quartermaster: 'The Quartermaster',
   armsmith: 'The Armsmith',
+  tailor: 'The Tailor',
 };
 /** How often the menu looks for new gear while open, in milliseconds. */
 const LOOK_MS = 100;
@@ -57,12 +61,17 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
     ['Click', 'Equip'],
     ['Right-click', 'Details'],
   ],
+  social: [
+    ['Click', 'Choose a player'],
+    ['Esc', 'Close a panel'],
+  ],
   vault: [
     ['Click', 'Put in or take out'],
     ['Right-click', 'Details'],
   ],
   quartermaster: [['Hold', 'Buy']],
   armsmith: [['Hold', 'Buy']],
+  tailor: [['Hold', 'Buy']],
   item: [
     ['Hold', 'Buy a node'],
     ['Click', 'Choose one bought'],
@@ -103,6 +112,7 @@ export function startGearWindow(
   link: AccountLink | null,
   here: () => GearHere | null,
   ship: () => ShipPanel | null,
+  travel: (place: string) => string | null = () => null,
 ): void {
   const screen = make('div', '', `gear-screen ${ROLES.window}`);
   screen.hidden = true;
@@ -207,16 +217,30 @@ export function startGearWindow(
   });
   tabRow.append(...tabs);
   const close = pressOf('Close', shut, 'button', 'Esc');
+  /** The player's name, for their nameplate, once the accounts give it. */
+  let named: string | null = null;
+  void link?.session().then((account) => (named = account?.username ?? null));
+  startPartyHud(root, link);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
-  /** The header's ends: the player's level and power, and their Aurem; each hidden where its page shows it. */
+  /** The header's ends: the player's nameplate, after Destiny's, their emblem behind their name, level and power; and
+   *  their Aurem; each hidden where its page shows it. */
   const ends = (gear: GearState | null) => {
     who.replaceChildren();
     purse.replaceChildren();
+    who.style.backgroundImage = '';
+    who.style.backgroundColor = '';
     if (!gear) return;
+    const emblem = emblemOf(gear.emblem ?? 0);
+    who.style.backgroundImage = `url(${emblemImage(emblem, 'band')})`;
+    who.style.backgroundColor = plateEnd(emblem);
     who.append(
-      make('strong', `Level ${characterOf(gear).level}`),
-      make('span', `Prestige ${gear.prestige} · Defense ${gear.defense}`, 'gear-hint'),
+      make('strong', named ?? `Level ${characterOf(gear).level}`),
+      make(
+        'span',
+        `${named ? `Level ${characterOf(gear).level} · ` : ''}Prestige ${gear.prestige} · Defense ${gear.defense}`,
+        'gear-who-power',
+      ),
     );
     purse.append(glyphImage('aurem'), make('b', gear.aurem.toLocaleString()), make('span', 'Aurem', 'gear-hint'));
     // The tabs keep the header's middle whichever end is hidden.
@@ -236,7 +260,7 @@ export function startGearWindow(
         : shown === 'ship'
           ? shipPage(panel)
           : shown === 'social'
-            ? socialPage(link)
+            ? rosterPage(link, travel)
             : settingsPage(link);
     plain = { key, page };
     return page;
@@ -331,7 +355,9 @@ export function startGearWindow(
           ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
           : view === 'vault'
             ? vaultPage(context)
-            : vendorPage(context, view === 'quartermaster' ? 0 : 1);
+            : view === 'tailor'
+              ? tailorPage(context)
+              : vendorPage(context, view === 'quartermaster' ? 0 : 1);
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
@@ -340,8 +366,8 @@ export function startGearWindow(
     body.replaceChildren(page, ...(shown ? [shown.page] : []));
     // One footer: what the presses and keys do here, the room's answer, and what may be done: an item's presses on its
     // page, else a step back while a flyout is open, else closing the menu.
-    // A Vestige opens with a click only in a social space, so the footer offers it only there.
-    const shelfHints = shelf === 'vestiges' && !gear.social ? [] : (SHELF_HINTS[shelf] ?? HINTS.inventory);
+    // A Vestige opens with a click only at the Reader's counter, so the footer offers it only there.
+    const shelfHints = shelf === 'vestiges' && !gear.atReader ? [] : (SHELF_HINTS[shelf] ?? HINTS.inventory);
     const hints = shown ? HINTS.item : view === 'inventory' ? shelfHints : HINTS[view];
     said.replaceChildren(answer, hintLine(hints ?? []));
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null ? [stepBack] : [close]));

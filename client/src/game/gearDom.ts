@@ -4,7 +4,7 @@
 
 import { button, make } from '../editor/dom.ts';
 import type { GearItem } from '../network/gearMessages.ts';
-import { ELEMENTS, RARITIES, fullyUpgraded, grown } from '../player/gear.ts';
+import { ELEMENTS, RARITIES, fullyUpgraded, upgraded } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
@@ -159,13 +159,13 @@ export function elementGlyph(element: number, className = 'gear-element'): HTMLE
   return glyph;
 }
 
-/** What an item's icon shows of it beyond its picture: a weapon's element as a glyph in its corner; and its growth,
- *  after Destiny 1, a gauge along its foot that grows as the item is used, until, fully upgraded, its frame is gilded
+/** What an item's icon shows of it beyond its picture: a weapon's element as a glyph in its corner; and, after
+ *  Destiny 1, a gauge along its foot that fills as its nodes are bought, until, fully upgraded, its frame is gilded
  *  and the gauge goes. */
 export function itemMarks(tile: HTMLElement, item: GearItem): void {
   const element = elementGlyph(item.element);
   if (element) tile.append(element);
-  const share = grown(item);
+  const share = upgraded(item);
   const gilded = fullyUpgraded(item);
   tile.classList.toggle('gear-gilded', gilded);
   if (share === null || gilded) return;

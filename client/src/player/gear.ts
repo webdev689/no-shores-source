@@ -73,7 +73,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   6: 'That slot already carries nine.',
   7: 'The vault is full.',
   8: 'You already carry ten Vestiges.',
-  9: 'Only in a social space, or at the stall.',
+  9: 'Only at its counter in a social space.',
   10: 'Not while it is worn or in the vault.',
   11: 'Locked until its ring fills.',
   12: 'There is no such node.',
@@ -140,14 +140,23 @@ export function itemNumbers(item: GearItem): string {
   return `${power.join(', ')} · level ${item.level} · XP ${item.xp.toLocaleString()} of ${item.xpMost.toLocaleString()}`;
 }
 
-/** How far an item has grown toward its last column, 0 to 1; null for one that does not grow. */
-export function grown(item: GearItem): number | null {
-  return item.xpMost > 0 ? Math.min(1, item.xp / item.xpMost) : null;
+/** How many nodes an item has. */
+function nodesOf(item: GearItem): number {
+  return item.columns.reduce((total, column) => total + Math.max(1, column.traits.length), 0);
+}
+
+/** How far an item is upgraded, 0 to 1: the share of its nodes bought; null for one with none to buy. */
+export function upgraded(item: GearItem): number | null {
+  const nodes = nodesOf(item);
+  if (nodes === 0) return null;
+  let bought = 0;
+  for (let node = 0; node < nodes; node++) if (item.bought & (1 << node)) bought++;
+  return bought / nodes;
 }
 
 /** Whether every node of an item is bought: it is fully upgraded. */
 export function fullyUpgraded(item: GearItem): boolean {
-  const nodes = item.columns.reduce((total, column) => total + Math.max(1, column.traits.length), 0);
+  const nodes = nodesOf(item);
   return nodes > 0 && item.bought === 2 ** nodes - 1;
 }
 

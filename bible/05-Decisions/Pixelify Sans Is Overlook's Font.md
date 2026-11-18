@@ -21,4 +21,7 @@ word, as DFO does, with DFO's fixed 5, 2 and Z."
 - **Pixelify Sans and Silkscreen's 5 are exceptions to [[Own Work]]**, shipped with the page under their free
   licence (the SIL Open Font Licence), with no request to Google.
 
+Silkscreen's 5 is replaced: the 5 is drawn on Pixelify's own grid, as
+[[The Face Is Mended Whole, and the Gauge Counts Upgrades]] settles.
+
 Links: [[Interface]], [[The Gear Screens Follow Destiny, on Enhanced Plus]], [[The Audit's Calls Are Claude's]].

@@ -1,4 +1,5 @@
 import { canvasSize } from '../canvasSize.ts';
+import { useMendedFace } from '../face.ts';
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import { GpuUnavailable, startGpu } from '../gpu.ts';
 import type { Colours } from '../forge/compose.ts';
@@ -54,6 +55,7 @@ function element<T extends Element>(selector: string): T {
 }
 
 async function start(): Promise<void> {
+  useMendedFace();
   const canvas = element<HTMLCanvasElement>('#ground');
   const gpu = await startGpu(canvas);
   const scene = new SceneView(gpu);

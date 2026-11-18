@@ -5,6 +5,7 @@ import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import { ROLES } from '../plus/kit.ts';
 import { accountPanel } from './accountTab.ts';
+import { pressOf } from './gearDom.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
@@ -45,5 +46,30 @@ export function settingsPage(link: AccountLink | null): HTMLElement {
   const page = make('div', '', `gear-settings ${ROLES.panel}`);
   page.append(make('h2', 'Account', `gear-heading ${ROLES.rule}`));
   page.append(link ? accountPanel(link) : make('p', 'Playing offline: there is no account.', 'gear-hint'));
+  if (link) page.append(blockedPanel(link));
   return page;
+}
+
+/** The players blocked, each with a press to unblock them; blocking is done from the Roster. */
+function blockedPanel(link: AccountLink): HTMLElement {
+  const panel = make('section', '', 'gear-blocked');
+  const list = make('div', '', 'gear-blocked-list');
+  panel.append(make('h2', 'Blocked players', `gear-heading ${ROLES.rule}`), list);
+  const show = () =>
+    void link.roster().then((roster) => {
+      if (typeof roster === 'string') return list.replaceChildren(make('p', roster, 'gear-hint'));
+      list.replaceChildren(
+        ...(roster.blocked.length === 0 ? [make('p', 'None. Block a player from the Roster.', 'gear-hint')] : []),
+        ...roster.blocked.map((name) => {
+          const row = make('div', '', 'gear-blocked-row');
+          row.append(
+            make('span', name),
+            pressOf('Unblock', () => void link.social('unblock', { name }).then(show)),
+          );
+          return row;
+        }),
+      );
+    });
+  show();
+  return panel;
 }

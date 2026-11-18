@@ -188,8 +188,8 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     .filter((each) => !each.vaulted)
     .map((each) =>
       vestigeCell(each, `For the ${SLOTS[each.slot] ?? ''}, level ${each.level}.`, {
-        words: state.social ? 'Click to open it.' : 'It opens in a social space.',
-        press: state.social ? { label: 'Open', ask: { kind: ASKS.identify, item: each.id }, role: 'primary' } : null,
+        words: state.atReader ? 'Click to open it.' : 'Open it at the Reader of Vestiges.',
+        press: state.atReader ? { label: 'Open', ask: { kind: ASKS.identify, item: each.id }, role: 'primary' } : null,
       }),
     );
   const empties = Array.from({ length: Math.max(0, VESTIGES_MOST - carried.length) }, (unused, place) =>

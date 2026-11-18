@@ -22,4 +22,7 @@ Destiny 2's character screen, its finest pieces' icons framed in gold.
   an item's icon has an XP gauge at the bottom that grows with upgrading; once it is fully maxed out, the icon becomes
   gilded.
 
+The gauge's measure is settled since: it counts upgrade progress, not general XP, as
+[[The Face Is Mended Whole, and the Gauge Counts Upgrades]] settles.
+
 Links: [[Plain Text]], [[Interface]], [[Gear]].

@@ -1,14 +1,18 @@
 //! A player's asks of their gear, answered in turn with their inputs: the gear crate's own asks, judged where the
-//! player stands (a social space, or within reach of the Test Ground's stall); gathering a resource node within reach;
+//! player stands (at the counter that serves the ask in a social space, or within reach of the Test Ground's stall,
+//! which serves them all); gathering a resource node within reach;
 //! and, in the Test Ground alone, grants of gear to try it with. Each answer is kept to send the player with their
 //! gear.
 
 use crate::{PlayerId, Room, Standing};
 use gear::dice::Dice;
+use gear::vendor::Vendor;
 use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
 
-/// How near the stall a player must stand for a social space's asks, and a resource node for gathering, in metres.
+/// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node for
+/// gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking up.
 pub const STALL_REACH: f64 = 4.0;
+pub const COUNTER_REACH: f64 = 4.0;
 pub const NODE_REACH: f64 = 2.5;
 /// How often, in ticks, one player's asks are answered: five a second, no more often than their gear is sent, so each
 /// answer reaches them before the next is made. How many asks are held for their turn; past those, they are let go.
@@ -61,6 +65,38 @@ pub struct ResourceNode {
     pub resource: u8,
 }
 
+/// A social space's counter that serves a player's gear: the Reader's opens Vestiges, a vault's keeps gear, a
+/// vendor's sells its own wares, and the Tailor's sells emblems.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CounterKind {
+    Reader,
+    Vault,
+    Vendor(Vendor),
+    /// The Tailor's, who sells emblems.
+    Tailor,
+}
+
+/// A counter and its middle.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Counter {
+    pub kind: CounterKind,
+    pub at: [f64; 2],
+}
+
+/// The counter that serves an ask, or none for one answered anywhere.
+#[must_use]
+pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
+    match ask {
+        Ask::Identify { .. } => Some(CounterKind::Reader),
+        Ask::Store { .. } | Ask::Withdraw { .. } | Ask::StoreVestige { .. } | Ask::WithdrawVestige { .. } => {
+            Some(CounterKind::Vault)
+        }
+        Ask::Vend { vendor, .. } => Some(CounterKind::Vendor(*vendor)),
+        Ask::BuyEmblem { .. } => Some(CounterKind::Tailor),
+        _ => None,
+    }
+}
+
 /// The number an answer sends: 0 done, else the refusal's.
 #[must_use]
 pub fn answer_code(answer: Result<(), Refusal>) -> u8 {
@@ -74,14 +110,29 @@ impl Room {
         self.resource_nodes = nodes;
     }
 
-    /// Whether a player stands where a social space's asks are answered: anywhere in a social space's room, or within
-    /// reach of the stall.
-    pub(crate) fn here(&self, player: PlayerId) -> Here {
-        let near_stall = |stall: [f64; 2]| {
+    /// Where a player stands as the gear crate judges an ask: where it is served if they stand at its counter in a
+    /// social space, or within reach of the Test Ground's stall, which serves every ask.
+    pub(crate) fn here(&self, player: PlayerId, ask: &Ask) -> Here {
+        let near = |at: [f64; 2], reach: f64| {
             self.fighter(player)
-                .is_some_and(|fighter| libm::hypot(fighter.body.x - stall[0], fighter.body.y - stall[1]) <= STALL_REACH)
+                .is_some_and(|fighter| libm::hypot(fighter.body.x - at[0], fighter.body.y - at[1]) <= reach)
         };
-        Here { social: self.social || self.stall.is_some_and(near_stall), day: self.day }
+        let at_counter = counter_for(ask).is_some_and(|wanted| {
+            self.counters.iter().flatten().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
+        });
+        Here { social: at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH)), day: self.day }
+    }
+
+    /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.
+    #[must_use]
+    pub fn in_social_space(&self, player: PlayerId) -> bool {
+        self.counters.is_some() || self.here(player, &Ask::Vend { vendor: Vendor::Quartermaster, ware: 0 }).social
+    }
+
+    /// Whether a player stands where a Vestige opens: at the Reader's counter, or the stall.
+    #[must_use]
+    pub fn at_reader(&self, player: PlayerId) -> bool {
+        self.here(player, &Ask::Identify { vestige: 0 }).social
     }
 
     /// A player's dice for one roll: the room's seed, the tick, and the count of rolls made, so no two rolls share
@@ -128,10 +179,10 @@ impl Room {
         let before = (found.trim, crate::power::arms_allowed(&found.character));
         found.asked_at = Some(clock);
         found.identified = 0;
-        let here = self.here(player);
         let dice = self.dice(player);
         let code = match asked {
             Asked::Gear(ask) => {
+                let here = self.here(player, &ask);
                 let Some(found) = self.players.get_mut(&player) else { return };
                 match found.character.ask(ask, here, &dice) {
                     Ok(gear::Done::Identified(item)) => {

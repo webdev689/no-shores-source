@@ -274,12 +274,6 @@ impl Room {
         true
     }
 
-    /// Whether a player stands where a social space's asks are answered.
-    #[must_use]
-    pub fn social_for(&self, player: PlayerId) -> bool {
-        self.here(player).social
-    }
-
     /// A player as the room keeps them.
     #[must_use]
     pub fn player(&self, player: PlayerId) -> Option<&Player> {

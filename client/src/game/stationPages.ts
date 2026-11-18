@@ -1,11 +1,14 @@
 // The screens a social space's counters open, as Destiny's vendors and vault open in the Tower: a vendor's stall of
-// the day's wares, each held to buy; and the vault, its weapons, armour and Vestiges beside what the player carries,
-// each a click to move across.
+// the day's wares, each held to buy; the Tailor's emblems of the day, as Destiny's Outfitter sold them; and the vault,
+// its weapons, armour and Vestiges beside what the player carries, each a click to move across.
 
 import { make } from '../editor/dom.ts';
-import { WORN } from '../player/gear.ts';
+import { ASKS } from '../network/gearMessages.ts';
+import { RARITIES, WORN } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
+import { emblemImage, emblemOf } from './emblemArt.ts';
+import { emblemCard } from './emblemSlot.ts';
 import { type VaultShelf, cardOf, vaultOf } from './gearCards.ts';
 import { cardNode, glyphImage, heldPress, itemIcon, itemMarks, rarityOf, tileLabel } from './gearDom.ts';
 import { vendorsOf } from './gearScreen.ts';
@@ -51,6 +54,45 @@ export function vendorPage(context: PageContext, vendor: number): HTMLElement {
     }
     wares.append(block);
   });
+  page.append(wares);
+  return page;
+}
+
+/** The Tailor's stall: the emblems sold today, each held to buy at its price, from the level it is sold at. */
+export function tailorPage(context: PageContext): HTMLElement {
+  const page = make('div', '', 'gear-vendor gear-tailor');
+  const { gear } = context;
+  const kept = new Set(gear.emblems ?? []);
+  const wares = make('div', '', 'gear-wares');
+  for (const number of gear.emblemsSold ?? []) {
+    const emblem = emblemOf(number);
+    const { aurem = 0, level = 1 } = emblem.source;
+    const has = kept.has(number);
+    const short = gear.aurem < aurem;
+    const low = gear.level < level;
+    const block = heldPress('', () => context.ask({ kind: ASKS.buyEmblem, item: number }));
+    block.classList.add('gear-ware');
+    block.dataset['key'] = `emblem-${emblem.id}`;
+    if (has || short || low) block.setAttribute('aria-disabled', 'true');
+    const plate = make('img', '', 'gear-emblem-plate');
+    Object.assign(plate, { src: emblemImage(emblem, 'plate'), width: 240, height: 48, alt: '' });
+    const words = make('div', '', 'gear-ware-words');
+    const name = make('b', emblem.name);
+    name.style.color = RARITIES.find((each) => each.name.toLowerCase() === emblem.rarity)?.colour ?? '';
+    words.append(name, plate);
+    const price = make('span', '', `gear-price${short && !has ? ' gear-short' : ''}`);
+    price.append(glyphImage('aurem'), make('b', aurem.toLocaleString()));
+    if (has) price.replaceChildren(make('span', 'Kept', 'gear-hint'));
+    else if (low) price.append(make('span', `From level ${level}`, 'gear-hint'));
+    else if (short) price.append(make('span', 'Not enough Aurem', 'gear-hint'));
+    words.append(price);
+    block.append(words);
+    block.setAttribute('aria-label', `${emblem.name}, emblem, ${has ? 'kept' : `${aurem.toLocaleString()} Aurem`}`);
+    context.tip.over(block, () => emblemCard(emblem, has, false));
+    wares.append(block);
+  }
+  if ((gear.emblemsSold ?? []).length === 0)
+    wares.append(make('p', 'The Tailor sells only in a social space.', 'gear-hint gear-empty'));
   page.append(wares);
   return page;
 }

@@ -6,6 +6,7 @@
 
 import type { Db } from './database.ts';
 import { USERNAME } from './names.ts';
+import { blocks } from './people.ts';
 
 /** The most friends and asks one player keeps at once, and the most asks a player's list takes. */
 export const FRIENDS_MOST = 100;
@@ -17,14 +18,14 @@ export interface FriendsList {
   readonly asked: readonly string[];
 }
 
-/** An answer: its status, and the list or why not. */
+/** An answer: its status, and what it holds or why not. */
 export interface Answer {
   readonly status: number;
-  readonly body: FriendsList | { readonly ok: true } | { readonly error: string };
+  readonly body: object;
 }
 
-const said = (status: number, error: string): Answer => ({ status, body: { error } });
-const done: Answer = { status: 200, body: { ok: true } };
+export const said = (status: number, error: string): Answer => ({ status, body: { error } });
+export const done: Answer = { status: 200, body: { ok: true } };
 
 /** The friends list of account `own` at `now`. */
 export async function friendsOf(database: Db, own: string, now: number): Promise<FriendsList> {
@@ -68,6 +69,9 @@ export async function friendAsk(
     if (asked !== 'ask') return asked === 'remove' ? done : notAsked;
     return them ? said(400, 'That is you.') : said(404, 'No one has that username.');
   }
+  // An ask of one who blocks the asker is answered as made, and never reaches them; one blocked must be unblocked.
+  if (asked === 'ask' && (await blocks(database, own, them.id))) return said(409, 'Unblock them first.');
+  if (asked !== 'remove' && (await blocks(database, them.id, own))) return asked === 'ask' ? done : notAsked;
   if (asked === 'remove') {
     await database
       .prepare('DELETE FROM friends WHERE (asker_id = ?1 AND asked_id = ?2) OR (asker_id = ?2 AND asked_id = ?1)')

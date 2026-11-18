@@ -22,14 +22,20 @@ code:
   - client/src/game/gearGlyphs.ts#nodeGlyphSvg
   - client/src/game/accountTab.ts#accountPanel
   - client/src/game/menuPages.ts#shipPage
-  - client/src/game/socialTab.ts#socialPage
+  - client/src/game/rosterTab.ts#rosterPage
+  - client/src/game/rosterRows.ts#actionsFor
+  - client/src/game/playerDetails.ts#detailsPage
+  - client/src/game/emblemArt.ts#emblemPixels
+  - client/src/game/emblemSlot.ts#emblemSlot
+  - client/src/game/partyHud.ts#startPartyHud
   - client/src/game/stationPages.ts#vaultPage
   - client/src/game/stationPages.ts#vendorPage
   - client/src/game/gearDom.ts#itemMarks
   - client/src/game/gearDom.ts#nodeRing
   - client/src/game/elementGlyphs.ts#elementSvg
-  - client/src/plus/face.css
-  - tools/pixelify_mends.py
+  - client/src/face.css
+  - client/src/face.ts#useMendedFace
+  - client/src/trueType.ts#trueType
 ---
 # Interface
 
@@ -62,21 +68,25 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 
 ## The face
 
-Every word on the game's own screens is set in Pixelify Sans, Enhanced Plus's own face
+Every word on the game's pages, the Test Ground's and the editor's is set in Pixelify Sans, Enhanced Plus's own face
 ([[Pixelify Sans Is Overlook's Font]]), served with the page. It draws sharpest at whole multiples of its grid, 11 px,
 so every size is one: 11 for words, 22 for names and titles, 33 to 66 for the numbers that lead a page. Letters stand
 1/22 of their size apart (3/22 for labels, 5/22 for titles), each word a little more than the face's own space, with
-no kerning and no ligature. It is set at one weight, so emphasis is in size and colour; it is never slanted, as it has
-no italic. Four of its glyphs misread, so a second face, listed first, replaces just those: Silkscreen's 5, and a 2, a
-Z and a B drawn on Pixelify's own grid at its weight (`tools/pixelify_mends.py`). Shadows under it are hard, a
-pixel's step.
+no kerning and no ligature. It is set at one weight, 500, so emphasis is in size and colour; it is never slanted, as
+it has no italic. Shadows under it are hard, a pixel's step.
+
+Four of its glyphs misread and ten symbols are missing, so a second face, listed first, stands in for just those
+([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]): a 2, a 5, a B and a Z, and the rarities' diamonds, the
+map's house, triangles, skull and anchor. Each is drawn in `face.ts` as rows of cells on Pixelify's grid at its
+weight, and made into a font in the page when it opens (`trueType.ts`), so nothing generated is kept.
 
 ## The menu
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
 the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings in its header, keys on keycaps;
-Journal and Guild marked Later, each a page saying what it will hold. The player's level, Prestige and Defense stand
-at the header's left and their Aurem at its right, each left blank where its page shows it. It opens with a short
+Journal and Guild marked Later, each a page saying what it will hold. At the header's left stands the player's
+nameplate, their emblem behind their name, level, Prestige and Defense, as Destiny's character screen heads with it;
+their Aurem at its right; each left blank where its page shows it. It opens with a short
 stepped rise; the world behind is dimmed, the pointer is free, the game's keys and the HUD under it rest, and the
 focus stays within it. Escape steps back: an item's page, then a slot's flyout, then the menu. Gear shows as the
 player's room last sent it ([[Gear]]), built again only when that is new or the player moves within the menu, and
@@ -92,12 +102,13 @@ never while a press is held. Each press is an ask the room answers.
   kit's plain stone. A tile is Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a
   card or page takes its rarity's band; pips mark it.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
-  corner; a green gauge along its foot that grows as the item earns toward its last column; and, once every node is
+  corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
-  Attack, Defense, Prestige and Fruit of Dagon. The weapons and the cloak stand to its left, the armour to its right,
-  each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its flyout of the
-  nine it may carry; a click there wears one.
+  Attack, Defense, Prestige and Fruit of Dagon. The weapons, the cloak and the emblem stand to its left, the armour to
+  its right, each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its
+  flyout of the nine it may carry; a click there wears one. The emblem's flyout holds every emblem, five a row: those
+  kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
   with the gain or loss in green or red. Along its foot what its presses do.
@@ -113,19 +124,30 @@ never while a press is held. Each press is an ask the room answers.
   ten places, a click opening one in a social space.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
-- **Social** ([[Accounts]], "Friends"): a field to ask another player by username; who has asked, to accept or
-  decline; the friends, each playing or away, a remove held; and whom the player has asked, to cancel. A player needs
-  a username to have friends, and the page says so.
+- **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
+  Roster"): three columns, Game, Friends and Guild, each a page of fourteen rows with arrows between pages, its empty
+  rows kept so each column keeps its length. Game holds invites to a party, then the party (its leader marked with a
+  gold corner, or the player alone, who leads their own), then those in the same room; over it the party's privacy.
+  Friends holds those asking, then friends playing, those asked, and friends away; over it a press to add a friend.
+  Guild holds its members by rank and those invited; over it the guild's name, motto and presses, or, with none, a
+  press to found one and the invites. Each row is a player's emblem and its nameplate behind their name and tag, at
+  twice the emblem's cells; one away is grey and bare. Choosing a row opens a panel beside it: who and where, then all
+  that may be done with them, what cannot be undone held. Details shows another player's nameplate, guild, power and
+  worn pieces. A join goes to them if they are on foot on this landmass. The Roster is asked for again every 15
+  seconds while it is seen.
+- **The party on the heads-up display**: each other member's nameplate under the place's name, with where they are,
+  and an invite waiting; it stands over the veil, so the party shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
+  Under it, the players blocked, each with a press to unblock them.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only the held press's
   fill moves.
 
 ## The social space's counters
 
-The vault and the vendors keep counters in the social space, as Destiny's keep theirs in the Tower; E at one opens
-its screen in the menu's window, its name where the tabs stand. The Reader of Vestiges opens the inventory at its
-Vestiges.
+The vault, the vendors and the Tailor keep counters in the social space, as Destiny's keep theirs in the Tower; E at
+one opens its screen in the menu's window, its name where the tabs stand. The Reader of Vestiges opens the inventory
+at its Vestiges. The room serves each ask only at its own counter ([[Gear]], "In the rooms").
 
 - **The vault**, after Destiny 1's: what it keeps on the left and what the player carries on the right, each in
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
@@ -133,13 +155,28 @@ Vestiges.
 - **A vendor's stall**: the Quartermaster's armour or the Armsmith's weapons of the day ([[Gear]], "Vendors"). Each
   ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
   the player cannot pay it; its card shows what it changes over the piece worn.
+- **The Tailor's stall**: the six emblems sold that day ([[Gear]], "Emblems"), each its nameplate, name and price, held
+  to buy; one kept, too dear or for a higher level says so.
+
+## Emblems
+
+An emblem is a sign 24 cells square and the nameplate it heads, 120 by 24, whose left square is the sign's own ground,
+as Destiny's are ([[Cosmetics Follow Destiny, Emblems First]]). Each is drawn in the page from its colours, a pattern
+and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
+multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
+it. It shows on the Roster's rows, the menu's header, another player's details, the party on the heads-up display, the
+Emblem slot and the Tailor's stall.
 
 ## Limits
 
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
-- The [[World Editor]] and the [[Test Ground]] keep their own panels for now, in the system's face: they are tools,
-  not the game's screens. A symbol the face does not draw (a map mark's anchor, a rarity's pips) falls back to the
-  system's.
+- The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
+  the game's screens.
+- Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
+  pictures on the player's own figure, which is not theirs.
+- A join reaches a party member on foot on the landmass open now; one across the sea, or at sea, is not reached, and
+  the Roster says so.
+- No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - No gamepad or touch layer yet.

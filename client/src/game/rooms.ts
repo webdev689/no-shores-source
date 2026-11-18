@@ -50,3 +50,9 @@ export function accountOf(
 export function nodeRoom(node: { readonly id: string; readonly kind: string }, difficulty: Difficulty): string {
   return node.kind === 'social' || difficulty === 'calm' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
 }
+
+/** The node and seas a node's room is for (`node-<id>`, `node-<id>--rough`); null for any other room. */
+export function nodeOfRoom(room: string): { readonly id: string; readonly seas: Difficulty } | null {
+  const found = /^node-([a-z0-9-]+?)(?:--(rough|storm))?$/.exec(room);
+  return found?.[1] ? { id: found[1], seas: (found[2] as Difficulty | undefined) ?? 'calm' } : null;
+}

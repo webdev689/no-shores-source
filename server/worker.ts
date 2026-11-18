@@ -19,6 +19,9 @@ interface Env {
 /** A day, milliseconds: the vendors' wares change with it. */
 const DAY_MS = 86_400_000;
 
+/** How often the sea says again who is there: half of how long the accounts keep its word. */
+const PRESENT_EVERY_MS = 30_000;
+
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
 
@@ -52,10 +55,12 @@ export class RoomHost extends DurableObject<Env> {
    *  a player let go of is gone from it, though their socket may still be closing. */
   private readonly players = new Map<
     WebSocket,
-    { readonly player: number; count: Count | undefined; signed: boolean }
+    { readonly player: number; count: Count | undefined; signed: boolean; token: string | null }
   >();
   private keeper: Keeper | null = null;
+  private name = '';
   private lastKept = 0;
+  private lastPresent = 0;
   private started = 0;
   private ticks = 0;
 
@@ -79,7 +84,7 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    this.players.set(server, { player, count: undefined, signed: false });
+    this.players.set(server, { player, count: undefined, signed: false, token: null });
     server.addEventListener('message', (event) => this.message(server, event.data));
     server.addEventListener('close', () => this.left(server));
     server.addEventListener('error', () => this.left(server));
@@ -90,6 +95,7 @@ export class RoomHost extends DurableObject<Env> {
 
   /** Opens the room its name says, once: a node's from its baked file, which only that node's room reads. */
   private async openRoom(name: string): Promise<boolean> {
+    this.name = name;
     const accounts = this.env.ACCOUNTS;
     const room = {
       character: (player: number) => this.guarded(() => this.room.character(player), null),
@@ -137,6 +143,11 @@ export class RoomHost extends DurableObject<Env> {
       held.signed = true;
       held.count = count;
       void this.keeper?.signIn(player, message, Date.now, () => this.players.get(socket) === held);
+      // At sea no character is kept, so the room says only who is there, for the Roster.
+      if (this.name === 'sea') {
+        held.token = message;
+        void this.env.ACCOUNTS.present(message, this.name).catch(() => false);
+      }
       return;
     }
     held.count = count;
@@ -162,6 +173,7 @@ export class RoomHost extends DurableObject<Env> {
     const held = this.players.get(socket);
     if (!held) return;
     this.players.delete(socket);
+    if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
     // The character's last save reads it now, before the room lets the player go.
     void this.keeper?.leave(held.player);
     this.guarded(() => this.room.leave(held.player), undefined);
@@ -216,6 +228,12 @@ export class RoomHost extends DurableObject<Env> {
         }
       }
       const now = Date.now();
+      // Said again before the last word lapses, for each player at sea.
+      if (now - this.lastPresent >= PRESENT_EVERY_MS) {
+        this.lastPresent = now;
+        for (const held of this.players.values())
+          if (held.token) void this.env.ACCOUNTS.present(held.token, this.name).catch(() => false);
+      }
       if (now - this.lastKept >= 1000) {
         this.lastKept = now;
         void this.keeper?.due(now);

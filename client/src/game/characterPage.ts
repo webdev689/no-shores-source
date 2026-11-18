@@ -22,6 +22,7 @@ import {
 } from './gearDom.ts';
 import { characterOf } from './gearScreen.ts';
 import { LARGE_CAP } from './iconFit.ts';
+import { EMBLEM_SLOT, emblemSlot } from './emblemSlot.ts';
 
 /** What a page of the gear screen draws from: the gear, the way to ask of it, the card, the pictures, and the height
  *  the screen gives it. */
@@ -185,6 +186,8 @@ export function characterPage(
     stat('Fruit of Dagon', String(character.fruit)),
   );
   middle.append(power, stand, stats);
-  page.append(side(WEAPONS, 'Weapons'), middle, side(ARMOUR, 'Armour'));
+  const weapons = side(WEAPONS, 'Weapons');
+  weapons.append(emblemSlot(context, open === EMBLEM_SLOT, () => choose(open === EMBLEM_SLOT ? null : EMBLEM_SLOT)));
+  page.append(weapons, middle, side(ARMOUR, 'Armour'));
   return page;
 }

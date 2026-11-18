@@ -28,6 +28,10 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
   release(account: string, holder: string, body: string | null): Promise<boolean> {
     return this.kept.release(account, holder, body);
   }
+
+  present(token: string, room: string | null): Promise<boolean> {
+    return this.kept.present(token, room);
+  }
 }
 
 /** The accounts' web API (`accounts.ts`). */

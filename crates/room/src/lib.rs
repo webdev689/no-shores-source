@@ -142,9 +142,9 @@ pub struct Room {
     pub(crate) rolls: u64,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
     past: VecDeque<(u64, Vec<(FighterId, Fighter)>)>,
-    /// Whether the room is a social space's, where its asks are answered anywhere; the Test Ground's stall, where
-    /// they are answered within reach; its resource nodes; and the Vestiges lying for its players.
-    pub social: bool,
+    /// A social space's counters, each serving its asks within reach (none for a room that is not one); the Test
+    /// Ground's stall, which serves them all within reach; its resource nodes; and the Vestiges lying for its players.
+    pub counters: Option<Vec<asks::Counter>>,
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
     pub(crate) drops: Vec<Drop>,
@@ -203,7 +203,7 @@ impl Room {
             world_seed: SEED,
             rolls: 0,
             past: VecDeque::new(),
-            social: false,
+            counters: None,
             stall: None,
             resource_nodes: Vec::new(),
             drops: Vec::new(),

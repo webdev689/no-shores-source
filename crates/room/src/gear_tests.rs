@@ -184,6 +184,29 @@ fn asks_are_answered_where_the_player_stands() {
 }
 
 #[test]
+fn a_social_space_serves_each_ask_at_its_own_counter() {
+    use crate::asks::{Counter, CounterKind};
+    let mut room = room();
+    let counters = [(CounterKind::Reader, [10.0, 0.0]), (CounterKind::Vault, [-10.0, 0.0])];
+    room.counters = Some(counters.map(|(kind, at)| Counter { kind, at }).to_vec());
+    let player = room.join().expect("a room with space");
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    character.pick_up(Vestige { id: 1, rarity: Rarity::Magic, slot: Slot::Legs, level: 3 });
+    let picked = *character.vestiges.keys().max().expect("picked up");
+    let identify = Asked::Gear(Ask::Identify { vestige: picked });
+    let store = Asked::Gear(Ask::StoreVestige { vestige: picked });
+    assert_eq!(ask(&mut room, player, 1, identify.clone()), answer_code(Err(Refusal::NotHere)), "mid-plaza");
+    assert!(room.in_social_space(player) && !room.at_reader(player));
+    move_to(&mut room, player, 8.0, 1.0);
+    assert!(room.at_reader(player));
+    assert_eq!(ask(&mut room, player, 2, store.clone()), answer_code(Err(Refusal::NotHere)), "not the vault's");
+    move_to(&mut room, player, -9.0, 0.0);
+    assert_eq!(ask(&mut room, player, 3, store), 0, "at the vault");
+    let vend = Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 0 });
+    assert_eq!(ask(&mut room, player, 4, vend), answer_code(Err(Refusal::NotHere)), "no Armsmith here");
+}
+
+#[test]
 fn the_test_ground_alone_grants_gear() {
     let mut room = room();
     let player = room.join().expect("a room with space");

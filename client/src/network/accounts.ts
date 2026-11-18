@@ -9,11 +9,64 @@ export interface Account {
   readonly guest: boolean;
 }
 
-/** A player's friends, whether each is playing; who has asked them; and whom they have asked. */
-export interface Friends {
-  readonly friends: readonly { readonly name: string; readonly playing: boolean }[];
-  readonly asking: readonly string[];
-  readonly asked: readonly string[];
+/** A player as the Roster shows them: their name, their guild's tag, the emblem they wear (by id), their level, and
+ *  the room they play in (null while they do not, or where they are is not for this player to know). */
+export interface Person {
+  readonly name: string;
+  readonly tag: string | null;
+  readonly emblem: string | null;
+  readonly level: number | null;
+  readonly place: string | null;
+}
+
+/** The Roster as one player sees it (`server/accounts/roster.ts`). */
+export interface Roster {
+  readonly me: Person | null;
+  readonly privacy: string;
+  readonly party: { readonly leader: string | null; readonly members: readonly Person[] } | null;
+  readonly invites: readonly Person[];
+  readonly nearby: readonly Person[];
+  readonly guests: number;
+  readonly friends: readonly Person[];
+  readonly asking: readonly Person[];
+  readonly asked: readonly Person[];
+  readonly guild: {
+    readonly name: string;
+    readonly tag: string;
+    readonly motto: string;
+    readonly rank: string;
+    readonly members: readonly (Person & { readonly rank: string })[];
+    readonly invited: readonly Person[];
+  } | null;
+  readonly guildInvites: readonly { readonly name: string; readonly tag: string; readonly from: string }[];
+  readonly blocked: readonly string[];
+}
+
+/** A worn piece as others see it, numbered as the gear message numbers it. */
+export interface ShownPiece {
+  readonly slot: number;
+  readonly kind: number;
+  readonly rarity: number;
+  readonly level: number;
+  readonly name: number;
+  readonly named?: string;
+  readonly element: number;
+  readonly attack: number;
+  readonly defense: number;
+  readonly gilded: boolean;
+}
+
+/** Another player's details, as Destiny's Inspect shows them. */
+export interface Details extends Person {
+  readonly playing: boolean;
+  readonly guild: { readonly name: string; readonly tag: string; readonly motto: string; readonly rank: string } | null;
+  readonly shown: {
+    readonly level: number;
+    readonly defense: number;
+    readonly attack: number;
+    readonly emblem: string;
+    readonly worn: readonly ShownPiece[];
+  } | null;
 }
 
 /** What a Discord sign-in came back with, in the page's address: a code to take, or no sign-in. */
@@ -172,15 +225,21 @@ export class AccountLink {
     return null;
   }
 
-  /** The player's friends list, or why not. */
-  async friends(): Promise<Friends | string> {
-    const answer = await this.call('GET', '/v1/friends');
-    return typeof answer === 'string' ? answer : (answer as unknown as Friends);
+  /** The player's Roster, or why not. */
+  async roster(): Promise<Roster | string> {
+    const answer = await this.call('GET', '/v1/roster');
+    return typeof answer === 'string' ? answer : (answer as unknown as Roster);
   }
 
-  /** Asks the player named to be friends, accepts their ask, or ends what is between them; why not, if it cannot. */
-  async befriend(asked: 'ask' | 'accept' | 'remove', name: string): Promise<string | null> {
-    const answer = await this.call('POST', `/v1/friends/${asked}`, { name });
+  /** Another player's details, or why not. */
+  async details(name: string): Promise<Details | string> {
+    const answer = await this.call('GET', `/v1/players/${encodeURIComponent(name)}`);
+    return typeof answer === 'string' ? answer : (answer as unknown as Details);
+  }
+
+  /** Asks something of the Roster (`friend/ask`, `party/join`, `guild/promote`, `block`...); why not, if it cannot. */
+  async social(path: string, body: Readonly<Record<string, string | number>> = {}): Promise<string | null> {
+    const answer = await this.call('POST', `/v1/social/${path}`, body);
     return typeof answer === 'string' ? answer : null;
   }
 

@@ -7,10 +7,12 @@
 
 use combat::Fighter;
 use combat::floats::{FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS};
+use gear::vendor::Vendor;
 use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
 use protocol::SeaInput;
+use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
@@ -59,6 +61,28 @@ struct NodeFile {
     bounds: [f64; 4],
     ground: Ground,
     boxes: Vec<[f64; 5]>,
+    #[serde(default)]
+    counters: Vec<NodeCounter>,
+}
+
+/// A social space's counter as the bake writes it: its station, and its middle.
+#[derive(Debug, Deserialize)]
+struct NodeCounter {
+    kind: String,
+    at: [f64; 2],
+}
+
+/// A counter that serves a player's gear, from its station's name.
+fn counter_of(found: &NodeCounter) -> Option<Counter> {
+    let kind = match found.kind.as_str() {
+        "reader" => CounterKind::Reader,
+        "vault" => CounterKind::Vault,
+        "quartermaster" => CounterKind::Vendor(Vendor::Quartermaster),
+        "armsmith" => CounterKind::Vendor(Vendor::Armsmith),
+        "tailor" => CounterKind::Tailor,
+        _ => return None,
+    };
+    Some(Counter { kind, at: found.at })
 }
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
@@ -99,8 +123,8 @@ pub fn open_node(text: &[u8]) -> bool {
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
     let mut room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
-    // A city's social space answers a social space's asks anywhere in it; a patrol keeps its island's foes and nodes.
-    room.social = node.id.ends_with("-social");
+    // A city's social space serves a player's gear at its counters; a patrol keeps its island's foes and nodes.
+    room.counters = (node.kind == "social").then(|| node.counters.iter().filter_map(counter_of).collect());
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == "patrol"
         && let (Some(levels), Some(resource)) = (gear::world::island_levels(&node.continent), resource)

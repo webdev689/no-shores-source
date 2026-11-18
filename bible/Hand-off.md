@@ -146,12 +146,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
   blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
   while; and which foes beyond the patrols' carry them.
-- The third audit's questions for the owner: draw the 5 on Pixelify's grid, as the 2, B and Z are; keep the Z's
-  straight diagonal or step it; weight 500 or 400; draw the few symbols the face lacks (the anchor, the pips); one
-  number for every mismatched shield (×0.5) or one for each pair; let a player block, since a declined player can ask
-  again; have the room check that a player stands at the counter they use; whether the mended glyphs, a data address a
-  tool writes, need a check under the generated-files rule; whether the icon's gauge counts XP or nodes bought; and
-  Pixelify in the Test Ground's panel and the editor.
+- The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
+  can change any. Open for the owner: a join that loads another landmass, to reach a party member across the sea;
+  names over other players' heads, green for the party, as Destiny 1 shows them; the Guild tab's own page; more
+  emblems and where they come from; whether Overlook should have text chat, which mute would need.
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
@@ -191,6 +189,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   its own asks and friends, and a name no one holds answers as any other; a blow the shield holds whole fills no
   poise; the menu lets go of a held press and stops the game under it; focus goes back to the tile an item's page came
   from; and the mended glyphs sit on the grid at weight 500.
+- **The owner's answers to the third audit are on #60 too**
+  ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]], [[The Roster Follows Destiny 1, With Blocking]],
+  [[Cosmetics Follow Destiny, Emblems First]]): the face's
+  5, Z and symbols drawn in code and made into a font in the page; the gauge counting nodes bought; the room serving
+  each ask only at its counter; the Social tab as Destiny 1's Roster with blocking, parties (never "fireteams"),
+  guilds, reports and details; and 25 emblems, kept and worn, sold by the Tailor, shown on the Roster, the header, the
+  HUD and the Emblem slot. Tested offline: the full check, and headless at 1920×1080 against local rooms and accounts
+  seeded with sixteen players.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.

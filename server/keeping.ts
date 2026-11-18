@@ -6,7 +6,10 @@
  * take the character (the same player joined elsewhere), this room's next save learns it, and the player is let go.
  */
 
-import type { Characters } from './accounts/characters.ts';
+import type { Characters as Kept } from './accounts/characters.ts';
+
+/** What a room keeps characters with: claiming, saving and letting go. */
+type Characters = Pick<Kept, 'claim' | 'save' | 'release'>;
 
 /** What the keeper needs of the room. */
 export interface KeptRoom {

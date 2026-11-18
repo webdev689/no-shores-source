@@ -80,7 +80,7 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
     let message = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message");
     let gear = message.gear().expect("the gear");
     assert!(message.snapshot().is_none() && message.joined().is_none());
-    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.social()), (20, 5, 0, true));
+    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.at_reader()), (20, 5, 0, true));
     assert_eq!(gear.spent().map(|spent| spent.iter().collect::<Vec<_>>()), Some(vec![0]));
     assert_eq!(gear.resources().map(|resources| resources.get(4)), Some(3), "three gathered");
     let items: Vec<_> = gear.items().expect("items").iter().collect();

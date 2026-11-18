@@ -77,6 +77,9 @@ impl Character {
         };
         let (xp, aurem) = (times(worth.xp), times(worth.aurem));
         self.earn_xp(xp, weapon);
+        if difficulty == Difficulty::Storm {
+            self.earn(crate::emblems::Deed::StormFoe);
+        }
         self.materials.add_aurem(aurem);
         let chance = (worth.vestige * difficulty.reward()).min(1.0);
         let vestige = vestige::dropped(chance, worth.boss, foe_level, dice).map(|(rarity, slot, level)| Vestige {
@@ -103,6 +106,7 @@ impl Character {
     /// worn; what was taken under the stock's most.
     pub fn gather(&mut self, resource: usize) -> u16 {
         let count = NODE_YIELD + u16::from(self.has_trait("forager"));
+        self.earn(crate::emblems::Deed::Gathered);
         self.materials.add(Stuff::Resource(resource), count)
     }
 }

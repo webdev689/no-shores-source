@@ -2,6 +2,10 @@
 type: system
 status: live
 code:
+  - crates/gear/src/emblems.rs#emblems
+  - crates/gear/src/emblems.rs#sold_on
+  - crates/gear/src/shown.rs#Shown
+  - crates/room/src/asks.rs#counter_for
   - crates/gear/src/item.rs#Item
   - crates/gear/src/grid.rs#columns
   - crates/gear/src/grid.rs#cost
@@ -102,8 +106,9 @@ number is one of [[Gear as Claude Shapes It]].
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner
   and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a
   parry or a block gives back, with Last Light's reload.
-- **Asks** ride the player's inputs and are answered in turn. A city's social space answers identifying and the vault
-  anywhere in it, while the menu offers the vault only at its counter ([[Interface]]); the [[Test Ground]] within reach of its stall. The Test Ground alone hands out gear.
+- **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a Vestige
+  opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]] serves
+  them all within reach of its stall. The Test Ground alone hands out gear.
 
 ## Vendors
 
@@ -113,8 +118,25 @@ number is one of [[Gear as Claude Shapes It]].
   so over four days the Quartermaster sells each armour piece at each rarity.
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only in a social space, and carried with its
   slot's nine. Legendary and Atheric gear is never sold: it is earned.
-- The room sends the day's wares with a player's gear while they stand in a social space, sends them again as the
-  day turns, and a purchase is an ask like any other.
+- The room sends the day's wares with a player's gear while they stand in a social space, with the Tailor's emblems,
+  sends them again as the day turns, and a purchase is an ask like any other.
+
+## Emblems
+
+An emblem is a cosmetic after Destiny's ([[Cosmetics Follow Destiny, Emblems First]]): a sign and the nameplate it
+heads, shown beside a player's name wherever others see it ([[Interface]], "Emblems"). Its catalogue is
+`content/gear/emblems.json`, numbered by its order on the wire, each with a name, a rarity, words, where it comes from
+and its art (`gear::emblems`).
+
+- **Kept and worn.** A player keeps every emblem they have had, as Destiny's kiosks kept them, and wears one, both in
+  their character; a character kept before emblems reads with the starting one, and one wearing an emblem it does not
+  keep wears the starting one.
+- **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
+  (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Storm
+  seas, a resource gathered); and the Tailor, who sells six a day of twelve, the same for everyone that day, at 500
+  Aurem for Magic and 2,500 for Rare, some from a level. Levels and a piece fully upgraded are earned as they happen.
+- **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
+  others see of it beside it (`shown`): level, Defense, the main hand's Attack, the emblem worn, and each piece worn.
 
 ## Elements and shields
 

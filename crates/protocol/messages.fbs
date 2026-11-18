@@ -310,7 +310,7 @@ table GearDrop {
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
 // then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
 // the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent;
-// whether they stand where a social space's asks are answered; and the answer to their last ask (0 done, then the
+// whether they stand where a Vestige opens (the Reader's counter, or the stall); and the answer to their last ask (0 done, then the
 // gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
 // answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
 // island's resource; and in a social space, the vendors' wares of the day, the Quartermaster's then the Armsmith's,
@@ -327,7 +327,7 @@ table Gear {
   vestiges: [GearVestige];
   drops: [GearDrop];
   spent: [ubyte];
-  social: bool;
+  at_reader: bool;
   answer: ubyte;
   identified: uint;
   answered: uint;
@@ -344,6 +344,11 @@ table Gear {
   // The arms the room lets them take up, by combat's codes: their gear's, and with a torch where the main hand
   // leaves the left free. The room makes any other bare hands.
   arms: [uint];
+  // The emblems they keep and the one they wear, by their place in content/gear/emblems.json; and in a social space,
+  // the emblems the Tailor sells that day.
+  emblems: [ushort];
+  emblem: ushort;
+  emblems_sold: [ushort];
 }
 
 // What a room sends: exactly one of these is present.

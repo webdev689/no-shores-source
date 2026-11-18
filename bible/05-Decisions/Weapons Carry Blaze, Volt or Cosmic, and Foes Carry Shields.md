@@ -25,4 +25,7 @@ than none."
   less effective; one with no element does normal damage.
 - **A weapon's element shows as a glyph** on its page and in the corner of its icon.
 
+Asked later whether each pair should have its own value, the owner kept one half for every other element, as
+[[The Face Is Mended Whole, and the Gauge Counts Upgrades]] records.
+
 Links: [[Gear]], [[Combat]], [[Gear and Power Follow Destiny 1 Vanilla]].

@@ -92,8 +92,9 @@ on Cloudflare.
   their levels. A foe's kill pays every player whose blow landed on it in its last ten seconds and could harm it, each their own XP and Aurem and perhaps a Vestige, which lies where the foe fell for them
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
-  them. A social space's room answers a social space's asks (identifying a Vestige, the vault) anywhere in it; the
-  Test Ground's course within 4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
+  them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
+  file names: a Vestige opened at the Reader's, the vault at a vault's, a ware at its own vendor's; the Test Ground's
+  course serves them all within 4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
   nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
@@ -194,7 +195,8 @@ a city has the same pads and walls.
 
 A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
 ring's bounds and 100 m past them, beyond the 60 m where a body dies); the exact window of the ground over that rect,
-city terraces included; and the boxes of the city a body runs into there. The bake takes about 8 s for the nine
+city terraces included; the boxes of the city a body runs into there; and, for a social space, the counters that
+serve a player's gear (the Reader's, the vaults', the Quartermaster's and the Armsmith's). The bake takes about 8 s for the nine
 continents' 99 nodes, a few at a time, and writes about 0.44 MB in all, 145 KB compressed. `server`, `server:bundle`
 and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
 called `index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.
@@ -236,7 +238,7 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges and those lying for them; the resource nodes they have spent; whether they stand where a social space's asks are answered; the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; and how far they are to their next level and their next Fruit of Dagon |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges and those lying for them; the resource nodes they have spent; whether they stand where a Vestige opens (the Reader's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; and the emblems they keep, the one they wear, and in a social space the Tailor's of the day |
 
 ## The host
 
@@ -259,8 +261,9 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - A browser's one text message is its session's token. In a node's room the player's character is claimed with it
-  from the [[Accounts]], saved as it changes and let go when they leave; a second text message, or any other, closes
-  the socket.
+  from the [[Accounts]], saved as it changes and let go when they leave. At sea, where no character is kept, the room
+  tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster. A second text
+  message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { answerText, fullyUpgraded, gearHands, grown, itemName, traitOf } from './gear.ts';
+import { answerText, fullyUpgraded, gearHands, itemName, traitOf, upgraded } from './gear.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -40,7 +40,7 @@ const state = (items: readonly GearItem[]): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  social: false,
+  atReader: false,
   answer: 0,
   identified: 0,
   answered: 0,
@@ -78,12 +78,12 @@ test('the hands hold what the gear wears, in its rarity’s metal where the forg
   assert.deepEqual(gearHands(state([]), WARDROBE), { right: null, left: null }, 'nothing worn, bare hands');
 });
 
-test('an item grows toward its last column, and is fully upgraded once every node is bought', () => {
+test('the gauge counts the nodes bought, and an item is fully upgraded once every node is bought', () => {
   const column = (traits: string[]) => ({ kind: 3, traits, xp: 500, aurem: 0, fragments: 0, essence: 0, resource: 0 });
   const columns = [column([]), column(['light_grip', 'weighted'])];
-  assert.equal(grown(item({ xp: 250, xpMost: 1_000 })), 0.25);
-  assert.equal(grown(item({ xp: 4_000, xpMost: 1_000 })), 1);
-  assert.equal(grown(item({ xpMost: 0 })), null, 'a piece that does not grow');
+  assert.equal(upgraded(item({ columns, bought: 0b001, xp: 4_000, xpMost: 1_000 })), 1 / 3, 'nodes, not XP');
+  assert.equal(upgraded(item({ columns, bought: 0b101 })), 2 / 3);
+  assert.equal(upgraded(item({ columns: [] })), null, 'a piece with nothing to buy');
   assert.equal(fullyUpgraded(item({ columns, bought: 0b011 })), false, 'one perk still to buy');
   assert.equal(fullyUpgraded(item({ columns, bought: 0b111 })), true);
   assert.equal(fullyUpgraded(item({ columns: [] })), false, 'nothing to upgrade');

@@ -10,7 +10,6 @@ import { HeldMap } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
-import { wheelNotches } from '../overworld/overworldInput.ts';
 import { type CardAt, Cards } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
@@ -34,13 +33,13 @@ import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
-import { accountOf, roomsFrom } from './rooms.ts';
+import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
+import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
-import { fightControls } from './seaCombat.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 
@@ -209,12 +208,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     wasDead = false;
   };
 
-  const goFoot = async (node: NodeInfo, facing: number) => {
+  const goFoot = async (node: NodeInfo, facing: number, seas = heldMap?.difficulty) => {
     leaveHere();
     foot?.leave();
     foot = null;
     sea?.leaveRoom();
-    foot = await Foot.enter(footContext, node, facing, heldMap?.difficulty);
+    foot = await Foot.enter(footContext, node, facing, seas);
   };
 
   const goSea = async () => {
@@ -243,7 +242,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Online the server's sea room; playing alone, the same room in the page.
     await sea.enterRoom(
       rooms
-        ? (snapshot) => RoomConnection.open(rooms('sea'), snapshot)
+        ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session)
         : async (snapshot) => LocalRoom.openSea(await roomModule, world.layoutText, snapshot),
     );
   };
@@ -262,6 +261,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     travel({ kind: 'land', node: id, name: landing.name }, () =>
       goFoot(node, arrivalFacing(node, landmass.plan, from)),
     );
+  };
+
+  /** Joins a party member where they play: a node of this landmass at their seas, the ship left where she lies. */
+  const joinAt = (place: string): string | null => {
+    const where = nodeOfRoom(place);
+    const node = where && landmass.nodes.find((each) => each.id === where.id);
+    if (!where || !node)
+      return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
+    const facing = arrivalFacing(node, landmass.plan, null);
+    travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
+    return null;
   };
 
   const syncMenu = () => {
@@ -364,7 +374,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onTakeHelm(takeHelm);
   // The Ship tab's papers: her voyage only while she is at sea.
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
-  startGearWindow(hudRoot, link, () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null), shipNow);
+  const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
+  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat) return;
@@ -400,37 +411,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
     if (flow.mode === 'sea' && !flow.menu && sea?.aboard.walking && !input.locked) input.lock();
   });
-  const atSea = () => flow.mode === 'sea' && !flow.menu;
-  /** While the map is up, the pointer and the wheel are the map's. */
-  const mapUp = () => heldMap?.shown ?? false;
-  canvas.addEventListener('pointerdown', (event) => {
-    if (!atSea()) return;
-    // Held to the canvas, so a press let go over a mark or the bar still ends here; a locked pointer is held already.
-    if (!input.locked) canvas.setPointerCapture(event.pointerId);
-    if (mapUp()) heldMap?.pointerDown(event.offsetX, event.offsetY);
-    else sea?.pointerDown(event.offsetX, event.offsetY);
-  });
-  canvas.addEventListener('pointermove', (event) => {
-    if (!atSea()) return;
-    if (mapUp()) heldMap?.pointerMove(event.offsetX, event.offsetY);
-    else sea?.pointerMove(event.offsetX, event.offsetY);
-  });
-  /** A press is let go by whichever took it; neither keeps one after, where the map rose or fell in between. */
-  const forgetPresses = () => {
-    sea?.pointerCancel();
-    heldMap?.pointerCancel();
-  };
-  canvas.addEventListener('pointerup', (event) => {
-    if (atSea() && mapUp()) heldMap?.pointerUp(event.offsetX, event.offsetY);
-    else if (atSea()) sea?.pointerUp(event.offsetX, event.offsetY);
-    forgetPresses();
-  });
-  canvas.addEventListener('pointercancel', forgetPresses);
-  fightControls(canvas, () => sea?.fight ?? null);
-  canvas.addEventListener('wheel', (event) => {
-    if (!atSea()) return;
-    if (mapUp()) heldMap?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
-    else sea?.zoom(wheelNotches(event.deltaY, event.deltaMode, canvas.clientHeight));
+  seaPointer(canvas, input, {
+    atSea: () => flow.mode === 'sea' && !flow.menu,
+    sea: () => sea,
+    map: () => heldMap,
   });
 
   /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides. */
@@ -487,7 +471,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     const swell = scene.land?.swell;
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
-    if (!paused && !mapUp())
+    if (!paused && !heldMap?.shown)
       here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
     const shown = here.frame({
       seconds,

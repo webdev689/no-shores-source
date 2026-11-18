@@ -133,6 +133,14 @@ impl Item {
         self.node_bit(column, node).is_some_and(|bit| self.bought & bit != 0)
     }
 
+    /// Whether every node of every column is bought: it is fully upgraded, as Destiny 1's weapon was once every node
+    /// was lit. A piece with no nodes never is.
+    #[must_use]
+    pub fn fully_upgraded(&self) -> bool {
+        let (_, nodes) = node_offsets(self.columns());
+        nodes > 0 && self.bought == (1_u32 << nodes) - 1
+    }
+
     /// The upgrades bought, and how many it has.
     #[must_use]
     pub fn upgrades(&self) -> (u32, u32) {

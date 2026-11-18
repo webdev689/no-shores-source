@@ -21,6 +21,8 @@ pub const WITHDRAW: u8 = 9;
 pub const STORE_VESTIGE: u8 = 10;
 pub const WITHDRAW_VESTIGE: u8 = 11;
 pub const VEND: u8 = 12;
+pub const WEAR_EMBLEM: u8 = 13;
+pub const BUY_EMBLEM: u8 = 14;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -47,6 +49,8 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         STORE_VESTIGE => Asked::Gear(Ask::StoreVestige { vestige: item }),
         WITHDRAW_VESTIGE => Asked::Gear(Ask::WithdrawVestige { vestige: item }),
         VEND => Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::from_number(column)?, ware: node }),
+        WEAR_EMBLEM => Asked::Gear(Ask::WearEmblem { emblem: u16::try_from(item).ok()? }),
+        BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
         GATHER => Asked::Gather { node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -86,6 +90,10 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::Vend { vendor, ware } => {
                 args = messages::AskArgs { kind: VEND, column: vendor as u8, node: ware, ..args };
             }
+            Ask::WearEmblem { emblem } => {
+                args = messages::AskArgs { kind: WEAR_EMBLEM, item: u32::from(emblem), ..args };
+            }
+            Ask::BuyEmblem { emblem } => args = messages::AskArgs { kind: BUY_EMBLEM, item: u32::from(emblem), ..args },
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
@@ -198,7 +206,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let mut builder = FlatBufferBuilder::new();
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
     // In a social space, the day's wares, each numbered by its place among its vendor's.
-    let wares: Vec<_> = if room.social_for(player) {
+    let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
+    // In a social space, the emblems the Tailor sells that day.
+    let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day) } else { Vec::new() };
+    let wares: Vec<_> = if room.in_social_space(player) {
         gear::vendor::Vendor::ALL
             .into_iter()
             .flat_map(|vendor| gear::vendor::wares(vendor, room.day, character.level()))
@@ -260,7 +271,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         vestiges,
         drops,
         spent: Some(builder.create_vector(&found.spent)),
-        social: room.social_for(player),
+        at_reader: room.at_reader(player),
         answer: found.answer,
         identified: found.identified,
         answered: found.answered,
@@ -271,6 +282,9 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         to_next_needs,
         fruit_growing: character.fruit_growing().unwrap_or(-1.0),
         arms: Some(builder.create_vector(&arms)),
+        emblems: Some(builder.create_vector(&emblems)),
+        emblem: gear::emblems::number_of(&character.emblem).unwrap_or_default(),
+        emblems_sold: Some(builder.create_vector(&emblems_sold)),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

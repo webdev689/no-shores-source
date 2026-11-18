@@ -40,7 +40,7 @@ const state = (items: GearItem[]): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  social: false,
+  atReader: false,
   answer: 0,
   answered: 0,
   nodes: [],

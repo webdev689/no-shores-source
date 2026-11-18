@@ -39,7 +39,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  social: false,
+  atReader: false,
   answer: 0,
   answered: 0,
   nodes: [],
@@ -98,16 +98,16 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
       ['Hold to feed a Fruit of Dagon', 'button'],
     ],
   );
-  const carried = itemDetailOf({ ...legendary, at: 0 }, state({ social: true }));
+  const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atReader: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
     ['Equip', 'Equip off hand', 'Hold to dismantle'],
   );
   assert.equal(carried.presses.at(-1)?.role, 'warn');
   // At the vault's counter, it may be put in; a vaulted one, taken out.
-  const atVault = itemDetailOf({ ...legendary, at: 0 }, state({ social: true }), true);
+  const atVault = itemDetailOf({ ...legendary, at: 0 }, state({ atReader: true }), true);
   assert.ok(atVault.presses.some((press) => press.label === 'Put in the vault'));
-  const vaulted = itemDetailOf({ ...legendary, at: 1 }, state({ social: true }), true);
+  const vaulted = itemDetailOf({ ...legendary, at: 1 }, state({ atReader: true }), true);
   assert.deepEqual(vaulted.presses[0]?.ask, { kind: ASKS.withdraw, item: legendary.id });
 });
 

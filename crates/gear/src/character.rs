@@ -123,6 +123,11 @@ pub struct Character {
     pub materials: Materials,
     /// The number the next item or Vestige takes.
     pub next_id: u32,
+    /// The emblems the player keeps, by id, and the one they wear (`emblems.rs`).
+    #[serde(default)]
+    pub emblems: Vec<String>,
+    #[serde(default)]
+    pub emblem: String,
 }
 
 impl Character {
@@ -136,6 +141,8 @@ impl Character {
             vestiges: BTreeMap::new(),
             materials: Materials { resources: vec![0; catalogue().resources.len()], ..Materials::default() },
             next_id: 1,
+            emblems: Vec::new(),
+            emblem: crate::emblems::starting(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::MainHand),
@@ -147,13 +154,19 @@ impl Character {
             let id = character.take_id();
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }
+        character.earn_due();
         character
     }
 
-    /// The character as it is kept between sessions.
+    /// The character as it is kept between sessions, with what others see of it (`shown.rs`) beside it, which reading
+    /// it passes over.
     #[must_use]
     pub fn to_json(&self) -> String {
-        serde_json::to_string(self).unwrap_or_default()
+        let mut kept = serde_json::to_value(self).unwrap_or_default();
+        if let (Some(object), Ok(shown)) = (kept.as_object_mut(), serde_json::to_value(self.shown())) {
+            object.insert("shown".to_owned(), shown);
+        }
+        kept.to_string()
     }
 
     /// A character kept between sessions, or none when the text is not one. Read, it is made whole: it gains a stock
@@ -194,6 +207,7 @@ impl Character {
         }
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
+        character.earn_due();
         Some(character)
     }
 
@@ -332,5 +346,6 @@ impl Character {
                 item.xp = item.xp.saturating_add(xp).min(item.xp_most());
             }
         }
+        self.earn_due();
     }
 }

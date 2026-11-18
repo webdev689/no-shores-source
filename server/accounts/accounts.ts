@@ -5,8 +5,10 @@
  */
 
 import { type Db, SESSION_IDLE_MS } from './database.ts';
+import { type AccountRow, HEADERS, LAPSED, bodyOf, json, refused, sessionOf, signedIn, within } from './http.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
 import { friendAsk, friendsOf } from './friends.ts';
+import { socialAsk, socialRead } from './social.ts';
 import { USERNAME } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
@@ -33,25 +35,9 @@ const LIMITS = {
   discord: { most: 20, window: 10 * MINUTE },
   ticket: { most: 10, window: 10 * MINUTE },
   friend: { most: 30, window: 60 * MINUTE },
+  social: { most: 60, window: 60 * MINUTE },
+  report: { most: 10, window: 24 * 60 * MINUTE },
 } as const;
-/** The most a request's body may hold, in bytes: a username and password, or a code and nonce, are far less. */
-const BODY_MOST = 2048;
-
-const HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-};
-
-const json = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), { status, headers: { ...HEADERS, 'Content-Type': 'application/json' } });
-const refused = (status: number, why: string): Response => json({ error: why }, status);
-
-interface AccountRow {
-  readonly id: string;
-  readonly username: string | null;
-  readonly discord_id: string | null;
-}
 
 /** An account as its player sees it. */
 const shown = (row: AccountRow) => ({
@@ -60,24 +46,6 @@ const shown = (row: AccountRow) => ({
   discord: row.discord_id !== null,
   guest: row.username === null && row.discord_id === null,
 });
-
-/** Whether one more ask under `key` passes its limit; counts it either way. */
-async function within(
-  database: Db,
-  key: string,
-  limit: { most: number; window: number },
-  now: number,
-): Promise<boolean> {
-  const start = now - (now % limit.window);
-  const counted = await database
-    .prepare(
-      `INSERT INTO limits (key, window_start, count) VALUES (?1, ?2, 1)
-       ON CONFLICT (key) DO UPDATE SET count = count + 1 RETURNING count`,
-    )
-    .bind(`${key}@${start}`, start)
-    .first<{ count: number }>();
-  return (counted?.count ?? 0) <= limit.most;
-}
 
 async function newSession(database: Db, account: string, now: number): Promise<string> {
   const token = randomToken();
@@ -95,74 +63,6 @@ async function newAccount(database: Db, now: number, discord: string | null = nu
     .bind(id, discord, now)
     .run();
   return id;
-}
-
-/** Said of a session its account has not used in `SESSION_IDLE_MS`. */
-const LAPSED = 'Your sign-in lapsed after 30 days away. Sign in again.';
-
-/** The account a request's bearer token is a session of, seen now; `LAPSED` if it lapsed, which ends it. */
-async function sessionOf(request: Request, database: Db, now: number): Promise<AccountRow | typeof LAPSED | null> {
-  const token = /^Bearer ([0-9a-f]{64})$/.exec(request.headers.get('Authorization') ?? '')?.[1];
-  if (!token) return null;
-  const hash = await hashOf(token);
-  const row = await database
-    .prepare(
-      `SELECT accounts.id, accounts.username, accounts.discord_id, sessions.seen_at FROM sessions
-       JOIN accounts ON accounts.id = sessions.account_id WHERE sessions.token_hash = ?1`,
-    )
-    .bind(hash)
-    .first<AccountRow & { seen_at: number }>();
-  if (!row) return null;
-  const lapsed = (row.username !== null || row.discord_id !== null) && row.seen_at < now - SESSION_IDLE_MS;
-  await database
-    .prepare(
-      lapsed ? 'DELETE FROM sessions WHERE token_hash = ?2' : 'UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2',
-    )
-    .bind(now, hash)
-    .run();
-  return lapsed ? LAPSED : { id: row.id, username: row.username, discord_id: row.discord_id };
-}
-
-/** The account a request's bearer token is a live session of. */
-async function signedIn(request: Request, database: Db, now: number): Promise<AccountRow | null> {
-  const found = await sessionOf(request, database, now);
-  return found === LAPSED ? null : found;
-}
-
-/** A request's body as text, read only up to `BODY_MOST` bytes however it is sent; null past that. */
-async function textOf(request: Request): Promise<string | null> {
-  if (Number(request.headers.get('Content-Length') ?? 0) > BODY_MOST) return null;
-  const reader = request.body?.getReader();
-  if (!reader) return '';
-  const read: Uint8Array[] = [];
-  let size = 0;
-  try {
-    for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
-      size += chunk.value.byteLength;
-      if (size > BODY_MOST) {
-        await reader.cancel();
-        return null;
-      }
-      read.push(chunk.value);
-    }
-  } catch {
-    return '';
-  }
-  const whole = new Uint8Array(size);
-  read.reduce((offset, part) => (whole.set(part, offset), offset + part.byteLength), 0);
-  return new TextDecoder().decode(whole);
-}
-
-/** A request's JSON body, read only up to `BODY_MOST` bytes; null if it is longer or not JSON. */
-async function bodyOf(request: Request): Promise<Record<string, unknown> | null> {
-  const text = await textOf(request);
-  if (text === null) return null;
-  try {
-    const read: unknown = JSON.parse(text);
-    return typeof read === 'object' && read !== null ? (read as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
 }
 
 /** A request's JSON body's username and password, if it has both as strings. */
@@ -224,6 +124,29 @@ async function finish(request: Request, deps: Deps, now: number): Promise<Respon
       .first<AccountRow>());
   if (!row) return refused(400, 'This sign-in has run out. Start it again from the game.');
   return json({ token: await newSession(database, row.id, now), account: shown(row) });
+}
+
+/** The Roster's routes (`social.ts`): `GET /v1/roster`, `GET /v1/players/<name>` and `POST /v1/social/<ask>`, each
+ *  for a signed-in player with a username. Asks that reach other players are limited. */
+async function social(request: Request, deps: Deps, route: string, now: number): Promise<Response> {
+  const { database } = deps;
+  const read = /^GET \/v1\/(roster|players\/[^/]+)$/.exec(route)?.[1];
+  const asked = /^POST \/v1\/social\/([a-z]+\/?[a-z]*)$/.exec(route)?.[1];
+  if (!read && !asked) return refused(404, 'No such page.');
+  const account = await sessionOf(request, database, now);
+  if (account === LAPSED) return refused(401, LAPSED);
+  if (!account) return refused(401, 'Not signed in.');
+  if (account.username === null) return refused(409, 'Add a username in Settings to use the Roster.');
+  if (read) {
+    const answer = await socialRead(database, account.id, read, now);
+    return json(answer.body, answer.status);
+  }
+  const limit = asked === 'report' ? LIMITS.report : LIMITS.social;
+  const reaching = /^(friend\/ask|party\/invite|guild\/invite|guild\/found|report)$/.test(asked ?? '');
+  if (reaching && !(await within(database, `${asked === 'report' ? 'report' : 'social'}:${account.id}`, limit, now)))
+    return refused(429, 'Too many asks. Wait a while.');
+  const answer = await socialAsk(database, account.id, asked ?? '', await bodyOf(request), now);
+  return json(answer.body, answer.status);
 }
 
 /** Answers one request to the API. */
@@ -360,6 +283,6 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
       return json(answer.body, answer.status);
     }
     default:
-      return refused(404, 'No such page.');
+      return social(request, deps, route, now);
   }
 }

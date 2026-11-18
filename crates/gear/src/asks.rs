@@ -4,6 +4,7 @@
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};
 use crate::dice::{Dice, Purpose};
+use crate::emblems::Deed;
 use crate::item::{Item, NAMED_LEVEL, NONE_CHOSEN};
 use crate::kinds::{Slot, Stock};
 use crate::rarity::Rarity;
@@ -59,6 +60,14 @@ pub enum Ask {
         vendor: Vendor,
         ware: u8,
     },
+    /// Wears an emblem the player keeps, by its number in the catalogue.
+    WearEmblem {
+        emblem: u16,
+    },
+    /// Buys one of the emblems the Tailor sells that day: at the Tailor's counter only.
+    BuyEmblem {
+        emblem: u16,
+    },
 }
 
 /// Why an ask was refused.
@@ -89,6 +98,13 @@ pub enum Refusal {
     Short,
     NoFruit,
     FullOfXp,
+    NoSuchEmblem,
+    /// The player does not keep that emblem.
+    NotKept,
+    /// The player keeps that emblem already.
+    Kept,
+    /// The Tailor does not sell it that day.
+    NotSold,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -126,8 +142,14 @@ impl Character {
             Ask::StoreVestige { vestige } => self.move_vestige(vestige, here, true),
             Ask::WithdrawVestige { vestige } => self.move_vestige(vestige, here, false),
             Ask::Vend { vendor, ware } => self.vend(vendor, ware, here),
+            Ask::WearEmblem { emblem } => self.wear_emblem(emblem),
+            Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
         }
-        .map(|done| done.unwrap_or(Done::Done))
+        .map(|done| {
+            // A level reached or a piece fully upgraded earns its emblem as it happens.
+            self.earn_due();
+            done.unwrap_or(Done::Done)
+        })
     }
 
     fn wear(&mut self, id: u32, slot: Slot) -> Result<Option<Done>, Refusal> {
@@ -308,7 +330,13 @@ impl Character {
         let item = vestige::make(item_id, rarity, vestige.slot, vestige.level, dice).ok_or(Refusal::NoSuchItem)?;
         self.take_id();
         self.vestiges.remove(&id);
+        let opened = item.rarity;
         self.items.insert(item_id, (item, At::Carried));
+        match opened {
+            Rarity::Legendary => self.earn(Deed::OpenedLegendary),
+            Rarity::Atheric => self.earn(Deed::OpenedAtheric),
+            _ => {}
+        }
         Ok(Some(Done::Identified(item_id)))
     }
 

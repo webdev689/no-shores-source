@@ -39,7 +39,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  social: false,
+  atReader: false,
   answer: 0,
   answered: 0,
   identified: 0,
@@ -99,7 +99,7 @@ test('the inventory shows its currencies, and Vestiges open only in a social spa
     away.tabs.map((each) => each.id),
     ['consumables', 'materials', 'vestiges'],
   );
-  const social = inventoryPageOf(state({ social: true, vestiges: [vestige, { ...vestige, id: 8, vaulted: true }] }));
+  const social = inventoryPageOf(state({ atReader: true, vestiges: [vestige, { ...vestige, id: 8, vaulted: true }] }));
   assert.deepEqual(tab(social, 'vestiges')[0]?.press?.ask, { kind: ASKS.identify, item: 9 });
   assert.equal(tab(social, 'vestiges')[1]?.glyph, 'empty', 'a vaulted Vestige is not carried');
 });
@@ -107,7 +107,7 @@ test('the inventory shows its currencies, and Vestiges open only in a social spa
 test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from what is carried', () => {
   const vault = vaultOf(
     state({
-      social: true,
+      atReader: true,
       items: [item({ id: 5, at: 1 }), item({ id: 6, at: 1, kind: 14 }), item({ id: 7, at: 0 }), item({ id: 8, at: 2 })],
       vestiges: [{ id: 9, rarity: 3, slot: 3, level: 20, vaulted: true }],
     }),

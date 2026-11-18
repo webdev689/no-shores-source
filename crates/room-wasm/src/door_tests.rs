@@ -227,10 +227,12 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
 }
 
 #[test]
-fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem() {
+fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_counter() {
     let mut social = node_file();
     social["id"] = json!("harbour-social");
     social["kind"] = json!("social");
+    // The Armsmith's counter where the player stands, as the bake writes a social space's counters.
+    social["counters"] = json!([{ "kind": "armsmith", "at": social["spawns"][0].clone() }]);
     assert!(open_node(social.to_string().as_bytes()));
     assert!(set_day(20_400));
     let player = room_join();
