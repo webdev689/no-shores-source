@@ -61,9 +61,13 @@ function soundPanel(): HTMLElement {
   Object.assign(slider, { type: 'range', min: '0', max: '100', step: '5' });
   slider.value = String(Math.round(interfaceVolume() * 100));
   const shown = make('b', `${slider.value}%`);
+  // The slider is named by its words alone, and says its level as a percentage.
+  shown.setAttribute('aria-hidden', 'true');
+  slider.setAttribute('aria-valuetext', `${slider.value}%`);
   slider.addEventListener('input', () => {
     setInterfaceVolume(Number(slider.value) / 100);
     shown.textContent = `${slider.value}%`;
+    slider.setAttribute('aria-valuetext', `${slider.value}%`);
   });
   slider.addEventListener('change', () => play('press'));
   row.append(make('span', 'Interface sounds'), slider, shown);
@@ -77,7 +81,9 @@ function creditsList(): HTMLElement {
   list.setAttribute('aria-label', 'Sound credits');
   for (const credit of soundCredits()) {
     const item = make('li', '');
-    const licence = make('a', credit.licence);
+    // Its licence by its full name and version, as the licence's own page gives it: CC BY 4.0, CC0 1.0.
+    const version = /(\d\.\d)\/$/.exec(credit.licenceUrl)?.[1] ?? '';
+    const licence = make('a', `${credit.licence.replace('-', ' ')} ${version}`.trim());
     licence.href = credit.licenceUrl;
     const source = make('a', 'Freesound');
     source.href = credit.page;
@@ -86,7 +92,11 @@ function creditsList(): HTMLElement {
     list.append(item);
   }
   const credits = make('section', '', 'gear-sound-credits');
-  credits.append(make('h3', 'Sound credits', 'gear-hint'), list);
+  credits.append(
+    make('h3', 'Sound credits', 'gear-hint'),
+    make('p', "Each plays at the game's own level.", 'gear-hint'),
+    list,
+  );
   return credits;
 }
 

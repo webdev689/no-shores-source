@@ -1,6 +1,6 @@
 // The interface's recorded sounds: the owner's picks from Freesound (content/audio/sounds.json), kept on R2 under the
-// hash of their bytes. Each is fetched once the synthesiser wakes, levelled to one peak so a quiet recording and a
-// loud one sit together, and played in place of the synthesiser's own for its cue; until it has come, or where it
+// hash of their bytes. Each is fetched once the synthesiser wakes, levelled to one peak and one loudness so a quiet
+// recording and a loud one sit together, and played in place of the synthesiser's own for its cue; until it has come, or where it
 // cannot, the synthesiser's sound plays. Each Attribution sound carries its credit, which Settings lists.
 
 import bank from '../../../content/audio/sounds.json' with { type: 'json' };
@@ -16,18 +16,32 @@ export interface SoundCredit {
   readonly changes: string;
 }
 
-/** The peak every recorded sound is levelled to, the synthesiser's own presses' loudness. */
+/** The peak a recorded sound is levelled to, the synthesiser's own presses' loudness; and the loudness none passes, as
+ *  its loudest 20 ms (-24 dBFS): a held tone levelled by its peak alone sounds far louder than a click. */
 const PEAK = 0.3;
+const LOUD = 0.063;
+const WINDOW_S = 0.02;
 const loaded = new Map<string, { readonly buffer: AudioBuffer; readonly level: number }>();
 let asked = false;
 
-/** The loudest sample a recording reaches. */
-function peakOf(buffer: AudioBuffer): number {
-  let peak = 0;
-  for (let channel = 0; channel < buffer.numberOfChannels; channel++)
-    for (const sample of buffer.getChannelData(channel)) peak = Math.max(peak, Math.abs(sample));
-  return peak;
+/** How much a recording is turned up or down: its peak to PEAK, unless its loudest 20 ms would then pass LOUD. */
+export function levelOf(channels: readonly Float32Array[], sampleRate: number): number {
+  const window = Math.max(1, Math.round(sampleRate * WINDOW_S));
+  let [peak, loudest] = [0, 0];
+  for (const samples of channels) {
+    let sum = 0;
+    for (let index = 0; index < samples.length; index++) {
+      const sample = samples[index] ?? 0;
+      peak = Math.max(peak, Math.abs(sample));
+      sum += sample * sample - (index >= window ? (samples[index - window] ?? 0) ** 2 : 0);
+      loudest = Math.max(loudest, sum / window);
+    }
+  }
+  return Math.min(PEAK / Math.max(0.01, peak), LOUD / Math.max(1e-4, Math.sqrt(loudest)));
 }
+
+const channelsOf = (buffer: AudioBuffer) =>
+  Array.from({ length: buffer.numberOfChannels }, (unused, channel) => buffer.getChannelData(channel));
 
 /** Fetches and decodes every recorded sound, once. */
 export function loadSamples(audio: AudioContext): void {
@@ -37,7 +51,7 @@ export function loadSamples(audio: AudioContext): void {
     void fetch(bank.base + sound.key)
       .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`${answer.status}`))))
       .then((bytes) => audio.decodeAudioData(bytes))
-      .then((buffer) => loaded.set(id, { buffer, level: PEAK / Math.max(0.01, peakOf(buffer)) }))
+      .then((buffer) => loaded.set(id, { buffer, level: levelOf(channelsOf(buffer), buffer.sampleRate) }))
       // A sound that cannot be fetched leaves the synthesiser's own in its place.
       .catch(() => undefined);
 }

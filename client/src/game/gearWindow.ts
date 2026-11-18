@@ -5,6 +5,7 @@ import { make } from '../editor/dom.ts';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, answerText, itemName } from '../player/gear.ts';
+import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
@@ -60,10 +61,10 @@ const BANNER_SCALE = 3;
 const LOOK_MS = 100;
 /** What the footer says each view's presses and keys do, and an item's page's. */
 const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
+  // A worn piece is not dismantled; a carried one's card in the flyout says how.
   character: [
     ['Click', 'Swap'],
     ['Right-click / X', 'Details'],
-    [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
   social: [
     ['Click', 'Choose a player'],
@@ -167,8 +168,10 @@ export function startGearWindow(
   scrim.hidden = true;
   root.append(scrim, screen);
   const tip = new HoverCard(root);
-  // What the player gains shows at the right, in play and over the menu alike.
-  const feed = startAcquiredFeed(root, here);
+  // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
+  let pictures: ItemPictures | null = null;
+  const picturesOf = (forge: Cards) => (pictures ??= new ItemPictures(forge));
+  const feed = startAcquiredFeed(root, here, picturesOf);
   let view: View | null = null;
   let slot: number | null = null;
   let shelf = FIRST_SHELF;
@@ -188,7 +191,6 @@ export function startGearWindow(
   let tabbed: View | null = null;
   /** A page that needs no gear, kept while its view and what it shows stay the same. */
   let plain: { key: string; page: HTMLElement } | null = null;
-  let pictures: ItemPictures | null = null;
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
   const redraw = () => drawn++;
 
@@ -224,6 +226,8 @@ export function startGearWindow(
   };
   const open = (wanted: View, onShelf?: string) => {
     if (view === wanted && onShelf === undefined) return shut();
+    // A hold under way on the page left behind does not act on it unseen.
+    letGo();
     const opening = view === null;
     [view, slot, inspecting, plain, shownGear, returnTo] = [wanted, null, null, null, null, null];
     shelf = onShelf ?? FIRST_SHELF;
@@ -369,7 +373,7 @@ export function startGearWindow(
       return;
     }
     plain = null;
-    if (now?.forge && !pictures) pictures = new ItemPictures(now.forge);
+    if (now?.forge) picturesOf(now.forge);
     const dress = now?.dress ?? null;
     const figureKey = dress ? JSON.stringify(dress) : '';
     if (now?.forge && dress && figureKey !== figure.key) {
@@ -392,8 +396,14 @@ export function startGearWindow(
       return;
     }
     [shownGear, shownState] = [gear, state];
-    // The focused control is found again in the page built anew, by what it is.
-    const focused = document.activeElement instanceof HTMLElement ? document.activeElement.dataset['key'] : undefined;
+    // The focused control is found again in the page built anew, by what it is; should it be gone (dismantled, opened),
+    // the one beside it takes the focus, else the tab or station it is under.
+    const held = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focused = held?.dataset['key'];
+    const beside = [held?.nextElementSibling, held?.previousElementSibling]
+      .map((node) => (node instanceof HTMLElement ? node.dataset['key'] : undefined))
+      .find(Boolean);
+    const within = held !== null && screen.contains(held);
     tip.hide();
     ends(gear);
     if (!now || !gear) {
@@ -463,7 +473,12 @@ export function startGearWindow(
     if (shown && !(again && shown.page.contains(again)))
       // The page is read from its name, so no card opens over it unasked.
       shown.page.querySelector<HTMLElement>('.gear-item-name')?.focus();
-    else (again ?? found(returnTo))?.focus();
+    else {
+      const next = again ?? found(returnTo) ?? found(beside);
+      if (next) next.focus();
+      else if (within && !screen.contains(document.activeElement))
+        (tabs.find((node) => node.classList.contains('gear-chosen')) ?? title).focus();
+    }
   }
 
   // A press is never lost to a new build under it: none is made while one is held down.

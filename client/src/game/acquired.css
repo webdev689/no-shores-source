@@ -4,7 +4,8 @@
   position: fixed;
   right: 40px;
   bottom: 30vh;
-  z-index: 45;
+  /* Over the menu, under the hover card, which is read where it stands. */
+  z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -36,13 +37,18 @@
     radial-gradient(ellipse at 50% 115%, rgba(var(--rar-rgb, 120, 110, 90), 0.35), transparent 68%), var(--well);
 }
 .acquired-icon img.gear-glyph {
-  width: 32px;
-  height: 32px;
-}
-.acquired-emblem {
   width: 36px;
   height: 36px;
+}
+/* An emblem's sign at its own 24 cells, as a glyph's 12 stand at three times: whole pixels either way. */
+.acquired-emblem {
+  width: 24px;
+  height: 24px;
   image-rendering: pixelated;
+}
+/* While the menu is open its rows stand low, over the footer's edge, clear of the page's names and cards. */
+.gear-screen:not([hidden]) ~ .acquired {
+  bottom: 96px;
 }
 .acquired-name {
   order: 0;
@@ -101,5 +107,8 @@
     /* The zoom doubles the offsets too, so they are halved to stand where they do below 1440p. */
     right: 20px;
     bottom: 15vh;
+  }
+  .gear-screen:not([hidden]) ~ .acquired {
+    bottom: 48px;
   }
 }

@@ -22,37 +22,41 @@ const out = process.argv[2] ?? 'freesound-candidates';
 const wanted = JSON.parse(readFileSync(new URL('../../content/audio/freesound.json', import.meta.url), 'utf8'));
 const pause = () => new Promise((done) => setTimeout(done, PAUSE_MS));
 
-/** An answer that came back well, or null with the reason logged. */
-async function fetched(url) {
+/** An answer's text, or its bytes, read whole; or null with the reason logged. */
+async function fetched(url, bytes = false) {
   await pause();
   try {
     const answer = await fetch(url, { headers });
-    if (answer.ok) return answer;
+    if (answer.ok) return bytes ? Buffer.from(await answer.arrayBuffer()) : await answer.text();
     console.log(`  ${answer.status} for ${url}: ${(await answer.text()).slice(0, 200).replace(/\s+/g, ' ')}`);
   } catch (error) {
-    // One request failing is logged and passed over: the rest of the search still runs.
+    // One request failing, even partway through its answer, is logged and passed over: the rest still runs.
     console.log(`  no answer from ${url}: ${error.cause?.code ?? error.message}`);
   }
   return null;
 }
 
 /** A page's text, or null with the reason logged. */
-async function page(url) {
-  return (await fetched(url))?.text() ?? null;
-}
+const page = (url) => fetched(url);
+/** A preview's bytes, or null with the reason logged. */
+const audioOf = (url) => fetched(url, true);
 
 /** A picked sound, read from its own page for its credit, its preview kept as `picks/<cue>.mp3`. */
 async function pickOf(cue) {
   const id = String(cue.picked);
   const sound = await page(`${SITE}/s/${id}/`);
+  // Kept beside the picks, so how the credit was read can be checked later without Freesound.
+  mkdirSync(join(out, 'pages'), { recursive: true });
+  if (sound) writeFileSync(join(out, 'pages', `pick-${cue.id}.html`), sound);
   const licence = sound && licenceLinkOf(sound);
   const preview = sound && previewOf(sound, id);
   const author = sound?.match(new RegExp(`/people/([A-Za-z0-9_.@+-]{1,80})/sounds/${id}/`))?.[1] ?? null;
-  const pick = { id: cue.id, freesound: Number(id), name: sound ? titleOf(sound, id) : null, author, licence, preview };
-  const audio = preview ? await fetched(preview) : null;
+  const name = sound ? titleOf(sound, id, author ?? '') : null;
+  const pick = { id: cue.id, freesound: Number(id), name, author, licence, preview };
+  const audio = preview ? await audioOf(preview) : null;
   if (audio) {
     mkdirSync(join(out, 'picks'), { recursive: true });
-    writeFileSync(join(out, 'picks', `${cue.id}.mp3`), Buffer.from(await audio.arrayBuffer()));
+    writeFileSync(join(out, 'picks', `${cue.id}.mp3`), audio);
   }
   console.log(`${cue.id}: picked ${id}, ${pick.name} by ${author}, ${licence?.url ?? 'no allowed licence found'}`);
   return {
@@ -99,13 +103,13 @@ for (const cue of wanted.cues) {
     if (!licence) continue;
     const preview = previewOf(sound, id);
     if (!preview) continue;
-    const audio = await fetched(preview);
+    const audio = await audioOf(preview);
     if (!audio) continue;
     const file = `${id}.mp3`;
-    writeFileSync(join(out, cue.id, file), Buffer.from(await audio.arrayBuffer()));
+    writeFileSync(join(out, cue.id, file), audio);
     candidates.push({
       freesound: Number(id),
-      name: titleOf(sound, id),
+      name: titleOf(sound, id, author),
       author,
       licence,
       page: address,
@@ -118,10 +122,8 @@ for (const cue of wanted.cues) {
 writeFileSync(join(out, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
 writeFileSync(join(out, 'picks.json'), `${JSON.stringify(picks, null, 2)}\n`);
 // A search that kept nothing at all, or a pick not read whole, fails the run, so a refusal or a changed page shows.
-if (
-  picks.some((pick) => !pick.licence || !pick.file) ||
-  (report.length > 0 && report.every((cue) => cue.candidates.length === 0))
-) {
-  console.log('No candidates for any cue: read pages/ in the download to see why.');
-  process.exitCode = 1;
-}
+const unread = picks.filter((pick) => !pick.licence || !pick.file).map((pick) => pick.id);
+if (unread.length > 0) console.log(`Picks not read whole: ${unread.join(', ')}. Read pages/ in the download.`);
+const empty = report.length > 0 && report.every((cue) => cue.candidates.length === 0);
+if (empty) console.log('No candidates for any cue: read pages/ in the download to see why.');
+if (unread.length > 0 || empty) process.exitCode = 1;

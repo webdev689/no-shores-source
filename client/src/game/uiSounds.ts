@@ -42,8 +42,12 @@ let air: AudioBuffer | null = null;
 let lastCueAt = -Infinity;
 let lastTickAt = -Infinity;
 
+/** The player's volume once set in this page, so a browser that keeps nothing still shows what it plays at. */
+let chosen: number | null = null;
+
 /** The player's volume, 0 to 1. */
 export function interfaceVolume(): number {
+  if (chosen !== null) return chosen;
   try {
     const kept = Number(localStorage.getItem(VOLUME_KEY) ?? VOLUME_FIRST);
     return Number.isFinite(kept) ? Math.min(1, Math.max(0, kept)) : VOLUME_FIRST;
@@ -54,6 +58,7 @@ export function interfaceVolume(): number {
 
 export function setInterfaceVolume(volume: number): void {
   const kept = Math.min(1, Math.max(0, volume));
+  chosen = kept;
   try {
     localStorage.setItem(VOLUME_KEY, String(kept));
   } catch {
@@ -62,9 +67,14 @@ export function setInterfaceVolume(volume: number): void {
   if (master) master.gain.value = kept * LEVEL;
 }
 
-/** The synthesiser, woken by the player's first press or key, as a browser lets sound start only then. */
+/** The synthesiser, woken by the player's first press or key, as a browser lets sound start only then; woken again by
+ *  a later one, should the browser have stopped it. Nothing else wakes it, so no sound waits to play all at once. */
 function wake(): void {
-  if (context || typeof AudioContext === 'undefined') return;
+  if (context) {
+    if (context.state !== 'running') void context.resume();
+    return;
+  }
+  if (typeof AudioContext === 'undefined') return;
   context = new AudioContext();
   master = context.createGain();
   master.gain.value = interfaceVolume() * LEVEL;
@@ -137,7 +147,6 @@ function rush([from, to]: readonly [number, number], peak: number, length: numbe
 
 /** Plays a cue of the interface. */
 export function play(cue: Cue): void {
-  wake();
   lastCueAt = performance.now();
   // The sounds heard most stray a little in pitch, so a run of them never drones.
   const stray = 1 + (Math.random() - 0.5) * STRAY;
@@ -229,7 +238,6 @@ const GLINTS = [2, 3, 2.5, 4, 3.5, 2, 3, 2.5];
 /** A gain's chime, the Brass bells the owner picked: one voice at three sizes, a single bell for a Normal or Magic gain,
  *  a rising run for a Rare, and for a Legendary or Atheric a longer run over a held, shimmering chord and its glints. */
 export function chime(rarity: number): void {
-  wake();
   lastCueAt = performance.now();
   if (rarity <= 1) return bell(BELL, 0.22, 0.45);
   if (rarity === 2) return fromBell([0, 4, 7]).forEach((pitch, nth) => bell(pitch, 0.2, 0.7, nth * 0.075));
@@ -244,7 +252,6 @@ export function chime(rarity: number): void {
 /** A hold's build-up, the Shimmer the owner picked: high, thin air swelling over `holdMs` as it is held, glinting
  *  faster as it nears its end, then gone; the stop it returns lets it fall away at once, let go early. */
 export function charge(holdMs: number): () => void {
-  wake();
   lastCueAt = performance.now();
   const now = live();
   if (!now || !air) return () => undefined;
@@ -277,7 +284,9 @@ export function charge(holdMs: number): () => void {
     lastCueAt = performance.now();
     const when = now.audio.currentTime;
     gain.gain.cancelScheduledValues(when);
-    gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), when);
+    // Let go before it began, it reads at the gain's default of 1: it stays silent, never a hiss at the full level.
+    const level = when < now.when + 0.004 ? 0.0001 : Math.max(0.0001, gain.gain.value);
+    gain.gain.setValueAtTime(level, when);
     gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
     for (const voice of [source, flutter]) voice.stop(when + 0.05);
   };
@@ -301,11 +310,13 @@ export function installInterfaceSounds(root: HTMLElement): void {
     },
     true,
   );
+  // A control reached by a press or key that already sounded (a tab opened, a tab moved to) ticks no more.
   const tick = (target: Element | null) => {
-    if (!target || target === over) return;
+    if (target === over) return;
     over = target;
+    if (!target) return;
     const now = performance.now();
-    if (now - lastTickAt < TICK_MS || target.matches('.gear-vacant')) return;
+    if (now - Math.max(lastTickAt, lastCueAt) < TICK_MS || target.matches('.gear-vacant')) return;
     lastTickAt = now;
     play('hover');
   };

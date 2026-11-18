@@ -263,6 +263,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   page for its exact licence), puts each on R2 by its hash and writes `content/audio/sounds.json`, whose credits
   Settings lists. All thirteen cues are settled: six recordings, the gains' Brass bells and a hold's Shimmer made by
   the synthesiser, and the tab, close and refusal kept as the synthesiser's own.
+- **A fifth audit and design pass are on #60 too**, each finding checked against the code before its fix: F dismantles
+  the piece last pointed at or focused, never one focused earlier; Ctrl, Cmd or Alt with F, leaving the window, or
+  the pointer leaving the piece lets go; the shards fly whole; the focus stays near a dismantled piece; a tab opened
+  lets go of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's
+  character is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none
+  waits to play at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits
+  say CC BY 4.0 and which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check
+  each pick before it goes to R2, and keep each pick's own page in the run. The design pass: the hover card above
+  the footer, the footer and the item page at the names' size on a wide screen, empty Vestige places as dark
+  Vestiges, the vault's rows of ten where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's
+  rows and its count, and a shelf of more than six gains showing only its last six. The `freesound` workflow
+  runs on this push: if it ends red with "Picks not read whole", Freesound's own pages link more than one licence,
+  and `pages/pick-*.html` in its download shows where.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.

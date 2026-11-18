@@ -137,7 +137,11 @@ export function burstAt(target: HTMLElement, burst: Exclude<Burst, null>): void 
     }
   hud.append(shown);
   play(burst === 'shatter' ? 'dismantle' : 'feed');
-  shown.addEventListener('animationend', (event) => event.target === shown && shown.remove());
+  // A shatter's flash ends long before its shards land, so only its own fade takes it away; a pulse is its ring.
+  shown.addEventListener(
+    'animationend',
+    (event) => event.target === shown && (burst === 'pulse' || !event.pseudoElement) && shown.remove(),
+  );
   // Gone even where no animation runs.
   window.setTimeout(() => shown.remove(), 900);
 }
@@ -173,36 +177,55 @@ export function heldPress(
 export const DISMANTLE_KEY = 'F';
 /** Each tile F dismantles, and what dismantling it asks. */
 const dismantles = new WeakMap<HTMLElement, { readonly rarity: number; readonly run: () => void }>();
-/** The tile the pointer is over, which F dismantles though the focus is elsewhere. */
-let pointed: HTMLElement | null = null;
+/** The tile last pointed at or focused, which F dismantles: whichever the player turned to last. */
+let aimed: HTMLElement | null = null;
+/** The tile whose hold F began, which only F's release lets go. */
+let keyHeld: HTMLElement | null = null;
 let listening = false;
 
 /** Lets `tile`, a carried piece's, be dismantled by holding F while the pointer is over it or it has the focus, as
  *  long as its rarity asks, its picture charging and breaking apart once it acts. */
 export function dismantleOnHold(tile: HTMLElement, rarity: number, dismantle: () => void): void {
   dismantles.set(tile, { rarity, run: dismantle });
-  tile.addEventListener('pointerenter', () => (pointed = tile));
-  tile.addEventListener('pointerleave', () => pointed === tile && (pointed = null));
+  tile.setAttribute('aria-keyshortcuts', DISMANTLE_KEY);
+  const aim = () => (aimed = tile);
+  tile.addEventListener('pointerenter', aim);
+  tile.addEventListener('focus', aim);
+  // The pointer moved off: what F held there is let go, as Destiny's is.
+  tile.addEventListener('pointerleave', () => {
+    if (aimed === tile) aimed = null;
+    if (keyHeld === tile) letGoHold(tile);
+  });
   tile.addEventListener('pointercancel', () => letGoHold(tile));
   if (listening) return;
   listening = true;
   const isKey = (event: KeyboardEvent) => event.key.toUpperCase() === DISMANTLE_KEY;
-  // Heard before the menu keeps its keys to itself; a key typed into a field is the field's.
+  // Heard before the menu keeps its keys to itself; a key typed into a field is the field's, and Ctrl, Cmd or Alt with
+  // F is the browser's or the system's, whose release may never be heard.
   addEventListener(
     'keydown',
     (event) => {
       const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
-      if (!isKey(event) || event.repeat || typing) return;
+      const chord = event.ctrlKey || event.metaKey || event.altKey;
+      if (!isKey(event) || event.repeat || typing || chord) return;
       const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const tile = focused && dismantles.has(focused) ? focused : pointed?.isConnected ? pointed : null;
+      const tile = aimed?.isConnected ? aimed : focused && dismantles.has(focused) ? focused : null;
       const found = tile ? dismantles.get(tile) : undefined;
       if (!tile || !found) return;
       event.preventDefault();
+      keyHeld = tile;
       holdOn(tile, found.run, { charges: tile, burst: 'shatter', holdMs: dismantleMs(found.rarity) });
     },
     true,
   );
-  addEventListener('keyup', (event) => isKey(event) && letGoHold(), true);
+  const release = () => {
+    if (keyHeld) letGoHold(keyHeld);
+    keyHeld = null;
+  };
+  addEventListener('keyup', (event) => isKey(event) && release(), true);
+  // A window left mid-hold never hears F let go there, so leaving it lets go.
+  addEventListener('blur', release);
+  document.addEventListener('visibilitychange', release);
 }
 
 /** A canvas showing a picture in a box of `box` CSS pixels, its clear margin trimmed, fitted as Enhanced Plus fits
@@ -460,7 +483,12 @@ export class HoverCard {
     const size = this.tip.getBoundingClientRect();
     const right = near.right + TIP_GAP;
     const left = right + size.width + TIP_GAP > innerWidth ? near.left - TIP_GAP - size.width : right;
-    const top = Math.min(Math.max(TIP_GAP, near.top), innerHeight - size.height - TIP_GAP);
+    // It stands above the menu's footer, whose keys and presses stay readable under it.
+    const foot = this.tip.parentElement
+      ?.querySelector('.gear-screen:not([hidden]) .gear-foot')
+      ?.getBoundingClientRect();
+    const floor = foot ? foot.top : innerHeight;
+    const top = Math.min(Math.max(TIP_GAP, near.top), floor - size.height - TIP_GAP);
     // Measured on the screen, placed in the card's own pixels, which a zoomed menu doubles.
     const zoom = cssZoom(this.tip);
     this.tip.style.left = `${Math.max(TIP_GAP, left) / zoom}px`;
