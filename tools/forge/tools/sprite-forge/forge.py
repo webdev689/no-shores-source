@@ -1,4 +1,4 @@
-"""DFO Sprite Forge: render a class sprite archive from the forge's own 3D fighter.
+"""Daggerfall Online Sprite Forge: render a class sprite archive from the forge's own 3D fighter.
 
     python -I tools/sprite-forge/forge.py --spec tools/sprite-forge/specs/488.json --out <dir> [--records 0,5]
 
@@ -124,6 +124,10 @@ class Fighter:
             self.lines.append([tuple(a), tuple(nock), tuple(b)])
             if gear.get('arrow'):
                 tip = Vector(gear['arrow'])
+                self.extra.append(arrow_mesh(self.M, nock, tip))
+                self.lines.append([tuple(nock), tuple(tip)])
+            if gear.get('loose'):   # an arrow off the string, held in a fist: its nock and its tip
+                nock, tip = (Vector(v) for v in gear['loose'])
                 self.extra.append(arrow_mesh(self.M, nock, tip))
                 self.lines.append([tuple(nock), tuple(tip)])
 

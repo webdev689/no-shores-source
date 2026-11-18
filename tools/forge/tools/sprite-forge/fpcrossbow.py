@@ -138,17 +138,39 @@ def posed(v, pose, S):
 # the owner's materials dressed for the eye: lit by the first-person lamps, not mirrors of a world the eye has none of
 WOOD_LOOK = {'Metallic': 0.0, 'Roughness': 0.8, 'Specular IOR Level': 0.2}
 METAL_LOOK = {'Metallic': 0.45, 'Roughness': 0.35}
+# the wood's colour under the first-person lamps, multiplied in linear light: the lamps lift the owner's wood half again
+# above the crossbow the owner drew at rest and wash its red out, so it is laid darker and warmer to match that picture
+WOOD_TONE = (0.17, 0.12, 0.06)
+
+
+def _toned(m, node, tone):
+    """`node`'s base colour multiplied by `tone`, whatever fed it before still feeding it."""
+    tree = m.node_tree
+    mix = tree.nodes.new('ShaderNodeMix')
+    mix.data_type, mix.blend_type = 'RGBA', 'MULTIPLY'
+    mix.inputs['Factor'].default_value = 1.0
+    base = node.inputs['Base Color']
+    if base.links:
+        tree.links.new(base.links[0].from_socket, mix.inputs['A'])
+    else:
+        mix.inputs['A'].default_value = base.default_value
+    mix.inputs['B'].default_value = (*tone, 1.0)
+    tree.links.new(mix.outputs['Result'], base)
 
 
 def dress(m):
-    """`m` dressed for the eye, its colours its own: its wood matte, its metal more lamp-lit than mirrored."""
-    look = WOOD_LOOK if m.name.lower().startswith('wood') else METAL_LOOK
-    for node in m.node_tree.nodes if m.node_tree else ():
+    """`m` dressed for the eye, its colours its own: its wood matte and toned, its metal more lamp-lit than mirrored."""
+    wood = m.name.lower().startswith('wood')
+    look = WOOD_LOOK if wood else METAL_LOOK
+    for node in list(m.node_tree.nodes) if m.node_tree else ():
         if node.type == 'BSDF_PRINCIPLED':
             for k, v in look.items():
                 node.inputs[k].default_value = v
             for link in list(node.inputs['Normal'].links):   # its bump is made for the model's own size, not ours
                 m.node_tree.links.remove(link)
+            if wood and not m.get('fp_toned'):
+                _toned(m, node, WOOD_TONE)
+                m['fp_toned'] = True
     return m
 
 

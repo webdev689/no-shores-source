@@ -120,6 +120,11 @@ def _vambrace(k, r, cuff_z):
     return _axis_loft(z, rad + band, (rad + band) * 0.9, caps=(True, False), n=40)
 
 
+def _fur(k, r, cuff_z):
+    import fpclaws
+    return fpclaws.fur_sleeve(k, r, cuff_z)
+
+
 def _mail_sleeve(k, r, cuff_z):
     """A mail sleeve: the sleeve's girth and length, its rings lying flat (the material draws them), no creases."""
     from fpmodel import _axis_loft
@@ -142,7 +147,11 @@ GARMENTS = {
     # a plate gauntlet's glove, held still: mail, as a gauntlet's plates ride a mail glove, so where it shows between
     # them it reads as the mail under the plate, the sleeve's own, not as a hole in the plate (leather, brown or black)
     'glove_under': {'layer': 'hand', 'mat': 'mail', 'make': 'plate'},
+    # a werecreature's arm (fpclaws.py): its forearm a shaggy pelt, its hand the bare hand in the same fur
+    'fur': {'layer': 'arm', 'mat': 'fur', 'make': 'fur'},
+    'pelt': {'layer': 'hand', 'mat': 'pelt', 'make': 'glove'},
 }
+BEAST = ('fur', 'pelt')   # the werecreature's outfit
 # what the arm wears for each armour material (tools/sprite-forge/armour.py `MATERIALS`): leather the glove and sleeve
 # it always had, chain mail, plate a vambrace and a gauntlet
 ARMOUR = {'Leather': ('linen', 'gauntlet'), 'Chain': ('mail_sleeve', 'mail_glove')}
@@ -172,7 +181,7 @@ def arm(k, r, side='L', outfit=OUTFIT, cuff=None, thumb=None, fingers=None, slim
     for g in outfit:
         layer, m, make = GARMENTS[g]['layer'], outfit.index(g), GARMENTS[g]['make']
         if layer == 'arm':
-            v, t = {'sleeve': _sleeve, 'vambrace': _vambrace, 'mail_sleeve': _mail_sleeve}[make](k, r, cuff_z)
+            v, t = {'sleeve': _sleeve, 'vambrace': _vambrace, 'mail_sleeve': _mail_sleeve, 'fur': _fur}[make](k, r, cuff_z)
             out.append((v, t, m))
             piece.append(np.full(len(v), -1))
         else:

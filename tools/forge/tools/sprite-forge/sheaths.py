@@ -30,9 +30,12 @@ import numpy as np
 from mathutils import Matrix, Quaternion, Vector
 
 import armour
+import blows
+import bowhold
 import bows
 import clothes
 import daggers3p
+import driving
 import gear
 import gunplay
 import guns3p
@@ -56,10 +59,10 @@ HOLDS = {
     'back_up': ('chest', (0.04, 0.15, 0.83), (-0.22, 0.02, 0.975), (0.975, 0.0, 0.22), (0.0, 1.0, 0.0)),
     'staff': ('chest', (0.0, 0.15, 1.20), (-0.55, 0.0, 0.83), (0.83, 0.0, 0.55), (0.0, 1.0, 0.0)),
     # a bow flat across the back from the left hip up over the right shoulder, its string toward the left shoulder; the
-    # quiver across the small of the back at the belt, riding the spine as the back plates over it do, its mouth a
+    # quiver across the top of the hips, riding the pelvis, so a bent back never swings it into the seat; its mouth a
     # little up and the arrows out past the right hip where the right hand draws, its foot short of the bow's limb
     'bow': ('chest', (-0.02, 0.15, 1.36), (-0.64, 0.0, 0.77), (0.0, -1.0, 0.0), (0.0, 1.0, 0.0)),
-    'quiver': ('spine', (-0.077, 0.15, 1.08), (-0.985, 0.0, 0.17), (0.17, 0.0, 0.985), (0.0, 1.0, 0.0)),
+    'quiver': ('pelvis', (-0.077, 0.14, 1.00), (-0.985, 0.0, 0.17), (0.17, 0.0, 0.985), (0.0, 1.0, 0.0)),
     # the left hand's blade at the right hip, the hip's mirror
     'hip_r': ('pelvis', (-0.151, -0.084, 1.04), (-0.11, 0.63, -0.77), (0.0, -0.77, -0.63), (-1.0, 0.25, 0.0)),
     # a Pistolet holstered at the front of the hip across from its hand, its muzzle down and back, its butt forward;
@@ -265,7 +268,7 @@ def build(M, A, want=()):
             bow = lay('bow', _bow(M, metal, kind))
             pieces.append(('bow', [(bow, SHEATHED)], {f'sheath_bow_{kind}_{metal.lower()}': bow}, False))
     quiver = lay('quiver', _quiver(M, A))
-    kinds.append(pieces + [('quiver', [(quiver, NOCKED)], {'quiver': quiver}, True)])
+    kinds.append(pieces + [('quiver', [(quiver, QUIVER_LAID)], {'quiver': quiver}, True)])
     kinds += _guns(lay, A)
     # each shield slung on the back, laid clear of the body as every piece is; each metal's crossbow slung alone, and
     # again over each kind of shield (`_<kind>`) for the two put away at once, so they never cross (the quiver's way)
@@ -324,6 +327,9 @@ DRAWN = SHEATHED + ('attack_sword',)
 # the quiver stays on the back in every move a bow's look plays: its class records (the archer's swing and hurt), the
 # bow's own, the bow at rest and the fall, so it never comes and goes between them
 NOCKED = DRAWN + ('hurt', 'bow', *poses.AT_REST, 'death', 'fallen')
+# the frames the quiver is laid clear in: all but the flinch, drawn rigid there, whose bent back alone would push it a
+# hand off every other frame's back
+QUIVER_LAID = tuple(a for a in NOCKED if a not in ('hurt', 'hurt_bow'))
 # the left hand's weapon is in the left fist only in a brace's moves and the twin blades'. So it lies at its hip,
 # sheathed or its sheath empty, through whatever the right hand does, the hurt included
 LEFT = DRAWN + ('hurt', 'attack_axe', *gunplay.PISTOL, *gunplay.BRACE, *onehand.TWIN)
@@ -334,15 +340,19 @@ STEP = 0.005    # how finely the push out is found, metres
 
 # The frames above are those a worn weapon is laid clear in. It is drawn, rigid where it was laid, in more: the
 # weapon sheathed while the body is struck, casts, falls, lies, rides, crouches, jumps and climbs; its sheath empty in
-# every move the blade is in the hand, a foe's own moves too, the shield's, the twin blades', the crouch and the jump
-STRUCK = ('hurt', 'spell', 'cast', 'death', 'fallen', *riding.RIDE, *agility.MOVES, *gunplay.RUNS)
-OWN_MOVES = ('parry', 'warcry', 'breathe', 'thrust', 'chop', 'swing2h')
+# every move the blade is in the hand, a foe's own moves too, the shield's, the twin blades', the crouch and the jump;
+# and through the bow's own holds (bowhold.py), the bow in both hands
+STRUCK = ('hurt', 'spell', 'cast', 'death', 'fallen', *riding.RIDE, *driving.DRIVE, *agility.MOVES, *gunplay.RUNS,
+          *bowhold.ANIMS)
+OWN_MOVES = ('parry', 'warcry', 'breathe', 'thrust', 'chop', 'swing2h', *blows.BLOWS)
 # a crossbow's moves as a player plays them: the shot and the crossbow at rest
 SHOT = ('bow', 'idle_bow', 'walk_bow', 'hurt_bow')
 # what the other hand's weapon is worn through, drawn out of the hand that holds no shield: a blade's or a bare fist's,
 # an axe's, a Pistolet's and a crossbow's moves
-BESIDE = ('attack_sword', 'attack_axe', 'thrust', *gunplay.PISTOL, *SHOT)
+BESIDE = ('attack_sword', 'attack_axe', 'thrust', *blows.BLOWS, *gunplay.PISTOL, *SHOT)
 EMPTY = DRAWN + ('hurt', 'spell', 'death', 'fallen', *OWN_MOVES, *onehand.SHIELDED, *onehand.TWIN, *agility.HELD)
+# the blows a shield is slung through: a mace's or a battle axe's in one hand, and both hands' (a pair holds none)
+SLUNG_BLOWS = tuple(b for b in blows.BLOWS if b not in blows.PAIR)
 # the bow at rest's idle, walk and flinch: a torch is carried so, the right hand's blade put away (torch3p.py)
 CARRIED = ('idle_bow', 'walk_bow', 'hurt_bow')
 TORCH_SHEATHS = ('sheath_sword', 'sheath_greatsword', 'sheath_dagger_')   # the blades a torch is held beside
@@ -352,15 +362,16 @@ def anims_of(layer):
     """The animations a worn weapon's layer is drawn in."""
     if layer.endswith('_l'):
         return list(dict.fromkeys(LEFT + ('spell', 'cast', 'death', 'fallen', *OWN_MOVES, *agility.MOVES)
-                                  + ((*riding.RIDE, *SHOT) if layer.startswith('sheath_') else ())))
+                                  + ((*riding.RIDE, *driving.DRIVE, *SHOT) if layer.startswith('sheath_') else ())))
     if layer == 'scabbard_pistolet':
         return list(EMPTY_HOLSTER + ('death', 'fallen'))
     if layer == 'quiver':
-        return list(dict.fromkeys(NOCKED + ('spell', 'cast', *riding.RIDE, *agility.MOVES, *gunplay.RUNS)))
+        return list(dict.fromkeys(NOCKED + ('spell', 'cast', *riding.RIDE, *driving.DRIVE, *agility.MOVES,
+                                            *gunplay.RUNS, *bowhold.ANIMS)))
     if layer.startswith('sheath_crossbow_'):   # put away, or beside the other hand's weapon out; over a shield: away
         return list(dict.fromkeys(SHEATHED + STRUCK + (() if layer.rsplit('_', 1)[1] in shields3p.KINDS else BESIDE)))
     if layer.startswith('slung_shield_'):   # and while an axe, a Pistolet or a crossbow is out (not a blade: a guard)
-        return list(dict.fromkeys(SHEATHED + STRUCK + ('attack_axe', *gunplay.PISTOL, *SHOT)))
+        return list(dict.fromkeys(SHEATHED + STRUCK + ('attack_axe', *SLUNG_BLOWS, *gunplay.PISTOL, *SHOT)))
     if layer.startswith(TORCH_SHEATHS):   # and beside a torch carried at rest
         return list(dict.fromkeys(SHEATHED + STRUCK + CARRIED))
     return list(dict.fromkeys(SHEATHED + STRUCK if layer.startswith(('sheath_', 'slung_')) else EMPTY))
@@ -372,7 +383,7 @@ FELL = ('death', 'fallen')
 FLOOR = 0.01
 # in the body's moves a hip's piece swings on its belt as the hips lean (the run's, the crouch's): it hangs at the
 # angle it hangs at standing, turned about its grip, a share of the lean taken (the belt holds it a little)
-HUNG = (*agility.MOVES, *gunplay.RUNS)
+HUNG = (*agility.MOVES, *gunplay.RUNS, 'bowrun')
 HANG_SHARE = 0.8
 
 

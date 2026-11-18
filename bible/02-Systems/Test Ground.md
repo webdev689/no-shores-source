@@ -4,6 +4,7 @@ status: live
 code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
+  - client/src/testground/aimPanel.ts
   - client/src/player/player.ts#updatePlayer
   - client/src/player/player.ts#shownBody
   - client/src/player/others.ts#showOther
@@ -51,6 +52,11 @@ short of a wall. Aiming a ranged weapon, it eases behind the right shoulder, 0.6
 the head, and zooms in 1.15 times; in first person the view zooms in 1.6 times and the hands keep still
 ([[Aiming Sits Behind the Shoulder and Zooms the View]]).
 
+The panel's **Third-person aim** places that view by hand: sliders for how far right of the head it stands (left below
+zero), how far behind and above, and its zoom. A ticked **Hold the aiming view** keeps the camera there, with the
+crosshair, while the sliders move, without a weapon drawn. The place is kept in the browser, and its numbers are
+shown to copy into the game's own (`AIM` in `playerCamera.ts`); **Back to the game's** returns to them.
+
 North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
 and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
 
@@ -66,8 +72,10 @@ room's word for it, so playing alone and online are the same game.
   swordsman in mail with a sword and kite shield, the brute in iron plate with a warhammer, the archer in leather with
   a short bow, and the captain in ebony plate with an ebony sword.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen
-  when knocked down; hurt while staggered or flinching; the jump's rising, top and falling frames through a dodge's
-  hop (the run where the forge does not draw what it holds in the jump, a shield); the parry's deflect, or a shield's
+  when knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air,
+  no weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the
+  jump's rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the
+  jump); the parry's deflect, or a shield's
   block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
   wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame, before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
@@ -128,14 +136,20 @@ The player's figure shows the move the forge draws for what the body does:
   lip; the climb, held on its first frame while still.
 - **In the air:** the jump's rising, top or falling frame.
 - **Mounted:** the horse's rest, walk or gallop.
-- **Acting:** the cast. A swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. The stroke's frames run through the swing's wind-up so its last lands with the blow, two fifths of the way
-  through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the follow-through: the figure strikes
-  as fast as its blow comes and shows itself open while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
+- **Acting:** the cast. A swing strikes one of the owner's blows where the forge draws it with both hands' things: its
+  stroke by the swing (down the overhead, up the thrust, any other the side cut) and its hold by the weapon (a sword,
+  dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair). A blow's
+  nine frames hold the first until halfway to the blow, run the first four through the last half of that time, show
+  the fifth as it lands, and run the rest over a third of that time after. Where no blow
+  is drawn, a swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
+  to 5. The stroke's frames run through the last half of the swing's wind-up so its last lands with the blow, two
+  fifths of the way through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the
+  follow-through: the figure strikes fast and shows itself open while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
   right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
   move whole, a brace's right then left, then its reload where the forge draws one.
 - **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each
-  have their own. A gun or a crossbow drawn runs with its own run, held at port arms.
+  have their own. A gun or a crossbow drawn runs with its own run, held at port arms. A bow drawn stands, walks and
+  sprints in its own holds, both hands on it, where the forge draws them; else it rests in the left fist.
 
 The left hand decides the stance. A shield or a torch there guards, marches and slashes; a blade there fights as a
 pair. Each holds only where the forge draws both hands' things in that stance's attack. Otherwise the right hand's

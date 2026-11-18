@@ -118,6 +118,9 @@ def transform(name, p, S=None, alpha=None, draw=0.0):
         zs = [row[0] for row in TORSO]
         out[:, 0] *= np.interp(p[:, 2], zs, S.get('torso_pw', [1.0] * len(zs)))
         out[:, 1] = cy + (p[:, 1] - cy) * S['torso_d'] * np.interp(p[:, 2], zs, S.get('torso_pd', [1.0] * len(zs)))
+        back = np.interp(p[:, 2], zs, S.get('torso_pb', [1.0] * len(zs)))
+        behind = (p[:, 1] > cy) & (back != 1.0)   # +y is behind: the seat drawn in alone (`torso_pb`), the belly left;
+        out[behind, 1] = cy[behind] + (out[behind, 1] - cy[behind]) * back[behind]   # a body without it is untouched
         return out
     if base.startswith('arm_') or base.startswith('leg_'):
         s = base[-1]
@@ -131,6 +134,10 @@ def transform(name, p, S=None, alpha=None, draw=0.0):
         k = S['arm_r' if base.startswith('arm_') else 'leg_r'] * prof
         out[:, 0] = cx + (p[:, 0] - cx) * k
         out[:, 1] = cy + (p[:, 1] - cy) * k
+        if base.startswith('leg_'):   # the seat at the thigh's top drawn in behind alone (`leg_pb`), the front left
+            back = np.interp(p[:, 2], zs, list(S.get('leg_pb', [1.0] * len(rows)))[::-1])
+            behind = (p[:, 1] > cy) & (back != 1.0)
+            out[behind, 1] = cy[behind] + (out[behind, 1] - cy[behind]) * back[behind]
         return out
     if base in HEAD_PARTS:
         out = p * S.get('head', 1.0)

@@ -6,7 +6,7 @@ Every mesh carries a `rest` point attribute: its rest position (about the limb's
 it, so a lattice or a fleck stays on its texel however the mesh is posed."""
 import bpy
 import numpy as np
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 from rig import rest
 
@@ -161,6 +161,50 @@ def ramp(x, lo, hi):
     return smooth01((x - lo) / (hi - lo))
 
 
+DUAL = [True]   # dual-quaternion skinning; off, the plain linear blend
+
+
+def _qmul(a, b):
+    """Quaternions (w, x, y, z) multiplied, row by row."""
+    a0, a1, a2, a3 = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
+    b0, b1, b2, b3 = b[..., 0], b[..., 1], b[..., 2], b[..., 3]
+    return np.stack([a0 * b0 - a1 * b1 - a2 * b2 - a3 * b3, a0 * b1 + a1 * b0 + a2 * b3 - a3 * b2,
+                     a0 * b2 - a1 * b3 + a2 * b0 + a3 * b1, a0 * b3 + a1 * b2 - a2 * b1 + a3 * b0], axis=-1)
+
+
+def skin(rest, heads, joints, w, W):
+    """Points at rest (`rest`, each weighted `w` over `joints`, whose rest heads are `heads`) posed by the joints'
+    world matrices `W`. Dual quaternions blend each joint's turn and move as one rigid motion, so a point shared by a
+    raised arm and the chest keeps its distance from the shoulder; a linear blend of the two pulls it in toward the
+    joint, and the shoulder's top caves into a flat slab (DUAL off)."""
+    if not DUAL[0]:
+        out = np.zeros_like(rest)
+        for k, j in enumerate(joints):
+            M = np.array(W[j])
+            out += w[:, k:k + 1] * ((rest - heads[k]) @ M[:3, :3].T + M[:3, 3])
+        return out
+    qr, qd = [], []
+    for k, j in enumerate(joints):
+        M = np.asarray(W[j], float)   # a Blender matrix or its numbers, as the caller keeps them
+        q = Matrix(M[:3, :3].tolist()).to_quaternion()
+        r = np.array([q.w, q.x, q.y, q.z])
+        t = M[:3, 3] - M[:3, :3] @ heads[k]   # the rest point's move after the turn
+        qr.append(r)
+        qd.append(0.5 * _qmul(np.array([0.0, *t]), r))
+    qr, qd = np.array(qr), np.array(qd)
+    lead = np.argmax(w, axis=1)
+    sign = np.sign((qr @ qr.T)[lead])   # each joint's turn on the same side of the sphere as the vertex's own lead
+    sign[sign == 0] = 1.0
+    ws = w * sign
+    br, bd = ws @ qr, ws @ qd
+    n = np.linalg.norm(br, axis=1, keepdims=True)
+    br, bd = br / n, bd / n
+    v = br[:, 1:]
+    out = rest + 2.0 * br[:, :1] * np.cross(v, rest) + 2.0 * np.cross(v, np.cross(v, rest))
+    conj = br * np.array([1.0, -1.0, -1.0, -1.0])
+    return out + 2.0 * _qmul(bd, conj)[:, 1:]
+
+
 class Skinned:
     """A mesh posed by linear-blend skinning: `weights` (n, joints) over `joints`."""
 
@@ -180,10 +224,7 @@ class Skinned:
         attr.data.foreach_set('vector', base.astype(np.float32).ravel())
 
     def pose(self, W):
-        out = np.zeros_like(self.rest)
-        for k, j in enumerate(self.joints):
-            M = np.array(W[j])
-            out += self.w[:, k:k + 1] * ((self.rest - self.heads[k]) @ M[:3, :3].T + M[:3, 3])
+        out = skin(self.rest, self.heads, self.joints, self.w, W)
         self.me.vertices.foreach_set('co', out.ravel())
         self.me.update()
 
