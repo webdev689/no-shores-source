@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { Orbit } from '../editor/orbit.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { CameraKick, kicksOf, leanOf } from './cameraKick.ts';
 import { EVENT } from './cues.ts';
@@ -53,8 +52,8 @@ test('a push peaks near its own size, overshoots a little and settles; a shake d
 });
 
 test('a kicked view turns about its own eye: the eye moves only as pushed', () => {
-  const orbit: Orbit = { targetX: 5, targetY: 4, targetZ: 1.6, yaw: 0.3, pitch: 0.1, distance: 1 };
-  const eye = (view: Orbit) => [
+  const orbit = { targetX: 5, targetY: 4, targetZ: 1.6, yaw: 0.3, pitch: 0.1, distance: 1 };
+  const eye = (view: typeof orbit) => [
     view.targetX - Math.cos(view.pitch) * Math.sin(view.yaw) * view.distance,
     view.targetY + Math.cos(view.pitch) * Math.cos(view.yaw) * view.distance,
     view.targetZ + Math.sin(view.pitch) * view.distance,

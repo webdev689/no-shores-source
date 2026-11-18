@@ -1,9 +1,8 @@
 // The camera's kick: a punch as the player's blow lands, a jolt as one lands on them, a lean into their own swing. A
 // spring carries each push, overshooting a little and settling, and a struck player's view also shakes, as hard as
 // the blow, dying away. Only the view moves: where the player looks and aims is their own.
-import type { Orbit } from '../editor/orbit.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { STROKE_DIRECTIONS } from '../player/playerMoves.ts';
+import { STROKE_DIRECTIONS } from '../rules/fighters.ts';
 import { EVENT } from './cues.ts';
 
 /** A push on the view: turned right (`yaw`) and down (`pitch`), radians; moved ahead, to the right and up, metres. */
@@ -15,6 +14,15 @@ export interface Push {
   readonly up?: number;
 }
 const CHANNELS = ['yaw', 'pitch', 'ahead', 'aside', 'up'] as const;
+/** A view as a scene draws from it: the point it looks at, its turn and tilt, and how far back from it the eye is. */
+interface View {
+  readonly targetX: number;
+  readonly targetY: number;
+  readonly targetZ: number;
+  readonly yaw: number;
+  readonly pitch: number;
+  readonly distance: number;
+}
 
 const DEGREE = Math.PI / 180;
 /** The spring: how fast it swings back (radians a second) and how much it is damped; a push's peak is this share of the
@@ -129,7 +137,7 @@ export class CameraKick {
   }
 
   /** `orbit` kicked: turned about its own eye and moved, so the view moves and nothing it looks at. */
-  kicked(orbit: Orbit, push: Push = this.now): Orbit {
+  kicked<Seen extends View>(orbit: Seen, push: Push = this.now): Seen {
     const forward = (yaw: number, pitch: number) =>
       [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)] as const;
     const was = forward(orbit.yaw, orbit.pitch);

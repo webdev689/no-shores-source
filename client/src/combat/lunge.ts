@@ -1,6 +1,6 @@
 // A lunge: the striker's figure drives forward into its blow and settles back. Only the drawing moves; the fight's
 // rules keep the fighter where it stands.
-import { STROKE_DIRECTIONS } from '../player/playerMoves.ts';
+import { STROKE_DIRECTIONS } from '../rules/fighters.ts';
 
 /** How far each stroke drives in (metres): a thrust most, an overhead and the slants less, a sweep least. */
 const DRIVE: Readonly<Record<string, number>> = {

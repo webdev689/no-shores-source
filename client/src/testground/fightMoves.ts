@@ -1,6 +1,6 @@
 import type { Dress } from '../player/dressing.ts';
-import { type Doing, type Fight, STROKE_DIRECTIONS } from '../player/playerMoves.ts';
-import { type FighterView, type Shape, actionProgress } from '../rules/fighters.ts';
+import type { Doing, Fight } from '../player/playerMoves.ts';
+import { type FighterView, STROKE_DIRECTIONS, type Shape, actionProgress } from '../rules/fighters.ts';
 
 /** How long a dodge and a parry's deflect last, and a death's fall, in ticks, as the combat crate times them. */
 export const FIGHT_TICKS = { dodge: 26, parry: 18, death: 48, drawFull: 60 } as const;

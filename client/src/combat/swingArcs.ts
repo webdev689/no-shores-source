@@ -1,7 +1,7 @@
 // A swing's arc: the streak of light a blade leaves through the air. It is laid from the fight's own blow (its stroke,
 // when it lands, how far it reaches and how wide it sweeps), so the eye follows where the blow goes rather than the
 // frames between. Each part of the streak fades by how long ago the blade passed it and burns by how fast it went.
-import { type Direction, STROKE_DIRECTIONS } from '../player/playerMoves.ts';
+import { STROKE_DIRECTIONS, type StrokeDirection } from '../rules/fighters.ts';
 
 export type Vector = readonly [number, number, number];
 export type Colour = readonly [number, number, number];
@@ -97,7 +97,7 @@ interface Path {
   readonly after: number;
   readonly widened: boolean;
 }
-const PATHS: Readonly<Record<Exclude<Direction, 'up'>, Path>> = {
+const PATHS: Readonly<Record<Exclude<StrokeDirection, 'up'>, Path>> = {
   down: { land: [1, 0, -0.3], travel: [0, -0.22, -1], before: 95 * DEGREE, after: 65 * DEGREE, widened: false },
   downLeft: { land: [1, 0, -0.25], travel: [0, -1, -1], before: 35 * DEGREE, after: 15 * DEGREE, widened: true },
   downRight: { land: [1, 0, -0.25], travel: [0, 1, -1], before: 35 * DEGREE, after: 15 * DEGREE, widened: true },

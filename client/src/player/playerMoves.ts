@@ -2,8 +2,6 @@ import type { Mode } from '../rules/movementRules.ts';
 
 /** A swing's direction, as the first-person weapon draws it. */
 export type Direction = 'down' | 'downLeft' | 'left' | 'right' | 'downRight' | 'up';
-/** The combat crate's strokes 1 to 6 as the first person's directions. */
-export const STROKE_DIRECTIONS: readonly Direction[] = ['down', 'downLeft', 'left', 'right', 'downRight', 'up'];
 
 /** What the player's body is doing, as the move it shows is chosen from. */
 export interface Doing {
