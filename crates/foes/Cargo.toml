@@ -11,5 +11,8 @@ combat = { path = "../combat" }
 movement = { path = "../movement" }
 libm.workspace = true
 
+[dev-dependencies]
+navmesh = { path = "../navmesh" }
+
 [lints]
 workspace = true

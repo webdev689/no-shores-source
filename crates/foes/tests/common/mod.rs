@@ -10,8 +10,12 @@ use combat::shots::{Flight, Shot, fly};
 use combat::sight::bearing;
 use combat::strike::struck;
 use combat::{Fighter, FighterId, Happening, Intent, Surroundings, Verdict, step_fighter};
-use foes::{Board, Brain, Director, Rank, Routes, Seen, Straight, World, foe_type, notice, spawn, think};
+use foes::{
+    Board, Brain, Director, NoSpots, Rank, Routes, Seen, Spot, Spots, Straight, World, foe_type, notice, spawn, think,
+};
 use movement::{Block, Controls, standing};
+use navmesh::{AGENT, Bounds, NavMesh};
+use std::rc::Rc;
 
 /// The pirates' types, the five foes as the Test Ground first had them.
 pub const SKIRMISHER: u8 = 13;
@@ -33,6 +37,7 @@ pub struct Room {
     pub director: Director,
     pub blocks: Vec<Block>,
     pub routes: Box<dyn Routes>,
+    pub spots: Box<dyn Spots>,
     /// Every foe's intent, by tick.
     pub intents: Vec<(u64, FighterId, Intent)>,
     pub happenings: Vec<(u64, FighterId, Happening)>,
@@ -56,6 +61,7 @@ impl Room {
             director: Director::default(),
             blocks: Vec::new(),
             routes: Box::new(Straight),
+            spots: Box::new(NoSpots),
             intents: Vec::new(),
             happenings: Vec::new(),
             verdicts: Vec::new(),
@@ -80,6 +86,17 @@ impl Room {
         let (fighter, brain) = spawn(foe_type(number).expect("a type of the roster"), rank, x, y, facing);
         self.fighters.push((id, fighter));
         self.brains.push((id, brain));
+        self
+    }
+
+    /// A course of blocks, its navmesh baked as a room bakes it over open ground 30 m round: the foes find their way by
+    /// its routes and fire from its spots.
+    pub fn course(mut self, blocks: Vec<Block>) -> Self {
+        let bounds = Bounds { min_x: -30.0, min_y: -30.0, max_x: 30.0, max_y: 30.0 };
+        let mesh = Rc::new(NavMesh::bake(&blocks, bounds, &AGENT));
+        self.routes = Box::new(Mesh(Rc::clone(&mesh)));
+        self.spots = Box::new(Mesh(mesh));
+        self.blocks = blocks;
         self
     }
 
@@ -150,6 +167,7 @@ impl Room {
                 fighters: &self.fighters,
                 blocks: &self.blocks,
                 routes: &*self.routes,
+                spots: &*self.spots,
                 director: self.director,
             };
             let (mut next, intent) = think(id, &brain, &mut self.board, &world);
@@ -311,4 +329,21 @@ pub fn watching(whom: FighterId) -> impl FnMut(&Room, FighterId) -> Intent {
 /// Whether a fighter is swinging.
 pub fn swinging(fighter: &Fighter) -> bool {
     matches!(fighter.action, Action::Attack(_))
+}
+
+/// A baked navmesh, as the room hands it in: its routes and its firing spots.
+struct Mesh(Rc<NavMesh>);
+
+impl Routes for Mesh {
+    fn next_point(&self, from: [f64; 3], to: [f64; 3]) -> Option<[f64; 3]> {
+        let path = self.0.find_path(from, to).or_else(|| self.0.find_path(from, self.0.nearest_point(to)?));
+        Some(path.and_then(|points| points.get(1).copied()).unwrap_or(to))
+    }
+}
+
+impl Spots for Mesh {
+    fn near(&self, point: [f64; 3], radius: f64) -> Vec<Spot> {
+        let near = self.0.spots_near(point, radius);
+        near.map(|spot| Spot { point: spot.point, cover: spot.cover, lanes: spot.lanes }).collect()
+    }
 }

@@ -168,12 +168,14 @@ impl Room {
         let mut intents = Vec::with_capacity(ids.len());
         {
             let routes = MeshRoutes { mesh: &self.nav };
+            let spots = MeshSpots { mesh: &self.nav };
             let world = World {
                 tick: self.clock,
                 seed: self.seed,
                 fighters: &noticed,
                 blocks: &self.blocks,
                 routes: &routes,
+                spots: &spots,
                 director: self.director,
             };
             for id in &ids {

@@ -1,6 +1,6 @@
 //! What the foes of a room share: for each target, who holds the turns to fight it hand to hand and to shoot at it,
 //! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in
-//! whatever the count.
+//! whatever the count. And the posts shooters hold, so no two take one place.
 
 use crate::director::Caps;
 use combat::FighterId;
@@ -27,15 +27,18 @@ impl Fight {
     }
 }
 
-/// What the foes of a room share: who holds the turns to fight each target, and since when each waits.
+/// What the foes of a room share: who holds the turns to fight each target, and since when each waits; and the spot
+/// each shooter holds as its post.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Board {
     fights: BTreeMap<FighterId, Fight>,
+    posts: BTreeMap<FighterId, [f64; 3]>,
 }
 
 impl Board {
     /// A foe that died or left gives up any turn it held and stops waiting.
     pub fn forget(&mut self, foe: FighterId) {
+        self.posts.remove(&foe);
         for fight in self.fights.values_mut() {
             fight.melee.remove(&foe);
             fight.ranged.remove(&foe);
@@ -135,5 +138,20 @@ impl Board {
     #[must_use]
     pub fn tokens_out(&self, target: FighterId) -> (usize, usize) {
         self.fights.get(&target).map_or((0, 0), |fight| (fight.melee.len(), fight.ranged.len()))
+    }
+
+    /// A shooter holds the spot at `point` as its post.
+    pub fn claim(&mut self, foe: FighterId, point: [f64; 3]) {
+        self.posts.insert(foe, point);
+    }
+
+    /// A shooter gives its post up.
+    pub fn release(&mut self, foe: FighterId) {
+        self.posts.remove(&foe);
+    }
+
+    /// The posts every other shooter holds, in the order of their numbers.
+    pub fn posts_but(&self, foe: FighterId) -> impl Iterator<Item = [f64; 3]> + '_ {
+        self.posts.iter().filter(move |(other, _)| **other != foe).map(|(_, point)| *point)
     }
 }
