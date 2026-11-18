@@ -1,10 +1,10 @@
 # Rust and TypeScript
-target/
-node_modules/
+target
+node_modules
 
 # Builds and generated outputs never enter git: forge renders, world bakes, web builds.
 dist/
-generated/
+generated
 client/public/*.wasm
 # The forge's renders, its tables and its packs: published to R2 by tools/forge/publish.py.
 tools/forge/public/
