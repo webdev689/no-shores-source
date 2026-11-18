@@ -48,7 +48,7 @@ test('a block ends what is between two players, and what the blocked one asks af
   assert.deepEqual((await ada.roster()).blocked, ['Ben']);
   assert.equal((await ben.ask('friend/ask', { name: 'Ada' })).status, 200, 'answered as made');
   assert.deepEqual(names((await ada.roster()).asking), [], 'but never reaches Ada');
-  assert.equal((await ben.ask('party/invite', { name: 'Ada' })).status, 200);
+  assert.equal((await ben.ask('fireteam/invite', { name: 'Ada' })).status, 200);
   assert.deepEqual((await ada.roster()).invites, [], 'nor does an invite');
   assert.equal((await ada.ask('friend/ask', { name: 'Ben' })).status, 409, 'Ada must unblock first');
   assert.equal((await ben.details('Ada')).status, 404, 'Ada is not found by the one she blocks');
@@ -57,7 +57,7 @@ test('a block ends what is between two players, and what the blocked one asks af
   assert.deepEqual(names((await ben.roster()).asking), ['Ada']);
 });
 
-test('a party holds three, joined by invite or as its leader allows, and its lead passes on', async () => {
+test('a fireteam holds three, joined by invite or as its leader allows, and its lead passes on', async () => {
   const { player, play } = await world('Ada', 'Ben', 'Cal', 'Dee');
   for (const name of ['Ada', 'Ben', 'Cal', 'Dee']) await play(name, 'node-overlook-social');
   const [ada, ben, cal, dee] = ['Ada', 'Ben', 'Cal', 'Dee'].map(player) as [
@@ -66,45 +66,45 @@ test('a party holds three, joined by invite or as its leader allows, and its lea
     ReturnType<typeof player>,
     ReturnType<typeof player>,
   ];
-  assert.equal((await ben.ask('party/join', { name: 'Ada' })).status, 403, "Friends Only: Ben is not Ada's friend");
-  await ada.ask('party/invite', { name: 'Ben' });
+  assert.equal((await ben.ask('fireteam/join', { name: 'Ada' })).status, 403, "Friends Only: Ben is not Ada's friend");
+  await ada.ask('fireteam/invite', { name: 'Ben' });
   assert.deepEqual(names((await ben.roster()).invites), ['Ada']);
-  assert.equal((await ben.ask('party/accept', { name: 'Ada' })).status, 200);
-  const party = (await cal.roster()).party;
-  assert.equal(party, null, 'Cal is not in it');
-  assert.deepEqual(names((await ben.roster()).party?.members ?? []), ['Ada', 'Ben'], 'the leader first');
-  await ada.ask('party/privacy', { privacy: 0 });
-  assert.equal((await cal.ask('party/join', { name: 'Ben' })).status, 200, 'Public: anyone joins');
-  assert.equal((await dee.ask('party/join', { name: 'Ada' })).status, 409, 'three at most');
-  assert.equal((await ben.ask('party/kick', { name: 'Cal' })).status, 403, 'only the leader removes');
-  assert.equal((await ada.ask('party/lead', { name: 'Cal' })).status, 200);
-  await cal.ask('party/kick', { name: 'Ada' });
-  assert.deepEqual(names((await ben.roster()).party?.members ?? []), ['Cal', 'Ben']);
-  await cal.ask('party/leave');
-  assert.equal((await ben.roster()).party, null, 'a party of one ends');
-  await ben.ask('party/privacy', { privacy: 3 });
-  assert.equal((await ada.ask('party/join', { name: 'Ben' })).status, 403, 'Closed');
-  await ben.ask('party/invite', { name: 'Ada' });
-  assert.equal((await ada.ask('party/accept', { name: 'Ben' })).status, 200, 'an invite still stands');
+  assert.equal((await ben.ask('fireteam/accept', { name: 'Ada' })).status, 200);
+  const fireteam = (await cal.roster()).fireteam;
+  assert.equal(fireteam, null, 'Cal is not in it');
+  assert.deepEqual(names((await ben.roster()).fireteam?.members ?? []), ['Ada', 'Ben'], 'the leader first');
+  await ada.ask('fireteam/privacy', { privacy: 0 });
+  assert.equal((await cal.ask('fireteam/join', { name: 'Ben' })).status, 200, 'Public: anyone joins');
+  assert.equal((await dee.ask('fireteam/join', { name: 'Ada' })).status, 409, 'three at most');
+  assert.equal((await ben.ask('fireteam/kick', { name: 'Cal' })).status, 403, 'only the leader removes');
+  assert.equal((await ada.ask('fireteam/lead', { name: 'Cal' })).status, 200);
+  await cal.ask('fireteam/kick', { name: 'Ada' });
+  assert.deepEqual(names((await ben.roster()).fireteam?.members ?? []), ['Cal', 'Ben']);
+  await cal.ask('fireteam/leave');
+  assert.equal((await ben.roster()).fireteam, null, 'a fireteam of one ends');
+  await ben.ask('fireteam/privacy', { privacy: 3 });
+  assert.equal((await ada.ask('fireteam/join', { name: 'Ben' })).status, 403, 'Closed');
+  await ben.ask('fireteam/invite', { name: 'Ada' });
+  assert.equal((await ada.ask('fireteam/accept', { name: 'Ben' })).status, 200, 'an invite still stands');
 });
 
-test('a party lets go of a member away from the game ten minutes', async () => {
+test('a fireteam lets go of a member away from the game ten minutes', async () => {
   const { player, play, clock, kept, tokens } = await world('Ada', 'Ben');
   await play('Ada', 'node-overlook-social');
   await play('Ben', 'node-overlook-social');
-  await player('Ada').ask('party/invite', { name: 'Ben' });
-  await player('Ben').ask('party/accept', { name: 'Ada' });
+  await player('Ada').ask('fireteam/invite', { name: 'Ben' });
+  await player('Ben').ask('fireteam/accept', { name: 'Ada' });
   const ben = await kept.claim(tokens['Ben'] ?? '', 'node-overlook-social:Ben');
   await kept.release(ben?.account ?? '', 'node-overlook-social:Ben', null);
   clock.now += 9 * 60_000;
   await play('Ada', 'node-overlook-social');
-  assert.equal((await player('Ada').roster())?.party?.members.length, 2, 'away nine minutes');
+  assert.equal((await player('Ada').roster())?.fireteam?.members.length, 2, 'away nine minutes');
   clock.now += 2 * 60_000;
   await play('Ada', 'node-overlook-social');
-  assert.equal((await player('Ada').roster()).party, null);
+  assert.equal((await player('Ada').roster()).fireteam, null);
 });
 
-test('the Roster lists those in the same room beside the party, each with where they are and what they wear', async () => {
+test('the Roster lists those in the same room beside the fireteam, each with where they are and what they wear', async () => {
   const { player, play, kept, tokens, ask } = await world('Ada', 'Ben', 'Cal');
   await play('Ada', 'node-overlook-social', 12);
   await play('Ben', 'node-overlook-social', 9);

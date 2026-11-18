@@ -14,7 +14,7 @@ code:
   - server/accounts/friends.ts#friendsOf
   - server/accounts/migrations/20261118200000_roster.sql
   - server/accounts/roster.ts#rosterOf
-  - server/accounts/parties.ts#partyAsk
+  - server/accounts/fireteams.ts#fireteamAsk
   - server/accounts/guilds.ts#guildAsk
   - server/accounts/social.ts#socialAsk
   - server/accounts/people.ts#PERSON
@@ -104,7 +104,7 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the database, so an ask that crosses one already made accepts it. A player's own count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
-- **The party**, Destiny's fireteam: three at most, one its leader; a player alone leads their own. A player is
+- **The fireteam**, as Destiny's: three at most, one its leader; a player alone leads their own. A player is
   invited (the invite stands ten minutes), or joins as the leader's privacy allows: Public, anyone; Friends Only (each
   player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though an invite still
   stands. The leader makes another the leader or removes them; a leader who leaves hands the lead to the longest
@@ -115,12 +115,12 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   founding to an admin, who must first be made one. A founder leaves only once another founds it, or alone, which
   ends it. A hundred at most.
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
-  as sent and never arrives; they cannot join the blocker's party, and the blocker is not found by them. A blocked
+  as sent and never arrives; they cannot join the blocker's fireteam, and the blocker is not found by them. A blocked
   player is unblocked from Settings.
 - **Reporting** keeps a player's name, who reported them and why (cheating, a name, harassment, something else) for
   the owner to read in the database, ten a day a player.
-- **The room's own**: the Game column lists the players with a name in the same room beside the party, the guests
-  only counted. Another player's details show what they wear always, and where they are only to their friends, party
+- **The room's own**: the Game column lists the players with a name in the same room beside the fireteam, the guests
+  only counted. Another player's details show what they wear always, and where they are only to their friends, fireteam
   and guild.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
 

@@ -1,7 +1,7 @@
 import type { Person, Roster } from '../network/accounts.ts';
 
 /**
- * What the Roster's three columns hold, after Destiny 1's: Game (the party, then the players in the same room),
+ * What the Roster's three columns hold, after Destiny 1's: Game (the fireteam, then the players in the same room),
  * Friends and Guild; each player playing first, then those away, greyed, by name. And what may be done with each, as
  * their place in the player's lists allows.
  */
@@ -13,7 +13,7 @@ export interface Row {
   readonly words: string;
   /** Away from the game, or only asked: greyed, with no emblem. */
   readonly dim: boolean;
-  /** The party's leader, marked as Destiny marks theirs. */
+  /** The fireteam's leader, marked as Destiny marks theirs. */
   readonly leads: boolean;
   readonly actions: readonly Action[];
 }
@@ -31,8 +31,8 @@ export interface Action {
 
 /** The privacies, in the order the accounts number them. */
 export const PRIVACIES = ['Public', 'Friends Only', 'Invite Only', 'Closed'] as const;
-/** How many players a party holds. */
-export const PARTY_MOST = 3;
+/** How many players a fireteam holds. */
+export const FIRETEAM_MOST = 3;
 /** How many rows a column shows a page. */
 export const ROWS_A_PAGE = 14;
 
@@ -66,27 +66,27 @@ export function actionsFor(roster: Roster, person: Person): Action[] {
   const named = { name };
   if (name === own) {
     const own: Action[] = [{ label: 'Details', opens: 'details' }];
-    if (roster.party) own.push({ label: 'Leave party', path: 'party/leave' });
+    if (roster.fireteam) own.push({ label: 'Leave fireteam', path: 'fireteam/leave' });
     if (roster.guild) own.push({ label: 'Leave guild', path: 'guild/leave', held: true, warn: true });
     return own;
   }
   const actions: Action[] = [{ label: 'Details', opens: 'details' }];
-  const party = roster.party?.members ?? [];
-  const inParty = party.some((each) => each.name === name);
-  const leading = !roster.party || roster.party.leader === own;
+  const fireteam = roster.fireteam?.members ?? [];
+  const inFireteam = fireteam.some((each) => each.name === name);
+  const leading = !roster.fireteam || roster.fireteam.leader === own;
   if (roster.invites.some((each) => each.name === name))
-    actions.push({ label: 'Accept party invite', path: 'party/accept', body: named, opens: 'join' });
-  if (inParty && leading) {
-    actions.push({ label: 'Make party leader', path: 'party/lead', body: named });
-    actions.push({ label: 'Remove from party', path: 'party/kick', body: named, held: true, warn: true });
+    actions.push({ label: 'Accept fireteam invite', path: 'fireteam/accept', body: named, opens: 'join' });
+  if (inFireteam && leading) {
+    actions.push({ label: 'Make fireteam leader', path: 'fireteam/lead', body: named });
+    actions.push({ label: 'Remove from fireteam', path: 'fireteam/kick', body: named, held: true, warn: true });
   }
-  if (!inParty && person.place !== null) {
-    actions.push({ label: 'Join party', path: 'party/join', body: named, opens: 'join' });
-    if (leading && Math.max(1, party.length) < PARTY_MOST)
-      actions.push({ label: 'Invite to party', path: 'party/invite', body: named });
+  if (!inFireteam && person.place !== null) {
+    actions.push({ label: 'Join fireteam', path: 'fireteam/join', body: named, opens: 'join' });
+    if (leading && Math.max(1, fireteam.length) < FIRETEAM_MOST)
+      actions.push({ label: 'Invite to fireteam', path: 'fireteam/invite', body: named });
   }
   if (roster.invites.some((each) => each.name === name))
-    actions.push({ label: 'Decline party invite', path: 'party/decline', body: named });
+    actions.push({ label: 'Decline fireteam invite', path: 'fireteam/decline', body: named });
   if (roster.friends.some((each) => each.name === name))
     actions.push({ label: 'Remove friend', path: 'friend/remove', body: named, held: true, warn: true });
   else if (roster.asking.some((each) => each.name === name)) {
@@ -122,22 +122,22 @@ const row = (roster: Roster, person: Person, words: string, dim: boolean, key: s
   person,
   words,
   dim,
-  leads: roster.party?.leader === person.name,
+  leads: roster.fireteam?.leader === person.name,
   actions: actionsFor(roster, person),
 });
 
-/** The Game column: invites to a party, the party (its leader first, or the player alone, who leads their own), then
+/** The Game column: invites to a fireteam, the fireteam (its leader first, or the player alone, who leads their own), then
  *  those in the same room. */
 export function gameRows(roster: Roster): Row[] {
   const self = roster.me;
-  const party = roster.party ? roster.party.members : self ? [self] : [];
+  const fireteam = roster.fireteam ? roster.fireteam.members : self ? [self] : [];
   return [
     ...roster.invites.map((person) =>
-      row(roster, person, 'Invites you to their party', false, `invite-${person.name}`),
+      row(roster, person, 'Invites you to their fireteam', false, `invite-${person.name}`),
     ),
-    ...party.map((person) => ({
+    ...fireteam.map((person) => ({
       ...row(roster, person, placeWords(person.place), person.place === null, `game-${person.name}`),
-      leads: roster.party ? roster.party.leader === person.name : person.name === self?.name,
+      leads: roster.fireteam ? roster.fireteam.leader === person.name : person.name === self?.name,
     })),
     ...ordered(roster.nearby).map((person) => row(roster, person, 'Nearby', false, `game-${person.name}`)),
   ];

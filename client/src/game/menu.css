@@ -22,6 +22,7 @@
   text-transform: uppercase;
   color: var(--brass-lit);
   text-align: center;
+  line-height: 48px;
 }
 .gear-station-name[hidden],
 .gear-tabs-top[hidden] {

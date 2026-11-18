@@ -38,10 +38,16 @@ export const SIGN_CELLS = 24;
 export const PLATE_CELLS = 120;
 const BAND_CELLS = 320;
 
-/** How an emblem is drawn: its sign alone; its nameplate, framed all round; or a band, the nameplate run on unframed
- *  at its end, behind a row or a header of any length, which the colour it ends in fills on past it. */
-export type Shape = 'sign' | 'plate' | 'band';
-const WIDTHS: Readonly<Record<Shape, number>> = { sign: SIGN_CELLS, plate: PLATE_CELLS, band: BAND_CELLS };
+/** How an emblem is drawn: its sign alone; its nameplate, framed all round; a band, the nameplate run on unframed at
+ *  its end, behind a row of any length, which the colour it ends in fills on past it; or a banner, as Destiny 2 heads
+ *  its character screen, the pattern carried the whole way and framed all round at the length asked for. */
+export type Shape = 'sign' | 'plate' | 'band' | 'banner';
+const WIDTHS: Readonly<Record<Shape, number>> = {
+  sign: SIGN_CELLS,
+  plate: PLATE_CELLS,
+  band: BAND_CELLS,
+  banner: PLATE_CELLS,
+};
 
 type Rgb = readonly [number, number, number];
 
@@ -110,20 +116,23 @@ function signCells(motif: string): Uint8Array {
 }
 
 /** An emblem's cells as colours, four numbers each (red, green, blue, opaque), in its shape. */
-export function emblemPixels(emblem: Emblem, shape: Shape): Uint8ClampedArray<ArrayBuffer> {
+export function emblemPixels(emblem: Emblem, shape: Shape, cells = WIDTHS[shape]): Uint8ClampedArray<ArrayBuffer> {
   const { ground, ink, accent, pattern, motif } = emblem.art;
   const [top, foot] = [rgb(ground[0] ?? '#000000'), rgb(ground[1] ?? ground[0] ?? '#000000')];
   const [inked, lit] = [rgb(ink), rgb(accent)];
-  const width = WIDTHS[shape];
+  const width = Math.max(SIGN_CELLS, Math.round(cells));
   const sign = signCells(motif);
   const pixels = new Uint8ClampedArray(width * SIGN_CELLS * 4);
   for (let y = 0; y < SIGN_CELLS; y++)
     for (let x = 0; x < width; x++) {
       // The ground falls from its top colour to its foot in four bands, and past the sign darkens toward the end.
       const band = Math.min(3, Math.floor((y / SIGN_CELLS) * 4)) / 3;
-      const along = Math.min(1, Math.max(0, (x - SIGN_CELLS) / (PLATE_CELLS - SIGN_CELLS)));
+      const reach = shape === 'banner' ? width - SIGN_CELLS : PLATE_CELLS - SIGN_CELLS;
+      const along = Math.min(1, Math.max(0, (x - SIGN_CELLS) / reach));
       let colour = dark(mix(top, foot, band), 1 - along * 0.3);
-      if (patterned(pattern, x, y)) colour = mix(colour, lit, x < SIGN_CELLS ? 0.22 : 0.22 * (1 - along));
+      // A banner keeps its pattern the whole way; a nameplate's fades toward its end.
+      const faded = shape === 'banner' ? 0.22 * (1 - along * 0.5) : 0.22 * (1 - along);
+      if (patterned(pattern, x, y)) colour = mix(colour, lit, x < SIGN_CELLS ? 0.22 : faded);
       const cell = x < SIGN_CELLS ? (sign[y * SIGN_CELLS + x] ?? 0) : 0;
       if (cell === 1) colour = inked;
       else if (cell === 2) colour = lit;
@@ -138,14 +147,15 @@ export function emblemPixels(emblem: Emblem, shape: Shape): Uint8ClampedArray<Ar
 
 const drawn = new Map<string, string>();
 
-/** An emblem in its shape as an image's address, drawn once a page. */
-export function emblemImage(emblem: Emblem, shape: Shape): string {
-  const key = `${emblem.id}:${shape}`;
+/** An emblem in its shape as an image's address, drawn once a page; a banner at the cells it is asked for. */
+export function emblemImage(emblem: Emblem, shape: Shape, cells = WIDTHS[shape]): string {
+  const key = `${emblem.id}:${shape}:${cells}`;
   const known = drawn.get(key);
   if (known) return known;
   const canvas = document.createElement('canvas');
-  [canvas.width, canvas.height] = [WIDTHS[shape], SIGN_CELLS];
-  canvas.getContext('2d')?.putImageData(new ImageData(emblemPixels(emblem, shape), canvas.width, canvas.height), 0, 0);
+  const pixels = emblemPixels(emblem, shape, cells);
+  [canvas.width, canvas.height] = [pixels.length / 4 / SIGN_CELLS, SIGN_CELLS];
+  canvas.getContext('2d')?.putImageData(new ImageData(pixels, canvas.width, canvas.height), 0, 0);
   const address = canvas.toDataURL();
   drawn.set(key, address);
   return address;

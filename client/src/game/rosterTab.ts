@@ -54,7 +54,7 @@ function rowPress(row: Row, chosen: boolean, choose: () => void): HTMLButtonElem
 }
 
 /**
- * The Social tab as Destiny 1's Roster: three columns, Game (the party under its privacy, then those in the same room),
+ * The Social tab as Destiny 1's Roster: three columns, Game (the fireteam under its privacy, then those in the same room),
  * Friends and Guild, each a page of rows with arrows between pages. Each row is a player's emblem and nameplate behind
  * their name and their guild's tag; choosing one opens a panel beside it with where they are and all that may be done
  * with them. What cannot be undone is held. The Roster is asked for again now and then while it is seen.
@@ -106,8 +106,8 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
       .finally(() => {
         busy = false;
         look();
-        // The party on the heads-up display hears of it at once.
-        dispatchEvent(new Event('overlook:party'));
+        // The fireteam on the heads-up display hears of it at once.
+        dispatchEvent(new Event('overlook:fireteam'));
       });
   };
 
@@ -155,15 +155,15 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     return field;
   };
 
-  /** What heads each column: the party's privacy; adding a friend; the guild, or founding one. */
+  /** What heads each column: the fireteam's privacy; adding a friend; the guild, or founding one. */
   const topOf = (column: Column, current: Roster): HTMLElement => {
     if (column === 'game') {
-      const top = pressOf(`Party: ${current.privacy}`, () =>
+      const top = pressOf(`Fireteam: ${current.privacy}`, () =>
         openPanel(
           top,
-          'Who may join your party',
+          'Who may join your fireteam',
           PRIVACIES.map((privacy, index) =>
-            pressOf(privacy, () => doing({ label: privacy, path: 'party/privacy', body: { privacy: index } }, null)),
+            pressOf(privacy, () => doing({ label: privacy, path: 'fireteam/privacy', body: { privacy: index } }, null)),
           ),
         ),
       );

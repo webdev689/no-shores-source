@@ -263,7 +263,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   };
 
-  /** Joins a party member where they play: a node of this landmass at their seas, the ship left where she lies. */
+  /** Joins a fireteam member where they play: a node of this landmass at their seas, the ship left where she lies. */
   const joinAt = (place: string): string | null => {
     const where = nodeOfRoom(place);
     const node = where && landmass.nodes.find((each) => each.id === where.id);

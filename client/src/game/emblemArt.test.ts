@@ -34,3 +34,14 @@ test('an emblem is found by its number or id, and an unknown one is Overlook’s
   assert.equal(emblemOf('no_such').id, 'overlook');
   assert.equal(emblemOf(null).id, 'overlook');
 });
+
+test("the menu's banner is drawn to the width asked for, framed all round, so none of it is cut off", () => {
+  const emblem = EMBLEMS[0];
+  assert.ok(emblem);
+  const cells = 613;
+  const banner = emblemPixels(emblem, 'banner', cells);
+  assert.equal(banner.length, cells * SIGN_CELLS * 4);
+  const right = (y: number) => [...banner.subarray((y * cells + cells - 1) * 4, (y * cells + cells) * 4)];
+  const inner = (y: number) => [...banner.subarray((y * cells + cells - 2) * 4, (y * cells + cells - 1) * 4)];
+  assert.notDeepEqual(right(SIGN_CELLS / 2), inner(SIGN_CELLS / 2), 'its frame stands at its own end');
+});

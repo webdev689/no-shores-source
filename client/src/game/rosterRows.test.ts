@@ -14,7 +14,7 @@ const person = (name: string, place: string | null = 'node-overlook-social', tag
 const roster = (more: Partial<Roster> = {}): Roster => ({
   me: person('Ada'),
   privacy: 'Friends Only',
-  party: null,
+  fireteam: null,
   invites: [],
   nearby: [],
   guests: 0,
@@ -37,9 +37,9 @@ test('where a player is reads as its place: a node by name and its seas, the sea
   assert.equal(placeWords(null), 'Away');
 });
 
-test('the Game column holds invites, then the party leader first, then those nearby by name', () => {
-  const party = { leader: 'Cal', members: [person('Cal'), person('Ada')] };
-  const rows = gameRows(roster({ party, invites: [person('Eve')], nearby: [person('Zed'), person('Ben')] }));
+test('the Game column holds invites, then the fireteam leader first, then those nearby by name', () => {
+  const fireteam = { leader: 'Cal', members: [person('Cal'), person('Ada')] };
+  const rows = gameRows(roster({ fireteam, invites: [person('Eve')], nearby: [person('Zed'), person('Ben')] }));
   assert.deepEqual(
     rows.map((row) => [row.person.name, row.leads]),
     [
@@ -92,8 +92,8 @@ test('each player offers what their place in the lists allows, and what cannot b
   const lists = roster({ friends: [person('Ben')], guild });
   assert.deepEqual(labels(lists, 'Ben'), [
     'Details',
-    'Join party',
-    'Invite to party',
+    'Join fireteam',
+    'Invite to fireteam',
     'Remove friend',
     'Make member',
     'Make founder',
@@ -108,9 +108,9 @@ test('each player offers what their place in the lists allows, and what cannot b
     'away: no join',
   );
   assert.deepEqual(labels(lists, 'Ada'), ['Details', 'Leave guild'], 'oneself');
-  const full = roster({ party: { leader: 'Ada', members: [person('Ada'), person('Ben'), person('Cal')] } });
-  assert.ok(!labels(full, 'Dee').includes('Invite to party'), 'a full party invites no one');
-  assert.ok(labels(full, 'Ben').includes('Remove from party'), 'its leader removes');
+  const full = roster({ fireteam: { leader: 'Ada', members: [person('Ada'), person('Ben'), person('Cal')] } });
+  assert.ok(!labels(full, 'Dee').includes('Invite to fireteam'), 'a full fireteam invites no one');
+  assert.ok(labels(full, 'Ben').includes('Remove from fireteam'), 'its leader removes');
 });
 
 test('the Guild column ranks each member, playing first, then those invited', () => {

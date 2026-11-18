@@ -142,7 +142,7 @@ async function social(request: Request, deps: Deps, route: string, now: number):
     return json(answer.body, answer.status);
   }
   const limit = asked === 'report' ? LIMITS.report : LIMITS.social;
-  const reaching = /^(friend\/ask|party\/invite|guild\/invite|guild\/found|report)$/.test(asked ?? '');
+  const reaching = /^(friend\/ask|fireteam\/invite|guild\/invite|guild\/found|report)$/.test(asked ?? '');
   if (reaching && !(await within(database, `${asked === 'report' ? 'report' : 'social'}:${account.id}`, limit, now)))
     return refused(429, 'Too many asks. Wait a while.');
   const answer = await socialAsk(database, account.id, asked ?? '', await bodyOf(request), now);

@@ -17,9 +17,13 @@ small panel with the player's status and what may be done ("Details"). The foote
 
 They closed the message: "Take your time and address/develop everything".
 
-While it was being built with Destiny's word for a group of players, "fireteam", the owner wrote:
+While it was being built, calling a group of players by Destiny's word, "fireteam", the owner wrote:
 
 > "Dont call it firewall"
+
+Claude read it as "do not call it a fireteam" and named it a party. Shown that, the owner wrote:
+
+> "Fireteams"
 
 ## What it settles
 
@@ -27,7 +31,7 @@ While it was being built with Destiny's word for a group of players, "fireteam",
 - **The friends list is Destiny 1's Roster**, to match the picture's detail: the players nearby split from the rest,
   then friends, the guild's list and the party.
 - **Every function the Roster has comes over.** No exceptions.
-- **A group of players is a party**, the owner's word above, never a fireteam.
+- **A group of players is a fireteam**, as Destiny calls it.
 
 Links: [[The Roster and Emblems as Claude Shapes Them]], [[Accounts]], [[Interface]], [[The Menu Follows Destiny, the Vault and Vendors in the Social Space]],
 [[Cosmetics Follow Destiny, Emblems First]], [[The Face Is Mended Whole, and the Gauge Counts Upgrades]].

@@ -1,13 +1,13 @@
 /**
- * The Roster as one player sees it, after Destiny 1's: their party, then the players in the same room; their friends
+ * The Roster as one player sees it, after Destiny 1's: their fireteam, then the players in the same room; their friends
  * and those asking; their guild and its invites; and whom they block. And another player's details, as Destiny's
- * Inspect shows them: what they wear and where they are, if they are friends, in the party or the guild.
+ * Inspect shows them: what they wear and where they are, if they are friends, in the fireteam or the guild.
  */
 
 import type { Db } from './database.ts';
 import { friendsOf } from './friends.ts';
 import { RANKS, guildOf } from './guilds.ts';
-import { INVITE_MS, PRIVACIES, keepPresent, partyOf } from './parties.ts';
+import { INVITE_MS, PRIVACIES, keepPresent, fireteamOf } from './fireteams.ts';
 import { PERSON, type Person, type PersonRow, accountNamed, blocks, shown } from './people.ts';
 
 /** What a room kept of a character for others to see (the gear crate's `shown.rs`). */
@@ -30,7 +30,7 @@ export interface Shown {
   }[];
 }
 
-/** The most players a room lists beside the party: a social space holds a few dozen. */
+/** The most players a room lists beside the fireteam: a social space holds a few dozen. */
 const NEARBY_MOST = 64;
 
 /** People by their accounts' ids, in the order asked; `?2` is now. */
@@ -56,17 +56,17 @@ export async function rosterOf(database: Db, own: string, now: number) {
     .prepare('SELECT privacy FROM accounts WHERE id = ?1')
     .bind(own)
     .first<{ privacy: number }>();
-  const party = await partyOf(database, own);
-  const members = party
-    ? await peopleOf(database, [party.leader, ...party.members.filter((id) => id !== party.leader)], now)
+  const fireteam = await fireteamOf(database, own);
+  const members = fireteam
+    ? await peopleOf(database, [fireteam.leader, ...fireteam.members.filter((id) => id !== fireteam.leader)], now)
     : [];
   const { results: invites } = await database
     .prepare(
-      `${PERSON} JOIN party_invites ON party_invites.from_id = accounts.id WHERE party_invites.to_id = ?1 AND party_invites.created_at >= ?3`,
+      `${PERSON} JOIN fireteam_invites ON fireteam_invites.from_id = accounts.id WHERE fireteam_invites.to_id = ?1 AND fireteam_invites.created_at >= ?3`,
     )
     .bind(own, now, now - INVITE_MS)
     .all<PersonRow>();
-  // The players in the same room, beside the party: those with a name, less those they block; guests are counted.
+  // The players in the same room, beside the fireteam: those with a name, less those they block; guests are counted.
   const room = self?.place ?? null;
   const inRoom = room
     ? (
@@ -80,7 +80,7 @@ export async function rosterOf(database: Db, own: string, now: number) {
           .all<PersonRow>()
       ).results
     : [];
-  const nearby = inRoom.filter((row) => row.name !== null && !party?.members.includes(row.id));
+  const nearby = inRoom.filter((row) => row.name !== null && !fireteam?.members.includes(row.id));
   const { results: befriended } = await database
     .prepare(
       `SELECT people.*, friends.accepted, friends.asker_id = ?1 AS mine FROM (${PERSON}) AS people
@@ -122,7 +122,7 @@ export async function rosterOf(database: Db, own: string, now: number) {
   return {
     me: self ? shown(self) : null,
     privacy: PRIVACIES[privacy?.privacy ?? 1],
-    party: party ? { leader: members[0]?.name ?? null, members: members.map(shown) } : null,
+    fireteam: fireteam ? { leader: members[0]?.name ?? null, members: members.map(shown) } : null,
     invites: invites.map(shown),
     nearby: nearby.map(shown),
     guests: inRoom.filter((row) => row.name === null).length,
@@ -145,7 +145,7 @@ export async function rosterOf(database: Db, own: string, now: number) {
 }
 
 /** Another player's details as account `own` may see them: what they wear always; where they are only to their
- *  friends, party and guild. One who blocks the asker, or a name no one holds, is not found. */
+ *  friends, fireteam and guild. One who blocks the asker, or a name no one holds, is not found. */
 export async function detailsOf(database: Db, own: string, name: string, now: number) {
   const them = await accountNamed(database, name);
   if (!them || (await blocks(database, them.id, own))) return null;
@@ -158,7 +158,7 @@ export async function detailsOf(database: Db, own: string, name: string, now: nu
   const guild = await guildOf(database, them.id);
   const close =
     them.id === own ||
-    (await partyOf(database, own))?.members.includes(them.id) ||
+    (await fireteamOf(database, own))?.members.includes(them.id) ||
     (guild !== null && (await guildOf(database, own))?.id === guild.id) ||
     (await friendsOf(database, own, now)).friends.some((each) => each.name === them.username);
   const seen: Person = shown(person);

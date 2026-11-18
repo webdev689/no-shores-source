@@ -29,8 +29,8 @@ import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
-import { emblemImage, emblemOf, plateEnd } from './emblemArt.ts';
-import { startPartyHud } from './partyHud.ts';
+import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
+import { startFireteamHud } from './fireteamHud.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -49,6 +49,8 @@ const STATIONS: Readonly<Record<Station, string>> = {
   armsmith: 'The Armsmith',
   tailor: 'The Tailor',
 };
+/** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
+const BANNER_SCALE = 3;
 /** How often the menu looks for new gear while open, in milliseconds. */
 const LOOK_MS = 100;
 /** What the footer says each view's presses and keys do, and an item's page's. */
@@ -120,13 +122,16 @@ export function startGearWindow(
   screen.setAttribute('aria-modal', 'true');
   screen.setAttribute('aria-label', 'Menu');
   const header = make('div', '', `gear-head ${ROLES.header}`);
-  const who = make('div', '', 'gear-who');
   const tabRow = make('div', '', 'gear-tabs-top');
   tabRow.setAttribute('role', 'tablist');
   const title = make('h2', '', 'gear-station-name');
   title.id = 'gear-station-name';
+  // Under the tabs, the player's banner the whole width of the menu: their emblem, name and power, and their Aurem.
+  const banner = make('div', '', 'gear-banner');
+  const who = make('div', '', 'gear-who');
   const purse = make('div', '', 'gear-purse');
-  header.append(who, tabRow, title, purse);
+  banner.append(who, purse);
+  header.append(tabRow, title, banner);
   // The room's answer to the last press, in the footer beside what the presses do.
   const answer = make('div', '', 'gear-answer');
   answer.setAttribute('role', 'status');
@@ -220,20 +225,31 @@ export function startGearWindow(
   /** The player's name, for their nameplate, once the accounts give it. */
   let named: string | null = null;
   void link?.session().then((account) => (named = account?.username ?? null));
-  startPartyHud(root, link);
+  startFireteamHud(root, link);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
-  /** The header's ends: the player's nameplate, after Destiny's, their emblem behind their name, level and power; and
-   *  their Aurem; each hidden where its page shows it. */
+  /** The banner's emblem, drawn again to the banner's width whenever that changes. */
+  let bannered: Emblem | null = null;
+  const paintBanner = () => {
+    const cells = Math.floor(banner.clientWidth / BANNER_SCALE);
+    if (!bannered || cells < SIGN_CELLS) return;
+    banner.style.backgroundImage = `url(${emblemImage(bannered, 'banner', cells)})`;
+    banner.style.backgroundSize = `${cells * BANNER_SCALE}px 100%`;
+  };
+  new ResizeObserver(paintBanner).observe(banner);
+
+  /** The header's banner, after Destiny's: the player's emblem behind their name, level and power, and their Aurem
+   *  at its end, hidden where the inventory's page shows it. */
   const ends = (gear: GearState | null) => {
     who.replaceChildren();
     purse.replaceChildren();
-    who.style.backgroundImage = '';
-    who.style.backgroundColor = '';
+    banner.hidden = !gear;
     if (!gear) return;
     const emblem = emblemOf(gear.emblem ?? 0);
-    who.style.backgroundImage = `url(${emblemImage(emblem, 'band')})`;
-    who.style.backgroundColor = plateEnd(emblem);
+    if (emblem !== bannered) {
+      bannered = emblem;
+      paintBanner();
+    }
     who.append(
       make('strong', named ?? `Level ${characterOf(gear).level}`),
       make(
@@ -243,8 +259,6 @@ export function startGearWindow(
       ),
     );
     purse.append(glyphImage('aurem'), make('b', gear.aurem.toLocaleString()), make('span', 'Aurem', 'gear-hint'));
-    // The tabs keep the header's middle whichever end is hidden.
-    who.style.visibility = view === 'character' ? 'hidden' : '';
     purse.style.visibility = view === 'inventory' ? 'hidden' : '';
   };
 
