@@ -40,16 +40,22 @@ pub fn players() -> Vec<Seen> {
     ]
 }
 
-/// The foe the client's test expects: a brute, foe 12, staggered with 40 of its 130 health gone.
+/// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
+/// staggered with 40 of its 130 health gone, alert to the player its lock is on.
 pub fn foes() -> Vec<FoeSeen> {
     let warhammer = Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
-    let mut brute = fighter(Side::Foes, standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
+    let mut brute = fighter(Side::Faction(2), standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
     vec![FoeSeen {
         foe: 12,
         kind: 3,
+        foe_type: 15,
+        rank: 3,
+        faction: 2,
+        phase: 1,
+        alert: 2,
         fighter: brute,
         level: 7,
         shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
@@ -81,6 +87,13 @@ fn shots() -> Vec<Shot> {
     vec![loose(12, Ranged::Bow, [3.0, -6.0, 1.1], 0.5, 0.1, 1.0)]
 }
 
+/// Foe 12's ball, six ticks out east from (4, -6, 1.1) at 60 m/s, stopped half a metre into its seventh tick.
+fn lines() -> Vec<Line> {
+    let ball =
+        Shot { ranged: Ranged::Pistolet, at: [10.0, -6.0, 1.1], velocity: [60.0, 0.0, 0.0], age: 6, ..shots()[0] };
+    vec![combat::shots::stopped_line(&ball, [10.5, -6.0, 1.1])]
+}
+
 const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
@@ -96,9 +109,10 @@ impl sailing::waters::Waters for Open {
     }
 }
 
-/// A fight as a snapshot carries it: its player, and its view with the player's look laid to starboard, the captain's
-/// port guns run out and the player's stem ramming her (the client's test reads it back).
-fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
+/// Two fights as a snapshot carries them: each its player, and its view with the player's look laid to starboard, the
+/// captain's port guns run out and the player's stem ramming her; player 2's with a pirate fighting too, player 5's the
+/// same fight without her (the client's test reads both back).
+fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
         x,
         y,
@@ -109,15 +123,24 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
         sail_way: 0.0,
         rung: 2,
     };
-    let fight = naval::fight::Fight::meet(at(0.0, 0.0, 0.0), at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let pirate_elite = Commission { faction: naval::ranks::PIRATES, rank: naval::ranks::Rank::Elite };
+    let captains = [(at(0.0, -700.0, 3.0), TITHE_MINIBOSS, 7), (at(400.0, -700.0, 0.5), pirate_elite, 8)];
     let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let (player, captain) = (naval::fight::PLAYER, naval::fight::CAPTAIN);
     let events = [
         naval::fight::Event::RunOut { ship: captain, side: naval::arms::Side::Port },
         naval::fight::Event::Ram { ship: captain, by: player, point: [1.0, 2.0, 3.0], dealt: 4.5 },
     ];
-    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0))]
+    let view = |captains: &[(sailing::ship::Ship, Commission, u32)]| {
+        let mut fight = naval::fight::Fight::among(captains, &Open, 0.0);
+        fight.put_to_sea(player, at(0.0, 0.0, 0.0), &Open, 0.0);
+        naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0)
+    };
+    vec![(2, view(&captains), TITHE_MINIBOSS), (5, view(&captains[..1]), TITHE_MINIBOSS)]
 }
+
+/// The captain of the fight the client's test reads: a Miniboss of the Grey Tithe.
+const TITHE_MINIBOSS: Commission = Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Miniboss };
 
 const SHIPS: [(PlayerId, Ship); 2] = [
     (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 60, rate: 5 }),
@@ -128,8 +151,9 @@ fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
     shots: &'snapshot [Shot],
+    lines: &'snapshot [Line],
 ) -> Snapshot<'snapshot> {
-    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots }
+    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines }
 }
 
 /// The dresses a message holds.
@@ -160,12 +184,14 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         dress: Some("dressed".to_owned()),
         arms: Arms { melee: WeaponClass::Dagger, ranged: None, off_hand: OffHand::Shield }.code(),
         seen: 977,
-        spawn: Some(3),
+        spawn: Some(SpawnAsk::Foe { foe_type: 12, rank: 5, shield: 2 }),
         respawn: true,
         ask: Some(room::Asked::Gear(gear::Ask::Feed { item: 4 })),
         spawn_level: 12,
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
+    let clearing = Input { spawn: Some(SpawnAsk::Clear), ..input(2, Controls::default()) };
+    assert_eq!(read_input(&input_bytes(&clearing)).unwrap(), clearing);
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
     let asked = (plain.dress, plain.spawn, plain.intent.combat, plain.respawn);
     assert_eq!(asked, (None, None, CombatInput::default(), false));
@@ -175,6 +201,26 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
     let bare = messages::Input::create(&mut builder, &messages::InputArgs { controls, ..Default::default() });
     builder.finish(bare, None);
     assert_eq!(read_input(builder.finished_data()).unwrap().intent.combat, CombatInput::default());
+}
+
+#[test]
+fn a_foe_asked_for_by_its_role_alone_is_the_pirates_type_in_that_role() {
+    let asked = |role: u8| {
+        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let controls = Some(builder.create_vector(&[0.0; CONTROLS_FLOATS]));
+        let args = messages::InputArgs { controls, spawn: role, ..Default::default() };
+        let message = messages::Input::create(&mut builder, &args);
+        builder.finish(message, None);
+        read_input(builder.finished_data()).unwrap().spawn
+    };
+    let foe = |foe_type, rank| Some(SpawnAsk::Foe { foe_type, rank, shield: 0 });
+    // The pirates' Skirmisher to their Brute and Archer as Majors; their Captain at his first rank, an Elite.
+    let roles: Vec<_> = (1..=5).map(asked).collect();
+    assert_eq!(roles, [foe(13, 2), foe(14, 2), foe(15, 2), foe(16, 2), foe(17, 3)]);
+    assert_eq!((asked(0), asked(6), asked(CLEAR_FOES)), (None, None, Some(SpawnAsk::Clear)));
+    // A shield's element rides above the role's four bits.
+    let shielded = Some(SpawnAsk::Foe { foe_type: 14, rank: 2, shield: 3 });
+    assert_eq!(asked(2 | (3 << room::SHIELD_SHIFT)), shielded);
 }
 
 #[test]
@@ -223,8 +269,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let plain = flatbuffers::root::<messages::FromRoom>(&plain).unwrap().joined().unwrap();
     assert_eq!((plain.node(), plain.bounds().is_none()), (None, true));
 
-    let (players, foes, shots) = (players(), foes(), shots());
-    let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots));
+    let (players, foes, shots, lines) = (players(), foes(), shots(), lines());
+    let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert_eq!(read.tick(), 1234);
     let fighters: Vec<Fighter> = read
@@ -254,6 +300,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let glance: [f64; combat::floats::GLANCE_FLOATS] =
         foe.glance().unwrap().iter().collect::<Vec<_>>().try_into().unwrap();
     assert_eq!((foe.id(), foe.kind(), glance), (12, 3, foes[0].fighter.glance()));
+    let named = (foe.type_(), foe.rank(), foe.faction(), foe.phase(), foe.alert());
+    assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
     assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
@@ -261,6 +309,14 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let flying = read.shots().unwrap().get(0);
     assert_eq!((flying.owner(), flying.ranged()), (12, 1));
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());
+    assert!(flying.muzzle().is_none(), "a shot still flying carries no muzzle");
+    let stopped = read.shots().unwrap().get(1);
+    let ends = |shot: messages::Flying<'_>| {
+        [shot.at(), shot.velocity(), shot.muzzle()].map(|part| part.map(|numbers| numbers.iter().collect::<Vec<_>>()))
+    };
+    let line = lines[0];
+    let sent = [Some(line.last.at.to_vec()), Some(line.last.velocity.to_vec()), Some(line.muzzle.to_vec())];
+    assert_eq!((stopped.age(), ends(stopped)), (6, sent), "a stopped ball's last segment, and where it left its gun");
     assert!(read.ships().is_none());
 
     let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
@@ -281,8 +337,19 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((sea.tick(), ships), (77, sent.to_vec()));
     let pirate = sea.pirates().unwrap().get(0);
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
+    let commission = PIRATES[0].commission();
+    assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
     let fight = sea.fights().unwrap().get(0);
-    assert_eq!((fight.player(), fight.view().unwrap().iter().collect::<Vec<_>>()), (2, fights_seen()[0].1.clone()));
+    assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
+    let numbers =
+        |numbers: Option<flatbuffers::Vector<'_, f64>>| -> Option<Vec<f64>> { Some(numbers?.iter().collect()) };
+    let alone = sea.fights().unwrap().get(1);
+    // A page that knows one captain reads the view whole, the same with others in the fight or without them.
+    assert_eq!((fight.player(), numbers(fight.view())), (2, numbers(alone.view())));
+    let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].1.clone(), numbers(fight.others()).unwrap());
+    assert_eq!((others[0], others.len()), (1.0, 1 + 2 + naval::wire::VESSEL_NUMBERS + 4), "one other captain");
+    assert!(seen.windows(others.len()).any(|part| part == others), "her numbers as the fight's view holds them");
+    assert_eq!((alone.player(), numbers(alone.others())), (5, None), "none, as a room from before others sends it");
     let walker = sea.players().unwrap().get(0);
     let body = body_of(&walker.fighter().unwrap().iter().collect::<Vec<_>>());
     assert_eq!((walker.player(), walker.acknowledged(), body), (3, 41, Some(aboard_seen()[0].2)));
@@ -340,9 +407,10 @@ fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
 fn the_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
-    let (players, foes, shots) = (players(), foes(), shots());
+    let (players, foes, shots, lines) = (players(), foes(), shots(), lines());
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE))).unwrap();
-    std::fs::write(format!("{folder}/snapshot.bin"), snapshot_bytes(&snapshot(&players, &foes, &shots))).unwrap();
+    let snapshot = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
+    std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }

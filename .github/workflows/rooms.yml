@@ -4,7 +4,8 @@ name: rooms
 # over its D1 database (made if it is not there, its migrations applied first, the Discord app's keys handed over when
 # the repository has them), then the rooms (built first without the token, then deployed with it alone), whose
 # service binding reaches the accounts. ci.yml calls it from main once the same commit has passed the check, as it
-# publishes the page; it also runs by hand from main, to deploy again.
+# publishes the page, and it deploys only when what the rooms are built from has changed since their last deploy; it
+# also runs by hand from main, deploying whether anything changed or not.
 on:
   workflow_call:
   workflow_dispatch:
@@ -19,20 +20,52 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
     outputs:
       deploy: ${{ steps.ready.outputs.deploy }}
     steps:
+      # The history without its files' contents, to compare the rooms' code with that of their last deploy.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: .github
       - id: ready
         env:
           GH_TOKEN: ${{ github.token }}
           HAS_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN != '' }}
+          BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
+          # What the rooms are built from: the crates of `room-wasm` and of the bake, the Workers, the schema's maker,
+          # the content they read, the toolchain, the locks and the scripts that deploy, and this workflow.
+          ROOMS_CODE: >-
+            crates/bake crates/city crates/combat crates/foes crates/gear crates/land crates/movement crates/naval
+            crates/navmesh crates/protocol crates/reach crates/room crates/room-wasm crates/sailing crates/world
+            server tools/schema.mjs content/world content/testground content/gear content/ships/ships.json
+            Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json .github/workflows/rooms.yml
         run: |
-          head=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          repo="${{ github.repository }}"
+          head=$(gh api "repos/$repo/commits/main" --jq .sha)
+          # The commit the rooms were last deployed from: the newest deployment to `rooms` whose last word is success.
+          # With none found, they deploy.
+          list=$(gh api "repos/$repo/deployments?environment=rooms&per_page=30" \
+            --jq '.[] | "\(.sha) \(.id)"') || list=""
+          deployed=""
+          while read -r sha id; do
+            [ -n "$id" ] || continue
+            state=$(gh api "repos/$repo/deployments/$id/statuses" --jq '.[0].state') || state=""
+            if [ "$state" = success ]; then deployed=$sha; break; fi
+          done <<< "$list"
           if [ "$HAS_TOKEN" != "true" ]; then
             echo "::warning::the repository has no CLOUDFLARE_TOKEN secret, so the rooms were not deployed"
             echo "deploy=no" >> "$GITHUB_OUTPUT"
           elif [ "$head" != "${{ github.sha }}" ]; then
             echo "main has moved past this commit; its own run deploys the rooms"
+            echo "deploy=no" >> "$GITHUB_OUTPUT"
+          elif [ "$BY_HAND" != "true" ] && [ -n "$deployed" ] &&
+            git diff --quiet --no-renames "$deployed" HEAD -- $ROOMS_CODE; then
+            echo "the rooms' code is as deployed from $deployed: nothing to deploy"
             echo "deploy=no" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=yes" >> "$GITHUB_OUTPUT"
@@ -118,6 +151,8 @@ jobs:
     concurrency:
       group: rooms
       cancel-in-progress: false
+    # Each deploy is recorded against the commit it came from, which the next run compares with.
+    environment: rooms
     env:
       CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
     steps:

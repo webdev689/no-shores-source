@@ -34,7 +34,7 @@ test('a telegraphed blow is marked on the ground where its shape lies, filling a
   const red = vertices(late).every((vertex) => (vertex[3] ?? 0) > 0.9 && (vertex[4] ?? 0) < 0.2);
   assert.ok(red, 'iron is red');
   assert.ok((vertices(late)[0]?.[6] ?? 0) > (vertices(early)[0]?.[6] ?? 0), 'brighter in its last stretch');
-  const arrow = marksMesh([], [{ owner: 3, ranged: 1, at: [0, 0, 1], velocity: [45, 0, 0], age: 0 }]);
+  const arrow = marksMesh([], [{ owner: 3, ranged: 1, at: [0, 0, 1], velocity: [45, 0, 0], age: 0, muzzle: null }]);
   assert.equal(arrow.length, 12 * MARK_FLOATS, 'an arrow is two crossed strips');
 });
 
@@ -57,6 +57,14 @@ test('an iron blow’s edge is drawn twice, the second inside the first: its sha
   for (let index = 0; index < iron.length; index += MARK_FLOATS)
     asides.add(Math.round(Math.abs((iron[index + 1] ?? 0) - 2) * 100) / 100);
   assert.ok(asides.has(0.6) && asides.has(0.4), [...asides].join(' '));
+});
+
+test('marks are laid from an origin, so a mark far out in the world keeps its centimetres', () => {
+  const far = { ...lunge(40, false), origin: [1_000_001, 2_000_002, 0.5] as const };
+  const near = marksMesh([lunge(40, false)], []);
+  const laid = marksMesh([far], [], [], [], [1_000_000, 2_000_000, 0]);
+  assert.equal(laid.length, near.length);
+  laid.forEach((value, index) => assert.ok(Math.abs(value - (near[index] ?? 0)) < 1e-4, `at ${index}: ${value}`));
 });
 
 test('far out in the world, the marks are measured from an origin near them, exact where 32-bit floats are not', () => {

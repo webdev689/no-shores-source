@@ -3,7 +3,7 @@
 //! earns a counter; anything else lands, filling poise until the fighter staggers.
 
 use crate::arms::{OffHand, Ranged, Stroke, stroke_shape, weapon};
-use crate::fighter::{Action, Attack, Cause, Fighter, FighterId, Side, Swing};
+use crate::fighter::{Action, Attack, Cause, Fighter, FighterId, Swing};
 use crate::shapes::{Shape, Telegraph, numbers};
 use crate::sight::{bearing, off};
 use crate::tuning::{
@@ -242,7 +242,7 @@ fn landed(next: &mut Fighter, blow: &Blow, damage: f64, poise: f64) {
         next.poise_immune = stagger + POISE_IMMUNE;
     } else if blow.knocks_down {
         next.action = Action::Down { left: KNOCKED_DOWN };
-    } else if next.side == Side::Players && flinches(&next.action) {
+    } else if next.side.is_players() && flinches(&next.action) {
         next.action = Action::Flinch { left: FLINCH };
     }
 }

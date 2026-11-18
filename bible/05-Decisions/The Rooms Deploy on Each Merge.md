@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-17
-status: in force
+status: replaced
+replaced_by: "[[The Rooms Deploy When Their Code Changes]]"
 ---
 # The Rooms Deploy on Each Merge
+
+Replaced by [[The Rooms Deploy When Their Code Changes]].
 
 > Told that a fix reaches the rooms only when they are next deployed, by hand: "We need to make it automatic"
 

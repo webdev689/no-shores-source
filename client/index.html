@@ -6,7 +6,6 @@
     <meta name="robots" content="noindex" />
     <title>Overlook</title>
     <link rel="stylesheet" href="/src/face.css" />
-    <link rel="stylesheet" href="/src/combat/hud.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -16,6 +15,11 @@
         --warn: #f0b545;
         --dead: #d8574a;
         --gold: #f3cf6a;
+        /* Words laid straight on the world: a hard 1 px outline all round and a soft shade past it, as the fight's
+           plates and the ships' write theirs, so they read over cloud and glare. */
+        --halo:
+          1px 0 0 #050608, -1px 0 0 #050608, 0 1px 0 #050608, 0 -1px 0 #050608, 1px 1px 0 #050608, -1px -1px 0 #050608,
+          1px -1px 0 #050608, -1px 1px 0 #050608, 0 0 4px rgba(0, 0, 0, 0.6);
       }
       html,
       body {
@@ -30,7 +34,7 @@
         height: 100%;
         transition: filter 1.4s ease-out;
       }
-      /* In death the world drains to grey, as Destiny's does, and comes back in colour on respawn. */
+      /* In death the world drains to grey, and comes back in colour on respawn. */
       canvas.dead {
         filter: grayscale(0.92) brightness(0.72) contrast(1.05);
       }
@@ -60,10 +64,13 @@
       [hidden] {
         display: none !important;
       }
+      /* The place's name keeps left of the compass, 520 px wide or 60% of a narrower screen, at the top's middle. */
       .place {
         position: absolute;
         left: 28px;
         top: 22px;
+        max-width: calc(50vw - min(260px, 30vw) - 40px);
+        text-shadow: var(--halo);
       }
       .place .title {
         font-size: 22px;
@@ -92,11 +99,12 @@
         background: radial-gradient(ellipse at center, transparent 35%, #000 100%);
         transition: opacity 0.4s;
       }
+      /* Under the compass's column: the compass, a boss's bar and the target's plate. */
       .warning {
         position: absolute;
         left: 0;
         right: 0;
-        top: 18%;
+        top: max(18%, 180px);
         text-align: center;
         color: var(--warn);
       }
@@ -136,6 +144,7 @@
         font-size: 11px;
         line-height: 19px;
         color: var(--ink);
+        text-shadow: var(--halo);
       }
       /* On a screen past 1440p the HUD's words stand at twice their size, as the menu does. */
       @media (min-width: 2400px) and (min-height: 1300px) {
@@ -147,25 +156,50 @@
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
       }
-      /* The fight's own bars stand at the foot of the view's middle, clear of the keys listed at its left, and the
-         locked foe's under the room's note. */
-      #fight-hud .own {
-        left: 50%;
-        margin-left: -120px;
-        bottom: 22px;
+      /* The offer to dock or go ashore stands over the sea bar, where the hints would run into it. */
+      #hud:has(> .sea-bar:not([hidden])):has(> .landfall:not([hidden])) .hints {
+        bottom: 148px;
       }
-      #fight-hud .target {
-        top: 72px;
+      /* On foot the hints stand over the fight's vitals panel, 126 px tall from the screen's foot. */
+      #hud:has(> .fight:not([hidden])) .hints {
+        bottom: 140px;
       }
+      /* On foot the fight's display holds the compass; the game's own is the sea's. */
+      #hud:has(> .fight:not([hidden])) > .compass-column {
+        display: none;
+      }
+      /* A boss's bar under the compass takes the top from the place's name while it shows. */
+      #hud:has(> .fight.bossed:not([hidden])) .place {
+        visibility: hidden;
+      }
+      /* At sea the line stands under the compass. */
       .status {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
-        top: 24px;
+        top: 56px;
         padding: 6px 14px;
         border: 2px solid transparent;
         white-space: nowrap;
         text-shadow: 1px 1px 0 #000;
+      }
+      /* On foot the fight's column holds the top's middle, so the line stands under the place's name, and under a
+         boss's bar while one shows. */
+      #hud:has(> .fight:not([hidden])) .status {
+        left: 28px;
+        top: 84px;
+        transform: none;
+      }
+      #hud:has(> .fight.bossed:not([hidden])) .status {
+        top: 114px;
+      }
+      /* In a fight at sea the ships' plates hold the top, a Boss's under the compass: the line stands under it, and
+         the place's name gives way. */
+      #hud:has(> svg:not(:empty)) .status {
+        top: 114px;
+      }
+      #hud:has(> svg:not(:empty)) .place {
+        visibility: hidden;
       }
       .sea-bar {
         position: absolute;
@@ -482,11 +516,15 @@
           opacity: 0.45;
         }
       }
+      @media (prefers-reduced-motion: reduce) {
+        .veil-text {
+          animation: none;
+        }
+      }
     </style>
   </head>
   <body>
     <canvas id="game"></canvas>
-    <div id="fight-hud" class="fight-hud" hidden></div>
     <div id="hud"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

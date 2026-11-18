@@ -14,11 +14,11 @@ code:
 ---
 # First Person
 
-What the player holds in first person, from the [[Sprite Forge]]'s first-person pictures, as DFO plays it ([[The
-Player Plays as in DFO]]). The [[Test Ground]] hands `FirstPerson` the attack button and the player's state each frame:
-what is in each hand, the gauntlets and boots worn, whether the hands are drawn, walking or running, the metres walked,
-a cast, a climb, a ride and the look's bearing. It answers the blow that lands or the shot that leaves, and from which
-hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
+What the player holds in first person, from the [[Sprite Forge]]'s first-person pictures, as DFO plays it
+([[The Player Plays as in DFO]]). The [[Test Ground]] hands `FirstPerson` the attack button and the player's state each
+frame: what is in each hand, the gauntlets and boots worn, whether the hands are drawn, walking or running, the metres
+walked, a cast, a climb, a ride and the look's bearing. It answers the blow that lands or the shot that leaves, and from
+which hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
 
 ## How it works
 
@@ -79,10 +79,11 @@ it while it reloads is the blade's.
 
 ### Shooting
 
-The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not
-while aiming, where each shot takes a fresh pull as the rules ask. Aiming zooms the weapon with the view, about the middle of the
-screen, and its muzzle with it, so a tracer starts where it is drawn ([[First-Person Aiming Zooms the Weapon With the View]]). A shot plays its frames
-at its own rate, then the weapon reloads:
+The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not while
+aiming, where each shot takes a fresh pull as the rules ask. Aiming zooms the weapon with the view, about the middle of
+the screen, and its muzzle with it, so a tracer starts where it is drawn
+([[First-Person Aiming Zooms the Weapon With the View]]). A shot plays its frames at its own rate, then the weapon
+reloads:
 
 | | Frames | A second | Leaves on | Reload | Kick | Dips |
 |---|---|---|---|---|---|---|
@@ -102,9 +103,9 @@ Running on the ground with every gun loaded, the guns are carried: the Thunderlo
 held up, a frame each sixth of a stride. The carry comes up over a fifth of a second and dips 70 pixels as its hold
 changes, so no picture swaps in sight.
 
-Each ranged weapon's muzzle is known on its own picture, at rest and in the frame its shot leaves on, kicked up
-(design pixels): the Pistolet's at (72, 64) and (82, 53), the Thunderlock's at (66, 59) and (77, 42), the crossbow's
-at (109, 93) and (82, 73), and a drawn bow's arrowhead at (107, 150). The first person reports the firing one where the hands
+Each ranged weapon's muzzle is known on its own picture, at rest and in the frame its shot leaves on, kicked up (design
+pixels): the Pistolet's at (72, 64) and (82, 53), the Thunderlock's at (66, 59) and (77, 42), the crossbow's at (109,
+93) and (82, 73), and a drawn bow's arrowhead at (107, 150). The first person reports the firing one where the hands
 stand that frame, before they are drawn, so a shot let go then starts its tracer where it will be drawn.
 
 ### Which picture
@@ -125,21 +126,20 @@ sets keep their own colours. Bare hands take iron's.
 
 ### On the screen
 
-Each picture lies on a 320 by 200 design screen, scaled to the canvas, texel for texel, with its clear texels cut
-out, over the scene. A weapon lies at its own place, but a sword rests 60 pixels below its own and 40 to the right, its blade clear of
-the crosshair (in the left hand, 40 to the left); its strikes keep
-their own places, since lowered as far they leave the screen ([[First-Person Placement Is Our Own]]). A gun sits flush in the bottom right corner, sunk its kick's
+Each picture lies on a 320 by 200 design screen, scaled to the canvas, texel for texel, with its clear texels cut out,
+over the scene. A weapon lies at its own place, but a sword rests 60 pixels below its own and 40 to the right, its blade
+clear of the crosshair (in the left hand, 40 to the left); its strikes keep their own places, since lowered as far they
+leave the screen ([[First-Person Placement Is Our Own]]). A gun sits flush in the bottom right corner, sunk its kick's
 height below the foot. A crossbow's rest frame sits flush in that corner, and every frame where that puts it. The left
 hand of a pair is mirrored about the middle, and each weapon of a pair stands 34 pixels further out toward its own side,
 at rest and through every blow, so the two blades do not close on the middle.
 
-The left hand's things are placed as our own ([[First-Person Placement Is Our Own]]): in the lower left, the mirror of the weapon side, a texel a pixel. A
-shield's and the lantern's arms leave through their left edge, so they sit flush to it, their feet on the screen's.
-The torch stands 4 pixels in, its arm leaving through its foot across from where a dagger's does. A shield is held a
-frame below raised, and raised whole for a block when the state asks for one. While the weapon strikes, a shield
-or a torch ducks below the screen, as fast as a climb lowers a weapon, and comes back up once the strike ends. A
-lantern stays up. A light's flame
-steps every 0.1 s.
+The left hand's things are placed as our own ([[First-Person Placement Is Our Own]]): in the lower left, the mirror of
+the weapon side, a texel a pixel. A shield's and the lantern's arms leave through their left edge, so they sit flush to
+it, their feet on the screen's. The torch stands 4 pixels in, its arm leaving through its foot across from where a
+dagger's does. A shield is held a frame below raised, and raised whole for a block when the state asks for one. While
+the weapon strikes, a shield or a torch ducks below the screen, as fast as a climb lowers a weapon, and comes back up
+once the strike ends. A lantern stays up. A light's flame steps every 0.1 s.
 
 While walking, the picture dips a few design pixels each step, more at a run. A flail at rest wears its chain's swing,
 a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps both arms, the left half a stride behind

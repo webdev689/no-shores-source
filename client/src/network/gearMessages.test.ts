@@ -46,14 +46,14 @@ test('an ask crosses into an input with every field it names', () => {
     look: { anim: 'idle', frame: 0, facing: 0 },
     arms: 0,
     seen: 0n,
-    spawn: 2,
+    spawn: { type: 14, rank: 2, shield: 1 },
     spawnLevel: 12,
     ask,
   });
   const input = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
   const read = input.ask();
   assert.deepEqual([read?.kind(), read?.item(), read?.column(), read?.node()], [ASKS.buy, 7, 6, 1]);
-  assert.deepEqual([input.spawn(), input.spawnLevel()], [2, 12]);
+  assert.deepEqual([input.spawn(), input.spawnType(), input.spawnLevel()], [1 << 4, 14, 12], 'its shield above');
   const named = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(
       inputBytes(4, {
@@ -61,7 +61,6 @@ test('an ask crosses into an input with every field it names', () => {
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,
-        spawn: 0,
         ask: { kind: ASKS.grantNamed, named: 'gullwing' },
       }),
     ),
@@ -74,7 +73,6 @@ test('an ask crosses into an input with every field it names', () => {
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,
-        spawn: 0,
       }),
     ),
   );

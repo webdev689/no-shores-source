@@ -62,8 +62,8 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     ship.to_floats().into_iter().chain(pose.to_floats()).collect()
 }
 
-/// The numbers of one other ship in a lay's request: her number, flag (0 a player's, 1 a pirate's), ship, pose and
-/// whether she floats.
+/// The numbers of one other ship in a lay's request: her number, flag (0 a player's, else her faction's number),
+/// ship, pose and whether she floats.
 const OTHER_FLOATS: usize = 3 + SHIP_FLOATS + POSE_FLOATS;
 
 fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
@@ -72,7 +72,8 @@ fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
     let pose = pose_from(rest.get(SHIP_FLOATS..SHIP_FLOATS + POSE_FLOATS)?)?;
     let afloat = *rest.get(SHIP_FLOATS + POSE_FLOATS)? != 0.0;
     let id = (id >= 0.0 && id <= f64::from(u32::MAX) && id == id.trunc()).then_some(id as u32)?;
-    let flag = if flag == 0.0 { Flag::Player } else { Flag::Pirate };
+    let flag = (flag >= 0.0 && flag <= f64::from(u8::MAX) && flag == flag.trunc()).then_some(flag as u8)?;
+    let flag = Flag::numbered(flag);
     Some(Sighted { id, flag, ship, pose, afloat })
 }
 

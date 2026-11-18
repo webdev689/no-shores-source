@@ -1,18 +1,21 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { courseBytes, helmBytes } from '../network/messages.ts';
-import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
+import type { SeenShip } from '../network/messages.ts';
+import type { Snapshot } from '../network/roomConnection.ts';
 import { SeaRoom } from './seaRoom.ts';
 
-/** A sea room's link in the test: what the page sends, and its snapshots handed on by tick. */
-async function joined(): Promise<{ room: SeaRoom; sent: Uint8Array[]; atTick: (tick: number) => void }> {
+/** A sea room's link in the test: what the page sends, and its snapshots handed on by tick, with the ships at sea. */
+async function joined() {
   const sent: Uint8Array[] = [];
   let hand: (snapshot: Snapshot) => void = () => undefined;
-  const link: RoomLink = {
+  const link = {
     player: 1,
     dressed: [],
+    joins: 1,
+    rejoining: false,
     lost: null,
-    send: (bytes) => sent.push(bytes),
+    send: (bytes: Uint8Array) => void sent.push(bytes),
     pump: () => undefined,
   };
   const room = await SeaRoom.join(
@@ -23,9 +26,9 @@ async function joined(): Promise<{ room: SeaRoom; sent: Uint8Array[]; atTick: (t
     [50_000, 150_000],
     10,
   );
-  const atTick = (tick: number) =>
-    hand({ tick: BigInt(tick), players: [], ships: [], pirates: [], fights: [] } as unknown as Snapshot);
-  return { room, sent, atTick };
+  const atTick = (tick: number, ships: readonly SeenShip[] = []) =>
+    hand({ tick: BigInt(tick), players: [], ships, pirates: [], fights: [] } as unknown as Snapshot);
+  return { room, sent, atTick, link };
 }
 
 test('a course set sooner than the sea takes one waits for a later snapshot, the newest in place of the rest', async () => {
@@ -62,4 +65,17 @@ test('a facing still waiting when the player leaves the helm is let go, and a co
     [courseBytes([[60_000, 150_000]], 10), helmBytes(true)],
     'the course, then the leave',
   );
+});
+
+test('while its link rejoins the sea shows none of its ships; joined again, she is its new player, her course sent at once', async () => {
+  const { room, sent, atTick, link } = await joined();
+  atTick(1000, [{ player: 1, x: 50_000, y: 150_000, heading: 0, pace: 0 }]);
+  assert.ok(room.ownShip);
+  link.rejoining = true;
+  room.pump(0);
+  assert.equal(room.ownShip, null, 'the old room has her no more');
+  Object.assign(link, { player: 4, joins: 2, rejoining: false });
+  assert.deepEqual([room.rejoined(), room.rejoined(), room.own], [true, false, 4]);
+  room.course([[50_000, 150_000]], 10);
+  assert.equal(sent.length, 2, 'put to sea again at once, with no wait on the old room’s clock');
 });

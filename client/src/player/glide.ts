@@ -26,6 +26,11 @@ export class Glide {
   /** Where to draw the figure now, `ticks` (a share of them, as a frame lasts) after the last frame: `to` its place at
    *  room tick `tick`. */
   follow(to: Place, tick: number, ticks: number): Place {
+    // A tick before the newest is a new room's clock (the player joined it again): the figure starts over there.
+    if (tick < (this.snapshots.at(-1)?.tick ?? tick)) {
+      this.snapshots.splice(0, this.snapshots.length, { tick, place: to });
+      this.clock = tick;
+    }
     const newest = this.snapshots.at(-1) ?? { tick, place: to };
     if (tick > newest.tick) {
       this.snapshots.push({ tick, place: to });

@@ -55,6 +55,7 @@ dependencies = [
  "combat",
  "libm",
  "movement",
+ "navmesh",
 ]
 
 [[package]]
@@ -110,6 +111,7 @@ name = "movement"
 version = "0.0.0"
 dependencies = [
  "libm",
+ "serde_json",
 ]
 
 [[package]]
@@ -205,6 +207,7 @@ dependencies = [
  "bake",
  "city",
  "combat",
+ "foes",
  "gear",
  "land",
  "movement",

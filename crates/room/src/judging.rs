@@ -7,7 +7,7 @@ use crate::Room;
 use combat::fighter::{Action, Attack, FighterId};
 use combat::judge::{answered, overreached, suffer};
 use combat::shapes::{LATE, Telegraph};
-use combat::shots::{Flight, fly, line_of};
+use combat::shots::{Flight, fly, stopped_line};
 use combat::strike::reaches;
 use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 use gear::Slot;
@@ -114,6 +114,19 @@ impl Room {
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
+        // The fight's heat follows what the players took and what they dealt and killed: what they dealt, a shield's
+        // share with it, as the numbers combat is tuned for, whatever the foe's level.
+        let lost = before.health - after.health;
+        if self.players.contains_key(&defender) {
+            self.director.taken(lost);
+        } else if self.players.contains_key(&blow.striker) {
+            let level = self.foes.get(&defender).map_or(0, |foe| foe.level);
+            let took = shielded.map_or(0.0, |(took, _)| took);
+            self.director.dealt((lost + took) / gear::power::foe_health_times(level));
+            if after.dead() {
+                self.director.killed();
+            }
+        }
         // A blow too far below its foe's level to harm it shares nothing of its kill.
         if let Some(hand) = hand
             && blow.damage > 0.0
@@ -289,11 +302,11 @@ impl Room {
                 .filter(|(_, fighter)| fighter.side != side && !fighter.dead())
                 .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
                 .collect();
-            let flight = fly(&shot, &self.blocks, &bodies);
+            let flight = fly(&shot, &self.blocks, &self.floor, &bodies);
             if let Flight::Stopped { at, .. } = flight
                 && combat::shots::shot_numbers(shot.ranged).0 <= 0.0
             {
-                self.lines.push(line_of(&shot, at));
+                self.lines.push(stopped_line(&shot, at));
             }
             match flight {
                 Flight::Flying(next) => self.shots.push((next, loosed)),
@@ -323,7 +336,7 @@ impl Room {
             .filter(|(id, fighter)| self.foes.contains_key(id) && !fighter.dead())
             .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
             .collect();
-        let (stop, struck) = match fly(shot, &self.blocks, &bodies) {
+        let (stop, struck) = match fly(shot, &self.blocks, &self.floor, &bodies) {
             Flight::Stopped { at, struck } => (at, struck),
             Flight::Flying(next) => (next.at, None),
         };

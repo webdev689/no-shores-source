@@ -33,7 +33,7 @@ const SCRIPT: [Phase; 10] = [
 /// The still foe the player fights, 3 m north of where it starts.
 pub fn foe() -> Fighter {
     let arms = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Empty };
-    fighter(Side::Foes, standing(0.0, -3.0), arms, Weight::Medium, 70.0, 35.0)
+    fighter(Side::Faction(1), standing(0.0, -3.0), arms, Weight::Medium, 70.0, 35.0)
 }
 
 pub fn run_script() -> Vec<Fighter> {

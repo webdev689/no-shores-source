@@ -1,20 +1,26 @@
-//! Telegraphed blows and shots: a brute winds up iron slams and never guards; the captain closes with charges and
-//! leaps, feints and chains, and roars into its second phase once with an iron ring, striking harder after; an archer
-//! kites a player who comes too close, draws and looses, and aims a shot now and then.
+//! Telegraphed blows and shots: a brute winds up iron slams and never guards; a captain as a Miniboss closes with
+//! charges and leaps, feints and chains, throws more often than an Elite in its first phase, and roars into its second
+//! once with an iron ring, striking harder after;
+//! Thule roars into each of his three phases and calls his crew into the last, Corvane calls his own into each later
+//! one; a Minor throws no telegraphed blow;
+//! an archer kites a player who comes too close, draws and looses, and aims a shot now and then; every shooter draws
+//! its own weapon as long as that weapon takes.
 
 mod common;
 
 use combat::Happening;
 use combat::shapes::Shape;
-use common::{Room, still, watching};
+use common::{ARCHER, BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, still, watching};
 use core::f64::consts::PI;
-use foes::Kind;
+use foes::Rank::{Boss, Elite, Major, Miniboss, Minor};
+use foes::roster::HIGH_ASSESSOR;
+use foes::{Call, Place};
 
 const PLAYER: u32 = 1;
 
 #[test]
 fn a_brute_winds_up_iron_slams_and_never_guards_or_dodges() {
-    let mut room = Room::new(21).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Brute, 0.0, -4.0, PI);
+    let mut room = Room::new(21).player(PLAYER, 0.0, 0.0, 0.0).foe(10, BRUTE, Major, 0.0, -4.0, PI);
     room.run(3600, &mut still(0.0));
     let orders = room.orders(10);
     assert!(orders.iter().any(|(_, order)| order.shape == Shape::Slam && order.iron), "{orders:?}");
@@ -26,10 +32,10 @@ fn a_brute_winds_up_iron_slams_and_never_guards_or_dodges() {
 }
 
 #[test]
-fn the_captain_throws_its_whole_set_closing_from_afar_feinting_and_chaining() {
+fn a_miniboss_captain_throws_its_whole_set_closing_from_afar_feinting_and_chaining() {
     let (mut closers, mut feints, mut chains) = (0, 0, 0);
     for seed in 1..=6 {
-        let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Captain, 0.0, -9.0, PI);
+        let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, CAPTAIN, Miniboss, 0.0, -9.0, PI);
         let mut script = |room: &Room, me: u32| {
             // A player who backs off for the first half draws the gap-closers, then stands to be fought up close.
             let mut intent = common::standing_still(room.toward(me, 10));
@@ -55,15 +61,19 @@ fn the_captain_throws_its_whole_set_closing_from_afar_feinting_and_chaining() {
 }
 
 #[test]
-fn the_captain_roars_into_its_second_phase_once_and_strikes_harder_after() {
-    let mut room = Room::new(5).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Captain, 0.0, -2.0, PI);
+fn a_miniboss_roars_into_its_second_phase_once_with_its_poise_refilled_and_strikes_harder_after() {
+    let mut room = Room::new(5).player(PLAYER, 0.0, 0.0, 0.0).foe(10, CAPTAIN, Miniboss, 0.0, -2.0, PI);
     room.run(30, &mut still(0.0));
-    assert!((room.brain(10).might() - 1.2).abs() < 1e-12);
+    let might = 1.2 * 1.25;
+    assert!((room.brain(10).might() - might).abs() < 1e-12 && room.brain(10).phase() == 1);
     room.set(10, |captain| captain.health = 0.36 * captain.health_max);
     room.run(30, &mut still(0.0));
     assert!(room.orders(10).iter().all(|(_, order)| order.shape != Shape::Ring), "not above its threshold");
     // Struck down to it while winding up or swinging, it roars as soon as it is free.
-    room.set(10, |captain| captain.health = 0.34 * captain.health_max);
+    room.set(10, |captain| {
+        captain.health = 0.34 * captain.health_max;
+        captain.poise = 0.5 * captain.poise_max;
+    });
     let free = (room.tick..room.tick + 120).find(|_| {
         let idle = matches!(room.fighter(10).action, combat::fighter::Action::Idle);
         room.step(&mut still(0.0));
@@ -74,15 +84,17 @@ fn the_captain_roars_into_its_second_phase_once_and_strikes_harder_after() {
     assert_eq!(Some(tick), free, "at once");
     assert!(roar.shape == Shape::Ring && roar.iron, "an iron ring: {roar:?}");
     assert_eq!(roar.windup + combat::ticks(combat::shapes::IRON_EXTRA), 72, "a roar of 1.2 s");
-    assert!((room.brain(10).might() - 1.2 * 1.25).abs() < 1e-12);
-    assert!((room.fighter(10).might - 1.5).abs() < 1e-12, "its blows strike harder");
+    assert!((room.brain(10).might() - might * 1.25).abs() < 1e-12 && room.brain(10).phase() == 2);
+    assert!((room.fighter(10).might - might * 1.25).abs() < 1e-12, "its blows strike harder");
+    assert!(room.fighter(10).poise < 0.5 * room.fighter(10).poise_max, "its poise refilled as it roared");
     let rings = room.orders(10).iter().filter(|(_, order)| order.shape == Shape::Ring).count();
     assert_eq!(rings, 1, "once");
+    assert!(room.crew_calls.is_empty(), "a Miniboss calls no crew");
 }
 
 #[test]
 fn an_archer_kites_a_player_too_close_then_draws_and_looses_and_sometimes_aims() {
-    let mut room = Room::new(9).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Archer, 0.0, -4.0, PI);
+    let mut room = Room::new(9).player(PLAYER, 0.0, 0.0, 0.0).foe(10, ARCHER, Major, 0.0, -4.0, PI);
     room.run(150, &mut watching(10));
     assert!(room.distance(PLAYER, 10) > 6.0, "it walked out of reach: {}", room.distance(PLAYER, 10));
     room.run(1800, &mut watching(10));
@@ -96,4 +108,196 @@ fn an_archer_kites_a_player_too_close_then_draws_and_looses_and_sometimes_aims()
     let aimed = room.orders(10);
     assert!(!aimed.is_empty() && aimed.iter().all(|(_, order)| order.shape == Shape::Aimed), "{aimed:?}");
     assert!(aimed.iter().all(|(_, order)| (order.ahead - room.distance(PLAYER, 10)).abs() < 3.0));
+}
+
+#[test]
+fn a_shooter_stood_close_kites_out_to_its_ring_and_shoots_rather_than_punching() {
+    const MARKSMAN: u8 = 5;
+    for (number, rank) in [(MARKSMAN, Elite), (3, Major), (9, Minor)] {
+        let mut room = Room::new(2).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -5.0, PI);
+        room.run(1800, &mut watching(10));
+        let loosed =
+            room.happenings.iter().filter(|(_, by, happening)| *by == 10 && matches!(happening, Happening::Loosed(_)));
+        assert!(loosed.count() + room.orders(10).len() >= 8, "type {number} shoots");
+        assert!(room.swings(10).is_empty(), "type {number} never punches a player it has outwalked");
+    }
+}
+
+/// The tick of each roar a foe ordered: an iron ring wound up the roar's 1.2 s.
+fn roars(room: &Room, id: u32) -> Vec<u64> {
+    let roar = |order: &combat::TelegraphOrder| {
+        order.shape == Shape::Ring && order.iron && order.windup + combat::ticks(combat::shapes::IRON_EXTRA) == 72
+    };
+    room.orders(id).iter().filter(|(_, order)| roar(order)).map(|(tick, _)| *tick).collect()
+}
+
+#[test]
+fn the_boss_roars_into_each_of_its_three_phases_and_calls_its_crew_once_into_the_last() {
+    const THULE: u8 = 12;
+    let mut room = Room::new(8).player(PLAYER, 0.0, 0.0, 0.0).foe(10, THULE, Boss, 0.0, -2.5, PI);
+    room.run(30, &mut still(0.0));
+    let might = 1.2 * 1.35;
+    assert_eq!(room.brain(10).phase(), 1);
+    assert!((room.brain(10).might() - might).abs() < 1e-12);
+    room.set(10, |boss| boss.health = 0.7 * boss.health_max);
+    room.run(120, &mut still(0.0));
+    assert!(roars(&room, 10).is_empty(), "not above two thirds");
+    room.set(10, |boss| boss.health = 0.6 * boss.health_max);
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (1, 2), "the boarding, roared once");
+    assert!((room.brain(10).might() - might).abs() < 1e-12, "no harder yet");
+    assert!(room.crew_calls.is_empty());
+    room.set(10, |boss| boss.health = 0.3 * boss.health_max);
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (2, 3), "the last stand, roared once");
+    assert!((room.brain(10).might() - might * 1.25).abs() < 1e-12, "a quarter harder");
+    assert_eq!(room.crew_calls.len(), 1, "its crew called");
+    assert_eq!(room.crew_calls[0].0, roars(&room, 10)[1] + 1, "as its roar begins");
+    room.run(1800, &mut still(0.0));
+    assert_eq!(roars(&room, 10).len(), 2, "each phase roared once");
+    assert_eq!(room.crew_calls.len(), 1, "and its crew called once");
+    let orders = room.orders(10);
+    assert!(orders.iter().any(|(_, order)| order.shape == Shape::Slam && order.iron), "iron slams: {orders:?}");
+}
+
+#[test]
+fn corvane_holds_his_shield_up_then_summons_crossbowmen_behind_him_and_collectors_to_his_sides() {
+    let mut room = Room::new(8).player(PLAYER, 0.0, 0.0, 0.0).foe(10, HIGH_ASSESSOR, Boss, 0.0, -2.5, PI);
+    room.run(900, &mut still(0.0));
+    let might = 1.2 * 1.35;
+    assert_eq!(room.brain(10).phase(), 1);
+    let guarded = room.foe_intents(10).iter().filter(|(_, intent)| intent.combat.guard).count();
+    assert!(guarded > 60, "the levy: his shield up while he waits, though no blow comes ({guarded} ticks)");
+    let levy = room.orders(10);
+    assert!(levy.iter().all(|(_, order)| matches!(order.shape, Shape::Sweep | Shape::Lunge)), "{levy:?}");
+    room.set(10, |boss| boss.health = 0.6 * boss.health_max);
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (1, 2), "the summons, roared once");
+    let crossbowmen = Call { foe_type: 3, rank: Minor, count: 2, place: Place::Behind };
+    assert_eq!(room.crew_calls.iter().map(|call| call.2).collect::<Vec<_>>(), [crossbowmen]);
+    assert_eq!(room.crew_calls[0].0, roars(&room, 10)[0] + 1, "as its roar begins");
+    assert!((room.brain(10).might() - might).abs() < 1e-12, "no harder yet");
+    room.run(1800, &mut still(0.0));
+    let summons = room.orders(10);
+    assert!(summons.iter().any(|(_, order)| order.shape == Shape::Slam && order.iron), "iron slams: {summons:?}");
+    room.set(10, |boss| boss.health = 0.3 * boss.health_max);
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (2, 3), "the seizure, roared once");
+    let collectors = Call { foe_type: 2, rank: Major, count: 2, place: Place::Beside };
+    assert_eq!(room.crew_calls.iter().map(|call| call.2).collect::<Vec<_>>(), [crossbowmen, collectors]);
+    assert!((room.brain(10).might() - might * 1.25).abs() < 1e-12, "a quarter harder");
+}
+
+#[test]
+fn a_roar_knocked_out_of_a_boss_before_it_begins_is_still_owed_and_roared_once_it_stands() {
+    let mut room = Room::new(8).player(PLAYER, 0.0, 0.0, 0.0).foe(10, 12, Boss, 0.0, -2.5, PI);
+    room.run(30, &mut still(0.0));
+    room.set(10, |boss| boss.health = 0.6 * boss.health_max);
+    while roars(&room, 10).is_empty() {
+        room.step(&mut still(0.0));
+    }
+    // Knocked down by a foe of another side before its brain saw the wind-up begin.
+    room.set(10, |boss| boss.action = combat::fighter::Action::Down { left: 40 });
+    room.run(240, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (2, 2), "the boarding's roar, ordered again once up");
+    assert!(room.crew_calls.is_empty());
+}
+
+#[test]
+fn a_new_phase_s_numbers_hold_only_as_its_roar_begins() {
+    // Thule waits his turn on the ring, his guard up, while two others hold the player's turns.
+    let mut room = Room::new(7).player(PLAYER, 0.0, 0.0, 0.0).foe(10, 12, Boss, 0.0, -4.0, PI).alert(10, PLAYER);
+    let caps = room.director.caps();
+    for holder in [3, 4] {
+        room.board.join(PLAYER, holder, false, 0);
+        assert!(room.board.take(PLAYER, holder, false, 0, u64::MAX, caps));
+    }
+    room.run(150, &mut still(0.0));
+    let might = room.brain(10).might();
+    room.set(10, |boss| boss.health = 0.6 * boss.health_max);
+    let mut owed = 0;
+    while roars(&room, 10).is_empty() {
+        room.step(&mut still(0.0));
+        assert!(room.brain(10).phase() == 1 && room.brain(10).might() == might, "not before its roar");
+        owed += 1;
+        assert!(owed < 600, "it roars in the end");
+    }
+    assert!(owed > 1, "its roar waited on its guard: {owed} ticks");
+    room.run(2, &mut still(0.0));
+    assert!(matches!(room.fighter(10).action, combat::fighter::Action::Telegraph(_)));
+    assert_eq!(room.brain(10).phase(), 2, "the boarding, as its roar begins");
+}
+
+#[test]
+fn a_boss_cut_from_its_first_phase_to_its_last_at_one_blow_still_roars_twice() {
+    let mut room = Room::new(3).player(PLAYER, 0.0, 0.0, 0.0).foe(10, 12, Boss, 0.0, -2.5, PI);
+    room.run(30, &mut still(0.0));
+    room.set(10, |boss| boss.health = 0.2 * boss.health_max);
+    room.run(600, &mut still(0.0));
+    assert_eq!((roars(&room, 10).len(), room.brain(10).phase(), room.crew_calls.len()), (2, 3, 1));
+}
+
+#[test]
+fn a_minor_throws_no_telegraphed_blow_and_a_minor_archer_never_aims() {
+    for number in [SKIRMISHER, SWORDSMAN] {
+        let mut room = Room::new(4).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, Minor, 0.0, -3.0, PI);
+        room.run(3600, &mut still(0.0));
+        assert!(room.orders(10).is_empty(), "type {number}: {:?}", room.orders(10));
+        assert!(!room.swings(10).is_empty(), "type {number} fights all the same");
+    }
+    let mut room = Room::new(9).player(PLAYER, 0.0, 0.0, 0.0).foe(10, ARCHER, Minor, 0.0, -12.0, PI);
+    room.run(1800, &mut watching(10));
+    let loosed =
+        room.happenings.iter().filter(|(_, by, happening)| *by == 10 && matches!(happening, Happening::Loosed(_)));
+    assert!(loosed.count() >= 5, "it shoots plainly");
+    assert!(room.orders(10).is_empty(), "and never aims");
+}
+
+#[test]
+fn each_shooter_draws_its_own_weapon_for_as_long_as_it_takes_and_a_gunner_s_ball_flies_to_be_dodged() {
+    for (number, rank, drawn, speed) in [(ARCHER, Major, 60, 45.0), (3, Major, 78, 55.0), (9, Major, 72, 70.0)] {
+        let mut room = Room::new(6).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -12.0, PI);
+        room.run(600, &mut watching(10));
+        let intents = room.foe_intents(10);
+        let raised = intents.windows(2).find(|pair| !pair[0].1.combat.aim && pair[1].1.combat.aim);
+        let raised = raised.expect("it raises its weapon")[1].0;
+        let pulled = intents.iter().find(|(tick, intent)| *tick > raised && intent.combat.shoot).expect("and shoots");
+        assert_eq!(pulled.0 - raised, drawn + 1, "type {number} draws {drawn} ticks");
+        let shot = room
+            .happenings
+            .iter()
+            .find_map(|(_, by, happening)| match happening {
+                Happening::Loosed(shot) if *by == 10 => Some(*shot),
+                _ => None,
+            })
+            .expect("a shot");
+        let [east, south, up] = shot.velocity;
+        assert!(((east * east + south * south + up * up).sqrt() - speed).abs() < 1e-9, "type {number}: {shot:?}");
+    }
+}
+
+/// Telegraphed blows a minute a Captain of a rank throws in its first phase at a player standing still, over seeded
+/// fights of three minutes each.
+fn first_phase_rate(rank: foes::Rank) -> f64 {
+    const MINUTES: u64 = 3;
+    let seeds = 1..=24_u64;
+    let minutes = (seeds.clone().count() as u64 * MINUTES) as f64;
+    let thrown: usize = seeds
+        .map(|seed| {
+            let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, CAPTAIN, rank, 0.0, -2.5, PI);
+            room.run(MINUTES * 3600, &mut still(0.0));
+            assert_eq!(room.brain(10).phase(), 1, "untouched, it stays in its first phase");
+            room.orders(10).len()
+        })
+        .sum();
+    thrown as f64 / minutes
+}
+
+#[test]
+fn a_miniboss_throws_the_blows_an_elite_does_more_often_in_its_first_phase() {
+    let (elite, miniboss) = (first_phase_rate(Elite), first_phase_rate(Miniboss));
+    // Its feints take the place of chains, which follow only a blow that landed: at the Elite's cooldowns it threw
+    // fewer than the Elite (6.4 a minute to 6.8); at four fifths of them, about 7.5.
+    assert!((6.4..=7.2).contains(&elite), "an Elite: {elite} a minute");
+    assert!((7.0..=8.0).contains(&miniboss) && miniboss >= 1.05 * elite, "a Miniboss: {miniboss} a minute");
 }

@@ -9,11 +9,34 @@ use movement::{Body, Controls};
 /// A fighter's number in a room: players and foes share one count, never reused while the room lives.
 pub type FighterId = u32;
 
-/// Which side a fighter fights for: fighters on different sides are foes to each other.
+/// Which side a fighter fights for: the players, or a faction of foes by its number (1 and up). Fighters on different
+/// sides are foes to each other, so factions fight the players and each other alike.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Side {
-    Players = 0,
-    Foes = 1,
+    Players,
+    Faction(u8),
+}
+
+impl Side {
+    #[must_use]
+    pub fn is_players(self) -> bool {
+        self == Side::Players
+    }
+
+    /// The side as one number, as floats and the wire carry it: 0 for the players, else the faction's number.
+    #[must_use]
+    pub fn number(self) -> u8 {
+        match self {
+            Side::Players => 0,
+            Side::Faction(faction) => faction,
+        }
+    }
+
+    /// The side a number names: 0 the players, any other a faction.
+    #[must_use]
+    pub fn from_number(number: u8) -> Side {
+        if number == 0 { Side::Players } else { Side::Faction(number) }
+    }
 }
 
 /// How heavy a fighter is: how long a broken poise staggers it.

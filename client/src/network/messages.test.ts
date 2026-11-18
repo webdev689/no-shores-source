@@ -7,7 +7,7 @@ import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
-import { courseBytes, inputBytes, ordersBytes, readFromRoom } from './messages.ts';
+import { courseBytes, inputBytes, ordersBytes, readFromRoom, walkBytes } from './messages.ts';
 import { fightViewOf, ordersNumbers } from './seaFight.ts';
 
 const target = (path: string) => new URL(`../../../target/${path}`, import.meta.url);
@@ -67,6 +67,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [foe?.id, foe?.kind, brute.health, brute.healthMax, brute.target, brute.side],
     [12, 3, 90, 130, 9, 'foes'],
   );
+  // A pirate brute of the Elite rank in its first phase, alert.
+  assert.deepEqual([foe?.type, foe?.rank, foe?.faction, foe?.phase, foe?.alert], [15, 3, 2, 1, 2]);
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   assert.deepEqual(
     snapshot.events.map((event) => [
@@ -90,6 +92,13 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   arrow?.at.forEach((value, axis) =>
     assert.ok(Math.abs(value - ([3, -6, 1.1][axis] ?? 0) - (along[axis] ?? 0) * 0.4) < 1e-12),
   );
+  assert.equal(arrow?.muzzle, null, 'a shot still flying carries no muzzle');
+  // Foe 12's ball, stopped half a metre into its seventh tick out from (4, -6, 1.1): its last segment and its muzzle.
+  const ball = snapshot.shots[1];
+  assert.deepEqual([ball?.ranged, ball?.age, ball?.at], [3, 6, [10, -6, 1.1]]);
+  assert.ok(Math.abs((ball?.velocity[0] ?? 0) / 60 - 0.5) < 1e-12, 'to where it stopped');
+  ball?.muzzle?.forEach((value, axis) => assert.ok(Math.abs(value - ([4, -6, 1.1][axis] ?? 0)) < 1e-12, `${value}`));
+  assert.ok(ball?.muzzle);
 });
 
 test('the sea’s snapshot the server wrote reads back as its ships, its pirates, its fights and its walkers on deck', async () => {
@@ -108,15 +117,30 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
       { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
     ],
   ]);
-  assert.deepEqual(sea?.kind === 'snapshot' ? sea.pirates : null, [{ id: 4, x: 1_000.5, y: 2_000.25, heading: 1.5 }]);
+  assert.deepEqual(sea?.kind === 'snapshot' ? sea.pirates : null, [
+    { id: 4, x: 1_000.5, y: 2_000.25, heading: 1.5, faction: 1, rank: 2 },
+  ]);
   const fights = sea?.kind === 'snapshot' ? sea.fights : [];
-  assert.equal(fights[0]?.player, 2);
-  const fight = fightViewOf(fights[0]?.view ?? []);
+  assert.deepEqual([fights[0]?.player, fights[0]?.faction, fights[0]?.rank], [2, 1, 4]);
+  const named = { name: 'Tithe Sloop', faction: fights[0]?.faction ?? 0, rank: fights[0]?.rank ?? 0 };
+  const fight = fightViewOf(fights[0]?.view ?? [], named);
+  assert.deepEqual([fight.captain.name, fight.captain.faction, fight.captain.rank], ['Tithe Sloop', 1, 4]);
+  assert.equal(fightViewOf(fights[0]?.view ?? []).captain.name, 'Pirate Sloop', 'unnamed, a Major of the pirates');
   assert.deepEqual(
     [fight.clock, fight.over, fight.player.ship.slice(0, 3), fight.captain.ship.slice(0, 3)],
     [0, null, [0, 0, 0], [0, -700, 3]],
   );
   assert.deepEqual([fight.player.state, fight.captain.mode, fight.player.guns.load], ['afloat', 'cruise', 'round']);
+  const other = fightViewOf(fights[0]?.view ?? [], named, (faction) => `of ${faction}`).others?.[0];
+  assert.deepEqual(
+    [other?.name, other?.faction, other?.rank, other?.ship.slice(0, 3), other?.mode],
+    ['of 2', 2, 3, [400, -700, 0.5], 'cruise'],
+    'a pirates’ Elite fights too',
+  );
+  // The same fight without her, as a room from before other captains sends any fight: no others, the rest alike.
+  const alone = fightViewOf(fights[1]?.view ?? [], named);
+  assert.deepEqual([fights[1]?.player, alone.others], [5, []]);
+  assert.deepEqual({ ...alone, others: fight.others }, fight);
   assert.deepEqual([fight.lay?.side, fight.lay?.launches.length, fight.lay?.ends.length], ['starboard', 3, 3]);
   assert.ok((fight.lay?.radius ?? 0) > 0, 'the landing zone has a size');
   assert.ok(
@@ -143,7 +167,7 @@ test('a fighting ship’s orders cross as the naval crate’s numbers', () => {
 test('an input is its number, its controls and fight buttons in the combat crate’s order, its look, its arms, the tick seen, a foe asked for, a dress if given, and a respawn', () => {
   const intent = new Float64Array([1, -0.5, 0.3, 1, 0, 1, 0, 6, 1, 0, 1, -0.2]);
   const look = { anim: 'ride_gallop', frame: 3, facing: -1.5 };
-  const parts = { intent, look, arms: 0x10002, seen: 977n, spawn: 3 };
+  const parts = { intent, look, arms: 0x10002, seen: 977n, spawn: { type: 12, rank: 5 } };
   const input = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(inputBytes(42, { ...parts, dress: '{"body":"female"}', respawn: true })),
   );
@@ -152,11 +176,13 @@ test('an input is its number, its controls and fight buttons in the combat crate
   assert.deepEqual(Array.from(input.combatArray() ?? []), [6, 1, 0, 1, -0.2]);
   assert.deepEqual(
     [input.anim(), input.frame(), input.facing(), input.dress(), input.arms(), input.seen(), input.spawn()],
-    ['ride_gallop', 3, -1.5, '{"body":"female"}', 0x10002, 977n, 3],
+    ['ride_gallop', 3, -1.5, '{"body":"female"}', 0x10002, 977n, 0],
   );
-  assert.equal(input.respawn(), true);
-  const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, parts)));
-  assert.deepEqual([plain.dress(), plain.respawn()], [null, false]);
+  assert.deepEqual([input.spawnType(), input.spawnRank(), input.respawn()], [12, 5, true]);
+  const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, { ...parts, spawn: undefined })));
+  assert.deepEqual([plain.dress(), plain.respawn(), plain.spawn(), plain.spawnType()], [null, false, 0, 0]);
+  const clearing = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(2, { ...parts, spawn: 'clear' })));
+  assert.deepEqual([clearing.spawn(), clearing.spawnType()], [255, 0]);
 });
 
 test('a course is its points, x then y, and its pace', () => {
@@ -174,4 +200,21 @@ test('a course is its points, x then y, and its pace', () => {
 test('bytes that hold no message read as nothing', () => {
   assert.equal(readFromRoom(new Uint8Array()), null);
   assert.equal(readFromRoom(new Uint8Array([1, 2, 3])), null);
+});
+
+test('an input never wraps a number past its field: its number, arms and a foe’s type are refused, and its frame, the tick seen and a foe’s rank are held within range', () => {
+  const look = { anim: 'idle', frame: 70_000, facing: 0 };
+  const parts = { intent: new Float64Array(12), look, arms: 0, seen: 2n ** 70n, spawn: { type: 12, rank: 9 } };
+  const high = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, parts)));
+  assert.deepEqual([high.frame(), high.seen(), high.spawnRank()], [0xffff, 2n ** 64n - 1n, 5]);
+  const under = { ...parts, look: { ...look, frame: -3 }, seen: -1n, spawn: { type: 12, rank: 0 } };
+  const low = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, under)));
+  assert.deepEqual([low.frame(), low.seen(), low.spawnRank()], [0, 0n, 1]);
+  assert.throws(() => inputBytes(2 ** 32, parts), RangeError);
+  assert.throws(() => inputBytes(1.5, parts), RangeError);
+  assert.throws(() => inputBytes(1, { ...parts, arms: -1 }), RangeError);
+  assert.throws(() => inputBytes(1, { ...parts, spawn: { type: 257, rank: 2 } }), RangeError);
+  assert.throws(() => inputBytes(1, { ...parts, look: { ...look, frame: Number.NaN } }), RangeError);
+  assert.throws(() => courseBytes([], 70_000), RangeError);
+  assert.throws(() => walkBytes(-1, [0, 0, 0, 0, 0, 0, 0]), RangeError);
 });

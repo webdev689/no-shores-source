@@ -50,14 +50,14 @@ decision, made in the same change as its entry here.
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
-| `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks, and the paths across it |
+| `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the paths across it, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |
-| `crates/foes` | [[Foes]]: the kinds of foe and the brain each fights with: turns at a target, the ring, telegraphed blows and answers to blows |
+| `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
 | `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, emblems, and what a player holds and shows others |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
-| `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; and a fleet ship's prediction and lay for a browser |
+| `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick on its ground and judged against its section; the sea, its ships sailing their courses; and a fleet, its ships sailed by their helms and fighting at true scale |
 | `crates/bake` | The bake (`npm run bake`): each node's section, window of the ground and boxes, cut at build time for its room ([[Server]]) |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
@@ -90,14 +90,17 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
 
-Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and
-`water` (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`),
-`ships` (imports `rules`, and the water's sun and samples), `editor` (imports `rules`, `water`, `terrain` and
-`ships`), `combat` (imports `rules` and `network`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
-the editor's camera), `testground` (imports what `player` does, `player` itself, `combat` and the editor's panel
-helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap`
-(imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page helpers), `plus`
-(imports nothing) and `game` (imports the layers it wires, `combat` among them). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
+Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
+(each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
+(imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain` and `ships`),
+`combat` (imports `rules`, `network`, `plus`, `player` and the editor's camera), `player` (imports `rules`, `network`,
+`forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`
+and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
+`water`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page
+helpers),
+`plus` (imports nothing) and `game` (imports the layers it wires, `combat` among them;
+[[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
+import.
 
 ## The Rust crates
 
@@ -115,7 +118,7 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use
   `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
   the Cloudflare shell in `server/`, and for a browser playing alone or predicting its ship in a fleet, reading a
-  node's baked file and the layout with `gear`, `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
+  node's baked file and the layout with `foes`, `gear`, `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
   `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are

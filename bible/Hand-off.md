@@ -24,8 +24,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
   the ground's own contours, and every edge of land and water at each pixel, at any distance. The sea's reflection
   blurs the sky's clouds by the roughness of waves too small to draw.
-- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2. The [[Test Ground]] plays a forge figure with every
-  move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
+- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2. The [[Test Ground]] plays a
+  forge figure with every move, in first and third person, with DFO's controls, Daggerfall's colours and the
+  [[Three Races]].
 - Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the
   Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, agreeing to the bit
   wherever it runs.
@@ -122,6 +123,49 @@ Where the work stands now, for the next session. Each session rewrites this note
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
     twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
+- The enemy system, on pull request #61 from branch `claude/enemies-factions-ai-fiapxf`, tested offline and on the
+  local Cloudflare runtime, as the owner decided it ([[Enemies Come in Five Ranks, After Destiny]],
+  [[Enemy Factions Start With the Grey Tithe]], [[project-final's AI Comes Over Onto DFO's]],
+  [[The Enemies as Claude Builds Them]], [[The Bars and the Fight Wear the Plus Kit]],
+  [[The Rooms Deploy When Their Code Changes]], [[Foes Leash to Their Posts and Fall With Their Boss]],
+  [[Plates Stay Light and Bars Do What Enhanced Plus Does]]):
+  - [[Enemies]]: a fighter's side is the players' or a faction's, and factions fight each other; the Grey Tithe (land
+    and sea) and the pirates (sea); five roles, a roster of 18 types, five ranks scaling health, poise, might,
+    reaction, defence and telegraphed blows; a Miniboss's second phase; Captain Brannoc Thule's three phases at sea and
+    High Assessor Corvane's three on land, each calling foes; a Grey Tithe garrison in every node but the social
+    spaces, standing again 120 s after it falls; the Game fighting them on foot as the Test Ground does.
+  - The bars, after the owner's reference, in the [[Interface]]'s Enhanced Plus kit: each foe's faction emblem, name
+    and thin rank-coloured bar, never overlapping; the boss bar and the soft lock's plate at the top; the vitals panel;
+    captains' ships' plates at sea.
+  - [[Foes]]: project-final's awareness and noises (muffled through blocks), its combat director, shooters at posts in
+    cover costed by route, waiting foes flanking; no foe left idle before a guard, shooters kiting rather than
+    punching, rival factions hearing each other out to 60 m.
+  - [[Navmesh]]: baked over any ground, ramps standing on it, firing spots probing the ground's rises, a node's room on
+    its land; faster to bake and to search.
+  - [[Naval Combat]]: captains of a faction and a rank (hull, guns, reload, aim, crew, way, temper), the Tithe Sloop
+    beside the pirates, rival captains meeting and fighting at sea with no player, the wary reckoning a ship's whole
+    rank.
+  - [[Server]]: pages rejoin a room by themselves after a deploy or a dropped network; the rooms deploy only when
+    their code changed; a stopped ball's last segment carries its muzzle; old pages read new rooms and the reverse.
+    Two headless pages in one room on the local runtime held the same foes at every shared tick.
+  - [[Hulls]]: new ships in the Sloop's style, planned, not built
+    ([[New Ships Are Planned in the Sloop's Style, After the System]]).
+  - A third audit and design pass, tested offline: a Miniboss strikes more often, a Boss's called foes fall with it,
+    garrison foes leash to their posts (a leashing Boss resets whole) and walk home after a search; foes no longer
+    shake at a guard, a range's edge or a mesh's edge; a body no longer sticks in a block's corner ([[Movement]]);
+    sea fights' views read across a deploy, and figures glide after a rejoin; the fight display's layers, outline,
+    veils and overlaps with the Game's own display; at sea the Sloop is never drawn larger than she is as the view
+    comes in or a fight begins, and pirates cut the water.
+  - The bars do what DFO's Enhanced Plus does with them ([[Pick - Enhanced Plus UI]], read at DFO's fc2a8e6): a
+    hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
+    the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
+    hit the same way; and plates stay light: only near the crosshair or for foes fought in the last minute, never
+    larger, never through a block, none past 60 m.
+  - DFO's compass across the top, with the boss bar and the target's plate under it; the vitals kept in their window
+    at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]); the plates just over a foe's head.
+  - The gear loop fitted in, `main` with #60 merged into #61: the garrisons stand at their island's levels raised by
+    the seas, one Minor, Major or Elite foe in five shielded, never a Boss or a Miniboss, kills paying as #60's camps
+    did, and the camps give way ([[Garrisons Take the Gear Loop's Levels and Shields]]).
 - First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
   ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
   the page and the rooms; tested offline, with a test and a headless Test Ground run.
@@ -135,20 +179,30 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- The next pull request stops drawing swing arcs in first person, speeds up first-person strikes to the third-person
-  figure's pace, and sends each arc the way its striker's figure is drawn swinging or thrusting, mirrored with a
-  mirrored figure ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). Tested offline, with
-  tests and headless Test Ground runs; it waits for the owner's yes to merge.
+- #61, the enemy system: the owner's yes to merge it, which deploys the page and the rooms. The first rooms deploy
+  after it always runs and creates the `rooms` environment the next ones compare with; that side of GitHub is tested
+  offline only. Its open choices: whether the sea's pirates become the Grey Tithe; the roster's names and Corvane,
+  Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over time;
+  whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to change:
+  a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in [[Foes]].
+- Pirates at sea: nothing stops them, on `main` or #61; they are rare by the numbers ported from DFO (a roll every
+  60–140 s, 0.24 of rolls a pirate, the wait starting again at each return to the ship), so about half of players
+  see none in their first 5–7 minutes. Measured options were offered and the owner skipped them for now: hostiles
+  taking the cut ships' share, DFO's faster rolls, both (about 1 minute to the first), pirates ahead on voyages, the
+  port's label giving way, and DFO's other ships back.
+- The bars' proposals, the owner's to choose: a foe's alert "!" showing its plate through the cone for a second;
+  a setting to switch the vitals' rest off; near plates growing (DFO's own law grows them to 1.5×, ours caps them);
+  ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
+  a Major; the display scaled with the screen; one look for both kinds of death in the Game. DFO's blade face is
+  left out: its pictures are another person's ([[Own Work]]).
 - Which of the attack feel's effects go into the game, and at what settings, is the owner's to say.
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
-  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
-  `main` ([[The Rooms Deploy on Each Merge]]); the `rooms` workflow can still be run by hand.
-- Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
-  does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
-  owner's to say.
+  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into
+  `main` that changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run
+  by hand.
 - #62's: no weapon is seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and
   `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
@@ -187,8 +241,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
 - **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
-  choices in [[Gear as Claude Shapes It]]), is built on pull request #60 and waits on the owner's yes to merge; a
-  merge deploys the accounts, the rooms and the page together. On it: the `gear` crate ([[Gear]]); gear held by the
+  choices in [[Gear as Claude Shapes It]]), is on `main` (#60, merged with the owner's yes); its patrols' camps give
+  way to #61's garrisons when #61 merges. On it: the `gear` crate ([[Gear]]); gear held by the
   rooms, blows by Attack, level and Defense, kills paying XP, Aurem and Vestiges; perks trimming the fight
   ([[Combat]]); accounts on Cloudflare D1 keeping a character between visits ([[Accounts]]); the gear screens after
   Destiny on Enhanced Plus ([[The Gear Screens Follow Destiny, on Enhanced Plus]], [[Interface]]); gear on the
@@ -264,18 +318,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   Settings lists. All thirteen cues are settled: six recordings, the gains' Brass bells and a hold's Shimmer made by
   the synthesiser, and the tab, close and refusal kept as the synthesiser's own.
 - **A fifth audit and design pass are on #60 too**, each finding checked against the code before its fix: F dismantles
-  the piece last pointed at or focused, never one focused earlier; Ctrl, Cmd or Alt with F, leaving the window, or
-  the pointer leaving the piece lets go; the shards fly whole; the focus stays near a dismantled piece; a tab opened
-  lets go of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's
-  character is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none
-  waits to play at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits
-  say CC BY 4.0 and which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check
-  each pick before it goes to R2, and keep each pick's own page in the run. The design pass: the hover card above
-  the footer, the footer and the item page at the names' size on a wide screen, empty Vestige places as dark
-  Vestiges, the vault's rows of ten where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's
-  rows and its count, and a shelf of more than six gains showing only its last six. The `freesound` workflow
-  runs on this push: if it ends red with "Picks not read whole", Freesound's own pages link more than one licence,
-  and `pages/pick-*.html` in its download shows where.
+  the piece last pointed at or focused, never one focused earlier; Ctrl, Cmd or Alt with F, leaving the window, or the
+  pointer leaving the piece lets go; the shards fly whole; the focus stays near a dismantled piece; a tab opened lets go
+  of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's character
+  is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none waits to play
+  at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits say CC BY 4.0 and
+  which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check each pick before it
+  goes to R2, and keep each pick's own page in the run. The design pass: the hover card above the footer, the footer and
+  the item page at the names' size on a wide screen, empty Vestige places as dark Vestiges, the vault's rows of ten
+  where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's rows and its
+  count, and a shelf of more than six gains showing only its last six. The `freesound` workflow runs on this push: if it
+  ends red with "Picks not read whole", Freesound's own pages link more than one licence, and `pages/pick-*.html` in its
+  download shows where.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
@@ -292,9 +346,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
-- The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm, foes that
-  flank or seek a line around a block, and the navmesh baked over the [[Land]]. Whether players may harm one another
+- The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm. Whether players may harm one another
   is the owner's to decide.
+- The enemies' open ends ([[Enemies]], [[Naval Combat]], [[Server]]): a garrison stands within its room's 70 m
+  navmesh, not across its whole section; a player waiting near a fallen group holds it from standing again; a rejoin
+  loses the player's place, any fight and its foes; the planned hulls ([[Hulls]]); and the boarding fight on a deck
+  that the deck crews are for. None of it is tested in a deployed room yet.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them

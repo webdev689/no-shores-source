@@ -1,4 +1,5 @@
 use super::*;
+use crate::ranks::Commission;
 use sailing::ship::Ship;
 use sailing::waters::{Spot, Waters};
 
@@ -55,16 +56,16 @@ fn numbers_that_are_not_orders_are_refused() {
 
 #[test]
 fn a_fights_view_holds_its_clock_both_ships_her_captain_and_counts_for_the_rest() {
-    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), Commission::default(), 7, &Open, 0.0);
     let numbers = view_numbers(&fight, &[], None, &Open, 0.0);
-    assert_eq!(numbers.len(), 2 + 2 * VESSEL_NUMBERS + 4 + 3, "no balls, no lay, no events");
+    assert_eq!(numbers.len(), 2 + 2 * VESSEL_NUMBERS + 4 + 4, "no other captains, no balls, no lay, no events");
     assert_eq!(numbers[..2], [0.0, 0.0]);
     let ship_of = |id| fight.vessel(id).map(|vessel| vessel.ship.to_floats()).unwrap_or_default();
     assert_eq!(numbers[2..10], ship_of(PLAYER));
     assert_eq!(numbers[2 + VESSEL_NUMBERS..10 + VESSEL_NUMBERS], ship_of(CAPTAIN));
     let aim = Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let laid = view_numbers(&fight, &[Event::RunOut { ship: CAPTAIN, side: Side::Port }], Some(&aim), &Open, 0.0);
-    let lay_at = 2 + 2 * VESSEL_NUMBERS + 4 + 1;
+    let lay_at = 2 + 2 * VESSEL_NUMBERS + 4 + 2;
     assert_eq!(laid[lay_at..lay_at + 2], [1.0, 1.0], "a lay on her starboard side");
     assert_eq!(laid[lay_at + 6], 3.0, "three guns a side");
     assert_eq!(laid.len(), lay_at + 7 + 3 * (6 + STOP_NUMBERS) + 3);
@@ -74,12 +75,12 @@ fn a_fights_view_holds_its_clock_both_ships_her_captain_and_counts_for_the_rest(
 #[test]
 fn a_lay_crosses_as_the_fight_shows_it_each_gun_with_its_launch_and_its_stop() {
     // Her starboard guns laid on the captain close abeam: their balls strike her.
-    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(50.0, 0.0, 0.0), 7, &Open, 0.0);
+    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(50.0, 0.0, 0.0), Commission::default(), 7, &Open, 0.0);
     let aim = Aim { bearing_deg: 90.0, range_m: 50.0, ray: None };
     let shown = fight.preview(PLAYER, &aim, &Open, 0.0).expect("a side bears");
     assert!(shown.on_target, "laid on her, close abeam");
     let numbers = view_numbers(&fight, &[], Some(&aim), &Open, 0.0);
-    let lay_at = 2 + 2 * VESSEL_NUMBERS + 4 + 1;
+    let lay_at = 2 + 2 * VESSEL_NUMBERS + 4 + 2;
     let head = [1.0, 1.0, shown.lay.elevation, shown.lay.reach, shown.radius, 1.0, 3.0];
     assert_eq!(numbers[lay_at..lay_at + 7], head);
     for (index, (launch, stop)) in shown.launches.iter().zip(&shown.ends).enumerate() {
@@ -98,9 +99,24 @@ fn a_lay_crosses_as_the_fight_shows_it_each_gun_with_its_launch_and_its_stop() {
 
 #[test]
 fn a_ram_crosses_as_its_own_kind_with_whom_it_struck_and_what_it_dealt() {
-    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), Commission::default(), 7, &Open, 0.0);
     let ram = Event::Ram { ship: CAPTAIN, by: PLAYER, point: [1.0, 2.0, 3.0], dealt: 4.0 };
     let numbers = view_numbers(&fight, &[ram], None, &Open, 0.0);
     assert_eq!(EVENT_NUMBERS[9], 6);
     assert_eq!(numbers[numbers.len() - 8..], [1.0, 10.0, 1.0, 0.0, 1.0, 2.0, 3.0, 4.0]);
+}
+
+#[test]
+fn a_fight_with_more_captains_shows_each_other_one_with_her_faction_and_rank() {
+    let tithe = Commission { faction: crate::ranks::GREY_TITHE, rank: crate::ranks::Rank::Elite };
+    let captains = [(sloop_at(0.0, -700.0, 3.0), Commission::default(), 7), (sloop_at(400.0, -700.0, 0.0), tithe, 8)];
+    let mut fight = Fight::among(&captains, &Open, 0.0);
+    fight.put_to_sea(PLAYER, sloop_at(0.0, 0.0, 0.0), &Open, 0.0);
+    let numbers = view_numbers(&fight, &[], None, &Open, 0.0);
+    let others_at = 2 + 2 * VESSEL_NUMBERS + 4;
+    assert_eq!(numbers[others_at..others_at + 3], [1.0, 1.0, 3.0], "one other: an Elite of the Grey Tithe");
+    let second = fight.vessel(CAPTAIN + 1).map(|vessel| vessel.ship.to_floats()).unwrap_or_default();
+    assert_eq!(numbers[others_at + 3..others_at + 11], second);
+    assert_eq!(numbers.len(), others_at + 3 + VESSEL_NUMBERS + 4 + 3);
+    assert!(view_numbers(&Fight::among(&captains, &Open, 0.0), &[], None, &Open, 0.0).is_empty(), "no player");
 }

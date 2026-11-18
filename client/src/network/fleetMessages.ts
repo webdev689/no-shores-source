@@ -7,7 +7,8 @@ import type { FleetLook } from '../rules/fleetRules.ts';
 export type FleetCall = 'none' | 'captain' | 'send off';
 
 /** One tick's orders at sea in a fleet room (crates/room/src/fleet.rs Input): her helm, her look, the fire, the
- *  brace, a load (0 none, 1 round, 2 grape, 3 chain, 4 heated), where she puts to sea (heeded once), and a call. */
+ *  brace, a load (0 none, 1 round, 2 grape, 3 chain, 4 heated), where she puts to sea (heeded once), and a call,
+ *  with the faction and rank of a captain called (a Major of the pirates when none is named). */
 export interface FleetOrders {
   readonly steer: number;
   readonly crab: boolean;
@@ -18,29 +19,70 @@ export interface FleetOrders {
   readonly load: number;
   readonly putToSea: readonly [number, number, number] | null;
   readonly call: FleetCall;
+  readonly captain?: { readonly faction: number; readonly rank: number };
+}
+
+/** A captain's faction and rank as a room sends them; an older room sends 0 for both, and every captain it held was a
+ *  Major of the pirates (2 for each, as the messages number them). */
+export function commissionOf(faction: number, rank: number): { readonly faction: number; readonly rank: number } {
+  return { faction: faction || 2, rank: rank || 2 };
 }
 
 /** The calls as the messages number them. */
 const CALLS: Record<FleetCall, number> = { none: 0, captain: 1, 'send off': 255 };
 
-/** One tick's orders as their bytes, as the schema defines them. */
+/** The farthest a look may lay, metres (crates/room/src/fleet.rs MOST_RANGE_M). */
+const MOST_RANGE_M = 1e5;
+
+/** A whole number from `low` to `high`, as a field of the schema holds it; any other is refused (a RangeError), since
+ *  a number past what its field holds would reach the room as another. */
+export function wholeIn(value: number, low: number, high: number, what: string): number {
+  if (!Number.isInteger(value) || value < low || value > high) throw new RangeError(`${what} is ${value}`);
+  return value;
+}
+
+/** A number held within `low` to `high`, as the room takes it; one that is not a number is refused (a RangeError). */
+export function heldIn(value: number, low: number, high: number, what: string): number {
+  if (Number.isNaN(value)) throw new RangeError(`${what} is not a number`);
+  return Math.min(high, Math.max(low, value));
+}
+
+/** Numbers the room takes only when each is one; any other is refused (a RangeError). */
+function finite(numbers: readonly number[], what: string): number[] {
+  if (!numbers.every(Number.isFinite)) throw new RangeError(`${what} holds a number that is not one`);
+  return [...numbers];
+}
+
+/** One tick's orders as their bytes, as the schema defines them: her rudder, rung and look held within what the room
+ *  takes, and her number, load and call refused outside what their fields hold. */
 export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
-  const look = orders.look ? [orders.look.bearing, orders.look.range, ...(orders.look.ray ?? [])] : [];
+  const { look: laid, captain } = orders;
+  const look = laid
+    ? [
+        heldIn(laid.bearing, -180, 180, "the look's bearing"),
+        heldIn(laid.range, 0, MOST_RANGE_M, "the look's range"),
+        ...finite(laid.ray ?? [], "the look's ray"),
+      ]
+    : [];
   const aim = Orders.createAimVector(builder, look);
-  const putToSea = Orders.createPutToSeaVector(builder, orders.putToSea ? [...orders.putToSea] : []);
+  const put = orders.putToSea ? finite(orders.putToSea, 'where she puts to sea') : [];
+  const putToSea = Orders.createPutToSeaVector(builder, put);
+  const called = orders.call === 'captain';
   const message = Orders.createOrders(
     builder,
-    sequence,
-    orders.steer,
+    wholeIn(sequence, 0, 0xffff_ffff, "the orders' number"),
+    heldIn(orders.steer, -1, 1, 'the rudder'),
     orders.crab,
-    orders.climb,
+    Math.round(heldIn(orders.climb, -1, 1, 'the rung')),
     aim,
     orders.fire,
     orders.brace,
-    orders.load,
+    wholeIn(orders.load, 0, 4, 'the load'),
     putToSea,
     CALLS[orders.call],
+    called ? wholeIn(captain?.faction ?? 0, 0, 0xff, "the captain's faction") : 0,
+    called ? wholeIn(captain?.rank ?? 0, 0, 5, "the captain's rank") : 0,
   );
   builder.finish(message);
   return builder.asUint8Array().slice();
@@ -55,7 +97,8 @@ export type CaptainMode = (typeof MODES)[number];
 /** One ship in a fleet room as it last stepped her: her number; whether a captain sails her; her helm's numbers and
  *  pose (crates/sailing/src/floats.rs); hull, sail and men with their wholes; her state and fires; her guns' seconds
  *  left to load and progress (port, starboard); her load and brace; a captain's mode, target (0 none) and sides run
- *  out (1 port, 2 starboard); and the number of her player's last orders taken. */
+ *  out (1 port, 2 starboard); the number of her player's last orders taken; and the faction she sails for (0 a
+ *  player's) and a captain's rank (1 Minor to 5 Boss, 0 none). */
 export interface SeenVessel {
   readonly id: number;
   readonly captain: boolean;
@@ -71,6 +114,8 @@ export interface SeenVessel {
   readonly target: number;
   readonly runOut: number;
   readonly acknowledged: number;
+  readonly faction: number;
+  readonly rank: number;
 }
 
 /** A ball aloft: the ship that fired it, where and when (the fight's clock) it left its gun, its launch, its radius. */
@@ -164,6 +209,9 @@ export function fleetOf(snapshot: Snapshot): FleetPart {
       target: vessel.target(),
       runOut: vessel.runOut(),
       acknowledged: vessel.acknowledged(),
+      ...(vessel.captain()
+        ? commissionOf(vessel.faction(), vessel.rank())
+        : { faction: vessel.faction(), rank: vessel.rank() }),
     };
   });
   const balls = Array.from({ length: snapshot.ballsLength() }, (unused, index): AloftBall => {

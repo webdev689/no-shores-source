@@ -106,9 +106,9 @@ number is one of [[Gear as Claude Shapes It]].
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner
   and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a
   parry or a block gives back, with Last Light's reload.
-- **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a Vestige
-  opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]] serves
-  them all within reach of its stall. The Test Ground alone hands out gear.
+- **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
+  Vestige opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
+  serves them all within reach of its stall. The Test Ground alone hands out gear.
 
 ## Vendors
 
@@ -123,8 +123,8 @@ number is one of [[Gear as Claude Shapes It]].
 
 ## Emblems
 
-An emblem is a cosmetic after Destiny's ([[Cosmetics Follow Destiny, Shown in Many Places]]): a sign and the nameplate it
-heads, shown beside a player's name wherever others see it ([[Interface]], "Emblems"). Its catalogue is
+An emblem is a cosmetic after Destiny's ([[Cosmetics Follow Destiny, Shown in Many Places]]): a sign and the nameplate
+it heads, shown beside a player's name wherever others see it ([[Interface]], "Emblems"). Its catalogue is
 `content/gear/emblems.json`, numbered by its order on the wire, each with a name, a rarity, words, where it comes from
 and its art (`gear::emblems`).
 
@@ -145,11 +145,12 @@ and its art (`gear::emblems`).
   rarity: one in ten for Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and
   Atheric; it is not guaranteed. Armour and shields carry none. A blow carries the element of the weapon that struck
   it, none from the fists while a bow or gun is worn; a shot keeps the one it was loosed with.
-- **A foe's shield.** One foe in five that a patrol stands carries a shield of an element chosen evenly, holding half
-  its health. While it holds, a blow wears the shield and not the foe's health: three times as hard with the shield's
-  own element, half as hard with another, as hard as on health with none. A blow the shield holds whole fills no
-  poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold reaches health. A shield
-  does not come back.
+- **A foe's shield.** One foe in five that a garrison stands carries a shield of an element chosen evenly, holding half
+  its health, drawn from its node's id, so its group stands with the same shields each time; a Boss or a Miniboss never
+  does. A foe a Boss calls stands with none. While it holds, a blow wears the shield and not the foe's health: three
+  times as hard with the shield's own element, half as hard with another, as hard as on health with none. A blow the
+  shield holds whole fills no poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold
+  reaches health. A shield does not come back.
 - **What is told.** The room tells each blow a shield takes, with what it took, and its breaking; the browser draws a
   shielded foe's shield over its health in its element's colour, says what the shield took in that colour for the
   player's own blows, and stacks the words told of one foe at once. Its glyphs show the elements on the screens
@@ -161,7 +162,10 @@ and its art (`gear::emblems`).
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
 - **The seas** a voyage sets out at raise them: Calm as they are, Rough two levels higher, Storm three, never past
   level 32; and pay by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
-- A patrol's foes are drawn from its island's band ([[Server]], "A patrol").
+- **A garrison's foes** ([[Garrisons Take the Gear Loop's Levels and Shields]], [[Enemies]]) each stand at a level
+  drawn evenly from their island's band, from the node's id, raised by the room's seas; a Boss's called foes at its
+  level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might
+  and defence on top ([[Foes]]). A node with no island stands its foes at level 0.
 
 ## Looks
 

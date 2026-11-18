@@ -4,6 +4,7 @@
 #![allow(unsafe_code, reason = "the code flatc makes reads a message's bytes in place, once the verifier passes them")]
 
 use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
+use combat::shots::Line;
 use combat::trim::TRIM_FLOATS;
 
 /// A fighter's numbers in a snapshot: all of them but its trim.
@@ -12,10 +13,11 @@ use combat::{Intent, Shot};
 use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
 use naval::fight::Orders;
+use naval::ranks::Commission;
 use naval::wire::{orders_from, orders_numbers};
 use room::pirates::Pirate;
 use room::sea::Ship;
-use room::{Event, FoeSeen, Input, PlayerId, Seen, Shown, Standing};
+use room::{CLEAR_FOES, Event, FoeSeen, Input, PlayerId, SHIELD_SHIFT, Seen, Shown, SpawnAsk, Standing};
 
 /// The code flatc makes from the schema, into `generated/`, which git leaves out (`npm run schema`).
 #[allow(
@@ -45,9 +47,9 @@ const COMBAT_NUMBERS: usize = INTENT_FLOATS - CONTROLS_FLOATS;
 const NO_FIGHT: [f64; COMBAT_NUMBERS] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f64::NAN, f64::NAN, f64::NAN];
 
 /// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
-/// changed, what their hands hold, the tick their screen showed, a foe asked for, and whether they ask to respawn; or
-/// why they do not read. The bytes come from a player's machine, so the verifier passes them first. An input with no
-/// fight's numbers asks for nothing in the fight.
+/// changed, what their hands hold, the tick their screen showed, a foe asked for (a type and a rank) or every foe sent
+/// away, and whether they ask to respawn; or why they do not read. The bytes come from a player's machine, so the
+/// verifier passes them first. An input with no fight's numbers asks for nothing in the fight.
 pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let input = flatbuffers::root::<messages::Input>(bytes).map_err(|error| error.to_string())?;
     let controls: Vec<f64> = input.controls().map(|controls| controls.iter().collect()).unwrap_or_default();
@@ -63,7 +65,12 @@ pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let anim = input.anim().unwrap_or_default().to_owned();
     let shown = Shown { anim, frame: input.frame(), facing: input.facing() };
     let dress = input.dress().map(str::to_owned);
-    let spawn = Some(input.spawn()).filter(|kind| *kind != 0);
+    let (spawn, shield) = (input.spawn(), input.spawn() >> SHIELD_SHIFT);
+    let spawn = match (spawn, input.spawn_type()) {
+        (CLEAR_FOES, _) => Some(SpawnAsk::Clear),
+        (role, 0) => SpawnAsk::by_role(role & ((1 << SHIELD_SHIFT) - 1), shield),
+        (_, foe_type) => Some(SpawnAsk::Foe { foe_type, rank: input.spawn_rank(), shield }),
+    };
     let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
     let ask = input.ask().and_then(|ask| gear_wire::asked_of(&ask));
     Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn, ask, spawn_level: input.spawn_level() })
@@ -90,10 +97,22 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
         combat,
         arms: input.arms,
         seen: input.seen,
-        spawn: input.spawn.unwrap_or_default(),
+        spawn: match input.spawn {
+            Some(SpawnAsk::Clear) => CLEAR_FOES,
+            Some(SpawnAsk::Foe { shield, .. }) => shield << SHIELD_SHIFT,
+            None => 0,
+        },
         respawn: input.respawn,
         ask,
         spawn_level: input.spawn_level,
+        spawn_type: match input.spawn {
+            Some(SpawnAsk::Foe { foe_type, .. }) => foe_type,
+            _ => 0,
+        },
+        spawn_rank: match input.spawn {
+            Some(SpawnAsk::Foe { rank, .. }) => rank,
+            _ => 0,
+        },
     };
     let message = messages::Input::create(&mut builder, &args);
     builder.finish(message, None);
@@ -283,6 +302,8 @@ pub struct Snapshot<'snapshot> {
     pub foes: &'snapshot [FoeSeen],
     pub events: &'snapshot [Event],
     pub shots: &'snapshot [Shot],
+    /// The balls that stopped since the last snapshot, each sent among the shots as its last segment and its muzzle.
+    pub lines: &'snapshot [Line],
 }
 
 /// Every player as the room saw them after its tick, the dresses that changed since the last snapshot, every foe,
@@ -318,6 +339,11 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 id: foe.foe,
                 kind: foe.kind,
                 glance,
+                type_: foe.foe_type,
+                rank: foe.rank,
+                faction: foe.faction,
+                phase: foe.phase,
+                alert: foe.alert,
                 level: foe.level,
                 shield_element: shield.map_or(0, |shield| shield.element as u8),
                 shield: shield.map_or(0.0, |shield| shield.left),
@@ -344,14 +370,17 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         })
         .collect();
     let events = Some(builder.create_vector(&events));
-    let shots: Vec<_> = snapshot
-        .shots
-        .iter()
-        .map(|shot| {
+    let flying = snapshot.shots.iter().map(|shot| (shot, None));
+    let stopped = snapshot.lines.iter().map(|line| (&line.last, Some(line.muzzle)));
+    let shots: Vec<_> = flying
+        .chain(stopped)
+        .map(|(shot, muzzle)| {
             let at = Some(builder.create_vector(&shot.at));
             let velocity = Some(builder.create_vector(&shot.velocity));
+            let muzzle = muzzle.map(|muzzle| builder.create_vector(&muzzle));
             let age = u16::try_from(shot.age).unwrap_or(u16::MAX);
-            let args = messages::FlyingArgs { owner: shot.owner, ranged: shot.ranged as u8, at, velocity, age };
+            let (owner, ranged) = (shot.owner, shot.ranged as u8);
+            let args = messages::FlyingArgs { owner, ranged, at, velocity, age, muzzle };
             messages::Flying::create(&mut builder, &args)
         })
         .collect();
@@ -362,15 +391,16 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     finish_snapshot(builder, &args)
 }
 
-/// Everything at sea after the sea room's tick `tick`: every ship, every pirate, each player's fight as the naval
-/// crate's numbers (`naval::wire::view_numbers`), and each player off the helm with the number of their last step
-/// taken and their body on deck.
+/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction and rank, each
+/// player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a field
+/// of their own) with its captain's commission, and each player off the helm with the number of their last step taken
+/// and their body on deck.
 #[must_use]
 pub fn sea_snapshot_bytes(
     tick: u64,
     ships: &[(PlayerId, Ship)],
     pirates: &[Pirate],
-    fights: &[(PlayerId, Vec<f64>)],
+    fights: &[(PlayerId, Vec<f64>, Commission)],
     aboard: &[(PlayerId, u32, Body)],
 ) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
@@ -394,16 +424,25 @@ pub fn sea_snapshot_bytes(
     let ships = Some(builder.create_vector(&each));
     let each: Vec<_> = pirates
         .iter()
-        .map(|&Pirate { id, x, y, heading, .. }| {
-            messages::Pirate::create(&mut builder, &messages::PirateArgs { id, x, y, heading })
+        .map(|pirate| {
+            let Pirate { id, x, y, heading, .. } = *pirate;
+            let Commission { faction, rank } = pirate.commission();
+            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number() };
+            messages::Pirate::create(&mut builder, &args)
         })
         .collect();
     let pirates = Some(builder.create_vector(&each));
     let each: Vec<_> = fights
         .iter()
-        .map(|(player, numbers)| {
-            let view = Some(builder.create_vector(numbers));
-            messages::SeaFight::create(&mut builder, &messages::SeaFightArgs { player: *player, view })
+        .map(|(player, numbers, commission)| {
+            let (view, others) = naval::wire::parted(numbers);
+            let (view, faction, rank) =
+                (Some(builder.create_vector(&view)), commission.faction, commission.rank.number());
+            let others = (!others.is_empty()).then(|| builder.create_vector(&others));
+            messages::SeaFight::create(
+                &mut builder,
+                &messages::SeaFightArgs { player: *player, view, faction, rank, others },
+            )
         })
         .collect();
     let fights = Some(builder.create_vector(&each));

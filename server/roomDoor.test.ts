@@ -7,6 +7,7 @@ import course from '../content/testground/course.json' with { type: 'json' };
 import { type Look, type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
 import { ASKS } from '../client/src/network/gearMessages.ts';
+import { fightViewOf } from '../client/src/network/seaFight.ts';
 import { startFleetRules } from '../client/src/rules/fleetRules.ts';
 import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
@@ -28,7 +29,6 @@ const asking = (sequence: number, intent: Float64Array, look: Look, dress?: stri
     look,
     arms: 0,
     seen: 0n,
-    spawn: 0,
     respawn,
     ...(dress === undefined ? {} : { dress }),
   });
@@ -75,6 +75,27 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     node: null,
     protocol,
   });
+});
+
+test('the roster reads from the rules: every enemy type with its name, faction, ranks and hands', () => {
+  const roster = JSON.parse(startRoomDoor(compiled).roster()) as {
+    type: number;
+    name: string;
+    faction_name: string;
+    ranks: number[];
+    right: string;
+  }[];
+  assert.equal(roster.length, 18);
+  const thule = roster.find((entry) => entry.type === 12);
+  assert.deepEqual(
+    [thule?.name, thule?.faction_name, thule?.ranks, thule?.right],
+    ['Captain Brannoc Thule', 'The Grey Tithe', [5], 'sword_ebony'],
+  );
+  const corvane = roster.find((entry) => entry.type === 18);
+  assert.deepEqual(
+    [corvane?.name, corvane?.faction_name, corvane?.ranks, corvane?.right],
+    ['High Assessor Corvane', 'The Grey Tithe', [5], 'flail_iron'],
+  );
 });
 
 test('a player who leaves is no longer seen, and each room is a room of its own', () => {
@@ -187,6 +208,24 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
 });
 
+test('a node’s room stands the foes a player asks for only once a page playing alone tells it to', () => {
+  const foesAfterAsking = (told: boolean) => {
+    const room = startRoomDoor(compiled);
+    assert.equal(room.openNode(nodeFile().text), true);
+    if (told) room.takeFoeAsks();
+    const player = room.join();
+    const spawn = { type: 2, rank: 1 };
+    room.input(player, inputBytes(1, { intent: walk, look: walking, arms: 0, seen: 0n, spawn }));
+    room.tick();
+    const snapshot = readFromRoom(room.snapshot());
+    return snapshot?.kind === 'snapshot' ? snapshot.foes.map((foe) => foe.type) : [];
+  };
+  // The patrol node's own garrison stands either way; the ask adds a Collector only when the room is told to take it.
+  const garrison = foesAfterAsking(false);
+  assert.ok(garrison.length > 0, 'its garrison');
+  assert.deepEqual(foesAfterAsking(true), [...garrison, 2]);
+});
+
 test('the sea sails the course a browser writes, refuses one across land, and shows each ship', () => {
   const room = startRoomDoor(compiled);
   const square = [
@@ -222,6 +261,33 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
   assert.equal(ships.length, 1, 'only the ship whose course was taken is at sea');
   assert.deepEqual([ships[0]?.player, ships[0]?.x, ships[0]?.heading, ships[0]?.pace], [first, 50_000, 0, 10]);
   assert.ok(Math.abs((ships[0]?.y ?? 0) - (150_000 - 120)) < 1e-6, 'a second north at 10 × 12 m/s');
+});
+
+test('a sea where rivals clash and a player joins them snapshots to the fingerprint the crate holds natively', () => {
+  // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH).
+  const room = startRoomDoor(compiled);
+  const square = [
+    [100_000, 100_000],
+    [200_000, 100_000],
+    [200_000, 200_000],
+    [100_000, 200_000],
+  ];
+  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 51), true);
+  const player = room.join();
+  assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
+  let hash = 0xcbf2_9ce4_8422_2325n;
+  let others = 0;
+  for (let tick = 1; tick <= 16_000; tick++) {
+    room.tick();
+    if (tick % 60 !== 0) continue;
+    const bytes = room.snapshot();
+    for (const byte of bytes) hash = ((hash ^ BigInt(byte)) * 0x0100_0000_01b3n) & 0xffff_ffff_ffff_ffffn;
+    const snapshot = readFromRoom(bytes);
+    const fight = snapshot?.kind === 'snapshot' ? snapshot.fights[0] : undefined;
+    if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
+  }
+  assert.equal(others, 1, 'the player fights both rivals');
+  assert.equal(hash.toString(16).padStart(16, '0'), '644e1cba3156ebb0');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
@@ -290,7 +356,6 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
     look: walking,
     arms: 0,
     seen: 0n,
-    spawn: 0,
     ask: { kind: ASKS.grantNamed, named: 'lanternfall' },
   });
   assert.equal(room.input(first, grant), 'taken');

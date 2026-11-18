@@ -17,7 +17,9 @@ export class LocalRoom implements RoomLink {
   private carry = 0;
   readonly player: number;
   readonly dressed = [];
-  /** A room in the page is never lost. */
+  /** A room in the page is joined once and never lost. */
+  readonly joins = 1;
+  readonly rejoining = false;
   readonly lost = null;
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
@@ -45,6 +47,20 @@ export class LocalRoom implements RoomLink {
     door.furnish(furnishing.stall, furnishing.nodes);
     door.day(Math.floor(Date.now() / 86_400_000));
     return new LocalRoom(door, snapshot, gear);
+  }
+
+  /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
+   *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
+  static openNode(
+    module: WebAssembly.Module,
+    nodeText: string,
+    snapshot: (snapshot: Snapshot) => void,
+    foeAsks = false,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
+    if (foeAsks) door.takeFoeAsks();
+    return new LocalRoom(door, snapshot, () => undefined);
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player

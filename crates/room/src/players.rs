@@ -64,9 +64,9 @@ pub struct Shown {
 
 /// One input from a player: its number; one tick's intent (movement and the fight's buttons); what their figure
 /// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
-/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; and a foe's kind to stand
-/// before them, if they asked for one (the Test Ground's panel), and its level (0 for none: it fights by combat's own
-/// numbers); whether they ask to respawn, dead past a node's section; and an ask of their gear.
+/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand before them,
+/// or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it fights by
+/// combat's own numbers); whether they ask to respawn, dead past a node's section; and an ask of their gear.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -75,10 +75,30 @@ pub struct Input {
     pub dress: Option<String>,
     pub arms: u32,
     pub seen: u64,
-    pub spawn: Option<u8>,
+    pub spawn: Option<SpawnAsk>,
     pub respawn: bool,
     pub ask: Option<Asked>,
     pub spawn_level: u8,
+}
+
+/// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
+/// does not come in, or none, takes the type's first), with a shield of an element (the gear crate's number, 0 for
+/// none), or every foe sent away.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SpawnAsk {
+    Foe { foe_type: u8, rank: u8, shield: u8 },
+    Clear,
+}
+
+impl SpawnAsk {
+    /// A foe asked for by its role alone (1 skirmisher to 5 captain, no type), as a page from before the roster asks:
+    /// the pirates' type in that role, a Major, or at its first rank if it comes in none (their Captain an Elite).
+    #[must_use]
+    pub fn by_role(role: u8, shield: u8) -> Option<Self> {
+        let foe_type = ::foes::in_role(::foes::factions::PIRATES, ::foes::Role::from_number(role)?)?;
+        let rank = foe_type.rank_or_first(Some(::foes::Rank::Major)) as u8;
+        Some(Self::Foe { foe_type: foe_type.number, rank, shield })
+    }
 }
 
 impl Input {

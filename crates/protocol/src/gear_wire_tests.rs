@@ -4,7 +4,7 @@ use gear::Vestige;
 use room::{Input, ResourceNode};
 
 fn asked_input(asked: Asked) -> Input {
-    Input { sequence: 1, ask: Some(asked), spawn: Some(2), spawn_level: 14, ..Input::default() }
+    Input { sequence: 1, ask: Some(asked), spawn: room::SpawnAsk::by_role(2, 1), spawn_level: 14, ..Input::default() }
 }
 
 fn every_ask() -> Vec<Asked> {

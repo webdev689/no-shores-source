@@ -24,9 +24,12 @@ table Ask {
 // With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
 // their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
 // 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
-// combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
-// (0 none; 255 sends every foe away; the element of a shield it stands with in the bits above the kind's four), whether they ask to respawn, dead past a node's section, an ask of their gear,
-// and the level of the foe asked for (0 for none: combat's own numbers). New fields go at the end, so old readers skip them.
+// combat's arms code, the room tick of the last snapshot the screen showed, a foe to stand before the player (0 none;
+// 255 sends every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a
+// shield it stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of
+// their gear, and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in
+// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). New
+// fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -41,6 +44,8 @@ table Input {
   respawn: bool;
   ask: Ask;
   spawn_level: ubyte;
+  spawn_type: ubyte;
+  spawn_rank: ubyte;
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
@@ -64,7 +69,8 @@ table Course {
 // while she aims (its bearing off her bow in degrees and how far out it meets the water in metres, then its ray: the
 // aim eye and the way it looks, east, south and up; none while she does not aim); whether she fires and whether she
 // braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where she puts to sea (x, y and heading,
-// heeded once); and a captain asked for (0 none, 1 one called round her, 255 every one sent off).
+// heeded once); a captain asked for (0 none, 1 one called round her, 255 every one sent off); and the faction (1 the
+// Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates.
 table Orders {
   sequence: uint;
   steer: double;
@@ -76,6 +82,8 @@ table Orders {
   load: ubyte;
   put_to_sea: [double];
   call: ubyte;
+  call_faction: ubyte;
+  call_rank: ubyte;
 }
 
 // A player's dress, passed on as their browser wrote it.
@@ -111,9 +119,11 @@ table Seen {
   standing_ticks: uint;
 }
 
-// A foe as the room last stepped it: its number, its kind, a glance at its fighter (combat's glance order), its level,
-// and its shield, if it stands with one: its element (the gear crate's numbers, 0 for none), what it holds still and
-// what it held whole.
+// A foe as the room last stepped it: its number, its role (1 skirmisher, 2 swordsman, 3 brute, 4 archer, 5 captain), a
+// glance at its fighter (combat's glance order), its level, and its shield, if it stands with one: its element (the
+// gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
+// its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
+// 1 suspicious, 2 alert, 3 searching).
 table Foe {
   id: uint;
   kind: ubyte;
@@ -122,6 +132,11 @@ table Foe {
   shield_element: ubyte;
   shield: double;
   shield_most: double;
+  type: ubyte;
+  rank: ubyte;
+  faction: ubyte;
+  phase: ubyte;
+  alert: ubyte;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -136,15 +151,17 @@ table Event {
   stroke: ubyte;
 }
 
-// A shot in flight, or a gun's ball in the tick it was fired: who shot it, what shot it (combat's number), where it is
-// (x, y, z), how fast it goes, and the ticks it has flown. A ball's whole line runs from `at` to `at` plus one tick of
-// its velocity.
+// A shot in flight, or a gun's ball in the tick it stopped: who shot it, what shot it (combat's number), where it is
+// (x, y, z), how fast it goes, and the ticks it has flown. A stopped ball's last segment runs from `at` to `at` plus
+// one tick of its velocity, to where it stopped, and carries `muzzle`, the point it left its gun; a ball still flying
+// carries none.
 table Flying {
   owner: uint;
   ranged: ubyte;
   at: [double];
   velocity: [double];
   age: ushort;
+  muzzle: [double];
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
@@ -157,18 +174,26 @@ table Ship {
   pace: ushort;
 }
 
-// A pirate at sea: her number, where she is, and her heading in radians clockwise from north.
+// A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
+// from north, her faction (1 the Grey Tithe, 2 pirates) and her rank (1 Minor to 5 Boss).
 table Pirate {
   id: uint;
   x: double;
   y: double;
   heading: double;
+  faction: ubyte;
+  rank: ubyte;
 }
 
-// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs).
+// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and
+// her captain's faction and rank, as Pirate numbers them. Then the other captains in the fight, their count and each
+// one's numbers (none when there are none), which the view leaves out so a page that knows one captain reads it whole.
 table SeaFight {
   player: uint;
   view: [double];
+  faction: ubyte;
+  rank: ubyte;
+  others: [double];
 }
 
 // One ship in a fleet room: her number; whether a captain sails her; her helm's numbers in the sailing crate's order
@@ -176,7 +201,8 @@ table SeaFight {
 // (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; her guns (the seconds each side has left
 // to load, port then starboard, then how far each has loaded); her load (as Orders numbers it) and whether she is
 // braced; for a captain, her mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship she fights (0 none) and
-// her sides run out (1 port, 2 starboard, 3 both); and for a player's ship, the number of her last orders taken.
+// her sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of her last orders taken; and the
+// faction she sails for (0 a player's, else as Pirate numbers them) and a captain's rank (1 Minor to 5 Boss, 0 none).
 table Vessel {
   id: uint;
   captain: bool;
@@ -192,6 +218,8 @@ table Vessel {
   target: uint;
   run_out: ubyte;
   acknowledged: uint;
+  faction: ubyte;
+  rank: ubyte;
 }
 
 // A ball aloft in a fleet room: the ship that fired it, where it leaves its gun and when (seconds of the fight's

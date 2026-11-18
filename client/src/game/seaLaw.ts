@@ -2,6 +2,7 @@ import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
 import { alongNear, type Pace, SHIP_SPEED, sailSpeed, type Voyage } from '../overworld/voyage.ts';
 import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
+import type { Shot } from './camera.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
  *  shore to water `depthM` deep, then `clearM` on, within `farthestM` of the harbour. */
@@ -36,14 +37,33 @@ export const HELM = {
   pitch: 0.1,
 } as const;
 
-/** The scale ships are drawn at: the Overworld's, shrinking to true scale as the view comes down to the helm
- *  (`helmShare` 0 the sea's view, 1 at the helm), so at the wheel the Sloop and every ship round her are their own
- *  size. */
-export function shownScale(overworldScale: number, helmShare: number): number {
-  return overworldScale + (1 - overworldScale) * helmShare;
+/** How tall a shot's picture stands at a point, metres: the world its height spans there. A ship that long fills it. */
+export function pictureAt(shot: Shot, point: readonly [number, number, number]): number {
+  const away = Math.hypot(shot.eye[0] - point[0], shot.eye[1] - point[1], shot.eye[2] - point[2]);
+  return 2 * away * Math.tan(shot.fov / 2);
 }
 
-/** Where the eye stands at the helm of a ship as she lies, at her size as drawn. */
+/** How tall the picture stands at her (`pictureAt`), metres: on the sea's view, which draws ships `overworldScale`
+ *  times their size; on the view shown; and on the view near her (the close view, the helm's, Manage's or the walk's)
+ *  it comes down to, `share` of the way there (0 to 1). */
+export interface PictureAtHer {
+  readonly seaM: number;
+  readonly shownM: number;
+  readonly nearM: number;
+  readonly share: number;
+}
+
+/** The scale ships are drawn at: as large as holds the Sloop on the screen at the size the sea's view shows her, or
+ *  the near view shows her at her own size where that is smaller, and never under her own size. The eye coming in,
+ *  she never shrinks on the screen, never looms larger than her own size once that shows her as large, and on the
+ *  near view she and every ship round her are their own size. */
+export function shownScale(overworldScale: number, picture: PictureAtHer): number {
+  const held = overworldScale * (picture.shownM / picture.seaM);
+  const near = Math.min(held, picture.shownM / picture.nearM);
+  return Math.max(1, (1 - picture.share) * held + picture.share * near);
+}
+
+/** Where the eye stands at the helm of a ship as she lies, at the size she lies at. */
 export function helmEye(lying: Lying): readonly [number, number, number] {
   const [helmX, helmY] = SLOOP_DECK.helm;
   return deckToWorld(lying, helmX, helmY, HELM.eyeM);

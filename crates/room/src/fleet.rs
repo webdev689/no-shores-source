@@ -1,6 +1,6 @@
 //! The fleet room's law: a place at sea at true scale, on the open sea under the swell, where each player sails her
-//! own Sloop by her helm and fights, and pirate captains called into the room fight whom they choose (the naval
-//! crate's fight). A player's orders are taken as the land room takes inputs: in order, one a tick, never faster
+//! own Sloop by her helm and fights, and captains of each faction called into the room fight whom they choose (the
+//! naval crate's fight). A player's orders are taken as the land room takes inputs: in order, one a tick, never faster
 //! than the room's clock, a few at most to catch up after a stall; a player whose orders stop has her helm stand.
 //! It has no network and no clock: whatever hosts it hands it orders and ticks, and sends out what it sees.
 
@@ -8,6 +8,7 @@ use crate::players::{CATCH_UP, PLAYERS_MOST, SLACK_TICKS, VIEW_LAG, WAITING_LIMI
 use crate::{PlayerId, Refused};
 use land::sea::Swell;
 use naval::fight::{Aim, End, Event, Fight, Orders};
+use naval::ranks::Commission;
 use naval::shots::ShipId;
 use sailing::TICK_SECONDS;
 use sailing::ship::{Helm, Ship};
@@ -23,12 +24,13 @@ const SEED: u32 = 0x464c_4545;
 /// The farthest a look may lay, metres: past every gun's reach.
 pub const MOST_RANGE_M: f64 = 1e5;
 
-/// A captain asked for with a player's orders: one called onto the ring round her ship, or every one sent off.
+/// A captain asked for with a player's orders: one of a faction and rank called onto the ring round her ship, or
+/// every one sent off.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Call {
     #[default]
     None,
-    Captain,
+    Captain(Commission),
     SendOff,
 }
 
@@ -249,8 +251,8 @@ impl Fleet {
         Taken { orders, calls }
     }
 
-    /// A captain called onto the ring round the player's ship, while the room holds fewer than `CAPTAINS_MOST`; or
-    /// every captain sent off.
+    /// A captain of the faction and rank asked for called onto the ring round the player's ship, while the room holds
+    /// fewer than `CAPTAINS_MOST`; or every captain sent off.
     fn answer_call(&mut self, player: PlayerId, call: Call, time: f64) {
         let captains: Vec<ShipId> =
             self.fight.ships.iter().filter(|(_, vessel)| vessel.command().is_some()).map(|(id, _)| *id).collect();
@@ -262,14 +264,14 @@ impl Fleet {
                     self.events.push((self.clock, Event::Gone { ship: captain, end: End::Gone }));
                 }
             }
-            Call::Captain => {
+            Call::Captain(commission) => {
                 let Some(near) = self.fight.vessel(player).map(|vessel| vessel.ship) else { return };
                 if captains.len() >= CAPTAINS_MOST {
                     return;
                 }
                 let id = self.next_ship;
                 let waters = OpenSea { swell: &self.swell };
-                if self.fight.call_captain(id, &near, &waters, time).is_ok() {
+                if self.fight.call_captain(id, &near, commission, &waters, time).is_ok() {
                     self.next_ship += 1;
                 }
             }

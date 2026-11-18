@@ -150,8 +150,8 @@ impl Room {
     /// Pays a foe's kill to every player who struck it within its last ten seconds, laying each one's Vestige where
     /// it fell.
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
-        let Some(Foe { fighter, kind, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
-        let Some(worth) = worth_of(kind) else { return };
+        let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
+        let Some(worth) = worth_of(brain.role() as u8) else { return };
         let at = [fighter.body.x, fighter.body.y, fighter.body.z];
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {

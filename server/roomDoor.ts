@@ -41,6 +41,9 @@ export interface RoomDoor {
   openSea(layoutText: string, seed: number): boolean;
   /** Opens a fleet room on the open sea. */
   openFleet(): boolean;
+  /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
+   *  Only a page playing alone tells it; a server never does. */
+  takeFoeAsks(): void;
   /** A new player's number, or 0 when the room is full. */
   join(): number;
   /** The welcome's bytes for a player. */
@@ -74,6 +77,10 @@ export interface RoomDoor {
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
+  /** Every enemy type the rules know, as JSON, in their order: each one's number (`type`), name, faction (`faction`
+   *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
+   *  first), and its right and left forge layers. */
+  roster(): string;
 }
 
 interface RoomExports {
@@ -85,6 +92,7 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
+  room_take_foe_asks(): void;
   room_join(): number;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -100,6 +108,7 @@ interface RoomExports {
   room_own(player: number, address: number, length: number): number;
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
+  room_roster(): bigint;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -141,6 +150,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openSea: (layoutText, seed) =>
       openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,
+    takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
@@ -170,5 +180,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
+    roster: () => new TextDecoder().decode(take(exports.room_roster())),
   };
 }

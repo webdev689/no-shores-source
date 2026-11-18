@@ -7,15 +7,12 @@ code:
   - client/src/game/game.ts#startGame
   - client/src/game/flow.ts#next
   - client/src/game/foot.ts#Foot
-  - client/src/game/footFight.ts#FootFight
-  - client/src/game/fightMarks.ts#FightMarks
+  - client/src/game/footView.ts#FootView
+  - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
   - client/src/game/footGear.ts#groundRings
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
-  - client/src/player/foeFigures.ts#FoeFigures
-  - client/src/player/fightMoves.ts#fightButtons
-  - client/src/combat/hud.css
   - client/src/game/sea.ts#Sea
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
@@ -26,6 +23,7 @@ code:
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
   - client/src/game/seaLaw.ts#continentToOpen
+  - client/src/game/seaLaw.ts#shownScale
   - client/src/game/seaShips.ts#SeaShips
   - client/src/game/passage.ts#Passage
   - client/src/game/seaHelm.ts#clearAhead
@@ -75,47 +73,49 @@ is `<city id>-social`): a way to look round the world. An id the world does not 
 ## On foot
 
 `Foot` stands the player in one node, as the [[Player]] plays on the [[Test Ground]]: DFO's controls, first and
-third person, the forge's figure and the first person's hands.
+third person, the forge's figure and the first person's hands, and the Test Ground's fight.
 
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
-  there, cut by the land's worker and handed to the movement door, the same ground to the bit as the node's room
-  ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
+  there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
+  as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
 - **The camera** is the player's, held 0.3 m over the ground, with the Test Ground's 50-degree view.
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
   with nothing pressed. Click the view to look round with the mouse.
-- **The fight.** Online, the player fights in the node's room as on the Test Ground ([[Combat]]), by the same
-  shared pieces: `FootFight` holds the combat layer's `Fighting` over the room's link. Right button swings once the
-  weapon is out (Z), left button or F guards, and V dodges; with a bow, a crossbow or a gun the right button aims
-  and the left fires, onto the crosshair's point over the node's ground; aiming eases the view behind the shoulder
-  and zooms it, and in first person the weapon zooms with it
-  ([[Aiming Sits Behind the Shoulder and Zooms the View]], [[First-Person Aiming Zooms the Weapon With the View]]).
-  The arms are what the figure's hands hold. The lock turns the body to its foe, the first person swings as the fight's rules begin each swing, and the
-  figure shows what the fight holds it to. Each foe is drawn in its kind's dress (`FoeFigures`), and it and every
-  other player glide between snapshots. Struck figures flash, sparks fly where a guard meets a blow, shots leave tracers, and telegraphed blows
-  are marked on the ground (`FightMarks`). The fight's display (`#fight-hud`, drawn by `combat/hud.css`, the Test
-  Ground's sheet too) shows the player's health, stamina and poise, the locked foe's bars, the parry rings and the
-  words over the fight. Offline, with no room, the player only walks. If the room is lost, the fight is let go and
-  the player walks on alone, the section's edge judged by the same rules here, taking up where the room's word left
-  them: warned, the warning runs on; dead, they lie until Respawn, their time running on, as offline.
+- **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,
+  on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
+- **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
+  weapon, the right button swings or aims, the left button or F guards, parries or fires, V or Mouse5 dodges, and the
+  soft lock holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
+  taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
+  name the fight's.
+- **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
+  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
+  foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
+  tracers, the sparks, the blood and the flashes. The game's own display stands over it: the place, the keys (over
+  the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the top of the screen, and
+  the status line stands under the place's name, under the boss's bar ([[Interface]]).
+- **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
+  by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
   plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
   landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
   is found again only once they have walked a step. The fight never takes them for targets.
-- **On the ground** (`footGear`): a brass ring at each counter that deals with the player; at each resource node they
-  may still gather, a sea-green ring under a beam 40 m tall, seen across the patrol, so a route can be planned through
-  them; and at each Vestige lying for them, a ring and a beam in its rarity's colour, picked up by walking over it.
+- **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
+  player; at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
+  patrol, so a route can be planned through them; and at each Vestige lying for them, a ring and a beam in its
+  rarity's colour, picked up by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
-  vendor their own; [[Interface]]); within 2.5 m of a node it asks the
-  room to gather it. Neither is offered while a menu is up or the player lies dead, past the edge or felled by a
-  foe.
+  vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
+  menu is up or the player lies dead, past the edge or felled by a foe.
 
 ## The edge
 
-Offline, the movement door judges the body against the node's section each tick, by the room's own rules
-([[Reach]]). Past the edge the screen darkens and "Return to the area" counts down 10 s; back inside, it ends. At 0,
-or 60 m past, the player dies: "You died", the pointer is freed, and Respawn is offered after 4 s (or Enter). The
-player comes back at the section's spawn nearest where they fell. A dead body lies still while its standing ticks on.
+The node's room judges the body against the node's section each tick ([[Reach]]). Past the edge the screen darkens and
+"Return to the area" counts down 10 s; back inside, it ends. At 0, or 60 m past, the player dies: "You died", the
+pointer is freed, and Respawn is offered after 4 s (or Enter). The player comes back at the section's spawn nearest
+where they fell. A dead body lies still while its standing ticks on. A player killed in the fight falls, the fight's
+display counts down 4 s, and the room stands them again at the section's spawn nearest where they fell.
 
 ## At sea
 
@@ -127,12 +127,19 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is not to scale: a ship is
   drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other player's ship is the Sloop
   too. At the helm every ship is her true size ([[Held Map]]).
+- **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's, the walk's and a fight's)
+  is laid on her at her true size, and the view eases down to it from the sea's. On the way every ship is drawn as large
+  as holds the Sloop on the screen at the size the sea's view shows her, and never under her true size. So she never
+  shrinks on the screen as the eye comes in, and she is her true size as soon as that shows her as large: from about 75
+  m off with the camera at its lowest, looking 30 degrees down. A view near her that shows her smaller at her true size
+  (Manage with its wheel taken out) is eased to instead. On each view near her every ship is her true size, her pose on
+  the swell, her footprint on the water and everyone aboard with her.
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
   lowest the wheel keeps coming in, a fifth of the way a notch. The eye comes down along the camera's own look to
-  25 m from the point 4.5 m over her waterline that the World Editor looks at, while every ship eases to her true
-  size. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
+  25 m from the point 4.5 m over her waterline that the World Editor looks at, every ship drawn as her size coming in
+  has it. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
   on the picture as shown.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
@@ -172,11 +179,17 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   Each figure stands where her deck lies on the swell, drawn as large as she is.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
-- **Pirates** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her voyage's pace. As one
-  comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says so; the page sails its
-  ship at the pace the room sailed her at, drawn to where the room has her. A bold one that comes within 750 m meets
-  her: the ship heaves to, her voyage kept, and the view pans down to the fight at true scale, then back up when it
-  ends.
+- **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
+  It marks each ship within 900 m of hers: the hostile red, other players' bone, a fight's struck captains grey
+  ([[Interface]]). It hides while the held map is up at the helm.
+- **Pirates and the Grey Tithe** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her
+  voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says so;
+  the page sails its ship at the pace the room sailed her at, drawn to where the room has her. A bold one that comes
+  within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight, every ship in it
+  easing to her true size as on any view near her (above), her plate over her (her faction's emblem, her name over a bar
+  of her hull coloured by her rank), then back up when it ends. Ships of two factions that meet fight each other, drawn
+  at sea where the room has them; coming within 750 m of such a fight joins it the same way, every captain in it under
+  her own plate.
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
@@ -195,27 +208,33 @@ its landmark over the city, as on arriving. Escape flies back down.
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder seas `node-<node id>--rough`
-  or `--storm` (a social space is one room at any seas), and starts at the spawn the room stands them at,
-  each joiner at the next of the node's spawns in turn. The room judges the edge. Each tick's input goes to it from
-  the fight: the controls and the fight's buttons, the figure's look, its arms, the dress when it changed, the
-  gear's asks and a respawn when asked. The player's fighter is predicted by the combat rules from `room.wasm`,
-  standing on the node's window of the land as the room stands it (`setGround`), and set by each snapshot; the body
-  is held still while the room says they are dead past the edge. The warning, the count and death are the room's
-  word, and so are the blows. Every other player in the room is shown where the room last saw them, in their own
-  dress, and every foe the room stands. A room whose socket closes is lost: the heads-up display says so, the fight's
-  display is put away, and the player walks on alone, nothing more sent.
+- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder seas
+  `node-<node id>--rough` or `--storm` (a social space is one room at any seas), and stands at the spawn the room's
+  first word puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first). The
+  room judges the edge. Each tick's controls go to it with the fight's buttons and arms, the figure's look, the dress
+  when it changed, the gear's asks and a respawn when asked; the player is predicted on the same ground and corrected
+  by each snapshot, held still while the room says they are dead. The warning, the count and death are the room's
+  word. Every other player in the room is shown where the room last saw them, in their own dress, and every foe where
+  it last stood.
+  A room whose socket closes, for a deploy or a dropped network, is joined again by itself ([[Server]], "The
+  browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
+  joined again, they are a new player there, standing where the room puts them, their dress and session sent again.
+  A room that sends the player away is lost: the display says so and they play on alone.
   With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
   makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
-  the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks.
+  the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played
+  alone, the room in the page keeps no gear.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
   is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at
   the pace the room last held her to, then draws her to where the room has her. Where the room has her at rest short
   of her voyage's end, a course it would not take, the page heaves her to there. Leaving the helm while a course
-  waits its turn sends the course first, then the leave, so the room takes the course from the helm. A sea room
-  whose link is lost calls the player to the helm, and they sail on alone, the voyage's line saying so. Playing
-  alone, the same sea room runs in the page, so its pirates and fights are the same law.
+  waits its turn sends the course first, then the leave, so the room takes the course from the helm. While the sea
+  room is joined again after its socket closed, the page sails her alone and shows none of its ships, a fight in it
+  over, and the voyage's line says "Reconnecting…"; joined again, the player is called to the helm and she puts to sea
+  where she lies, on her voyage. A sea room that sends the player away is lost: they are called to the helm and sail
+  on alone, the voyage's line saying so. Playing alone, the same sea room runs in the page, so its pirates and
+  fights are the same law.
 
 ## Drawing
 
@@ -249,7 +268,9 @@ through the maps, each of its points asked of them from past that turned card, s
 shadow or a wall's and never by its own. Its contact shade stays under its feet where its own shadow is drawn, and
 past the near square leans the way the sun throws one, standing in for it.
 
-At sea each ship's footprint is handed to the water, which keeps out of her hull and foams round her bow under way.
+At sea the footprints of the player's ship and the seven ships nearest her (other players', pirates and a fight's
+captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round her bow under
+way.
 Under way the player's ship stirs the water's ripples at her bow and quarters, as the World Editor's does, and the
 ripples follow her.
 In death the world drains to grey, and comes back in colour on respawn or on leaving.
@@ -260,7 +281,9 @@ In death the world drains to grey, and comes back in colour on respawn or on lea
 - A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and the ship
   then rests short of it, the page drawing her where the room has her.
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
-- Offline, the edge is judged in the browser; online, the room judges it and the browser predicts nothing of it.
+- The browser predicts nothing of the edge: a warning, a death or a respawn shows as the room's snapshot says it.
+- The land is drawn a little off the ground bodies stand on, so the fight's marks and blood are drawn 0.12 m over
+  where they lie. A telegraphed blow's mark is flat: on a slope, part of it lies under the land.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.

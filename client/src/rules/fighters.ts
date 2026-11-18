@@ -172,7 +172,7 @@ export function glanceView(glance: ArrayLike<number>): FighterView {
     mode: MODES[valueAt(4)] ?? 'ground',
     crouched: valueAt(5) !== 0,
     aim: valueAt(6),
-    side: valueAt(7) === 1 ? 'foes' : 'players',
+    side: valueAt(7) === 0 ? 'players' : 'foes',
     arms: valueAt(8),
     health: valueAt(10),
     healthMax: valueAt(11),

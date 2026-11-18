@@ -1,5 +1,6 @@
 use super::*;
-use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
+use combat::Fighter;
+use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};
 use protocol::wire::overlook::wire as messages;
 use room::sea::Ship;
 use serde_json::{Value, json};
@@ -157,6 +158,32 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     assert!(ships[0].1.y < 150_000.0);
 }
 
+/// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
+pub const SEA_CLASH_HASH: &str = "644e1cba3156ebb0";
+
+#[test]
+fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
+    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 51));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
+    for tick in 1..=16_000 {
+        room_tick();
+        with_open(|opened| {
+            if let Opened::Sea(sea) = opened {
+                clashed |= !sea.clashes().is_empty();
+                three |= sea.fights().any(|(_, fought)| fought.fight.ships.len() == 3);
+            }
+        });
+        if tick % 60 == 0 {
+            hash = snapshot().iter().fold(hash, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x0100_0000_01b3));
+        }
+    }
+    assert!(clashed && three, "rivals clashed, and the player joined them");
+    assert_eq!(format!("{hash:016x}"), SEA_CLASH_HASH);
+}
+
 #[test]
 fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms() {
     assert!(set_course(&bytes_of(&[-5.0, -4.0, 5.0, -1.0, 2.3])));
@@ -183,6 +210,30 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     assert!(predict(&bytes_of(&[1.0, 2.0])).is_empty());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword.code());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\nworn"), combat::arms::BARE_HANDS.code());
+}
+
+#[test]
+fn a_browser_predicts_a_fighter_on_a_node_s_ground_as_its_room_steps_it() {
+    let file = node_file();
+    let ground = file["ground"].to_string();
+    assert!(!set_ground(b"not ground"));
+    assert!(set_ground(ground.as_bytes()));
+    assert!(set_course(&bytes_of(&[-5.0, -8.0, 5.0, -7.0, 13.0])));
+    let floor = Floor::Land(Box::new(serde_json::from_str(&ground).unwrap()));
+    let fighter = combat::fighter::player(room::standing_on(&floor, &[], 30.0, -40.0), combat::arms::BARE_HANDS);
+    let controls = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
+    let intent = combat::Intent { controls, ..combat::Intent::default() };
+    let mut numbers: Vec<f64> = fighter.to_floats().to_vec();
+    numbers.extend(intent.to_floats());
+    numbers.extend([1.0, f64::from(combat::arms::BARE_HANDS.code())]);
+    let course = [Block::from_floats(&[-5.0, -8.0, 5.0, -7.0, 13.0])];
+    let (expected, _) = combat::player_tick(1, &fighter, &intent, &[], &course, &floor);
+    let next = Fighter::from_floats(floats_of(&predict(&bytes_of(&numbers))).as_slice().try_into().unwrap());
+    assert_eq!(next, expected, "stepped on the land, 10 m up");
+    assert_eq!(next.body.z.to_bits(), floor.height_at(next.body.x, next.body.y).to_bits());
+    assert!(set_ground(b""));
+    let flat = Fighter::from_floats(floats_of(&predict(&bytes_of(&numbers))).as_slice().try_into().unwrap());
+    assert_ne!(flat.body.z.to_bits(), next.body.z.to_bits(), "open ground again once the ground is let go");
 }
 
 #[test]

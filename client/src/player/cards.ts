@@ -1,7 +1,8 @@
 import { type Colours, composeFrame } from '../forge/compose.ts';
-import type { DyeTable } from '../forge/dyes.ts';
+import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import { type ForgeLooks, mirroredGear } from '../forge/looks.ts';
-import type { ForgeStore } from '../forge/store.ts';
+import type { HairColours, RaceSkins } from '../forge/skins.ts';
+import { ForgeStore } from '../forge/store.ts';
 import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
 import type { Picture } from './picture.ts';
 
@@ -29,6 +30,22 @@ export interface CardAt {
 /** Whatever turns a composed picture into a card it can draw: the Test Ground's scene, or the game's figures. */
 export interface CardMaker {
   card(pixels: Uint8Array, width: number, height: number, root: readonly [number, number]): Card;
+}
+
+/** The forge's cards for the figures `maker` draws, read from the forge's published renders, with the store they come
+ *  from and its looks and hair colours (a panel's choices). */
+export async function openCards(
+  maker: CardMaker,
+): Promise<{ forge: Cards; store: ForgeStore; looks: ForgeLooks; hair: HairColours }> {
+  const store = await ForgeStore.open();
+  const [looks, skins, hair, dyes] = await Promise.all([
+    store.table<ForgeLooks>('looks'),
+    store.table<RaceSkins>('skins'),
+    store.table<HairColours>('hair'),
+    store.table<DyeTable>('dyes'),
+  ]);
+  const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
+  return { forge: new Cards(maker, store, looks, colours, dyes), store, looks, hair };
 }
 
 /** Composed frames kept on the GPU before the least lately asked for are let go, to be composed again as asked. */

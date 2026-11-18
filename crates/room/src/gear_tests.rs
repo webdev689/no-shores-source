@@ -15,12 +15,14 @@ fn room() -> Room {
     Room::new(Vec::new(), (0.0, 0.0))
 }
 
-fn stand(room: &mut Room, kind: ::foes::Kind, level: u8, y: f64) -> FighterId {
+fn stand(room: &mut Room, role: ::foes::Role, level: u8, y: f64) -> FighterId {
     let id = room.next_id();
-    let (mut fighter, brain) = ::foes::spawn(kind, 0.0, y, core::f64::consts::PI);
+    let (foe_type, rank) = foes::pirate_in(role).expect("a role the pirates fill");
+    let (mut fighter, brain) = ::foes::spawn(foe_type, rank, 0.0, y, core::f64::consts::PI);
     fighter.health *= gear::power::foe_health_times(level);
     fighter.health_max = fighter.health;
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by: BTreeMap::new(), shield: None });
+    let struck_by = BTreeMap::new();
+    room.foes.insert(id, Foe { fighter, brain, caller: None, level, struck_by, shield: None });
     id
 }
 
@@ -69,7 +71,7 @@ fn move_to(room: &mut Room, player: PlayerId, x: f64, y: f64) {
 fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let level_one = stand(&mut room, ::foes::Kind::Brute, 1, -1.5);
+    let level_one = stand(&mut room, ::foes::Role::Brute, 1, -1.5);
     let events = chop(&mut room, player, 1);
     let hit =
         events.iter().find(|event| event.kind == EventKind::Hit && event.striker == player).expect("the chop lands");
@@ -77,7 +79,7 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
     let times = gear::power::by_player(10, 1, 1);
     assert!((hit.amount - 14.0 * 1.15 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 1.15 * times);
     assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::MainHand));
-    let level_five = stand(&mut room, ::foes::Kind::Brute, 5, -40.0);
+    let level_five = stand(&mut room, ::foes::Role::Brute, 5, -40.0);
     let striker = *room.fighter(player).expect("in");
     let attack = combat::fighter::Attack {
         stroke: Stroke::Down,
@@ -99,13 +101,13 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
 fn a_foe_asked_for_stands_at_its_level_with_its_health_grown() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let asked = Input { spawn: Some(1), spawn_level: 10, ..asking(1, &room, CombatInput::default()) };
+    let asked = Input { spawn: SpawnAsk::by_role(1, 0), spawn_level: 10, ..asking(1, &room, CombatInput::default()) };
     room.input(player, asked).unwrap();
     room.tick();
     let foe = room.foes_seen().next().expect("a skirmisher stood");
     assert_eq!(foe.level, 10);
     assert!((foe.fighter.health - 45.0 * gear::power::foe_health_times(10)).abs() < 1e-9);
-    let plain = Input { spawn: Some(1), ..asking(2, &room, CombatInput::default()) };
+    let plain = Input { spawn: SpawnAsk::by_role(1, 0), ..asking(2, &room, CombatInput::default()) };
     room.input(player, plain).unwrap();
     room.tick();
     let unlevelled = room.foes_seen().find(|seen| seen.level == 0).expect("a foe of no level");
@@ -117,7 +119,7 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let mut room = room();
     let player = room.join().expect("a room with space");
     let onlooker = room.join().expect("a room with space");
-    let brute = stand(&mut room, ::foes::Kind::Brute, 0, -1.5);
+    let brute = stand(&mut room, ::foes::Role::Brute, 0, -1.5);
     let mut weak = *room.fighter(brute).expect("standing");
     weak.health = 1.0;
     room.set_fighter(brute, weak);
@@ -129,7 +131,7 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let sword = paid.worn(Slot::MainHand).expect("the sword");
     assert_eq!(sword.xp, 90, "the weapon that struck earns it");
 
-    let captain = stand(&mut room, ::foes::Kind::Captain, 0, -8.0);
+    let captain = stand(&mut room, ::foes::Role::Captain, 0, -8.0);
     room.mark_struck(player, captain, Slot::MainHand);
     room.pay_kill(captain);
     let lying: Vec<Drop> = room.drops_for(player).copied().collect();
@@ -147,7 +149,7 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
 fn a_vestige_left_lying_is_gone_after_two_minutes() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let captain = stand(&mut room, ::foes::Kind::Captain, 0, -30.0);
+    let captain = stand(&mut room, ::foes::Role::Captain, 0, -30.0);
     room.mark_struck(player, captain, Slot::MainHand);
     room.pay_kill(captain);
     for _ in 0..crate::power::DROP_TICKS {
@@ -282,7 +284,7 @@ fn a_players_gear_is_theirs_to_be_sent_whenever_it_changes() {
 fn a_blow_that_cannot_harm_its_foe_shares_nothing_of_its_kill() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let foe = stand(&mut room, ::foes::Kind::Brute, 9, -1.5);
+    let foe = stand(&mut room, ::foes::Role::Brute, 9, -1.5);
     let striker = *room.fighter(player).expect("in");
     let attack = combat::fighter::Attack {
         stroke: Stroke::Down,
@@ -347,7 +349,7 @@ fn a_shield_takes_blows_before_health_and_its_own_element_breaks_it_fastest() {
         for _ in 0..120 {
             room.tick();
         }
-        let foe = stand(room, ::foes::Kind::Brute, 1, -1.5);
+        let foe = stand(room, ::foes::Role::Brute, 1, -1.5);
         room.foes.get_mut(&foe).expect("stood").shield = Some(Shield { left, ..Shield::whole(Element::Volt, 1_000.0) });
         let character = &mut room.players.get_mut(&player).expect("in").character;
         for (item, at) in character.items.values_mut() {

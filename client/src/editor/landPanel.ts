@@ -1,4 +1,6 @@
+import { RANKS, SHIP_FACTIONS } from '../ships/shipBars.ts';
 import { button, make } from './dom.ts';
+import { chooseCaptain, chosenCaptain } from './fleetLink.ts';
 import { buildSitePanel, type SitePanelHandlers, type SitePanelView } from './sitePanel.ts';
 
 /** How far along a landmass's land is. */
@@ -178,7 +180,26 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       ' a captain and X sends them all off.',
     'hint',
   );
-  root.append(views, walkHint, sailHint, fightHint);
+  // The captain F calls in a fleet: her faction and rank.
+  const calling = make('label', 'In a fleet, F calls ', 'brush');
+  const pick = (options: readonly (readonly [number, string])[], value: number) => {
+    const select = make('select');
+    for (const [key, text] of options) select.append(new Option(text, String(key), false, key === value));
+    select.addEventListener('change', () =>
+      chooseCaptain({ faction: Number(faction.value), rank: Number(rank.value) }),
+    );
+    return select;
+  };
+  const faction = pick(
+    SHIP_FACTIONS.map((each) => [each.faction, each.name] as const),
+    chosenCaptain().faction,
+  );
+  const rank = pick(
+    RANKS.map((name, index) => [index + 1, name] as const),
+    chosenCaptain().rank,
+  );
+  calling.append(faction, ' ', rank);
+  root.append(views, walkHint, sailHint, fightHint, calling);
 
   const exaggerationLabel = make('label', '', 'brush');
   const exaggeration = make('input');
@@ -257,6 +278,7 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       sail.classList.toggle('active', view.sailing);
       sailHint.hidden = !view.sailing;
       fightHint.hidden = !view.sailing;
+      calling.hidden = !view.sailing;
       exaggerationLabel.hidden = view.view !== '3d';
       exaggeration.value = String(view.exaggeration);
       exaggerationText.textContent = ` ${view.exaggeration}× in 3D`;

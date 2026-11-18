@@ -1,10 +1,11 @@
-//! Shots: an arrow or a bolt flies, falling a little, until it meets a block or a body; a gun's ball reaches its mark
-//! at once along its line. A body is an upright cylinder from its feet.
+//! Shots: an arrow or a bolt flies, falling a little, until it meets a block, the ground or a body; a player's gun's
+//! ball reaches its mark at once along its line, a foe's flies straight at its own speed. A body is an upright
+//! cylinder from its feet.
 
 use crate::arms::Ranged;
 use crate::fighter::FighterId;
 use crate::tuning::{BODY_HEIGHT, BODY_RADIUS};
-use movement::{Block, TICK_SECONDS};
+use movement::{Block, TICK_SECONDS, Terrain};
 
 /// A shot in flight: what shot it, where it is and how fast it goes (m and m/s), what it does when it lands, and how
 /// many ticks it has flown.
@@ -34,6 +35,38 @@ pub fn shot_numbers(ranged: Ranged) -> (f64, f64, f64, u32) {
 /// An arrow or a bolt falls this fast; a ball reaches this far.
 pub const FALL: f64 = 6.0;
 pub const BALL_REACH: f64 = 60.0;
+
+/// How fast a foe's shot flies: an arrow or a bolt as anyone's, but a ball slowly enough that a player who reads the
+/// draw and the flash can dodge it, where a player's own reaches its mark at once.
+#[must_use]
+pub fn foe_speed(ranged: Ranged) -> f64 {
+    match ranged {
+        Ranged::Pistolet => 70.0,
+        Ranged::Thunderlock => 110.0,
+        Ranged::Bow | Ranged::Crossbow => shot_numbers(ranged).0,
+    }
+}
+
+/// A shot as a foe looses it: an arrow or a bolt as it is; a ball along the same line at a foe's speed.
+#[must_use]
+pub fn by_foe(shot: &Shot) -> Shot {
+    if shot_numbers(shot.ranged).0 > 0.0 {
+        return *shot;
+    }
+    let [east, south, up] = shot.velocity;
+    let speed = (east * east + south * south + up * up).sqrt();
+    let scale = if speed > 0.0 { foe_speed(shot.ranged) / speed } else { 0.0 };
+    Shot { velocity: shot.velocity.map(|along| along * scale), ..*shot }
+}
+
+/// Whether a ball has flown its whole reach by the end of this tick: a player's, crossing it at once, in its first; a
+/// foe's slower one after many. A hair is allowed for the last bits of a reach crossed in one tick, and a flight that
+/// is not a number is spent.
+fn ball_spent(shot: &Shot) -> bool {
+    let [east, south, up] = shot.velocity;
+    let flown = f64::from(shot.age + 1) * (east * east + south * south + up * up).sqrt() * TICK_SECONDS;
+    flown.is_nan() || flown >= BALL_REACH * (1.0 - 1e-9)
+}
 /// An aimed shot strikes this many times as hard as a quick one: a gun's or a crossbow's at once, a bow's once it has
 /// been aimed this many ticks, and by its share of them before.
 pub const AIMED_POWER: f64 = 1.5;
@@ -88,6 +121,22 @@ pub fn line_of(shot: &Shot, stop: [f64; 3]) -> Shot {
     Shot { velocity, ..*shot }
 }
 
+/// A ball's flight once it has stopped, for every screen's tracer: its last tick's segment, carried to where it
+/// stopped (`line_of`), and the point it left its gun.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Line {
+    pub last: Shot,
+    pub muzzle: [f64; 3],
+}
+
+/// The line of a ball that stopped at `stop` this tick. A ball flies straight, so it left its gun its ticks flown
+/// back along its velocity.
+#[must_use]
+pub fn stopped_line(shot: &Shot, stop: [f64; 3]) -> Line {
+    let back = f64::from(shot.age) * TICK_SECONDS;
+    Line { last: line_of(shot, stop), muzzle: [0, 1, 2].map(|axis| shot.at[axis] - shot.velocity[axis] * back) }
+}
+
 /// What a tick of flight came to: the shot flown on, or where it stopped and the body it struck, if any.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Flight {
@@ -95,10 +144,40 @@ pub enum Flight {
     Stopped { at: [f64; 3], struck: Option<FighterId> },
 }
 
-/// One tick of a shot's flight among the blocks and the bodies (`(id, feet)`), its owner's left out. A ball crosses
-/// its whole reach in this one tick.
+/// The ground is probed along a flight at least this often across it, metres; and at most this many times a tick.
+const GROUND_STEP: f64 = 1.0;
+const GROUND_PROBES: f64 = 256.0;
+
+/// How far along the segment (0 to 1) it goes into the ground, if it does: in the first stretch between probes where it
+/// sinks below the ground, sinking toward it, where it meets the ground's line across that stretch. On level ground
+/// that is where the segment crosses the ground's height.
+fn into_ground(terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+    let (east, south) = (to[0] - from[0], to[1] - from[1]);
+    let across = (east * east + south * south).sqrt();
+    let probes = (across / GROUND_STEP).ceil().clamp(1.0, GROUND_PROBES) as u32;
+    let ground = terrain.height_at(from[0], from[1]);
+    let mut before = (0.0, ground, from[2] - ground);
+    for probe in 1..=probes {
+        let share = f64::from(probe) / f64::from(probes);
+        let at = if probe == probes { to } else { [0, 1, 2].map(|axis| from[axis] + (to[axis] - from[axis]) * share) };
+        let ground = terrain.height_at(at[0], at[1]);
+        let above = at[2] - ground;
+        if above < 0.0 && before.2 > above {
+            // The ground's line across this stretch, carried out to the segment's ends.
+            let slope = (ground - before.1) / (share - before.0);
+            let (start, end) = (before.1 - slope * before.0, before.1 + slope * (1.0 - before.0));
+            let (first, last) = (from[2] - start, to[2] - end);
+            return Some(first / (first - last));
+        }
+        before = (share, ground, above);
+    }
+    None
+}
+
+/// One tick of a shot's flight among the blocks, over the ground, and among the bodies (`(id, feet)`), its owner's
+/// left out. A player's ball crosses its whole reach in this one tick.
 #[must_use]
-pub fn fly(shot: &Shot, blocks: &[Block], bodies: &[(FighterId, [f64; 3])]) -> Flight {
+pub fn fly(shot: &Shot, blocks: &[Block], terrain: &dyn Terrain, bodies: &[(FighterId, [f64; 3])]) -> Flight {
     let falls = shot_numbers(shot.ranged).0 > 0.0;
     let fall = if falls { FALL * TICK_SECONDS } else { 0.0 };
     let velocity = [shot.velocity[0], shot.velocity[1], shot.velocity[2] - fall];
@@ -108,7 +187,7 @@ pub fn fly(shot: &Shot, blocks: &[Block], bodies: &[(FighterId, [f64; 3])]) -> F
         shot.at[2] + velocity[2] * TICK_SECONDS,
     ];
     let wall = blocks.iter().filter_map(|block| entry(block, shot.at, to)).fold(f64::INFINITY, f64::min);
-    let ground = if to[2] < 0.0 && shot.at[2] > to[2] { shot.at[2] / (shot.at[2] - to[2]) } else { f64::INFINITY };
+    let ground = into_ground(terrain, shot.at, to).unwrap_or(f64::INFINITY);
     let body = bodies
         .iter()
         .filter(|(id, _)| *id != shot.owner)
@@ -128,7 +207,7 @@ pub fn fly(shot: &Shot, blocks: &[Block], bodies: &[(FighterId, [f64; 3])]) -> F
     match body {
         Some((share, id)) if share <= stop => Flight::Stopped { at: point(share), struck: Some(id) },
         _ if stop <= 1.0 => Flight::Stopped { at: point(stop), struck: None },
-        _ if !falls || shot.age >= FLIGHT_TICKS => Flight::Stopped { at: to, struck: None },
+        _ if (!falls && ball_spent(shot)) || shot.age >= FLIGHT_TICKS => Flight::Stopped { at: to, struck: None },
         _ => Flight::Flying(Shot { at: to, velocity, age: shot.age + 1, ..*shot }),
     }
 }

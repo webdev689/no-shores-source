@@ -6,6 +6,7 @@ code:
   - crates/movement/src/body.rs#TUNING
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
+  - crates/movement/src/blocks.rs#pushed_out
   - crates/movement/src/terrain.rs#Terrain
   - crates/movement/src/heights.rs#Heights
   - crates/movement/src/floats.rs#fingerprint
@@ -32,9 +33,13 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   so a browser's step and a room's agree), run, mounted, and jump and crouch pressed. A control that is not a number
   counts as none, so a body never takes one in. A press between two ticks is kept for the next. The view turns
   every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
-- **Blocks.** A course is a list of blocks, each a footprint and a top. The body, a circle of 0.35 m radius, stands
-  on the highest top within a step (0.5 m) of its feet, slides along a block's sides, and is stopped by one
-  taller than a step.
+- **Blocks.** A course is a list of blocks, each a footprint and a top. The body, a square reaching 0.35 m each way
+  from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet, slides along a
+  block's sides, and is stopped by one taller than a step. A move is judged where the feet end it: stepping down
+  beside a taller block, the body is held where the drop would leave it overlapping that block, and slides on.
+- **Never inside a block.** Falling past the top of a block beside it, too slowly to clear it, the body is pushed out
+  of it the shortest way, never past its far side. A body set down overlapping a block, as a blow's charge may leave
+  it, is pushed out the same way before it moves. So no edge or corner holds a body fast.
 - **Terrain.** The blocks stand on a terrain: any ground known by its height at a point (`Terrain`), so the rules
   need nothing of the crate that makes it. A node's room stands its bodies on the [[Land]]'s window round its node,
   and its city's boxes as blocks ([[Server]]); the [[Test Ground]] and its rooms use open ground at 0 m. A body that
@@ -72,7 +77,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
 | Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs |
 | Mantle | Rises first, then goes over onto the lip |
-| Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing beyond it |
+| Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 
 ## Tuning
 
@@ -105,5 +110,6 @@ cuts the same windows there, and steps them through the movement door. Both hold
   gain height up a slope too steep to walk.
 - A body slides along a rise too steep for its path an axis at a time, as along a block, not along the rise's own
   contour.
+- Pushed out of a block it fell beside, a body moves up to 0.35 m sideways in one tick.
 - Whether the body is mounted is the client's to say; the rules take it as a control.
 - A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time.

@@ -1,16 +1,11 @@
 import { FirstPerson } from '../firstperson/firstPerson.ts';
-import type { Colours } from '../forge/compose.ts';
-import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
-import type { ForgeLooks } from '../forge/looks.ts';
-import type { HairColours, RaceSkins } from '../forge/skins.ts';
-import { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
 import { coastField } from '../heldmap/coastField.ts';
 import { HeldMap } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
-import { type CardAt, Cards } from '../player/cards.ts';
+import { type CardAt, openCards } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
@@ -26,6 +21,8 @@ import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
+import { foesAsked } from './foesAsked.ts';
+import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
@@ -58,23 +55,9 @@ const GROUND_WAIT_S = 20;
 const CHART_EVERY_S = 1;
 
 /** The forge's figures and the first person's hands, read from the forge's published renders. */
-async function openForge(
-  gpu: Gpu,
-  figures: FigureView,
-): Promise<{ forge: Cards; firstPerson: FirstPerson; store: ForgeStore }> {
-  const store = await ForgeStore.open();
-  const [looks, skins, hair, dyes] = await Promise.all([
-    store.table<ForgeLooks>('looks'),
-    store.table<RaceSkins>('skins'),
-    store.table<HairColours>('hair'),
-    store.table<DyeTable>('dyes'),
-  ]);
-  const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
-  return {
-    forge: new Cards(figures, store, looks, colours, dyes),
-    firstPerson: await FirstPerson.open(gpu, store),
-    store,
-  };
+async function openForge(gpu: Gpu, figures: FigureView) {
+  const { forge, store } = await openCards(figures);
+  return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
 }
 
 /** The words under a place's name: its kind, and its island's name where it has one. */
@@ -155,10 +138,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     land,
     walker,
     forge,
-    rooms: rooms && { url: rooms, module: roomModule },
+    rooms,
+    roomModule,
+    groundAt: (x, y) => scene.groundAt(x, y),
+    // Under `npm run dev` only, `?spawn=` asks a room in the page for foes to fight.
+    foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
-    scene,
   };
+  const footView = new FootView(gpu, hudRoot);
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
   /** The held map, made when it is first asked for, since its coasts are worked out then. */
@@ -426,11 +413,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     map: () => heldMap,
   });
 
-  /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides. */
-  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[]): Drawer[] => {
-    const found: (Drawer | null)[] = [
+  /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides; on foot
+   *  the fight's blood under the figures and its marks over them. */
+  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) => {
+    const found: (Drawer | null | undefined)[] = [
       drawers.city,
       drawers.nature,
+      fight?.under,
       {
         drawInto: (pass, fromEye, shot, time) => {
           const camera = { fromEye, eye: shot.eye };
@@ -444,19 +433,23 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         drawInto: (pass, fromEye, shot, _time, shadow) =>
           figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
       },
+      fight?.over,
     ];
-    return found.filter((drawer): drawer is Drawer => drawer !== null);
+    return found.filter((drawer): drawer is Drawer => !!drawer);
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    const paused = flow.mode !== 'foot' || flow.menu;
-    const shown = here.frame(controls, seconds, clock, paused);
+    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
+    const aspect = size.width / Math.max(1, size.height);
+    const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
       : undefined;
-    scene.draw(shown.shot, size, clock, seconds, [...standing([], shown.figures), ...shown.drawers], { after: hands });
+    const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
+    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
+    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
@@ -479,6 +472,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     const swell = scene.land?.swell;
+    footView.hide();
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
     if (!paused && !heldMap?.shown)
       here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);

@@ -17,7 +17,7 @@ const compiled = new WebAssembly.Module(
   }),
 );
 const TICK = 1 / 60;
-const SWORDSMAN = 2;
+const SWORDSMAN = { type: 14, rank: 2 };
 /** The room's event numbers (crates/room/src/judging.rs) and its riposte's. */
 const EVENT = { parried: 3, perfect: 6, killed: 8 };
 const RIPOSTE = 2;
@@ -53,7 +53,7 @@ function duel(answer: Answer): string[] {
   };
   // The sword is the starting kit's; the shield is handed out and worn, as the room takes arms from gear alone.
   wear(fighting, () => gear, idle, [KIND.shield]);
-  fighting.askFoe(SWORDSMAN);
+  fighting.ask(SWORDSMAN);
   const told: string[] = [];
   let answeredAt = -Infinity;
   let guarding = 0;

@@ -1,17 +1,19 @@
 //! Shots: a quick shot from the hip at once, at the soft lock's foe; an aimed one half again as hard, a bow's charged
-//! by its aiming; no guard behind a ranged weapon; an arrow flying and falling until a block or a body stops it; a
-//! gun's ball reaching its mark at once; and the number layout every fighter crosses in.
+//! by its aiming; no guard behind a ranged weapon; an arrow flying and falling until a block, the ground or a body
+//! stops it, on sloping ground as on level; a
+//! player's gun's ball reaching its mark at once and a foe's flying at its gun's speed; and the number layout every
+//! fighter crosses in.
 
 mod common;
 
 use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
-use combat::fighter::Action;
+use combat::fighter::{Action, Side};
 use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
 use combat::shots::{AIMED_POWER, DRAW_FULL, Flight, fly, loose};
 use combat::{CombatInput, Fighter, Happening, Intent, Stroke, player_tick};
 use common::{asking, foe_at, guarding, idle, player_at, run};
 use core::f64::consts::PI;
-use movement::{Block, Controls};
+use movement::{Block, Controls, Flat, Terrain};
 
 fn holding(ranged: Ranged) -> Fighter {
     let mut fighter = player_at(0.0, 0.0);
@@ -72,6 +74,9 @@ fn a_foe_archers_drawn_arrow_strikes_as_a_quick_shot() {
     assert!(matches!(drawn.action, Action::Draw { elapsed } if elapsed == DRAW_FULL), "{:?}", drawn.action);
     let (_, happenings) = run(drawn, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
     assert!((only_shot(&happenings).1.damage - 18.0).abs() < 1e-9, "a quick shot's 18, never half again");
+    let mighty = Fighter { might: 1.5, ..drawn };
+    let (_, happenings) = run(mighty, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
+    assert!((only_shot(&happenings).1.damage - 27.0).abs() < 1e-9, "times its might, as its blows are");
 }
 
 #[test]
@@ -94,7 +99,7 @@ fn an_aimed_arrow_laid_on_a_mark_comes_down_on_it() {
     let pull = CombatInput { shoot: true, mark: Some(mark), ..AIMING };
     let mut arrow = only_shot(&run(drawn, asking(0.0, pull), 1, None).1).1;
     let came = loop {
-        match fly(&arrow, &[], &[]) {
+        match fly(&arrow, &[], &Flat, &[]) {
             Flight::Flying(next) if next.at[1] > mark[1] => arrow = next,
             Flight::Flying(next) => break next.at,
             Flight::Stopped { at, .. } => break at,
@@ -167,7 +172,7 @@ fn an_arrow_falls_as_it_flies_and_stops_at_a_block_or_the_first_body_on_its_line
     let arrow = loose(1, Ranged::Bow, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
     let mut flying = arrow;
     for _ in 0..10 {
-        let Flight::Flying(next) = fly(&flying, &[], &[]) else { panic!("open air") };
+        let Flight::Flying(next) = fly(&flying, &[], &Flat, &[]) else { panic!("open air") };
         flying = next;
     }
     assert!(flying.at[2] < 1.1 && flying.at[1] < -7.0);
@@ -176,7 +181,7 @@ fn an_arrow_falls_as_it_flies_and_stops_at_a_block_or_the_first_body_on_its_line
     let mut stop = None;
     let mut shot = arrow;
     for _ in 0..20 {
-        match fly(&shot, &wall, &bodies) {
+        match fly(&shot, &wall, &Flat, &bodies) {
             Flight::Flying(next) => shot = next,
             Flight::Stopped { struck, .. } => {
                 stop = Some(struck);
@@ -188,7 +193,7 @@ fn an_arrow_falls_as_it_flies_and_stops_at_a_block_or_the_first_body_on_its_line
     let behind = [(2, [0.0, -6.0, 0.0])];
     let mut shot = arrow;
     let walled = loop {
-        match fly(&shot, &wall, &behind) {
+        match fly(&shot, &wall, &Flat, &behind) {
             Flight::Flying(next) => shot = next,
             Flight::Stopped { at, struck } => break (at, struck),
         }
@@ -197,12 +202,81 @@ fn an_arrow_falls_as_it_flies_and_stops_at_a_block_or_the_first_body_on_its_line
     assert!((walled.0[1] + 4.0).abs() < 1e-6, "stopped at the wall's face");
 }
 
+/// Ground rising northward a fifth of a metre each metre, flat to the south.
+struct Rising;
+
+impl movement::Terrain for Rising {
+    fn height_at(&self, _x: f64, y: f64) -> f64 {
+        (-y * 0.2).max(0.0)
+    }
+}
+
+/// Where a shot stops on the rising ground, flown tick by tick.
+fn stopped_on_the_rise(mut shot: combat::Shot) -> [f64; 3] {
+    loop {
+        match fly(&shot, &[], &Rising, &[]) {
+            Flight::Flying(next) => shot = next,
+            Flight::Stopped { at, .. } => break at,
+        }
+    }
+}
+
+#[test]
+fn a_shot_stops_where_it_meets_sloping_ground_and_never_flies_through_a_hill() {
+    for ranged in [Ranged::Bow, Ranged::Crossbow] {
+        let at = stopped_on_the_rise(loose(1, ranged, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0));
+        assert!(at[1] > -5.6 && at[1] < -4.0, "{ranged:?} stops into the rise, not 50 m on: {at:?}");
+        assert!((at[2] - Rising.height_at(at[0], at[1])).abs() < 1e-6, "{ranged:?} on the ground: {at:?}");
+    }
+    let foes = combat::shots::by_foe(&loose(1, Ranged::Thunderlock, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0));
+    let players = loose(1, Ranged::Pistolet, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
+    for ball in [foes, players] {
+        let at = stopped_on_the_rise(ball);
+        assert!(
+            (at[1] + 5.5).abs() < 1e-6 && (at[2] - 1.1).abs() < 1e-6,
+            "a level ball meets the rise at 5.5 m: {at:?}"
+        );
+    }
+}
+
 #[test]
 fn a_ball_reaches_its_mark_along_its_line_in_one_tick() {
     let ball = loose(1, Ranged::Pistolet, [0.0, 0.0, 1.1], PI, 0.0, 1.0);
     let far = [(2, [0.0, 40.0, 0.0])];
-    assert!(matches!(fly(&ball, &[], &far), Flight::Stopped { struck: Some(2), .. }));
-    assert!(matches!(fly(&ball, &[], &[(2, [0.0, 70.0, 0.0])]), Flight::Stopped { struck: None, .. }));
+    assert!(matches!(fly(&ball, &[], &Flat, &far), Flight::Stopped { struck: Some(2), .. }));
+    assert!(matches!(fly(&ball, &[], &Flat, &[(2, [0.0, 70.0, 0.0])]), Flight::Stopped { struck: None, .. }));
+}
+
+#[test]
+fn a_foes_ball_flies_at_its_guns_own_speed_so_it_can_be_dodged() {
+    for (ranged, speed) in [(Ranged::Pistolet, 70.0), (Ranged::Thunderlock, 110.0)] {
+        let mut gunner = foe_at(0.0, 0.0, PI);
+        gunner.arms = Arms { melee: WeaponClass::Fists, ranged: Some(ranged), off_hand: OffHand::Empty };
+        let (drawn, _) = run(gunner, asking(PI, AIMING), 30, None);
+        let (_, happenings) = run(drawn, asking(PI, CombatInput { shoot: true, ..AIMING }), 1, None);
+        let mut ball = only_shot(&happenings).1;
+        let [east, south, up] = ball.velocity;
+        assert!(((east * east + south * south + up * up).sqrt() - speed).abs() < 1e-9, "{ranged:?}: {ball:?}");
+        let target = [(2, [0.0, 30.0, 0.0])];
+        let mut ticks = 0;
+        let struck = loop {
+            ticks += 1;
+            match fly(&ball, &[], &Flat, &target) {
+                Flight::Flying(next) => ball = next,
+                Flight::Stopped { struck, .. } => break struck,
+            }
+        };
+        assert_eq!(struck, Some(2), "{ranged:?}");
+        let flown = 30.0 / speed * 60.0;
+        assert!((f64::from(ticks) - flown).abs() <= 1.0, "{ranged:?} took {ticks} ticks to fly 30 m, not {flown}");
+    }
+    let mut ball = combat::shots::by_foe(&loose(1, Ranged::Pistolet, [0.0, 0.0, 1.1], PI, 0.0, 1.0));
+    let mut ticks = 0;
+    while let Flight::Flying(next) = fly(&ball, &[], &Flat, &[]) {
+        ball = next;
+        ticks += 1;
+    }
+    assert!((50..=52).contains(&ticks), "it falls spent at its reach of 60 m: {ticks} ticks");
 }
 
 #[test]
@@ -229,6 +303,11 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
         ..fighter
     };
     assert_eq!(Fighter::from_floats(&telegraphing.to_floats()), telegraphing);
+    for side in [Side::Players, Side::Faction(1), Side::Faction(2)] {
+        let sided = Fighter { side, ..telegraphing };
+        assert_eq!(Fighter::from_floats(&sided.to_floats()), sided, "a side crosses as one number");
+        assert_eq!(Fighter::from_glance(&sided.glance()).side, side);
+    }
     let intent = Intent {
         controls: Controls { forward: 1.0, sideways: -0.5, yaw: 2.0, run: true, ..Controls::default() },
         combat: CombatInput {
@@ -252,14 +331,14 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
 fn a_shot_strikes_only_bodies_ahead_of_it_and_one_through_the_top_of_a_head() {
     let north = loose(1, Ranged::Bow, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
     let behind = [(2, [0.0, 2.0, 0.0])];
-    assert!(matches!(fly(&north, &[], &behind), Flight::Flying(_)), "a body behind the archer is not struck");
+    assert!(matches!(fly(&north, &[], &Flat, &behind), Flight::Flying(_)), "a body behind the archer is not struck");
     let ball = loose(1, Ranged::Thunderlock, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
     let (behind_far, ahead) = ([(2, [0.0, 30.0, 0.0])], [(2, [0.0, -30.0, 0.0])]);
-    assert!(matches!(fly(&ball, &[], &behind_far), Flight::Stopped { struck: None, .. }));
-    assert!(matches!(fly(&ball, &[], &ahead), Flight::Stopped { struck: Some(2), .. }));
+    assert!(matches!(fly(&ball, &[], &Flat, &behind_far), Flight::Stopped { struck: None, .. }));
+    assert!(matches!(fly(&ball, &[], &Flat, &ahead), Flight::Stopped { struck: Some(2), .. }));
     // An arrow coming down steeply over the body: above its head as it crosses into its round, inside it soon after.
     let falling = combat::shots::Shot { at: [0.0, -0.6, 1.95], velocity: [0.0, 72.0, -39.0], ..north };
-    let Flight::Stopped { struck, at } = fly(&falling, &[], &[(2, [0.0, 0.0, 0.0])]) else { panic!("it stops") };
+    let Flight::Stopped { struck, at } = fly(&falling, &[], &Flat, &[(2, [0.0, 0.0, 0.0])]) else { panic!("it stops") };
     assert_eq!(struck, Some(2));
     assert!((at[2] - 1.8).abs() < 0.05, "it meets the head's top: {at:?}");
 }

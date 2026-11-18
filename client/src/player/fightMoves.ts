@@ -1,7 +1,6 @@
 import type { Dress } from './dressing.ts';
-import type { InputFrame } from './input.ts';
 import type { Doing, Fight } from './playerMoves.ts';
-import { type Action, type FighterView, type Shape, actionProgress, directionOf } from '../rules/fighters.ts';
+import { type FighterView, type Shape, actionProgress, directionOf } from '../rules/fighters.ts';
 
 /** How long a dodge and a parry's deflect last, and a death's fall, in ticks, as the combat crate times them. */
 export const FIGHT_TICKS = { dodge: 26, parry: 18, death: 48, drawFull: 60 } as const;
@@ -76,85 +75,5 @@ export function foeDoing(view: FighterView, before: FighterView | null, dress: D
     cast: null,
     act: null,
     fight: fightOf(view),
-  };
-}
-
-/** The weapons that shoot: their button draws or fires, as the fight's rules take a shot. */
-export const SHOOTERS = /^(bow|crossbow|pistolet|thunderlock)(_|$)/;
-/** What the fight holds the player to, when their weapon neither swings nor shoots. */
-export const HELD: ReadonlySet<Action['kind']> = new Set([
-  'flinch',
-  'staggered',
-  'down',
-  'dead',
-  'dodge',
-  'guard',
-  'parry',
-  'telegraph',
-  'overreach',
-]);
-/** The first person's guard, a weapon's own stroke frame held upright across the middle of the view, and a parry's
- *  deflect, the next stroke's middle frames played through. */
-const GUARD_POSE = { record: 3, frame: 2 } as const;
-const PARRY_RECORD = 4;
-
-/** The pose the first person holds its weapon in for the fight's action: a guard's, a parry's deflect, or none. */
-export function guardPose(action: Action): { readonly record: number; readonly frame: number } | null {
-  if (action.kind === 'guard') return GUARD_POSE;
-  if (action.kind !== 'parry') return null;
-  return { record: PARRY_RECORD, frame: 1 + Math.min(2, Math.floor((action.elapsed / FIGHT_TICKS.parry) * 3)) };
-}
-
-/** How the player's hands stand for the fight this frame: the weapon out, on foot, the hands free (`armed`); a bow,
- *  a crossbow or a gun in the right hand (`shooter`), armed (`ranged`) and held up to aim (`aiming`); and whether the
- *  guard may rise (never behind a ranged weapon). */
-export interface FightHands {
-  readonly armed: boolean;
-  readonly shooter: boolean;
-  readonly ranged: boolean;
-  readonly aiming: boolean;
-  readonly guards: boolean;
-}
-
-/** The fight's hands for a frame, from the controls, the player before the frame steps them (their body's mode and
- *  whether they ride), and whether their weapon was drawn and what their right hand holds. */
-export function fightHands(
-  controls: InputFrame,
-  player: { readonly body: { readonly mode: string }; readonly mounted: boolean },
-  drawn: boolean,
-  right: string | null,
-): FightHands {
-  const free = player.body.mode === 'ground' || player.body.mode === 'air';
-  const armed = controls.locked && drawn && free && !player.mounted;
-  const shooter = SHOOTERS.test(right ?? '');
-  const ranged = armed && shooter;
-  const aiming = ranged && controls.held('swing');
-  const guards = controls.locked && free && !player.mounted && !ranged;
-  return { armed, shooter, ranged, aiming, guards };
-}
-
-/** The fight's buttons for a frame's ticks, as the combat layer's fight takes them: a swing or a shot only with the
- *  weapon already out, on foot, the hands free; a guard on foot; a dodge whenever pressed (the rules refuse one in the
- *  air or the saddle). With a ranged weapon the swing's button aims, laying the shot on `mark`, and the guard's fires.
- *  Each press counts even let go within the frame. */
-export function fightButtons(
-  controls: InputFrame,
-  hands: FightHands,
-  pitch: number,
-  mark: readonly [number, number, number] | null,
-) {
-  const { armed, shooter, ranged, aiming, guards } = hands;
-  const swings = armed && !shooter;
-  return {
-    swing: swings && controls.held('swing'),
-    shoot: ranged && controls.held('guard'),
-    guard: guards && controls.held('guard'),
-    dodge: controls.locked && controls.pressed('dodge'),
-    pitch: -pitch,
-    aim: aiming,
-    mark,
-    swingPressed: swings && controls.pressed('swing'),
-    shootPressed: ranged && controls.pressed('guard'),
-    guardPressed: guards && controls.pressed('guard'),
   };
 }

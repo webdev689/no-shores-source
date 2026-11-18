@@ -77,8 +77,8 @@ test('every foe asked for comes, one with each input, even two asked for within 
   fight = fighting;
   const steps = fighting.steps(movement);
   const held = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
-  fighting.askFoe(1);
-  fighting.askFoe(3);
+  fighting.ask({ type: 13, rank: 2 });
+  fighting.ask({ type: 15, rank: 2 });
   for (let tick = 0; tick < 4; tick += 1) {
     steps.step({} as Body, held);
     room.pump(TICK);
@@ -173,6 +173,8 @@ function fightByHand() {
   const link = {
     player: 1,
     dressed: [],
+    joins: 1,
+    rejoining: false,
     lost: null,
     send: () => undefined,
     pump: () => undefined,
@@ -215,7 +217,14 @@ test("a shot an input lets go only once the room's word is replayed is handed ov
 
 test("every snapshot's shots are handed over once, however many came in a frame", () => {
   const { fighting, word } = fightByHand();
-  const ball = (owner: number): FlyingShot => ({ owner, ranged: 3, at: [0, 0, 1], velocity: [0, -3600, 0], age: 0 });
+  const ball = (owner: number): FlyingShot => ({
+    owner,
+    ranged: 3,
+    at: [0, 0, 1],
+    velocity: [0, -3600, 0],
+    age: 0,
+    muzzle: [0, 0, 1],
+  });
   word(0, [ball(2)]);
   word(0, [ball(3)]);
   assert.deepEqual(
@@ -235,6 +244,8 @@ test('a dress too long for the room is never sent: the room takes every input, a
   const link: RoomLink = {
     player,
     dressed: [],
+    joins: 1,
+    rejoining: false,
     lost: null,
     send: (bytes) => answers.add(door.input(player, bytes)),
     pump: () => {
@@ -272,7 +283,15 @@ test('a swing rolls among the strokes that reach its target, and among all six w
 
 test('a foe’s two glances are as many ticks apart as the snapshots that brought them', () => {
   const rules = startCombatRules(compiled);
-  const link: RoomLink = { player: 1, dressed: [], lost: null, send: () => undefined, pump: () => undefined };
+  const link: RoomLink = {
+    player: 1,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: () => undefined,
+    pump: () => undefined,
+  };
   const fighting = new Fighting(rules, link);
   const glance = (east: number) => Object.assign(new Float64Array(GLANCE_FLOATS), { 0: east });
   const snapshot = (tick: bigint, east: number): Snapshot => ({
@@ -280,7 +299,20 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     tick,
     players: [],
     dressed: [],
-    foes: [{ id: 7, kind: 2, glance: glance(east), level: 0, shield: null }],
+    foes: [
+      {
+        id: 7,
+        kind: 2,
+        glance: glance(east),
+        level: 0,
+        shield: null,
+        type: 14,
+        rank: 2,
+        faction: 2,
+        phase: 1,
+        alert: 0,
+      },
+    ],
     events: [],
     shots: [],
     ships: [],
@@ -297,6 +329,58 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
   assert.deepEqual([kept?.before?.x, kept?.view.x, kept?.ticks, fighting.roomTick], [0, 0.15, 3, 13]);
 });
 
+test('a fight whose link joins its room again numbers its inputs anew, sends its dress again, and stands where the new room puts it', () => {
+  const [before, after] = [startRoomDoor(compiled), startRoomDoor(compiled)];
+  for (const door of [before, after]) door.open(course.start, course.blocks);
+  let door = before;
+  const answers = new Set<string>();
+  const dressed: string[] = [];
+  let fight: Fighting | null = null;
+  const link = {
+    player: door.join(),
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: (bytes: Uint8Array<ArrayBuffer>) => void answers.add(door.input(link.player, bytes)),
+    pump: () => {
+      door.tick();
+      const message = readFromRoom(door.snapshot());
+      if (message?.kind !== 'snapshot') return;
+      dressed.push(...message.dressed.map((each) => each.dress));
+      fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  [fight, fighting.dress] = [fighting, '{"short":1}'];
+  link.pump();
+  const steps = fighting.steps(movement);
+  const walk = (ticks: number, controls: Controls) => {
+    for (let count = 0; count < ticks; count += 1) {
+      steps.step({} as Body, controls);
+      link.pump();
+    }
+  };
+  walk(60, { ...STILL, forward: 1 });
+  const walked = fighting.own;
+  // A deploy: the room starts afresh, and the link joins it as its second player.
+  [door, dressed.length] = [after, 0];
+  after.join();
+  Object.assign(link, { player: door.join(), joins: 2 });
+  answers.clear();
+  steps.step({} as Body, STILL);
+  assert.equal(answers.size, 0, 'nothing is sent before the new room has said where the player stands');
+  link.pump();
+  walk(10, STILL);
+  assert.deepEqual([...answers], ['taken'], 'every input numbered anew, from 1');
+  assert.deepEqual(dressed, ['{"short":1}'], 'the dress sent again');
+  const [x, y] = [fighting.own?.x ?? 0, fighting.own?.y ?? 0];
+  assert.ok(Math.hypot(x - course.start.x, y - course.start.y) < 0.01, `at the new room's spawn: ${x}, ${y}`);
+  assert.ok(Math.hypot((walked?.x ?? 0) - course.start.x, (walked?.y ?? 0) - course.start.y) > 1, 'it had walked');
+});
+
 test('a respawn asked goes with the next input only', () => {
   const door = startRoomDoor(compiled);
   door.open(course.start, course.blocks);
@@ -306,6 +390,8 @@ test('a respawn asked goes with the next input only', () => {
   const link: RoomLink = {
     player,
     dressed: [],
+    joins: 1,
+    rejoining: false,
     lost: null,
     send: (bytes) => {
       asked.push(Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).respawn());

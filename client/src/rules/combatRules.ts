@@ -29,9 +29,8 @@ export interface CombatRules {
   readonly sizes: CombatSizes;
   /** Keeps these blocks as the course every later prediction moves on. */
   setCourse(blocks: readonly Block[]): void;
-  /** Stands every later prediction on a node's window of the land, from the same JSON the movement rules' setGround
-   *  takes, as the node's room stands its fighters; null, or anything that is not a window, is open ground at 0 m.
-   *  Answers whether a window was set. */
+  /** Keeps a node's window of the ground (its JSON, as the land's worker cuts it) for every later prediction to stand
+   *  on, or open ground with none; false if the text is not ground. */
   setGround(windowJson: string | null): boolean;
   /** The player's fighter one tick on under an intent, taking up `arms` as the room does, among the fighters they
    *  see, and the shot it let go. */
