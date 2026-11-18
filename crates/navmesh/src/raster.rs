@@ -158,8 +158,10 @@ pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bou
                 let sample_x = centre_x.clamp(min_x, max_x);
                 let sample_y = centre_y.clamp(min_y, max_y);
                 let column = ix + iy * cells_x;
-                let base = collider.base(heights[column], min_z);
-                field.add_span(column, base, collider.surface(sample_x, sample_y), walkable);
+                // A block or ramp stands solid from the ground beneath it; a top below the ground is buried in it.
+                let top = collider.surface(sample_x, sample_y);
+                let base = if top < heights[column] { min_z } else { heights[column] };
+                field.add_span(column, base, top, walkable);
             }
         }
     }

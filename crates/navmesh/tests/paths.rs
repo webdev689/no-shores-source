@@ -5,7 +5,7 @@ mod common;
 
 use common::{along, closest, ends_at, path};
 use movement::Block;
-use navmesh::{AGENT, Bounds, Collider, NavMesh, Ramp, Rise};
+use navmesh::{AGENT, Bounds, Collider, NavMesh, Ramp, Rise, Way};
 
 fn block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> Block {
     Block { min_x, min_y, max_x, max_y, top }
@@ -134,6 +134,17 @@ fn a_gentle_ramp_walks_up_and_a_steep_one_does_not() {
 }
 
 #[test]
+fn a_ramp_stands_on_the_ground_beneath_it_and_nothing_walks_under_it() {
+    // Its lower end 2 m up: were it solid only from there, a body would fit under it.
+    let ramp = Ramp { min_x: -1.0, min_y: -4.0, max_x: 1.0, max_y: 4.0, rises: Rise::East, low: 2.0, high: 2.5 };
+    let navmesh = NavMesh::bake_colliders(&[Collider::Ramp(ramp)], FIELD, &AGENT);
+    let route = path(&navmesh, [-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]);
+    assert!(closest(&route, &block(-1.0, -4.0, 1.0, 4.0, 2.5)) >= AGENT.radius, "round it, not under it: {route:?}");
+    let reach = navmesh.reachable_from([-5.0, 0.0, 0.0]).expect("the ground is on the mesh");
+    assert!(!reach.contains([0.0, 0.0, 0.0]), "no floor under it");
+}
+
+#[test]
 fn an_end_off_the_mesh_has_no_path() {
     let navmesh = bake(&[]);
     assert_eq!(navmesh.find_path([0.0, 0.0, 0.0], [30.0, 0.0, 0.0]), None);
@@ -187,6 +198,26 @@ fn a_foe_standing_in_an_obstacle_walks_out_of_it() {
     navmesh.add_obstacle(4, 5.0, 0.0, 1.0);
     let route = path(&navmesh, [-5.0, -5.0, 0.0], [-5.0, 5.0, 0.0]);
     assert!(through_west_gap(&route), "straight out by the near gap: {route:?}");
+}
+
+#[test]
+fn a_kept_way_holds_its_gap_until_the_goal_moves_a_metre_or_an_obstacle_changes() {
+    let mut navmesh = two_gaps();
+    let from = [0.0, -5.0, 0.0];
+    let kept = |navmesh: &NavMesh, way: &mut Way, x: f64| navmesh.find_path_kept(way, from, [x, 5.0, 0.0]).unwrap();
+    let mut way = Way::default();
+    let first = kept(&navmesh, &mut way, -0.5);
+    assert_eq!(Some(first.clone()), navmesh.find_path(from, [-0.5, 5.0, 0.0]), "a new way is a fresh search");
+    assert!(through_west_gap(&first), "the west gap, for a goal west of the middle");
+    assert!(!through_west_gap(&path(&navmesh, from, [0.4, 5.0, 0.0])), "a fresh search goes east for one east of it");
+    let held = kept(&navmesh, &mut way, 0.4);
+    assert!(through_west_gap(&held), "the way holds while its goal moves under a metre: {held:?}");
+    ends_at(&held, [0.4, 5.0, 0.0]);
+    assert!(!through_west_gap(&kept(&navmesh, &mut way, 0.6)), "searched afresh once it moves further");
+    let mut way = Way::default();
+    assert!(through_west_gap(&kept(&navmesh, &mut way, -0.5)));
+    navmesh.add_obstacle(1, -5.0, 0.0, 1.0);
+    assert!(!through_west_gap(&kept(&navmesh, &mut way, -0.5)), "an obstacle laid in the gap: searched afresh");
 }
 
 #[test]
