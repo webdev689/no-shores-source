@@ -136,16 +136,22 @@ Where the work stands now, for the next session. Each session rewrites this note
   pocket off its path for each resource, and beacons, ore, salvage, herbs and timber each standing as a place.
   After the owner's look: rock lies on the floor at each face's foot, nothing stuck into the hillsides; walk-in
   buildings' doorways are open from outside too (they were cut from just behind the door's face, so the wall in its
-  plane stayed); a room shows its building's windows; carved ground samples about six times faster.
+  plane stayed); a room shows its building's windows; carved ground samples about six times faster; no lamp, post
+  or resource stands on a path (a sweep of three continents finds none); each climate's cliffs and rubble take its
+  own stone's colour, the ground's grain no longer speckles a dark tile's colours, and lanterns are iron and glass.
   From the movement worker: a spatial index under the movement rules (same answers to the bit, a tick 2.5 times
   faster natively), the third-person camera kept off walls and inside rooms, `&view=first` for pictures, and rooms
   every body can walk into and up (`crates/room/tests/rooms_walked.rs`). From the editor worker: the World Editor
   opens each landmass carved as the game does and draws every layout's areas, paths, section and sites, in 2D (over
   tiles of the exact carved ground) and in 3D ([[World Editor]]).
 - Also on #63, from a worker branch: the flora baked from detailed Blender models ([[Flora Is Baked From Detailed
-  Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, 153 objects on R2. Its frame on
-  SwiftShader is about 1.8 times slower in the woodland; the cost on a real GPU is unchecked. Its weak spots are listed
-  in [[Nature]]: swamp cypresses flat near, umbrella pines sparse far off, the rainforest's canopy open from above.
+  Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, on R2. A second pass gave the
+  swamp's cypresses distinct drooping tiers, the rainforest giants buttress fins with thickness, firs their full
+  width, umbrella pines their flat crowns far off and the rainforest a closed canopy from above, and made the drawing
+  cheaper; its frame on SwiftShader is now 1.3 to 1.6 times the frame before the bake (the goal was no slower), and
+  the cost on a real GPU is unchecked. Still wrong ([[Nature]]): near cypresses look thinner since the cards shrank,
+  the rainforest seen 2 km off from 90 m up shows bare trunks between 300 m and 1 km, tundra spruces read as dark
+  dots far off. The next steps for the cost: indexed near meshes and fewer cards.
 
 ## Waiting on the owner
 
