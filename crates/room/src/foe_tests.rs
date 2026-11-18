@@ -208,21 +208,27 @@ fn a_crossbowman_fights_from_behind_the_room_s_cover() {
     room.input(player, asking(&room, 1, major(CROSSBOWMAN), Controls::default())).unwrap();
     room.tick();
     let foe = room.foes_seen().next().unwrap().foe;
-    let mut hidden = 0;
+    let (mut hidden, mut watched) = (0, 0);
     for sequence in 2..1200 {
         room.input(player, asking(&room, sequence, None, Controls::default())).unwrap();
         room.tick();
         let (crossbowman, them) = (*room.fighter(foe).unwrap(), *room.fighter(player).unwrap());
-        if sequence > 600 {
+        // Its bolts fell the player who stands for them; then the fight is over and it goes to search where they fell.
+        if them.dead() {
+            break;
+        }
+        if sequence > 400 {
             assert!(
                 (crossbowman.body.y + 14.7).abs() < 1.0 && crossbowman.body.x < 0.0,
                 "by the wall: {:?}",
                 crossbowman.body
             );
             hidden += usize::from(!combat::sight::clear_line(&room.blocks, crossbowman.chest(), them.chest()));
+            watched += 1;
         }
     }
-    assert!(hidden > 150, "and out of the player's sight behind it much of the time: {hidden}");
+    assert!(watched >= 400, "a fight long enough to watch: {watched} ticks");
+    assert!(hidden > watched / 3, "and out of the player's sight behind it much of the time: {hidden} of {watched}");
 }
 
 /// A pirate swordsman put straight into the room at (x, y), facing `facing`.
