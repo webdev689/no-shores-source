@@ -104,7 +104,7 @@ ${wards}
 }
 
 .fight-hud .overhead { width: ${overhead.width}px; height: ${overhead.height}px; translate: -50% -100%;
-  transform-origin: 50% 100%; margin-top: -30px; font-size: ${PLATE_SIZE.letters}px; }
+  transform-origin: 50% 100%; margin-top: -4px; font-size: ${PLATE_SIZE.letters}px; }
 .fight-hud .overhead .body { width: ${overhead.width - overhead.height - 5}px; }
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
 .fight-hud .overhead .meter { height: ${overhead.bar}px; }
