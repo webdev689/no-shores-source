@@ -492,6 +492,13 @@ img.gear-glyph {
   text-overflow: ellipsis;
   max-width: 180px;
 }
+/* At the names' size a name needs the room of two words more. */
+@media (min-width: 1500px) {
+  .gear-slot-item,
+  .gear-slot-words {
+    max-width: 280px;
+  }
+}
 /* A slot's flyout opens toward the figure, and upward from each side's lowest slot, never off the screen's edge. */
 .gear-flyout {
   position: absolute;
@@ -1107,12 +1114,10 @@ img.gear-glyph {
   flex-direction: column;
   min-width: 0;
 }
+/* A ware's name wraps rather than being cut: at the names' size a stall's card holds about a dozen letters a line. */
 .gear-ware-words b {
   font-size: var(--type-m);
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .gear-ware-power {
   font-size: var(--type-s);
@@ -1235,4 +1240,21 @@ img.gear-glyph {
 #hud .gear-ware .gear-cell {
   width: 84px;
   height: 84px;
+}
+/* A rule runs the width of what holds it: a bare hr's auto margins would shrink it to a dot in a column. */
+.gear-screen hr {
+  align-self: stretch;
+  width: auto;
+  margin: 6px 0;
+  border-width: 0 0 1px;
+  border-style: solid;
+}
+/* Where the menu is wide, the gear shelf's names have the room of their size. */
+@media (min-width: 1500px) {
+  .gear-gear-row {
+    grid-template-columns: 220px 84px 1fr;
+  }
+  .gear-gear-label .gear-slot-item {
+    max-width: 220px;
+  }
 }

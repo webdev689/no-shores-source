@@ -195,8 +195,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   weapon's fight on foot untested headless.
 - **The owner's next round is on #60 too**: Pixelify Sans as the one face, its sizes on its 11 px grid and its
   misreading glyphs mended ([[Pixelify Sans Is Overlook's Font]], [[Interface]], "The face"); the menu's seven tabs,
-  the vault and the vendors moved to their counters, and friends on the Social tab
-  ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]], [[Accounts]], "Friends"); the Plain Text
+  the vault and the vendors moved to their counters, and friends on the Social tab, which became the Roster
+  ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]], [[Accounts]], "The Roster"); the Plain Text
   rule, with progress shown on icons and nodes instead of XP counts ([[Text Is Plain]]); and weapon elements with
   foes' shields ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]], [[Gear]], "Elements and
   shields"). Tested offline: the full check, headless pictures of every page at 1280×720 and 1920×1080 against
@@ -208,14 +208,21 @@ Where the work stands now, for the next session. Each session rewrites this note
   from; and the mended glyphs sit on the grid at weight 500.
 - **The owner's answers to the third audit are on #60 too**
   ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]], [[The Roster Follows Destiny 1, With Blocking]],
-  [[Cosmetics Follow Destiny, Shown in Many Places]]): the face's
-  5, Z and symbols drawn in code and made into a font in the page; the gauge counting nodes bought; the room serving
-  each ask only at its counter; the Social tab as Destiny 1's Roster with blocking, companies,
-  guilds, reports and details; and 25 emblems, kept and worn, sold by the Tailor, shown on the Roster, the header, the
-  HUD and the Emblem slot. A group is a company, as the owner named it. The menu's tabs share its whole top, and under
-  them the player's banner runs its full width, drawn to that width so none of it is cut off
-  ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]). Tested offline: the full check, and headless at 1920×1080
-  and 1280×720 against local rooms and accounts seeded with sixteen players.
+  [[Cosmetics Follow Destiny, Shown in Many Places]]): the face's 5, Z, brackets and symbols drawn in code and made into
+  a font in the page; the gauge counting nodes bought; the room serving each ask only at its counter; the Social tab as
+  Destiny 1's Roster with blocking, companies, guilds, reports and details; and 25 emblems, kept and worn, sold by the
+  Tailor, shown on the Roster, the header, the HUD and the Emblem slot. A group of players is a company, as the owner
+  named it ([[A Group of Players Is a Company]]). The menu's tabs share its whole top, and under them the player's
+  banner runs its full width, drawn to that width so none of it is cut off
+  ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]).
+- **A fourth audit and design pass are on #60 too**, every finding checked before it was fixed: a leaving player's
+  last save kept; blocks holding against a whole company; no stranger shown a player's place; the report limit, the
+  Roster's races and its query over every account fixed; the Reader's Open shown where it works; Gilded earned only by
+  a Legendary or Atheric piece; Escape giving the Roster's panel and details their own step; a join travelling only when
+  nothing else is under way; the menu's words at the names' size, the Roster fitted to the screen, long icons on the
+  diagonal, the banner kept once shown. Tested offline: the full check, and headless at 1920×1080 and 1280×720. Not
+  done, for the owner or later: a scale for screens past 1440p, the item page's missing grip, a glyph of its own for
+  each material, Destiny's 3×3 gear shelf, and whether strangers see "Playing" or "Away".
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
