@@ -115,7 +115,7 @@ test('in the air the jump shows rising, at the top and falling; on a wall the cl
   assert.equal(shownMove({ ...doing, mode: 'climb' }, frames, classic).frame, 0);
 });
 
-test('mounted, the horse walks and gallops; a move chosen by hand plays over classic', () => {
+test('mounted, the horse walks and gallops; a move chosen by hand plays over everything', () => {
   assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 12 }, frames, classic).anim, 'horsegallop');
   assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 6 }, frames, classic).anim, 'horsewalk');
   assert.equal(shownMove({ ...doing, act: { anim: 'death', progress: 0.5 } }, frames, classic).anim, 'death');
@@ -198,7 +198,14 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
     [0, 0, 2, 3, 4, 5, 8, 8],
   );
   assert.equal(blow('down', 'sword_iron', null, 0.4).frame, 4);
-  assert.ok(likelyMoves('sword_iron', null, everything).includes('side1h'));
+  // A torch in the left is drawn in no blow: the guard's slash plays, as before the blows.
+  const unlit = (anim: string, held: string | null) => !(held === 'torch_l' && NEXT.test(anim));
+  const torchBlow = { ...doing, left: 'torch_l', blow: { direction: 'up', second: false, progress: 0 } } as const;
+  assert.equal(shownMove(torchBlow, frames, unlit).anim, 'slash');
+  // Every swing strikes a blow: the blows are composed ahead, the old strokes no longer.
+  const likely = likelyMoves('sword_iron', null, everything);
+  assert.ok(['over1h', 'side1h', 'thrust1h'].every((anim) => likely.includes(anim)));
+  assert.ok(!likely.includes('chop') && !likely.includes('attack_sword'));
 });
 
 test('a bow drawn stands, walks and sprints in its own holds; undrawn there, it rests in the left fist', () => {
@@ -215,4 +222,5 @@ test('a dodge rolls through its span, on the ground and in the air; with no roll
   assert.equal(shownMove({ ...dodging, mode: 'air', vz: 3 }, frames, everything).anim, 'roll');
   assert.equal(shownMove(dodging, frames, classic).anim, 'idle', 'on the ground, the hop stands');
   assert.equal(shownMove({ ...dodging, mode: 'air', vz: 3 }, frames, classic).anim, 'jump');
+  assert.equal(shownMove({ ...dodging, mounted: true }, frames, everything).anim, 'horseidle', 'mounted, the horse');
 });

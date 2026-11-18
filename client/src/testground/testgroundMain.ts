@@ -139,6 +139,9 @@ async function start(): Promise<void> {
   startAimPanel(element<HTMLElement>('#panel'), (place, held) => {
     [aimPlace, aimHeld] = [place, held];
   });
+  // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
+  const aimView = (shown: typeof player) =>
+    playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, COURSE, aimPlace);
   const panelState = (looks: ForgeLooks, hair: HairColours, line: string) => ({
     looks,
     hair,
@@ -230,9 +233,7 @@ async function start(): Promise<void> {
       (placed) => [placed.x, placed.y, placed.z] as const,
     );
     const aspect = canvas.width / Math.max(1, canvas.height);
-    const mark = aiming
-      ? crosshairPoint(playerCamera(player, movement, COURSE, aimPlace), aspect, COURSE, bodies)
-      : null;
+    const mark = aiming ? crosshairPoint(aimView(player), aspect, COURSE, bodies) : null;
     // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the
     // other is held is a fresh press.
     fight.press({
@@ -278,7 +279,7 @@ async function start(): Promise<void> {
     Object.assign(you, { x: body.x, y: body.y, facing: fighting ? own.aim : player.facing });
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
-    const camera = playerCamera(aimHeld ? { ...player, aim: 1 } : player, movement, COURSE, aimPlace);
+    const camera = aimView(player);
     const eye = eyeOf(camera);
 
     const drawn: CardAt[] = [];
@@ -506,7 +507,18 @@ async function start(): Promise<void> {
         anim: move.anim,
         frame: frameShown,
       });
-      forge.warm(kind.dress, ['idle', 'walk', 'run', 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death', 'jump']);
+      const [right, left] = kind.dress.outfit.drawn ? [kind.dress.outfit.right, kind.dress.outfit.left] : [null, null];
+      const draws = (anim: string, held: string | null) => forge.draws(kind.dress.body, anim, held);
+      // Its likeliest moves, the telegraphed blows' strokes and what a fight holds it to.
+      forge.warm(kind.dress, [
+        ...likelyMoves(right, left, draws),
+        'thrust',
+        'chop',
+        'swing2h',
+        'parry',
+        'hurt',
+        'death',
+      ]);
       const { view: side, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
       const card = forge.card(placed.id, kind.dress, move.anim, side, frameShown, flip);
       const flash = { share: flashes.shareOf(kept.id), red: false };

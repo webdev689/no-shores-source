@@ -158,18 +158,20 @@ def pull(strips):
 
 def merge_roll(looks, roll):
     """`roll`, a forge index of the dodge roll alone, laid into `looks`: each body's roll, and each layer's roll cell
-    and its place among the layer's moves, for the bodies in both."""
+    and its place among the layer's moves, for the bodies in both. Answers the bodies laid in."""
+    merged = []
     for name, own in roll['bodies'].items():
         body = looks['bodies'].get(name)
         if body is None:
             continue
-        body['anims'].update(own['anims'])
+        body.setdefault('anims', {}).update(own.get('anims', {}))
         for layer, cells in own.get('cells', {}).items():
-            body['cells'].setdefault(layer, {}).update(cells)
-        for layer, moves in own['layers'].items():
-            kept = body['layers'].setdefault(layer, [])
+            body.setdefault('cells', {}).setdefault(layer, {}).update(cells)
+        for layer, moves in own.get('layers', {}).items():
+            kept = body.setdefault('layers', {}).setdefault(layer, [])
             kept += [move for move in moves if move not in kept]
-    return looks
+        merged.append(name)
+    return merged
 
 
 def roll(folder):
@@ -180,17 +182,21 @@ def roll(folder):
         looks = json.load(file)
     with open(os.path.join(folder, 'forgeLooks.json')) as file:
         own = json.load(file)
+    merged = merge_roll(looks, own)
     with open(path, 'w') as file:
-        json.dump(merge_roll(looks, own), file, separators=(',', ':'))
+        json.dump(looks, file, separators=(',', ':'))
     laid = 0
-    for name in own['bodies']:
+    for name in merged:
         target = os.path.join(ART, 'studio', 'forge', 'layers', name)
         os.makedirs(target, exist_ok=True)
         for picture in os.listdir(os.path.join(folder, name)):
-            if picture.endswith('.png'):
+            # A strip and its depth twin, by the forge's names; anything else in the folder stays behind.
+            if picture.endswith(('_roll.png', '_roll_z.png')):
                 shutil.copyfile(os.path.join(folder, name, picture), os.path.join(target, picture))
                 laid += 1
-    print(f'{laid} roll strips laid in; the looks table has the roll')
+    skipped = sorted(set(own['bodies']) - set(merged))
+    print(f'{laid} roll strips laid in for {", ".join(merged)}; the looks table has the roll'
+          + (f'; no such body in the looks table: {", ".join(skipped)}' if skipped else ''))
 
 
 def main():
@@ -204,6 +210,8 @@ def main():
     elif args.command == 'add':
         add()
     elif args.command == 'roll':
+        if not args.folder:
+            parser.error("roll needs the folder DFO's forge drew the roll into")
         roll(args.folder)
     else:
         pull(args.strips)

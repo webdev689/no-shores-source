@@ -26,8 +26,9 @@ The [[Test Ground]] shows them.
   overhead, a side cut and a thrust in each of four holds: one hand, a haft, a long hilt and a pair), the bow's own
   hold, walk and sprint, casting, dying, climbing, riding, driving a wagon's bench and playing each instrument. Some
   moves turn the body by CC0 motion: Quaternius's libraries and KayKit's clips.
-- **The dodge roll**: drawn by DFO for Overlook, outside its own studio, on both adult bodies and everything worn; it
-  draws nothing held ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
+- **The dodge roll**: drawn by DFO for Overlook, outside its own studio, on both adult bodies and what they wear, but
+  no weapon, held or worn: a weapon is not seen through a roll
+  ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
 - **Views**: five, from the front round to the back. The other three are drawn mirrored.
 
 The first-person frames are pictures of their own: each weapon's idle and its six strokes, the bow's draw and loose,
