@@ -63,13 +63,8 @@ export class SeaRoom {
   private follow(): void {
     if (this.link.joins === this.joined) return;
     [this.joined, this.own, this.fresh] = [this.link.joins, this.link.player, true];
-    [this.tick, this.courseSentAt, this.waitingCourse, this.waitingFacing, this.leaveWaiting] = [
-      null,
-      null,
-      null,
-      false,
-      false,
-    ];
+    [this.tick, this.courseSentAt, this.waitingCourse] = [null, null, null];
+    [this.waitingFacing, this.leaveWaiting] = [false, false];
   }
 
   /** Whether the player joined the sea again since this was last asked, after its socket closed: their ship is to be

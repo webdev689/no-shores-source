@@ -97,11 +97,11 @@ on Cloudflare.
   An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn nearest where
   it died. A room with no section never judges.
 - **What it sees:** every player's fighter, where they stand with the section, and the number of their last input it
-  took; every foe; the shots in flight, each with the ticks it has flown, and every gun's ball fired since it was last
-  asked as its whole line from where it left to where it stopped, so every screen draws its tracer however many ticks
-  the room ran first; and what happened in the fight since it was last asked (a swing's blows with their stroke): hits,
-  blocks, parries,
-  guard breaks, dodges, staggers, deaths, players standing again, feints, foes arriving. The same on every machine.
+  took; every foe; the shots in flight, each with the ticks it has flown, and every gun's ball that stopped since it
+  was last asked as its last segment, to where it stopped, with the point it left its gun, so every screen ends its
+  tracer there however many ticks the room ran first; and what happened in the fight since it was last asked (a
+  swing's blows with their stroke): hits, blocks, parries, guard breaks, dodges, staggers, deaths, players standing
+  again, feints, foes arriving. The same on every machine.
 
 ## The sea
 
@@ -189,11 +189,11 @@ an older reader skips them.
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank, and whether they ask to respawn |
+| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the pirates' type in that role, a Major), and whether they ask to respawn |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading she faces at rest; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called (with her faction and rank; 0 for both is the pirates' Major) or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, role, type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching) and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every other ship (a pirate's or the Grey Tithe's, sailing or in a fight among captains): her number, position, heading, faction and rank; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
+| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, role, type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching) and a glance at its fighter; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and each ball that stopped since the last snapshot as its last segment with the point it left its gun; and at sea every ship: its player, position, heading and pace, 0 at rest; every other ship (a pirate's or the Grey Tithe's, sailing or in a fight among captains): her number, position, heading, faction and rank; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
 starboard), crab and climb; whether a look is laid, its bearing off her bow (degrees) and range (metres); whether it
@@ -210,7 +210,11 @@ struck, by whom, the point and the hull it took).
 
 The server reads an input or a course only after FlatBuffers' verifier passes its bytes, so bytes that are not one,
 controls that are not 7 numbers, or a course's numbers that are not pairs, are refused. The browser reads a message
-the room sent, and takes one it cannot read as nothing.
+the room sent, and takes one it cannot read as nothing; a captain an older room sends with no faction or rank reads as
+a Major of the pirates. The browser's messages never carry a number wrapped: one that names something past what its
+field holds (an input's or orders' number, the arms, a foe's type, a load, a call) is refused as it is written (a
+`RangeError`), and one the room takes within a range (a frame, the tick seen, a rank, the rudder, a rung, a look) is
+held within it.
 
 Looks and dresses are each player's own word, passed on and decided nothing about: a look goes out with the tick that
 takes its input, a dress once each time it changes, and every dress to whoever joins. The room refuses a move name
@@ -238,7 +242,7 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
-  room is gone learns so by its socket closing.
+  room is gone learns so by its socket closing, and joins again.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
   room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
@@ -249,6 +253,13 @@ so every decision is Rust and the shell only carries bytes and time.
 
 - `RoomConnection` joins a room, keeps its welcome's node, and sends each tick's controls, numbered, as the player
   plays, with a respawn when asked; at sea it sends the ship's course.
+- **Joining again.** When a room's socket closes, for a deploy or a dropped network, `RoomConnection` joins the room
+  again by itself: after 1 s, then 2, 4 and 8 s between tries, 15 s at most, and 1 s again once a join holds. The
+  page says "Reconnecting…" meanwhile, and nothing is sent. A rejoin is a new join: a new number, inputs numbered from
+  1 again, the player standing where the room puts them, their dress sent again and what their hands hold kept. The
+  [[Test Ground]], the [[Game]]'s node rooms and sea, and a fleet each follow it so; at sea, and in a fleet, the ship
+  puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009)
+  is not joined again, and the page says why.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
   with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
   rect the welcome names from the landmass open in the land's door and stands the movement rules on it, with the
@@ -264,10 +275,15 @@ so every decision is Rust and the shell only carries bytes and time.
 ## Running it
 
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`.
-  CI deploys it after each merge into `main`, once the same commit has passed the check, as it publishes the page
-  ([[The Rooms Deploy on Each Merge]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret, and
-  only while that commit is still `main`'s head. Without the secret it warns and deploys nothing. It runs by hand
-  from `main` too, and `npm run server:deploy` does the same from a machine that holds the token itself.
+  CI deploys it after a merge into `main`, once the same commit has passed the check, as it publishes the page
+  ([[The Rooms Deploy on Each Merge]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret, only
+  while that commit is still `main`'s head, and only when what the rooms are built from differs from the commit
+  they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content
+  they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A
+  merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms` environment, which the
+  next run compares with; with none found, it deploys. Without the secret it warns and deploys nothing. It runs by
+  hand from `main` too, deploying whatever changed, and `npm run server:deploy` does the same from a machine that
+  holds the token itself.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground played alone runs the same room in its own WebAssembly, ticked by the page.
 
@@ -275,10 +291,19 @@ Measured on the deployed rooms with two browsers in one room: 60.0 ticks a secon
 median, 59 ms at the 99th in a hundred and 84 ms at the most; the room taking a player's input about 4 ticks after it
 was sent; and every snapshot of a player matching that player's inputs replayed by the movement rules, to the bit.
 
+Played on the local runtime with two headless pages of the [[Test Ground]] in one room, foes of both factions and a
+Boss fighting them and each other (tested live, locally): both pages held the same foes, health, phases and
+alertness at every room tick they both kept, about 900 a run, and showed the same plates and boss bar. The room's
+word on each page's own fighter matched what the page had shown for that input for about 98% of inputs; the rest
+were blows that landed, deaths and stands again, and ticks the room stood a page still once its inputs fell a view's
+lag behind, as a headless page's slow frames do. Stopped mid-fight and started again, the runtime had both pages say
+"Reconnecting…" and join again by themselves, within one wait of its coming back.
+
 ## Limits
 
-- Each deploy starts every room afresh: whoever is in one is dropped, as when any room is lost, and joins again only by
-  coming back to it. A deployed node's window can lag the edits files until the next merge.
+- Each deploy starts every room afresh: whoever is in one is dropped and joins again by themselves as a new player,
+  where the room stands them; their place, a fight and its foes are lost. A deployed node's window can lag the edits
+  files until the next merge.
 - A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
 - Any page can join a room, under any name; no one signs in.

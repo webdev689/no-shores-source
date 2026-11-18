@@ -167,15 +167,21 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   it with the figure's look, the dress when it changed and a respawn when asked; the player is predicted on the same
   ground and corrected by each snapshot, held still while the room says they are dead. The warning, the count and
   death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
-  A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
+  A room whose socket closes, for a deploy or a dropped network, is joined again by itself ([[Server]], "The
+  browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
+  joined again, they are a new player there, standing where the room puts them, their dress sent again. A room that
+  sends the player away is lost: the display says so and they play on alone.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
   is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at
   the pace the room last held her to, then draws her to where the room has her. Where the room has her at rest short
   of her voyage's end, a course it would not take, the page heaves her to there. Leaving the helm while a course
-  waits its turn sends the course first, then the leave, so the room takes the course from the helm. A sea room
-  whose link is lost calls the player to the helm, and they sail on alone, the voyage's line saying so. Playing
-  alone, the same sea room runs in the page, so its pirates and fights are the same law.
+  waits its turn sends the course first, then the leave, so the room takes the course from the helm. While the sea
+  room is joined again after its socket closed, the page sails her alone and shows none of its ships, a fight in it
+  over, and the voyage's line says "Reconnecting…"; joined again, the player is called to the helm and she puts to sea
+  where she lies, on her voyage. A sea room that sends the player away is lost: they are called to the helm and sail
+  on alone, the voyage's line saying so. Playing alone, the same sea room runs in the page, so its pirates and
+  fights are the same law.
 
 ## Drawing
 
