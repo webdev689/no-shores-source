@@ -54,7 +54,8 @@ fn a_crossbowman_with_a_wall_near_takes_the_covered_spot_with_a_line_not_the_ope
     let mut open = Room::new(5).player(PLAYER, 0.0, 0.0, 0.0).foe(10, CROSSBOWMAN, Major, 0.0, -15.0, PI);
     open.blocks = vec![wall()];
     open.run(900, &mut watching(10));
-    assert!(open.distance(PLAYER, 10) > 14.5, "with no spots it shoots from where it stands, in the open");
+    // Noticing the player, it walks a step or so toward it before it is alert; then it shoots from there.
+    assert!(open.distance(PLAYER, 10) > 13.5, "with no spots it shoots from where it stands, in the open");
     let mut room = crossbowman_by_the_wall(5);
     let (mut hidden, mut far_from_wall) = (0, 0.0_f64);
     for tick in 0..900 {
@@ -173,10 +174,11 @@ fn walls_north() -> Vec<Block> {
         .collect()
 }
 
-/// How far from the player a shooter of a type fights, on average, from a start 15 m north of it among walls.
+/// How far from the player a shooter of a type fights, on average, among walls. It starts 16.5 m north of the player
+/// and, suspicious, walks a step or so toward it before it is alert, so it picks its post from about 15 m.
 fn stands_at(number: u8, rank: foes::Rank) -> f64 {
     let mut room =
-        Room::new(4).course(walls_north()).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -15.0, PI);
+        Room::new(4).course(walls_north()).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -16.5, PI);
     let mut sum = 0.0;
     for tick in 0..1200 {
         room.step(&mut watching(10));
