@@ -48,7 +48,18 @@ pub fn foes() -> Vec<FoeSeen> {
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
-    vec![FoeSeen { foe: 12, kind: 3, foe_type: 15, rank: 3, faction: 2, phase: 1, alert: 2, fighter: brute }]
+    vec![FoeSeen {
+        foe: 12,
+        kind: 3,
+        foe_type: 15,
+        rank: 3,
+        faction: 2,
+        phase: 1,
+        alert: 2,
+        fighter: brute,
+        level: 7,
+        shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
+    }]
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -173,8 +184,10 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         dress: Some("dressed".to_owned()),
         arms: Arms { melee: WeaponClass::Dagger, ranged: None, off_hand: OffHand::Shield }.code(),
         seen: 977,
-        spawn: Some(SpawnAsk::Foe { foe_type: 12, rank: 5 }),
+        spawn: Some(SpawnAsk::Foe { foe_type: 12, rank: 5, shield: 2 }),
         respawn: true,
+        ask: Some(room::Asked::Gear(gear::Ask::Feed { item: 4 })),
+        spawn_level: 12,
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
     let clearing = Input { spawn: Some(SpawnAsk::Clear), ..input(2, Controls::default()) };
@@ -200,11 +213,14 @@ fn a_foe_asked_for_by_its_role_alone_is_the_pirates_type_in_that_role() {
         builder.finish(message, None);
         read_input(builder.finished_data()).unwrap().spawn
     };
-    let foe = |foe_type, rank| Some(SpawnAsk::Foe { foe_type, rank });
+    let foe = |foe_type, rank| Some(SpawnAsk::Foe { foe_type, rank, shield: 0 });
     // The pirates' Skirmisher to their Brute and Archer as Majors; their Captain at his first rank, an Elite.
     let roles: Vec<_> = (1..=5).map(asked).collect();
     assert_eq!(roles, [foe(13, 2), foe(14, 2), foe(15, 2), foe(16, 2), foe(17, 3)]);
     assert_eq!((asked(0), asked(6), asked(CLEAR_FOES)), (None, None, Some(SpawnAsk::Clear)));
+    // A shield's element rides above the role's four bits.
+    let shielded = Some(SpawnAsk::Foe { foe_type: 14, rank: 2, shield: 3 });
+    assert_eq!(asked(2 | (3 << room::SHIELD_SHIFT)), shielded);
 }
 
 #[test]
@@ -261,7 +277,13 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
         .players()
         .unwrap()
         .iter()
-        .map(|seen| Fighter::from_floats(&seen.fighter().unwrap().iter().collect::<Vec<f64>>().try_into().unwrap()))
+        .map(|seen| {
+            // A snapshot's fighter leaves out its trim: put back the plain one each test player wears.
+            let mut floats: Vec<f64> = seen.fighter().unwrap().iter().collect();
+            assert_eq!(floats.len(), crate::UNTRIMMED_FLOATS);
+            floats.extend(combat::Trim::PLAIN.to_floats());
+            Fighter::from_floats(&floats.try_into().unwrap())
+        })
         .collect();
     assert_eq!(fighters, players.iter().map(|seen| seen.fighter).collect::<Vec<_>>());
     let bodies: Vec<_> = read
@@ -280,6 +302,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((foe.id(), foe.kind(), glance), (12, 3, foes[0].fighter.glance()));
     let named = (foe.type_(), foe.rank(), foe.faction(), foe.phase(), foe.alert());
     assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
+    assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

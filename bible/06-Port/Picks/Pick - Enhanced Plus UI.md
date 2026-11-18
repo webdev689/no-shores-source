@@ -14,7 +14,9 @@ dfo_paths:
   - src/ui/nameCone.js
   - src/ui/hitNumbers.js
   - src/ui/naval/navalHud.js
-dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the health bars fc2a8e6, on the same branch
+  - src/ui/profileBadge.js
+dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the health bars fc2a8e6, on the same branch; the profile mark read
+  at 1c0fd681 (main)
 ---
 # Pick - Enhanced Plus UI
 
@@ -51,5 +53,7 @@ owner approved it: asked whether to record it as an approved pick, "yes".
 The style kit and its frame are the [[Interface]]'s roles, and the [[Game]]'s heads-up display wears them
 ([[The Ship Is Managed and Walked From the Sea's Panel]]). The health bars are ported: the vitals, the target plate
 and the boss bar, the plates over foes and ships' plates do what Enhanced Plus does with them ([[Interface]],
-[[Enemies]], [[Plates Stay Light and Bars Do What Enhanced Plus Does]]). The themes, the pad, the touch layer and the
+[[Enemies]], [[Plates Stay Light and Bars Do What Enhanced Plus Does]]). The main menu's profile mark
+(`profileBadge.js` and its style in `enhancedStyle.js`) is the menu's account mark, in its top line
+([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]). The themes, the pad, the touch layer and the
 windows have not come over.

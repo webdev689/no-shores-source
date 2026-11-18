@@ -1,0 +1,142 @@
+/* The menu's own pages (client/src/game/menuPages.ts and stationPages.ts) and its tabs still to come; the Roster has
+   its own sheet (roster.css).
+   The gear screen's sheet gives the words, wells and headings they share. */
+
+/* A tab still to come reads as resting, Later under its name. */
+#hud .gear-tab.gear-tab-to-come:not(.gear-chosen) {
+  color: var(--faint);
+}
+.gear-tab-later {
+  margin-left: 6px;
+  font-size: var(--type-xs);
+  color: var(--brass);
+  letter-spacing: round(up, calc(1em / 22), 1px);
+  text-transform: none;
+}
+/* A station's name stands where the tabs do. */
+.gear-station-name {
+  margin: 0;
+  font-size: var(--type-l);
+  font-weight: 500;
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--brass-lit);
+  text-align: center;
+  line-height: 48px;
+}
+.gear-station-name[hidden],
+.gear-tabs-top[hidden] {
+  display: none;
+}
+
+/* A page of the menu: a panel set back from the window's edges. */
+.gear-later,
+.gear-ship,
+.gear-settings {
+  max-width: 640px;
+  margin: 24px auto;
+  padding: 18px 22px;
+}
+.gear-later-name,
+.gear-ship-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 10px;
+  font-size: var(--type-l);
+  font-weight: 500;
+}
+.gear-ship-part + .gear-ship-part {
+  margin-top: 14px;
+}
+.gear-ship-part .gear-heading,
+.gear-vault-shelf .gear-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.gear-ship-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.gear-ship-row b {
+  font-weight: 500;
+}
+
+/* The vault, after Destiny 1's: what it keeps beside what the player carries, each in weapons, armour and Vestiges. */
+.gear-vault {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 14px 18px;
+}
+.gear-vault-side {
+  padding: 14px 16px;
+  min-width: 0;
+}
+.gear-vault-title {
+  margin: 0 0 11px;
+  font-size: var(--type-l);
+  font-weight: 500;
+  letter-spacing: round(up, calc(1em / 22), 1px);
+  text-transform: none;
+  color: var(--brass-lit);
+}
+.gear-vault-shelf + .gear-vault-shelf {
+  margin-top: 12px;
+}
+.gear-vault-shelf .gear-empty {
+  margin: 4px 0;
+  text-align: left;
+  font-size: var(--type-s);
+}
+
+/* The players blocked, under the account: a name and its press on each line. */
+.gear-blocked {
+  margin-top: 18px;
+}
+.gear-blocked-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+
+/* The interface's volume, under the account: its name, a slider in brass and the level it stands at. */
+.gear-sound {
+  margin-top: 18px;
+}
+.gear-sound-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#hud .gear-volume {
+  flex: 1;
+  max-width: 260px;
+  accent-color: var(--brass-lit);
+  pointer-events: auto;
+}
+.gear-sound-row b {
+  min-width: 4ch;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* The recorded sounds' credits, small under the volume, each link in brass. */
+.gear-sound-credits {
+  margin-top: 12px;
+}
+.gear-credits {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--faint);
+}
+.gear-credits li {
+  margin: 2px 0;
+}
+#hud .gear-credits a {
+  color: var(--brass-lit);
+  pointer-events: auto;
+}

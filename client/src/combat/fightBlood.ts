@@ -132,7 +132,7 @@ export class FightBlood {
     const fighters = this.fighters(fight);
     for (const event of events) {
       const defender = fighters.get(event.defender)?.view;
-      if (event.kind !== EVENT.hit || !defender) continue;
+      if (event.kind !== EVENT.hit || event.amount <= 0 || !defender) continue;
       const striker = fighters.get(event.striker)?.view;
       const player = striker?.side === 'players';
       const heavy = player && (striker.arms & 0xff) === WARHAMMER;

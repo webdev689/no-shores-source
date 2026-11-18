@@ -1,0 +1,319 @@
+// The interface's sounds: a tick as the pointer or the keys reach a control, a press, a tab turned, the menu opened and
+// shut, a hold's build-up until it acts, an item dismantled or fed, a gain's chime by its rarity, and a refusal.
+// The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), or one the browser's own
+// synthesiser makes here, which also stands in while a recording loads. One listener hears every press, as DFO's
+// click does, and plays the press only where no sound of its own already played. The volume is the player's, kept in
+// this browser.
+
+import { loadSamples, playSample } from './soundSamples.ts';
+
+/** The sounds the interface makes. */
+export type Cue = 'hover' | 'press' | 'tab' | 'open' | 'close' | 'back' | 'dismantle' | 'feed' | 'refused';
+
+/** Where the player's volume is kept, 0 to 1. */
+const VOLUME_KEY = 'overlook.interfaceVolume';
+const VOLUME_FIRST = 0.6;
+/** How loud the whole interface stands at full volume, under the game's own sounds. */
+const LEVEL = 0.35;
+/** The least time between two ticks, so a sweep across a grid is a patter, not a buzz. */
+const TICK_MS = 45;
+/** How far a tick's or a press's pitch strays, either way, as a share of it. */
+const STRAY = 0.06;
+/** The cues played from a recording the owner picked, by its place in content/audio/sounds.json. */
+const RECORDED: Partial<Record<Cue, string>> = {
+  hover: 'ui.hover',
+  press: 'ui.press',
+  back: 'ui.back',
+  open: 'ui.open',
+  dismantle: 'hold.dismantle',
+  feed: 'hold.feed',
+};
+/** What a press is: buttons and what acts like them. */
+const PRESSABLE = 'button, a[href], summary, select, [role="button"], [role="tab"], input[type="checkbox"]';
+/** What a tick is heard on, reached by the pointer. */
+const TICKED = `${PRESSABLE}, .gear-cell, .gear-material`;
+
+let context: AudioContext | null = null;
+let master: GainNode | null = null;
+let noise: AudioBuffer | null = null;
+/** Two seconds of pink noise, softer at the top than white, the stuff of a hold's air. */
+let air: AudioBuffer | null = null;
+/** When the last sound played, so a press that already sounded sounds once. */
+let lastCueAt = -Infinity;
+let lastTickAt = -Infinity;
+
+/** The player's volume, 0 to 1. */
+export function interfaceVolume(): number {
+  try {
+    const kept = Number(localStorage.getItem(VOLUME_KEY) ?? VOLUME_FIRST);
+    return Number.isFinite(kept) ? Math.min(1, Math.max(0, kept)) : VOLUME_FIRST;
+  } catch {
+    return VOLUME_FIRST;
+  }
+}
+
+export function setInterfaceVolume(volume: number): void {
+  const kept = Math.min(1, Math.max(0, volume));
+  try {
+    localStorage.setItem(VOLUME_KEY, String(kept));
+  } catch {
+    // A browser that keeps nothing still hears the change until the page closes.
+  }
+  if (master) master.gain.value = kept * LEVEL;
+}
+
+/** The synthesiser, woken by the player's first press or key, as a browser lets sound start only then. */
+function wake(): void {
+  if (context || typeof AudioContext === 'undefined') return;
+  context = new AudioContext();
+  master = context.createGain();
+  master.gain.value = interfaceVolume() * LEVEL;
+  master.connect(context.destination);
+  loadSamples(context);
+  // A second of white noise, the stuff of every crunch and swish.
+  noise = context.createBuffer(1, context.sampleRate, context.sampleRate);
+  const samples = noise.getChannelData(0);
+  for (let index = 0; index < samples.length; index++) samples[index] = Math.random() * 2 - 1;
+  air = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+  const airy = air.getChannelData(0);
+  // White noise filtered to fall away by its pitch, as pink noise does.
+  let [slow, middle, quick] = [0, 0, 0];
+  for (let index = 0; index < airy.length; index++) {
+    const white = Math.random() * 2 - 1;
+    slow = 0.99765 * slow + white * 0.099;
+    middle = 0.963 * middle + white * 0.2965;
+    quick = 0.57 * quick + white * 1.0526;
+    airy[index] = (slow + middle + quick + white * 0.1848) * 0.2;
+  }
+}
+
+/** The synthesiser, if it is awake and may sound now. */
+function live(): { readonly audio: AudioContext; readonly out: GainNode; readonly when: number } | null {
+  if (!context || !master || interfaceVolume() === 0) return null;
+  if (context.state === 'suspended') void context.resume();
+  return { audio: context, out: master, when: context.currentTime + 0.005 };
+}
+
+/** An envelope: up to `peak` at once, down to silence over `length` seconds. */
+function envelope(audio: AudioContext, out: AudioNode, when: number, peak: number, length: number): GainNode {
+  const gain = audio.createGain();
+  gain.gain.setValueAtTime(0.0001, when);
+  gain.gain.exponentialRampToValueAtTime(peak, when + 0.004);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+  gain.connect(out);
+  return gain;
+}
+
+/** A tone gliding from one pitch to another over its length. */
+function tone(type: OscillatorType, [from, to]: readonly [number, number], peak: number, length: number, delay = 0) {
+  const now = live();
+  if (!now) return;
+  const when = now.when + delay;
+  const voice = now.audio.createOscillator();
+  voice.type = type;
+  voice.frequency.setValueAtTime(from, when);
+  voice.frequency.exponentialRampToValueAtTime(to, when + length);
+  voice.connect(envelope(now.audio, now.out, when, peak, length));
+  voice.start(when);
+  voice.stop(when + length + 0.02);
+}
+
+/** Noise through a band that slides from one pitch to another: a swish, or a crunch when low and loud. */
+function rush([from, to]: readonly [number, number], peak: number, length: number, width = 1.2, delay = 0) {
+  const now = live();
+  if (!now || !noise) return;
+  const when = now.when + delay;
+  const source = now.audio.createBufferSource();
+  source.buffer = noise;
+  const band = now.audio.createBiquadFilter();
+  band.type = 'bandpass';
+  band.Q.value = width;
+  band.frequency.setValueAtTime(from, when);
+  band.frequency.exponentialRampToValueAtTime(to, when + length);
+  source.connect(band).connect(envelope(now.audio, now.out, when, peak, length));
+  source.start(when, Math.random() * 0.5);
+  source.stop(when + length + 0.02);
+}
+
+/** Plays a cue of the interface. */
+export function play(cue: Cue): void {
+  wake();
+  lastCueAt = performance.now();
+  // The sounds heard most stray a little in pitch, so a run of them never drones.
+  const stray = 1 + (Math.random() - 0.5) * STRAY;
+  const now = live();
+  const recorded = RECORDED[cue];
+  const often = cue === 'hover' || cue === 'press' || cue === 'back';
+  if (now && recorded && playSample(now.audio, now.out, recorded, often ? stray : 1)) return;
+  switch (cue) {
+    case 'hover':
+      return tone('sine', [2100 * stray, 1700 * stray], 0.05, 0.03);
+    case 'press':
+      tone('triangle', [950 * stray, 620 * stray], 0.22, 0.06);
+      return rush([3000, 1800], 0.08, 0.025, 2);
+    case 'back':
+      return tone('triangle', [700 * stray, 430 * stray], 0.2, 0.07);
+    case 'tab':
+      rush([700, 2600], 0.16, 0.12, 1.4);
+      return tone('sine', [1300, 1100], 0.06, 0.05, 0.05);
+    case 'open':
+      tone('sine', [330, 660], 0.16, 0.2);
+      return rush([400, 2000], 0.07, 0.22, 0.8);
+    case 'close':
+      tone('sine', [620, 310], 0.14, 0.18);
+      return rush([1800, 400], 0.06, 0.18, 0.8);
+    case 'dismantle':
+      rush([1600, 220], 0.7, 0.28, 0.9);
+      rush([4200, 2400], 0.2, 0.12, 3, 0.02);
+      return tone('sine', [140, 45], 0.5, 0.2);
+    case 'feed':
+      tone('sine', [523, 523], 0.18, 0.5);
+      return tone('sine', [784, 784], 0.14, 0.6, 0.07);
+    case 'refused':
+      tone('square', [118, 112], 0.08, 0.09);
+      return tone('square', [118, 112], 0.08, 0.09, 0.12);
+  }
+}
+
+/** A brass bell: a sine rung by another at 1.4 times its pitch, the ring fading faster than the note, over a soft
+ *  octave below for its body. */
+function bell(pitch: number, peak: number, length: number, delay = 0) {
+  const now = live();
+  if (!now) return;
+  const when = now.when + delay;
+  const sound = (freq: number, share: number, rings: number, struck: boolean) => {
+    const voice = now.audio.createOscillator();
+    voice.frequency.setValueAtTime(freq, when);
+    if (struck) {
+      const striker = now.audio.createOscillator();
+      striker.frequency.setValueAtTime(freq * 1.4, when);
+      const depth = now.audio.createGain();
+      depth.gain.setValueAtTime(freq * 2.2, when);
+      depth.gain.exponentialRampToValueAtTime(freq * 0.05, when + rings * 0.6);
+      striker.connect(depth).connect(voice.frequency);
+      striker.start(when);
+      striker.stop(when + rings + 0.05);
+    }
+    voice.connect(envelope(now.audio, now.out, when, peak * share, rings));
+    voice.start(when);
+    voice.stop(when + rings + 0.05);
+  };
+  sound(pitch, 1, length, true);
+  sound(pitch / 2, 0.25, length * 0.8, false);
+}
+
+/** A chord swelling in and out, its notes each a little apart in pitch so it shimmers. */
+function held(pitches: readonly number[], peak: number, length: number, delay: number) {
+  const now = live();
+  if (!now) return;
+  const when = now.when + delay;
+  for (const pitch of pitches)
+    for (const cents of [-6, 6]) {
+      const voice = now.audio.createOscillator();
+      voice.frequency.setValueAtTime(pitch * 2 ** (cents / 1200), when);
+      const gain = now.audio.createGain();
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.exponentialRampToValueAtTime(peak / pitches.length, when + length * 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
+      voice.connect(gain).connect(now.out);
+      voice.start(when);
+      voice.stop(when + length + 0.05);
+    }
+}
+
+/** The gains' bells are pitched from A5, a step at a time in semitones. */
+const BELL = 880;
+const fromBell = (steps: readonly number[]) => steps.map((semitones) => BELL * 2 ** (semitones / 12));
+/** A Legendary gain's glints, as dust catching the light: each a multiple of the bell an octave up. */
+const GLINTS = [2, 3, 2.5, 4, 3.5, 2, 3, 2.5];
+/** A gain's chime, the Brass bells the owner picked: one voice at three sizes, a single bell for a Normal or Magic gain,
+ *  a rising run for a Rare, and for a Legendary or Atheric a longer run over a held, shimmering chord and its glints. */
+export function chime(rarity: number): void {
+  wake();
+  lastCueAt = performance.now();
+  if (rarity <= 1) return bell(BELL, 0.22, 0.45);
+  if (rarity === 2) return fromBell([0, 4, 7]).forEach((pitch, nth) => bell(pitch, 0.2, 0.7, nth * 0.075));
+  fromBell([0, 4, 7, 12, 16]).forEach((pitch, nth) => bell(pitch, 0.18, 0.9, nth * 0.065));
+  held(fromBell([-12, -5, 0, 4]), 0.12, 1.6, 0.2);
+  GLINTS.forEach((step, nth) => {
+    const pitch = BELL * 2 * step;
+    tone('sine', [pitch, pitch], 0.05 * (1 - nth / 10), 0.12, 0.35 + nth * 0.045 + (nth % 3) * 0.012);
+  });
+}
+
+/** A hold's build-up, the Shimmer the owner picked: high, thin air swelling over `holdMs` as it is held, glinting
+ *  faster as it nears its end, then gone; the stop it returns lets it fall away at once, let go early. */
+export function charge(holdMs: number): () => void {
+  wake();
+  lastCueAt = performance.now();
+  const now = live();
+  if (!now || !air) return () => undefined;
+  const seconds = holdMs / 1000;
+  const source = now.audio.createBufferSource();
+  source.buffer = air;
+  source.loop = true;
+  const high = now.audio.createBiquadFilter();
+  high.type = 'highpass';
+  high.frequency.setValueAtTime(3000, now.when);
+  high.frequency.exponentialRampToValueAtTime(6000, now.when + seconds);
+  // Its loudness flutters, quickening from seven times a second to fourteen.
+  const flutter = now.audio.createOscillator();
+  flutter.frequency.setValueAtTime(7, now.when);
+  flutter.frequency.linearRampToValueAtTime(14, now.when + seconds);
+  const depth = now.audio.createGain();
+  depth.gain.value = 0.35;
+  const glint = now.audio.createGain();
+  flutter.connect(depth).connect(glint.gain);
+  const gain = now.audio.createGain();
+  gain.gain.setValueAtTime(0.0001, now.when);
+  gain.gain.exponentialRampToValueAtTime(0.31, now.when + seconds);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now.when + seconds + 0.08);
+  source.connect(high).connect(glint).connect(gain).connect(now.out);
+  for (const voice of [source, flutter]) {
+    voice.start(now.when);
+    voice.stop(now.when + seconds + 0.1);
+  }
+  return () => {
+    lastCueAt = performance.now();
+    const when = now.audio.currentTime;
+    gain.gain.cancelScheduledValues(when);
+    gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), when);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
+    for (const voice of [source, flutter]) voice.stop(when + 0.05);
+  };
+}
+
+/** Hears every press and every control reached in `root`, and plays its tick or its press. */
+export function installInterfaceSounds(root: HTMLElement): void {
+  let gestureAt = -Infinity;
+  let keyed = false;
+  let over: Element | null = null;
+  addEventListener('pointerdown', () => ((gestureAt = performance.now()), (keyed = false), wake()), true);
+  addEventListener('keydown', () => ((keyed = true), wake()), true);
+  // After the press's own handlers, so a press that made its own sound makes no other.
+  addEventListener(
+    'click',
+    (event) => {
+      const target = event.target instanceof Element ? event.target.closest(PRESSABLE) : null;
+      if (!target || !root.contains(target) || target.matches(':disabled, [aria-disabled="true"]')) return;
+      const when = event.detail > 0 ? gestureAt : performance.now();
+      window.setTimeout(() => lastCueAt < when && play(target.getAttribute('role') === 'tab' ? 'tab' : 'press'), 0);
+    },
+    true,
+  );
+  const tick = (target: Element | null) => {
+    if (!target || target === over) return;
+    over = target;
+    const now = performance.now();
+    if (now - lastTickAt < TICK_MS || target.matches('.gear-vacant')) return;
+    lastTickAt = now;
+    play('hover');
+  };
+  root.addEventListener('pointerover', (event) => {
+    if (event.pointerType !== 'mouse') return;
+    tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
+  });
+  root.addEventListener('focusin', (event) => {
+    if (keyed) tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
+  });
+}

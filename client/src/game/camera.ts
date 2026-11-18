@@ -108,8 +108,9 @@ export function onScreen(
   return [((across + 1) / 2) * size.width, ((1 - upward) / 2) * size.height];
 }
 
-/** The shot a player's orbit camera takes (its eye back from its target along its look), held `clearance` over the
- *  ground under the eye where the ground is known, so a camera pulled back up a slope never looks out from under it. */
+/** The shot a player's orbit camera takes (its eye back from its target along its look, its lens narrowed by the
+ *  orbit's zoom), held `clearance` over the ground under the eye where the ground is known, so a camera pulled back up
+ *  a slope never looks out from under it. */
 export function shotOfOrbit(
   orbit: {
     readonly targetX: number;
@@ -118,6 +119,7 @@ export function shotOfOrbit(
     readonly yaw: number;
     readonly pitch: number;
     readonly distance: number;
+    readonly zoom?: number;
   },
   lens: { readonly fov: number; readonly near: number; readonly far: number },
   groundAt: (x: number, y: number) => number | null,
@@ -131,7 +133,8 @@ export function shotOfOrbit(
   ];
   const ground = groundAt(eye[0], eye[1]);
   if (ground !== null && eye[2] < ground + clearance) eye[2] = ground + clearance;
-  return { eye, yaw: orbit.yaw, pitch: orbit.pitch, ...lens };
+  const fov = 2 * Math.atan(Math.tan(lens.fov / 2) / (orbit.zoom ?? 1));
+  return { eye, yaw: orbit.yaw, pitch: orbit.pitch, ...lens, fov };
 }
 
 /** The look of a forward vector (east, south, up) as a bearing and a pitch below the horizon. */

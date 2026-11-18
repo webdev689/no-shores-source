@@ -14,7 +14,7 @@ const SKIRMISHER: u8 = 13;
 
 /// An ask for a Major of the type numbered `number`.
 fn major(number: u8) -> Option<SpawnAsk> {
-    Some(SpawnAsk::Foe { foe_type: number, rank: 2 })
+    Some(SpawnAsk::Foe { foe_type: number, rank: 2, shield: 0 })
 }
 
 const CLEAR: Option<SpawnAsk> = Some(SpawnAsk::Clear);
@@ -134,7 +134,8 @@ fn turns_at(dominating: bool) -> (usize, f64, f64) {
             let (fighter, brain) =
                 ::foes::spawn(brute, ::foes::Rank::Major, x, y, combat::sight::bearing([x, y], [0.0, 0.0]));
             let id = room.next_id();
-            room.foes.insert(id, Foe { fighter, brain, caller: None });
+            room.foes
+                .insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
             id
         })
         .collect();
@@ -154,8 +155,11 @@ fn turns_at(dominating: bool) -> (usize, f64, f64) {
                 parryable: true,
                 blockable: true,
                 knocks_down: false,
+                through: 1.0,
+                stagger: 1.0,
+                element: 0,
             };
-            room.settle(&blow, How::Swing, brute, Verdict::Hit { damage: 25.0, poise: 0.0 });
+            room.settle(&blow, How::Swing, brute, Verdict::Hit { damage: 25.0, poise: 0.0 }, None);
             room.foes.get_mut(&brute).unwrap().fighter.health = room.foes[&brute].fighter.health_max;
         }
         let whole = room.players[&player].fighter.health_max;
@@ -237,7 +241,7 @@ fn put(room: &mut Room, x: f64, y: f64, facing: f64) -> FighterId {
     let (fighter, brain) =
         ::foes::spawn(::foes::foe_type(SWORDSMAN).expect("a type"), ::foes::Rank::Major, x, y, facing);
     let id = room.next_id();
-    room.foes.insert(id, Foe { fighter, brain, caller: None });
+    room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
@@ -271,6 +275,8 @@ fn a_players_gunshot_alerts_a_foe_across_the_room_whose_shout_wakes_its_ally() {
     let near = put(&mut room, 0.0, 15.0, PI);
     let ally = put(&mut room, 0.0, 25.0, PI);
     let far = put(&mut room, 0.0, 40.0, PI);
+    // A player holds only what their gear puts in their hands.
+    crate::power::hold(&mut room, player, gear::Kind::Pistolet);
     let pistolet = combat::Arms { ranged: Some(combat::Ranged::Pistolet), ..combat::arms::BARE_HANDS }.code();
     let shoot = Intent { combat: CombatInput { shoot: true, ..CombatInput::default() }, ..Intent::default() };
     room.input(player, Input { sequence: 1, intent: shoot, arms: pistolet, seen: 0, ..Input::default() }).unwrap();
@@ -289,7 +295,7 @@ fn a_bosss_crew_comes_alert_to_the_foe_it_fights() {
     let player = room.join().expect("a room with space");
     let (fighter, brain) = ::foes::spawn(::foes::foe_type(12).expect("the Boss"), ::foes::Rank::Boss, 0.0, -2.5, PI);
     let boss = room.next_id();
-    room.foes.insert(boss, Foe { fighter, brain, caller: None });
+    room.foes.insert(boss, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     for sequence in 1..=400 {
         if sequence == 30 {
             let found = room.foes.get_mut(&boss).unwrap();
@@ -325,7 +331,7 @@ fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
             ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], PI);
         let id = room.next_id();
         ::foes::notice(&mut brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
-        room.foes.insert(id, Foe { fighter, brain, caller: None });
+        room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
         let reached = (0..60 * 30).any(|_| {
             room.tick();
             let body = room.foes[&id].fighter.body;
@@ -344,7 +350,7 @@ fn a_foe_walks_on_off_its_navmesh_to_a_player_standing_past_its_edge_and_strikes
     let (fighter, brain) =
         ::foes::spawn(::foes::foe_type(SWORDSMAN).unwrap(), ::foes::Rank::Minor, 22.0, 0.0, FRAC_PI_2);
     let foe = room.next_id();
-    room.foes.insert(foe, Foe { fighter, brain, caller: None });
+    room.foes.insert(foe, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     let (mut closest, mut struck) = (f64::MAX, false);
     for sequence in 1..=600 {
         let input = asking(&room, sequence, None, Controls { yaw: -FRAC_PI_2, ..Controls::default() });
@@ -370,7 +376,7 @@ fn a_foe_sent_to_a_place_atop_a_wall_it_cannot_climb_goes_round_to_its_foot_rath
         ::foes::spawn(::foes::foe_type(BRUTE).unwrap(), ::foes::Rank::Major, start[0], start[1], -FRAC_PI_2);
     let id = room.next_id();
     ::foes::notice(&mut brain, id, &::foes::Seen::Shouted { from: start, at: place }, 0);
-    room.foes.insert(id, Foe { fighter, brain, caller: None });
+    room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     let reached = (0..60 * 20).any(|_| {
         room.tick();
         let body = room.foes[&id].fighter.body;
@@ -386,7 +392,7 @@ fn a_telegraphed_blow_a_leaving_player_ends_still_tells_its_foe_whether_it_lande
     let enforcer = ::foes::foe_type(4).expect("the Enforcer");
     let (fighter, brain) = ::foes::spawn(enforcer, ::foes::Rank::Elite, 0.0, -2.5, PI);
     let foe = room.next_id();
-    room.foes.insert(foe, Foe { fighter, brain, caller: None });
+    room.foes.insert(foe, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     // The one who stays sees each tick at once; the one who leaves lags, so the blow waits on them alone.
     let waits_on_leaver = |room: &Room| {
         room.groups.values().any(|group| group.foe == foe && group.found && group.waiting == 1)
@@ -427,7 +433,7 @@ fn turns_back(bearings: &[f64]) -> usize {
 fn a_foe_walled_off_by_a_guard_that_turns_with_it_steps_round_one_way_rather_than_shake() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let minor = Some(SpawnAsk::Foe { foe_type: SWORDSMAN, rank: 1 });
+    let minor = Some(SpawnAsk::Foe { foe_type: SWORDSMAN, rank: 1, shield: 0 });
     room.input(player, asking(&room, 1, minor, Controls::default())).unwrap();
     room.tick();
     let foe = room.foes_seen().next().unwrap().foe;

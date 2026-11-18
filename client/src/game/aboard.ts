@@ -6,7 +6,7 @@ import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { type Dress, plainDress } from '../player/dressing.ts';
 import { cardStand, frameAt, viewOf } from '../player/figures.ts';
-import type { InputFrame } from '../player/input.ts';
+import { IDLE, type InputFrame } from '../player/input.ts';
 import { playerCamera } from '../player/player.ts';
 import type { Walker } from '../player/walker.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
@@ -15,7 +15,6 @@ import { smooth01 } from '../overworld/overworldCamera.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { Crew } from './crew.ts';
 import { type DeckRoom, DeckWalk } from './deckWalk.ts';
-import { IDLE } from './foot.ts';
 
 /** Seconds the view takes to come down aboard, or go back up. */
 const PAN_S = 1.4;

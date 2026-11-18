@@ -6,6 +6,7 @@ use super::*;
 use combat::arms::{OffHand, Ranged, Stroke, WeaponClass};
 use combat::{CombatInput, Intent};
 use movement::Controls;
+use std::collections::BTreeMap;
 
 const FISTS: u32 = 0;
 const WARHAMMER: u32 = 6;
@@ -23,7 +24,8 @@ fn stand(room: &mut Room, number: u8, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
     let foe_type = ::foes::foe_type(number).expect("a type of the roster");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, core::f64::consts::PI);
-    room.foes.insert(id, foes::Foe { fighter, brain, caller: None });
+    room.foes
+        .insert(id, foes::Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
@@ -64,6 +66,7 @@ fn a_player_who_stops_sending_mid_dodge_does_not_stay_in_its_safe_stretch() {
 fn a_weapon_changes_only_at_rest_never_in_the_middle_of_a_swing() {
     let mut room = room();
     let player = room.join().expect("a room with space");
+    crate::power::hold(&mut room, player, gear::Kind::Warhammer);
     let jab = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
     room.input(player, asking(1, room.clock(), FISTS, jab, 0.0)).unwrap();
     room.tick();
@@ -165,7 +168,7 @@ fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
         };
         let aimed = combat::shapes::Telegraph::begin(&order, [0.0, -ahead, 0.0]);
         room.telegraph_lands(archer, &foe, &aimed);
-        let mut shot = room.shots.pop().expect("an arrow leaves");
+        let (mut shot, _) = room.shots.pop().expect("an arrow leaves");
         let landed = loop {
             match combat::shots::fly(&shot, &[], &movement::Flat, &[]) {
                 combat::shots::Flight::Flying(next) => shot = next,
@@ -191,7 +194,7 @@ fn an_aimed_shot_leaves_from_the_foes_own_weapon_a_ball_straight_and_quick() {
         ahead: 20.0,
     };
     room.telegraph_lands(pistoleer, &foe, &combat::shapes::Telegraph::begin(&order, [0.0, -20.0, 0.0]));
-    let ball = room.shots.pop().expect("a ball leaves");
+    let (ball, _) = room.shots.pop().expect("a ball leaves");
     let [east, south, up] = ball.velocity;
     assert_eq!(ball.ranged, Ranged::Pistolet);
     assert!(((east * east + south * south + up * up).sqrt() - 70.0 * 1.3).abs() < 1e-9 && up.abs() < 1e-12);

@@ -66,3 +66,11 @@ test('marks are laid from an origin, so a mark far out in the world keeps its ce
   assert.equal(laid.length, near.length);
   laid.forEach((value, index) => assert.ok(Math.abs(value - (near[index] ?? 0)) < 1e-4, `at ${index}: ${value}`));
 });
+
+test('far out in the world, the marks are measured from an origin near them, exact where 32-bit floats are not', () => {
+  const far = [2_807_143.37, 1_207_025.81, 30.25] as const;
+  const out = { ...lunge(40, false), origin: far };
+  const mesh = marksMesh([out], [], [], [], far);
+  const near = marksMesh([lunge(40, false)], [], [], [], [1, 2, 0.5]);
+  assert.deepEqual(Array.from(mesh), Array.from(near), 'the same mark wherever it is, from its own origin');
+});

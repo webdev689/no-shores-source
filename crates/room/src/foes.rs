@@ -26,6 +26,9 @@ use std::collections::BTreeMap;
 /// for those called behind; and the ask that sends every foe away.
 pub const FOES_MOST: usize = 12;
 pub const NODE_FOES_MOST: usize = 24;
+/// An ask for a foe on the wire names its role in its low four bits, and in the bits above them the element of a
+/// shield it stands with, 0 for none.
+pub const SHIELD_SHIFT: u8 = 4;
 const SPAWN_AHEAD: f64 = 5.0;
 const CREW_BESIDE: f64 = 1.5;
 const CALLED_BEHIND: f64 = 3.0;
@@ -39,17 +42,21 @@ const SHAPE_MARGIN: f64 = 2.0;
 const AIMED_SPEED: f64 = 1.3;
 const AIMED_DAMAGE: f64 = 1.4;
 
-/// A foe as the room keeps it: its fighter, its brain, which holds its type, rank and phase, and the Boss that called
-/// it, if one did.
+/// A foe as the room keeps it: its fighter, its brain, which holds its type, rank and phase, the Boss that called it,
+/// if one did; its level (0 for none: it fights by combat's own numbers), the players whose blows landed on it, with
+/// the tick and hand of each one's last, and its shield, if it stands with one: blows take it down before its health.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Foe {
     pub fighter: Fighter,
     pub brain: Brain,
     pub caller: Option<FighterId>,
+    pub level: u8,
+    pub struck_by: BTreeMap<crate::PlayerId, (u64, gear::Slot)>,
+    pub shield: Option<gear::element::Shield>,
 }
 
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
-/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), and its fighter.
+/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeSeen {
     pub foe: FighterId,
@@ -60,6 +67,8 @@ pub struct FoeSeen {
     pub phase: u8,
     pub alert: u8,
     pub fighter: Fighter,
+    pub level: u8,
+    pub shield: Option<gear::element::Shield>,
 }
 
 /// A corner nearer a foe's feet than a tick's run is as good as reached, in metres.
@@ -172,6 +181,12 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
     }
 }
 
+/// The pirates' type in a role, at the rank a page asking by role alone gets (`SpawnAsk::by_role`).
+pub(crate) fn pirate_in(role: ::foes::Role) -> Option<(&'static FoeType, Rank)> {
+    let SpawnAsk::Foe { foe_type: number, rank, .. } = SpawnAsk::by_role(role as u8, 0)? else { return None };
+    Some((foe_type(number)?, Rank::from_number(rank)?))
+}
+
 impl Room {
     /// The places over the room's course a shooter may fire from.
     #[cfg(test)]
@@ -179,10 +194,11 @@ impl Room {
         MeshSpots { mesh: &self.nav }
     }
 
-    /// Stands each foe the players asked for before them, or sends every foe away.
+    /// Stands each foe the players asked for before them, at the level and with the shield asked for, or sends every
+    /// foe away.
     pub(crate) fn spawn_asked(&mut self) {
-        for (asker, ask) in std::mem::take(&mut self.spawns) {
-            let SpawnAsk::Foe { foe_type: number, rank } = ask else {
+        for (asker, ask, level) in std::mem::take(&mut self.spawns) {
+            let SpawnAsk::Foe { foe_type: number, rank, shield } = ask else {
                 let gone: Vec<FighterId> = self.foes.keys().copied().collect();
                 for foe in gone {
                     self.board.forget(foe);
@@ -204,8 +220,20 @@ impl Room {
             let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
             let spot = self.nav.nearest_point(ahead).unwrap_or(ahead);
             let facing = combat::sight::bearing([spot[0], spot[1]], [player.body.x, player.body.y]);
-            self.stand_foe(foe_type, rank, spot, facing, Some(asker));
+            let id = self.stand_foe(foe_type, rank, spot, facing, Some(asker));
+            self.gird(id, level, gear::Element::from_number(shield));
         }
+    }
+
+    /// Raises a foe just stood to its level, its health its kind's at that level, and gives it a whole shield of
+    /// `element`, if one.
+    pub(crate) fn gird(&mut self, id: FighterId, level: u8, element: Option<gear::Element>) {
+        let Some(foe) = self.foes.get_mut(&id) else { return };
+        let times = gear::power::foe_health_times(level);
+        foe.fighter.health *= times;
+        foe.fighter.health_max *= times;
+        foe.level = level;
+        foe.shield = element.map(|element| gear::element::Shield::whole(element, foe.fighter.health_max));
     }
 
     /// A new foe of a type at a rank standing at a place found on the navmesh, facing `facing`, and its arrival told as
@@ -222,7 +250,8 @@ impl Room {
         let (mut fighter, brain) = spawn(foe_type, rank, at[0], at[1], facing);
         fighter.body.z = ground_at(&self.blocks, &self.floor, at[0], at[1], at[2]);
         let id = self.next_id();
-        self.foes.insert(id, Foe { fighter, brain, caller: None });
+        let struck_by = BTreeMap::new();
+        self.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by, shield: None });
         self.tell(EventKind::Spawned, None, by.unwrap_or(id), id, 0.0);
         id
     }
@@ -305,7 +334,7 @@ impl Room {
             let spots = MeshSpots { mesh: &self.nav };
             let world = World {
                 tick: self.clock,
-                seed: self.seed,
+                seed: self.world_seed,
                 fighters: &noticed,
                 blocks: &self.blocks,
                 routes: &routes,
@@ -400,7 +429,7 @@ impl Room {
         let (mut found, mut perfect) = (false, false);
         for (defender, then) in caught {
             let verdict = judge(&blow, &then);
-            self.settle(&blow, how, defender, verdict);
+            self.settle(&blow, how, defender, verdict, None);
             match verdict {
                 Verdict::Dodged { perfect: dodged } => perfect |= dodged,
                 _ => found = true,
@@ -429,6 +458,7 @@ impl Room {
         self.groups.insert(group, Group { waiting: u32::try_from(near.len()).unwrap_or(u32::MAX), ..entry });
         for defender in near {
             let check = Check::Shape { telegraph: *telegraph, group };
+            let blow = self.empower(blow, defender, false);
             self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
         }
     }
@@ -444,7 +474,7 @@ impl Room {
         let mut shot = by_foe(&loose(id, ranged, foe.chest(), telegraph.bearing, pitch, 1.0));
         shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
         shot.damage = shot_numbers(ranged).1 * AIMED_DAMAGE * foe.might;
-        self.shots.push(shot);
+        self.shots.push((shot, None));
         // Loosed like any shot: heard, and seen coming by the foes of other sides it may strike.
         self.loosed.push(id);
         self.ended_telegraphs.push((id, false, false));
@@ -460,7 +490,7 @@ impl Room {
             swings.into_iter().map(|(by, attack)| (by, attack, side(&by))).collect();
         // Each shot's speed as it flies, the newest of its shooter's: a ball that reaches its mark at once flies none.
         let speed = |by: FighterId| {
-            let shot = self.shots.iter().rev().find(|shot| shot.owner == by);
+            let shot = self.shots.iter().rev().map(|(shot, _)| shot).find(|shot| shot.owner == by);
             shot.map_or(0.0, |shot| libm::sqrt(shot.velocity.iter().map(|part| part * part).sum()))
         };
         let loosed: Vec<(FighterId, Option<Side>, f64)> =
@@ -522,6 +552,8 @@ impl Room {
                 phase: brain.phase(),
                 alert: brain.alertness() as u8,
                 fighter: found.fighter,
+                level: found.level,
+                shield: found.shield,
             }
         })
     }

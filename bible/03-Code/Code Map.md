@@ -19,16 +19,17 @@ decision, made in the same change as its entry here.
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU and hands both to the game layer |
 | `client/src/editorPage.ts` | The [[World Editor]]'s entry point: offers the editor a fleet room, through the combat layer, when its address carries `?room=`, then starts it |
 | `client/src/game/` | The game layer: the [[Game]]'s flow from arriving to landing, on foot in a node, at sea in the [[Overworld]], the scene every drawer draws into, and the heads-up display |
-| `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's controls, the forge's figure and its frames |
+| `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's controls, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, and the crosshair |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
+| `client/src/face.css`, `face.ts`, `trueType.ts` | Every page's face: Pixelify Sans at its sizes, with the glyphs it misreads or lacks drawn in code and made into a font in the page ([[Interface]], "The face") |
 | `client/src/shadow.ts` | The sun's shadow map round the eye, which every drawer of the [[Game]]'s scene casts into and reads |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up, and sails the Sloop alone or, through what its page offers, in a fleet room |
 | `client/src/terrain/` | The terrain layer: the land drawn in rings round the eye on WebGPU, and the land crate's worker, for the [[World Editor]] and the game |
-| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb, the foes' dresses and the moves a fight holds a figure to |
+| `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
-| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display, the ground's marks for telegraphed blows and shots, and [[Blood]]; and a Sloop's session in a fleet room ([[Naval Combat]]), her orders sent and her ship predicted |
+| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display and its stylesheet, the ground's marks for telegraphed blows and shots, the shots' tracers, and [[Blood]]; and a Sloop's session in a fleet room ([[Naval Combat]]), her orders sent and her ship predicted |
 | `client/src/nature/` | The nature layer: each biome's trees, plants and rocks, made in code, scattered over the ground round the eye and drawn on WebGPU ([[Nature]]). Imports `rules` and `water` |
 | `client/src/ships/` | The ships layer: a ship's mesh read from R2 and drawn at her pose on the water ([[Sailing]]), and a fight's balls and effects drawn as small spheres ([[Naval Combat]]) |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
@@ -39,7 +40,8 @@ decision, made in the same change as its entry here.
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
 | `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
 | `client/src/city/` | The city layer: a port city's plan drawn on WebGPU with the forged models and the procedural textures, whole near the eye, as masses and hulls further out, its solids and ground plates at every distance ([[Cities]]) |
-| `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
+| `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings, and the keeper that keeps each player's character with the accounts while they play |
+| `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the judge of the [[Names]] players set for others to read, the Roster (friends, companies, guilds, blocks, reports, where each player is), the characters the rooms hold, and the database's migrations |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world-wasm` | The world rules for the browser: a door crate, text in and text out |
@@ -52,6 +54,7 @@ decision, made in the same change as its entry here.
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |
 | `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
+| `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, emblems, and what a player holds and shows others |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
@@ -59,7 +62,7 @@ decision, made in the same change as its entry here.
 | `crates/bake` | The bake (`npm run bake`): each node's section, window of the ground and boxes, cut at build time for its room ([[Server]]) |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
 | `generated/` | What the tools make, never in git ([[Generated Files Stay Out of Git]]): `generated/messages/`, the messages' code `flatc` makes, and `generated/nodes/`, the bake's file for each node and their index, which the server's rooms read |
-| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, guns and hit boxes, and `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too |
+| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, guns and hit boxes, `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too, and `content/gear/`, the [[Gear]]'s traits, named items, islands' resources, rolled items' names and emblems, built into the gear rules (the page reads the emblems too) |
 | `content/world/rmb/` | Daggerfall's RMB town blocks as data, for laying out towns: placements, ground tiles and flat counts ([[RMB Blocks]]) |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `.claude/settings.json` | The repository's Claude Code settings: a hook that says, as a session starts, when the toolkit is not installed in its container ([[Toolkit]]) |
@@ -93,7 +96,8 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 `combat` (imports `rules`, `network`, `plus`, `player` and the editor's camera), `player` (imports `rules`, `network`,
 `forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`
 and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
-`water`), `heldmap` (imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers),
+`water`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page
+helpers),
 `plus` (imports nothing) and `game` (imports the layers it wires, `combat` among them;
 [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
 import.
@@ -108,13 +112,13 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
   `sailing`, which may use `land` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use
   `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement`
-  and `libm`; and `reach`, which uses no other crate.
+  and `libm`; `reach`, which uses no other crate; and `gear`, which may use `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `land`, `movement`,
-  `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use `combat`,
-  `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `gear`, `land`,
+  `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use
+  `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
   the Cloudflare shell in `server/`, and for a browser playing alone or predicting its ship in a fleet, reading a
-  node's baked file and the layout with `foes`, `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
+  node's baked file and the layout with `foes`, `gear`, `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
   `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are

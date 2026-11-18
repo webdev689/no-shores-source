@@ -52,7 +52,7 @@ const GLYPHS: Record<MarkKind, string> = {
   mission: '◆',
   dungeon: '▼',
   boss: '☠',
-  port: '⚓',
+  port: '⚓\uFE0E',
 };
 
 /** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
@@ -62,6 +62,11 @@ interface MarkNode {
   readonly name: HTMLElement;
   readonly note: HTMLElement;
   readonly arrow: HTMLElement;
+}
+
+/** Writes words only when they change: called every frame, the HUD would otherwise rebuild its text each time. */
+function say(node: HTMLElement, text: string): void {
+  if (node.textContent !== text) node.textContent = text;
 }
 
 /** The game's heads-up display: plain elements over the canvas, nothing drawn on the GPU. */
@@ -167,15 +172,16 @@ export class Hud {
 
   /** Names the place the player is in. */
   place(title: string, kind: string): void {
-    this.placeTitle.textContent = title;
-    this.placeKind.textContent = kind;
+    say(this.placeTitle, title);
+    say(this.placeKind, kind);
   }
 
   /** Shows the player's standing against their section's edge: the warning and its count, or death. */
   reach(standing: Standing): void {
-    this.shade.style.opacity = String(vignette(standing, WARNING_SECONDS));
+    const shade = String(vignette(standing, WARNING_SECONDS));
+    if (this.shade.style.opacity !== shade) this.shade.style.opacity = shade;
     this.warning.hidden = standing.kind !== 'warned';
-    if (standing.kind === 'warned') this.count.textContent = countdownText(standing.secondsLeft);
+    if (standing.kind === 'warned') say(this.count, countdownText(standing.secondsLeft));
     this.death.hidden = standing.kind !== 'dead';
     if (standing.kind === 'dead') {
       this.respawn.disabled = !standing.canRespawn;
@@ -227,7 +233,7 @@ export class Hud {
       kept.add(mark.id);
       const shown = this.marksShown.get(mark.id) ?? this.markNode(mark.id);
       shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}`;
-      shown.root.style.transform = `translate(${mark.x.toFixed(1)}px, ${mark.y.toFixed(1)}px)`;
+      shown.root.style.transform = `translate(${Math.round(mark.x)}px, ${Math.round(mark.y)}px)`;
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
       shown.glyph.textContent = GLYPHS[mark.kind];

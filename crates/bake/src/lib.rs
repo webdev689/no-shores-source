@@ -4,6 +4,7 @@
 //! there.
 
 use city::rmb::Blocks;
+use city::stations::StationKind;
 use land::edits::Edits;
 use land::ground::Ground;
 use land::landmass::generate;
@@ -30,6 +31,15 @@ pub struct NodeFile {
     pub ground: Ground,
     /// The boxes a body runs into within the rect: west, north, east, south and top.
     pub boxes: Vec<[f64; 5]>,
+    /// In a social space, the counters that answer a player's gear, which the room serves only at each.
+    pub counters: Vec<Counter>,
+}
+
+/// A counter of a social space: its station, and its middle.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+pub struct Counter {
+    pub kind: StationKind,
+    pub at: [f64; 2],
 }
 
 /// What a node's index lists of it.
@@ -81,6 +91,13 @@ pub fn bounds_of(ring: &[[f64; 2]]) -> [f64; 4] {
     [west - MARGIN_M, north - MARGIN_M, east + MARGIN_M, south + MARGIN_M]
 }
 
+/// Whether a station answers a player's gear: the Reader opens Vestiges, the vaults keep gear, the Quartermaster and
+/// the Armsmith sell it, and the Tailor sells emblems.
+fn answers_gear(kind: StationKind) -> bool {
+    use StationKind::{Armsmith, Quartermaster, Reader, Tailor, Vault};
+    matches!(kind, Reader | Vault | Quartermaster | Armsmith | Tailor)
+}
+
 /// Every node of a continent, drawn and social, generated with its edits and its city settled on the land. Fails
 /// for edits that break their rules or a city that cannot be planned.
 pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<Vec<NodeFile>, String> {
@@ -94,7 +111,8 @@ pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<
         let [west, north, east, south] = bounds;
         let ground = landmass.surface.window(west, north, east, south);
         let boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
-        NodeFile { id, kind, name, continent: continent.id.clone(), ring, spawns, bounds, ground, boxes }
+        let continent = continent.id.clone();
+        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new() }
     };
     let whole =
         |points: &[world::geometry::Point]| points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
@@ -105,7 +123,11 @@ pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<
         .map(|node| cut(node.id.clone(), node.kind, node.name.clone(), whole(&node.ring), whole(&node.spawns)));
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
-        cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
+        let counters = social.stations.iter().filter(|station| answers_gear(station.kind));
+        NodeFile {
+            counters: counters.map(|station| Counter { kind: station.kind, at: station.counter }).collect(),
+            ..cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
+        }
     });
     Ok(drawn.chain(social).collect())
 }

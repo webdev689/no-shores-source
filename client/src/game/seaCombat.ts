@@ -17,6 +17,7 @@ import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Shot } from './camera.ts';
 import type { SeaRoom } from './seaRoom.ts';
+import { gearScreenOpen } from './gearScreen.ts';
 
 /** Seconds the view takes to come down to the fight, or go back up. */
 const PAN_S = 1.5;
@@ -257,6 +258,9 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
   };
   // A key let go still reaches the sea's own controls, so none is held there once the fight is over.
   const key = (down: boolean) => (event: KeyboardEvent) => {
+    // Under the gear screen the fight takes no key pressed, they are the screen's; a key let go is still the fight's,
+    // so nothing it held stays held.
+    if (down && gearScreenOpen()) return;
     if (!fight()?.key(event.key.toLowerCase(), down)) return;
     if (down) taken(event);
     else event.preventDefault();

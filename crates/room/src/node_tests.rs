@@ -185,7 +185,7 @@ fn a_room_with_no_section_never_judges_its_bodies() {
 fn a_node_s_room_stands_no_foe_a_player_asks_for_where_a_course_s_room_does() {
     let foes_after_asking = |mut room: Room| {
         let player = room.join().unwrap();
-        let spawn = Some(SpawnAsk::Foe { foe_type: 13, rank: 2 });
+        let spawn = Some(SpawnAsk::Foe { foe_type: 13, rank: 2, shield: 0 });
         room.input(player, Input { sequence: 1, spawn, ..Input::default() }).unwrap();
         room.tick();
         room.foes_seen().count()
@@ -205,7 +205,7 @@ fn a_node_s_room_told_to_take_asks_stands_each_foe_on_its_land_and_it_stays_ther
         asker.play(&mut room, Controls { yaw: PI, ..RUN_NORTH }, false);
     }
     asker.sequence += 1;
-    let spawn = Some(SpawnAsk::Foe { foe_type: 2, rank: 1 });
+    let spawn = Some(SpawnAsk::Foe { foe_type: 2, rank: 1, shield: 0 });
     let input = Input {
         sequence: asker.sequence,
         intent: combat::Intent { controls: STILL, ..combat::Intent::default() },

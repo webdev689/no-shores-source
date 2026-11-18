@@ -6,11 +6,13 @@ import course from '../content/testground/course.json' with { type: 'json' };
 // check its bodies with the browser's own steps.
 import { type Look, type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
+import { ASKS } from '../client/src/network/gearMessages.ts';
 import { fightViewOf } from '../client/src/network/seaFight.ts';
 import { startFleetRules } from '../client/src/rules/fleetRules.ts';
 import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
+import { PROTOCOL } from '../generated/messages/ts/version.ts';
 
 const built = (name: string) =>
   readFile(new URL(`../target/wasm32-unknown-unknown/release/${name}.wasm`, import.meta.url)).catch(() => {
@@ -36,7 +38,15 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.equal(room.tickSeconds, 1 / 60);
   assert.equal(room.open(course.start, course.blocks), true);
   const [first, second] = [room.join(), room.join()];
-  assert.deepEqual(readFromRoom(room.joined(first)), { kind: 'joined', player: first, dressed: [], node: null });
+  // The room speaks the protocol the page was built from: the same schema's hash.
+  const protocol = PROTOCOL;
+  assert.deepEqual(readFromRoom(room.joined(first)), {
+    kind: 'joined',
+    player: first,
+    dressed: [],
+    node: null,
+    protocol,
+  });
   assert.equal(room.input(first, asking(1, walk, walking, '{"body":"male"}')), 'taken');
   for (let sequence = 2; sequence <= 30; sequence++)
     assert.equal(room.input(first, asking(sequence, walk, walking)), 'taken');
@@ -63,6 +73,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     player: third,
     dressed: [{ player: first, dress: '{"body":"male"}' }],
     node: null,
+    protocol,
   });
 });
 
@@ -162,7 +173,13 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.equal(room.openNode(text), true);
   const [first, second] = [room.join(), room.join()];
   const node = { id: 'glade', bounds: [-150, -150, 150, 150] };
-  assert.deepEqual(readFromRoom(room.joined(first)), { kind: 'joined', player: first, dressed: [], node });
+  assert.deepEqual(readFromRoom(room.joined(first)), {
+    kind: 'joined',
+    player: first,
+    dressed: [],
+    node,
+    protocol: PROTOCOL,
+  });
   // The browser stands bodies on the same ground and boxes, and finds the same bodies, to the bit.
   const movement = await startMovementRules(await built('movement_wasm'));
   assert.equal(movement.setGround(ground), true);
@@ -317,4 +334,38 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   room.tick();
   const called = read();
   assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round her');
+});
+
+/** How often, in ticks, the room sends one player's gear (`room::GEAR_EVERY_TICKS`). */
+const GEAR_EVERY_TICKS = 12;
+
+test('the Test Ground’s room lays out its stall and nodes, and sends each player their own gear when it changes', () => {
+  const room = startRoomDoor(compiled);
+  assert.equal(room.furnish(course.stall, course.resources), false, 'nothing to lay out before a room opens');
+  assert.equal(room.open(course.start, course.blocks), true);
+  assert.equal(room.furnish(course.stall, course.resources), true);
+  const [first, second] = [room.join(), room.join()];
+  room.tick();
+  const gear = readFromRoom(room.gear(first));
+  assert.equal(gear?.kind, 'gear', 'sent once on joining');
+  if (gear?.kind !== 'gear') return;
+  assert.equal(gear.items.length, 5, 'the starting kit');
+  assert.equal(room.gear(first).length, 0, 'and not again until it changes');
+  const grant = inputBytes(1, {
+    intent: walk.map(() => 0),
+    look: walking,
+    arms: 0,
+    seen: 0n,
+    ask: { kind: ASKS.grantNamed, named: 'lanternfall' },
+  });
+  assert.equal(room.input(first, grant), 'taken');
+  // The room sends one player's gear five times a second at most: the answer goes out once it may again.
+  for (let tick = 0; tick < GEAR_EVERY_TICKS; tick += 1) room.tick();
+  const granted = readFromRoom(room.gear(first));
+  assert.ok(granted?.kind === 'gear' && granted.items.some((item) => item.named === 'lanternfall'));
+  assert.equal(readFromRoom(room.gear(second))?.kind, 'gear', 'the second player’s own first gear');
+  assert.equal(room.gear(second).length, 0, 'the first player’s ask is not theirs');
+  const sea = startRoomDoor(compiled);
+  assert.equal(sea.openFleet(), true);
+  assert.equal(sea.furnish(course.stall, course.resources), false, 'a fleet keeps no gear');
 });

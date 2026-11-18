@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { type TestContext, test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { FromRoom, Joined, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
+import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import { RoomConnection, type Snapshot as RoomSnapshot, rejoinWait } from './roomConnection.ts';
 
 /** A room's message as its bytes: a welcome for `player`, or a snapshot at `tick`. */
@@ -9,7 +10,7 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
   const builder = new flatbuffers.Builder(64);
   const part =
     'player' in message
-      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0)
+      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL)
       : Snapshot.createSnapshot(builder, message.tick, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);
@@ -57,6 +58,8 @@ async function joined(player: number) {
   const opening = RoomConnection.open(
     'ws://test/room/court',
     (snapshot: RoomSnapshot) => ticks.push(snapshot.tick),
+    undefined,
+    null,
     connect,
   );
   sockets[0]?.says({ player });

@@ -241,7 +241,7 @@ fn a_foe_asked_for_on_a_platform_stands_on_its_top() {
     let mut room = Room::new(vec![platform], (0.0, 0.0));
     let player = room.join().unwrap();
     room.players.get_mut(&player).unwrap().fighter.body.z = 1.6;
-    let spawn = Some(SpawnAsk::Foe { foe_type: COLLECTOR, rank: 2 });
+    let spawn = Some(SpawnAsk::Foe { foe_type: COLLECTOR, rank: 2, shield: 0 });
     room.input(player, Input { sequence: 1, spawn, ..Input::default() }).unwrap();
     run(&mut room, 60);
     let foe = room.foes_seen().next().unwrap();
@@ -267,7 +267,7 @@ pub(super) fn shoot(room: &mut Room, player: PlayerId, foe: FighterId, damage: f
     let from = [body.x, body.y + 1.0, body.z + combat::tuning::CHEST];
     let mut ball = combat::shots::loose(player, combat::Ranged::Pistolet, from, 0.0, 0.0, 1.0);
     ball.damage = damage;
-    room.shots.push(ball);
+    room.shots.push((ball, None));
     run(room, 1);
 }
 

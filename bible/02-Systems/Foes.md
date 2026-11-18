@@ -65,6 +65,9 @@ phases) is [[Enemies]].
 | Archer | 50 | 18 | light | 1.0 | 18 | - / - / 25% | aimed shot |
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
+  A foe may have a level: its health is its kind's times 1.07 for each, and its blows on a player and theirs on it
+  are made with the power of [[Gear]]. A foe of level 0 has none, and fights by these numbers alone.
+
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
 - **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it, and
   it believes that thing's place. Sight of a fighter of another side raises it by up to 5 a second, scaled by how near

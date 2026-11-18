@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Overlook</title>
+    <link rel="stylesheet" href="/src/face.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -19,9 +20,6 @@
         --halo:
           1px 0 0 #050608, -1px 0 0 #050608, 0 1px 0 #050608, 0 -1px 0 #050608, 1px 1px 0 #050608, -1px -1px 0 #050608,
           1px -1px 0 #050608, -1px 1px 0 #050608, 0 0 4px rgba(0, 0, 0, 0.6);
-        font:
-          14px system-ui,
-          sans-serif;
       }
       html,
       body {
@@ -45,7 +43,7 @@
         inset: 0;
         pointer-events: none;
         color: var(--ink);
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+        text-shadow: 1px 1px 0 #000;
       }
       /* The heads-up display wears the Enhanced Plus kit (client/src/plus/), which paints each surface by its role;
          this sheet gives each its room, and each window and press the 2 px border the kit's frame lands on. A rule here
@@ -73,16 +71,25 @@
         text-shadow: var(--halo);
       }
       .place .title {
-        font-size: 26px;
-        letter-spacing: 0.04em;
-        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: round(up, calc(1em / 22), 1px);
+        font-weight: 500;
+      }
+      /* Small words over the sky and the ground are outlined in black, so they read on either. */
+      .place .kind,
+      .hints {
+        text-shadow:
+          -1px 0 #000,
+          1px 0 #000,
+          0 -1px #000,
+          0 1px #000;
       }
       .place .kind {
         margin-top: 2px;
-        font-size: 12px;
-        letter-spacing: 0.16em;
+        font-size: 11px;
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
-        color: var(--dim);
+        color: var(--ink);
       }
       .vignette {
         position: absolute;
@@ -100,13 +107,13 @@
       }
       .warning-words {
         font-size: 22px;
-        letter-spacing: 0.22em;
+        letter-spacing: round(up, calc(5em / 22), 1px);
         text-transform: uppercase;
       }
       .warning .count {
-        font-size: 64px;
-        font-weight: 600;
-        line-height: 1.2;
+        font-size: 66px;
+        font-weight: 500;
+        line-height: 79px;
       }
       .death {
         position: absolute;
@@ -119,7 +126,7 @@
       }
       .death-words {
         font-size: 44px;
-        letter-spacing: 0.2em;
+        letter-spacing: round(up, calc(5em / 22), 1px);
         text-transform: uppercase;
         color: var(--dead);
       }
@@ -131,10 +138,17 @@
         position: absolute;
         left: 28px;
         bottom: 22px;
-        font-size: 12px;
-        line-height: 1.7;
-        color: var(--dim);
+        font-size: 11px;
+        line-height: 19px;
+        color: var(--ink);
         text-shadow: var(--halo);
+      }
+      /* On a screen past 1440p the HUD's words stand at twice their size, as the menu does. */
+      @media (min-width: 2400px) and (min-height: 1300px) {
+        .place,
+        .hints {
+          zoom: 2;
+        }
       }
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
@@ -201,15 +215,15 @@
       }
       .sea-bar .pace-label {
         font-size: 11px;
-        letter-spacing: 0.16em;
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
       }
       .sea-bar .pace {
         min-width: 44px;
         text-align: center;
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 22px;
+        font-weight: 500;
       }
       #hud .landfall {
         position: absolute;
@@ -217,7 +231,7 @@
         bottom: 94px;
         transform: translateX(-50%);
         padding: 10px 18px;
-        font-size: 16px;
+        font-size: 11px;
       }
       .menu {
         position: absolute;
@@ -233,8 +247,8 @@
         text-shadow: 1px 1px 0 #000;
       }
       .menu-title {
-        font-size: 12px;
-        letter-spacing: 0.16em;
+        font-size: 11px;
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
         margin: -20px -22px 6px;
@@ -254,9 +268,9 @@
       .ship-title {
         margin: 0 -18px 4px;
         padding: 12px 18px 10px;
-        font-size: 17px;
-        letter-spacing: 0.04em;
-        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: round(up, calc(1em / 22), 1px);
+        font-weight: 500;
         border-bottom: 1px solid transparent;
       }
       .ship-part {
@@ -266,7 +280,7 @@
         margin-bottom: 6px;
         padding-bottom: 4px;
         font-size: 11px;
-        letter-spacing: 0.16em;
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
         border-bottom: 1px solid transparent;
@@ -286,8 +300,8 @@
       .ship-later {
         display: inline-block;
         padding: 2px 10px;
-        font-size: 12px;
-        letter-spacing: 0.08em;
+        font-size: 11px;
+        letter-spacing: round(up, calc(3em / 22), 1px);
         border: 2px solid transparent;
         color: var(--dim);
       }
@@ -301,7 +315,7 @@
       }
       .menu button {
         text-align: left;
-        font-size: 15px;
+        font-size: 22px;
       }
       .marks {
         position: absolute;
@@ -323,14 +337,14 @@
       .held-mark {
         padding: 0 0 0 9px;
         margin-top: -8px;
-        font:
-          italic 14px Georgia,
-          serif;
+        font-size: 11px;
         color: var(--map-ink);
         white-space: nowrap;
         text-shadow:
-          0 0 3px rgba(238, 222, 190, 0.95),
-          0 0 1px rgba(238, 222, 190, 1);
+          -1px 0 0 #eedebe,
+          1px 0 0 #eedebe,
+          0 -1px 0 #eedebe,
+          0 1px 0 #eedebe;
       }
       .held-mark::before {
         content: '';
@@ -344,8 +358,8 @@
       }
       .held-mark.port {
         font-style: normal;
-        font-weight: 600;
-        letter-spacing: 0.04em;
+        font-weight: 500;
+        letter-spacing: round(up, calc(1em / 22), 1px);
       }
       .held-mark.port::before {
         background: var(--map-ink);
@@ -396,7 +410,7 @@
         height: var(--size);
         display: grid;
         place-items: center;
-        font-size: calc(var(--size) * 0.5);
+        font-size: max(11px, round(down, calc(var(--size) / 2), 11px));
         border-radius: 50%;
         background: rgba(10, 13, 17, 0.6);
         border: 2px solid var(--kind, var(--ink));
@@ -411,7 +425,7 @@
       }
       .mark .name {
         top: calc(var(--size) / 2 + 4px);
-        font-weight: 600;
+        font-weight: 500;
       }
       .mark .note {
         top: calc(var(--size) / 2 + 22px);
@@ -424,7 +438,7 @@
         top: -6px;
         width: 12px;
         height: 12px;
-        font-size: 10px;
+        font-size: 11px;
         line-height: 12px;
         text-align: center;
         color: var(--kind, var(--ink));
@@ -480,8 +494,8 @@
         pointer-events: auto;
       }
       .veil-text {
-        font-size: 18px;
-        letter-spacing: 0.3em;
+        font-size: 22px;
+        letter-spacing: round(up, calc(5em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
         animation: breathe 2.4s ease-in-out infinite;

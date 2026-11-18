@@ -9,6 +9,10 @@ code:
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
   - client/src/game/foesAsked.ts#foesAsked
+  - client/src/game/footGear.ts#useAt
+  - client/src/game/footGear.ts#groundRings
+  - client/src/game/plazaLife.ts#PlazaLife
+  - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/sea.ts#Sea
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
@@ -92,6 +96,18 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   status line stands under the place's name ([[Interface]]).
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
+- **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
+  plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
+  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
+  is found again only once they have walked a step. The fight never takes them for targets.
+- **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
+  player; at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
+  patrol, so a route can be planned through them; and at each Vestige lying for them, a ring and a beam in its
+  rarity's colour, picked up by walking over it.
+- **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
+  (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
+  vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
+  menu is up or the player lies dead, past the edge or felled by a foe.
 
 ## The edge
 
@@ -189,17 +205,22 @@ its landmark over the city, as on arriving. Escape flies back down.
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, and stands at the spawn the room's first word
-  puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first). The room judges
-  the edge. Each tick's controls go to
-  it with the fight's buttons and arms, the figure's look, the dress when it changed and a respawn when asked; the
-  player is predicted on the same ground and corrected by each snapshot, held still while the room says they are dead.
-  The warning, the count and death are the room's word. Every other player in the room is shown where the room last
-  saw them, in their own dress, and every foe where it last stood.
+- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder seas
+  `node-<node id>--rough` or `--storm` (a social space is one room at any seas), and stands at the spawn the room's
+  first word puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first). The
+  room judges the edge. Each tick's controls go to it with the fight's buttons and arms, the figure's look, the dress
+  when it changed, the gear's asks and a respawn when asked; the player is predicted on the same ground and corrected
+  by each snapshot, held still while the room says they are dead. The warning, the count and death are the room's
+  word. Every other player in the room is shown where the room last saw them, in their own dress, and every foe where
+  it last stood.
   A room whose socket closes, for a deploy or a dropped network, is joined again by itself ([[Server]], "The
   browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
-  joined again, they are a new player there, standing where the room puts them, their dress sent again. A room that
-  sends the player away is lost: the display says so and they play on alone.
+  joined again, they are a new player there, standing where the room puts them, their dress and session sent again.
+  A room that sends the player away is lost: the display says so and they play on alone.
+  With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
+  makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
+  the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played
+  alone, the room in the page keeps no gear.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
   is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at

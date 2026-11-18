@@ -19,7 +19,8 @@ const PIRATE_SWORDSMAN: u8 = 14;
 fn stand(room: &mut Room, number: u8, rank: Rank, x: f64, y: f64, facing: f64) -> FighterId {
     let id = room.next_id();
     let (fighter, brain) = ::foes::spawn(::foes::foe_type(number).unwrap(), rank, x, y, facing);
-    room.foes.insert(id, foes::Foe { fighter, brain, caller: None });
+    room.foes
+        .insert(id, foes::Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
@@ -104,7 +105,7 @@ fn a_spawn_ask_is_a_type_and_a_rank_and_a_rank_the_type_lacks_takes_its_first() 
     let player = room.join().unwrap();
     let asks = [(5, 1), (12, 2), (17, 3), (17, 0), (99, 2)];
     for (sequence, (foe_type, rank)) in (1..).zip(asks) {
-        let spawn = Some(SpawnAsk::Foe { foe_type, rank });
+        let spawn = Some(SpawnAsk::Foe { foe_type, rank, shield: 0 });
         room.input(player, Input { sequence, seen: room.clock(), spawn, ..Input::default() }).unwrap();
         room.tick();
     }

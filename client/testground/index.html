@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Test Ground</title>
+    <link rel="stylesheet" href="/src/face.css" />
     <style>
       :root {
         color-scheme: dark;
-        font:
-          13px system-ui,
-          sans-serif;
         color: #e8e8e8;
         background: #0b0d10;
       }
@@ -18,22 +16,35 @@
         margin: 0;
         height: 100vh;
         display: grid;
-        grid-template-columns: 320px 1fr;
+        grid-template-columns: 320px 1fr 360px;
       }
-      #panel {
+      #panel,
+      #gear-panel {
         overflow-y: auto;
         padding: 12px 14px;
         background: #14181d;
         border-right: 1px solid #2a3038;
       }
+      #gear-panel {
+        border-right: none;
+        border-left: 1px solid #2a3038;
+      }
+      .kit-item {
+        margin: 8px 0;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #222a33;
+      }
+      .kit-item > span {
+        color: #fff;
+      }
       h1 {
-        font-size: 16px;
+        font-size: 22px;
         margin: 0 0 4px;
       }
       h2 {
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: round(up, calc(3em / 22), 1px);
         color: #9aa4b0;
         margin: 16px 0 6px;
       }
@@ -54,6 +65,29 @@
       .row input[type='range'] {
         flex: 1;
         min-width: 0;
+      }
+      .feel {
+        border: 1px solid #2a3038;
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin: 6px 0;
+      }
+      .feel-head > span:first-child {
+        font-weight: 600;
+      }
+      .feel .row:not(.feel-head) > span:first-child {
+        min-width: 82px;
+        padding-left: 10px;
+        color: #b4bcc6;
+      }
+      .feel .value {
+        min-width: 40px;
+        text-align: right;
+        color: #9aa4b0;
+        font-variant-numeric: tabular-nums;
+      }
+      .feel.off .row:not(.feel-head) {
+        opacity: 0.4;
       }
       .figures {
         display: flex;
@@ -111,6 +145,7 @@
       <canvas id="ground"></canvas>
       <div id="hud" class="fight"></div>
     </main>
+    <aside id="gear-panel"></aside>
     <script type="module" src="/src/testground/testgroundMain.ts"></script>
   </body>
 </html>

@@ -1,0 +1,1495 @@
+/* The gear screen (client/src/game/gearWindow.ts and its pages): the kit (client/src/plus/) paints each surface by
+   its role; this sheet gives each its room, and the rest Enhanced Plus draws: a tile's well and its rarity's bevel and
+   glow, a card's band in its rarity, the cell's count and pips, the chosen tab, the meters, the nodes. One scale of
+   type runs through it, and what moves moves in steps, as Enhanced Plus's sigils breathe. */
+
+.gear-screen,
+.gear-tip,
+.gear-scrim,
+.acquired {
+  --word: #efe8d6;
+  --faint: #a89f88;
+  --brass: #c08a3e;
+  --brass-lit: #f3cf86;
+  --ground: #0e1013;
+  --well: #101216;
+  --edge: #4a463d;
+  --stone-hi: #6d6252;
+  --stone-lo: #231e18;
+  --outline: #050608;
+  --gain: #74d9a0;
+  --loss: #e8968a;
+  /* Pixelify Sans's grid: words at one step, names at two, numbers that lead at three and five. */
+  --type-xs: 11px;
+  --type-s: 11px;
+  --type-m: 11px;
+  --type-l: 22px;
+  --type-xl: 33px;
+  --type-xxl: 55px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The world behind the screen, dimmed and softened, as Destiny's menus hold it back. */
+#hud .gear-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 19;
+  background: rgba(5, 7, 10, 0.6);
+  backdrop-filter: blur(5px) saturate(0.7);
+  pointer-events: auto;
+}
+#hud .gear-scrim[hidden] {
+  display: none;
+}
+
+.gear-screen {
+  position: absolute;
+  inset: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+  color: var(--word);
+  font-size: var(--type-s);
+  text-shadow: 1px 1px 0 #000;
+  pointer-events: auto;
+  z-index: 20;
+}
+.gear-screen ::selection {
+  background: rgba(243, 207, 134, 0.35);
+}
+/* Focus is white, as Destiny marks what is selected, so it never reads as the brass of a chosen tab or a rarity. */
+#hud .gear-screen :focus-visible,
+#hud .gear-tip :focus-visible {
+  outline: 2px solid #f2efe6;
+  outline-offset: 2px;
+}
+/* Where the menu is wide, names and values stand at the names' size, labels staying at the words'. */
+@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
+  .gear-screen,
+  .gear-tip,
+  .acquired {
+    --type-m: 22px;
+  }
+}
+/* The header: the tabs filling the top, then the player's banner the whole width of the menu. */
+.gear-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0 0;
+  border-bottom: 1px solid transparent;
+}
+/* The banner, after Destiny's: their emblem drawn to its width at three times its cells, so nothing of it is cut,
+   their name, level and power over it, and their Aurem at its end. */
+.gear-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  padding: 0 40px 0 102px;
+  background: left top no-repeat;
+  image-rendering: pixelated;
+  text-shadow:
+    1px 1px 0 #000,
+    -1px 0 0 #000;
+}
+.gear-banner[hidden] {
+  display: none;
+}
+.gear-who {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.gear-who strong {
+  font-size: var(--type-l);
+  letter-spacing: round(up, calc(1em / 22), 1px);
+}
+.gear-who-power {
+  color: rgba(242, 239, 230, 0.8);
+}
+/* The tabs fill the top, each a whole number of pixels wide so the kit's bevels stay sharp. */
+/* The top line: the tabs filling it, or a station's name, and the account's mark at its right. */
+.gear-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+}
+.gear-tabs-top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+}
+.gear-top .gear-station-name {
+  flex: 1;
+}
+/* The account's mark, after DFO's profile mark: a round well rimmed in brass over an iron ring, the face inside at its
+   own pixels, a hooded head and shoulders until it is drawn, and a gem on the rim, filled for an account kept
+   anywhere. */
+#hud .gear-profile {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.gear-portrait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--brass);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #1b2029 0%, #0a0c11 72%);
+  box-shadow:
+    0 0 0 2px #3a3f47,
+    0 3px 10px rgba(0, 0, 0, 0.65);
+}
+.gear-silhouette {
+  position: absolute;
+  inset: 0;
+}
+.gear-silhouette::before {
+  content: '';
+  position: absolute;
+  left: 31%;
+  top: 16%;
+  width: 38%;
+  height: 40%;
+  border-radius: 48% 48% 44% 44%;
+  background: #3a424d;
+}
+.gear-silhouette::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  top: 58%;
+  width: 76%;
+  height: 60%;
+  border-radius: 50% 50% 0 0;
+  background: #3a424d;
+}
+.gear-profile-gem {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  font-size: var(--type-xs);
+  line-height: 1;
+  color: #3a3f47;
+  text-shadow:
+    0 0 2px #000,
+    1px 1px 0 #000;
+}
+.gear-profile-gem.gear-on {
+  color: var(--brass-lit);
+}
+#hud .gear-profile:hover .gear-portrait,
+#hud .gear-profile:focus-visible .gear-portrait {
+  border-color: var(--brass-lit);
+  box-shadow:
+    0 0 0 2px #3a3f47,
+    0 0 14px rgba(243, 207, 134, 0.35);
+}
+#hud .gear-tab {
+  flex: 0 0 round(down, calc((100% - 36px) / 7), 1px);
+  justify-content: center;
+  min-width: 0;
+  height: 48px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: round(up, calc(1em / 22), 1px);
+  text-transform: uppercase;
+  font-size: var(--type-l);
+}
+/* On a narrower menu the words keep their size: the keycaps step aside and a tab to come says so under its name. */
+@media (max-width: 1499px), (min-width: 2400px) and (min-height: 1300px) {
+  #hud .gear-tab kbd.gear-key {
+    display: none;
+  }
+  #hud .gear-tab.gear-tab-to-come {
+    flex-direction: column;
+    line-height: 22px;
+  }
+  #hud .gear-tab .gear-tab-later {
+    margin-left: 0;
+  }
+}
+/* The chosen tab is a lit press: the kit's brass bevel on its primary ground. */
+#hud .gear-tab.gear-chosen {
+  color: var(--brass-lit);
+  border-color: #f3cf86 #7a5424 #5c3f1a #c08a3e;
+  background-color: #2a2217;
+  box-shadow: inset 0 -2px 0 var(--brass-lit);
+}
+/* A key on a keycap: square and bevelled, as the kit's stone is. */
+kbd.gear-key {
+  margin-left: 8px;
+  min-width: 18px;
+  padding: 0 5px;
+  border: 1px solid;
+  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
+  border-bottom-width: 2px;
+  border-radius: 0;
+  background: #16181d;
+  font: inherit;
+  font-size: var(--type-xs);
+  line-height: 16px;
+  text-align: center;
+  color: var(--word);
+  text-transform: none;
+}
+.gear-tab-count {
+  margin-left: 8px;
+  color: var(--faint);
+  font-size: var(--type-xs);
+}
+.gear-purse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gear-purse b {
+  font-size: var(--type-l);
+}
+.gear-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 20px 14px;
+  scrollbar-color: var(--edge) transparent;
+  scrollbar-width: thin;
+}
+/* One footer: the room's answer and what the presses and keys do; what may be done, to the right. */
+.gear-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-top: 1px solid transparent;
+}
+.gear-said {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.gear-answer {
+  color: #f0b545;
+}
+/* Empty, the answer stays in the page as a live region, so its first words are read out; it takes no room. */
+.gear-answer:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.gear-actions,
+.gear-item-presses {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.gear-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+}
+.gear-hint-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--faint);
+  font-size: var(--type-s);
+}
+.gear-hint-pair kbd.gear-key {
+  margin-left: 0;
+}
+.gear-hint,
+.gear-card-meta {
+  color: var(--faint);
+  font-size: var(--type-s);
+}
+.gear-empty {
+  margin: 48px auto;
+  max-width: 420px;
+  text-align: center;
+  font-size: var(--type-m);
+}
+.gear-heading {
+  margin: 4px 0 10px;
+  padding-bottom: 4px;
+  font-size: var(--type-xs);
+  font-weight: 500;
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+  border-bottom: 1px solid transparent;
+}
+canvas.gear-picture,
+img.gear-glyph {
+  image-rendering: pixelated;
+}
+canvas.gear-picture.gear-picture-fitted {
+  image-rendering: auto;
+}
+img.gear-glyph {
+  width: 36px;
+  height: 36px;
+}
+.gear-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid;
+  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
+  font-size: var(--type-xs);
+  color: var(--word);
+}
+/* A press the player cannot use now still takes the focus, so its card says why; it reads as resting. */
+#hud .plus-button[aria-disabled='true'],
+#hud .plus-primary[aria-disabled='true'] {
+  border-color: rgba(125, 116, 96, 0.3);
+  background-color: rgba(12, 14, 18, 0.6);
+  background-image: none;
+  cursor: not-allowed;
+  translate: none;
+}
+
+/* A tile: Enhanced Plus's dark well, its bevel in its rarity and its glow sunk inside, brighter under the pointer;
+   plain stone without one. */
+#hud .gear-slot,
+#hud .gear-cell {
+  position: relative;
+  box-sizing: border-box;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid;
+  border-color: var(--rar-hi, var(--stone-hi)) var(--rar-lo, var(--stone-lo)) var(--rar-lo, var(--stone-lo))
+    var(--rar-hi, var(--stone-hi));
+  background:
+    radial-gradient(ellipse at 50% 115%, rgba(var(--rar-rgb, 120, 110, 90), 0.3), transparent 68%), var(--well);
+  box-shadow:
+    0 0 0 1px var(--outline),
+    inset 0 0 0 1px rgba(var(--rar-rgb, 120, 110, 90), 0.3),
+    inset 0 0 12px rgba(var(--rar-rgb, 120, 110, 90), 0.2);
+  color: var(--word);
+}
+#hud button.gear-slot:hover,
+#hud button.gear-cell:hover,
+#hud button.gear-slot:focus-visible,
+#hud button.gear-cell:focus-visible {
+  border-color: var(--rar, var(--brass-lit));
+  background-color: #171a20;
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 9px rgba(var(--rar-rgb, 243, 207, 134), 0.6),
+    inset 0 0 0 1px rgba(var(--rar-rgb, 243, 207, 134), 0.45),
+    inset 0 0 16px rgba(var(--rar-rgb, 243, 207, 134), 0.32);
+}
+#hud .gear-slot {
+  width: 88px;
+  height: 88px;
+}
+@media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
+  #hud .gear-slot {
+    width: 77px;
+    height: 77px;
+  }
+}
+#hud .gear-cell {
+  width: 64px;
+  height: 64px;
+}
+#hud .gear-cell.gear-worn {
+  width: 84px;
+  height: 84px;
+}
+#hud .gear-slot.gear-open {
+  border-color: var(--brass-lit) var(--brass) var(--brass) var(--brass-lit);
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 12px rgba(var(--rar-rgb, 243, 207, 134), 0.55),
+    inset 0 0 0 1px rgba(var(--rar-rgb, 243, 207, 134), 0.45);
+}
+#hud .gear-vacant {
+  opacity: 0.55;
+}
+/* A weapon's element: its glyph in the icon's corner, and beside its kind on its card and page. */
+.gear-element {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(1px 1px 0 var(--outline));
+}
+.gear-element svg,
+.gear-element-inline svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.gear-element-inline {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+}
+.gear-element-name {
+  margin-left: 4px;
+}
+/* An item's growth, after Destiny 1: a gauge along the icon's foot that grows as it is used. */
+.gear-gauge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(5, 6, 8, 0.85);
+}
+.gear-gauge-fill {
+  display: block;
+  height: 100%;
+  background: var(--gain);
+}
+/* Fully upgraded, the frame is gilded, as Destiny 2's masterworks are: a gold bevel and a gold light within. */
+#hud .gear-slot.gear-gilded,
+#hud .gear-cell.gear-gilded {
+  border-color: #fbe3a0 #a8741f #a8741f #fbe3a0;
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 10px rgba(242, 196, 92, 0.55),
+    inset 0 0 0 1px rgba(255, 232, 160, 0.6),
+    inset 0 0 14px rgba(242, 196, 92, 0.35);
+}
+/* Its gold catches the light at one corner, stepped as the kit's bevels are, so it is never taken for Rare's yellow. */
+#hud .gear-slot.gear-gilded::after,
+#hud .gear-cell.gear-gilded::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 244, 200, 0.55) 0 6px, transparent 6px),
+    linear-gradient(135deg, rgba(255, 232, 160, 0.25) 0 12px, transparent 12px);
+}
+#hud .gear-vacant img.gear-glyph {
+  width: 24px;
+  height: 24px;
+}
+.gear-cell.gear-none,
+.gear-material.gear-none {
+  opacity: 0.6;
+}
+.gear-count {
+  position: absolute;
+  right: 4px;
+  bottom: 5px;
+  font-size: var(--type-xs);
+  color: var(--word);
+  text-shadow:
+    -1px 0 0 var(--outline),
+    1px 0 0 var(--outline),
+    0 -1px 0 var(--outline),
+    0 1px 0 var(--outline);
+}
+.gear-pips {
+  position: absolute;
+  left: 4px;
+  bottom: 5px;
+  font-size: var(--type-xs);
+  line-height: 1;
+  color: var(--rar);
+  text-shadow: 1px 1px 0 var(--outline);
+}
+.gear-initials {
+  font-size: var(--type-l);
+  letter-spacing: round(up, calc(1em / 22), 1px);
+  color: var(--rar-hi, var(--word));
+}
+
+/* The character page: the weapons and cloak, the figure, the armour, their headings level. */
+.gear-character {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.25fr) minmax(220px, 1fr);
+  gap: 24px;
+  align-items: start;
+  align-content: center;
+  min-height: 100%;
+}
+.gear-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gear-character > .gear-side:first-child {
+  align-items: flex-end;
+}
+.gear-side .gear-heading {
+  align-self: stretch;
+}
+.gear-character > .gear-side:first-child .gear-heading {
+  text-align: right;
+}
+.gear-slot-holder {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gear-character > .gear-side:first-child .gear-slot-holder {
+  flex-direction: row-reverse;
+}
+.gear-slot-words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 180px;
+}
+.gear-character > .gear-side:first-child .gear-slot-words {
+  align-items: flex-end;
+  text-align: right;
+}
+.gear-slot-name {
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-slot-item {
+  font-size: var(--type-m);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+/* At the names' size a name needs the room of two words more. */
+@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
+  .gear-slot-item,
+  .gear-slot-words {
+    max-width: 280px;
+  }
+}
+/* A slot's flyout opens toward the figure, and upward from each side's lowest slot, never off the screen's edge. */
+.gear-flyout {
+  position: absolute;
+  top: -8px;
+  z-index: 3;
+  padding: 10px;
+  border: 2px solid transparent;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+.gear-side > .gear-slot-holder:last-child .gear-flyout {
+  top: auto;
+  bottom: -8px;
+}
+.gear-character > .gear-side:first-child .gear-flyout {
+  left: calc(100% + 10px);
+}
+.gear-character > .gear-side:last-child .gear-flyout {
+  right: calc(100% + 10px);
+}
+.gear-flyout-head {
+  margin-bottom: 8px;
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.gear-flyout .gear-hint {
+  margin: 0 0 8px;
+}
+.gear-flyout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  gap: 6px;
+}
+.gear-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.gear-power {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: min(100%, 300px);
+}
+.gear-power-label {
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(5em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-power-level {
+  font-size: var(--type-xxl);
+  line-height: 1;
+  color: var(--brass-lit);
+}
+.gear-power-next {
+  font-size: var(--type-s);
+}
+.gear-figure-stand {
+  display: grid;
+  place-items: end center;
+  width: 100%;
+  background:
+    radial-gradient(ellipse 34% 9% at 50% 97%, rgba(192, 138, 62, 0.32), transparent 72%),
+    radial-gradient(ellipse 46% 52% at 50% 62%, rgba(192, 138, 62, 0.07), transparent 70%);
+}
+.gear-figure-stand canvas {
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.55));
+}
+.gear-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.gear-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 16px;
+}
+.gear-stat + .gear-stat {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+.gear-stat-label {
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-stat-value {
+  font-size: var(--type-l);
+}
+.gear-meter {
+  box-sizing: border-box;
+  width: 100%;
+  height: 10px;
+  border: 2px solid transparent;
+}
+.gear-meter-fill {
+  height: 100%;
+  background: linear-gradient(180deg, #e9e0c0, #c9bf9c);
+}
+
+/* The hover card: opaque, its head a band of its rarity, its name in its rarity's lit tone. */
+.gear-tip {
+  position: fixed;
+  z-index: 40;
+  width: min(300px, 80vw);
+  pointer-events: none;
+}
+#hud .gear-tip .gear-card {
+  background: var(--ground);
+  border: 2px solid;
+  border-color: var(--rar-hi, var(--stone-hi)) var(--rar-lo, var(--stone-lo)) var(--rar-lo, var(--stone-lo))
+    var(--rar-hi, var(--stone-hi));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+  color: var(--word);
+  font-size: var(--type-s);
+  text-shadow: 1px 1px 0 #000;
+}
+.gear-card-head {
+  padding: 9px 12px 8px;
+  background:
+    linear-gradient(180deg, rgba(var(--rar-rgb, 154, 144, 121), 0.4), rgba(var(--rar-rgb, 154, 144, 121), 0.18)),
+    #15171c;
+  border-bottom: 1px solid rgba(var(--rar-rgb, 154, 144, 121), 0.45);
+}
+.gear-card-head h3 {
+  margin: 0;
+  font-size: var(--type-l);
+  font-weight: 500;
+  color: var(--rar-hi, var(--word));
+}
+/* A Normal piece's name is white, as its rarity is named; its frame alone is plain stone. */
+.gear-card[data-rarity='normal'] .gear-card-head h3,
+.gear-item-page[data-rarity='normal'] .gear-item-name {
+  color: var(--rar);
+}
+.gear-card-head .gear-card-meta {
+  margin: 3px 0 0;
+  color: var(--word);
+}
+.gear-card-pips {
+  margin-left: 8px;
+  color: var(--rar, var(--faint));
+}
+.gear-card-body {
+  padding: 10px 12px;
+}
+.gear-card-icon {
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+}
+.gear-card-icon canvas {
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6));
+}
+.gear-card-big strong,
+.gear-item-big strong {
+  font-size: var(--type-xl);
+  font-weight: 500;
+  margin-right: 8px;
+}
+.gear-card-big span,
+.gear-item-big span {
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-card-stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 0;
+  margin: 8px 0;
+}
+.gear-card-stats dt {
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-card-stats dd {
+  margin: 0;
+  text-align: right;
+}
+/* A trait: its column's glyph beside its name and words. */
+.gear-card-trait {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+.gear-card-trait .gear-node-glyph,
+.gear-card-trait .gear-node-glyph svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  color: var(--brass-lit);
+}
+.gear-trait-words {
+  display: flex;
+  flex-direction: column;
+}
+.gear-trait-words b {
+  font-weight: 500;
+  color: var(--brass-lit);
+}
+.gear-trait-words span,
+.gear-card-words {
+  font-size: var(--type-s);
+  color: var(--faint);
+}
+.gear-card-words {
+  margin: 4px 0;
+}
+/* What a piece changes over the one worn: each number's meter, the change a segment in its colour. */
+.gear-compare {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.gear-compare-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 72px;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.gear-compare-label {
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-compare-well {
+  display: flex;
+  height: 8px;
+  border: 2px solid transparent;
+}
+.gear-compare-kept {
+  background: linear-gradient(180deg, #e9e0c0, #c9bf9c);
+}
+.gear-compare-row.up .gear-compare-moved {
+  background: var(--gain);
+}
+.gear-compare-row.down .gear-compare-moved {
+  background: rgba(232, 150, 138, 0.45);
+}
+.gear-compare-value {
+  text-align: right;
+}
+.gear-compare-value small {
+  font-size: var(--type-xs);
+}
+.gear-compare-row.up small {
+  color: var(--gain);
+}
+.gear-compare-row.down small {
+  color: var(--loss);
+}
+.gear-card-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 7px 12px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: var(--type-s);
+  color: var(--faint);
+}
+
+/* An item's page, laid over the screen, hiding it: Destiny 1's weapon page, its name on its rarity's band. */
+#hud .gear-screen .gear-item-page {
+  background:
+    radial-gradient(ellipse 50% 60% at 76% 46%, rgba(var(--rar-rgb, 120, 110, 90), 0.1), transparent 70%), var(--ground);
+}
+.gear-item-page {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+}
+.gear-item-head {
+  padding: 14px 24px 12px;
+}
+.gear-item-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(380px, 660px) 1fr;
+  gap: 32px;
+  padding: 14px 24px 18px;
+  overflow: auto;
+  scrollbar-color: var(--edge) transparent;
+  scrollbar-width: thin;
+}
+.gear-item-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.gear-item-name {
+  margin: 0;
+  font-size: var(--type-xl);
+  font-weight: 500;
+  line-height: 36px;
+  color: var(--rar-hi, var(--word));
+}
+.gear-item-kind {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 6px 0 0;
+  color: var(--word);
+}
+.gear-item-kind .gear-card-pips {
+  margin-left: 0;
+}
+.gear-item-big {
+  margin: 8px 0 6px;
+}
+.gear-item-big strong {
+  font-size: var(--type-xxl);
+  line-height: 1;
+}
+.gear-bar {
+  display: grid;
+  grid-template-columns: 76px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+.gear-bar.gear-bar-bare {
+  grid-template-columns: 1fr;
+}
+.gear-bar-label {
+  font-size: var(--type-s);
+  color: var(--faint);
+}
+.gear-bar-value {
+  font-size: var(--type-s);
+  text-align: right;
+}
+.gear-item-left > .gear-heading {
+  margin-top: 16px;
+}
+/* The node grid: column by column, each node a tile of the kit's stone. */
+.gear-nodes {
+  display: flex;
+  gap: 14px;
+  align-self: flex-start;
+}
+.gear-node-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 48px;
+}
+/* A node is a press, but its state, not the press's resting look, says what it is. */
+#hud .gear-node.plus-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid;
+  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
+  background: var(--well);
+  color: var(--brass-lit);
+  cursor: pointer;
+}
+.gear-node-glyph,
+.gear-node-glyph svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+/* A locked node's ring, round its glyph inside the tile, lit as far as the item has grown toward it. */
+#hud .gear-node {
+  position: relative;
+}
+.gear-node-ring {
+  position: absolute;
+  inset: 0;
+  color: var(--brass-lit);
+}
+.gear-node-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#hud .gear-node.gear-node-locked {
+  border-color: var(--stone-lo) var(--stone-hi) var(--stone-hi) var(--stone-lo);
+  background: #0b0c0f;
+  color: #6a6458;
+  cursor: default;
+}
+#hud .gear-node.gear-node-open {
+  border-color: var(--rar-hi, var(--brass-lit)) var(--rar-lo, var(--brass)) var(--rar-lo, var(--brass))
+    var(--rar-hi, var(--brass-lit));
+  color: var(--rar-hi, var(--brass-lit));
+  box-shadow:
+    0 0 8px rgba(var(--rar-rgb, 243, 207, 134), 0.45),
+    inset 0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.25);
+}
+#hud .gear-node.gear-node-chosen {
+  border-color: #f6dca4 #8a5f17 #8a5f17 #f6dca4;
+  background: linear-gradient(180deg, #e2b86a, #b07a32);
+  color: #1a120a;
+  box-shadow: 0 0 0 1px var(--outline);
+  cursor: default;
+}
+#hud .gear-node.plus-button:hover:not([aria-disabled='true']) {
+  border-color: var(--brass-lit);
+}
+.gear-item-art {
+  display: grid;
+  place-items: end center;
+  min-height: 0;
+  padding-bottom: 10%;
+  background:
+    radial-gradient(ellipse 36% 7% at 50% 92%, rgba(var(--rar-rgb, 120, 110, 90), 0.4), transparent 72%),
+    radial-gradient(circle at 50% 55%, rgba(var(--rar-rgb, 120, 110, 90), 0.14), transparent 58%);
+}
+.gear-item-art canvas {
+  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.6));
+}
+
+/* A press held to act: it fills from its foot while it is held, a band along the foot over a wash of its colour. */
+#hud .gear-held {
+  position: relative;
+  overflow: hidden;
+}
+#hud .gear-held::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: linear-gradient(0deg, var(--brass-lit) 0 3px, rgba(243, 207, 134, 0.18) 3px);
+  pointer-events: none;
+}
+#hud .plus-warn.gear-held::after {
+  background: linear-gradient(0deg, var(--loss) 0 3px, rgba(232, 150, 138, 0.18) 3px);
+}
+#hud .gear-held.gear-holding::after {
+  width: 100%;
+  transition: width var(--hold, 800ms) linear;
+}
+
+/* What a hold acts on charges while it is held, as Destiny's dismantle does: a wash of its rarity rising through a
+   tile, the picture brightening and quivering toward the end. */
+#hud .gear-charging {
+  position: relative;
+}
+#hud .gear-cell.gear-charging::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(var(--rar-rgb, 243, 207, 134), 0.65), rgba(255, 246, 220, 0.12));
+  transform-origin: bottom;
+  animation: gear-rise var(--hold, 800ms) linear forwards;
+}
+#hud .gear-charging > canvas,
+#hud .gear-charging > img {
+  animation: gear-quiver var(--hold, 800ms) linear forwards;
+}
+@keyframes gear-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes gear-quiver {
+  0%,
+  50% {
+    transform: none;
+    filter: brightness(1) drop-shadow(0 0 0 rgba(var(--rar-rgb, 243, 207, 134), 0));
+  }
+  62% {
+    transform: translate(1px, 0);
+  }
+  70% {
+    transform: translate(-1px, 1px);
+  }
+  78% {
+    transform: translate(1px, -1px);
+  }
+  86% {
+    transform: translate(-1px, 0);
+  }
+  93% {
+    transform: translate(1px, 1px);
+  }
+  100% {
+    transform: translate(0, -1px);
+    filter: brightness(1.9) drop-shadow(0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.9));
+  }
+}
+/* Where a hold acted, over the page built anew: shards of the item's rarity flying from a flash, or a ring of it
+   swelling out of what was fed. */
+.gear-burst {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+}
+.gear-burst-shatter {
+  animation: gear-fade 460ms ease-out forwards;
+}
+.gear-burst-shatter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 246, 220, 0.9);
+  animation: gear-fade 180ms ease-out forwards;
+}
+.gear-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgb(var(--rar-rgb, 243, 207, 134));
+  box-shadow: 0 0 0 1px #120e0a;
+  animation: gear-fly 460ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.gear-shard.gear-shard-lit {
+  background: #fff6dc;
+}
+.gear-burst-pulse::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  aspect-ratio: 1;
+  max-width: 100%;
+  max-height: 100%;
+  border: 3px solid rgb(var(--rar-rgb, 243, 207, 134));
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgb(var(--rar-rgb, 243, 207, 134));
+  animation: gear-swell 520ms ease-out forwards;
+}
+@keyframes gear-fly {
+  from {
+    transform: translate(-50%, -50%);
+  }
+  to {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(90deg);
+    opacity: 0;
+  }
+}
+@keyframes gear-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes gear-swell {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #hud .gear-charging > canvas,
+  #hud .gear-charging > img {
+    animation: none;
+  }
+  .gear-shard {
+    display: none;
+  }
+}
+
+/* The inventory: the currencies along its head, its shelves in a well, then the gear, a list or a grid. */
+.gear-inventory {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gear-currencies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gear-currency {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 8px;
+  border: 2px solid transparent;
+}
+.gear-currency-words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gear-currency-words b {
+  font-size: var(--type-m);
+  font-weight: 500;
+}
+.gear-currency-name {
+  font-size: var(--type-xs);
+  color: var(--faint);
+}
+.gear-currency img.gear-glyph,
+.gear-purse img.gear-glyph,
+.gear-price img.gear-glyph {
+  width: 24px;
+  height: 24px;
+}
+.gear-shelves {
+  align-self: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px 6px;
+  border: 2px solid transparent;
+}
+#hud .gear-shelf {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border: 0;
+  background: none;
+  color: var(--word);
+  font: inherit;
+  font-size: var(--type-s);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+}
+#hud .gear-shelf:hover {
+  color: var(--brass-lit);
+}
+#hud .gear-shelf.gear-chosen {
+  color: var(--brass-lit);
+  box-shadow: inset 0 -2px 0 var(--brass-lit);
+}
+#hud .gear-shelf.gear-bare:not(.gear-chosen) {
+  color: var(--faint);
+}
+.gear-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 64px);
+  gap: 6px;
+}
+.gear-grid > .gear-empty,
+.gear-list > .gear-empty {
+  grid-column: 1 / -1;
+}
+.gear-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+.gear-material {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 8px;
+  border: 2px solid transparent;
+}
+.gear-material img.gear-glyph {
+  width: 32px;
+  height: 32px;
+}
+.gear-material-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gear-material b {
+  font-size: var(--type-m);
+  font-weight: 500;
+}
+/* The Vestiges carried: their name and count over a rule, then ten places in two rows of five, as Destiny 2's
+   engrams stand; an empty place is a dark Vestige. */
+.gear-vestiges .gear-heading {
+  display: flex;
+  justify-content: space-between;
+  max-width: 344px;
+  font-size: var(--type-m);
+}
+.gear-vestige-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 64px);
+  gap: 6px;
+}
+#hud .gear-vestige-place img.gear-glyph {
+  filter: grayscale(1) brightness(0.8);
+  opacity: 0.55;
+}
+
+/* A vendor's wares: each ware a press held to buy it, its tile, name, kind and price. */
+.gear-vendor {
+  padding: 14px 18px;
+}
+.gear-wares {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px 14px;
+}
+#hud .gear-ware {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  text-align: left;
+}
+.gear-ware-words {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* A ware's name wraps rather than being cut: at the names' size a stall's card holds about a dozen letters a line. */
+.gear-ware-words b {
+  font-size: var(--type-m);
+  font-weight: 500;
+}
+.gear-ware-power {
+  font-size: var(--type-s);
+  color: var(--word);
+}
+.gear-price {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--brass-lit);
+}
+.gear-price b {
+  font-size: var(--type-m);
+  font-weight: 500;
+}
+.gear-price.gear-short {
+  color: var(--loss);
+}
+.gear-price.gear-short .gear-hint {
+  color: var(--loss);
+}
+
+/* The account. */
+.gear-account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 520px;
+}
+.gear-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gear-field input {
+  pointer-events: auto;
+  flex: 1;
+  max-width: 280px;
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--word);
+  background: var(--well);
+  border: 2px solid transparent;
+  caret-color: var(--brass-lit);
+}
+.gear-presses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.gear-label {
+  color: var(--faint);
+  font-size: var(--type-s);
+  min-width: 72px;
+}
+
+/* What moves, moves in steps, as Enhanced Plus's sigils breathe; with less motion asked for, nothing does but the
+   hold's fill, which says how long is left. */
+@media (prefers-reduced-motion: no-preference) {
+  #hud .gear-screen:not([hidden]) {
+    animation: gear-in 160ms steps(4, end);
+  }
+  #hud .gear-scrim:not([hidden]) {
+    animation: gear-fade 200ms steps(4, end);
+  }
+  #hud .gear-node-open {
+    animation: gear-breathe 2.4s steps(6, end) infinite alternate;
+  }
+}
+@keyframes gear-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes gear-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes gear-breathe {
+  from {
+    box-shadow:
+      0 0 4px rgba(var(--rar-rgb, 243, 207, 134), 0.35),
+      inset 0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.2);
+  }
+  to {
+    box-shadow:
+      0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.6),
+      inset 0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.3);
+  }
+}
+
+/* Where the menu is wide, the shelves' tabs are pressed at the names' size. */
+@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
+  #hud .gear-shelf {
+    padding: 11px 22px;
+    font-size: var(--type-l);
+    letter-spacing: round(up, calc(1em / 22), 1px);
+  }
+}
+/* On a short screen an item's page takes the banner's height back for its nodes. */
+@media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
+  .gear-screen:has(.gear-item-page) .gear-banner {
+    display: none;
+  }
+}
+/* A slot's flyout stands over the level, which waits under it until the flyout closes. */
+.gear-character:has(.gear-flyout) .gear-power {
+  visibility: hidden;
+}
+/* A page's name takes the focus to be read from, without a ring: it is not a control. */
+#hud .gear-station-name:focus,
+#hud .gear-item-name:focus {
+  outline: none;
+}
+/* A ware leads with its picture, as Destiny's kiosks do. */
+#hud .gear-ware .gear-cell {
+  width: 84px;
+  height: 84px;
+}
+/* A rule runs the width of what holds it: a bare hr's auto margins would shrink it to a dot in a column. */
+.gear-screen hr {
+  align-self: stretch;
+  width: auto;
+  margin: 6px 0;
+  border-width: 0 0 1px;
+  border-style: solid;
+}
+/* Where the menu is wide, the Character page's labels, the banner's numbers and the footer's keys stand at the
+   names' size, the face's next sharp step, so none of it is read at the smallest. */
+@media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+  (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+  .gear-character .gear-slot-name,
+  .gear-character .gear-power-label,
+  .gear-character .gear-power-next,
+  .gear-character .gear-stat-label,
+  .gear-character .gear-heading,
+  .gear-flyout-head,
+  .gear-who-power,
+  .gear-hint-pair {
+    font-size: var(--type-l);
+  }
+  .gear-hint-pair kbd.gear-key {
+    font-size: var(--type-l);
+    line-height: 28px;
+  }
+  /* At the names' size the level's words keep to a line, and the stats' labels drop their wide capitals so all four
+     stand in one row. */
+  .gear-character .gear-power {
+    width: min(100%, 480px);
+  }
+  .gear-character .gear-stat-label {
+    letter-spacing: 1px;
+    text-transform: none;
+  }
+  .gear-character .gear-stat-value {
+    font-size: var(--type-xl);
+  }
+}
+/* On a screen past 1440p the menu and its cards stand at twice their size: its layout is 1280x720's, doubled, so every
+   size stays a whole multiple of the face's grid. The rules above read such a screen as a short, narrow one. */
+@media (min-width: 2400px) and (min-height: 1300px) {
+  .gear-screen,
+  .gear-tip {
+    zoom: 2;
+  }
+}

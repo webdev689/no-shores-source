@@ -3,6 +3,7 @@ use combat::arms::{OffHand, Stroke, WeaponClass};
 use combat::{CombatInput, Intent};
 use judging::{Check, How};
 use movement::Controls;
+use std::collections::BTreeMap;
 
 const SWORD: u32 = 2;
 
@@ -15,7 +16,8 @@ fn stand(room: &mut Room, number: u8, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
     let foe_type = ::foes::foe_type(number).expect("a type of the roster");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, core::f64::consts::PI);
-    room.foes.insert(id, foes::Foe { fighter, brain, caller: None });
+    room.foes
+        .insert(id, foes::Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
@@ -123,6 +125,7 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
     let mut room = room();
     let player = room.join().expect("a room with space");
     let foe = stand_foe(&mut room);
+    crate::power::hold(&mut room, player, gear::Kind::Pistolet);
     let mut archer = *room.fighter(player).unwrap();
     archer.arms =
         combat::Arms { melee: WeaponClass::Fists, ranged: Some(combat::Ranged::Pistolet), off_hand: OffHand::Empty };
@@ -138,7 +141,7 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
             .iter()
             .any(|event| event.kind == EventKind::Hit && event.how == Some(How::Shot) && event.defender == foe)
     );
-    assert!(room.shots().is_empty());
+    assert!(room.shots().next().is_none());
     // Two ticks before the snapshot, as a late timer runs them: the ball's line is kept for it, and sent once.
     let lines = room.take_lines();
     assert!(lines.len() == 1 && lines[0].last.owner == player, "{lines:?}");
@@ -151,9 +154,9 @@ fn a_foes_ball_that_stops_is_sent_once_as_its_last_segment_and_its_muzzle() {
     let foe = stand(&mut room, 9, 0.0, 0.0);
     let muzzle = [0.5, -0.5, 1.3];
     let aimed = combat::shots::loose(foe, combat::Ranged::Pistolet, [0.5, -0.1, 1.3], 0.0, 0.0, 1.0);
-    room.shots.push(combat::shots::by_foe(&combat::Shot { at: muzzle, ..aimed }));
+    room.shots.push((combat::shots::by_foe(&combat::Shot { at: muzzle, ..aimed }), None));
     let mut ticks = 0;
-    while !room.shots().is_empty() {
+    while room.shots().next().is_some() {
         assert!(room.take_lines().is_empty(), "a ball still flying has no line");
         room.tick();
         ticks += 1;

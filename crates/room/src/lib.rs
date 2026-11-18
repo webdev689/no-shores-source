@@ -4,23 +4,30 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees.
 
+pub mod asks;
 pub mod clash;
 pub mod deck;
 pub mod fleet;
 mod foes;
 mod garrison;
 mod judging;
+pub mod patrol;
+mod perks;
 pub mod pirates;
 mod players;
+mod power;
 pub mod sea;
 pub mod threat;
 
-pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST};
+pub use asks::{Asked, Grant, ResourceNode};
+pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
+pub use perks::trim_of;
 pub use players::{
-    CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, SpawnAsk,
-    VIEW_LAG, WAITING_LIMIT,
+    CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
+    Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
+pub use power::{Drop, allowed_arms, arms_allowed, gear_arms};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
@@ -92,7 +99,8 @@ pub struct Room {
     joins: usize,
     pub(crate) players: BTreeMap<PlayerId, Player>,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
-    pub(crate) shots: Vec<Shot>,
+    /// Each with what its player loosed it with; a foe's with nothing.
+    pub(crate) shots: Vec<(Shot, Option<power::Loosed>)>,
     pub(crate) pending: Vec<Pending>,
     pub(crate) groups: BTreeMap<u32, Group>,
     pub(crate) next_group: u32,
@@ -101,16 +109,17 @@ pub struct Room {
     /// foes' brains were last told: one a player's leaving ends between ticks is told at the next.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
     pub(crate) ended_telegraphs: Vec<(FighterId, bool, bool)>,
-    /// What the players asked of the foes, in turn.
-    pub(crate) spawns: Vec<(PlayerId, SpawnAsk)>,
+    /// What the players asked of the foes, in turn, each with the level asked for.
+    pub(crate) spawns: Vec<(PlayerId, SpawnAsk, u8)>,
     /// Swings begun this tick, for the foes' brains to see.
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
     pub(crate) loosed: Vec<FighterId>,
     /// The balls that stopped since the last snapshot, each as its last segment and the point it left its gun.
     pub(crate) lines: Vec<Line>,
-    /// What the foes share, how hot their fight runs, the routes they walk, the seed their chances are drawn from, the
-    /// most it holds, and a node's garrison.
+    /// What the foes share, how hot their fight runs, the routes they walk, the most it holds, and a node's garrison;
+    /// the seed the players' loot is drawn from, and apart from it the seed the foes' chances and the camps are, since a
+    /// player sees where a foe stands and what it does.
     pub(crate) board: ::foes::Board,
     pub(crate) director: ::foes::Director,
     pub(crate) nav: navmesh::NavMesh,
@@ -119,8 +128,22 @@ pub struct Room {
     pub(crate) seed: u64,
     pub(crate) foes_most: usize,
     pub(crate) garrison: Vec<garrison::Post>,
+    pub(crate) world_seed: u64,
+    /// How many rolls the room has made for players, so no two share one, even in one tick.
+    pub(crate) rolls: u64,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
     past: VecDeque<(u64, Vec<(FighterId, Fighter)>)>,
+    /// A social space's counters, each serving its asks within reach (none for a room that is not one); the Test
+    /// Ground's stall, which serves them all within reach; its resource nodes; and the Vestiges lying for its players.
+    pub counters: Option<Vec<asks::Counter>>,
+    pub(crate) stall: Option<[f64; 2]>,
+    pub(crate) resource_nodes: Vec<ResourceNode>,
+    pub(crate) drops: Vec<Drop>,
+    /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
+    pub(crate) difficulty: gear::Difficulty,
+    pub(crate) patrol: Option<patrol::Patrol>,
+    /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
+    pub day: u64,
 }
 
 impl Room {
@@ -171,7 +194,16 @@ impl Room {
             seed: SEED,
             foes_most: FOES_MOST,
             garrison: Vec::new(),
+            world_seed: SEED,
+            rolls: 0,
             past: VecDeque::new(),
+            counters: None,
+            stall: None,
+            resource_nodes: Vec::new(),
+            drops: Vec::new(),
+            difficulty: gear::Difficulty::Calm,
+            patrol: None,
+            day: 0,
         }
     }
 
@@ -216,6 +248,7 @@ impl Room {
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
         self.players.remove(&player);
+        self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
             std::mem::take(&mut self.pending).into_iter().partition(|pending| pending.defender == player);
         self.pending = kept;
@@ -259,6 +292,7 @@ impl Room {
         self.clock += 1;
         self.step_players();
         self.spawn_asked();
+        self.keep_patrol();
         self.step_foes();
         self.fly_shots();
         self.judge_waiting();
@@ -266,6 +300,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {
             self.past.pop_front();
@@ -283,10 +318,14 @@ impl Room {
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
             self.dress_in_turn(id);
+            self.answer_due(id);
             let mut taken = 0;
             while taken < CATCH_UP {
-                let Some((input, seen)) = self.next_input(id) else { break };
+                let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
+                if let Some(asked) = input.ask.take() {
+                    self.take_ask(id, asked);
+                }
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
@@ -298,20 +337,21 @@ impl Room {
                         let body = self.stand_again(fallen.body.x, fallen.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = player(body, fallen.arms);
+                            found.fighter = Fighter { trim: found.trim, ..player(body, fallen.arms) };
                             found.standing = Standing::Inside;
                             found.graced = graced;
                         }
                     }
                     continue;
                 }
-                let fighter = found.fighter.holding(Arms::from_code(input.arms));
+                let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
+                let fighter = Fighter { trim: found.trim, ..held };
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
                 found.fighter = next;
                 found.shown = input.shown;
                 found.remember(seen);
                 if let Some(ask) = input.spawn.filter(|_| self.takes_foe_asks) {
-                    self.spawns.push((id, ask));
+                    self.spawns.push((id, ask, input.spawn_level));
                 }
                 self.happened(id, &next, happening, &view);
             }
@@ -404,13 +444,14 @@ impl Room {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
                 for defender in struck(id, fighter, &attack, view, &self.blocks) {
-                    let blow = swing_blow(id, fighter, &attack, defender);
+                    let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender, attack.left_hand);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {
                         let check = Check::Swing { striker: Box::new(*fighter), attack };
                         self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
                     } else if let Some(then) = self.as_seen(defender, view) {
-                        self.judge_now(&blow, how, defender, &then);
+                        let hand = if attack.left_hand { gear::Slot::OffHand } else { gear::Slot::MainHand };
+                        self.judge_now(&blow, how, defender, &then, Some(hand));
                     }
                 }
             }
@@ -422,7 +463,8 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    self.shots.push(shot);
+                    let loosed = self.held(id, gear::Slot::MainHand);
+                    self.shots.push((shot, loosed));
                 }
             }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
@@ -444,7 +486,7 @@ impl Room {
             let body = self.stand_again(fighter.body.x, fighter.body.y);
             let graced = self.clock + GRACE;
             if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = player(body, fighter.arms);
+                found.fighter = Fighter { trim: found.trim, ..player(body, fighter.arms) };
                 found.graced = graced;
                 raised.push(id);
             }
@@ -502,9 +544,8 @@ impl Room {
     }
 
     /// The shots in flight.
-    #[must_use]
-    pub fn shots(&self) -> &[Shot] {
-        &self.shots
+    pub fn shots(&self) -> impl Iterator<Item = &Shot> {
+        self.shots.iter().map(|(shot, _)| shot)
     }
 
     /// The balls that stopped since this was last asked, each as its line, to send to everyone once so every screen
@@ -518,25 +559,6 @@ impl Room {
         std::mem::take(&mut self.events)
     }
 
-    /// Every player's dress, for one who joins; players who have sent none are left out.
-    pub fn dresses(&self) -> impl Iterator<Item = (PlayerId, &str)> + '_ {
-        self.players
-            .iter()
-            .filter(|(_, found)| !found.dress.is_empty())
-            .map(|(&player, found)| (player, found.dress.as_str()))
-    }
-
-    /// The dresses that changed since this was last asked, to send to everyone once.
-    pub fn take_dress_changes(&mut self) -> Vec<(PlayerId, String)> {
-        let changed = self.players.iter_mut().filter(|(_, found)| found.dress_changed);
-        changed
-            .map(|(&player, found)| {
-                found.dress_changed = false;
-                (player, found.dress.clone())
-            })
-            .collect()
-    }
-
     #[must_use]
     pub fn clock(&self) -> u64 {
         self.clock
@@ -547,25 +569,20 @@ impl Room {
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
-#[path = "room_tests.rs"]
-mod room_tests;
-
-#[cfg(test)]
-#[path = "fight_tests.rs"]
-mod fight_tests;
-
-#[cfg(test)]
-#[path = "foe_tests.rs"]
-mod foe_tests;
-
-#[cfg(test)]
-#[path = "fair_tests.rs"]
-mod fair_tests;
-
-#[cfg(test)]
-#[path = "faction_tests.rs"]
 mod faction_tests;
-
 #[cfg(test)]
-#[path = "node_tests.rs"]
+mod fair_tests;
+#[cfg(test)]
+mod fight_tests;
+#[cfg(test)]
+mod foe_tests;
+#[cfg(test)]
+mod gear_tests;
+#[cfg(test)]
 mod node_tests;
+#[cfg(test)]
+mod patrol_tests;
+#[cfg(test)]
+mod perks_tests;
+#[cfg(test)]
+mod room_tests;

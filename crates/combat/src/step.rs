@@ -110,7 +110,8 @@ fn kept(fighter: &Fighter, input: &CombatInput, now: Held) -> Kept {
 fn rest(next: &mut Fighter) {
     if next.stamina_rest >= STAMINA_REST {
         let share = if matches!(next.action, Action::Guard { .. }) { STAMINA_GUARDING } else { 1.0 };
-        next.stamina = (next.stamina + STAMINA_PER_TICK * share).min(STAMINA);
+        let low = if next.health < next.health_max / 2.0 { next.trim.regen_low } else { 1.0 };
+        next.stamina = (next.stamina + STAMINA_PER_TICK * share * next.trim.regen * low).min(STAMINA);
     }
     next.stamina_rest = next.stamina_rest.saturating_add(1);
     if next.poise_rest >= POISE_REST {
@@ -322,7 +323,7 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
         Swing::Plain
     };
     let left_hand = next.arms.off_hand == crate::arms::OffHand::Weapon && next.blows % 2 == 1;
-    spend(next, weapon(next.arms.melee).stamina);
+    spend(next, weapon(next.arms.melee).stamina * next.trim.swing_stamina);
     next.blows = next.blows.wrapping_add(1);
     next.kept.attack = 0;
     next.kept.stroke = None;
@@ -348,7 +349,8 @@ fn dodge(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) -> H
     let body = next.body;
     let facing =
         around.target_at.map_or_else(|| bearing([0.0, 0.0], toward), |at| bearing([body.x, body.y], [at[0], at[1]]));
-    spend(next, DODGE_STAMINA);
+    let drawn = if next.arms == crate::arms::BARE_HANDS { 1.0 } else { next.trim.drawn_dodge_stamina };
+    spend(next, DODGE_STAMINA * next.trim.dodge_stamina * drawn);
     next.body = Body {
         mode: Mode::Air,
         vx: toward[0] * DODGE_SPEED,
@@ -414,9 +416,11 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
     if pulled {
         let (chest, heading) = (next.chest(), aimed_bearing(next, intent));
         let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
-        // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone.
+        // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone. A quicker draw reaches
+        // its power sooner.
         let player = next.side.is_players();
-        let power = if player { aimed_power(ranged, elapsed) } else { 1.0 };
+        let drawn = (f64::from(elapsed) / next.trim.draw).round().min(f64::from(DRAW_FULL)) as u32;
+        let power = if player { aimed_power(ranged, drawn) * next.trim.aimed } else { 1.0 };
         let shot = loose(0, ranged, chest, heading, pitch, power * next.might);
         return Some(shoot(next, if player { shot } else { by_foe(&shot) }));
     }
@@ -426,10 +430,14 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
 
 /// A shot leaving: the weapon reloads, its arms pointing the way the shot flies.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
-    next.action = Action::Reload { left: shot_numbers(shot.ranged).3 };
+    let reload = f64::from(shot_numbers(shot.ranged).3) * next.trim.reload;
+    next.action = Action::Reload { left: reload.round().max(1.0) as u32 };
     next.aim = crate::sight::bearing([0.0, 0.0], [shot.velocity[0], shot.velocity[1]]);
     Happening::Loosed(shot)
 }
+
+/// The share of its pace a fighter keeps while it aims a ranged weapon.
+const AIM_PACE: f64 = 0.5;
 
 /// Controls that hold the body still where it stands, but let it fall.
 fn still(controls: Controls) -> Controls {
@@ -448,7 +456,7 @@ fn move_body(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) 
         Action::Idle | Action::Reload { .. } => controls,
         Action::Attack(_) => slowed(controls, ATTACK_PACE),
         Action::Guard { .. } | Action::Parry { .. } => slowed(controls, GUARD_PACE),
-        Action::Draw { .. } => slowed(controls, 0.5),
+        Action::Draw { .. } => slowed(controls, (AIM_PACE * next.trim.aim_pace).min(1.0)),
         Action::Telegraph(telegraph) => {
             if let Some(body) = travel(&next.body, &telegraph, around) {
                 next.body = body;

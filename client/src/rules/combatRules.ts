@@ -45,6 +45,8 @@ export interface CombatRules {
   armsCode(right: string | null, left: string | null, drawn: boolean): number;
   /** The farthest a stroke (1 to 6) of the melee weapon in this arms code reaches, feet to a body's middle. */
   strokeReach(arms: number, stroke: number): number;
+  /** The half-width in radians of the arc a stroke (1 to 6) sweeps either side of its aim; 0 for no stroke. */
+  strokeArc(stroke: number): number;
 }
 
 interface FightExports {
@@ -57,6 +59,7 @@ interface FightExports {
   fighter_arms(address: number, length: number): number;
   fighter_sizes(): number;
   fighter_reach(arms: number, stroke: number): number;
+  fighter_stroke_arc(stroke: number): number;
 }
 
 /** Starts the fight's rules from the compiled `room-wasm` module. */
@@ -123,5 +126,6 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
       return lend(text, (address) => exports.fighter_arms(address, text.length));
     },
     strokeReach: (arms, stroke) => exports.fighter_reach(arms, stroke),
+    strokeArc: (stroke) => exports.fighter_stroke_arc(stroke),
   };
 }

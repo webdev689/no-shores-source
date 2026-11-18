@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { blowFrame, type Doing, likelyMoves, shownMove } from './playerMoves.ts';
+import { blowFrame, blowWay, type Doing, likelyMoves, shownMove } from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -67,7 +67,7 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
     shownMove({ ...doing, blow: { direction, second, progress } }, frames, classic);
   assert.deepEqual(blow('downLeft', false, 0), { anim: 'attack_sword', frame: 0, frameSeconds: 0 });
   assert.deepEqual(blow('downLeft', true, 0.99), { anim: 'attack_sword', frame: 5, frameSeconds: 0 });
-  // The stroke's three frames run through the last half of the wind-up, the last landing with the blow (two fifths
+  // The stroke's three frames run through the last three quarters of the wind-up, the last landing with the blow (two fifths
   // through the swing, DFO's law), and hold through the follow-through: a sword's swing is struck in 0.4 s of its second.
   assert.deepEqual(
     [0.1, 0.2, 0.31, 0.39, 0.4, 0.7].map((progress) => blow('downLeft', false, progress).frame),
@@ -191,11 +191,11 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
     blow: { direction: 'down', second: false, progress: 0 },
   } as const;
   assert.equal(shownMove(guarded, frames, shieldless).anim, 'slash');
-  // Landing two fifths through the swing: the first frame held, then four through the last half of the time up to it,
-  // the fifth as it lands, and the rest over a third of that time after.
+  // Landing two fifths through the swing: the first frame held, then four through the last three quarters of the time
+  // up to it, the fifth as it lands, and the rest over a little over half that time after.
   assert.deepEqual(
     [0, 0.2, 0.31, 0.39, 0.4, 0.45, 0.55, 1].map((progress) => blowFrame(progress, 0.4)),
-    [0, 0, 2, 3, 4, 5, 8, 8],
+    [0, 1, 2, 3, 4, 5, 7, 8],
   );
   assert.equal(blow('down', 'sword_iron', null, 0.4).frame, 4);
   // A torch in the left is drawn in no blow: the guard's slash plays, as before the blows.
@@ -223,4 +223,17 @@ test('a dodge rolls through its span, on the ground and in the air; with no roll
   assert.equal(shownMove(dodging, frames, classic).anim, 'idle', 'on the ground, the hop stands');
   assert.equal(shownMove({ ...dodging, mode: 'air', vz: 3 }, frames, classic).anim, 'jump');
   assert.equal(shownMove({ ...dodging, mounted: true }, frames, everything).anim, 'horseidle', 'mounted, the horse');
+});
+
+test("a blow's blade goes the way the forge draws it: down, out, a hand's side cut right and a two-hander's left", () => {
+  assert.deepEqual(['over1h', 'thrustpair', 'side1h', 'sidepair', 'sidehilt', 'sidehaft'].map(blowWay), [
+    'down',
+    'up',
+    'right',
+    'right',
+    'left',
+    'left',
+  ]);
+  assert.equal(blowWay('slash'), null, 'any other move');
+  assert.equal(blowWay('swing2h'), null);
 });

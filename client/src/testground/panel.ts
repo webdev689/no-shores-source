@@ -5,6 +5,7 @@ import { choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { type FoeType, factionsOf, rankChoices } from '../rules/roster.ts';
+import { ELEMENTS } from '../player/gear.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
  *  speed, whether the player is playing, and a status line. */
@@ -30,8 +31,9 @@ export interface PanelHandlers {
   fps(value: number): void;
   /** Plays a move once on the player. */
   act(anim: string): void;
-  /** Stands a foe of a type and a rank before the player, or sends every foe away. */
-  fight(foe: FoeAsk): void;
+  /** Stands a foe of a type and a rank, with a shield if asked, at a level (0, a foe of none) before the player, or
+   *  sends every foe away. */
+  fight(foe: FoeAsk, level: number): void;
 }
 
 /** DFO's controls, as the hint lists them. */
@@ -46,9 +48,20 @@ const CONTROLS = [
 ];
 
 /** The foes the panel stands: a faction, one of its types (with where it is met) and one of the ranks that type comes
- *  in, each list following the one before; then spawn one, or send every foe away. */
+ *  in, each list following the one before, its level and its shield; then spawn one, or send every foe away. */
 function foeControls(roster: readonly FoeType[], fight: PanelHandlers['fight']): HTMLElement {
   const section = make('div');
+  const asked = { level: 0, shield: 0 };
+  const shield = make('select');
+  ['No shield', ...ELEMENTS.flatMap((each) => (each ? [`${each.name} shield`] : []))].forEach((name, element) =>
+    shield.append(Object.assign(make('option', name), { value: String(element) })),
+  );
+  shield.addEventListener('change', () => (asked.shield = Number(shield.value) || 0));
+  const level = make('input');
+  Object.assign(level, { type: 'number', min: '0', max: '30', value: '0' });
+  level.addEventListener('change', () => {
+    asked.level = Math.min(30, Math.max(0, Math.round(Number(level.value) || 0)));
+  });
   const factions = factionsOf(roster);
   let [faction] = factions[0] ?? [0];
   let type = roster.find((each) => each.faction === faction);
@@ -84,8 +97,10 @@ function foeControls(roster: readonly FoeType[], fight: PanelHandlers['fight']):
           rank = Number(value);
         }),
       ),
-      button('Spawn', () => type && fight({ type: type.type, rank })),
-      button('Clear', () => fight('clear')),
+      labelled('Level (0: none)', level),
+      labelled('Shield', shield),
+      button('Spawn', () => type && fight({ type: type.type, rank, shield: asked.shield }, asked.level)),
+      button('Clear', () => fight('clear', 0)),
     );
   };
   show();

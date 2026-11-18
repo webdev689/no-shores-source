@@ -32,12 +32,14 @@ const guardPose = (action: Action) => {
 const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
 
 /** What a fight holds the player to this frame, for the walker to show: their fighter as the page predicts it, whether
- *  the rules began a swing or lowered an aimed weapon unfired since the last frame, and whether a ranged weapon aims. */
+ *  the rules began a swing or lowered an aimed weapon unfired since the last frame, whether a ranged weapon aims, and
+ *  how far the first person's hands move on this frame (less while a page's attack feel holds a blow landing). */
 export interface FightShown {
   readonly own: FighterView | null;
   readonly begun: boolean;
   readonly dropped: boolean;
   readonly aiming: boolean;
+  readonly handsSeconds?: number;
 }
 
 /** The strokes struck so far after this frame's swing: a swing begins where there was none, or where the last one
@@ -149,7 +151,7 @@ export class Walker {
     if (fight && ((own && !shooter && own.action.kind !== 'attack') || (shooter && fight.dropped)))
       firstPerson.cancel();
     const free = swings && !(own && HELD.has(own.action.kind));
-    firstPerson.update(seconds, this.button(controls, free, shooter, fight), {
+    firstPerson.update(fight?.handsSeconds ?? seconds, this.button(controls, free, shooter, fight), {
       right: outfit.right,
       left: outfit.left,
       armour: { gauntlets: outfit.armour.gauntlets, boots: outfit.armour.boots },
@@ -233,12 +235,18 @@ export class Walker {
 
   /** The player's own figure as an eye at (eyeX, eyeY) sees it, or null in first person or before its first frame is
    *  composed. Its card stands a body's radius toward the eye. */
-  figure(eyeX: number, eyeY: number, flash?: CardAt['flash']): CardAt | null {
+  figure(
+    eyeX: number,
+    eyeY: number,
+    flash?: CardAt['flash'],
+    shift: readonly [number, number, number] = [0, 0, 0],
+  ): CardAt | null {
     if (this.inFirstPerson) return null;
     const { you, player } = this;
     const body = shownBody(player);
-    const { view, flip } = viewOf(you.facing, body.x, body.y, eyeX, eyeY);
+    const [x, y, z] = [body.x + shift[0], body.y + shift[1], body.z + shift[2]];
+    const { view, flip } = viewOf(you.facing, x, y, eyeX, eyeY);
     const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip);
-    return card && { card, ...cardStand(body.x, body.y, eyeX, eyeY), z: body.z, flip, ...(flash ? { flash } : {}) };
+    return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, ...(flash ? { flash } : {}) };
   }
 }

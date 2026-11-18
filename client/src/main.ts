@@ -1,10 +1,12 @@
 import { canvasSize } from './canvasSize.ts';
+import { useMendedFace } from './face.ts';
 import { startGame } from './game/game.ts';
 import { GpuUnavailable, startGpu } from './gpu.ts';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
 const hud = document.querySelector<HTMLElement>('#hud');
 if (!canvas || !hud) throw new Error('index.html has no <canvas id="game"> and <div id="hud">');
+useMendedFace();
 
 /** Keeps the drawing buffer at the canvas's displayed size in device pixels, so nothing is blurred or stretched. */
 function fitCanvas(target: HTMLCanvasElement): void {
@@ -21,7 +23,7 @@ fitCanvas(canvas);
 /** Tells the player plainly why the game could not start. */
 function stopped(message: string): void {
   document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;background:#000;font:16px system-ui;padding:24px';
+  document.body.style.cssText = 'color:#ddd;background:#000;font-size:22px;padding:24px';
 }
 
 try {

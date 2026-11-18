@@ -1,7 +1,10 @@
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
+import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** A room's snapshot, as a link hands it on. */
 export type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
+/** The player's own gear, as a link hands it on whenever it changes. */
+export type GearMessage = Extract<FromRoomMessage, { kind: 'gear' }>;
 type Welcome = Extract<FromRoomMessage, { kind: 'joined' }>;
 
 /** A browser's way into a room, wherever the room runs: the player's number and the dresses at their last welcome;
@@ -16,6 +19,10 @@ export interface RoomLink {
   readonly lost: string | null;
   send(bytes: Uint8Array<ArrayBuffer>): void;
   pump(seconds: number): void;
+  /** The player's trim, from the room's last word on their gear; none until it sends it. */
+  readonly trim?: readonly number[] | null;
+  /** The arms the room lets the player take up, from its last word on their gear; none until it sends it. */
+  readonly arms?: readonly number[] | null;
 }
 
 /** Opens a WebSocket to a room's address: the browser's own, or a test's stand-in. */
@@ -31,16 +38,27 @@ export function rejoinWait(tries: number): number {
  *  too large, or not one, worker.ts): rejoining would only be sent away again. */
 const SENT_AWAY = [1008, 1009];
 
-/** Hands on a socket's messages: its welcome to `welcomed`, each snapshot to `snapshot`. */
-function hear(socket: WebSocket, welcomed: (welcome: Welcome) => void, snapshot: (snapshot: Snapshot) => void): void {
+/** What a socket's messages go to: its welcome, each snapshot, and the player's own gear. */
+interface Heard {
+  readonly welcomed: (welcome: Welcome) => void;
+  readonly snapshot: (snapshot: Snapshot) => void;
+  readonly gear: (gear: GearMessage) => void;
+}
+
+/** Hands on a socket's messages to `heard`. */
+function hear(socket: WebSocket, heard: Heard): void {
   socket.binaryType = 'arraybuffer';
   socket.addEventListener('message', (event: MessageEvent<unknown>) => {
     if (!(event.data instanceof ArrayBuffer)) return;
     const message = readFromRoom(new Uint8Array(event.data));
-    if (message?.kind === 'joined') welcomed(message);
-    else if (message?.kind === 'snapshot') snapshot(message);
+    if (message?.kind === 'joined') heard.welcomed(message);
+    else if (message?.kind === 'snapshot') heard.snapshot(message);
+    else if (message?.kind === 'gear') heard.gear(message);
   });
 }
+
+/** The words a join fails with when the room speaks another protocol than the page. */
+const UPDATED = 'The game was updated. Load the page again.';
 
 /** A browser's WebSocket to one room: it joins, sends the player's input for each tick (or, at sea, their ship's
  *  course), and hands on every snapshot. When its socket closes for a deploy or a dropped network, it joins the room
@@ -49,6 +67,8 @@ export class RoomConnection implements RoomLink {
   private socket: WebSocket;
   private readonly url: string;
   private readonly snapshot: (snapshot: Snapshot) => void;
+  private readonly gear: (gear: GearMessage) => void;
+  private readonly session: string | null;
   private readonly connect: Connect;
   /** The player's number in the room, every dress in it when they joined, and its node in a node's room, from its
    *  last welcome. */
@@ -59,32 +79,52 @@ export class RoomConnection implements RoomLink {
   rejoining = false;
   /** Why the room sent the player away, in its words where it gave them; null while the link holds or rejoins. */
   lost: string | null = null;
+  /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
+  trim: readonly number[] | null = null;
+  arms: readonly number[] | null = null;
   private tries = 0;
   private closed = false;
   private waiting: ReturnType<typeof setTimeout> | null = null;
 
   private constructor(
     url: string,
-    snapshot: (snapshot: Snapshot) => void,
+    heard: { snapshot: (snapshot: Snapshot) => void; gear: (gear: GearMessage) => void; session: string | null },
     connect: Connect,
     socket: WebSocket,
     welcome: Welcome,
   ) {
-    [this.url, this.snapshot, this.connect, this.socket] = [url, snapshot, connect, socket];
+    [this.url, this.snapshot, this.gear, this.session] = [url, heard.snapshot, heard.gear, heard.session];
+    [this.connect, this.socket] = [connect, socket];
     [this.player, this.dressed, this.node] = [welcome.player, welcome.dressed, welcome.node];
     this.watch(socket);
   }
 
   /** Joins the room at `url` (`ws://…/room/<name>`); resolves once the room has welcomed the player, and fails if it
-   *  closes first (a full room says so). */
+   *  closes first (a full room says so) or speaks another protocol (the page loads again for it). Each snapshot goes to
+   *  `snapshot`, and the player's own gear to `gear`. With a session's token, the room is sent it once welcomed, and
+   *  on each rejoin, to keep the player's character. */
   static open(
     url: string,
     snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+    session: string | null = null,
     connect: Connect = (address) => new WebSocket(address),
   ): Promise<RoomConnection> {
     return new Promise((resolve, reject) => {
       const socket = connect(url);
-      hear(socket, (welcome) => resolve(new RoomConnection(url, snapshot, connect, socket, welcome)), snapshot);
+      let made: RoomConnection | null = null;
+      const welcomed = (welcome: Welcome) => {
+        if (welcome.protocol !== PROTOCOL) {
+          socket.close(1000, 'another protocol');
+          reject(new Error(UPDATED));
+          loadAgainFor(welcome.protocol);
+          return;
+        }
+        if (session !== null) socket.send(session);
+        made = new RoomConnection(url, { snapshot, gear, session }, connect, socket, welcome);
+        resolve(made);
+      };
+      hear(socket, { welcomed, snapshot, gear: (sent) => (made ? made.heard(sent) : gear(sent)) });
       socket.addEventListener('error', () => reject(new Error(`the room at ${url} could not be reached`)));
       socket.addEventListener('close', (event) =>
         reject(new Error(`the room at ${url} closed: ${event.reason || 'it gave no reason'}`)),
@@ -109,15 +149,31 @@ export class RoomConnection implements RoomLink {
     this.waiting = null;
     const socket = this.connect(this.url);
     this.socket = socket;
-    hear(socket, (welcome) => this.welcomed(socket, welcome), this.snapshot);
+    const welcomed = (welcome: Welcome) => this.welcomed(socket, welcome);
+    hear(socket, { welcomed, snapshot: this.snapshot, gear: (sent) => this.heard(sent) });
     this.watch(socket);
   }
 
-  /** A new welcome: the player joined again, as the room numbers them now. */
+  /** A new welcome: the player joined again, as the room numbers them now; a room deployed with another protocol
+   *  sends the page to load again. */
   private welcomed(socket: WebSocket, welcome: Welcome): void {
     if (socket !== this.socket || this.closed) return;
+    if (welcome.protocol !== PROTOCOL) {
+      [this.closed, this.rejoining, this.lost] = [true, false, UPDATED];
+      socket.close(1000, 'another protocol');
+      loadAgainFor(welcome.protocol);
+      return;
+    }
+    if (this.session !== null) socket.send(this.session);
     [this.player, this.dressed, this.node] = [welcome.player, welcome.dressed, welcome.node];
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
+  }
+
+  /** The room's word on the player's gear: its trim and arms kept, and the whole handed on. */
+  private heard(gear: GearMessage): void {
+    if (gear.trim) this.trim = gear.trim;
+    if (gear.arms) this.arms = gear.arms;
+    this.gear(gear);
   }
 
   /** Sends one tick's input bytes; while the socket is not open, nothing is sent. */
@@ -144,4 +200,17 @@ export class RoomConnection implements RoomLink {
 
   /** The room runs on its own clock, on the server. */
   pump(): void {}
+}
+
+/** Loads the page again for a room that speaks another protocol, once for each protocol, so a page a deploy left
+ *  behind takes the new one without looping should the two still differ. */
+function loadAgainFor(protocol: number): void {
+  const key = 'overlook.protocol';
+  try {
+    if (globalThis.sessionStorage.getItem(key) === String(protocol)) return;
+    globalThis.sessionStorage.setItem(key, String(protocol));
+    globalThis.location.reload();
+  } catch {
+    // No storage, or no page: the join fails, and says why.
+  }
 }

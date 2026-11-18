@@ -3,8 +3,12 @@
 //! crate's numbers, in its order.
 #![allow(unsafe_code, reason = "the code flatc makes reads a message's bytes in place, once the verifier passes them")]
 
-use combat::floats::INTENT_FLOATS;
+use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
 use combat::shots::Line;
+use combat::trim::TRIM_FLOATS;
+
+/// A fighter's numbers in a snapshot: all of them but its trim.
+pub const UNTRIMMED_FLOATS: usize = FIGHTER_FLOATS - TRIM_FLOATS;
 use combat::{Intent, Shot};
 use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
@@ -13,7 +17,7 @@ use naval::ranks::Commission;
 use naval::wire::{orders_from, orders_numbers};
 use room::pirates::Pirate;
 use room::sea::Ship;
-use room::{CLEAR_FOES, Event, FoeSeen, Input, PlayerId, Seen, Shown, SpawnAsk, Standing};
+use room::{CLEAR_FOES, Event, FoeSeen, Input, PlayerId, SHIELD_SHIFT, Seen, Shown, SpawnAsk, Standing};
 
 /// The code flatc makes from the schema, into `generated/`, which git leaves out (`npm run schema`).
 #[allow(
@@ -30,7 +34,11 @@ pub mod wire {
 
 use wire::overlook::wire as messages;
 
+/// The protocol's version: the schema's hash, which a room's welcome carries.
+pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/messages/rust/version.rs"));
+
 pub mod fleet;
+pub mod gear_wire;
 
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
 /// aim's mark (x, y, z, none as NaN).
@@ -57,13 +65,15 @@ pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     let anim = input.anim().unwrap_or_default().to_owned();
     let shown = Shown { anim, frame: input.frame(), facing: input.facing() };
     let dress = input.dress().map(str::to_owned);
-    let spawn = match (input.spawn(), input.spawn_type()) {
+    let (spawn, shield) = (input.spawn(), input.spawn() >> SHIELD_SHIFT);
+    let spawn = match (spawn, input.spawn_type()) {
         (CLEAR_FOES, _) => Some(SpawnAsk::Clear),
-        (role, 0) => SpawnAsk::by_role(role),
-        (_, foe_type) => Some(SpawnAsk::Foe { foe_type, rank: input.spawn_rank() }),
+        (role, 0) => SpawnAsk::by_role(role & ((1 << SHIELD_SHIFT) - 1), shield),
+        (_, foe_type) => Some(SpawnAsk::Foe { foe_type, rank: input.spawn_rank(), shield }),
     };
     let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
-    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn })
+    let ask = input.ask().and_then(|ask| gear_wire::asked_of(&ask));
+    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn, ask, spawn_level: input.spawn_level() })
 }
 
 /// An input as its bytes: what a browser sends, written from Rust for tests.
@@ -76,6 +86,7 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
     let combat = Some(builder.create_vector(combat));
     let anim = Some(builder.create_string(&input.shown.anim));
     let dress = input.dress.as_ref().map(|dress| builder.create_string(dress));
+    let ask = input.ask.as_ref().map(|asked| gear_wire::ask_offset(&mut builder, asked));
     let args = messages::InputArgs {
         sequence: input.sequence,
         controls,
@@ -86,8 +97,14 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
         combat,
         arms: input.arms,
         seen: input.seen,
-        spawn: if input.spawn == Some(SpawnAsk::Clear) { CLEAR_FOES } else { 0 },
+        spawn: match input.spawn {
+            Some(SpawnAsk::Clear) => CLEAR_FOES,
+            Some(SpawnAsk::Foe { shield, .. }) => shield << SHIELD_SHIFT,
+            None => 0,
+        },
         respawn: input.respawn,
+        ask,
+        spawn_level: input.spawn_level,
         spawn_type: match input.spawn {
             Some(SpawnAsk::Foe { foe_type, .. }) => foe_type,
             _ => 0,
@@ -239,9 +256,14 @@ pub fn joined_bytes(player: u32, dressed: &[(PlayerId, &str)], node: Option<(&st
     let dressed = Some(dressed_vector(&mut builder, dressed));
     let bounds = node.map(|(_, bounds)| builder.create_vector(&bounds));
     let node = node.map(|(id, _)| builder.create_string(id));
-    let joined = messages::Joined::create(&mut builder, &messages::JoinedArgs { player, dressed, node, bounds });
-    let message =
-        messages::FromRoom::create(&mut builder, &messages::FromRoomArgs { joined: Some(joined), snapshot: None });
+    let joined = messages::Joined::create(
+        &mut builder,
+        &messages::JoinedArgs { player, dressed, node, bounds, protocol: PROTOCOL },
+    );
+    let message = messages::FromRoom::create(
+        &mut builder,
+        &messages::FromRoomArgs { joined: Some(joined), ..Default::default() },
+    );
     builder.finish(message, None);
     builder.finished_data().to_vec()
 }
@@ -293,7 +315,9 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .players
         .iter()
         .map(|seen| {
-            let fighter = Some(builder.create_vector(&seen.fighter.to_floats()));
+            // Each fighter goes without its trim, which only its own player needs and has in their gear.
+            let floats = seen.fighter.to_floats();
+            let fighter = Some(builder.create_vector(&floats[..UNTRIMMED_FLOATS]));
             let anim = Some(builder.create_string(&seen.shown.anim));
             let (frame, facing) = (seen.shown.frame, seen.shown.facing);
             let (standing, standing_ticks) = standing_parts(seen.standing);
@@ -310,6 +334,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .iter()
         .map(|foe| {
             let glance = Some(builder.create_vector(&foe.fighter.glance()));
+            let shield = foe.shield;
             let args = messages::FoeArgs {
                 id: foe.foe,
                 kind: foe.kind,
@@ -319,6 +344,10 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 faction: foe.faction,
                 phase: foe.phase,
                 alert: foe.alert,
+                level: foe.level,
+                shield_element: shield.map_or(0, |shield| shield.element as u8),
+                shield: shield.map_or(0.0, |shield| shield.left),
+                shield_most: shield.map_or(0.0, |shield| shield.most),
             };
             messages::Foe::create(&mut builder, &args)
         })
@@ -426,8 +455,10 @@ fn finish_snapshot<'builder>(
     args: &messages::SnapshotArgs<'builder>,
 ) -> Vec<u8> {
     let snapshot = messages::Snapshot::create(&mut builder, args);
-    let message =
-        messages::FromRoom::create(&mut builder, &messages::FromRoomArgs { joined: None, snapshot: Some(snapshot) });
+    let message = messages::FromRoom::create(
+        &mut builder,
+        &messages::FromRoomArgs { snapshot: Some(snapshot), ..Default::default() },
+    );
     builder.finish(message, None);
     builder.finished_data().to_vec()
 }

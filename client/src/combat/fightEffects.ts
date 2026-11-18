@@ -47,17 +47,19 @@ export class FightEffects {
       readonly muzzleOf: (shot: Fired) => Point;
       readonly origin?: Point;
       readonly groundAt?: (x: number, y: number) => number | null;
+      readonly more?: readonly number[];
     },
   ): Float32Array {
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
-    const { eye, blocks, bodies, muzzleOf, origin, groundAt } = where;
+    const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [] } = where;
     this.tracers.fired(fight.fired.splice(0), muzzleOf);
     this.tracers.seen(fight.takeShots(), fight.player);
     for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt))
       this.sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     const traced = this.tracers.mesh(eye, fight.shots, fight.player);
-    return marksMesh(telegraphs, othersArrows(fight.shots, fight.player), this.sparks.flying, traced, origin);
+    const arrows = othersArrows(fight.shots, fight.player);
+    return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...more], origin);
   }
 }

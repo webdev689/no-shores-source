@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>World Editor</title>
+    <link rel="stylesheet" href="/src/face.css" />
     <style>
       :root {
         color-scheme: dark;
-        font:
-          13px system-ui,
-          sans-serif;
         color: #e8e8e8;
         background: #0b0d10;
       }
@@ -27,13 +25,13 @@
         border-right: 1px solid #2a3038;
       }
       h1 {
-        font-size: 16px;
+        font-size: 22px;
         margin: 0 0 4px;
       }
       h2 {
-        font-size: 12px;
+        font-size: 11px;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: round(up, calc(3em / 22), 1px);
         color: #9aa4b0;
         margin: 16px 0 6px;
       }
@@ -50,7 +48,6 @@
       }
       .warning {
         color: #ff6b5b;
-        font-weight: 600;
       }
       .row,
       .column {
@@ -101,7 +98,6 @@
         height: 22px;
         border-radius: 4px;
         color: #000;
-        font-weight: 700;
         display: grid;
         place-items: center;
       }

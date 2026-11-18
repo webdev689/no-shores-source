@@ -200,7 +200,7 @@ impl Room {
     #[must_use]
     pub fn garrisoned(floor: Floor, blocks: Vec<movement::Block>, section: Section, kind: NodeKind, id: &str) -> Self {
         let mut room = Self::node(floor, blocks, section);
-        room.seed = node_seed(id);
+        room.world_seed = node_seed(id);
         room.foes_most = NODE_FOES_MOST;
         room.stand_garrison(kind);
         room
@@ -211,7 +211,7 @@ impl Room {
     /// the mesh or the section cannot hold tries the next; when no post is left, the rest stand nowhere.
     pub(crate) fn stand_garrison(&mut self, kind: NodeKind) {
         let Some(section) = self.section.clone() else { return };
-        let mut draws = draws_of(self.seed);
+        let mut draws = draws_of(self.world_seed);
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         let mut open = open_points(&section, ground_middle(&section, first));
         for group in groups(kind, &mut draws) {

@@ -5,6 +5,12 @@ code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
   - client/src/testground/aimPanel.ts
+  - client/src/testground/attackFeel.ts#AttackFeel
+  - client/src/testground/feelPanel.ts#startFeelPanel
+  - client/src/combat/swingArcs.ts#SwingArcs
+  - client/src/combat/hitStop.ts#HitStops
+  - client/src/combat/cameraKick.ts#CameraKick
+  - client/src/combat/lunge.ts#lungeOf
   - client/src/player/player.ts#updatePlayer
   - client/src/player/player.ts#shownBody
   - client/src/player/others.ts#showOther
@@ -56,9 +62,9 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Wheel, Mouse4 | Pull back into third person and further, or come back into first person; Mouse4 switches straight |
 
 Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than
-0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second and stops
-short of a wall. Aiming a ranged weapon, it eases behind the right shoulder, 0.65 m out, 1.8 m back and 0.25 m up from
-the head, and zooms in 1.15 times; in first person the view zooms in 1.6 times, the hands with it
+0.8 m, the next notch returns to first person. The camera eases into place in about a tenth of a second, stops
+short of a wall and keeps 0.25 m over the ground. Aiming a ranged weapon, it eases behind the right shoulder, 0.8 m out, 3 m back and 0.25 m up from
+the head, and zooms in 1.3 times ([[The Third-Person Aim Stands 0.8 m Out and 3 m Back]]); in first person the view zooms in 1.6 times, the hands with it
 ([[Aiming Sits Behind the Shoulder and Zooms the View]], [[First-Person Aiming Zooms the Weapon With the View]]).
 
 The panel's **Third-person aim** places that view by hand: sliders for how far right of the head it stands (left below
@@ -77,10 +83,12 @@ room's word for it, so playing alone and online are the same game. The [[Game]] 
 the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight's effects and blood, and the display.
 
 - **Foes.** The panel picks a faction, then one of its types (marked land or deck), then one of the ranks that type
-  comes in; Spawn stands it 5 m ahead of where the player looks, facing them, at most twelve, and Clear sends every
-  foe away; a foe asked for while the forge still loads is not asked for. Names, factions and hands come from the
-  rules' roster through WebAssembly. Each fights by its brain ([[Foes]]) and wears its type's dress ([[Enemies]]): the
-  Grey Tithe in grey over leather or iron, the pirates as the foes of each kind were dressed before.
+  comes in, the level it stands at (0 for none, which fights by combat's own numbers) and a Blaze, Volt or Cosmic
+  shield if one is picked ([[Gear]], "Elements and shields"); Spawn stands it 5 m ahead of where the player looks,
+  facing them, at most twelve, and Clear sends every foe away; a foe asked for while the forge still loads is not asked
+  for. Names, factions and hands come from the rules' roster through WebAssembly. Each fights by its brain ([[Foes]])
+  and wears its type's dress ([[Enemies]]): the Grey Tithe in grey over leather or iron, the pirates as the foes of
+  each kind were dressed before.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen
   when knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air,
   no weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the
@@ -107,6 +115,34 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   `?blood=off` draws none.
 - **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
   the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
+- **The attack feel.** Four effects over the fight's blows, each switched on or off and set by a slider in the panel's
+  **Attack feel**, kept in the browser with its numbers shown to copy
+  ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never
+  do.
+  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own landing, reach and width, going
+    the way the striker's figure is drawn swinging ([[First Person Strikes Faster Without Arcs, and Arcs Follow the
+    Drawn Blow]]). A blow goes its own way, whatever way the swing was asked: the overhead down, the thrust out, the
+    side cut to the right with one hand or a pair, to the left with a hilt or a haft. Any other move goes the rules'
+    stroke. A figure drawn mirrored swings left-handed, so its arc is mirrored too, as it was when the swing began.
+    An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
+    cuts down and across, and a thrust drives out and flares where it lands. Each part fades by how long ago the blade
+    passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut
+    seen edge on still shows, and a dark rim keeps it clear against the sky. It burns in the weapon's metal (daedric
+    red, steel blue, dwarven gold), gold for a riposte or a counter; it follows the blow's aim as the rules turn it,
+    flares where the blow meets something, stops where a flinch or a dodge cuts it short, and waits while the fight
+    waits. None is drawn through the eyes. Brightness and trail are set.
+  - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
+    0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing, or a shot, holds
+    nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch
+    up at 1.6 times, never more than 0.2 s behind, and the player's hands go back to the rules' clock as what they do
+    changes. Other players' figures, drawn from their own looks, are not held. Its length is set.
+  - *Camera kick.* The player's blow landing punches the view down and along the stroke and shakes it a little, harder
+    for a kill, a stagger or a guard broken; a blow of theirs stopped by a guard knocks the view back; a blow landing
+    on the player jolts it and shakes it as hard as the harm; and the view leans into their own swing as it lands. A
+    blow's hit and the kill it made punch once; a shot kicks nothing; while a crosshair shows, the kick moves the view
+    but never turns it, so the crosshair stays where shots land. Its strength is set.
+  - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
+    a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
   view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
 - **The display.** It lays its own sheet over the [[Interface]]'s kit. Health, stamina and poise in one carved window
@@ -136,6 +172,29 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
   takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
 
+## Gear
+
+The [[Gear]] panel, at the right, shows the player's gear as the room holds it: their level, Prestige, Defense, XP,
+Aurem and every material; what they wear and carry, each item's Attack, Defense or Prestige, level and XP; each
+item's nodes, column by column, bought and chosen, with what a node costs or the XP it waits on; their Vestiges, those
+lying for them on the ground, and the vault; and the answer to their last ask.
+
+- **Asks.** Its buttons wear an item (a blade or mace in the off hand too), take one off, buy a node or choose among
+  those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to
+  an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes, carried
+  by a tick of the player standing still.
+- **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
+  the vault is reached, as in a social space.
+- **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
+  Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
+- **Vestiges** a kill leaves lie where the foe fell, ringed in their colour on the ground, and are picked up by walking
+  over them.
+- **The hands** hold what the gear wears: the room takes no other arms, so the dress panel's hands give way to it.
+- **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
+  item of any kind, rarity and level, any named item, 50 of every material, and XP.
+
+The room in the page runs one tick as the page opens, so the gear is there before the player first plays.
+
 ## Playing together
 
 With `?room=` and a room's name in the page's address (`?room=playtest`), the Test Ground joins that room on the
@@ -164,11 +223,12 @@ The player's figure shows the move the forge draws for what the body does:
 - **Acting:** the cast. A swing strikes one of the owner's blows where the forge draws it with both hands' things: its
   stroke by the swing (down the overhead, up the thrust, any other the side cut) and its hold by the weapon (a sword,
   dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair). A blow's
-  nine frames hold the first until halfway to the blow, run the first four through the last half of that time, show
-  the fifth as it lands, and run the rest over a third of that time after. Where no blow
+  nine frames hold the first until a quarter of the way to the blow, run the first four through the last three
+  quarters of that time, show the fifth as it lands, and run the rest over a little over half that time after
+  ([[Third-Person Strikes Run Faster Than DFO's]]). Where no blow
   is drawn, a swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. The stroke's frames run through the last half of the swing's wind-up so its last lands with the blow, two
-  fifths of the way through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the
+  to 5. The stroke's frames run through the last three quarters of the swing's wind-up so its last lands with the
+  blow, two fifths of the way through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the
   follow-through: the figure strikes fast and shows itself open while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
   right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
   move whole, a brace's right then left, then its reload where the forge draws one.
@@ -225,8 +285,12 @@ A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 - Then every texel is snapped to the nearest colour of the palette.
 
 The view shown follows the turn between the figure's facing and the eye, and the three side views past the back are
-the other side's, mirrored. A mirrored view with nothing in hand wears each hip piece (a sword's or dagger's sheath, a
-Pistolet's) at the other hip first, so the mirror lays it back at its own; the forge draws a twin of each for that. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
+the other side's, mirrored. A mirrored view wears each hip piece (a sword's or dagger's sheath, a Pistolet's) at the
+other hip first, and puts what each fist holds in the other fist, so the mirror lays each back on its own side. The
+forge draws each hip piece's twin in every move, but a weapon's twin in the left fist only in some: a sword, a dagger
+or a mace through the run, the crouch and the jump, never the walk, the rest or a blow. Where a fist's twin is not
+drawn, both fists keep the plain mirror, so the weapon is seen in the other hand; where a hip has a piece with no
+twin (the quiver), both hips keep it. Each frame stands upright on the figure's feet at 62 pixels a metre, turned to face the
 eye. Its card stands a body's radius, 0.35 m, in front of the
 body's centre toward the eye, so a wall the body touches, or a lip it is going over, does not cut through the flat
 picture.

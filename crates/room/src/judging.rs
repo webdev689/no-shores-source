@@ -10,6 +10,7 @@ use combat::shapes::{LATE, Telegraph};
 use combat::shots::{Flight, fly, stopped_line};
 use combat::strike::reaches;
 use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
+use gear::Slot;
 
 /// What a client is told of the fight: a blow and what it came to, a stagger, a death, a player standing again, a
 /// foe's feint, a foe arriving.
@@ -26,6 +27,9 @@ pub enum EventKind {
     Respawned = 9,
     Feinted = 10,
     Spawned = 11,
+    /// A foe's shield took a blow, the amount what it took; and broke under one.
+    Shielded = 12,
+    ShieldBroken = 13,
 }
 
 /// How a blow was struck, for the words a client shows.
@@ -93,18 +97,21 @@ pub fn how_of_swing(attack: &Attack, defender: FighterId) -> How {
 }
 
 impl Room {
-    /// Judges a blow against `then`, the defender as its striker saw it, and settles it now.
-    pub(crate) fn judge_now(&mut self, blow: &Blow, how: How, defender: FighterId, then: &Fighter) {
+    /// Judges a blow against `then`, the defender as its striker saw it, and settles it now. `hand` is the striking
+    /// player's hand, if a player struck.
+    pub(crate) fn judge_now(&mut self, blow: &Blow, how: How, defender: FighterId, then: &Fighter, hand: Option<Slot>) {
         let verdict = judge(blow, then);
-        self.settle(blow, how, defender, verdict);
+        self.settle(blow, how, defender, verdict, hand);
     }
 
-    /// Does what a verdict does to the defender and its striker as they are now, and tells it.
-    pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict) {
+    /// Does what a verdict does to the defender and its striker as they are now, and tells it. A player's blow that
+    /// lands on a foe shares its kill, which pays everyone who shares it.
+    pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict, hand: Option<Slot>) {
         let Some(before) = self.fighter(defender).copied() else { return };
         if before.dead() {
             return;
         }
+        let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
         // The fight's heat follows what the players took and what they dealt and killed.
@@ -116,6 +123,17 @@ impl Room {
             if after.dead() {
                 self.director.killed();
             }
+        }
+        // A blow too far below its foe's level to harm it shares nothing of its kill.
+        if let Some(hand) = hand
+            && blow.damage > 0.0
+            && matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. })
+        {
+            self.mark_struck(blow.striker, defender, hand);
+        }
+        self.perks_after(blow.striker, defender, &verdict, after.dead());
+        if after.dead() && self.foes.contains_key(&defender) {
+            self.pay_kill(defender);
         }
         if let Some(striker) = self.fighter(blow.striker).copied().filter(|striker| !striker.dead()) {
             self.set_fighter(blow.striker, answered(&striker, defender, &verdict));
@@ -143,6 +161,16 @@ impl Room {
                 stroke,
             });
         };
+        if let Some((took, broke)) = shielded {
+            tell(EventKind::Shielded, took);
+            if broke {
+                tell(EventKind::ShieldBroken, 0.0);
+                if let Some(found) = self.players.get_mut(&blow.striker) {
+                    found.character.earn(gear::emblems::Deed::ShieldBroken);
+                    found.gear_changed = true;
+                }
+            }
+        }
         tell(kind, amount);
         if after.dead() {
             tell(EventKind::Killed, 0.0);
@@ -150,6 +178,33 @@ impl Room {
             tell(EventKind::Staggered, 0.0);
         }
         self.verdicts.push((blow.striker, defender, verdict));
+    }
+
+    /// The verdict as a foe's shield leaves it: the shield takes the blow's damage first, weighed by the blow's element
+    /// against its own, and only what it could not hold reaches health. With it, what the shield took and whether it
+    /// broke.
+    fn shielded(&mut self, defender: FighterId, blow: &Blow, verdict: Verdict) -> (Verdict, Option<(f64, bool)>) {
+        let Some(shield) = self.foes.get_mut(&defender).and_then(|foe| foe.shield.as_mut()) else {
+            return (verdict, None);
+        };
+        if shield.left <= 0.0 {
+            return (verdict, None);
+        }
+        let (element, held) = (gear::Element::from_number(blow.element), shield.left);
+        let verdict = match verdict {
+            // A blow the shield holds whole does not reach the foe at all, so it fills no poise either.
+            Verdict::Hit { damage, poise } => {
+                let reached = shield.struck(damage, element);
+                Verdict::Hit { damage: reached, poise: if reached > 0.0 { poise } else { 0.0 } }
+            }
+            Verdict::Blocked { damage, stamina } => {
+                Verdict::Blocked { damage: shield.struck(damage, element), stamina }
+            }
+            Verdict::GuardBroken { damage } => Verdict::GuardBroken { damage: shield.struck(damage, element) },
+            other => return (other, None),
+        };
+        let took = held - shield.left;
+        (verdict, (took > 0.0).then_some((took, shield.left <= 0.0)))
     }
 
     pub(crate) fn tell(
@@ -198,7 +253,7 @@ impl Room {
             _ => Some(judge(&pending.blow, then)),
         };
         if let Some(verdict) = verdict {
-            self.settle(&pending.blow, pending.how, pending.defender, verdict);
+            self.settle(&pending.blow, pending.how, pending.defender, verdict, None);
         }
         self.group_judged(pending, verdict);
     }
@@ -237,7 +292,7 @@ impl Room {
     pub(crate) fn fly_shots(&mut self) {
         let shots = std::mem::take(&mut self.shots);
         let everyone = self.fighters();
-        for shot in shots {
+        for (shot, loosed) in shots {
             let Some(side) = self.fighter(shot.owner).map(|owner| owner.side) else { continue };
             let bodies: Vec<(FighterId, [f64; 3])> = everyone
                 .iter()
@@ -251,9 +306,18 @@ impl Room {
                 self.lines.push(stopped_line(&shot, at));
             }
             match flight {
-                Flight::Flying(next) => self.shots.push(next),
-                Flight::Stopped { struck: Some(defender), .. } => {
+                Flight::Flying(next) => self.shots.push((next, loosed)),
+                Flight::Stopped { struck: Some(defender), at } => {
                     let blow = combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]);
+                    let blow = self.empower_as(blow, defender, loosed);
+                    // An arrow or a bolt covered its speed for each whole tick it flew, and in its last only as far as
+                    // it went before it struck.
+                    let [east, south, up] = [at[0] - shot.at[0], at[1] - shot.at[1], at[2] - shot.at[2]];
+                    let last = libm::sqrt(east * east + south * south + up * up);
+                    let covered =
+                        combat::shots::shot_numbers(shot.ranged).0 * f64::from(shot.age) * movement::TICK_SECONDS
+                            + last;
+                    let blow = loosed.map_or(blow, |loosed| Self::at_range(blow, covered, &loosed.trim));
                     self.blow_lands(&blow, How::Shot, defender, Check::Shot);
                 }
                 Flight::Stopped { struck: None, .. } => {}
@@ -276,8 +340,13 @@ impl Room {
         if let Some(defender) = struck
             && let Some(then) = self.as_seen(defender, view)
         {
-            let blow = combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]);
-            self.judge_now(&blow, How::Shot, defender, &then);
+            let held = self.held(shot.owner, Slot::MainHand);
+            let blow = self.empower_as(combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]), defender, held);
+            // A ball's range is measured as an arrow's: the line it flew to where it struck.
+            let [east, south, up] = [stop[0] - shot.at[0], stop[1] - shot.at[1], stop[2] - shot.at[2]];
+            let covered = libm::sqrt(east * east + south * south + up * up);
+            let blow = held.map_or(blow, |held| Self::at_range(blow, covered, &held.trim));
+            self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::MainHand));
         }
         stop
     }
@@ -287,7 +356,7 @@ impl Room {
         if self.players.contains_key(&defender) {
             self.pending.push(Pending { blow: *blow, how, defender, tick: self.clock, check });
         } else if let Some(then) = self.fighter(defender).copied() {
-            self.judge_now(blow, how, defender, &then);
+            self.judge_now(blow, how, defender, &then, Some(Slot::MainHand));
         }
     }
 }

@@ -14,6 +14,7 @@ pub mod shots;
 pub mod sight;
 pub mod step;
 pub mod strike;
+pub mod trim;
 pub mod tuning;
 pub mod turn;
 
@@ -23,6 +24,7 @@ pub use judge::{Blow, BlowKind, Verdict, judge};
 pub use shapes::{Shape, Telegraph, TelegraphOrder};
 pub use shots::Shot;
 pub use step::{Happening, Surroundings, step_fighter};
+pub use trim::Trim;
 pub use turn::player_tick;
 
 /// Whole ticks in `seconds`, to the nearest.

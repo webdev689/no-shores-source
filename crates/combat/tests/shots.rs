@@ -342,3 +342,20 @@ fn a_shot_strikes_only_bodies_ahead_of_it_and_one_through_the_top_of_a_head() {
     assert_eq!(struck, Some(2));
     assert!((at[2] - 1.8).abs() < 0.05, "it meets the head's top: {at:?}");
 }
+
+#[test]
+fn a_trimmed_bow_draws_sooner_strikes_harder_aimed_and_reloads_faster() {
+    let trimmed = combat::Fighter {
+        trim: combat::Trim { draw: 0.5, aimed: 1.1, reload: 0.85, ..combat::Trim::PLAIN },
+        ..archer()
+    };
+    let (half, _) = run(trimmed, asking(0.0, AIMING), DRAW_FULL / 2 + 1, None);
+    let (fired, happenings) = run(half, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
+    assert!((only_shot(&happenings).1.damage - 18.0 * AIMED_POWER * 1.1).abs() < 1e-9, "Updraft and Steady Draw");
+    let (_, plain) = run(archer(), asking(0.0, TRIGGER), 1, None);
+    let (plain_fired, _) = run(archer(), asking(0.0, TRIGGER), 1, None);
+    let (Action::Reload { left: quick }, Action::Reload { left: slow }) = (fired.action, plain_fired.action) else {
+        panic!("both reload: {plain:?}");
+    };
+    assert_eq!(f64::from(quick), (f64::from(slow) * 0.85).round(), "Quick Hands");
+}

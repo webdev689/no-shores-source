@@ -33,7 +33,14 @@ function builtFrom(roots: readonly string[]): string[] {
 test('the rooms’ code is every crate the room’s WebAssembly and the bake are built from, and no other', () => {
   const crates = roomsCode.filter((path) => path.startsWith('crates/')).map((path) => path.slice('crates/'.length));
   assert.deepEqual(crates.sort(), builtFrom(['room-wasm', 'bake']));
-  for (const path of ['server', 'tools/schema.mjs', 'content/world', 'content/testground', 'Cargo.lock'])
+  for (const path of [
+    'server',
+    'tools/schema.mjs',
+    'content/world',
+    'content/testground',
+    'content/gear',
+    'Cargo.lock',
+  ])
     assert.ok(roomsCode.includes(path), path);
 });
 

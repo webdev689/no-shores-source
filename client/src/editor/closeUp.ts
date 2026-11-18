@@ -113,7 +113,7 @@ export function drawScaleCues(
     draw('line', { x1: base.x, y1: base.y + 14, x2: end.x, y2: end.y + 14, stroke: '#fff', 'stroke-width': 2 });
     draw(
       'text',
-      { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30, fill: '#fff', 'text-anchor': 'middle', 'font-size': 12 },
+      { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30, fill: '#fff', 'text-anchor': 'middle', 'font-size': 11 },
       label,
     );
     break;

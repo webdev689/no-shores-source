@@ -7,6 +7,13 @@ export interface CourseBlock {
   readonly top: number;
 }
 
+/** A resource node on a course: where it stands, and its island's resource by its place in the gear's list. */
+export interface CourseNode {
+  readonly x: number;
+  readonly y: number;
+  readonly resource: number;
+}
+
 /** What became of a player's input: the room took it, or why not. At sea, `too soon` is a second course in one tick,
  *  and `refused` a course the sea's law will not sail: across land, at a pace off the steps, or too long. */
 export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'no such player' | 'too soon' | 'refused';
@@ -49,6 +56,24 @@ export interface RoomDoor {
   /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
    *  bytes. */
   snapshot(): Uint8Array;
+  /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
+   *  course open. */
+  furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
+  /** A player's own gear's bytes, to send them alone; empty when it has not changed since last asked. */
+  gear(player: number): Uint8Array;
+  /** Sets a node's room's seas, as its voyage set out: 0 calm, 1 rough, 2 storm; false if it is no room on land. */
+  difficulty(seas: number): boolean;
+  /** Sets the day, counted from the epoch, whose wares its vendors show; false if it is no room on land. */
+  day(day: number): boolean;
+  /** Draws a room on land's loot, and apart from it its foes and camps, from seeds the host keeps secret, each as two
+   *  halves; false if it is none. */
+  reseed(seeds: readonly [number, number, number, number]): boolean;
+  /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
+  character(player: number): string | null;
+  /** Gives a player the character kept for them; false if the text is not one or they are not in. */
+  restoreCharacter(player: number, kept: string): boolean;
+  /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
+  own(player: number, account: string): boolean;
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
@@ -74,6 +99,14 @@ interface RoomExports {
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
   room_snapshot(): bigint;
+  room_gear(player: number): bigint;
+  room_character(player: number): bigint;
+  room_difficulty(seas: number): number;
+  room_day(day: number): number;
+  room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
+  room_restore_character(player: number, address: number, length: number): number;
+  room_own(player: number, address: number, length: number): number;
+  room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
   room_roster(): bigint;
 }
@@ -125,6 +158,27 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
     snapshot: () => take(exports.room_snapshot()),
+    furnish: (stall, nodes) => {
+      const numbers = [
+        stall?.x ?? Number.NaN,
+        stall?.y ?? Number.NaN,
+        ...nodes.flatMap((node) => [node.x, node.y, node.resource]),
+      ];
+      const bytes = new Uint8Array(new Float64Array(numbers).buffer);
+      return lend(bytes, (address) => exports.room_furnish(address, bytes.length)) === 1;
+    },
+    gear: (player) => take(exports.room_gear(player)),
+    difficulty: (seas) => exports.room_difficulty(seas) === 1,
+    day: (day) => exports.room_day(day) === 1,
+    reseed: ([lootLow, lootHigh, worldLow, worldHigh]) =>
+      exports.room_reseed(lootLow, lootHigh, worldLow, worldHigh) === 1,
+    character: (player) => {
+      const bytes = take(exports.room_character(player));
+      return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
+    },
+    restoreCharacter: (player, kept) =>
+      openWith((address, length) => exports.room_restore_character(player, address, length), kept),
+    own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
   };

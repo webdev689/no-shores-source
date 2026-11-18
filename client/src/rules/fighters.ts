@@ -1,5 +1,10 @@
 import { BODY_FLOATS, type Mode } from './movementRules.ts';
 
+/** The combat crate's strokes 1 to 6, as the way each swing goes. */
+export const STROKE_DIRECTIONS = ['down', 'downLeft', 'left', 'right', 'downRight', 'up'] as const;
+export type StrokeDirection = (typeof STROKE_DIRECTIONS)[number];
+/** The way stroke `stroke` (1 to 6) goes; an overhead for any other. */
+export const directionOf = (stroke: number): StrokeDirection => STROKE_DIRECTIONS[stroke - 1] ?? 'down';
 /** A foe's telegraphed blow's shapes, by the combat crate's numbers 1 to 7. */
 export const SHAPES = ['lunge', 'sweep', 'slam', 'ring', 'charge', 'leap', 'aimed'] as const;
 export type Shape = (typeof SHAPES)[number];
@@ -65,7 +70,21 @@ export interface FighterView {
 const COMBAT_AT = BODY_FLOATS;
 const ACTION_NUMBERS = 10;
 export const GLANCE_FLOATS = 17 + ACTION_NUMBERS;
-export const FIGHTER_FLOATS = BODY_FLOATS + 24 + ACTION_NUMBERS;
+/** A whole fighter: its body, the fight's numbers, its action's, then its gear's trim (combat's TRIM_FLOATS). */
+export const TRIM_FLOATS = 29;
+export const FIGHTER_FLOATS = BODY_FLOATS + 24 + ACTION_NUMBERS + TRIM_FLOATS;
+/** A fighter as a snapshot carries it: all but its trim, which only its own player has, in their gear. */
+export const UNTRIMMED_FLOATS = FIGHTER_FLOATS - TRIM_FLOATS;
+/** The trim of a fighter whose gear trims nothing (combat's `Trim::PLAIN`): every factor 1, nothing given back. */
+export const PLAIN_TRIM: readonly number[] = [...Array<number>(25).fill(1), 0, 0, 0, 0];
+
+/** A whole fighter from a snapshot's, its trim put back. */
+export function trimmed(untrimmed: ArrayLike<number>, trim: readonly number[] | null | undefined): Float64Array {
+  const whole = new Float64Array(FIGHTER_FLOATS);
+  whole.set(Array.from(untrimmed).slice(0, UNTRIMMED_FLOATS));
+  whole.set(trim?.length === TRIM_FLOATS ? trim : PLAIN_TRIM, UNTRIMMED_FLOATS);
+  return whole;
+}
 
 function actionOf(kind: number, numbers: ArrayLike<number>): Action {
   const valueAt = (index: number) => numbers[index] ?? 0;

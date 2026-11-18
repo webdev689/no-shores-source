@@ -14,6 +14,14 @@ code:
   - client/src/player/others.ts#showOther
   - client/src/player/others.ts#OtherPlayers
   - client/src/combat/playerFight.ts#PlayerFight
+  - client/src/player/gear.ts#RARITIES
+  - client/src/player/gear.ts#nodeShown
+  - client/src/player/gear.ts#gearHands
+  - client/src/player/gearLooks.ts#gearOutfit
+  - client/src/player/fightMoves.ts#foeDoing
+  - client/src/player/crosshair.ts#crosshairPoint
+  - client/src/player/glide.ts#Glides
+  - client/src/player/picture.ts#addedBy
 ---
 # Player
 
@@ -34,10 +42,15 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
   The walker gives the player's own card for an eye; other players' figures stand where their room last saw them, in
   their own dress when it reads as one (`OtherPlayers`, `showOther`), as in the game's nodes so on the Test Ground.
-- **A room** (`Fighting`): each tick's intent goes to it, with what the figure shows, the dress when it changed and a
-  respawn when asked. Each snapshot corrects the prediction, keeps the player's standing with the room's section,
+- **A room** (`Fighting`): it is joined with the player's session, if they have one, to keep their character
+  ([[Accounts]]). Each tick's intent goes to it, with what the figure shows, the dress when it changed, a gear ask and
+  a respawn when asked. Each snapshot corrects the prediction, keeps the player's standing with the room's section,
   holds a body dead past its edge still, and moves every other player's figure, which the page places and takes away
-  ([[Server]]).
+  ([[Server]]); every figure glides between snapshots (`Glides`).
+- **Gear** (`gear.ts`, `gearLooks.ts`): the gear the room sends, as the screens and the figure read it: its
+  rarities' colours, its nodes, what the hands hold (`gearHands`) and what the figure wears (`gearOutfit`, [[Gear]]).
+  An item's own picture is the pixels its layers add to the figure, less any speck apart from the piece (`addedBy`).
+- **The crosshair** (`crosshair.ts`) finds where a shot would strike, over the ground and the bodies.
 - **The input** (`Input`) reads the keys and the mouse on the page's canvas, with the pointer locked to look round.
 
 ## Limits

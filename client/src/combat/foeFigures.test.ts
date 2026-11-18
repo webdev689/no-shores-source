@@ -24,6 +24,8 @@ function fightWith(east: number, south: number, tick: number) {
   const kept: KeptFoe = {
     id: 7,
     kind: 2,
+    level: 0,
+    shield: null,
     type: COLLECTOR,
     rank: 2,
     faction: 1,

@@ -44,6 +44,9 @@ test("an orbit's shot stands back from its target along its look, and over the g
   const buried = shotOfOrbit(orbit, lens, () => 12, 0.3);
   assert.equal(buried.eye[2], 12.3);
   assert.equal(buried.yaw, 0);
+  assert.equal(level.fov, 1, 'unzoomed, the lens as it is');
+  const aimed = shotOfOrbit({ ...orbit, zoom: 2 }, lens, () => null, 0.3);
+  assert.ok(Math.abs(Math.tan(aimed.fov / 2) - Math.tan(0.5) / 2) < 1e-12, 'zoomed twice, half as wide');
 });
 
 test('a forward vector reads back as its bearing and pitch', () => {

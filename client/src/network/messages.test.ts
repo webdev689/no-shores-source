@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
@@ -17,11 +18,17 @@ const built = (path: string, how: string) =>
 const written = async (name: string) => new Uint8Array(await built(`protocol/${name}`, 'run `cargo test -p protocol`'));
 
 test('a welcome and a snapshot the server wrote read back to the bit', async () => {
-  // protocol_tests.rs writes these messages: a welcome into Overlook's social space; one player standing inside, one
-  // after half a second's walk, swinging and warned; and the first's dress.
+  // protocol_tests.rs writes these messages: a welcome into Overlook's social space, in the protocol both were built
+  // from; one player standing inside, one after half a second's walk, swinging and warned; and the first's dress.
   const dressed = [{ player: 7, dress: '{"body":"male"}' }];
   const node = { id: 'overlook-social', bounds: [2_808_986, 1_201_139, 2_809_442, 1_201_455.5] };
-  assert.deepEqual(readFromRoom(await written('joined.bin')), { kind: 'joined', player: 7, dressed, node });
+  assert.deepEqual(readFromRoom(await written('joined.bin')), {
+    kind: 'joined',
+    player: 7,
+    dressed,
+    node,
+    protocol: PROTOCOL,
+  });
   const snapshot = readFromRoom(await written('snapshot.bin'));
   assert.equal(snapshot?.kind, 'snapshot');
   if (snapshot?.kind !== 'snapshot') return;
