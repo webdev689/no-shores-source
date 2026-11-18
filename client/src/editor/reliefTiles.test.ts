@@ -106,3 +106,43 @@ test('past the most kept, a new tile takes the slot of the one least lately want
   assert.ok(!tiles.kept.some(({ key }) => key === 't0'));
   assert.equal(tiles.kept.find(({ key }) => key === `t${MOST_TILES}`)?.slot, 0);
 });
+
+test('once the land changes, an old tile no longer wanted is dropped, so a finer one never hides the fresh ground', async () => {
+  const tiles = new ReliefTiles(() => undefined);
+  const source = { ground: (left: number, top: number, step: number) => Promise.resolve(patch(left, top, step)) };
+  const fine: TileAsk = { key: '2:0:0', left: 0, top: 0, step: 2 };
+  const coarse: TileAsk = { key: '8:0:0', left: 0, top: 0, step: 8 };
+  tiles.keep('c1', 1, [fine], source);
+  await settle();
+  tiles.keep('c1', 1, [coarse], source);
+  await settle();
+  assert.deepEqual(tiles.kept.map(({ key }) => key).sort(), ['2:0:0', '8:0:0'], 'unchanged land keeps both');
+  tiles.keep('c1', 2, [coarse], source);
+  assert.deepEqual(
+    tiles.kept.map(({ key }) => key),
+    ['8:0:0'],
+  );
+});
+
+test('more tiles wanted than are kept: only the nearest are asked for, and each once', async () => {
+  const asked: number[] = [];
+  const tiles = new ReliefTiles(() => undefined);
+  const source = {
+    ground: (left: number, top: number, step: number) => {
+      asked.push(left);
+      return Promise.resolve(patch(left, top, step));
+    },
+  };
+  const wanted = Array.from({ length: MOST_TILES + 10 }, (_unused, index) => ({
+    key: `t${index}`,
+    left: index * 512,
+    top: 0,
+    step: 4,
+  }));
+  for (let frame = 0; frame < MOST_TILES * 2; frame++) {
+    tiles.keep('c1', 1, wanted, source);
+    await settle();
+  }
+  assert.equal(asked.length, MOST_TILES);
+  assert.equal(new Set(asked).size, MOST_TILES);
+});

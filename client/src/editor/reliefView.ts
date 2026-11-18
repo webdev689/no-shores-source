@@ -46,8 +46,8 @@ struct View {
 @group(0) @binding(1) var heights: texture_2d<f32>;
 @group(0) @binding(2) var lakes: texture_2d<f32>;
 @group(0) @binding(3) var marks: texture_2d<u32>;
-// Each tile's samples (height, fresh water's surface) and marks, one layer a tile; and each tile's first inner
-// sample in metres from the view's centre, its step and its layer.
+// Each tile's samples (height, fresh water's surface, metres past its edge) and marks, one layer a tile; and each
+// tile's first inner sample in metres from the view's centre, its step and its layer.
 @group(0) @binding(4) var tile_ground: texture_2d_array<f32>;
 @group(0) @binding(5) var tile_marks: texture_2d_array<u32>;
 @group(0) @binding(6) var<storage, read> tile_table: array<vec4f, ${MOST_TILES}>;
@@ -97,16 +97,17 @@ fn tile_over(offset: vec2f) -> i32 {
   return best;
 }
 
-// A tile's height and water at a point in its steps from its first inner sample, between the four samples round it.
-fn tile_at(layer: i32, at: vec2f) -> vec2f {
+// A tile's height, fresh water's surface and how far a point lies past that water's edge, at a point in its steps
+// from its first inner sample, between the four samples round it.
+fn tile_at(layer: i32, at: vec2f) -> vec3f {
   let last = vec2i(textureDimensions(tile_ground)) - 1;
   let base = floor(at) + 1.0;
   let fraction = at + 1.0 - base;
   let corner = vec2i(base);
-  let a = textureLoad(tile_ground, clamp(corner, vec2i(0), last), layer, 0).rg;
-  let b = textureLoad(tile_ground, clamp(corner + vec2i(1, 0), vec2i(0), last), layer, 0).rg;
-  let c = textureLoad(tile_ground, clamp(corner + vec2i(0, 1), vec2i(0), last), layer, 0).rg;
-  let d = textureLoad(tile_ground, clamp(corner + vec2i(1, 1), vec2i(0), last), layer, 0).rg;
+  let a = textureLoad(tile_ground, clamp(corner, vec2i(0), last), layer, 0).rgb;
+  let b = textureLoad(tile_ground, clamp(corner + vec2i(1, 0), vec2i(0), last), layer, 0).rgb;
+  let c = textureLoad(tile_ground, clamp(corner + vec2i(0, 1), vec2i(0), last), layer, 0).rgb;
+  let d = textureLoad(tile_ground, clamp(corner + vec2i(1, 1), vec2i(0), last), layer, 0).rgb;
   return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
 }
 
@@ -144,7 +145,8 @@ fn exact_colour(offset: vec2f, pixel_m: f32) -> vec4f {
   // A face steeper than one in one is a carved cliff: rock, as the terrain lays it.
   var land = mix(land_colour(max(height, 0.0)), vec3f(0.50, 0.48, 0.46), smoothstep(0.6, 1.2, length(slope)));
   land = land * (0.4 + 0.8 * shade);
-  land = mix(land, LAKE, smoothstep(-0.25, 0.25, (here.y - height) / across) * select(0.0, 1.0, here.y > 0.0));
+  // Fresh water by how far past its edge a point lies, so a river a few metres wide reads as water, not a tint.
+  land = mix(land, RIVER, 1.0 - smoothstep(-0.5 * pixel_m, 0.5 * pixel_m, here.z));
   land = mix(mix(mix(land, ROAD, tile_marked(layer, at, 3u, 3u)), TOWN, 0.6 * tile_marked(layer, at, 4u, 4u)), PORT, tile_marked(layer, at, 5u, 5u));
   let sea = mix(SHALLOW, OPEN_SEA, smoothstep(0.0, 300.0, -height));
   let colour = mix(sea, land, smoothstep(-0.5, 0.5, height / across));
@@ -239,7 +241,7 @@ export class ReliefView {
     this.uniforms = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     const layers = [TILE_SAMPLES, TILE_SAMPLES, MOST_TILES];
     const usage = TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination;
-    this.tileGround = device.createTexture({ size: layers, format: 'rg32float', usage });
+    this.tileGround = device.createTexture({ size: layers, format: 'rgba32float', usage });
     this.tileMarks = device.createTexture({ size: layers, format: 'r8uint', usage });
     this.tileTable = device.createBuffer({
       size: MOST_TILES * 16,
@@ -319,17 +321,15 @@ export class ReliefView {
   /** Sends a tile of the exact ground to its slot. */
   layTile(tile: Tile): void {
     const { patch, slot } = tile;
-    const ground = new Float32Array(patch.width * patch.height * 2);
-    for (let index = 0; index < patch.width * patch.height; index++) {
-      ground[index * 2] = patch.heights[index] ?? 0;
-      ground[index * 2 + 1] = patch.water[index] ?? 0;
-    }
+    const ground = new Float32Array(patch.width * patch.height * 4);
+    for (let index = 0; index < patch.width * patch.height; index++)
+      ground.set([patch.heights[index] ?? 0, patch.water[index] ?? 0, patch.edges[index] ?? 0], index * 4);
     const { queue } = this.gpu.device;
     const size = [patch.width, patch.height, 1];
     queue.writeTexture(
       { texture: this.tileGround, origin: [0, 0, slot] },
       ground,
-      { bytesPerRow: patch.width * 8 },
+      { bytesPerRow: patch.width * 16 },
       size,
     );
     queue.writeTexture(

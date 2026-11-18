@@ -97,7 +97,9 @@ export function layoutMarks(
     for (const area of areas) {
       const colour = AREA_COLOUR.get(area.kind) ?? '#cccccc';
       const edge = pathThrough(circle(project, area.at, area.radius));
-      if (edge.box) below.push({ shape: 'line', path: edge.path, colour, width: 1.5, fill: `${colour}2e` });
+      // Cut by the view, an area is only outlined: a fill would close each piece with a chord across it.
+      const fill = edge.whole ? { fill: `${colour}2e` } : {};
+      if (edge.box) below.push({ shape: 'line', path: edge.path, colour, width: 1.5, ...fill });
     }
     for (const { tier, points, heights } of layout.paths) {
       const { widthM, colour, thinnestPx } = PATHS[tier];
@@ -133,10 +135,11 @@ export function layoutMarks(
           ...(site.kind === 'event' ? { dash: '6 3' } : {}),
         });
       else dots.push({ shape: 'dot', ...spot, radius: 4, fill: colour, stroke: '#000000cc' });
-      // A gate's and a landing's names are their areas'; a ring's name stands on its edge.
+      // A gate's and a landing's names are their areas', and an event's or foes' would repeat their area's: a
+      // resource is named by what it holds, the rest by their kind. A ring's name stands on its edge.
       const [nameX, nameY] = ring?.box ? [spot.x, ring.box.top - 3] : [spot.x, spot.y - 7];
       if (span(box) >= SITE_NAMES_FROM_PX && site.kind !== 'gate' && site.kind !== 'landing')
-        labels.place(nameX, nameY, site.holds ?? site.kind, colour);
+        labels.place(nameX, nameY, site.kind === 'resource' ? (site.holds ?? site.kind) : site.kind, colour);
     }
   }
   return { below, dots };

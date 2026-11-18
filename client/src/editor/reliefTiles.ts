@@ -80,8 +80,8 @@ export interface TileSource {
 }
 
 /** The kept tiles of one landmass: asks for the next one wanted, keeps it in a free slot (or the one least lately
- *  wanted), and drops every tile when the landmass changes. A tile of an older land version is drawn until its
- *  fresh one comes, so a stroke never blanks the carving. */
+ *  wanted), and drops every tile when another landmass is shown. A wanted tile of an older land version is drawn
+ *  until its fresh one comes, so a stroke never blanks the carving. */
 export class ReliefTiles {
   private readonly tiles = new Map<string, Tile>();
   private readonly used = new Map<string, number>();
@@ -99,14 +99,20 @@ export class ReliefTiles {
     return [...this.tiles.values()];
   }
 
-  /** Called each frame of the 2D map: asks for the next tile wanted if none is being sampled. */
-  keep(landmass: string, version: number, wanted: readonly TileAsk[], source: TileSource): void {
+  /** Called each frame of the 2D map: asks for the next tile wanted if none is being sampled. Only the nearest
+   *  `MOST_TILES` wanted are kept, so a wanted tile never takes another's slot and is asked for again forever; and once
+   *  the land changes, a tile of the land before it that is no longer wanted is dropped, so an old, finer tile never
+   *  hides the fresh ground under it. */
+  keep(landmass: string, version: number, everyWanted: readonly TileAsk[], source: TileSource): void {
     this.frame++;
     if (landmass !== this.landmass) {
       this.tiles.clear();
       this.used.clear();
       this.landmass = landmass;
     }
+    const wanted = everyWanted.slice(0, MOST_TILES);
+    const wantedKeys = new Set(wanted.map(({ key }) => key));
+    for (const [key, tile] of this.tiles) if (tile.version !== version && !wantedKeys.has(key)) this.tiles.delete(key);
     for (const { key } of wanted) this.used.set(key, this.frame);
     const next = wanted.find(({ key }) => this.tiles.get(key)?.version !== version);
     if (!next || this.asking) return;

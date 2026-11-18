@@ -396,7 +396,7 @@ export async function startLandEditor(
     } else {
       const { clientWidth, clientHeight } = canvas;
       const open = session;
-      // No tile is asked for while a stroke is drawn, so its dabs never wait behind one in the worker.
+      // No tile is asked for while a stroke is drawn, so its dabs wait behind one in the worker at most once.
       if (open && !stroke) {
         const ground = (left: number, top: number, step: number, samples: number) =>
           open.ground(selected, left, top, step, samples).then((close) => close?.patch ?? null);
