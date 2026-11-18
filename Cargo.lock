@@ -8,6 +8,7 @@ version = "0.0.0"
 dependencies = [
  "city",
  "land",
+ "layout",
  "serde",
  "serde_json",
  "world",
@@ -78,8 +79,20 @@ version = "0.0.0"
 dependencies = [
  "city",
  "land",
+ "layout",
  "naval",
  "sailing",
+ "serde_json",
+ "world",
+]
+
+[[package]]
+name = "layout"
+version = "0.0.0"
+dependencies = [
+ "city",
+ "land",
+ "serde",
  "serde_json",
  "world",
 ]

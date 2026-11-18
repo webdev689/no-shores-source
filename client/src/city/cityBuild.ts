@@ -18,7 +18,7 @@ import {
   writeMass,
 } from './cityMasses.ts';
 import { forgedModel, type ModelBuffers, modelBuffers, type ModelKey, modelKeyOf } from './cityModels.ts';
-import { appendMesh, emptyMesh, type MeshData } from './mesh.ts';
+import { addPolygon, appendMesh, emptyMesh, type MeshData } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
 import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach } from './plan.ts';
 import { meshSolid } from './solidMesh.ts';
@@ -31,6 +31,8 @@ const TALLEST_M = 60;
 const OVERHANG_M = 20;
 /** A retaining wall's thickness, as the planner lays it. */
 const RETAINING_THICK_M = 1.5;
+/** How far a decal stands over the ground it is laid on, so the land's own triangles never show through it. */
+const DECAL_LIFT_M = 0.04;
 const TERRACE_WALL_M = 16;
 
 export type CityTables = {
@@ -127,6 +129,25 @@ export function buildCity(
       }
   }
 
+  // models a layout placed in the world stand in the cell under them, at their own height and yaw
+  for (const piece of plan.pieces ?? []) {
+    const [column, row] = [
+      Math.floor((piece.at[0] - plan.grid.west) / CELL_M),
+      Math.floor((piece.at[1] - plan.grid.north) / CELL_M),
+    ];
+    const index = cellIndex(side, column, row);
+    if (!levelled.has(index)) continue;
+    const yaw = (piece.yaw * Math.PI) / 180;
+    placedPieces.push({
+      cell: index,
+      chunk: chunkOf(column, row),
+      key: modelKeyOf(tables, piece.model, piece.building ? 'building' : 'prop'),
+      at: [piece.at[0] - origin[0], piece.at[1] - origin[1], piece.at[2], yaw],
+      row: piece.building ? [piece.model, 0, 0, 0, piece.yaw, 0, 0] : [piece.model, 0, 0, 0, piece.yaw, 1],
+    });
+  }
+  for (const decal of plan.decals ?? []) groundRecords.add(decal.record);
+
   const keys = [...new Set(placedPieces.map((piece) => piece.key))].sort();
   const modelIndex = new Map(keys.map((key, k) => [key, k]));
   const models = keys.map((key) => forgedModel(tables, key));
@@ -195,6 +216,26 @@ export function buildCity(
     box[3] = Math.max(box[3], reached[3]);
     box[4] = Math.max(box[4], reached[4]);
     box[5] = Math.max(box[5], solid.at[2] + solid.size[2] + reach);
+  }
+  for (const decal of plan.decals ?? []) {
+    const middle = decal.corners.reduce((sum, corner) => [sum[0] + corner[0] / 4, sum[1] + corner[1] / 4], [0, 0]);
+    const chunk = chunkOf(
+      Math.floor((middle[0] - plan.grid.west) / CELL_M),
+      Math.floor((middle[1] - plan.grid.north) / CELL_M),
+    );
+    const corners = decal.corners.map(
+      (corner) => [corner[0] - origin[0], corner[1] - origin[1], corner[2] + DECAL_LIFT_M] as const,
+    );
+    addPolygon(chunkMeshes[chunk], corners, [[0, 0, 1]], decal.uvs, book.ground[decal.record] ?? 0, [0, 0, 1]);
+    const box = solidBoxes[chunk];
+    for (const corner of corners) {
+      box[0] = Math.min(box[0], corner[0]);
+      box[1] = Math.min(box[1], corner[1]);
+      box[2] = Math.min(box[2], corner[2]);
+      box[3] = Math.max(box[3], corner[0]);
+      box[4] = Math.max(box[4], corner[1]);
+      box[5] = Math.max(box[5], corner[2]);
+    }
   }
   const terracePicture = book.pictures[book.terrace] ?? { width: 64, height: 128 };
   plateSkirts(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);

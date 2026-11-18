@@ -3,7 +3,7 @@
 //! writes each node's file and the index of them into `generated/nodes/`, which git leaves out.
 #![allow(clippy::print_stdout, reason = "a command-line tool reports to the terminal")]
 
-use bake::{Listed, NodeFile, ids_problem, nodes_of};
+use bake::{Builders, Listed, NodeFile, ids_problem, nodes_of};
 use city::rmb::Blocks;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -35,8 +35,38 @@ fn read(path: &Path) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
 }
 
+/// What the layouts are built with: every RMB block file beside the index, the forged models' boxes and the briefs,
+/// each left empty where the repository holds none.
+fn builders(root: &Path) -> Result<Builders, String> {
+    let mut builders = Builders::default();
+    let rmb = root.join("content/world/rmb");
+    if rmb.is_dir() {
+        let mut files: Vec<PathBuf> = std::fs::read_dir(&rmb)
+            .map_err(|error| format!("{}: {error}", rmb.display()))?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| path.extension().is_some_and(|extension| extension == "json") && !path.ends_with("index.json"))
+            .collect();
+        files.sort();
+        for file in files {
+            builders.book.add_blocks(&read(&file)?)?;
+        }
+    }
+    let forged = root.join("content/forged");
+    for (name, table) in [("buildings.json", &mut builders.book.buildings), ("props.json", &mut builders.book.props)] {
+        let path = forged.join(name);
+        if path.is_file() {
+            *table = layout::book::Book::measures(&read(&path)?)?;
+        }
+    }
+    let briefs = root.join("content/world/briefs.json");
+    if briefs.is_file() {
+        builders.briefs = layout::brief::Briefs::parse(&read(&briefs)?)?;
+    }
+    Ok(builders)
+}
+
 /// Each continent's nodes, generated a few continents at a time; the nodes come back in the layout's order.
-fn every_node(continents: Vec<(Continent, String)>, blocks: &Blocks) -> Result<Vec<NodeFile>, String> {
+fn every_node(continents: Vec<(Continent, String)>, blocks: &Blocks, builders: &Builders) -> Result<Vec<NodeFile>, String> {
     let count = continents.len();
     let queue = Mutex::new(continents.into_iter().enumerate().collect::<VecDeque<_>>());
     let baked = Mutex::new(Vec::with_capacity(count));
@@ -49,7 +79,7 @@ fn every_node(continents: Vec<(Continent, String)>, blocks: &Blocks) -> Result<V
                     let Some((order, (continent, text))) = next else { break };
                     let nodes = land::edits::parse(&text)
                         .map_err(|error| format!("{}: {error}", continent.id))
-                        .and_then(|edits| nodes_of(&continent, edits, blocks));
+                        .and_then(|edits| nodes_of(&continent, edits, blocks, builders));
                     if let Ok(mut baked) = baked.lock() {
                         baked.push((order, nodes));
                     }
@@ -80,6 +110,7 @@ fn bake() -> Result<String, String> {
     let layout = world::layout::parse(&read(&content.join("layout.json"))?).map_err(|error| error.to_string())?;
     let rmb = content.join("rmb/index.json");
     let blocks = if rmb.is_file() { Blocks::from_index(&read(&rmb)?)? } else { Blocks::default() };
+    let builders = builders(&root)?;
     let mut continents = Vec::new();
     for continent in layout.continents {
         let edits = content.join("land").join(format!("{}.json", continent.id));
@@ -88,7 +119,7 @@ fn bake() -> Result<String, String> {
         }
     }
     let landmasses = continents.len();
-    let nodes = every_node(continents, &blocks)?;
+    let nodes = every_node(continents, &blocks, &builders)?;
     if let Some(problem) = ids_problem(&nodes) {
         return Err(problem);
     }

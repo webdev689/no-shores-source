@@ -35,12 +35,30 @@ export type PlanCell = {
   readonly row: number;
   readonly ground: 'level' | 'steep' | 'shore' | 'outside';
   readonly level?: number;
-  readonly use: 'open' | 'landmark' | 'avenue' | 'block';
+  /** 'pieces' holds models already placed in the world (a layout's): levelled for the tiers, with no plate. */
+  readonly use: 'open' | 'landmark' | 'avenue' | 'block' | 'pieces';
   readonly district?: string;
   readonly block?: string;
 };
 
 export type Pad = { readonly bounds: readonly [number, number, number, number]; readonly level: number };
+
+/** A forged model already placed in the world: its id, whether it is a building, its origin (east, south, up) and
+ *  its yaw in degrees clockwise from north. */
+export type Piece = {
+  readonly model: number;
+  readonly building: boolean;
+  readonly at: readonly [number, number, number];
+  readonly yaw: number;
+};
+
+/** A ground picture laid on the land: four corners in world metres (north-west, north-east, south-east, south-west,
+ *  on the ground), each corner's UV in pictures, and the ground record whose picture it wears. */
+export type Decal = {
+  readonly corners: readonly (readonly [number, number, number])[];
+  readonly uvs: readonly (readonly [number, number])[];
+  readonly record: number;
+};
 
 export type CityPlan = {
   readonly id: string;
@@ -61,6 +79,9 @@ export type CityPlan = {
     readonly solids: readonly Solid[];
   };
   readonly pads: readonly Pad[];
+  /** Models placed in the world and pictures laid on the land, beside the blocks the cells stand. */
+  readonly pieces?: readonly Piece[];
+  readonly decals?: readonly Decal[];
 };
 
 /** The climate and season a city's pictures are drawn in. */

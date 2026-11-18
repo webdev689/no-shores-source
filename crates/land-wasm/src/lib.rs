@@ -132,9 +132,11 @@ fn with_open(change: impl FnOnce(&mut Landmass) -> Result<(), String>) -> Vec<u8
 }
 
 /// Opens one continent of a layout: `{ "layout": <layout file>, "id": <continent id>, "edits": <edits file or null>,
-/// "keep": bool, "rmb": <the RMB index or null> }`. Generates its land with the edits on it and answers its view, or a
-/// header holding only `error`. Only a kept landmass stays open for strokes, its city settled on it with the RMB
-/// index's blocks, or none; one not kept is a preview and leaves the open one alone.
+/// "keep": bool, "rmb": <the RMB index or null>, "rmbBlocks": [<each RMB block file>], "forged": { "buildings",
+/// "props" }, "briefs": <the briefs> }`, the last three optional. Generates its land with the edits on it and answers
+/// its view, or a header holding only `error`. Only a kept landmass stays open for strokes, its city settled on it
+/// with the RMB index's blocks, or none, and its nodes' layouts with what they are built with; one not kept is a
+/// preview and leaves the open one alone.
 #[must_use]
 pub fn open_view(request: &[u8]) -> Vec<u8> {
     let opened = read(request).and_then(|request| {
@@ -144,14 +146,15 @@ pub fn open_view(request: &[u8]) -> Vec<u8> {
         let edits = edits_from(&request["edits"])?;
         let keep = request["keep"].as_bool().unwrap_or(true);
         let blocks = settled::blocks_from(&request)?;
+        let builders = settled::book_from(&request)?;
         let continent = layout.continents.iter().find(|continent| continent.id == id);
         let continent = continent.ok_or_else(|| format!("the layout has no continent \"{id}\""))?;
-        generate(continent, edits).map(|landmass| (landmass, keep, blocks))
+        generate(continent, edits).map(|landmass| (landmass, keep, blocks, builders))
     });
     match opened {
-        Ok((landmass, false, _)) => view_bytes(&header_of(&landmass), Some(&landmass)),
-        Ok((mut landmass, true, blocks)) => {
-            settled::keep_blocks(blocks);
+        Ok((landmass, false, _, _)) => view_bytes(&header_of(&landmass), Some(&landmass)),
+        Ok((mut landmass, true, blocks, (book, briefs))) => {
+            settled::keep_blocks(blocks, book, briefs);
             settled::settle(&mut landmass);
             let bytes = view_bytes(&settled::header_with_city(&landmass), Some(&landmass));
             OPEN.with(|open| *open.borrow_mut() = Some(landmass));

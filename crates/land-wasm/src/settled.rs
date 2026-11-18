@@ -1,20 +1,28 @@
-//! The open landmass's city, settled on its land each time its ground is laid, and what a node's room is cut from it:
-//! a window of the ground and the boxes a body runs into there, the same as the bake cuts for the server, and the
-//! city's plan for the drawing.
+//! The open landmass's city and its layouts, settled on its land each time its ground is laid, and what a node's room
+//! is cut from it: a window of the ground and the boxes a body runs into there, the same as the bake cuts for the
+//! server, and the city's plan and the layouts for the drawing.
 
 use super::{OPEN, hand_over, header_of, read};
 use city::Plan;
 use city::rmb::Blocks;
 use land::landmass::Landmass;
+use layout::Layout;
+use layout::book::{Book, Measure, RmbBlock};
+use layout::brief::{Brief, Briefs};
+use std::collections::BTreeMap;
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
-/// The RMB blocks the open landmass was opened with, and its city's plan, or why it could not be planned.
+/// The RMB blocks the open landmass was opened with, what its layouts are built with, its city's plan, or why it
+/// could not be planned, and its layouts.
 #[derive(Debug, Default)]
 struct Settled {
     blocks: Blocks,
+    book: Book,
+    briefs: Briefs,
     plan: Option<Plan>,
     problem: Option<(String, String)>,
+    layouts: Vec<Layout>,
 }
 
 thread_local! {
@@ -26,9 +34,41 @@ pub fn blocks_from(request: &Value) -> Result<Blocks, String> {
     if request["rmb"].is_null() { Ok(Blocks::default()) } else { Blocks::from_index(&request["rmb"].to_string()) }
 }
 
-/// Keeps the blocks a newly opened landmass's city is filled with.
-pub fn keep_blocks(blocks: Blocks) {
-    CITY.with(|city| city.borrow_mut().blocks = blocks);
+/// What a request gives the layouts to build with: `rmbBlocks`, the RMB table's block files' lists; `forged`, the
+/// forged tables (`buildings` and `props`); `briefs`, every node's brief. Each missing part is empty.
+pub fn book_from(request: &Value) -> Result<(Book, Briefs), String> {
+    let mut book = Book::default();
+    if let Some(files) = request["rmbBlocks"].as_array() {
+        for file in files {
+            let blocks: Vec<RmbBlock> =
+                serde_json::from_value(file.clone()).map_err(|error| format!("an RMB block file: {error}"))?;
+            book.blocks.extend(blocks.into_iter().map(|block| (block.name.clone(), block)));
+        }
+    }
+    let measures = |table: &Value| -> Result<BTreeMap<u32, Measure>, String> {
+        if table.is_null() {
+            return Ok(BTreeMap::new());
+        }
+        let read: BTreeMap<String, Measure> =
+            serde_json::from_value(table.clone()).map_err(|error| format!("a forged table: {error}"))?;
+        read.into_iter().map(|(id, measure)| id.parse().map(|id| (id, measure)).map_err(|_| format!("a model id {id}"))).collect()
+    };
+    book.buildings = measures(&request["forged"]["buildings"])?;
+    book.props = measures(&request["forged"]["props"])?;
+    let briefs = if request["briefs"].is_null() {
+        Briefs::default()
+    } else {
+        Briefs(serde_json::from_value::<BTreeMap<String, Brief>>(request["briefs"].clone()).map_err(|error| format!("the briefs: {error}"))?)
+    };
+    Ok((book, briefs))
+}
+
+/// Keeps the blocks a newly opened landmass's city is filled with, and what its layouts are built with.
+pub fn keep_blocks(blocks: Blocks, book: Book, briefs: Briefs) {
+    CITY.with(|city| {
+        let mut city = city.borrow_mut();
+        (city.blocks, city.book, city.briefs) = (blocks, book, briefs);
+    });
 }
 
 /// Plans the landmass's city and lays its pads on the ground, after anything that laid the ground again.
@@ -40,6 +80,7 @@ pub fn settle(landmass: &mut Landmass) {
             Ok(plan) => (city.plan, city.problem) = (plan, None),
             Err(error) => (city.plan, city.problem) = (None, Some((id, error))),
         }
+        city.layouts = layout::settle::settle(landmass, &city.book, &city.briefs);
     });
 }
 
@@ -82,8 +123,10 @@ pub fn window_json(request: &[u8]) -> String {
 pub fn boxes_json(request: &[u8]) -> String {
     let found = read(request).and_then(|request| rect_of(&request)).map(|bounds| {
         CITY.with(|city| {
-            let boxes = city.borrow().plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds));
-            json!({ "boxes": boxes.unwrap_or_default() }).to_string()
+            let city = city.borrow();
+            let mut boxes = city.plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
+            boxes.extend(city.layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
+            json!({ "boxes": boxes }).to_string()
         })
     });
     found.unwrap_or_else(|error| json!({ "error": error }).to_string())
@@ -93,6 +136,18 @@ pub fn boxes_json(request: &[u8]) -> String {
 #[must_use]
 pub fn city_plan_json() -> String {
     CITY.with(|city| serde_json::to_string(&city.borrow().plan).unwrap_or_else(|_| "null".to_owned()))
+}
+
+/// The open landmass's layouts as JSON: a list, empty with none.
+#[must_use]
+pub fn layouts_json() -> String {
+    CITY.with(|city| serde_json::to_string(&city.borrow().layouts).unwrap_or_else(|_| "[]".to_owned()))
+}
+
+/// The open landmass's layouts.
+#[unsafe(no_mangle)]
+pub extern "C" fn land_layouts() -> u64 {
+    hand_over(layouts_json().into_bytes())
 }
 
 /// The open landmass's ground over the rect the request at `address`, `length` bytes long, names, as a window.

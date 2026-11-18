@@ -12,8 +12,10 @@ export type LandRequest =
       readonly editsText: string | null;
       readonly keep: boolean;
       readonly rmbText?: string | null;
+      readonly buildersText?: string | null;
     }
   | { readonly kind: 'city' }
+  | { readonly kind: 'layouts' }
   | { readonly kind: 'window'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'boxes'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'dab'; readonly brush: Brush; readonly point: readonly [number, number]; readonly starts: boolean }
@@ -69,16 +71,20 @@ export interface LandAnswer {
 
 /** The land, worked in a worker so the page stays responsive while a continent takes seconds. */
 export interface LandWorker {
-  /** Opens a landmass; kept, its city is settled on it, its blocks named from the RMB index's text if given. */
+  /** Opens a landmass; kept, its city is settled on it, its blocks named from the RMB index's text if given, and its
+   *  nodes' layouts with `buildersText` (the open request's `rmbBlocks`, `forged` and `briefs` members) if given. */
   open(
     layoutText: string,
     id: string,
     editsText: string | null,
     keep: boolean,
     rmbText?: string | null,
+    buildersText?: string | null,
   ): Promise<LandView>;
   /** The open landmass's city plan as JSON, or null with none. */
   cityPlan(): Promise<string | null>;
+  /** The open landmass's nodes' layouts, as a JSON list. */
+  layouts(): Promise<string>;
   /** The open landmass's exact ground over a rect (west, north, east, south) as JSON, and the city's boxes there. */
   window(rect: readonly [number, number, number, number]): Promise<string>;
   boxes(rect: readonly [number, number, number, number]): Promise<readonly Block[]>;
@@ -133,9 +139,10 @@ export function startLandWorker(): LandWorker {
     return answer.view;
   };
   return {
-    open: (layoutText, id, editsText, keep, rmbText) =>
-      view({ kind: 'open', layoutText, id, editsText, keep, rmbText }),
+    open: (layoutText, id, editsText, keep, rmbText, buildersText) =>
+      view({ kind: 'open', layoutText, id, editsText, keep, rmbText, buildersText }),
     cityPlan: async () => (await ask({ kind: 'city' })).text ?? null,
+    layouts: async () => (await ask({ kind: 'layouts' })).text ?? '[]',
     window: async (rect) => {
       const { text } = await ask({ kind: 'window', rect });
       if (typeof text !== 'string') throw new Error('the land worker answered no window');

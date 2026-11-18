@@ -4,6 +4,8 @@
 //! there.
 
 use city::rmb::Blocks;
+use layout::book::Book;
+use layout::brief::Briefs;
 use land::edits::Edits;
 use land::ground::Ground;
 use land::landmass::generate;
@@ -81,28 +83,40 @@ pub fn bounds_of(ring: &[[f64; 2]]) -> [f64; 4] {
     [west - MARGIN_M, north - MARGIN_M, east + MARGIN_M, south + MARGIN_M]
 }
 
-/// Every node of a continent, drawn and social, generated with its edits and its city settled on the land. Fails
-/// for edits that break their rules or a city that cannot be planned.
-pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<Vec<NodeFile>, String> {
+/// What a continent's layouts are built with: the RMB blocks' contents and the forged models' boxes, and every
+/// node's brief.
+#[derive(Debug, Clone, Default)]
+pub struct Builders {
+    pub book: Book,
+    pub briefs: Briefs,
+}
+
+/// Every node of a continent, drawn and social, generated with its edits, its city settled on the land and every
+/// drawn node's layout laid on it: a drawn node's section, spawns and boxes are its layout's. Fails for edits that
+/// break their rules or a city that cannot be planned.
+pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks, builders: &Builders) -> Result<Vec<NodeFile>, String> {
     let mut landmass = generate(continent, edits)?;
     if let Some(problem) = landmass.problems().first() {
         return Err(format!("{}: {}: {}", continent.id, problem.subject, problem.message));
     }
     let plan = city::settle(&mut landmass, blocks)?;
+    let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
     let cut = |id: String, kind: NodeKind, name: String, ring: Vec<[f64; 2]>, spawns: Vec<[f64; 2]>| {
         let bounds = bounds_of(&ring);
         let [west, north, east, south] = bounds;
         let ground = landmass.surface.window(west, north, east, south);
-        let boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
+        let mut boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
+        boxes.extend(layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
         NodeFile { id, kind, name, continent: continent.id.clone(), ring, spawns, bounds, ground, boxes }
     };
     let whole =
         |points: &[world::geometry::Point]| points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
-    let drawn = landmass
-        .edits
-        .nodes
-        .iter()
-        .map(|node| cut(node.id.clone(), node.kind, node.name.clone(), whole(&node.ring), whole(&node.spawns)));
+    let drawn = landmass.edits.nodes.iter().map(|node| {
+        let laid = layouts.iter().find(|layout| layout.id == node.id && layout.ring.len() >= 3);
+        let (ring, spawns) =
+            laid.map_or_else(|| (whole(&node.ring), whole(&node.spawns)), |layout| (layout.ring.clone(), layout.spawns.clone()));
+        cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns)
+    });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
         cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
@@ -128,7 +142,8 @@ mod tests {
     fn glade() -> (NodeFile, world::layout::Layout) {
         let layout = world::layout::parse(SQUARE).unwrap();
         let mut nodes =
-            nodes_of(&layout.continents[0], land::edits::parse(GLADE).unwrap(), &Blocks::default()).unwrap();
+            nodes_of(&layout.continents[0], land::edits::parse(GLADE).unwrap(), &Blocks::default(), &Builders::default())
+                .unwrap();
         assert_eq!(nodes.len(), 1);
         (nodes.remove(0), layout)
     }

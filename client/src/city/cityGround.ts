@@ -46,6 +46,14 @@ export function levelledCells(plan: CityPlan): Map<number, PlanCell & { level: n
   return levelled;
 }
 
+/** The levelled cells that stand on a plate of their own: all but those holding placed pieces, which stand on the
+ *  land. */
+function platedCells(plan: CityPlan): Map<number, PlanCell & { level: number }> {
+  const plated = levelledCells(plan);
+  for (const [index, cell] of plated) if (cell.use === 'pieces') plated.delete(index);
+  return plated;
+}
+
 /** The plates' tops (positions only, from the city's origin), and their tiles: per tile its layer and quarter turns,
  *  (side x 16) tiles a row. */
 export function groundPlates(
@@ -57,7 +65,7 @@ export function groundPlates(
   const side = sideOf(plan);
   const width = side * TILES;
   const tiles = new Uint8Array(width * width * 2);
-  const byPlace = levelledCells(plan);
+  const byPlace = platedCells(plan);
   const levelled = [...byPlace.values()];
   const tops = new Float32Array(levelled.length * 18);
   const paved = (column: number, row: number): boolean => {
@@ -107,7 +115,7 @@ export function plateSkirts(
   into: (cell: PlanCell) => MeshData,
 ): void {
   const side = sideOf(plan);
-  const levelled = levelledCells(plan);
+  const levelled = platedCells(plan);
   const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / picture.width, SOLID_TEXELS_PER_METRE / picture.height];
   const sides = [
     { step: [0, -1], from: [0, 0], to: [1, 0], out: [0, -1, 0] },

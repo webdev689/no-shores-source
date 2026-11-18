@@ -1,0 +1,259 @@
+{
+ "saltgrass-downs": {
+  "theme": "Chalk downland over the sea: sheep walks, salt wind, an old beacon tower on the heights, and the Grey Tithe camped in the chalk pits.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Shingle Landing"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Saltgrass",
+    "blocks": 3
+   },
+   {
+    "kind": "tower",
+    "name": "The Old Beacon"
+   },
+   {
+    "kind": "farm",
+    "name": "Ewe Fold"
+   },
+   {
+    "kind": "graveyard",
+    "name": "The Barrow Field"
+   },
+   {
+    "kind": "wilds",
+    "name": "The High Downs"
+   },
+   {
+    "kind": "ruin",
+    "name": "Chalkpit Ruin"
+   },
+   {
+    "kind": "camp",
+    "name": "Tithe Camp"
+   }
+  ]
+ },
+ "gullwing-vale": {
+  "theme": "A river vale of water meadows and mills under a guarded keep, its old stones older than anyone remembers.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Vale Mouth"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Gullwing",
+    "blocks": 2
+   },
+   {
+    "kind": "mill",
+    "name": "Weir Mill"
+   },
+   {
+    "kind": "keep",
+    "name": "Valeguard"
+   },
+   {
+    "kind": "farm",
+    "name": "Orchard Farm"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Old Stones"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Water Meadows"
+   },
+   {
+    "kind": "coven",
+    "name": "Hollow Coven"
+   }
+  ]
+ },
+ "driftwood-moors": {
+  "theme": "Gorse moor above a wreck-strewn strand, a lighthouse on the point and the drowned buried where the sea gave them back.",
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Driftwood Strand"
+   },
+   {
+    "kind": "wreck",
+    "name": "The Saltbreaker"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Moorend",
+    "blocks": 1
+   },
+   {
+    "kind": "lighthouse",
+    "name": "Grey Point Light"
+   },
+   {
+    "kind": "ruin",
+    "name": "Moorhold"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Drowned Men's Graves"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Gorse Moor"
+   },
+   {
+    "kind": "camp",
+    "name": "Tithe Camp"
+   }
+  ]
+ },
+ "burned-mill": {
+  "theme": "A mill and its farm burned by the Grey Tithe, the millrace still turning a charred wheel.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Millrace Gate"
+   },
+   {
+    "kind": "farm",
+    "name": "Charred Farmstead"
+   },
+   {
+    "kind": "mill",
+    "name": "The Burned Mill"
+   },
+   {
+    "kind": "arena",
+    "name": "The Mill Yard"
+   }
+  ]
+ },
+ "broken-causeway": {
+  "theme": "A stone causeway over the salt marsh, broken at its middle, its toll house held against all comers.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Marsh Edge"
+   },
+   {
+    "kind": "causeway",
+    "name": "The Broken Causeway"
+   },
+   {
+    "kind": "ruin",
+    "name": "Toll House"
+   },
+   {
+    "kind": "arena",
+    "name": "The Far Bank"
+   }
+  ]
+ },
+ "shrine-tides": {
+  "theme": "A shrine whose stones stand in the tide at full flood, kept by those who drowned keeping it.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Tide Steps"
+   },
+   {
+    "kind": "graveyard",
+    "name": "The Keepers' Rest"
+   },
+   {
+    "kind": "shrine",
+    "name": "Shrine of Tides"
+   },
+   {
+    "kind": "arena",
+    "name": "The Flood Court"
+   }
+  ]
+ },
+ "krakens-grotto": {
+  "theme": "Sea caves where a kraken dragged ships to die; their wrecks still choke the mouth.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Cliff Path"
+   },
+   {
+    "kind": "wreck",
+    "name": "The Dragged Ship"
+   },
+   {
+    "kind": "cave",
+    "name": "Grotto Mouth"
+   },
+   {
+    "kind": "arena",
+    "name": "The Inner Grotto"
+   }
+  ]
+ },
+ "maw-shallows": {
+  "theme": "The lair of the thing in the shallows, ringed by the bones of what it ate.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "The Strand"
+   },
+   {
+    "kind": "bones",
+    "name": "The Ribcage"
+   },
+   {
+    "kind": "arena",
+    "name": "The Maw of the Shallows"
+   }
+  ]
+ },
+ "tidewall": {
+  "theme": "A sea fort on the point, its gate under the Grey Tithe's banner.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "The Approach"
+   },
+   {
+    "kind": "dock",
+    "name": "The Sea Gate"
+   },
+   {
+    "kind": "keep",
+    "name": "Tidewall"
+   },
+   {
+    "kind": "arena",
+    "name": "The Rampart Yard"
+   }
+  ]
+ },
+ "pearl-tomb": {
+  "theme": "The tomb of the pearl divers' kings, its doors under the dunes.",
+  "areas": [
+   {
+    "kind": "entrance",
+    "name": "Dune Path"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Divers' Graves"
+   },
+   {
+    "kind": "cave",
+    "name": "The Tomb Door"
+   },
+   {
+    "kind": "arena",
+    "name": "The Pearl Tomb"
+   }
+  ]
+ }
+}

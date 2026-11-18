@@ -37,6 +37,10 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     scope.postMessage({ ticket, text: rules.cityPlan() }, []);
     return;
   }
+  if (request.kind === 'layouts') {
+    scope.postMessage({ ticket, text: rules.layouts() }, []);
+    return;
+  }
   if (request.kind === 'window') {
     scope.postMessage({ ticket, text: rules.window(...request.rect) }, []);
     return;
@@ -69,7 +73,7 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
   }
   const view =
     request.kind === 'open'
-      ? rules.open(request.layoutText, request.id, request.editsText, request.keep, request.rmbText)
+      ? rules.open(request.layoutText, request.id, request.editsText, request.keep, request.rmbText, request.buildersText)
       : request.kind === 'settle'
         ? rules.settle()
         : rules.setEdits(request.editsText);

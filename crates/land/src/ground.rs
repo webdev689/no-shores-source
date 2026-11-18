@@ -321,6 +321,22 @@ impl Ground {
         ground
     }
 
+    /// Lays more roads on the ground after it is made, as a layout's paths: each course is points (already as close
+    /// together as it bends) and a width, and its bed is the ground under it smoothed over its two points either side.
+    pub fn add_roads(&mut self, roads: &[(Vec<(f64, f64)>, f64)]) {
+        for (points, width) in roads {
+            let beds: Vec<f64> = points.iter().map(|&(x, y)| self.padded(x, y)).collect();
+            let course = points.iter().enumerate().map(|(at, &(x, y))| {
+                let near = &beds[at.saturating_sub(2)..(at + 3).min(beds.len())];
+                let level = near.iter().sum::<f64>() / near.len() as f64;
+                CoursePoint { x, y, level, width: *width, depth: 0.0 }
+            });
+            self.roads.push(course.collect());
+        }
+        self.index.clear();
+        self.index_courses();
+    }
+
     fn index_courses(&mut self) {
         let courses =
             self.rivers.iter().map(|course| (false, course)).chain(self.roads.iter().map(|course| (true, course)));

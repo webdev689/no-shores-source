@@ -32,6 +32,7 @@ import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
+import { loadLandTexts } from './landTexts.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
@@ -107,11 +108,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
+  const [world, landTexts, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
-    fetch(`${base}world/rmb/index.json`)
-      .then((answer) => (answer.ok ? answer.text() : null))
-      .catch(() => null),
+    loadLandTexts(base),
     fetch(`${base}movement.wasm`)
       .then((answer) => {
         if (!answer.ok) throw new Error(`movement.wasm: ${answer.status}`);
@@ -135,7 +134,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const discovered = keptDiscovered(world);
   discovered.arrived(start.continent, start.node);
 
-  let landmass = await openLandmass(land, world, rmbText, start.continent);
+  let landmass = await openLandmass(land, world, landTexts, start.continent);
   let drawers = drawersOn(landmass);
   /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
   const terrainFor = (opened: Landmass) => {
@@ -248,10 +247,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   };
 
-  const firstNode = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
-  if (!firstNode) throw new Error(`${start.name} has no place to arrive at`);
+  const arrived = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
+  if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
+  // `&spawn=<east>,<south>[,<bearing in degrees>]` stands the arrival there instead: a way to look at one place.
+  const spawnAsked = new URLSearchParams(location.search).get('spawn')?.split(',').map(Number) ?? [];
+  const spawnAt = spawnAsked.length >= 2 && spawnAsked.every(Number.isFinite) ? spawnAsked : null;
+  const firstNode = spawnAt ? { ...arrived, spawns: [[spawnAt[0], spawnAt[1]] as const] } : arrived;
+  const firstFacing = spawnAt?.[2] === undefined ? null : (spawnAt[2] * Math.PI) / 180;
   if (flow.mode === 'loading')
-    behindVeil(flow.words, () => goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)));
+    behindVeil(flow.words, () =>
+      goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, landmass.plan, null)),
+    );
 
   const landAt = (id: string) => {
     discovered.nodes([id]);
@@ -437,6 +443,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const standing = (ships: readonly SeaShip[], figures: readonly CardAt[]): Drawer[] => {
     const found: (Drawer | null)[] = [
       drawers.city,
+      drawers.layouts,
       drawers.nature,
       {
         drawInto: (pass, fromEye, shot, time) => {
@@ -551,7 +558,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const other = continentToOpen(here.position, continents, landmass.id);
     if (!other || unchartable.has(other)) return;
     charting = other;
-    openLandmass(land, world, rmbText, other)
+    openLandmass(land, world, landTexts, other)
       .then((opened: Landmass) => {
         landmass = opened;
         drawers.release();

@@ -3,6 +3,8 @@ import { blockFiles, parseBlockFile, type RmbBlock } from '../city/blocks.ts';
 import type { CityTables } from '../city/cityBuild.ts';
 import { CityView } from '../city/cityView.ts';
 import { cityClimate } from '../city/plan.ts';
+import { layoutsNear, type NodeLayout } from '../layout/layouts.ts';
+import { planOfLayouts } from '../layout/layoutPlan.ts';
 import { landSampler } from '../nature/ground.ts';
 import { NatureView } from '../nature/natureView.ts';
 import type { Landmass } from './landmass.ts';
@@ -17,11 +19,58 @@ export interface CityAssets {
   readonly blocks: Map<string, RmbBlock>;
 }
 
-/** The drawers that stand on a landmass besides the land: its city and its nature, and how to let them go. */
+/** The drawers that stand on a landmass besides the land: its city, its nodes' layouts near the eye and its nature,
+ *  and how to let them go. */
 export interface LandDrawers {
   readonly city: Drawer | null;
+  readonly layouts: Drawer | null;
   readonly nature: Drawer | null;
   release(): void;
+}
+
+/** How far round the eye layouts are drawn, metres, and how far the eye moves before they are gathered again. */
+const LAYOUT_REACH_M = 4000;
+const LAYOUT_REGATHER_M = 1500;
+
+/** Draws the layouts near the eye with the city layer, gathered again once the eye has moved on. */
+function layoutDrawer(
+  gpu: Gpu,
+  layouts: readonly NodeLayout[],
+  biome: string | null,
+  assets: Promise<CityAssets | null>,
+  regathered: () => void,
+): { drawer: Drawer; view: CityView; release(): void } {
+  const view = new CityView(gpu);
+  let tables: CityTables | null = null;
+  let [gatheredAt, gathered]: [readonly [number, number] | null, string] = [null, ''];
+  void assets.then((loaded) => (tables = loaded?.tables ?? null));
+  const gather = (eye: readonly [number, number, number]) => {
+    if (!tables) return;
+    if (gatheredAt && Math.hypot(eye[0] - gatheredAt[0], eye[1] - gatheredAt[1]) < LAYOUT_REGATHER_M) return;
+    gatheredAt = [eye[0], eye[1]];
+    const near = layoutsNear(layouts, gatheredAt, LAYOUT_REACH_M);
+    const names = near.map((layout) => layout.id).join(',');
+    if (names === gathered) return;
+    gathered = names;
+    const plan = planOfLayouts(near);
+    if (plan) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
+    else view.clear();
+    regathered();
+  };
+  return {
+    view,
+    drawer: {
+      castInto: (pass, fromEye, shot, time, shadow) => {
+        gather(shot.eye);
+        view.castInto(pass, fromEye, shot, time, shadow);
+      },
+      drawInto: (pass, fromEye, shot, time, shadow) => {
+        gather(shot.eye);
+        view.drawInto(pass, fromEye, shot, time, shadow);
+      },
+    },
+    release: () => view.clear(),
+  };
 }
 
 /** Reads the forged models' tables and the RMB index once, or null where the pages do not serve them. */
@@ -97,8 +146,12 @@ export function landDrawers(
       })
       .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
   }
-  // The pads are kept clear from the first frame; the city's solids too once it is built.
-  const cleared = (x: number, y: number) => landmass.cleared(x, y) || (city?.cleared(x, y) ?? false);
+  const laid = landmass.layouts.length
+    ? layoutDrawer(gpu, landmass.layouts, biome, assets, () => (version += 1))
+    : null;
+  // The pads are kept clear from the first frame; the city's and the layouts' solids and yards too once built.
+  const cleared = (x: number, y: number) =>
+    landmass.cleared(x, y) || (city?.cleared(x, y) ?? false) || (laid?.view.cleared(x, y) ?? false);
   const nature = biome ? new NatureView(gpu) : null;
   // Nature is updated once a frame, for its shadow's pass and its own alike.
   let updatedFor: Float32Array | null = null;
@@ -130,10 +183,12 @@ export function landDrawers(
   };
   return {
     city,
+    layouts: laid?.drawer ?? null,
     nature: natureDrawer,
     release: () => {
       released = true;
       city?.clear();
+      laid?.release();
       nature?.destroy();
     },
   };
