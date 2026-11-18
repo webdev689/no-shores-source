@@ -446,6 +446,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const shown = here.frame(controls, seconds, clock, paused);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
+    scene.keepMiddle([body.x, body.y], closeSource);
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
       : undefined;

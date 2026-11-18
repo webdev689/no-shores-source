@@ -1,9 +1,9 @@
 // Layouts drawn by the city layer: the layouts near the eye gathered into one plan of placed pieces (every building
-// and prop where its layout stood it), solids (plinths and set pieces), and ground pictures laid on the land (a block's
-// streets and yards, and the paths), on a grid of cells just large enough to hold them. Its cells carry no plates:
-// what stands in them stands on the land.
-import { type CityPlan, CELL_M, type Decal, type Pad, type PlanCell, type Piece } from '../city/plan.ts';
-import { type LaidPath, type LaidTile, type NodeLayout, PATH_WIDTH_M } from './layouts.ts';
+// and prop where its layout stood it) and solids (plinths, set pieces, works and rooms), on a grid of cells just large
+// enough to hold them. Its cells carry no plates: what stands in them stands on the land. A block's streets and the
+// paths are the terrain's to draw (the game's groundPaint.ts).
+import { type CityPlan, CELL_M, type Pad, type PlanCell, type Piece } from '../city/plan.ts';
+import type { NodeLayout } from './layouts.ts';
 
 /** How far round a building nothing wild grows, metres: its yard, its eaves' drip and the lane past its door. */
 const YARD_CLEAR_M = 10;
@@ -30,8 +30,6 @@ const CLEARED_SHARE: Readonly<Record<string, number>> = {
   keep: 0.6,
   hamlet: 0.55,
 };
-/** The ground records a path wears: Daggerfall's dirt. */
-const DIRT = 1;
 /** A ground picture's side on the land, metres: one tile of a block. */
 const PICTURE_M = CELL_M / 16;
 
@@ -59,74 +57,6 @@ export function tileUvs(byte: number, blockTurns: number): [number, number][] {
   });
 }
 
-/** A tile as a ground picture laid on its corners' heights. */
-function tileDecal(tile: LaidTile): Decal {
-  const half = PICTURE_M / 2;
-  const [x, y] = tile.at;
-  const spots: [number, number][] = [
-    [x - half, y - half],
-    [x + half, y - half],
-    [x + half, y + half],
-    [x - half, y + half],
-  ];
-  return {
-    corners: spots.map(([east, south], k) => [east, south, tile.corners[k]] as const),
-    uvs: tileUvs(tile.byte, tile.turns),
-    record: tile.byte & 63,
-  };
-}
-
-/** A path as a ribbon of ground pictures, a quad between each pair of its points, its edges square to its way and
- *  mitred at each bend; the stretches over a river's crossing are left to its bridge. */
-export function pathDecals(path: LaidPath): Decal[] {
-  const half = PATH_WIDTH_M[path.tier] / 2;
-  const points = path.points;
-  if (points.length < 2 || path.heights.length !== points.length) return [];
-  const across = points.map((point, k) => {
-    const before = points[Math.max(k - 1, 0)];
-    const after = points[Math.min(k + 1, points.length - 1)];
-    const [east, south] = [after[0] - before[0], after[1] - before[1]];
-    const length = Math.hypot(east, south) || 1;
-    return [-south / length, east / length] as const;
-  });
-  const overWater = (point: readonly [number, number]) =>
-    path.crossings.some(([from, to]) => {
-      const [spanX, spanY] = [to[0] - from[0], to[1] - from[1]];
-      const length = spanX * spanX + spanY * spanY || 1;
-      const along = ((point[0] - from[0]) * spanX + (point[1] - from[1]) * spanY) / length;
-      const [nearX, nearY] = [from[0] + spanX * along, from[1] + spanY * along];
-      return along > 0 && along < 1 && Math.hypot(point[0] - nearX, point[1] - nearY) < 4;
-    });
-  const decals: Decal[] = [];
-  let travelled = 0;
-  for (let k = 0; k + 1 < points.length; k++) {
-    const [from, to] = [points[k], points[k + 1]];
-    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
-    const [startV, endV] = [travelled / PICTURE_M, (travelled + length) / PICTURE_M];
-    travelled += length;
-    if (overWater(from) || overWater(to)) continue;
-    const side = (point: readonly [number, number], place: number, sign: number, height: number) =>
-      [point[0] + across[place][0] * half * sign, point[1] + across[place][1] * half * sign, height] as const;
-    const width = (2 * half) / PICTURE_M;
-    decals.push({
-      corners: [
-        side(from, k, -1, path.heights[k]),
-        side(from, k, 1, path.heights[k]),
-        side(to, k + 1, 1, path.heights[k + 1]),
-        side(to, k + 1, -1, path.heights[k + 1]),
-      ],
-      uvs: [
-        [0, startV],
-        [width, startV],
-        [width, endV],
-        [0, endV],
-      ],
-      record: DIRT,
-    });
-  }
-  return decals;
-}
-
 /** The ground round each building kept clear of the wild, as rects: what nature keeps off. */
 function yards(layouts: readonly NodeLayout[]): Pad[] {
   return layouts.flatMap((layout) =>
@@ -151,14 +81,10 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
       yaw: seated.yaw,
     })),
   );
-  const decals: Decal[] = layouts.flatMap((layout) => [
-    ...layout.tiles.map(tileDecal),
-    ...layout.paths.flatMap(pathDecals),
-  ]);
   const solids = layouts.flatMap((layout) => [...layout.solids, ...layout.rooms]);
   const spots = [
     ...pieces.map((piece) => [piece.at[0], piece.at[1]] as const),
-    ...decals.flatMap((decal) => decal.corners.map((corner) => [corner[0], corner[1]] as const)),
+    ...layouts.flatMap((layout) => layout.tiles.map((tile) => tile.at)),
     ...solids.map((solid) => [solid.at[0], solid.at[1]] as const),
   ];
   if (!spots.length) return null;
@@ -211,7 +137,6 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
     social: { bounds: [0, 0, 0, 0], level: 0, ring: [], spawns: [], solids: [] },
     pads: [...layouts.flatMap((layout) => layout.pads), ...tileRects, ...yards(layouts)],
     pieces,
-    decals,
     clearings: layouts.flatMap((layout) =>
       layout.areas.flatMap((area) => {
         const share = CLEARED_SHARE[area.kind];

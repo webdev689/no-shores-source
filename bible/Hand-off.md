@@ -165,8 +165,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- The layouts' open ends ([[Layouts]], "Limits"): the World Editor planning and showing them, soft edges for a
-  block's streets, a spatial index for the movement rules' thousands of boxes, the third-person camera kept inside
+- The layouts' open ends ([[Layouts]], "Limits"): the World Editor planning and showing them,
+  a spatial index for the movement rules' thousands of boxes, the third-person camera kept inside
   rooms, and the activities that will stand on the sites (public events, beacons, resource nodes, foes).
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),

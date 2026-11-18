@@ -4,7 +4,7 @@ import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CLIPMAP_LEVELS, CLIPMAP_QUADS, type ClipLevel } from './clipmap.ts';
-import { GROUND_COLOUR_WGSL, TILE_LAYERS, TILE_M, TILE_TURN, WIDE_TILE_M } from './groundColour.ts';
+import { GROUND_COLOUR_WGSL, type GroundPaint, TILE_LAYERS, TILE_M, TILE_TURN, WIDE_TILE_M } from './groundColour.ts';
 /** A rectangle of whole cells, right and bottom exclusive. */
 export interface CellRect {
   readonly left: number;
@@ -74,7 +74,10 @@ export interface TerrainFrame {
   readonly pixelAngle: number;
 }
 
-const UNIFORM_FLOATS = 56 + CLIPMAP_LEVELS * 8;
+const UNIFORM_FLOATS = 64 + CLIPMAP_LEVELS * 8;
+/** How far inland of the painted coast the middle ground is eased in from, metres: nearer the coast the 1 km land
+ *  is the water's own, so the land drawn there keeps to it. */
+const MIDDLE_FROM_COAST_M = [150, 400] as const;
 /** The low ground and snow line drawn for a landmass with no biome. */
 const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
 const DEFAULT_SNOW_M = 2300;
@@ -109,6 +112,11 @@ struct View {
   world: vec4f,
   // Where the noise's anchor falls in the tiles, as fractions of a tile: the plain reading, then the wide turned one.
   tiles: vec4f,
+  // The painting of what is laid on the land: its north-west corner (window metres), texels a metre, and whether
+  // there is one.
+  paint: vec4f,
+  // The middle ground (showMiddle): the eye from its corner, metres, its step, and whether it is shown.
+  middle: vec4f,
   rings: array<vec4f, ${CLIPMAP_LEVELS * 2}>,
 };
 
@@ -121,6 +129,9 @@ struct View {
 @group(0) @binding(6) var close_marks: texture_2d<u32>;
 @group(0) @binding(7) var ground_tiles: texture_2d_array<f32>;
 @group(0) @binding(8) var tile_sampler: sampler;
+@group(0) @binding(9) var ground_paint: texture_2d<f32>;
+@group(0) @binding(10) var paint_sampler: sampler;
+@group(0) @binding(11) var middle_heights: texture_2d<f32>;
 
 struct Surface {
   @builtin(position) clip: vec4f,
@@ -146,6 +157,25 @@ fn wide_at(offset: vec2f) -> vec2f {
 
 fn close_at(offset: vec2f) -> vec2f {
   return (offset + view.local.zw) / view.close.x;
+}
+
+// The ground at a point: the 1 km land, the middle ground eased in over it inland, and the close-up's over both
+// (share, close_share's), each easing into the coarser one across its edge.
+fn land_at(offset: vec2f, share: f32) -> Wide {
+  var land = wide_ground(wide_heights, wide_at(offset));
+  land.ground *= vec4f(1.0, 1.0 / view.wide.x, 1.0 / view.wide.x, 1.0);
+  let middle_at = (offset + view.middle.xy) / view.middle.z;
+  let inland = smoothstep(${MIDDLE_FROM_COAST_M[0]}.0, ${MIDDLE_FROM_COAST_M[1]}.0, land.ground.w);
+  let middle_share = close_share(middle_heights, middle_at, view.middle.w > 0.5) * inland;
+  if (middle_share > 0.0) {
+    let middle = spline_at(middle_heights, middle_at) * vec3f(1.0, 1.0 / view.middle.z, 1.0 / view.middle.z);
+    land.ground = vec4f(mix(land.ground.xyz, middle, middle_share), land.ground.w);
+  }
+  if (share > 0.0) {
+    let near = spline_at(close_heights, close_at(offset)) * vec3f(1.0, 1.0 / view.close.x, 1.0 / view.close.x);
+    land.ground = vec4f(mix(land.ground.xyz, near, share), land.ground.w);
+  }
+  return land;
 }
 
 @vertex
@@ -176,7 +206,7 @@ fn vertex_main(@builtin(vertex_index) index: u32, @builtin(instance_index) ring:
   // Whole lattice steps, exact in f32, then one rounding: the same for every ring at a shared vertex.
   let offset = view.lattice.xy + (first.xy + snapped * first.z) * view.lattice.z;
   let share = close_share(close_heights, close_at(offset), view.close.y > 0.5);
-  let ground = ground_at(wide_heights, wide_at(offset), view.wide.x, close_heights, close_at(offset), view.close.x, share);
+  let ground = land_at(offset, share);
   // A triangle across the coast must reach the sea's level on the painted line or inland of it, never out at sea,
   // or it would stand over water the ground lies under. So a vertex inland, within a triangle's reach of the coast,
   // is lowered as far as that asks of the lowest the sea can be at its seaward neighbour, a pixel short of the line;
@@ -218,7 +248,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let close = close_at(surface.offset);
   let wide = wide_at(surface.offset);
   let share = close_share(close_heights, close, view.close.y > 0.5);
-  let ground = ground_at(wide_heights, wide, view.wide.x, close_heights, close, view.close.x, share).ground;
+  let ground = land_at(surface.offset, share).ground;
   let bed = ground.x;
   let slope = length(ground.yz);
   let still = still_at(wide_lakes, wide, close_levels, close, share);
@@ -247,6 +277,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let town = select(marked(wide_marks, wide, 4u, 4u), marked(close_marks, close, 4u, 4u), in_close);
   let port = select(marked(wide_marks, wide, 5u, 5u), marked(close_marks, close, 5u, 5u), in_close);
   dry = mix(mix(mix(dry, ROAD * tile_grain(DIRT_TILE, local), road), TOWN, 0.6 * town), PORT, port);
+  dry = painted(dry, point, local, footprint);
 
   var colour = mix(dry, wet, under);
   let direct = max(dot(normal, SUN), 0.0);
@@ -297,6 +328,13 @@ export class TerrainView {
   private readonly plainTiles: GPUTexture;
   private tiles: GPUTextureView;
   private readonly tileSampler: GPUSampler;
+  /** What is laid on the land, painted (GroundPaint), or a blank texel with none; where it lies. */
+  private paint: GPUTexture;
+  private paintPlace: readonly [number, number, number, number] = [0, 0, 1, 0];
+  /** The middle ground's heights (showMiddle), or a blank texel with none, and its corner and step. */
+  private middle: GPUTexture;
+  private middlePlace: { readonly corner: readonly [number, number]; readonly step: number } | null = null;
+  private readonly paintSampler: GPUSampler;
   /** The cells for WGSL wide_ground: height, distance from the coast, height carried over it. */
   private readonly wide: GPUTexture;
   private readonly lakes: GPUTexture;
@@ -332,6 +370,9 @@ export class TerrainView {
       [1, 1, TILE_LAYERS.length],
     );
     this.tiles = this.plainTiles.createView({ dimension: '2d-array' });
+    this.paint = this.texture(1, 1, 'rg8unorm');
+    this.middle = this.texture(1, 1, 'r32float');
+    this.paintSampler = gpu.device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
     this.tileSampler = gpu.device.createSampler({
       addressModeU: 'repeat',
       addressModeV: 'repeat',
@@ -370,6 +411,9 @@ export class TerrainView {
         ...textures.map((texture, index) => ({ binding: index + 1, resource: (texture ?? this.wide).createView() })),
         { binding: 7, resource: this.tiles },
         { binding: 8, resource: this.tileSampler },
+        { binding: 9, resource: this.paint.createView() },
+        { binding: 10, resource: this.paintSampler },
+        { binding: 11, resource: this.middle.createView() },
       ],
     });
   }
@@ -430,9 +474,42 @@ export class TerrainView {
     this.bindGroup = this.bind();
   }
 
+  /**
+   * Shows the ground sampled `step` metres apart over a wide square round the eye (its north-west sample at `corner`,
+   * window metres), between the close-up and the 1 km land, so the land's carving reads from kilometres off; or none.
+   */
+  showMiddle(middle: { corner: readonly [number, number]; step: number; size: number; heights: Float32Array } | null) {
+    this.middle.destroy();
+    this.middle = this.texture(middle?.size ?? 1, middle?.size ?? 1, 'r32float');
+    if (middle) {
+      const { queue } = this.gpu.device;
+      queue.writeTexture({ texture: this.middle }, middle.heights, { bytesPerRow: middle.size * 4 }, [
+        middle.size,
+        middle.size,
+      ]);
+    }
+    this.middlePlace = middle ? { corner: middle.corner, step: middle.step } : null;
+    this.bindGroup = this.bind();
+  }
+
+  /** Draws what is laid on the land as painted from now on, or nothing painted. */
+  paintGround(paint: GroundPaint | null): void {
+    this.paint.destroy();
+    this.paint = this.texture(paint?.width ?? 1, paint?.height ?? 1, 'rg8unorm');
+    if (paint) {
+      const { queue } = this.gpu.device;
+      queue.writeTexture({ texture: this.paint }, paint.texels, { bytesPerRow: paint.width * 2 }, [
+        paint.width,
+        paint.height,
+      ]);
+    }
+    this.paintPlace = paint ? [paint.west, paint.north, 1 / paint.texelM, 1] : [0, 0, 1, 0];
+    this.bindGroup = this.bind();
+  }
+
   /** Gives the GPU back this view's textures and buffers; the view draws nothing after. */
   destroy(): void {
-    const owned = [this.wide, this.lakes, this.marks, this.plainTiles, this.uniforms];
+    const owned = [this.wide, this.lakes, this.marks, this.plainTiles, this.paint, this.middle, this.uniforms];
     for (const resource of [...owned, ...(this.close?.textures ?? [])]) {
       resource.destroy();
     }
@@ -474,11 +551,14 @@ export class TerrainView {
       ],
       52,
     );
+    floats.set(this.paintPlace, 56);
+    const middle = this.middlePlace;
+    floats.set(middle ? [eyeX - middle.corner[0], eyeY - middle.corner[1], middle.step, 1] : [0, 0, 1, 0], 60);
     for (const [index, ring] of frame.rings.entries()) {
       const [steps, origin] = [finest?.spacing ?? ring.spacing, finest?.corner ?? ring.corner];
       const lattice = [(ring.corner[0] - origin[0]) / steps, (ring.corner[1] - origin[1]) / steps];
-      floats.set([...lattice, ring.spacing / steps, 0], 56 + index * 8);
-      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 60 + index * 8);
+      floats.set([...lattice, ring.spacing / steps, 0], 64 + index * 8);
+      floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 68 + index * 8);
     }
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, floats);
   }

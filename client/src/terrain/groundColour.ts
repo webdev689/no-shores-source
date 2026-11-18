@@ -3,8 +3,23 @@
 // declares `view`, `ground_tiles` and `tile_sampler`.
 
 /** The ground's tile pictures the terrain wears, in this order in the array `wearTiles` is handed: the low ground's
- *  grass, the dirt of the highlands and roads, the stone of bare rock, snow, and a beach's sand. */
-export const TILE_LAYERS = ['grass', 'dirt', 'stone', 'snow', 'sand'] as const;
+ *  grass, the dirt of the highlands, roads and paths, the stone of bare rock, snow, a beach's sand, and a town's
+ *  paving. */
+export const TILE_LAYERS = ['grass', 'dirt', 'stone', 'snow', 'sand', 'paving'] as const;
+
+/**
+ * What is laid on the land, painted for the terrain (game's groundPaint.ts): texels `texelM` metres square from the
+ * north-west corner (`west`, `north`, window metres), two bytes a texel, the paths and dirt then the paving, each a
+ * distance from its edge (128 at the edge, 32 a metre, more inside).
+ */
+export interface GroundPaint {
+  readonly west: number;
+  readonly north: number;
+  readonly texelM: number;
+  readonly width: number;
+  readonly height: number;
+  readonly texels: Uint8Array;
+}
 /** A ground tile's side in metres, as Daggerfall laid them, and the second, wider and turned, reading of it that
  *  breaks up its repeats. */
 export const TILE_M = 6.4;
@@ -29,6 +44,10 @@ const DIRT_TILE = 1;
 const STONE_TILE = 2;
 const SNOW_TILE = 3;
 const SAND_TILE = 4;
+const PAVING_TILE = 5;
+// A path's trodden earth and a street's stone, under their tiles' grain.
+const PATH_EARTH = vec3f(0.47, 0.38, 0.27);
+const PAVING_STONE = vec3f(0.60, 0.58, 0.54);
 
 // A ground tile's grain at a point (metres from the noise's anchor), as a factor on its class's colour: the tile over
 // its own mean, read plainly and again wider and turned, so its repeats do not line up. A tile not painted yet, and
@@ -78,6 +97,23 @@ fn land_colour(bed: f32, slope: f32, coast: f32, world: vec2f, at: vec2f, normal
   let beach = (1.0 - smoothstep(60.0, 140.0, coast)) * low * (1.0 - smoothstep(0.12, 0.3, slope));
   let wet = (1.0 - smoothstep(0.1, 0.4, bed)) * beach;
   return mix(snowy, SAND * tile_grain(SAND_TILE, at), beach) * mix(1.0, WET, wet);
+}
+
+// The paths and streets painted on the land (GroundPaint): each channel's distance from its edge, with a noise on it so
+// an edge wanders as a trodden one does, soft across a pixel; a path paler in its middle and darker at its edges,
+// where the grass is worn into it. Read only where a painting lies (view.paint.w), and only on dry land.
+fn painted(colour: vec3f, point: vec2f, at: vec2f, footprint: f32) -> vec3f {
+  let earth = PATH_EARTH * tile_grain(DIRT_TILE, at);
+  let stones = PAVING_STONE * tile_grain(PAVING_TILE, at);
+  let uv = (point - view.paint.xy) * view.paint.z / vec2f(textureDimensions(ground_paint));
+  let held = view.paint.w > 0.5 && all(uv >= vec2f(0.0)) && all(uv <= vec2f(1.0));
+  let reach = (textureSampleLevel(ground_paint, paint_sampler, uv, 0.0).rg * 255.0 - 128.0) / 32.0;
+  let ragged = (grove_noise(point, 1.3, 83) - 0.5) * 0.9 + (grove_noise(point, 0.45, 89) - 0.5) * 0.35;
+  let soft = max(0.15, footprint);
+  let dirt = smoothstep(-soft, soft, reach.x + ragged) * select(0.0, 1.0, held);
+  let paving = smoothstep(-soft, soft, reach.y + ragged * 0.5) * select(0.0, 1.0, held);
+  let worn = mix(0.8, 1.06, smoothstep(0.0, 1.4, reach.x));
+  return mix(mix(colour, earth * worn, dirt), stones, paving);
 }
 
 // The bed under water: wet sand in the shallows, as the beach is at the waterline, giving way to silt and darker

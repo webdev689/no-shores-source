@@ -5,6 +5,7 @@ import { CityView } from '../city/cityView.ts';
 import { cityClimate } from '../city/plan.ts';
 import { layoutsNear, type NodeLayout } from '../layout/layouts.ts';
 import { planOfLayouts } from '../layout/layoutPlan.ts';
+import { paintOfLayouts } from './groundPaint.ts';
 import { landSampler } from '../nature/ground.ts';
 import { NatureView } from '../nature/natureView.ts';
 import type { Landmass } from './landmass.ts';
@@ -31,6 +32,9 @@ export interface LandDrawers {
 /** How far round the eye layouts are drawn, metres, and how far the eye moves before they are gathered again. */
 const LAYOUT_REACH_M = 4000;
 const LAYOUT_REGATHER_M = 1500;
+/** How far round the eye the layouts' paths and streets are painted on the land, metres: past it they are too thin
+ *  to see. */
+const PAINT_REACH_M = 2500;
 
 /** Draws the layouts near the eye with the city layer, gathered again once the eye has moved on. */
 function layoutDrawer(
@@ -38,7 +42,7 @@ function layoutDrawer(
   layouts: readonly NodeLayout[],
   biome: string | null,
   assets: Promise<CityAssets | null>,
-  regathered: () => void,
+  regathered: (near: readonly NodeLayout[], eye: readonly [number, number]) => void,
 ): { drawer: Drawer; view: CityView; release(): void } {
   const view = new CityView(gpu);
   let tables: CityTables | null = null;
@@ -55,7 +59,7 @@ function layoutDrawer(
     const plan = planOfLayouts(near);
     if (plan) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
     else view.clear();
-    regathered();
+    regathered(near, gatheredAt);
   };
   return {
     view,
@@ -147,7 +151,10 @@ export function landDrawers(
       .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
   }
   const laid = landmass.layouts.length
-    ? layoutDrawer(gpu, landmass.layouts, biome, assets, () => (version += 1))
+    ? layoutDrawer(gpu, landmass.layouts, biome, assets, (near, eye) => {
+        version += 1;
+        scene.paintGround(paintOfLayouts(near, eye, PAINT_REACH_M, [landmass.view.leftM, landmass.view.topM]));
+      })
     : null;
   // The pads are kept clear from the first frame; the city's and the layouts' solids and yards too once built.
   const cleared = (x: number, y: number) =>

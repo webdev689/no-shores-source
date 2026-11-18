@@ -197,7 +197,14 @@ roads, its stone on bare rock, its winter grass under snow and the desert's sand
 biome's colour and takes its tile's grain over it (`groundColour.ts`), a tile to 6.4 m as Daggerfall laid them, read
 again 34 m wide and turned so its repeats do not line up, and cast from three sides on cliffs so a face is not
 smeared. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
-painted, and in the World Editor, the class is its plain colour.
+painted, and in the World Editor, the class is its plain colour. The layouts' paths and streets are painted on it
+too ([[Layouts]], "In the browser"), in the dirt's and the town paving's grain.
+
+**The middle ground.** Between the exact ground round the player (2 km, every 4 m) and the 1 km land, the scene keeps
+the ground sampled every 16 m over 8 km round the player (`keepMiddle`), sampled again once the player moves 1.5 km,
+so a patrol area's canyons, cliffs and mesas stand under its great works and rock as far off as they are drawn. It is
+eased in from 150 to 400 m inland of the painted coast, so at the shore the land keeps to the 1 km land the water is
+drawn from. Arriving waits for it as for the exact ground.
 
 **The sun's shadows.** Before the pass, what casts draws its depth along the sun into two maps (`shadow.ts`), 2048
 texels a side each, every square ahead of the camera and snapped to its own texels so the edges hold still:

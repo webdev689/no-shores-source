@@ -22,6 +22,7 @@ code:
   - crates/layout/src/collide.rs#boxes_of
   - content/world/briefs.json
   - client/src/layout/layoutPlan.ts#planOfLayouts
+  - client/src/game/groundPaint.ts#paintOfLayouts
   - client/src/layout/passage.ts#passageAt
   - client/src/game/landDrawers.ts#landDrawers
 ---
@@ -139,16 +140,22 @@ instance or "Return to" the patrol area (E), and goes through the veil to arrive
 
 The game draws the layouts within 4 km of the eye with the city layer ([[Cities]]), gathered again once the eye has
 moved 1.5 km: a plan of placed pieces (each building and prop where its layout stood it, a building walked into with
-its doorways open), solids (plinths, set pieces, great works, rooms) and ground pictures laid on the land (a block's
-streets and yards, and the paths as ribbons of dirt), on a grid of cells just large enough to hold them, with no
-plates. Nature keeps off the buildings' yards and each place's open ground. The terrain lays carved cliffs in strata
-of rock.
+its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
+to hold them, with no plates. Nature keeps off the buildings' yards and each place's open ground.
+
+The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within
+2.5 km of the eye (`paintOfLayouts`) as a distance from their edges, a metre a texel at finest, the paths and a
+block's dirt in one channel and its paving and stone in the other. A block's tiles are read by their records'
+classes at their corners, as Daggerfall's tile map lays them, across each tile and the next, so a street has no seam
+between its tiles and fades out across the first tile not laid. The terrain draws them in its dirt's and paving's
+grain, their edges wandering as trodden ones do, a path paler in its middle and darker where the grass is worn into
+it. The terrain lays carved cliffs in strata of rock, and draws the land's carving as far as the layouts are drawn
+(the middle ground, [[Game]]).
 
 ## Limits
 
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
   wait on the server.
 - A patrol area full of rooms holds three thousand boxes or so; the movement rules test them one by one.
-- A block's streets are pictures laid in squares of 6.4 m with hard edges.
 - Only the third-person camera's distance is kept from the land; indoors it can stand outside the walls.
 - The World Editor does not plan layouts yet: it shows the land as generated, uncarved.

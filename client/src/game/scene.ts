@@ -5,6 +5,7 @@ import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, R
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
+import type { GroundPaint } from '../terrain/groundColour.ts';
 import { type TerrainData, TerrainView } from '../terrain/terrainView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { waterUnder } from '../water/shore.ts';
@@ -28,6 +29,12 @@ interface CloseUp {
   readonly water: PatchWater;
   readonly centre: readonly [number, number];
 }
+
+/** The middle ground's samples a side and their spacing, 8 km square every 16 m, and how far the eye moves before
+ *  it is sampled again, metres: enough to show the patrol areas' canyons as far as their pieces are drawn. */
+const MIDDLE_SAMPLES = 513;
+const MIDDLE_STEP_M = 16;
+const MIDDLE_REFRESH_M = 1500;
 
 const DEPTH_COPY = /* wgsl */ `
 @group(0) @binding(0) var depths: texture_depth_multisampled_2d;
@@ -54,6 +61,8 @@ export class GameScene {
   private readonly copy: GPURenderPipeline;
   private terrain: { view: LandView; drawn: TerrainView; tiles: CityPainter } | null = null;
   private close: CloseUp | null = null;
+  /** Where the middle ground was last sampled round, and whether a sampling is on its way. */
+  private middle: { readonly centre: readonly [number, number]; pending: boolean } | null = null;
   private shownClose: CloseUp | null = null;
   private pending = false;
   private targets: { colour: GPUTexture; depth: GPUTexture; multisampled: GPUTexture; multidepth: GPUTexture } | null =
@@ -78,8 +87,14 @@ export class GameScene {
     const [drawn, tiles] = [new TerrainView(this.gpu, data), groundTiles(this.gpu, biome)];
     drawn.wearTiles(tiles.view);
     this.terrain = { view, drawn, tiles };
+    this.middle = null;
     dropPatchWater(this.close?.water ?? null);
     [this.close, this.shownClose] = [null, null];
+  }
+
+  /** Draws what the layouts lay on the land, as painted, or nothing painted. */
+  paintGround(paint: GroundPaint | null): void {
+    this.terrain?.drawn.paintGround(paint);
   }
 
   get land(): LandView | null {
@@ -125,15 +140,39 @@ export class GameScene {
       });
   }
 
+  /** Keeps the middle ground round a world point (the terrain's showMiddle), sampled again once it moves 1.5 km. */
+  keepMiddle(focus: readonly [number, number], source: CloseSource): void {
+    const terrain = this.terrain;
+    if (!terrain || this.middle?.pending) return;
+    const centre = this.middle?.centre;
+    if (centre && Math.hypot(focus[0] - centre[0], focus[1] - centre[1]) < MIDDLE_REFRESH_M) return;
+    const asked = { centre: [focus[0], focus[1]] as const, pending: true };
+    this.middle = asked;
+    const half = ((MIDDLE_SAMPLES - 1) * MIDDLE_STEP_M) / 2;
+    const [left, top] = [Math.round(focus[0] - half), Math.round(focus[1] - half)];
+    source(left, top, MIDDLE_STEP_M, MIDDLE_SAMPLES)
+      .then(({ patch }) => {
+        asked.pending = false;
+        if (this.terrain !== terrain) return;
+        const corner = [left - terrain.view.leftM, top - terrain.view.topM] as const;
+        terrain.drawn.showMiddle({ corner, step: MIDDLE_STEP_M, size: MIDDLE_SAMPLES, heights: patch.heights });
+      })
+      .catch(() => {
+        // Asked again on the next frame.
+        this.middle = null;
+      });
+  }
+
   /** The exact ground round the player as last sampled, or null before any. */
   closePatch(): GroundPatch | null {
     return this.close?.ground.patch ?? null;
   }
 
-  /** Whether the exact ground round a world point has come. */
+  /** Whether the exact ground round a world point has come, and the middle ground round it. */
   closeReady(x: number, y: number): boolean {
     const centre = this.close?.centre;
-    return !!centre && Math.hypot(x - centre[0], y - centre[1]) < REFRESH_M;
+    const middle = this.middle && !this.middle.pending;
+    return !!centre && !!middle && Math.hypot(x - centre[0], y - centre[1]) < REFRESH_M;
   }
 
   /** The water at a world point now: its surface over the sea or a lake or river, or null on dry ground. */
