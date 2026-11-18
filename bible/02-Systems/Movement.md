@@ -6,6 +6,7 @@ code:
   - crates/movement/src/body.rs#TUNING
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
+  - crates/movement/src/near.rs#Blocks
   - crates/movement/src/terrain.rs#Terrain
   - crates/movement/src/heights.rs#Heights
   - crates/movement/src/floats.rs#fingerprint
@@ -39,6 +40,13 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   only where it overlaps the body's column: its top over a step above the feet and its underside below the head. A
   body walks under a block whose underside is over its head, stands on an upper floor's top, and falls off its edge
   as off any block.
+- **The blocks near a body.** A course is kept with a grid over it (`Blocks`, `near.rs`), built once when the
+  blocks are set: in the movement door, in a room, and in the room door's course. Each cell lists, in the course's
+  order, every block whose footprint grown by the body's radius reaches into it, so a rule asks only the blocks of the
+  cell under the point it tests. Every rule still tests each of them itself, and those left out could not have held
+  the point, so the answers are the whole list's to the bit, first block found included. A cell is at least 2 m a
+  side, and a course has at most about 16,000 of them; building the Saltgrass Downs' grid takes a quarter of a
+  millisecond. A plain list still serves for a small course (the Test Ground's, a deck's).
 - **Head room.** The body is 1.8 m tall standing and 1.0 m crouched. Rising, by a jump, a climb or going over a lip,
   its head stops at the lowest underside over it: its feet stay that far below and its upward speed ends. A crouched
   body under a ceiling too low to stand stays crouched, and a crouched jump there leaves it crouched. A lip is a
@@ -105,6 +113,13 @@ continent, into its parapet, over it and along the terrace beyond, then over a p
 side (`crates/room/tests/agree_node.rs`) takes the windows and boxes the bake cuts and steps them natively; the
 browser's (`client/src/rules/nodeWindow.test.ts`) generates the continent and settles its city in the land's door,
 cuts the same windows there, and steps them through the movement door. Both hold the same value.
+
+A tick's cost among a patrol area's boxes: bodies run 600 ticks each from the Saltgrass Downs' spawns and from
+every fiftieth of its 4,429 boxes (92 runs), turning, running, jumping and crouching among its buildings. Natively
+(`cargo test --release -p room --test near_blocks -- --ignored --nocapture`) a tick took 112.7 µs over the whole
+list and 44.1 µs through the grid; through `movement.wasm` in Node, 27 µs before and 13 µs after (the same runs with no
+boxes at all take 18.6 µs, so what remains is the land's window and the door, not the blocks). The same test steps
+every run over the list and over the grid and holds them equal at every tick.
 
 ## Limits
 

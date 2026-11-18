@@ -18,12 +18,18 @@ const LEAST_ROOM_M: f64 = 2.4;
 const LINING_M: f64 = 0.2;
 const INSET_M: f64 = 0.04;
 const FLOOR_M: f64 = 0.06;
+/// How far a ground floor's planks stand over the highest ground under them, and over the room's base at least: over
+/// the model's own floor (its sills stand 0.05 m up) and any hump of the land, so neither shows through.
+const PLANKS_OVER_M: f64 = 0.03;
+const PLANKS_OVER_BASE_M: f64 = 0.07;
+const PLANKS_HIGHEST_M: f64 = 0.4;
 const CEILING_M: f64 = 0.16;
 const SLAB_M: f64 = 0.25;
 /// A stair's rise and run a step, and its width.
 const RISE_M: f64 = 0.2;
 const RUN_M: f64 = 0.3;
 const STAIR_WIDTH_M: f64 = 1.0;
+const WELL_BESIDE_M: f64 = 0.45;
 /// The building types a body walks into: shops, guild halls, temples, taverns, palaces and houses (not the graves,
 /// castle pieces and wall pieces Daggerfall files as buildings).
 const WALKED_INTO: std::ops::RangeInclusive<u8> = 0..=20;
@@ -162,7 +168,7 @@ pub fn build(kit: &mut Kit, seated: &mut Seated, book: &Book) -> Option<Built> {
         }
         let floors = floors_of(room);
         let stair = (Some(index) == stair_room).then(|| stair_of(room, &measure.doors));
-        lay_floors(&frame, room, &floors, stair, &mut built);
+        lay_floors(&frame, room, &floors, stair, planks_of(kit, &frame, room), &mut built);
         if let Some(stair) = stair {
             climb(&frame, room, stair, &mut built);
         }
@@ -173,11 +179,22 @@ pub fn build(kit: &mut Kit, seated: &mut Seated, book: &Book) -> Option<Built> {
         .max_by(|(first, _), (second, _)| area(first).total_cmp(&area(second)));
     if let Some((room, _)) = main {
         let stair = stair_room.map(|index| stair_of(&rooms[index].0, &measure.doors));
-        furnish(kit, &frame, room, &measure.doors, stair, seated.purpose);
+        let planks = planks_of(kit, &frame, room);
+        furnish(kit, &frame, room, &measure.doors, stair, planks, seated.purpose);
     }
     steps_out(kit, &frame, &measure.doors, measure.min[1], &mut built);
     seated.open = true;
     Some(built)
+}
+
+/// The top of a room's ground-floor planks over the origin: over the highest of the ground at its corners and middle.
+fn planks_of(kit: &Kit, frame: &Frame, room: &Room) -> f64 {
+    let (xs, zs) = ([room.xs[0] + 0.3, room.xs[1] - 0.3], [room.zs[0] + 0.3, room.zs[1] - 0.3]);
+    let middle = [(xs[0] + xs[1]) / 2.0, (zs[0] + zs[1]) / 2.0];
+    let points = [[xs[0], zs[0]], [xs[1], zs[0]], [xs[0], zs[1]], [xs[1], zs[1]], middle];
+    let highest = points.iter().map(|&[x, z]| kit.height(frame.world(x, z))).fold(f64::NEG_INFINITY, f64::max);
+    // Never more than a step over the doors' sills, so a body still walks in where the land humps under a room.
+    (highest - frame.origin[2] + PLANKS_OVER_M).max(room.base + PLANKS_OVER_BASE_M).min(room.base + PLANKS_HIGHEST_M)
 }
 
 fn area(room: &Room) -> f64 {
@@ -297,8 +314,8 @@ fn wall(frame: &Frame, along_x: bool, span: [f64; 2], thick: [f64; 2], bottom: f
     frame.block(xs, zs, bottom, top, Material::Plaster)
 }
 
-/// Where a room's stair runs: along its longer side, against the wall with fewer doors, in plan metres (its start and
-/// its way along x or z, and its side's inner line).
+/// Where a room's stair runs: along its longer side, against a wall and from an end that leave its doors clear, in
+/// plan metres (its foot, its way along x or z, +1 or -1, and the span across it).
 #[derive(Debug, Clone, Copy)]
 struct Stair {
     along_x: bool,
@@ -307,15 +324,37 @@ struct Stair {
     side: [f64; 2],
 }
 
+impl Stair {
+    /// The stretch its steps run along, low end first, plan metres.
+    fn run(&self) -> [f64; 2] {
+        let end = self.start + self.way * (STOREY_M / RISE_M).round() * RUN_M;
+        [self.start.min(end), self.start.max(end)]
+    }
+}
+
 fn stair_of(room: &Room, doors: &[Door]) -> Stair {
     let along_x = room.xs[1] - room.xs[0] >= room.zs[1] - room.zs[0];
-    let (lines, outs) = if along_x { (room.zs, [-1.0, 1.0]) } else { (room.xs, [-1.0, 1.0]) };
-    let busy = |at: f64, out: f64| doors_in(doors, along_x, at, out).len();
-    let near = if busy(lines[0], outs[0]) <= busy(lines[1], outs[1]) { 0 } else { 1 };
-    let inner = if near == 0 { lines[0] + INSET_M + LINING_M } else { lines[1] - INSET_M - LINING_M };
-    let side = if near == 0 { [inner, inner + STAIR_WIDTH_M] } else { [inner - STAIR_WIDTH_M, inner] };
-    let ends = if along_x { room.xs } else { room.zs };
-    Stair { along_x, start: ends[0] + INSET_M + LINING_M + 0.2, way: 1.0, side }
+    let (lines, ends) = if along_x { (room.zs, room.xs) } else { (room.xs, room.zs) };
+    let busy = |near: usize| doors_in(doors, along_x, lines[near], [-1.0, 1.0][near]).len();
+    let fewer = if busy(0) <= busy(1) { 0 } else { 1 };
+    let options = [(fewer, 1.0), (fewer, -1.0), (1 - fewer, 1.0), (1 - fewer, -1.0)].map(|(near, way)| {
+        let inner = if near == 0 { lines[0] + INSET_M + LINING_M } else { lines[1] - INSET_M - LINING_M };
+        let side = if near == 0 { [inner, inner + STAIR_WIDTH_M] } else { [inner - STAIR_WIDTH_M, inner] };
+        let start = if way > 0.0 { ends[0] + INSET_M + LINING_M + 0.2 } else { ends[1] - INSET_M - LINING_M - 0.2 };
+        (Stair { along_x, start, way, side }, near)
+    });
+    // The first that leaves every door clear: none in its wall beside the run or the landing at its top, and none in
+    // the end wall at its foot.
+    let clear = |(stair, near): &(Stair, usize)| {
+        let [low, high] = stair.run();
+        let beside = doors_in(doors, along_x, lines[*near], [-1.0, 1.0][*near]);
+        let foot = if stair.way > 0.0 { 0 } else { 1 };
+        let ahead = doors_in(doors, !along_x, ends[foot], [-1.0, 1.0][foot]);
+        beside.iter().all(|(span, _, _)| span[1] < low - 1.0 || span[0] > high + 1.0)
+            && ahead.iter().all(|(span, _, _)| span[1] < stair.side[0] - 0.2 || span[0] > stair.side[1] + 0.2)
+    };
+    let (stair, _) = options.iter().find(|option| clear(option)).unwrap_or(&options[0]);
+    *stair
 }
 
 /// The steps up to the first upper floor, each a block from the floor to its tread.
@@ -332,18 +371,23 @@ fn climb(frame: &Frame, room: &Room, stair: Stair, built: &mut Built) {
     }
 }
 
-/// A room's plank floor, ceiling, and the slab of each upper floor with its stairwell left open.
-fn lay_floors(frame: &Frame, room: &Room, floors: &[f64], stair: Option<Stair>, built: &mut Built) {
+/// A room's plank floor, its top at `planks` over the origin and walked on, its ceiling, and the slab of each upper
+/// floor with its stairwell left open.
+fn lay_floors(frame: &Frame, room: &Room, floors: &[f64], stair: Option<Stair>, planks: f64, built: &mut Built) {
     let inner_x = [room.xs[0] + INSET_M, room.xs[1] - INSET_M];
     let inner_z = [room.zs[0] + INSET_M, room.zs[1] - INSET_M];
-    built.solids.push(frame.block(inner_x, inner_z, room.base - FLOOR_M + 0.02, room.base + 0.02, Material::Timber));
+    let floor = frame.block(inner_x, inner_z, room.base - FLOOR_M, planks, Material::Timber);
+    built.boxes.push(box_of(&floor));
+    built.solids.push(floor);
     built.solids.push(frame.block(inner_x, inner_z, room.top - CEILING_M, room.top, Material::Timber));
     for &floor in &floors[1..] {
         let mut slabs = vec![(inner_x, inner_z)];
         if let (Some(stair), true) = (stair, floor - room.base < STOREY_M + 0.1) {
-            let length = (STOREY_M / RISE_M).round() * RUN_M;
-            let well = [stair.start - 0.1, stair.start + length + 0.3];
-            let side = [stair.side[0] - 0.1, stair.side[1] + 0.1];
+            // Open over the steps, and past the top one so a head climbing them clears the slab's edge.
+            let [low, high] = stair.run();
+            let well = if stair.way > 0.0 { [low - 0.1, high + 0.3] } else { [low - 0.3, high + 0.1] };
+            // Wider than the steps by more than a body's radius, so a head going up beside their edge clears the slab.
+            let side = [stair.side[0] - WELL_BESIDE_M, stair.side[1] + WELL_BESIDE_M];
             let (well_x, well_z) = if stair.along_x { (well, side) } else { (side, well) };
             slabs = vec![
                 ([inner_x[0], well_x[0]], inner_z),
@@ -363,7 +407,7 @@ fn lay_floors(frame: &Frame, room: &Room, floors: &[f64], stair: Option<Stair>, 
 }
 
 /// The furniture of a room by its building's kind: what stands along its walls, and a table in its middle.
-fn furnish(kit: &mut Kit, frame: &Frame, room: &Room, doors: &[Door], stair: Option<Stair>, purpose: u8) {
+fn furnish(kit: &mut Kit, frame: &Frame, room: &Room, doors: &[Door], stair: Option<Stair>, planks: f64, purpose: u8) {
     const BED: u32 = 41000;
     const TABLE: u32 = 41108;
     const CHAIR: u32 = 41100;
@@ -403,19 +447,16 @@ fn furnish(kit: &mut Kit, frame: &Frame, room: &Room, doors: &[Door], stair: Opt
                 (middle[0] - at[0]).abs() + (middle[1] - at[1]).abs() < 2.2 && door.sill[1] < room.base + 0.8
             });
             let on_stair = stair.is_some_and(|stair| {
-                let length = (STOREY_M / RISE_M).round() * RUN_M;
+                let [low, high] = stair.run();
                 let (along, across) = if stair.along_x { (at[0], at[1]) } else { (at[1], at[0]) };
-                along > stair.start - 0.8
-                    && along < stair.start + length + 0.8
-                    && across > stair.side[0] - 0.9
-                    && across < stair.side[1] + 0.9
+                along > low - 0.8 && along < high + 0.8 && across > stair.side[0] - 0.9 && across < stair.side[1] + 0.9
             });
             if !by_door && !on_stair {
                 slots.push((at, facing));
             }
         }
     }
-    let floor = frame.origin[2] + room.base;
+    let floor = frame.origin[2] + planks;
     let place = |kit: &mut Kit, model: u32, at: [f64; 2], facing: [f64; 2]| {
         let Some(measure) = kit.book.measure(model, false) else { return };
         let world = frame.world(at[0], at[1]);
@@ -494,6 +535,26 @@ mod tests {
         assert_eq!(cut([0.0, 10.0], [4.0, 5.5]), [[0.0, 4.0], [5.5, 10.0]]);
         assert_eq!(cut([0.0, 3.0], [4.0, 5.0]), [[0.0, 3.0]]);
         assert_eq!(cut([4.2, 5.0], [4.0, 5.5]), Vec::<[f64; 2]>::new());
+    }
+
+    #[test]
+    fn a_stair_stands_clear_of_the_doors_in_its_wall() {
+        // A long room with a door near the middle of each long wall, as a curved hall's (model 703).
+        let room = Room { cells: [0; 4], xs: [9.6, 19.2], zs: [-12.8, 6.4], base: 0.0, top: 6.45 };
+        let door = |x: f64, z: [f64; 2], out: f64| Door {
+            top: [x, 2.3, z[0]],
+            sill: [x, 0.05, z[0]],
+            sill_end: [x, 0.05, z[1]],
+            out: [out, 0.0, 0.0],
+        };
+        let doors = [door(9.6, [-6.75, -8.0], -1.0), door(19.2, [-9.25, -8.0], 1.0)];
+        let stair = stair_of(&room, &doors);
+        let [low, high] = stair.run();
+        let wall = if stair.side[0] < 14.4 { 9.6 } else { 19.2 };
+        for (span, _, _) in doors_in(&doors, false, wall, if wall < 14.4 { -1.0 } else { 1.0 }) {
+            assert!(span[1] < low - 1.0 || span[0] > high + 1.0, "{span:?} by the run {low}..{high}");
+        }
+        assert!(low >= room.zs[0] && high <= room.zs[1], "within the room");
     }
 
     #[test]

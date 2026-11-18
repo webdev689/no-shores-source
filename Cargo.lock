@@ -191,6 +191,7 @@ dependencies = [
  "combat",
  "foes",
  "land",
+ "layout",
  "libm",
  "movement",
  "naval",

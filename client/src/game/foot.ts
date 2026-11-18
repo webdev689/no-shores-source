@@ -2,7 +2,7 @@ import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { InputFrame } from '../player/input.ts';
-import { newPlayer, playerCamera } from '../player/player.ts';
+import { cameraFollowed, newPlayer, playerCamera } from '../player/player.ts';
 import type { Others } from '../player/others.ts';
 import { RoomPlay } from '../player/roomPlay.ts';
 import type { Walker } from '../player/walker.ts';
@@ -156,7 +156,9 @@ export class Foot {
   frame(controls: InputFrame, seconds: number, clock: number, paused: boolean): FootFrame {
     const { walker, movement, forge, groundAt } = this.context;
     walker.frame(paused ? IDLE : { ...controls, locked: true }, this.rules, seconds, clock);
-    const shot = shotOfOrbit(playerCamera(walker.player, movement, this.boxes), LENS, groundAt, CAMERA_CLEARANCE_M);
+    walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
+    const camera = playerCamera(walker.player, movement, this.boxes, groundAt);
+    const shot = shotOfOrbit(camera, LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
     const figures: CardAt[] = [];
     const own = walker.figure(eyeX, eyeY);

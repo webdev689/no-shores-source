@@ -157,6 +157,14 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
+- From a worker branch (`wt-bodies`), tested offline: the movement rules find a body's blocks through a grid
+  ([[Movement]], "The blocks near a body"), every answer the same to the bit, a tick among a patrol area's boxes
+  about two and a half times cheaper natively and twice through WebAssembly; the third-person camera's boom eased in
+  off every block and the ground, so indoors it shows the room from inside ([[Player]]); `&view=first` and
+  `&view=third,<metres>` in the address, and the QA driver's `hold` and `anyPort` ([[Toolkit]]); and the rooms fixed
+  where a body could not walk them: a stair laid in front of a door, a stairwell a head going up could hit, planks the
+  land showed through ([[Layouts]]). Seen in pictures but not fixed, as it is the drawing's: an open building's door
+  leaf is still drawn from outside, though bodies pass it.
 - #63: merging deploys the page and the rooms. The `flora` workflow publishes on a push to any branch, as `ships`
   does; whether it should publish from `main` only is the owner's to say. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
   look (textured, not palette-snapped) was Claude's call, as the owner left it.
@@ -166,8 +174,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Next
 
 - The layouts' open ends ([[Layouts]], "Limits"): the World Editor planning and showing them, soft edges for a
-  block's streets, a spatial index for the movement rules' thousands of boxes, the third-person camera kept inside
-  rooms, and the activities that will stand on the sites (public events, beacons, resource nodes, foes).
+  block's streets, and the activities that will stand on the sites (public events, beacons, resource nodes, foes).
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to

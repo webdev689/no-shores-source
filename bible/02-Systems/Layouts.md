@@ -62,8 +62,12 @@ from the sea, fresh water and the claim's edge), then:
 3. **The rooms.** Every shop, guild hall, temple, tavern, palace and house is walked into
    ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]: "Buildings are now open spaces"): its
    doorways stand open, and inside its outline it is lined with plaster, gaps left at its doors with lintels over
-   them, floored with planks and ceiled under its eaves. A wing tall enough has an upper floor on a slab and a stair
-   of 0.2 m risers up to it. Its main room is furnished by its kind: a tavern's counter, hearth and benches, a
+   them, floored with planks and ceiled under its eaves. The planks stand 3 cm over the highest ground under the room
+   (7 cm over its base at least, 40 cm at most), so neither the land nor the model's own floor shows through, and a
+   body walks on them. A wing tall enough has an upper floor on a slab and a stair of 0.2 m risers up to it, along a
+   long wall and from whichever end leaves every door clear: none in its wall within a metre of its run or the
+   landing at its top, none in the end wall at its foot. The well over it is 0.45 m wider than the steps on each
+   side, more than a body's radius, so a head going up beside their edge clears the slab. Its main room is furnished by its kind: a tavern's counter, hearth and benches, a
    house's bed, hearth and wardrobe, a temple's benches and lectern, a shop's counter and shelves, a table and chairs
    in the middle. Stone steps lead down from a door whose sill stands over the ground. Wings too low to stand in,
    outdoor steps and platforms stay solid.
@@ -122,10 +126,11 @@ file takes its section, spawns and boxes from its layout.
 
 ## Boxes
 
-What a body meets ([[Movement]]): each room's linings, lintels, slabs and stairs, the outdoor steps, each wing too low
+What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs and stairs, the outdoor steps, each wing too low
 to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the ways,
 and each prop too tall to step over. Rubble past the section, at the cliffs' feet, is never reached and is no box. A box's underside is its own, so a body walks under a viaduct's deck and a lintel. Boxes are written to
-the centimetre, grown out so none shrinks.
+the centimetre, grown out so none shrinks. A body walks in at every ground-floor door of the Saltgrass Downs'
+buildings, and up to every upper floor, as the bake lays them (`crates/room/tests/rooms_walked.rs`).
 
 ## Gates
 
@@ -143,11 +148,12 @@ of rock.
 
 ## Limits
 
+- A room's lining covers the model's windows: inside, the walls are plaster all round, lit only through the doors.
+- No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.
+
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
   wait on the server.
-- A patrol area full of rooms holds three thousand boxes or so; the movement rules test them one by one.
 - A block's streets are pictures laid in squares of 6.4 m with hard edges.
-- Only the third-person camera's distance is kept from the land; indoors it can stand outside the walls.
 - The World Editor does not plan layouts yet: it shows the land as generated, uncarved.
 - A set piece stands on the land as it was before the paths' beds were laid, so a prop beside a path can stand a
   hand high or low.

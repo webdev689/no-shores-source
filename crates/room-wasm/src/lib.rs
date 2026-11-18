@@ -31,7 +31,7 @@ enum Opened {
 
 thread_local! {
     static OPEN: RefCell<Option<Opened>> = const { RefCell::new(None) };
-    static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    static COURSE: RefCell<movement::Blocks> = RefCell::new(movement::Blocks::default());
 }
 
 /// What became of an input the host handed over.
@@ -78,7 +78,7 @@ pub fn open(bytes: &[u8]) -> bool {
     let blocks =
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
-    COURSE.with(|course| *course.borrow_mut() = blocks.clone());
+    COURSE.with(|course| *course.borrow_mut() = blocks.clone().into());
     keep(Opened::Land { room: Box::new(Room::new(blocks, (spawn[0], spawn[1]))), node: None });
     true
 }
@@ -121,7 +121,7 @@ pub fn set_course(bytes: &[u8]) -> bool {
     }
     let blocks =
         floats.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
-    COURSE.with(|course| *course.borrow_mut() = blocks.collect());
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(blocks.collect()));
     true
 }
 
@@ -151,7 +151,7 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let intent = combat::Intent::from_floats(intent);
     let (next, shot) = COURSE.with(|course| {
         let blocks = course.borrow();
-        let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &movement::Flat);
+        let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &*blocks, &movement::Flat);
         let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
         if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
             return (next, Some(shot));

@@ -1,7 +1,16 @@
 import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import type { InputFrame } from './input.ts';
-import { aimEased, cameraOrbit, eased, FIRST_PERSON, scrolled, toggled, type ViewMode } from './playerCamera.ts';
+import {
+  aimEased,
+  boomFollowed,
+  cameraOrbit,
+  eased,
+  FIRST_PERSON,
+  scrolled,
+  toggled,
+  type ViewMode,
+} from './playerCamera.ts';
 
 /** The player: their body, where they look, how the camera is held, whether they ride, their weapon out or away, and
  *  the cast or chosen move playing. The first person's weapon swings; this only readies it. */
@@ -133,9 +142,32 @@ export function shownBody(player: Player): Body {
   };
 }
 
-/** The camera the scene draws the player's frame from. */
-export function playerCamera(player: Player, movement: MovementRules, blocks: readonly Block[]): Orbit {
+/** Where the player's eyes are, as drawn. */
+function headOf(player: Player, movement: MovementRules): readonly [number, number, number] {
   const body = shownBody(player);
-  const head = [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
-  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim);
+  return [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)];
+}
+
+/** The camera the scene draws the player's frame from, kept off `blocks` and, given its height, the ground. */
+export function playerCamera(
+  player: Player,
+  movement: MovementRules,
+  blocks: readonly Block[],
+  groundAt: ((x: number, y: number) => number | null) | null = null,
+): Orbit {
+  return cameraOrbit(headOf(player, movement), player.yaw, player.pitch, player.view, blocks, player.aim, groundAt);
+}
+
+/** The player with the third-person camera's boom eased over `seconds` clear of `blocks` and the ground: called
+ *  once a frame before `playerCamera`, so the camera comes in and goes out smoothly. */
+export function cameraFollowed(
+  player: Player,
+  movement: MovementRules,
+  blocks: readonly Block[],
+  groundAt: ((x: number, y: number) => number | null) | null,
+  seconds: number,
+): Player {
+  const head = headOf(player, movement);
+  const view = boomFollowed(head, player.yaw, player.pitch, player.view, blocks, player.aim, groundAt, seconds);
+  return { ...player, view };
 }
