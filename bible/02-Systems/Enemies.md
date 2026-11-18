@@ -82,8 +82,9 @@ elite tier is [[Foes]]' (quicker wind-ups and cooldowns, one blow in three iron,
      two; and it calls its crew: two Minor Deckhands stand 1.5 m either side of it, alert, counted against the room's
      limit of foes.
 
-  Each change of phase is a roar of 1.2 s (an iron ring about its feet) as soon as it is free, and refills its poise.
-  Phases advance one at a time, so a blow that cuts through two roars twice.
+  Each change of phase is a roar of 1.2 s (an iron ring about its feet) as soon as it is free, owed until its wind-up
+  begins (a foe knocked down first roars once it stands), and as it begins its poise is refilled and, into the last
+  phase, its crew called. Phases advance one at a time, so a blow that cuts through two roars twice.
 
 Captain Brannoc Thule as the Boss: 1,120 health, 210 poise.
 

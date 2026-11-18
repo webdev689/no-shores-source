@@ -133,7 +133,8 @@ person's timing wanders: within 12 the window spans the landing, earlier it has 
 later than 2 ticks before. A block raises the guard only if its window will have closed before the blow lands (raised
 later it would parry, which a block is not), or keeps one already held; too late for that, it takes the blow. A dodge
 hops aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing it can only
-dodge. A shot loosed at it is timed by its distance: a shield-bearer blocks it, others may dodge it. Only the swing or
+dodge. A shot loosed at it is timed by its distance and the speed the room says it flies at (an aimed shot's
+faster than its weapon's plain one): a shield-bearer blocks it, others may dodge it. Only the swing or
 shot of a fighter of another side is weighed, never an ally's. Waiting on an answer, a foe does not swing; while it
 answers, it faces the striker. The room judges a player's blow against a foe where the player's screen showed it but
 guarding and dodging as it is now ([[Server]]), so these answers count the same at any lag.
