@@ -2,6 +2,7 @@
 // that would cover a bar already placed is lifted just above it. The picture stays still from frame to frame: the
 // order changes only when a figure comes nearer by a clear margin, a lifted bar stays lifted until it stands clear by
 // a margin too, and a bar eases to a new height rather than jumping to it.
+import { UNDER_COMPASS } from './compass.ts';
 
 /** A bar to lay: its key, where it stands over its figure (its middle's x and its foot's y, in CSS pixels), its size,
  *  and how far its figure is from the eye. */
@@ -21,11 +22,11 @@ export interface LaidBar {
 }
 
 /** The plates' sizes in CSS pixels, one for a foe's and a ship's alike: over a figure, its box (as tall as its emblem's
- *  square) and its bar's height; across the top of the screen, the boss bar's box at most `width` and `share` of the
- *  screen's width, its bar's height, and how far down it stands. */
+ *  square) and its bar's height; at the top of the screen, the boss bar's box at most `width` and `share` of the
+ *  screen's width, its bar's height, and how far down it stands: under the compass. */
 export const PLATES = {
   overhead: { width: 140, height: 26, bar: 8 },
-  boss: { width: 640, share: 0.76, height: 48, bar: 16, top: 14 },
+  boss: { width: 640, share: 0.76, height: 48, bar: 16, top: UNDER_COMPASS },
 } as const;
 
 /** The space kept between two bars, in CSS pixels. */
