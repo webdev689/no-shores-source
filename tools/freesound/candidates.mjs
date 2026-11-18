@@ -44,7 +44,7 @@ async function page(url) {
 const report = [];
 for (const cue of wanted.cues) {
   // A cue the owner settled on the sound sheet is searched no more; what they already heard is passed over.
-  if (cue.picked || cue.keep) continue;
+  if (cue.picked || cue.keep || cue.made) continue;
   const heard = new Set((cue.skip ?? []).map(String));
   const [least, most] = cue.seconds;
   const search = (filter) =>

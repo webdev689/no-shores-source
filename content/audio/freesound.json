@@ -1,5 +1,5 @@
 {
-  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number) or keeps the game's own sound, and is searched no more; `skip` lists the candidates already heard there.",
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there.",
   "cues": [
     {
       "id": "ui.hover",
@@ -29,20 +29,15 @@
         0.05,
         0.8
       ],
-      "skip": [
-        464912,
-        565133,
-        652499,
-        833054
-      ]
+      "picked": 872703
     },
     {
       "id": "ui.tab",
       "use": "A tab of the menu turned",
-      "query": "ui swipe",
+      "query": "ui whoosh",
       "seconds": [
         0.1,
-        0.8
+        0.6
       ],
       "skip": [
         592444,
@@ -58,13 +53,7 @@
         0.1,
         1.5
       ],
-      "skip": [
-        467599,
-        537031,
-        537035,
-        878251,
-        878253
-      ]
+      "picked": 467555
     },
     {
       "id": "ui.close",
@@ -74,13 +63,7 @@
         0.1,
         1.5
       ],
-      "skip": [
-        467598,
-        587834,
-        672943,
-        872717,
-        878251
-      ]
+      "keep": true
     },
     {
       "id": "ui.refused",
@@ -95,14 +78,18 @@
     {
       "id": "hold.charge",
       "use": "A hold charging, 0.6 to 1.8 seconds",
-      "query": "energy charge",
+      "query": "charging",
       "seconds": [
         0.6,
         3.0
       ],
       "skip": [
+        519414,
         555060,
+        558679,
+        701702,
         850227,
+        878449,
         878599
       ]
     },
@@ -114,22 +101,21 @@
         0.2,
         2.0
       ],
-      "skip": [
-        444134,
-        686849,
-        753899,
-        814954
-      ]
+      "picked": 686849
     },
     {
       "id": "hold.feed",
       "use": "A Fruit of Dagon fed to an item",
-      "query": "magic chime",
+      "query": "magic absorb",
       "seconds": [
         0.3,
         2.5
       ],
       "skip": [
+        198850,
+        376748,
+        452379,
+        810754,
         817466,
         859301,
         875968,
@@ -144,12 +130,7 @@
         0.1,
         1.0
       ],
-      "skip": [
-        678384,
-        678385,
-        822565,
-        878311
-      ]
+      "made": "synthesiser"
     },
     {
       "id": "gain.rare",
@@ -159,12 +140,7 @@
         0.3,
         2.5
       ],
-      "skip": [
-        810753,
-        810754,
-        810755,
-        878448
-      ]
+      "made": "synthesiser"
     },
     {
       "id": "gain.legendary",
@@ -174,13 +150,7 @@
         0.5,
         3.0
       ],
-      "skip": [
-        377254,
-        462095,
-        511485,
-        856641,
-        878614
-      ]
+      "made": "synthesiser"
     }
   ]
 }
