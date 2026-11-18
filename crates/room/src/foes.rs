@@ -10,10 +10,14 @@ use combat::shapes::{Shape, Telegraph};
 use combat::shots::{loose, shot_numbers};
 use combat::{Fighter, Happening, Ranged, Surroundings, step_fighter};
 use foes::{Kind, Seen, World, notice, spawn, think};
+use movement::Block;
 use navmesh::NavMesh;
 
 /// The most foes a room holds; how far before a player one is stood; and the ask that sends every foe away.
 pub const FOES_MOST: usize = 12;
+/// An ask for a foe names its kind in its low four bits, and in the bits above them the element of a shield it stands
+/// with, 0 for none.
+pub const SHIELD_SHIFT: u8 = 4;
 const SPAWN_AHEAD: f64 = 5.0;
 pub const CLEAR_FOES: u8 = 255;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
@@ -56,7 +60,7 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
 impl Room {
     /// Stands each foe the players asked for before them, or sends every foe away.
     pub(crate) fn spawn_asked(&mut self) {
-        for (asker, number) in std::mem::take(&mut self.spawns) {
+        for (asker, number, level) in std::mem::take(&mut self.spawns) {
             if number == CLEAR_FOES {
                 let gone: Vec<FighterId> = self.foes.keys().copied().collect();
                 for foe in gone {
@@ -67,25 +71,33 @@ impl Room {
                 self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
                 continue;
             }
-            let (Some(kind), Some(player)) = (Kind::from_number(number), self.fighter(asker).copied()) else {
+            let kind = Kind::from_number(number & ((1 << SHIELD_SHIFT) - 1));
+            let (Some(kind), Some(player)) = (kind, self.fighter(asker).copied()) else {
                 continue;
             };
             if self.foes.len() >= FOES_MOST {
                 continue;
             }
-            self.stand_foe(kind, &player, asker);
+            let element = gear::Element::from_number(number >> SHIELD_SHIFT);
+            self.stand_foe(kind, &player, asker, level, element);
         }
     }
 
-    fn stand_foe(&mut self, kind: Kind, player: &Fighter, asker: PlayerId) {
+    /// Stands a foe before a player, its health its kind's at its level, with a whole shield of `element` if one.
+    fn stand_foe(&mut self, kind: Kind, player: &Fighter, asker: PlayerId, level: u8, element: Option<gear::Element>) {
         // Along the player's aim, which follows their look: a body standing still keeps the way it last walked.
         let (sin, cos) = (libm::sin(player.aim), libm::cos(player.aim));
         let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
         let spot = self.nav.nearest_point(ahead).unwrap_or(ahead);
         let facing = combat::sight::bearing([spot[0], spot[1]], [player.body.x, player.body.y]);
-        let (fighter, brain) = spawn(kind, spot[0], spot[1], facing);
+        let (mut fighter, brain) = spawn(kind, spot[0], spot[1], facing);
+        let times = gear::power::foe_health_times(level);
+        fighter.health *= times;
+        fighter.health_max *= times;
         let id = self.next_id();
-        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
+        let struck_by = std::collections::BTreeMap::new();
+        let shield = element.map(|element| gear::element::Shield::whole(element, fighter.health_max));
+        self.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level, struck_by, shield });
         self.tell(EventKind::Spawned, None, asker, id, 0.0);
     }
 
@@ -104,8 +116,13 @@ impl Room {
         let mut intents = Vec::with_capacity(ids.len());
         {
             let routes = MeshRoutes { mesh: &self.nav };
-            let world =
-                World { tick: self.clock, seed: self.seed, fighters: &noticed, blocks: &self.blocks, routes: &routes };
+            let world = World {
+                tick: self.clock,
+                seed: self.world_seed,
+                fighters: &noticed,
+                blocks: &self.blocks,
+                routes: &routes,
+            };
             for id in &ids {
                 let Some(foe) = self.foes.get(id) else { continue };
                 intents.push((*id, think(*id, &foe.brain, &mut self.board, &world)));
@@ -145,7 +162,7 @@ impl Room {
             let mut shot = loose(id, Ranged::Bow, foe.chest(), telegraph.bearing, pitch, 1.0);
             shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
             shot.damage = shot_numbers(Ranged::Bow).1 * AIMED_DAMAGE * foe.might;
-            self.shots.push(shot);
+            self.shots.push((shot, None));
             self.ended_telegraphs.push((id, false, false));
             return;
         }
@@ -174,6 +191,7 @@ impl Room {
         let how = if telegraph.iron { How::Iron } else { How::Telegraph };
         for defender in near {
             let check = Check::Shape { telegraph: *telegraph, group };
+            let blow = self.empower(blow, defender, false);
             self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
         }
     }
@@ -214,5 +232,25 @@ impl Room {
             }
             foe.brain = brain;
         }
+    }
+}
+
+/// Open ground a navmesh covers beyond the course's blocks and the spawn, each way.
+const GROUND_AROUND: f64 = 30.0;
+
+/// The ground a room's navmesh covers: the course's blocks and the spawn, and open ground around them.
+pub(crate) fn ground_around(blocks: &[Block], spawn: (f64, f64)) -> navmesh::Bounds {
+    let start = navmesh::Bounds { min_x: spawn.0, min_y: spawn.1, max_x: spawn.0, max_y: spawn.1 };
+    let covered = blocks.iter().fold(start, |bounds, block| navmesh::Bounds {
+        min_x: bounds.min_x.min(block.min_x),
+        min_y: bounds.min_y.min(block.min_y),
+        max_x: bounds.max_x.max(block.max_x),
+        max_y: bounds.max_y.max(block.max_y),
+    });
+    navmesh::Bounds {
+        min_x: covered.min_x - GROUND_AROUND,
+        min_y: covered.min_y - GROUND_AROUND,
+        max_x: covered.max_x + GROUND_AROUND,
+        max_y: covered.max_y + GROUND_AROUND,
     }
 }

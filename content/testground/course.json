@@ -92,5 +92,30 @@
       "maxY": -3,
       "top": 1.6
     }
+  ],
+  "stall": {
+    "what": "the stall where Vestiges are identified and the vault is reached, as in a social space",
+    "x": 7,
+    "y": 15
+  },
+  "resources": [
+    {
+      "what": "a node of Saltmere's Brineglass",
+      "x": -6,
+      "y": 14,
+      "resource": 0
+    },
+    {
+      "what": "a node of Saltmere's Brineglass",
+      "x": -9,
+      "y": 17,
+      "resource": 0
+    },
+    {
+      "what": "a node of Cairnwatch's Cairn Iron",
+      "x": -4,
+      "y": 19,
+      "resource": 1
+    }
   ]
 }

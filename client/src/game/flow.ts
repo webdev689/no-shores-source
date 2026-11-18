@@ -18,6 +18,7 @@ export type Happening =
   | { readonly kind: 'view-landings' }
   | { readonly kind: 'choose'; readonly node: string }
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
+  | { readonly kind: 'join'; readonly node: string; readonly name: string }
   | { readonly kind: 'back' };
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
@@ -44,6 +45,14 @@ export function next(flow: Flow, happening: Happening): Flow {
       return {
         mode: 'loading',
         words: `Landing at ${happening.name}`,
+        then: { mode: 'foot', node: happening.node, menu: false },
+      };
+    case 'join':
+      // A company member is joined from wherever the player is, on foot or at sea, as Destiny's join brings them in.
+      if (flow.mode !== 'foot' && flow.mode !== 'sea') return flow;
+      return {
+        mode: 'loading',
+        words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node, menu: false },
       };
     case 'back':

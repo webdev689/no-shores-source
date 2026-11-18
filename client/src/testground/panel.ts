@@ -3,7 +3,8 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
-import { CLEAR_FOES, FOE_KINDS } from './foeKinds.ts';
+import { CLEAR_FOES, FOE_KINDS, SHIELD_SHIFT } from '../player/foeKinds.ts';
+import { ELEMENTS } from '../player/gear.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
  *  speed, whether the player is playing, and a status line. */
@@ -29,8 +30,8 @@ export interface PanelHandlers {
   fps(value: number): void;
   /** Plays a move once on the player. */
   act(anim: string): void;
-  /** Stands a foe of this kind before the player, or sends every foe away. */
-  fight(kind: number): void;
+  /** Stands a foe of this kind and level (0, a foe of none) before the player, or sends every foe away. */
+  fight(kind: number, level: number): void;
 }
 
 /** DFO's controls, as the hint lists them. */
@@ -47,6 +48,7 @@ const CONTROLS = [
 /** The Test Ground's panel: the figures, and the chosen one's move, facing and dress. */
 export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: PanelState) => void {
   const garmentFilter = { text: '' };
+  const foeLevel = { value: 0, shield: 0 };
   let shown = '';
   const status = make('p', '', 'status');
   const body = make('div');
@@ -115,13 +117,26 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
     const chosen = state.chosen;
     const foes = FOE_KINDS.map((kind) =>
       button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () =>
-        handlers.fight(kind.number),
+        handlers.fight(kind.number | (foeLevel.shield << SHIELD_SHIFT), foeLevel.value),
       ),
     );
+    const shield = make('select');
+    ['No shield', ...ELEMENTS.flatMap((each) => (each ? [`${each.name} shield`] : []))].forEach((name, element) =>
+      shield.append(Object.assign(make('option', name), { value: String(element) })),
+    );
+    shield.value = String(foeLevel.shield);
+    shield.addEventListener('change', () => (foeLevel.shield = Number(shield.value) || 0));
+    const level = make('input');
+    Object.assign(level, { type: 'number', min: '0', max: '30', value: String(foeLevel.value) });
+    level.addEventListener('change', () => {
+      foeLevel.value = Math.min(30, Math.max(0, Math.round(Number(level.value) || 0)));
+    });
     body.replaceChildren(
       make('h2', 'Foes'),
+      labelled('Level (0: none)', level),
+      labelled('Shield', shield),
       ...foes,
-      button('Send every foe away', () => handlers.fight(CLEAR_FOES)),
+      button('Send every foe away', () => handlers.fight(CLEAR_FOES, 0)),
       make('h2', 'Figures'),
       list,
       button('Add a figure ahead', handlers.add),

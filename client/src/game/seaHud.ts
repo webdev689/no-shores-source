@@ -36,8 +36,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
   hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
   const build = aboard.managing ? state.build() : null;
-  const voyage = { heading: here.heading, pace: here.paceStep, note: here.voyageNote };
-  hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, voyage) : null);
+  hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
   hud.wheelOffer(onSea && aboard.atWheel);
   hud.note(state.charting ? 'Charting the coast ahead…' : shown.note);
 }

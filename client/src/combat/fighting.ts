@@ -1,10 +1,11 @@
-import type { Look, FightEvent, FlyingShot, SeenPlayer } from '../network/messages.ts';
+import type { FightEvent, FlyingShot, FoeShield, Look, SeenPlayer } from '../network/messages.ts';
+import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
 import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
-import { type FighterView, fighterView, glanceFrom, glanceView } from '../rules/fighters.ts';
+import { type FighterView, fighterView, glanceFrom, glanceView, trimmed } from '../rules/fighters.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
  *  and its action's kind (0 at rest, 12 for the dead). */
@@ -20,6 +21,8 @@ const IDLE = 0;
 const DRAW = 10;
 /** The most bytes of dress the room takes (room's DRESS_LIMIT); a longer one is refused as no input at all. */
 const DRESS_LIMIT = 4096;
+/** The most shots and events kept for the next frame to show. */
+const QUEUED_MOST = 256;
 const STROKES = [1, 2, 3, 4, 5, 6] as const;
 
 /** The strokes, 1 to 6, whose reach (`reach`, feet to a body's middle) takes in a target `apart` metres away; all six
@@ -29,11 +32,13 @@ export function strokesReaching(apart: number | null, reach: (stroke: number) =>
   return reaching.length > 0 ? reaching : [...STROKES];
 }
 
-/** A foe as the page keeps it: its kind, the room's glance at it now and at the snapshot before, and the room ticks
- *  between the two. */
+/** A foe as the page keeps it: its kind and level (0 for none), the room's glance at it now and at the snapshot
+ *  before, and the room ticks between the two. */
 export interface KeptFoe {
   readonly id: number;
   readonly kind: number;
+  readonly level: number;
+  readonly shield: FoeShield | null;
   readonly view: FighterView;
   readonly before: FighterView | null;
   readonly ticks: number;
@@ -103,11 +108,17 @@ export class Fighting {
   private readonly random: () => number;
   private readonly prediction = new Prediction<Asked>();
   private fighter: Float64Array | null = null;
+  /** The trim last laid on the fighter from the room's word on the player's gear. */
+  private trimTaken: readonly number[] | null = null;
   private seen = 0n;
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
   private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
-  private readonly spawnsQueued: number[] = [];
+  private readonly spawnsQueued: { readonly kind: number; readonly level: number }[] = [];
+  private readonly gearQueued: GearAsk[] = [];
+  /** Whether the room holds the player dead past a section's edge, their fighter still while it takes inputs. */
+  private heldDead = false;
+  private respawnAsked = false;
   private sentDress = '';
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
    *  Daggerfall Unity's click chooses among all six, and again once used. */
@@ -158,10 +169,26 @@ export class Fighting {
     if (buttons.dodge) this.latches.dodge.press();
   }
 
-  /** Asks the room to stand a foe of this kind before the player (or to send every foe away): one ask an input, in the
-   *  order asked. */
-  ask(kind: number): void {
-    this.spawnsQueued.push(kind);
+  /** Asks the room to stand a foe of this kind and level before the player (level 0, a foe of none; or to send every
+   *  foe away): one ask an input, in the order asked. */
+  askFoe(kind: number, level = 0): void {
+    this.spawnsQueued.push({ kind, level });
+  }
+
+  /** Asks something of the player's gear: one ask an input, in the order asked. */
+  askGear(ask: GearAsk): void {
+    this.gearQueued.push(ask);
+  }
+
+  /** Asks the room, with the next tick's input, to stand the player up at the nearest spawn, dead past a node's
+   *  section. */
+  askRespawn(): void {
+    this.respawnAsked = true;
+  }
+
+  /** Whether an ask of a foe or of the gear waits for an input to carry it. */
+  get asking(): boolean {
+    return this.spawnsQueued.length > 0 || this.gearQueued.length > 0;
   }
 
   /** The movement rules as the page's tick loop steps them, but each tick's body the fighter's: its intent sent to the
@@ -208,6 +235,11 @@ export class Fighting {
 
   private tick(body: Body, controls: Controls): Body {
     if (!this.fighter) return body;
+    // A new word on the player's gear is theirs at once: the trim the room now steps them by.
+    if (this.link.trim && this.link.trim !== this.trimTaken) {
+      this.trimTaken = this.link.trim;
+      this.fighter = trimmed(this.fighter, this.link.trim);
+    }
     const { pitch } = this.buttons;
     const swing = this.latches.swing.tick(this.buttons.swing);
     // The stroke rolled is kept while it reaches; once it does not and another would, it is rolled again.
@@ -224,11 +256,27 @@ export class Fighting {
     ]);
     const dress = this.dressToSend();
     const view = this.view;
-    const arms = this.arms;
+    // Arms the room would not let the player take up are bare hands, as the room makes them.
+    const allowed = this.link.arms;
+    const arms = !allowed || allowed.length === 0 || allowed.includes(this.arms) ? this.arms : 0;
     const asked: Asked = { intent, view, arms, fired: null };
     const sequence = this.prediction.next(asked);
-    const parts = { intent, look: this.look, arms, seen: this.seen, spawn: this.spawnsQueued.shift() ?? 0 };
+    const spawned = this.spawnsQueued.shift();
+    const gear = this.gearQueued.shift();
+    const parts = {
+      intent,
+      look: this.look,
+      arms,
+      seen: this.seen,
+      spawn: spawned?.kind ?? 0,
+      spawnLevel: spawned?.level ?? 0,
+      respawn: this.respawnAsked,
+      ...(gear === undefined ? {} : { ask: gear }),
+    };
+    this.respawnAsked = false;
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
+    // Dead past the edge, the room holds the fighter still while it takes the inputs: nothing is swung or shot.
+    if (this.heldDead) return bodyOf(Array.from(this.fighter.subarray(0, 22)));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
@@ -254,14 +302,22 @@ export class Fighting {
       // Only a fighter fights: a player with none (a walker on a ship's deck) is no one's to strike here.
       if (!seen.fighter) continue;
       if (seen.player === this.player) {
-        this.fighter = this.prediction.corrected(seen.fighter, seen.acknowledged, (fighter, asked) => {
-          const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
-          // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
-          // has been drawn already.
-          if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
-          asked.fired = replayed.fired ?? asked.fired;
-          return replayed.fighter;
-        });
+        // The snapshot leaves out the player's trim: it is theirs from their gear.
+        const whole = trimmed(seen.fighter, this.link.trim);
+        this.heldDead = seen.standing.kind === 'dead';
+        this.fighter = this.prediction.corrected(
+          whole,
+          seen.acknowledged,
+          (fighter, asked) => {
+            const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
+            // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
+            // has been drawn already.
+            if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
+            asked.fired = replayed.fired ?? asked.fired;
+            return replayed.fighter;
+          },
+          this.heldDead,
+        );
         continue;
       }
       this.others.set(seen.player, seen);
@@ -272,14 +328,17 @@ export class Fighting {
       present.add(foe.id);
       const kept = this.foes.get(foe.id);
       const glanced = glanceView(foe.glance);
-      this.foes.set(foe.id, { id: foe.id, kind: foe.kind, view: glanced, before: kept?.view ?? null, ticks });
+      const before = kept?.view ?? null;
+      const { kind, level, shield } = foe;
+      this.foes.set(foe.id, { id: foe.id, kind, level, shield, view: glanced, before, ticks });
       view.push({ id: foe.id, glance: foe.glance });
     }
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);
     this.view = view;
     this.shots = snapshot.shots;
-    this.shotsReceived.push(...snapshot.shots);
-    this.events.push(...snapshot.events);
+    // Kept only so many: a hidden tab draws no frame to take them, and on its return the newest are enough.
+    this.shotsReceived = [...this.shotsReceived, ...snapshot.shots].slice(-QUEUED_MOST);
+    this.events = [...this.events, ...snapshot.events].slice(-QUEUED_MOST);
   }
 
   /** Lets the room's clock run, for a room in the page. */

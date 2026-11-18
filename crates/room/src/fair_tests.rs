@@ -6,6 +6,7 @@ use super::*;
 use combat::arms::{OffHand, Ranged, Stroke, WeaponClass};
 use combat::{CombatInput, Intent};
 use movement::Controls;
+use std::collections::BTreeMap;
 
 const FISTS: u32 = 0;
 const WARHAMMER: u32 = 6;
@@ -22,7 +23,7 @@ fn asking(sequence: u32, seen: u64, arms: u32, combat: CombatInput, forward: f64
 fn stand(room: &mut Room, kind: ::foes::Kind, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
     let (fighter, brain) = ::foes::spawn(kind, x, y, core::f64::consts::PI);
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
+    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
@@ -63,6 +64,7 @@ fn a_player_who_stops_sending_mid_dodge_does_not_stay_in_its_safe_stretch() {
 fn a_weapon_changes_only_at_rest_never_in_the_middle_of_a_swing() {
     let mut room = room();
     let player = room.join().expect("a room with space");
+    crate::power::hold(&mut room, player, gear::Kind::Warhammer);
     let jab = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
     room.input(player, asking(1, room.clock(), FISTS, jab, 0.0)).unwrap();
     room.tick();
@@ -164,7 +166,7 @@ fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
         };
         let aimed = combat::shapes::Telegraph::begin(&order, [0.0, -ahead, 0.0]);
         room.telegraph_lands(archer, &foe, &aimed);
-        let mut shot = room.shots.pop().expect("an arrow leaves");
+        let (mut shot, _) = room.shots.pop().expect("an arrow leaves");
         let landed = loop {
             match combat::shots::fly(&shot, &[], &[]) {
                 combat::shots::Flight::Flying(next) => shot = next,

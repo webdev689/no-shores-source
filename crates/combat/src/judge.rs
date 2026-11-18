@@ -33,6 +33,21 @@ pub struct Blow {
     pub parryable: bool,
     pub blockable: bool,
     pub knocks_down: bool,
+    /// What a guard lets through of it, times its share; and how long a stagger it causes lasts, times: its striker's
+    /// gear.
+    pub through: f64,
+    pub stagger: f64,
+    /// Its striker's weapon's element, by the gear's number, 0 for none: combat carries it, and the host weighs it
+    /// against a shield.
+    pub element: u8,
+}
+
+impl Blow {
+    /// Whether it is a riposte: the one swing no guard can answer.
+    #[must_use]
+    pub fn riposte(&self) -> bool {
+        matches!(self.kind, BlowKind::Swing(_)) && !self.parryable
+    }
 }
 
 /// What a blow came to.
@@ -55,23 +70,27 @@ pub fn swing_blow(striker_id: FighterId, striker: &Fighter, attack: &Attack, def
     let counter = attack.swing == Swing::Counter;
     let damage = held.damage * shape.damage * striker.might;
     let weight = held.weight * POISE_PER_WEIGHT;
+    let trim = &striker.trim;
     Blow {
         striker: striker_id,
         kind: BlowKind::Swing(attack.stroke),
         from: [striker.body.x, striker.body.y],
         damage: damage
             * if riposte {
-                RIPOSTE_DAMAGE
+                RIPOSTE_DAMAGE * trim.riposte
             } else if counter {
-                COUNTER_DAMAGE
+                COUNTER_DAMAGE * trim.counter
             } else {
                 1.0
             },
-        poise: weight * shape.poise * if counter { COUNTER_POISE } else { 1.0 },
-        guard: weight * shape.guard,
+        poise: weight * shape.poise * if counter { COUNTER_POISE } else { 1.0 } * trim.poise_given,
+        guard: weight * shape.guard * trim.guard_wear,
         parryable: !riposte,
         blockable: !riposte,
         knocks_down: false,
+        through: trim.guard_through,
+        stagger: trim.stagger_given,
+        element: 0,
     }
 }
 
@@ -91,6 +110,9 @@ pub fn telegraph_blow(striker_id: FighterId, striker: &Fighter, telegraph: &Tele
         parryable: !telegraph.iron,
         blockable: !telegraph.iron,
         knocks_down: telegraph.iron && matches!(telegraph.shape, Shape::Slam | Shape::Ring),
+        through: 1.0,
+        stagger: 1.0,
+        element: 0,
     }
 }
 
@@ -108,6 +130,9 @@ pub fn shot_blow(shot: &crate::shots::Shot, from: [f64; 2]) -> Blow {
         parryable: false,
         blockable: true,
         knocks_down: false,
+        through: 1.0,
+        stagger: 1.0,
+        element: 0,
     }
 }
 
@@ -118,6 +143,7 @@ pub fn judge(blow: &Blow, defender: &Fighter) -> Verdict {
         return Verdict::Dodged { perfect };
     }
     let toward = bearing([defender.body.x, defender.body.y], blow.from);
+    let behind = off(defender.aim, toward) > BEHIND;
     if let Some(window) = defender.guarding() {
         let (arc, chip, share) = crate::tuning::guard_of(defender.arms.off_hand);
         let shield = defender.arms.off_hand == OffHand::Shield;
@@ -127,25 +153,32 @@ pub fn judge(blow: &Blow, defender: &Fighter) -> Verdict {
                 return Verdict::Parried;
             }
             if blockable {
-                let stamina = blow.guard * share;
+                let stamina = blow.guard * share * defender.trim.guard_stamina;
                 if stamina >= defender.stamina {
-                    return Verdict::GuardBroken { damage: taken(defender, blow) * GUARD_BROKEN_TAKEN };
+                    return Verdict::GuardBroken { damage: taken(defender, blow, behind) * GUARD_BROKEN_TAKEN };
                 }
-                return Verdict::Blocked { damage: blow.damage * chip, stamina };
+                return Verdict::Blocked {
+                    damage: blow.damage * chip * blow.through * telegraphed(defender, blow),
+                    stamina,
+                };
             }
         }
     }
-    let behind = off(defender.aim, toward) > BEHIND;
-    Verdict::Hit { damage: taken(defender, blow), poise: blow.poise * if behind { POISE_BEHIND } else { 1.0 } }
+    Verdict::Hit { damage: taken(defender, blow, behind), poise: blow.poise * if behind { POISE_BEHIND } else { 1.0 } }
 }
 
 /// A blow's damage as this fighter takes it: more while staggered (but a riposte, the stagger's own answer, does not
-/// count it twice) or overreached.
-fn taken(defender: &Fighter, blow: &Blow) -> f64 {
-    let riposte = matches!(blow.kind, BlowKind::Swing(_)) && !blow.parryable;
-    let staggered = if defender.staggered() && !riposte { STAGGER_TAKEN } else { 1.0 };
+/// count it twice) or overreached; less from behind or telegraphed as its gear trims.
+fn taken(defender: &Fighter, blow: &Blow, behind: bool) -> f64 {
+    let staggered = if defender.staggered() && !blow.riposte() { STAGGER_TAKEN } else { 1.0 };
     let punished = if defender.punished > 0 { PUNISH_TAKEN } else { 1.0 };
-    blow.damage * staggered * punished
+    let from_behind = if behind { defender.trim.behind_taken } else { 1.0 };
+    blow.damage * staggered * punished * from_behind * telegraphed(defender, blow)
+}
+
+/// What of a telegraphed blow this fighter's gear lets reach them, through a guard or not.
+fn telegraphed(defender: &Fighter, blow: &Blow) -> f64 {
+    if matches!(blow.kind, BlowKind::Telegraph(_)) { defender.trim.telegraph_taken } else { 1.0 }
 }
 
 /// The defender after the verdict.
@@ -196,10 +229,11 @@ fn landed(next: &mut Fighter, blow: &Blow, damage: f64, poise: f64) {
     next.health -= damage;
     let iron_windup = matches!(next.action, Action::Telegraph(telegraph) if telegraph.iron);
     if !iron_windup && next.poise_immune == 0 {
-        next.poise = (next.poise + poise).min(next.poise_max);
+        let drawn = if next.arms == crate::arms::BARE_HANDS { 1.0 } else { next.trim.drawn_poise_taken };
+        next.poise = (next.poise + poise * next.trim.poise_taken * drawn).min(next.poise_max);
         next.poise_rest = 0;
     }
-    let stagger = next.weight.stagger_ticks();
+    let stagger = (f64::from(next.weight.stagger_ticks()) * blow.stagger).round() as u32;
     let may_stagger = (next.poise_immune == 0 || next.punished > 0) && !next.staggered();
     if may_stagger && (next.punished > 0 || next.poise >= next.poise_max) && !iron_windup {
         next.action = Action::Staggered { left: stagger, cause: Cause::Poise };

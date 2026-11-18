@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import * as flatbuffers from 'flatbuffers';
+import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { LocalRoom } from '../network/localRoom.ts';
@@ -8,9 +10,11 @@ import { readFromRoom } from '../network/messages.ts';
 import type { FlyingShot } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type CombatRules, type Fired, startCombatRules } from '../rules/combatRules.ts';
-import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
+import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
+import { KIND, wear } from './wornForTests.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -73,8 +77,8 @@ test('every foe asked for comes, one with each input, even two asked for within 
   fight = fighting;
   const steps = fighting.steps(movement);
   const held = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
-  fighting.ask(1);
-  fighting.ask(3);
+  fighting.askFoe(1);
+  fighting.askFoe(3);
   for (let tick = 0; tick < 4; tick += 1) {
     steps.step({} as Body, held);
     room.pump(TICK);
@@ -88,7 +92,16 @@ const UNPRESSED: FightButtons = { swing: false, shoot: false, guard: false, dodg
 /** A fight in a room in the page, its player holding `right`, and a tick that steps it with these buttons pressed. */
 function fightIn(right: string) {
   let fight: Fighting | null = null;
-  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
+  let gear: GearState | null = null;
+  const room = LocalRoom.open(
+    compiled,
+    course.start,
+    course.blocks,
+    (snapshot: Snapshot) => fight?.receive(snapshot),
+    (message) => {
+      gear = message;
+    },
+  );
   const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
@@ -101,6 +114,9 @@ function fightIn(right: string) {
     steps.step({} as Body, STILL);
     room.pump(TICK);
   };
+  // A weapon the starting kit lacks is handed out and worn first: the room takes arms from gear alone.
+  const kind = right.startsWith('bow') ? KIND.bow : right.startsWith('pistolet') ? KIND.pistolet : null;
+  if (kind !== null) wear(fighting, () => gear, tick, [kind]);
   return { fighting, tick };
 }
 
@@ -165,8 +181,8 @@ function fightByHand() {
   let tick = 0n;
   const word = (acknowledged: number, shots: readonly FlyingShot[] = []) => {
     tick += 1n;
-    const fighter = new Float64Array(FIGHTER_FLOATS);
-    const seen = { player: 1, acknowledged, fighter };
+    const fighter = new Float64Array(UNTRIMMED_FLOATS);
+    const seen = { player: 1, acknowledged, fighter, standing: { kind: 'inside' } };
     fighting.receive({
       kind: 'snapshot',
       tick,
@@ -264,7 +280,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     tick,
     players: [],
     dressed: [],
-    foes: [{ id: 7, kind: 2, glance: glance(east) }],
+    foes: [{ id: 7, kind: 2, glance: glance(east), level: 0, shield: null }],
     events: [],
     shots: [],
     ships: [],
@@ -279,4 +295,35 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
   fighting.receive(snapshot(13n, 0.15));
   const kept = fighting.foes.get(7);
   assert.deepEqual([kept?.before?.x, kept?.view.x, kept?.ticks, fighting.roomTick], [0, 0.15, 3, 13]);
+});
+
+test('a respawn asked goes with the next input only', () => {
+  const door = startRoomDoor(compiled);
+  door.open(course.start, course.blocks);
+  const player = door.join();
+  const asked: boolean[] = [];
+  let fight: Fighting | null = null;
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    lost: null,
+    send: (bytes) => {
+      asked.push(Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).respawn());
+      door.input(player, bytes);
+    },
+    pump: () => {
+      door.tick();
+      const message = readFromRoom(door.snapshot());
+      if (message?.kind === 'snapshot') fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump(TICK);
+  const steps = fighting.steps(movement);
+  fighting.askRespawn();
+  for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
+  assert.deepEqual(asked, [true, false, false]);
 });

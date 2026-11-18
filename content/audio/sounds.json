@@ -1,0 +1,66 @@
+{
+  "about": "The owner's picks from Freesound, kept on R2 by their hash, each with its credit. Written by tools/freesound/publish.py; the game plays each in place of its synthesised cue.",
+  "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
+  "sounds": {
+    "hold.dismantle": {
+      "key": "sounds/80500bd0bff2346cc03969e8f15d3a12fc1fa5d0b7d1112ebf478a5bbbfebae9.mp3",
+      "freesound": 686849,
+      "name": "glass shatter",
+      "author": "ccen18",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/ccen18/sounds/686849/",
+      "changes": "Unchanged."
+    },
+    "hold.feed": {
+      "key": "sounds/6b42bae48779008000d647a25f72b697f9068a46d1c9c23e9a59b28dbbf40c24.mp3",
+      "freesound": 875968,
+      "name": "Magical UI Selection Stinger - Mysterious Fantasy Game SFX",
+      "author": "TommasoMotteran",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/TommasoMotteran/sounds/875968/",
+      "changes": "Unchanged."
+    },
+    "ui.back": {
+      "key": "sounds/bebb1a082b0621a07b00ee9a5c0d5e403c9e2411601f656709194068271d731f.mp3",
+      "freesound": 872703,
+      "name": "Cancel (Sci-Fi UI SFX Free)",
+      "author": "heyheytheree",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/heyheytheree/sounds/872703/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "ui.hover": {
+      "key": "sounds/418da7df6a2ce2c9a87c429b305078a23e36cbb50249db5867cca9822c6a7fa2.mp3",
+      "freesound": 871921,
+      "name": "Hover tick (Soft UI SFX Free)",
+      "author": "heyheytheree",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/heyheytheree/sounds/871921/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "ui.open": {
+      "key": "sounds/0b5beb92080e712c4d16c3cbcf14894ea530a384a33d63534d9889cf0c371ad5.mp3",
+      "freesound": 467555,
+      "name": "Action Heavy.wav",
+      "author": "ryusa",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/ryusa/sounds/467555/",
+      "changes": "Unchanged."
+    },
+    "ui.press": {
+      "key": "sounds/5f2597452168f05f80093a950a070add3e99bb73038907ddcf6bdb70efc82089.mp3",
+      "freesound": 213148,
+      "name": "Click",
+      "author": "complex_waveform",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/complex_waveform/sounds/213148/",
+      "changes": "Its pitch varies a little each time it plays."
+    }
+  }
+}

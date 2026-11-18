@@ -7,10 +7,12 @@
 
 use combat::Fighter;
 use combat::floats::{FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS};
+use gear::vendor::Vendor;
 use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
 use protocol::SeaInput;
+use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
@@ -20,6 +22,9 @@ use std::cell::RefCell;
 
 mod deck_door;
 mod fleet_door;
+mod gear_door;
+
+pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]
@@ -32,6 +37,7 @@ enum Opened {
 thread_local! {
     static OPEN: RefCell<Option<Opened>> = const { RefCell::new(None) };
     static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    static FLOOR: RefCell<Floor> = const { RefCell::new(Floor::Flat) };
 }
 
 /// What became of an input the host handed over.
@@ -48,11 +54,35 @@ pub const REFUSED: i32 = 5;
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
+    kind: String,
+    continent: String,
     ring: Vec<[f64; 2]>,
     spawns: Vec<[f64; 2]>,
     bounds: [f64; 4],
     ground: Ground,
     boxes: Vec<[f64; 5]>,
+    #[serde(default)]
+    counters: Vec<NodeCounter>,
+}
+
+/// A social space's counter as the bake writes it: its station, and its middle.
+#[derive(Debug, Deserialize)]
+struct NodeCounter {
+    kind: String,
+    at: [f64; 2],
+}
+
+/// A counter that serves a player's gear, from its station's name.
+fn counter_of(found: &NodeCounter) -> Option<Counter> {
+    let kind = match found.kind.as_str() {
+        "reader" => CounterKind::Reader,
+        "vault" => CounterKind::Vault,
+        "quartermaster" => CounterKind::Vendor(Vendor::Quartermaster),
+        "armsmith" => CounterKind::Vendor(Vendor::Armsmith),
+        "tailor" => CounterKind::Tailor,
+        _ => return None,
+    };
+    Some(Counter { kind, at: found.at })
 }
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
@@ -92,7 +122,15 @@ pub fn open_node(text: &[u8]) -> bool {
     }
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
-    let room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
+    let mut room = Room::node(Floor::Land(Box::new(node.ground)), blocks.collect(), section);
+    // A city's social space serves a player's gear at its counters; a patrol keeps its island's foes and nodes.
+    room.counters = (node.kind == "social").then(|| node.counters.iter().filter_map(counter_of).collect());
+    let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
+    if node.kind == "patrol"
+        && let (Some(levels), Some(resource)) = (gear::world::island_levels(&node.continent), resource)
+    {
+        room.start_patrol(&node.id, levels, u8::try_from(resource).unwrap_or_default());
+    }
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
     true
 }
@@ -125,11 +163,21 @@ pub fn set_course(bytes: &[u8]) -> bool {
     true
 }
 
-/// One tick of a player's fighter as a course's room would take it, on open ground, from its numbers: the fighter,
-/// the intent, the player's number, the arms their hands hold (taken up as the room takes them, `Fighter::holding`),
-/// then every fighter it sees as a number and a glance. Answers the next fighter's
-/// numbers, then, if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its
-/// whole line to where it stops among those seen, in a tick); or none when the numbers are not that.
+/// Keeps the ground a fighter is predicted on: a node's window of the land, from the same JSON the movement door's
+/// `set_ground` takes, so the prediction stands where the node's room stands its bodies. Text that is not a window
+/// leaves open ground at 0 m; answers whether it was one.
+pub fn set_ground(text: &[u8]) -> bool {
+    let ground = serde_json::from_slice::<Ground>(text).ok();
+    let kept = ground.is_some();
+    FLOOR.with(|floor| *floor.borrow_mut() = ground.map_or(Floor::Flat, |ground| Floor::Land(Box::new(ground))));
+    kept
+}
+
+/// One tick of a player's fighter as a course's or a node's room would take it, on the ground kept, from its
+/// numbers: the fighter, the intent, the player's number, the arms their hands hold (taken up as the room takes them,
+/// `Fighter::holding`), then every fighter it sees as a number and a glance. Answers the next fighter's numbers, then,
+/// if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its whole line to where
+/// it stops among those seen, in a tick); or none when the numbers are not that.
 #[must_use]
 pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let floats = floats_of(bytes);
@@ -151,7 +199,8 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let intent = combat::Intent::from_floats(intent);
     let (next, shot) = COURSE.with(|course| {
         let blocks = course.borrow();
-        let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &movement::Flat);
+        let (next, happening) =
+            FLOOR.with(|floor| combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &*floor.borrow()));
         let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
         if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
             return (next, Some(shot));
@@ -262,7 +311,7 @@ pub fn snapshot() -> Vec<u8> {
             let foes: Vec<FoeSeen> = room.foes_seen().collect();
             let tick = room.clock();
             let lines = room.take_lines();
-            let shots: Vec<combat::Shot> = room.shots().iter().chain(&lines).copied().collect();
+            let shots: Vec<combat::Shot> = room.shots().chain(&lines).copied().collect();
             let snapshot = protocol::Snapshot {
                 tick,
                 players: &players,
@@ -436,6 +485,16 @@ pub extern "C" fn room_sloop() -> u64 {
 pub unsafe extern "C" fn fighter_course(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_course(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the ground written at `address` for predicting, as `set_ground` says; 1 if it was a window, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Steps the fighter whose numbers are written at `address` a tick, as `predict` says; answers the next fighter's

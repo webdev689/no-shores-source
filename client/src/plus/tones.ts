@@ -14,6 +14,7 @@ export const TONES = {
   brassLo: '#7a5424',
   brassDark: '#3d2a12',
   ground: 'rgba(12,14,18,0.93)',
+  groundPanel: 'rgba(15,17,22,0.92)',
   groundButton: '#1c1f26',
   groundButtonHi: '#262a33',
   groundChip: 'rgba(12,14,18,0.84)',
@@ -28,4 +29,7 @@ export const BEVELS = {
   raisedSoft: `${TONES.stoneMid} #2e2a21 ${TONES.stoneDark} ${TONES.stoneLo}`,
   sunk: `${TONES.stoneDark} ${TONES.stoneMid} ${TONES.stoneLit} ${TONES.stoneDim}`,
   brass: `${TONES.brassHi} ${TONES.brassLo} #5c3f1a ${TONES.brass}`,
+  blood: '#e0584a #5a130f #3d0d0a #b83a2e',
+  bloodHi: '#ff8a76 #7a1d16 #5a130f #e0584a',
+  bloodSunk: '#3d0d0a #b83a2e #e0584a #5a130f',
 } as const;

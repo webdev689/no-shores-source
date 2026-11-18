@@ -2,7 +2,8 @@ import { type Colours, composeFrame } from '../forge/compose.ts';
 import type { DyeTable } from '../forge/dyes.ts';
 import { type ForgeLooks, mirroredGear } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
-import { type Dress, figureOf, rampsOf } from './dressing.ts';
+import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
+import type { Picture } from './picture.ts';
 
 /** A figure's picture as a scene draws it: its texture, its size in pixels, and its feet on it. */
 export interface Card {
@@ -30,8 +31,10 @@ export interface CardMaker {
   card(pixels: Uint8Array, width: number, height: number, root: readonly [number, number]): Card;
 }
 
-/** Composed frames kept on the GPU before all are let go and composed again as asked. */
+/** Composed frames kept on the GPU before the least lately asked for are let go, to be composed again as asked. */
 const KEPT_CARDS = 4000;
+/** How many are kept once the least lately asked for are let go. */
+const KEPT_AFTER = 3000;
 /** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
 const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
 /** The forge's views of a figure. */
@@ -69,6 +72,35 @@ export class Cards {
     return this.composing.size;
   }
 
+  /** A figure's frame as plain pixels, for a page to draw rather than the scene: composed now, never kept. Given
+   *  `alone`, one of its layers, that layer is drawn by itself: a weapon in hand whole, with no hand over its grip. */
+  async picture(dress: Dress, anim: string, view: number, frame = 0, alone?: string): Promise<Picture | null> {
+    const own = this.looks.bodies[dress.body];
+    const figure = figureOf(dress, own?.layers ?? {}, anim);
+    const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
+    const strip = (path: string) => this.store.strip(path);
+    // The forge renders each layer by itself; read as a body that draws that layer alone, it stacks nothing else.
+    const looks =
+      alone && own
+        ? { ...this.looks, bodies: { [dress.body]: { ...own, layers: { [alone]: own.layers[alone] ?? [] } } } }
+        : this.looks;
+    const composed = await composeFrame(figure, anim, view, frame, looks, this.colours, ramps, strip);
+    return (
+      composed && {
+        width: composed.width,
+        height: composed.height,
+        pixels: new Uint8ClampedArray(composed.pixels),
+        root: composed.root,
+      }
+    );
+  }
+
+  /** What a body can wear, as the forge draws it; null for a body it has not. */
+  wardrobe(body: string): Wardrobe | null {
+    const layers = this.looks.bodies[body]?.layers;
+    return layers ? wardrobeOf(body, layers) : null;
+  }
+
   /** The frames an animation has on a body. */
   frames(body: string, anim: string): number {
     return this.looks.bodies[body]?.anims[anim]?.frames ?? 1;
@@ -92,6 +124,11 @@ export class Cards {
     const figure = { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
     const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame]);
     const kept = this.kept.get(key);
+    if (kept !== undefined) {
+      // Asked again, it is kept the longest of all.
+      this.kept.delete(key);
+      this.kept.set(key, kept);
+    }
     if (kept !== undefined || this.composing.has(key)) return kept ?? null;
     this.composing.add(key);
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
@@ -132,13 +169,24 @@ export class Cards {
     }
   }
 
+  /** Lets go of a figure that has left: the last card it showed is no longer kept for it. */
+  forget(id: number): void {
+    this.last.delete(id);
+  }
+
   /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. Past the most
-   *  kept, every card is let go here, before a frame asks for any: none handed out this frame is destroyed under it. */
+   *  kept, the cards least lately asked for are let go here, before a frame asks for any, so none handed out this frame
+   *  is destroyed under it; a figure whose last card goes shows nothing until its next is composed. */
   pump(): void {
     if (this.kept.size > KEPT_CARDS) {
-      for (const old of this.kept.values()) old?.texture.destroy();
-      this.kept.clear();
-      this.last.clear();
+      const gone = new Set<Card>();
+      for (const [key, card] of this.kept) {
+        if (this.kept.size <= KEPT_AFTER) break;
+        this.kept.delete(key);
+        if (card) gone.add(card);
+      }
+      for (const [id, card] of this.last) if (gone.has(card)) this.last.delete(id);
+      for (const card of gone) card.texture.destroy();
     }
     for (let started = 0; started < WARM_A_TICK && this.composing.size < WARM_UNDER_WAY; started++) {
       const next = this.queued.shift();

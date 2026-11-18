@@ -1,0 +1,13 @@
+{
+  "resources": [
+    { "id": "brineglass", "name": "Brineglass", "continent": "continent-1", "words": "Salt grown clear as glass in Saltmere's tide pools." },
+    { "id": "cairn_iron", "name": "Cairn Iron", "continent": "continent-2", "words": "Ore weathered out of the highland cairns round Cairnwatch." },
+    { "id": "heartwood_resin", "name": "Heartwood Resin", "continent": "continent-3", "words": "Amber bled from the old trees of Elmhaven's woods." },
+    { "id": "sunstone", "name": "Sunstone", "continent": "continent-4", "words": "Desert stone that holds the day's heat long after Sunspire's sunset." },
+    { "id": "goldgrass_seed", "name": "Goldgrass Seed", "continent": "continent-5", "words": "Hard seed of the tall grass that names Goldreach." },
+    { "id": "mistbloom", "name": "Mistbloom", "continent": "continent-6", "words": "A pale flower that opens only in Mistfall's fog." },
+    { "id": "windthistle", "name": "Windthistle", "continent": "continent-7", "words": "Thistle down from Windmere's steppe, tough as wire." },
+    { "id": "bog_pearl", "name": "Bog Pearl", "continent": "continent-8", "words": "A dull pearl from the shellfish of Fenhallow's black water." },
+    { "id": "rimecrystal", "name": "Rimecrystal", "continent": "continent-9", "words": "Frost that never melts, cut from Rimeholt's tundra." }
+  ]
+}

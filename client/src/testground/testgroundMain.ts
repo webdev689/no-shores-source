@@ -1,4 +1,5 @@
 import { canvasSize } from '../canvasSize.ts';
+import { useMendedFace } from '../face.ts';
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import { GpuUnavailable, startGpu } from '../gpu.ts';
 import type { Colours } from '../forge/compose.ts';
@@ -6,27 +7,33 @@ import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
-import { type Action, type FighterView, fighterView } from '../rules/fighters.ts';
-import { FIGHT_TICKS, fightOf, foeDoing } from './fightMoves.ts';
-import { foeKind } from './foeKinds.ts';
-import { Glides } from './glide.ts';
+import { FIGHT_TICKS, HELD, fightButtons, fightHands, fightOf, guardPose } from '../player/fightMoves.ts';
+import { FoeFigures } from '../player/foeFigures.ts';
+import { Glides } from '../player/glide.ts';
+import { type FighterView, fighterView } from '../rules/fighters.ts';
+import { foeKind } from '../player/foeKinds.ts';
 import { type TelegraphMark, marksMesh } from '../combat/marks.ts';
 import { Fighting } from '../combat/fighting.ts';
-import { crosshairPoint } from './crosshair.ts';
+import { crosshairPoint, screenMuzzle, shotStop } from '../player/crosshair.ts';
 import { Flashes } from '../combat/flashes.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { Sparks } from '../combat/sparks.ts';
-import { IMPACT_SPARKS, Tracers, figureMuzzle, othersArrows, screenMuzzle } from './tracers.ts';
+import { IMPACT_SPARKS, type ShotStops, Tracers, figureMuzzle, othersArrows } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
-import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
+import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { TestgroundBlood } from './blood.ts';
 import { type CardAt, Cards } from '../player/cards.ts';
-import { COURSE, START } from './course.ts';
-import { type Dress, plainDress } from '../player/dressing.ts';
+import { COURSE, RESOURCE_NODES, STALL, START } from './course.ts';
+import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
+import { startGearPanel } from './gearPanel.ts';
+import type { GearState } from '../network/gearMessages.ts';
+import { SLOTS, worn } from '../player/gear.ts';
+import { gearOutfit } from '../player/gearLooks.ts';
+import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
@@ -46,17 +53,6 @@ const SPIN = (2 * Math.PI) / 8;
 const PLAYER_ID = 1;
 /** How long each frame of a move chosen in the panel plays on the player. */
 const ACT_FRAME = 0.2;
-/** The weapons that shoot: their button draws or fires, as the fight's rules take a shot. */
-const SHOOTERS = /^(bow|crossbow|pistolet|thunderlock)(_|$)/;
-/** The first person's guard, a weapon's own stroke frame held upright across the middle of the view, and a parry's
- *  deflect, the next stroke's middle frames played through. */
-const GUARD_POSE = { record: 3, frame: 2 } as const;
-const PARRY_RECORD = 4;
-const guardPose = (action: Action) => {
-  if (action.kind === 'guard') return GUARD_POSE;
-  if (action.kind !== 'parry') return null;
-  return { record: PARRY_RECORD, frame: 1 + Math.min(2, Math.floor((action.elapsed / FIGHT_TICKS.parry) * 3)) };
-};
 /** The Test Ground's ground is flat at 0, and its camera keeps this far over it (metres): an aiming view looking up
  *  from behind the shoulder stays above the ground. */
 const GROUND_CLEARANCE_M = 0.25;
@@ -64,8 +60,6 @@ function aboveGround(orbit: Orbit): Orbit {
   const eyeZ = orbit.targetZ + Math.sin(orbit.pitch) * orbit.distance;
   return eyeZ >= GROUND_CLEARANCE_M ? orbit : { ...orbit, targetZ: orbit.targetZ + GROUND_CLEARANCE_M - eyeZ };
 }
-/** What the fight holds the player to, when their weapon neither swings nor shoots. */
-const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
 
 function element<T extends Element>(selector: string): T {
   const found = document.querySelector<T>(selector);
@@ -74,6 +68,7 @@ function element<T extends Element>(selector: string): T {
 }
 
 async function start(): Promise<void> {
+  useMendedFace();
   const canvas = element<HTMLCanvasElement>('#ground');
   const gpu = await startGpu(canvas);
   const scene = new SceneView(gpu);
@@ -140,8 +135,11 @@ async function start(): Promise<void> {
       const seconds = (cards?.frames(you.dress.body, anim) ?? 1) * ACT_FRAME;
       player = { ...player, act: { anim, elapsed: 0, seconds } };
     },
-    fight: (kind) => fight?.ask(kind),
+    fight: (kind, level) => fight?.askFoe(kind, level),
   });
+  // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
+  let gear: GearState | null = null;
+  const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => fight?.askGear(ask));
   // Third person's aiming view where the panel places it; held there while the box is ticked, to place it by eye.
   let aimPlace: AimPlace = AIM;
   let aimHeld = false;
@@ -198,24 +196,28 @@ async function start(): Promise<void> {
     fight?.receive(snapshot);
     otherPlayers.seen(snapshot.players, fight?.player ?? null, forge);
   };
+  const gearReceived = (message: GearMessage) => {
+    gear = message;
+  };
   const link = roomUrl
-    ? await RoomConnection.open(roomUrl, received)
-    : LocalRoom.open(roomModule, START, COURSE, received);
+    ? await RoomConnection.open(roomUrl, received, gearReceived)
+    : LocalRoom.open(roomModule, START, COURSE, received, gearReceived, { stall: STALL, nodes: RESOURCE_NODES });
   fight = new Fighting(combatRules, link);
+  // The room in the page runs one tick at once, so the player's fighter and gear are known before they first play.
+  if (!roomUrl) link.pump(movement.tickSeconds);
   otherPlayers.takeDresses(link.dressed);
   const steps = fight.steps(movement);
-  if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
+  if (roomUrl) status = 'Click the view to play.';
   const hud = new Hud(element<HTMLElement>('#hud'));
   const flashes = new Flashes();
   const sparks = new Sparks();
   const tracers = new Tracers();
   /** The foes' figures, by the room's number for each, apart from the panel's figures; they and other players are
    *  drawn gliding between the room's snapshots. */
-  const foeFigures = new Map<number, Placed>();
-  const foeGlides = new Glides();
+  const foeFigures = new FoeFigures(forge);
   const otherGlides = new Glides();
-  let foeId = -1;
   let armsKey = '';
+  let gearWornKey = '';
 
   let last = performance.now();
   let clock = 0;
@@ -228,36 +230,28 @@ async function start(): Promise<void> {
     last = now;
     clock += seconds;
     const controls = input.frame();
+    // The figure wears what the gear wears, and the hands hold it: the room takes no other arms.
+    const ownGear = gear;
+    const gearWorn =
+      ownGear && JSON.stringify([you.dress.body, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
+    const bodyLayers = looks.bodies[you.dress.body]?.layers;
+    if (ownGear && gearWorn && gearWorn !== gearWornKey && bodyLayers) {
+      gearWornKey = gearWorn;
+      you.dress = {
+        ...you.dress,
+        outfit: gearOutfit(ownGear, wardrobeOf(you.dress.body, bodyLayers), you.dress.outfit),
+      };
+    }
     const wasDrawn = you.dress.outfit.drawn;
-    // The fight's buttons for this frame's ticks: a swing or a shot only with the weapon already out, on foot, the
-    // hands free; a guard on foot; a dodge whenever pressed (the rules refuse one in the air or the saddle).
-    const free = player.body.mode === 'ground' || player.body.mode === 'air';
-    const armed = controls.locked && wasDrawn && free && !player.mounted;
-    const shooter = SHOOTERS.test(you.dress.outfit.right ?? '');
-    // A bow, a crossbow or a gun drawn: the right button aims it, laying its shot on the crosshair's point, and the
-    // left fires it; no guard rises behind it.
-    const ranged = armed && shooter;
-    const aiming = ranged && controls.held('swing');
-    const guards = controls.locked && free && !player.mounted && !ranged;
-    const bodies = [...foeFigures.values(), ...others.values()].map(
+    const fightHanded = fightHands(controls, player, wasDrawn, you.dress.outfit.right);
+    const { armed, shooter, ranged, aiming } = fightHanded;
+    const bodies = [...foeFigures.placed.values(), ...others.values()].map(
       (placed) => [placed.x, placed.y, placed.z] as const,
     );
     const aspect = canvas.width / Math.max(1, canvas.height);
+    // A bow, a crossbow or a gun drawn: the right button aims it, laying its shot on the crosshair's point.
     const mark = aiming ? crosshairPoint(aimView(player), aspect, COURSE, bodies) : null;
-    // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the
-    // other is held is a fresh press.
-    fight.press({
-      swing: armed && !shooter && controls.held('swing'),
-      shoot: ranged && controls.held('guard'),
-      guard: guards && controls.held('guard'),
-      dodge: controls.locked && controls.pressed('dodge'),
-      pitch: -player.pitch,
-      aim: aiming,
-      mark,
-      swingPressed: armed && !shooter && controls.pressed('swing'),
-      shootPressed: ranged && controls.pressed('guard'),
-      guardPressed: guards && controls.pressed('guard'),
-    });
+    fight.press(fightButtons(controls, fightHanded, player.pitch, mark));
     if (controls.locked) {
       const foe = fight.targetAt;
       const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
@@ -272,7 +266,13 @@ async function start(): Promise<void> {
       );
       if (player.drawn !== wasDrawn) you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: player.drawn } };
     }
-    // Alone, the room in the page waits while the pointer is free: Escape pauses the fight.
+    // Alone, the room in the page waits while the pointer is free: Escape pauses the fight. An ask made from the
+    // panel meanwhile still goes, carried by a tick of the player standing still.
+    if (!controls.locked && fight.asking) {
+      const still = { forward: 0, sideways: 0, yaw: player.yaw, run: false, jump: false, crouch: false };
+      player = { ...player, body: steps.step(player.body, { ...still, mounted: player.mounted }) };
+      if (!roomUrl) fight.pump(movement.tickSeconds);
+    }
     if (roomUrl || controls.locked) fight.pump(seconds);
     const own = fight.own;
     const events = fight.takeEvents();
@@ -427,7 +427,9 @@ async function start(): Promise<void> {
       if (number !== undefined) figuresDrawn.set(number, { feet: drawnAt, anim: placed.anim, flip });
       if (card) drawn.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
-    drawn.push(...drawFoes(eye, frameTicks, shift, figuresDrawn));
+    const time = { clock, roomTick: fight.roomTick, frameTicks, tickSeconds: movement.tickSeconds };
+    const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn };
+    drawn.push(...foeFigures.cards(fight.foes.values(), eye, time, (id) => flashes.shareOf(id), foeFeel));
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
@@ -440,9 +442,13 @@ async function start(): Promise<void> {
         : figureMuzzle([body.x, body.y, body.z], Math.atan2(shot.velocity[0], -shot.velocity[1])),
     );
     tracers.seen(fight.takeShots(), fight.player);
-    for (const impact of tracers.update(seconds, COURSE, bodies)) sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
+    const stops: ShotStops = (from, along) => shotStop(from, along, COURSE, bodies);
+    for (const impact of tracers.update(seconds, stops)) sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     const traced = tracers.mesh(cameraOf(camera).eye, fight.shots, fight.player);
-    scene.setMarks(marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, traced));
+    const rings = gearRings(STALL, RESOURCE_NODES, gear, clock);
+    scene.setMarks(
+      marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, [...traced, ...rings]),
+    );
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (outfitOf: Dress['outfit'] | undefined) => ({
       right: outfitOf?.right ?? null,
@@ -464,15 +470,11 @@ async function start(): Promise<void> {
     });
     const where = (id: number): [number, number, number] | null => {
       if (id === fight.player && own) return [own.x, own.y, own.z];
-      const figure = foeFigures.get(id) ?? others.get(id);
+      const figure = foeFigures.placed.get(id) ?? others.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
     // Each foe marked where its figure is drawn.
-    const foesMarked = [...fight.foes.values()].map((kept) => {
-      const figure = foeFigures.get(kept.id);
-      const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
-      return { id: kept.id, name: foeKind(kept.kind)?.name ?? 'Foe', view };
-    });
+    const foesMarked = foeFigures.marked(fight.foes.values());
     const matrix = viewProjection(camera, canvas.width / Math.max(1, canvas.height));
     hud.update(
       {
@@ -504,84 +506,16 @@ async function start(): Promise<void> {
     const failure = forge.failure ? ` A strip did not load: ${forge.failure}` : '';
     const line = controls.locked ? 'Playing: Escape frees the mouse.' : status;
     showPanel(panelState(looks, hair, line + composing + failure));
+    const atStall = Math.hypot(player.body.x - STALL.x, player.body.y - STALL.y) <= STALL_REACH;
+    showGear({ gear, atStall, nodesInReach: nodesInReach(player.body, RESOURCE_NODES, gear) });
     requestAnimationFrame(frame);
   };
 
-  /** Every foe's figure, gliding toward where the room last saw it (`frameTicks` the frame's share of ticks) and showing
-   *  the move its fight holds it to. */
-  const drawFoes = (
-    eye: { x: number; y: number },
-    frameTicks: number,
-    shift: (id: number, view: FighterView) => Vector,
-    figuresDrawn: Map<number, DrawnFigure>,
-  ): CardAt[] => {
-    const cards: CardAt[] = [];
-    for (const kept of fight.foes.values()) {
-      const kind = foeKind(kept.kind);
-      if (!kind) continue;
-      let placed = foeFigures.get(kept.id);
-      if (!placed) {
-        placed = {
-          id: foeId--,
-          x: kept.view.x,
-          y: kept.view.y,
-          z: 0,
-          facing: 0,
-          dress: kind.dress,
-          anim: 'idle',
-          frame: null,
-          spin: false,
-        };
-        foeFigures.set(kept.id, placed);
-      }
-      // Its moves as its drawing shows them, held back while a blow landing holds it.
-      const view = feel.held(kept.id, kept.view);
-      const doing = foeDoing(view, kept.before, kind.dress, kept.ticks * movement.tickSeconds);
-      const move = shownMove(
-        doing,
-        (anim) => forge.frames(kind.dress.body, anim),
-        (anim, held) => forge.draws(kind.dress.body, anim, held),
-      );
-      const moveFrames = forge.frames(kind.dress.body, move.anim);
-      const frameShown = move.frame ?? Math.floor(clock / Math.max(move.frameSeconds, 0.01)) % moveFrames;
-      const [x, y, z] = foeGlides.follow(kept.id, [view.x, view.y, view.z], fight.roomTick, frameTicks);
-      Object.assign(placed, {
-        x,
-        y,
-        z,
-        facing: view.facing,
-        anim: move.anim,
-        frame: frameShown,
-      });
-      const [right, left] = kind.dress.outfit.drawn ? [kind.dress.outfit.right, kind.dress.outfit.left] : [null, null];
-      const draws = (anim: string, held: string | null) => forge.draws(kind.dress.body, anim, held);
-      // Its likeliest moves, the telegraphed blows' strokes and what a fight holds it to.
-      forge.warm(kind.dress, [
-        ...likelyMoves(right, left, draws),
-        'thrust',
-        'chop',
-        'swing2h',
-        'parry',
-        'hurt',
-        'death',
-      ]);
-      const { view: side, flip } = viewOf(placed.facing, placed.x, placed.y, eye.x, eye.y);
-      const card = forge.card(placed.id, kind.dress, move.anim, side, frameShown, flip);
-      const flash = { share: flashes.shareOf(kept.id), red: false };
-      const moved = shift(kept.id, kept.view);
-      const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
-      figuresDrawn.set(kept.id, { feet: drawnAt, anim: move.anim, flip });
-      if (card) cards.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
-    }
-    for (const id of foeFigures.keys()) if (!fight.foes.has(id)) foeFigures.delete(id);
-    foeGlides.keep(new Set(fight.foes.keys()));
-    return cards;
-  };
   requestAnimationFrame(frame);
 }
 
 start().catch((error: unknown) => {
   const message = error instanceof GpuUnavailable || error instanceof Error ? error.message : String(error);
   document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;font:16px system-ui;padding:24px';
+  document.body.style.cssText = 'color:#ddd;padding:22px';
 });

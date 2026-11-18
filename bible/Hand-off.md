@@ -162,6 +162,22 @@ Where the work stands now, for the next session. Each session rewrites this note
   unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
   renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
+- #60's audit calls are made, under the owner's "All decisions are yours" ([[The Audit's Calls Are Claude's]]); the
+  owner can change any. What stays theirs: the Workers plan (a password sign-in takes about 50 ms of CPU, the Free plan
+  allows 10); a domain of the game's own, since every Pages project of `lattymoy.github.io` shares one origin and its
+  storage, the session's token among it; Cloudflare's rate-limiting rules over the accounts, for floods past one
+  address's limits; and a protected environment over the deploy jobs, with required reviewers.
+- #60's keys: the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and the repository secrets
+  `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; and the Cloudflare token's leave to edit D1, which CI needs to
+  make the accounts' database.
+- For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
+  blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
+  while; and which foes beyond the patrols' carry them.
+- The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
+  can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
+  names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
+  emblems and where they come from; whether Overlook should have text chat, which mute would need.
+- A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
@@ -170,7 +186,96 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
-
+- **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
+  choices in [[Gear as Claude Shapes It]]), is built on pull request #60 and waits on the owner's yes to merge; a
+  merge deploys the accounts, the rooms and the page together. On it: the `gear` crate ([[Gear]]); gear held by the
+  rooms, blows by Attack, level and Defense, kills paying XP, Aurem and Vestiges; perks trimming the fight
+  ([[Combat]]); accounts on Cloudflare D1 keeping a character between visits ([[Accounts]]); the gear screens after
+  Destiny on Enhanced Plus ([[The Gear Screens Follow Destiny, on Enhanced Plus]], [[Interface]]); gear on the
+  figure; island levels and the voyage's seas ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]);
+  patrols with camps and resource spots ([[Server]]); Overlook's stations, vendors, keepers and townsfolk
+  ([[Cities]]); the fight on foot in the game; and on the ground, beams over the nodes and Vestiges, with E to use a
+  counter or gather ([[Game]], "On foot"). Then two full audits and two design passes of the gear screens, every
+  finding fixed with a test where it could be ([[The Audit's Calls Are Claude's]] for the calls they left): a
+  session sent only where it belongs and lapsing for an account with a way back in, Discord by one-time code, the
+  loot's seed secret and apart from the foes', an arrow striking as it was loosed, asks queued in turn and a change to
+  how a player fights sent at once, the welcome carrying the schema's hash, leaving saves retried through an outage,
+  and the screens on Enhanced Plus's fit law, frames, nodes and keycaps, with Destiny 1's gear shelf. Tested offline.
+  Its open ends: **the patrols' look is the next pull request**: camps with tents, fires and goods, which the bake and
+  the room must place alike, so the layout of camps moves to a crate both use (the owner wants patrols extremely
+  detailed); a voyage's seas are the client's to name, so a signed ticket from the sea room should name the node and
+  the seas a player may join at; Breaches, Elite Dungeons and Missions as loot sources; the wardrobe; a ranged
+  weapon's fight on foot untested headless.
+- **The owner's next round is on #60 too**: Pixelify Sans as the one face, its sizes on its 11 px grid and its
+  misreading glyphs mended ([[Pixelify Sans Is Overlook's Font]], [[Interface]], "The face"); the menu's seven tabs,
+  the vault and the vendors moved to their counters, and friends on the Social tab, which became the Roster
+  ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]], [[Accounts]], "The Roster"); the Plain Text
+  rule, with progress shown on icons and nodes instead of XP counts ([[Text Is Plain]]); and weapon elements with
+  foes' shields ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]], [[Gear]], "Elements and
+  shields"). Tested offline: the full check, headless pictures of every page at 1280×720 and 1920×1080 against
+  local accounts and rooms, the friends list against the local accounts, and a shielded foe in the Test Ground. Not
+  yet seen headless: a blow on a shield in the game, its words and its breaking (the room's tests cover them).
+  A third audit of this round is fixed on #60: friends asked by both at once make one friendship, a list counts only
+  its own asks and friends, and a name no one holds answers as any other; a blow the shield holds whole fills no
+  poise; the menu lets go of a held press and stops the game under it; focus goes back to the tile an item's page came
+  from; and the mended glyphs sit on the grid at weight 500.
+- **The owner's answers to the third audit are on #60 too**
+  ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]], [[The Roster Follows Destiny 1, With Blocking]],
+  [[Cosmetics Follow Destiny, Shown in Many Places]]): the face's 5, Z, brackets and symbols drawn in code and made into
+  a font in the page; the gauge counting nodes bought; the room serving each ask only at its counter; the Social tab as
+  Destiny 1's Roster with blocking, companies, guilds, reports and details; and 25 emblems, kept and worn, sold by the
+  Tailor, shown on the Roster, the header, the HUD and the Emblem slot. A group of players is a company, as the owner
+  named it ([[A Group of Players Is a Company]]). The menu's tabs share its whole top, and under them the player's
+  banner runs its full width, drawn to that width so none of it is cut off
+  ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]).
+- **A fourth audit and design pass are on #60 too**, every finding checked before it was fixed: a leaving player's
+  last save kept; blocks holding against a whole company; no stranger shown a player's place; the report limit, the
+  Roster's races and its query over every account fixed; the Reader's Open shown where it works; Gilded earned only by
+  a Legendary or Atheric piece; Escape giving the Roster's panel and details their own step; a join travelling only when
+  nothing else is under way; the menu's words at the names' size, the Roster fitted to the screen, long icons on the
+  diagonal, the banner kept once shown. Tested offline: the full check, and headless at 1920×1080 and 1280×720.
+- **The owner's answers to the fourth audit are on #60 too**
+  ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]],
+  [[Names Follow Guidelines, Checked by the Accounts]]): names, guild names, tags and mottos judged by one module
+  of the accounts, with own-written blocked words, reserved names and look-alikes refused, and the owner's way to rename
+  in [[Names]]; the HUD's "In the room" line gone; no join from a fight at sea or a fall; letter spacing in whole
+  pixels and the Character page's words at 22 on a wide screen; the menu doubled past 1440p; Destiny 1's three-by-three
+  gear shelf; a held weapon's picture whole, grip and all; a glyph of its own for each material; and DFO's profile mark
+  at the menu's top right, the player's face in a brass well, opening Settings. Tested offline: the full check, and
+  headless at 1920×1080, 1280×720 and 2560×1440.
+- **The owner's next asks are on #60 too**
+  ([[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]]): the inventory without gear, its
+  Vestiges under the currencies, ten places as Destiny 2's engrams are; dismantling held over a tile (F) or on an
+  item's page, longer the rarer, the item charging until it breaks into shards; feeding a Fruit held, the item
+  charging; what is gained shown at the right, in play and over the menu; and every interaction sounding, made by the
+  browser's synthesiser, with a volume in Settings. Tested offline: the full check, a dismantle by F against the local
+  rooms (the feed showed its Aurem and fragments), and pictures at 1920×1080 and 2560×1440. The sounds were counted as
+  they played, not heard: the owner should listen for their level and character. A ware bought at the
+  Quartermaster's counter, and a Vestige opened at the Reader's, were not walked to headless.
+- **Sounds come from Freesound** ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the owner judges every
+  sound and piece of music on the sound sheet, https://claude.ai/artifact/YT29RAFbgdPRLByLUVC7nh (private to them),
+  marking each Keep, Redo or a candidate picked, with a note; the marks are its store's `marks` collection, read with
+  ArtifactData. Candidates come from the `freesound` workflow on GitHub's machines, with no key: it reads Freesound's
+  public pages for the cues in `content/audio/freesound.json` and keeps each cue's first four CC0 or Attribution
+  previews as the run's download; a cue the owner settled names its pick, keeps the game's own sound or is made by
+  the synthesiser, and is searched no more, and `skip` lists what they already heard. The picks are on R2 and in the
+  game: `tools/freesound/publish.py <download>` reads a run's `picks.json` and pick files (each pick read from its own
+  page for its exact licence), puts each on R2 by its hash and writes `content/audio/sounds.json`, whose credits
+  Settings lists. All thirteen cues are settled: six recordings, the gains' Brass bells and a hold's Shimmer made by
+  the synthesiser, and the tab, close and refusal kept as the synthesiser's own.
+- **A fifth audit and design pass are on #60 too**, each finding checked against the code before its fix: F dismantles
+  the piece last pointed at or focused, never one focused earlier; Ctrl, Cmd or Alt with F, leaving the window, or
+  the pointer leaving the piece lets go; the shards fly whole; the focus stays near a dismantled piece; a tab opened
+  lets go of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's
+  character is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none
+  waits to play at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits
+  say CC BY 4.0 and which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check
+  each pick before it goes to R2, and keep each pick's own page in the run. The design pass: the hover card above
+  the footer, the footer and the item page at the names' size on a wide screen, empty Vestige places as dark
+  Vestiges, the vault's rows of ten where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's
+  rows and its count, and a shelf of more than six gains showing only its last six. The `freesound` workflow
+  runs on this push: if it ends red with "Picks not read whole", Freesound's own pages link more than one licence,
+  and `pages/pick-*.html` in its download shows where.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
@@ -187,7 +292,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
-- The fight's open ends ([[Combat]], [[Foes]]): gear power by metal, running's stamina, casting's harm, foes that
+- The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm, foes that
   flank or seek a line around a block, and the navmesh baked over the [[Land]]. Whether players may harm one another
   is the owner's to decide.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
@@ -197,9 +302,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   the game draws (its worker opens a landmass without the RMB index, and its city would be built again after every
   stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
-- Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]); a frame
-  there takes seconds, so a fight is seen beginning, not fought through. A driver should pace every frame from the
-  first, and read the page's panel only after a frame has drawn.
+- Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]), of a
+  built page under `vite preview`, never the dev server, which reloads on an edit; a frame there takes seconds, so a
+  fight is seen beginning, not fought through.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
   map, the charted sea's wash laid while the map is up.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them

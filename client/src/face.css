@@ -1,0 +1,29 @@
+/* Overlook's one face is Pixelify Sans, Enhanced Plus's own, on every page. A face drawn in the page (face.ts) stands
+   first, over just the glyphs Pixelify misreads or lacks. */
+@import '@fontsource-variable/pixelify-sans';
+
+:root {
+  /* Pixelify Sans draws sharp only at whole multiples of its grid, 11 px: one step for words, two for names and
+     titles, three and more for the numbers that lead a page. Never smoothed into grey, never joined by a ligature. */
+  font:
+    500 11px 'Pixelify Mended',
+    'Pixelify Sans Variable',
+    monospace;
+  font-variant-ligatures: none;
+  font-kerning: none;
+  -webkit-font-smoothing: none;
+}
+/* Each letter stands 1/22 of its size from the next, and each word 3/110 more than the face's own space, each rounded
+   up to a whole pixel, so no letter lands on half a pixel at the small size. */
+:where(*) {
+  letter-spacing: round(up, calc(1em / 22), 1px);
+  word-spacing: round(up, calc(3em / 110), 1px);
+}
+/* One weight throughout: emphasis is in size and colour, never in a heavier stroke. */
+:where(b, strong, h1, h2, h3, h4, th) {
+  font-weight: 500;
+}
+/* Fields and presses speak in the page's face, not the system's. */
+:where(button, input, select, textarea) {
+  font: inherit;
+}

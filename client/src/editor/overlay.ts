@@ -36,7 +36,7 @@ function element<K extends keyof SVGElementTagNameMap>(name: K, attributes: Reco
 }
 
 function label(x: number, y: number, text: string): SVGTextElement {
-  const node = element('text', { x, y, 'fill': '#fff', 'font-size': 12, 'paint-order': 'stroke', 'stroke': '#000a' });
+  const node = element('text', { x, y, 'fill': '#fff', 'font-size': 11, 'paint-order': 'stroke', 'stroke': '#000a' });
   node.setAttribute('stroke-width', '3');
   node.textContent = text;
   return node;

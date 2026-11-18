@@ -171,6 +171,8 @@ pub struct Fighter {
     pub blows: u32,
     /// What its blows' damage is multiplied by: 1 for a player, its kind's for a foe.
     pub might: f64,
+    /// What its gear trims of the fight's numbers: nothing for a foe.
+    pub trim: crate::trim::Trim,
 }
 
 /// What a player's controls or a foe's brain asks of a fighter in a tick: the movement's controls and the fight's.
@@ -226,6 +228,7 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         kept: Kept::default(),
         blows: 0,
         might: 1.0,
+        trim: crate::trim::Trim::PLAIN,
     }
 }
 

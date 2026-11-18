@@ -83,7 +83,8 @@ status: in force
   affects drops.
 - **Weapons** have types that set a melee weapon's weight, speed and damage and a ranged weapon's own stats. Weapons
   and armour are upgraded by nodes, with currency, materials from dismantling and rare or legendary resources. A
-  weapon unlocks more nodes as it is used and gains weapon XP; armour has neither.
+  weapon unlocks more nodes as it is used and gains weapon XP; armour has neither. Replaced for armour: it earns XP
+  too ([[Gear and Power Follow Destiny 1 Vanilla]]).
 - **The world** is a vast region: nine continents, many smaller islands and unique random encounters. The player sails
   from Overlook on their own ship and sees other players on their own adventures. Islands, and Overlook itself, are
   not walked as an open world: the player lands when close enough. From the side of an island they get a bird's-eye

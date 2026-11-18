@@ -5,6 +5,7 @@ export const HINTS = {
   foot: [
     'Click to look round · W A S D move · Shift run',
     'Space jump · C crouch · Z weapon · Q cast',
+    'Right button swing · Left button or F guard · V dodge',
     'Wheel: third person · M menu',
   ],
   dead: ['Enter or Respawn: back at the nearest spawn'],

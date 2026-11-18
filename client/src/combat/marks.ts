@@ -46,12 +46,14 @@ export const MARK_FLOATS = 7;
 type Point = readonly [number, number];
 
 /** The triangles of every telegraphed blow's mark, every arrow and bolt in flight, every spark and the tracers'
- *  vertices `more`, as vertices of MARK_FLOATS numbers. */
+ *  vertices `more`, as vertices of MARK_FLOATS numbers, each place measured from `origin`: far out in the world, a
+ *  place in 32-bit floats is only near the eye exact enough to draw. */
 export function marksMesh(
   telegraphs: readonly TelegraphMark[],
   shots: readonly FlyingShot[],
   sparks: readonly Spark[] = [],
   more: readonly number[] = [],
+  origin: readonly [number, number, number] = [0, 0, 0],
 ): Float32Array {
   const out: number[] = [];
   for (const telegraph of telegraphs) markTelegraph(out, telegraph);
@@ -65,6 +67,8 @@ export function marksMesh(
     markStreak(out, at, velocity, length, SPARK_THICK, [...colour, 1 - cooled * cooled]);
   }
   for (const value of more) out.push(value);
+  for (let start = 0; start + 2 < out.length; start += MARK_FLOATS)
+    for (let axis = 0; axis < 3; axis++) out[start + axis] = (out[start + axis] ?? 0) - (origin[axis] ?? 0);
   return new Float32Array(out);
 }
 
@@ -192,6 +196,29 @@ function markStreak(
     const offset = (point: readonly number[], sign: number) =>
       [0, 1, 2].map((axis) => (point[axis] ?? 0) + (side[axis] ?? 0) * thick * sign);
     const corners = [offset(tail, -1), offset([x, y, z], -1), offset([x, y, z], 1), offset(tail, 1)];
+    const [first, second, third, fourth] = corners;
+    if (!first || !second || !third || !fourth) continue;
+    for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);
+  }
+}
+
+/** A ring on the ground about `centre` from radius `inner` to `outer`, in one colour: red, green, blue, opacity. */
+export function markRing(
+  out: number[],
+  centre: readonly [number, number, number],
+  inner: number,
+  outer: number,
+  colour: readonly [number, number, number, number],
+): void {
+  const [x, y, z] = centre;
+  const onGround = (radius: number, angle: number) => [
+    x + Math.sin(angle) * radius,
+    y - Math.cos(angle) * radius,
+    z + LIFT,
+  ];
+  for (let step = 0; step < CURVE_STEPS; step += 1) {
+    const [from, to] = [(step / CURVE_STEPS) * 2 * Math.PI, ((step + 1) / CURVE_STEPS) * 2 * Math.PI];
+    const corners = [onGround(inner, from), onGround(outer, from), onGround(outer, to), onGround(inner, to)];
     const [first, second, third, fourth] = corners;
     if (!first || !second || !third || !fourth) continue;
     for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);

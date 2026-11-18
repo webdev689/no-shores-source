@@ -2,11 +2,28 @@ import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { edgeArrow, parryCue, threatens, wordOf } from './cues.ts';
 
-/** A foe as the display marks it: its number, its kind's name and its glance (its place as it is drawn). */
+/** A foe's shield as the display shows it: what it holds still, what it held whole, and its element's colour. */
+export interface MarkedShield {
+  readonly left: number;
+  readonly most: number;
+  readonly colour: string;
+}
+
+/** A foe as the display marks it: its number, its kind's name, its glance (its place as it is drawn) and its shield. */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
   readonly view: FighterView;
+  readonly shield: MarkedShield | null;
+}
+
+/** A shield's bar, filled to what it holds still and coloured by its element; hidden once it is broken. */
+function showShield(bar: Bar, shield: MarkedShield | null): void {
+  const holds = shield !== null && shield.left > 0;
+  bar.root.hidden = !holds;
+  if (!holds) return;
+  bar.set(shield.left / Math.max(1, shield.most));
+  bar.root.style.setProperty('--element', shield.colour);
 }
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
@@ -17,7 +34,7 @@ export interface HudFrame {
   readonly own: FighterView | null;
   readonly foes: readonly MarkedFoe[];
   readonly where: (id: number) => readonly [number, number, number] | null;
-  readonly matrix: Float32Array;
+  readonly matrix: ArrayLike<number>;
   readonly width: number;
   readonly height: number;
   readonly events: readonly FightEvent[];
@@ -39,6 +56,8 @@ const OWN_WORD_BELOW = 56;
 const OWN_WORD_LINE = 22;
 /** A foe's bar shows over it this near, once it has been struck. */
 const BAR_NEAR_M = 16;
+/** How far above the last word one told of the same fighter at once stands, in metres. */
+const WORD_STACK_M = 0.35;
 /** A foe winding up an iron blow this near is told to be dodged. */
 const IRON_NEAR_M = 12;
 /** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
@@ -54,7 +73,7 @@ const RING_CLOSED = 14;
 const RING_HEIGHT = 2.5;
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
-function clipOf(matrix: Float32Array, point: readonly [number, number, number]): [number, number, number] {
+function clipOf(matrix: ArrayLike<number>, point: readonly [number, number, number]): [number, number, number] {
   const [x, y, z] = point;
   const component = (row: number) =>
     (matrix[row] ?? 0) * x + (matrix[4 + row] ?? 0) * y + (matrix[8 + row] ?? 0) * z + (matrix[12 + row] ?? 0);
@@ -62,7 +81,12 @@ function clipOf(matrix: Float32Array, point: readonly [number, number, number]):
 }
 
 /** Where a point falls on the canvas in CSS pixels, or null behind the camera. */
-export function project(matrix: Float32Array, point: readonly [number, number, number], width: number, height: number) {
+export function project(
+  matrix: ArrayLike<number>,
+  point: readonly [number, number, number],
+  width: number,
+  height: number,
+) {
   const [clipX, clipY, clipW] = clipOf(matrix, point);
   if (clipW <= 1e-6) return null;
   return { x: ((clipX / clipW + 1) / 2) * width, y: ((1 - clipY / clipW) / 2) * height };
@@ -105,6 +129,7 @@ export class Hud {
   private readonly poise: Bar;
   private readonly target: HTMLElement;
   private readonly targetName: HTMLElement;
+  private readonly targetShield: Bar;
   private readonly targetHealth: Bar;
   private readonly targetPoise: Bar;
   private readonly mark: HTMLElement;
@@ -112,7 +137,7 @@ export class Hud {
   private readonly hurt: HTMLElement;
   private readonly veil: HTMLElement;
   private readonly crosshair: HTMLElement;
-  private readonly bars = new Map<number, Bar>();
+  private readonly bars = new Map<number, { readonly health: Bar; readonly shield: Bar }>();
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
@@ -129,11 +154,12 @@ export class Hud {
     this.poise = new Bar(own, 'poise');
     this.target = element('div', 'target', root);
     this.targetName = element('div', 'name', this.target);
+    this.targetShield = new Bar(this.target, 'shield');
     this.targetHealth = new Bar(this.target, 'health');
     this.targetPoise = new Bar(this.target, 'poise');
-    this.mark = element('div', 'mark', root);
+    this.mark = element('div', 'lock', root);
     this.over = element('div', 'over', root);
-    this.veil = element('div', 'veil', root);
+    this.veil = element('div', 'fallen', root);
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
@@ -209,6 +235,7 @@ export class Hud {
       return;
     }
     this.targetName.textContent = foe.name;
+    showShield(this.targetShield, foe.shield);
     this.targetHealth.set(foe.view.health / Math.max(1, foe.view.healthMax));
     this.targetPoise.set(foe.view.poise / Math.max(1, foe.view.poiseMax));
     const spot = project(frame.matrix, [foe.view.x, foe.view.y, foe.view.z + 1.1], frame.width, frame.height);
@@ -216,25 +243,33 @@ export class Hud {
     if (spot) this.mark.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
   }
 
-  /** A small bar over each foe near the player that has been struck. */
+  /** Small bars over each foe near the player that has been struck or stands with a shield: its shield's, in its
+   *  element's colour, over its health's. */
   private markFoes(frame: HudFrame): void {
     const shown = new Set<number>();
     for (const foe of frame.foes) {
       const { view } = foe;
       const near = frame.own ? Math.hypot(view.x - frame.own.x, view.y - frame.own.y) <= BAR_NEAR_M : false;
-      if (!near || view.health >= view.healthMax || view.action.kind === 'dead' || foe.id === frame.own?.target)
-        continue;
+      const shielded = foe.shield !== null && foe.shield.left > 0;
+      const marked = shielded || view.health < view.healthMax;
+      if (!near || !marked || view.action.kind === 'dead' || foe.id === frame.own?.target) continue;
       const spot = project(frame.matrix, [view.x, view.y, view.z + 2.1], frame.width, frame.height);
       if (!spot) continue;
       shown.add(foe.id);
-      const bar = this.bars.get(foe.id) ?? new Bar(this.over, 'health small');
-      this.bars.set(foe.id, bar);
-      bar.set(view.health / Math.max(1, view.healthMax));
-      bar.root.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
+      const made = () => {
+        const stack = element('div', 'bars small', this.over);
+        return { shield: new Bar(stack, 'shield small'), health: new Bar(stack, 'health small') };
+      };
+      const bars = this.bars.get(foe.id) ?? made();
+      this.bars.set(foe.id, bars);
+      showShield(bars.shield, foe.shield);
+      bars.health.set(view.health / Math.max(1, view.healthMax));
+      const stack = bars.health.root.parentElement;
+      if (stack) stack.style.transform = `translate(${Math.round(spot.x)}px, ${Math.round(spot.y)}px)`;
     }
-    for (const [id, bar] of this.bars) {
+    for (const [id, bars] of this.bars) {
       if (shown.has(id)) continue;
-      bar.root.remove();
+      bars.health.root.parentElement?.remove();
       this.bars.delete(id);
     }
   }
@@ -260,22 +295,30 @@ export class Hud {
     }
   }
 
-  private say(text: string, tone: string, place: Word['at']): void {
+  private say(text: string, tone: string, place: Word['at']): HTMLElement {
     const made = element('div', `word ${tone}`, this.over);
     made.textContent = text;
     const line = place ? 0 : this.words.filter((word) => !word.at).length;
     this.words.push({ element: made, at: place, line, age: 0 });
+    return made;
   }
 
   /** The events' words, each rising and fading over where it happened (in first person, those on the player below the
    *  crosshair), and a warning over a foe near the player as it begins an iron wind-up. */
   private floatWords(frame: HudFrame, seconds: number): void {
+    // Words told of one fighter at once stand one above the next, so a breaking shield's are each read.
+    const told = new Map<number, number>();
     for (const event of frame.events) {
       const word = wordOf(event, frame.player);
       const place = frame.where(event.defender);
       if (!word || !place) continue;
       const own = frame.firstPerson && event.defender === frame.player;
-      this.say(word.text, word.tone, own ? null : [place[0], place[1], place[2] + 1.9]);
+      const above = told.get(event.defender) ?? 0;
+      told.set(event.defender, above + 1);
+      const over = [place[0], place[1], place[2] + 1.9 + above * WORD_STACK_M] as const;
+      const said = this.say(word.text, word.tone, own ? null : over);
+      const shield = frame.foes.find((each) => each.id === event.defender)?.shield;
+      if (word.tone === 'shield' && shield) said.style.setProperty('--element', shield.colour);
     }
     for (const { id, view } of frame.foes) {
       const iron = view.action.kind === 'telegraph' && view.action.iron;
@@ -295,7 +338,7 @@ export class Hud {
         return false;
       }
       const share = word.age / WORD_SECONDS;
-      word.element.style.transform = `translate(${spot.x}px, ${spot.y - share * WORD_RISE}px)`;
+      word.element.style.transform = `translate(${Math.round(spot.x)}px, ${Math.round(spot.y - share * WORD_RISE)}px)`;
       word.element.style.opacity = String(1 - share * share);
       return true;
     });

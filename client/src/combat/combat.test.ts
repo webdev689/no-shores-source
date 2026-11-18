@@ -58,3 +58,11 @@ test('an iron blow’s edge is drawn twice, the second inside the first: its sha
     asides.add(Math.round(Math.abs((iron[index + 1] ?? 0) - 2) * 100) / 100);
   assert.ok(asides.has(0.6) && asides.has(0.4), [...asides].join(' '));
 });
+
+test('far out in the world, the marks are measured from an origin near them, exact where 32-bit floats are not', () => {
+  const far = [2_807_143.37, 1_207_025.81, 30.25] as const;
+  const out = { ...lunge(40, false), origin: far };
+  const mesh = marksMesh([out], [], [], [], far);
+  const near = marksMesh([lunge(40, false)], [], [], [], [1, 2, 0.5]);
+  assert.deepEqual(Array.from(mesh), Array.from(near), 'the same mark wherever it is, from its own origin');
+});

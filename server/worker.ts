@@ -2,14 +2,28 @@ import { DurableObject } from 'cloudflare:workers';
 import course from '../content/testground/course.json' with { type: 'json' };
 import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
+import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
+import { Keeper, TOKEN } from './keeping.ts';
+import { nodeRoom } from './roomNames.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
   readonly ROOMS: DurableObjectNamespace<RoomHost>;
   /** The bake's node files (`generated/nodes/<id>.json`), as static assets only the rooms read. */
   readonly NODES: Fetcher;
+  /** The accounts' keeper of characters (`accounts/worker.ts`), through a service binding. */
+  readonly ACCOUNTS: Service<CharacterKeeper>;
 }
+
+/** A day, milliseconds: the vendors' wares change with it. */
+const DAY_MS = 86_400_000;
+
+/** How often the sea says again who is there: half of how long the accounts keep its word. */
+const PRESENT_EVERY_MS = 30_000;
+
+/** The close code for a player whose character joined another room. */
+const ELSEWHERE = 4001;
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
@@ -25,11 +39,13 @@ function roomName(request: Request): string | null {
 
 /**
  * One room on Cloudflare: a Durable Object, one for each room's name, that keeps the room in WebAssembly. Its name
- * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land, `fleet-<name>` a fleet's
+ * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--rough` or
+ * `--storm` at a voyage's harder seas), `fleet-<name>` a fleet's
  * place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
  * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
  * room in step with the clock and sends every player the snapshot after each tick. Its sockets live and die with it:
- * the room is kept only in its memory, so a socket must never outlast it.
+ * the room is kept only in its memory, so a socket must never outlast it. A browser's one text message is its
+ * session's token; in a node's room, the player's character is kept by the accounts while they play (`keeping.ts`).
  */
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);
@@ -37,7 +53,14 @@ export class RoomHost extends DurableObject<Env> {
   private ticking: ReturnType<typeof setInterval> | null = null;
   /** Each player's socket, by its player's number, and their messages in the second they last sent in (`budget.ts`);
    *  a player let go of is gone from it, though their socket may still be closing. */
-  private readonly players = new Map<WebSocket, { readonly player: number; count: Count | undefined }>();
+  private readonly players = new Map<
+    WebSocket,
+    { readonly player: number; count: Count | undefined; signed: boolean; token: string | null }
+  >();
+  private keeper: Keeper | null = null;
+  private name = '';
+  private lastKept = 0;
+  private lastPresent = 0;
   private started = 0;
   private ticks = 0;
 
@@ -61,7 +84,7 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    this.players.set(server, { player, count: undefined });
+    this.players.set(server, { player, count: undefined, signed: false, token: null });
     server.addEventListener('message', (event) => this.message(server, event.data));
     server.addEventListener('close', () => this.left(server));
     server.addEventListener('error', () => this.left(server));
@@ -72,13 +95,42 @@ export class RoomHost extends DurableObject<Env> {
 
   /** Opens the room its name says, once: a node's from its baked file, which only that node's room reads. */
   private async openRoom(name: string): Promise<boolean> {
+    this.name = name;
+    const accounts = this.env.ACCOUNTS;
+    const room = {
+      character: (player: number) => this.guarded(() => this.room.character(player), null),
+      restoreCharacter: (player: number, kept: string) =>
+        this.guarded(() => this.room.restoreCharacter(player, kept), false),
+      own: (player: number, account: string) => this.guarded(() => this.room.own(player, account), false),
+    };
+    const characters = {
+      claim: (token: string, holder: string) => accounts.claim(token, holder),
+      save: (account: string, holder: string, body: string) => accounts.save(account, holder, body),
+      release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
+    };
+    // Only the game's nodes keep characters: the Test Ground grants gear to try it, and at sea no one holds any.
+    this.keeper = new Keeper(name.startsWith('node-') ? characters : null, room, name, (player) => {
+      const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
+      if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
+    });
     if (name === 'sea')
       return this.room.openSea(JSON.stringify(layout), crypto.getRandomValues(new Uint32Array(1))[0] ?? 0);
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
-    if (node === undefined) return this.room.open(course.start, course.blocks);
-    const file = await this.env.NODES.fetch(`https://nodes/${node}.json`);
-    return file.ok && this.room.openNode(await file.text());
+    // Every room on land rolls its loot from a seed of its own that no player sees.
+    const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
+    const seeds = [lootLow, lootHigh, worldLow, worldHigh] as const;
+    if (node === undefined)
+      return (
+        this.room.open(course.start, course.blocks) &&
+        this.room.furnish(course.stall, course.resources) &&
+        this.room.reseed(seeds)
+      );
+    const named = nodeRoom(node);
+    if (!named) return false;
+    const file = await this.env.NODES.fetch(`https://nodes/${named.id}.json`);
+    const opened = file.ok && this.room.openNode(await file.text()) && this.room.difficulty(named.seas);
+    return opened && this.room.reseed(seeds) && this.room.day(Math.floor(Date.now() / DAY_MS));
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
@@ -87,6 +139,17 @@ export class RoomHost extends DurableObject<Env> {
     if (!held) return;
     const { player } = held;
     const { count, within } = counted(held.count, Date.now());
+    if (typeof message === 'string' && TOKEN.test(message) && !held.signed) {
+      held.signed = true;
+      held.count = count;
+      void this.keeper?.signIn(player, message, Date.now, () => this.players.get(socket) === held);
+      // At sea no character is kept, so the room says only who is there, for the Roster.
+      if (this.name === 'sea') {
+        held.token = message;
+        void this.env.ACCOUNTS.present(message, this.name).catch(() => false);
+      }
+      return;
+    }
     held.count = count;
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
     if (typeof message !== 'string' && message.byteLength > MESSAGE_MOST)
@@ -110,6 +173,9 @@ export class RoomHost extends DurableObject<Env> {
     const held = this.players.get(socket);
     if (!held) return;
     this.players.delete(socket);
+    if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
+    // The character's last save reads it now, before the room lets the player go.
+    void this.keeper?.leave(held.player);
     this.guarded(() => this.room.leave(held.player), undefined);
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
@@ -149,11 +215,29 @@ export class RoomHost extends DurableObject<Env> {
       }
       const snapshot = this.guarded(() => this.room.snapshot(), new Uint8Array());
       for (const socket of this.open()) {
+        const held = this.players.get(socket);
+        // Each player's own gear goes to them alone, when it changed.
+        const gear = held ? this.guarded(() => this.room.gear(held.player), new Uint8Array()) : new Uint8Array();
+        if (held && gear.length > 0) this.keeper?.changed(held.player);
         try {
+          // Gear first, so the browser predicts a change of trim or arms from this snapshot on.
+          if (gear.length > 0) socket.send(gear);
           socket.send(snapshot);
         } catch {
           // A socket that closed between the check and the send misses this snapshot; the rest still get theirs.
         }
+      }
+      const now = Date.now();
+      // Said again before the last word lapses, for each player at sea.
+      if (now - this.lastPresent >= PRESENT_EVERY_MS) {
+        this.lastPresent = now;
+        for (const held of this.players.values())
+          if (held.token) void this.env.ACCOUNTS.present(held.token, this.name).catch(() => false);
+      }
+      if (now - this.lastKept >= 1000) {
+        this.lastKept = now;
+        void this.keeper?.due(now);
+        this.guarded(() => this.room.day(Math.floor(now / DAY_MS)), false);
       }
     }, tickMs);
   }

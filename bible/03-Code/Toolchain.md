@@ -55,8 +55,9 @@ code:
 - **`npm run server`** runs the rooms locally on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **`npm run server:bundle`** bundles the Worker as a deploy would, into `target/server/`, without deploying.
   `cargo xtask check` runs it last.
-- **`npm run server:deploy`** deploys it: the `rooms` workflow runs it after each merge into `main`
-  ([[The Rooms Deploy on Each Merge]]). It needs `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token held where it runs, as
+- **`npm run server:deploy`** builds what it bundles and deploys it. The `rooms` workflow does the same after each
+  merge into `main` ([[The Rooms Deploy on Each Merge]]) in two steps, so the token is held only by the one that
+  runs `wrangler deploy`, never by a build. It needs `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token held where it runs, as
   the workflow holds the repository's secret. A cloud session cannot, since its proxy writes its own token over the
   one Cloudflare hands back for the upload.
 

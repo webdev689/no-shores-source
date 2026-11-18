@@ -7,6 +7,15 @@ code:
   - client/src/game/game.ts#startGame
   - client/src/game/flow.ts#next
   - client/src/game/foot.ts#Foot
+  - client/src/game/footFight.ts#FootFight
+  - client/src/game/fightMarks.ts#FightMarks
+  - client/src/game/footGear.ts#useAt
+  - client/src/game/footGear.ts#groundRings
+  - client/src/game/plazaLife.ts#PlazaLife
+  - client/src/game/usePrompt.ts#UsePrompt
+  - client/src/player/foeFigures.ts#FoeFigures
+  - client/src/player/fightMoves.ts#fightButtons
+  - client/src/combat/hud.css
   - client/src/game/sea.ts#Sea
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
@@ -74,6 +83,32 @@ third person, the forge's figure and the first person's hands.
 - **The camera** is the player's, held 0.3 m over the ground, with the Test Ground's 50-degree view.
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
   with nothing pressed. Click the view to look round with the mouse.
+- **The fight.** Online, the player fights in the node's room as on the Test Ground ([[Combat]]), by the same
+  shared pieces: `FootFight` holds the combat layer's `Fighting` over the room's link. Right button swings once the
+  weapon is out (Z), left button or F guards, and V dodges; with a bow, a crossbow or a gun the right button aims
+  and the left fires, onto the crosshair's point over the node's ground; aiming eases the view behind the shoulder
+  and zooms it, and in first person the weapon zooms with it
+  ([[Aiming Sits Behind the Shoulder and Zooms the View]], [[First-Person Aiming Zooms the Weapon With the View]]).
+  The arms are what the figure's hands hold. The lock turns the body to its foe, the first person swings as the fight's rules begin each swing, and the
+  figure shows what the fight holds it to. Each foe is drawn in its kind's dress (`FoeFigures`), and it and every
+  other player glide between snapshots. Struck figures flash, sparks fly where a guard meets a blow, shots leave tracers, and telegraphed blows
+  are marked on the ground (`FightMarks`). The fight's display (`#fight-hud`, drawn by `combat/hud.css`, the Test
+  Ground's sheet too) shows the player's health, stamina and poise, the locked foe's bars, the parry rings and the
+  words over the fight. Offline, with no room, the player only walks. If the room is lost, the fight is let go and
+  the player walks on alone, the section's edge judged by the same rules here, taking up where the room's word left
+  them: warned, the warning runs on; dead, they lie until Respawn, their time running on, as offline.
+- **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
+  plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
+  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
+  is found again only once they have walked a step. The fight never takes them for targets.
+- **On the ground** (`footGear`): a brass ring at each counter that deals with the player; at each resource node they
+  may still gather, a sea-green ring under a beam 40 m tall, seen across the patrol, so a route can be planned through
+  them; and at each Vestige lying for them, a ring and a beam in its rarity's colour, picked up by walking over it.
+- **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
+  (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
+  vendor their own; [[Interface]]); within 2.5 m of a node it asks the
+  room to gather it. Neither is offered while a menu is up or the player lies dead, past the edge or felled by a
+  foe.
 
 ## The edge
 
@@ -160,12 +195,19 @@ its landmark over the city, as on arriving. Escape flies back down.
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, and starts at the spawn the room stands them at,
-  each joiner at the next of the node's spawns in turn. The room judges the edge. Each tick's controls go to
-  it with the figure's look, the dress when it changed and a respawn when asked; the player is predicted on the same
-  ground and corrected by each snapshot, held still while the room says they are dead. The warning, the count and
-  death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
-  A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
+- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder seas `node-<node id>--rough`
+  or `--storm` (a social space is one room at any seas), and starts at the spawn the room stands them at,
+  each joiner at the next of the node's spawns in turn. The room judges the edge. Each tick's input goes to it from
+  the fight: the controls and the fight's buttons, the figure's look, its arms, the dress when it changed, the
+  gear's asks and a respawn when asked. The player's fighter is predicted by the combat rules from `room.wasm`,
+  standing on the node's window of the land as the room stands it (`setGround`), and set by each snapshot; the body
+  is held still while the room says they are dead past the edge. The warning, the count and death are the room's
+  word, and so are the blows. Every other player in the room is shown where the room last saw them, in their own
+  dress, and every foe the room stands. A room whose socket closes is lost: the heads-up display says so, the fight's
+  display is put away, and the player walks on alone, nothing more sent.
+  With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
+  makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
+  the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
   is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at
