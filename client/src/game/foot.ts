@@ -173,7 +173,8 @@ export class Foot {
     const received = (snapshot: Snapshot) => {
       players.takeDresses(snapshot.dressed);
       fight?.receive(snapshot);
-      players.seen(snapshot.players, fight?.player ?? null, forge);
+      // Before the fight stands there is no own number to tell the player from the others.
+      if (fight) players.seen(snapshot.players, fight.player, forge);
     };
     const asked = rooms ? [] : context.foesAsked;
     const connection = rooms ? await RoomConnection.open(rooms(`node-${node.id}`), received) : null;
