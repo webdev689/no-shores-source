@@ -1,13 +1,7 @@
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { edgeArrow, parryCue, threatens, wordOf } from './cues.ts';
-
-/** A foe as the display marks it: its number, its kind's name and its glance (its place as it is drawn). */
-export interface MarkedFoe {
-  readonly id: number;
-  readonly name: string;
-  readonly view: FighterView;
-}
+import { FoeBars, type MarkedFoe } from './foeBars.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
  *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
@@ -37,8 +31,6 @@ const WORD_RISE = 36;
 /** In first person, a word on the player stands this far below the crosshair, the next ones each a line lower. */
 const OWN_WORD_BELOW = 56;
 const OWN_WORD_LINE = 22;
-/** A foe's bar shows over it this near, once it has been struck. */
-const BAR_NEAR_M = 16;
 /** A foe winding up an iron blow this near is told to be dodged. */
 const IRON_NEAR_M = 12;
 /** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
@@ -48,7 +40,7 @@ const FLASH_SECONDS = 0.45;
 /** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels. */
 const ARROW_INSET = 28;
 /** A parry ring's span as a blow begins and as it lands (its fixed inner ring's), in CSS pixels; and how high over
- *  the foe's feet it stands, in metres. */
+ *  the foe's feet it stands, in metres, a foe's name and bar standing just above it. */
 const RING_WIDEST = 56;
 const RING_CLOSED = 14;
 const RING_HEIGHT = 2.5;
@@ -112,7 +104,7 @@ export class Hud {
   private readonly hurt: HTMLElement;
   private readonly veil: HTMLElement;
   private readonly crosshair: HTMLElement;
-  private readonly bars = new Map<number, Bar>();
+  private readonly foeBars: FoeBars;
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
@@ -137,6 +129,7 @@ export class Hud {
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
+    this.foeBars = new FoeBars(root, this.over);
   }
 
   update(frame: HudFrame, seconds: number): void {
@@ -156,7 +149,9 @@ export class Hud {
     this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
     this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
     this.markTarget(frame);
-    this.markFoes(frame);
+    const overHead = (view: FighterView) =>
+      project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
+    this.foeBars.update(frame.foes, own, overHead, seconds);
     this.pointAtThreats(frame);
     this.ringParries(frame);
     this.floatWords(frame, seconds);
@@ -214,29 +209,6 @@ export class Hud {
     const spot = project(frame.matrix, [foe.view.x, foe.view.y, foe.view.z + 1.1], frame.width, frame.height);
     this.mark.hidden = !spot;
     if (spot) this.mark.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
-  }
-
-  /** A small bar over each foe near the player that has been struck. */
-  private markFoes(frame: HudFrame): void {
-    const shown = new Set<number>();
-    for (const foe of frame.foes) {
-      const { view } = foe;
-      const near = frame.own ? Math.hypot(view.x - frame.own.x, view.y - frame.own.y) <= BAR_NEAR_M : false;
-      if (!near || view.health >= view.healthMax || view.action.kind === 'dead' || foe.id === frame.own?.target)
-        continue;
-      const spot = project(frame.matrix, [view.x, view.y, view.z + 2.1], frame.width, frame.height);
-      if (!spot) continue;
-      shown.add(foe.id);
-      const bar = this.bars.get(foe.id) ?? new Bar(this.over, 'health small');
-      this.bars.set(foe.id, bar);
-      bar.set(view.health / Math.max(1, view.healthMax));
-      bar.root.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
-    }
-    for (const [id, bar] of this.bars) {
-      if (shown.has(id)) continue;
-      bar.root.remove();
-      this.bars.delete(id);
-    }
   }
 
   /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
