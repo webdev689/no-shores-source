@@ -7,7 +7,7 @@ mod common;
 use combat::fighter::Action;
 use common::{Room, still, swinging, watching};
 use core::f64::consts::PI;
-use foes::{Board, Kind};
+use foes::{Board, Director, Kind};
 
 const PLAYER: u32 = 1;
 
@@ -90,18 +90,19 @@ fn the_turns_pass_on_after_each_blow_so_every_foe_fights_in_time() {
 fn the_longest_waiter_takes_a_freed_turn_and_a_foe_past_its_patience_goes_in_regardless() {
     let mut board = Board::default();
     let patience = 360;
+    let caps = Director::default().caps();
     for (foe, since) in [(1, 0), (2, 0), (3, 10), (4, 20)] {
         board.join(9, foe, false, since);
     }
-    assert!(board.take(9, 1, false, 30, patience) && board.take(9, 2, false, 30, patience));
-    assert!(!board.take(9, 4, false, 40, patience), "two at once");
+    assert!(board.take(9, 1, false, 30, patience, caps) && board.take(9, 2, false, 30, patience, caps));
+    assert!(!board.take(9, 4, false, 40, patience, caps), "two at once");
     assert_eq!(board.tokens_out(9), (2, 0));
     board.hand_on(9, 1, 50);
-    assert!(!board.take(9, 4, false, 60, patience), "foe 3 has waited longer");
-    assert!(!board.take(9, 1, false, 60, patience), "and the one that just struck waits behind everyone");
-    assert!(board.take(9, 3, false, 60, patience));
-    assert!(!board.take(9, 4, false, 379, patience));
-    assert!(board.take(9, 4, false, 380, patience), "six seconds of waiting: in, whatever the count");
+    assert!(!board.take(9, 4, false, 60, patience, caps), "foe 3 has waited longer");
+    assert!(!board.take(9, 1, false, 60, patience, caps), "and the one that just struck waits behind everyone");
+    assert!(board.take(9, 3, false, 60, patience, caps));
+    assert!(!board.take(9, 4, false, 379, patience, caps));
+    assert!(board.take(9, 4, false, 380, patience, caps), "six seconds of waiting: in, whatever the count");
     assert_eq!(board.tokens_out(9), (3, 0));
     board.forget(3);
     board.forget(4);

@@ -1,7 +1,7 @@
 use super::*;
 use ::foes::Kind;
 use combat::shapes::{Shape, Telegraph, TelegraphOrder};
-use combat::{CombatInput, Intent};
+use combat::{Blow, BlowKind, CombatInput, Intent, Stroke, Verdict};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::Controls;
 
@@ -108,4 +108,65 @@ fn the_same_inputs_play_the_same_fight() {
         room.fighters()
     };
     assert_eq!(play(), play());
+}
+
+/// A player who stands still among five brutes, kept whole; `dominating`, they land a blow on one brute after another
+/// ten times a second, each brute kept whole too. Answers the most brutes holding a turn at the player at once, and
+/// how many on average, over the fight's last ten seconds; and the heat it ends at.
+fn turns_at(dominating: bool) -> (usize, f64, f64) {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let brutes: Vec<FighterId> = (0..5_u32)
+        .map(|index| {
+            let bearing = (f64::from(index) * 30.0 - 60.0).to_radians();
+            let (x, y) = (6.0 * libm::sin(bearing), -6.0 * libm::cos(bearing));
+            let (fighter, brain) = ::foes::spawn(Kind::Brute, x, y, combat::sight::bearing([x, y], [0.0, 0.0]));
+            let id = room.next_id();
+            room.foes.insert(id, Foe { fighter, kind: Kind::Brute as u8, brain });
+            id
+        })
+        .collect();
+    let (mut most, mut total) = (0, 0);
+    for sequence in 1..=1500_u32 {
+        room.input(player, asking(&room, sequence, None, Controls::default())).unwrap();
+        room.tick();
+        if dominating && sequence.is_multiple_of(6) {
+            let brute = brutes[(sequence / 6) as usize % brutes.len()];
+            let blow = Blow {
+                striker: player,
+                kind: BlowKind::Swing(Stroke::Down),
+                from: [0.0, 0.0],
+                damage: 25.0,
+                poise: 0.0,
+                guard: 0.0,
+                parryable: true,
+                blockable: true,
+                knocks_down: false,
+            };
+            room.settle(&blow, How::Swing, brute, Verdict::Hit { damage: 25.0, poise: 0.0 });
+            room.foes.get_mut(&brute).unwrap().fighter.health = room.foes[&brute].fighter.health_max;
+        }
+        let whole = room.players[&player].fighter.health_max;
+        room.players.get_mut(&player).unwrap().fighter.health = whole;
+        if sequence > 900 {
+            let (melee, _) = room.board.tokens_out(player);
+            most = most.max(melee);
+            total += melee;
+        }
+    }
+    (most, total as f64 / 600.0, room.director.heat)
+}
+
+#[test]
+fn a_dominating_player_meets_more_foes_in_their_turn_at_once_than_one_being_beaten() {
+    let (dominating, beaten) = (turns_at(true), turns_at(false));
+    assert!(dominating.2 >= 0.6 && beaten.2 < 0.25, "hot against cold: {dominating:?} against {beaten:?}");
+    assert!(dominating.0 >= 3, "three brutes at once on the dominating player: {dominating:?}");
+    assert!(dominating.1 > beaten.1, "more in their turn than on the beaten player: {dominating:?} {beaten:?}");
+}
+
+#[test]
+fn the_same_inputs_give_the_same_heat_to_the_bit() {
+    let heat = || turns_at(true).2.to_bits();
+    assert_eq!(heat(), heat());
 }
