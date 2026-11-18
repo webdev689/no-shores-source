@@ -27,6 +27,7 @@ import type { CardAt } from '../player/cards.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
+import type { ShipBar } from '../ships/shipBars.ts';
 import { type Stir, wakeStirs } from '../ships/swellPose.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { Aboard, type AboardContext } from './aboard.ts';
@@ -87,6 +88,8 @@ export interface SeaFrame {
   readonly ships: readonly SeaShip[];
   /** Each ship's footprint on the water, world metres: none inside her, foam round her bow under way. */
   readonly hulls: readonly HullMask[];
+  /** In a fight, each captain's bar over her masthead as she is drawn. */
+  readonly bars: readonly ShipBar[];
   readonly marks: readonly ScreenMark[];
   readonly note: string;
   /** What the ship is offered off the island's coast: to dock, to go ashore, or nothing. */
@@ -465,18 +468,17 @@ export class Sea {
     const combat = this.combat;
     const fail = (error: unknown) => this.passage.say(error instanceof Error ? error.message : String(error));
     const aboardShot = this.aboard.target(trueLying);
-    const down =
-      this.view.kind === 'helm'
+    // The fight's view, the helm's or one aboard, which the view comes down to from the sea's.
+    const down = combat
+      ? { near: combat.frame(dt, time, seaShot.far, fail), share: combat.share }
+      : this.view.kind === 'helm'
         ? { near: this.helmShot(trueLying, seaShot.far), share: this.helmShare }
         : aboardShot && { near: aboardShot, share: this.aboard.share };
-    const shown = combat
-      ? combat.frame(dt, time, seaShot, fail)
-      : down
-        ? panShot(seaShot, down.near, down.share)
-        : seaShot;
+    const shown = down ? panShot(seaShot, down.near, down.share) : seaShot;
     const closest = this.close.closest(overworld, trueLying, this.camera.yaw, this.camera.tilt);
     const { near, share } = down ?? { near: closest, share: this.close.eased };
-    const atHer = (view: Shot) => pictureAt(view, [ship.x, ship.y, 0]);
+    const her = combat ? combat.lying : ship;
+    const atHer = (view: Shot) => pictureAt(view, [her.x, her.y, 0]);
     const scale = shownScale(this.scale, { seaM: atHer(overworld), shownM: atHer(shown), nearM: atHer(near), share });
     // Asked again no time on, her swing stands: she is posed on the swell at the size she is drawn.
     const place = scale === 1 ? truePlace : this.drawn.placeOf('own', own, scale, this.water, 0, time);
@@ -487,7 +489,7 @@ export class Sea {
     }
     const others = this.room?.others ?? [];
     const pirates = this.room?.pirates ?? [];
-    const aboard = combat ? combat.own : lying;
+    const aboard = combat ? combat.ownAt(scale) : lying;
     const kind = this.view.kind === 'sail' || this.view.kind === 'landing' ? this.view.kind : 'other';
     const marks = seaMarks(
       combat || this.aboard.active ? 'other' : kind,
@@ -502,9 +504,10 @@ export class Sea {
     return {
       shot: shown,
       ships: combat
-        ? combat.ships(dt, time, windBearing).map((ship) => ({ ...ship }))
+        ? combat.ships(dt, time, windBearing, scale)
         : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, pirates, scale, this.water),
-      hulls: combat ? combat.hulls(this.hull.waterline) : this.drawn.hulls(own, others, scale),
+      hulls: combat ? combat.hulls(this.hull.waterline, scale) : this.drawn.hulls(own, others, pirates, scale),
+      bars: combat?.bars(scale) ?? [],
       marks: marks.shown,
       figures: aboard
         ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, this.helmShare > 0.5)

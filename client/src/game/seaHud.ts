@@ -35,7 +35,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   hud.hints(seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
   hud.marks(shown.marks);
   const { eye, yaw, pitch, fov } = shown.shot;
-  hud.shipBars(here.fight?.bars() ?? [], poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
+  hud.shipBars(shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
   hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
   const build = aboard.managing ? state.build() : null;

@@ -21,7 +21,7 @@ type Vector = [number, number, number];
 /** A shot `share` of the way (0 to 1, eased by the caller) from `from` to `to`: its eye, pitch and lens straight, its
  *  bearing the short way round, its near plane the target's past half way, its far plane the first's. */
 export function panShot(from: Shot, to: Shot, share: number): Shot {
-  const mix = (start: number, end: number) => start + (end - start) * share;
+  const mix = (start: number, end: number) => start * (1 - share) + end * share;
   const turn = Math.atan2(Math.sin(to.yaw - from.yaw), Math.cos(to.yaw - from.yaw));
   return {
     eye: [mix(from.eye[0], to.eye[0]), mix(from.eye[1], to.eye[1]), mix(from.eye[2], to.eye[2])],

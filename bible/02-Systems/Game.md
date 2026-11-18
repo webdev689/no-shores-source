@@ -110,13 +110,13 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is not to scale: a ship is
   drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other player's ship is the Sloop
   too. At the helm every ship is her true size ([[Held Map]]).
-- **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's and the walk's) is laid
-  on her at her true size, and the view eases down to it from the sea's. On the way every ship is drawn as large as
-  holds the Sloop on the screen at the size the sea's view shows her, and never under her true size. So she never
-  shrinks on the screen as the eye comes in, and she is her true size as soon as that shows her as large: from about
-  75 m off with the camera at its lowest, looking 30 degrees down. A view near her that shows her smaller at her
-  true size (Manage with its wheel taken out) is eased to instead. On each view near her every ship is her true size,
-  her pose on the swell, her footprint on the water and everyone aboard with her.
+- **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's, the walk's and a fight's)
+  is laid on her at her true size, and the view eases down to it from the sea's. On the way every ship is drawn as large
+  as holds the Sloop on the screen at the size the sea's view shows her, and never under her true size. So she never
+  shrinks on the screen as the eye comes in, and she is her true size as soon as that shows her as large: from about 75
+  m off with the camera at its lowest, looking 30 degrees down. A view near her that shows her smaller at her true size
+  (Manage with its wheel taken out) is eased to instead. On each view near her every ship is her true size, her pose on
+  the swell, her footprint on the water and everyone aboard with her.
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
@@ -163,12 +163,13 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
 - **Pirates and the Grey Tithe** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her
-  voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says
-  so; the page sails its ship at the pace the room sailed her at, drawn to where the room has her. A bold one that
-  comes within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight at true
-  scale, her plate over her (her faction's emblem, her name over a bar of her hull coloured by her rank), then back
-  up when it ends. Ships of two factions that meet fight each other, drawn at sea where the room has them; coming
-  within 750 m of such a fight joins it the same way, every captain in it under her own plate.
+  voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says so;
+  the page sails its ship at the pace the room sailed her at, drawn to where the room has her. A bold one that comes
+  within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight, every ship in it
+  easing to her true size as on any view near her (above), her plate over her (her faction's emblem, her name over a bar
+  of her hull coloured by her rank), then back up when it ends. Ships of two factions that meet fight each other, drawn
+  at sea where the room has them; coming within 750 m of such a fight joins it the same way, every captain in it under
+  her own plate.
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
@@ -242,7 +243,9 @@ through the maps, each of its points asked of them from past that turned card, s
 shadow or a wall's and never by its own. Its contact shade stays under its feet where its own shadow is drawn, and
 past the near square leans the way the sun throws one, standing in for it.
 
-At sea each ship's footprint is handed to the water, which keeps out of her hull and foams round her bow under way.
+At sea the footprints of the player's ship and the seven ships nearest her (other players', pirates and a fight's
+captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round her bow under
+way.
 Under way the player's ship stirs the water's ripples at her bow and quarters, as the World Editor's does, and the
 ripples follow her.
 In death the world drains to grey, and comes back in colour on respawn or on leaving.
