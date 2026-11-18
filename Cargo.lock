@@ -102,6 +102,7 @@ name = "movement"
 version = "0.0.0"
 dependencies = [
  "libm",
+ "serde_json",
 ]
 
 [[package]]
