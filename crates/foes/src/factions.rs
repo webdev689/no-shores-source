@@ -26,7 +26,7 @@ pub const GREY_TITHE: u8 = 1;
 pub const PIRATES: u8 = 2;
 
 pub const FACTIONS: [Faction; 2] = [
-    Faction { number: GREY_TITHE, name: "The Grey Tithe", presence: Presence::Both, ships: &[] },
+    Faction { number: GREY_TITHE, name: "The Grey Tithe", presence: Presence::Both, ships: &["Tithe Sloop"] },
     Faction { number: PIRATES, name: "Pirates", presence: Presence::Sea, ships: &["Pirate Sloop"] },
 ];
 
