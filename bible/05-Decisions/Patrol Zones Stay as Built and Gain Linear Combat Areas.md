@@ -1,0 +1,40 @@
+---
+type: decision
+date: 2026-11-18
+status: in force
+---
+# Patrol Zones Stay as Built and Gain Linear Combat Areas
+
+> "Lets honestly just stay with our current implementation"
+
+The owner's answers to the questions that followed:
+
+> Asked whether that also keeps all three patrol zones on each island (27 in all), as built: "Keep all 27 as built
+> (Recommended)"
+>
+> Asked whether to fix the bugs the audit verified in what is built: "Do a comprehensive audit and fix verified bugs.
+> Still do a comprehensive detailed pass to make zome varied, more detailed, and implement linear combat areas that
+> break off. Some in open space, some that traverse larger buildings. Future proofing for mission areas."
+>
+> Asked whether the earlier answers stand (the World Editor draws the layouts' buildings, the well house's roof is
+> fixed, the flora workflow's publishing is Claude's call): "Yes, do those three"
+>
+> Asked how the linear combat areas break off: (1) one-way runs of 200 to 400 m cut into the zone's own rock, each
+> from a mouth seen from the zone through three to five fights to an end arena with a sealed door where a mission
+> continues later, at least one in the open and one through a large building, open in patrol and named so missions
+> can use them; (2) runs that leave the zone past its edge into land beyond it, as the gates to instances do; or (3)
+> the zone's existing ways shaped into linear fights: "1 and 2"
+
+## What it settles
+
+- **All 27 patrol zones stay as built**, three on each island, laid out as [[Layouts]] describes. It replaces
+  [[Each Island Has One Patrol Zone, Built of 500 m Combat Spaces]].
+- **A comprehensive audit**, and the bugs it verifies are fixed.
+- **A comprehensive, detailed pass** makes the zones more varied and more detailed.
+- **Linear combat areas break off the zones**: some in open space, some through larger buildings. They prepare the
+  zones for mission areas. Some are cut into the zone's own rock, and some leave the zone past its edge into land
+  beyond it.
+- [[The World Editor Draws the Layouts' Buildings]], [[The Well House's Roof Is Fixed]] and the flora workflow's
+  publishing ([[Flora Is Baked From Detailed Models]]) stand.
+
+It builds on [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]].

@@ -1,7 +1,7 @@
 ---
 type: decision
 date: 2026-11-18
-status: in force
+status: replaced by [[Patrol Zones Stay as Built and Gain Linear Combat Areas]]
 ---
 # Each Island Has One Patrol Zone, Built of 500 m Combat Spaces
 
