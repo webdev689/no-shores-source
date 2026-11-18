@@ -2,6 +2,7 @@ import type { GroundPatch } from '../rules/landRules.ts';
 import { type Orbit, viewProjection } from './orbit.ts';
 import { heldSplineAt } from '../water/spline.ts';
 import type { CloseUpData } from '../terrain/terrainView.ts';
+import type { Box } from './screenMarks.ts';
 
 /** Under this distance from its target, the 3D camera shows the exact ground around the target. */
 export const CLOSE_RANGE_M = 8000;
@@ -85,14 +86,14 @@ export function toScreen(
 }
 
 /** Draws a person's height at the target and a scale bar beside it over the 3D view, so the ground's size reads.
- *  Adds to what the overlay holds. */
+ *  Adds to what the overlay holds, and answers the box it drew in, or null when the target is behind the camera. */
 export function drawScaleCues(
   svg: SVGSVGElement,
   orbit: Orbit,
   size: { readonly width: number; readonly height: number },
   feet: readonly [number, number, number],
   exaggeration: number,
-): void {
+): Box | null {
   const draw = (name: string, attributes: Record<string, string | number>, text = '') => {
     const node = document.createElementNS('http://www.w3.org/2000/svg', name);
     for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
@@ -101,7 +102,13 @@ export function drawScaleCues(
   };
   const base = toScreen(orbit, size, feet);
   const head = toScreen(orbit, size, [feet[0], feet[1], feet[2] + FIGURE_M * exaggeration]);
-  if (!base || !head) return;
+  if (!base || !head) return null;
+  let box: Box = {
+    left: Math.min(base.x, head.x) - 8,
+    top: Math.min(base.y, head.y) - 8,
+    right: Math.max(base.x, head.x) + 8,
+    bottom: Math.max(base.y, head.y) + 8,
+  };
   draw('line', { x1: base.x, y1: base.y, x2: head.x, y2: head.y, stroke: '#ffe28a', 'stroke-width': 3 });
   draw('circle', { cx: head.x, cy: head.y, r: Math.max(2, Math.abs(base.y - head.y) / 8), fill: '#ffe28a' });
   const across: readonly [number, number] = [Math.cos(orbit.yaw), Math.sin(orbit.yaw)];
@@ -115,6 +122,14 @@ export function drawScaleCues(
       { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30, fill: '#fff', 'text-anchor': 'middle', 'font-size': 12 },
       label,
     );
+    const middle = { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30 };
+    box = {
+      left: Math.min(box.left, end.x, middle.x - 24),
+      top: box.top,
+      right: Math.max(box.right, end.x, middle.x + 24),
+      bottom: Math.max(box.bottom, middle.y + 4),
+    };
     break;
   }
+  return box;
 }

@@ -18,7 +18,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   space, with the port city.
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
-  shows it in 2D and 3D, close up at true scale, and on foot.
+  shows it in 2D and 3D, close up at true scale, and on foot, carved by the nodes' layouts as the game stands on it,
+  with each layout's areas, paths, section and sites drawn over both views.
 - The [[Water]], on `main`: the shared swell in the land crate, breakers that shoal and break on every shore, a
   stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an underwater
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
@@ -180,8 +181,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- The layouts' open ends ([[Layouts]], "Limits"): the World Editor planning and showing them, and the activities
-  that will stand on the sites (public events, beacons, resource nodes, foes).
+- The layouts' open ends ([[Layouts]], "Limits"): the World Editor's drawing of their buildings, props and solids
+  (the owner's to allow: the editor's layer may not import the city's), replanning only the layouts a change
+  touches, and the activities that will stand on the sites (public events, beacons, resource nodes, foes).
 
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
@@ -205,9 +207,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them
-  (no node comes within 2 km of a city's wall yet); the World Editor's 3D view without the city, woods and shadows
-  the game draws (its worker opens a landmass without the RMB index, and its city would be built again after every
-  stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
+  (no node comes within 2 km of a city's wall yet); the World Editor's 3D view without the city, the layouts'
+  buildings, woods and shadows the game draws (its worker now settles the city and the layouts as the game's does,
+  but the city layer that draws them may not be imported by the editor's); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
 - Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]); a frame
   there takes seconds, so a fight is seen beginning, not fought through. A driver should pace every frame from the
