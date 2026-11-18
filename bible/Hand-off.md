@@ -140,6 +140,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- One pull request in review (#62) holds two of the owner's asks:
+  - the [[Test Ground]]'s third-person aim, placed by hand with sliders, kept in the browser and shown as numbers;
+    the owner's numbers, once given, go into `AIM` in `playerCamera.ts`;
+  - DFO's next forge work ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]): its code exactly but for the
+    were-creatures', its 118,158 redrawn and new pictures and its tables published to R2 by a helper session on the
+    `overlook-source` environment, and the client playing the owner's blows, the bow's own holds and the dodge roll.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
