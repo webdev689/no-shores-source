@@ -172,7 +172,10 @@ export class Foot {
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
   get gear(): GearHere | null {
     const room = this.room;
-    return room?.connected ? { gear: room.gear, ask: (ask) => room.askGear(ask) } : null;
+    const { forge, walker } = this.context;
+    return room?.connected
+      ? { gear: room.gear, ask: (ask) => room.askGear(ask), forge, dress: walker.you.dress }
+      : null;
   }
 
   /** A line on the room the player plays in: their number in it, word that it was lost, or nothing offline. */

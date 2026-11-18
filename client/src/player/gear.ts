@@ -28,13 +28,14 @@ export const KINDS = [
 ] as const;
 /** The slots, by the gear crate's numbers. */
 export const SLOTS = ['main hand', 'off hand', 'head', 'torso', 'arms', 'legs', 'cloak'] as const;
-/** The rarities, by the gear crate's numbers: each one's name and colour. */
+/** The rarities, by the gear crate's numbers: each one's name, its colour with the lit and shaded edges of a frame in it
+ *  (Enhanced Plus's bevel), and the pips that mark it. */
 export const RARITIES = [
-  { name: 'Normal', colour: '#e9e4d9' },
-  { name: 'Magic', colour: '#6f9ee8' },
-  { name: 'Rare', colour: '#e4c34f' },
-  { name: 'Legendary', colour: '#e0a12e' },
-  { name: 'Atheric', colour: '#4fd8f0' },
+  { name: 'Normal', colour: '#e9e4d9', lit: '#f6f3ec', shade: '#6b665c', pips: '' },
+  { name: 'Magic', colour: '#6f9ee8', lit: '#b3cdf6', shade: '#34568f', pips: '◆' },
+  { name: 'Rare', colour: '#e4c34f', lit: '#f6e398', shade: '#8f7420', pips: '◆◆' },
+  { name: 'Legendary', colour: '#e0a12e', lit: '#f5cf7e', shade: '#8a5a14', pips: '◆◆◆' },
+  { name: 'Atheric', colour: '#4fd8f0', lit: '#b8f2fb', shade: '#1f7486', pips: '◈' },
 ] as const;
 /** A column's kind of node, by the gear message's numbers. */
 export const COLUMNS = ['Upgrade', 'Handling', 'Finish', 'Perk', 'Its own'] as const;
@@ -96,6 +97,11 @@ export function traitOf(id: string): { readonly name: string; readonly words: st
 /** An island's resource's name, by its place in the list. */
 export function resourceName(index: number): string {
   return resources.resources[index]?.name ?? `resource ${index}`;
+}
+
+/** An island's resource's words. */
+export function resourceWords(index: number): string {
+  return resources.resources[index]?.words ?? '';
 }
 
 export const RESOURCE_COUNT = resources.resources.length;

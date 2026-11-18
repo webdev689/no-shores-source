@@ -11,6 +11,11 @@ code:
   - client/src/game/gearScreen.ts#characterOf
   - client/src/game/gearScreen.ts#itemDetailOf
   - client/src/game/gearWindow.ts#startGearWindow
+  - client/src/game/characterPage.ts#characterPage
+  - client/src/game/itemPage.ts#itemPage
+  - client/src/game/inventoryPage.ts#inventoryPage
+  - client/src/game/gearCards.ts#cardOf
+  - client/src/game/itemPictures.ts#ItemPictures
   - client/src/game/accountTab.ts#accountPanel
 ---
 # Interface
@@ -44,35 +49,45 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 
 ## The gear window
 
-A window over the game, after Destiny's own: Character (I), Inventory (O), Vendors and Account, under a header of
-tabs. While
-it is open the pointer is free and the game's own keys rest; Escape or Close shuts it. It shows the player's gear as
-their room last sent it ([[Gear]]), and each press is an ask the room answers with their gear.
+A screen over the game, after Destiny's own ([[The Gear Screens Follow Destiny, on Enhanced Plus]]): Character (I),
+Inventory (O), Vendors and Account as tabs in its header, the player's level, Prestige and Defense at its left and
+their Aurem at its right. While it is open the pointer is free and the game's own keys rest; Escape shuts an item's
+page, then the screen. It shows the player's gear as their room last sent it ([[Gear]]), and each press is an ask
+the room answers with their gear.
 
-- **Character.** The weapons (main hand, off hand) and the cloak to the left, the four armour pieces to the right,
-  each slot a tile with its item's name in its rarity's colour and its Attack, Defense or Prestige. Between them,
-  the player's level, a meter to the next (XP below 20, Prestige past it), Prestige, Defense, each hand's Attack, the
-  Fruit of Dagon held and a meter for the next one growing past level 20. A slot pressed lists what it wears and the
-  nine it may carry; an item pressed opens it.
-- **An item.** Its name, rarity and kind, its numbers, a meter of its XP, its words if it is named, and its nodes,
-  column by column, each with its XP: a node chosen in brass, one that can be bought or chosen raised, one locked
-  flat, each saying what it does and costs. Below, what may be done where it is: wear it (or in the off hand), take
-  it off, dismantle it (in blood), put it in or take it out of the vault, and feed it a Fruit of Dagon, held for a
-  moment.
-- **Inventory.** Aurem, the fragments and Essence, Fruit of Dagon and each island's resource held; the Vestiges
-  carried; and the vault. In a social space, a Vestige may be identified or vaulted, and the vault opens; elsewhere it
-  says where they are.
+- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped.
+  A weapon is drawn in the pose that holds it. Where the forge draws nothing of a piece, its slot shows its name's
+  initials, as Enhanced Plus shows a piece without art. Currencies, materials and Vestiges are small pixel glyphs.
+- **Rarity.** A cell, card or page takes its rarity's colour, a lit and a shaded tone for its bevel, a glow behind
+  its picture, and its pips (◆ to ◈).
+- **Character.** The player's figure large in the middle, under their level, Prestige and Defense, a meter to the
+  next level below it (XP below 20, Prestige past it). The weapons (main hand, off hand) and the cloak stand to its
+  left, the four armour pieces to its right, each slot a cell with its item's picture. Hovering a slot shows its
+  card; a click opens its flyout, the nine it may carry in a 3 by 3 grid beside it, each with its card and how it
+  changes the worn one's numbers, green up and red down; a click there wears it, a right-click inspects it.
+- **The card.** An item's name on a band of its rarity, its kind and pips, its picture, its main number large, its
+  level and XP, its chosen traits, its words, and what it replaces.
+- **An item's page** lies over the screen, as Destiny 1's weapon page does: its name in its rarity's colour, its kind
+  and words, its main number large and meters of its Attack or Prestige, level and XP; its nodes in round columns,
+  each column's XP above it, chosen in brass, bought lit, open raised and locked flat, each with its card; to the
+  right the item drawn large in its rarity's glow; and along its foot what may be done where it is: wear it (or in
+  the off hand), take it off, dismantle it, vault it or take it out, and feed it a Fruit of Dagon, held a moment.
+- **Inventory.** The currencies along the top (Aurem, the fragments, Essence), then tabs: Consumables (Fruit of
+  Dagon), Materials (each island's resource), Vestiges and, in a social space, the vault. Each is a grid of cells, a
+  count at each cell's foot and pips beside it. A click does what the cell is for (a Vestige identified, an item
+  taken out); a right-click its other use or the item's page.
 - **Vendors.** In a social space, the Quartermaster's and the Armsmith's wares of the day ([[Gear]], "Vendors"),
-  each a tile with its kind, level and a Buy press at its price, flat while the player's Aurem falls short.
+  each a cell with its picture and card, its kind, level and a Buy press at its price, flat while the player's Aurem
+  falls short.
 - **Account** ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a username and
   password to keep a guest by, or to sign in with; Discord; and signing out, which warns a guest they cannot come
   back. A sign-in or out loads the page again, so its rooms hold the right character.
-- A new build of the window waits while a press is held, so no press is lost to it.
+- A new build of the screen waits while a press is held, so no press is lost to it.
 
 ## Limits
 
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels for now.
-- The gear window draws no item's picture, and no figure wearing it: the figure in the world wears it ([[Gear]]).
+- An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - No gamepad or touch layer yet.

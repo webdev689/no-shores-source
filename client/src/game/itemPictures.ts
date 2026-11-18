@@ -5,13 +5,20 @@
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
-import { WORN } from '../player/gear.ts';
+import { KINDS, WORN } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { type Picture, addedBy } from '../player/picture.ts';
 
-/** The move and view an item is drawn in: standing, from the front, its weapon in hand. */
-const ANIM = 'idle';
+/** The view an item is drawn in, from the front; and the move each weapon is held up in, a melee weapon or shield on
+ *  guard. Armour is drawn standing. */
 const VIEW = 0;
+const HELD_IN: Readonly<Record<string, string>> = {
+  bow: 'idle_bow',
+  staff: 'idle_staff',
+  crossbow: 'braceready',
+  pistolet: 'pistolready',
+  thunderlock: 'gunready',
+};
 
 /** Gear holding nothing but `items`. */
 const holding = (items: readonly GearItem[]): GearState => ({
@@ -55,11 +62,15 @@ export class ItemPictures {
       outfit: { ...gearOutfit(state, wardrobe, plain), drawn: true },
     });
     const [worn, bare] = [dressed(holding([{ ...item, at: WORN + slot }])), dressed(holding([]))];
-    const key = JSON.stringify([worn, bare]);
+    const kind = KINDS[item.kind] ?? '';
+    const held = worn.outfit.left ?? worn.outfit.right;
+    const wanted = slot <= 1 ? (HELD_IN[kind] ?? 'guard') : 'idle';
+    const anim = this.forge.draws(body.body, wanted, held) ? wanted : 'idle';
+    const key = JSON.stringify([worn, bare, anim]);
     if (this.kept.has(key)) return this.kept.get(key) ?? null;
     if (!this.asked.has(key)) {
       this.asked.add(key);
-      Promise.all([this.forge.picture(worn, ANIM, VIEW), this.forge.picture(bare, ANIM, VIEW)])
+      Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)])
         .then(([withIt, without]) => {
           this.kept.set(key, withIt && without ? addedBy(withIt, without) : null);
           ready();

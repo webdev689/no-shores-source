@@ -23,5 +23,11 @@ test('an item’s picture is what it adds to the figure, cropped round it on a c
   assert.deepEqual([added.width, added.height], [2, 2]);
   assert.deepEqual([...added.pixels], [...sword, 0, 0, 0, 0, 0, 0, 0, 0, ...sword]);
   assert.equal(addedBy(bare, bare), null, 'nothing added');
-  assert.equal(addedBy(worn, picture(4, 4, body)), null, 'not the same size');
+  // A helm widens the frame by a row above: the two line up by their feet.
+  const tall = picture(5, 5, body, [[1, 0, sword]]);
+  for (const column of [0, 2, 3, 4]) tall.pixels.fill(0, column * 4, column * 4 + 4);
+  const taller = { ...tall, root: [2, 4] as const };
+  const lower = { ...bare, root: [2, 3] as const };
+  const helm = addedBy(taller, lower);
+  assert.deepEqual([helm?.width, helm?.height], [1, 1], 'only the new row is the helm');
 });

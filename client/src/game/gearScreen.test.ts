@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { characterOf, inventoryOf, itemDetailOf, slotChoices, vendorsOf, xpForLevel } from './gearScreen.ts';
+import { characterOf, itemDetailOf, vendorsOf, xpForLevel } from './gearScreen.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -78,27 +78,6 @@ test('a level below 20 counts XP to the next; past it, Prestige; the last is ful
   assert.equal(characterOf(state({ level: 30, prestige: 120 })).toNext, 1);
 });
 
-test('the Character tab shows each slot worn and each hand’s Attack; a slot offers what it carries', () => {
-  const off = item({ id: 8, kind: 12, at: 3, defense: 30 });
-  const spare = item({ id: 9, kind: 2, at: 0, bucket: 0, attack: 120 });
-  const gear = state({ items: [legendary, off, spare] });
-  const character = characterOf(gear);
-  assert.deepEqual(character.attack, [248, null], 'a shield gives no Attack');
-  assert.equal(character.slots.length, 7);
-  assert.deepEqual(character.slots[0], {
-    slot: 0,
-    name: 'Main hand',
-    worn: { id: 7, name: 'Harbourwarden', colour: '#e0a12e', power: '248 Attack' },
-  });
-  assert.equal(character.slots[2]?.worn, null);
-  const choices = slotChoices(gear, 0);
-  assert.equal(choices.worn?.id, 7);
-  assert.deepEqual(
-    choices.carried.map((tile) => tile.id),
-    [9],
-  );
-});
-
 test('an item’s detail lays out its nodes: bought, to buy once unlocked, and what it may do where it is', () => {
   const detail = itemDetailOf(legendary, state({ items: [legendary], stocks: [0, 0, 0, 0, 2] }));
   assert.equal(detail.kind, 'Legendary Sword');
@@ -125,29 +104,6 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
     ['Wear', 'Off hand', 'Put in the vault', 'Dismantle'],
   );
   assert.equal(carried.presses.at(-1)?.role, 'warn');
-});
-
-test('the Inventory counts materials, and opens Vestiges and the vault only in a social space', () => {
-  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
-  const away = inventoryOf(state({ aurem: 1_250, stocks: [3, 0, 1, 0, 0], vestiges: [vestige] }));
-  assert.deepEqual(away.materials.slice(0, 2), [
-    ['Aurem', '1,250'],
-    ['Weapon Fragments', '3'],
-  ]);
-  assert.equal(away.vestiges[0]?.label, 'Rare Vestige · Head · level 12');
-  assert.deepEqual(away.vestiges[0]?.presses, []);
-  const social = inventoryOf(
-    state({ social: true, vestiges: [vestige, { ...vestige, id: 5, vaulted: true }], items: [item({ at: 1 })] }),
-  );
-  assert.deepEqual(
-    social.vestiges[0]?.presses.map((press) => press.ask),
-    [
-      { kind: ASKS.identify, item: 4 },
-      { kind: ASKS.storeVestige, item: 4 },
-    ],
-  );
-  assert.equal(social.vaulted.length, 1);
-  assert.deepEqual(social.vaultedVestiges[0]?.presses[0]?.ask, { kind: ASKS.withdrawVestige, item: 5 });
 });
 
 test('the Vendors tab shows each vendor’s wares of the day, bought for their price in Aurem', () => {

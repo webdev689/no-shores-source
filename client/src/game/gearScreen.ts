@@ -3,21 +3,20 @@
 // tab (materials, Vestiges and, in a social space, the vault). The page draws these in the Enhanced Plus kit.
 
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import type { Cards } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
 import {
   CARRIED,
   COLUMNS,
   KINDS,
   type NodeShown,
   RARITIES,
-  RESOURCE_COUNT,
   SLOTS,
-  STOCK_NAMES,
   VAULTED,
   WORN,
   itemName,
   itemWords,
   nodeShown,
-  resourceName,
   wearAsks,
 } from '../player/gear.ts';
 
@@ -25,6 +24,9 @@ import {
 export interface GearHere {
   readonly gear: GearState | null;
   ask(ask: GearAsk): void;
+  /** The forge that draws the player and their items, and the player's dress, for the screens' pictures. */
+  readonly forge: Cards | null;
+  readonly dress: Dress | null;
 }
 
 /** A press a screen offers: its words, what it asks, and how it is painted (the kit's role). */
@@ -114,13 +116,6 @@ export function characterOf(state: GearState): Character {
   };
 }
 
-/** A slot's choices: what it wears, then what it carries beside it. */
-export function slotChoices(state: GearState, slot: number): { readonly worn: Tile | null; readonly carried: Tile[] } {
-  const worn = state.items.find((item) => item.at === WORN + slot);
-  const carried = state.items.filter((item) => item.at === CARRIED && item.bucket === slot);
-  return { worn: worn ? tileOf(worn) : null, carried: carried.map(tileOf) };
-}
-
 /** An item's detail: its name and kind, numbers, XP, each column of nodes, its words and what may be done with it. */
 export interface ItemDetail {
   readonly name: string;
@@ -175,56 +170,6 @@ export function itemDetailOf(item: GearItem, state: GearState): ItemDetail {
     })),
     words: itemWords(item),
     presses,
-  };
-}
-
-/** A Vestige as the Inventory shows it: its colour's name, slot and level, and what may be done with it. */
-export interface VestigeShown {
-  readonly label: string;
-  readonly colour: string;
-  readonly presses: readonly Press[];
-}
-
-/** The Inventory tab: the player's materials, their Vestiges, and the vault, which only a social space opens. */
-export interface Inventory {
-  readonly materials: readonly (readonly [string, string])[];
-  readonly vestiges: readonly VestigeShown[];
-  readonly lying: number;
-  readonly social: boolean;
-  readonly vaulted: readonly Tile[];
-  readonly vaultedVestiges: readonly VestigeShown[];
-}
-
-export function inventoryOf(state: GearState): Inventory {
-  const materials: [string, string][] = [['Aurem', state.aurem.toLocaleString()]];
-  STOCK_NAMES.forEach((name, index) => materials.push([name, String(state.stocks[index] ?? 0)]));
-  for (let index = 0; index < RESOURCE_COUNT; index++)
-    if ((state.resources[index] ?? 0) > 0) materials.push([resourceName(index), String(state.resources[index])]);
-  const shown = (vaulted: boolean) =>
-    state.vestiges
-      .filter((vestige) => vestige.vaulted === vaulted)
-      .map((vestige): VestigeShown => {
-        const presses: Press[] = vaulted
-          ? [{ label: 'Take out', ask: { kind: ASKS.withdrawVestige, item: vestige.id }, role: 'button' }]
-          : state.social
-            ? [
-                { label: 'Identify', ask: { kind: ASKS.identify, item: vestige.id }, role: 'primary' },
-                { label: 'Vault', ask: { kind: ASKS.storeVestige, item: vestige.id }, role: 'button' },
-              ]
-            : [];
-        return {
-          label: `${RARITIES[vestige.rarity]?.name ?? ''} Vestige · ${capital(SLOTS[vestige.slot] ?? '')} · level ${vestige.level}`,
-          colour: colourOf(vestige.rarity),
-          presses,
-        };
-      });
-  return {
-    materials,
-    vestiges: shown(false),
-    lying: state.drops.length,
-    social: state.social,
-    vaulted: state.items.filter((item) => item.at === VAULTED).map(tileOf),
-    vaultedVestiges: shown(true),
   };
 }
 

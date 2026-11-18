@@ -1,19 +1,18 @@
-import { button, make } from '../editor/dom.ts';
+import './gearScreen.css';
+import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import type { GearItem } from '../network/gearMessages.ts';
 import { RARITIES, answerText, itemName } from '../player/gear.ts';
-import { ROLES, type Role } from '../plus/kit.ts';
+import type { Picture } from '../player/picture.ts';
+import { ROLES } from '../plus/kit.ts';
 import { accountPanel } from './accountTab.ts';
-import {
-  type GearHere,
-  type Press,
-  type Tile,
-  characterOf,
-  inventoryOf,
-  itemDetailOf,
-  slotChoices,
-  vendorsOf,
-} from './gearScreen.ts';
+import { type PageContext, characterPage } from './characterPage.ts';
+import { HoverCard, cardNode, glyphImage, itemIcon, pressOf, rarityOf } from './gearDom.ts';
+import { cardOf } from './gearCards.ts';
+import { type GearHere, characterOf, vendorsOf } from './gearScreen.ts';
+import { inventoryPage } from './inventoryPage.ts';
+import { itemPage } from './itemPage.ts';
+import { ItemPictures } from './itemPictures.ts';
 
 export type Tab = 'character' | 'inventory' | 'vendors' | 'account';
 
@@ -26,220 +25,92 @@ const TABS: readonly (readonly [Tab, string, string])[] = [
 ];
 /** The page event that opens the gear window at a tab, as a station's counter does. */
 const OPEN_AT = 'overlook:gear';
+/** How often the window looks for new gear while open, in milliseconds. */
+const LOOK_MS = 100;
+/** A ware's picture box, in pixels. */
+const WARE_PX = 48;
 
 /** Opens the gear window at a tab, wherever it was started. */
 export function openGearWindow(tab: Tab): void {
   dispatchEvent(new CustomEvent<Tab>(OPEN_AT, { detail: tab }));
 }
 
-/** How long a held press is held before it asks, in milliseconds: a Fruit of Dagon is eaten, not tapped. */
-const HOLD_MS = 800;
-/** How often the window looks for new gear while open, in milliseconds. */
-const LOOK_MS = 100;
-
-function pressOf(text: string, run: () => void, role: Role = 'button'): HTMLButtonElement {
-  const node = button(text, run);
-  node.classList.add(ROLES[role]);
-  return node;
-}
-
-/** A press that asks only once held down for a moment. */
-function heldPress(text: string, held: () => void): HTMLButtonElement {
-  const node = pressOf(text, () => undefined);
-  let timer = 0;
-  const cancel = () => window.clearTimeout(timer);
-  node.addEventListener('pointerdown', () => {
-    cancel();
-    timer = window.setTimeout(held, HOLD_MS);
-  });
-  for (const event of ['pointerup', 'pointerleave', 'pointercancel']) node.addEventListener(event, cancel);
-  return node;
-}
-
-/** An item's tile: its name in its rarity's colour over its main number; or an empty slot's. */
-function tileNode(tile: Tile | null, label: string, run: () => void): HTMLButtonElement {
-  const node = pressOf('', run, 'tile');
-  node.classList.add('gear-tile');
-  const name = make('span', tile?.name ?? 'Empty', 'gear-tile-name');
-  if (tile) name.style.color = tile.colour;
-  node.append(make('span', label, 'gear-tile-label'), name, make('span', tile?.power ?? '', 'gear-tile-power'));
-  return node;
-}
-
-/** A meter sunk into the window, filled to `share` of its width. */
-function meter(share: number, words: string): HTMLElement {
-  const well = make('div', '', `gear-meter ${ROLES.well}`);
-  const fill = make('div', '', 'gear-meter-fill');
-  fill.style.width = `${Math.round(share * 100)}%`;
-  well.append(fill);
-  const box = make('div', '', 'gear-meter-box');
-  box.append(well, make('div', words, 'gear-hint'));
-  return box;
-}
-
-const rows = (pairs: readonly (readonly [string, string])[]): HTMLElement[] =>
-  pairs.map(([label, value]) => {
-    const row = make('div', '', 'gear-row');
-    row.append(make('span', label, 'gear-label'), make('span', value, 'gear-value'));
-    return row;
-  });
-
-const heading = (text: string) => make('div', text, `gear-heading ${ROLES.rule}`);
-
 /**
- * The gear window, in the Enhanced Plus kit: Character (I), Inventory (O), Vendors and Account. While it is open the pointer is
- * free and the game's keys rest; Escape closes it. It shows the player's gear as their room last sent it, and each
- * press asks the room, whose answer comes back with their gear. Where no room keeps gear it says so.
+ * The gear screen, after Destiny's, in the Enhanced Plus kit: Character (I), Inventory (O), Vendors and Account under a
+ * header of tabs, and an item's page laid over them when one is inspected. While it is open the pointer is free and
+ * the game's keys rest; Escape closes the item's page, then the screen. It shows the player's gear as their room last
+ * sent it, each press an ask the room answers; where no room keeps gear it says so.
  */
 export function startGearWindow(root: HTMLElement, link: AccountLink | null, here: () => GearHere | null): void {
-  const box = make('div', '', `gear-window ${ROLES.window}`);
-  box.hidden = true;
-  const tabRow = make('div', '', `gear-tabs ${ROLES.header}`);
+  const screen = make('div', '', `gear-screen ${ROLES.window}`);
+  screen.hidden = true;
+  const header = make('div', '', `gear-head ${ROLES.header}`);
+  const who = make('div', '', 'gear-who');
+  const tabRow = make('div', '', 'gear-tabs-top');
+  const purse = make('div', '', 'gear-purse');
+  header.append(who, tabRow, purse);
   const answer = make('div', '', 'gear-answer');
   const body = make('div', '', 'gear-body');
-  const footer = make('div', '', `gear-footer ${ROLES.footer}`);
-  box.append(tabRow, answer, body, footer);
-  root.append(box);
+  const footer = make('div', '', `gear-foot ${ROLES.footer}`);
+  footer.append(make('span', 'Click: choose · Right-click: inspect · Esc: back', 'gear-hint'));
+  screen.append(header, answer, body, footer);
+  root.append(screen);
+  const tip = new HoverCard(root);
   let tab: Tab | null = null;
   let slot: number | null = null;
-  let item: number | null = null;
-  let shownGear: GearState | null | undefined;
-  let shownUi = '';
+  let shelf = 'consumables';
+  let inspecting: number | null = null;
+  let shown = '';
+  let drawn = 0;
   let pressing = false;
   let account: HTMLElement | null = null;
+  let pictures: ItemPictures | null = null;
+  let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
+  const redraw = () => drawn++;
 
   const close = () => {
-    tab = null;
-    box.hidden = true;
+    if (inspecting !== null) inspecting = null;
+    else {
+      tab = null;
+      screen.hidden = true;
+      tip.hide();
+    }
   };
   const open = (wanted: Tab) => {
     if (tab === wanted) return close();
-    [tab, slot, item, account] = [wanted, null, null, null];
-    box.hidden = false;
+    [tab, slot, inspecting, account] = [wanted, null, null, null];
+    screen.hidden = false;
     document.exitPointerLock();
     render();
   };
   const tabs = TABS.map(([name, label, key]) => {
     const node = pressOf(key ? `${label}  ${key}` : label, () => open(name));
+    node.classList.add('gear-tab');
     node.dataset['tab'] = name;
     return node;
   });
   tabRow.append(...tabs);
-  footer.append(pressOf('Close  Esc', close));
+  footer.append(pressOf('Close', () => ((inspecting = null), close())));
 
-  const presses = (all: readonly Press[], ask: GearHere['ask']): HTMLElement => {
-    const row = make('div', '', 'gear-presses');
-    for (const press of all) {
-      const run = () => ask(press.ask);
-      row.append(press.held ? heldPress(press.label, run) : pressOf(press.label, run, press.role));
-    }
-    return row;
-  };
-
-  const itemView = (gear: GearState, ask: GearHere['ask']): HTMLElement[] => {
-    const found = gear.items.find((each) => each.id === item);
-    if (!found) {
-      item = null;
-      return [];
-    }
-    const detail = itemDetailOf(found, gear);
-    const name = make('div', detail.name, 'gear-item-name');
-    name.style.color = detail.colour;
-    const columns = make('div', '', 'gear-columns');
-    for (const column of detail.columns) {
-      const stack = make('div', '', `gear-column ${ROLES.panel}`);
-      stack.append(make('div', column.heading, 'gear-hint'));
-      for (const node of column.nodes) {
-        const pressed = pressOf(node.label, () => node.ask && ask(node.ask), node.chosen ? 'primary' : 'tile');
-        pressed.disabled = node.ask === null;
-        pressed.title = `${node.words} ${node.cost}`;
-        stack.append(pressed);
-      }
-      columns.append(stack);
-    }
-    return [
-      pressOf('◂ Back', () => (item = null)),
-      name,
-      make('div', detail.kind, 'gear-hint'),
-      ...rows(detail.numbers),
-      ...(detail.xpWords ? [meter(detail.xp, detail.xpWords)] : []),
-      ...(detail.words ? [make('p', detail.words, 'gear-words')] : []),
-      ...(detail.columns.length > 0 ? [heading('Nodes'), columns] : []),
-      presses(detail.presses, ask),
-    ];
-  };
-
-  const characterView = (gear: GearState): HTMLElement[] => {
-    const character = characterOf(gear);
-    const slotTile = (index: number) => {
-      const shown = character.slots[index];
-      const node = tileNode(shown?.worn ?? null, shown?.name ?? '', () => (slot = slot === index ? null : index));
-      if (slot === index) node.classList.add('gear-chosen');
-      return node;
-    };
-    const [weapons, armour, summary] = [make('div', '', 'gear-side'), make('div', '', 'gear-side'), make('div')];
-    weapons.append(heading('Weapons'), slotTile(0), slotTile(1), heading('Cloak'), slotTile(6));
-    armour.append(heading('Armour'), slotTile(2), slotTile(3), slotTile(4), slotTile(5));
-    summary.className = 'gear-summary';
-    const attack = character.attack.map((value) => (value === null ? '—' : String(value))).join(' · ');
-    summary.append(
-      make('div', `Level ${character.level}`, `gear-level ${ROLES.chip}`),
-      meter(character.toNext, character.toNextWords),
-      ...rows([
-        ['Prestige', String(character.prestige)],
-        ['Defense', String(character.defense)],
-        ['Attack, each hand', attack],
-        ['Fruit of Dagon', String(character.fruit)],
-      ]),
-      ...(character.fruitGrown === null ? [] : [meter(character.fruitGrown, 'The next Fruit of Dagon grows')]),
-    );
-    const grid = make('div', '', 'gear-character');
-    grid.append(weapons, summary, armour);
-    if (slot === null) return [grid];
-    const choices = slotChoices(gear, slot);
-    const list = make('div', '', 'gear-list');
-    const pick = (tile: Tile | null, label: string) => tileNode(tile, label, () => tile && (item = tile.id));
-    list.append(pick(choices.worn, 'Worn'), ...choices.carried.map((tile) => pick(tile, 'Carried')));
-    const name = character.slots[slot]?.name ?? '';
-    return [grid, heading(`${name}: worn and carried (${choices.carried.length} of 9)`), list];
-  };
-
-  const inventoryView = (gear: GearState, ask: GearHere['ask']): HTMLElement[] => {
-    const inventory = inventoryOf(gear);
-    const vestige = (shown: (typeof inventory.vestiges)[number]) => {
-      const row = make('div', '', 'gear-row');
-      const label = make('span', shown.label);
-      label.style.color = shown.colour;
-      row.append(label, presses(shown.presses, ask));
-      return row;
-    };
-    const vault = inventory.social
-      ? [
-          heading(`The vault (${inventory.vaulted.length} items)`),
-          ...inventory.vaulted.map((tile) => tileNode(tile, 'In the vault', () => (item = tile.id))),
-          ...inventory.vaultedVestiges.map(vestige),
-        ]
-      : [make('p', 'Vestiges open, and the vault is kept, in a social space.', 'gear-hint')];
-    const lying = inventory.lying > 0 ? ` · ${inventory.lying} lying for you` : '';
-    return [
-      heading('Materials'),
-      ...rows(inventory.materials),
-      heading(`Vestiges (${inventory.vestiges.length} of 10${lying})`),
-      ...inventory.vestiges.map(vestige),
-      ...vault,
-    ];
-  };
-
-  const vendorsView = (gear: GearState, ask: GearHere['ask']): HTMLElement[] => {
-    if (!gear.social) return [make('p', 'The vendors keep their stalls in a social space’s arcades.', 'gear-hint')];
-    return vendorsOf(gear).flatMap((vendor) => [
-      heading(vendor.name),
-      ...vendor.wares.map((ware) => {
-        const row = make('div', '', 'gear-row');
-        const tile = tileNode(ware.tile, `${ware.kind} · level ${ware.level}`, () => undefined);
-        const buy = pressOf(ware.press.label, () => ask(ware.press.ask), ware.press.role);
+  const vendorsView = (context: PageContext): HTMLElement[] => {
+    if (!context.gear.social)
+      return [make('p', 'The vendors keep their stalls in a social space’s arcades.', 'gear-hint')];
+    return vendorsOf(context.gear).flatMap((vendor) => [
+      make('div', vendor.name, `gear-heading ${ROLES.rule}`),
+      ...vendor.wares.map((ware, place) => {
+        const row = make('div', '', 'gear-ware');
+        const cell = make('div', '', `gear-cell ${ROLES.tile}`);
+        const item = context.gear.wares[(vendor.name === 'The Armsmith' ? vendor.wares.length : 0) + place];
+        rarityOf(cell, item?.rarity ?? null);
+        cell.append(item ? itemIcon(context.picture(item), ware.tile.name, WARE_PX) : glyphImage('empty'));
+        if (item) tip.over(cell, () => cardNode(cardOf(item), context.picture(item), ''));
+        const words = make('div', '', 'gear-ware-words');
+        const name = make('b', ware.tile.name);
+        name.style.color = ware.tile.colour;
+        words.append(name, make('span', `${ware.kind} · level ${ware.level} · ${ware.tile.power}`, 'gear-hint'));
+        const buy = pressOf(ware.press.label, () => context.ask(ware.press.ask), ware.press.role);
         buy.disabled = !ware.affordable;
-        row.append(tile, buy);
+        row.append(cell, words, buy);
         return row;
       }),
     ]);
@@ -247,7 +118,7 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
 
   function render(): void {
     if (tab === null) return;
-    for (const node of tabs) node.classList.toggle(ROLES.primary, node.dataset['tab'] === tab);
+    for (const node of tabs) node.classList.toggle('gear-chosen', node.dataset['tab'] === tab);
     if (tab === 'account') {
       if (!account) {
         account = link ? accountPanel(link) : make('p', 'This page keeps no account: it plays alone.', 'gear-hint');
@@ -259,38 +130,71 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
     account = null;
     const now = here();
     const gear = now?.gear ?? null;
-    const ui = JSON.stringify([tab, slot, item]);
-    if (pressing || (gear === shownGear && ui === shownUi)) return;
-    [shownGear, shownUi] = [gear, ui];
+    if (now?.forge && !pictures) pictures = new ItemPictures(now.forge);
+    const dress = now?.dress ?? null;
+    const figureKey = dress ? JSON.stringify(dress) : '';
+    if (now?.forge && dress && figureKey !== figure.key) {
+      figure = { key: figureKey, picture: null };
+      void now.forge.picture(dress, 'idle', 0).then((picture) => {
+        if (figure.key === figureKey) figure.picture = picture;
+        redraw();
+      });
+    }
+    const key = JSON.stringify([tab, slot, shelf, inspecting, drawn, gear?.answered, gear?.items.length, gear?.aurem]);
+    if (pressing || (key === shown && gear)) return;
+    shown = key;
     if (!now || !gear) {
       answer.textContent = '';
       const why = now ? 'Waiting for the room…' : 'Gear is kept by the rooms: it shows on foot in a room.';
       body.replaceChildren(make('p', why, 'gear-hint'));
       return;
     }
+    who.replaceChildren(
+      make('strong', `Level ${characterOf(gear).level}`),
+      make('span', `Prestige ${gear.prestige} · Defense ${gear.defense}`, 'gear-hint'),
+    );
+    purse.replaceChildren(glyphImage('aurem'), make('b', gear.aurem.toLocaleString()));
     const opened = gear.items.find((each) => each.id === gear.identified);
     answer.textContent = opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
     answer.style.color = opened ? (RARITIES[opened.rarity]?.colour ?? '') : '';
-    const ask = (asked: Parameters<GearHere['ask']>[0]) => now.ask(asked);
-    const itemNodes = item === null ? [] : itemView(gear, ask);
-    const tabNodes = () =>
-      tab === 'character' ? characterView(gear) : tab === 'vendors' ? vendorsView(gear, ask) : inventoryView(gear, ask);
-    body.replaceChildren(...(itemNodes.length > 0 ? itemNodes : tabNodes()));
+    const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
+    const context: PageContext = {
+      gear,
+      ask: (asked) => now.ask(asked),
+      tip,
+      picture,
+      figure: figure.picture,
+      inspect: (item) => {
+        inspecting = item.id;
+        render();
+      },
+    };
+    const page =
+      tab === 'character'
+        ? [characterPage(context, slot, (chosen) => ((slot = chosen), render()))]
+        : tab === 'inventory'
+          ? [inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))]
+          : vendorsView(context);
+    const inspected = gear.items.find((each) => each.id === inspecting);
+    if (!inspected) inspecting = null;
+    body.replaceChildren(
+      ...page,
+      ...(inspected ? [itemPage(context, inspected, () => ((inspecting = null), render()))] : []),
+    );
   }
 
   // A press is never lost to a new build under it: none is made while one is held down.
-  box.addEventListener('pointerdown', () => (pressing = true));
+  screen.addEventListener('pointerdown', () => (pressing = true));
   addEventListener('pointerup', () => {
     pressing = false;
-    // A press that chose a slot or an item, or went back, builds the window at once.
     window.setTimeout(render, 0);
   });
   addEventListener(OPEN_AT, (event) => {
     const wanted = (event as CustomEvent<Tab>).detail;
     if (tab !== wanted) open(wanted);
   });
-  // Typing in the window's fields reaches no game key.
-  box.addEventListener('keydown', (event) => event.stopPropagation());
+  // Typing in the screen's fields reaches no game key.
+  screen.addEventListener('keydown', (event) => event.stopPropagation());
   addEventListener(
     'keydown',
     (event) => {
@@ -298,12 +202,14 @@ export function startGearWindow(root: HTMLElement, link: AccountLink | null, her
       const key = event.key.toLowerCase();
       const opens = key === 'i' || key === 'o';
       if (!opens && tab === null) return;
-      // While the window is open, the game's own keys rest.
+      // While the screen is open, the game's own keys rest.
       event.stopPropagation();
       if (!opens && key !== 'escape') return;
       event.preventDefault();
-      if (key === 'escape') close();
-      else if (!event.repeat) open(key === 'i' ? 'character' : 'inventory');
+      if (key === 'escape') {
+        close();
+        render();
+      } else if (!event.repeat) open(key === 'i' ? 'character' : 'inventory');
     },
     { capture: true },
   );

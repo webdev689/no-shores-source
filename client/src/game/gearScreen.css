@@ -1,0 +1,537 @@
+/* The gear screen (client/src/game/gearWindow.ts and its pages): the kit (client/src/plus/) paints each surface by
+   its role; this sheet gives each its room, and the rest Enhanced Plus draws: a rarity's bevel and glow on a frame,
+   its colour along a card's top, the cell's count and pips, the chosen tab, the meters. */
+
+.gear-screen {
+  --word: #efe8d6;
+  --faint: #a89f88;
+  --brass: #c08a3e;
+  --brass-lit: #f3cf86;
+  position: absolute;
+  inset: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+  color: var(--word);
+  text-shadow: 1px 1px 0 #000;
+  pointer-events: auto;
+  z-index: 20;
+}
+.gear-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  border-bottom: 1px solid transparent;
+}
+.gear-who {
+  display: flex;
+  flex-direction: column;
+}
+.gear-who strong {
+  font-size: 18px;
+  letter-spacing: 0.06em;
+}
+.gear-tabs-top,
+.gear-tabs {
+  display: flex;
+  gap: 6px;
+}
+#hud .gear-tab {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+#hud .gear-tab.gear-chosen {
+  color: rgb(243, 239, 44);
+  box-shadow: inset 0 -2px 0 var(--brass);
+}
+.gear-tab.gear-chosen::after {
+  content: ' ◆';
+  font-size: 10px;
+}
+.gear-tab-count {
+  margin-left: 8px;
+  color: var(--faint);
+  font-size: 11px;
+}
+.gear-purse {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gear-answer {
+  min-height: 18px;
+  padding: 6px 20px 0;
+  color: #f0b545;
+}
+.gear-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 20px 14px;
+}
+.gear-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-top: 1px solid transparent;
+}
+.gear-hint,
+.gear-card-meta {
+  color: var(--faint);
+  font-size: 12px;
+}
+.gear-heading {
+  margin: 4px 0 8px;
+  padding-bottom: 4px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  border-bottom: 1px solid transparent;
+}
+canvas.gear-picture,
+img.gear-glyph {
+  image-rendering: pixelated;
+}
+img.gear-glyph {
+  width: 36px;
+  height: 36px;
+}
+
+/* A frame in a rarity: Enhanced Plus's bevel in its lit and shaded tones, and its glow behind. */
+[data-rarity] {
+  border-color: var(--rar-hi) var(--rar-lo) var(--rar-lo) var(--rar-hi) !important;
+}
+.gear-slot[data-rarity],
+.gear-cell[data-rarity] {
+  background-image: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in srgb, var(--rar) 30%, transparent),
+    transparent 72%
+  );
+}
+
+/* The character page: weapons, the figure, armour. */
+.gear-character {
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 1.3fr) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.gear-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gear-character > .gear-side:first-child {
+  align-items: flex-end;
+}
+.gear-slot-holder {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gear-character > .gear-side:first-child .gear-slot-holder {
+  flex-direction: row-reverse;
+}
+#hud .gear-slot {
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+#hud .gear-slot.gear-open {
+  outline: 2px solid var(--brass-lit);
+}
+.gear-slot-name {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-flyout {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 8px);
+  z-index: 3;
+  padding: 8px;
+  border: 2px solid transparent;
+}
+.gear-character > .gear-side:first-child .gear-flyout {
+  left: auto;
+  right: calc(100% + 8px);
+}
+.gear-flyout-head {
+  margin-bottom: 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-flyout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  gap: 6px;
+}
+.gear-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.gear-power {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.gear-power-label {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-power-level {
+  font-size: 56px;
+  line-height: 1;
+  color: #f3cf6a;
+}
+.gear-figure-stand {
+  display: grid;
+  place-items: end center;
+  min-height: 360px;
+  width: 100%;
+  background: radial-gradient(ellipse at 50% 85%, rgba(192, 138, 62, 0.18), transparent 60%);
+}
+.gear-meter {
+  width: 100%;
+  height: 10px;
+  border: 2px solid transparent;
+}
+.gear-meter-fill {
+  height: 100%;
+  background: #d8cfae;
+}
+
+/* A cell of a grid: its picture, its count at its foot and its pips beside it. */
+#hud .gear-cell {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.gear-cell.gear-none {
+  opacity: 0.45;
+}
+.gear-count {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 11px;
+  color: var(--word);
+}
+.gear-pips {
+  position: absolute;
+  left: 4px;
+  bottom: 2px;
+  font-size: 9px;
+  color: var(--rar);
+}
+
+/* The hover card. */
+.gear-tip {
+  position: fixed;
+  z-index: 40;
+  width: min(300px, 80vw);
+  pointer-events: none;
+}
+.gear-card {
+  background: #0e1013;
+  border: 2px solid transparent;
+  border-top: 3px solid var(--rar, #9a9079);
+  color: var(--word);
+  text-shadow: 1px 1px 0 #000;
+}
+.gear-card-head {
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--rar, #9a9079) 55%, #0e1013);
+}
+.gear-card-head h3 {
+  margin: 0;
+  font-size: 17px;
+  color: #fff;
+}
+.gear-card-head .gear-card-meta {
+  margin: 2px 0 0;
+  color: rgba(255, 255, 255, 0.78);
+}
+.gear-card-body {
+  padding: 10px 12px;
+}
+.gear-card-icon {
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+}
+.gear-card-icon canvas {
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--rar) 55%, transparent));
+}
+.gear-card-big strong,
+.gear-item-big strong {
+  font-size: 32px;
+  margin-right: 8px;
+}
+.gear-card-big span,
+.gear-item-big span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-card-stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 8px 0;
+}
+.gear-card-stats dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.gear-card-stats dd {
+  margin: 0;
+  text-align: right;
+}
+.gear-card-trait {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+.gear-card-trait b {
+  color: var(--brass-lit);
+}
+.gear-card-trait span,
+.gear-card-words {
+  font-size: 12px;
+  color: var(--faint);
+}
+.gear-card-words {
+  font-style: italic;
+}
+.gear-card-compare {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.gear-card-change {
+  display: flex;
+  justify-content: space-between;
+}
+.gear-card-change.up {
+  color: #74d9a0;
+}
+.gear-card-change.down {
+  color: #d98074;
+}
+.gear-card-change.same {
+  color: var(--faint);
+}
+.gear-card-hint {
+  margin: 0;
+  padding: 6px 12px 8px;
+  font-size: 11px;
+  color: var(--faint);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* An item's page, laid over the screen, hiding it. */
+.gear-screen .gear-item-page {
+  background: #0e1013;
+}
+.gear-item-page {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+}
+.gear-item-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(320px, 1.1fr) 1fr;
+  gap: 20px;
+  padding: 18px 22px;
+  overflow: auto;
+}
+.gear-item-name {
+  margin: 0;
+  font-size: 30px;
+  color: var(--rar);
+}
+.gear-item-big {
+  margin: 10px 0;
+}
+.gear-item-big strong {
+  font-size: 48px;
+}
+.gear-bar {
+  display: grid;
+  grid-template-columns: 70px 1fr 120px;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+.gear-bar-label {
+  font-size: 12px;
+  color: var(--faint);
+}
+.gear-bar-value {
+  font-size: 12px;
+  text-align: right;
+}
+.gear-nodes {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.gear-node-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.gear-node-xp {
+  font-size: 10px;
+  color: var(--faint);
+}
+#hud .gear-node {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #9a9079;
+  background: #1c1f26;
+  color: #d8cfae;
+  font-size: 16px;
+}
+#hud .gear-node-bought {
+  border-color: var(--brass-lit);
+  color: var(--brass-lit);
+}
+#hud .gear-node-chosen {
+  border-color: var(--brass-lit);
+  background: var(--brass);
+  color: #120e0a;
+  box-shadow: 0 0 10px var(--brass-lit);
+}
+#hud .gear-node-locked {
+  opacity: 0.35;
+}
+.gear-item-art {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rar) 22%, transparent), transparent 65%);
+}
+.gear-item-art canvas {
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--rar) 55%, transparent));
+}
+.gear-item-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 10px 16px;
+  border-top: 1px solid transparent;
+}
+
+/* The inventory: currencies along its head, its tabs, its grid. */
+.gear-inventory {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gear-currencies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gear-currency {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 2px solid transparent;
+}
+.gear-currency img.gear-glyph,
+.gear-purse img.gear-glyph {
+  width: 22px;
+  height: 22px;
+}
+.gear-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* The vendors' wares. */
+.gear-ware {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.gear-ware-words {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The account. */
+.gear-account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 520px;
+}
+.gear-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gear-field input {
+  pointer-events: auto;
+  flex: 1;
+  max-width: 280px;
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--word);
+  border: 2px solid transparent;
+}
+.gear-presses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.gear-label {
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.gear-initials {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--rar, var(--word));
+}

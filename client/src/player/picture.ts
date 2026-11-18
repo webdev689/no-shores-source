@@ -7,23 +7,29 @@ export interface Picture {
   readonly width: number;
   readonly height: number;
   readonly pixels: Uint8ClampedArray;
+  /** Where the figure's feet stand on it, so two frames of one figure line up; its top left when it has none. */
+  readonly root?: readonly [number, number];
 }
 
-/** The pixels `worn` shows that `bare` does not, on a clear ground and cropped round them; null if none differ or
- *  the two are not the same size. */
+/** The pixels `worn` shows that `bare` does not, the two lined up by their feet, on a clear ground and cropped round
+ *  them; null if none differ. A worn piece can widen a frame, so the two need not be the same size. */
 export function addedBy(worn: Picture, bare: Picture): Picture | null {
-  if (worn.width !== bare.width || worn.height !== bare.height) return null;
   const { width, height } = worn;
+  const [wornX, wornY] = worn.root ?? [0, 0];
+  const [bareX, bareY] = bare.root ?? [0, 0];
   let [west, north, east, south] = [width, height, -1, -1];
-  const differs = (spot: number) =>
-    worn.pixels[spot + 3] !== 0 &&
-    (worn.pixels[spot] !== bare.pixels[spot] ||
-      worn.pixels[spot + 1] !== bare.pixels[spot + 1] ||
-      worn.pixels[spot + 2] !== bare.pixels[spot + 2] ||
-      worn.pixels[spot + 3] !== bare.pixels[spot + 3]);
+  const differs = (column: number, row: number) => {
+    const spot = (row * width + column) * 4;
+    if (worn.pixels[spot + 3] === 0) return false;
+    const [across, down] = [column - wornX + bareX, row - wornY + bareY];
+    const outside = across < 0 || down < 0 || across >= bare.width || down >= bare.height;
+    if (outside) return true;
+    const under = (down * bare.width + across) * 4;
+    return [0, 1, 2, 3].some((channel) => worn.pixels[spot + channel] !== bare.pixels[under + channel]);
+  };
   for (let row = 0; row < height; row++)
     for (let column = 0; column < width; column++)
-      if (differs((row * width + column) * 4)) {
+      if (differs(column, row)) {
         west = Math.min(west, column);
         east = Math.max(east, column);
         north = Math.min(north, row);
@@ -34,8 +40,8 @@ export function addedBy(worn: Picture, bare: Picture): Picture | null {
   const pixels = new Uint8ClampedArray(cropWidth * cropHeight * 4);
   for (let row = 0; row < cropHeight; row++)
     for (let column = 0; column < cropWidth; column++) {
+      if (!differs(west + column, north + row)) continue;
       const from = ((north + row) * width + west + column) * 4;
-      if (!differs(from)) continue;
       pixels.set(worn.pixels.subarray(from, from + 4), (row * cropWidth + column) * 4);
     }
   return { width: cropWidth, height: cropHeight, pixels };

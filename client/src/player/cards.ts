@@ -75,7 +75,12 @@ export class Cards {
     const strip = (path: string) => this.store.strip(path);
     const composed = await composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, strip);
     return (
-      composed && { width: composed.width, height: composed.height, pixels: new Uint8ClampedArray(composed.pixels) }
+      composed && {
+        width: composed.width,
+        height: composed.height,
+        pixels: new Uint8ClampedArray(composed.pixels),
+        root: composed.root,
+      }
     );
   }
 
