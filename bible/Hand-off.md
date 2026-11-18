@@ -122,12 +122,12 @@ Where the work stands now, for the next session. Each session rewrites this note
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
     twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
+- First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
+  ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
+  the page and the rooms; tested offline, with a test and a headless Test Ground run.
 
 ## Waiting on the owner
 
-- A pull request for [[First-Person Aiming Zooms the Weapon With the View]]: aiming in first person zooms the hands
-  with the view, and the muzzle with them, as the owner chose from pictures. Tested offline, with a test and a
-  headless Test Ground run; it waits for the owner's yes to merge.
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
