@@ -270,6 +270,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const free = (flow.mode === 'foot' || flow.mode === 'sea') && !flow.menu;
     if (!free || heldMap?.shown || mapWanted || sea?.aboard.active || charting)
       return 'You are in their company. Choose Go to them once nothing else is under way.';
+    // As other games keep travel out of a fight, and the fallen respawn before they go anywhere.
+    if (flow.mode === 'sea' && sea?.fight) return 'You are in their company. Go to them once the fight is over.';
+    if (flow.mode === 'foot' && foot?.fallen) return 'You are in their company. Go to them once you respawn.';
     const where = nodeOfRoom(place);
     const node = where && landmass.nodes.find((each) => each.id === where.id);
     if (!where || !node)

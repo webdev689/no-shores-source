@@ -63,7 +63,7 @@
   outline-offset: 2px;
 }
 /* Where the menu is wide, names and values stand at the names' size, labels staying at the words'. */
-@media (min-width: 1500px) {
+@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
   .gear-screen,
   .gear-tip {
     --type-m: 22px;
@@ -102,16 +102,98 @@
 }
 .gear-who strong {
   font-size: var(--type-l);
-  letter-spacing: calc(1em / 22);
+  letter-spacing: round(up, calc(1em / 22), 1px);
 }
 .gear-who-power {
   color: rgba(242, 239, 230, 0.8);
 }
 /* The tabs fill the top, each a whole number of pixels wide so the kit's bevels stay sharp. */
+/* The top line: the tabs filling it, or a station's name, and the account's mark at its right. */
+.gear-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+}
 .gear-tabs-top {
+  flex: 1;
+  min-width: 0;
   display: flex;
   justify-content: space-between;
-  padding: 0 18px;
+}
+.gear-top .gear-station-name {
+  flex: 1;
+}
+/* The account's mark, after DFO's profile mark: a round well rimmed in brass over an iron ring, the face inside at its
+   own pixels, a hooded head and shoulders until it is drawn, and a gem on the rim, filled for an account kept
+   anywhere. */
+#hud .gear-profile {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.gear-portrait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--brass);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #1b2029 0%, #0a0c11 72%);
+  box-shadow:
+    0 0 0 2px #3a3f47,
+    0 3px 10px rgba(0, 0, 0, 0.65);
+}
+.gear-silhouette {
+  position: absolute;
+  inset: 0;
+}
+.gear-silhouette::before {
+  content: '';
+  position: absolute;
+  left: 31%;
+  top: 16%;
+  width: 38%;
+  height: 40%;
+  border-radius: 48% 48% 44% 44%;
+  background: #3a424d;
+}
+.gear-silhouette::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  top: 58%;
+  width: 76%;
+  height: 60%;
+  border-radius: 50% 50% 0 0;
+  background: #3a424d;
+}
+.gear-profile-gem {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  font-size: var(--type-xs);
+  line-height: 1;
+  color: #3a3f47;
+  text-shadow:
+    0 0 2px #000,
+    1px 1px 0 #000;
+}
+.gear-profile-gem.gear-on {
+  color: var(--brass-lit);
+}
+#hud .gear-profile:hover .gear-portrait,
+#hud .gear-profile:focus-visible .gear-portrait {
+  border-color: var(--brass-lit);
+  box-shadow:
+    0 0 0 2px #3a3f47,
+    0 0 14px rgba(243, 207, 134, 0.35);
 }
 #hud .gear-tab {
   flex: 0 0 round(down, calc((100% - 36px) / 7), 1px);
@@ -121,12 +203,12 @@
   padding: 0 8px;
   display: inline-flex;
   align-items: center;
-  letter-spacing: calc(1em / 22);
+  letter-spacing: round(up, calc(1em / 22), 1px);
   text-transform: uppercase;
   font-size: var(--type-l);
 }
 /* On a narrower menu the words keep their size: the keycaps step aside and a tab to come says so under its name. */
-@media (max-width: 1499px) {
+@media (max-width: 1499px), (min-width: 2400px) and (min-height: 1300px) {
   #hud .gear-tab kbd.gear-key {
     display: none;
   }
@@ -249,7 +331,7 @@ kbd.gear-key {
   padding-bottom: 4px;
   font-size: var(--type-xs);
   font-weight: 500;
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
   border-bottom: 1px solid transparent;
@@ -319,7 +401,7 @@ img.gear-glyph {
   width: 88px;
   height: 88px;
 }
-@media (max-height: 800px) {
+@media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
   #hud .gear-slot {
     width: 77px;
     height: 77px;
@@ -433,7 +515,7 @@ img.gear-glyph {
 }
 .gear-initials {
   font-size: var(--type-l);
-  letter-spacing: calc(1em / 22);
+  letter-spacing: round(up, calc(1em / 22), 1px);
   color: var(--rar-hi, var(--word));
 }
 
@@ -481,7 +563,7 @@ img.gear-glyph {
 }
 .gear-slot-name {
   font-size: var(--type-xs);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -493,7 +575,7 @@ img.gear-glyph {
   max-width: 180px;
 }
 /* At the names' size a name needs the room of two words more. */
-@media (min-width: 1500px) {
+@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
   .gear-slot-item,
   .gear-slot-words {
     max-width: 280px;
@@ -521,7 +603,7 @@ img.gear-glyph {
 .gear-flyout-head {
   margin-bottom: 8px;
   font-size: var(--type-xs);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
   white-space: nowrap;
@@ -549,7 +631,7 @@ img.gear-glyph {
 }
 .gear-power-label {
   font-size: var(--type-xs);
-  letter-spacing: calc(5em / 22);
+  letter-spacing: round(up, calc(5em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -588,7 +670,7 @@ img.gear-glyph {
 }
 .gear-stat-label {
   font-size: var(--type-xs);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -669,7 +751,7 @@ img.gear-glyph {
 .gear-card-big span,
 .gear-item-big span {
   font-size: var(--type-xs);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -681,7 +763,7 @@ img.gear-glyph {
 }
 .gear-card-stats dt {
   font-size: var(--type-xs);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -734,7 +816,7 @@ img.gear-glyph {
 }
 .gear-compare-label {
   font-size: var(--type-xs);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -1013,7 +1095,7 @@ img.gear-glyph {
   color: var(--word);
   font: inherit;
   font-size: var(--type-s);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   cursor: pointer;
   pointer-events: auto;
@@ -1065,10 +1147,17 @@ img.gear-glyph {
   font-weight: 500;
 }
 /* The gear shelf: each slot's row, its name and worn piece, then the nine it carries. */
+/* The gear shelf: weapons and cloak on the left, armour on the right, as Destiny 1's inventory stands. */
 .gear-gear {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  gap: 12px 40px;
+  align-items: start;
+}
+.gear-gear-side {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .gear-gear-row {
   display: grid;
@@ -1086,10 +1175,19 @@ img.gear-glyph {
 .gear-gear-label .gear-slot-item {
   max-width: 150px;
 }
+/* The nine carried, three by three, each smaller than the worn piece beside them. */
 .gear-gear-carried {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  gap: 4px;
+}
+#hud .gear-cell.gear-small {
+  width: 44px;
+  height: 44px;
+}
+#hud .gear-cell.gear-small img.gear-glyph {
+  width: 22px;
+  height: 22px;
 }
 
 /* A vendor's wares: each ware a press held to buy it, its tile, name, kind and price. */
@@ -1214,15 +1312,15 @@ img.gear-glyph {
 }
 
 /* Where the menu is wide, the shelves' tabs are pressed at the names' size. */
-@media (min-width: 1500px) {
+@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
   #hud .gear-shelf {
     padding: 11px 22px;
     font-size: var(--type-l);
-    letter-spacing: calc(1em / 22);
+    letter-spacing: round(up, calc(1em / 22), 1px);
   }
 }
 /* On a short screen an item's page takes the banner's height back for its nodes. */
-@media (max-height: 800px) {
+@media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
   .gear-screen:has(.gear-item-page) .gear-banner {
     display: none;
   }
@@ -1250,11 +1348,39 @@ img.gear-glyph {
   border-style: solid;
 }
 /* Where the menu is wide, the gear shelf's names have the room of their size. */
-@media (min-width: 1500px) {
+@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
   .gear-gear-row {
     grid-template-columns: 220px 84px 1fr;
   }
   .gear-gear-label .gear-slot-item {
     max-width: 220px;
+  }
+}
+/* Where the menu is wide, the Character page's labels, the banner's numbers and the footer's keys stand at the
+   names' size, the face's next sharp step, so none of it is read at the smallest. */
+@media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+  (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+  .gear-character .gear-slot-name,
+  .gear-character .gear-power-label,
+  .gear-character .gear-power-next,
+  .gear-character .gear-stat-label,
+  .gear-character .gear-heading,
+  .gear-flyout-head,
+  .gear-who-power,
+  .gear-hint-pair {
+    font-size: var(--type-l);
+  }
+  .gear-hint-pair kbd.gear-key,
+  .gear-actions kbd.gear-key {
+    font-size: var(--type-l);
+    line-height: 28px;
+  }
+}
+/* On a screen past 1440p the menu and its cards stand at twice their size: its layout is 1280x720's, doubled, so every
+   size stays a whole multiple of the face's grid. The rules above read such a screen as a short, narrow one. */
+@media (min-width: 2400px) and (min-height: 1300px) {
+  .gear-screen,
+  .gear-tip {
+    zoom: 2;
   }
 }

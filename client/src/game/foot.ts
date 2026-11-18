@@ -271,10 +271,14 @@ export class Foot {
       : null;
   }
 
-  /** A line on the room the player plays in: their number in it, word that it was lost, or nothing offline. */
+  /** Whether the player has fallen and waits to respawn. */
+  get fallen(): boolean {
+    return this.reach.kind === 'dead';
+  }
+
+  /** A line on the room the player plays in: word that it was lost, else nothing; who is in it shows on the Roster. */
   get roomNote(): string {
-    if (!this.room) return '';
-    return this.room.connected ? `In the room as player ${this.room.player}` : 'The room was lost: playing on alone';
+    return this.room && !this.room.connected ? 'The room was lost: playing on alone' : '';
   }
 
   /** One frame on foot: the player plays (with nothing pressed while `paused`), the camera follows, and every figure

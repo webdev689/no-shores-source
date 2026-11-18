@@ -195,7 +195,7 @@ async function start(): Promise<void> {
   if (!roomUrl) link.pump(movement.tickSeconds);
   otherPlayers.takeDresses(link.dressed);
   const steps = fight.steps(movement);
-  if (roomUrl) status = `Click the view to play. In the room as player ${link.player}.`;
+  if (roomUrl) status = 'Click the view to play.';
   const hud = new Hud(element<HTMLElement>('#hud'));
   const flashes = new Flashes();
   const sparks = new Sparks();

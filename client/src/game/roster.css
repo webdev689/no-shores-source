@@ -36,7 +36,7 @@
   margin: 0;
   font-size: var(--type-l);
   font-weight: 500;
-  letter-spacing: calc(5em / 22);
+  letter-spacing: round(up, calc(5em / 22), 1px);
   text-transform: uppercase;
 }
 .roster-page {
@@ -269,7 +269,7 @@
 }
 .roster-facts dt {
   color: var(--faint);
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
 }
 .roster-facts dd {
@@ -354,4 +354,10 @@
 }
 .gear-tailor .gear-ware-words b {
   white-space: normal;
+}
+/* On a screen past 1440p the company on the HUD stands at twice its size, as the menu does. */
+@media (min-width: 2400px) and (min-height: 1300px) {
+  #hud .company-hud {
+    zoom: 2;
+  }
 }

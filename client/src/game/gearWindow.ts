@@ -2,7 +2,7 @@ import './gearScreen.css';
 import './menu.css';
 import './roster.css';
 import { make } from '../editor/dom.ts';
-import type { AccountLink } from '../network/accounts.ts';
+import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, answerText, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
@@ -33,6 +33,7 @@ import { rosterPage } from './rosterTab.ts';
 import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
+import { accountMark } from './accountMark.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -137,7 +138,11 @@ export function startGearWindow(
   const who = make('div', '', 'gear-who');
   const purse = make('div', '', 'gear-purse');
   banner.append(who, purse);
-  header.append(tabRow, title, banner);
+  // The top line: the tabs, or a station's name, and the account's mark at its right, as DFO's stands in its corner.
+  const mark = accountMark(() => open('settings'));
+  const top = make('div', '', 'gear-top');
+  top.append(tabRow, title, mark.node);
+  header.append(top, banner);
   // The room's answer to the last press, in the footer beside what the presses do.
   const answer = make('div', '', 'gear-answer');
   answer.setAttribute('role', 'status');
@@ -252,9 +257,13 @@ export function startGearWindow(
   const close = pressOf('Close', shut, 'button', 'Esc');
   /** The player's name, for their nameplate, once the accounts give it. */
   let named: string | null = null;
+  /** The account last heard of, for the mark. */
+  let account: Account | null = null;
   const nameAgain = () =>
-    void link?.session().then((account) => {
-      named = account?.username ?? null;
+    void link?.session().then((found) => {
+      account = found;
+      named = found?.username ?? null;
+      mark.show(account, figure.picture);
       if (view !== null) ends(here()?.gear ?? null);
     });
   nameAgain();
@@ -363,6 +372,7 @@ export function startGearWindow(
         .catch(() => null)
         .then((picture) => {
           if (figure.key === figureKey) figure.picture = picture;
+          mark.show(account, figure.picture);
           redraw();
         });
     }

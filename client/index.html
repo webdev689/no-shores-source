@@ -67,7 +67,7 @@
       }
       .place .title {
         font-size: 22px;
-        letter-spacing: calc(1em / 22);
+        letter-spacing: round(up, calc(1em / 22), 1px);
         font-weight: 500;
       }
       /* Small words over the sky and the ground are outlined in black, so they read on either. */
@@ -82,7 +82,7 @@
       .place .kind {
         margin-top: 2px;
         font-size: 11px;
-        letter-spacing: calc(3em / 22);
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
         color: var(--ink);
       }
@@ -102,7 +102,7 @@
       }
       .warning-words {
         font-size: 22px;
-        letter-spacing: calc(5em / 22);
+        letter-spacing: round(up, calc(5em / 22), 1px);
         text-transform: uppercase;
       }
       .warning .count {
@@ -121,7 +121,7 @@
       }
       .death-words {
         font-size: 44px;
-        letter-spacing: calc(5em / 22);
+        letter-spacing: round(up, calc(5em / 22), 1px);
         text-transform: uppercase;
         color: var(--dead);
       }
@@ -136,6 +136,13 @@
         font-size: 11px;
         line-height: 19px;
         color: var(--ink);
+      }
+      /* On a screen past 1440p the HUD's words stand at twice their size, as the menu does. */
+      @media (min-width: 2400px) and (min-height: 1300px) {
+        .place,
+        .hints {
+          zoom: 2;
+        }
       }
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
@@ -185,7 +192,7 @@
       }
       .sea-bar .pace-label {
         font-size: 11px;
-        letter-spacing: calc(3em / 22);
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
       }
@@ -218,7 +225,7 @@
       }
       .menu-title {
         font-size: 11px;
-        letter-spacing: calc(3em / 22);
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
         margin: -20px -22px 6px;
@@ -239,7 +246,7 @@
         margin: 0 -18px 4px;
         padding: 12px 18px 10px;
         font-size: 22px;
-        letter-spacing: calc(1em / 22);
+        letter-spacing: round(up, calc(1em / 22), 1px);
         font-weight: 500;
         border-bottom: 1px solid transparent;
       }
@@ -250,7 +257,7 @@
         margin-bottom: 6px;
         padding-bottom: 4px;
         font-size: 11px;
-        letter-spacing: calc(3em / 22);
+        letter-spacing: round(up, calc(3em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
         border-bottom: 1px solid transparent;
@@ -271,7 +278,7 @@
         display: inline-block;
         padding: 2px 10px;
         font-size: 11px;
-        letter-spacing: calc(3em / 22);
+        letter-spacing: round(up, calc(3em / 22), 1px);
         border: 2px solid transparent;
         color: var(--dim);
       }
@@ -329,7 +336,7 @@
       .held-mark.port {
         font-style: normal;
         font-weight: 500;
-        letter-spacing: calc(1em / 22);
+        letter-spacing: round(up, calc(1em / 22), 1px);
       }
       .held-mark.port::before {
         background: var(--map-ink);
@@ -465,7 +472,7 @@
       }
       .veil-text {
         font-size: 22px;
-        letter-spacing: calc(5em / 22);
+        letter-spacing: round(up, calc(5em / 22), 1px);
         text-transform: uppercase;
         color: var(--dim);
         animation: breathe 2.4s ease-in-out infinite;

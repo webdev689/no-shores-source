@@ -10,7 +10,7 @@ import { make } from '../editor/dom.ts';
 import type { GearItem } from '../network/gearMessages.ts';
 import { CARRIED, RARITIES, SLOTS, itemName } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
-import { CELL_HINTS, type PageContext } from './characterPage.ts';
+import { ARMOUR, CELL_HINTS, type PageContext, WEAPONS } from './characterPage.ts';
 import { type Cell, cardOf, flyoutOf, inventoryPageOf, wearIn } from './gearCards.ts';
 import { type Hint, cardNode, glyphImage, hintLine, itemIcon, itemMarks, rarityOf, tileLabel } from './gearDom.ts';
 
@@ -18,6 +18,8 @@ import { type Hint, cardNode, glyphImage, hintLine, itemIcon, itemMarks, rarityO
 const CELL_PX = 48;
 const WORN_PX = 64;
 const ROW_PX = 32;
+/** A carried piece's picture in the gear shelf's three by three, smaller, as Destiny 1's are beside the worn one. */
+const SMALL_PX = 34;
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
@@ -109,11 +111,13 @@ function gearTile(
   slot: number,
   worn: GearItem | null,
   isWorn = false,
+  small = false,
 ): HTMLElement {
-  const tile = make(item ? 'button' : 'div', '', `gear-cell ${ROLES.tile}`);
+  const tile = make(item ? 'button' : 'div', '', `gear-cell ${ROLES.tile}${small ? ' gear-small' : ''}`);
   rarityOf(tile, item?.rarity ?? null);
   tile.classList.toggle('gear-worn', isWorn);
-  tile.append(item ? itemIcon(context.picture(item), itemName(item), isWorn ? WORN_PX : CELL_PX) : glyphImage('empty'));
+  const box = isWorn ? WORN_PX : small ? SMALL_PX : CELL_PX;
+  tile.append(item ? itemIcon(context.picture(item), itemName(item), box) : glyphImage('empty'));
   if (!item) {
     tile.classList.add('gear-vacant');
     return tile;
@@ -141,19 +145,25 @@ function gearTile(
 }
 
 /** The gear shelf: a row for each slot, its worn piece and then the nine it carries. */
+/** The gear shelf, after Destiny 1's: the weapons and cloak on the left, the armour on the right, each slot's worn
+ *  piece with its name beside the nine it carries, three by three. */
 function gearShelf(context: PageContext): HTMLElement {
   const shelf = make('div', '', 'gear-gear');
-  SLOTS.forEach((name, slot) => {
-    const { worn, cells } = flyoutOf(context.gear, slot);
-    const row = make('div', '', 'gear-gear-row');
-    const label = make('div', '', 'gear-gear-label');
-    label.append(make('span', capital(name), 'gear-slot-name'));
-    if (worn) label.append(make('span', itemName(worn), 'gear-slot-item'));
-    const carried = make('div', '', 'gear-gear-carried');
-    carried.append(...cells.map((item) => gearTile(context, item, slot, worn)));
-    row.append(label, gearTile(context, worn, slot, worn, true), carried);
-    shelf.append(row);
-  });
+  for (const side of [WEAPONS, ARMOUR]) {
+    const column = make('div', '', 'gear-gear-side');
+    for (const slot of side) {
+      const { worn, cells } = flyoutOf(context.gear, slot);
+      const row = make('div', '', 'gear-gear-row');
+      const label = make('div', '', 'gear-gear-label');
+      label.append(make('span', capital(SLOTS[slot] ?? ''), 'gear-slot-name'));
+      if (worn) label.append(make('span', itemName(worn), 'gear-slot-item'));
+      const carried = make('div', '', 'gear-gear-carried');
+      carried.append(...cells.map((item) => gearTile(context, item, slot, worn, false, true)));
+      row.append(label, gearTile(context, worn, slot, worn, true), carried);
+      column.append(row);
+    }
+    shelf.append(column);
+  }
   return shelf;
 }
 

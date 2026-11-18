@@ -10,7 +10,7 @@
   margin-left: 6px;
   font-size: var(--type-xs);
   color: var(--brass);
-  letter-spacing: calc(1em / 22);
+  letter-spacing: round(up, calc(1em / 22), 1px);
   text-transform: none;
 }
 /* A station's name stands where the tabs do. */
@@ -18,7 +18,7 @@
   margin: 0;
   font-size: var(--type-l);
   font-weight: 500;
-  letter-spacing: calc(3em / 22);
+  letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--brass-lit);
   text-align: center;
@@ -79,7 +79,7 @@
   margin: 0 0 11px;
   font-size: var(--type-l);
   font-weight: 500;
-  letter-spacing: calc(1em / 22);
+  letter-spacing: round(up, calc(1em / 22), 1px);
   text-transform: none;
   color: var(--brass-lit);
 }

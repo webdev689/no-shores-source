@@ -71,8 +71,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 Every word on the game's pages, the Test Ground's and the editor's is set in Pixelify Sans, Enhanced Plus's own face
 ([[Pixelify Sans Is Overlook's Font]]), served with the page. It draws sharpest at whole multiples of its grid, 11 px,
 so every size is one: 11 for words, 22 for names and titles, 33 to 66 for the numbers that lead a page. Letters stand
-1/22 of their size apart (3/22 for labels, 5/22 for titles), each word a little more than the face's own space, with
-no kerning and no ligature. It is set at one weight, 500, so emphasis is in size and colour; it is never slanted, as
+1/22 of their size apart (3/22 for labels, 5/22 for titles), each word a little more than the face's own space, each
+rounded up to a whole pixel, with no kerning and no ligature. Where the menu is wide, the Character page's labels, the
+banner's numbers and the footer's keys stand at 22. It is set at one weight, 500, so emphasis is in size and colour; it is never slanted, as
 it has no italic. Shadows under it are hard, a pixel's step.
 
 Six of its glyphs misread and eleven symbols are missing, so a second face, listed first, stands in for just those
@@ -86,12 +87,17 @@ A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault a
 the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
 whole number of pixels wide, their words at the names' size; keys on keycaps where the menu is wide enough; Journal
 and Guild marked Later, each a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
-between tabs. Under them, the whole width of the menu, stands the player's banner
+between tabs. At the top line's right stands the account's mark, after DFO's
+([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
+face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
+username or Discord and hollow for a guest's; pressed, it opens Settings. Under them, the whole width of the menu,
+stands the player's banner
 ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]): their emblem drawn to the banner's width at three times its
 cells, so it is never cut off, their name, level, Prestige and Defense over it, and their Aurem at its end, left blank
 on the Inventory, which shows it. Once shown it stays, though the room's word goes; only its numbers wait for it. It opens with a short
 stepped rise; the world behind is dimmed, the pointer is free, the game's keys and the HUD under it rest, and the
-focus stays within it, marked in white. Escape steps back: a page's own step first (the Roster's panel, a player's
+focus stays within it, marked in white. On a screen past 1440p the menu, its cards and the HUD's words stand at
+twice their size, the 1280 by 720 layout doubled. Escape steps back: a page's own step first (the Roster's panel, a player's
 details), then an item's page, then a slot's flyout, then the menu. Gear shows as the
 player's room last sent it ([[Gear]]), built again only when that is new or the player moves within the menu, and
 never while a press is held. Each press is an ask the room answers.
@@ -124,8 +130,9 @@ never while a press is held. Each press is an ask the room answers.
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** The currencies along the top; then shelves, each counting what it holds: Gear, each slot's worn
-  piece and the nine it carries, a click wearing one; Consumables; Materials, a list by name and count; and Vestiges,
+- **Inventory.** The currencies along the top; then shelves, each counting what it holds: Gear, after Destiny 1's,
+  the weapons and cloak on the left and the armour on the right, each slot's worn piece beside the nine it carries,
+  three by three, a click wearing one; Consumables; Materials, a list by name and count; and Vestiges,
   ten places, a click opening one in a social space.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
@@ -140,7 +147,8 @@ never while a press is held. Each press is an ask the room answers.
   panel beside it, or over it near the page's foot: who and where, then all that may be done with them, what cannot
   be undone held and saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company
   playing elsewhere can be gone to. Details shows another player's nameplate, guild, power and
-  worn pieces. A join goes to them if they are on foot on this landmass. The Roster is asked for again every 15
+  worn pieces. A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
+  has fallen; then they go to them once it is over. The Roster is asked for again every 15
   seconds while it is seen.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
   and an invite waiting; it stands over the veil, so the company shows while the player travels.

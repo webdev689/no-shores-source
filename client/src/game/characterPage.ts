@@ -43,8 +43,8 @@ export interface PageContext {
 }
 
 /** The slots each side of the figure, by the gear's slot numbers. */
-const WEAPONS = [0, 1, 6];
-const ARMOUR = [2, 3, 4, 5];
+export const WEAPONS = [0, 1, 6];
+export const ARMOUR = [2, 3, 4, 5];
 /** A slot's picture box, and a flyout cell's, in pixels. */
 const SLOT_PX = 72;
 const CELL_PX = 48;

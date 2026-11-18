@@ -20,6 +20,11 @@ const TIP_GAP = 10;
 /** What a press or a key does, as a line of keycaps shows it: the key, then its words. */
 export type Hint = readonly [key: string, words: string];
 
+/** How much CSS zooms an element where it stands: 2 for the menu on a screen past 1440p, else 1. */
+export function cssZoom(node: Element): number {
+  return (node as Element & { readonly currentCSSZoom?: number }).currentCSSZoom ?? 1;
+}
+
 /** A press in its role; with `key`, the key that does it too, on a keycap. */
 export function pressOf(text: string, run: () => void, role: Role = 'button', key = ''): HTMLButtonElement {
   const node = button(text, run);
@@ -335,8 +340,10 @@ export class HoverCard {
     const right = near.right + TIP_GAP;
     const left = right + size.width + TIP_GAP > innerWidth ? near.left - TIP_GAP - size.width : right;
     const top = Math.min(Math.max(TIP_GAP, near.top), innerHeight - size.height - TIP_GAP);
-    this.tip.style.left = `${Math.max(TIP_GAP, left)}px`;
-    this.tip.style.top = `${Math.max(TIP_GAP, top)}px`;
+    // Measured on the screen, placed in the card's own pixels, which a zoomed menu doubles.
+    const zoom = cssZoom(this.tip);
+    this.tip.style.left = `${Math.max(TIP_GAP, left) / zoom}px`;
+    this.tip.style.top = `${Math.max(TIP_GAP, top) / zoom}px`;
   }
 
   hide(): void {

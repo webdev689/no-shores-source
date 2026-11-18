@@ -2,7 +2,7 @@ import { make } from '../editor/dom.ts';
 import type { AccountLink, Person, Roster } from '../network/accounts.ts';
 import { ROLES } from '../plus/kit.ts';
 import { emblemImage, emblemOf, plateEnd } from './emblemArt.ts';
-import { heldPress, pressOf } from './gearDom.ts';
+import { cssZoom, heldPress, pressOf } from './gearDom.ts';
 import { ROSTER_HEARD, STEP_BACK } from './gearScreen.ts';
 import { detailsPage } from './playerDetails.ts';
 import {
@@ -128,13 +128,17 @@ export function rosterPage(link: AccountLink | null, travel: (place: string) => 
     panel.setAttribute('aria-label', heading.replace('\n', ', '));
     panel.hidden = false;
     // Beside the row, inside the page: over it where there is no room under it.
+    // Measured on the screen, placed in the page's own pixels, which a zoomed menu doubles.
+    const zoom = cssZoom(panel);
+    const [wide, tall] = [panel.offsetWidth * zoom, panel.offsetHeight * zoom];
     const [box, holder] = [under.getBoundingClientRect(), page.getBoundingClientRect()];
     const seen = page.parentElement?.getBoundingClientRect() ?? holder;
-    const left = Math.min(box.left - holder.left + box.width * 0.4, holder.width - panel.offsetWidth);
+    const left = Math.min(box.left - holder.left + box.width * 0.4, holder.width - wide);
     const below = box.bottom - holder.top + 2;
-    const fitsBelow = box.bottom + 2 + panel.offsetHeight <= seen.bottom;
-    panel.style.left = `${Math.round(Math.max(0, left))}px`;
-    panel.style.top = `${Math.round(fitsBelow ? below : Math.max(0, box.top - holder.top - panel.offsetHeight - 2))}px`;
+    const fitsBelow = box.bottom + 2 + tall <= seen.bottom;
+    const above = Math.max(0, box.top - holder.top - tall - 2);
+    panel.style.left = `${Math.round(Math.max(0, left) / zoom)}px`;
+    panel.style.top = `${Math.round((fitsBelow ? below : above) / zoom)}px`;
     panel.querySelector<HTMLElement>('button, input')?.focus();
   };
 

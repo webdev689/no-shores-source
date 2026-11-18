@@ -9,7 +9,8 @@ dfo_paths:
   - src/ui/plus/
   - src/ui/touch/
   - src/ui/menu/
-dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit)
+  - src/ui/profileBadge.js
+dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the profile mark read at 1c0fd681 (main)
 ---
 # Pick - Enhanced Plus UI
 
@@ -35,5 +36,7 @@ owner approved it: asked whether to record it as an approved pick, "yes".
 ## Our version
 
 The style kit and its frame are the [[Interface]]'s roles, and the [[Game]]'s heads-up display wears them
-([[The Ship Is Managed and Walked From the Sea's Panel]]). The themes, the pad, the touch layer and the windows have
+([[The Ship Is Managed and Walked From the Sea's Panel]]). The main menu's profile mark (`profileBadge.js` and its
+style in `enhancedStyle.js`) is the menu's account mark, in its top line
+([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]). The themes, the pad, the touch layer and the windows have
 not come over.
