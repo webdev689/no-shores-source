@@ -204,14 +204,30 @@ Where the work stands now, for the next session. Each session rewrites this note
   where a body could not walk them: a stair laid in front of a door, a stairwell a head going up could hit, planks the
   land showed through ([[Layouts]]). Seen in pictures but not fixed, as it is the drawing's: an open building's door
   leaf is still drawn from outside, though bodies pass it.
-- #63: merging deploys the page and the rooms. The `flora` workflow publishes on a push to any branch, as `ships`
-  does; whether it should publish from `main` only is the owner's to say. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
+- #63: merging deploys the page and the rooms. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
   look (textured, not palette-snapped) was Claude's call, as the owner left it.
+- Also on #63: the runs ([[Patrol Zones Stay as Built and Gain Linear Combat Areas]], [[Layouts]], "Runs"), three
+  in each of Saltmere's zones, for the owner to look at before the other 24 zones get theirs; the client audit's
+  fixes (far paths' tint, the ground paint swapped mid-frame, fine detail stepped by single precision, plate tiles);
+  the World Editor drawing the layouts' buildings and runs; the well house's posts. Tested offline, with a body
+  walked through every run, and headless pictures of eight of the nine.
 - Private mission instances with invites ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]):
   an instance's room is still a node's shared room until the server makes rooms per party.
 
 ## Next
 
+- The detail pass's findings on Saltmere's zones, from the pictures and the plans, not yet done:
+  - the mesas and spires read as pointed tents (in every zone): too steep for the land's sampling to hold, so they
+    want broader stepped mesas and rounded tors by climate;
+  - the zones share one grammar of round basins and even canyons: basins and canyons could take their shape from
+    the area's kind (long fields, lobed hamlets) and canyons could narrow and widen;
+  - the Gullwing Vale: a large massif in its middle is never reached but by one dead-end spur, and its river runs
+    outside its section, though the vale is a river's;
+  - a keep run's walls are plain (no battlements or windows), and a mine's cavern roof reads as slabs afloat.
+- The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
+  low enough to climb in places: its runs will need their end arenas cut deeper or walled.
+- The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
+  is the terrain's only), and the land texts and the city's assets fetch the same files twice.
 - The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities
   that will stand on the sites (public events, beacons, resource nodes, foes).
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
