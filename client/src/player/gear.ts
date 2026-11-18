@@ -29,13 +29,14 @@ export const KINDS = [
 /** The slots, by the gear crate's numbers. */
 export const SLOTS = ['main hand', 'off hand', 'head', 'torso', 'arms', 'legs', 'cloak'] as const;
 /** The rarities, by the gear crate's numbers: each one's name, its colour with the lit and shaded edges of a frame in it
- *  (Enhanced Plus's bevel), and the pips that mark it. */
+ *  (Enhanced Plus's bevel), its colour's channels, and the pips that mark it. Magic, Rare and Legendary are Enhanced
+ *  Plus's own (`RARITY_VARS`), Legendary its orange, so it never reads as Rare's gold. */
 export const RARITIES = [
-  { name: 'Normal', colour: '#e9e4d9', lit: '#f6f3ec', shade: '#6b665c', pips: '' },
-  { name: 'Magic', colour: '#6f9ee8', lit: '#b3cdf6', shade: '#34568f', pips: '◆' },
-  { name: 'Rare', colour: '#e4c34f', lit: '#f6e398', shade: '#8f7420', pips: '◆◆' },
-  { name: 'Legendary', colour: '#e0a12e', lit: '#f5cf7e', shade: '#8a5a14', pips: '◆◆◆' },
-  { name: 'Atheric', colour: '#4fd8f0', lit: '#b8f2fb', shade: '#1f7486', pips: '◈' },
+  { name: 'Normal', colour: '#e9e4d9', lit: '#f6f3ec', shade: '#6b665c', rgb: '233,228,217', pips: '' },
+  { name: 'Magic', colour: '#6f9ee8', lit: '#b3cdf6', shade: '#34568f', rgb: '111,158,232', pips: '◆' },
+  { name: 'Rare', colour: '#e4c34f', lit: '#f6e398', shade: '#8f7420', rgb: '228,195,79', pips: '◆◆' },
+  { name: 'Legendary', colour: '#e07a2e', lit: '#f7b684', shade: '#8e4518', rgb: '224,122,46', pips: '◆◆◆' },
+  { name: 'Atheric', colour: '#4fd8f0', lit: '#b8f2fb', shade: '#1f7486', rgb: '79,216,240', pips: '◈' },
 ] as const;
 /** A column's kind of node, by the gear message's numbers. */
 export const COLUMNS = ['Upgrade', 'Handling', 'Finish', 'Perk', 'Its own'] as const;

@@ -45,14 +45,39 @@ export class ItemPictures {
   private readonly forge: Cards;
   private readonly kept = new Map<string, Picture | null>();
   private readonly asked = new Set<string>();
+  /** Each item's dresses and pose, worked out once for the gear message it came in and the body it is worn on. */
+  private readonly looks = new WeakMap<
+    GearItem,
+    { body: Dress; key: string; worn: Dress; bare: Dress; anim: string }
+  >();
 
   constructor(forge: Cards) {
     this.forge = forge;
   }
 
   /** The picture of `item` worn on `body`, or null while it is drawn or where the forge draws nothing of it;
-   *  `ready` is called once it is drawn. */
+   *  `ready` is called once it is drawn. A picture the forge failed to draw is asked again the next time. */
   pictureOf(item: GearItem, body: Dress, ready: () => void): Picture | null {
+    const look = this.lookOf(item, body);
+    if (!look) return null;
+    const { key, worn, bare, anim } = look;
+    if (this.kept.has(key)) return this.kept.get(key) ?? null;
+    if (!this.asked.has(key)) {
+      this.asked.add(key);
+      Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)])
+        .then(([withIt, without]) => {
+          this.kept.set(key, withIt && without ? addedBy(withIt, without) : null);
+          ready();
+        })
+        .catch(() => this.asked.delete(key));
+    }
+    return null;
+  }
+
+  /** The dresses an item's picture is drawn from: the body wearing it alone, and bare; and the pose that holds it. */
+  private lookOf(item: GearItem, body: Dress): { key: string; worn: Dress; bare: Dress; anim: string } | null {
+    const known = this.looks.get(item);
+    if (known && known.body === body) return known;
     const wardrobe = this.forge.wardrobe(body.body);
     if (!wardrobe) return null;
     const slot = item.at >= WORN ? item.at - WORN : item.bucket;
@@ -66,17 +91,8 @@ export class ItemPictures {
     const held = worn.outfit.left ?? worn.outfit.right;
     const wanted = slot <= 1 ? (HELD_IN[kind] ?? 'guard') : 'idle';
     const anim = this.forge.draws(body.body, wanted, held) ? wanted : 'idle';
-    const key = JSON.stringify([worn, bare, anim]);
-    if (this.kept.has(key)) return this.kept.get(key) ?? null;
-    if (!this.asked.has(key)) {
-      this.asked.add(key);
-      Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)])
-        .then(([withIt, without]) => {
-          this.kept.set(key, withIt && without ? addedBy(withIt, without) : null);
-          ready();
-        })
-        .catch(() => this.kept.set(key, null));
-    }
-    return null;
+    const look = { body, key: JSON.stringify([worn, bare, anim]), worn, bare, anim };
+    this.looks.set(item, look);
+    return look;
   }
 }

@@ -101,7 +101,7 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   const carried = itemDetailOf({ ...legendary, at: 0 }, state({ social: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
-    ['Wear', 'Off hand', 'Put in the vault', 'Dismantle'],
+    ['Wear', 'Off hand', 'Put in the vault', 'Hold to dismantle'],
   );
   assert.equal(carried.presses.at(-1)?.role, 'warn');
 });
@@ -123,5 +123,5 @@ test('the Vendors tab shows each vendor’s wares of the day, bought for their p
     ],
   );
   assert.deepEqual(armsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0 });
-  assert.equal(armsmith?.wares[0]?.press.label, 'Buy · 2,000 Aurem');
+  assert.equal(armsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
 });

@@ -24,6 +24,7 @@ import { HINTS } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
+import { UsePrompt } from './usePrompt.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** The rooms on foot: each room's address by its name, and the compiled room module the fight's rules come from. */
@@ -120,6 +121,8 @@ export class Foot {
   /** The gear's rings on the ground, and what E does where the player stands. */
   private readonly ground: FightMarks;
   private using: Use | null = null;
+  /** What E does, shown low in the middle of the view. */
+  private readonly prompt: UsePrompt | null;
   /** The gear and the beat the rings were last laid for. */
   private ringsFor: GearState | null = null;
   private ringBeat = -1;
@@ -145,6 +148,8 @@ export class Foot {
     this.fought = fought;
     this.plaza = plaza;
     this.ground = new FightMarks(context.scene.gpu);
+    const hud = document.querySelector<HTMLElement>('#hud');
+    this.prompt = hud ? new UsePrompt(hud) : null;
     this.rules = room ? room.rules(fought?.fight ?? null) : this.reachRules();
   }
 
@@ -299,7 +304,8 @@ export class Foot {
     }
     figures.push(...foes);
     const standing = this.standing;
-    const keys = this.using ? [this.using.words, ...HINTS.foot] : HINTS.foot;
+    this.prompt?.show(this.using?.words ?? null);
+    const keys = HINTS.foot;
     const drawers = fought ? [this.ground, fought.marks] : [this.ground];
     return { shot, figures, standing, drawers, hints: standing.kind === 'dead' ? HINTS.dead : keys };
   }
@@ -335,6 +341,7 @@ export class Foot {
   leave(): void {
     this.fought?.leave();
     this.plaza?.close();
+    this.prompt?.remove();
     this.ground.release();
     this.room?.close();
     this.context.movement.setSection(null);

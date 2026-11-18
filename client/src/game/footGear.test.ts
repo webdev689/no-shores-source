@@ -15,9 +15,9 @@ const lying = {
 test('E at a counter opens its tab, and near a node asks the room to gather it', () => {
   const asked: GearAsk[] = [];
   const ask = (each: GearAsk) => asked.push(each);
-  assert.match(useAt(0.5, 0.5, [ARMSMITH], lying, ask)?.words ?? '', /^E: The Armsmith/);
+  assert.match(useAt(0.5, 0.5, [ARMSMITH], lying, ask)?.words ?? '', /^The Armsmith/);
   const gather = useAt(10 + NODE_REACH_M - 0.1, 0, [ARMSMITH], lying, ask);
-  assert.match(gather?.words ?? '', /^E: gather /);
+  assert.match(gather?.words ?? '', /^Gather /);
   gather?.run();
   assert.deepEqual(asked, [{ kind: ASKS.gather, node: 3 }]);
   assert.equal(useAt(10 + NODE_REACH_M + 0.1, 0, [ARMSMITH], lying, ask), null, "out of the room's reach");

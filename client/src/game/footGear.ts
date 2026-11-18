@@ -23,7 +23,7 @@ const VESTIGE_BEAM = { height: 8, half: 0.2 } as const;
 /** How much of its opacity a beam keeps at its top. */
 const BEAM_TOP = 0.2;
 
-/** What E does where a player stands: its words in the keys listed, and the doing. */
+/** What E does where a player stands: its deed in words, and the doing. */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
@@ -38,10 +38,10 @@ export function useAt(
   ask: (asked: GearAsk) => void,
 ): Use | null {
   const offer = offerAt(stations, x, y);
-  if (offer) return { words: `E: ${offer.words}`, run: () => openGearWindow(offer.tab) };
+  if (offer) return { words: offer.words, run: () => openGearWindow(offer.tab) };
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node) return null;
-  return { words: `E: gather ${resourceName(node.resource)}`, run: () => ask({ kind: ASKS.gather, node: node.index }) };
+  return { words: `Gather ${resourceName(node.resource)}`, run: () => ask({ kind: ASKS.gather, node: node.index }) };
 }
 
 /** A colour written `#rrggbb` as red, green and blue from 0 to 1. */

@@ -25,6 +25,13 @@ export type Tab = 'character' | 'inventory' | 'vendors' | 'account';
 /** The page event that opens the gear screen at a tab, as a station's counter does. */
 export const OPEN_AT = 'overlook:gear';
 
+/** Whether the gear screen is open: while it is, the game's own keys and pointer rest. */
+let screenOpen = false;
+export const gearScreenOpen = (): boolean => screenOpen;
+export function setGearScreenOpen(open: boolean): void {
+  screenOpen = open;
+}
+
 /** Opens the gear screen at a tab, wherever it was started. */
 export function openGearWindow(tab: Tab): void {
   dispatchEvent(new CustomEvent<Tab>(OPEN_AT, { detail: tab }));
@@ -71,7 +78,7 @@ const colourOf = (rarity: number) => RARITIES[rarity]?.colour ?? '';
 
 export function tileOf(item: GearItem): Tile {
   const power = item.attack || item.defense || item.prestige;
-  const word = item.attack ? 'Attack' : item.prestige ? 'Prestige' : item.defense ? 'Defense' : '';
+  const word = item.attack ? 'Attack' : item.defense ? 'Defense' : item.prestige ? 'Prestige' : '';
   return { id: item.id, name: itemName(item), colour: colourOf(item.rarity), power: word ? `${power} ${word}` : '' };
 }
 
@@ -154,7 +161,12 @@ export function itemDetailOf(item: GearItem, state: GearState): ItemDetail {
     for (const wear of wearAsks(item)) presses.push({ ...wear, role: 'primary' });
     if (state.social)
       presses.push({ label: 'Put in the vault', ask: { kind: ASKS.store, item: item.id }, role: 'button' });
-    presses.push({ label: 'Dismantle', ask: { kind: ASKS.dismantle, item: item.id }, role: 'warn' });
+    presses.push({
+      label: 'Hold to dismantle',
+      ask: { kind: ASKS.dismantle, item: item.id },
+      role: 'warn',
+      held: true,
+    });
   }
   if (item.at === VAULTED)
     presses.push({ label: 'Take out of the vault', ask: { kind: ASKS.withdraw, item: item.id }, role: 'button' });
@@ -206,9 +218,10 @@ export function vendorsOf(state: GearState): readonly { readonly name: string; r
       price: item.price,
       affordable: state.aurem >= item.price,
       press: {
-        label: `Buy · ${item.price.toLocaleString()} Aurem`,
+        label: `Hold to buy · ${item.price.toLocaleString()}`,
         ask: { kind: ASKS.vend, column: vendor, node: item.id },
-        role: 'primary',
+        role: 'button',
+        held: true,
       },
     })),
   }));

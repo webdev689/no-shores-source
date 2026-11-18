@@ -181,3 +181,88 @@ export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): s
   );
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" shape-rendering="crispEdges">${squares.join('')}</svg>`;
 }
+
+/** A node's kind, as its column's kind numbers it: an upgrade, handling, a finish, a perk, an Atheric's own. */
+const NODE_MAPS: readonly (readonly string[])[] = [
+  [
+    '............',
+    '.....aa.....',
+    '....aaaa....',
+    '...aaaaaa...',
+    '..aaa..aaa..',
+    '.aaa....aaa.',
+    '.....aa.....',
+    '....aaaa....',
+    '...aaaaaa...',
+    '..aaa..aaa..',
+    '.aaa....aaa.',
+    '............',
+  ],
+  [
+    '.....aa.....',
+    '....aaaa....',
+    '.....aa.....',
+    '..aaaaaaaa..',
+    '.....aa.....',
+    '...aaaaaa...',
+    '.....aa.....',
+    '...aaaaaa...',
+    '.....aa.....',
+    '.....aa.....',
+    '....aaaa....',
+    '............',
+  ],
+  [
+    '............',
+    '...aaaaaa...',
+    '..aa.aa.aa..',
+    '.aaaaaaaaaa.',
+    '.a..a..a..a.',
+    '..a.a..a.a..',
+    '...a.aa.a...',
+    '....aaaa....',
+    '.....aa.....',
+    '............',
+    '............',
+    '............',
+  ],
+  [
+    '.....aa.....',
+    '.....aa.....',
+    '....aaaa....',
+    'aaaaaaaaaaaa',
+    '.aaaaaaaaaa.',
+    '..aaaaaaaa..',
+    '...aaaaaa...',
+    '...aaaaaa...',
+    '..aaa..aaa..',
+    '..aa....aa..',
+    '.a........a.',
+    '............',
+  ],
+  [
+    '.....aa.....',
+    '.a...aa...a.',
+    '..a......a..',
+    '....aaaa....',
+    '...aaaaaa...',
+    'aa.aaaaaa.aa',
+    'aa.aaaaaa.aa',
+    '...aaaaaa...',
+    '....aaaa....',
+    '..a......a..',
+    '.a...aa...a.',
+    '.....aa.....',
+  ],
+];
+
+/** A node's glyph as an SVG drawn in the colour of the text around it, so its state colours it. */
+export function nodeGlyphSvg(kind: number): string {
+  const rows = NODE_MAPS[kind] ?? NODE_MAPS[3] ?? [];
+  const squares = rows.flatMap((row, line) =>
+    [...row].flatMap((letter, column) =>
+      letter === 'a' ? [`<rect x="${column}" y="${line}" width="1" height="1"/>`] : [],
+    ),
+  );
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">${squares.join('')}</svg>`;
+}

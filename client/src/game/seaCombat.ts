@@ -15,6 +15,7 @@ import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { panShot, type Shot } from './camera.ts';
 import type { SeaRoom } from './seaRoom.ts';
+import { gearScreenOpen } from './gearScreen.ts';
 
 /** Seconds the view takes to come down to the fight, or go back up. */
 const PAN_S = 1.5;
@@ -218,6 +219,8 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     event.stopImmediatePropagation();
   };
   const key = (down: boolean) => (event: KeyboardEvent) => {
+    // Under the gear screen the fight takes no keys: they are the screen's.
+    if (gearScreenOpen()) return;
     if (fight()?.key(event.key.toLowerCase(), down)) taken(event);
   };
   addEventListener('keydown', key(true), { capture: true });
