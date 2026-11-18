@@ -171,16 +171,17 @@ fn a_skirmisher_below_a_fifth_of_its_health_runs_once() {
 #[test]
 fn a_shooter_whose_target_walks_off_at_the_edge_of_its_range_closes_in_and_shoots_rather_than_stop_and_start() {
     const CROSSBOWMAN: u8 = 3;
-    let mut room = Room::new(4).player(PLAYER, 0.0, 0.0, PI).foe(10, CROSSBOWMAN, Major, 0.0, -51.0, PI);
+    let room = Room::new(4).player(PLAYER, 0.0, 0.0, PI).foe(10, CROSSBOWMAN, Major, 0.0, -51.0, PI);
     let mut room = room.alert(10, PLAYER);
-    let walking_off = |_: &Room, _: u32| combat::Intent {
+    // The player walks straight off, away from it, along the edge of its range.
+    let mut walking_off = |_: &Room, _: u32| combat::Intent {
         controls: movement::Controls { forward: 1.0, yaw: PI, ..movement::Controls::default() },
         ..combat::Intent::default()
     };
     let mut moved = Vec::new();
     for _ in 0..1200 {
         let before = room.fighter(10).body;
-        room.step(&mut { walking_off });
+        room.step(&mut walking_off);
         let after = room.fighter(10).body;
         moved.push(libm::hypot(after.x - before.x, after.y - before.y) > 0.01);
     }
