@@ -7,7 +7,8 @@ import type { FleetLook } from '../rules/fleetRules.ts';
 export type FleetCall = 'none' | 'captain' | 'send off';
 
 /** One tick's orders at sea in a fleet room (crates/room/src/fleet.rs Input): her helm, her look, the fire, the
- *  brace, a load (0 none, 1 round, 2 grape, 3 chain, 4 heated), where she puts to sea (heeded once), and a call. */
+ *  brace, a load (0 none, 1 round, 2 grape, 3 chain, 4 heated), where she puts to sea (heeded once), and a call,
+ *  with the faction and rank of a captain called (a Major of the pirates when none is named). */
 export interface FleetOrders {
   readonly steer: number;
   readonly crab: boolean;
@@ -18,6 +19,7 @@ export interface FleetOrders {
   readonly load: number;
   readonly putToSea: readonly [number, number, number] | null;
   readonly call: FleetCall;
+  readonly captain?: { readonly faction: number; readonly rank: number };
 }
 
 /** The calls as the messages number them. */
@@ -41,6 +43,8 @@ export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<A
     orders.load,
     putToSea,
     CALLS[orders.call],
+    orders.call === 'captain' ? (orders.captain?.faction ?? 0) : 0,
+    orders.call === 'captain' ? (orders.captain?.rank ?? 0) : 0,
   );
   builder.finish(message);
   return builder.asUint8Array().slice();
@@ -55,7 +59,8 @@ export type CaptainMode = (typeof MODES)[number];
 /** One ship in a fleet room as it last stepped her: her number; whether a captain sails her; her helm's numbers and
  *  pose (crates/sailing/src/floats.rs); hull, sail and men with their wholes; her state and fires; her guns' seconds
  *  left to load and progress (port, starboard); her load and brace; a captain's mode, target (0 none) and sides run
- *  out (1 port, 2 starboard); and the number of her player's last orders taken. */
+ *  out (1 port, 2 starboard); the number of her player's last orders taken; and the faction she sails for (0 a
+ *  player's) and a captain's rank (1 Minor to 5 Boss, 0 none). */
 export interface SeenVessel {
   readonly id: number;
   readonly captain: boolean;
@@ -71,6 +76,8 @@ export interface SeenVessel {
   readonly target: number;
   readonly runOut: number;
   readonly acknowledged: number;
+  readonly faction: number;
+  readonly rank: number;
 }
 
 /** A ball aloft: the ship that fired it, where and when (the fight's clock) it left its gun, its launch, its radius. */
@@ -164,6 +171,8 @@ export function fleetOf(snapshot: Snapshot): FleetPart {
       target: vessel.target(),
       runOut: vessel.runOut(),
       acknowledged: vessel.acknowledged(),
+      faction: vessel.faction(),
+      rank: vessel.rank(),
     };
   });
   const balls = Array.from({ length: snapshot.ballsLength() }, (unused, index): AloftBall => {

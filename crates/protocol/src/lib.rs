@@ -8,6 +8,7 @@ use combat::{Intent, Shot};
 use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
 use naval::fight::Orders;
+use naval::ranks::Commission;
 use naval::wire::{orders_from, orders_numbers};
 use room::pirates::Pirate;
 use room::sea::Ship;
@@ -355,15 +356,15 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     finish_snapshot(builder, &args)
 }
 
-/// Everything at sea after the sea room's tick `tick`: every ship, every pirate, each player's fight as the naval
-/// crate's numbers (`naval::wire::view_numbers`), and each player off the helm with the number of their last step
-/// taken and their body on deck.
+/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction and rank, each
+/// player's fight as the naval crate's numbers (`naval::wire::view_numbers`) with its captain's commission, and each
+/// player off the helm with the number of their last step taken and their body on deck.
 #[must_use]
 pub fn sea_snapshot_bytes(
     tick: u64,
     ships: &[(PlayerId, Ship)],
     pirates: &[Pirate],
-    fights: &[(PlayerId, Vec<f64>)],
+    fights: &[(PlayerId, Vec<f64>, Commission)],
     aboard: &[(PlayerId, u32, Body)],
 ) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
@@ -387,16 +388,20 @@ pub fn sea_snapshot_bytes(
     let ships = Some(builder.create_vector(&each));
     let each: Vec<_> = pirates
         .iter()
-        .map(|&Pirate { id, x, y, heading, .. }| {
-            messages::Pirate::create(&mut builder, &messages::PirateArgs { id, x, y, heading })
+        .map(|pirate| {
+            let Pirate { id, x, y, heading, .. } = *pirate;
+            let Commission { faction, rank } = pirate.commission();
+            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number() };
+            messages::Pirate::create(&mut builder, &args)
         })
         .collect();
     let pirates = Some(builder.create_vector(&each));
     let each: Vec<_> = fights
         .iter()
-        .map(|(player, numbers)| {
+        .map(|(player, numbers, commission)| {
             let view = Some(builder.create_vector(numbers));
-            messages::SeaFight::create(&mut builder, &messages::SeaFightArgs { player: *player, view })
+            let (faction, rank) = (commission.faction, commission.rank.number());
+            messages::SeaFight::create(&mut builder, &messages::SeaFightArgs { player: *player, view, faction, rank })
         })
         .collect();
     let fights = Some(builder.create_vector(&each));

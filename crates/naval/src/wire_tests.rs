@@ -1,4 +1,5 @@
 use super::*;
+use crate::ranks::Commission;
 use sailing::ship::Ship;
 use sailing::waters::{Spot, Waters};
 
@@ -55,7 +56,7 @@ fn numbers_that_are_not_orders_are_refused() {
 
 #[test]
 fn a_fights_view_holds_its_clock_both_ships_her_captain_and_counts_for_the_rest() {
-    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), Commission::default(), 7, &Open, 0.0);
     let numbers = view_numbers(&fight, &[], None, &Open, 0.0);
     assert_eq!(numbers.len(), 2 + 2 * VESSEL_NUMBERS + 4 + 3, "no balls, no lay, no events");
     assert_eq!(numbers[..2], [0.0, 0.0]);
@@ -74,7 +75,7 @@ fn a_fights_view_holds_its_clock_both_ships_her_captain_and_counts_for_the_rest(
 #[test]
 fn a_lay_crosses_as_the_fight_shows_it_each_gun_with_its_launch_and_its_stop() {
     // Her starboard guns laid on the captain close abeam: their balls strike her.
-    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(50.0, 0.0, 0.0), 7, &Open, 0.0);
+    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(50.0, 0.0, 0.0), Commission::default(), 7, &Open, 0.0);
     let aim = Aim { bearing_deg: 90.0, range_m: 50.0, ray: None };
     let shown = fight.preview(PLAYER, &aim, &Open, 0.0).expect("a side bears");
     assert!(shown.on_target, "laid on her, close abeam");
@@ -98,7 +99,7 @@ fn a_lay_crosses_as_the_fight_shows_it_each_gun_with_its_launch_and_its_stop() {
 
 #[test]
 fn a_ram_crosses_as_its_own_kind_with_whom_it_struck_and_what_it_dealt() {
-    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let fight = Fight::meet(sloop_at(0.0, 0.0, 0.0), sloop_at(0.0, -700.0, 3.0), Commission::default(), 7, &Open, 0.0);
     let ram = Event::Ram { ship: CAPTAIN, by: PLAYER, point: [1.0, 2.0, 3.0], dealt: 4.0 };
     let numbers = view_numbers(&fight, &[ram], None, &Open, 0.0);
     assert_eq!(EVENT_NUMBERS[9], 6);

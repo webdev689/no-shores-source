@@ -1,6 +1,7 @@
 use super::*;
 use naval::fight::{Aim, Fight, Orders, Refusal};
 use naval::guns::SWIVEL;
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use room::fleet::{Call, Input, STANDING};
 use sailing::ship::{Helm, Ship};
 use sailing::waters::OpenSea;
@@ -17,7 +18,7 @@ fn looked() -> Input {
             load: Some(Shot::Chain),
         },
         put_to_sea: Some([200_000.0, 300_000.0, 1.25]),
-        call: Call::Captain,
+        call: Call::Captain(Commission::default()),
     }
 }
 
@@ -54,6 +55,23 @@ fn orders_whose_parts_are_not_of_their_shape_are_refused() {
     assert!(read_orders(&write(&[], &[], 0, 2)).is_err(), "no second call");
 }
 
+#[test]
+fn a_call_names_the_faction_and_rank_of_the_captain_it_calls() {
+    let boss = Input { call: Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Boss }), ..looked() };
+    assert_eq!(read_orders(&orders_bytes(&boss)), Ok(boss));
+    let write = |call_faction: u8, call_rank: u8| {
+        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let args = messages::OrdersArgs { sequence: 1, call: 1, call_faction, call_rank, ..Default::default() };
+        let orders = messages::Orders::create(&mut builder, &args);
+        builder.finish(orders, None);
+        read_orders(builder.finished_data()).map(|input| input.call)
+    };
+    assert_eq!(write(0, 0), Ok(Call::Captain(Commission::default())), "a call that names none: a Major pirate");
+    assert_eq!(write(GREY_TITHE, 0), Ok(Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Major })));
+    assert!(write(3, 2).is_err(), "no captain sails for a third faction");
+    assert!(write(1, 6).is_err(), "no sixth rank");
+}
+
 /// The fleet the client's test reads (messages.test.ts): two players' ships at known places and one captain's, and
 /// events of every kind.
 pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
@@ -72,7 +90,15 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
     };
     fight.put_to_sea(3, at(200_000.0, 300_000.0, 0.5), &waters, 10.0);
     fight.put_to_sea(4, at(200_060.0, 300_010.0, 2.0), &waters, 10.0);
-    fight.call_captain(9, &at(200_000.0, 300_000.0, 0.5), &waters, 10.0).unwrap_or_else(|error| panic!("{error}"));
+    fight
+        .call_captain(
+            9,
+            &at(200_000.0, 300_000.0, 0.5),
+            Commission { faction: GREY_TITHE, rank: Rank::Elite },
+            &waters,
+            10.0,
+        )
+        .unwrap_or_else(|error| panic!("{error}"));
     let hit = ShotEvent::Hit {
         shooter: 3,
         target: 9,
@@ -115,6 +141,8 @@ fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
     assert_eq!(vessels[0].hurts().unwrap().iter().collect::<Vec<_>>(), [240.0, 240.0, 96.0, 96.0, 0.0, 0.0]);
     assert_eq!((vessels[0].acknowledged(), vessels[1].acknowledged()), (12, 0));
     assert_eq!((vessels[0].load(), vessels[2].mode()), (1, 0), "round shot, cruising");
+    let colours: Vec<_> = vessels.iter().map(|vessel| (vessel.faction(), vessel.rank())).collect();
+    assert_eq!(colours, [(0, 0), (0, 0), (1, 3)], "players' ships, then a Grey Tithe Elite");
     let kinds: Vec<_> =
         read.naval().unwrap().iter().map(|event| (event.tick(), event.kind(), event.ship(), event.detail())).collect();
     assert_eq!(

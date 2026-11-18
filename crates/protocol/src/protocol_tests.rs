@@ -93,7 +93,7 @@ impl sailing::waters::Waters for Open {
 
 /// A fight as a snapshot carries it: its player, and its view with the player's look laid to starboard, the captain's
 /// port guns run out and the player's stem ramming her (the client's test reads it back).
-fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
+fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
         x,
         y,
@@ -104,15 +104,18 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>)> {
         sail_way: 0.0,
         rung: 2,
     };
-    let fight = naval::fight::Fight::meet(at(0.0, 0.0, 0.0), at(0.0, -700.0, 3.0), 7, &Open, 0.0);
+    let fight = naval::fight::Fight::meet(at(0.0, 0.0, 0.0), at(0.0, -700.0, 3.0), TITHE_MINIBOSS, 7, &Open, 0.0);
     let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let (player, captain) = (naval::fight::PLAYER, naval::fight::CAPTAIN);
     let events = [
         naval::fight::Event::RunOut { ship: captain, side: naval::arms::Side::Port },
         naval::fight::Event::Ram { ship: captain, by: player, point: [1.0, 2.0, 3.0], dealt: 4.5 },
     ];
-    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0))]
+    vec![(2, naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0), TITHE_MINIBOSS)]
 }
+
+/// The captain of the fight the client's test reads: a Miniboss of the Grey Tithe.
+const TITHE_MINIBOSS: Commission = Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Miniboss };
 
 const SHIPS: [(PlayerId, Ship); 2] = [
     (3, Ship { x: 50_000.0, y: 149_880.25, heading: 0.0, pace: 60, rate: 5 }),
@@ -271,7 +274,10 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((sea.tick(), ships), (77, sent.to_vec()));
     let pirate = sea.pirates().unwrap().get(0);
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
+    let commission = PIRATES[0].commission();
+    assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
     let fight = sea.fights().unwrap().get(0);
+    assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
     assert_eq!((fight.player(), fight.view().unwrap().iter().collect::<Vec<_>>()), (2, fights_seen()[0].1.clone()));
     let walker = sea.players().unwrap().get(0);
     let body = body_of(&walker.fighter().unwrap().iter().collect::<Vec<_>>());

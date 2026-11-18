@@ -2,6 +2,7 @@ import type { FightLay, FightLook } from '../rules/fightRules.ts';
 import type { FleetLay } from '../rules/fleetRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
+import { barOver, type ShipBar, shipName } from '../ships/shipBars.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipCamera, ShipPlace, ShipView } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
@@ -115,6 +116,15 @@ export class FleetScene {
       marks.push({ x: x - view.leftM, y: y - view.topM, z: z * shown, radius: radius * BALL_DRAWN, colour: BALL });
     marks.push(...arcsOf(arcsLay(this.lay), view, shown));
     this.marks.drawInto(pass, marks, camera);
+  }
+
+  /** Each captain's bar over her masthead, heights as drawn. */
+  bars(view: LandView, shown: number): ShipBar[] {
+    return this.play
+      .others()
+      .filter((vessel) => vessel.captain)
+      .map((vessel) => barOver({ ...vessel, ...vessel.hurts, name: shipName(vessel.faction) }, view, shown))
+      .filter((bar) => bar !== null);
   }
 
   /** The panel's lines. */

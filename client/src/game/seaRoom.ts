@@ -16,6 +16,7 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { Pace } from '../overworld/voyage.ts';
 import type { FightEvent, FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Body } from '../rules/movementRules.ts';
+import { shipName } from '../ships/shipBars.ts';
 
 /** A room link that may be closed: a server's socket is; the room in the page has nothing to close. */
 type Closable = RoomLink & { close?(): void };
@@ -80,7 +81,7 @@ export class SeaRoom {
     this.words += 1;
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     if (own) {
-      this.fight = fightViewOf(own.view);
+      this.fight = fightViewOf(own.view, { name: shipName(own.faction), faction: own.faction, rank: own.rank });
       this.events.push(...this.fight.events);
     } else if (this.fight?.over === null) this.fight = null;
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.

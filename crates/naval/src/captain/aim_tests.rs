@@ -29,7 +29,14 @@ impl Deck {
 
     fn step(&mut self, clock: f64, mark: &Mark) -> Battery {
         let ship = heading_north();
-        let at = Aboard { ship: &ship, pose: &LEVEL, arms: &SLOOP_ARMS, guns: &self.guns, build: &PIRATE_SLOOP };
+        let at = Aboard {
+            ship: &ship,
+            pose: &LEVEL,
+            arms: &SLOOP_ARMS,
+            guns: &self.guns,
+            build: &PIRATE_SLOOP,
+            aim_error: 1.0,
+        };
         captain_guns(&mut self.run, &at, mark, clock, &mut self.draws)
     }
 }

@@ -81,7 +81,7 @@ export async function startLandEditor(
     status = error instanceof Error ? error.message : String(error);
     requestFrame();
   };
-  const scene = new LandScene(gpu, requestFrame, fail);
+  const scene = new LandScene(gpu, requestFrame, fail, overlay);
 
   const showSelected = (fit: boolean) => {
     // A new view (another landmass, or the layout redrawn) makes any close-up of the old land stale.

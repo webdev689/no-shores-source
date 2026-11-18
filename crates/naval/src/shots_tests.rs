@@ -2,6 +2,7 @@ use super::*;
 use crate::ballistics::{Ball, Block, launch_velocity};
 use crate::damage::Zone;
 use crate::guns::{SWIVEL, Shot};
+use crate::ranks::PIRATES;
 use sailing::TICK_SECONDS;
 use sailing::waters::{Spot, Waters};
 
@@ -39,7 +40,7 @@ fn east_ball(height: f64, elevation: f64, born: f64) -> Ball {
 
 /// Ship `id` with her hull and canvas: the shooter's own (0) flies the players' flag, any other the pirates'.
 fn ship(id: ShipId, hull: Block, rig: Vec<Block>) -> Target {
-    let flag = if id == 0 { Flag::Player } else { Flag::Pirate };
+    let flag = if id == 0 { Flag::Player } else { Flag::Faction(PIRATES) };
     Target { id, flag, hull, rig, alive: true }
 }
 
@@ -138,7 +139,7 @@ fn a_ball_never_meets_its_own_ship_nor_a_ship_gone_down() {
     let events = fly(&mut balls, &[own.clone(), nobody()[1].clone()], &Sea);
     assert!(!events.iter().any(|event| matches!(event, ShotEvent::Hit { .. })));
     let mut again = vec![east_ball(1.1, 0.0, 0.0)];
-    let gone = Target { id: 1, flag: Flag::Pirate, alive: false, ..own };
+    let gone = Target { id: 1, flag: Flag::Faction(PIRATES), alive: false, ..own };
     let events = fly(&mut again, &[nobody()[0].clone(), gone], &Sea);
     assert!(!events.iter().any(|event| matches!(event, ShotEvent::Hit { .. })));
 }

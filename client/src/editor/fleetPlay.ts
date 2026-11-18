@@ -1,6 +1,7 @@
 import type { FightEvent, ShotName } from '../rules/fightRules.ts';
 import type { FleetLay, FleetLook } from '../rules/fleetRules.ts';
 import type { ShipFloats } from '../rules/landRules.ts';
+import { RANKS, shipName } from '../ships/shipBars.ts';
 import { Afloat } from './afloat.ts';
 import { wordsFor } from './fighting.ts';
 import type { FleetInput, FleetSession, FleetVessel } from './fleetLink.ts';
@@ -57,7 +58,7 @@ export class FleetSloop extends Afloat {
     this.moveTo(new Float64Array(this.session.shipFloats()) as ShipFloats, this.session.shipPose());
     for (const event of this.session.takeEvents()) {
       this.events.push(event);
-      const words = event.kind === 'gone' ? goneWords(event.ship, event.sunk) : wordsFor(event, 'Pirate Sloop');
+      const words = event.kind === 'gone' ? goneWords(event.ship, event.sunk) : wordsFor(event, 'captain’s Sloop');
       if (words) this.say(words, now);
     }
   }
@@ -97,8 +98,9 @@ export class FleetSloop extends Afloat {
     );
     if (nearest) {
       const { hurts } = nearest;
+      const named = `${shipName(nearest.faction)} (${RANKS[nearest.rank - 1] ?? 'Major'})`;
       lines.push(
-        `Pirate Sloop, ${Math.round(apart(nearest))} m off, ${nearest.state === 'afloat' ? nearest.mode : nearest.state}:` +
+        `${named}, ${Math.round(apart(nearest))} m off, ${nearest.state === 'afloat' ? nearest.mode : nearest.state}:` +
           ` hull ${whole(hurts.hull, hurts.maxHull)}, sails ${whole(hurts.sail, hurts.maxSail)}, ${Math.round(hurts.crew)} men.`,
       );
     }
@@ -121,5 +123,5 @@ export class FleetSloop extends Afloat {
 /** What the panel says of a captain leaving the fight (ship 1, as the fight's words number a captain). */
 function goneWords(ship: number, sunk: boolean): string | null {
   if (ship !== 1) return null;
-  return sunk ? 'The Pirate Sloop has gone down.' : 'The Pirate Sloop is gone.';
+  return sunk ? 'A captain’s Sloop has gone down.' : 'A captain’s Sloop is gone.';
 }

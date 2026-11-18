@@ -79,6 +79,12 @@ impl Guns {
         self.lengths[side.index()] = seconds;
     }
 
+    /// A side's reload, as it stands, taken at `share` of its length: a rank's quicker or slower gunners.
+    pub fn pace_reload(&mut self, side: Side, share: f64) {
+        self.clocks[side.index()] *= share;
+        self.lengths[side.index()] *= share;
+    }
+
     /// Loads `shot`: a side standing loaded is drawn and loaded again in a share of the new load's reload; one loading
     /// takes the new load in, its clock scaled to the new reload. False when it is the load already.
     pub fn set_load(&mut self, shot: Shot, crew_share: f64, crewed: bool) -> bool {

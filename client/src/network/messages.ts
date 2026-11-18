@@ -48,19 +48,24 @@ export interface SeenShip {
   readonly pace: number;
 }
 
-/** A pirate at sea: her number, where she is, and her heading in radians clockwise from north. */
+/** A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
+ *  from north, her faction (1 the Grey Tithe, 2 pirates) and her rank (1 Minor to 5 Boss). */
 export interface SeenPirate {
   readonly id: number;
   readonly x: number;
   readonly y: number;
   readonly heading: number;
+  readonly faction: number;
+  readonly rank: number;
 }
 
 /** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), which
- *  `fightViewOf` reads. */
+ *  `fightViewOf` reads, and her captain's faction and rank. */
 export interface SeenSeaFight {
   readonly player: number;
   readonly view: Float64Array;
+  readonly faction: number;
+  readonly rank: number;
 }
 
 /** A node's room's word on where its player is: the node's id, and the rect (west, north, east, south) its window of
@@ -299,12 +304,14 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const pirates = Array.from({ length: snapshot.piratesLength() }, (unused, index) => {
       const pirate = snapshot.pirates(index);
       if (!pirate) throw new Error(`snapshot pirate ${index} does not read`);
-      return { id: pirate.id(), x: pirate.x(), y: pirate.y(), heading: pirate.heading() };
+      const [faction, rank] = [pirate.faction(), pirate.rank()];
+      return { id: pirate.id(), x: pirate.x(), y: pirate.y(), heading: pirate.heading(), faction, rank };
     });
     const fights = Array.from({ length: snapshot.fightsLength() }, (unused, index) => {
       const fight = snapshot.fights(index);
       if (!fight) throw new Error(`snapshot fight ${index} does not read`);
-      return { player: fight.player(), view: new Float64Array(fight.viewArray() ?? []) };
+      const [faction, rank] = [fight.faction(), fight.rank()];
+      return { player: fight.player(), view: new Float64Array(fight.viewArray() ?? []), faction, rank };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
     return {

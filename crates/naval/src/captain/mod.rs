@@ -13,6 +13,7 @@ use crate::arms::{Arms, Build, Side};
 use crate::damage::{Damage, State};
 use crate::gunnery::{Guns, lay};
 use crate::random::Mulberry32;
+use crate::ranks::Commission;
 use crate::shots::ShipId;
 use aim::{Aboard, Battery, Mark, RunOut, captain_guns, fire_window};
 use course::{
@@ -43,7 +44,8 @@ pub const CHASE_GAIN: f64 = 0.1;
 pub const CLOSE_FROM: f64 = 1.8;
 /// A wrecked player she does not board is left after this long.
 pub const WRECK_SPARE_S: f64 = 30.0;
-/// A pirate runs under this share of her hull; a wary one takes a prize under this share, or at these odds.
+/// A captain of an ordinary rank runs under this share of her hull (`ranks::SCALES`); a wary one takes a prize
+/// under this share, or at these odds.
 pub const PIRATE_RUNS_AT: f64 = 0.3;
 pub const GRAPPLE_HULL: f64 = 0.35;
 pub const WARY_ODDS: f64 = 1.25;
@@ -90,6 +92,12 @@ pub fn temper_of(seed: u32) -> Temper {
     if Mulberry32::new(seed ^ TEMPER_SALT).draw() < BOLD_SHARE { Temper::Bold } else { Temper::Wary }
 }
 
+/// A captain's temper: bold if her rank makes her so, else as her seed says.
+#[must_use]
+pub fn temper_for(commission: Commission, seed: u32) -> Temper {
+    if commission.rank.scale().always_bold { Temper::Bold } else { temper_of(seed) }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Cruise,
@@ -114,7 +122,8 @@ struct Chase {
     marks: Vec<[f64; 2]>,
 }
 
-/// A player's ship as she sees her: her number, where she is and how she lies, her hurts and her power.
+/// A ship she may fight as she sees her, a player's or another faction's: her number, where she is and how she lies,
+/// her hurts and her power.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sighting {
     pub id: ShipId,
@@ -145,10 +154,12 @@ struct Plan {
     track: bool,
 }
 
-/// A captain: her class, temper, seed and the course she cruises, her standing with each player's ship (who
-/// struck her, whom she spares, whom she fights), and her memory of the ship she marks.
+/// A captain: her commission (her faction and rank) and the class it gives her, her temper, seed and the course she
+/// cruises, her standing with each ship she may fight (who struck her, whom she spares, whom she fights), and her
+/// memory of the ship she marks.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Captain {
+    pub commission: Commission,
     pub build: Build,
     pub temper: Temper,
     pub seed: u32,
@@ -185,12 +196,14 @@ pub fn swing_rate(ship: &Ship, hull: &Hull) -> f64 {
 }
 
 impl Captain {
-    /// A captain of `build` with her seed's temper, cruising on `cruise`, her dead zone against a ship armed as hers.
+    /// A captain of `commission` with her temper (`temper_for`), cruising on `cruise`, her dead zone against a ship
+    /// armed as hers.
     #[must_use]
-    pub fn new(build: Build, seed: u32, cruise: f64, arms: &Arms) -> Self {
+    pub fn new(commission: Commission, seed: u32, cruise: f64, arms: &Arms) -> Self {
         Self {
-            build,
-            temper: temper_of(seed),
+            commission,
+            build: commission.build(),
+            temper: temper_for(commission, seed),
             seed,
             cruise,
             mode: Mode::Cruise,
@@ -405,7 +418,7 @@ impl Captain {
         self.want_rate
     }
 
-    /// Her helm for a step of `seconds` among the players' ships she sees and the hulls about her (`traffic`, each
+    /// Her helm for a step of `seconds` among the ships she may fight and the hulls about her (`traffic`, each
     /// where it is and its way), over water `is_water` says she can float in.
     pub fn steer(
         &mut self,
@@ -439,7 +452,7 @@ impl Captain {
         seen = seen && chosen.is_some_and(|(enemy, _)| self.wreck_on(enemy.wrecked, enemy.id));
         let threat = self.threat(her, sightings);
         let outgunned = threat.is_some_and(|threat| odds(&threat.power, &self.power(her), her.arms) > 1.0);
-        let runs = (her.damage.hull_share() < PIRATE_RUNS_AT && (threat.is_some() || seen))
+        let runs = (her.damage.hull_share() < self.commission.rank.scale().runs_at && (threat.is_some() || seen))
             || (self.temper == Temper::Wary && outgunned);
         let enemy = chosen.filter(|_| seen).map(|(enemy, _)| enemy);
         self.target = enemy.map(|enemy| enemy.id);
@@ -537,7 +550,8 @@ impl Captain {
             smoothed: self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship)),
             level: enemy.level,
         };
-        let aboard = Aboard { ship: her.ship, pose: her.pose, arms: her.arms, guns: her.guns, build: &self.build };
+        let (ship, pose, arms, guns, build) = (her.ship, her.pose, her.arms, her.guns, &self.build);
+        let aboard = Aboard { ship, pose, arms, guns, build, aim_error: self.commission.rank.scale().aim_error };
         captain_guns(&mut self.run, &aboard, &mark, self.clock, draws)
     }
 }

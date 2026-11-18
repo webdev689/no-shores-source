@@ -49,7 +49,8 @@ table Course {
 // while she aims (its bearing off her bow in degrees and how far out it meets the water in metres, then its ray: the
 // aim eye and the way it looks, east, south and up; none while she does not aim); whether she fires and whether she
 // braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where she puts to sea (x, y and heading,
-// heeded once); and a captain asked for (0 none, 1 one called round her, 255 every one sent off).
+// heeded once); a captain asked for (0 none, 1 one called round her, 255 every one sent off); and the faction (1 the
+// Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates.
 table Orders {
   sequence: uint;
   steer: double;
@@ -61,6 +62,8 @@ table Orders {
   load: ubyte;
   put_to_sea: [double];
   call: ubyte;
+  call_faction: ubyte;
+  call_rank: ubyte;
 }
 
 // A player's dress, passed on as their browser wrote it.
@@ -142,18 +145,24 @@ table Ship {
   pace: ushort;
 }
 
-// A pirate at sea: her number, where she is, and her heading in radians clockwise from north.
+// A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
+// from north, her faction (1 the Grey Tithe, 2 pirates) and her rank (1 Minor to 5 Boss).
 table Pirate {
   id: uint;
   x: double;
   y: double;
   heading: double;
+  faction: ubyte;
+  rank: ubyte;
 }
 
-// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs).
+// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and
+// her captain's faction and rank, as Pirate numbers them.
 table SeaFight {
   player: uint;
   view: [double];
+  faction: ubyte;
+  rank: ubyte;
 }
 
 // One ship in a fleet room: her number; whether a captain sails her; her helm's numbers in the sailing crate's order
@@ -161,7 +170,8 @@ table SeaFight {
 // (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; her guns (the seconds each side has left
 // to load, port then starboard, then how far each has loaded); her load (as Orders numbers it) and whether she is
 // braced; for a captain, her mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship she fights (0 none) and
-// her sides run out (1 port, 2 starboard, 3 both); and for a player's ship, the number of her last orders taken.
+// her sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of her last orders taken; and the
+// faction she sails for (0 a player's, else as Pirate numbers them) and a captain's rank (1 Minor to 5 Boss, 0 none).
 table Vessel {
   id: uint;
   captain: bool;
@@ -177,6 +187,8 @@ table Vessel {
   target: uint;
   run_out: ubyte;
   acknowledged: uint;
+  faction: ubyte;
+  rank: ubyte;
 }
 
 // A ball aloft in a fleet room: the ship that fired it, where it leaves its gun and when (seconds of the fight's
