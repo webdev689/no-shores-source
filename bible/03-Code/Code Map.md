@@ -41,7 +41,7 @@ decision, made in the same change as its entry here.
 | `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
 | `client/src/city/` | The city layer: a port city's plan drawn on WebGPU with the forged models and the procedural textures, whole near the eye, as masses and hulls further out, its solids and ground plates at every distance ([[Cities]]) |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings, and the keeper that keeps each player's character with the accounts while they play |
-| `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the Roster (friends, companies, guilds, blocks, reports, where each player is), the characters the rooms hold, and the database's migrations |
+| `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the judge of the [[Names]] players set for others to read, the Roster (friends, companies, guilds, blocks, reports, where each player is), the characters the rooms hold, and the database's migrations |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world-wasm` | The world rules for the browser: a door crate, text in and text out |

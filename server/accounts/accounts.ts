@@ -9,7 +9,7 @@ import { type AccountRow, HEADERS, LAPSED, bodyOf, json, refused, sessionOf, sig
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
 import { INVITE_MS } from './companies.ts';
 import { socialAsk, socialRead } from './social.ts';
-import { USERNAME } from './names.ts';
+import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
 /** What the API runs on: the database, the clock, the Discord app if its keys are set, and the pages (by origin and
@@ -193,21 +193,29 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
       if (!(await within(database, `register:${address}`, LIMITS.register, now)))
         return refused(429, 'Too many tries.');
       const given = await nameAndPassword(request);
-      if (!given || !USERNAME.test(given.username))
-        return refused(400, 'A username is 3 to 20 letters, digits or underscores, starting with a letter.');
+      if (!given) return refused(400, 'Give a username and a password.');
+      const unfit = refusalOf('username', given.username);
+      if (unfit) return refused(400, unfit);
       if (given.password.length < PASSWORD_LEAST || given.password.length > PASSWORD_MOST)
         return refused(400, `A password is ${PASSWORD_LEAST} to ${PASSWORD_MOST} characters.`);
-      const key = given.username.toLowerCase();
+      const [key, look] = [given.username.toLowerCase(), skeleton(given.username)];
       const kept = await hashPassword(given.password);
       const named = await database
         .prepare(
-          `UPDATE accounts SET username = ?1, username_key = ?2, password = ?3 WHERE id = ?4 AND username IS NULL
-           AND NOT EXISTS (SELECT 1 FROM accounts WHERE username_key = ?2)`,
+          `UPDATE accounts SET username = ?1, username_key = ?2, name_skeleton = ?5, password = ?3
+           WHERE id = ?4 AND username IS NULL AND NOT EXISTS (SELECT 1 FROM accounts WHERE username_key = ?2)
+           AND NOT EXISTS (SELECT 1 FROM accounts WHERE name_skeleton = ?5)`,
         )
-        .bind(given.username, key, kept, account.id)
+        .bind(given.username, key, kept, account.id, look)
         .run()
         .catch(() => ({ meta: { changes: 0 } }));
-      if (named.meta.changes !== 1) return refused(409, 'That username is taken.');
+      if (named.meta.changes !== 1) {
+        const like = await database
+          .prepare('SELECT username_key = ?2 AS same FROM accounts WHERE name_skeleton = ?1')
+          .bind(look, key)
+          .first<{ same: number }>();
+        return refused(409, like?.same === 0 ? "That name is too like another player's." : 'That username is taken.');
+      }
       return json({ account: shown({ ...account, username: given.username }) });
     }
     case 'POST /v1/login': {

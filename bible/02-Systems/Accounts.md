@@ -10,6 +10,7 @@ code:
   - server/accounts/worker.ts#CharacterKeeper
   - server/accounts/migrations/20261117210000_accounts.sql
   - server/accounts/migrations/20261118120000_friends.sql
+  - server/accounts/migrations/20261118181357_name_skeletons.sql
   - server/accounts/friends.ts#friendAsk
   - server/accounts/friends.ts#friendsOf
   - server/accounts/migrations/20261118200000_roster.sql
@@ -17,6 +18,7 @@ code:
   - server/accounts/companies.ts#companyAsk
   - server/accounts/guilds.ts#guildAsk
   - server/accounts/social.ts#socialAsk
+  - server/accounts/names.ts#refusalOf
   - server/accounts/people.ts#PERSON
   - server/keeping.ts#Keeper
   - client/src/network/accounts.ts#AccountLink
@@ -38,7 +40,8 @@ they play in holds it while they are there.
 - **A guest from the first visit.** A page that holds no session asks for a guest (`POST /v1/guest`) and keeps the
   session's token in the browser. The database keeps only the token's SHA-256, so a copy of it signs no one in.
 - **A username and password** may be added to an account that has no username yet (`POST /v1/register`): 3 to 20
-  letters, digits or underscores, starting with a letter, one however it is typed; a password of 8 to 200
+  letters, digits or underscores, starting with a letter, one however it is typed, and judged as [[Names]] says: no
+  blocked word, nothing that speaks for the game, and nothing too like another player's; a password of 8 to 200
   characters. It is kept as PBKDF2 over SHA-256, 100,000 iterations (the most a Worker derives) with a random salt.
   Signing in with them (`POST /v1/login`) starts a new session for that account, leaving any guest behind. Signing
   out ends the session, and the next visit is a new guest.
@@ -114,8 +117,9 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   leader makes another the leader or removes them; a leader who leaves hands the lead to the longest there. A member
   away from the game ten minutes leaves it, but never the player asking.
 - **The guild**: a name of 3 to 24 characters, letters and digits starting with a letter, with single spaces, dashes
-  or apostrophes between them; a tag of 2 to 4 letters or digits, each unique however it is typed; and a motto of one
-  line, 80 characters at most, with no control characters or marks that turn the text's direction. Its founder and admins invite players with no guild, who accept or
+  or apostrophes between them, none too like another's; a tag of 2 to 4 letters or digits, unique however it is
+  typed; and a motto of one line, 80 characters at most, with no control characters or marks that turn the text's
+  direction. Each is judged as [[Names]] says. Its founder and admins invite players with no guild, who accept or
   decline; the founder makes members admins and back, either removes those below them, and the founder hands the
   founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. A founder leaves only once another founds it, or alone, which
   ends it. A hundred at most.
@@ -124,7 +128,7 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   joining or by an invite, answered as a company closed to them. The one blocked sees the blocker's details as a
   stranger does, so the block shows nowhere. A blocked player is unblocked from Settings.
 - **Reporting** keeps a player's name, who reported them and why (cheating, a name, harassment, something else) for
-  the owner to read in the database, ten a day a player.
+  the owner to read in the database, ten a day a player. [[Names]] says how the owner reads and acts on a name.
 - **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
   and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.

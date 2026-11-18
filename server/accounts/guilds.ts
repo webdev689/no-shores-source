@@ -7,6 +7,7 @@
 
 import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
+import { refusalOf, skeleton } from './names.ts';
 import { accountNamed, blocks } from './people.ts';
 
 /** The most members a guild holds, as Destiny's clans do. */
@@ -14,13 +15,6 @@ export const GUILD_MOST = 100;
 /** The ranks: its founder, an admin, a member. */
 export const RANKS = ['Founder', 'Admin', 'Member'] as const;
 const [FOUNDER, ADMIN, MEMBER] = [0, 1, 2];
-/** A guild's name, its tag and its motto. A name's spaces, dashes and apostrophes each stand alone between letters or
- *  digits. */
-const NAME = /^(?=.{3,24}$)[A-Za-z][A-Za-z0-9]*(?:[' -][A-Za-z0-9]+)*$/;
-const TAG = /^[A-Za-z0-9]{2,4}$/;
-const MOTTO_MOST = 80;
-/** Control characters and the marks that turn text's direction, which could hide or reorder what others read. */
-const HIDDEN = /[\p{Cc}\u202A-\u202E\u2066-\u2069]/u;
 
 /** A player's guild and rank in it, or null for none. */
 export async function guildOf(
@@ -39,22 +33,24 @@ export async function guildOf(
 /** Founds a guild with its founder its one member. */
 async function found(database: Db, own: string, given: Record<string, unknown> | null, now: number): Promise<Answer> {
   const [name, tag] = [given?.['name'], given?.['tag']];
-  if (typeof name !== 'string' || !NAME.test(name))
-    return said(
-      400,
-      'A guild name is 3 to 24 characters: letters and digits, starting with a letter, with single spaces, dashes or apostrophes between them.',
-    );
-  if (typeof tag !== 'string' || !TAG.test(tag)) return said(400, 'A tag is 2 to 4 letters or digits.');
+  const unfit = refusalOf('guild', name) ?? refusalOf('tag', tag);
+  if (unfit) return said(400, unfit);
   if (await guildOf(database, own)) return said(409, 'Leave your guild first.');
-  const id = crypto.randomUUID();
+  const [id, look] = [crypto.randomUUID(), skeleton(String(name))];
   const made = await database
     .prepare(
       `INSERT OR IGNORE INTO guilds (id, name, name_key, tag, tag_key, created_at)
-       VALUES (?1, ?2, lower(?2), ?3, lower(?3), ?4)`,
+       VALUES (?1, ?2, ?5, ?3, lower(?3), ?4)`,
     )
-    .bind(id, name, tag.toUpperCase(), now)
+    .bind(id, name, String(tag).toUpperCase(), now, look)
     .run();
-  if (made.meta.changes !== 1) return said(409, 'That name or tag is taken.');
+  if (made.meta.changes !== 1) {
+    const like = await database
+      .prepare('SELECT lower(name) = lower(?2) AS same FROM guilds WHERE name_key = ?1')
+      .bind(look, name)
+      .first<{ same: number }>();
+    return said(409, like?.same === 0 ? "That name is too like another guild's." : 'That name or tag is taken.');
+  }
   const joined = await database
     .prepare('INSERT OR IGNORE INTO guild_members (account_id, guild_id, rank, joined_at) VALUES (?1, ?2, ?3, ?4)')
     .bind(own, id, FOUNDER, now)
@@ -124,9 +120,9 @@ export async function guildAsk(
   if (asked === 'motto') {
     const motto = given?.['motto'];
     if (mine.rank > ADMIN) return said(403, 'Only the founder and admins can set the motto.');
-    if (typeof motto !== 'string' || motto.length > MOTTO_MOST || HIDDEN.test(motto))
-      return said(400, `A motto is one line of ${MOTTO_MOST} characters at most.`);
-    await database.prepare('UPDATE guilds SET motto = ?1 WHERE id = ?2').bind(motto.trim(), mine.id).run();
+    const unfit = refusalOf('motto', motto);
+    if (unfit) return said(400, unfit);
+    await database.prepare('UPDATE guilds SET motto = ?1 WHERE id = ?2').bind(String(motto).trim(), mine.id).run();
     return done;
   }
   const them = await accountNamed(database, given?.['name']);

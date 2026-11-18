@@ -88,6 +88,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Roster and Emblems as Claude Shapes Them]]
 - [[The Menu's Tabs Fill Its Top, Its Banner Under Them]]
 - [[A Group of Players Is a Company]]
+- [[Names Follow Guidelines, Checked by the Accounts]]
 - [[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]
 
 - [[Overlook Is Our Own Game]]

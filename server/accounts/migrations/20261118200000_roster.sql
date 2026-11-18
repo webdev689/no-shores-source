@@ -34,8 +34,8 @@ CREATE TABLE company_invites (
 );
 CREATE INDEX company_invites_by_to ON company_invites (to_id);
 
--- A guild: its name and tag, each unique however it is typed, and its motto. A player is in one at most, at a rank:
--- 0 its founder, 1 an admin, 2 a member.
+-- A guild: its name, unique by how it looks (its key is names.ts's skeleton), its tag, unique however it is typed,
+-- and its motto. A player is in one at most, at a rank: 0 its founder, 1 an admin, 2 a member.
 CREATE TABLE guilds (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
