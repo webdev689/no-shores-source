@@ -7,6 +7,7 @@
 use crate::book::Book;
 use crate::brief::Briefs;
 use crate::collide::boxes_of;
+use crate::seat::Seating;
 use crate::{Layout, Link, middle_of, plan};
 use land::landmass::Landmass;
 use land::pads::{Pad, Pads};
@@ -16,6 +17,47 @@ use std::collections::BTreeMap;
 
 /// The longest step between two of a path's points as it is laid on the ground, metres.
 const PATH_STEP_M: f64 = 8.0;
+/// How far a solid's base may stand under the ground it was planned on and still stand on it: the deepest a stone
+/// or a footing is sunk, metres.
+const SUNK_AT_MOST_M: f64 = 1.2;
+
+/// A solid stood on the ground it was planned on (`was`), rather than at a height of its own: a deck, a pile in the
+/// water, a battlement.
+fn stood_on(base: f64, was: f64) -> bool {
+    base >= was - SUNK_AT_MOST_M && base <= was + 0.05
+}
+
+/// Moves every piece that stood on the ground as it was planned (`was`, the ground's height under it then) by as far
+/// as the pads and roads have since moved the ground under it, so none floats or sinks beside a path. A solid at a
+/// height of its own moves with a grounded one under it, as a lantern's cage with its post.
+fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &Planned) {
+    let moved = |at: [f64; 3], before: f64| height(at[0], at[1]) - before;
+    for (prop, &before) in seating.props.iter_mut().zip(&was.props) {
+        if prop.grounded {
+            prop.at[2] += moved(prop.at, before);
+        }
+    }
+    let bases: Vec<[f64; 2]> = seating
+        .solids
+        .iter()
+        .zip(&was.solids)
+        .filter(|(solid, before)| stood_on(solid.at[2], **before))
+        .map(|(solid, _)| [solid.at[0], solid.at[1]])
+        .collect();
+    for (solid, &before) in seating.solids.iter_mut().zip(&was.solids) {
+        let over_one =
+            bases.iter().any(|base| (base[0] - solid.at[0]).abs() < 0.01 && (base[1] - solid.at[1]).abs() < 0.01);
+        if over_one {
+            solid.at[2] += moved(solid.at, before);
+        }
+    }
+}
+
+/// The ground's height under each prop and solid of a layout, as it lay when they were planned.
+struct Planned {
+    props: Vec<f64>,
+    solids: Vec<f64>,
+}
 
 /// Which nodes each node's layout links to: a patrol area to the instances nearer it than any other patrol area, an
 /// instance to that patrol area. With no patrol area, nothing links.
@@ -69,6 +111,18 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
         })
         .collect();
     landmass.surface.sculpts = Sculpts::from(layouts.iter().map(|layout| layout.sculpt.clone()).collect::<Vec<_>>());
+    // Every piece was planned on the carved ground (the carving keeps off the floor the pieces stand on, and rock
+    // stands on the carved faces), so it is that ground the pads and roads are measured from.
+    let planned: Vec<Planned> = layouts
+        .iter()
+        .map(|layout| {
+            let under = |at: [f64; 3]| landmass.surface.height_at(at[0], at[1]);
+            Planned {
+                props: layout.seating.props.iter().map(|prop| under(prop.at)).collect(),
+                solids: layout.seating.solids.iter().map(|solid| under(solid.at)).collect(),
+            }
+        })
+        .collect();
     let mut pads: Vec<Pad> = landmass.surface.pads.clone().into();
     pads.extend(layouts.iter().flat_map(|layout| layout.seating.pads.iter().copied()));
     landmass.surface.pads = Pads::from(pads);
@@ -78,7 +132,8 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
         .collect();
     landmass.surface.add_roads(&roads);
     let ground = &landmass.surface;
-    for layout in &mut layouts {
+    for (layout, was) in layouts.iter_mut().zip(&planned) {
+        follow_ground(&mut layout.seating, &|x, y| ground.height_at(x, y), was);
         for path in &mut layout.paths {
             path.heights = path.points.iter().map(|&[x, y]| ground.height_at(x, y)).collect();
         }
@@ -116,6 +171,34 @@ mod tests {
         assert_eq!(links["mill"][0].id, "west");
         assert_eq!(links["tomb"][0].id, "east");
         assert_eq!(links["west"].iter().map(|link| link.id.as_str()).collect::<Vec<_>>(), ["mill"]);
+    }
+
+    #[test]
+    fn what_stood_on_the_ground_follows_it_and_what_stood_above_it_stays() {
+        use city::solids::{Material, Shape, Solid};
+        let prop = |at: [f64; 3], grounded: bool| crate::seat::Seated {
+            model: 1,
+            at,
+            yaw: 0.0,
+            building: false,
+            footprint: [0.0; 4],
+            purpose: 0,
+            open: false,
+            grounded,
+        };
+        let solid = |at: [f64; 3]| Solid::upright(Shape::Block, at, [0.3, 0.3, 2.0], Material::Timber);
+        let mut seating = Seating {
+            props: vec![prop([0.0, 0.0, 10.0], true), prop([5.0, 0.0, 14.0], false)],
+            // A post sunk in the ground with a cage on it, and a deck's pile standing in the water far below.
+            solids: vec![solid([1.0, 1.0, 9.7]), solid([1.0, 1.0, 12.4]), solid([3.0, 3.0, -8.0])],
+            ..Seating::default()
+        };
+        let was = Planned { props: vec![10.0, 10.0], solids: vec![10.0, 10.0, 10.0] };
+        // The road's bed lowered the ground 0.2 m everywhere.
+        follow_ground(&mut seating, &|_, _| 9.8, &was);
+        let heights = |list: &[[f64; 3]]| list.iter().map(|at| (at[2] * 100.0).round() / 100.0).collect::<Vec<_>>();
+        assert_eq!(heights(&seating.props.iter().map(|prop| prop.at).collect::<Vec<_>>()), [9.8, 14.0]);
+        assert_eq!(heights(&seating.solids.iter().map(|solid| solid.at).collect::<Vec<_>>()), [9.5, 12.2, -8.0]);
     }
 
     #[test]

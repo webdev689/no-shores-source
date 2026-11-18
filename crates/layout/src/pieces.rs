@@ -92,12 +92,16 @@ impl Kit<'_> {
         });
         let base = self.height(at) - measure.min[1] - 0.05;
         self.prop_at(model, [at[0], at[1], base], yaw, footprint);
+        if let Some(seated) = self.into.props.last_mut() {
+            seated.grounded = true;
+        }
     }
 
     /// Stands a prop with its origin at a point, turned `yaw` degrees, covering `footprint`.
     pub fn prop_at(&mut self, model: u32, at: [f64; 3], yaw: f64, footprint: [f64; 4]) {
         let yaw = yaw.rem_euclid(360.0);
-        self.into.props.push(Seated { model, at, yaw, building: false, footprint, purpose: 0, open: false });
+        let seated = Seated { model, at, yaw, building: false, footprint, purpose: 0, open: false, grounded: false };
+        self.into.props.push(seated);
     }
 
     /// Adds a solid as it is.

@@ -116,7 +116,10 @@ from the sea, fresh water and the claim's edge), then:
 `settle` plans every drawn node's layout on a landmass whose city is settled, then lays them on its ground: the
 sculpts, then the buildings' seats as pads, then the paths as roads (their beds the ground smoothed along them), so
 nature keeps off them, every window of the ground carries them, and a node's room stands its bodies on the carved
-land ([[Land]], [[Server]]). The streets' and paths' heights are then read from the ground as it lies. Saltmere's ten
+land ([[Land]], [[Server]]). Every prop and stone that stood on the ground as it was planned then follows it as it is
+laid, by as far as the pads and roads moved it (`follow_ground`), and what stands on one (a lantern's cage on its
+post) moves with it; a deck, a pile in the water or a battlement keeps its height. The streets' and paths' heights
+are then read from the ground as it lies. Saltmere's ten
 layouts are planned and laid in about 0.65 s natively. The bake and the land's worker settle them alike; a node's
 file takes its section, spawns and boxes from its layout.
 
@@ -149,5 +152,3 @@ of rock.
 - A block's streets are pictures laid in squares of 6.4 m with hard edges.
 - Only the third-person camera's distance is kept from the land; indoors it can stand outside the walls.
 - The World Editor does not plan layouts yet: it shows the land as generated, uncarved.
-- A set piece stands on the land as it was before the paths' beds were laid, so a prop beside a path can stand a
-  hand high or low.

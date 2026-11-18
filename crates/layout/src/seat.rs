@@ -42,6 +42,9 @@ pub struct Seated {
     pub purpose: u8,
     /// Whether a body walks into it: its doors stand open onto rooms of its own.
     pub open: bool,
+    /// Whether it stands on the ground as the plan found it, so it follows the ground as it is laid (settle.rs).
+    #[serde(skip)]
+    pub grounded: bool,
 }
 
 /// A tile of a block's streets or yards laid on the land: its middle, its byte as the block keeps it, and the quarter
@@ -213,6 +216,7 @@ pub fn seat(
             footprint: print,
             purpose: row[5] as u8,
             open: false,
+            grounded: false,
         });
     }
     let standing = &seating.buildings[first_building..];
@@ -245,6 +249,7 @@ pub fn seat(
             footprint: print,
             purpose: 0,
             open: false,
+            grounded: true,
         });
     }
     let mut tiles = Vec::new();
