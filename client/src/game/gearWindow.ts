@@ -9,12 +9,10 @@ import { accountPanel } from './accountTab.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
 import { HoverCard, cardNode, glyphImage, itemIcon, pressOf, rarityOf } from './gearDom.ts';
 import { cardOf } from './gearCards.ts';
-import { type GearHere, characterOf, vendorsOf } from './gearScreen.ts';
+import { type GearHere, OPEN_AT, type Tab, characterOf, vendorsOf } from './gearScreen.ts';
 import { inventoryPage } from './inventoryPage.ts';
 import { itemPage } from './itemPage.ts';
 import { ItemPictures } from './itemPictures.ts';
-
-export type Tab = 'character' | 'inventory' | 'vendors' | 'account';
 
 /** Each tab: its name and the key that opens it. */
 const TABS: readonly (readonly [Tab, string, string])[] = [
@@ -23,17 +21,10 @@ const TABS: readonly (readonly [Tab, string, string])[] = [
   ['vendors', 'Vendors', ''],
   ['account', 'Account', ''],
 ];
-/** The page event that opens the gear window at a tab, as a station's counter does. */
-const OPEN_AT = 'overlook:gear';
 /** How often the window looks for new gear while open, in milliseconds. */
 const LOOK_MS = 100;
 /** A ware's picture box, in pixels. */
 const WARE_PX = 48;
-
-/** Opens the gear window at a tab, wherever it was started. */
-export function openGearWindow(tab: Tab): void {
-  dispatchEvent(new CustomEvent<Tab>(OPEN_AT, { detail: tab }));
-}
 
 /**
  * The gear screen, after Destiny's, in the Enhanced Plus kit: Character (I), Inventory (O), Vendors and Account under a

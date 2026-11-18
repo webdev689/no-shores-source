@@ -38,7 +38,7 @@ import { accountOf, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
 import type { SeaShip } from './seaShips.ts';
-import { HINTS, seaHints } from './hints.ts';
+import { seaHints } from './hints.ts';
 import { shipPanelOf, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { fightControls } from './seaCombat.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
@@ -394,6 +394,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'b') manage();
     else if (key === 'h') leaveHelm();
     else if (key === 'e' && sea?.aboard.walking) takeHelm();
+    else if (key === 'e' && flow.mode === 'foot') foot?.use();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
     else if (key === 'enter' && flow.mode === 'foot') respawn();
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
@@ -468,7 +469,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     scene.draw(shown.shot, size, clock, seconds, [...standing([], shown.figures), ...shown.drawers], { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
-    hud.hints(shown.standing.kind === 'dead' ? HINTS.dead : HINTS.foot);
+    hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);
     hud.note(here.roomNote);

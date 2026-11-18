@@ -86,7 +86,8 @@ number is one of [[Gear as Claude Shapes It]].
   struck it (a shot is the main hand's), a foe's on a player by the player's Defense, each by the two levels. A foe
   of level 0 fights by combat's own numbers.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds, and lays each one's
-  Vestige where it fell, seen by them alone, for two minutes.
+  Vestige where it fell, seen by them alone, for two minutes, under a beam in its rarity's colour ([[Game]], "On
+  foot"). Walking within 1.5 m picks it up.
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner
   and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a

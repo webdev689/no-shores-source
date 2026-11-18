@@ -1,3 +1,4 @@
+import { marksMesh } from '../combat/marks.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
@@ -12,13 +13,17 @@ import type { CombatRules } from '../rules/combatRules.ts';
 import type { Block, MovementRules, Reach } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
+import { FightMarks } from './fightMarks.ts';
 import { FootFight, combatRulesOf } from './footFight.ts';
+import { type Use, groundRings, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { nodeRoom } from './rooms.ts';
 import type { Drawer, GameScene } from './scene.ts';
+import { HINTS } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
+import { PlazaLife } from './plazaLife.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** The rooms on foot: each room's address by its name, and the compiled room module the fight's rules come from. */
@@ -63,13 +68,14 @@ export const IDLE: InputFrame = {
   locked: true,
 };
 
-/** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, and what
- *  else is drawn among them (a fight's marks). */
+/** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, what else
+ *  is drawn among them (the gear's rings on the ground, a fight's marks), and the keys listed. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
   readonly standing: Standing;
   readonly drawers: readonly Drawer[];
+  readonly hints: readonly string[];
 }
 
 /** Stands the movement rules, and the fight's when the player fights, on a node's ground as its room stands its
@@ -94,7 +100,8 @@ function fightDisplay(): HTMLElement {
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section. Offline,
  * the movement door's reach rules judge the edge each tick and the player only walks; online, the node's room judges
  * it and the player fights there, their fighter predicted on the same ground and set by the room's word, with every
- * other player and foe in the room shown.
+ * other player and foe in the room shown. A social space's keepers and townsfolk walk it, and E uses what is within
+ * reach: a station's counter, or a resource node.
  */
 export class Foot {
   readonly node: NodeInfo;
@@ -105,6 +112,10 @@ export class Foot {
   private dressedIn: GearState | null = null;
   private readonly others: readonly Placed[];
   private readonly fought: FootFight | null;
+  private readonly plaza: PlazaLife | null;
+  /** The gear's rings on the ground, and what E does where the player stands. */
+  private readonly ground: FightMarks;
+  private using: Use | null = null;
   private readonly rules: MovementRules;
   private reach: Reach = { kind: 'inside' };
 
@@ -115,6 +126,7 @@ export class Foot {
     room: RoomPlay | null,
     others: readonly Placed[],
     fought: FootFight | null,
+    plaza: PlazaLife | null,
   ) {
     this.context = context;
     this.node = node;
@@ -122,6 +134,8 @@ export class Foot {
     this.room = room;
     this.others = others;
     this.fought = fought;
+    this.plaza = plaza;
+    this.ground = new FightMarks(context.scene.gpu);
     const { movement } = context;
     this.rules = room
       ? room.rules(fought?.fight ?? null)
@@ -184,7 +198,8 @@ export class Foot {
     const fightContext = { walker, forge: context.forge, movement, scene: context.scene, others: placed };
     const fought =
       combat && link ? new FootFight({ ...fightContext, rules: combat, link, root: fightDisplay() }) : null;
-    return new Foot(context, node, boxes, room, placed, fought);
+    const plaza = node.kind === 'social' ? new PlazaLife(node, others, (x, y) => movement.standing(x, y).z) : null;
+    return new Foot(context, node, boxes, room, placed, fought, plaza);
   }
 
   /** Dresses the player's figure in their gear as their room last sent it, once it changes. */
@@ -227,6 +242,13 @@ export class Foot {
     const shot = shotOfOrbit(playerCamera(walker.player, movement, this.boxes), LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
     const foes = fought?.frame(played, seconds, clock, shot, this.boxes) ?? [];
+    this.plaza?.frame(seconds);
+    const gear = this.room?.connected ? this.room.gear : null;
+    const stations = this.node.stations ?? [];
+    const floor = (x: number, y: number) => movement.standing(x, y).z;
+    this.ground.set(marksMesh([], [], [], groundRings(gear, stations, floor, clock), shot.eye));
+    const { x, y } = walker.player.body;
+    this.using = useAt(x, y, stations, gear, (asked) => this.room?.askGear(asked));
     const figures: CardAt[] = [];
     const own = walker.figure(eyeX, eyeY);
     if (own) figures.push(fought ? { ...own, flash: fought.ownFlash } : own);
@@ -238,7 +260,15 @@ export class Foot {
       if (card) figures.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip });
     }
     figures.push(...foes);
-    return { shot, figures, standing: this.standing, drawers: fought ? [fought.marks] : [] };
+    const standing = this.standing;
+    const keys = this.using ? [this.using.words, ...HINTS.foot] : HINTS.foot;
+    const drawers = fought ? [this.ground, fought.marks] : [this.ground];
+    return { shot, figures, standing, drawers, hints: standing.kind === 'dead' ? HINTS.dead : keys };
+  }
+
+  /** Does what E does where the player stands, if anything is within reach. */
+  use(): void {
+    this.using?.run();
   }
 
   /** Where the player stands with the section's edge: the room's word online, the reach rules' offline. */
@@ -266,6 +296,8 @@ export class Foot {
   /** Leaves the node: its room lets the player go, and no section judges them. */
   leave(): void {
     this.fought?.leave();
+    this.plaza?.close();
+    this.ground.release();
     this.room?.close();
     this.context.movement.setSection(null);
   }

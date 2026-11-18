@@ -9,6 +9,9 @@ code:
   - client/src/game/foot.ts#Foot
   - client/src/game/footFight.ts#FootFight
   - client/src/game/fightMarks.ts#FightMarks
+  - client/src/game/footGear.ts#useAt
+  - client/src/game/footGear.ts#groundRings
+  - client/src/game/plazaLife.ts#PlazaLife
   - client/src/player/foeFigures.ts#FoeFigures
   - client/src/player/fightMoves.ts#fightButtons
   - client/src/combat/hud.css
@@ -86,6 +89,14 @@ third person, the forge's figure and the first person's hands.
   are marked on the ground (`FightMarks`). The fight's display (`#fight-hud`, drawn by `combat/hud.css`, the Test
   Ground's sheet too) shows the player's health, stamina and poise, the locked foe's bars, the parry rings and the
   words over the fight. Offline, with no room, the player only walks.
+- **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
+  plaza, seeded by the plaza so they walk the same each visit, online or not.
+- **On the ground** (`footGear`): a brass ring at each counter that deals with the player; at each resource node they
+  may still gather, a sea-green ring under a beam 40 m tall, seen across the patrol, so a route can be planned through
+  them; and at each Vestige lying for them, a ring and a beam in its rarity's colour, picked up by walking over it.
+- **E** uses what is within reach, listed first among the keys: at a counter it opens the gear screen at its tab (the
+  Reader and the vault at Inventory, the Quartermaster and the Armsmith at Vendors); within 2.5 m of a node it asks the
+  room to gather it.
 
 ## The edge
 

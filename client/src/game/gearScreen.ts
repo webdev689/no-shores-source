@@ -20,6 +20,16 @@ import {
   wearAsks,
 } from '../player/gear.ts';
 
+/** The gear screen's tabs. */
+export type Tab = 'character' | 'inventory' | 'vendors' | 'account';
+/** The page event that opens the gear screen at a tab, as a station's counter does. */
+export const OPEN_AT = 'overlook:gear';
+
+/** Opens the gear screen at a tab, wherever it was started. */
+export function openGearWindow(tab: Tab): void {
+  dispatchEvent(new CustomEvent<Tab>(OPEN_AT, { detail: tab }));
+}
+
 /** The player's gear here and the way to ask of it; null where no room keeps gear. */
 export interface GearHere {
   readonly gear: GearState | null;
