@@ -253,6 +253,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_resource_off_a_path_is_reached_from_the_path_point_nearest_it() {
+        let path = Path {
+            tier: Tier::Track,
+            points: vec![[0.0, 0.0], [100.0, 0.0], [100.0, 100.0]],
+            crossings: Vec::new(),
+            heights: Vec::new(),
+        };
+        assert_eq!(nearest_on(std::slice::from_ref(&path), [40.0, 35.0]), Some([40.0, 0.0]));
+        assert_eq!(nearest_on(&[path], [130.0, 80.0]), Some([100.0, 80.0]));
+    }
+
+    #[test]
     fn the_massif_stands_tallest_in_the_highland_and_lowest_in_the_swamp() {
         assert!(rise_of(Some("highland")) > rise_of(Some("temperate-coast")));
         assert!(rise_of(Some("swamp")) < rise_of(Some("steppe")));
