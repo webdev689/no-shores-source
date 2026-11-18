@@ -178,14 +178,19 @@ impl Room {
         }
         let (element, held) = (gear::Element::from_number(blow.element), shield.left);
         let verdict = match verdict {
-            Verdict::Hit { damage, poise } => Verdict::Hit { damage: shield.struck(damage, element), poise },
+            // A blow the shield holds whole does not reach the foe at all, so it fills no poise either.
+            Verdict::Hit { damage, poise } => {
+                let reached = shield.struck(damage, element);
+                Verdict::Hit { damage: reached, poise: if reached > 0.0 { poise } else { 0.0 } }
+            }
             Verdict::Blocked { damage, stamina } => {
                 Verdict::Blocked { damage: shield.struck(damage, element), stamina }
             }
             Verdict::GuardBroken { damage } => Verdict::GuardBroken { damage: shield.struck(damage, element) },
             other => return (other, None),
         };
-        (verdict, Some((held - shield.left, shield.left <= 0.0)))
+        let took = held - shield.left;
+        (verdict, (took > 0.0).then_some((took, shield.left <= 0.0)))
     }
 
     pub(crate) fn tell(

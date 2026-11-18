@@ -86,15 +86,21 @@ they play in holds it while they are there.
 
 ## Friends
 
-The menu's Social tab ([[Interface]]) is the friends list, kept by the accounts as Destiny keeps it.
+The menu's Social tab ([[Interface]], [[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]) is the
+friends list, kept by the accounts as Destiny keeps it.
 
 - **By username.** A player with a username asks another by theirs (`POST /v1/friends/ask`), however it is typed;
   the one asked accepts (`/accept`) or declines, and either may end it after (`/remove`). An account with no username
-  has no friends, and is told to add one in Settings.
-- **One row a pair**, whoever asked: an ask that crosses one already made accepts it. A player keeps at most 100
-  friends and asks, and may ask 30 times an hour.
+  has no friends, and is told to add one in Settings. Accepting or removing a name no one holds answers as for a name
+  that never asked, so neither tells which names exist.
+- **One row a pair**, whoever asked, held so by the database: an ask that crosses one already made accepts it, even
+  when the two are sent at once.
+- **Limits.** A player's own count is their friends and the asks they made, at most 100, so strangers' asks cannot
+  fill it; a list that holds 100 rows takes no new asks. A player may ask 30 times an hour. A declined player may ask
+  again.
 - **Playing or away.** `GET /v1/friends` lists the friends, whether each is playing (a room holds their character
-  now), who has asked, and whom the player has asked. The page asks again every 30 seconds while the list is shown.
+  now), who has asked, and whom the player has asked. The page asks again every 30 seconds while it is seen, not
+  while the menu is shut or a press on it is held, and sends one ask at a time.
 
 ## Running it here
 

@@ -7,6 +7,7 @@
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
 import { friendAsk, friendsOf } from './friends.ts';
+import { USERNAME } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
 /** What the API runs on: the database, the clock, the Discord app if its keys are set, and the pages (by origin and
@@ -18,8 +19,6 @@ export interface Deps {
   readonly pages: readonly string[];
 }
 
-/** A username: 3 to 20 letters, digits and underscores, starting with a letter. */
-const USERNAME = /^[A-Za-z][A-Za-z0-9_]{2,19}$/;
 const PASSWORD_LEAST = 8;
 const PASSWORD_MOST = 200;
 const MINUTE = 60_000;
@@ -348,7 +347,8 @@ export async function handle(request: Request, deps: Deps): Promise<Response> {
     case 'POST /v1/friends/ask':
     case 'POST /v1/friends/accept':
     case 'POST /v1/friends/remove': {
-      const account = await signedIn(request, database, now);
+      const account = await sessionOf(request, database, now);
+      if (account === LAPSED) return refused(401, LAPSED);
       if (!account) return refused(401, 'Not signed in.');
       if (account.username === null) return refused(409, 'Add a username in Settings to have friends.');
       if (request.method === 'GET') return json(await friendsOf(database, account.id, now));

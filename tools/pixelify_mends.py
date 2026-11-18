@@ -10,16 +10,17 @@ from pathlib import Path
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 
-# Pixelify Sans's grid at 1000 units, at weight 500: five columns and seven rows, row 6 the top.
-COLS = [(60, 150), (150, 240), (240, 331), (331, 440), (440, 531)]
+# Pixelify Sans's grid at 1000 units, at weight 500: five columns and seven rows, row 6 the top. A cell is 90 units
+# from the next and 110 wide, as the face's own strokes are at that weight, so neighbouring cells overlap.
+COLS = [(60, 170), (150, 260), (240, 350), (330, 440), (420, 531)]
 ROWS = [
-    (-12, 77),
-    (77, 166),
-    (166, 255),
-    (255, 344),
-    (344, 432),
+    (-12, 100),
+    (77, 189),
+    (166, 278),
+    (255, 367),
+    (344, 456),
     (432, 544),
-    (544, 633),
+    (520, 633),
 ]
 # The 2: a rounded top, the right side down, a diagonal stepping two cells wide, a full base.
 TWO = {
@@ -33,7 +34,7 @@ TWO = {
 }
 # The Z: a flat top and base and one straight diagonal, so it cannot be taken for the 2.
 ZED = {6: [0, 1, 2, 3, 4], 0: [0, 1, 2, 3, 4]}
-ZED_DIAGONAL = ((531, 544), (60, 77))
+ZED_DIAGONAL = ((531, 520), (60, 100))
 # The B: a stem the full height, square at both ends, and two bowls.
 BEE = {
     6: [0, 1, 2, 3],
@@ -111,10 +112,11 @@ made = io.BytesIO()
 builder.save(made)
 data = base64.b64encode(made.getvalue()).decode()
 sheet = FACE.read_text()
-sheet = re.sub(
+sheet, replaced = re.subn(
     r"unicode-range: U\+0032[^;]*;\n  src: url\('data:font/woff2;base64,[^']*'\)",
     f"unicode-range: U+0032, U+0042, U+005A;\n  src: url('data:font/woff2;base64,{data}')",
     sheet,
 )
+assert replaced == 1, f"the mended face was not found in {FACE.name}"
 FACE.write_text(sheet)
 print(f"{len(made.getvalue())} bytes written into {FACE.name}")

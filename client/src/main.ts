@@ -21,7 +21,7 @@ fitCanvas(canvas);
 /** Tells the player plainly why the game could not start. */
 function stopped(message: string): void {
   document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;background:#000;font:16px system-ui;padding:24px';
+  document.body.style.cssText = 'color:#ddd;background:#000;font-size:22px;padding:24px';
 }
 
 try {

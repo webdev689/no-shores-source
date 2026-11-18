@@ -1,8 +1,7 @@
 //! Gear and power, the same on the server and in every browser, after Destiny 1 at launch: items of five rarities,
 //! their nodes unlocked by XP and bought with Aurem, fragments, island resources and Essence; Prestige carried by
 //! armour raising a player past level 20; a weapon's Attack and armour's Defense against a foe's level; Vestiges, the
-//! sealed drops, opened in a social space; weapons' elements and foes' shields; and everything a player holds. See the
-//! Gear note in the bible.
+//! sealed drops, opened in a social space; weapons' elements and foes' shields; and everything a player holds.
 
 pub mod asks;
 pub mod catalogue;

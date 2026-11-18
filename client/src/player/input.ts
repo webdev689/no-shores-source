@@ -24,6 +24,16 @@ export type Action = keyof typeof BINDINGS;
 
 /** One frame's input: what is held, what was pressed or let go since the last frame, how far the mouse moved while the
  *  pointer was locked, and the wheel's notches (positive pulled back). */
+export interface InputFrame {
+  held(action: Action): boolean;
+  pressed(action: Action): boolean;
+  released(action: Action): boolean;
+  readonly lookX: number;
+  readonly lookY: number;
+  readonly wheel: number;
+  readonly locked: boolean;
+}
+
 /** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
 export const IDLE: InputFrame = {
   held: () => false,
@@ -34,16 +44,6 @@ export const IDLE: InputFrame = {
   wheel: 0,
   locked: true,
 };
-
-export interface InputFrame {
-  held(action: Action): boolean;
-  pressed(action: Action): boolean;
-  released(action: Action): boolean;
-  readonly lookX: number;
-  readonly lookY: number;
-  readonly wheel: number;
-  readonly locked: boolean;
-}
 
 /** Listens to the keyboard, the mouse and the wheel on a canvas; `frame()` hands over each frame's input. Clicking the
  *  canvas locks the pointer to look round; Escape lets it go. */

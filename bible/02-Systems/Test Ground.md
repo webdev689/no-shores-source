@@ -61,7 +61,8 @@ WebAssembly; with `?room=`, a server's. The page predicts the player's fighter b
 room's word for it, so playing alone and online are the same game.
 
 - **Foes.** The panel stands a foe of each kind 5 m ahead of where the player looks, facing them, at the level it
-  names (0 for none, which fights by combat's own numbers; a levelled foe's name shows its level), at most twelve, or
+  names (0 for none, which fights by combat's own numbers; a levelled foe's name shows its level), with a Blaze, Volt
+  or Cosmic shield when one is picked ([[Gear]], "Elements and shields"), at most twelve, or
   sends every foe away; a foe asked for while the forge still loads is not asked for. Each
   fights by its brain ([[Foes]]) and is dressed by its kind: the skirmisher in leather with a pair of daggers, the
   swordsman in mail with a sword and kite shield, the brute in iron plate with a warhammer, the archer in leather with

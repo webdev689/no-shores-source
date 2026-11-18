@@ -5,7 +5,7 @@ status: in force
 ---
 # Text Is Plain
 
-> "ensure everything is properly organized and we establish a rule that text needs to be easily explainable, ai text
+> "…ensure everything is properly organized and we establish a rule that text needs to be easily explainable, ai text
 > avoided along with text bloat.
 >
 > For example, instead of saying XP everywhere, the nodes themselves within a weapon can have a ring within it that
@@ -17,11 +17,9 @@ Destiny 2's character screen, its finest pieces' icons framed in gold.
 
 ## What it settles
 
-- **A rule**: text is easily explained, never reads as AI text, and carries no bloat ([[Plain Text]]).
-- **Shown, not said**: where a picture can carry it, the picture does, and the words go.
-- **A node's progress is a ring inside it** that grows as the weapon earns toward it.
-- **An item's icon has a gauge along its foot** that grows as the item is upgraded.
-- **A fully upgraded item's icon is gilded.**
-- So the screens stop saying XP everywhere.
+- **A rule**: text is easily explained, AI text is avoided, and so is text bloat ([[Plain Text]]).
+- **The owner's example: not saying XP everywhere.** The nodes within a weapon have a ring within them that grows;
+  an item's icon has an XP gauge at the bottom that grows with upgrading; once it is fully maxed out, the icon becomes
+  gilded.
 
 Links: [[Plain Text]], [[Interface]], [[Gear]].

@@ -8,3 +8,5 @@ CREATE TABLE friends (
   PRIMARY KEY (asker_id, asked_id)
 );
 CREATE INDEX friends_by_asked ON friends (asked_id);
+-- One row a pair whichever asked, so two asks that cross at once cannot both be kept.
+CREATE UNIQUE INDEX friends_pair ON friends (min(asker_id, asked_id), max(asker_id, asked_id));

@@ -39,14 +39,15 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 ## How it works
 
 - **Roles.** Every surface plays a role, and the role says how it is painted and how it answers a press: a window
-  (the carved frame with brass fittings at its corners, a grained ground, a hard drop), a button, a primary (the one
-  press a surface is for, in brass), a chip (a readout), a header, a footer, a rule and a rail. A surface takes its
-  role by taking its class (`ROLES`); a role no surface wears yet comes over from DFO's kit when one does.
+  (the carved frame with brass fittings at its corners, a grained ground, a hard drop), a panel, a button, a primary
+  (the one press a surface is for, in brass), a warn (a press that costs something, its edge in blood), a tile, a
+  chip (a readout), a well, a header, a footer, a rule and a rail. A surface takes its role by taking its class
+  (`ROLES`).
 - **Presses answer alike.** A button or primary is raised stone; it goes brass under the pointer or focus, sinks while
-  held and goes flat when it cannot be pressed.
+  held and goes flat when it cannot be pressed. A warn lights in blood, never brass.
 - **Paint only.** The kit writes colours, bevels, grounds and shadows, never a width, padding or size, so dressing a
-  surface never sizes or spaces it; only a held press sinks a pixel. The page's own sheet gives each surface its room, and each window and press the 2 px
-  border the kit's bevel and frame land on.
+  surface never sizes or spaces it; only a held press sinks a pixel. The page's own sheet gives each surface its room,
+  and each window and press the 2 px border the kit's bevel and frame land on.
 - **The frame** is a 25 px square picture drawn pixel for pixel and used at 1:1: the outline, the stone bevel lit
   from the top left, an engraved line and a dark lip, with a brass fitting and its rivet at each corner. It reaches
   6 px outside its box, so it takes no room.
@@ -61,12 +62,14 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 
 ## The face
 
-Every word is set in Pixelify Sans, Enhanced Plus's own face ([[Pixelify Sans Is Overlook's Font]]), served with the
-page. It draws sharp only at whole multiples of its grid, 11 px, so every size is one: 11 for words, 22 for names
-and titles, 33 to 66 for the numbers that lead a page. Letters stand 1/22 of their size apart, which keeps them on
-whole pixels at each size; it is set at one weight, never smoothed, never joined by a ligature, and never slanted,
-since it has no italic. Four of its glyphs misread, so a face over just those stands first: Silkscreen's 5, and a 2,
-a Z and a B drawn on its own grid (`tools/pixelify_mends.py`). Shadows under it are hard, a pixel's step.
+Every word on the game's own screens is set in Pixelify Sans, Enhanced Plus's own face
+([[Pixelify Sans Is Overlook's Font]]), served with the page. It draws sharpest at whole multiples of its grid, 11 px,
+so every size is one: 11 for words, 22 for names and titles, 33 to 66 for the numbers that lead a page. Letters stand
+1/22 of their size apart (3/22 for labels, 5/22 for titles), each word a little more than the face's own space, with
+no kerning and no ligature. It is set at one weight, so emphasis is in size and colour; it is never slanted, as it has
+no italic. Four of its glyphs misread, so a second face, listed first, replaces just those: Silkscreen's 5, and a 2, a
+Z and a B drawn on Pixelify's own grid at its weight (`tools/pixelify_mends.py`). Shadows under it are hard, a
+pixel's step.
 
 ## The menu
 
@@ -108,7 +111,7 @@ never while a press is held. Each press is an ask the room answers.
 - **Inventory.** The currencies along the top; then shelves, each counting what it holds: Gear, each slot's worn
   piece and the nine it carries, a click wearing one; Consumables; Materials, a list by name and count; and Vestiges,
   ten places, a click opening one in a social space.
-- **Ship.** The Sloop's papers, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
+- **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** ([[Accounts]], "Friends"): a field to ask another player by username; who has asked, to accept or
   decline; the friends, each playing or away, a remove held; and whom the player has asked, to cancel. A player needs
@@ -135,6 +138,8 @@ Vestiges.
 
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
-- The [[World Editor]] and the [[Test Ground]] keep their own panels for now.
+- The [[World Editor]] and the [[Test Ground]] keep their own panels for now, in the system's face: they are tools,
+  not the game's screens. A symbol the face does not draw (a map mark's anchor, a rarity's pips) falls back to the
+  system's.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - No gamepad or touch layer yet.

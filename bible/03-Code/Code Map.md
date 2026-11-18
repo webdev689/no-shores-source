@@ -53,7 +53,7 @@ decision, made in the same change as its entry here.
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |
 | `crates/foes` | [[Foes]]: the kinds of foe and the brain each fights with: turns at a target, the ring, telegraphed blows and answers to blows |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
-| `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, and what a player holds |
+| `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, and what a player holds |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; and a fleet ship's prediction and lay for a browser |

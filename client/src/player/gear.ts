@@ -74,14 +74,14 @@ const REFUSALS: Readonly<Record<number, string>> = {
   7: 'The vault is full.',
   8: 'You already carry ten Vestiges.',
   9: 'Only in a social space, or at the stall.',
-  10: 'Not where it is: worn, or in the vault.',
-  11: 'Not unlocked yet: its ring fills as the item is used.',
+  10: 'Not while it is worn or in the vault.',
+  11: 'Locked until its ring fills.',
   12: 'There is no such node.',
   13: 'That node is already bought.',
   14: 'That node is not bought.',
   15: 'You do not have enough for it.',
   16: 'You have no Fruit of Dagon.',
-  17: 'It can earn no more XP.',
+  17: 'It cannot grow any more.',
   100: 'Out of reach, or already gathered.',
   101: 'Only the Test Ground hands out gear.',
   102: 'You can carry no more of it.',
@@ -197,8 +197,9 @@ export function nodeShown(item: GearItem, column: number, node: number): NodeSho
 export function wearAsks(item: GearItem): readonly { readonly label: string; readonly ask: GearAsk }[] {
   const kind = KINDS[item.kind] ?? '';
   const home = kind === 'shield' ? 1 : SLOTS.indexOf(kind as (typeof SLOTS)[number]);
-  const asks = [{ label: 'Wear', ask: { kind: ASKS.wear, item: item.id, slot: Math.max(0, home) } }];
-  if (OFF_HAND_BLADES.has(kind)) asks.push({ label: 'Off hand', ask: { kind: ASKS.wear, item: item.id, slot: 1 } });
+  const asks = [{ label: 'Equip', ask: { kind: ASKS.wear, item: item.id, slot: Math.max(0, home) } }];
+  if (OFF_HAND_BLADES.has(kind))
+    asks.push({ label: 'Equip off hand', ask: { kind: ASKS.wear, item: item.id, slot: 1 } });
   return asks;
 }
 

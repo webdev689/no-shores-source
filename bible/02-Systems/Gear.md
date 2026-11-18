@@ -119,15 +119,19 @@ number is one of [[Gear as Claude Shapes It]].
 ## Elements and shields
 
 - **A weapon's element** ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]): Blaze, Volt or Cosmic,
-  or none. It is rolled as the weapon is made, as a Vestige opens or a vendor stocks it, by rarity: one in ten for
-  Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and Atheric; never surely.
-  Armour and shields carry none. A blow carries its weapon's element; a shot keeps the one it was loosed with.
+  or none. It is rolled as the weapon is made, as a Vestige opens, a vendor stocks it or the Test Ground grants it, by
+  rarity: one in ten for Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and
+  Atheric; it is not guaranteed. Armour and shields carry none. A blow carries the element of the weapon that struck
+  it, none from the fists while a bow or gun is worn; a shot keeps the one it was loosed with.
 - **A foe's shield.** One foe in five that a patrol stands carries a shield of an element chosen evenly, holding half
-  its health. While it holds, a blow wears the shield and not the foe: three times as hard with the shield's own
-  element, half as hard with another, as hard as on health with none. What a breaking shield cannot hold reaches
-  health. A shield does not come back.
+  its health. While it holds, a blow wears the shield and not the foe's health: three times as hard with the shield's
+  own element, half as hard with another, as hard as on health with none. A blow the shield holds whole fills no
+  poise; what a guard pays in stamina is paid as ever. What a breaking shield cannot hold reaches health. A shield
+  does not come back.
 - **What is told.** The room tells each blow a shield takes, with what it took, and its breaking; the browser draws a
-  shielded foe's shield over its health in its element's colour, and says what the shield took in that colour.
+  shielded foe's shield over its health in its element's colour, says what the shield took in that colour for the
+  player's own blows, and stacks the words told of one foe at once. Its glyphs show the elements on the screens
+  ([[Interface]], [[Text Is Plain]]).
 
 ## Where foes stand
 

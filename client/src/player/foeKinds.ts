@@ -90,3 +90,5 @@ export const foeKind = (number: number): FoeKind | undefined => FOE_KINDS.find((
 
 /** The number a panel sends to send every foe away. */
 export const CLEAR_FOES = 255;
+/** A foe asked for names its shield's element above its kind's four bits (crates/room/src/foes.rs `SHIELD_SHIFT`). */
+export const SHIELD_SHIFT = 4;

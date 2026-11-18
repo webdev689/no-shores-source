@@ -56,6 +56,8 @@ const OWN_WORD_BELOW = 56;
 const OWN_WORD_LINE = 22;
 /** A foe's bar shows over it this near, once it has been struck. */
 const BAR_NEAR_M = 16;
+/** How far above the last word one told of the same fighter at once stands, in metres. */
+const WORD_STACK_M = 0.35;
 /** A foe winding up an iron blow this near is told to be dodged. */
 const IRON_NEAR_M = 12;
 /** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
@@ -263,7 +265,7 @@ export class Hud {
       showShield(bars.shield, foe.shield);
       bars.health.set(view.health / Math.max(1, view.healthMax));
       const stack = bars.health.root.parentElement;
-      if (stack) stack.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
+      if (stack) stack.style.transform = `translate(${Math.round(spot.x)}px, ${Math.round(spot.y)}px)`;
     }
     for (const [id, bars] of this.bars) {
       if (shown.has(id)) continue;
@@ -304,12 +306,17 @@ export class Hud {
   /** The events' words, each rising and fading over where it happened (in first person, those on the player below the
    *  crosshair), and a warning over a foe near the player as it begins an iron wind-up. */
   private floatWords(frame: HudFrame, seconds: number): void {
+    // Words told of one fighter at once stand one above the next, so a breaking shield's are each read.
+    const told = new Map<number, number>();
     for (const event of frame.events) {
       const word = wordOf(event, frame.player);
       const place = frame.where(event.defender);
       if (!word || !place) continue;
       const own = frame.firstPerson && event.defender === frame.player;
-      const said = this.say(word.text, word.tone, own ? null : [place[0], place[1], place[2] + 1.9]);
+      const above = told.get(event.defender) ?? 0;
+      told.set(event.defender, above + 1);
+      const over = [place[0], place[1], place[2] + 1.9 + above * WORD_STACK_M] as const;
+      const said = this.say(word.text, word.tone, own ? null : over);
       const shield = frame.foes.find((each) => each.id === event.defender)?.shield;
       if (word.tone === 'shield' && shield) said.style.setProperty('--element', shield.colour);
     }
@@ -331,7 +338,7 @@ export class Hud {
         return false;
       }
       const share = word.age / WORD_SECONDS;
-      word.element.style.transform = `translate(${spot.x}px, ${spot.y - share * WORD_RISE}px)`;
+      word.element.style.transform = `translate(${Math.round(spot.x)}px, ${Math.round(spot.y - share * WORD_RISE)}px)`;
       word.element.style.opacity = String(1 - share * share);
       return true;
     });

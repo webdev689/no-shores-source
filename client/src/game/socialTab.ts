@@ -27,7 +27,7 @@ function row(name: string, word: string, presses: readonly HTMLElement[], playin
 export function socialPage(link: AccountLink | null): HTMLElement {
   const page = make('div', '', `gear-social ${ROLES.panel}`);
   if (!link) {
-    page.append(make('p', 'This page keeps no account: it plays alone.', 'gear-hint'));
+    page.append(make('p', 'Friends need an account. You are playing offline.', 'gear-hint'));
     return page;
   }
   const said = make('p', '', 'gear-answer');
@@ -37,15 +37,25 @@ export function socialPage(link: AccountLink | null): HTMLElement {
   Object.assign(name, { type: 'text', autocomplete: 'off', spellcheck: false, maxLength: 20 });
   name.setAttribute('aria-label', 'Their username');
   const field = make('label', '', 'gear-field');
-  const doing = (asked: 'ask' | 'accept' | 'remove', who: string) =>
-    void link.befriend(asked, who).then((why) => {
-      said.textContent = why ?? (asked === 'ask' ? `Asked ${who}.` : '');
-      if (why === null && asked === 'ask') name.value = '';
-      look();
-    });
+  // One ask at a time: a second press, or Enter held, while one is on its way does nothing.
+  let busy = false;
+  const doing = (asked: 'ask' | 'accept' | 'remove', who: string) => {
+    if (busy) return;
+    busy = true;
+    void link
+      .befriend(asked, who)
+      .then((why) => {
+        said.textContent = why ?? (asked === 'ask' ? `Asked ${who}.` : '');
+        if (why === null && asked === 'ask') name.value = '';
+      })
+      .finally(() => {
+        busy = false;
+        look();
+      });
+  };
   const askPress = pressOf('Ask', () => doing('ask', name.value.trim()), 'primary');
   name.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') doing('ask', name.value.trim());
+    if (event.key === 'Enter' && !event.repeat) doing('ask', name.value.trim());
   });
   field.append(make('span', 'Add a friend', 'gear-label'), name, askPress);
   const show = (list: Friends | string) => {
@@ -99,12 +109,14 @@ export function socialPage(link: AccountLink | null): HTMLElement {
     );
   };
   function look(): void {
-    if (!page.isConnected && page.dataset['looked']) return;
-    page.dataset['looked'] = '';
     void link?.friends().then(show);
   }
   page.append(field, said, lists);
   look();
-  const timer = window.setInterval(() => (page.isConnected ? look() : window.clearInterval(timer)), LOOK_MS);
+  // Asked again only while it is seen, and never under a press being held, which a rebuild would let go.
+  const timer = window.setInterval(() => {
+    if (!page.isConnected) window.clearInterval(timer);
+    else if (page.checkVisibility() && !document.hidden && !page.querySelector('.gear-holding')) look();
+  }, LOOK_MS);
   return page;
 }

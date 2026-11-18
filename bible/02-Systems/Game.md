@@ -103,8 +103,8 @@ third person, the forge's figure and the first person's hands.
   may still gather, a sea-green ring under a beam 40 m tall, seen across the patrol, so a route can be planned through
   them; and at each Vestige lying for them, a ring and a beam in its rarity's colour, picked up by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
-  (`UsePrompt`): at a counter it opens the gear screen at its tab (the
-  Reader and the vault at Inventory, the Quartermaster and the Armsmith at Vendors); within 2.5 m of a node it asks the
+  (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
+  vendor their own; [[Interface]]); within 2.5 m of a node it asks the
   room to gather it. Neither is offered while a menu is up or the player lies dead, past the edge or felled by a
   foe.
 

@@ -45,15 +45,15 @@ export function wordOf(event: FightEvent, player: number): { readonly text: stri
     return strikerWins === (side === 'striker') ? good : 'taken';
   };
   if (event.kind === EVENT.feinted) return { text: 'Feint', tone: 'plain' };
-  // What a shield takes is said in its element's colour; a blow it held whole reaches no health to number.
-  if (event.kind === EVENT.shielded) return { text: String(Math.max(1, Math.round(event.amount))), tone: 'shield' };
-  if (event.kind === EVENT.hit && event.amount <= 0) return null;
-  if (event.kind === EVENT.hit) {
-    const amount = Math.max(1, Math.round(event.amount));
-    const special = event.how === HOW.riposte ? 'Riposte' : event.how === HOW.counter ? 'Counter' : null;
-    const text = special ? `${special} ${amount}` : String(amount);
-    return { text, tone: toneOf(true, special ? 'great' : 'dealt') };
-  }
+  const special = event.how === HOW.riposte ? 'Riposte' : event.how === HOW.counter ? 'Counter' : null;
+  const numbered = (amount: number) => (special ? `${special} ${amount}` : String(amount));
+  // What a shield takes is said in its element's colour, for the player's own blows; a blow it held whole reaches no
+  // health to number.
+  if (event.kind === EVENT.shielded && event.amount > 0)
+    return { text: numbered(Math.max(1, Math.round(event.amount))), tone: side === null ? 'plain' : 'shield' };
+  if (event.kind === EVENT.shielded || (event.kind === EVENT.hit && event.amount <= 0)) return null;
+  if (event.kind === EVENT.hit)
+    return { text: numbered(Math.max(1, Math.round(event.amount))), tone: toneOf(true, special ? 'great' : 'dealt') };
   const says = SAYS[event.kind];
   if (!says) return null;
   // The player's own blow parried is told as theirs.

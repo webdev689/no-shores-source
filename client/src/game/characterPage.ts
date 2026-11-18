@@ -55,7 +55,7 @@ const FIGURE_AROUND = 230;
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 /** What a worn slot's presses do, and a carried piece's. */
 const SLOT_HINTS: readonly Hint[] = [
-  ['Click', 'Its nine'],
+  ['Click', 'Swap'],
   ['Right-click', 'Details'],
 ];
 export const CELL_HINTS: readonly Hint[] = [

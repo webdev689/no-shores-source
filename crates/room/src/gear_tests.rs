@@ -318,17 +318,19 @@ fn a_shield_takes_blows_before_health_and_its_own_element_breaks_it_fastest() {
         let events = chop(room, player, from);
         let took = events.iter().find(|event| event.kind == EventKind::Shielded).map_or(0.0, |event| event.amount);
         let broke = events.iter().any(|event| event.kind == EventKind::ShieldBroken);
-        (took, broke, health - room.foes[&foe].fighter.health)
+        let poise = room.foes[&foe].fighter.poise;
+        (took, broke, health - room.foes[&foe].fighter.health, poise)
     };
-    let (plain, broke, harmed) = strike(&mut room, None, 500.0, 1);
+    let (plain, broke, harmed, poise) = strike(&mut room, None, 500.0, 1);
     assert!(plain > 0.0 && !broke);
     assert_eq!(harmed, 0.0, "nothing reaches its health while the shield holds");
+    assert_eq!(poise, 0.0, "nor its poise");
     let (matched, ..) = strike(&mut room, Some(Element::Volt), 500.0, 31);
     let (other, ..) = strike(&mut room, Some(Element::Blaze), 500.0, 61);
     assert!((matched - plain * MATCHED).abs() < 1e-6, "{matched} against {plain}");
     assert!((other - plain * MISMATCHED).abs() < 1e-6, "{other} against {plain}");
     // A shield almost gone breaks under the next blow, and the rest of that blow reaches health.
-    let (_, broke, harmed) = strike(&mut room, None, 1.0, 91);
+    let (_, broke, harmed, _) = strike(&mut room, None, 1.0, 91);
     assert!(broke);
     assert!((harmed - (plain - 1.0)).abs() < 1e-6, "{harmed}");
 }

@@ -107,7 +107,6 @@ kbd.gear-key {
   line-height: 16px;
   text-align: center;
   color: var(--word);
-  letter-spacing: 0;
   text-transform: none;
 }
 .gear-tab-count {
@@ -366,9 +365,7 @@ img.gear-glyph {
   font-size: var(--type-xs);
   line-height: 1;
   color: var(--rar);
-  text-shadow:
-    1px 1px 0 var(--outline),
-    0 0 4px rgba(var(--rar-rgb, 120, 110, 90), 0.7);
+  text-shadow: 1px 1px 0 var(--outline);
 }
 .gear-initials {
   font-size: var(--type-l);
@@ -742,7 +739,7 @@ img.gear-glyph {
   margin: 0;
   font-size: var(--type-xl);
   font-weight: 500;
-  line-height: 1.1;
+  line-height: 36px;
   color: var(--rar-hi, var(--word));
 }
 .gear-item-kind {
@@ -911,7 +908,7 @@ img.gear-glyph {
 .gear-currency-words {
   display: flex;
   flex-direction: column;
-  line-height: 1.15;
+  line-height: 13px;
 }
 .gear-currency-words b {
   font-size: var(--type-m);

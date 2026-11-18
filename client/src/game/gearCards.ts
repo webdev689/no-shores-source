@@ -27,8 +27,6 @@ import type { Press } from './gearScreen.ts';
 export const CARRIED_MOST = 9;
 export const VESTIGES_MOST = 10;
 export const VAULT_MOST = 20;
-/** The XP a Fruit of Dagon gives an item (the gear crate's `FRUIT_ITEM_XP`). */
-const FRUIT_ITEM_XP = 5_000;
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
@@ -177,7 +175,7 @@ export function inventoryPageOf(state: GearState): InventoryPage {
   ];
   const fruit = cell('fruit', 'fruit', 'Fruit of Dagon', {
     count: state.stocks[4] ?? 0,
-    words: `Held on an item's page, it is eaten to give that item ${FRUIT_ITEM_XP.toLocaleString()} XP.`,
+    words: "Hold it on an item's page to feed it to that item: it grows the item.",
   });
   const materials = Array.from({ length: RESOURCE_COUNT }, (unused, index) =>
     cell(`resource-${index}`, 'resource', resourceName(index), {

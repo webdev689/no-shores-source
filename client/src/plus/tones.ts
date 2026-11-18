@@ -23,8 +23,6 @@ export const TONES = {
   wordDim: '#e2dccd',
 } as const;
 
-export type Tones = typeof TONES;
-
 /** The four edges of a bevel, as `border-color` takes them: top, right, bottom, left. */
 export const BEVELS = {
   raised: `${TONES.stoneLit} ${TONES.stoneDim} ${TONES.stoneDark} ${TONES.stoneMid}`,

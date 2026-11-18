@@ -98,7 +98,13 @@ impl Room {
     /// by their levels. Its poise and the stamina it costs a guard are the weapon's own.
     pub(crate) fn empower(&self, blow: Blow, defender: FighterId, left_hand: bool) -> Blow {
         let hand = if left_hand { Slot::OffHand } else { Slot::MainHand };
-        self.empower_as(blow, defender, self.held(blow.striker, hand))
+        // A swing with a bow or a gun worn is a blow of the fists: it carries none of the weapon's element.
+        let shooting = |striker: &crate::Player| striker.character.worn(hand).is_some_and(|item| item.kind.ranged());
+        let held = self.held(blow.striker, hand).map(|held| match self.players.get(&blow.striker) {
+            Some(striker) if shooting(striker) => Loosed { element: None, ..held },
+            _ => held,
+        });
+        self.empower_as(blow, defender, held)
     }
 
     /// What a player strikes with now from `hand`; nothing for a foe.

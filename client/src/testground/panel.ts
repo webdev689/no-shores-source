@@ -3,7 +3,7 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
-import { CLEAR_FOES, FOE_KINDS } from '../player/foeKinds.ts';
+import { CLEAR_FOES, FOE_KINDS, SHIELD_SHIFT } from '../player/foeKinds.ts';
 import { ELEMENTS } from '../player/gear.ts';
 
 /** What the panel shows: the forge's tables, the figures (the player's own among them), the chosen one, the figures'
@@ -115,10 +115,9 @@ export function startPanel(root: HTMLElement, handlers: PanelHandlers): (state: 
       list.append(pick);
     }
     const chosen = state.chosen;
-    // A foe asked for names its shield's element above its kind's four bits (crates/room/src/foes.rs SHIELD_SHIFT).
     const foes = FOE_KINDS.map((kind) =>
       button(`${/^[aeiou]/i.test(kind.name) ? 'An' : 'A'} ${kind.name.toLowerCase()}`, () =>
-        handlers.fight(kind.number | (foeLevel.shield << 4), foeLevel.value),
+        handlers.fight(kind.number | (foeLevel.shield << SHIELD_SHIFT), foeLevel.value),
       ),
     );
     const shield = make('select');

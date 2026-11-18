@@ -1,4 +1,4 @@
-// The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Ship, the Sloop's papers as
+// The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Ship, the Sloop's details as
 // Manage shows them; and Settings, which keeps the account.
 
 import { make } from '../editor/dom.ts';
@@ -20,7 +20,7 @@ export function laterPage(name: string, words: string): HTMLElement {
 export function shipPage(panel: ShipPanel | null): HTMLElement {
   const page = make('div', '', `gear-ship ${ROLES.panel}`);
   if (!panel) {
-    page.append(make('p', 'Reading her papers…', 'gear-hint gear-empty'));
+    page.append(make('p', 'Loading your ship…', 'gear-hint gear-empty'));
     return page;
   }
   page.append(make('h2', panel.title, 'gear-ship-name'));
@@ -44,6 +44,6 @@ export function shipPage(panel: ShipPanel | null): HTMLElement {
 export function settingsPage(link: AccountLink | null): HTMLElement {
   const page = make('div', '', `gear-settings ${ROLES.panel}`);
   page.append(make('h2', 'Account', `gear-heading ${ROLES.rule}`));
-  page.append(link ? accountPanel(link) : make('p', 'This page keeps no account: it plays alone.', 'gear-hint'));
+  page.append(link ? accountPanel(link) : make('p', 'Playing offline: there is no account.', 'gear-hint'));
   return page;
 }

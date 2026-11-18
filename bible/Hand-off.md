@@ -146,6 +146,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
   blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
   while; and which foes beyond the patrols' carry them.
+- The third audit's questions for the owner: draw the 5 on Pixelify's grid, as the 2, B and Z are; keep the Z's
+  straight diagonal or step it; weight 500 or 400; draw the few symbols the face lacks (the anchor, the pips); one
+  number for every mismatched shield (×0.5) or one for each pair; let a player block, since a declined player can ask
+  again; have the room check that a player stands at the counter they use; whether the mended glyphs, a data address a
+  tool writes, need a check under the generated-files rule; whether the icon's gauge counts XP or nodes bought; and
+  Pixelify in the Test Ground's panel and the editor.
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
@@ -181,6 +187,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   shields"). Tested offline: the full check, headless pictures of every page at 1280×720 and 1920×1080 against
   local accounts and rooms, the friends list against the local accounts, and a shielded foe in the Test Ground. Not
   yet seen headless: a blow on a shield in the game, its words and its breaking (the room's tests cover them).
+  A third audit of this round is fixed on #60: friends asked by both at once make one friendship, a list counts only
+  its own asks and friends, and a name no one holds answers as any other; a blow the shield holds whole fills no
+  poise; the menu lets go of a held press and stops the game under it; focus goes back to the tile an item's page came
+  from; and the mended glyphs sit on the grid at weight 500.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.

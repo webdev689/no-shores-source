@@ -50,7 +50,7 @@ const GLYPHS: Record<MarkKind, string> = {
   mission: '◆',
   dungeon: '▼',
   boss: '☠',
-  port: '⚓',
+  port: '⚓\uFE0E',
 };
 
 /** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
@@ -208,7 +208,7 @@ export class Hud {
       kept.add(mark.id);
       const shown = this.marksShown.get(mark.id) ?? this.markNode(mark.id);
       shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}`;
-      shown.root.style.transform = `translate(${mark.x.toFixed(1)}px, ${mark.y.toFixed(1)}px)`;
+      shown.root.style.transform = `translate(${Math.round(mark.x)}px, ${Math.round(mark.y)}px)`;
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
       shown.glyph.textContent = GLYPHS[mark.kind];

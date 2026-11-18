@@ -19,7 +19,7 @@ than none."
 ## What it settles
 
 - **Three elements**: Blaze, which is fire; Volt, which is electric; Cosmic, which is purple energy.
-- **A weapon may roll one, never surely.** Some weapons have no element.
+- **A weapon may roll one; it is not guaranteed.** Some weapons have no element.
 - **Foes sometimes carry a shield**, and each shield has a type.
 - **Against a shield**, a weapon whose element matches its type is very effective; one with another element is
   less effective; one with no element does normal damage.

@@ -19,7 +19,7 @@ import {
   wearAsks,
 } from '../player/gear.ts';
 
-/** The menu's tabs, in the owner's order. */
+/** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
 /** The screens a social space's counters open: the vault, and each vendor's stall. */
@@ -164,7 +164,7 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
   }
   if (item.at === VAULTED && atVault)
     presses.push({ label: 'Take out of the vault', ask: { kind: ASKS.withdraw, item: item.id }, role: 'button' });
-  if (item.columns.length > 0 && item.xp < item.xpMost && (state.stocks[4] ?? 0) > 0)
+  if (item.columns.length > 0 && item.at !== VAULTED && item.xp < item.xpMost && (state.stocks[4] ?? 0) > 0)
     presses.push({
       label: 'Hold to feed a Fruit of Dagon',
       ask: { kind: ASKS.feed, item: item.id },

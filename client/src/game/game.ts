@@ -33,7 +33,7 @@ import { KIND_WORDS, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
-import { startGearWindow } from './gearWindow.ts';
+import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
@@ -484,7 +484,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const paused = flow.mode !== 'sea' || flow.menu;
+    const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     const swell = scene.land?.swell;
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
     if (!paused && !mapUp())

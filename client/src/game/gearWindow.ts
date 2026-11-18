@@ -22,6 +22,8 @@ import {
 import { inventoryPage } from './inventoryPage.ts';
 import { itemPage } from './itemPage.ts';
 import { ItemPictures } from './itemPictures.ts';
+
+export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { socialPage } from './socialTab.ts';
@@ -39,7 +41,7 @@ const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: 
 };
 /** Each station's screen's name. */
 const STATIONS: Readonly<Record<Station, string>> = {
-  vault: 'Vault',
+  vault: 'The Vault',
   quartermaster: 'The Quartermaster',
   armsmith: 'The Armsmith',
 };
@@ -48,7 +50,7 @@ const LOOK_MS = 100;
 /** What the footer says each view's presses and keys do, and an item's page's. */
 const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   character: [
-    ['Click', 'Its nine'],
+    ['Click', 'Swap'],
     ['Right-click', 'Details'],
   ],
   inventory: [
@@ -56,7 +58,7 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
     ['Right-click', 'Details'],
   ],
   vault: [
-    ['Click', 'Move across'],
+    ['Click', 'Put in or take out'],
     ['Right-click', 'Details'],
   ],
   quartermaster: [['Hold', 'Buy']],
@@ -112,6 +114,7 @@ export function startGearWindow(
   const tabRow = make('div', '', 'gear-tabs-top');
   tabRow.setAttribute('role', 'tablist');
   const title = make('h2', '', 'gear-station-name');
+  title.id = 'gear-station-name';
   const purse = make('div', '', 'gear-purse');
   header.append(who, tabRow, title, purse);
   // The room's answer to the last press, in the footer beside what the presses do.
@@ -119,6 +122,7 @@ export function startGearWindow(
   answer.setAttribute('role', 'status');
   answer.setAttribute('aria-live', 'polite');
   const body = make('div', '', 'gear-body');
+  body.setAttribute('role', 'tabpanel');
   const footer = make('div', '', `gear-foot ${ROLES.footer}`);
   const said = make('div', '', 'gear-said');
   const actions = make('div', '', 'gear-actions');
@@ -138,6 +142,10 @@ export function startGearWindow(
   let shownState = '';
   let drawn = 0;
   let pressing = false;
+  /** How many asks the room had answered when the menu opened: only a newer answer is shown. */
+  let heard: number | null = null;
+  /** The tile to give the focus back to once an item's page closes. */
+  let returnTo: string | null = null;
   /** A page that needs no gear, kept while its view and what it shows stay the same. */
   let plain: { key: string; page: HTMLElement } | null = null;
   let pictures: ItemPictures | null = null;
@@ -149,15 +157,26 @@ export function startGearWindow(
     for (const part of root.children)
       if (part instanceof HTMLElement && part !== screen && part !== scrim && part !== tip.node) part.inert = asleep;
   };
+  /** Lets go of every press held, so none acts once its page has gone. */
+  const letGo = () => {
+    for (const held of screen.querySelectorAll('.gear-holding')) held.dispatchEvent(new PointerEvent('pointercancel'));
+  };
   const shut = () => {
+    letGo();
+    if (document.activeElement instanceof HTMLElement && screen.contains(document.activeElement))
+      document.activeElement.blur();
     view = null;
     screen.hidden = scrim.hidden = true;
     setGearScreenOpen(false);
     beneath(false);
     tip.hide();
+    // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
+    body.replaceChildren();
+    [plain, shownGear] = [null, null];
   };
   /** Escape's one step back: the item's page, then the flyout, then the menu. */
   const back = () => {
+    letGo();
     if (inspecting !== null) inspecting = null;
     else if (slot !== null) slot = null;
     else shut();
@@ -165,17 +184,22 @@ export function startGearWindow(
   const open = (wanted: View, onShelf?: string) => {
     if (view === wanted && onShelf === undefined) return shut();
     const opening = view === null;
-    [view, slot, inspecting, plain, shownGear] = [wanted, null, null, null, null];
-    if (onShelf !== undefined) shelf = onShelf;
+    [view, slot, inspecting, plain, shownGear, returnTo] = [wanted, null, null, null, null, null];
+    shelf = onShelf ?? 'gear';
+    if (opening) heard = here()?.gear?.answered ?? null;
     screen.hidden = scrim.hidden = false;
     setGearScreenOpen(true);
     beneath(true);
     document.exitPointerLock();
     render();
-    if (opening) (tabs.find((node) => node.dataset['tab'] === wanted) ?? screen.querySelector('button'))?.focus();
+    // Opened, or moved to a station while the focus was on a page now gone: the tab or the station's first press.
+    if (opening || !screen.contains(document.activeElement))
+      (tabs.find((node) => node.dataset['tab'] === wanted) ?? body.querySelector('button'))?.focus();
   };
   const tabs = TABS.map((name) => {
-    const node = tabPress(name, () => open(name));
+    // The tab already shown stays shown; Escape or Close shuts the menu.
+    const node = tabPress(name, () => view !== name && open(name));
+    node.id = `gear-tab-${name}`;
     node.dataset['tab'] = name;
     node.dataset['key'] = `tab-${name}`;
     node.setAttribute('role', 'tab');
@@ -231,10 +255,11 @@ export function startGearWindow(
     title.textContent = station ?? '';
     const now = here();
     const gear = now?.gear ?? null;
+    body.setAttribute('aria-labelledby', isTab(view) ? `gear-tab-${view}` : 'gear-station-name');
     if (!ofGear(view)) {
       const page = plainPage(view);
+      if (gear !== shownGear) [shownGear] = [gear, ends(gear)];
       if (body.firstChild !== page) {
-        ends(gear);
         tip.hide();
         answer.textContent = '';
         body.replaceChildren(page);
@@ -272,14 +297,15 @@ export function startGearWindow(
     ends(gear);
     if (!now || !gear) {
       answer.textContent = '';
-      const why = now ? 'Waiting for the room…' : 'Gear is kept by the rooms: it shows on foot in a room.';
+      const why = now ? 'Loading…' : 'Your gear shows here on foot, when playing online.';
       body.replaceChildren(make('p', why, 'gear-hint gear-empty'));
       said.replaceChildren(answer);
       actions.replaceChildren(close);
       return;
     }
     const opened = gear.items.find((each) => each.id === gear.identified);
-    answer.textContent = opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
+    const fresh = gear.answered !== heard;
+    answer.textContent = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
     answer.style.color = opened ? (RARITIES[opened.rarity]?.colour ?? '') : '';
     const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
     const context: PageContext = {
@@ -291,6 +317,9 @@ export function startGearWindow(
       room: body.clientHeight,
       inspect: (item) => {
         inspecting = item.id;
+        // Back to the tile it was asked from: a worn piece's slot or its tile in a list.
+        const from = document.activeElement instanceof HTMLElement ? document.activeElement.dataset['key'] : undefined;
+        returnTo = from ?? `item-${item.id}`;
         render();
       },
       atVault: view === 'vault',
@@ -311,13 +340,19 @@ export function startGearWindow(
     body.replaceChildren(page, ...(shown ? [shown.page] : []));
     // One footer: what the presses and keys do here, the room's answer, and what may be done: an item's presses on its
     // page, else a step back while a flyout is open, else closing the menu.
-    const hints = shown ? HINTS.item : view === 'inventory' ? (SHELF_HINTS[shelf] ?? HINTS.inventory) : HINTS[view];
+    // A Vestige opens with a click only in a social space, so the footer offers it only there.
+    const shelfHints = shelf === 'vestiges' && !gear.social ? [] : (SHELF_HINTS[shelf] ?? HINTS.inventory);
+    const hints = shown ? HINTS.item : view === 'inventory' ? shelfHints : HINTS[view];
     said.replaceChildren(answer, hintLine(hints ?? []));
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null ? [stepBack] : [close]));
-    const again = focused ? screen.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`) : null;
-    if (again) again.focus();
-    else if (shown && !shown.page.contains(document.activeElement))
-      shown.page.querySelector<HTMLElement>('button')?.focus();
+    // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it
+    // goes back to the item's tile.
+    const found = (key: string | null | undefined) =>
+      key ? screen.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : null;
+    const again = found(focused);
+    if (shown && !(again && shown.page.contains(again)))
+      (shown.page.querySelector<HTMLElement>('button') ?? shown.presses.querySelector<HTMLElement>('button'))?.focus();
+    else (again ?? found(returnTo))?.focus();
   }
 
   // A press is never lost to a new build under it: none is made while one is held down.
@@ -332,7 +367,9 @@ export function startGearWindow(
     if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
   });
   // A key on the menu's own controls goes to them and no further, so typing in its fields reaches no game key.
-  screen.addEventListener('keydown', (event) => event.stopPropagation());
+  screen.addEventListener('keydown', (event) => {
+    if (view !== null) event.stopPropagation();
+  });
   addEventListener(
     'keydown',
     (event) => {

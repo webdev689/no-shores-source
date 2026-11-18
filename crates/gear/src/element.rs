@@ -96,17 +96,21 @@ impl Shield {
     /// Takes a blow of `damage` with `element` on the shield, and answers what of it reaches the foe's health: none
     /// while the shield holds, the rest of the blow once it breaks.
     pub fn struck(&mut self, damage: f64, element: Option<Element>) -> f64 {
-        if self.left <= 0.0 || damage <= 0.0 {
-            return damage.max(0.0);
+        // Written so that no damage, and damage that is not a number, wear nothing and reach nothing.
+        if damage.is_nan() || damage <= 0.0 {
+            return 0.0;
         }
         let times = against_shield(element, self.element);
+        if self.left <= 0.0 || times <= 0.0 {
+            return damage;
+        }
         if damage * times < self.left {
             self.left -= damage * times;
             return 0.0;
         }
         let held = self.left / times;
         self.left = 0.0;
-        damage - held
+        (damage - held).max(0.0)
     }
 }
 
@@ -135,6 +139,11 @@ mod tests {
         assert_eq!(shield.struck(40.0, Some(Element::Cosmic)), 30.0, "10 of it broke the 30 left");
         assert_eq!(shield.left, 0.0);
         assert_eq!(shield.struck(25.0, Some(Element::Blaze)), 25.0, "a broken shield holds nothing");
+        let mut whole = Shield::whole(Element::Volt, 60.0);
+        assert_eq!(whole.struck(f64::NAN, None), 0.0);
+        assert_eq!(whole.struck(0.0, Some(Element::Volt)), 0.0);
+        assert_eq!(whole.left, 30.0, "nothing wears it");
+        assert!(whole.struck(10.0, Some(Element::Volt)) >= 0.0, "an exact break reaches no less than nothing");
     }
 
     #[test]

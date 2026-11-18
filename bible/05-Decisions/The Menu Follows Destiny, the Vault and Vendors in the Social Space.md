@@ -23,11 +23,10 @@ Asked whether Journal and Guild show before they are built, the owner chose: "Sh
 ## What it settles
 
 - **The menu's tabs**, in this order: Character, Inventory, Journal, Ship, Social, Guild, Settings.
-- **Journal** is for quests and **Guild** is for guilds. Both come later; until then each shows in the menu, marked
-  Later.
+- **Journal** is for quests. **Journal** and **Guild** are deferred until later; until then each shows in the menu,
+  marked Later.
 - **Social** is the friends list.
-- **The vault and the vendors are in the social space**, as Destiny's are in the Tower. Neither is a tab in the
-  menu or a shelf in the inventory.
+- **The vault and the vendors are in the social space.** Neither is a tab in the inventory, nor in the menu.
 
 Links: [[Interface]], [[The Gear Screens Follow Destiny, on Enhanced Plus]],
 [[Voyages Choose a Difficulty, Overlook Lives Like the Tower]].

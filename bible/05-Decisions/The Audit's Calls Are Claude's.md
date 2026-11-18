@@ -27,8 +27,8 @@ among them: those still need the owner ([[Ask Before Deploying]]).
 | Its sizes | Whole multiples of its 11 px grid: 11 for words, 22 for names, 33 to 66 for numbers; one weight | Between them it blurs, and its C, G and B run together |
 | Its B | Drawn anew with a square stem, beside DFO's 2 and Z | Its own B is an 8 with a stem and reads as a G |
 | Fully upgraded | Every node of the item bought | Destiny 1's weapon was finished when every node was lit |
-| The Ship tab | The Sloop's papers as Manage shows them, her voyage while at sea | Manage pans to her deck at sea; the menu is everywhere |
-| Friends | Asked by username, accepted by the one asked, ended by either; 100 at most; 30 asks an hour | Destiny's friends are named players; a cap stops a list being flooded |
+| The Ship tab | The Sloop's details as Manage shows them, her voyage while at sea | Manage pans to her deck at sea; the menu is everywhere |
+| Friends | Asked by username, accepted by the one asked, ended by either; a player's own friends and asks 100 at most, a list of 100 rows taking no new asks; 30 asks an hour; accepting or removing a name no one holds answers as one that never asked | Destiny's friends are named players; the caps stop a list being flooded by strangers, and the answers tell no one which names exist |
 | The vault's screen | What it keeps beside what is carried, each in weapons, armour and Vestiges; a click moves a piece | Destiny 1's vault was two columns, a click a move |
 
 Links: [[Gear as Claude Shapes It]], [[Gear]], [[Accounts]], [[Combat]], [[Interface]].

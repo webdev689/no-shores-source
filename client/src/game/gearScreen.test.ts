@@ -101,7 +101,7 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   const carried = itemDetailOf({ ...legendary, at: 0 }, state({ social: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
-    ['Wear', 'Off hand', 'Hold to dismantle'],
+    ['Equip', 'Equip off hand', 'Hold to dismantle'],
   );
   assert.equal(carried.presses.at(-1)?.role, 'warn');
   // At the vault's counter, it may be put in; a vaulted one, taken out.

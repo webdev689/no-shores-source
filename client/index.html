@@ -24,14 +24,16 @@
           'Pixelify Sans Variable',
           monospace;
         font-variant-ligatures: none;
+        font-kerning: none;
         -webkit-font-smoothing: none;
       }
-      /* Each letter stands 1/22 of its size from the next, which keeps it on whole pixels at every step of the grid. */
+      /* Each letter stands 1/22 of its size from the next, and each word 3/110 more than the face's own space, so both
+         keep to the grid's steps at every size. */
       :where(*) {
         letter-spacing: calc(1em / 22);
+        word-spacing: calc(3em / 110);
       }
-      /* Its strokes are whole pixels only at the one weight: emphasis is in size and colour, never in a heavier
-         stroke. */
+      /* One weight throughout: emphasis is in size and colour, never in a heavier stroke. */
       :where(b, strong, h1, h2, h3, h4, th) {
         font-weight: 500;
       }
@@ -117,7 +119,7 @@
       .warning .count {
         font-size: 66px;
         font-weight: 500;
-        line-height: 1.2;
+        line-height: 79px;
       }
       .death {
         position: absolute;
@@ -143,7 +145,7 @@
         left: 28px;
         bottom: 22px;
         font-size: 11px;
-        line-height: 1.7;
+        line-height: 19px;
         color: var(--dim);
       }
       #hud:has(> .sea-bar:not([hidden])) .hints {
@@ -320,8 +322,10 @@
         color: var(--map-ink);
         white-space: nowrap;
         text-shadow:
-          0 0 3px rgba(238, 222, 190, 0.95),
-          0 0 1px rgba(238, 222, 190, 1);
+          -1px 0 0 #eedebe,
+          1px 0 0 #eedebe,
+          0 -1px 0 #eedebe,
+          0 1px 0 #eedebe;
       }
       .held-mark::before {
         content: '';
@@ -387,7 +391,7 @@
         height: var(--size);
         display: grid;
         place-items: center;
-        font-size: calc(var(--size) * 0.5);
+        font-size: max(11px, round(down, calc(var(--size) / 2), 11px));
         border-radius: 50%;
         background: rgba(10, 13, 17, 0.6);
         border: 2px solid var(--kind, var(--ink));

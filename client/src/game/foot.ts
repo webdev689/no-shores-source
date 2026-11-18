@@ -17,7 +17,7 @@ import { type Shot, shotOfOrbit } from './camera.ts';
 import { FightMarks } from './fightMarks.ts';
 import { FootFight, combatRulesOf } from './footFight.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
-import type { GearHere } from './gearScreen.ts';
+import { type GearHere, gearScreenOpen } from './gearScreen.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { nodeRoom } from './rooms.ts';
 import type { Drawer, GameScene } from './scene.ts';
@@ -282,7 +282,8 @@ export class Foot {
   frame(controls: InputFrame, seconds: number, clock: number, paused: boolean): FootFrame {
     const { walker, movement, forge, scene } = this.context;
     this.dressInGear();
-    const played = paused ? IDLE : { ...controls, locked: true };
+    // Keys held as the menu opens rest with the rest, so no one walks on behind it.
+    const played = paused || gearScreenOpen() ? IDLE : { ...controls, locked: true };
     this.goAlone();
     const fought = this.alone ? null : this.fought;
     walker.frame(played, this.rules, seconds, clock, fought?.press(played, this.boxes));

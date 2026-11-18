@@ -143,11 +143,11 @@ these are Claude's numbers for them.
 
 | Choice | Chosen | Why |
 |---|---|---|
-| A weapon's chance of an element | Normal 1 in 10, Magic 1 in 5, Rare 35 in 100, Legendary and Atheric 1 in 2; each element alike | The owner: never surely. Finer weapons are likelier to carry one, so an element is worth chasing |
-| When it is rolled | As the weapon is made: a Vestige opened, a vendor's ware stocked | It is part of what the weapon is, so it never changes |
+| A weapon's chance of an element | Normal 1 in 10, Magic 1 in 5, Rare 35 in 100, Legendary and Atheric 1 in 2; each element alike | The owner: not guaranteed. Finer weapons are likelier to carry one, so an element is worth chasing |
+| When it is rolled | As the weapon is made: a Vestige opened, a vendor's ware stocked, a Test Ground grant | It is part of what the weapon is, so it never changes |
 | How effective | A blow on a shield: ×3 with its own element, ×0.5 with another, ×1 with none | The owner: very effective, less effective, normal. Three times makes the right element plainly the answer; half makes the wrong one worse than none, as the owner was offered |
 | Who carries a shield | One patrol foe in five, of an element chosen evenly | The owner: sometimes |
-| How much it holds | Half the foe's health; it does not come back | Enough that the right element saves real time, little enough that any weapon breaks it |
+| How much it holds | Half the foe's health; it does not come back; a blow it holds whole fills no poise | Enough that the right element saves real time, little enough that any weapon breaks it |
 
 ### Vestiges
 

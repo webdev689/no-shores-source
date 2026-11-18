@@ -28,7 +28,9 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 - **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer or
   staff, fists with nothing drawn, or a bow, crossbow, pistolet or thunderlock. The left hand holds a shield, a second
   blade (the pair's blows take turns between the hands), a torch, or nothing; a two-handed weapon leaves it empty.
-  In a room a player holds only what their [[Gear]] puts in their hands. Metals do not change a fight.
+  In a room a player holds only what their [[Gear]] puts in their hands. Metals do not change a fight. A blow carries
+  its weapon's element, which only a foe's shield weighs, in the room ([[Gear]], "Elements and shields";
+  [[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]).
 
 | Weapon | Reach (m) | Damage | Weight | Stamina | Blow lands / swing ends (ticks) |
 |---|---|---|---|---|---|

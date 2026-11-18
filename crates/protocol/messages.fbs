@@ -25,7 +25,7 @@ table Ask {
 // their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
 // 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
 // combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
-// (0 none; 255 sends every foe away), whether they ask to respawn, dead past a node's section, an ask of their gear,
+// (0 none; 255 sends every foe away; the element of a shield it stands with in the bits above the kind's four), whether they ask to respawn, dead past a node's section, an ask of their gear,
 // and the level of the foe asked for (0 for none: combat's own numbers). New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
