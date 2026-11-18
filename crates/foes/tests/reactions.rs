@@ -148,10 +148,10 @@ fn dodge_pressed(seed: u64, speed: f64) -> Option<u64> {
     let fighters = [(1, skirmisher), (2, runner), (3, bowman)];
     let mut board = foes::Board::default();
     let shout = foes::Seen::Shouted { from: [0.0, 0.0, 0.0], at: [0.0, -2.0, 0.0] };
-    brain = foes::notice(&brain, 1, &shout, 0);
+    foes::notice(&mut brain, 1, &shout, 0);
     for tick in 1..60 {
         if tick == 10 {
-            brain = foes::notice(&brain, 1, &foes::Seen::Loosed { by: 3, speed }, tick);
+            foes::notice(&mut brain, 1, &foes::Seen::Loosed { by: 3, speed }, tick);
         }
         let world = foes::World {
             tick,

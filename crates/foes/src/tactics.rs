@@ -298,7 +298,7 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
         .world
         .fighters
         .iter()
-        .filter(|(id, _)| here.enemy(*id).is_some())
+        .filter(|(_, other)| here.hostile(other))
         .filter(|(_, other)| {
             let there = [other.body.x, other.body.y];
             apart(here.at(), there) <= reach && off(sight.toward, bearing(here.at(), there)) <= side

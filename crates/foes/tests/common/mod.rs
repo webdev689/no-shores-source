@@ -254,7 +254,7 @@ impl Room {
     pub fn tell(&mut self, id: FighterId, seen: Seen) {
         let tick = self.tick;
         if let Some((_, brain)) = self.brains.iter_mut().find(|(other, _)| *other == id) {
-            *brain = notice(brain, id, &seen, tick);
+            notice(brain, id, &seen, tick);
         }
     }
 

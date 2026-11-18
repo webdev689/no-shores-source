@@ -47,7 +47,13 @@ impl Here<'_, '_> {
     /// A living fighter of another side, by id.
     #[must_use]
     pub fn enemy(&self, id: FighterId) -> Option<&Fighter> {
-        self.find(id).filter(|other| other.side != self.fighter.side && !other.dead())
+        self.find(id).filter(|other| self.hostile(other))
+    }
+
+    /// Whether a fighter in hand is of another side and alive.
+    #[must_use]
+    pub fn hostile(&self, other: &Fighter) -> bool {
+        other.side != self.fighter.side && !other.dead()
     }
 
     /// How far it fights from.
@@ -139,7 +145,7 @@ fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64)> {
     here.world
         .fighters
         .iter()
-        .filter(|(id, _)| here.enemy(*id).is_some())
+        .filter(|(_, other)| here.hostile(other))
         .filter_map(|(id, other)| {
             let distance = apart(at, [other.body.x, other.body.y]);
             let turn = off(here.fighter.aim, bearing(at, [other.body.x, other.body.y]));
