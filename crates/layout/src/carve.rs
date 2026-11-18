@@ -10,7 +10,7 @@ use crate::field::{Field, distance};
 use crate::paths::{Path, Tier, simplified};
 use crate::seat::Seating;
 use land::exact::rand01;
-use land::sculpts::Sculpt;
+use land::sculpts::{Sculpt, Sculpts};
 
 /// How much wider than its area's reach a basin is, metres.
 const BASIN_ROOM_M: f64 = 32.0;
@@ -49,18 +49,41 @@ fn gorge(field: &Field, from: [f64; 2], way: [f64; 2], half: f64) -> [f64; 5] {
     [from[0], from[1], end[0], end[1], half]
 }
 
-/// What a layout's floor is carved round: its areas, its paths, and the gorges out of it (each a start and a way).
+/// What a layout's floor is carved round: its areas, its paths, the gorges out of it (each a start and a way), and
+/// the pockets off its paths where its resources lie.
 #[derive(Debug, Clone, Copy)]
 pub struct Network<'layout> {
     pub areas: &'layout [Area],
     pub paths: &'layout [Path],
     pub exits: &'layout [([f64; 2], [f64; 2])],
+    pub pockets: &'layout [[f64; 2]],
+}
+
+/// A pocket's half-width, metres: room round a resource and a way into it from the path.
+const POCKET_HALF_M: f64 = 9.0;
+
+/// The point of the paths nearest a point.
+fn nearest_on(paths: &[Path], at: [f64; 2]) -> Option<[f64; 2]> {
+    paths
+        .iter()
+        .flat_map(|path| path.points.windows(2))
+        .map(|pair| {
+            let (span_x, span_y) = (pair[1][0] - pair[0][0], pair[1][1] - pair[0][1]);
+            let length = span_x * span_x + span_y * span_y;
+            let along = if length > 0.0 {
+                (((at[0] - pair[0][0]) * span_x + (at[1] - pair[0][1]) * span_y) / length).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
+            [pair[0][0] + span_x * along, pair[0][1] + span_y * along]
+        })
+        .min_by(|first, second| distance(*first, at).total_cmp(&distance(*second, at)))
 }
 
 /// A layout's sculpt: its claim, its floors, its outcrops, its massif's height and seed.
 #[must_use]
 pub fn carve(field: &Field, claim: Vec<[f64; 2]>, network: Network, seating: &Seating, rise: f64, seed: u32) -> Sculpt {
-    let Network { areas, paths, exits } = network;
+    let Network { areas, paths, exits, pockets } = network;
     let mut floors: Vec<[f64; 5]> =
         areas.iter().map(|area| [area.at[0], area.at[1], area.at[0], area.at[1], area.radius + BASIN_ROOM_M]).collect();
     for path in paths {
@@ -72,8 +95,105 @@ pub fn carve(field: &Field, claim: Vec<[f64; 2]>, network: Network, seating: &Se
     for &(from, way) in exits {
         floors.push(gorge(field, from, way, FOOTPATH_HALF_M + 3.0));
     }
+    for &pocket in pockets {
+        let mouth = nearest_on(paths, pocket).unwrap_or(pocket);
+        floors.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M]);
+    }
     let outcrops = outcrops(areas, paths, seating, seed);
-    Sculpt { claim, floors, outcrops, rise, seed }
+    let bare = Sculpts::from(vec![Sculpt {
+        claim: claim.clone(),
+        floors: floors.clone(),
+        outcrops: Vec::new(),
+        rise,
+        seed,
+        climbs: Vec::new(),
+    }]);
+    let climbs = climbs(field, areas, &bare, rise, seed);
+    Sculpt { claim, floors, outcrops, rise, seed, climbs }
+}
+
+/// How steep a climb rises at most (a rise a metre, for the massif's tallest), its half-width, its lookout's reach,
+/// metres, and how far it turns out from along the basin's rim, radians, so the face behind it stands over it.
+const CLIMB_STEEPEST: f64 = 0.3;
+const CLIMB_HALF_M: f64 = 3.5;
+const LOOKOUT_HALF_M: f64 = 11.0;
+const CLIMB_TURN: f64 = 0.32;
+/// How far into the rock a climb must have bored for each metre it has run, metres.
+const CLIMB_BORES: f64 = 0.28;
+/// How many basins a layout climbs out of at most.
+const MOST_CLIMBS: usize = 2;
+
+/// Ways up the massif from the edges of the larger basins, each to a lookout on the top over its basin: a straight
+/// climb from where the basin's floor really ends (`bare`, the floors as carved, wander and all), turned out from
+/// along its edge, boring into the rock as it rises so its face stands over it and its drop falls to the floor, clear
+/// of every other floor and well inside the claim; each a climb and its lookout (land's `Sculpt::climbs`).
+fn climbs(field: &Field, areas: &[Area], bare: &Sculpts, rise: f64, seed: u32) -> Vec<[f64; 7]> {
+    let length = rise * 1.15 / CLIMB_STEEPEST;
+    let mut found: Vec<[f64; 7]> = Vec::new();
+    for (number, area) in areas.iter().enumerate() {
+        if found.len() >= 2 * MOST_CLIMBS {
+            break;
+        }
+        let open = !matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance | AreaKind::Dock);
+        if !open || area.radius < 40.0 {
+            continue;
+        }
+        'tries: for attempt in 0..16 {
+            let angle = std::f64::consts::TAU * (f64::from(attempt) / 16.0 + rand01(seed ^ 0xC11B, &[number as i64]));
+            let (sine, cosine) = land::exact::sin_cos(angle);
+            let radial = [sine, -cosine];
+            let mut out = area.radius;
+            while out < area.radius * 3.0
+                && bare.floor_distance(area.at[0] + radial[0] * out, area.at[1] + radial[1] * out) <= 0.0
+            {
+                out += 2.0;
+            }
+            let start = [area.at[0] + radial[0] * (out - 2.0), area.at[1] + radial[1] * (out - 2.0)];
+            let (out_sine, out_cosine) = land::exact::sin_cos(CLIMB_TURN);
+            for side in [1.0, -1.0] {
+                let along = [-radial[1] * side, radial[0] * side];
+                let way = [along[0] * out_cosine + radial[0] * out_sine, along[1] * out_cosine + radial[1] * out_sine];
+                let end = [start[0] + way[0] * length, start[1] + way[1] * length];
+                if climb_clear(field, bare, &found, start, way, length) {
+                    found.push([start[0], start[1], end[0], end[1], CLIMB_HALF_M, 0.0, 1.0]);
+                    found.push([end[0], end[1], end[0], end[1], LOOKOUT_HALF_M, 1.0, 1.0]);
+                    break 'tries;
+                }
+            }
+        }
+    }
+    found
+}
+
+/// Whether a climb from `start` along `way` for `length` metres, and its lookout, lie on dry land well inside the
+/// claim, bore into the rock as they rise (`bare`'s floors ever further off), and keep clear of other climbs.
+fn climb_clear(
+    field: &Field,
+    bare: &Sculpts,
+    climbs: &[[f64; 7]],
+    start: [f64; 2],
+    way: [f64; 2],
+    length: f64,
+) -> bool {
+    let clearance = land::sculpts::CLIFF_RUN_M + CLIMB_HALF_M;
+    let mut along = 10.0;
+    while along <= length + LOOKOUT_HALF_M {
+        let at = [start[0] + way[0] * along, start[1] + way[1] * along];
+        let deep_enough = if along > length { LOOKOUT_HALF_M + 4.0 } else { (along * CLIMB_BORES).min(clearance) };
+        along += 6.0;
+        let Some((column, row)) = field.cell_of(at[0], at[1]) else { return false };
+        let cell = field.index(column, row);
+        if !field.claimed[cell] || field.inside[cell] < 30.0 || field.water[cell] != crate::field::Water::Dry {
+            return false;
+        }
+        let off_climbs = climbs.iter().all(|climb| {
+            crate::paths::off_line(at, [climb[0], climb[1]], [climb[2], climb[3]]) - climb[4] > 2.0 * clearance
+        });
+        if bare.floor_distance(at[0], at[1]) < deep_enough || !off_climbs {
+            return false;
+        }
+    }
+    true
 }
 
 /// The mesas and spires of a layout's open ground: three to five in each wilds and arena, a pair at the rim of each

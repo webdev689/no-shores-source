@@ -13,6 +13,7 @@ pub mod compose;
 pub mod dressing;
 pub mod field;
 pub mod interiors;
+pub mod marks;
 pub mod paths;
 pub mod pieces;
 pub mod pieces_coast;
@@ -113,7 +114,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
         .map(|(area, &blocks)| if blocks > 0 { hub(&seating, area.at) } else { area.at })
         .collect();
     let blocked = blocked_by(&field, &seating);
-    let paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
+    let mut paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
     keep_props_off(&mut seating, &paths);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
     for path in &paths {
@@ -123,6 +124,8 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
     }
     dressing::dress(&mut kit, &areas, &paths);
     let sites = sites::mark(&field, &areas, &paths, &seating, seed);
+    let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x51E5, draws: 0, into: &mut seating };
+    marks::build(&mut kit, &sites);
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);
     let exits: Vec<([f64; 2], [f64; 2])> = areas
         .iter()
@@ -137,13 +140,28 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
             }
         })
         .collect();
-    let network = carve::Network { areas: &areas, paths: &paths, exits: &exits };
+    let pockets: Vec<[f64; 2]> =
+        sites.iter().filter(|site| site.kind == sites::SiteKind::Resource).map(|site| site.at).collect();
+    let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets };
     let sculpt = carve::carve(&field, claim_of(node), network, &seating, rise, seed);
     let carved = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
     let cells = ring::section_cells(&field, &|x, y| carved.floor_distance(x, y), anchor);
     let ring = ring::traced(&field, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, rise);
+    // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
+    for pair in sculpt.climbs.chunks_exact(2) {
+        let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
+        let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
+        let points = (0..=steps as usize)
+            .map(|step| {
+                let along = step as f64 / steps;
+                [x1 + (x2 - x1) * along, y1 + (y2 - y1) * along]
+            })
+            .collect();
+        paths.push(paths::Path { tier: paths::Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() });
+        skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
+    }
     rocks::talus(&mut kit, &ring, &paths, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &paths);
     skyline::rim(&mut kit, &ring, &paths, &carved);

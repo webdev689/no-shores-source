@@ -31,7 +31,7 @@ const RUNS: readonly { node: string; bounds: Rect; script: readonly Phase[] }[] 
   },
   {
     node: 'emerald-tangle',
-    bounds: [489_190.5, 2_279_231.5, 490_895.5, 2_280_067],
+    bounds: [489_189.5, 2_279_231.5, 490_895.5, 2_280_067],
     script: [
       [600, 1, 0, 0, true, false],
       [600, 1, 0, Math.PI / 2, true, false],

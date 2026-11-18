@@ -40,7 +40,7 @@ const RUNS: [Run; 2] = [
     // North over open land, east, a jump, then back south-west.
     Run {
         node: "emerald-tangle",
-        bounds: [489_190.5, 2_279_231.5, 490_895.5, 2_280_067.0],
+        bounds: [489_189.5, 2_279_231.5, 490_895.5, 2_280_067.0],
         script: &[
             (600, 1.0, 0.0, 0.0, true, false),
             (600, 1.0, 0.0, FRAC_PI_2, true, false),

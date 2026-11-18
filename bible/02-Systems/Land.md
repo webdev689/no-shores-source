@@ -106,7 +106,11 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
 - A layout's sculpt carves the land round its patrol area or instance ([[Layouts]]): its network's floor (basins and
   canyons) is left as it is and everything else in its claim is raised into a massif with stepped cliffs, fading back
   to the land over 140 m past the claim. It is applied to the land before the towns, rivers and roads, never raises
-  the sea or the 35 m of strand inland from the coast, and only raises: the coast stays where it was painted.
+  the sea or the 35 m of strand inland from the coast, and only raises: the coast stays where it was painted. Its
+  climbs are capsules whose level runs from one share of the massif's height to another along them: on a climb the
+  land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
+  from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
+  top. The floor's distance counts the climbs, so a section reaches up them.
 
 The land's WebAssembly door gives the browser the same answers.
 

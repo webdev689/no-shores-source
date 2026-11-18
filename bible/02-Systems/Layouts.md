@@ -20,6 +20,7 @@ code:
   - crates/layout/src/dressing.rs#dress
   - crates/layout/src/interiors.rs#build
   - crates/layout/src/sites.rs#mark
+  - crates/layout/src/marks.rs#build
   - crates/layout/src/ring.rs#traced
   - crates/layout/src/collide.rs#boxes_of
   - content/world/briefs.json
@@ -95,6 +96,12 @@ from the sea, fresh water and the claim's edge), then:
    the rims of the wider basins, for cover and to break the long views. The carving is the land crate's sculpt
    (`Sculpts`), applied after the land is made and before the towns, rivers and roads; it never raises the sea or a
    35 m strand inland from the coast, and fades back into the natural land over 140 m past the claim.
+   Out of the larger basins (two at most), a climb is cut up the massif's face to a lookout on its top: from where
+   the basin's floor really ends, a straight way 7 m wide turned out from along its edge, rising at most 0.3 a metre,
+   boring into the rock as it climbs so its face stands over it and its drop falls to the floor, clear of every
+   other floor and well inside the claim; at its top a flat 22 m across, with a broken parapet but where the climb
+   arrives and a brazier glowing on a plinth. Each climb is walked as a footpath, and the section takes in the climbs
+   and the lookouts, so a patrol area has its heights as well as its floor.
 7. **The great works**, across and along the canyons, so they make the ways and the bounds: a colossal ruined wall of
    ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed and
    battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from cliff
@@ -113,7 +120,11 @@ from the sea, fresh water and the claim's edge), then:
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), and where foes hold
-   ground.
+   ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   nearest point. Each beacon and resource is a place before its activity comes (`marks`): a beacon's brazier glowing
+   on a stone plinth in a ring of standing stones; ore as a broken outcrop seamed with metal and its spoil; salvage as
+   broken timbers and spilt stores; herbs by a gatherer's drying rack hung with bundles; timber as felled logs stacked
+   by a stump with its axe.
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, in the claim, as one
     piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
     the landing or the way in.

@@ -119,6 +119,49 @@ fn wall_run(kit: &mut Kit, carved: &Sculpts, site: [f64; 2], along: [f64; 2]) {
     }
 }
 
+/// A lookout on the massif's top at a climb's end (`toward`, the way the climb ran up): a parapet of broken stone round
+/// its edge but where the climb comes up, and an iron brazier glowing on a plinth over the drop.
+pub fn lookout(kit: &mut Kit, at: [f64; 2], toward: [f64; 2], carved: &Sculpts) {
+    let length = (toward[0] * toward[0] + toward[1] * toward[1]).sqrt().max(1e-9);
+    let up = [toward[0] / length, toward[1] / length];
+    let reach = 9.5;
+    for piece in 0..18 {
+        let angle = f64::from(piece) * std::f64::consts::TAU / 18.0;
+        let spot = ahead(at, up, reach, angle);
+        // The climb arrives from behind: no parapet across it.
+        let behind = (spot[0] - at[0]) * up[0] + (spot[1] - at[1]) * up[1] < -reach * 0.75;
+        if behind || kit.draw() < 0.2 {
+            continue;
+        }
+        let ground = carved_at(kit, carved, spot);
+        let high = 0.8 + kit.draw() * 0.5;
+        let tangent = [spot[1] - at[1], at[0] - spot[0]];
+        let wall =
+            Solid::upright(Shape::Block, [spot[0], spot[1], ground - 0.3], [0.7, 3.2, high + 0.3], Material::Stone);
+        kit.solid(wall.turned(turn_along(tangent)));
+    }
+    let front = [at[0] + up[0] * 5.5, at[1] + up[1] * 5.5];
+    let ground = carved_at(kit, carved, front);
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 8, top: 0.85 },
+        [front[0], front[1], ground - 0.3],
+        [1.4, 1.4, 1.4],
+        Material::Stone,
+    ));
+    kit.solid(Solid::upright(
+        Shape::Column { sides: 8, top: 1.4 },
+        [front[0], front[1], ground + 1.1],
+        [0.9, 0.9, 0.45],
+        Material::Iron,
+    ));
+    kit.solid(Solid::upright(
+        Shape::Pyramid { top: 0.2 },
+        [front[0], front[1], ground + 1.45],
+        [0.7, 0.7, 0.55],
+        Material::Glow,
+    ));
+}
+
 /// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet in the cliffs either
 /// side, its crown a little over the massif's top, boulders fallen at its feet; the way runs under it.
 pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64) {
