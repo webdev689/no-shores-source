@@ -5,6 +5,7 @@
 
 use crate::Layout;
 use crate::book::Book;
+use crate::field::ring_holds;
 use city::solids::Material;
 
 /// A box a body runs into: west, north, east, south, top and bottom, metres, as the city's.
@@ -40,6 +41,10 @@ pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
     }
     for solid in &layout.seating.solids {
         if solid.material == Material::Paving || solid.size[2] < STEPPED_OVER_M {
+            continue;
+        }
+        // Rubble past the section's edge, at the cliffs' feet, is never reached.
+        if solid.material == Material::Rubble && !ring_holds(&layout.ring, solid.at[0], solid.at[1]) {
             continue;
         }
         let [west, north, east, south, bottom, top] = solid.bounds();

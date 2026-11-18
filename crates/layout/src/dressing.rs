@@ -1,0 +1,201 @@
+//! What lines a layout's ways, so walking them reads as a land travelled: a signpost where a way leaves each place,
+//! a milestone every so often between the places and now and then a scene by the way (a cart broken down with its
+//! crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts along the ways
+//! into a settlement; and drystone walls along the tracks out of the farms and hamlets. All of it beside the way,
+//! clear of every other way and of what already stands.
+
+use crate::areas::Area;
+use crate::brief::AreaKind;
+use crate::field::distance;
+use crate::paths::{Path, Tier, off_line};
+use crate::pieces::{Kit, fire, lantern, model, turn_along, yaw_toward};
+use crate::rocks::stone;
+use city::solids::{Material, Shape};
+
+/// How far apart a way's samples, milestones, scenes and lanterns lie along it, metres.
+const STEP_M: f64 = 2.0;
+const MILESTONE_EVERY_M: f64 = 160.0;
+const SCENE_EVERY_M: f64 = 130.0;
+const LANTERN_EVERY_M: f64 = 26.0;
+/// How far past a settlement's reach its lanterns and its drystone walls run, metres.
+const LANTERN_REACH_M: f64 = 70.0;
+const WALL_REACH_M: f64 = 170.0;
+/// A drystone wall's length a stretch and how far it stands off the track's edge, metres.
+const WALL_STRETCH_M: f64 = 8.0;
+const WALL_OFF_M: f64 = 3.5;
+
+/// Places with folk living or working in them, lit along their ways.
+const fn settled(kind: AreaKind) -> bool {
+    matches!(
+        kind,
+        AreaKind::Hamlet
+            | AreaKind::Farm
+            | AreaKind::Keep
+            | AreaKind::Landing
+            | AreaKind::Camp
+            | AreaKind::Dock
+            | AreaKind::Mill
+    )
+}
+
+/// A path's samples every STEP_M: each point and the unit way the path runs there.
+fn samples(path: &Path) -> Vec<([f64; 2], [f64; 2])> {
+    let mut found = Vec::new();
+    let mut carried = 0.0;
+    for pair in path.points.windows(2) {
+        let length = distance(pair[0], pair[1]);
+        if length < 1e-6 {
+            continue;
+        }
+        let way = [(pair[1][0] - pair[0][0]) / length, (pair[1][1] - pair[0][1]) / length];
+        let mut step = STEP_M - carried;
+        while step <= length {
+            found.push(([pair[0][0] + way[0] * step, pair[0][1] + way[1] * step], way));
+            step += STEP_M;
+        }
+        carried = length - (step - STEP_M);
+    }
+    found
+}
+
+/// A point `out` metres to a side of a way (positive to its left).
+fn beside(at: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
+    [at[0] - way[1] * out, at[1] + way[0] * out]
+}
+
+/// Whether a point stands clear of the other ways by `margin` past their edges, and of everything seated by it.
+fn clear(kit: &Kit, others: &[&Path], at: [f64; 2], margin: f64) -> bool {
+    let off_ways = others.iter().all(|other| {
+        let reach = other.tier.width() / 2.0 + margin;
+        other.points.windows(2).all(|pair| off_line(at, pair[0], pair[1]) > reach)
+    });
+    let seats = kit.into.buildings.iter().chain(kit.into.props.iter());
+    let off_seats = seats.map(|seated| seated.footprint).all(|[west, north, east, south]| {
+        at[0] < west - margin || at[0] > east + margin || at[1] < north - margin || at[1] > south + margin
+    });
+    off_ways && off_seats && kit.dry(at)
+}
+
+/// Dresses every way of a layout.
+pub fn dress(kit: &mut Kit, areas: &[Area], paths: &[Path]) {
+    for (number, path) in paths.iter().enumerate() {
+        let others: Vec<&Path> =
+            paths.iter().enumerate().filter(|(other, _)| *other != number).map(|(_, other)| other).collect();
+        along(kit, areas, path, &others);
+    }
+}
+
+/// Walks one way, dressing it as it goes.
+fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
+    let edge = path.tier.width() / 2.0;
+    let mut was_in: Option<usize> = None;
+    let (mut since_mile, mut since_scene, mut since_lantern, mut since_wall) = (0.0, 0.0, LANTERN_EVERY_M, 0.0);
+    let mut next_scene = SCENE_EVERY_M * (0.6 + kit.draw() * 0.8);
+    let mut lantern_side = 1.0;
+    for (at, way) in samples(path) {
+        let within = areas.iter().position(|area| distance(area.at, at) < area.radius);
+        if within.is_some() != was_in.is_some() {
+            // Leaving a place a signpost faces on along the way; reaching one, it faces back along it.
+            let facing = if within.is_none() { way } else { [-way[0], -way[1]] };
+            let post = beside(at, way, edge + 1.2);
+            if clear(kit, others, post, 1.0) {
+                let sign = kit.pick(&model::SIGNPOSTS);
+                kit.prop(sign, post, yaw_toward(facing));
+            }
+        }
+        was_in = within;
+        let near = |reach: f64, wanted: fn(AreaKind) -> bool| {
+            areas.iter().any(|area| wanted(area.kind) && distance(area.at, at) < area.radius + reach)
+        };
+        since_lantern += STEP_M;
+        if since_lantern >= LANTERN_EVERY_M && near(LANTERN_REACH_M, settled) {
+            let post = beside(at, way, (edge + 1.0) * lantern_side);
+            if clear(kit, others, post, 1.0) {
+                lantern(kit, post, 2.8);
+                since_lantern = 0.0;
+                lantern_side = -lantern_side;
+            }
+        }
+        since_wall += STEP_M;
+        let walled = |kind| matches!(kind, AreaKind::Hamlet | AreaKind::Farm);
+        if within.is_none() && path.tier == Tier::Track && since_wall >= WALL_STRETCH_M && near(WALL_REACH_M, walled) {
+            since_wall = 0.0;
+            for side in [-1.0, 1.0] {
+                drystone(kit, others, beside(at, way, (edge + WALL_OFF_M) * side), way);
+            }
+        }
+        if within.is_some() {
+            continue;
+        }
+        since_mile += STEP_M;
+        since_scene += STEP_M;
+        if since_mile >= MILESTONE_EVERY_M {
+            let stone_at = beside(at, way, -(edge + 0.8));
+            if clear(kit, others, stone_at, 0.8) {
+                kit.stand(
+                    Shape::Pyramid { top: 0.7 },
+                    stone_at,
+                    [0.5, 0.34, 1.05],
+                    turn_along(way),
+                    Material::Stone,
+                    0.2,
+                );
+                since_mile = 0.0;
+            }
+        }
+        if since_scene >= next_scene {
+            let side = if kit.draw() < 0.5 { 1.0 } else { -1.0 };
+            let middle = beside(at, way, (edge + 5.0) * side);
+            if clear(kit, others, middle, 4.0) {
+                scene(kit, middle, way);
+                since_scene = 0.0;
+                next_scene = SCENE_EVERY_M * (0.6 + kit.draw() * 0.8);
+            }
+        }
+    }
+}
+
+/// One stretch of drystone wall along a way, broken now and then by a gap, a field's gate or its fall.
+fn drystone(kit: &mut Kit, others: &[&Path], at: [f64; 2], way: [f64; 2]) {
+    if kit.draw() < 0.18 || !clear(kit, others, at, WALL_STRETCH_M / 2.0) {
+        return;
+    }
+    let high = 1.0 + kit.draw() * 0.35;
+    kit.stand(Shape::Block, at, [0.8, WALL_STRETCH_M + 0.3, high], turn_along(way), Material::Rubble, 0.25);
+    if kit.draw() < 0.25 {
+        let fallen = beside(at, way, 0.9);
+        let size = [0.6 + kit.draw() * 0.4, 0.5 + kit.draw() * 0.3, 0.3 + kit.draw() * 0.1];
+        stone(kit, Shape::Pyramid { top: 0.5 }, [fallen[0], fallen[1], kit.height(fallen)], size, 0.3);
+    }
+}
+
+/// A scene by the way: a cart broken down with its crates, a fallen log, a cold campfire with a log to sit on, or a
+/// heap of stones.
+fn scene(kit: &mut Kit, middle: [f64; 2], way: [f64; 2]) {
+    let kind = kit.draw();
+    if kind < 0.3 {
+        let cart = kit.pick(&model::CARTS);
+        let yaw = yaw_toward(way) + (kit.draw() - 0.5) * 50.0;
+        kit.prop(cart, middle, yaw);
+        for _ in 0..2 + (kit.draw() * 2.0) as u32 {
+            let crate_at = beside(middle, [-way[1], way[0]], (kit.draw() - 0.5) * 5.0);
+            let crate_at = [crate_at[0] + way[0] * 2.5, crate_at[1] + way[1] * 2.5];
+            let model = kit.pick(&model::CRATES);
+            let yaw = kit.draw() * 360.0;
+            kit.prop(model, crate_at, yaw);
+        }
+    } else if kind < 0.55 {
+        let yaw = kit.draw() * 360.0;
+        kit.prop(model::LOG, middle, yaw);
+    } else if kind < 0.8 {
+        fire(kit, middle, 1.2);
+        let seat = beside(middle, way, 2.2);
+        kit.prop(model::LOG, seat, yaw_toward(way));
+    } else {
+        for _ in 0..3 + (kit.draw() * 3.0) as u32 {
+            let at = [middle[0] + (kit.draw() - 0.5) * 4.0, middle[1] + (kit.draw() - 0.5) * 4.0];
+            let size = [0.7 + kit.draw() * 1.2, 0.6 + kit.draw() * 1.0, 0.5 + kit.draw() * 0.9];
+            stone(kit, Shape::Dome { sides: 6 }, [at[0], at[1], kit.height(at)], size, 0.35);
+        }
+    }
+}

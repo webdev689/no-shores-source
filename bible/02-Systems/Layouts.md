@@ -13,6 +13,9 @@ code:
   - crates/land/src/sculpts.rs#Sculpts
   - crates/layout/src/pieces.rs#build
   - crates/layout/src/works.rs#build
+  - crates/layout/src/rocks.rs#talus
+  - crates/layout/src/rocks.rs#clad
+  - crates/layout/src/dressing.rs#dress
   - crates/layout/src/interiors.rs#build
   - crates/layout/src/sites.rs#mark
   - crates/layout/src/ring.rs#traced
@@ -76,6 +79,11 @@ from the sea, fresh water and the claim's edge), then:
    off it, and a slow noise bends it as worn tracks wander. It ends on a block's own streets and leaves a village
    between its buildings. A way too steep for its tier is laid as a footpath, then stepped; an area no way reached is
    joined to the nearest that is. Bridges carry paths over rivers.
+   Along every way, beside it and clear of every other way and of what stands: a signpost where it leaves a place and
+   where it reaches one; a milestone every 160 m between the places; a scene every 80 to 180 m (a cart broken down
+   with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 26 m
+   along the ways within 70 m of a settlement (a hamlet, farm, keep, landing, camp, dock or mill), side to side; and
+   drystone walls along both sides of the tracks within 170 m of a hamlet or farm, broken by gaps, with fallen stones.
 6. **The land carved.** Each area becomes a basin 32 m wider than its reach and each path a canyon (15 m either side
    of a track, 11 of a footpath), their edges wandering outward with a noise; a gorge runs out of the claim from
    each gate toward its instance and from the landing toward the sea. Everything else in the claim is raised into a
@@ -87,15 +95,21 @@ from the sea, fresh water and the claim's edge), then:
 7. **The great works**, across and along the canyons, so they make the ways and the bounds: a colossal ruined wall of
    ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed and
    battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from cliff
-   top to cliff top on piers and arches, one span fallen into the gorge; retaining walls along part of the wider
-   basins' feet; and boulders fallen along every cliff's foot.
-8. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
+   top to cliff top on piers and arches, one span fallen into the gorge; and retaining walls along part of the wider
+   basins' feet.
+8. **The rock.** Every cliff's foot is walked every 7 m and given a heap of talus where no path runs: a great boulder
+   on the carved face's first ledge, smaller ones round it, scree spilt onto the floor too low to trip on, now and
+   then one of the forged rocks, and every 46 m a slab several metres high broken from the face and leant back on it.
+   Each mesa and spire stands in a ring of rubble pillars against its face, the columns its rock breaks into, tallest
+   round a spire, with boulders fallen at its foot. All of it is the solids' rubble, which wears the ground's stone in
+   the grey the terrain draws its cliffs in.
+9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), and where foes hold
    ground.
-9. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, in the claim, as one
-   piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
-   the landing or the way in.
+10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, in the claim, as one
+    piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
+    the landing or the way in.
 
 ## Laid on the land
 
@@ -109,8 +123,8 @@ file takes its section, spawns and boxes from its layout.
 ## Boxes
 
 What a body meets ([[Movement]]): each room's linings, lintels, slabs and stairs, the outdoor steps, each wing too low
-to enter whole, each building not walked into whole, each plinth, set piece and great work, and each prop too tall to
-step over. A box's underside is its own, so a body walks under a viaduct's deck and a lintel. Boxes are written to
+to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the ways,
+and each prop too tall to step over. Rubble past the section, at the cliffs' feet, is never reached and is no box. A box's underside is its own, so a body walks under a viaduct's deck and a lintel. Boxes are written to
 the centimetre, grown out so none shrinks.
 
 ## Gates

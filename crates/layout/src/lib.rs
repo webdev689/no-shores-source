@@ -10,6 +10,7 @@ pub mod brief;
 pub mod carve;
 pub mod collide;
 pub mod compose;
+pub mod dressing;
 pub mod field;
 pub mod interiors;
 pub mod paths;
@@ -17,6 +18,7 @@ pub mod pieces;
 pub mod pieces_coast;
 pub mod pieces_land;
 pub mod ring;
+pub mod rocks;
 pub mod seat;
 pub mod settle;
 pub mod sites;
@@ -118,6 +120,7 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
             pieces_land::bridge(&mut kit, banks, path.tier.width());
         }
     }
+    dressing::dress(&mut kit, &areas, &paths);
     let sites = sites::mark(&field, &areas, &paths, &seating, seed);
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);
     let exits: Vec<([f64; 2], [f64; 2])> = areas
@@ -139,7 +142,9 @@ pub fn plan(node: &Node, ground: &Ground, brief: &Brief, links: &[Link], book: &
     let cells = ring::section_cells(&field, &|x, y| carved.floor_distance(x, y), anchor);
     let ring = ring::traced(&field, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
-    works::build(&mut kit, &areas, &paths, &ring, rise);
+    works::build(&mut kit, &areas, &paths, rise);
+    rocks::talus(&mut kit, &ring, &paths, &carved);
+    rocks::clad(&mut kit, &sculpt.outcrops, &paths);
     let spawns = spawns_round(&field, anchor);
     Layout {
         id: node.id.clone(),

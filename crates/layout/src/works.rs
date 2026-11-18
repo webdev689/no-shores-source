@@ -1,14 +1,14 @@
 //! The great works of a layout, built across and along its canyons so they make its ways and its bounds: a colossal
 //! ruined wall dammed across one canyon with a breach broken through it where the track runs, a viaduct carried over
 //! another from cliff top to cliff top with one span fallen into the gorge, retaining walls along the feet of the
-//! wider basins, and the talus of boulders fallen from every cliff. All of stone, laid as the city's solids, and every
+//! wider basins (the rock of the cliffs and outcrops is rocks.rs'). All of stone, laid as the city's solids, and every
 //! one a box a body meets: the deck of a viaduct overhead, its piers and the wall's flanks in the way.
 
 use crate::areas::Area;
 use crate::brief::AreaKind;
 use crate::field::distance;
 use crate::paths::{Path, Tier, simplified};
-use crate::pieces::{Kit, ahead, model, turn_along};
+use crate::pieces::{Kit, ahead, turn_along};
 use city::solids::{Material, Shape, Solid};
 
 /// The great wall's thickness and how far it stands over the massif's top, metres.
@@ -22,8 +22,6 @@ const DECK_M: f64 = 7.0;
 const PIER_M: f64 = 4.0;
 /// How far apart the great wall and the viaduct stand at least, metres.
 const WORKS_APART_M: f64 = 250.0;
-/// How far apart the talus's boulders lie along a cliff's foot, metres.
-const TALUS_EVERY_M: f64 = 9.0;
 
 /// A straight run of a path: its middle, its way and its length.
 type Run = ([f64; 2], [f64; 2], f64);
@@ -46,8 +44,8 @@ fn between_areas(areas: &[Area], at: [f64; 2]) -> bool {
 }
 
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
-/// longest path's, the retaining walls and the talus.
-pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], ring: &[[f64; 2]], rise: f64) {
+/// longest path's, and the retaining walls.
+pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
         .filter_map(|path| longest_run(path).map(|run| (path.tier, run)))
@@ -68,7 +66,6 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], ring: &[[f64; 2]], r
     {
         retaining(kit, area, paths);
     }
-    talus(kit, ring, paths);
 }
 
 /// A canyon's half-width at its floor and how far its cliffs run out, for a tier.
@@ -236,29 +233,5 @@ fn retaining(kit: &mut Kit, area: &Area, paths: &[Path]) {
         let (sine, cosine) = land::exact::sin_cos(angle);
         let tangent = [cosine, sine];
         kit.stand(Shape::Block, at, [1.4, 7.2, 4.2], turn_along(tangent), Material::Stone, 1.0);
-    }
-}
-
-/// Boulders fallen from the cliffs along the section's edge, never on a path.
-fn talus(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path]) {
-    let mut since = 0.0;
-    for (at, &from) in ring.iter().enumerate() {
-        let to = ring[(at + 1) % ring.len()];
-        since += distance(from, to);
-        if since < TALUS_EVERY_M {
-            continue;
-        }
-        since = 0.0;
-        if paths.iter().any(|path| path.points.iter().any(|&point| distance(point, from) < 12.0)) {
-            continue;
-        }
-        let rock = kit.pick(&model::ROCKS);
-        let yaw = kit.draw() * 360.0;
-        kit.prop(rock, from, yaw);
-        if kit.draw() < 0.35 {
-            let size = [2.2 + kit.draw() * 3.0, 1.8 + kit.draw() * 2.4, 1.4 + kit.draw() * 2.2];
-            let spin = kit.draw() * 3.0;
-            kit.stand(Shape::Pyramid { top: 0.35 }, from, size, spin, Material::Stone, 0.6);
-        }
     }
 }

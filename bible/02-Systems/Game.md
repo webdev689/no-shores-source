@@ -11,6 +11,8 @@ code:
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
+  - client/src/game/groundTiles.ts#groundTiles
+  - client/src/terrain/groundColour.ts#GROUND_COLOUR_WGSL
   - client/src/shadow.ts#ShadowMap
   - client/src/game/figureView.ts#FigureView
   - client/src/game/hud.ts#Hud
@@ -188,6 +190,14 @@ node's section and spawns are its layout's. Its nature is the nature layer's `Na
 ([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
 (`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture.
 The land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
+
+**The ground's pictures.** The land wears its climate's ground tiles ([[Procedural Textures]], `groundTiles`), painted
+off the page's thread by the city's painter: the terrain set's grass on the low ground, its dirt on the highlands and
+roads, its stone on bare rock, its winter grass under snow and the desert's sand on beaches. Each class keeps its
+biome's colour and takes its tile's grain over it (`groundColour.ts`), a tile to 6.4 m as Daggerfall laid them, read
+again 34 m wide and turned so its repeats do not line up, and cast from three sides on cliffs so a face is not
+smeared. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
+painted, and in the World Editor, the class is its plain colour.
 
 **The sun's shadows.** Before the pass, what casts draws its depth along the sun into two maps (`shadow.ts`), 2048
 texels a side each, every square ahead of the camera and snapped to its own texels so the edges hold still:

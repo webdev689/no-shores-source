@@ -11,7 +11,7 @@ export const COLOUR_LAYERS = { gold: 252, iron: 253, bone: 254, glow: 255 } as c
 /** Every picture is resampled to this square, so one array holds them all. */
 export const LAYER_SIZE = 128;
 
-/** The materials with a picture of their own; rubble wears the terraces' rubble. */
+/** The materials with a picture of their climate's own; rubble wears RUBBLE in every climate. */
 type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS | 'rubble'>;
 type Tint = readonly [number, number, number];
 type Choice = readonly [archive: number, record: number, use: PictureUse, tint?: Tint];
@@ -66,6 +66,10 @@ const TERRACES: Readonly<Record<Climate, Choice>> = {
   mountain: [112, 1, 'wall', [1.25, 1.25, 1.2]],
   swamp: [409, 1, 'wall', [1.2, 1.2, 1.15]],
 };
+
+/** Natural rock (boulders, slabs, the pillars round outcrops, drystone): the temperate ground's stone, lightened to
+ *  the grey the terrain draws its cliffs in (groundColour.ts ROCK), so the rock fallen from a cliff matches it. */
+const RUBBLE: Choice = [302, 3, 'floor', [1.5, 1.47, 1.36]];
 
 const CLIMATE_OF_BASE: readonly [number, Climate][] = [
   [400, 'swamp'],
@@ -177,6 +181,7 @@ export function pictureBook(
   for (const [material, choice] of Object.entries(MATERIALS[climate.climate]) as [Pictured, Choice][])
     materialKeys.set(material, chosen(choice));
   const terraceKey = chosen(TERRACES[climate.climate]);
+  const rubbleKey = chosen(RUBBLE);
   const turnOf = (archive: number, record: number): string =>
     `${climateArchive(archive, record, climate.climate, climate.season)}.${record}`;
   for (const each of wants) {
@@ -208,7 +213,7 @@ export function pictureBook(
   const layerAt = (key: string | undefined): number => (key === undefined ? 0 : (layers.get(key) ?? 0));
   const materials = { ...COLOUR_LAYERS } as Record<SolidMaterial, number>;
   for (const [material, key] of materialKeys) materials[material] = layerAt(key);
-  materials.rubble = layerAt(terraceKey);
+  materials.rubble = layerAt(rubbleKey);
   return {
     pictures,
     layerOf: (archive, record) => layerAt(turnOf(archive, record)),

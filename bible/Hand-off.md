@@ -125,7 +125,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   floored, stair'd and furnished; each instance moved beside its patrol area behind a gate the player goes through on
   foot (E). The bake and the land's worker settle them alike; native and WebAssembly runs over a carved patrol
   area agree to the bit. Movement blocks gained an underside, so a body walks under decks and lintels and up stairs
-  ([[Movement]]).
+  ([[Movement]]). Deeper detail since: talus heaps, leant slabs and scree at every cliff's foot and rubble pillars round
+  each mesa and spire; along every way signposts, milestones, wayside scenes, lanterns near settlements and drystone
+  walls by the farms and hamlets; the land wearing its climate's painted ground tiles instead of flat colour
+  ([[Game]], "The ground's pictures").
+- Also on #63, from a worker branch: the flora baked from detailed Blender models ([[Flora Is Baked From Detailed
+  Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, 153 objects on R2. Its frame on
+  SwiftShader is about 1.8 times slower in the woodland; the cost on a real GPU is unchecked. Its weak spots are listed
+  in [[Nature]]: swamp cypresses flat near, umbrella pines sparse far off, the rainforest's canopy open from above.
 
 ## Waiting on the owner
 
@@ -150,7 +157,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
-- #63: merging deploys the page and the rooms. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
+- #63: merging deploys the page and the rooms. The `flora` workflow publishes on a push to any branch, as `ships`
+  does; whether it should publish from `main` only is the owner's to say. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
   look (textured, not palette-snapped) was Claude's call, as the owner left it.
 - Private mission instances with invites ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]):
   an instance's room is still a node's shared room until the server makes rooms per party.
