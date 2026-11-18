@@ -3,7 +3,11 @@
 //! crate's numbers, in its order. See the Server note in the bible.
 #![allow(unsafe_code, reason = "the code flatc makes reads a message's bytes in place, once the verifier passes them")]
 
-use combat::floats::INTENT_FLOATS;
+use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
+use combat::trim::TRIM_FLOATS;
+
+/// A fighter's numbers in a snapshot: all of them but its trim.
+pub const UNTRIMMED_FLOATS: usize = FIGHTER_FLOATS - TRIM_FLOATS;
 use combat::{Intent, Shot};
 use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
@@ -263,7 +267,9 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .players
         .iter()
         .map(|seen| {
-            let fighter = Some(builder.create_vector(&seen.fighter.to_floats()));
+            // Each fighter goes without its trim, which only its own player needs and has in their gear.
+            let floats = seen.fighter.to_floats();
+            let fighter = Some(builder.create_vector(&floats[..UNTRIMMED_FLOATS]));
             let anim = Some(builder.create_string(&seen.shown.anim));
             let (frame, facing) = (seen.shown.frame, seen.shown.facing);
             let (standing, standing_ticks) = standing_parts(seen.standing);

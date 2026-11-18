@@ -12,6 +12,8 @@ import type { Characters } from './accounts/characters.ts';
 export interface KeptRoom {
   character(player: number): string | null;
   restoreCharacter(player: number, kept: string): boolean;
+  /** Notes the account that keeps a player's character. */
+  own(player: number, account: string): boolean;
 }
 
 /** How soon a change is saved, and how often a character is saved unchanged, to keep the room's hold. */
@@ -60,6 +62,7 @@ export class Keeper {
       await characters.release(claimed.account, holder, null).catch(() => false);
       return false;
     }
+    this.room.own(player, claimed.account);
     this.held.set(player, {
       account: claimed.account,
       holder,

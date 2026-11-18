@@ -12,6 +12,7 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
     held,
     character: (player) => held.get(player) ?? null,
     restoreCharacter: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
+    own: (player) => held.has(player),
   };
 }
 

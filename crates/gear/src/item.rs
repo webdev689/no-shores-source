@@ -62,6 +62,35 @@ impl Item {
         item
     }
 
+    /// The item as a kept character should hold it, whatever the keeping did to it: its number its key's, its level
+    /// and XP within their bounds, a choice for each of its columns naming only a node bought, nodes only it has, and
+    /// a resource the catalogue lists.
+    #[must_use]
+    pub fn kept(mut self, id: u32, resources: usize) -> Self {
+        self.id = id;
+        self.level = self.level.clamp(1, ITEM_LEVEL_MOST);
+        self.xp = self.xp.min(self.xp_most());
+        let columns = self.columns();
+        let shown = &self;
+        let every = columns
+            .iter()
+            .enumerate()
+            .flat_map(|(column, kind)| (0..kind.nodes()).filter_map(move |node| shown.node_bit(column, node)))
+            .fold(0, |all, bit| all | bit);
+        self.bought &= every;
+        self.chosen.resize(columns.len(), NONE_CHOSEN);
+        for column in 0..columns.len() {
+            let node = self.chosen[column];
+            if node != NONE_CHOSEN && !self.has(column, node) {
+                self.chosen[column] = NONE_CHOSEN;
+            }
+        }
+        if self.resource.is_some_and(|resource| usize::from(resource) >= resources) {
+            self.resource = None;
+        }
+        self
+    }
+
     /// Its columns of nodes; a cloak has none.
     #[must_use]
     pub fn columns(&self) -> &'static [Column] {

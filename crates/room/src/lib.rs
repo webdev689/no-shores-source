@@ -22,8 +22,8 @@ pub use foes::{CLEAR_FOES, FOES_MOST};
 pub use judging::{Event, EventKind, How, how_of};
 pub use perks::trim_of;
 pub use players::{
-    CATCH_UP, DRESS_LIMIT, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS, Shown, VIEW_LAG,
-    WAITING_LIMIT,
+    CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
+    Shown, VIEW_LAG, WAITING_LIMIT,
 };
 pub use power::{Drop, allowed_arms, gear_arms};
 
@@ -132,6 +132,8 @@ pub struct Room {
     pub(crate) board: ::foes::Board,
     pub(crate) nav: navmesh::NavMesh,
     pub(crate) seed: u64,
+    /// How many rolls the room has made for players, so no two share one, even in one tick.
+    pub(crate) rolls: u64,
     /// Every fighter after each of the last ticks, to judge a player's blows as the player saw them.
     past: VecDeque<(u64, Vec<(FighterId, Fighter)>)>,
     /// Whether the room is a social space's, where its asks are answered anywhere; the Test Ground's stall, where
@@ -192,6 +194,7 @@ impl Room {
             board: ::foes::Board::default(),
             nav,
             seed: SEED,
+            rolls: 0,
             past: VecDeque::new(),
             social: false,
             stall: None,
@@ -322,7 +325,7 @@ impl Room {
                         let body = self.stand_again(fallen.body.x, fallen.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = player(body, fallen.arms);
+                            found.fighter = Fighter { trim: found.trim, ..player(body, fallen.arms) };
                             found.standing = Standing::Inside;
                             found.graced = graced;
                         }
@@ -469,7 +472,7 @@ impl Room {
             let body = self.stand_again(fighter.body.x, fighter.body.y);
             let graced = self.clock + GRACE;
             if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = player(body, fighter.arms);
+                found.fighter = Fighter { trim: found.trim, ..player(body, fighter.arms) };
                 found.graced = graced;
                 raised.push(id);
             }

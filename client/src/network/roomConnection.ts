@@ -14,6 +14,8 @@ export interface RoomLink {
   readonly lost: string | null;
   send(bytes: Uint8Array<ArrayBuffer>): void;
   pump(seconds: number): void;
+  /** The player's trim, from the room's last word on their gear; none until it sends it. */
+  readonly trim?: readonly number[] | null;
 }
 
 /** A browser's WebSocket to one room: it joins, sends the player's input for each tick (or, at sea, their ship's
@@ -27,6 +29,8 @@ export class RoomConnection implements RoomLink {
   readonly node: JoinedNode | null;
   /** Why the socket closed, in the server's words where it gave them; null while it is open. */
   lost: string | null = null;
+  /** The player's trim, from the room's last word on their gear. */
+  trim: readonly number[] | null = null;
 
   private constructor(socket: WebSocket, welcome: Extract<FromRoomMessage, { kind: 'joined' }>) {
     this.socket = socket;
@@ -49,6 +53,7 @@ export class RoomConnection implements RoomLink {
   ): Promise<RoomConnection> {
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(url);
+      let made: RoomConnection | null = null;
       socket.binaryType = 'arraybuffer';
       socket.addEventListener('error', () => reject(new Error(`the room at ${url} could not be reached`)));
       socket.addEventListener('close', (event) =>
@@ -59,9 +64,13 @@ export class RoomConnection implements RoomLink {
         const message = readFromRoom(new Uint8Array(event.data));
         if (message?.kind === 'joined') {
           if (session !== null) socket.send(session);
-          resolve(new RoomConnection(socket, message));
+          made = new RoomConnection(socket, message);
+          resolve(made);
         } else if (message?.kind === 'snapshot') snapshot(message);
-        else if (message?.kind === 'gear') gear(message);
+        else if (message?.kind === 'gear') {
+          if (made && message.trim) made.trim = message.trim;
+          gear(message);
+        }
       });
     });
   }

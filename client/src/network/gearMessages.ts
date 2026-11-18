@@ -123,6 +123,8 @@ export interface GearState {
   /** In a social space, the vendors' wares of the day: the Quartermaster's, then the Armsmith's, each numbered by
    *  its place among its vendor's. */
   readonly wares: readonly GearItem[];
+  /** What the player's worn gear trims of the fight's numbers, which their browser predicts them by. */
+  readonly trim?: readonly number[];
 }
 
 /** No node chosen in a column, and no resource. */
@@ -213,6 +215,7 @@ export function gearOf(gear: Gear): GearState {
     answered: gear.answered(),
     nodes: nodesOf(Array.from(gear.nodesArray() ?? [])),
     wares,
+    trim: Array.from(gear.trimArray() ?? []),
   };
 }
 

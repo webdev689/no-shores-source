@@ -8,7 +8,6 @@ use crate::{Foe, PlayerId, Room};
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
 use combat::fighter::FighterId;
 use combat::judge::Blow;
-use gear::dice::Dice;
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot, Vestige};
 
@@ -121,7 +120,7 @@ impl Room {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
             }
-            let dice = Dice { seed: self.seed, tick: self.clock, player };
+            let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
             found.gear_changed = true;
@@ -165,7 +164,7 @@ pub(crate) fn hold(room: &mut Room, player: PlayerId, kind: Kind) {
     let id = character.take_id();
     let item = gear::Item::new(id, kind, gear::Rarity::Normal, 1, Slot::MainHand);
     character.items.insert(id, (item, gear::At::Carried));
-    let dice = Dice { seed: 0, tick: 0, player };
+    let dice = gear::dice::Dice { seed: 0, tick: 0, player };
     let worn = character.ask(gear::Ask::Wear { item: id, slot: Slot::MainHand }, gear::Here::default(), &dice);
     assert_eq!(worn, Ok(gear::Done::Done));
 }

@@ -244,7 +244,10 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem() {
     let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 4 });
     let bytes = protocol::input_bytes(&room::Input { sequence: 1, ask: Some(ask), ..room::Input::default() });
     assert_eq!(input(player, &bytes), 0);
-    room_tick();
+    // The answer goes out once the room may send this player's gear again.
+    for _ in 0..room::GEAR_EVERY_TICKS {
+        room_tick();
+    }
     let answered = gear(player);
     let gear_now = messages::root_as_from_room(&answered).unwrap().gear().unwrap();
     assert_eq!(gear_now.answer(), gear::Refusal::Short as u8 + 1, "no Aurem yet");

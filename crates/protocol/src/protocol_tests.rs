@@ -225,7 +225,13 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
         .players()
         .unwrap()
         .iter()
-        .map(|seen| Fighter::from_floats(&seen.fighter().unwrap().iter().collect::<Vec<f64>>().try_into().unwrap()))
+        .map(|seen| {
+            // A snapshot's fighter leaves out its trim: put back the plain one each test player wears.
+            let mut floats: Vec<f64> = seen.fighter().unwrap().iter().collect();
+            assert_eq!(floats.len(), crate::UNTRIMMED_FLOATS);
+            floats.extend(combat::Trim::PLAIN.to_floats());
+            Fighter::from_floats(&floats.try_into().unwrap())
+        })
         .collect();
     assert_eq!(fighters, players.iter().map(|seen| seen.fighter).collect::<Vec<_>>());
     let bodies: Vec<_> = read

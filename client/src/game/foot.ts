@@ -85,7 +85,8 @@ async function standOn(context: FootContext, rect: Rect, combat: CombatRules | n
   context.movement.setCourse(boxes);
   combat?.setCourse(boxes);
   if (!context.movement.setGround(windowJson)) throw new Error('the ground of this place did not load');
-  combat?.setGround(windowJson);
+  // The fight predicts on the same ground, or every tick would be predicted on flat ground at 0 m.
+  if (combat && !combat.setGround(windowJson)) throw new Error("the fight's ground of this place did not load");
   return boxes;
 }
 

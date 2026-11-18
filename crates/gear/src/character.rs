@@ -156,25 +156,56 @@ impl Character {
         serde_json::to_string(self).unwrap_or_default()
     }
 
-    /// A character kept between sessions, or none when the text is not one. It gains a stock of each island's resource
-    /// added since it was kept, and its next number stays past every one it holds.
+    /// A character kept between sessions, or none when the text is not one. Read, it is made whole: it gains a stock
+    /// of each island's resource added since it was kept, its stocks stay within their caps, each item is as an item
+    /// should be (`Item::kept`), one worn in a slot it does not fit or that another fills is carried, and its next
+    /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it.
     #[must_use]
     pub fn from_json(text: &str) -> Option<Self> {
         let mut character: Self = serde_json::from_str(text).ok()?;
         let resources = catalogue().resources.len();
-        if character.materials.resources.len() < resources {
-            character.materials.resources.resize(resources, 0);
+        let materials = &mut character.materials;
+        materials.resources.resize(resources.max(materials.resources.len()), 0);
+        materials.aurem = materials.aurem.min(AUREM_MOST);
+        for stock in [
+            &mut materials.weapon_fragments,
+            &mut materials.armor_fragments,
+            &mut materials.weapon_essence,
+            &mut materials.armor_essence,
+            &mut materials.fruit,
+        ]
+        .into_iter()
+        .chain(materials.resources.iter_mut())
+        {
+            *stock = (*stock).min(STOCK_MOST);
+        }
+        let mut worn = Vec::new();
+        for (id, (item, at)) in std::mem::take(&mut character.items) {
+            let item = item.kept(id, resources);
+            let at = match at {
+                At::Worn(slot) if !item.kind.fits(slot) || worn.contains(&slot) => At::Carried,
+                At::Worn(slot) => {
+                    worn.push(slot);
+                    At::Worn(slot)
+                }
+                other => other,
+            };
+            character.items.insert(id, (item, at));
         }
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
-        character.next_id = character.next_id.max(highest.saturating_add(1));
+        character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         Some(character)
     }
 
-    /// A fresh number for an item or Vestige.
+    /// A fresh number for an item or Vestige, never one it already holds.
     pub fn take_id(&mut self) -> u32 {
-        let id = self.next_id;
-        self.next_id = self.next_id.wrapping_add(1).max(1);
-        id
+        loop {
+            let id = self.next_id;
+            self.next_id = self.next_id.wrapping_add(1).max(1);
+            if !self.items.contains_key(&id) && !self.vestiges.contains_key(&id) {
+                return id;
+            }
+        }
     }
 
     #[must_use]

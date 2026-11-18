@@ -67,14 +67,18 @@ number is one of [[Gear as Claude Shapes It]].
 - **Vestiges.** A kill may leave a Vestige for each player who struck the foe, seen by them alone: by the foe's
   chance (a boss's is sure), its colour weighted by the foe (Legendary from level 18, Atheric from 20), for one slot,
   its item at the foe's level. A player carries ten. Identified in a social space, it opens to a colour at, below or
-  now and then above its own, and to a named item of its slot (a Breach's excepted) or a lesser one of a kind the slot
-  takes, its name and traits rolled, never a trait twice.
+  now and then above its own, never above what its level could drop (Legendary from 18, Atheric from 20), and to a
+  named item of its slot (a Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled,
+  never a trait twice.
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault.
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. Dismantling returns Aurem, fragments and, from a
   Legendary or Atheric, Essence with a third of what was spent on it.
-- **Chance** comes from a hash of the room's seed, its tick, the player and what the roll is for, so the same seed
-  gives the same loot.
+- **Chance** comes from a hash of the room's seed, its tick, a count of the rolls the room has made, the player and
+  what the roll is for. A deployed room's seed is its host's own, random and never sent, so no player can foresee a
+  roll; a room in the page keeps one fixed seed, so it gives the same loot for the same play. A kept character is
+  made whole as it is read: its stocks within their caps, each item's choices, nodes, level and XP within its own,
+  one worn where it does not fit carried, so no keeping can make a room refuse or fail on it.
 
 ## In the rooms
 
@@ -99,11 +103,12 @@ number is one of [[Gear as Claude Shapes It]].
 
 - **The Quartermaster** sells armour (head, torso, arms, legs) and **the Armsmith** weapons and shields, in a
   social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three Magic, made at the buyer's
-  level (at most 20), the same for everyone that day and new the next (`gear::vendor`).
+  level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The slots turn with the day,
+  so over four days the Quartermaster sells each armour piece at each rarity.
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only in a social space, and carried with its
   slot's nine. Legendary and Atheric gear is never sold: it is earned.
-- The room sends the day's wares with a player's gear while they stand in a social space, and a purchase is an ask
-  like any other.
+- The room sends the day's wares with a player's gear while they stand in a social space, sends them again as the
+  day turns, and a purchase is an ask like any other.
 
 ## Where foes stand
 

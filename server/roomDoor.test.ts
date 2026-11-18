@@ -254,6 +254,9 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round her');
 });
 
+/** How often, in ticks, the room sends one player's gear (`room::GEAR_EVERY_TICKS`). */
+const GEAR_EVERY_TICKS = 12;
+
 test('the Test Ground’s room lays out its stall and nodes, and sends each player their own gear when it changes', () => {
   const room = startRoomDoor(compiled);
   assert.equal(room.furnish(course.stall, course.resources), false, 'nothing to lay out before a room opens');
@@ -275,7 +278,8 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
     ask: { kind: ASKS.grantNamed, named: 'lanternfall' },
   });
   assert.equal(room.input(first, grant), 'taken');
-  room.tick();
+  // The room sends one player's gear five times a second at most: the answer goes out once it may again.
+  for (let tick = 0; tick < GEAR_EVERY_TICKS; tick += 1) room.tick();
   const granted = readFromRoom(room.gear(first));
   assert.ok(granted?.kind === 'gear' && granted.items.some((item) => item.named === 'lanternfall'));
   assert.equal(readFromRoom(room.gear(second))?.kind, 'gear', 'the second player’s own first gear');

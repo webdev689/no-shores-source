@@ -93,8 +93,11 @@ on Cloudflare.
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
   them. A social space's room answers a social space's asks (identifying a Vestige, the vault) anywhere in it; the
-  Test Ground's course within 4 m of its stall. A resource node is gathered within 2.5 m, and is spent for that player
-  until they leave. Only the Test Ground's room hands out gear to try the loop with.
+  Test Ground's course within 4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
+  spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
+  rejoins. A room takes one player's asks ten times a second at most and lets go of any sooner, and sends their gear
+  five times a second at most, so a page that asks without end cannot flood its socket or slow the room. Only the
+  Test Ground's room hands out gear to try the loop with.
 - **The dead** stand again, whole, after four seconds, at the spawn nearest where they fell, and the foes leave them be
   for three more unless they strike first; a dead foe is gone after ten.
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
@@ -170,6 +173,7 @@ they choose, all in one fight ([[Naval Combat]]).
   captain's mode, target and sides run out, and a player's last order taken), the balls aloft, what happened in the
   fight since it was last asked, and the fight's clock.
 - A room holds 16 players. Its chances are drawn from one seed, so one room fights the same fight for the same orders.
+  A room on land the servers host is given a seed of its own, random and never sent, so no player can foresee its loot.
 
 ## The bake
 
@@ -199,7 +203,7 @@ an older reader skips them.
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, and in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window |
-| Snapshot | The room | The room's tick; every player: their number, their whole fighter (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind, a glance at its fighter and its level; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
+| Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, kind, a glance at its fighter and its level; the fight's events since the last snapshot; the shots in flight with the ticks each has flown, and the balls fired since the last snapshot as their lines; and at sea every ship: its player, position, heading and pace, 0 at rest; every pirate: her number, position and heading; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
 starboard), crab and climb; whether a look is laid, its bearing off her bow (degrees) and range (metres); whether it
@@ -223,7 +227,7 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, and each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules); their Vestiges and those lying for them; the resource nodes they have spent; whether they stand where a social space's asks are answered; and the answer to their last ask |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, and each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules); their Vestiges and those lying for them; the resource nodes they have spent; whether they stand where a social space's asks are answered; the answer to their last ask; and their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them |
 
 ## The host
 

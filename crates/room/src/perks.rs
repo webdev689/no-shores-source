@@ -65,8 +65,11 @@ impl Room {
     /// Sets a player's trim from their worn gear, after an ask that may have changed it.
     pub(crate) fn retrim(&mut self, player: PlayerId) {
         if let Some(found) = self.players.get_mut(&player) {
-            found.trim = trim_of(&found.character);
-            found.fighter.trim = found.trim;
+            let trim = trim_of(&found.character);
+            // A new trim goes to the player in their gear, which their browser predicts them by.
+            found.gear_changed |= trim != found.trim;
+            found.trim = trim;
+            found.fighter.trim = trim;
         }
     }
 

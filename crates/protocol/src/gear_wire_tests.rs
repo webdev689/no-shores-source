@@ -57,6 +57,10 @@ fn furnished() -> (Room, PlayerId) {
     room.furnish(Some([0.0, 0.0]), vec![ResourceNode { x: 0.0, y: 1.0, resource: 4 }]);
     let player = room.join().expect("a room with space");
     let ask = |room: &mut Room, sequence: u32, asked: Asked| {
+        // As long after the last ask as the room takes them.
+        for _ in 0..room::asks::ASK_EVERY_TICKS {
+            room.tick();
+        }
         room.input(player, Input { sequence, ask: Some(asked), ..Input::default() }).expect("taken");
         room.tick();
     };

@@ -10,6 +10,8 @@ use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
 /// How near the stall a player must stand for a social space's asks, and a resource node for gathering, in metres.
 pub const STALL_REACH: f64 = 4.0;
 pub const NODE_REACH: f64 = 2.5;
+/// How often, in ticks, one player's asks are taken: ten a second.
+pub const ASK_EVERY_TICKS: u64 = 6;
 /// The answers the room gives beside the gear crate's refusals: a resource node out of reach or already spent, and a
 /// grant asked outside the Test Ground.
 pub const OUT_OF_REACH: u8 = 100;
@@ -78,10 +80,31 @@ impl Room {
         Here { social: self.social || self.stall.is_some_and(near_stall), day: self.day }
     }
 
-    /// Answers a player's ask, keeping the answer to send them.
+    /// A player's dice for one roll: the room's seed, the tick, and the count of rolls made, so no two rolls share
+    /// one and none can be foreseen without the seed, which a host keeps secret (`reseed`).
+    pub(crate) fn dice(&mut self, player: PlayerId) -> Dice {
+        self.rolls += 1;
+        Dice { seed: self.seed, tick: self.clock ^ (self.rolls << 32), player }
+    }
+
+    /// Draws the room's chances from a seed of the host's own, kept from the players: a room on the default seed
+    /// rolls what anyone with its code could foresee.
+    pub fn reseed(&mut self, seed: u64) {
+        self.seed = seed;
+    }
+
+    /// Answers a player's ask, keeping the answer to send them. An ask within `ASK_EVERY_TICKS` of their last is let
+    /// go unanswered: no one presses so fast, and a page that asks without end cannot make the room work for it.
     pub(crate) fn answer(&mut self, player: PlayerId, asked: Asked) {
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&player) else { return };
+        if found.asked_at.is_some_and(|asked| clock < asked + ASK_EVERY_TICKS) {
+            return;
+        }
+        found.asked_at = Some(clock);
+        found.identified = 0;
         let here = self.here(player);
-        let dice = Dice { seed: self.seed, tick: self.clock, player };
+        let dice = self.dice(player);
         let code = match asked {
             Asked::Gear(ask) => {
                 let Some(found) = self.players.get_mut(&player) else { return };
@@ -112,15 +135,19 @@ impl Room {
         let standing = self.node_standing(usize::from(node));
         let Some(found) = self.players.get_mut(&player) else { return OUT_OF_REACH };
         let far = libm::hypot(fighter.body.x - spot.x, fighter.body.y - spot.y) > NODE_REACH;
-        if found.spent.contains(&node) || far || !standing {
+        if found.spent.contains(&node) || far || !standing || fighter.dead() {
             return OUT_OF_REACH;
         }
         found.spent.push(node);
+        if let (Some(owner), Some(patrol)) = (&found.owner, self.patrol.as_mut()) {
+            patrol.gathered.entry(owner.clone()).or_default().push(node);
+        }
         found.character.gather(usize::from(spot.resource));
         0
     }
 
     fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
+        let dice = self.dice(player);
         let Some(found) = self.players.get_mut(&player) else { return 0 };
         let character = &mut found.character;
         match grant {
@@ -144,7 +171,6 @@ impl Room {
                     return answer_code(Err(Refusal::NoSuchItem));
                 }
                 let bucket = Slot::ALL.into_iter().find(|slot| kind.fits(*slot)).unwrap_or(Slot::MainHand);
-                let dice = Dice { seed: self.seed, tick: self.clock, player };
                 let item = gear::vestige::rolled(character.take_id(), kind, rarity, bucket, level, &dice);
                 return carry(character, item);
             }

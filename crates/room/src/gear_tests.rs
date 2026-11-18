@@ -40,10 +40,22 @@ fn chop(room: &mut Room, player: PlayerId, from: u32) -> Vec<Event> {
     room.take_events()
 }
 
+/// The player asks once, as long after their last ask as the room takes them, and the room answers.
 fn ask(room: &mut Room, player: PlayerId, sequence: u32, asked: Asked) -> u8 {
+    for _ in 0..crate::asks::ASK_EVERY_TICKS {
+        room.tick();
+    }
     room.input(player, Input { ask: Some(asked), ..asking(sequence, room, CombatInput::default()) }).unwrap();
     room.tick();
     room.player(player).expect("in the room").answer
+}
+
+/// Whether the player's gear is sent to them once the room next may send it.
+fn sent(room: &mut Room, player: PlayerId) -> bool {
+    for _ in 0..crate::players::GEAR_EVERY_TICKS {
+        room.tick();
+    }
+    room.take_gear_change(player)
 }
 
 fn move_to(room: &mut Room, player: PlayerId, x: f64, y: f64) {
@@ -210,11 +222,14 @@ fn a_players_gear_is_theirs_to_be_sent_whenever_it_changes() {
     let mut room = room();
     let player = room.join().expect("a room with space");
     assert!(room.take_gear_change(player), "sent once on joining");
-    assert!(!room.take_gear_change(player));
+    assert!(!sent(&mut room, player));
     room.input(player, asking(1, &room, CombatInput::default())).unwrap();
     room.tick();
-    assert!(!room.take_gear_change(player), "an input that asks nothing changes nothing");
+    assert!(!sent(&mut room, player), "an input that asks nothing changes nothing");
     ask(&mut room, player, 2, Asked::Gear(Ask::TakeOff { slot: Slot::Head }));
     assert!(room.take_gear_change(player));
+    ask(&mut room, player, 3, Asked::Gear(Ask::TakeOff { slot: Slot::Torso }));
+    assert!(!room.take_gear_change(player), "not so soon after the last send");
+    assert!(sent(&mut room, player), "but once the room may send again");
     assert!(room.player(player).is_some_and(|found| found.character.worn(Slot::Head).is_none()));
 }

@@ -122,3 +122,32 @@ fn resource_nodes_stand_at_their_spots_a_third_at_a_time_and_each_may_be_gathere
     assert!(next.iter().all(|index| !first.contains(index)), "the next third");
     assert_eq!(gathered(&mut room, first[0]), asks::OUT_OF_REACH, "its spot rests this turn");
 }
+
+#[test]
+fn a_node_gathered_stays_spent_for_its_account_however_often_the_player_rejoins_this_turn() {
+    let (mut room, player) = patrol(Difficulty::Calm);
+    room.own(player, "account-a");
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    let spot = room.resource_nodes[usize::from(node)];
+    let stand_at = |room: &mut Room, player: PlayerId| {
+        let mut there = *room.fighter(player).expect("in");
+        there.body.x = spot.x;
+        there.body.y = spot.y;
+        room.set_fighter(player, there);
+    };
+    stand_at(&mut room, player);
+    room.answer(player, asks::Asked::Gather { node });
+    assert_eq!(room.player(player).expect("in").answer, 0);
+    room.leave(player);
+    let back = room.join().expect("a room with space");
+    room.own(back, "account-a");
+    stand_at(&mut room, back);
+    room.answer(back, asks::Asked::Gather { node });
+    assert_ne!(room.player(back).expect("in").answer, 0, "spent for the account, not the socket");
+    assert!(!room.nodes_for(back).any(|(index, _)| index == node), "and not shown as standing for them");
+    let other = room.join().expect("a room with space");
+    room.own(other, "account-b");
+    stand_at(&mut room, other);
+    room.answer(other, asks::Asked::Gather { node });
+    assert_eq!(room.player(other).expect("in").answer, 0, "another account gathers it");
+}

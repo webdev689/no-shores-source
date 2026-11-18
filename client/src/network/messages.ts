@@ -1,7 +1,7 @@
 import * as flatbuffers from 'flatbuffers';
 import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
-import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
+import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import { type FleetPart, fleetOf, point, whole } from './fleetMessages.ts';
 import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
@@ -239,7 +239,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       // A walker on a ship's deck crosses as their body alone, and has no fighter.
       const numbers = seen.fighterArray();
       const walker = numbers?.length === BODY_FLOATS;
-      const fighter = walker ? null : whole(numbers, FIGHTER_FLOATS, `player ${index}'s fighter`);
+      const fighter = walker ? null : whole(numbers, UNTRIMMED_FLOATS, `player ${index}'s fighter`);
       // A fighter's first numbers are its body: the room sends them once.
       const body = bodyOf(Array.from((fighter ?? Float64Array.from(numbers ?? [])).subarray(0, BODY_FLOATS)));
       const look = { anim: seen.anim() ?? '', frame: seen.frame(), facing: seen.facing() };

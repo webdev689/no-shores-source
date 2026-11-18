@@ -263,6 +263,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         answered: found.answered,
         nodes: Some(builder.create_vector(&nodes)),
         wares,
+        trim: Some(builder.create_vector(&found.trim.to_floats())),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

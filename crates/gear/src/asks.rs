@@ -251,8 +251,8 @@ impl Character {
         }
         let item = self.held_mut(id)?;
         item.bought |= bit;
-        if item.chosen[column] == NONE_CHOSEN {
-            item.chosen[column] = node;
+        if let Some(chosen) = item.chosen.get_mut(column).filter(|chosen| **chosen == NONE_CHOSEN) {
+            *chosen = node;
         }
         Ok(None)
     }
@@ -265,7 +265,8 @@ impl Character {
         if !item.has(column, node) {
             return Err(Refusal::NotBought);
         }
-        item.chosen[column] = node;
+        let chosen = item.chosen.get_mut(column).ok_or(Refusal::NoSuchNode)?;
+        *chosen = node;
         Ok(None)
     }
 
@@ -302,7 +303,7 @@ impl Character {
         if self.carried_in(vestige.slot) >= CARRIED_MOST {
             return Err(Refusal::CarriedFull);
         }
-        let rarity = vestige::opens_to(vestige.rarity, dice);
+        let rarity = vestige::opens_to(vestige.rarity, vestige.level, dice);
         let item_id = self.next_id;
         let item = vestige::make(item_id, rarity, vestige.slot, vestige.level, dice).ok_or(Refusal::NoSuchItem)?;
         self.take_id();

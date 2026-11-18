@@ -62,10 +62,14 @@ export interface RoomDoor {
   difficulty(seas: number): boolean;
   /** Sets the day, counted from the epoch, whose wares its vendors show; false if it is no room on land. */
   day(day: number): boolean;
+  /** Draws a room on land's chances from a seed the host keeps secret, from its two halves; false if it is none. */
+  reseed(low: number, high: number): boolean;
   /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
   character(player: number): string | null;
   /** Gives a player the character kept for them; false if the text is not one or they are not in. */
   restoreCharacter(player: number, kept: string): boolean;
+  /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
+  own(player: number, account: string): boolean;
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
@@ -90,7 +94,9 @@ interface RoomExports {
   room_character(player: number): bigint;
   room_difficulty(seas: number): number;
   room_day(day: number): number;
+  room_reseed(low: number, high: number): number;
   room_restore_character(player: number, address: number, length: number): number;
+  room_own(player: number, address: number, length: number): number;
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
 }
@@ -153,12 +159,14 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     gear: (player) => take(exports.room_gear(player)),
     difficulty: (seas) => exports.room_difficulty(seas) === 1,
     day: (day) => exports.room_day(day) === 1,
+    reseed: (low, high) => exports.room_reseed(low, high) === 1,
     character: (player) => {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
     },
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
+    own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
   };
 }

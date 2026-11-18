@@ -26,7 +26,7 @@ table Ask {
 // 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
 // combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
 // (0 none; 255 sends every foe away), whether they ask to respawn, dead past a node's section, an ask of their gear,
-// and the level of the foe asked for (0, the player's own). New fields go at the end, so old readers skip them.
+// and the level of the foe asked for (0 for none: combat's own numbers). New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -323,6 +323,9 @@ table Gear {
   answered: uint;
   nodes: [double];
   wares: [GearItem];
+  // What their worn gear trims of the fight's numbers (combat's Trim, in its order): their fighter in a snapshot
+  // leaves it out, and their browser puts it back before it predicts them.
+  trim: [double];
 }
 
 // What a room sends: exactly one of these is present.

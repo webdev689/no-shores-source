@@ -20,6 +20,20 @@ const FROM_BOSSES: [u32; 5] = [0, 20, 55, 22, 3];
 const OPENS: [[u32; 5]; 5] =
     [[85, 15, 0, 0, 0], [20, 70, 10, 0, 0], [0, 25, 65, 10, 0], [0, 0, 60, 35, 5], [0, 0, 0, 20, 80]];
 
+/// Colour weights as `level` allows them: too low for the best colours, what would have been one is the best its level
+/// allows.
+fn gated(mut weights: [u32; 5], level: u8) -> [u32; 5] {
+    if level < ATHERIC_FROM {
+        weights[3] += weights[4];
+        weights[4] = 0;
+    }
+    if level < LEGENDARY_FROM {
+        weights[2] += weights[3];
+        weights[3] = 0;
+    }
+    weights
+}
+
 /// What a kill leaves for one player: a Vestige of this colour, for this slot, its item of this level. `chance` is the
 /// foe's chance of leaving one; a boss always does, and leaves the better colours.
 #[must_use]
@@ -27,25 +41,17 @@ pub fn dropped(chance: f64, boss: bool, foe_level: u8, dice: &Dice) -> Option<(R
     if !boss && dice.roll(Purpose::Drops, 0) >= chance {
         return None;
     }
-    let mut weights = if boss { FROM_BOSSES } else { FROM_FOES };
-    // Too low a foe for the best colours: what would have been one is the best its level allows.
-    if foe_level < ATHERIC_FROM {
-        weights[3] += weights[4];
-        weights[4] = 0;
-    }
-    if foe_level < LEGENDARY_FROM {
-        weights[2] += weights[3];
-        weights[3] = 0;
-    }
+    let weights = gated(if boss { FROM_BOSSES } else { FROM_FOES }, foe_level);
     let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &weights)];
     let slot = Slot::VESTIGE[dice.pick(Purpose::Slot, 0, Slot::VESTIGE.len())];
     Some((colour, slot, foe_level.clamp(1, NAMED_LEVEL)))
 }
 
-/// The colour a Vestige opens to.
+/// The colour a Vestige of this level opens to: above its own colour only as far as its level allows a drop, so a
+/// low Vestige never opens to what its foe could not have dropped.
 #[must_use]
-pub fn opens_to(colour: Rarity, dice: &Dice) -> Rarity {
-    Rarity::ALL[dice.weighted(Purpose::Opens, 0, &OPENS[colour as usize])]
+pub fn opens_to(colour: Rarity, level: u8, dice: &Dice) -> Rarity {
+    Rarity::ALL[dice.weighted(Purpose::Opens, 0, &gated(OPENS[colour as usize], level))]
 }
 
 /// The item a Vestige of this slot and level makes at this rarity, numbered `id`: a named one of its slot, chosen

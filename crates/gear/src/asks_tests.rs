@@ -241,3 +241,19 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
     assert_eq!(bought.1, At::Carried);
     assert_eq!(character.ask(Ask::Vend { vendor: Vendor::Armsmith, ware: 9 }, here, &DICE), Err(Refusal::NoSuchItem));
 }
+
+#[test]
+fn over_four_days_the_quartermaster_sells_every_armour_piece_at_each_rarity() {
+    use crate::vendor::{Vendor, wares};
+    let mut seen = std::collections::BTreeSet::new();
+    for day in 20_000..20_004 {
+        for ware in wares(Vendor::Quartermaster, day, 20) {
+            seen.insert((ware.bucket, ware.rarity));
+        }
+    }
+    for slot in [Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs] {
+        for rarity in [Rarity::Rare, Rarity::Magic] {
+            assert!(seen.contains(&(slot, rarity)), "{slot:?} at {rarity:?}");
+        }
+    }
+}

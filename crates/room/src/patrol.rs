@@ -47,6 +47,8 @@ pub struct Patrol {
     pub low: u8,
     pub high: u8,
     pub camps: Vec<Camp>,
+    /// The nodes each account's character gathered this turn, kept past a player's leaving.
+    pub gathered: BTreeMap<String, Vec<u8>>,
 }
 
 /// A number for a name, the same every time: FNV-1a.
@@ -96,7 +98,7 @@ impl Room {
             })
             .collect();
         self.resource_nodes = nodes.into_iter().map(|[x, y]| ResourceNode { x, y, resource }).collect();
-        self.patrol = Some(Patrol { low: levels.0, high: levels.1.max(levels.0), camps });
+        self.patrol = Some(Patrol { low: levels.0, high: levels.1.max(levels.0), camps, gathered: BTreeMap::new() });
     }
 
     /// Sets the difficulty the room's voyage set out at.
@@ -128,6 +130,7 @@ impl Room {
                 found.spent.clear();
                 found.gear_changed = true;
             }
+            patrol.gathered.clear();
         }
         let bodies: Vec<[f64; 2]> =
             self.players.values().map(|found| [found.fighter.body.x, found.fighter.body.y]).collect();
@@ -135,7 +138,8 @@ impl Room {
             let held = camp.foes.len();
             camp.foes.retain(|id| self.foes.contains_key(id));
             if held > 0 && camp.foes.is_empty() {
-                camp.refill_at = self.clock + REFILL_TICKS;
+                // Its last foe fell `FOE_GONE` ago, when its body was taken away: the wait counts from the fall.
+                camp.refill_at = self.clock + REFILL_TICKS.saturating_sub(u64::from(combat::tuning::FOE_GONE));
             }
             let [x, y] = camp.at;
             let watched = bodies.iter().any(|body| libm::hypot(body[0] - x, body[1] - y) < CAMP_CLEAR_M);

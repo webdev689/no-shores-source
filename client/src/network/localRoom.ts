@@ -19,6 +19,8 @@ export class LocalRoom implements RoomLink {
   readonly dressed = [];
   /** A room in the page is never lost. */
   readonly lost = null;
+  /** The player's trim, from the room's last word on their gear. */
+  trim: readonly number[] | null = null;
 
   private constructor(door: RoomDoor, snapshot: (snapshot: Snapshot) => void, gear: (gear: GearMessage) => void) {
     this.door = door;
@@ -70,7 +72,10 @@ export class LocalRoom implements RoomLink {
       const message = readFromRoom(this.door.snapshot());
       if (message?.kind === 'snapshot') this.snapshot(message);
       const gear = readFromRoom(this.door.gear(this.player));
-      if (gear?.kind === 'gear') this.gear(gear);
+      if (gear?.kind === 'gear') {
+        if (gear.trim) this.trim = gear.trim;
+        this.gear(gear);
+      }
     }
   }
 }

@@ -10,7 +10,7 @@ import { readFromRoom } from '../network/messages.ts';
 import type { FlyingShot } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type CombatRules, type Fired, startCombatRules } from '../rules/combatRules.ts';
-import { FIGHTER_FLOATS, GLANCE_FLOATS } from '../rules/fighters.ts';
+import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
@@ -181,8 +181,8 @@ function fightByHand() {
   let tick = 0n;
   const word = (acknowledged: number, shots: readonly FlyingShot[] = []) => {
     tick += 1n;
-    const fighter = new Float64Array(FIGHTER_FLOATS);
-    const seen = { player: 1, acknowledged, fighter };
+    const fighter = new Float64Array(UNTRIMMED_FLOATS);
+    const seen = { player: 1, acknowledged, fighter, standing: { kind: 'inside' } };
     fighting.receive({
       kind: 'snapshot',
       tick,

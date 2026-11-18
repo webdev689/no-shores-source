@@ -26,3 +26,49 @@ fn a_kept_character_gains_new_resources_and_never_reuses_a_number() {
     assert_eq!(Character::from_json("{\"xp\":"), None);
     assert_eq!(Character::from_json("null"), None);
 }
+
+#[test]
+fn a_kept_character_however_broken_is_made_whole_and_no_ask_fails_on_it() {
+    use crate::asks::{Ask, Here};
+    use crate::character::{AUREM_MOST, STOCK_MOST};
+    use crate::dice::Dice;
+    let mut character = Character::starting();
+    let id = character.take_id();
+    let mut item = Item::new(id, Kind::Sword, Rarity::Legendary, 20, Slot::MainHand);
+    item.xp = u32::MAX;
+    item.chosen.clear();
+    item.bought = u32::MAX;
+    item.id = 999;
+    character.items.insert(id, (item, At::Worn(Slot::Head)));
+    character.materials.aurem = u32::MAX;
+    character.materials.weapon_essence = u16::MAX;
+    let back = Character::from_json(&character.to_json()).expect("a character");
+    let (kept, at) = &back.items[&id];
+    assert_eq!(kept.id, id, "an item's number is its key");
+    assert_eq!(*at, At::Carried, "a sword is not worn on the head");
+    assert_eq!(kept.chosen.len(), kept.columns().len());
+    assert!(kept.xp <= kept.xp_most());
+    assert!(kept.bought.count_ones() as usize <= kept.columns().iter().map(|column| usize::from(column.nodes())).sum());
+    assert_eq!(back.materials.aurem, AUREM_MOST);
+    assert_eq!(back.materials.weapon_essence, STOCK_MOST);
+    let mut asked = back;
+    let dice = Dice { seed: 1, tick: 1, player: 1 };
+    for column in 0..12 {
+        for node in 0..6 {
+            let _ = asked.ask(Ask::Buy { item: id, column, node }, Here::default(), &dice);
+            let _ = asked.ask(Ask::Choose { item: id, column, node }, Here::default(), &dice);
+        }
+    }
+}
+
+#[test]
+fn a_fresh_number_is_never_one_held() {
+    let mut character = Character::starting();
+    let held = *character.items.keys().next().expect("its starting kit");
+    character.next_id = held;
+    let fresh = character.take_id();
+    assert!(!character.items.contains_key(&fresh));
+    character.next_id = u32::MAX;
+    let _ = character.take_id();
+    assert_ne!(character.next_id, 0, "never 0, the number for none");
+}

@@ -30,7 +30,8 @@ fn past_twenty_the_armours_prestige_sets_the_level_as_at_destiny_1s_launch() {
 fn a_blow_rises_with_attack_up_to_the_foes_level_and_falls_away_below_it() {
     let close = |left: f64, right: f64| (left - right).abs() < 1e-12;
     assert!(close(by_player(300, 20, 20), libm::pow(1.07, 20.0)), "300 reaches level 20");
-    assert!(close(by_player(300, 25, 25), libm::pow(1.07, 20.0)), "and no further");
+    assert!(close(by_player(300, 25, 25), libm::pow(1.07, 25.0)), "a level 25 player reaches 5 further");
+    assert!(close(by_player(300, 25, 30), libm::pow(1.07, 25.0) * 0.0), "but five below a foe strikes nothing");
     assert!(close(by_player(150, 20, 20), libm::pow(1.07, 10.0)), "150 reaches level 10");
     assert!(close(by_player(300, 20, 5), libm::pow(1.07, 5.0)), "a low foe takes only its own level's");
     assert!(close(by_player(300, 19, 20), libm::pow(1.07, 20.0) * 0.67));
@@ -56,4 +57,14 @@ fn defense_meets_a_foes_level_and_a_player_below_it_is_struck_harder() {
     assert!(close(on_player(1_350, 28, 30), 1.5), "two levels below: half again");
     assert!(close(on_player(1_350, 10, 30), 2.0), "four or more below: double");
     assert!(close(on_player(0, 1, 0), 1.0), "a level 0 foe asks nothing of Defense");
+}
+
+#[test]
+fn a_player_matched_to_a_foe_fells_it_in_the_tuned_blows_at_every_level() {
+    use crate::power::{by_player, foe_health_times};
+    for level in 1..=30_u8 {
+        let attack = if level <= 20 { u32::from(level) * 15 } else { 300 };
+        let blows = foe_health_times(level) / by_player(attack, level, level);
+        assert!((blows - 1.0).abs() < 1e-9, "level {level}: {blows} times the tuned blows");
+    }
 }

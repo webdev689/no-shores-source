@@ -52,10 +52,12 @@ pub fn foe_health_times(foe_level: u8) -> f64 {
 }
 
 /// What a player's blow with a weapon of this Attack is times against a foe of this level: 1.07 for each of the foe's
-/// levels the Attack reaches, and the share the level gap leaves.
+/// levels the Attack reaches, its reach lengthened by each level the player has past 20 by Prestige, and the share
+/// the level gap leaves. So a player matched to a foe at any level fells it in the blows combat is tuned for.
 #[must_use]
 pub fn by_player(attack: u32, player_level: u8, foe_level: u8) -> f64 {
-    let reached = (f64::from(attack) / ATTACK_PER_LEVEL).min(f64::from(foe_level));
+    let past_xp = f64::from(player_level.saturating_sub(XP_LEVEL_MOST));
+    let reached = (f64::from(attack) / ATTACK_PER_LEVEL + past_xp).min(f64::from(foe_level));
     libm::pow(PER_LEVEL, reached) * gap(player_level, foe_level)
 }
 

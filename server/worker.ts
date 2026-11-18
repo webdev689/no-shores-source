@@ -97,6 +97,7 @@ export class RoomHost extends DurableObject<Env> {
       character: (player: number) => this.guarded(() => this.room.character(player), null),
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
+      own: (player: number, account: string) => this.guarded(() => this.room.own(player, account), false),
     };
     const characters = {
       claim: (token: string, holder: string) => accounts.claim(token, holder),
@@ -112,15 +113,21 @@ export class RoomHost extends DurableObject<Env> {
       return this.room.openSea(JSON.stringify(layout), crypto.getRandomValues(new Uint32Array(1))[0] ?? 0);
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
+    // Every room on land rolls its loot from a seed of its own that no player sees.
+    const [low = 0, high = 0] = crypto.getRandomValues(new Uint32Array(2));
     if (node === undefined)
-      return this.room.open(course.start, course.blocks) && this.room.furnish(course.stall, course.resources);
+      return (
+        this.room.open(course.start, course.blocks) &&
+        this.room.furnish(course.stall, course.resources) &&
+        this.room.reseed(low, high)
+      );
     // `node-<id>--rough` is that node at a voyage's rough seas, a room of its own; a plain name, calm.
     const [id, seas = 'calm'] = node.split('--');
     const difficulty = SEAS.indexOf(seas);
     if (difficulty < 0) return false;
     const file = await this.env.NODES.fetch(`https://nodes/${id ?? ''}.json`);
     const opened = file.ok && this.room.openNode(await file.text()) && this.room.difficulty(difficulty);
-    return opened && this.room.day(Math.floor(Date.now() / DAY_MS));
+    return opened && this.room.reseed(low, high) && this.room.day(Math.floor(Date.now() / DAY_MS));
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {

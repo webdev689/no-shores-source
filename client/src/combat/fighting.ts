@@ -5,7 +5,7 @@ import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
 import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
-import { type FighterView, fighterView, glanceFrom, glanceView } from '../rules/fighters.ts';
+import { type FighterView, fighterView, glanceFrom, glanceView, trimmed } from '../rules/fighters.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
  *  and its action's kind (0 at rest, 12 for the dead). */
@@ -111,6 +111,8 @@ export class Fighting {
   private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
   private readonly spawnsQueued: { readonly kind: number; readonly level: number }[] = [];
   private readonly gearQueued: GearAsk[] = [];
+  /** Whether the room holds the player dead past a section's edge, their fighter still while it takes inputs. */
+  private heldDead = false;
   private respawnAsked = false;
   private sentDress = '';
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
@@ -261,6 +263,8 @@ export class Fighting {
     };
     this.respawnAsked = false;
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
+    // Dead past the edge, the room holds the fighter still while it takes the inputs: nothing is swung or shot.
+    if (this.heldDead) return bodyOf(Array.from(this.fighter.subarray(0, 22)));
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
@@ -286,14 +290,22 @@ export class Fighting {
       // Only a fighter fights: a player with none (a walker on a ship's deck) is no one's to strike here.
       if (!seen.fighter) continue;
       if (seen.player === this.player) {
-        this.fighter = this.prediction.corrected(seen.fighter, seen.acknowledged, (fighter, asked) => {
-          const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
-          // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
-          // has been drawn already.
-          if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
-          asked.fired = replayed.fired ?? asked.fired;
-          return replayed.fighter;
-        });
+        // The snapshot leaves out the player's trim: it is theirs from their gear.
+        const whole = trimmed(seen.fighter, this.link.trim);
+        this.heldDead = seen.standing.kind === 'dead';
+        this.fighter = this.prediction.corrected(
+          whole,
+          seen.acknowledged,
+          (fighter, asked) => {
+            const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
+            // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
+            // has been drawn already.
+            if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
+            asked.fired = replayed.fired ?? asked.fired;
+            return replayed.fighter;
+          },
+          this.heldDead,
+        );
         continue;
       }
       this.others.set(seen.player, seen);

@@ -136,6 +136,19 @@ fn a_trim_crosses_with_its_fighter_to_the_bit() {
 }
 
 #[test]
+fn every_number_of_a_trim_crosses_to_its_own_place() {
+    // Each number distinct, so two swapped in packing or unpacking would not cross back the same.
+    let mut numbers = [0.0; combat::trim::TRIM_FLOATS];
+    for (nth, number) in numbers.iter_mut().enumerate() {
+        *number = 1.0 + 0.01 * (nth as f64 + 1.0);
+    }
+    numbers[combat::trim::TRIM_FLOATS - 1] = 1.0;
+    let trim = Trim::from_floats(&numbers);
+    assert_eq!(trim.to_floats(), numbers);
+    assert!(trim.kill_reload);
+}
+
+#[test]
 fn a_fighter_seen_at_a_glance_reads_as_untrimmed() {
     let seen = Fighter::from_glance(&armed(Trim { swing_stamina: 0.85, ..Trim::PLAIN }).glance());
     assert_eq!(seen.trim, Trim::PLAIN);

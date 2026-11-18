@@ -10,6 +10,9 @@ use gear::Character;
 use reach::Standing;
 use std::collections::VecDeque;
 
+/// How often, in ticks, a player's changed gear is sent: five times a second.
+pub const GEAR_EVERY_TICKS: u64 = 12;
+
 /// A player's number in a room, never reused while the room lives: one count with the foes'.
 pub type PlayerId = FighterId;
 
@@ -120,13 +123,19 @@ pub struct Player {
     /// Their gear, and whether it changed since it was last sent to them.
     pub character: Character,
     pub gear_changed: bool,
+    /// The tick their gear was last sent, and their last ask taken: a room sends one player's gear, and takes their
+    /// asks, only so often.
+    pub gear_sent: Option<u64>,
+    pub asked_at: Option<u64>,
     /// The answer to their last ask (0 done, else why not), the item a Vestige last opened to, and how many asks
     /// have been answered.
     pub answer: u8,
     pub identified: u32,
     pub answered: u32,
-    /// The room's resource nodes they have gathered from, spent for them until they leave.
+    /// The room's resource nodes they have gathered from this turn, spent for them.
     pub spent: Vec<u8>,
+    /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
+    pub owner: Option<String>,
     /// What their worn gear trims of the fight's numbers, set whenever it may change.
     pub trim: combat::Trim,
 }
@@ -152,10 +161,13 @@ impl Player {
             dressed_at: None,
             character: Character::starting(),
             gear_changed: true,
+            gear_sent: None,
+            asked_at: None,
             answer: 0,
             identified: 0,
             answered: 0,
             spent: Vec::new(),
+            owner: None,
             trim: combat::Trim::PLAIN,
         }
     }
@@ -197,9 +209,17 @@ impl Room {
             .collect()
     }
 
-    /// Whether a player's gear changed since this was last asked, so it should be sent to them alone.
+    /// Whether a player's gear changed since it was last sent and is due to be sent to them alone: at most every
+    /// `GEAR_EVERY_TICKS`, so a page that asks without end cannot flood its socket or slow the room.
     pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
-        self.players.get_mut(&player).is_some_and(|found| std::mem::take(&mut found.gear_changed))
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&player) else { return false };
+        if !found.gear_changed || found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS) {
+            return false;
+        }
+        found.gear_changed = false;
+        found.gear_sent = Some(clock);
+        true
     }
 
     /// A player's character as it is kept between sessions.
@@ -216,6 +236,33 @@ impl Room {
         found.character = character;
         found.gear_changed = true;
         self.retrim(player);
+        true
+    }
+
+    /// Sets the day, counted from the epoch, whose wares the room's vendors show; when it turns, every player is sent
+    /// the new day's wares, so none buys what they were not shown.
+    pub fn set_day(&mut self, day: u64) {
+        if self.day == day {
+            return;
+        }
+        self.day = day;
+        for found in self.players.values_mut() {
+            found.gear_changed = true;
+        }
+    }
+
+    /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
+    /// spent for them again, however often they rejoin.
+    pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
+        let gathered = self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
+        let Some(found) = self.players.get_mut(&player) else { return false };
+        found.owner = Some(owner.to_owned());
+        for node in gathered {
+            if !found.spent.contains(&node) {
+                found.spent.push(node);
+            }
+        }
+        found.gear_changed = true;
         true
     }
 

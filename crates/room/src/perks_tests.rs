@@ -127,6 +127,9 @@ fn a_kept_character_comes_back_into_the_room_trimmed() {
         .to_json();
     assert!(room.take_gear_change(player), "a new player's gear goes to them");
     assert!(room.restore_character(player, &kept));
+    for _ in 0..crate::players::GEAR_EVERY_TICKS {
+        room.tick();
+    }
     assert!(room.take_gear_change(player), "and again once their own comes back");
     assert_eq!(room.kept_character(player), Some(kept));
     assert_eq!(room.fighter(player).expect("in").trim.swing_stamina, 0.85);

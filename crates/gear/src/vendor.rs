@@ -55,7 +55,8 @@ pub fn wares(vendor: Vendor, day: u64, level: u8) -> Vec<Item> {
         .filter_map(|ware| {
             let dice = Dice { seed: day.wrapping_mul(2).wrapping_add(vendor as u64), tick: ware as u64, player: 0 };
             let rarity = if ware < WARES / 2 { Rarity::Rare } else { Rarity::Magic };
-            let slot = slots[ware % slots.len()];
+            // The slots turn with the day, so each is sold at each rarity in its turn.
+            let slot = slots[(ware + (day % slots.len() as u64) as usize) % slots.len()];
             vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), &dice)
         })
         .collect()

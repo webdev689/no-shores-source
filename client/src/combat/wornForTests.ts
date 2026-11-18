@@ -3,6 +3,13 @@ import type { Fighting } from './fighting.ts';
 
 /** The gear crate's numbers for the kinds a test's player fights with. */
 export const KIND = { sword: 2, bow: 8, pistolet: 10, shield: 12 } as const;
+/** Ticks enough for the room to take the next ask and send the gear it changed: it takes a player's asks ten times a
+ *  second and sends their gear five times (`ASK_EVERY_TICKS`, `GEAR_EVERY_TICKS`). */
+const PACE_TICKS = 13;
+
+const ticked = (tick: () => void) => {
+  for (let nth = 0; nth < PACE_TICKS; nth += 1) tick();
+};
 
 /**
  * Has a player in the Test Ground's room take up these kinds as the room demands, through their gear: each handed out
@@ -19,12 +26,10 @@ export function wear(
   for (const kind of kinds) {
     const before = new Set(gear()?.items.map((item) => item.id) ?? []);
     fighting.askGear({ kind: ASKS.grantItem, itemKind: kind, rarity: 0, level: 1 });
-    tick();
-    tick();
+    ticked(tick);
     const item = gear()?.items.find((each) => !before.has(each.id) && each.kind === kind);
     if (!item) throw new Error(`the room handed out no item of kind ${kind}`);
     fighting.askGear({ kind: ASKS.wear, item: item.id, slot: kind === KIND.shield ? 1 : 0 });
-    tick();
-    tick();
+    ticked(tick);
   }
 }

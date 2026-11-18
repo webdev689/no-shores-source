@@ -69,6 +69,27 @@ pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
     .unwrap_or(false)
 }
 
+/// Notes the account, written in `bytes`, that keeps a player's character (`Room::own`); false if it is not text or
+/// they are not in.
+pub fn own(player: PlayerId, bytes: &[u8]) -> bool {
+    let Ok(owner) = std::str::from_utf8(bytes) else { return false };
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.own(player, owner),
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    })
+    .unwrap_or(false)
+}
+
+/// Notes the account written at `address` that keeps a player's character; 1 if noted, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_own(player: PlayerId, address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller gives `length` readable bytes at `address`.
+    u32::from(own(player, unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
 /// A player's own gear's bytes, empty when it has not changed.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_gear(player: PlayerId) -> u64 {
@@ -128,12 +149,30 @@ pub extern "C" fn room_difficulty(number: u32) -> u32 {
 pub fn set_day(day: u32) -> bool {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {
-            room.day = u64::from(day);
+            room.set_day(u64::from(day));
             true
         }
         Opened::Sea(_) | Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
+}
+
+/// Draws a room on land's chances from the host's own secret seed, from its two halves; false with no room on land.
+pub fn reseed(low: u32, high: u32) -> bool {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => {
+            room.reseed(u64::from(high) << 32 | u64::from(low));
+            true
+        }
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    })
+    .unwrap_or(false)
+}
+
+/// Reseeds the room (`reseed`); 1 if set, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_reseed(low: u32, high: u32) -> u32 {
+    u32::from(reseed(low, high))
 }
 
 /// Sets the room's day (`set_day`); 1 if set, 0 if not.

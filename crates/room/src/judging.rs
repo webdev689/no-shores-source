@@ -254,11 +254,15 @@ impl Room {
             }
             match flight {
                 Flight::Flying(next) => self.shots.push(next),
-                Flight::Stopped { struck: Some(defender), .. } => {
+                Flight::Stopped { struck: Some(defender), at } => {
                     let blow = self.empower(combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]), defender, false);
-                    // An arrow or a bolt has covered its speed for every tick it flew.
+                    // An arrow or a bolt covered its speed for each whole tick it flew, and in its last only as far as
+                    // it went before it struck.
+                    let [east, south, up] = [at[0] - shot.at[0], at[1] - shot.at[1], at[2] - shot.at[2]];
+                    let last = libm::sqrt(east * east + south * south + up * up);
                     let covered =
-                        combat::shots::shot_numbers(shot.ranged).0 * f64::from(shot.age + 1) * movement::TICK_SECONDS;
+                        combat::shots::shot_numbers(shot.ranged).0 * f64::from(shot.age) * movement::TICK_SECONDS
+                            + last;
                     let blow = self.at_range(blow, covered);
                     self.blow_lands(&blow, How::Shot, defender, Check::Shot);
                 }

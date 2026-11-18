@@ -67,7 +67,7 @@ fn a_vestige_opens_at_below_or_now_and_then_above_its_colour() {
     let opened = |colour: Rarity| {
         let mut seen = [0_u32; 5];
         for seed in 0..10_000 {
-            seen[opens_to(colour, &dice(seed)) as usize] += 1;
+            seen[opens_to(colour, NAMED_LEVEL, &dice(seed)) as usize] += 1;
         }
         seen
     };
@@ -77,6 +77,14 @@ fn a_vestige_opens_at_below_or_now_and_then_above_its_colour() {
     assert!(legendary[4] > 300 && legendary[0] + legendary[1] == 0);
     let atheric = opened(Rarity::Atheric);
     assert!(atheric[3] > 1_500 && atheric[3] < 2_500, "even an Atheric can open below its colour: {atheric:?}");
+}
+
+#[test]
+fn a_low_vestige_never_opens_to_what_its_foe_could_not_have_dropped() {
+    for seed in 0..5_000 {
+        assert!(opens_to(Rarity::Rare, 17, &dice(seed)) <= Rarity::Rare, "no Legendary below level 18");
+        assert!(opens_to(Rarity::Legendary, 19, &dice(seed)) <= Rarity::Legendary, "no Atheric below level 20");
+    }
 }
 
 #[test]
