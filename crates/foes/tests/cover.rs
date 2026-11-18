@@ -301,3 +301,19 @@ fn a_shooter_backs_off_from_each_bad_hurt_not_only_the_first() {
         room.run(900, &mut watching(10));
     }
 }
+
+#[test]
+fn a_shooter_caught_and_fighting_close_gives_its_post_up() {
+    let mut room = crossbowman_by_the_wall(5);
+    room.run(400, &mut watching(10));
+    assert_eq!(room.board.posts_but(0).count(), 1, "it holds a post");
+    // The player keeps a step from it, on its open side: it cannot outwalk them.
+    for _ in 0..600 {
+        let at = room.fighter(10).body;
+        let east = if at.x < -4.0 { -1.0 } else { 1.0 };
+        room.set(PLAYER, |player| (player.body.x, player.body.y) = (at.x + east, at.y));
+        room.step(&mut watching(10));
+    }
+    assert!(!room.swings(10).is_empty(), "caught, it fights close");
+    assert_eq!(room.board.posts_but(0).count(), 0, "and its post is free for another");
+}

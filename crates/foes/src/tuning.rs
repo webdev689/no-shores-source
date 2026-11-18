@@ -75,10 +75,12 @@ pub const FLEE_SHARE: f64 = 0.2;
 pub const FLEE: f64 = 8.0;
 
 /// A shooter closer than KITE_IN walks out to KITE_OUT, one burst of at most KITE_MAX, and not again for
-/// KITE_COOLDOWN; caught or cornered it fights close for KITE_CORNERED. A ranged token held this long unused goes on.
+/// KITE_COOLDOWN; between the two it shoots. Caught (its target inside KITE_CAUGHT as its burst ends, or while it may
+/// not kite) or cornered, it fights close for KITE_CORNERED. A ranged token held this long unused goes on.
 pub const KITE_IN: f64 = 6.0;
 pub const KITE_OUT: f64 = 7.0;
-pub const KITE_MAX: f64 = 2.0;
+pub const KITE_MAX: f64 = 3.0;
+pub const KITE_CAUGHT: f64 = 2.5;
 pub const KITE_COOLDOWN: f64 = 8.0;
 pub const KITE_CORNERED: f64 = 3.0;
 pub const RANGED_LEASE: f64 = 5.0;
@@ -129,8 +131,12 @@ pub const SWING_FACE: f64 = 22.5 * DEGREES;
 pub const SWING_DELAY: (f64, f64) = (0.3, 0.9);
 /// A foe that guards keeps this much stamina for its guard when it swings.
 pub const GUARD_RESERVE: f64 = 30.0;
-/// Blocked this many times running by a guard still raised, a foe stops swinging into it.
+/// Blocked this many times running by a guard still raised and facing it, a foe stops swinging into it and steps
+/// round toward the guard's open side; walled off this long, it chops at the guard again. Its swing's beat, begun in
+/// reach, runs on while its target sways out to this much past it.
 pub const BLOCKED_ENOUGH: u8 = 2;
+pub const WALLED: f64 = 2.0;
+pub const SWING_SLACK: f64 = 0.3;
 
 /// Telegraphed blows: DFO's one in ten a classic tick of 1/16 s for a holder in reach off its cooldown, with no other
 /// wind-up within BLOW_NEAR of its target; and the cooldowns between one foe's blows by tier.

@@ -155,8 +155,7 @@ pub fn hold(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
         if brain.bow.seek_at <= tick {
             brain.bow.seek_at = tick + Here::ticks(POST_RETRY);
         }
-        brain.bow.post = None;
-        board.release(here.me);
+        leave_post(brain, board, here.me);
         return None;
     };
     if brain.bow.post.is_none_or(|old| old.spot != post.spot) {
@@ -190,6 +189,12 @@ pub fn hold(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
         return Some(shooting);
     }
     Some(Ask { way: Some((bearing(here.at(), flat(goal)), 1.0)), ..shooting })
+}
+
+/// A shooter with no post, or fighting close, gives its post up so another may take it.
+pub fn leave_post(brain: &mut Brain, board: &mut Board, me: FighterId) {
+    brain.bow.post = None;
+    board.release(me);
 }
 
 /// A shooter out of sight of its target at its post: it keeps to it, or None when it has none or it failed.

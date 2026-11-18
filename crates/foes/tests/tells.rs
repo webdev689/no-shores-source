@@ -11,7 +11,7 @@ use combat::Happening;
 use combat::shapes::Shape;
 use common::{ARCHER, BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, still, watching};
 use core::f64::consts::PI;
-use foes::Rank::{Boss, Major, Miniboss, Minor};
+use foes::Rank::{Boss, Elite, Major, Miniboss, Minor};
 use foes::roster::HIGH_ASSESSOR;
 use foes::{Call, Place};
 
@@ -107,6 +107,18 @@ fn an_archer_kites_a_player_too_close_then_draws_and_looses_and_sometimes_aims()
     let aimed = room.orders(10);
     assert!(!aimed.is_empty() && aimed.iter().all(|(_, order)| order.shape == Shape::Aimed), "{aimed:?}");
     assert!(aimed.iter().all(|(_, order)| (order.ahead - room.distance(PLAYER, 10)).abs() < 3.0));
+}
+
+#[test]
+fn a_shooter_stood_close_kites_out_to_its_ring_and_shoots_rather_than_punching() {
+    const MARKSMAN: u8 = 5;
+    for (number, rank) in [(MARKSMAN, Elite), (3, Major), (9, Minor)] {
+        let mut room = Room::new(2).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -5.0, PI);
+        room.run(1800, &mut watching(10));
+        let loosed = room.happenings.iter().filter(|(_, by, happening)| *by == 10 && matches!(happening, Happening::Loosed(_)));
+        assert!(loosed.count() + room.orders(10).len() >= 8, "type {number} shoots");
+        assert!(room.swings(10).is_empty(), "type {number} never punches a player it has outwalked");
+    }
 }
 
 /// The tick of each roar a foe ordered: an iron ring wound up the roar's 1.2 s.
