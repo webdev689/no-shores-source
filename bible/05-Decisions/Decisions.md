@@ -108,6 +108,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]]
 - [[Sounds Come From Freesound, Judged on a Test Sheet]]
 - [[Garrisons Take the Gear Loop's Levels and Shields]]
+- [[Your Weapon Glows in Its Element]]
+- [[Weapons Are a Melee and a Ranged Loadout]]
+- [[Arts Are Overlook's Subclasses]]
+- [[Arts and Loadouts as Claude Shapes Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
