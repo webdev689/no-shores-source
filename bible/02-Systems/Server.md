@@ -276,14 +276,15 @@ so every decision is Rust and the shell only carries bytes and time.
 ## Running it
 
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`. CI
-  deploys it after a merge into `main`, once the same commit has passed the check, as it publishes the page ([[The Rooms
-  Deploy When Their Code Changes]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret, only while
-  that commit is still `main`'s head, and only when what the rooms are built from differs from the commit they were last
-  deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content they read, the
-  toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A merge of notes alone
-  deploys nothing. Each deploy is recorded as a deployment to the `rooms` environment, which the next run compares with;
-  with none found, it deploys. Without the secret it warns and deploys nothing. Run by hand from `main`, it deploys
-  whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token itself.
+  deploys it after a merge into `main`, once the same commit has passed the check, as it publishes the page
+  ([[The Rooms Deploy When Their Code Changes]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret,
+  only while that commit is still `main`'s head, and only when what the rooms are built from differs from the commit
+  they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content
+  they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A merge
+  of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms` environment, which the next run
+  compares with; with none found, it deploys. Without the secret it warns and deploys nothing. Run by hand from `main`,
+  it deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token
+  itself.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground and the [[Game]] played alone run the same room in its own WebAssembly, ticked by
   the page: the Test Ground's course, a node's room on the window and boxes the page cut, and the sea.

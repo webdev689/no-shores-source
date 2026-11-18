@@ -24,8 +24,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
   the ground's own contours, and every edge of land and water at each pixel, at any distance. The sea's reflection
   blurs the sky's clouds by the roughness of waves too small to draw.
-- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2. The [[Test Ground]] plays a forge figure with every
-  move, in first and third person, with DFO's controls, Daggerfall's colours and the [[Three Races]].
+- The [[Sprite Forge]], on `main`, exactly as DFO had it, with its 130,407 pictures on R2. The [[Test Ground]] plays a
+  forge figure with every move, in first and third person, with DFO's controls, Daggerfall's colours and the
+  [[Three Races]].
 - Gameplay has begun, in the owner's order ([[Gameplay Starts With the Shared Rules]]). [[Movement]], on `main`: the
   Test Ground's moves in the Rust `movement` crate, stepped in ticks of 1/60 s through WebAssembly, agreeing to the bit
   wherever it runs.
@@ -122,37 +123,48 @@ Where the work stands now, for the next session. Each session rewrites this note
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
     twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
-- The enemy system, on pull request #61 from branch `claude/enemies-factions-ai-fiapxf`, tested offline, as the owner
-  decided it ([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]],
-  [[project-final's AI Comes Over Onto DFO's]], [[The Enemies as Claude Builds Them]]):
+- The enemy system, on pull request #61 from branch `claude/enemies-factions-ai-fiapxf`, tested offline and on the
+  local Cloudflare runtime, as the owner decided it ([[Enemies Come in Five Ranks, After Destiny]],
+  [[Enemy Factions Start With the Grey Tithe]], [[project-final's AI Comes Over Onto DFO's]],
+  [[The Enemies as Claude Builds Them]], [[The Bars and the Fight Wear the Plus Kit]],
+  [[The Rooms Deploy When Their Code Changes]]):
   - [[Enemies]]: a fighter's side is the players' or a faction's, and factions fight each other; the Grey Tithe (land
-    and sea) and the pirates (sea); five roles, a roster of 17 types, five ranks scaling health, poise, might,
-    reaction, defence and telegraphed blows; a Miniboss's second phase and Captain Brannoc Thule's three, his crew
-    called in the last; foes' guns that fly; names over rank-coloured bars, the boss bar, a panel by faction, type and
-    rank, and each type's dress.
-  - [[Foes]]: project-final's awareness and noises (suspicion, alert, searching, allies woken by a shout), its combat
-    director (the room's heat setting the turns), shooters at posts in cover, and waiting foes flanking.
-  - [[Navmesh]]: baked over any ground, a node's room on its land, and firing spots baked with it.
-  - [[Naval Combat]]: captains of a faction and a rank, the Grey Tithe's Tithe Sloop at sea beside the pirates, ranks
-    scaling hull, guns, reload, aim, temper and when she runs and strikes, factions' ships fighting each other in a
-    fight, and bars over captains' ships.
+    and sea) and the pirates (sea); five roles, a roster of 18 types, five ranks scaling health, poise, might,
+    reaction, defence and telegraphed blows; a Miniboss's second phase; Captain Brannoc Thule's three phases at sea and
+    High Assessor Corvane's three on land, each calling foes; a Grey Tithe garrison in every node but the social
+    spaces, standing again 120 s after it falls; the Game fighting them on foot as the Test Ground does.
+  - The bars, after the owner's reference, in the [[Interface]]'s Enhanced Plus kit: each foe's faction emblem, name
+    and thin rank-coloured bar, never overlapping; the boss bar and the soft lock's plate at the top; the vitals panel;
+    captains' ships' plates at sea.
+  - [[Foes]]: project-final's awareness and noises (muffled through blocks), its combat director, shooters at posts in
+    cover costed by route, waiting foes flanking; no foe left idle before a guard, shooters kiting rather than
+    punching, rival factions hearing each other out to 60 m.
+  - [[Navmesh]]: baked over any ground, ramps standing on it, firing spots probing the ground's rises, a node's room on
+    its land; faster to bake and to search.
+  - [[Naval Combat]]: captains of a faction and a rank (hull, guns, reload, aim, crew, way, temper), the Tithe Sloop
+    beside the pirates, rival captains meeting and fighting at sea with no player, the wary reckoning a ship's whole
+    rank.
+  - [[Server]]: pages rejoin a room by themselves after a deploy or a dropped network; the rooms deploy only when
+    their code changed; a stopped ball's last segment carries its muzzle; old pages read new rooms and the reverse.
+    Two headless pages in one room on the local runtime held the same foes at every shared tick.
   - [[Hulls]]: new ships in the Sloop's style, planned, not built
     ([[New Ships Are Planned in the Sloop's Style, After the System]]).
 
 ## Waiting on the owner
 
-- #61, the enemy system: the owner's yes to merge it. Its open choices: whether the sea's pirates become the Grey
-  Tithe; a boss on land; the roster's names, Claude's for now; which hulls the ranks of ships sail, and who builds
-  them; where each faction is present, and whether that shifts; whether project-final's crystal faction comes over
-  ([[Open Questions]]).
+- #61, the enemy system: the owner's yes to merge it, which deploys the page and the rooms. The first rooms deploy
+  after it always runs and creates the `rooms` environment the next ones compare with; that side of GitHub is tested
+  offline only. Its open choices: whether the sea's pirates become the Grey Tithe; the roster's names and Corvane,
+  Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over time;
+  whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to change:
+  a captain strikes from losing men at about 80% of her hull at every rank, and the foes' new numbers (a walled foe's
+  2 s, a kite's 3 s, hearing to 60 m) are in [[Foes]].
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
-  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after each merge into
-  `main` ([[The Rooms Deploy on Each Merge]]); the `rooms` workflow can still be run by hand.
-- Each merge deploys the rooms, even one that changes only notes, and each deploy drops everyone in a room: the browser
-  does not rejoin on its own. Whether to deploy only when the rooms' code changed, or to rejoin by itself, is the
-  owner's to say.
+  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into
+  `main` that changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run
+  by hand.
 - #62's: the third-person aim's numbers, once the owner gives them, go into `AIM` in `playerCamera.ts`; no weapon is
   seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
@@ -189,9 +201,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   the same rules everywhere.
 - The fight's open ends ([[Combat]], [[Foes]]): gear power by metal, running's stamina, casting's harm. Whether
   players may harm one another is the owner's to decide.
-- The enemies' open ends ([[Enemies]], [[Naval Combat]]): placing each faction's presence in the world (foes stand
-  only where a player asks), captains of different factions meeting outside a fight at sea, the planned hulls
-  ([[Hulls]]), and the boarding fight on a deck that the deck crews are for.
+- The enemies' open ends ([[Enemies]], [[Naval Combat]], [[Server]]): a garrison stands within its room's 70 m
+  navmesh, not across its whole section; a player waiting near a fallen group holds it from standing again; a rejoin
+  loses the player's place, any fight and its foes; the planned hulls ([[Hulls]]); and the boarding fight on a deck
+  that the deck crews are for. None of it is tested in a deployed room yet.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them
