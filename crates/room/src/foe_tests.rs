@@ -483,3 +483,37 @@ fn a_foe_backing_off_from_a_target_that_follows_it_walks_out_rather_than_shake()
         assert!(shakes <= 4, "type {number} at {pace}: its aim turned back and forth {shakes} times in a second");
     }
 }
+
+#[test]
+fn a_shooter_caught_by_a_target_that_follows_it_fights_close_a_while_rather_than_shake() {
+    const CROSSBOWMAN: u8 = 3;
+    for pace in [0.2, 0.25, 0.3, 0.4] {
+        let mut room = room();
+        let player = room.join().expect("a room with space");
+        room.input(player, asking(&room, 1, major(CROSSBOWMAN), Controls::default())).unwrap();
+        room.tick();
+        let foe = room.foes_seen().next().unwrap().foe;
+        let mut aims = Vec::new();
+        // The player walks after it, looking at it, and swings at it within reach, till it falls.
+        for sequence in 2..=1500 {
+            let Some(them) = room.foes.get(&foe).filter(|found| !found.fighter.dead()).map(|found| found.fighter.body)
+            else {
+                break;
+            };
+            let me = room.players[&player].fighter.body;
+            let yaw = combat::sight::bearing([me.x, me.y], [them.x, them.y]);
+            let apart = combat::sight::apart([me.x, me.y], [them.x, them.y]);
+            let forward = if apart > 1.6 { pace } else { 0.0 };
+            let mut input = asking(&room, sequence, None, Controls { forward, yaw, ..Controls::default() });
+            input.intent.combat.attack = (apart < 2.0 && sequence % 45 == 0).then_some(Stroke::Down);
+            room.input(player, input).unwrap();
+            room.tick();
+            let whole = room.players[&player].fighter.health_max;
+            room.players.get_mut(&player).unwrap().fighter.health = whole;
+            aims.extend(room.foes.get(&foe).map(|found| found.fighter.aim));
+        }
+        assert!(aims.len() > 600, "at {pace}: the fight lasts");
+        let shakes = aims.windows(61).map(turns_back).max().unwrap_or(0);
+        assert!(shakes <= 4, "at {pace}: its aim turned back and forth {shakes} times in a second");
+    }
+}

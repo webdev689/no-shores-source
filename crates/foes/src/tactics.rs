@@ -18,8 +18,8 @@ use crate::steer::{Ask, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
-    FLEE_SHARE, GUARD_RESERVE, HURT_SHARE, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM, STALE, STEP_PACE,
-    SWING_FACE, SWING_SLACK, WALLED,
+    FLEE_SHARE, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RECOVER, RECOVER_HOP, RING_SLACK, RUN_FROM,
+    STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
 };
 use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
@@ -120,6 +120,9 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
             }
             ranged(brain, here, board, &sight)
         } else {
+            // Caught, it fights close a while: judged afresh each tick, a target that follows at the edge of its
+            // reach would turn it between its fists and its weapon every other tick.
+            brain.bow.close_until = brain.bow.close_until.max(here.tick() + Here::ticks(KITE_CORNERED));
             leave_post(brain, board, me);
             melee(brain, here, board, &sight)
         };
