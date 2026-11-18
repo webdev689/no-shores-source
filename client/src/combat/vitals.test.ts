@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
 import { LOSS_DRAIN, LOSS_HOLD, LOSS_HOLD_MOST, type Loss, stepLoss } from './meter.ts';
-import { healthLow, LOW_HEALTH, vitalOf, vitalsOf } from './vitals.ts';
+import { onFakePage } from './page.test.ts';
+import { calmFor, healthLow, LOW_HEALTH, REST_SECONDS, Vitals, vitalOf, vitalsOf, vitalsWhole } from './vitals.ts';
 
 const fighter: FighterView = {
   x: 0,
@@ -78,4 +79,24 @@ test('losses coming every frame still let the strip drain once it has stood its 
     strip = stepLoss(strip, share, 1 / 60);
   }
   assert.ok(strip.at < 1, `drains under a trickle of harm: ${strip.at}`);
+});
+
+test('the vitals rest once whole and untouched for four seconds with no foe on the target plate, back at the first loss', () => {
+  assert.equal(REST_SECONDS, 4);
+  const whole = { ...fighter, health: 200, stamina: 100, poise: 0 };
+  assert.equal(vitalsWhole(whole), true);
+  assert.equal(vitalsWhole({ ...whole, health: 199.5 }), true, 'short of no whole point');
+  assert.equal(vitalsWhole({ ...whole, health: 199 }), false);
+  assert.equal(vitalsWhole({ ...whole, stamina: 98 }), false, 'a swing spent');
+  assert.equal(vitalsWhole({ ...whole, poise: 2 }), false, 'poise taken');
+  assert.equal(calmFor(3, true, false, 0.5), 3.5);
+  assert.equal(calmFor(3, true, true, 0.5), 0, 'a foe on the target plate');
+  assert.equal(calmFor(3, false, false, 0.5), 0);
+  onFakePage((root) => {
+    const vitals = new Vitals(root);
+    for (let frame = 0; frame < 9; frame++) vitals.update(whole, 0.5, false, false);
+    assert.equal(vitals.root.classList.contains('rest'), true, 'at rest');
+    vitals.update({ ...whole, health: 150 }, 1 / 60, false, false);
+    assert.equal(vitals.root.classList.contains('rest'), false, 'back at once');
+  });
 });

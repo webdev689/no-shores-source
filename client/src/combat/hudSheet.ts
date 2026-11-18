@@ -5,6 +5,7 @@ import { PLATES } from '../plus/barLayout.ts';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
 import { wearKit } from '../plus/kit.ts';
 import { BEVELS, FILLS, TONES } from '../plus/tones.ts';
+import { PLATE_SIZE } from './plateSight.ts';
 
 const SHEET_ID = 'fight-hud';
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
@@ -65,11 +66,43 @@ ${marks.join('\n')}
 .fight-hud .meter .lost, .fight-hud .meter .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
   display: block; }
 .fight-hud .meter .fill { background-color: var(--fill); }
-.fight-hud .meter .lost { background-color: #fff6e4; opacity: 0.42; }
-.fight-hud .meter.poise { --fill: ${FILLS.poise}; }
+/* What a foe's bar lost stands pale, its own hue lightened under a cream top line. */
+.fight-hud .meter .lost { opacity: 0.6;
+  background: linear-gradient(180deg, #fff6e4 0 1px, color-mix(in srgb, var(--fill) 45%, #fff6e4) 1px); }
+/* A piece a loss breaks off: two halves the display drops a step at a time, under the words, over the fill. */
+.fight-hud .meter .piece { position: absolute; top: 0; bottom: 0; display: block; pointer-events: none; }
+.fight-hud .meter .piece > i { position: absolute; top: 0; bottom: 0; display: block; box-shadow: 0 0 0 1px ${TONES.outline};
+  background: linear-gradient(180deg, #fff6e4 0 2px, var(--fill) 2px calc(100% - 3px),
+    color-mix(in srgb, var(--fill), #000 35%) calc(100% - 3px)); }
+.fight-hud .meter .piece .left { left: 0; width: 55%; }
+.fight-hud .meter .piece .right { left: 55%; right: 0; }
+
+/* The poise track under a foe's health: its poise filling toward a break, iron hatched in red (never by its colour
+   alone), a white flash as it breaks into a stagger, a brass edge while it stands open; its word centred under it. It
+   keeps its room while it has nothing to say, so the plate never jumps. */
+.fight-hud .poise-track { position: relative; display: block; height: 6px; box-sizing: border-box; border: 1px solid;
+  border-color: ${BEVELS.sunk}; background-color: ${TONES.groundTrack}; box-shadow: 0 0 0 1px ${TONES.outline}; }
+.fight-hud .poise-track.poise-empty { visibility: hidden; }
+.fight-hud .poise-fill { display: block; height: 100%; width: 0; }
+.fight-hud .poise-filling .poise-fill { background-color: ${FILLS.poise}; }
+.fight-hud .poise-iron .poise-fill { background: repeating-linear-gradient(135deg, #d8342c 0 4px, #7a1410 4px 6px); }
+.fight-hud .poise-staggered .poise-fill { background-color: #fff; }
+.fight-hud .poise-flash .poise-fill { animation: fight-poise-flash 0.45s ease-out; }
+@keyframes fight-poise-flash { 0% { box-shadow: 0 0 10px 3px rgba(255,255,255,0.9); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } }
+.fight-hud .poise-open { border-color: rgba(241,192,79,0.9); }
+.fight-hud .poise-word { position: absolute; left: 50%; top: calc(100% + 3px); translate: -50% 0; white-space: nowrap;
+  font-size: 11px; line-height: 13px; letter-spacing: 0.16em; text-transform: uppercase; text-shadow: ${HALO}; }
+.fight-hud .poise-iron .poise-word { color: #ff6a5a; }
+.fight-hud .poise-staggered .poise-word { color: #fff; }
+.fight-hud .poise-open .poise-word { color: #f1c04f; }
+@media (prefers-reduced-motion: reduce) {
+  .fight-hud .meter .piece { display: none !important; }
+  .fight-hud .poise-flash .poise-fill { animation: none; }
+}
 
 .fight-hud .overhead { width: ${overhead.width}px; height: ${overhead.height}px; translate: -50% -100%;
-  margin-top: -30px; font-size: 12px; }
+  transform-origin: 50% 100%; margin-top: -30px; font-size: ${PLATE_SIZE.letters}px; }
 .fight-hud .overhead .body { width: ${overhead.width - overhead.height - 5}px; }
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
 .fight-hud .overhead .meter { height: ${overhead.bar}px; }
@@ -77,8 +110,7 @@ ${marks.join('\n')}
 .fight-hud .target { position: absolute; top: 16px; left: 50%; width: 340px; translate: -50% 0; font-size: 14px; }
 .fight-hud .target .body { flex: 1; gap: 3px; }
 .fight-hud .target .meter.health { height: 12px; }
-.fight-hud .target .meter.poise { height: 6px; }
-.fight-hud.bossed .target { top: 80px; }
+.fight-hud.bossed .target { top: 84px; }
 
 .fight-hud .boss { position: absolute; top: ${boss.top}px; left: 50%; width: min(${boss.width}px, ${boss.share * 100}%);
   translate: -50% 0; }
@@ -88,6 +120,7 @@ ${marks.join('\n')}
   color: ${TONES.wordDim}; }
 .fight-hud .boss .phase { margin-left: auto; }
 .fight-hud .boss .meter.health { height: ${boss.bar}px; border-width: 2px; }
+.fight-hud .boss .poise-track { margin-top: 3px; }
 .fight-hud .boss .phase-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px;
   display: block; background: ${TONES.outline}; box-shadow: 1px 0 0 ${TONES.groove}; }
 `;
@@ -103,6 +136,11 @@ function vitalsCss(): string {
 .fight-hud .vital.poise { height: 16px; }
 .fight-hud .vital.health { --fill: ${FILLS.health}; }
 .fight-hud .vital.stamina { --fill: ${FILLS.stamina}; }
+/* What a vital lost is its own body tone, faint: darker than any band of the fill, never brighter. */
+.fight-hud .vital .lost { background: var(--fill); opacity: 0.35; }
+/* Full and untouched, the panel rests: it goes in six steps, and comes back in two at the first change. */
+.fight-hud .vitals { transition: opacity 120ms steps(2, end); }
+.fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
 .fight-hud .vital .label, .fight-hud .vital .number { position: relative; padding: 0 7px; color: ${TONES.word};
   text-shadow: ${HALO}; }
 .fight-hud .vital .label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
@@ -149,14 +187,35 @@ function cuesCss(): string {
 .fight-hud .parry.now::before, .fight-hud .parry.now::after { border-color: #ffd95a; box-shadow: 0 0 8px #ffd95a; }
 .fight-hud .parry.iron::before { background: #e0281c; border-color: #fff; }
 .fight-hud .parry.iron::after { display: none; }
-.fight-hud .word { white-space: nowrap; translate: -50% 0; font-size: 15px; padding: 1px 7px; border-radius: 4px;
-  background: #000b; text-shadow: none; }
-.fight-hud .word.dealt { color: #f2f2f2; }
-.fight-hud .word.taken { color: #ff7468; }
-.fight-hud .word.great { color: #ffd95a; font-size: 18px; }
-.fight-hud .word.good { color: #ffd95a; }
-.fight-hud .word.warn { color: #fff; font-size: 18px; background: #a0140ccc; border: 2px solid #fff; }
-.fight-hud .word.plain { color: #bfc8d2; }
+/* A word rises and fades as the sheet says, from where the display sets it; a great turn's pops larger and rises
+   farther. With reduced motion asked for it stands where it happened and fades. */
+.fight-hud .word { white-space: nowrap; translate: -50% 0; }
+.fight-hud .word .rise { display: inline-block; font-size: 15px; padding: 1px 7px; border-radius: 4px;
+  background: #000b; text-shadow: none; text-align: center;
+  animation: fight-word-rise 0.95s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+.fight-hud .word .tag { display: block; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: #ffd95a; }
+.fight-hud .word.dealt .rise { color: #f2f2f2; }
+.fight-hud .word.taken .rise { color: #ff7468; }
+.fight-hud .word.great .rise { color: #ffd95a; font-size: 18px; animation-name: fight-word-great; }
+.fight-hud .word.good .rise { color: #ffd95a; }
+.fight-hud .word.warn .rise { color: #fff; font-size: 18px; background: #a0140ccc; border: 2px solid #fff; }
+.fight-hud .word.plain .rise { color: #bfc8d2; }
+@keyframes fight-word-rise {
+  0% { opacity: 0; transform: translateY(10px) scale(0.9); }
+  12% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-64px) scale(1); } }
+@keyframes fight-word-great {
+  0% { opacity: 0; transform: translateY(10px) scale(0.6); }
+  14% { opacity: 1; transform: translateY(-4px) scale(1.18); }
+  30% { transform: translateY(-8px) scale(1); }
+  72% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-80px) scale(1); } }
+@keyframes fight-word-still { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .fight-hud .word .rise, .fight-hud .word.great .rise { animation-name: fight-word-still; }
+}
 .fight-hud .arrow { width: 0; height: 0; margin: -12px 0 0 -10px; border-top: 12px solid transparent;
   border-bottom: 12px solid transparent; border-left: 22px solid #ff5a4a; transform-origin: 10px 12px;
   filter: drop-shadow(0 0 2px #000) drop-shadow(0 0 2px #000); }

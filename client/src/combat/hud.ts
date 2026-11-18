@@ -1,10 +1,15 @@
 import type { FightEvent } from '../network/messages.ts';
+import { rayHit } from '../player/playerCamera.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { edgeArrow, parryCue, threatens, wordOf } from './cues.ts';
-import { FoeBars, type MarkedFoe } from './foeBars.ts';
+import type { Block } from '../rules/movementRules.ts';
+import { edgeArrow, parryCue, threatens } from './cues.ts';
+import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
+import { FoeTarget } from './foeTarget.ts';
+import { Words, wordsOf } from './hitWords.ts';
 import { wearFightSheet } from './hudSheet.ts';
 import { element } from './meter.ts';
+import { cameraOf, SIGHT_SKIN_M } from './plateSight.ts';
 import { Vitals } from './vitals.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
@@ -28,14 +33,10 @@ export interface HudFrame {
   readonly crosshair?: { readonly charge: number | null } | null;
   /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen). */
   readonly parryOpen?: boolean;
+  /** The blocks of the place, which no plate over a figure is seen through. */
+  readonly blocks?: readonly Block[];
 }
 
-/** Seconds a word floats over where it happened, and how far it rises in that time, in CSS pixels. */
-const WORD_SECONDS = 1.1;
-const WORD_RISE = 36;
-/** In first person, a word on the player stands this far below the crosshair, the next ones each a line lower. */
-const OWN_WORD_BELOW = 56;
-const OWN_WORD_LINE = 22;
 /** A foe winding up an iron blow this near is told to be dodged. */
 const IRON_NEAR_M = 12;
 /** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
@@ -91,12 +92,14 @@ export function veilOf(
   return { words: `You fell. Standing again in ${seconds} s`, link: false };
 }
 
-/** A word floating up and fading: over a place in the world, or (null) at the player's own spot in first person. */
-interface Word {
-  readonly element: HTMLElement;
-  readonly at: readonly [number, number, number] | null;
-  readonly line: number;
-  age: number;
+/** Whether the line from `from` to `to` meets one of `blocks` short of its last `SIGHT_SKIN_M`. */
+export function blockedBy(
+  blocks: readonly Block[],
+  from: readonly [number, number, number],
+  to: readonly [number, number, number],
+): boolean {
+  const length = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+  return length > SIGHT_SKIN_M && rayHit(from, to, blocks) < 1 - SIGHT_SKIN_M / length;
 }
 
 /** The fight's display over the canvas, which lays its own sheet on the page and dresses `root` in it. */
@@ -110,11 +113,12 @@ export class Hud {
   private readonly veil: HTMLElement;
   private readonly crosshair: HTMLElement;
   private readonly foeBars: FoeBars;
+  private readonly foeTarget = new FoeTarget();
+  private readonly words: Words;
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
   private readonly ironTold = new Set<number>();
-  private words: Word[] = [];
   private staminaFlash = 0;
   private hurtFlash = 0;
 
@@ -130,15 +134,15 @@ export class Hud {
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
-    this.target = new FoePlate(root, 'target', { poise: true });
+    this.target = new FoePlate(root, 'target', { poise: true, remembers: true });
     this.foeBars = new FoeBars(root, this.over);
+    this.words = new Words(this.over);
     this.veil = element('div', 'veil', root);
   }
 
   update(frame: HudFrame, seconds: number): void {
     const { own } = frame;
     this.flash(frame, seconds);
-    this.vitals.update(own, seconds, this.staminaFlash > 0);
     const veil = veilOf(frame);
     this.veil.hidden = !veil;
     if (veil) {
@@ -150,13 +154,22 @@ export class Hud {
     this.crosshair.classList.toggle('charging', charge !== null);
     this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
     this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
-    this.markTarget(frame, seconds);
     const overHead = (view: FighterView) => {
       const point = [view.x, view.y, view.z + RING_HEIGHT] as const;
       const spot = project(frame.matrix, point, frame.width, frame.height);
       return spot && { ...spot, depth: clipOf(frame.matrix, point)[2] };
     };
-    this.foeBars.update(frame.foes, own, overHead, seconds);
+    const lock = own?.target ?? null;
+    const chosen = this.foeTarget.step({ player: frame.player, lock, foes: frame.foes, events: frame.events }, seconds);
+    const blocks = frame.blocks ?? [];
+    const viewing: PlateViewing = {
+      camera: cameraOf(frame.matrix),
+      blocked: (from, to) => blockedBy(blocks, from, to),
+      fought: (id) => this.foeTarget.foughtWith(id),
+    };
+    const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
+    this.markTarget(frame, chosen, boss, seconds);
+    this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
     this.pointAtThreats(frame);
     this.ringParries(frame);
     this.floatWords(frame, seconds);
@@ -198,19 +211,26 @@ export class Hud {
     this.hurt.style.opacity = String(this.hurtFlash / FLASH_SECONDS);
   }
 
-  /** The soft lock's target: a mark at its chest and its plate at the top. */
-  private markTarget(frame: HudFrame, seconds: number): void {
-    const target = frame.own?.target ?? null;
-    const foe = frame.foes.find((each) => each.id === target);
-    this.target.root.hidden = !foe;
-    if (!foe) {
-      this.mark.hidden = true;
-      return;
-    }
-    this.target.show(foe, seconds);
-    const spot = project(frame.matrix, [foe.view.x, foe.view.y, foe.view.z + 1.1], frame.width, frame.height);
+  /** The soft lock's mark at its foe's chest, and the target's plate at the top as much as it shows (`chosen`),
+   *  unless the boss bar shows that foe already. */
+  private markTarget(
+    frame: HudFrame,
+    chosen: { readonly id: number; readonly share: number } | null,
+    boss: MarkedFoe | null,
+    seconds: number,
+  ): void {
+    const lock = frame.own?.target ?? null;
+    const locked = frame.foes.find((each) => each.id === lock);
+    const spot =
+      locked && project(frame.matrix, [locked.view.x, locked.view.y, locked.view.z + 1.1], frame.width, frame.height);
     this.mark.hidden = !spot;
     if (spot) this.mark.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
+    const foe = chosen && chosen.id !== boss?.id ? frame.foes.find((each) => each.id === chosen.id) : undefined;
+    this.target.root.hidden = !foe;
+    this.target.keep(new Set(frame.foes.map((each) => each.id)));
+    if (!foe || !chosen) return;
+    this.target.show(foe, seconds);
+    this.target.root.style.opacity = chosen.share < 1 ? chosen.share.toFixed(2) : '';
   }
 
   /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
@@ -241,22 +261,15 @@ export class Hud {
     }
   }
 
-  private say(text: string, tone: string, place: Word['at']): void {
-    const made = element('div', `word ${tone}`, this.over);
-    made.textContent = text;
-    const line = place ? 0 : this.words.filter((word) => !word.at).length;
-    this.words.push({ element: made, at: place, line, age: 0 });
-  }
-
   /** The events' words, each rising and fading over where it happened (in first person, those on the player below the
    *  crosshair), and a warning over a foe near the player as it begins an iron wind-up. */
   private floatWords(frame: HudFrame, seconds: number): void {
-    for (const event of frame.events) {
-      const word = wordOf(event, frame.player);
-      const place = frame.where(event.defender);
-      if (!word || !place) continue;
-      const own = frame.firstPerson && event.defender === frame.player;
-      this.say(word.text, word.tone, own ? null : [place[0], place[1], place[2] + 1.9]);
+    const holding = (id: number) => frame.foes.find((foe) => foe.id === id)?.view.action.kind === 'telegraph';
+    for (const said of wordsOf(frame.events, frame.player, holding)) {
+      const place = frame.where(said.defender);
+      if (!place) continue;
+      const own = frame.firstPerson && said.defender === frame.player;
+      this.words.say(said, own ? null : [place[0], place[1], place[2] + 1.9]);
     }
     for (const { id, view } of frame.foes) {
       const iron = view.action.kind === 'telegraph' && view.action.iron;
@@ -264,21 +277,11 @@ export class Hud {
       if (!iron) this.ironTold.delete(id);
       else if (near && !this.ironTold.has(id)) {
         this.ironTold.add(id);
-        this.say('Dodge!', 'warn', [view.x, view.y, view.z + 2.3]);
+        this.words.say({ text: 'Dodge!', tone: 'warn', tags: [] }, [view.x, view.y, view.z + 2.3], 0.5);
       }
     }
-    this.words = this.words.filter((word) => {
-      word.age += seconds;
-      const ownSpot = { x: frame.width / 2, y: frame.height / 2 + OWN_WORD_BELOW + word.line * OWN_WORD_LINE };
-      const spot = word.at ? project(frame.matrix, word.at, frame.width, frame.height) : ownSpot;
-      if (word.age >= WORD_SECONDS || !spot) {
-        word.element.remove();
-        return false;
-      }
-      const share = word.age / WORD_SECONDS;
-      word.element.style.transform = `translate(${spot.x}px, ${spot.y - share * WORD_RISE}px)`;
-      word.element.style.opacity = String(1 - share * share);
-      return true;
-    });
+    const projectWord = (point: readonly [number, number, number]) =>
+      project(frame.matrix, point, frame.width, frame.height);
+    this.words.update(projectWord, frame.width, frame.height, seconds);
   }
 }

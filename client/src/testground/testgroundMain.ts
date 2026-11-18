@@ -287,6 +287,7 @@ async function start(): Promise<void> {
         width: canvas.clientWidth,
         height: canvas.clientHeight,
         events,
+        blocks: COURSE,
         player: fighting.player,
         firstPerson: inFirstPerson,
         pressed: shown.pressed,

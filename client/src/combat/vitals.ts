@@ -1,9 +1,10 @@
 // The player's vitals as one panel at the bottom left, in DFO's Enhanced HUD manner: a carved window holding three
 // labelled bars, each with its name and its percentage written inside it, the health's frame flashing blood when it
-// runs low and the stamina's when a swing or a dodge is asked of it with none.
+// runs low and the stamina's when a swing or a dodge is asked of it with none. Full and untouched, with no foe on the
+// target plate, the panel rests out of sight, and the first point lost or spent brings it back at once.
 import { ROLES } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { element, Meter } from './meter.ts';
+import { element, Meter, PIECE_LEAST } from './meter.ts';
 
 /** Health at or under this share of the whole warns. */
 export const LOW_HEALTH = 0.25;
@@ -38,25 +39,42 @@ export function vitalsOf(own: FighterView | null): Record<VitalName, { share: nu
 export const healthLow = (own: FighterView | null): boolean =>
   !!own && own.health > 0 && own.health / Math.max(1, own.healthMax) <= LOW_HEALTH;
 
+/** How long the vitals stand full and untouched before the panel rests, in seconds. */
+export const REST_SECONDS = 4;
+
+/** Whether every vital is whole: health and stamina short of no whole point, and no whole point of poise taken. */
+export const vitalsWhole = (own: FighterView | null): boolean =>
+  !own || (own.health > own.healthMax - 1 && own.stamina > STAMINA_WHOLE - 1 && own.poise < 1);
+
+/** How long the vitals have stood calm, `seconds` after `was`: whole, with no foe on the target plate. */
+export const calmFor = (was: number, whole: boolean, targeted: boolean, seconds: number): number =>
+  whole && !targeted ? was + Math.max(0, seconds) : 0;
+
 /** The vitals' panel. */
 export class Vitals {
   readonly root: HTMLElement;
   private readonly rows: Record<VitalName, { meter: Meter; number: HTMLElement }>;
+  private calm = 0;
 
   constructor(parent: HTMLElement) {
     const panel = element('div', `vitals ${ROLES.window}`, parent);
     this.root = panel;
     const row = ([name, label]: [VitalName, string]) => {
-      // Poise drains of itself, so it shows no lost strip.
-      const meter = new Meter(panel, `vital ${name}`, name !== 'poise');
+      // Poise drains of itself, so it shows no lost strip and breaks off nothing.
+      const drains = name === 'poise';
+      const meter = new Meter(panel, `vital ${name}`, {
+        lossShown: !drains,
+        pieceLeast: drains ? null : PIECE_LEAST.vital,
+      });
       element('span', 'label', meter.root, label);
       return [name, { meter, number: element('span', 'number', meter.root) }] as const;
     };
     this.rows = Object.fromEntries(VITALS.map(row)) as Record<VitalName, { meter: Meter; number: HTMLElement }>;
   }
 
-  /** Shows `own`'s vitals `seconds` on; `flashing` while the stamina flashes for a press with none. */
-  update(own: FighterView | null, seconds: number, flashing: boolean): void {
+  /** Shows `own`'s vitals `seconds` on; `flashing` while the stamina flashes for a press with none, and `targeted`
+   *  while a foe stands on the target plate. */
+  update(own: FighterView | null, seconds: number, flashing: boolean, targeted: boolean): void {
     const shown = vitalsOf(own);
     for (const [name] of VITALS) {
       const { meter, number } = this.rows[name];
@@ -65,5 +83,7 @@ export class Vitals {
     }
     this.rows.health.meter.root.classList.toggle('low', healthLow(own));
     this.rows.stamina.meter.root.classList.toggle('flash', flashing);
+    this.calm = calmFor(this.calm, vitalsWhole(own) && !flashing, targeted, seconds);
+    this.root.classList.toggle('rest', this.calm >= REST_SECONDS);
   }
 }

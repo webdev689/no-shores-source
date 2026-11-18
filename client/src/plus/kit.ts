@@ -99,6 +99,12 @@ ${role('rail')} { border-left-color: rgba(5,6,8,0.75); box-shadow: inset 1px 0 0
 `;
 }
 
+/** Whether the player asked for reduced motion: what moves on the display (a falling piece, a rising word, a flash)
+ *  stands still, or is not drawn. False where no page answers. */
+export function motionReduced(): boolean {
+  return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+}
+
 /** Lays the kit's sheet into `page` once; a second call leaves it as it is. */
 export function wearKit(page: Document): void {
   if (page.getElementById(KIT_STYLE_ID)) return;

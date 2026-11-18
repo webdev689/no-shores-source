@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { PLATES } from '../plus/barLayout.ts';
 import { TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { clearOf, veilOf } from './hud.ts';
+import { blockedBy, clearOf, veilOf } from './hud.ts';
 import { fightSheetCss, HALO } from './hudSheet.ts';
 
 const standing: FighterView = {
@@ -92,4 +92,27 @@ test('the plates on foot are the sizes the sea draws its own at', () => {
     new RegExp(`width: ${overhead.width}px; height: ${overhead.height}px`),
   );
   assert.match(rule(css, '.fight-hud .boss'), new RegExp(`width: min\\(${boss.width}px, ${boss.share * 100}%\\)`));
+});
+
+test('a plate’s line is blocked by a block between the eye and the head, never by one beside it or at the head', () => {
+  const wall = { minX: -2, minY: 4.8, maxX: 2, maxY: 5.2, top: 4 };
+  assert.equal(blockedBy([wall], [0, 0, 1.7], [0, 10, 1.8]), true);
+  assert.equal(blockedBy([wall], [0, 0, 1.7], [6, 10, 1.8]), false, 'a foe beside the wall keeps its plate');
+  const lintel = { minX: -2, minY: 9.85, maxX: 2, maxY: 10.5, top: 4 };
+  assert.equal(blockedBy([lintel], [0, 0, 1.7], [0, 10, 1.8]), false, 'a block at the head blinds nothing');
+  assert.equal(blockedBy([], [0, 0, 1.7], [0, 10, 1.8]), false);
+});
+
+test('what a vital lost is its own tone, faint; what a foe’s bar lost is pale', () => {
+  const css = fightSheetCss();
+  assert.match(rule(css, '.fight-hud .vital .lost'), /background: var\(--fill\); opacity: 0\.35/);
+  assert.match(rule(css, '.fight-hud .meter .lost'), /opacity: 0\.6/);
+});
+
+test('with reduced motion asked for, no piece falls, no word rises and the poise track does not flash', () => {
+  const css = fightSheetCss();
+  const still = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.match(still, /\.meter \.piece \{ display: none !important; \}/);
+  assert.match(still, /\.poise-flash \.poise-fill \{ animation: none; \}/);
+  assert.match(still, /\.word \.rise, \.fight-hud \.word\.great \.rise \{ animation-name: fight-word-still; \}/);
 });

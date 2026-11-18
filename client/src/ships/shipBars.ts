@@ -1,9 +1,13 @@
 // The bars over captains' ships, in the fight display's layout: her faction's emblem in a square at the left and, to
 // its right, her name above a long thin bar of her hull, coloured by her rank, over a dark trough with a hairline edge;
 // a Boss's the same, wide across the top of the screen. Drawn on an SVG laid over the picture, in the kit's palette.
+// Her hull's losses read as a foe's do on foot: a pale strip where the bar stood, a real bite breaking off and falling,
+// and the bar's edge flashing with it.
 
+import { bitten, type Loss, PIECE_LEAST, pieceAt, stepLoss } from '../combat/meter.ts';
 import { BarLayout, PLATES } from '../plus/barLayout.ts';
 import { EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
+import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
 
@@ -69,9 +73,12 @@ export function barOver(
   return { key: captain.id ?? 0, name: captain.name, faction: captain.faction, rank: captain.rank, share, over };
 }
 
-/** A plate as laid on the screen: its box's left and top, its size and its bar's height (CSS pixels), what it shows,
- *  and the words after its name (a Boss's faction), as the boss bar on foot writes them. */
+/** A plate as laid on the screen: her key, its box's left and top, its size and its bar's height (CSS pixels), what it
+ *  shows, and the words after its name (a Boss's faction), as the boss bar on foot writes them; and her hull's losses
+ *  as they read: the strip's share, the pieces falling (their span as shares of the bar, and how long each has fallen)
+ *  and how much of a bite's flash is left on the bar's edge, 1 down to 0. */
 export interface PlacedBar {
+  readonly key: number;
   readonly left: number;
   readonly top: number;
   readonly width: number;
@@ -83,6 +90,26 @@ export interface PlacedBar {
   readonly colour: string;
   readonly share: number;
   readonly words: string;
+  readonly lost?: number;
+  readonly pieces?: readonly { readonly left: number; readonly width: number; readonly age: number }[];
+  readonly flash?: number;
+}
+
+/** How long the bar's edge flashes for a bite, in seconds, in three hard steps. */
+export const HULL_FLASH_SECONDS = 0.24;
+
+/** How much of a bite's flash is left `age` seconds on: whole, two thirds, a third, then none. */
+export function flashLeft(age: number): number {
+  return age >= 0 && age < HULL_FLASH_SECONDS ? 1 - Math.floor((age / HULL_FLASH_SECONDS) * 3) / 3 : 0;
+}
+
+/** A colour a share of the way to the cream the losses are lit with, as `#rrggbb`. */
+function toward(colour: string, share: number): string {
+  const channel = (hex: string, start: number) => Number.parseInt(hex.slice(start, start + 2), 16);
+  const mixed = [1, 3, 5].map((start) =>
+    Math.round(channel(colour, start) + (channel('#fff6e4', start) - channel(colour, start)) * share),
+  );
+  return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
 /** Each ship's plate where `project` puts the point over her (none off the picture), laid by `layout` so none covers
@@ -97,6 +124,7 @@ export function placeShipBars(
   seconds: number,
 ): PlacedBar[] {
   const shown = (bar: ShipBar) => ({
+    key: bar.key,
     name: bar.name,
     faction: bar.faction,
     rank: bar.rank,
@@ -161,10 +189,54 @@ export function drawShipBars(svg: SVGSVGElement, bars: readonly PlacedBar[]): vo
     if (emblem) pixels(emblem, bar.left + (square - side) / 2, bar.top + (square - side) / 2, side, side);
     const [left, right] = [bar.left + square + 5, bar.left + bar.width];
     const barTop = bar.top + bar.height - bar.bar;
-    add('rect', { x: left, y: barTop, width: right - left, height: bar.bar, fill: TONES.groundTrack });
-    add('rect', { x: left, y: barTop, width: (right - left) * bar.share, height: bar.bar, fill: bar.colour });
-    add('rect', { x: left, y: barTop, width: (right - left) * bar.share, height: 1, fill: 'rgba(255,255,255,0.34)' });
-    edge(left - 1, barTop - 1, right - left + 2, bar.bar + 2, TONES.stoneLo);
+    const span = right - left;
+    add('rect', { x: left, y: barTop, width: span, height: bar.bar, fill: TONES.groundTrack });
+    const pale = { 'fill': toward(bar.colour, 0.55), 'opacity': 0.6 };
+    if ((bar.lost ?? 0) > bar.share)
+      add('rect', { ...pale, x: left, y: barTop, width: span * (bar.lost ?? 0), height: bar.bar });
+    add('rect', { x: left, y: barTop, width: span * bar.share, height: bar.bar, fill: bar.colour });
+    add('rect', { x: left, y: barTop, width: span * bar.share, height: 1, fill: 'rgba(255,255,255,0.34)' });
+    edge(left - 1, barTop - 1, span + 2, bar.bar + 2, TONES.stoneLo);
+    const flash = bar.flash ?? 0;
+    if (flash > 0)
+      add('rect', {
+        x: left - 0.5,
+        y: barTop - 0.5,
+        width: span + 1,
+        height: bar.bar + 1,
+        fill: 'none',
+        'stroke': '#fff6e4',
+        'opacity': flash,
+      });
+    for (const piece of bar.pieces ?? []) {
+      const pieceLeft = left + span * piece.left;
+      const halves = [
+        [pieceAt(piece.age, 'left'), pieceLeft, span * piece.width * 0.55],
+        [pieceAt(piece.age, 'right'), pieceLeft + span * piece.width * 0.55, span * piece.width * 0.45],
+      ] as const;
+      for (const [fallen, x, width] of halves) {
+        if (!fallen) continue;
+        const [shownX, shownY] = [x + fallen.x, barTop + fallen.y];
+        add('rect', {
+          x: shownX,
+          y: shownY,
+          width,
+          height: bar.bar,
+          fill: bar.colour,
+          opacity: fallen.opacity,
+          'stroke': TONES.outline,
+          'stroke-width': 1,
+        });
+        add('rect', {
+          x: shownX,
+          y: shownY,
+          width,
+          height: Math.min(2, bar.bar),
+          fill: '#fff6e4',
+          opacity: fallen.opacity,
+        });
+      }
+    }
     const baseline = barTop - 4;
     const fontSize = bar.bar > PLATE.bar ? 18 : 12;
     const name = add(
@@ -184,9 +256,56 @@ export function drawShipBars(svg: SVGSVGElement, bars: readonly PlacedBar[]): vo
   }
 }
 
-/** The plates of one picture's ships, laid from frame to frame so none covers another. */
+/** A ship's hull as her bar last read it: the strip, the two pieces her bites fall as in turn, how many bites, and how
+ *  long since the last. */
+interface Hull {
+  loss: Loss;
+  readonly pieces: ({ left: number; width: number; age: number } | null)[];
+  bites: number;
+  sinceBite: number;
+}
+
+/** Each ship's hull losses, read from frame to frame by her key. */
+export class HullLosses {
+  private readonly hulls = new Map<number, Hull>();
+
+  /** One frame of `bar`'s hull losses, `seconds` on, with nothing falling or flashing when `still`: a ship first seen
+   *  starts whole at her bar, so only a loss seen happen reads as one. */
+  read(bar: PlacedBar, seconds: number, still: boolean): PlacedBar {
+    const hull = this.hulls.get(bar.key) ?? {
+      loss: stepLoss(null, bar.share, 0),
+      pieces: [null, null],
+      bites: 0,
+      sinceBite: Infinity,
+    };
+    this.hulls.set(bar.key, hull);
+    const was = hull.loss;
+    hull.loss = stepLoss(was, bar.share, seconds);
+    hull.sinceBite += seconds;
+    hull.pieces.forEach((piece, index) => {
+      hull.pieces[index] = piece && piece.age + seconds < 1 ? { ...piece, age: piece.age + seconds } : null;
+    });
+    const bite = bitten(was, hull.loss, PIECE_LEAST.hull);
+    if (bite && !still) {
+      hull.pieces[hull.bites % 2] = { ...bite, age: 0 };
+      hull.bites += 1;
+      hull.sinceBite = 0;
+    }
+    const pieces = hull.pieces.filter((piece) => piece !== null);
+    return { ...bar, lost: hull.loss.at, pieces, flash: flashLeft(hull.sinceBite) };
+  }
+
+  /** Forgets every ship not in `kept`. */
+  keep(kept: ReadonlySet<number>): void {
+    for (const key of this.hulls.keys()) if (!kept.has(key)) this.hulls.delete(key);
+  }
+}
+
+/** The plates of one picture's ships, laid from frame to frame so none covers another, each reading her hull's
+ *  losses. */
 export class ShipPlates {
   private readonly layout = new BarLayout();
+  private readonly hulls = new HullLosses();
   private drawnAt: number | null = null;
 
   /** Draws `bars` onto `svg` at `now` (seconds), each where `project` puts the point over her, the picture `width`
@@ -200,6 +319,13 @@ export class ShipPlates {
   ): void {
     const seconds = this.drawnAt === null ? Infinity : now - this.drawnAt;
     this.drawnAt = now;
-    drawShipBars(svg, placeShipBars(bars, project, width, this.layout, seconds));
+    const still = motionReduced();
+    const placed = placeShipBars(bars, project, width, this.layout, still ? Infinity : seconds);
+    this.hulls.keep(new Set(bars.map((bar) => bar.key)));
+    const shownSeconds = Number.isFinite(seconds) ? seconds : 0;
+    drawShipBars(
+      svg,
+      placed.map((bar) => this.hulls.read(bar, shownSeconds, still)),
+    );
   }
 }

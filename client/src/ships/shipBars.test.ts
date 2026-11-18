@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BarLayout } from '../plus/barLayout.ts';
-import { barOver, placeShipBars, rankColour, shipName } from './shipBars.ts';
+import {
+  barOver,
+  flashLeft,
+  HULL_FLASH_SECONDS,
+  HullLosses,
+  type PlacedBar,
+  placeShipBars,
+  rankColour,
+  shipName,
+} from './shipBars.ts';
 
 test('a bar is red for a Minor, orange for a Major and yellow for an Elite, a Miniboss and a Boss', () => {
   const [minor, major, elite, miniboss, boss] = [1, 2, 3, 4, 5].map(rankColour);
@@ -76,4 +85,38 @@ test('a Boss’s plate is as wide as the boss bar on foot: 640 px at most, three
   const widthAt = (picture: number) => placeShipBars([boss], () => null, picture, new BarLayout(), Infinity)[0]?.width;
   assert.equal(widthAt(1920), 640);
   assert.equal(widthAt(800), 608);
+});
+
+test('her hull’s losses read as a foe’s: she starts whole at her bar, a bite holds a pale strip, falls and flashes', () => {
+  const hulls = new HullLosses();
+  const plate = (share: number): PlacedBar => ({
+    key: 4,
+    left: 0,
+    top: 0,
+    width: 140,
+    height: 26,
+    bar: 8,
+    name: 'Pirate Sloop',
+    faction: 2,
+    rank: 2,
+    colour: rankColour(2),
+    share,
+    words: '',
+  });
+  const first = hulls.read(plate(0.6), 0, false);
+  assert.deepEqual([first.lost, first.pieces, first.flash], [0.6, [], 0], 'first seen: nothing lost to read');
+  const struck = hulls.read(plate(0.5), 1 / 60, false);
+  assert.equal(struck.lost, 0.6, 'the strip holds where she stood');
+  assert.deepEqual(struck.pieces, [{ left: 0.5, width: 0.09999999999999998, age: 0 }], 'the bite breaks off');
+  assert.equal(struck.flash, 1, 'her bar’s edge flashes');
+  assert.equal(hulls.read(plate(0.5), HULL_FLASH_SECONDS, false).flash, 0, 'for a quarter of a second');
+  assert.deepEqual(hulls.read(plate(0.495), 1 / 60, false).pieces?.length, 1, 'half a hundredth breaks nothing off');
+  const still = hulls.read({ ...plate(0.3), key: 5 }, 0, true);
+  assert.deepEqual(hulls.read({ ...plate(0.2), key: 5 }, 1 / 60, true).pieces, [], 'reduced motion: nothing falls');
+  assert.equal(still.flash, 0);
+});
+
+test('a bite’s flash steps down in three: whole, two thirds, a third, then none', () => {
+  const steps = [0, 0.07, 0.09, 0.17, 0.23, 0.24].map(flashLeft);
+  [1, 1, 2 / 3, 1 / 3, 1 / 3, 0].forEach((left, index) => assert.ok(Math.abs((steps[index] ?? -1) - left) < 1e-12));
 });

@@ -274,6 +274,7 @@ export class Foot {
       foes: foes.marked(fight),
       where,
       events,
+      blocks: this.boxes,
       player: fight.player,
       firstPerson,
       pressed: shown.pressed,
