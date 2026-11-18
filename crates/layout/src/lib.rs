@@ -20,6 +20,7 @@ pub mod pieces_coast;
 pub mod pieces_land;
 pub mod ring;
 pub mod rocks;
+pub mod runs;
 pub mod seat;
 pub mod settle;
 pub mod sites;

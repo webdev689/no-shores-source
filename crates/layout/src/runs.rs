@@ -1,0 +1,471 @@
+//! The runs that break off a zone: one-way linear combat areas, each from a mouth at a basin's edge through three to
+//! five beats (small arenas) joined by bent passages to an end arena and a sealed door, cut into the zone's rock or
+//! carried out past its edge into the land beyond.
+
+use crate::areas::Area;
+use crate::brief::{RunBrief, RunKind, RunPlace};
+use crate::field::Field;
+use land::sculpts::Sculpts;
+use serde::Serialize;
+
+/// One beat of a run: its middle, its reach and its level (a share of the massif's height).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Beat {
+    pub at: [f64; 2],
+    pub radius: f64,
+    pub level: f64,
+}
+
+/// A run as found: its name, kind and place from its brief, its mouth, its line (beat middles and the bends of the
+/// passages between them, with each point's level), its beats (the last its end arena) and its door, facing on.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Run {
+    pub name: String,
+    pub kind: RunKind,
+    pub place: RunPlace,
+    pub mouth: [f64; 2],
+    pub line: Vec<[f64; 2]>,
+    pub levels: Vec<f64>,
+    pub beats: Vec<Beat>,
+    pub door: [f64; 2],
+    pub facing: [f64; 2],
+}
+
+/// What a zone's runs are found in: its land, its claim, its areas, its floors as carved before the runs, the climbs
+/// and runs already cut (`taken`, as the sculpt's capsules) and the other nodes' claims to keep clear of.
+#[derive(Debug, Clone, Copy)]
+pub struct Setting<'a> {
+    pub field: &'a Field,
+    pub claim: &'a [[f64; 2]],
+    pub areas: &'a [Area],
+    pub bare: &'a Sculpts,
+    pub taken: &'a [[f64; 7]],
+    pub avoid: &'a [Vec<[f64; 2]>],
+}
+
+/// A run's length from mouth to door, metres, at the least and the most.
+pub const SHORTEST_M: f64 = 200.0;
+pub const LONGEST_M: f64 = 400.0;
+/// How far the first passage runs in from the mouth before the first beat, metres.
+const ENTRY_M: [f64; 2] = [22.0, 34.0];
+/// A passage between two beats, metres from one's edge to the next's.
+const PASSAGE_M: [f64; 2] = [10.0, 40.0];
+/// How far a passage turns at its bend, radians (about 26 to 49 degrees): enough that one beat never sees the next.
+const BEND: [f64; 2] = [0.45, 0.85];
+/// The end arena's reach, metres.
+const END_M: [f64; 2] = [21.0, 27.0];
+/// A passage's half-width for the checks, metres: the widest any kind cuts.
+const HALF_M: f64 = 4.0;
+/// How far from the mouth the line may still be near the floor it leaves, metres.
+const MOUTH_M: f64 = 40.0;
+/// How far a run in the rock keeps inside its claim, and how far a run past the edge carries its door out of it.
+const INSIDE_M: f64 = 30.0;
+const OUT_PAST_M: f64 = 80.0;
+/// How far a run past the edge keeps from the sea, metres: the strand and more.
+const SEA_CLEAR_M: f64 = 50.0;
+/// The headings tried from each area.
+const HEADINGS: u32 = 24;
+
+/// The runs a brief asks for, each where its line first fits; one no line fits is left out.
+#[must_use]
+pub fn find(setting: &Setting, wanted: &[RunBrief], seed: u32) -> Vec<Run> {
+    let mut taken: Vec<[f64; 7]> = setting.taken.to_vec();
+    let mut used = vec![0_u32; setting.areas.len()];
+    let mut found = Vec::new();
+    for (number, brief) in wanted.iter().enumerate() {
+        let draw = |key: &[i64]| {
+            let mut keys = vec![number as i64];
+            keys.extend_from_slice(key);
+            land::exact::rand01(seed ^ 0x2A17, &keys)
+        };
+        let mut starts: Vec<usize> = (0..setting.areas.len()).filter(|&at| opens(&setting.areas[at])).collect();
+        starts.sort_by(|&first, &second| {
+            used[first].cmp(&used[second]).then(draw(&[first as i64]).total_cmp(&draw(&[second as i64])))
+        });
+        let fits = starts.iter().find_map(|&start| {
+            (0..HEADINGS).find_map(|heading| {
+                let turn =
+                    std::f64::consts::TAU * (f64::from(heading) / f64::from(HEADINGS) + draw(&[start as i64, -1]));
+                let (sine, cosine) = land::exact::sin_cos(turn);
+                let mouth = mouth_of(setting, &setting.areas[start], [sine, -cosine])?;
+                (0..3).find_map(|variant| {
+                    let run = shaped(brief, mouth, [sine, -cosine], &|key| {
+                        draw(&[start as i64, i64::from(heading), variant, key])
+                    });
+                    fits(setting, &run, &taken).then_some((start, run))
+                })
+            })
+        });
+        if let Some((start, run)) = fits {
+            used[start] += 1;
+            taken.extend(capsules(&run, HALF_M));
+            found.push(run);
+        }
+    }
+    found
+}
+
+/// Whether a run may break off an area: any place a body goes about in, not a gate's or landing's way out.
+fn opens(area: &Area) -> bool {
+    use crate::brief::AreaKind;
+    !matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance | AreaKind::Dock)
+        && area.radius >= 30.0
+}
+
+/// Where an area's floor ends walking out from its middle along `way`, as carved: the run's mouth.
+fn mouth_of(setting: &Setting, area: &Area, way: [f64; 2]) -> Option<[f64; 2]> {
+    let mut out = area.radius * 0.5;
+    while out < area.radius * 4.0 {
+        let at = [area.at[0] + way[0] * out, area.at[1] + way[1] * out];
+        if setting.bare.floor_distance(at[0], at[1]) > 0.0 {
+            return Some(at);
+        }
+        out += 2.0;
+    }
+    None
+}
+
+fn turned(way: [f64; 2], angle: f64) -> [f64; 2] {
+    let (sine, cosine) = land::exact::sin_cos(angle);
+    [way[0] * cosine - way[1] * sine, way[0] * sine + way[1] * cosine]
+}
+
+fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
+    [from[0] + way[0] * out, from[1] + way[1] * out]
+}
+
+/// A run's shape from its mouth along `way`: three to five beats, each passage bent at its middle and turned back,
+/// so the line wanders either side of its heading; the passages' lengths chosen so the whole is 200 to 400 m.
+fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], draw: &dyn Fn(i64) -> f64) -> Run {
+    let between = |range: [f64; 2], key: i64| range[0] + (range[1] - range[0]) * draw(key);
+    let count = 3 + (draw(1) * 3.0).floor().min(2.0) as usize;
+    // Fewer beats are larger, so a run of three is still long enough.
+    let beat_m: [f64; 2] = match count {
+        3 => [20.0, 28.0],
+        4 => [15.0, 22.0],
+        _ => [13.0, 18.0],
+    };
+    let radii: Vec<f64> = (0..count)
+        .map(|at| if at + 1 == count { between(END_M, 10 + at as i64) } else { between(beat_m, 10 + at as i64) })
+        .collect();
+    let entry = between(ENTRY_M, 2);
+    let fixed: f64 = entry + radii[0] + radii.windows(2).map(|pair| pair[0] + pair[1]).sum::<f64>();
+    let gaps = (count - 1) as f64;
+    let wanted_m = between([SHORTEST_M + 20.0, LONGEST_M - 40.0], 3);
+    let passage = ((wanted_m - fixed) / gaps).clamp(PASSAGE_M[0], PASSAGE_M[1]);
+    let side = if draw(4) < 0.5 { 1.0 } else { -1.0 };
+    let mut at = ahead(mouth, way, entry + radii[0]);
+    let mut line = vec![mouth, at];
+    let mut beats = vec![Beat { at, radius: radii[0], level: 0.0 }];
+    for (gap, pair) in radii.windows(2).enumerate() {
+        let bend = between(BEND, 20 + gap as i64) * if gap % 2 == 0 { side } else { -side };
+        let share = 0.35 + 0.3 * draw(30 + gap as i64);
+        let bent = turned(way, bend);
+        let elbow = ahead(at, bent, pair[0] + passage * share);
+        at = ahead(elbow, way, passage * (1.0 - share) + pair[1]);
+        line.extend([elbow, at]);
+        beats.push(Beat { at, radius: pair[1], level: 0.0 });
+    }
+    let end = radii[count - 1];
+    Run {
+        name: brief.name.clone(),
+        kind: brief.kind,
+        place: brief.place,
+        mouth,
+        levels: vec![0.0; line.len()],
+        line,
+        beats,
+        door: ahead(at, way, end),
+        facing: way,
+    }
+}
+
+/// How far a point lies outside a ring, metres (negative inside).
+fn off_ring(ring: &[[f64; 2]], at: [f64; 2]) -> f64 {
+    let edge = (0..ring.len())
+        .map(|edge| crate::paths::off_line(at, ring[edge], ring[(edge + 1) % ring.len()]))
+        .fold(f64::INFINITY, f64::min);
+    if crate::field::ring_holds(ring, at[0], at[1]) { -edge } else { edge }
+}
+
+/// Whether a run fits where it was shaped: as long as a run is, clear of the other runs and climbs, its rock standing
+/// round it, inside the claim (a run in the rock) or out past it on dry land clear of every other claim and the sea
+/// (a run past the edge).
+fn fits(setting: &Setting, run: &Run, taken: &[[f64; 7]]) -> bool {
+    let long: f64 = run.line.windows(2).map(|pair| crate::field::distance(pair[0], pair[1])).sum();
+    if !(SHORTEST_M..=LONGEST_M).contains(&long) {
+        return false;
+    }
+    let beyond = run.place == RunPlace::Beyond;
+    if beyond && off_ring(setting.claim, run.door) < OUT_PAST_M {
+        return false;
+    }
+    let mut points: Vec<([f64; 2], f64, f64)> =
+        run.beats.iter().map(|beat| (beat.at, beat.radius, f64::INFINITY)).collect();
+    let mut along = 0.0;
+    for pair in run.line.windows(2) {
+        let length = crate::field::distance(pair[0], pair[1]);
+        let steps = (length / 4.0).ceil().max(1.0);
+        for step in 0..=steps as usize {
+            let share = step as f64 / steps;
+            points.push((
+                ahead(
+                    pair[0],
+                    [(pair[1][0] - pair[0][0]) / length.max(1e-9), (pair[1][1] - pair[0][1]) / length.max(1e-9)],
+                    length * share,
+                ),
+                HALF_M,
+                along + length * share,
+            ));
+        }
+        along += length;
+    }
+    let field = setting.field;
+    points.iter().all(|&(at, half, along)| {
+        let Some((column, row)) = field.cell_of(at[0], at[1]) else { return false };
+        let cell = field.index(column, row);
+        if field.water[cell] != crate::field::Water::Dry {
+            return false;
+        }
+        let clear_of_taken = taken.iter().all(|capsule| {
+            crate::paths::off_line(at, [capsule[0], capsule[1]], [capsule[2], capsule[3]]) - capsule[4] - half
+                > 2.0 * land::sculpts::CLIFF_RUN_M
+        });
+        let floor = setting.bare.floor_distance(at[0], at[1]);
+        let in_rock =
+            if along <= MOUTH_M { floor >= along * 0.5 - 6.0 } else { floor >= half + land::sculpts::CLIFF_RUN_M };
+        let placed = if field.claimed[cell] {
+            beyond || field.inside[cell] >= INSIDE_M + half
+        } else {
+            beyond
+                && field.to_sea[cell] >= SEA_CLEAR_M + half
+                && setting.avoid.iter().all(|ring| off_ring(ring, at) > land::sculpts::FADE_M + half)
+        };
+        clear_of_taken && in_rock && placed
+    })
+}
+
+/// A run's capsules for the sculpt: its passages `half` metres either side of its line, and its beats.
+#[must_use]
+pub fn capsules(run: &Run, half: f64) -> Vec<[f64; 7]> {
+    let passages = run
+        .line
+        .windows(2)
+        .zip(run.levels.windows(2))
+        .map(|(pair, levels)| [pair[0][0], pair[0][1], pair[1][0], pair[1][1], half, levels[0], levels[1]]);
+    let beats = run
+        .beats
+        .iter()
+        .map(|beat| [beat.at[0], beat.at[1], beat.at[0], beat.at[1], beat.radius, beat.level, beat.level]);
+    passages.chain(beats).collect()
+}
+
+/// For a run past the edge, the wing that carries the claim out round it: from the last of its line inside the claim
+/// to past its door, wide enough to hold its line and the rock either side.
+#[must_use]
+pub fn wing(run: &Run, claim: &[[f64; 2]]) -> Option<[f64; 5]> {
+    if run.place != RunPlace::Beyond {
+        return None;
+    }
+    let from = run.line.iter().rev().find(|at| off_ring(claim, **at) < 0.0).copied().unwrap_or(run.mouth);
+    let to = ahead(run.door, run.facing, 20.0);
+    let widest = run.beats.iter().map(|beat| beat.radius).fold(0.0, f64::max);
+    let spread = run.line.iter().map(|at| crate::paths::off_line(*at, from, to)).fold(0.0, f64::max);
+    Some([from[0], from[1], to[0], to[1], spread + widest + 30.0])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::brief::AreaKind;
+    use crate::field::{CELL_M, Water, chamfer, distance, ring_holds};
+    use land::sculpts::{CLIFF_RUN_M, FADE_M, Sculpt};
+
+    const CLAIM_M: f64 = 750.0;
+
+    fn disc(radius: f64, at: [f64; 2]) -> Vec<[f64; 2]> {
+        (0..48)
+            .map(|step| {
+                let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(step) / 48.0);
+                [at[0] + radius * cosine, at[1] + radius * sine]
+            })
+            .collect()
+    }
+
+    fn made_field(margin: f64) -> Field {
+        let claim = disc(CLAIM_M, [0.0, 0.0]);
+        let (west, north) = (-CLAIM_M - margin, -CLAIM_M - margin);
+        let columns = (2.0 * (CLAIM_M + margin) / CELL_M).ceil() as usize;
+        let count = columns * columns;
+        let centre =
+            |at: usize| [west + ((at % columns) as f64 + 0.5) * CELL_M, north + ((at / columns) as f64 + 0.5) * CELL_M];
+        let claimed: Vec<bool> = (0..count).map(|at| ring_holds(&claim, centre(at)[0], centre(at)[1])).collect();
+        let inside = chamfer(columns, columns, |at| !claimed[at]);
+        Field {
+            west,
+            north,
+            columns,
+            rows: columns,
+            height: vec![5.0; count],
+            water: vec![Water::Dry; count],
+            slope: vec![0.0; count],
+            claimed,
+            to_sea: vec![1e6; count],
+            to_fresh: vec![1e6; count],
+            inside,
+            seaward: [0.0, -1.0],
+        }
+    }
+
+    fn basin() -> (Vec<[f64; 2]>, Vec<Area>, Sculpts) {
+        let claim = disc(CLAIM_M, [0.0, 0.0]);
+        // A basin in the middle and two near the edge, east and north, as a zone's places spread over its claim.
+        let middles = [[0.0, 0.0], [600.0, 0.0], [0.0, -600.0]];
+        let areas: Vec<Area> = middles
+            .iter()
+            .map(|&at| Area { kind: AreaKind::Wilds, name: "The Wilds".into(), at, radius: 48.0, leads_to: None })
+            .collect();
+        let sculpt = Sculpt {
+            claim: claim.clone(),
+            floors: middles.iter().map(|at| [at[0], at[1], at[0], at[1], 80.0]).collect(),
+            outcrops: Vec::new(),
+            rise: 28.0,
+            seed: 5,
+            climbs: Vec::new(),
+            runs: Vec::new(),
+            wings: Vec::new(),
+        };
+        (claim, areas, Sculpts::from(vec![sculpt]))
+    }
+
+    fn brief(kind: RunKind, place: RunPlace) -> RunBrief {
+        RunBrief { name: "A Run".into(), kind, place }
+    }
+
+    /// Points every 4 m along a run's line, each with how far along it lies.
+    fn samples(run: &Run) -> Vec<([f64; 2], f64)> {
+        let mut out = Vec::new();
+        let mut along = 0.0;
+        for pair in run.line.windows(2) {
+            let length = distance(pair[0], pair[1]);
+            let steps = (length / 4.0).ceil().max(1.0);
+            for step in 0..steps as usize {
+                let share = step as f64 / steps;
+                let at =
+                    [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share];
+                out.push((at, along + length * share));
+            }
+            along += length;
+        }
+        out
+    }
+
+    fn length(run: &Run) -> f64 {
+        run.line.windows(2).map(|pair| distance(pair[0], pair[1])).sum()
+    }
+
+    fn off_capsule(at: [f64; 2], capsule: &[f64; 7]) -> f64 {
+        let ([x1, y1], [x2, y2]) = ([capsule[0], capsule[1]], [capsule[2], capsule[3]]);
+        crate::paths::off_line(at, [x1, y1], [x2, y2]) - capsule[4]
+    }
+
+    fn one(kind: RunKind, place: RunPlace, field: &Field, avoid: &[Vec<[f64; 2]>]) -> Run {
+        let (claim, areas, bare) = basin();
+        let setting = Setting { field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid };
+        let mut runs = find(&setting, &[brief(kind, place)], 9);
+        assert_eq!(runs.len(), 1, "one run found");
+        runs.remove(0)
+    }
+
+    #[test]
+    fn a_run_in_the_rock_stays_in_the_rock() {
+        let field = made_field(60.0);
+        let run = one(RunKind::Gorge, RunPlace::Rock, &field, &[]);
+        let (_, _, bare) = basin();
+        let long = length(&run);
+        assert!((200.0..=400.0).contains(&long), "{long}");
+        assert!((3..=5).contains(&run.beats.len()));
+        let end = run.beats.last().map_or(0.0, |beat| beat.radius);
+        assert!((20.0..=30.0).contains(&end), "the end arena is 40 to 60 m across: {end}");
+        for beat in &run.beats {
+            assert!((12.5..=30.0).contains(&beat.radius));
+            assert!(bare.floor_distance(beat.at[0], beat.at[1]) >= beat.radius + CLIFF_RUN_M, "{beat:?}");
+        }
+        for (at, along) in samples(&run).into_iter().filter(|(_, along)| *along > 40.0) {
+            assert!(bare.floor_distance(at[0], at[1]) >= CLIFF_RUN_M + 4.0, "{at:?} at {along}");
+            assert!(field.inside[field.nearest(at[0], at[1])] >= 30.0, "{at:?} well inside the claim");
+        }
+    }
+
+    #[test]
+    fn a_run_past_the_edge_ends_out_of_the_claim() {
+        let field = made_field(520.0);
+        let run = one(RunKind::Gorge, RunPlace::Beyond, &field, &[]);
+        let out = distance(run.door, [0.0, 0.0]) - CLAIM_M;
+        assert!(out >= 80.0, "the door stands {out} m past the ring");
+        assert!(wing(&run, &disc(CLAIM_M, [0.0, 0.0])).is_some(), "and a wing carries the claim out to it");
+    }
+
+    #[test]
+    fn a_run_keeps_off_another_claim() {
+        let field = made_field(520.0);
+        let other = [CLAIM_M + 200.0 + 300.0, 0.0];
+        let run = one(RunKind::Gorge, RunPlace::Beyond, &field, &[disc(300.0, other)]);
+        let widest = run.beats.iter().map(|beat| beat.radius).fold(0.0, f64::max);
+        for (at, _) in samples(&run) {
+            assert!(distance(at, other) - 300.0 > FADE_M + widest, "{at:?}");
+        }
+    }
+
+    #[test]
+    fn no_beat_sees_the_next_whole() {
+        let field = made_field(60.0);
+        let run = one(RunKind::Gorge, RunPlace::Rock, &field, &[]);
+        let walls = capsules(&run, 3.5);
+        for pair in run.beats.windows(2) {
+            let blind = (1..40).any(|step| {
+                let share = f64::from(step) / 40.0;
+                let at = [
+                    pair[0].at[0] + (pair[1].at[0] - pair[0].at[0]) * share,
+                    pair[0].at[1] + (pair[1].at[1] - pair[0].at[1]) * share,
+                ];
+                walls.iter().all(|capsule| off_capsule(at, capsule) > 0.5)
+            });
+            assert!(blind, "rock stands between {:?} and {:?}", pair[0].at, pair[1].at);
+        }
+    }
+
+    #[test]
+    fn two_runs_never_cross() {
+        let field = made_field(60.0);
+        let (claim, areas, bare) = basin();
+        let setting = Setting { field: &field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid: &[] };
+        let wanted = [
+            brief(RunKind::Gorge, RunPlace::Rock),
+            brief(RunKind::Keep, RunPlace::Rock),
+            brief(RunKind::Ledge, RunPlace::Rock),
+        ];
+        let runs = find(&setting, &wanted, 9);
+        assert_eq!(runs.len(), 3);
+        for (first, run) in runs.iter().enumerate() {
+            for other in &runs[first + 1..] {
+                let theirs = capsules(other, 3.5);
+                for mine in capsules(run, 3.5) {
+                    for step in 0..=10 {
+                        let share = f64::from(step) / 10.0;
+                        let at = [mine[0] + (mine[2] - mine[0]) * share, mine[1] + (mine[3] - mine[1]) * share];
+                        let apart = theirs.iter().map(|capsule| off_capsule(at, capsule)).fold(f64::INFINITY, f64::min);
+                        assert!(apart - mine[4] > 2.0 * CLIFF_RUN_M, "{apart} at {at:?}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_same_seed_finds_the_same_runs() {
+        let field = made_field(60.0);
+        let first = one(RunKind::Mine, RunPlace::Rock, &field, &[]);
+        assert_eq!(first, one(RunKind::Mine, RunPlace::Rock, &field, &[]));
+    }
+}
