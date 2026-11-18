@@ -19,7 +19,7 @@ const PIRATE_SWORDSMAN: u8 = 14;
 fn stand(room: &mut Room, number: u8, rank: Rank, x: f64, y: f64, facing: f64) -> FighterId {
     let id = room.next_id();
     let (fighter, brain) = ::foes::spawn(::foes::foe_type(number).unwrap(), rank, x, y, facing);
-    room.foes.insert(id, foes::Foe { fighter, brain });
+    room.foes.insert(id, foes::Foe { fighter, brain, caller: None });
     id
 }
 

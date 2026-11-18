@@ -125,3 +125,23 @@ fn a_shapes_blow_stops_at_a_wall_and_does_not_reach_a_body_high_above() {
     assert!(!ring.strikes([0.0, -3.0, 0.0], &wall), "behind a wall");
     assert!(!ring.strikes([0.0, -3.0, 3.0], &[]), "up on a block three metres high");
 }
+
+#[test]
+fn a_charge_or_a_leap_off_a_drop_never_sets_its_foe_down_inside_the_block_it_left() {
+    let platform = movement::Block { min_x: -8.0, min_y: -3.0, max_x: 2.0, max_y: 3.0, top: 1.6 };
+    let radius = movement::TUNING.radius;
+    for (shape, ahead) in [(Shape::Charge, 0.0), (Shape::Leap, 6.0)] {
+        for start in 0..10 {
+            let mut foe = foe_at(f64::from(start) * 0.1 - 4.0, 0.0, FRAC_PI_2);
+            foe.body.z = platform.top;
+            for _ in 0..60 {
+                let (next, _) =
+                    common::run_on(foe, telegraphing(order(shape, 60, FRAC_PI_2, ahead)), 1, None, &[platform]);
+                foe = next;
+                let body = foe.body;
+                let over = body.x < platform.max_x + radius && body.y.abs() < platform.max_y + radius;
+                assert!(!over || body.z >= platform.top - movement::TUNING.step, "{shape:?} inside it: {body:?}");
+            }
+        }
+    }
+}

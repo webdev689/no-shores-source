@@ -13,6 +13,7 @@ code:
   - crates/foes/src/tell.rs#roar
   - crates/room/src/foes.rs#spawn_asked
   - crates/room/src/foes.rs#call
+  - crates/room/src/foes.rs#fall_with_callers
   - crates/room/src/garrison.rs#groups
   - crates/room/src/garrison.rs#stand_garrison
   - crates/room/src/garrison.rs#keep_garrison
@@ -30,9 +31,10 @@ code:
 
 Who a player fights: enemy factions, each with its own types of foe on land and at sea, every foe of a rank that sets
 how much it takes, how it defends and which telegraphed blows it throws. The owner decided the ranks and the factions
-([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]]); the roster and the
-numbers are Claude's ([[The Enemies as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are
-[[Naval Combat]]'s.
+([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]]), and that a Miniboss
+throws more often than an Elite, a Boss's called foes fall with it and a garrison leashes to its posts
+([[Foes Leash to Their Posts and Fall With Their Boss]]); the roster and the numbers are Claude's
+([[The Enemies as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
 
 ## Factions
 
@@ -89,12 +91,17 @@ The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 13
 Parry, block and dodge together never pass 0.85, scaled down evenly past it; a reaction is never under 13 ticks. The
 elite tier is [[Foes]]' (quicker wind-ups and cooldowns, one blow in three iron, chains).
 
+- **A Miniboss's first phase**: cooldowns ×0.8, so it throws its blows more often than an Elite. A Captain against a
+  player standing still throws about 7.4 telegraphed blows a minute as a Miniboss and 6.8 as an Elite; at the Elite's
+  cooldowns the Miniboss threw 6.4, its feints taking the place of chains, which follow only a blow that landed.
 - **A Miniboss's second phase**, at 35% of its health: a roar, then wind-ups ×0.75, cooldowns ×0.6, might ×1.25, and
   chains of two.
 - **A Boss's three phases** are its type's own, changing at 2/3 and 1/3 of its health. A phase may call foes: it
   names their type, their rank, how many, and whether they stand beside the Boss (in pairs, 1.5 m either side, each
   pair 1.5 m farther out) or behind it (3 m back, then the same either side). Called foes face the way the Boss
-  faces, alert toward its foe, while the room's living foes leave room under its limit.
+  faces, alert toward its foe, while the room's living foes leave room under its limit. When the Boss falls, the foes
+  it called fall in the same tick, each told as slain, and lie their ten seconds as any foe does: each fight with it
+  starts clean, and every phase's call comes. Called foes have no post: they never leash ([[Foes]]).
 - **Captain Brannoc Thule's**:
   1. **The blade**: sweep and lunge, feints, chains of one.
   2. **The boarding**: adds charge and leap; wind-ups ×0.85, cooldowns ×0.8, chains of two.
@@ -138,6 +145,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
   farthest from the nearest spawn. A group stands 2.5 m round its post, each foe facing outward, a leader in the
   middle facing the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+- **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
+  place at its post or off the room's navmesh, and walks back there, healing as it goes, to stand idle again
+  ([[Foes]]). It is still its group's: a leash never clears a group or stands it again.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
@@ -170,8 +180,8 @@ WebAssembly, so names, factions and weapons are read in one place.
 ## Limits
 
 - A garrison stands within its room's navmesh, a 70 m square by the first spawn, never across the whole section:
-  baking a section's whole ring costs more time and memory than a room has. A foe that chases a player off the mesh
-  walks straight.
+  baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
+  leaves the mesh; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
 - A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
 - Only the Sloop's hull for every rank of ship ([[Hulls]]).
 - The Hookman's axe takes both hands, so he carries no shield.

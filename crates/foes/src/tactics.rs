@@ -11,6 +11,7 @@ use crate::brain::{Brain, Plan};
 use crate::cover::{leave_post, unseen};
 use crate::dice::Purpose;
 use crate::flank::drift;
+use crate::leash::leash;
 use crate::react::{defend, opening};
 use crate::senses::{Here, Sight, sense};
 use crate::shoot::{ranged, shooting};
@@ -32,6 +33,9 @@ use core::f64::consts::{FRAC_PI_2, PI};
 pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask {
     let me = here.me;
     let hurt = brain.hurt(here.fighter.health, here.fighter.health_max, here.tick());
+    if let Some(ask) = leash(brain, here, board) {
+        return ask;
+    }
     let before = brain.target;
     let sight = sense(brain, here);
     if brain.target != before {

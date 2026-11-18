@@ -13,7 +13,7 @@ use crate::tuning::{
     STAMINA, STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH,
 };
 use core::f64::consts::FRAC_PI_2;
-use movement::blocks::{ground_at, slide};
+use movement::blocks::{ground_at, pushed_out, slide};
 use movement::{Block, Body, Controls, Mode, TICK_SECONDS, Terrain, step_body};
 
 /// A falling hop this near the ground has come down: its last tick, whatever the sums' last bits.
@@ -476,12 +476,14 @@ fn travel(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_>) -> Opti
     }
     let left = f64::from(telegraph.windup.saturating_sub(telegraph.elapsed).max(1));
     let (step_x, step_y) = ((landing[0] - body.x) / left, (landing[1] - body.y) / left);
-    let (x, y) = slide(around.blocks, around.terrain, body, step_x, step_y);
-    let ground = ground_at(around.blocks, around.terrain, x, y, body.z);
     let share = f64::from(telegraph.elapsed - begun + 1) / f64::from(travel);
     let rise = if telegraph.shape == crate::shapes::Shape::Leap { 4.8 * share * (1.0 - share) } else { 0.0 };
+    let (x, y) = slide(around.blocks, around.terrain, body, step_x, step_y);
+    // Off a drop its feet come down beside the block it slid off at its old height: it is set down clear of it.
+    let feet = |x, y| ground_at(around.blocks, around.terrain, x, y, body.z) + rise;
+    let (x, y) = pushed_out(around.blocks, around.terrain, x, y, feet);
     let facing = telegraph.bearing;
-    Some(Body { x, y, z: ground + rise, vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
+    Some(Body { x, y, z: feet(x, y), vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
 }
 
 /// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach, a

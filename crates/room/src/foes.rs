@@ -2,13 +2,14 @@
 //! Foes of different factions fight each other as they fight players: blows on a foe are judged at once, blows on
 //! players wait for their view; its telegraphed blows land on whoever's feet stand in their shape; its brain is told
 //! what it saw, the noises fighters of other sides made, and its allies' shouts. Players ask for foes from the Test
-//! Ground's panel, a node's garrison stands as its room opens, and a Boss calls the foes its phase names.
+//! Ground's panel, a node's garrison stands as its room opens, and a Boss calls the foes its phase names, who fall
+//! with it.
 
 use crate::judging::{Check, Group, How, Pending};
 use crate::{EventKind, Room, SpawnAsk};
 use ::foes::noises::{Noise, landed, running, shot, swing};
 use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, World, foe_type, notice, spawn, think};
-use combat::fighter::{FighterId, Side};
+use combat::fighter::{Action, FighterId, Side};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
 use combat::shots::{FALL, by_foe, foe_speed, loose, shot_numbers};
@@ -29,17 +30,22 @@ const SPAWN_AHEAD: f64 = 5.0;
 const CREW_BESIDE: f64 = 1.5;
 const CALLED_BEHIND: f64 = 3.0;
 pub const CLEAR_FOES: u8 = 255;
+/// A body this near the navmesh's nearest point to it, across, stands on the mesh: the margin its erosion trims by a
+/// wall.
+const ON_MESH: f64 = 1.5;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
 const SHAPE_MARGIN: f64 = 2.0;
 /// An aimed shot leaves faster and strikes harder than a plain one.
 const AIMED_SPEED: f64 = 1.3;
 const AIMED_DAMAGE: f64 = 1.4;
 
-/// A foe as the room keeps it: its fighter and its brain, which holds its type, rank and phase.
+/// A foe as the room keeps it: its fighter, its brain, which holds its type, rank and phase, and the Boss that called
+/// it, if one did.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Foe {
     pub fighter: Fighter,
     pub brain: Brain,
+    pub caller: Option<FighterId>,
 }
 
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
@@ -123,6 +129,11 @@ impl ::foes::Routes for MeshRoutes<'_> {
                 .sum(),
         )
     }
+
+    fn walkable(&self, point: [f64; 3]) -> bool {
+        let near = self.mesh.nearest_point(point);
+        near.is_some_and(|near| combat::sight::apart([near[0], near[1]], [point[0], point[1]]) <= ON_MESH)
+    }
 }
 
 /// The corner to walk for: the first past the start farther than a tick's run, so a corner underfoot never holds a
@@ -163,8 +174,8 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
 
 impl Room {
     /// The places over the room's course a shooter may fire from.
-    #[must_use]
-    pub fn spots(&self) -> impl foes::Spots + '_ {
+    #[cfg(test)]
+    pub(crate) fn spots(&self) -> impl foes::Spots + '_ {
         MeshSpots { mesh: &self.nav }
     }
 
@@ -211,7 +222,7 @@ impl Room {
         let (mut fighter, brain) = spawn(foe_type, rank, at[0], at[1], facing);
         fighter.body.z = ground_at(&self.blocks, &self.floor, at[0], at[1], at[2]);
         let id = self.next_id();
-        self.foes.insert(id, Foe { fighter, brain });
+        self.foes.insert(id, Foe { fighter, brain, caller: None });
         self.tell(EventKind::Spawned, None, by.unwrap_or(id), id, 0.0);
         id
     }
@@ -244,15 +255,36 @@ impl Room {
             let beside = [from_x + sin * out, from_y - cos * out, at.body.z];
             let spot = self.nav.nearest_point(beside).unwrap_or(beside);
             let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
-            if let (Some(called), Some(found)) = (called, self.foes.get_mut(&id)) {
+            let Some(found) = self.foes.get_mut(&id) else { continue };
+            found.caller = Some(caller);
+            if let Some(called) = called {
                 notice(&mut found.brain, id, &called, self.clock);
             }
         }
     }
 
+    /// The foes a Boss called fall with it, in the tick it falls, as any foe falls: each fight with it starts clean.
+    pub(crate) fn fall_with_callers(&mut self) {
+        let fallen = |caller: &FighterId| self.foes.get(caller).is_none_or(|found| found.fighter.dead());
+        let falling: Vec<(FighterId, FighterId)> = self
+            .foes
+            .iter()
+            .filter(|(_, found)| !found.fighter.dead())
+            .filter_map(|(id, found)| found.caller.filter(fallen).map(|caller| (*id, caller)))
+            .collect();
+        for (id, caller) in falling {
+            if let Some(found) = self.foes.get_mut(&id) {
+                found.fighter.health = 0.0;
+                found.fighter.action = Action::Dead { elapsed: 0 };
+            }
+            self.board.forget(id);
+            self.tell(EventKind::Killed, None, caller, id, 0.0);
+        }
+    }
+
     /// The fight's heat eases a tick; every foe thinks over the room as it stands, then steps by its intent; what each
-    /// set off lands as a player's would. A foe roaring into a new phase has its poise refilled, and the foes it calls
-    /// come once every foe has stepped.
+    /// set off lands as a player's would. A foe roaring into a new phase has its poise refilled, one walking back to its
+    /// post heals, and the foes a foe calls come once every foe has stepped.
     pub(crate) fn step_foes(&mut self) {
         self.director.step();
         let fighters = self.fighters();
@@ -297,6 +329,9 @@ impl Room {
             let mut fighter = Fighter { target, might: brain.might(), ..foe.fighter };
             if calls.refill_poise {
                 fighter.poise = 0.0;
+            }
+            if calls.heal > 0.0 {
+                fighter.health = (fighter.health + calls.heal).min(fighter.health_max);
             }
             if let Some(call) = calls.crew {
                 crews.push((id, call));
@@ -430,7 +465,7 @@ impl Room {
         let verdicts = std::mem::take(&mut self.verdicts);
         let ended = std::mem::take(&mut self.ended_telegraphs);
         let tick = self.clock;
-        for (id, Foe { fighter, brain }) in &mut self.foes {
+        for (id, Foe { fighter, brain, .. }) in &mut self.foes {
             // Only a blow from another side is a threat to answer: an ally's would only crowd it out.
             let hostile = |by: &Option<Side>| by.is_some_and(|by| by != fighter.side);
             for (by, attack, _) in swings.iter().filter(|(_, _, by)| hostile(by)) {

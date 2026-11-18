@@ -14,6 +14,7 @@ mod dice;
 pub mod director;
 pub mod factions;
 mod flank;
+mod leash;
 pub mod noises;
 pub mod ranks;
 mod react;
@@ -49,6 +50,11 @@ pub trait Routes {
     /// line unless the routes know better.
     fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
         Some(combat::sight::apart([from[0], from[1]], [to[0], to[1]]))
+    }
+
+    /// Whether a body standing at a point stands on the ground the routes cover: always, unless the routes know better.
+    fn walkable(&self, _point: [f64; 3]) -> bool {
+        true
     }
 }
 

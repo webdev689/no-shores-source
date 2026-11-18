@@ -2,7 +2,8 @@
 //! garrison as its room opens, in groups at posts on the navmesh its room bakes by its first spawn, inside its
 //! section, each foe at least SPAWN_CLEAR from every spawn, idle and facing outward. The room's seed, mixed from the
 //! node's id, draws who stands where, so every machine stands the same. A group whose last foe fell stands again
-//! STAND_AGAIN later, once no player is within CLEAR_AROUND of its post and the living foes leave it room.
+//! STAND_AGAIN later, once no player is within CLEAR_AROUND of its post and the living foes leave it room. Each foe is
+//! leashed to its place at its post: it gives up a target that leads it too far and walks back (the foes crate).
 //! The baked square reaches inland from the spawn rather than round it, so it holds the garrison past the spawn's
 //! clear ground without growing: a bake's cost grows far faster than its area.
 
@@ -259,13 +260,15 @@ impl Room {
         })
     }
 
-    /// Stands every foe of a post's group at its place, idle, facing as it was posted.
+    /// Stands every foe of a post's group at its place, idle, facing as it was posted, and leashed to it.
     fn stand_post(&mut self, post: usize) {
         let members = self.garrison[post].members.clone();
         let standing = members
             .iter()
             .filter_map(|&(number, rank, place, facing)| {
-                Some(self.stand_foe(foe_type(number)?, rank, place, facing, None))
+                let id = self.stand_foe(foe_type(number)?, rank, place, facing, None);
+                self.foes.get_mut(&id)?.brain.posted_at(place, facing);
+                Some(id)
             })
             .collect();
         self.garrison[post].standing = standing;
@@ -312,3 +315,7 @@ fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
 #[cfg(test)]
 #[path = "garrison_tests.rs"]
 mod garrison_tests;
+
+#[cfg(test)]
+#[path = "leash_tests.rs"]
+mod leash_tests;

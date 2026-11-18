@@ -23,7 +23,7 @@ fn stand(room: &mut Room, number: u8, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
     let foe_type = ::foes::foe_type(number).expect("a type of the roster");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, core::f64::consts::PI);
-    room.foes.insert(id, foes::Foe { fighter, brain });
+    room.foes.insert(id, foes::Foe { fighter, brain, caller: None });
     id
 }
 
