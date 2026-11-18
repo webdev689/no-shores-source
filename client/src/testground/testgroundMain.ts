@@ -408,7 +408,10 @@ async function start(): Promise<void> {
         : figureMuzzle([body.x, body.y, body.z], Math.atan2(shot.velocity[0], -shot.velocity[1])),
     );
     tracers.seen(fight.takeShots(), fight.player);
-    for (const impact of tracers.update(seconds, COURSE, bodies)) sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
+    // Paused with the room, a shot's tracer waits for it.
+    const shotSeconds = roomUrl || controls.locked ? seconds : 0;
+    for (const impact of tracers.update(shotSeconds, COURSE, bodies))
+      sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     const traced = tracers.mesh(cameraOf(camera).eye, fight.shots, fight.player);
     scene.setMarks(marksMesh(telegraphs, othersArrows(fight.shots, fight.player), sparks.flying, traced));
     blood.frame(seconds, events, fight, camera, canvas.width / Math.max(1, canvas.height));

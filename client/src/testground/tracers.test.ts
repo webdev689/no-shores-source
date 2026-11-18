@@ -112,3 +112,31 @@ test("a foe's travelling ball is one tracer moving out, with one flash at its mu
   assert.ok(Math.abs((impacts[0]?.at[1] ?? 0) - (-70 * TICK * 30 - 0.5)) < 1e-6, `${impacts[0]?.at}`);
   assert.equal(tracers.mesh(eye, [], 1).length, 0);
 });
+
+test("a foe's travelling ball whose snapshots pause or come late strikes nothing in mid-air, only where it stops", () => {
+  const tracers = new Tracers();
+  const carried = (age: number): FlyingShot => ({
+    owner: 7,
+    ranged: 3,
+    at: [0, -70 * TICK * age, 1.5],
+    velocity: [0, -70, 0],
+    age,
+  });
+  const impacts = [];
+  for (let age = 1; age <= 10; age++) {
+    tracers.seen([carried(age)], 1);
+    impacts.push(...tracers.update(TICK, [], []));
+  }
+  // Three ticks with no snapshot, as on a late one; then a long pause of the frames' clock alone.
+  for (let frame = 0; frame < 3; frame++) impacts.push(...tracers.update(TICK, [], []));
+  assert.equal(impacts.length, 0, 'no strike while the room has said nothing new');
+  for (let age = 11; age <= 20; age++) {
+    tracers.seen([carried(age)], 1);
+    impacts.push(...tracers.update(TICK, [], []));
+  }
+  assert.equal(impacts.length, 0, 'carried on as before');
+  tracers.seen([{ ...carried(20), velocity: [0, -30, 0] }], 1);
+  impacts.push(...tracers.update(0.2, [], []), ...tracers.update(0.5, [], []));
+  assert.equal(impacts.length, 1, 'one strike, where it stopped');
+  assert.ok(Math.abs((impacts[0]?.at[1] ?? 0) - (-70 * TICK * 20 - 0.5)) < 1e-6, `${impacts[0]?.at}`);
+});

@@ -11,6 +11,9 @@ type Colour = readonly [number, number, number, number];
 
 /** A tick of the rules, and how fast an arrow or a bolt falls (crates/combat/src/shots.rs FALL), m/s². */
 const TICK = 1 / 60;
+/** A foe's flying ball is held short of the last point the room gave it until no snapshot has carried it on for this
+ *  long, so a late or paused snapshot never reads as the ball striking in mid-air. */
+const CARRY_GRACE = 8 * TICK;
 const FALL = 6;
 /** The guns' numbers, as the combat crate numbers its ranged weapons: a Pistolet and a Thunderlock fire balls. */
 const BALLS = new Set([3, 4]);
@@ -44,6 +47,8 @@ interface Line {
   readonly speed: number;
   readonly owner: number | null;
   ticks: number;
+  /** Seconds since a snapshot last carried it on. */
+  quiet: number;
 }
 
 /** The player's own arrow or bolt, flown here as the rules fly it: where it left their weapon, where the rules
@@ -124,7 +129,7 @@ export class Tracers {
       const muzzle = muzzleOf(shot);
       const to = add(shot.at, shot.velocity, TICK);
       if (BALLS.has(shot.ranged))
-        this.lines.push({ from: muzzle, to, age: 0, speed: BALL.speed, owner: null, ticks: 0 });
+        this.lines.push({ from: muzzle, to, age: 0, speed: BALL.speed, owner: null, ticks: 0, quiet: 0 });
       else
         this.flights.push({ muzzle, launch: shot.at, at: shot.at, velocity: shot.velocity, flown: 0, stopped: null });
     }
@@ -139,7 +144,7 @@ export class Tracers {
       const to = add(shot.at, shot.velocity, TICK);
       const carried = shot.age > 0 && this.lines.find((line) => line.owner === shot.owner && line.ticks <= shot.age);
       if (carried) {
-        Object.assign(carried, { to, ticks: shot.age });
+        Object.assign(carried, { to, ticks: shot.age, quiet: 0 });
         continue;
       }
       this.lines.push({
@@ -150,6 +155,7 @@ export class Tracers {
         speed: Math.min(BALL.speed, Math.hypot(...shot.velocity)),
         owner: shot.owner,
         ticks: shot.age,
+        quiet: 0,
       });
     }
   }
@@ -165,6 +171,11 @@ export class Tracers {
     };
     for (const line of this.lines) {
       const arrives = this.arrival(line);
+      line.quiet += seconds;
+      if (line.ticks > 0 && line.quiet < CARRY_GRACE) {
+        line.age = Math.max(line.age, Math.min(line.age + seconds, arrives - TICK));
+        continue;
+      }
       if (line.age < arrives && line.age + seconds >= arrives)
         impacts.push({ at: line.to, back: back(line.from, line.to) });
       line.age += seconds;

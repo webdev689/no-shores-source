@@ -117,7 +117,8 @@ impl Commission {
     #[must_use]
     pub fn build(&self) -> Build {
         let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };
-        Build { hull: base.hull * self.rank.scale().hull, ..base }
+        // Whole points, as every blow takes, so a hull never shows a fraction of one left.
+        Build { hull: (base.hull * self.rank.scale().hull).round(), ..base }
     }
 
     /// Her ship's hurts, sound: her hull as strong as her rank makes it, striking where her rank strikes.

@@ -28,7 +28,7 @@ fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
         assert_eq!([scale.hull, scale.might, scale.reload, scale.aim_error], [hull, might, reload, aim_error]);
         assert_eq!((scale.always_bold, scale.runs_at, scale.strikes_at), (bold, runs_at, strikes_at), "{rank:?}");
         let commission = Commission { faction: GREY_TITHE, rank };
-        assert_eq!(commission.build().hull, 264.0 * hull, "{rank:?}");
+        assert_eq!(commission.build().hull, (264.0 * hull).round(), "whole points: {rank:?}");
         assert_eq!(commission.damage().struck_at, strikes_at, "{rank:?}");
         let gun = commission.armed(SWIVEL);
         assert_eq!([gun.hull, gun.sail, gun.crew], [5.0 * might, 2.0 * might, 2.0 * might]);
@@ -39,6 +39,9 @@ fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
 
 #[test]
 fn each_faction_sails_her_own_sloop_and_only_captains_factions_take_a_commission() {
+    let minor = Commission { faction: PIRATES, rank: Rank::Minor }.build().hull;
+    let elite = Commission { faction: PIRATES, rank: Rank::Elite }.build().hull;
+    assert_eq!((minor, elite), (158.0, 475.0), "a Minor's and an Elite's hull in whole points");
     assert_eq!(Commission { faction: GREY_TITHE, rank: Rank::Major }.build().name, "Tithe Sloop");
     assert_eq!(Commission { faction: PIRATES, rank: Rank::Boss }.build().name, "Pirate Sloop");
     assert_eq!(Commission::of(GREY_TITHE, Rank::Elite), Some(Commission { faction: GREY_TITHE, rank: Rank::Elite }));
