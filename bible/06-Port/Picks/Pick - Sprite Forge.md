@@ -21,7 +21,7 @@ dfo_paths:
   - src/systems/studioArt/forgeLayers.js
   - src/systems/studioArt/forgeRaces.js
   - src/systems/studioArt/forgeHair.js
-dfo_commit: 6e5958e7fb (ccr-aff93cb4-gw1nto-sprites); renders also from fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit)
+dfo_commit: aa2ac554c (ccr-aff93cb4-gw1nto-next); the roll from 614f72ae8; renders also from fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit)
 ---
 # Pick - Sprite Forge
 
@@ -30,7 +30,8 @@ composes a figure from them.
 
 ## What comes over
 
-- The forge's code, fitted tables, keys and models, exactly, in `tools/forge/` in DFO's own layout.
+- The forge's code, fitted tables, keys and models, exactly, in `tools/forge/` in DFO's own layout, but for DFO's newer
+  werewolf and wereboar work ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
 - Its 127,253 strips and its five tables as they are, published to R2 ([[DFO's Sprite Forge Comes Over Exactly]]).
   The first-person art it makes outside the studio comes too; the other authors' mod art on DFO's main does not.
 - From DFO's audit branch, the 1,101 renders the sprites branch left for a later release: the item and prop pictures

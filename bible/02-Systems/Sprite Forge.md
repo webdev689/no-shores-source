@@ -22,8 +22,12 @@ The [[Test Ground]] shows them.
   own; every other race is the bare body with its skin coloured as a frame is composed.
 - **Layers**: 660 on the man and 666 on the woman. Clothes, armour sets, helms, hair, worn and held weapons, bows,
   staffs, shields, instruments, tools and the horse a rider sits on.
-- **Moves**: 82 on each adult body. They include walking, running, fighting with each weapon, casting, dying, climbing,
-  riding and playing each instrument. Nine moves turn the body by CC0 motion from Quaternius's library.
+- **Moves**: 100 on each adult body. They include walking, running, fighting with each weapon, the owner's blows (an
+  overhead, a side cut and a thrust in each of four holds: one hand, a haft, a long hilt and a pair), the bow's own
+  hold, walk and sprint, casting, dying, climbing, riding, driving a wagon's bench and playing each instrument. Some
+  moves turn the body by CC0 motion: Quaternius's libraries and KayKit's clips.
+- **The dodge roll**: drawn by DFO for Overlook, outside its own studio, on both adult bodies and everything worn; it
+  draws nothing held ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
 - **Views**: five, from the front round to the back. The other three are drawn mirrored.
 
 The first-person frames are pictures of their own: each weapon's idle and its six strokes, the bow's draw and loose,
@@ -52,6 +56,8 @@ tables in `src/systems/studioArt/`, packs in `packs/`.
 - `add` publishes the pictures on disk beside those already published, in packs of their own, adding them to the
   published index and frames table, so the rest need not be pulled first.
 - `pull` fetches the tables back for the forge to render more. `pull --strips` also unpacks every strip as PNG.
+- `roll <folder>` lays the dodge roll DFO drew outside its studio in beside the studio's strips, and its moves into
+  the looks table, for `add` to publish.
 
 The bucket is public at `pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev` and lets the site and local servers read it.
 Cloudflare limits how often an `r2.dev` address answers; the renders will move to a name under `daggerfalljs.dev`

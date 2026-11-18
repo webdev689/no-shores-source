@@ -12,7 +12,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPng } from './pngIO.mjs';
 import { isMain } from './lib/isMain.mjs';
-import { layerCellOf, layerPath, solesOf, groundLift, AT_REST } from '../src/systems/studioArt/forgeLayers.js';
+import { layerCellOf, layerPath, solesOf, groundLift, AT_REST, BOW_HOLD } from '../src/systems/studioArt/forgeLayers.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const INDEX = join(ROOT, 'src/systems/studioArt/forgeLooks.json');
@@ -23,9 +23,9 @@ const BODY = /^body(_[a-z]+)?$/;
 
 /** The animations a record's canvas holds: its own, the other swing where a dressed weapon swings in a class's attack
  *  records (forgeDressed.js dressedLook: a blade or a mace in an axe's, an axe, a flail or a warhammer in a sword's),
- *  and its twin with a bow at rest (forgeLayers.js AT_REST). */
+ *  its twin with a bow at rest (forgeLayers.js AT_REST) and with a bow's own hold (BOW_HOLD). */
 export const recordAnims = (look, rec) => (/^attack_(axe|sword)$/.test(rec.anim) && /^(axe|sword)$/.test(look.weapon) ? ['attack_axe', 'attack_sword']
-  : AT_REST[rec.anim] ? [rec.anim, AT_REST[rec.anim]] : [rec.anim]);
+  : AT_REST[rec.anim] ? [rec.anim, AT_REST[rec.anim], ...(BOW_HOLD[rec.anim] ? [BOW_HOLD[rec.anim]] : [])] : [rec.anim]);
 
 /**
  * Each look's growth, [side, top] a record, from the strips `strip(path)` reads (null where there is none).

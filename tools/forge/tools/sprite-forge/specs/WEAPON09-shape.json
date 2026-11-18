@@ -16,5 +16,10 @@
  "arm_r": 1.04,
  "cuff": 9.0,
  "thumb": 1.0,
- "fist": 0.78
+ "fist": 0.78,
+ "limb": 0.75,
+ "wrap": 0.75,
+ "swell": 0.4,
+ "grip_cap": 1.12,
+ "ornament": 0.65
 }

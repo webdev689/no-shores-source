@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { type Doing, likelyMoves, shownMove } from './playerMoves.ts';
+import { blowFrame, type Doing, likelyMoves, shownMove } from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -25,9 +25,13 @@ const FRAMES: Record<string, number> = {
   pistolshot: 6,
   pistolreload: 4,
   braceshot: 6,
+  roll: 6,
 };
 const frames = (anim: string) => FRAMES[anim] ?? 4;
 const everything = () => true;
+/** The forge before its next work: its blows, the bow's own holds and the roll undrawn. */
+const NEXT = /^((over|side|thrust)(1h|haft|hilt|pair)|bow(ready|walk|run)|roll)$/;
+const classic = (anim: string) => !NEXT.test(anim);
 const doing: Doing = {
   mode: 'ground',
   moving: false,
@@ -46,21 +50,21 @@ const doing: Doing = {
 };
 
 test('on foot: rest, walk, run and crouch, the weapon in hand choosing its own rest and walk', () => {
-  assert.equal(shownMove(doing, frames, everything).anim, 'idle');
-  assert.deepEqual(shownMove({ ...doing, moving: true }, frames, everything), {
+  assert.equal(shownMove(doing, frames, classic).anim, 'idle');
+  assert.deepEqual(shownMove({ ...doing, moving: true }, frames, classic), {
     anim: 'walk',
     frame: null,
     frameSeconds: 0.25,
   });
-  assert.equal(shownMove({ ...doing, moving: true, running: true }, frames, everything).frameSeconds, 0.125);
-  assert.equal(shownMove({ ...doing, crouched: true, moving: true }, frames, everything).anim, 'crouch_walk');
-  assert.equal(shownMove({ ...doing, right: 'bow_long_iron', moving: true }, frames, everything).anim, 'walk_bow');
-  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, everything).anim, 'guard');
+  assert.equal(shownMove({ ...doing, moving: true, running: true }, frames, classic).frameSeconds, 0.125);
+  assert.equal(shownMove({ ...doing, crouched: true, moving: true }, frames, classic).anim, 'crouch_walk');
+  assert.equal(shownMove({ ...doing, right: 'bow_long_iron', moving: true }, frames, classic).anim, 'walk_bow');
+  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, classic).anim, 'guard');
 });
 
 test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swings two-handed', () => {
   const blow = (direction: 'downLeft' | 'up' | 'down' | 'left', second: boolean, progress: number) =>
-    shownMove({ ...doing, blow: { direction, second, progress } }, frames, everything);
+    shownMove({ ...doing, blow: { direction, second, progress } }, frames, classic);
   assert.deepEqual(blow('downLeft', false, 0), { anim: 'attack_sword', frame: 0, frameSeconds: 0 });
   assert.deepEqual(blow('downLeft', true, 0.99), { anim: 'attack_sword', frame: 5, frameSeconds: 0 });
   // The stroke's three frames run through the wind-up, the last landing with the blow (two fifths through the swing,
@@ -72,7 +76,7 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
   const late = shownMove(
     { ...doing, blow: { direction: 'down', second: false, progress: 0.45, lands: 0.5 } },
     frames,
-    everything,
+    classic,
   );
   assert.equal(late.frame, 1, 'a heavier blow that lands later shows its last frame later');
   assert.equal(blow('up', false, 0).anim, 'thrust');
@@ -82,14 +86,14 @@ test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swi
   const axe = shownMove(
     { ...doing, right: 'axe_iron', blow: { direction: 'up', second: false, progress: 0 } },
     frames,
-    (anim: string) => anim !== 'thrust',
+    (anim: string) => classic(anim) && anim !== 'thrust',
   );
   assert.equal(axe.anim, 'attack_axe');
 });
 
 test("a shot plays its weapon's own move whole, then its reload; a brace fires right then left", () => {
   const shot = (right: string, left: string | null, reload: boolean, second: boolean, progress: number) =>
-    shownMove({ ...doing, right, left, blow: { direction: null, second, progress, reload } }, frames, everything);
+    shownMove({ ...doing, right, left, blow: { direction: null, second, progress, reload } }, frames, classic);
   assert.deepEqual(shot('thunderlock', null, false, true, 0.99), { anim: 'gunshot', frame: 5, frameSeconds: 0 });
   assert.deepEqual(shot('thunderlock', null, true, false, 0.5), { anim: 'gunreload', frame: 2, frameSeconds: 0 });
   assert.equal(shot('pistolet', null, true, false, 0).anim, 'pistolreload');
@@ -99,37 +103,38 @@ test("a shot plays its weapon's own move whole, then its reload; a brace fires r
 });
 
 test('in the air the jump shows rising, at the top and falling; on a wall the climb moves', () => {
-  assert.equal(shownMove({ ...doing, mode: 'air', vz: 3 }, frames, everything).frame, 0);
-  assert.equal(shownMove({ ...doing, mode: 'air', vz: 0 }, frames, everything).frame, 1);
-  assert.equal(shownMove({ ...doing, mode: 'air', vz: -3 }, frames, everything).frame, 2);
-  assert.deepEqual(shownMove({ ...doing, mode: 'mantle', over: 0.6 }, frames, everything), {
+  assert.equal(shownMove({ ...doing, mode: 'air', vz: 3 }, frames, classic).frame, 0);
+  assert.equal(shownMove({ ...doing, mode: 'air', vz: 0 }, frames, classic).frame, 1);
+  assert.equal(shownMove({ ...doing, mode: 'air', vz: -3 }, frames, classic).frame, 2);
+  assert.deepEqual(shownMove({ ...doing, mode: 'mantle', over: 0.6 }, frames, classic), {
     anim: 'mantle',
     frame: 2,
     frameSeconds: 0,
   });
-  assert.equal(shownMove({ ...doing, mode: 'hang', moving: true }, frames, everything).anim, 'shimmy');
-  assert.equal(shownMove({ ...doing, mode: 'climb' }, frames, everything).frame, 0);
+  assert.equal(shownMove({ ...doing, mode: 'hang', moving: true }, frames, classic).anim, 'shimmy');
+  assert.equal(shownMove({ ...doing, mode: 'climb' }, frames, classic).frame, 0);
 });
 
-test('mounted, the horse walks and gallops; a move chosen by hand plays over everything', () => {
-  assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 12 }, frames, everything).anim, 'horsegallop');
-  assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 6 }, frames, everything).anim, 'horsewalk');
-  assert.equal(shownMove({ ...doing, act: { anim: 'death', progress: 0.5 } }, frames, everything).anim, 'death');
+test('mounted, the horse walks and gallops; a move chosen by hand plays over classic', () => {
+  assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 12 }, frames, classic).anim, 'horsegallop');
+  assert.equal(shownMove({ ...doing, mounted: true, moving: true, speed: 6 }, frames, classic).anim, 'horsewalk');
+  assert.equal(shownMove({ ...doing, act: { anim: 'death', progress: 0.5 } }, frames, classic).anim, 'death');
 });
 
 test('an off hand: two blades fight as a pair, and a shield or blade in the left keeps the weapon’s own attack', () => {
   const pair = { ...doing, left: 'dagger_iron_l' };
-  assert.equal(shownMove(pair, frames, everything).anim, 'twinguard');
-  assert.equal(shownMove({ ...pair, right: null }, frames, everything).anim, 'twinguard');
+  assert.equal(shownMove(pair, frames, classic).anim, 'twinguard');
+  assert.equal(shownMove({ ...pair, right: null }, frames, classic).anim, 'twinguard');
   const up = { direction: 'up', second: false, progress: 0 } as const;
-  assert.equal(shownMove({ ...pair, blow: up }, frames, everything).anim, 'twinslash');
-  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron', blow: up }, frames, everything).anim, 'slash');
-  assert.equal(shownMove({ ...doing, blow: up }, frames, everything).anim, 'thrust');
+  assert.equal(shownMove({ ...pair, blow: up }, frames, classic).anim, 'twinslash');
+  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron', blow: up }, frames, classic).anim, 'slash');
+  assert.equal(shownMove({ ...doing, blow: up }, frames, classic).anim, 'thrust');
 });
 
 test('a shield or second blade pairs only with a weapon the forge draws in the pair’s moves', () => {
   // An axe is drawn in none of the shield's or the pair's moves: it keeps its own; the shield or blade is worn.
-  const axeDraws = (anim: string, held: string | null) => held !== 'axe_iron' || !['slash', 'twinslash'].includes(anim);
+  const axeDraws = (anim: string, held: string | null) =>
+    classic(anim) && (held !== 'axe_iron' || !['slash', 'twinslash'].includes(anim));
   assert.equal(shownMove({ ...doing, right: 'axe_iron', left: 'shield_kite_iron' }, frames, axeDraws).anim, 'idle');
   const axeBlow = {
     ...doing,
@@ -138,33 +143,75 @@ test('a shield or second blade pairs only with a weapon the forge draws in the p
     blow: { direction: 'down', second: false, progress: 0 },
   } as const;
   assert.equal(shownMove(axeBlow, frames, axeDraws).anim, 'attack_axe');
-  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, everything).anim, 'guard');
+  assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, classic).anim, 'guard');
 });
 
 test('the likeliest moves are the kit’s, the strokes of a weapon held alone, and the moves on foot', () => {
-  const alone = likelyMoves('sword_iron', null, everything);
+  const alone = likelyMoves('sword_iron', null, classic);
   for (const anim of ['idle', 'walk', 'attack_sword', 'thrust', 'chop', 'swing2h', 'run', 'jump'])
     assert.ok(alone.includes(anim));
-  const paired = likelyMoves('sword_iron', 'dagger_iron_l', everything);
+  const paired = likelyMoves('sword_iron', 'dagger_iron_l', classic);
   assert.ok(paired.includes('twinslash') && !paired.includes('chop'));
   assert.equal(new Set(paired).size, paired.length);
 });
 
 test('running with a gun or a crossbow drawn plays its own run; put away, the plain run', () => {
   const running = { ...doing, moving: true, running: true, speed: 7.6 };
-  assert.equal(shownMove({ ...running, right: 'thunderlock' }, frames, everything).anim, 'gunrun');
-  assert.equal(shownMove({ ...running, right: 'pistolet' }, frames, everything).anim, 'pistolrun');
-  assert.equal(shownMove({ ...running, right: 'pistolet', left: 'pistolet_l' }, frames, everything).anim, 'bracerun');
-  assert.equal(shownMove({ ...running, right: 'crossbow_iron' }, frames, everything).anim, 'xbowrun');
-  assert.equal(shownMove({ ...running, right: 'crossbow_iron', drawn: false }, frames, everything).anim, 'run');
-  assert.ok(likelyMoves('crossbow_iron', null, everything).includes('xbowrun'));
+  assert.equal(shownMove({ ...running, right: 'thunderlock' }, frames, classic).anim, 'gunrun');
+  assert.equal(shownMove({ ...running, right: 'pistolet' }, frames, classic).anim, 'pistolrun');
+  assert.equal(shownMove({ ...running, right: 'pistolet', left: 'pistolet_l' }, frames, classic).anim, 'bracerun');
+  assert.equal(shownMove({ ...running, right: 'crossbow_iron' }, frames, classic).anim, 'xbowrun');
+  assert.equal(shownMove({ ...running, right: 'crossbow_iron', drawn: false }, frames, classic).anim, 'run');
+  assert.ok(likelyMoves('crossbow_iron', null, classic).includes('xbowrun'));
 });
 
 test('a gun aimed holds its shot at the frame it is aimed, before it fires; a bow is drawn through its draw', () => {
   const aimed = (right: string, left: string | null = null) =>
-    shownMove({ ...doing, right, left, fight: { kind: 'draw', progress: 0.5 } }, frames, everything);
+    shownMove({ ...doing, right, left, fight: { kind: 'draw', progress: 0.5 } }, frames, classic);
   assert.deepEqual(aimed('thunderlock_iron'), { anim: 'gunshot', frame: 1, frameSeconds: 0 });
   assert.deepEqual(aimed('pistolet_iron'), { anim: 'pistolshot', frame: 1, frameSeconds: 0 });
   assert.deepEqual(aimed('pistolet_iron', 'pistolet_iron_l'), { anim: 'braceshot', frame: 0, frameSeconds: 0 });
   assert.equal(aimed('bow_long_elven').anim, 'bow');
+});
+
+test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, landing on the fifth", () => {
+  const blow = (direction: 'down' | 'up' | 'left', right: string, left: string | null = null, progress = 0) =>
+    shownMove({ ...doing, right, left, blow: { direction, second: false, progress } }, frames, everything);
+  assert.equal(blow('down', 'sword_iron').anim, 'over1h');
+  assert.equal(blow('up', 'sword_iron').anim, 'thrust1h');
+  assert.equal(blow('left', 'mace_iron').anim, 'side1h');
+  assert.equal(blow('down', 'axe_iron').anim, 'overhaft');
+  assert.equal(blow('down', 'warhammer_iron').anim, 'overhaft');
+  assert.equal(blow('up', 'dagger_iron', 'dagger_iron_l').anim, 'thrustpair');
+  // A shield is drawn in no blow: the weapon's own attack plays.
+  const shieldless = (anim: string, held: string | null) => !(held?.startsWith('shield_') && NEXT.test(anim));
+  const guarded = {
+    ...doing,
+    left: 'shield_kite_iron',
+    blow: { direction: 'down', second: false, progress: 0 },
+  } as const;
+  assert.equal(shownMove(guarded, frames, shieldless).anim, 'slash');
+  // Landing two fifths through the swing: four frames up to it, the fifth as it lands, the rest over the recovery.
+  assert.deepEqual(
+    [0, 0.2, 0.39, 0.4, 0.55, 0.7, 1].map((progress) => blowFrame(progress, 0.4)),
+    [0, 2, 3, 4, 6, 8, 8],
+  );
+  assert.equal(blow('down', 'sword_iron', null, 0.4).frame, 4);
+  assert.ok(likelyMoves('sword_iron', null, everything).includes('side1h'));
+});
+
+test('a bow drawn stands, walks and sprints in its own holds; undrawn there, it rests in the left fist', () => {
+  const bow = { ...doing, right: 'bow_long_iron' };
+  assert.equal(shownMove(bow, frames, everything).anim, 'bowready');
+  assert.equal(shownMove({ ...bow, moving: true }, frames, everything).anim, 'bowwalk');
+  assert.equal(shownMove({ ...bow, moving: true, running: true }, frames, everything).anim, 'bowrun');
+  assert.equal(shownMove(bow, frames, classic).anim, 'idle_bow');
+});
+
+test('a dodge rolls through its span, on the ground and in the air; with no roll drawn, the hop', () => {
+  const dodging = { ...doing, fight: { kind: 'dodge', progress: 0.5 } } as const;
+  assert.deepEqual(shownMove(dodging, frames, everything), { anim: 'roll', frame: 3, frameSeconds: 0 });
+  assert.equal(shownMove({ ...dodging, mode: 'air', vz: 3 }, frames, everything).anim, 'roll');
+  assert.equal(shownMove(dodging, frames, classic).anim, 'idle', 'on the ground, the hop stands');
+  assert.equal(shownMove({ ...dodging, mode: 'air', vz: 3 }, frames, classic).anim, 'jump');
 });

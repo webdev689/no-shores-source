@@ -1,4 +1,4 @@
-"""DFO first-person forge: render a first-person weapon archive from the forge's own weapon, seen by the player's eye.
+"""Daggerfall Online first-person forge: render a first-person weapon archive from the forge's own weapon, seen by the player's eye.
 
     python -I tools/sprite-forge/fpforge.py --spec tools/sprite-forge/specs/WEAPON04.json --out <dir> [--records 0,6]
 
@@ -33,9 +33,11 @@ import fpmodel  # noqa: E402
 import fpstage  # noqa: E402
 
 # a material's class in the reference (reference.mjs): 5 the band the metal dye recolours (a climbing painting's grey
-# cloth), 6 the tan ramp (its leather), 7 the red-brown ramp, else 1
+# cloth), 6 the tan ramp (its leather), 7 the red-brown ramp, else 1. The claws' fur is drawn in the other ramps, and
+# their paw pads and the pink round their nails in the red-brown's darks.
 CLASSES = {'blade': 5, 'axehead': 5, 'macehead': 5, 'macecore': 5, 'ferrule': 5, 'staff': 1, 'haft': 1, 'macehaft': 1,
            'blade_groove': 5, 'haft_wrap': 1, 'linen': 5, 'gauntlet': 6, 'legging': 6, 'boot': 7, 'flailiron': 5, 'flailwood': 1,
+           'fur': 1, 'pelt': 1, 'claw': 5, 'pad': 7, 'paw': 7,
            **fpbow.CLASSES, **fpheld.CLASSES, **fpdagger.CLASSES, **fpsword.CLASSES, **fpwarhammer.CLASSES, **lifetools.CLASSES}
 
 
@@ -532,6 +534,15 @@ def flipped(screen, rec):
     return out
 
 
+def paired(screen):
+    """A record of both hands (the werecreature's idle, `pair`): the hand drawn and its mirror across the screen's
+    middle, the drawn hand over its mirror where they meet."""
+    flip = screen[:, ::-1]
+    if screen.ndim == 3 and screen.shape[2] == 4:
+        return np.where(screen[..., 3:4] > 0, screen, flip)
+    return np.where(screen != 0, screen, flip)
+
+
 def screens(eye, spec, records=None, draw=None):
     """Every frame's whole screen, by record: a mirrored record is its source's flipped. `draw` makes a frame's screen
     (eye.screen's arguments), eye.screen's by default."""
@@ -547,6 +558,8 @@ def screens(eye, spec, records=None, draw=None):
         else:
             aim(spec, r)
             out[r] = [draw(FIT[f'{r}:{f}'], part_of(spec, rec), record=r, frame=f) for f in range(rec['frames'])]
+            if rec.get('pair'):
+                out[r] = [paired(s) for s in out[r]]
         return out[r]
     for r in range(len(spec['records'])):
         if records is None or r in records:

@@ -3,7 +3,11 @@ climbing - the hang from a ledge, the shimmy along it, the climb up a face, the 
 low wall.
 
 The run, the crouch and the jump are captured (mocap.py --bake, specs/moves.json) and drawn with the weapon in the fist
-as well as put away. The run is Quaternius's sprint, four frames of its stride: a foot down, the other knee through,
+as well as put away.
+
+The dodge roll (`ELSEWHERE`) is drawn for use outside the game, never played in it: Quaternius's roll, a crouch, a
+dive, over on the shoulders, the legs over, sat up and rising, the hands open and nothing held. It is drawn only when
+a run names it (layers.py). The run is Quaternius's sprint, four frames of its stride: a foot down, the other knee through,
 the other foot down, the first knee through. The climbing's hands are on the wall, so it is drawn only with the weapon put away (`BARE`). The mantle
 and the vault play Quaternius's climb onto a box (`climbup`); the hang, the shimmy, the climb and the mantle's pull up
 are keyed here, the hands laid on the lip or a hold by the arm's IK (`rig.solve_arm`).
@@ -19,6 +23,7 @@ from rig import JOINTS, Pose, solve_arm
 
 # each move's frames a view
 MOVES = {'run': 4, 'crouch_idle': 1, 'crouch_walk': 4, 'jump': 3, 'hang': 1, 'shimmy': 4, 'climb': 4, 'mantle': 4, 'vault': 4}
+ELSEWHERE = {'roll': 6}   # drawn for use outside the game alone
 HELD = ('run', 'crouch_idle', 'crouch_walk', 'jump')     # drawn with the weapon in the fist and put away
 BARE = ('hang', 'shimmy', 'climb', 'mantle', 'vault')    # the hands on the wall: the weapon only put away
 # the captured climb onto a box, its frames as baked: plant, deep, tucked, knee up, rising, stepping, stepped off
@@ -192,6 +197,11 @@ def jump(frame, view, yaw):
     return p, {'axe': held(p, _forearm_up(p, 'R'), blades=JUMP_BLADES)}
 
 
+def roll(frame, view, yaw):
+    """The dodge roll: crouched, diving, over on the shoulders, the legs over, sat up, rising; the hands open."""
+    return captured('roll', frame, yaw), {}
+
+
 def _mirrored(v):
     return (-v[0], v[1], v[2])
 
@@ -205,8 +215,8 @@ def left_hold(p, anim):
     return poses.in_fist(p, _mirrored(haft), 'L', _mirrored(blades))
 
 
-ANIMS = {'run': run, 'crouch_idle': crouch_idle, 'crouch_walk': crouch_walk, 'jump': jump, 'hang': hang, 'shimmy': shimmy,
-         'climb': climb, 'mantle': mantle, 'vault': vault}
+ANIMS = {'run': run, 'crouch_idle': crouch_idle, 'crouch_walk': crouch_walk, 'jump': jump, 'roll': roll, 'hang': hang,
+         'shimmy': shimmy, 'climb': climb, 'mantle': mantle, 'vault': vault}
 poses.ANIMS.update(ANIMS)
 # both fists closed in the held moves, which a pair's second blade and a torch are held in (layers.py `PairBearer`)
-poses.FISTS.update({**dict.fromkeys(HELD, 'LR'), **dict.fromkeys(BARE, 'LR'), 'mantle': '', 'vault': ''})
+poses.FISTS.update({**dict.fromkeys(HELD, 'LR'), **dict.fromkeys(BARE, 'LR'), 'mantle': '', 'vault': '', 'roll': ''})

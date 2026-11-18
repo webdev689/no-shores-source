@@ -383,11 +383,17 @@ def anims_of(layer):
     return [*own, 'hurt', 'spell', *poses.OWN]
 
 
+# the brace up at a sprint: each Pistolet by its shoulder as at rest (HIGH, HIGH_L), held out clear of the body and a
+# little ahead, its muzzle splayed out with it (the owner's)
+RUN_HIGH = ((-0.43, -0.25, 1.28), (-0.22, -0.24, 0.94), (0.0, 1.0, 0.1))
+RUN_HIGH_L = ((0.45, -0.29, 1.24), (0.26, -0.28, 0.92), (0.0, 1.0, 0.1))
+
+
 def bracerun(frame, view, yaw):
-    """The sprint with a Pistolet up by each shoulder."""
+    """The sprint with a Pistolet up by each shoulder, held out clear of the body."""
     p = poses.captured('run', frame, yaw)
-    return p, {'axe': gun_at(p, 'R', *_on_chest(p, HIGH, yaw), POLE_R, kind='pistolet'),
-               'off': gun_at(p, 'L', *_on_chest(p, HIGH_L, yaw), POLE_L, kind='pistolet'), 'fist': dict(FISTS)}
+    return p, {'axe': gun_at(p, 'R', *_on_chest(p, RUN_HIGH, yaw), POLE_R, kind='pistolet'),
+               'off': gun_at(p, 'L', *_on_chest(p, RUN_HIGH_L, yaw), POLE_L, kind='pistolet'), 'fist': dict(FISTS)}
 
 
 ANIMS = {'gunready': gunready, 'gunwalk': gunwalk, 'gunshot': gunshot, 'gunreload': gunreload, 'gunrun': gunrun,
