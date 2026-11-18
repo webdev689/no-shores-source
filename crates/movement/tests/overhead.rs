@@ -1,5 +1,6 @@
 //! Blocks with an underside over the ground: slabs a body walks under, floors it stands on, ceilings its head meets.
 
+use movement::blocks::{room_at, under_ceiling};
 use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, TUNING, standing, step_body};
 
 const STILL: Controls =
@@ -111,4 +112,37 @@ fn hanging_and_climbing_never_take_hold_of_a_slabs_underside() {
         }
         assert!(last(&bodies).y < -4.0, "it went on under the slab: {:?}", last(&bodies));
     }
+}
+
+/// Whether every body on its feet or in the air fits where it is: no block is in the way of it.
+fn always_fits(bodies: &[Body], blocks: &[Block]) {
+    for body in bodies.iter().filter(|body| matches!(body.mode, Mode::Ground | Mode::Air)) {
+        assert!(room_at(blocks, body.x, body.y, body.z, body.height()), "it is inside a block: {body:?}");
+    }
+}
+
+#[test]
+fn a_lip_with_a_lintel_just_over_it_is_not_gone_over() {
+    let sill = slab(-3.0, -2.0, 0.0, 1.0);
+    let lintel = slab(-3.0, -2.0, 1.4, 3.0);
+    let bodies = run(standing(0.0, 0.0), JUMP_NORTH, 120, &[sill, lintel]);
+    always_fits(&bodies, &[sill, lintel]);
+    assert!(bodies.iter().all(|body| body.y > -2.0), "it never went into the slot: {:?}", last(&bodies));
+}
+
+#[test]
+fn a_vault_never_lands_under_a_slab_too_low_to_stand() {
+    let wall = Block { min_x: -2.0, min_y: -2.0, max_x: 2.0, max_y: -1.7, top: 1.0, bottom: 0.0 };
+    let low = slab(-6.0, -2.6, 1.2, 1.6);
+    let run_jump = Controls { run: true, ..JUMP_NORTH };
+    let bodies = run(standing(0.0, 0.0), run_jump, 120, &[wall, low]);
+    always_fits(&bodies, &[wall, low]);
+    assert!(bodies.iter().all(|body| body.mode != Mode::Vault), "it vaulted into the slot: {:?}", last(&bodies));
+}
+
+#[test]
+fn a_ceiling_never_holds_a_falling_body_up() {
+    let high = slab(-4.0, 4.0, 2.5, 2.8);
+    assert_eq!(under_ceiling(&[high], 0.0, 0.0, 1.0, 0.9, TUNING.height), 0.9);
+    assert_eq!(under_ceiling(&[high], 0.0, 0.0, 0.0, 1.0, TUNING.height), high.bottom - TUNING.height);
 }

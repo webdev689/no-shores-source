@@ -44,6 +44,12 @@ fn in_the_way(block: &Block, z: f64, height: f64) -> bool {
     block.top > z + TUNING.step && block.bottom - height < z
 }
 
+/// Whether a body `height` tall with its feet at `z` fits at a point: no block is in the way of it there.
+#[must_use]
+pub fn room_at(blocks: &[Block], x: f64, y: f64, z: f64, height: f64) -> bool {
+    blocking_at(blocks, x, y, z, height).is_none()
+}
+
 /// The lowest underside over a body with its feet at `z` at a point, within its radius: of the blocks whose
 /// underside is over a step above the feet, so neither the ground nor a wall beside it; infinite when none is.
 #[must_use]
@@ -59,7 +65,7 @@ pub fn ceiling_at(blocks: &[Block], x: f64, y: f64, z: f64) -> f64 {
 #[must_use]
 pub fn under_ceiling(blocks: &[Block], x: f64, y: f64, from: f64, to: f64, height: f64) -> f64 {
     let highest = ceiling_at(blocks, x, y, from) - height;
-    if to > highest { highest.max(from) } else { to }
+    to.min(highest.max(from))
 }
 
 /// A block ahead of a body, and how deep it runs the way the body faces.

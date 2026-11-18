@@ -17,7 +17,7 @@ const WARHAMMER = 6;
 /** A body bleeds at five eighths of its height, its capsule's middle and an eighth more. */
 export const chestOf = (view: FighterView): Vector => [view.x, view.y, view.z + (BODY_HEIGHT * 5) / 8];
 
-/** The ground at height zero and the course's blocks as boxes from the ground to their tops: the nearest surface a ray
+/** The ground at height zero and the course's blocks as boxes from their undersides to their tops: the nearest surface a ray
  *  meets entering it, with that face's normal. A ray starting inside a box does not meet it. */
 export function surfacesOf(blocks: readonly Block[]): Surfaces {
   return (from, direction, reach) => {
@@ -28,7 +28,7 @@ export function surfacesOf(blocks: readonly Block[]): Surfaces {
     };
     if (direction[2] < 0 && from[2] >= 0) keep(from[2] / -direction[2], [0, 0, 1]);
     for (const block of blocks) {
-      const low = [block.minX, block.minY, 0];
+      const low = [block.minX, block.minY, block.bottom];
       const high = [block.maxX, block.maxY, block.top];
       let enter = -Infinity;
       let leave = Infinity;

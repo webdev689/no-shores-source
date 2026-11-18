@@ -1,6 +1,6 @@
 //! One step of a body: the rules for each way it can be held.
 
-use crate::blocks::{Block, WallAhead, ceiling_at, ground_at, slide, under_ceiling, wall_ahead};
+use crate::blocks::{Block, WallAhead, ground_at, room_at, slide, under_ceiling, wall_ahead};
 use crate::body::{Body, Controls, Mode, Over, TUNING};
 use crate::terrain::Terrain;
 use std::f64::consts::PI;
@@ -32,11 +32,11 @@ fn pace_of(crouched: bool, controls: &Controls) -> f64 {
 
 /// Whether a body has room to stand at a point with its feet at `z`.
 fn room_to_stand(blocks: &[Block], x: f64, y: f64, z: f64) -> bool {
-    ceiling_at(blocks, x, y, z) - TUNING.height >= z
+    room_at(blocks, x, y, z, TUNING.height)
 }
 
 /// Starts a mantle up onto a lip, or a vault over a low, thin block: the body goes over it in time with its rise.
-/// None where there is no room to stand over the lip, under a floor above it.
+/// None where there is no room to stand over the lip, or where a vault lands, under a floor above it.
 fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool, blocks: &[Block]) -> Option<Body> {
     let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let rise = ahead.block.top - body.z;
@@ -45,6 +45,9 @@ fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool, blocks: &[
         return None;
     }
     let reach_over = if vault { ahead.depth + TUNING.radius * 2.0 + 0.2 } else { onto };
+    if vault && !room_to_stand(blocks, body.x + dir_x * reach_over, body.y + dir_y * reach_over, body.z) {
+        return None;
+    }
     let to = [body.x + dir_x * reach_over, body.y + dir_y * reach_over, if vault { body.z } else { ahead.block.top }];
     // DFO's mantle time at middling skill: (0.25 + 0.22 rise)(1.3 - 0.5 skill).
     let seconds = (0.25 + 0.22 * rise.max(0.0)) * 1.05;
@@ -214,7 +217,8 @@ fn on_ground(
     let facing = if wish.length > 0.0 { libm::atan2(wish.x, -wish.y) } else { body.facing };
     let pace = pace_of(crouched, controls);
     let scale = if wish.length > 0.0 { pace * seconds / wish.length.max(1.0) } else { 0.0 };
-    let (x, y) = slide(blocks, terrain, body, wish.x * scale, wish.y * scale);
+    // Moved as tall as it now stands, so standing up never walks the head into a slab.
+    let (x, y) = slide(blocks, terrain, &Body { crouched, ..*body }, wish.x * scale, wish.y * scale);
     let ground = ground_at(blocks, terrain, x, y, body.z);
     let (moved_x, moved_y) = (x - body.x, y - body.y);
     let moving = (moved_x * moved_x + moved_y * moved_y).sqrt() > 1e-6;
