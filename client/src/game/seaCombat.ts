@@ -5,22 +5,23 @@ import { type FightInput, type FightSource, Fighting } from '../editor/fighting.
 import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
 import { cameraOf, type Orbit } from '../editor/orbit.ts';
 import { SAILS_RUNG } from '../editor/sailing.ts';
-import { FIELD_OF_VIEW } from '../overworld/overworldCamera.ts';
+import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { FightView } from '../rules/fightRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
+import type { Lying } from '../ships/deck.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import type { Shot } from './camera.ts';
+import { panShot, type Shot } from './camera.ts';
 import type { SeaRoom } from './seaRoom.ts';
 
 /** Seconds the view takes to come down to the fight, or go back up. */
 const PAN_S = 1.5;
 /** The fight's camera: the World Editor's while sailing, its distance behind her and pitch below the horizon, looking
  *  at a point this far over her waterline. */
-const ORBIT = { distance: 25, pitch: 0.3, lookOverM: 2 } as const;
+const ORBIT = { distance: 75, pitch: 0.3, lookOverM: 6 } as const;
 /** How fast a drag turns the camera, radians a pixel, and how far up and down it may look. */
 const DRAG_TURN = 0.005;
 const PITCH = [0.05, 1.2] as const;
@@ -28,8 +29,6 @@ const PITCH = [0.05, 1.2] as const;
 const CAPTAIN_SHADE = 0.55;
 /** The way a ship's foam shows round her bow, m/s: a Sloop's whole. */
 const UNDER_WAY = 2;
-
-const eased = (share: number) => share * share * (3 - 2 * share);
 
 /** The player's Sloop as the fight steers her: where it last left her. */
 class Fought {
@@ -173,17 +172,16 @@ export class SeaCombat {
       near: 0.3,
       far: seaShot.far,
     };
-    const share = eased(this.down);
-    const mix = (from: number, to: number) => from + (to - from) * share;
-    const turn = Math.atan2(Math.sin(fightShot.yaw - seaShot.yaw), Math.cos(fightShot.yaw - seaShot.yaw));
-    return {
-      eye: [0, 1, 2].map((axis) => mix(seaShot.eye[axis] ?? 0, fightShot.eye[axis] ?? 0)) as [number, number, number],
-      yaw: seaShot.yaw + turn * share,
-      pitch: mix(seaShot.pitch, fightShot.pitch),
-      fov: FIELD_OF_VIEW,
-      near: share > 0.5 ? fightShot.near : seaShot.near,
-      far: seaShot.far,
-    };
+    return panShot(seaShot, fightShot, smooth01(this.down));
+  }
+
+  /** The player's Sloop as she lies in the fight, at true scale, while she floats; null once she has sunk. */
+  get own(): Lying | null {
+    const vessel = this.last.player;
+    if (vessel.state === 'sunk') return null;
+    const [x = 0, y = 0, heading = 0] = vessel.ship;
+    const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
+    return { x, y, heading, scale: 1, heave, pitch, roll };
   }
 
   /** Both Sloops at true scale, the captain's darker, each with her sails as her rung sets them. */
@@ -229,8 +227,11 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     event.preventDefault();
     event.stopImmediatePropagation();
   };
+  // A key let go still reaches the sea's own controls, so none is held there once the fight is over.
   const key = (down: boolean) => (event: KeyboardEvent) => {
-    if (fight()?.key(event.key.toLowerCase(), down)) taken(event);
+    if (!fight()?.key(event.key.toLowerCase(), down)) return;
+    if (down) taken(event);
+    else event.preventDefault();
   };
   addEventListener('keydown', key(true), { capture: true });
   addEventListener('keyup', key(false), { capture: true });

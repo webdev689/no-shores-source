@@ -29,8 +29,9 @@ export interface RoomDoor {
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
-  /** Opens the sea round the continents of a layout file's text; false if the text is not a layout. */
-  openSea(layoutText: string): boolean;
+  /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; false if the
+   *  text is not a layout. */
+  openSea(layoutText: string, seed: number): boolean;
   /** Opens a fleet room on the open sea. */
   openFleet(): boolean;
   /** A new player's number, or 0 when the room is full. */
@@ -38,12 +39,16 @@ export interface RoomDoor {
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
-  /** A player's input on land, their ship's course at sea, or their ship's orders in a fleet. */
+  /** A player's input on land; at sea their ship's course or orders, a step of their walk on deck or the helm; or
+   *  their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
   /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
    *  bytes. */
   snapshot(): Uint8Array;
+  /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
+   *  and the loads her guns take. */
+  sloop(): string;
 }
 
 interface RoomExports {
@@ -53,7 +58,7 @@ interface RoomExports {
   room_tick_seconds(): number;
   room_open(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
-  room_open_sea(address: number, length: number): number;
+  room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
   room_join(): number;
   room_joined(player: number): bigint;
@@ -61,6 +66,7 @@ interface RoomExports {
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
   room_snapshot(): bigint;
+  room_sloop(): bigint;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -99,7 +105,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
-    openSea: (layoutText) => openWith(exports.room_open_sea, layoutText),
+    openSea: (layoutText, seed) =>
+      openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
@@ -108,5 +115,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
     snapshot: () => take(exports.room_snapshot()),
+    sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
   };
 }

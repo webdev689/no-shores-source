@@ -239,13 +239,14 @@ export class FigureView implements CardMaker {
     values.set(fromEye);
     values.set([Math.cos(yaw), Math.sin(yaw), 0, 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
-    const groups = figures.map(({ card, x, y, z, flip }, index) => {
+    const groups = figures.map(({ card, x, y, z, flip, scale = 1 }, index) => {
       const { buffer, group } = this.slot(index, card.texture);
-      const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
+      const metres = scale / PX_PER_M;
+      const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
       const cardValues = new Float32Array([
         ...[x - eye[0], y - eye[1], z - eye[2], flip ? 1 : 0],
-        ...[card.width / PX_PER_M, card.height / PX_PER_M, 0, 0],
-        ...[rootX, card.root[1] / PX_PER_M, 0, 0],
+        ...[card.width * metres, card.height * metres, 0, 0],
+        ...[rootX, card.root[1] * metres, 0, 0],
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;

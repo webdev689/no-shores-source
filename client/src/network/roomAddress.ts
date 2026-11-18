@@ -1,4 +1,4 @@
-/** Where the deployed rooms are (the Server note in the bible): a room is `${LIVE_ROOMS}/room/<name>`. */
+/** Where the deployed rooms are: a room is `${LIVE_ROOMS}/room/<name>`. */
 export const LIVE_ROOMS = 'wss://overlook-rooms.mackcothran.workers.dev';
 
 /** A room's address from what a page was given: a whole `ws://` or `wss://` address as it is, or a room's name on the

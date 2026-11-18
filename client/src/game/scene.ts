@@ -142,9 +142,16 @@ export class GameScene {
     return (this.groundAt(x, y) ?? 0) < 0 ? { surface: 0, fresh: false } : null;
   }
 
+  /** Presses the water's ripples at a world point, at their next step. */
+  stir(stir: { readonly x: number; readonly y: number; readonly radiusM: number; readonly strength: number }): void {
+    const view = this.terrain?.view;
+    if (view) this.water.stir(stir.x - view.leftM, stir.y - view.topM, stir.radiusM, stir.strength);
+  }
+
   /** Draws one frame from `shot` into the canvas, with the drawers drawn with the land; `after` may draw over the
-   *  finished picture (the first person's hands) before it is shown, and `hulls` are the ships on the water (world
-   *  metres), which it keeps out of and foams round. */
+   *  finished picture (the first person's hands) before it is shown, `hulls` are the ships on the water (world
+   *  metres), which it keeps out of and foams round, and the water's ripples follow `focus` (world metres; the eye
+   *  unless said). */
   draw(
     shot: Shot,
     size: { width: number; height: number },
@@ -154,6 +161,7 @@ export class GameScene {
     more: {
       readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
       readonly hulls?: readonly HullMask[];
+      readonly focus?: readonly [number, number];
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -233,7 +241,7 @@ export class GameScene {
       patch: near?.water ?? null,
       eyeWater,
       eyeAboveM: Math.abs(shot.eye[2] - (eyeWater?.surface ?? ground)),
-      focus: [local.eye[0], local.eye[1]],
+      focus: more.focus ? [more.focus[0] - origin[0], more.focus[1] - origin[1]] : [local.eye[0], local.eye[1]],
       hulls: (more.hulls ?? []).map((hull) => ({ ...hull, x: hull.x - origin[0], y: hull.y - origin[1] })),
       drawn: targets,
       target,

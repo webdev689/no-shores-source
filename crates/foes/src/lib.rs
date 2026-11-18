@@ -2,7 +2,7 @@
 //! DFO's Enhanced AI, its tactics and its telegraphed blows, stands here on Overlook's own fight: foes take turns at a
 //! target and ring it, back off, flee and kite, wind up telegraphed blows, and answer blows at them with the guard, the
 //! parry and the dodge, the riposte and the counter. A brain reads its room and asks its fighter for controls and
-//! buttons, a tick at a time; what it is told happened it notes. See the Foes note in the bible.
+//! buttons, a tick at a time; what it is told happened it notes.
 
 pub mod board;
 pub mod brain;

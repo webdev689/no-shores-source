@@ -3,7 +3,7 @@ use crate::arms::SLOOP_ARMS;
 use crate::ballistics::Ball;
 use crate::captain::Temper;
 use crate::damage::{Hurt, Zone};
-use crate::gunnery::{lay, lay_on};
+use crate::gunnery::{Lay, lay, lay_on};
 use crate::laying::Sighted;
 use crate::shots::step_balls;
 use sailing::waters::Spot;
@@ -209,8 +209,9 @@ fn a_look_lays_its_range_out_from_her_middle() {
     let aim = Aim { bearing_deg: 90.0, range_m: 60.0, ray: None };
     let laid = fight.laid(PLAYER, &aim).map_or(f64::NAN, |lay| lay.elevation);
     let own = player(&fight);
-    let from_guns = lay(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, 60.0 - 1.1093, None);
-    assert!((laid - from_guns.elevation).abs() < 1e-3, "her guns stand about 1.1 m out from her middle");
+    let out = SLOOP_ARMS.battery(Side::Starboard)[1][1];
+    let from_guns = lay(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, 60.0 - out, None);
+    assert!((laid - from_guns.elevation).abs() < 1e-3, "her guns stand {out} m out from her middle");
 }
 
 #[test]
@@ -246,7 +247,11 @@ fn a_look_on_her_hull_lays_on_that_point_and_its_unscattered_volley_strikes_her(
     let own = player(&fight);
     let on = lay_on(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, met);
     let laid = fight.laid(PLAYER, &aim);
-    assert_eq!(laid, Some(on), "laid for the point the look meets on her side, not the water's 300 m");
+    // The look's point and the test's differ in their last bits, so the elevation is held to a hair of it.
+    let same = laid.is_some_and(|laid| {
+        (laid.elevation - on.elevation).abs() < 1e-12 && Lay { elevation: on.elevation, ..laid } == on
+    });
+    assert!(same, "laid for the point the look meets on her side, not the water's 300 m: {laid:?} against {on:?}");
     let ends = laid.map(|laid| fight.ends(PLAYER, &laid, &Open, 0.0)).unwrap_or_default();
     assert_eq!(ends.len(), 3);
     assert!(ends.iter().all(|end| end.is_some_and(|stop| stop.strike.is_some() && !stop.water)), "{ends:?}");

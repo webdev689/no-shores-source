@@ -3,7 +3,7 @@ use super::*;
 const OPEN: fn([f64; 2], [f64; 2]) -> bool = |_, _| true;
 
 /// Steps the pirates `seconds` a second at a time round ships that stay where they are, answering every meeting.
-fn sail(pirates: &mut Pirates, seconds: u32, ships: &[(PlayerId, [f64; 2], bool)]) -> Vec<(PlayerId, Pirate)> {
+fn sail(pirates: &mut Pirates, seconds: u32, ships: &[(PlayerId, [f64; 2], bool, f64)]) -> Vec<(PlayerId, Pirate)> {
     (0..seconds).flat_map(|_| pirates.tick(1.0, ships, OPEN)).collect()
 }
 
@@ -11,11 +11,11 @@ fn sail(pirates: &mut Pirates, seconds: u32, ships: &[(PlayerId, [f64; 2], bool)
 fn no_pirate_comes_before_the_first_roll_and_each_comes_on_the_ring_clear_of_the_player() {
     let mut pirates = Pirates::default();
     let ship = [500_000.0, 500_000.0];
-    sail(&mut pirates, 29, &[(1, ship, true)]);
+    sail(&mut pirates, 29, &[(1, ship, true, 1.0)]);
     assert!(pirates.sailing.is_empty(), "nothing before half a minute, and nothing while fighting");
     let mut launched = Vec::new();
     for _ in 0..4 * 3600 {
-        pirates.tick(1.0, &[(1, ship, true)], OPEN);
+        pirates.tick(1.0, &[(1, ship, true, 1.0)], OPEN);
         // A fighting player is never met, so every pirate stays to be seen.
         for pirate in &pirates.sailing {
             if !launched.iter().any(|&(id, _)| id == pirate.id) {
@@ -26,7 +26,7 @@ fn no_pirate_comes_before_the_first_roll_and_each_comes_on_the_ring_clear_of_the
     assert!(launched.is_empty(), "a fighting player is sent no one");
     for _ in 0..4 * 3600 {
         pirates.sailing.retain(|pirate| !pirate.bold);
-        pirates.tick(1.0, &[(1, ship, false)], OPEN);
+        pirates.tick(1.0, &[(1, ship, false, 1.0)], OPEN);
         for pirate in &pirates.sailing {
             if !launched.iter().any(|&(id, _)| id == pirate.id) {
                 launched.push((pirate.id, apart([pirate.x, pirate.y], ship)));
@@ -46,7 +46,7 @@ fn no_pirate_comes_before_the_first_roll_and_each_comes_on_the_ring_clear_of_the
 fn a_pirate_far_from_every_player_leaves_the_sea_and_one_near_another_stays() {
     let pirate = |id: u32, x: f64| Pirate { id, seed: id, x, y: 0.0, heading: 0.0, bold: false };
     let mut pirates = Pirates { sailing: vec![pirate(1, 3_000.0), pirate(2, 10_000.0)], ..Pirates::default() };
-    let ships = [(1, [0.0, 0.0], false), (2, [11_000.0, 0.0], false)];
+    let ships = [(1, [0.0, 0.0], false, 1.0), (2, [11_000.0, 0.0], false, 1.0)];
     pirates.tick(1.0, &ships, OPEN);
     assert_eq!(pirates.sailing.iter().map(|pirate| pirate.id).collect::<Vec<_>>(), [2]);
 }
@@ -55,31 +55,62 @@ fn a_pirate_far_from_every_player_leaves_the_sea_and_one_near_another_stays() {
 fn a_bold_pirate_in_sight_of_a_player_meets_them_and_a_wary_one_sails_by() {
     let pirate = |id: u32, bold: bool| Pirate { id, seed: id, x: 700.0, y: 0.0, heading: 0.0, bold };
     let mut pirates = Pirates { sailing: vec![pirate(1, false), pirate(2, true)], ..Pirates::default() };
-    let met = pirates.tick(1.0, &[(5, [0.0, 0.0], false)], OPEN);
+    let met = pirates.tick(1.0, &[(5, [0.0, 0.0], false, 1.0)], OPEN);
     assert_eq!(met.iter().map(|(player, pirate)| (*player, pirate.id)).collect::<Vec<_>>(), [(5, 2)]);
     assert_eq!(pirates.sailing.len(), 1, "the one met leaves the sea for her fight");
     pirates.sailing.push(pirate(3, true));
-    assert!(pirates.tick(1.0, &[(5, [0.0, 0.0], true)], OPEN).is_empty(), "no meeting for a player fighting");
+    assert!(pirates.tick(1.0, &[(5, [0.0, 0.0], true, 1.0)], OPEN).is_empty(), "no meeting for a player fighting");
 }
 
 #[test]
 fn a_pirate_goes_about_at_land_and_none_comes_where_land_lies_between() {
     let ahead = Pirate { id: 1, seed: 1, x: 0.0, y: 0.0, heading: 0.0, bold: false };
     let mut pirates = Pirates { sailing: vec![ahead], ..Pirates::default() };
-    pirates.tick(1.0, &[(1, [0.0, 500.0], false)], |_, _| false);
+    pirates.tick(1.0, &[(1, [0.0, 500.0], false, 1.0)], |_, _| false);
     assert_eq!((pirates.sailing[0].y, pirates.sailing[0].heading), (0.0, TAU / 2.0));
     let mut walled = Pirates::default();
     for _ in 0..4 * 3600 {
-        walled.tick(1.0, &[(1, [0.0, 0.0], false)], |_, _| false);
+        walled.tick(1.0, &[(1, [0.0, 0.0], false, 1.0)], |_, _| false);
     }
     assert!(walled.sailing.is_empty());
+}
+
+#[test]
+fn a_pirate_sails_on_the_clock_of_the_player_she_sails_by_and_a_shared_sea_keeps_real_time() {
+    let pirate = Pirate { id: 1, seed: 1, x: 0.0, y: 0.0, heading: 0.0, bold: false };
+    let way = |ships: &[(PlayerId, [f64; 2], bool, f64)]| {
+        let mut pirates = Pirates { sailing: vec![pirate], ..Pirates::default() };
+        pirates.tick(1.0, ships, OPEN);
+        -pirates.sailing[0].y
+    };
+    assert!((way(&[(1, [1_000.0, 0.0], false, 60.0)]) - PIRATE_WAY_M_S * 60.0).abs() < 1e-9, "at the voyage's x60");
+    assert!((way(&[(1, [1_000.0, 0.0], false, 1.0)]) - PIRATE_WAY_M_S).abs() < 1e-9, "by a ship at rest");
+    let shared = [(1, [1_000.0, 0.0], false, 60.0), (2, [1_500.0, 0.0], false, 30.0)];
+    assert!((way(&shared) - PIRATE_WAY_M_S).abs() < 1e-9, "another player within 1200 m: real time");
+    let apart_far = [(1, [1_000.0, 0.0], false, 60.0), (2, [5_000.0, 0.0], false, 30.0)];
+    assert!((way(&apart_far) - PIRATE_WAY_M_S * 60.0).abs() < 1e-9, "the nearer player's clock, the other far off");
+}
+
+#[test]
+fn seas_opened_with_other_seeds_send_other_pirates() {
+    let first = |seed: u32| {
+        let mut pirates = Pirates::new(seed);
+        let mut ticks = 0;
+        while pirates.sailing.is_empty() && ticks < 4 * 3600 {
+            pirates.tick(1.0, &[(1, [0.0, 0.0], false, 1.0)], OPEN);
+            ticks += 1;
+        }
+        pirates.sailing.first().map(|pirate| format!("{ticks} s, at {:.0}, {:.0}", pirate.x, pirate.y))
+    };
+    let seen: std::collections::BTreeSet<_> = (1..=8).map(first).collect();
+    assert!(seen.len() >= 6, "eight seeds, their first pirates: {seen:?}");
 }
 
 #[test]
 fn the_same_courses_make_the_same_pirates() {
     let run = || {
         let mut pirates = Pirates::default();
-        sail(&mut pirates, 3600, &[(1, [0.0, 0.0], false), (2, [5_000.0, 0.0], false)]);
+        sail(&mut pirates, 3600, &[(1, [0.0, 0.0], false, 1.0), (2, [5_000.0, 0.0], false, 1.0)]);
         pirates.sailing
     };
     assert_eq!(run(), run());

@@ -1,13 +1,13 @@
 //! Movement for the browser. JavaScript hands over the course's blocks once, and a node's window of the land to stand
-//! them on if it has one, then steps a body one tick at a time: it writes the body's and the controls' numbers into
-//! memory this module reserved for it, and reads the next body's numbers back from the same place, little-endian
-//! 64-bit floats in the movement crate's order. The rules stay there.
+//! them on if it has one, or a ship's deck as a grid of heights, then steps a body one tick at a time: it writes the
+//! body's and the controls' numbers into memory this module reserved for it, and reads the next body's numbers back
+//! from the same place, little-endian 64-bit floats in the movement crate's order. The rules stay there.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use land::ground::Ground;
 use movement::blocks::ground_at;
 use movement::floats::{BLOCK_FLOATS, BODY_FLOATS, CONTROLS_FLOATS};
-use movement::{Block, Body, Controls, TICK_SECONDS, TUNING, Terrain, standing, step_body};
+use movement::{Block, Body, Controls, Heights, TICK_SECONDS, TUNING, Terrain, standing, step_body};
 use std::cell::RefCell;
 
 pub mod reach_door;
@@ -17,16 +17,29 @@ pub const STEP_FLOATS: usize = BODY_FLOATS + CONTROLS_FLOATS;
 
 thread_local! {
     static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
-    static LAND: RefCell<OnLand> = const { RefCell::new(OnLand(None)) };
+    static LAND: RefCell<OnLand> = const { RefCell::new(OnLand::Open) };
 }
 
-/// The terrain under the course: a window of the land once one is set, else open ground at 0 m, as the room's.
+/// The terrain under the course: open ground at 0 m, a window of the land once one is set, or a ship's deck, as the
+/// room's.
 #[derive(Debug)]
-pub struct OnLand(pub Option<Ground>);
+pub enum OnLand {
+    Open,
+    Land(Box<Ground>),
+    Deck(Heights),
+}
 
 impl Terrain for OnLand {
     fn height_at(&self, x: f64, y: f64) -> f64 {
-        self.0.as_ref().map_or(0.0, |ground| ground.height_at(x, y))
+        match self {
+            OnLand::Open => 0.0,
+            OnLand::Land(ground) => ground.height_at(x, y),
+            OnLand::Deck(deck) => deck.height_at(x, y),
+        }
+    }
+
+    fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
+        matches!(self, OnLand::Deck(deck) if deck.walled(from, to))
     }
 }
 
@@ -52,7 +65,17 @@ pub fn set_course(bytes: &[u8]) -> usize {
 pub fn set_ground(text: &[u8]) -> bool {
     let ground = serde_json::from_slice::<Ground>(text).ok();
     let kept = ground.is_some();
-    LAND.with(|land| *land.borrow_mut() = OnLand(ground));
+    LAND.with(|land| *land.borrow_mut() = ground.map_or(OnLand::Open, |ground| OnLand::Land(Box::new(ground))));
+    kept
+}
+
+/// Keeps a ship's deck, from a grid's numbers (`Heights::from_floats`), for every step after, in place of any ground:
+/// the same heights, to the bit, as the sea room's. Numbers that are not a grid leave open ground; answers whether
+/// they were one.
+pub fn set_heights(bytes: &[u8]) -> bool {
+    let deck = Heights::from_floats(&floats_of(bytes).collect::<Vec<_>>());
+    let kept = deck.is_some();
+    LAND.with(|land| *land.borrow_mut() = deck.map_or(OnLand::Open, OnLand::Deck));
     kept
 }
 
@@ -79,11 +102,14 @@ pub fn stand(bytes: &mut [u8; STEP_FLOATS * 8]) {
     };
     let body = LAND.with(|land| {
         let land = land.borrow();
-        let on_land = |ground: &Ground| {
-            let floor = COURSE.with(|course| ground_at(&course.borrow(), &*land, x, y, ground.height_at(x, y)));
-            Body { z: floor, ..standing(x, y) }
-        };
-        land.0.as_ref().map_or_else(|| standing(x, y), on_land)
+        match &*land {
+            OnLand::Open => standing(x, y),
+            OnLand::Land(ground) => {
+                let floor = COURSE.with(|course| ground_at(&course.borrow(), &*land, x, y, ground.height_at(x, y)));
+                Body { z: floor, ..standing(x, y) }
+            }
+            OnLand::Deck(deck) => deck.standing(x, y),
+        }
     });
     for (chunk, value) in bytes.chunks_exact_mut(8).zip(body.to_floats()) {
         chunk.copy_from_slice(&value.to_le_bytes());
@@ -148,6 +174,16 @@ pub unsafe extern "C" fn movement_set_course(address: *const u8, length: usize) 
 pub unsafe extern "C" fn movement_set_ground(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the deck written at `address`, `length` bytes of a grid's numbers; 1 if it was one, 0 for open ground.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_set_heights(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_heights(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Keeps the section written at `address`, `length` bytes of JSON; 1 if it was one, 0 cleared.
@@ -286,7 +322,7 @@ mod tests {
             numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0]);
             let mut bytes: [u8; STEP_FLOATS * 8] = bytes_of(&numbers).try_into().unwrap();
             step(&mut bytes);
-            let expected = step_body(&body, &controls, &[], &OnLand(Some(ground.clone())), TICK_SECONDS);
+            let expected = step_body(&body, &controls, &[], &OnLand::Land(Box::new(ground.clone())), TICK_SECONDS);
             let stepped: Vec<f64> = floats_of(&bytes[..BODY_FLOATS * 8]).collect();
             body = Body::from_floats(stepped.as_slice().try_into().unwrap());
             assert_eq!(body, expected);
@@ -294,6 +330,32 @@ mod tests {
         }
         assert!(!set_ground(b"not a window"), "anything else is open ground");
         assert_eq!(stood_at(30.0, -40.0), standing(30.0, -40.0));
+    }
+
+    #[test]
+    fn on_a_ships_deck_a_body_stands_and_walks_its_heights_as_the_movement_crate_steps_it() {
+        // A wall one cell thick across her, thinner than a run's tick, at 0.0 to 0.1 m.
+        let heights = (0..800).map(|index| if index / 20 == 20 { None } else { Some(0.8) }).collect();
+        let deck = Heights::new(-1.0, -2.0, 0.1, 20, 40, heights).unwrap();
+        set_course(&[]);
+        assert!(set_heights(&bytes_of(&deck.to_floats())));
+        assert_eq!(stood_at(0.25, 1.0), deck.standing(0.25, 1.0), "on her planks, facing her bow");
+        let controls = Controls { forward: 1.0, run: true, ..Controls::default() };
+        let mut body = stood_at(0.25, 1.0);
+        for _ in 0..120 {
+            let mut numbers = [0.0; STEP_FLOATS];
+            numbers[..BODY_FLOATS].copy_from_slice(&body.to_floats());
+            numbers[BODY_FLOATS..].copy_from_slice(&controls.to_floats());
+            let mut bytes: [u8; STEP_FLOATS * 8] = bytes_of(&numbers).try_into().unwrap();
+            step(&mut bytes);
+            let expected = step_body(&body, &controls, &[], &deck, TICK_SECONDS);
+            let stepped: Vec<f64> = floats_of(&bytes[..BODY_FLOATS * 8]).collect();
+            body = Body::from_floats(stepped.as_slice().try_into().unwrap());
+            assert_eq!(body, expected, "to the bit, as the sea room steps it");
+        }
+        assert!(body.y >= 0.1, "stopped at the wall, not through it: {}", body.y);
+        assert!(!set_heights(&[]), "no grid is open ground");
+        assert_eq!(stood_at(0.25, 1.0), standing(0.25, 1.0));
     }
 
     #[test]

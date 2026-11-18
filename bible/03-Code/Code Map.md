@@ -37,6 +37,7 @@ decision, made in the same change as its entry here.
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
+| `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
 | `client/src/city/` | The city layer: a port city's plan drawn on WebGPU with the forged models and the procedural textures, whole near the eye, as masses and hulls further out, its solids and ground plates at every distance ([[Cities]]) |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
@@ -61,10 +62,14 @@ decision, made in the same change as its entry here.
 | `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, guns and hit boxes, and `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too |
 | `content/world/rmb/` | Daggerfall's RMB town blocks as data, for laying out towns: placements, ground tiles and flat counts ([[RMB Blocks]]) |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
+| `.claude/settings.json` | The repository's Claude Code settings: a hook that says, as a session starts, when the toolkit is not installed in its container ([[Toolkit]]) |
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
 | `tools/r2.py` | R2 access for the publishers: objects named by their hash, uploaded once and checked when fetched |
-| `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh, with her guns and the boxes a ball can strike, and publishes both to R2 ([[Sailing]], [[Naval Combat]]) |
+| `tools/ships/shape_ship.py` | Shapes the owner's Sloop, her parts painted already: her size, and the gap and steps down from her quarterdeck ([[Sailing]]) |
+| `tools/ships/paint_ship.py` | Sorts a ship's faces into her parts and lays their UVs in metres, for the procedural painter's pictures ([[Sailing]]) |
+| `tools/ships/deck.py` | Measures a ship's deck from her published mesh, a grid of heights with walls where a body cannot walk, and the spot behind her wheel ([[Sailing]], "Her deck") |
+| `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh, with her waterline, guns, the boxes a ball can strike, her sails' corners and her deck, and publishes the model and mesh to R2 ([[Sailing]], [[Naval Combat]]) |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
 | `bible/` | This vault |
@@ -88,7 +93,8 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 `ships`), `combat` (imports `rules` and `network`), `player` (imports `rules`, `network`, `forge`, `firstperson` and
 the editor's camera), `testground` (imports what `player` does, `player` itself, `combat` and the editor's panel
 helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap`
-(imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers) and `game`
+(imports `forge`, `overworld`, the first person's picture drawer and the editor's page helpers), `plus` (imports
+nothing) and `game`
 (imports the layers it wires). The code `flatc` makes, in `generated/`, is groundwork any layer may import.
 
 ## The Rust crates

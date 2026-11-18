@@ -3,8 +3,6 @@ import { helmOf, isRungKey } from '../ships/helmKeys.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import { Afloat } from './afloat.ts';
 
-export type { Stir } from './afloat.ts';
-
 /** The rules' tick, seconds (crates/sailing TICK_SECONDS). */
 export const TICK_SECONDS = 1 / 60;
 /** The most ticks one step asks, the rules' own cap: a second's. Time spent waiting on the rules (behind a close-up

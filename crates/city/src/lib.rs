@@ -1,7 +1,7 @@
 //! A port city's plan from its site, the same on the server and in every browser: World 2.0's settlement stages at a
 //! city's scale (footprint, ways in, districts, terraces), its cells filled with Daggerfall's RMB blocks for the
 //! forged models, its wall and harbour, its landmark, and its social space. Only the social space is walked; the rest
-//! is seen. See the Cities note in the bible.
+//! is seen.
 
 pub mod articulation;
 pub mod collision;

@@ -1,5 +1,5 @@
 //! Stage H: each port city's landmark, the motif it is known by from the sea, as DFO's Imperial City is known by its
-//! tower (see the bible's decision The World as Claude Shapes It). Each is solids, built from the landmark's site, its
+//! tower. Each is solids, built from the landmark's site, its
 //! ground, and the way to the sea.
 
 use crate::articulation::articulated;

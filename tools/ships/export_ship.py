@@ -5,8 +5,8 @@
 bpy is Blender as a Python module: make a Python 3.13 venv and `pip install bpy==5.3.0`. The model's faces are in the
 part materials tools/ships/paint_ship.py sorts them into, with UVs in metres. With --dry-run it writes `<name>.mesh`
 into the working folder (so run it from one outside the repo) and uploads nothing; without, it uploads the .blend and
-the mesh under their hashes and names both, with her waterline, guns, boxes and sails, in content/ships/ships.json.
-The format and the ship's frame are in the Sailing note.
+the mesh under their hashes and names both, with her waterline, guns, boxes, sails and deck, in
+content/ships/ships.json.
 """
 import argparse
 import json
@@ -21,9 +21,10 @@ import bpy
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
+sys.path.insert(0, HERE)
+from deck import MANIFEST, deck_of, mesh_triangles, write_manifest  # noqa: E402
 from r2 import PUBLIC, published, put  # noqa: E402
 
-MANIFEST = os.path.join(os.path.dirname(TOOLS), 'content', 'ships', 'ships.json')
 # The parts the game paints, numbered as her mesh numbers them (client/src/textures/shipPictures.ts).
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
 # The parts a ball strikes as her hull; her spars and guns take none.
@@ -355,7 +356,7 @@ def mesh_bytes(name, faces, size):
     return header, struct.pack('<I', len(text)) + text + bytes(vertices) + struct.pack(f'<{len(indices)}I', *indices)
 
 
-def publish(name, blend_path, mesh, size, armed, struck, rigged):
+def publish(name, blend_path, mesh, size, armed, struck, rigged, walked):
     with open(blend_path, 'rb') as file:
         source = put(file.read(), 'sources', 'blend', 'application/octet-stream')
     shape = put(mesh, 'ships', 'mesh', 'application/octet-stream')
@@ -365,13 +366,12 @@ def publish(name, blend_path, mesh, size, armed, struck, rigged):
             manifest = json.load(file)
     manifest['ships'][name] = {
         'mesh': shape, 'source': source, 'waterline': size, 'guns': armed, 'boxes': struck, 'sails': rigged,
+        'deck': walked,
     }
     for key in (shape, source):
         published(manifest, key)
     os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
-    with open(MANIFEST, 'w') as file:
-        json.dump(manifest, file, indent=2)
-        file.write('\n')
+    write_manifest(manifest)
     print(f'{name}: mesh {shape}, source {source}; manifest written to {MANIFEST}')
 
 
@@ -401,7 +401,8 @@ def main():
         with open(f'{args.name}.mesh', 'wb') as file:
             file.write(mesh)
         return
-    publish(args.name, args.blend, mesh, size, armed, struck, rigged)
+    # Her deck from the mesh as published, so this and tools/ships/deck.py measure the same numbers.
+    publish(args.name, args.blend, mesh, size, armed, struck, rigged, deck_of(mesh_triangles(mesh)))
 
 
 if __name__ == '__main__':

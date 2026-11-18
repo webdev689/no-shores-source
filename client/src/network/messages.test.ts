@@ -85,13 +85,19 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   );
 });
 
-test('the sea’s snapshot the server wrote reads back as its ships, its pirates and its fights', async () => {
+test('the sea’s snapshot the server wrote reads back as its ships, its pirates, its fights and its walkers on deck', async () => {
   const sea = readFromRoom(await written('sea.bin'));
-  assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.players, sea.ships] : null, [
+  const walker = sea?.kind === 'snapshot' ? sea.players[0] : undefined;
+  assert.deepEqual(
+    [walker?.player, walker?.acknowledged, walker?.body.x, walker?.body.y, walker?.body.z],
+    [3, 41, 0.25, 2.5, 0.8],
+  );
+  assert.equal(walker?.fighter, null, 'a walker on deck crosses as their body alone, with no fighter');
+  assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.ships] : null, [
     77n,
-    [],
     [
-      { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 10 },
+      // The pace she sailed at, held down near a pirate: 5 where 60 was asked.
+      { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 5 },
       { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
     ],
   ]);

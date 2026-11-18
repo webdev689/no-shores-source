@@ -26,12 +26,19 @@ table Input {
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
-// of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest.
-// In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points.
+// of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest,
+// turned to `facing` when it holds one heading (radians clockwise from north).
+// In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the
+// helm, a step of the player's walk on her deck instead: its controls in the movement crate's order and its number,
+// 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2).
 table Course {
   points: [double];
   pace: ushort;
   orders: [double];
+  walk: [double];
+  walk_sequence: uint;
+  helm: ubyte;
+  facing: [double];
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: her helm (the rudder from -1, to port,
@@ -114,8 +121,8 @@ table Flying {
   age: ushort;
 }
 
-// One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and its pace, 0
-// at rest.
+// One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
+// sailed at, held down near a pirate, 0 at rest.
 table Ship {
   player: uint;
   x: double;
@@ -194,8 +201,9 @@ table Naval {
 
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
-// pirate, and each player's fight; in a fleet room, every ship, the balls aloft, what happened in its fight since the
-// last snapshot, and the fight's clock.
+// pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on her deck in
+// her own frame (x to her starboard, y to her stern, z over her waterline); in a fleet room, every ship, the balls
+// aloft, what happened in its fight since the last snapshot, and the fight's clock.
 table Snapshot {
   tick: ulong;
   players: [Seen];

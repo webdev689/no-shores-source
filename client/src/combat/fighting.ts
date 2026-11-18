@@ -251,6 +251,8 @@ export class Fighting {
     const view: Glanced[] = [];
     this.others.clear();
     for (const seen of snapshot.players) {
+      // Only a fighter fights: a player with none (a walker on a ship's deck) is no one's to strike here.
+      if (!seen.fighter) continue;
       if (seen.player === this.player) {
         this.fighter = this.prediction.corrected(seen.fighter, seen.acknowledged, (fighter, asked) => {
           const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);

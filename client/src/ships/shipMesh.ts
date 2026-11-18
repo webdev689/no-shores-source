@@ -29,7 +29,7 @@ interface MeshHeader {
 }
 
 /** Reads a mesh file (tools/ships/export_ship.py): its header's length, the header, then vertices and indices,
- *  three a face, in the model's own corner order (front faces counter-clockwise on screen, as the Sailing note says). */
+ *  three a face, in the model's own corner order (front faces counter-clockwise on screen). */
 export function readShipMesh(bytes: ArrayBuffer): ShipMesh {
   if (bytes.byteLength < 4) throw new Error('a ship mesh is too few bytes to hold its header');
   const headerLength = new DataView(bytes).getUint32(0, true);

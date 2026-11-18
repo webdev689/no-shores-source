@@ -37,7 +37,7 @@ const OTHERS_FPS = 6;
  *  forge keeps each figure's last card by its number, so a number used again would first show another node's figure. */
 let nextOtherId = 100;
 /** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
-const IDLE: InputFrame = {
+export const IDLE: InputFrame = {
   held: () => false,
   pressed: () => false,
   released: () => false,

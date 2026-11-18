@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { courseBytes, helmBytes } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { SeaRoom } from './seaRoom.ts';
 
@@ -23,7 +24,7 @@ async function joined(): Promise<{ room: SeaRoom; sent: Uint8Array[]; atTick: (t
     10,
   );
   const atTick = (tick: number) =>
-    hand({ tick: BigInt(tick), ships: [], pirates: [], fights: [] } as unknown as Snapshot);
+    hand({ tick: BigInt(tick), players: [], ships: [], pirates: [], fights: [] } as unknown as Snapshot);
   return { room, sent, atTick };
 }
 
@@ -44,4 +45,21 @@ test('a course set sooner than the sea takes one waits for a later snapshot, the
   atTick(1090);
   assert.equal(sent.length, 3);
   assert.notDeepEqual(sent[1], sent[2], 'each its own course');
+});
+
+test('a facing still waiting when the player leaves the helm is let go, and a course is sent before the leave', async () => {
+  const { room, sent, atTick } = await joined();
+  room.face(1.5);
+  room.leaveHelm();
+  atTick(1000);
+  assert.equal(sent.length, 2, 'the course that put her to sea, and the helm left: no facing');
+  room.course([[60_000, 150_000]], 10);
+  room.leaveHelm();
+  assert.equal(sent.length, 2, 'the leave waits on the course');
+  atTick(1100);
+  assert.deepEqual(
+    sent.slice(2),
+    [courseBytes([[60_000, 150_000]], 10), helmBytes(true)],
+    'the course, then the leave',
+  );
 });

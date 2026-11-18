@@ -16,15 +16,30 @@ const WIND: [f64; 2] = [1.5, 0.0];
 const ROWING: Orders =
     Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
 
-/// The player's Sloop at (0, `south`) heading north at `way` m/s on her oars, and a wary captain lying still at
-/// (0, -5) heading east, her starboard side to the player's bow.
+/// How far the captain's side lies off the player's bow at the start, metres.
+const GAP_M: f64 = 0.67;
+
+/// Where a captain heading east lies north of the player's Sloop at `south` heading north: her starboard side `GAP_M`
+/// off the player's bow, both on the Sloop's hull.
+fn her_y(south: f64) -> f64 {
+    let [_, high] = crate::arms::SLOOP_ARMS.hull;
+    south - high[0] - GAP_M - high[1]
+}
+
+/// The player's Sloop at (0, `south`) heading north at `way` m/s on her oars, and a wary captain lying still north of
+/// her heading east, her starboard side to the player's bow (`her_y`).
 fn bow_to_side(south: f64, way: f64) -> Fight {
     let mut fight = Fight::new(11);
     let player = Ship { x: 0.0, y: south, heading: 0.0, ahead: way, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 1 };
     fight.put_to_sea(PLAYER, player, &Open, 0.0);
     fight.call_captain(CAPTAIN, &player, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
     let her = fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain"));
-    her.ship = Ship { x: 0.0, y: -5.0, heading: std::f64::consts::FRAC_PI_2, ..Ship { rung: 0, ahead: 0.0, ..player } };
+    her.ship = Ship {
+        x: 0.0,
+        y: her_y(south),
+        heading: std::f64::consts::FRAC_PI_2,
+        ..Ship { rung: 0, ahead: 0.0, ..player }
+    };
     if let Sailor::Captain(command) = &mut her.sailor {
         (command.her.temper, command.her.cruise) = (crate::captain::Temper::Wary, std::f64::consts::FRAC_PI_2);
     }
@@ -77,7 +92,7 @@ fn a_ship_once_rammed_is_not_rammed_again_by_her_for_three_seconds() {
         fight.step(&[(PLAYER, ROWING)], &Open, WIND, f64::from(tick) / 60.0);
     }
     let again = Ship { x: 0.0, y: 0.5, heading: 0.0, ahead: 6.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 1 };
-    let her = Ship { x: 0.0, y: -5.0, heading: std::f64::consts::FRAC_PI_2, ahead: 0.0, rung: 0, ..again };
+    let her = Ship { x: 0.0, y: her_y(0.5), heading: std::f64::consts::FRAC_PI_2, ahead: 0.0, rung: 0, ..again };
     fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("player")).ship = again;
     fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = her;
     events.extend(fight.step(&[(PLAYER, ROWING)], &Open, WIND, 2.0));

@@ -17,7 +17,13 @@ code:
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
   - client/src/game/seaLaw.ts#continentToOpen
-  - client/src/game/sea.ts#SeaShip
+  - client/src/game/seaShips.ts#SeaShips
+  - client/src/game/passage.ts#Passage
+  - client/src/game/seaHelm.ts#clearAhead
+  - client/src/game/seaClose.ts#CloseZoom
+  - client/src/game/aboard.ts#Aboard
+  - client/src/game/shipPanel.ts#shipPanelOf
+  - client/src/game/hints.ts#seaHints
   - client/src/game/rooms.ts#roomsFrom
   - client/src/heldmap/heldMap.ts#HeldMap
 ---
@@ -81,25 +87,61 @@ player comes back at the section's spawn nearest where they fell. A dead body li
 `Sea` is the [[Overworld]] in play. The first return puts the ship off Overlook's harbour: out from the city's middle
 through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left.
 
-- **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures, riding a little on the swell, her sails
-  set while she is under way and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is
-  not to scale: a ship is drawn 75 m long (twelve times the Sloop), so one reads from the raised view. Every other
-  player's ship is the Sloop too.
+- **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures. Like the World Editor's, she rides the
+  swell the sea draws and heels into her turns ([[Sailing]], "Drawn at sea"). Her sails are set while she is under way
+  and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is not to scale: a ship is
+  drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other player's ship is the Sloop
+  too. At the helm every ship is her true size ([[Held Map]]).
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
+- **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
+  lowest the wheel keeps coming in, a fifth of the way a notch. The eye comes down along the camera's own look to
+  25 m from the point 4.5 m over her waterline that the World Editor looks at, while every ship eases to her true
+  size. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
+  on the picture as shown.
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
   planned says why.
-- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]) holds Map (N), which takes the
+- **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the sea's own view, close in or not:
+  - A and D turn her at the helm's 10 degrees a second. Under way she takes a course straight on along her new
+    heading; at rest she turns where she lies, and the room turns her too ([[Server]], "The sea").
+  - W sets her sailing straight on. That course reaches up to 20 km, stops 500 m short of the first coast that way, and
+    is set again once under 5 km of it is left. Where a coast stops it short, or less than 200 m lies clear, she comes
+    to rest facing the coast, and the voyage's line says "Land lies ahead."
+  - S heaves her to, as Stop does.
+  - Straight on, the voyage's line says "Sailing straight on"; resumed, she sails on straight along her heading.
+- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]), a window of the [[Interface]]
+  at the foot of the screen in three groups, Navigation, Pace and Ship, holds Map (N), which takes the
   view down to the helm and raises the [[Held Map]], where a destination is set; Stop while under way and Resume
-  voyage once stopped short (both Space); and the pace dial. A stopped voyage keeps its destination: resuming
+  voyage once stopped short (both Space); the pace dial; and Manage (B) and Leave the helm (H)
+  ([[The Ship Is Managed and Walked From the Sea's Panel]]). A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too.
+- **Manage** pans the view down over 1.4 s to the Sloop at her true size, from her starboard quarter 39 m off,
+  looking 0.5 radians down at her middle; a drag turns it round her, the wheel brings it from 18 m to 78 m. The player
+  stands at her wheel, three stand-in hands go about her deck, and a panel of the [[Interface]] shows her: her hull
+  and canvas whole (the naval rules' build, read through the room's own module), her guns a side and their loads,
+  her length, beam and draught; her heading, pace and voyage; and Cargo and Crew, marked Later. B, or the panel's
+  Back to the sea, pans back up.
+- **Leave the helm** pans the view down to the player behind her wheel, walking her deck as on foot (the same
+  controls, first or third person), the sea room the authority on every step ([[Server]], "The sea"). Under way her
+  helmsman stands at the wheel and she sails on; at rest the player simply leaves it. At her wheel the offer Take the
+  helm (E) takes it again, and once the room agrees the view pans back up. A fight that begins calls the player
+  straight back to the helm.
+- **Her hands.** Stand-ins until crew management comes: a human, a felid and a human in plain dress, each walking
+  between spots on her deck at 1.3 m/s and standing at each 2 to 7 s, on a leg the deck leaves clear and away from
+  her wheel; seeded, so they walk the same however the frames fall.
+- **Seen from any view** ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Her hands always go
+  about her deck. The player stands at her wheel, but at the helm, where the eye is theirs. Off the helm the player
+  walks her deck, with her helmsman at the wheel under way. In a fight they all stand on her as the fight lies her.
+  Each figure stands where her deck lies on the swell, drawn as large as she is.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
   ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
-- **Pirates** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"). A bold one that comes
-  within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight at true scale,
-  then back up when it ends.
+- **Pirates** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her voyage's pace. As one
+  comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says so; the page sails its
+  ship at the pace the room sailed her at, drawn to where the room has her. A bold one that comes within 750 m meets
+  her: the ship heaves to, her voyage kept, and the view pans down to the fight at true scale, then back up when it
+  ends.
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
@@ -124,9 +166,14 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   ground and corrected by each snapshot, held still while the room says they are dead. The warning, the count and
   death are the room's word. Every other player in the room is shown where the room last saw them, in their own dress.
   A room whose socket closes is lost: the heads-up display says so and the player plays on alone, nothing more sent.
-- **At sea** the player joins the `sea` room, their ship put to sea where it lies; each voyage's course and pace go
-  to it, and every other player's ship is drawn where the room moved it. Playing alone, the same sea room runs in the
-  page, so its pirates and fights are the same law.
+- **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
+  course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
+  is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at
+  the pace the room last held her to, then draws her to where the room has her. Where the room has her at rest short
+  of her voyage's end, a course it would not take, the page heaves her to there. Leaving the helm while a course
+  waits its turn sends the course first, then the leave, so the room takes the course from the helm. A sea room
+  whose link is lost calls the player to the helm, and they sail on alone, the voyage's line saying so. Playing
+  alone, the same sea room runs in the page, so its pirates and fights are the same law.
 
 ## Drawing
 
@@ -161,13 +208,15 @@ shadow or a wall's and never by its own. Its contact shade stays under its feet 
 past the near square leans the way the sun throws one, standing in for it.
 
 At sea each ship's footprint is handed to the water, which keeps out of her hull and foams round her bow under way.
+Under way the player's ship stirs the water's ripples at her bow and quarters, as the World Editor's does, and the
+ripples follow her.
 In death the world drains to grey, and comes back in colour on respawn or on leaving.
 
 ## Limits
 
 - Until the city's tables and blocks have come, the land shows without its city.
-- A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and others
-  then see the ship at rest.
+- A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and the ship
+  then rests short of it, the page drawing her where the room has her.
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
 - Offline, the edge is judged in the browser; online, the room judges it and the browser predicts nothing of it.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.

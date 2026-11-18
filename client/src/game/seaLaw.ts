@@ -1,6 +1,7 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
-import type { Voyage } from '../overworld/voyage.ts';
+import { alongNear, type Pace, SHIP_SPEED, sailSpeed, type Voyage } from '../overworld/voyage.ts';
+import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
  *  shore to water `depthM` deep, then `clearM` on, within `farthestM` of the harbour. */
@@ -23,6 +24,29 @@ export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Poi
     if (along - deepFrom >= OFFSHORE.clearM) return point;
   }
   return through;
+}
+
+/** A standing body's eye over its feet, metres (crates/movement/src/body.rs `TUNING.eye`). */
+export const STANDING_EYE_M = 1.7;
+
+/** The helm's view, behind the Sloop's wheel on her quarterdeck (her deck's helm spot): how high over the water the
+ *  eye stands there at her true scale, a standing eye over her deck, and how far down it looks. */
+export const HELM = {
+  eyeM: (cellHeight(SLOOP_DECK, ...SLOOP_DECK.helm) ?? 0) + STANDING_EYE_M,
+  pitch: 0.1,
+} as const;
+
+/** The scale ships are drawn at: the Overworld's, shrinking to true scale as the view comes down to the helm
+ *  (`helmShare` 0 the sea's view, 1 at the helm), so at the wheel the Sloop and every ship round her are their own
+ *  size. */
+export function shownScale(overworldScale: number, helmShare: number): number {
+  return overworldScale + (1 - overworldScale) * helmShare;
+}
+
+/** Where the eye stands at the helm of a ship as she lies, at her size as drawn. */
+export function helmEye(lying: Lying): readonly [number, number, number] {
+  const [helmX, helmY] = SLOOP_DECK.helm;
+  return deckToWorld(lying, helmX, helmY, HELM.eyeM);
 }
 
 /** A port's icon stands over its harbour at sea within this of it, metres: twice a landing's reach, so a port is seen
@@ -123,3 +147,37 @@ export function timeText(seconds: number): string {
   if (seconds < 60) return `${Math.max(1, Math.round(seconds))} s`;
   return `${Math.round(seconds / 60)} min`;
 }
+
+/** How fast the page draws its ship toward where the room has her, a share a second, and how far along her voyage it
+ *  looks for that place either side of its own, metres. */
+const FOLLOW = { perSecond: 4, windowM: 3_000 } as const;
+
+/** The room's word on the player's ship: where it has her and the pace it sailed her at, held down near a pirate. */
+export interface RoomWord {
+  readonly x: number;
+  readonly y: number;
+  readonly pace: number;
+}
+
+/** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
+ *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the dial's pace, held
+ *  to the pace it last sailed her at (`held`) while she was under way. */
+export function followed(
+  voyage: Voyage,
+  travelledM: number,
+  dt: number,
+  dial: Pace,
+  room: RoomWord | null,
+  held: number | null = null,
+): number {
+  const seconds = Math.max(0, dt);
+  const asked = held !== null && held > 0 ? Math.min(sailSpeed(dial), SHIP_SPEED * held) : sailSpeed(dial);
+  if (!room) return travelledM + asked * seconds;
+  const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
+  const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
+  return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);
+}
+
+/** What the voyage's line adds while the room holds her under the dial's pace: a pirate near. */
+export const heldNote = (dial: Pace, room: RoomWord | null): string =>
+  room && room.pace > 0 && room.pace < dial ? ` · Held to ×${room.pace}: a pirate near` : '';

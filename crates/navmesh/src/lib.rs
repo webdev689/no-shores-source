@@ -3,7 +3,6 @@
 //! and cut into convex polys. A path is an A* over those polys, pulled taut into a few corners. Obstacles laid over
 //! the mesh at run time block the polys they touch. Coordinates are the game's: x east, y south, z up, in metres.
 //! Every number is a 64-bit float and every sum is taken in a fixed order, so every machine bakes and paths alike.
-//! See the Navmesh note in the bible.
 
 mod collider;
 mod compact;
