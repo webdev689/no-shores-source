@@ -158,7 +158,7 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
   a spar or a gun stands in the room a body takes (from 0.25 m to 1.8 m over the planks), where the floor lies under
   1.7 m (her hold through her hatch, the stair down into it), or that is off her deck holds none.
 - **Her walls.** A cell standing more than 30 cm over a neighbour holds none either, judged on her heights as
-  measured: her rails, her bulwarks and the drop at her quarterdeck's edges are walls. Her steps rise 17 cm a tread,
+  measured: her rails, her bulwarks and the drop at her quarterdeck's edges are walls. Her steps rise 13 cm a tread,
   so they stay a way up and down.
 - **Her ramps.** Each cell left is then let down to within 8 cm of every neighbour, nothing raised, so her steps
   and a dip in her planks become slopes a body walks (under 1.19).

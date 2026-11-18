@@ -30,7 +30,7 @@ LOWEST_DECK_M = 1.7
 CLEAR_FROM_M = 0.25
 CLEAR_TO_M = 1.8
 # A cell standing more than this over a neighbour is a wall, centimetres: her rails, her bulwarks and the drop at a
-# raised deck's edge. A tread of her steps rises 17 cm, and stays a way up and down.
+# raised deck's edge. A tread of her steps rises 13 cm, and stays a way up and down.
 WALL_CM = 30
 # The most a cell stands over a neighbour a body walks to from it, centimetres: a slope a body walks up (the movement
 # crate walks 1.19 m a metre), so her steps and a dip in her planks have a way in and out.
