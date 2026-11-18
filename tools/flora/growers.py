@@ -166,8 +166,8 @@ def tiered(shape, rng):
         crown.append((np.array([rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), z]),
                       np.array([radius, radius * rng.uniform(0.85, 1.0), depth])))
     top = crown[-1][0][2]
-    tree(rng, model, (0, 0, top - depth), crown, 300 * tiers, 0.6, spread * shape['influence'], 1.0, shape['trunk'],
-         shape['spray'],
+    tree(rng, model, (0, 0, top - depth), crown, 300 * tiers, 0.6, spread * shape['influence'], 1.0,
+         shape['trunk'], shape['spray'],
          rise=0.05, sprout_from=int(base / 0.6 * 0.85), flare=shape['flare'])
     # A tier's rim sags below it, the further out the more, so each tier reads as its own drooping layer.
     for cluster in model.clusters:

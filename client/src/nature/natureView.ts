@@ -112,8 +112,8 @@ export class NatureView {
       minFilter: 'linear',
       mipmapFilter: 'linear',
     });
-    // The near meshes' cards read their pictures from one mip, not two: most of a card's pixels are tested and cut
-    // away, and on a CPU renderer that read is what a forest's frame costs. An alpha-cut edge hides the step.
+    // The near meshes' cards read their leaves from one mip: most of a card's pixels are tested and cut away, and on
+    // a CPU renderer that read is what a forest's frame costs. An alpha-cut edge hides the step.
     this.cutSampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear', mipmapFilter: 'nearest' });
     const module = device.createShaderModule({ code: NATURE_SHADER });
     const shadows = shadowLayouts(device);

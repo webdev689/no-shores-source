@@ -225,7 +225,8 @@ def fin_rows(turn, height, reach, thickness, stations, section):
         edge = height * (1 - share) ** 2 - 0.3
         half = thickness * (1 - share) ** 0.7 + 0.03
         middle = way * out + side * bend * math.sin(math.pi * share)
-        rows.append([middle + side * half * across + UP * (-0.3 + (edge + 0.3) * up + half * 0.6 * max(0.0, 1 - abs(across)))
+        rows.append([middle + side * half * across
+                     + UP * (-0.3 + (edge + 0.3) * up + half * 0.6 * max(0.0, 1 - abs(across)))
                      for across, up in section])
         outs.append(out)
     return np.array(rows), outs

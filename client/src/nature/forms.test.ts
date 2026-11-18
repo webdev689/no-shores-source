@@ -53,6 +53,8 @@ test("a form's terms name its pictures' layer and bark, and its sprites' sheet a
   assert.equal(terms[16], form.impostor.layer);
   assert.equal(terms[18], Math.fround(form.impostor.radius));
   assert.deepEqual([...terms.subarray(20, 23)], form.impostor.centre.map(Math.fround));
+  assert.equal(terms[9], Math.fround(form.shade[1]), 'a widened far tree sinks by its crown height');
+  assert.equal(terms[10], 0, 'a far quad draws no contact shade of its own');
 });
 
 test("a tree's contact shade spreads as wide as its crown and leans from where its leaves hang; grass casts none", () => {

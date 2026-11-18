@@ -60,7 +60,7 @@ round a trunk and along it with no seam, and a normal map from its height.
   normal (cards take the crown's, so a crown lights as one mass), its tangent for the normal map, its uv, a tint,
   the ambient occlusion the detailed model casts on it (24 rays), and its wind weight, still at the foot and freest
   at the top and the crown's rim. A card covers half its group's reach, so a crown is a few leaves deep along a
-  view, not ten, and is cut to the rectangle round its picture's leaves, so the GPU shades little air: a spray strung
+  view, and is cut to the rectangle round its picture's leaves, so the GPU shades little air: a spray strung
   along a bough is pictured turned to lie along its picture.
 - **The card pictures**: a kind's first form gives its pictures. A spray card shows the form's own sprays round a
   group's middle, grown again alone and seen face on, so its outline is ragged; a frond is laid flat; a tuft is seen

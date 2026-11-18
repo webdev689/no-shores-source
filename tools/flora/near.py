@@ -121,7 +121,8 @@ def fin(near, turn, height, reach, thickness):
     grid = []
     for row, out, facing in zip(rows, outs, normals):
         around = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(row, axis=0), axis=1))])
-        grid.append([corner(point, normal, (length / BARK_TILE_M, out / BARK_TILE_M), tint=(ground_shade(point[2]),) * 3)
+        grid.append([corner(point, normal, (length / BARK_TILE_M, out / BARK_TILE_M),
+                            tint=(ground_shade(point[2]),) * 3)
                      for point, normal, length in zip(row, facing, around)])
     for low, high in zip(grid[:-1], grid[1:]):
         for column in range(len(low) - 1):
@@ -147,8 +148,8 @@ def groups_of(clusters, count):
         centre = means[group]
         radius = max(float(np.linalg.norm(cluster.centre - centre)) + cluster.radius for cluster in members)
         out = unit(sum(cluster.out for cluster in members))
-        # A card covers the bulk of its group, not its farthest spray: crossed cards overlapping less leave a crown
-        # a few leaves deep along a view rather than ten, which a CPU renderer pays for pixel by pixel.
+        # A card covers the bulk of its group, not its farthest spray: crossed cards overlapping little leave a crown
+        # a few leaves deep along a view, which a CPU renderer pays for pixel by pixel.
         groups.append((centre, out, radius * 0.5))
     return groups
 

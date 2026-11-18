@@ -287,7 +287,15 @@ fn plant_vertex(vertex: Vertex, @builtin(instance_index) which: u32) -> Shaded {
 fn plant_fragment(shaded: Shaded) -> Drawn {
   let picture = picture_of(shaded.uv, shaded.wraps);
   let layer = i32(form.atlas.x);
-  let albedo = textureSampleGrad(albedo_map, cut_pictures, picture.uv, layer, picture.dx, picture.dy);
+  // Bark and stone are opaque and read two mips, smoothly; a card's leaves read one, their alpha-cut edge hiding the
+  // step, as on a CPU renderer that read is what a forest's frame costs.
+  let bark = shaded.wraps > 0.5;
+  var albedo: vec4f;
+  if (bark) {
+    albedo = textureSampleGrad(albedo_map, pictures, picture.uv, layer, picture.dx, picture.dy);
+  } else {
+    albedo = textureSampleGrad(albedo_map, cut_pictures, picture.uv, layer, picture.dx, picture.dy);
+  }
   let edge = edge_share(albedo.a);
   let pixel = vec2u(shaded.clip.xy);
   let near_mask = coverage(shaded.cover.x, pixel, 0u);
@@ -296,7 +304,7 @@ fn plant_fragment(shaded: Shaded) -> Drawn {
     discard;
   }
   // The normal is read only for what survives the cut: most of a card's pixels are air.
-  let mapped = textureSampleGrad(normal_map, cut_pictures, picture.uv, layer, picture.dx, picture.dy).xyz * 2.0 - 1.0;
+  let mapped = textureSampleGrad(normal_map, pictures, picture.uv, layer, picture.dx, picture.dy).xyz * 2.0 - 1.0;
   let normal_axis = normalize(shaded.normal);
   let across = normalize(shaded.tangent.xyz - normal_axis * dot(shaded.tangent.xyz, normal_axis));
   let up = cross(normal_axis, across) * select(-1.0, 1.0, shaded.tangent.w >= 0.0);
@@ -385,7 +393,7 @@ fn sprite_fragment(sprite: Sprite) -> Drawn {
   let layer = i32(form.sprites.x);
   let pixel = vec2u(sprite.clip.xy);
   // The two azimuths either side are blended; of the two elevations each pixel reads one, the nearer outside the
-  // middle third between them and dithered across it, so a far plant costs four reads a pixel, not eight.
+  // middle third between them and dithered across it: four reads a pixel.
   let dither = array<f32, 4>(0.125, 0.625, 0.875, 0.375);
   let upper = clamp((sprite.rows.y - 0.5) * 3.0 + 0.5, 0.0, 1.0) > dither[(pixel.x & 1u) + 2u * (pixel.y & 1u)];
   let row = select(sprite.columns.w, sprite.rows.x, upper);

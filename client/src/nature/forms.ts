@@ -41,7 +41,8 @@ function blockOf(
   const thins = kind.reachM > THIN_FROM_M;
   const nearM = form.impostor ? kind.nearM : NO_FAR_M;
   const darkness = !form.leafy ? 0.26 : tall ? 0.34 : 0.24;
-  const shade = form.impostor && !far ? [...form.shade, darkness] : [0, 0, 0];
+  // A far block keeps the crown's height (a widened far tree sinks by it) but draws no contact shade of its own.
+  const shade = form.impostor ? [...form.shade, far ? 0 : darkness] : [0, 0, 0];
   const sprites = form.impostor;
   return [
     nearM,
