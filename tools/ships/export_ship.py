@@ -7,7 +7,6 @@ part materials tools/ships/paint_ship.py sorts them into, with UVs in metres. Wi
 into the working folder (so run it from one outside the repo) and uploads nothing; without, it uploads the .blend and
 the mesh under their hashes and names both, with her waterline, guns, boxes, sails and deck, in
 content/ships/ships.json.
-The format and the ship's frame are in the Sailing note.
 """
 import argparse
 import json

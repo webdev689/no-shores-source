@@ -1,7 +1,7 @@
 //! Movement for the browser. JavaScript hands over the course's blocks once, and a node's window of the land to stand
-//! them on if it has one, or a ship's deck as a grid of heights, then steps a body one tick at a time: it writes the body's and the controls' numbers into
-//! memory this module reserved for it, and reads the next body's numbers back from the same place, little-endian
-//! 64-bit floats in the movement crate's order. The rules stay there.
+//! them on if it has one, or a ship's deck as a grid of heights, then steps a body one tick at a time: it writes the
+//! body's and the controls' numbers into memory this module reserved for it, and reads the next body's numbers back
+//! from the same place, little-endian 64-bit floats in the movement crate's order. The rules stay there.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use land::ground::Ground;

@@ -1,6 +1,6 @@
 //! Every network message between a browser and a room, as the one schema (`messages.fbs`) defines them: the Rust
 //! flatc makes from it, and the server's side of reading and writing them. A body and controls cross as the movement
-//! crate's numbers, in its order. See the Server note in the bible.
+//! crate's numbers, in its order.
 #![allow(unsafe_code, reason = "the code flatc makes reads a message's bytes in place, once the verifier passes them")]
 
 use combat::floats::INTENT_FLOATS;
