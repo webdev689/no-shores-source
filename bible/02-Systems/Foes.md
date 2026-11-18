@@ -20,6 +20,8 @@ code:
   - crates/foes/src/shoot.rs#ranged
   - crates/foes/src/shoot.rs#draw_ticks
   - crates/foes/src/cover.rs#hold
+  - crates/foes/src/cover.rs#stances
+  - crates/foes/src/noises.rs#stir_of
   - crates/foes/src/board.rs#claim
   - crates/foes/src/lib.rs#NoSpots
   - crates/foes/src/steer.rs#controls
@@ -66,11 +68,14 @@ phases) is [[Enemies]].
   scaled by how near (1 at its feet, nothing at its range: 14 m, a shooter's 51.2 m) and how nearly ahead (nothing at
   90 degrees off its facing), with nothing between their chests. Noises raise it by their loudness, less with
   distance, to nothing at their reach: a gunshot 2.0 to 40 m, a bow or crossbow 0.7 to 10 m, a swing or a blow landing
-  1.0 to 15 m (heard where it lands), a fighter running 0.42 to 8 m each half second. Sound passes blocks; a foe pays
-  no heed to its own side's noises. With nothing stirring the level bleeds 0.16 a second, but not while it fights or
-  hunts. Above 0.02 a foe is **suspicious**: it turns and walks up to 3 m toward what stirred it. At 1 it is
-  **alert**: it shouts once, waking allies within 12 m toward that place, and takes the nearest it sees, or the one
-  that strikes it (a blow alerts at once). Seen farther off than its range, a target is pursued, not fought. Out of
+  1.0 to 15 m (heard where it lands), a fighter running 0.42 to 8 m each half second. A noise whose line from it to
+  the foe's chest passes through a block carries half as loud and half as far. A foe pays no heed to its own side's
+  noises. With no target, a foe hears the stir of every foe of another faction, 0.2 a second at its feet to nothing at
+  60 m (halved through a block, as any noise), so two factions left apart beyond sight find each other; a player
+  makes no such stir. With nothing stirring the level bleeds 0.16 a second, but not while it fights or hunts. Above
+  0.02 a foe is **suspicious**: it turns and walks up to 3 m toward what stirred it. At 1 it is **alert**: it shouts
+  once, waking allies within 12 m toward that place, and takes the nearest it sees, or the one that strikes it (a
+  blow alerts at once). Seen farther off than its range, a target is pursued, not fought. Out of
   sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease); then it
   **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s,
   then lets go, and its level bleeds back to idle. The foe's soft lock holds its target, but while it answers a blow,
@@ -97,31 +102,44 @@ phases) is [[Enemies]].
   turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay and the ring's
   gap by its share. A dominating player meets more foes at once; one being beaten, fewer.
 - **Swings.** A chop into a raised guard, a sweep when two or more stand in reach before it, a thrust at the edge of
-  reach, otherwise a slash, chop or thrust by chance. A foe that guards keeps 30 stamina for its guard; short of a swing
-  and that, it hands its turn on. Blocked twice running by a guard still raised, it stops swinging into it and winds up
-  a telegraphed blow instead, or waits. A foe's riposte after its own parry, its counter after a perfect dodge, and,
-  in its turn, a swing at a target spent in its own swing's follow-through, staggered or tending a bow (not one knocked
-  down: the iron blow already punished that), are struck at once with a chop.
+  reach, otherwise a slash, chop or thrust by chance. Its wait before a swing begins in reach and runs on while its
+  target sways out to 0.3 m past it. A foe that guards keeps 30 stamina for its guard; short of a swing and that, it
+  hands its turn on. Blocked twice running by a guard still raised and facing it, it stops swinging into it: it winds
+  up a telegraphed blow if it may, else steps round toward the side the guard faces away from, at 0.7 of a walk, and
+  strikes from outside the guard; walled off 2 s, it chops at the guard again. A new target starts its count afresh. A
+  foe's riposte after its own parry, its counter after a perfect dodge, and, in its turn, a swing at a target spent in
+  its own swing's follow-through, staggered or tending a bow (not one knocked down: the iron blow already punished
+  that), are struck at once with a chop.
 - **Backing off and running.** A quarter of its health lost inside 3 s, or, for a foe that guards or dodges, its poise
   four fifths full: it hands its turn on and walks out to a ring 2 m farther for 2 s, at most once in 10 s.
 - **Shooters.** A shooter shoots its own weapon: a bow drawn 1.0 s, a crossbow 1.3 s, a pistolet 1.2 s, a thunderlock
   1.5 s, aiming up for a bolt's or arrow's fall, 0.5 to 1.5 s between shots; its shots strike as a player's quick shot
   does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A foe's gun ball flies at 70 m/s (pistolet) or 110 m/s
   (thunderlock), so it can be read and dodged, where a player's reaches its mark at once. A ranged turn gates a shot
-  and a shot spends it; held 5 s unused it goes on.
+  and a shot spends it; held 5 s unused it goes on. A drawn shot strikes times the foe's might, as its blows do.
 - **Cover.** With cover near, a shooter takes a **post**: among the firing spots within 11 m that have cover, one where
   either the spot hides it from where it believes its target is and a step of 1.2 m aside has the line, or the other way
   round. It scores each by 1.5 a metre to walk there, 3 a metre outside its weapon's band of distance (bow 10 to 18 m,
   crossbow 12 to 20, pistolet 8 to 12, thunderlock 14 to 24, a Marksman's half as far again), less up to 3 as its cover
   faces its target squarely, and up to 2.5 more the nearer it stands before its target's face; never nearer its target
-  than 7 m (a Marksman's 10.5) nor within 3 m of another's post; the lowest wins. At its post it hides 1.5 to 2.5 s,
-  then looks out for up to 1.5 s (longer while drawing); with its turn it draws behind cover, steps out, looses only on
-  a clear line and falls back to reload; hurt, it hides as it backs off. It picks again when its target moves 4 m from
+  than 7 m (a Marksman's 10.5) nor within 3 m of another's post; the lowest wins. Its walk is costed by the room's
+  route there, which goes round blocks: the spots are weighed first with a straight walk, cheapest first, and only the
+  cheapest 24 are worked out, their routes for at most 6, stopping once no spot left could cost less; one shooter of
+  a room picks a tick, and another that would stands that tick facing its target and picks at the next. A spot hides it
+  where a block stands across both the line from its eye (1.6 m up) and the line from its chest to its target's chest,
+  and fires where both lines are clear; its step aside is the shortest of 0.6 to 2.0 m, by fifths of a metre, that
+  turns its stance about and still does a fifth of a metre short of it, and costs 3 a metre, walked out and back each
+  shot. At its post it hides 1.5 to 2.5 s, then looks out for up to 1.5 s (longer while drawing); with its turn it
+  draws behind cover, steps out, looses only on a clear line and falls back to reload. One turn in three, by the dice
+  of the tick it took the turn, is an aimed shot while it may throw one: it steps out at once, its weapon unraised, aims
+  on the line and falls back after; hurt, it hides as it backs off. It picks again when its target moves 4 m from
   where it picked, when the line from its firing point closes or its hiding point opens; looking out and finding no one,
   it picks once more where it believes its target is, and failing again, hunts. Out of sight behind its own cover, it
   keeps its post. With no cover near it fights in the open: without a turn it stands off and holds its fire, never
-  circling; a target inside 6 m it walks away from, one burst of at most 2 s, out to 7 m (a Marksman's 9 and 10.5);
-  caught or cornered, it fights close with its fists for 3 s, and kites again only 8 s after.
+  circling. A target inside 6 m it walks away from at a full walk, one burst of at most 3 s, out to 7 m (a Marksman's
+  9 and 10.5), then shoots; out of time short of that, it shoots from there. Caught (its target inside 2.5 m as its
+  burst ends, or while it may not kite) or cornered, it fights close with its fists for 3 s, its post given up, and
+  kites again only 8 s after; between 2.5 m and its ring it shoots.
 
 ## Answers to blows
 
@@ -163,6 +181,4 @@ three of each Boss, its own, are [[Enemies]]'.
 - A foe answers one blow at a time: a second swing seen while it answers the first is not weighed.
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
-- Cover is judged by lines from chest to chest, the step aside is always 1.2 m, a post's walk is costed in a straight
-  line, and from a post an aimed shot comes only when its turn arrives while it looks out.
-- Flanking stops at 100 degrees, short of a turned back. Sound is not stopped by blocks.
+- Flanking stops at 100 degrees, short of a turned back.

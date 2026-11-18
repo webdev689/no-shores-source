@@ -102,8 +102,9 @@ elite tier is [[Foes]]' (quicker wind-ups and cooldowns, one blow in three iron,
      and he calls two Major Collectors beside him.
 
   Each change of phase is a roar of 1.2 s (an iron ring about its feet) as soon as it is free, owed until its wind-up
-  begins (a foe knocked down first roars once it stands), and as it begins its poise is refilled and the foes its
-  phase names called. Phases advance one at a time, so a blow that cuts through two roars twice.
+  begins (a foe knocked down first roars once it stands), and as it begins the phase's numbers hold (its wind-ups,
+  cooldowns, might, chains and blows), its poise is refilled and the foes its phase names called; a Boss killed in the
+  step its roar begins calls none. Phases advance one at a time, so a blow that cuts through two roars twice.
 
 Each Boss: 1,120 health, 210 poise. Thule fights with an ebony sword, Corvane with an iron flail and a kite shield.
 

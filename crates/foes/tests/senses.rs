@@ -1,9 +1,8 @@
 //! A foe's senses: it comes to know of a player by sight, sooner near and dead ahead than far or at the edge of its
 //! sight, and by what it hears, a gun farther than a bow and anything through a block half as far, but never its own
-//! side's noises; stirred, it turns and walks
-//! a few metres toward what stirred it, and with nothing more its awareness bleeds back to nothing; alert, it fights and
-//! wakes its allies near it; a blow alerts it at once; out of sight, it hunts, searches the last place it knew, and
-//! lets go.
+//! side's noises; stirred, it turns and walks a few metres toward what stirred it, and with nothing more its awareness
+//! bleeds back to nothing; alert, it fights and wakes its allies near it; a blow alerts it at once; out of sight, it
+//! hunts, searches the last place it knew, and lets go.
 
 mod common;
 

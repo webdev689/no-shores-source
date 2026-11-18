@@ -93,6 +93,7 @@ pub const RANGED_LEASE: f64 = 5.0;
 
 /// A shooter's post, from the firing spots within POST_SEEK of it that have cover to fall back behind. It likes its
 /// target at its weapon's band of distances (near and far, times its standoff) and pays: NEAR_WEIGHT a metre walked,
+/// ASIDE_WEIGHT a metre of its post's step aside (walked out and back each shot),
 /// BAND_WEIGHT a metre outside its band (more than a walk, so it walks to its band), up to FLANK_WEIGHT for a place
 /// before its target's face; it earns up to COVER_WEIGHT for cover full on its target's bearing. No post within
 /// POST_GAP of another shooter's.
@@ -102,20 +103,30 @@ pub const BAND_CROSSBOW: (f64, f64) = (12.0, 20.0);
 pub const BAND_PISTOLET: (f64, f64) = (8.0, 12.0);
 pub const BAND_THUNDERLOCK: (f64, f64) = (14.0, 24.0);
 pub const NEAR_WEIGHT: f64 = 1.5;
+pub const ASIDE_WEIGHT: f64 = 3.0;
 pub const BAND_WEIGHT: f64 = 3.0;
 pub const COVER_WEIGHT: f64 = 3.0;
 pub const FLANK_WEIGHT: f64 = 2.5;
 pub const POST_GAP: f64 = 3.0;
-/// At its post a shooter steps this far aside, out to fire or back to hide; it hides between these after a shot or a
-/// look, and looks out at most PEEK unless it is drawing. Its target this far from where it picked, it picks again;
+/// At its post a shooter steps aside the shortest of these that turns its stance about, in strides of ASIDE_STRIDE,
+/// out to fire or back to hide; it hides between these after a shot or a look, and looks out at most PEEK unless it
+/// is drawing. Its target this far from where it picked, it picks again;
 /// farther than POST_LEAVE from where it would stand, it walks back by the routes; finding no post, it seeks again
 /// only after POST_RETRY.
-pub const STEP_ASIDE: f64 = 1.2;
+pub const STEP_ASIDE: (f64, f64) = (0.6, 2.0);
+pub const ASIDE_STRIDE: f64 = 0.2;
 pub const HIDE: (f64, f64) = (1.5, 2.5);
 pub const PEEK: f64 = 1.5;
 pub const REPICK: f64 = 4.0;
 pub const POST_LEAVE: f64 = 2.5;
 pub const POST_RETRY: f64 = 0.5;
+/// A standing body's eye over its feet: cover hides a shooter only from its eye to its chest, and it fires only with
+/// both lines clear.
+pub const EYE: f64 = 1.6;
+/// A pick weighs the spots by their cost with a straight walk, cheapest first, and works out the stances of at most
+/// POST_TRIES of them and the routed walk of at most ROUTE_TRIES: the rest cost no less.
+pub const POST_TRIES: usize = 24;
+pub const ROUTE_TRIES: usize = 6;
 
 /// Walking somewhere, a foe turns first and steps only within this of its way, so no foe walks backwards.
 pub const WALK_FACE: f64 = 45.0 * DEGREES;

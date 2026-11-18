@@ -1,8 +1,9 @@
 //! A shooter's fight, as DFO's tactics have it: a ranged token gates its shot and a shot spends it; a target closing
 //! inside its weapon's near edge it walks away from, one burst out to its ring, then shoots; caught or cornered it
-//! fights close until it may kite again. With cover near, it fights from a post (the cover module); without, it stands off and holds its fire
-//! without a token, never circling. It draws by aiming its own weapon (a bow, a crossbow or a gun, each its own draw)
-//! and looses by pulling the trigger once drawn, aiming high enough for an arrow's or a bolt's fall.
+//! fights close until it may kite again. With cover near, it fights from a post (the cover module); without, it
+//! stands off and holds its fire without a token, never circling. It draws by aiming its own weapon (a bow, a crossbow
+//! or a gun, each its own draw) and looses by pulling the trigger once drawn, aiming high enough for an arrow's or a
+//! bolt's fall.
 
 use crate::board::Board;
 use crate::brain::Brain;
@@ -145,22 +146,33 @@ pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: 
     if let Some(ask) = hold(brain, here, board, sight, has) {
         return ask;
     }
-    fire(brain, here, board, sight, has, false)
+    fire(brain, here, board, sight, has, false, false)
 }
 
 /// Its shot: now and then an aimed one, from rest with its turn, facing its target with nothing between; else a draw.
 /// In the open it raises its weapon only with its turn and nothing between, and looses once drawn; from cover it
-/// raises with its turn alone, behind its cover, and looses once drawn with nothing between.
-pub fn fire(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight, has: bool, covered: bool) -> Ask {
+/// raises with its turn alone, behind its cover, and looses once drawn with nothing between, unless its turn is an
+/// aimed shot (`aim`): then it steps out unraised and aims once on the line.
+pub fn fire(
+    brain: &mut Brain,
+    here: &Here<'_, '_>,
+    board: &mut Board,
+    sight: &Sight,
+    has: bool,
+    covered: bool,
+    aim: bool,
+) -> Ask {
     let tick = here.tick();
     let clear = sight.seen && sees(here.world.blocks, &here.fighter, &sight.fighter);
     let ready = matches!(here.fighter.action, Action::Idle) && tick >= brain.bow.shot_ready;
     let facing = off(brain.heading, sight.toward) <= SWING_FACE / 4.0;
+    let roll = if aim { 0.0 } else { here.dice.roll(Purpose::Aimed) };
     if has
         && clear
         && ready
         && facing
-        && let Some(order) = aimed(brain, here, sight)
+        && (aim || !covered)
+        && let Some(order) = aimed(brain, here, sight, roll)
     {
         board.hand_on(sight.id, here.me, tick);
         let mut ask = Ask::facing(sight.toward);
@@ -168,7 +180,7 @@ pub fn fire(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
         return ask;
     }
     let drawn = draw_ticks(here.fighter.arms.ranged.unwrap_or(Ranged::Bow));
-    let (may, loose) = if covered { (has, clear) } else { (has && clear, true) };
+    let (may, loose) = if covered { (has && !aim, clear) } else { (has && clear, true) };
     let (ask, loosed) = draw(brain, here, sight, drawn, may, loose);
     if loosed {
         board.hand_on(sight.id, here.me, tick);

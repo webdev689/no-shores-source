@@ -388,6 +388,16 @@ impl Routes for Mesh {
         let path = self.0.find_path(from, to).or_else(|| self.0.find_path(from, self.0.nearest_point(to)?));
         Some(path.and_then(|points| points.get(1).copied()).unwrap_or(to))
     }
+
+    fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        let points = self.0.find_path(from, to)?;
+        Some(
+            points
+                .windows(2)
+                .map(|pair| combat::sight::apart([pair[0][0], pair[0][1]], [pair[1][0], pair[1][1]]))
+                .sum(),
+        )
+    }
 }
 
 impl Spots for Mesh {

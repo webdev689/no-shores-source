@@ -186,11 +186,19 @@ pub fn throw(
     Some(order(brain, here, shape, sight.toward, ahead, false))
 }
 
-/// An archer's aimed shot in place of a plain one, one in three, when it may throw.
-pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight) -> Option<TelegraphOrder> {
-    let ready = here.tick() >= brain.tells.blow_ready && !windup_near(here, sight.spot);
-    let wants = here.numbers.shapes.contains(&Shape::Aimed) && here.dice.roll(Purpose::Aimed) < AIMED_SHARE;
-    (ready && wants).then(|| order(brain, here, Shape::Aimed, sight.toward, sight.distance, false))
+/// Whether an archer may throw its aimed shot now: it has one, off its cooldown, with nobody else winding up near its
+/// target.
+#[must_use]
+pub fn aim_ready(brain: &Brain, here: &Here<'_, '_>, sight: &Sight) -> bool {
+    here.numbers.shapes.contains(&Shape::Aimed)
+        && here.tick() >= brain.tells.blow_ready
+        && !windup_near(here, sight.spot)
+}
+
+/// An archer's aimed shot in place of a plain one, one in three by `roll`, when it may throw.
+pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, roll: f64) -> Option<TelegraphOrder> {
+    (aim_ready(brain, here, sight) && roll < AIMED_SHARE)
+        .then(|| order(brain, here, Shape::Aimed, sight.toward, sight.distance, false))
 }
 
 /// What follows a wind-up that has ended: a feint's swing at once; once the room says whether the blow landed (it
