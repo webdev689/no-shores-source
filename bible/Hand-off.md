@@ -127,7 +127,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   local Cloudflare runtime, as the owner decided it ([[Enemies Come in Five Ranks, After Destiny]],
   [[Enemy Factions Start With the Grey Tithe]], [[project-final's AI Comes Over Onto DFO's]],
   [[The Enemies as Claude Builds Them]], [[The Bars and the Fight Wear the Plus Kit]],
-  [[The Rooms Deploy When Their Code Changes]]):
+  [[The Rooms Deploy When Their Code Changes]], [[Foes Leash to Their Posts and Fall With Their Boss]]):
   - [[Enemies]]: a fighter's side is the players' or a faction's, and factions fight each other; the Grey Tithe (land
     and sea) and the pirates (sea); five roles, a roster of 18 types, five ranks scaling health, poise, might,
     reaction, defence and telegraphed blows; a Miniboss's second phase; Captain Brannoc Thule's three phases at sea and
@@ -149,6 +149,12 @@ Where the work stands now, for the next session. Each session rewrites this note
     Two headless pages in one room on the local runtime held the same foes at every shared tick.
   - [[Hulls]]: new ships in the Sloop's style, planned, not built
     ([[New Ships Are Planned in the Sloop's Style, After the System]]).
+  - A third audit and design pass, tested offline: a Miniboss strikes more often, a Boss's called foes fall with it,
+    garrison foes leash to their posts (a leashing Boss resets whole) and walk home after a search; foes no longer
+    shake at a guard, a range's edge or a mesh's edge; a body no longer sticks in a block's corner ([[Movement]]);
+    sea fights' views read across a deploy, and figures glide after a rejoin; the fight display's layers, outline,
+    veils and overlaps with the Game's own display; at sea the Sloop is never drawn larger than she is as the view
+    comes in or a fight begins, and pirates cut the water.
 - First-person aiming zooms the weapon with the view, and its muzzle with it, as the owner chose from pictures
   ([[First-Person Aiming Zooms the Weapon With the View]]), merged to `main` with the owner's yes (#64), which deploys
   the page and the rooms; tested offline, with a test and a headless Test Ground run.
@@ -160,8 +166,16 @@ Where the work stands now, for the next session. Each session rewrites this note
   offline only. Its open choices: whether the sea's pirates become the Grey Tithe; the roster's names and Corvane,
   Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over time;
   whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to change:
-  a captain strikes from losing men at about 80% of her hull at every rank, and the foes' new numbers (a walled foe's
-  2 s, a kite's 3 s, hearing to 60 m) are in [[Foes]].
+  a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in [[Foes]].
+- Pirates at sea: nothing stops them, on `main` or #61; they are rare by the numbers ported from DFO (a roll every
+  60–140 s, 0.24 of rolls a pirate, the wait starting again at each return to the ship), so about half of players
+  see none in their first 5–7 minutes. Measured options were offered and the owner skipped them for now: hostiles
+  taking the cut ships' share, DFO's faster rolls, both (about 1 minute to the first), pirates ahead on voyages, the
+  port's label giving way, and DFO's other ships back.
+- The design pass's proposals, the owner's to choose: plates and the parry ring lower over a foe (2.1 m, not 2.5 m);
+  a soft-locked Boss shown once, not in both the boss bar and the target's plate; a mark for a Major, so it is not
+  told from a Minor by colour alone; plates only near or alert foes, against towers of far plates; the display
+  scaled with the screen; one look for both kinds of death in the Game.
 
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
   read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
