@@ -230,6 +230,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   gear shelf; a held weapon's picture whole, grip and all; a glyph of its own for each material; and DFO's profile mark
   at the menu's top right, the player's face in a brass well, opening Settings. Tested offline: the full check, and
   headless at 1920×1080, 1280×720 and 2560×1440.
+- **The owner's next asks are on #60 too**
+  ([[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]]): the inventory without gear, its
+  Vestiges under the currencies, ten places as Destiny 2's engrams are; dismantling held over a tile (F) or on an
+  item's page, longer the rarer, the item charging until it breaks into shards; feeding a Fruit held, the item
+  charging; what is gained shown at the right, in play and over the menu; and every interaction sounding, made by the
+  browser's synthesiser, with a volume in Settings. Tested offline: the full check, a dismantle by F against the local
+  rooms (the feed showed its Aurem and fragments), and pictures at 1920×1080 and 2560×1440. The sounds were counted as
+  they played, not heard: the owner should listen for their level and character. A ware bought at the
+  Quartermaster's counter, and a Vestige opened at the Reader's, were not walked to headless.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
   as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.

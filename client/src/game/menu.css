@@ -102,3 +102,24 @@
   align-items: center;
   padding: 3px 0;
 }
+
+/* The interface's volume, under the account: its name, a slider in brass and the level it stands at. */
+.gear-sound {
+  margin-top: 18px;
+}
+.gear-sound-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#hud .gear-volume {
+  flex: 1;
+  max-width: 260px;
+  accent-color: var(--brass-lit);
+  pointer-events: auto;
+}
+.gear-sound-row b {
+  min-width: 4ch;
+  text-align: right;
+  font-weight: 500;
+}

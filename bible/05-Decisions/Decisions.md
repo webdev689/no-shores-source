@@ -90,6 +90,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Group of Players Is a Company]]
 - [[Names Follow Guidelines, Checked by the Accounts]]
 - [[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]
+- [[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

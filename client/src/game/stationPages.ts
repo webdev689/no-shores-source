@@ -28,7 +28,8 @@ export function vendorPage(context: PageContext, vendor: number): HTMLElement {
     const nth = vendor * half + place;
     const item = context.gear.wares[nth];
     // One the player cannot pay for says so, and cannot be held.
-    const block = heldPress('', () => context.ask(ware.press.ask));
+    // The ware's picture charges as it is held, as a piece held to dismantle does.
+    const block = heldPress('', () => context.ask(ware.press.ask), 'button', { charges: () => cell });
     block.classList.add('gear-ware');
     block.dataset['key'] = `buy-${nth}`;
     if (!ware.affordable) block.setAttribute('aria-disabled', 'true');

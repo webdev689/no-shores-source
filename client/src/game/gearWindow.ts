@@ -8,7 +8,7 @@ import { RARITIES, answerText, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
-import { type Hint, HoverCard, glyphImage, hintLine, pressOf } from './gearDom.ts';
+import { DISMANTLE_KEY, type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
 import {
   ACCOUNT_CHANGED,
   type GearHere,
@@ -34,6 +34,8 @@ import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
+import { startAcquiredFeed } from './acquiredFeed.ts';
+import { installInterfaceSounds, play } from './uiSounds.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -61,10 +63,7 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   character: [
     ['Click', 'Swap'],
     ['Right-click / X', 'Details'],
-  ],
-  inventory: [
-    ['Click', 'Equip'],
-    ['Right-click / X', 'Details'],
+    [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
   social: [
     ['Click', 'Choose a player'],
@@ -73,6 +72,7 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   vault: [
     ['Click', 'Put in or take out'],
     ['Right-click / X', 'Details'],
+    [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
   quartermaster: [['Hold', 'Buy']],
   armsmith: [['Hold', 'Buy']],
@@ -82,12 +82,13 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
     ['Click', 'Choose one bought'],
   ],
 };
-/** What the inventory's shelves' presses do, where they differ from its gear's. */
+/** What the inventory's shelves' cells show. */
 const SHELF_HINTS: Readonly<Record<string, readonly Hint[]>> = {
   consumables: [['Hover', 'What it does']],
   materials: [['Hover', 'Where it is from']],
-  vestiges: [['Click', 'Open']],
 };
+/** The inventory's shelf shown first. */
+const FIRST_SHELF = 'consumables';
 
 const isTab = (view: View): view is Tab => (TABS as readonly string[]).includes(view);
 /** The views drawn from the player's gear; the rest need none. */
@@ -166,9 +167,11 @@ export function startGearWindow(
   scrim.hidden = true;
   root.append(scrim, screen);
   const tip = new HoverCard(root);
+  // What the player gains shows at the right, in play and over the menu alike.
+  const feed = startAcquiredFeed(root, here);
   let view: View | null = null;
   let slot: number | null = null;
-  let shelf = 'gear';
+  let shelf = FIRST_SHELF;
   let inspecting: number | null = null;
   /** The gear and the state of the menu it was last built for. */
   let shownGear: GearState | null = null;
@@ -177,6 +180,8 @@ export function startGearWindow(
   let pressing = false;
   /** How many asks the room had answered when the menu opened: only a newer answer is shown. */
   let heard: number | null = null;
+  /** The answer a refusal was last heard for. */
+  let refusedAt: number | null = null;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
   /** The view the tabs and title were last written for. */
@@ -190,12 +195,10 @@ export function startGearWindow(
   /** The HUD's other parts, out of reach of the keys and a screen reader while the menu is open. */
   const beneath = (asleep: boolean) => {
     for (const part of root.children)
-      if (part instanceof HTMLElement && part !== screen && part !== scrim && part !== tip.node) part.inert = asleep;
+      if (part instanceof HTMLElement && ![screen, scrim, tip.node, feed].includes(part)) part.inert = asleep;
   };
   /** Lets go of every press held, so none acts once its page has gone. */
-  const letGo = () => {
-    for (const held of screen.querySelectorAll('.gear-holding')) held.dispatchEvent(new PointerEvent('pointercancel'));
-  };
+  const letGo = () => letGoHold();
   const shut = () => {
     tabbed = null;
     letGo();
@@ -203,6 +206,7 @@ export function startGearWindow(
       document.activeElement.blur();
     view = null;
     screen.hidden = scrim.hidden = true;
+    play('close');
     setGearScreenOpen(false);
     beneath(false);
     tip.hide();
@@ -215,14 +219,16 @@ export function startGearWindow(
     letGo();
     if (inspecting !== null) inspecting = null;
     else if (slot !== null) slot = null;
-    else shut();
+    else return shut();
+    play('back');
   };
   const open = (wanted: View, onShelf?: string) => {
     if (view === wanted && onShelf === undefined) return shut();
     const opening = view === null;
     [view, slot, inspecting, plain, shownGear, returnTo] = [wanted, null, null, null, null, null];
-    shelf = onShelf ?? 'gear';
+    shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
+    play(opening ? 'open' : 'tab');
     screen.hidden = scrim.hidden = false;
     setGearScreenOpen(true);
     beneath(true);
@@ -269,6 +275,7 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
   startCompanyHud(root, link);
+  installInterfaceSounds(root);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
   /** The banner's emblem, drawn again to the banner's width whenever that changes. */
@@ -401,6 +408,9 @@ export function startGearWindow(
     }
     const opened = gear.items.find((each) => each.id === gear.identified);
     const fresh = gear.answered !== heard;
+    // A refusal is heard once, when it comes.
+    if (fresh && gear.answer !== 0 && gear.answered !== refusedAt) play('refused');
+    if (fresh) refusedAt = gear.answered;
     answer.textContent = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
     answer.style.color = opened ? (RARITIES[opened.rarity]?.colour ?? '') : '';
     const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
@@ -439,7 +449,9 @@ export function startGearWindow(
     // One footer: what the presses and keys do here, the room's answer, and what may be done: an item's presses on its
     // page, else a step back while a flyout is open, else closing the menu.
     // A Vestige opens with a click only at the Reader's counter, so the footer offers it only there.
-    const shelfHints = shelf === 'vestiges' && !gear.atReader ? [] : (SHELF_HINTS[shelf] ?? HINTS.inventory);
+    const opens: readonly Hint[] =
+      gear.atReader && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
+    const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
     const hints = shown ? HINTS.item : view === 'inventory' ? shelfHints : HINTS[view];
     hinted(hints ?? []);
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null ? [stepBack] : [close]));

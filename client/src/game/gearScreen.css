@@ -5,7 +5,8 @@
 
 .gear-screen,
 .gear-tip,
-.gear-scrim {
+.gear-scrim,
+.acquired {
   --word: #efe8d6;
   --faint: #a89f88;
   --brass: #c08a3e;
@@ -65,7 +66,8 @@
 /* Where the menu is wide, names and values stand at the names' size, labels staying at the words'. */
 @media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
   .gear-screen,
-  .gear-tip {
+  .gear-tip,
+  .acquired {
     --type-m: 22px;
   }
 }
@@ -1041,6 +1043,137 @@ img.gear-glyph {
   transition: width var(--hold, 800ms) linear;
 }
 
+/* What a hold acts on charges while it is held, as Destiny's dismantle does: a wash of its rarity rising through a
+   tile, the picture brightening and quivering toward the end. */
+#hud .gear-charging {
+  position: relative;
+}
+#hud .gear-cell.gear-charging::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(var(--rar-rgb, 243, 207, 134), 0.65), rgba(255, 246, 220, 0.12));
+  transform-origin: bottom;
+  animation: gear-rise var(--hold, 800ms) linear forwards;
+}
+#hud .gear-charging > canvas,
+#hud .gear-charging > img {
+  animation: gear-quiver var(--hold, 800ms) linear forwards;
+}
+@keyframes gear-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes gear-quiver {
+  0%,
+  50% {
+    transform: none;
+    filter: brightness(1) drop-shadow(0 0 0 rgba(var(--rar-rgb, 243, 207, 134), 0));
+  }
+  62% {
+    transform: translate(1px, 0);
+  }
+  70% {
+    transform: translate(-1px, 1px);
+  }
+  78% {
+    transform: translate(1px, -1px);
+  }
+  86% {
+    transform: translate(-1px, 0);
+  }
+  93% {
+    transform: translate(1px, 1px);
+  }
+  100% {
+    transform: translate(0, -1px);
+    filter: brightness(1.9) drop-shadow(0 0 10px rgba(var(--rar-rgb, 243, 207, 134), 0.9));
+  }
+}
+/* Where a hold acted, over the page built anew: shards of the item's rarity flying from a flash, or a ring of it
+   swelling out of what was fed. */
+.gear-burst {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+}
+.gear-burst-shatter {
+  animation: gear-fade 460ms ease-out forwards;
+}
+.gear-burst-shatter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 246, 220, 0.9);
+  animation: gear-fade 180ms ease-out forwards;
+}
+.gear-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgb(var(--rar-rgb, 243, 207, 134));
+  box-shadow: 0 0 0 1px #120e0a;
+  animation: gear-fly 460ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.gear-shard.gear-shard-lit {
+  background: #fff6dc;
+}
+.gear-burst-pulse::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  aspect-ratio: 1;
+  max-width: 100%;
+  max-height: 100%;
+  border: 3px solid rgb(var(--rar-rgb, 243, 207, 134));
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgb(var(--rar-rgb, 243, 207, 134));
+  animation: gear-swell 520ms ease-out forwards;
+}
+@keyframes gear-fly {
+  from {
+    transform: translate(-50%, -50%);
+  }
+  to {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(90deg);
+    opacity: 0;
+  }
+}
+@keyframes gear-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes gear-swell {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #hud .gear-charging > canvas,
+  #hud .gear-charging > img {
+    animation: none;
+  }
+  .gear-shard {
+    display: none;
+  }
+}
+
 /* The inventory: the currencies along its head, its shelves in a well, then the gear, a list or a grid. */
 .gear-inventory {
   display: flex;
@@ -1146,48 +1279,22 @@ img.gear-glyph {
   font-size: var(--type-m);
   font-weight: 500;
 }
-/* The gear shelf: each slot's row, its name and worn piece, then the nine it carries. */
-/* The gear shelf: weapons and cloak on the left, armour on the right, as Destiny 1's inventory stands. */
-.gear-gear {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
-  gap: 12px 40px;
-  align-items: start;
-}
-.gear-gear-side {
+/* The Vestiges carried: their name and count over a rule, then ten places in two rows of five, as Destiny 2's
+   engrams stand; an empty place is a dark Vestige. */
+.gear-vestiges .gear-heading {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  max-width: 344px;
+  font-size: var(--type-m);
 }
-.gear-gear-row {
+.gear-vestige-grid {
   display: grid;
-  grid-template-columns: 150px 84px 1fr;
-  align-items: center;
-  gap: 14px;
+  grid-template-columns: repeat(5, 64px);
+  gap: 6px;
 }
-.gear-gear-label {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-  min-width: 0;
-}
-.gear-gear-label .gear-slot-item {
-  max-width: 150px;
-}
-/* The nine carried, three by three, each smaller than the worn piece beside them. */
-.gear-gear-carried {
-  display: grid;
-  grid-template-columns: repeat(3, 44px);
-  gap: 4px;
-}
-#hud .gear-cell.gear-small {
-  width: 44px;
-  height: 44px;
-}
-#hud .gear-cell.gear-small img.gear-glyph {
-  width: 22px;
-  height: 22px;
+#hud .gear-vestige-place img.gear-glyph {
+  filter: grayscale(1) brightness(0.8);
+  opacity: 0.55;
 }
 
 /* A vendor's wares: each ware a press held to buy it, its tile, name, kind and price. */
@@ -1346,15 +1453,6 @@ img.gear-glyph {
   margin: 6px 0;
   border-width: 0 0 1px;
   border-style: solid;
-}
-/* Where the menu is wide, the gear shelf's names have the room of their size. */
-@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
-  .gear-gear-row {
-    grid-template-columns: 220px 84px 1fr;
-  }
-  .gear-gear-label .gear-slot-item {
-    max-width: 220px;
-  }
 }
 /* Where the menu is wide, the Character page's labels, the banner's numbers and the footer's keys stand at the
    names' size, the face's next sharp step, so none of it is read at the smallest. */

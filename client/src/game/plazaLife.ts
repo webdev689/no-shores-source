@@ -19,7 +19,7 @@ export interface Offer {
 
 /** What each station that deals with a player offers. */
 const OFFERS: Readonly<Record<string, Offer>> = {
-  reader: { words: 'The Reader of Vestiges: open your Vestiges', opens: { view: 'inventory', shelf: 'vestiges' } },
+  reader: { words: 'The Reader of Vestiges: open your Vestiges', opens: { view: 'inventory' } },
   vault: { words: 'Your vault', opens: { view: 'vault' } },
   quartermaster: { words: 'The Quartermaster: armour for Aurem', opens: { view: 'quartermaster' } },
   armsmith: { words: 'The Armsmith: weapons for Aurem', opens: { view: 'armsmith' } },

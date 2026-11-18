@@ -69,6 +69,8 @@ export interface Press {
   readonly role: 'button' | 'primary' | 'warn';
   /** Held for a moment before it asks, as a Fruit of Dagon is eaten. */
   readonly held?: boolean;
+  /** What the item does once the hold acts: breaks apart, dismantled, or takes something in, fed. */
+  readonly burst?: 'shatter' | 'pulse';
 }
 
 /** An item as a tile shows it: its name in its rarity's colour and its main number. */
@@ -167,6 +169,7 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
       ask: { kind: ASKS.dismantle, item: item.id },
       role: 'warn',
       held: true,
+      burst: 'shatter',
     });
   }
   if (item.at === VAULTED && atVault)
@@ -177,6 +180,7 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
       ask: { kind: ASKS.feed, item: item.id },
       role: 'button',
       held: true,
+      burst: 'pulse',
     });
   return {
     name: itemName(item),

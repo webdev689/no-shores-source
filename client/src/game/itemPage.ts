@@ -13,7 +13,9 @@ import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
 import { cardOf, traitsShown } from './gearCards.ts';
 import {
+  HOLD_MS,
   compareNode,
+  dismantleMs,
   elementGlyph,
   heldPress,
   nodeGlyph,
@@ -171,7 +173,16 @@ export function itemPage(
   presses.append(leave);
   for (const press of detail.presses) {
     const run = () => context.ask(press.ask);
-    const shown = press.held ? heldPress(press.label, run, press.role) : pressOf(press.label, run, press.role);
+    // Dismantling or feeding, the item's own picture charges as the press is held.
+    // A piece is held to dismantle as long as its rarity asks.
+    const hold = press.burst
+      ? {
+          charges: () => art,
+          burst: press.burst,
+          holdMs: press.burst === 'shatter' ? dismantleMs(item.rarity) : HOLD_MS,
+        }
+      : {};
+    const shown = press.held ? heldPress(press.label, run, press.role, hold) : pressOf(press.label, run, press.role);
     shown.dataset['key'] = `press-${press.label}`;
     presses.append(shown);
   }

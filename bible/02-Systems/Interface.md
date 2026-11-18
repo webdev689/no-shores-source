@@ -14,6 +14,11 @@ code:
   - client/src/game/characterPage.ts#characterPage
   - client/src/game/itemPage.ts#itemPage
   - client/src/game/inventoryPage.ts#inventoryPage
+  - client/src/game/gearDom.ts#holdOn
+  - client/src/game/gearDom.ts#dismantleOnHold
+  - client/src/game/acquiredFeed.ts#startAcquiredFeed
+  - client/src/game/gains.ts#gainsOf
+  - client/src/game/uiSounds.ts#play
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/itemPictures.ts#ItemPictures
   - client/src/game/gearDom.ts#HoverCard
@@ -119,7 +124,7 @@ never while a press is held. Each press is an ask the room answers.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
   Attack, Defense, Prestige and Fruit of Dagon. The weapons, the cloak and the emblem stand to its left, the armour to
   its right, each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its
-  flyout of the nine it may carry; a click there wears one. The emblem's flyout holds every emblem, five a row: those
+  flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. The emblem's flyout holds every emblem, five a row: those
   kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
@@ -131,10 +136,21 @@ never while a press is held. Each press is an ask the room answers.
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** The currencies along the top; then shelves, each counting what it holds: Gear, after Destiny 1's,
-  the weapons and cloak on the left and the armour on the right, each slot's worn piece beside the nine it carries,
-  three by three, a click wearing one; Consumables; Materials, a list by name and count; and Vestiges,
-  ten places, a click opening one in a social space.
+- **Inventory.** The currencies along the top; under them the Vestiges carried, "Vestiges 3/10" over ten places in
+  two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
+  then shelves, each counting what it holds: Consumables, and Materials, a list by name and count. The gear is on the
+  Character page alone.
+- **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
+  through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
+  longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
+  into shards of its rarity and a fed one gives off a ring; let go early, nothing happens.
+- **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
+  shows a pickup: a row each, its picture in a well of its rarity, its name and how many. Rows slide in, stay four
+  and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
+  once, for its rarest gain.
+- **Sounds.** Every control makes a sound, made by the browser's own synthesiser, so no file is fetched: a tick as
+  the pointer or the keys reach it, a press, a tab turned, the menu opened and shut, a hold's charge rising, a crunch
+  for a dismantle, a chime for a feed or a gain, a buzz for a refusal. One listener hears every press, as DFO's does.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
@@ -155,15 +171,16 @@ never while a press is held. Each press is an ask the room answers.
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
-  Under it, the players blocked, each with a press to unblock them.
-- **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only the held press's
-  fill moves.
+  Under it, the players blocked, each with a press to unblock them; then the interface's volume, kept in this
+  browser.
+- **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
+  wash move: no quiver, no shards, and the gains appear without sliding in.
 
 ## The social space's counters
 
 The vault, the vendors and the Tailor keep counters in the social space, as Destiny's keep theirs in the Tower; E at
-one opens its screen in the menu's window, its name where the tabs stand. The Reader of Vestiges opens the inventory
-at its Vestiges. The room serves each ask only at its own counter ([[Gear]], "In the rooms").
+one opens its screen in the menu's window, its name where the tabs stand. The Reader of Vestiges opens the inventory,
+its Vestiges at the top. The room serves each ask only at its own counter ([[Gear]], "In the rooms").
 
 - **The vault**, after Destiny 1's: what it keeps on the left and what the player carries on the right, each in
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
@@ -197,3 +214,5 @@ the Tailor's stall.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - No gamepad or touch layer yet.
+- The sounds are the interface's alone; the world and the music have none yet.
+- The Acquired feed shows what is counted in the gear; XP and levels are not shown there.

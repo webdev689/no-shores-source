@@ -1,27 +1,33 @@
-// The inventory page, after Destiny's: the currencies along its head, each named under its count; shelves to switch
-// between the gear carried, the consumables, the materials and the Vestiges, each counting what it holds and dimmed
-// while it holds nothing. The gear shelf is Destiny 1's own: each slot's worn piece, then the nine it carries, a click
-// wearing one. The materials are a list, each named beside its count, so nine alike are told apart; the rest are a
-// grid of cells, each its glyph or item picture in a well of its rarity, its count at its foot and its pips beside it,
-// as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a Vestige
-// opened); a right-click its other use or the item's page.
+// The inventory page, after Destiny's: the currencies along its head, each named under its count; then the Vestiges
+// carried, ten places in two rows of five as Destiny 2's engrams stand, an empty place a dark Vestige; then shelves to
+// switch between the consumables and the materials, each counting what it holds and dimmed while it holds nothing. The
+// gear itself is on the Character page. The materials are a list, each named beside its count, so nine alike are told
+// apart; the rest are a grid of cells, each its glyph in a well of its rarity, its count at its foot and its pips
+// beside it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
+// Vestige opened at the Reader); a right-click its other use.
 
 import { make } from '../editor/dom.ts';
-import type { GearItem } from '../network/gearMessages.ts';
-import { CARRIED, RARITIES, SLOTS, itemName } from '../player/gear.ts';
+import { ASKS } from '../network/gearMessages.ts';
+import { CARRIED, RARITIES } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
-import { ARMOUR, CELL_HINTS, type PageContext, WEAPONS } from './characterPage.ts';
-import { type Cell, cardOf, flyoutOf, inventoryPageOf, wearIn } from './gearCards.ts';
-import { type Hint, cardNode, glyphImage, hintLine, itemIcon, itemMarks, rarityOf, tileLabel } from './gearDom.ts';
+import type { PageContext } from './characterPage.ts';
+import { type Cell, cardOf, inventoryPageOf } from './gearCards.ts';
+import {
+  DISMANTLE_KEY,
+  type Hint,
+  cardNode,
+  dismantleOnHold,
+  glyphImage,
+  hintLine,
+  itemIcon,
+  itemMarks,
+  rarityOf,
+  tileLabel,
+} from './gearDom.ts';
 
-/** A cell's picture box, a worn piece's, and a material's in its row, in pixels. */
+/** A cell's picture box, and a material's in its row, in pixels. */
 const CELL_PX = 48;
-const WORN_PX = 64;
 const ROW_PX = 32;
-/** A carried piece's picture in the gear shelf's three by three, smaller, as Destiny 1's are beside the worn one. */
-const SMALL_PX = 34;
-
-const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
 /** Whether a cell holds anything: an item, or a count above none. */
 const holds = (cell: Cell): boolean => cell.item !== null || cell.glyph === 'vestige' || (cell.count ?? 0) > 0;
@@ -71,7 +77,14 @@ export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   const what = cell.count === null ? '' : `${cell.count.toLocaleString()} held`;
   node.setAttribute('aria-label', tileLabel(cell.name, cell.item ? cell.rarity : null, what));
   if (item) node.dataset['details'] = '';
-  const hints: Hint[] = [...(cell.press ? [['Click', cell.press.label] as const] : []), ['Right-click / X', 'Details']];
+  // A piece carried is dismantled by holding F over it, wherever its tile stands.
+  const carried = item?.at === CARRIED;
+  if (item && carried) dismantleOnHold(node, item.rarity, () => context.ask({ kind: ASKS.dismantle, item: item.id }));
+  const hints: Hint[] = [
+    ...(cell.press ? [['Click', cell.press.label] as const] : []),
+    ['Right-click / X', 'Details'],
+    ...(carried ? [[DISMANTLE_KEY, 'Hold to dismantle'] as const] : []),
+  ];
   context.tip.over(node, () => (item ? cardNode(cardOf(item), context.picture(item), hints) : cellCard(cell)));
   node.addEventListener('click', () => {
     context.tip.hide();
@@ -104,67 +117,25 @@ function materialRow(context: PageContext, cell: Cell): HTMLElement {
   return row;
 }
 
-/** A tile holding a piece of gear, in the worn place (`isWorn`) or carried, its card against the piece worn. */
-function gearTile(
-  context: PageContext,
-  item: GearItem | null,
-  slot: number,
-  worn: GearItem | null,
-  isWorn = false,
-  small = false,
-): HTMLElement {
-  const tile = make(item ? 'button' : 'div', '', `gear-cell ${ROLES.tile}${small ? ' gear-small' : ''}`);
-  rarityOf(tile, item?.rarity ?? null);
-  tile.classList.toggle('gear-worn', isWorn);
-  const box = isWorn ? WORN_PX : small ? SMALL_PX : CELL_PX;
-  tile.append(item ? itemIcon(context.picture(item), itemName(item), box) : glyphImage('empty'));
-  if (!item) {
-    tile.classList.add('gear-vacant');
-    return tile;
-  }
-  itemMarks(tile, item);
-  const pips = RARITIES[item.rarity]?.pips ?? '';
-  if (pips) tile.append(make('span', pips, 'gear-pips'));
-  tile.dataset['key'] = `item-${item.id}`;
-  tile.dataset['details'] = '';
-  tile.setAttribute('aria-label', tileLabel(itemName(item), item.rarity, isWorn ? 'worn' : 'carried'));
-  const hints: readonly Hint[] = isWorn ? [['Right-click / X', 'Details']] : CELL_HINTS;
-  context.tip.over(tile, () => cardNode(cardOf(item, isWorn ? null : worn), context.picture(item), hints));
-  tile.addEventListener('click', () => {
-    context.tip.hide();
-    const wear = isWorn ? null : wearIn(item, slot);
-    if (wear) context.ask(wear.ask);
-    else context.inspect(item);
-  });
-  tile.addEventListener('contextmenu', (event) => {
-    event.preventDefault();
-    context.tip.hide();
-    context.inspect(item);
-  });
-  return tile;
-}
-
-/** The gear shelf: a row for each slot, its worn piece and then the nine it carries. */
-/** The gear shelf, after Destiny 1's: the weapons and cloak on the left, the armour on the right, each slot's worn
- *  piece with its name beside the nine it carries, three by three. */
-function gearShelf(context: PageContext): HTMLElement {
-  const shelf = make('div', '', 'gear-gear');
-  for (const side of [WEAPONS, ARMOUR]) {
-    const column = make('div', '', 'gear-gear-side');
-    for (const slot of side) {
-      const { worn, cells } = flyoutOf(context.gear, slot);
-      const row = make('div', '', 'gear-gear-row');
-      const label = make('div', '', 'gear-gear-label');
-      label.append(make('span', capital(SLOTS[slot] ?? ''), 'gear-slot-name'));
-      if (worn) label.append(make('span', itemName(worn), 'gear-slot-item'));
-      const carried = make('div', '', 'gear-gear-carried');
-      carried.append(...cells.map((item) => gearTile(context, item, slot, worn, false, true)));
-      row.append(label, gearTile(context, worn, slot, worn, true), carried);
-      column.append(row);
+/** The Vestiges carried: their name and how many of the ten are held, then a place for each, an empty one a dark
+ *  Vestige, as Destiny 2's engrams stand. */
+function vestigeShelf(context: PageContext, vestiges: ReturnType<typeof inventoryPageOf>['vestiges']): HTMLElement {
+  const section = make('section', '', 'gear-vestiges');
+  const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
+  heading.append(make('span', 'Vestiges'), make('span', `${vestiges.held}/${vestiges.most}`));
+  heading.setAttribute('aria-label', `Vestiges, ${vestiges.held} of ${vestiges.most} carried`);
+  const grid = make('div', '', 'gear-vestige-grid');
+  for (const cell of vestiges.cells) {
+    if (cell.glyph !== 'empty') {
+      grid.append(cellTile(context, cell));
+      continue;
     }
-    shelf.append(column);
+    const place = make('div', '', `gear-cell ${ROLES.tile} gear-vacant gear-vestige-place`);
+    place.append(glyphImage('vestige'));
+    grid.append(place);
   }
-  return shelf;
+  section.append(heading, grid);
+  return section;
 }
 
 export function inventoryPage(context: PageContext, tab: string, choose: (tab: string) => void): HTMLElement {
@@ -179,11 +150,11 @@ export function inventoryPage(context: PageContext, tab: string, choose: (tab: s
     shown.append(glyphImage(currency.glyph === 'item' ? 'empty' : currency.glyph), words);
     head.append(shown);
   }
-  const carried = context.gear.items.filter((item) => item.at === CARRIED).length;
-  const shelves = [
-    { id: 'gear', name: 'Gear', held: carried },
-    ...inventory.tabs.map((each) => ({ id: each.id, name: each.name, held: each.cells.filter(holds).length })),
-  ];
+  const shelves = inventory.tabs.map((each) => ({
+    id: each.id,
+    name: each.name,
+    held: each.cells.filter(holds).length,
+  }));
   const tabs = make('div', '', `gear-shelves ${ROLES.well}`);
   tabs.setAttribute('role', 'tablist');
   for (const each of shelves) {
@@ -197,18 +168,14 @@ export function inventoryPage(context: PageContext, tab: string, choose: (tab: s
     press.addEventListener('click', () => choose(each.id));
     tabs.append(press);
   }
-  page.append(head, tabs);
-  if (tab === 'gear') {
-    page.append(gearShelf(context));
-    return page;
-  }
+  page.append(head, vestigeShelf(context, inventory.vestiges), tabs);
   const cells = inventory.tabs.find((each) => each.id === tab)?.cells ?? [];
   const listed = tab === 'materials';
   const grid = make('div', '', listed ? 'gear-list' : 'gear-grid');
   if (listed) grid.setAttribute('role', 'list');
   for (const cell of cells) grid.append(listed ? materialRow(context, cell) : cellTile(context, cell));
   if (listed && cells.length === 0) grid.append(make('p', 'Nothing here yet.', 'gear-hint gear-empty'));
-  // A grid's empty places stand as vacant tiles to the end of its row of ten, as the vault's and the Vestiges' do.
+  // A grid's empty places stand as vacant tiles to the end of its row of ten, as the vault's do.
   if (!listed)
     for (
       let place = cells.length;

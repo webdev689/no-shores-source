@@ -4,7 +4,7 @@
 // nine it carries, toward the figure, each worn by a click; a right-click on any opens the item's page.
 
 import { make } from '../editor/dom.ts';
-import type { GearAsk, GearItem, GearState } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import { RARITIES, SLOTS, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
@@ -12,7 +12,9 @@ import { cardOf, flyoutOf, wearIn } from './gearCards.ts';
 import {
   type Hint,
   type HoverCard,
+  DISMANTLE_KEY,
   cardNode,
+  dismantleOnHold,
   glyphImage,
   itemIcon,
   itemMarks,
@@ -43,8 +45,8 @@ export interface PageContext {
 }
 
 /** The slots each side of the figure, by the gear's slot numbers. */
-export const WEAPONS = [0, 1, 6];
-export const ARMOUR = [2, 3, 4, 5];
+const WEAPONS = [0, 1, 6];
+const ARMOUR = [2, 3, 4, 5];
 /** A slot's picture box, and a flyout cell's, in pixels. */
 const SLOT_PX = 72;
 const CELL_PX = 48;
@@ -59,9 +61,10 @@ const SLOT_HINTS: readonly Hint[] = [
   ['Click', 'Swap'],
   ['Right-click / X', 'Details'],
 ];
-export const CELL_HINTS: readonly Hint[] = [
+const CELL_HINTS: readonly Hint[] = [
   ['Click', 'Equip'],
   ['Right-click / X', 'Details'],
+  [DISMANTLE_KEY, 'Hold to dismantle'],
 ];
 
 /** A tile holding an item's picture, framed in its rarity, or an empty place. */
@@ -141,6 +144,7 @@ export function characterPage(
             if (wear) context.ask(wear.ask);
           });
           cell.dataset['details'] = '';
+          dismantleOnHold(cell, item.rarity, () => context.ask({ kind: ASKS.dismantle, item: item.id }));
           tip.over(cell, () => cardNode(cardOf(item, worn), context.picture(item), CELL_HINTS), flyout);
         }
         grid.append(cell);

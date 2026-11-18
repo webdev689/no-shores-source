@@ -1,5 +1,5 @@
 // The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Ship, the Sloop's details as
-// Manage shows them; and Settings, which keeps the account.
+// Manage shows them; and Settings, which keeps the account and the interface's volume.
 
 import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';
@@ -7,6 +7,7 @@ import { ROLES } from '../plus/kit.ts';
 import { accountPanel } from './accountTab.ts';
 import { pressOf } from './gearDom.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import { interfaceVolume, play, setInterfaceVolume } from './uiSounds.ts';
 
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
 export function laterPage(name: string, words: string): HTMLElement {
@@ -41,13 +42,32 @@ export function shipPage(panel: ShipPanel | null): HTMLElement {
   return page;
 }
 
-/** The Settings page: the account, or why there is none. */
+/** The Settings page: the account, or why there is none, and the interface's volume. */
 export function settingsPage(link: AccountLink | null): HTMLElement {
   const page = make('div', '', `gear-settings ${ROLES.panel}`);
   page.append(make('h2', 'Account', `gear-heading ${ROLES.rule}`));
   page.append(link ? accountPanel(link) : make('p', 'Playing offline: there is no account.', 'gear-hint'));
   if (link) page.append(blockedPanel(link));
+  page.append(soundPanel());
   return page;
+}
+
+/** The interface's volume, from silent to full, kept in this browser; let go, it is heard at its new level. */
+function soundPanel(): HTMLElement {
+  const panel = make('section', '', 'gear-sound');
+  const row = make('label', '', 'gear-sound-row');
+  const slider = make('input', '', 'gear-volume');
+  Object.assign(slider, { type: 'range', min: '0', max: '100', step: '5' });
+  slider.value = String(Math.round(interfaceVolume() * 100));
+  const shown = make('b', `${slider.value}%`);
+  slider.addEventListener('input', () => {
+    setInterfaceVolume(Number(slider.value) / 100);
+    shown.textContent = `${slider.value}%`;
+  });
+  slider.addEventListener('change', () => play('press'));
+  row.append(make('span', 'Interface sounds'), slider, shown);
+  panel.append(make('h2', 'Sound', `gear-heading ${ROLES.rule}`), row);
+  return panel;
 }
 
 /** The players blocked, each with a press to unblock them; blocking is done from the Roster. */

@@ -11,9 +11,14 @@ import type { Card, Glyph, Trait } from './gearCards.ts';
 import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 import { elementSvg } from './elementGlyphs.ts';
 import { diagonalFit, drawnBounds, fitIcon } from './iconFit.ts';
+import { charge, play } from './uiSounds.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */
 export const HOLD_MS = 800;
+/** How long a piece is held to dismantle it, by its rarity: the rarer the longer, as Destiny's are, so the rarest is
+ *  never lost to a slip. */
+const DISMANTLE_MS = [600, 700, 900, 1200, 1800];
+export const dismantleMs = (rarity: number): number => DISMANTLE_MS[rarity] ?? HOLD_MS;
 /** How far the hover card stands from what it describes, and from the screen's edge. */
 const TIP_GAP = 10;
 
@@ -46,30 +51,110 @@ export function hintLine(hints: readonly Hint[], className = 'gear-hints'): HTML
   return line;
 }
 
-/** A press that acts only once held down for a moment, by the pointer or by Enter or Space, its fill showing how long
- *  is left; let go early, nothing happens. */
-export function heldPress(text: string, held: () => void, role: Role = 'button'): HTMLButtonElement {
-  const node = pressOf(text, () => undefined, role);
-  node.classList.add('gear-held');
-  node.style.setProperty('--hold', `${HOLD_MS}ms`);
-  let timer = 0;
-  const cancel = () => {
+/** How a hold ends once it acts: the item breaking apart, the item taking something in, or nothing more. */
+export type Burst = 'shatter' | 'pulse' | null;
+/** A hold's parts beside the press: what charges as it is held, how it ends, and how long it is held. */
+interface Hold {
+  readonly charges?: HTMLElement | null;
+  readonly burst?: Burst;
+  readonly holdMs?: number;
+}
+
+/** The hold under way: what is held, what charges with it, and how to let it go. */
+let holding: { readonly node: HTMLElement; readonly letGo: () => void } | null = null;
+
+/** Lets go of the hold under way on `node`, or any with none named. */
+export function letGoHold(node?: HTMLElement): void {
+  if (holding && (!node || holding.node === node)) holding.letGo();
+}
+
+/**
+ * Holds `node` for a moment before `held` runs, `charges` (the item's picture, or `node` itself) charging as it is
+ * held: a wash rising through it, brightening, quivering at the end, as Destiny's dismantle does; let go early,
+ * nothing happens. Once it acts, `burst` plays where `charges` stood, though the page under it is built anew.
+ */
+export function holdOn(
+  node: HTMLElement,
+  held: () => void,
+  { charges = null, burst = null, holdMs = HOLD_MS }: Hold = {},
+) {
+  letGoHold();
+  // A press that can do nothing does not fill, so it never seems about to act.
+  if (node.getAttribute('aria-disabled') === 'true') return;
+  const shown = charges ?? node;
+  node.style.setProperty('--hold', `${holdMs}ms`);
+  shown.style.setProperty('--hold', `${holdMs}ms`);
+  // Restarts the fill's transition and the charge from empty.
+  void node.offsetWidth;
+  node.classList.add('gear-holding');
+  shown.classList.add('gear-charging');
+  const quiet = charge(holdMs);
+  const end = () => {
     window.clearTimeout(timer);
     node.classList.remove('gear-holding');
+    shown.classList.remove('gear-charging');
+    holding = null;
   };
-  const begin = () => {
-    cancel();
-    // A press that can do nothing does not fill, so it never seems about to act.
-    if (node.getAttribute('aria-disabled') === 'true') return;
-    // Restarts the fill's transition from empty.
-    void node.offsetWidth;
-    node.classList.add('gear-holding');
-    timer = window.setTimeout(() => {
-      node.classList.remove('gear-holding');
-      // A press built over while it was held is gone, and does nothing: its page shows the gear anew.
-      if (node.isConnected && node.getAttribute('aria-disabled') !== 'true') held();
-    }, HOLD_MS);
-  };
+  const timer = window.setTimeout(() => {
+    end();
+    // A press built over while it was held is gone, and does nothing: its page shows the gear anew.
+    if (!node.isConnected || node.getAttribute('aria-disabled') === 'true') return quiet();
+    if (burst) burstAt(shown, burst);
+    held();
+  }, holdMs);
+  holding = { node, letGo: () => (end(), quiet()) };
+}
+
+/** Pieces the burst breaks into, and how far they fly, in the item's own widths. */
+const SHARDS = 14;
+const SHARD_REACH = 0.9;
+
+/** Where a hold acted, after its page is gone: the item breaking into shards of its rarity with a flash, or a ring
+ *  of its rarity swelling out of it. */
+export function burstAt(target: HTMLElement, burst: Exclude<Burst, null>): void {
+  const box = target.getBoundingClientRect();
+  const hud = target.closest('#hud') ?? document.body;
+  const shown = make('div', '', `gear-burst gear-burst-${burst}`);
+  shown.setAttribute('aria-hidden', 'true');
+  Object.assign(shown.style, {
+    left: `${box.left}px`,
+    top: `${box.top}px`,
+    width: `${box.width}px`,
+    height: `${box.height}px`,
+  });
+  shown.style.setProperty('--rar-rgb', getComputedStyle(target).getPropertyValue('--rar-rgb') || '243, 207, 134');
+  const side = Math.max(4, Math.round(Math.min(box.width, box.height) / 9));
+  if (burst === 'shatter')
+    for (let shard = 0; shard < SHARDS; shard++) {
+      const piece = make('span', '', 'gear-shard');
+      const angle = (shard / SHARDS) * Math.PI * 2 + (shard % 3) * 0.35;
+      const reach = box.width * SHARD_REACH * (0.6 + ((shard * 7) % 5) / 10);
+      piece.style.setProperty('--dx', `${Math.round(Math.cos(angle) * reach)}px`);
+      piece.style.setProperty('--dy', `${Math.round(Math.sin(angle) * reach)}px`);
+      piece.style.width = piece.style.height = `${side}px`;
+      piece.classList.toggle('gear-shard-lit', shard % 2 === 0);
+      shown.append(piece);
+    }
+  hud.append(shown);
+  play(burst === 'shatter' ? 'dismantle' : 'feed');
+  shown.addEventListener('animationend', (event) => event.target === shown && shown.remove());
+  // Gone even where no animation runs.
+  window.setTimeout(() => shown.remove(), 900);
+}
+
+/** A press that acts only once held down for a moment, by the pointer or by Enter or Space, its fill showing how long
+ *  is left and `charges` charging with it; let go early, nothing happens. */
+export function heldPress(
+  text: string,
+  held: () => void,
+  role: Role = 'button',
+  { charges, ...hold }: Omit<Hold, 'charges'> & { readonly charges?: () => HTMLElement | null } = {},
+): HTMLButtonElement {
+  const node = pressOf(text, () => undefined, role);
+  node.classList.add('gear-held');
+  node.style.setProperty('--hold', `${hold.holdMs ?? HOLD_MS}ms`);
+  const begin = () => holdOn(node, held, { ...hold, charges: charges?.() ?? null });
+  const cancel = () => letGoHold(node);
   node.addEventListener('pointerdown', begin);
   for (const event of ['pointerup', 'pointerleave', 'pointercancel', 'blur']) node.addEventListener(event, cancel);
   node.addEventListener('keydown', (event) => {
@@ -82,6 +167,42 @@ export function heldPress(text: string, held: () => void, role: Role = 'button')
     if (event.key === 'Enter' || event.key === ' ') cancel();
   });
   return node;
+}
+
+/** The key held on a carried piece's tile to dismantle it, as Destiny's is on a computer. */
+export const DISMANTLE_KEY = 'F';
+/** Each tile F dismantles, and what dismantling it asks. */
+const dismantles = new WeakMap<HTMLElement, { readonly rarity: number; readonly run: () => void }>();
+/** The tile the pointer is over, which F dismantles though the focus is elsewhere. */
+let pointed: HTMLElement | null = null;
+let listening = false;
+
+/** Lets `tile`, a carried piece's, be dismantled by holding F while the pointer is over it or it has the focus, as
+ *  long as its rarity asks, its picture charging and breaking apart once it acts. */
+export function dismantleOnHold(tile: HTMLElement, rarity: number, dismantle: () => void): void {
+  dismantles.set(tile, { rarity, run: dismantle });
+  tile.addEventListener('pointerenter', () => (pointed = tile));
+  tile.addEventListener('pointerleave', () => pointed === tile && (pointed = null));
+  tile.addEventListener('pointercancel', () => letGoHold(tile));
+  if (listening) return;
+  listening = true;
+  const isKey = (event: KeyboardEvent) => event.key.toUpperCase() === DISMANTLE_KEY;
+  // Heard before the menu keeps its keys to itself; a key typed into a field is the field's.
+  addEventListener(
+    'keydown',
+    (event) => {
+      const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      if (!isKey(event) || event.repeat || typing) return;
+      const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const tile = focused && dismantles.has(focused) ? focused : pointed?.isConnected ? pointed : null;
+      const found = tile ? dismantles.get(tile) : undefined;
+      if (!tile || !found) return;
+      event.preventDefault();
+      holdOn(tile, found.run, { charges: tile, burst: 'shatter', holdMs: dismantleMs(found.rarity) });
+    },
+    true,
+  );
+  addEventListener('keyup', (event) => isKey(event) && letGoHold(), true);
 }
 
 /** A canvas showing a picture in a box of `box` CSS pixels, its clear margin trimmed, fitted as Enhanced Plus fits

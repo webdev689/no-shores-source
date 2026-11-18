@@ -146,9 +146,10 @@ export interface Cell {
   readonly item: GearItem | null;
 }
 
-/** The inventory page: its currencies, and its tabs of cells. */
+/** The inventory page: its currencies, the Vestiges carried in their ten places, and its tabs of cells. */
 export interface InventoryPage {
   readonly currencies: readonly { readonly glyph: Glyph; readonly name: string; readonly count: number }[];
+  readonly vestiges: { readonly held: number; readonly most: number; readonly cells: readonly Cell[] };
   readonly tabs: readonly { readonly id: string; readonly name: string; readonly cells: readonly Cell[] }[];
 }
 
@@ -197,10 +198,10 @@ export function inventoryPageOf(state: GearState): InventoryPage {
   );
   return {
     currencies,
+    vestiges: { held: carried.length, most: VESTIGES_MOST, cells: [...carried, ...empties] },
     tabs: [
       { id: 'consumables', name: 'Consumables', cells: [fruit] },
       { id: 'materials', name: 'Materials', cells: materials },
-      { id: 'vestiges', name: 'Vestiges', cells: [...carried, ...empties] },
     ],
   };
 }

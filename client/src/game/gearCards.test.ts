@@ -92,16 +92,19 @@ test('the inventory shows its currencies, and Vestiges open only in a social spa
   const tab = (page: typeof away, id: string) => page.tabs.find((each) => each.id === id)?.cells ?? [];
   assert.equal(tab(away, 'consumables')[0]?.count, 2, 'the Fruit of Dagon');
   assert.equal(tab(away, 'materials').length, 9, 'every island’s resource');
-  const vestiges = tab(away, 'vestiges');
-  assert.equal(vestiges.length, 10, 'ten places');
-  assert.equal(vestiges[0]?.press, null, 'not identified away from a social space');
+  const vestiges = away.vestiges;
+  assert.equal(vestiges.cells.length, 10, 'ten places');
+  assert.deepEqual([vestiges.held, vestiges.most], [1, 10]);
+  assert.equal(vestiges.cells[0]?.press, null, 'not identified away from a social space');
   assert.deepEqual(
     away.tabs.map((each) => each.id),
-    ['consumables', 'materials', 'vestiges'],
+    ['consumables', 'materials'],
+    'the Vestiges stand above the shelves, not on one',
   );
   const social = inventoryPageOf(state({ atReader: true, vestiges: [vestige, { ...vestige, id: 8, vaulted: true }] }));
-  assert.deepEqual(tab(social, 'vestiges')[0]?.press?.ask, { kind: ASKS.identify, item: 9 });
-  assert.equal(tab(social, 'vestiges')[1]?.glyph, 'empty', 'a vaulted Vestige is not carried');
+  assert.deepEqual(social.vestiges.cells[0]?.press?.ask, { kind: ASKS.identify, item: 9 });
+  assert.equal(social.vestiges.cells[1]?.glyph, 'empty', 'a vaulted Vestige is not carried');
+  assert.equal(social.vestiges.held, 1);
 });
 
 test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from what is carried', () => {
