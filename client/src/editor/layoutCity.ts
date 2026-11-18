@@ -45,9 +45,9 @@ export function layoutsWanted(
 }
 
 /** Reads the forged models' tables once, or null where the pages do not serve them. */
-async function loadTables(): Promise<CityTables | null> {
+async function loadTables(base: string): Promise<CityTables | null> {
   const read = async (name: string) => {
-    const answer = await fetch(`${import.meta.env.BASE_URL}world/forged/${name}.json`);
+    const answer = await fetch(`${base}world/forged/${name}.json`);
     if (!answer.ok) throw new Error(`world/forged/${name}.json: ${answer.status}`);
     return answer.json() as Promise<unknown>;
   };
@@ -63,15 +63,22 @@ async function loadTables(): Promise<CityTables | null> {
 /** The layouts near the 3D view's camera, drawn by one city view. */
 export class LayoutCity {
   private readonly view: CityView;
+  private readonly base: string;
   private tablesAsked = false;
   private loaded: CityTables | null = null;
   private gathered: Gathered | null = null;
   /** Layouts come from the worker and waiting to be built, with the climate they are painted in. */
-  private ready: { readonly layouts: readonly NodeLayout[]; readonly climate: string | null } | null = null;
+  private ready: {
+    readonly asked: Gathered;
+    readonly layouts: readonly NodeLayout[];
+    readonly climate: string | null;
+  } | null = null;
   private drawing = false;
 
-  constructor(gpu: Gpu) {
+  /** `base` is the pages' address, which serves the forged models' tables under `world/forged/`. */
+  constructor(gpu: Gpu, base: string) {
     this.view = new CityView(gpu);
+    this.base = base;
   }
 
   /** Once a frame, before any pass: asks for the layouts the camera now wants, and builds those that have come.
@@ -87,29 +94,40 @@ export class LayoutCity {
       [this.gathered, this.ready, this.drawing] = [null, null, false];
       return;
     }
-    if (!this.tablesAsked) void loadTables().then((tables) => (this.loaded = tables));
+    if (!this.tablesAsked) void loadTables(this.base).then((tables) => (this.loaded = tables));
     this.tablesAsked = true;
-    const ids = layoutsWanted(this.gathered, id, marks, eye);
-    if (this.gathered && !ids) this.gathered.at = eye;
-    else if (ids) {
+    const { gathered } = this;
+    const ids = layoutsWanted(gathered, id, marks, eye);
+    // The gathering point moves only in regather-sized steps, so a camera panned smoothly still gathers again.
+    if (!ids && gathered && Math.hypot(eye[0] - gathered.at[0], eye[1] - gathered.at[1]) >= LAYOUT_REGATHER_M)
+      gathered.at = eye;
+    if (ids) {
       const asked: Gathered = { id, marks, at: eye, names: ids.join(',') };
       this.gathered = asked;
       const named = ids.length ? source.layoutsNamed(id, ids) : Promise.resolve('[]');
       named
         .then((text) => {
-          // A camera moved on or a replan while the worker answered asked again: this answer is stale.
           if (this.gathered !== asked || text === null) return;
-          this.ready = { layouts: JSON.parse(text) as NodeLayout[], climate: source.climateOf(id) };
+          this.ready = { asked, layouts: JSON.parse(text) as NodeLayout[], climate: source.climateOf(id) };
         })
         .catch((error: unknown) => console.error("the layouts' buildings could not be gathered:", error));
     }
     const { ready, loaded } = this;
     if (!ready || !loaded) return;
     this.ready = null;
-    const plan = planOfLayouts(ready.layouts);
-    if (plan) this.view.setCity(plan, cityClimate(ready.climate ?? undefined), new Map(), loaded);
-    else this.view.clear();
-    this.drawing = plan !== null;
+    // The camera moved on or the layouts were planned again since this was asked for: it is stale.
+    if (ready.asked !== this.gathered) return;
+    try {
+      const plan = planOfLayouts(ready.layouts);
+      if (plan) this.view.setCity(plan, cityClimate(ready.climate ?? undefined), new Map(), loaded);
+      else this.view.clear();
+      this.drawing = plan !== null;
+    } catch (error) {
+      // Layouts the city cannot build leave the rest of the view drawing.
+      this.view.clear();
+      this.drawing = false;
+      console.error("the layouts' buildings could not be built:", error);
+    }
   }
 
   /** Draws the layouts gathered into the 3D view's pass. The view measures from its camera with heights shown

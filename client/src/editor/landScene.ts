@@ -164,7 +164,7 @@ export class LandScene {
     );
     this.marks = new MarkView(gpu);
     this.naval = new Naval(this.marks);
-    this.layoutCity = new LayoutCity(gpu);
+    this.layoutCity = new LayoutCity(gpu, import.meta.env.BASE_URL);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
