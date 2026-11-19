@@ -24,6 +24,8 @@ import {
   type SailedPace,
   timeText,
   WORLD_PACE,
+  HOLD_REACH_M,
+  paceToAskAgain,
 } from './seaLaw.ts';
 
 /** The Sloop drawn 75 m long on the sea's view. */
@@ -209,4 +211,16 @@ test("at the world's own time, with no word from the room, she sails at her true
   const easing = followed(voyage, 1_000, 1, WORLD_PACE, null, 40);
   assert.equal(easing, 1_000 + SHIP_SPEED * 40, 'until the room takes the eased course, at the pace it sails her at');
   assert.equal(heldNote(WORLD_PACE, { x: 0, y: 0, pace: WORLD_PACE }), '', 'eased for the view, not held by a pirate');
+});
+
+test('the page asks a pace again where the room sails her otherwise, but not where a hostile ship holds her', () => {
+  const room = (pace: number) => ({ x: 0, y: 0, pace });
+  assert.equal(paceToAskAgain(1, null, []), false, 'no word yet');
+  assert.equal(paceToAskAgain(1, room(0), []), false, 'at rest');
+  assert.equal(paceToAskAgain(1, room(1), []), false, 'they agree');
+  assert.equal(paceToAskAgain(1, room(5), []), true, 'a step down refused');
+  assert.equal(paceToAskAgain(60, room(40), []), true, 'a step up refused, no hostile ship near');
+  assert.equal(paceToAskAgain(60, room(5), [{ x: 1_500, y: 0 }]), false, 'held by a hostile ship near');
+  assert.equal(paceToAskAgain(1, room(5), [{ x: 1_500, y: 0 }]), true, 'faster than asked is never a hold');
+  assert.equal(paceToAskAgain(60, room(40), [{ x: HOLD_REACH_M + 1, y: 0 }]), true, 'one past the hold’s reach');
 });

@@ -191,8 +191,10 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   she sails at her true speed, 12 m/s, while watched close; as the view rises it eases back up to the dial the same way.
   The dial itself is not changed, and the voyage's time left is read at it. Each step goes to the sea room with her
   course; the room takes one course each half second, so it sails her at the latest step it has, and the page sails
-  her at the room's pace until it takes the next. While the pace is eased the voyage's line adds "Sailing at true
-  speed while you watch close."
+  her at the room's pace until it takes the next. Once the room's word on her comes and its pace is not the one she is
+  sailed at, a step it refused, the page asks it again with her course, until the two agree (`paceToAskAgain`); a
+  slower word with a hostile ship within 1.7 km is the room holding her, not a refusal. While the pace is eased, and
+  the room sails her at it, the voyage's line adds "Sailing at true speed while you watch close."
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
