@@ -123,7 +123,11 @@ fn a_blow_strikes_every_foe_its_arc_and_reach_hold_the_locks_target_first_then_t
     assert!(struck(1, &striker, &attack(Stroke::Left), &fighters, &wall).is_empty(), "nothing through a wall");
     let mut locked = striker;
     locked.target = Some(3);
-    assert_eq!(struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[]), vec![3, 8, 2, 4], "the lock's target first");
+    assert_eq!(
+        struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[]),
+        vec![3, 8, 2, 4],
+        "the lock's target first"
+    );
 }
 
 #[test]
