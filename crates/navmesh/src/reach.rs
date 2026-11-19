@@ -13,7 +13,7 @@ const GOAL_REACH: f64 = 4.0;
 /// A poly is on a body's level when the body's feet are within this of its corners' heights (m).
 const LEVEL_SPAN: f64 = 0.9;
 
-/// The polys a walk reaches from a start: its own, and every one joined to it across a shared edge.
+/// The polys a walk reaches from a start: its own, and every one joined to it across a shared edge or a link.
 #[derive(Clone, Debug)]
 pub struct Reachable<'mesh> {
     navmesh: &'mesh NavMesh,
@@ -79,7 +79,8 @@ fn nearest_in(count: usize, rim: impl Fn(usize) -> (f64, f64), x: f64, y: f64) -
 }
 
 impl NavMesh {
-    /// The floor a walk reaches from `start`; none when `start` stands on no poly. Obstacles are not walls to it.
+    /// The floor a walk reaches from `start`, climbing and dropping where links lead; none when `start` stands on no
+    /// poly. Obstacles are not walls to it.
     #[must_use]
     pub fn reachable_from(&self, start: [f64; 3]) -> Option<Reachable<'_>> {
         let first = self.locate(start)?;
@@ -87,7 +88,8 @@ impl NavMesh {
         reached[first] = true;
         let mut stack = vec![first];
         while let Some(poly) = stack.pop() {
-            for &next in self.mesh.polys[poly].neighbours.iter().flatten() {
+            let linked = self.mesh.exits[poly].iter().map(|&at| self.mesh.links[at].end);
+            for next in self.mesh.polys[poly].neighbours.iter().flatten().copied().chain(linked) {
                 if !reached[next] {
                     reached[next] = true;
                     stack.push(next);

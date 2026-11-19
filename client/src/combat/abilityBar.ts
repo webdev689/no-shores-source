@@ -1,25 +1,28 @@
-// The Art's abilities on the HUD, at the bottom left beside the vitals, as Destiny shows a Super and its abilities:
-// the Anima as its own icon, the one the Art's screen shows, lit from the bottom as it charges, its outline lit all
-// the while, and glowing once full; the two Tenets as square icons, a dark wedge over each sweeping clockwise away as
-// it recharges, its last seconds counted in it. Each has its key on a keycap under it. What it shows is worked out
-// from the room's numbers alone, and only what changed is written.
+// The Art's abilities at the bottom left, as Destiny shows a Super and its abilities: the Anima's icon in a diamond,
+// lit from the bottom as it charges and glowing once full; the two Tenets' icons in rings, a dark wedge over each
+// sweeping clockwise away as it recharges, its last seconds counted in it, the ring lit once ready. Each has its key on
+// a keycap under it. A spell just cast flashes its frame white; while the player cannot cast (staggered, down, dead),
+// every icon greys under a hatch. What it shows is worked out from the room's numbers alone, and only what changed is
+// written.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import { ROLES } from '../plus/kit.ts';
 import { HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
+import { ARMS_SIZES, DIAMOND_CELLS, RING_CELLS } from './hudLayout.ts';
+import { element } from './meter.ts';
 
 /** The keys that cast the Anima and the two Tenets. */
 export const ABILITY_KEYS = ['R', 'Q', 'G'] as const;
 /** The Anima's icon's rows: it lights a whole row of its picture at a time. */
 export const ANIMA_ROWS = 24;
+/** A Tenet's icon's cells, and the clear middle of its ring, across. */
+const TENET_CELLS = 12;
+const RING_CLEAR = 14;
 /** The steps a Tenet's wedge sweeps in, round the circle. */
 const SWEEP_STEPS = 60;
 /** A Tenet counts its seconds only once fewer than this are left. */
 const COUNT_UNDER = 10;
-/** How many CSS pixels each cell of the Anima's icon takes on the bar, and of a Tenet's, and where the HUD is wide
- *  (1500 by 900 and up). */
-const SCALE = 3;
-const WIDE_SCALE = 4;
+/** How long a spell just cast flashes, in seconds. */
+export const USED_SECONDS = 0.5;
 /** Float error left by a share worked out from ticks, kept from tipping a step. */
 const EPSILON = 1e-9;
 
@@ -48,12 +51,15 @@ export interface AbilityShown {
   readonly tenets: readonly [TenetShown, TenetShown];
 }
 
-/** The pictures the bar draws an Art with, as SVG: its Anima's icon and that icon's outline alone, and its two Tenets'
- *  icons. The game's glyphs make them, so the HUD needs no picture of its own. */
+/** The pictures the bar draws an Art with, as SVG: its Anima's icon and that icon's outline alone, its two Tenets'
+ *  icons, and the Anima's diamond and a Tenet's ring. The game's glyphs make them, so the HUD needs no picture of its
+ *  own. */
 export interface ArtPictures {
   readonly anima: string;
   readonly animaOutline: string;
   readonly tenets: readonly [string, string];
+  readonly diamond: string;
+  readonly ring: string;
 }
 
 const share = (value: number): number => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0);
@@ -85,45 +91,85 @@ export function abilityBarOf(state: AbilityState): AbilityShown {
   };
 }
 
+/** Which of the Anima and the two Tenets were spent between `was` and `now`: full before, short of it after. */
+export function spentBetween(was: AbilityState | null, now: AbilityState): readonly [boolean, boolean, boolean] {
+  const spent = (before: number | undefined, after: number) => before !== undefined && before >= 1 && after < 1;
+  const same = was?.art === now.art;
+  return [
+    same && spent(was.animaShare, now.animaShare),
+    same && spent(was.tenets[0], now.tenets[0]),
+    same && spent(was.tenets[1], now.tenets[1]),
+  ];
+}
+
 const SHEET_ID = 'ability-bar';
-/** The bar's sheet: a carved window right of the vitals, the Anima's icon, the Tenets' wells and the keycaps, each cap
- *  under its icon on one line; where the HUD is wide, each a step larger, its pictures still whole multiples. */
+/** The bar's sheet at one step, `scope` the display's class for it: each picture a whole multiple of its cells. */
+function stepCss(scope: string, cell: number, gap: number): string {
+  const diamond = DIAMOND_CELLS * cell;
+  const ring = RING_CELLS * cell;
+  const clear = RING_CLEAR * cell;
+  return `
+${scope} .abilities { gap: ${gap}px; }
+${scope} .abilities .anima { width: ${diamond}px; height: ${diamond}px; }
+${scope} .abilities .anima .icon { inset: ${((DIAMOND_CELLS - ANIMA_ROWS) / 2) * cell}px; }
+${scope} .abilities .tenet { width: ${ring}px; height: ${ring}px; }
+${scope} .abilities .tenet .icon { inset: ${((RING_CELLS - TENET_CELLS) / 2) * cell}px; }
+${scope} .abilities .tenet .sweep { inset: ${(ring - clear) / 2}px; }
+${scope} .abilities kbd { min-width: ${cell * 9}px; font-size: ${cell === 2 ? 11 : 22}px;
+  line-height: ${cell === 2 ? 14 : 24}px; margin-top: -${cell * 3}px; }
+${scope} .abilities .seconds { font-size: ${cell === 2 ? 22 : 33}px; }`;
+}
+
 const SHEET = `
-.ability-bar { position: absolute; left: 308px; bottom: 24px; display: flex; align-items: flex-end; gap: 11px;
-  box-sizing: border-box; padding: 7px 12px; border-width: 2px; border-style: solid; pointer-events: none; }
-.ability-bar[hidden] { display: none; }
-.ability-bar .slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.ability-bar img { display: block; image-rendering: pixelated; }
-.ability-bar .anima { position: relative; width: ${ANIMA_ROWS * SCALE}px; height: ${ANIMA_ROWS * SCALE}px; }
-.ability-bar .anima img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ability-bar .anima .unlit { filter: grayscale(0.8) brightness(0.55); }
-.ability-bar .anima.full .lit { filter: drop-shadow(0 0 6px var(--art)); }
-.ability-bar .tenet { position: relative; box-sizing: border-box; width: 44px; height: 44px; display: grid;
-  place-items: center; border: 2px solid; border-color: ${TONES.stoneDark} ${TONES.stoneMid} ${TONES.stoneLit}
-  ${TONES.stoneDim}; background: ${TONES.groundTrack}; box-shadow: 0 0 0 1px ${TONES.outline}; }
-.ability-bar .tenet img { width: 36px; height: 36px; }
-.ability-bar .tenet:not(.ready) img { filter: saturate(0.5) brightness(0.75); }
-.ability-bar .tenet.ready { border-color: var(--art-lit) var(--art-dark) var(--art-dark) var(--art-lit);
-  box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 8px var(--art); }
-.ability-bar .sweep { position: absolute; inset: 0; background: conic-gradient(transparent 0 var(--done),
-  rgba(5, 6, 8, 0.7) var(--done) 360deg); }
-.ability-bar .tenet.ready .sweep { display: none; }
-.ability-bar .seconds { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px;
-  line-height: 1; color: ${TONES.word}; text-shadow: ${HALO}; font-variant-numeric: tabular-nums; }
-.ability-bar kbd { min-width: 18px; box-sizing: border-box; padding: 0 5px; border: 1px solid;
+.fight-hud .abilities { display: flex; align-items: flex-end; pointer-events: none; }
+.fight-hud .abilities[hidden] { display: none; }
+.fight-hud .abilities .slot { position: relative; display: flex; flex-direction: column; align-items: center; }
+.fight-hud .abilities img { display: block; image-rendering: pixelated; }
+.fight-hud .abilities .anima, .fight-hud .abilities .tenet { position: relative; flex: none; }
+.fight-hud .abilities .frame { position: absolute; inset: 0; width: 100%; height: 100%;
+  filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
+.fight-hud .abilities .icon { position: absolute; }
+.fight-hud .abilities .icon img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fight-hud .abilities .anima .unlit { filter: grayscale(0.85) brightness(0.5); }
+.fight-hud .abilities .anima:not(.full) .frame { filter: saturate(0.45) brightness(0.8)
+  drop-shadow(1px 1px 0 ${TONES.outline}); }
+.fight-hud .abilities .anima.full .frame { filter: drop-shadow(1px 1px 0 ${TONES.outline})
+  drop-shadow(0 0 6px var(--art)); }
+.fight-hud .abilities .anima.full .lit { filter: drop-shadow(0 0 4px var(--art)); }
+.fight-hud .abilities .tenet:not(.ready) .frame { filter: saturate(0.45) brightness(0.8)
+  drop-shadow(1px 1px 0 ${TONES.outline}); }
+.fight-hud .abilities .tenet:not(.ready) .icon img { filter: saturate(0.5) brightness(0.7); }
+/* Its last seconds counted, the icon steps back so the number reads. */
+.fight-hud .abilities .tenet.counting .icon img { opacity: 0.3; }
+.fight-hud .abilities .tenet.ready .frame { filter: brightness(1.25) drop-shadow(1px 1px 0 ${TONES.outline})
+  drop-shadow(0 0 5px var(--art)); }
+.fight-hud .abilities .sweep { position: absolute; border-radius: 50%; background: conic-gradient(transparent 0
+  var(--done), rgba(5, 6, 8, 0.72) var(--done) 360deg); }
+.fight-hud .abilities .tenet.ready .sweep { display: none; }
+.fight-hud .abilities .seconds { position: absolute; inset: 0; display: grid; place-items: center; line-height: 1;
+  color: ${TONES.word}; text-shadow: ${HALO}; font-variant-numeric: tabular-nums; }
+/* A spell just cast: its frame white for a beat, in two hard steps. */
+.fight-hud .abilities .used .frame { animation: ability-used ${USED_SECONDS}s steps(2, end) forwards; }
+@keyframes ability-used { from { filter: brightness(3) drop-shadow(0 0 6px #fff); } to { filter: none; } }
+/* Unable to cast: every icon greys under a hatch, so it never reads by its colour alone. */
+.fight-hud .abilities.unable .anima::after, .fight-hud .abilities.unable .tenet::after { content: ''; position: absolute;
+  inset: 22%; border-radius: 50%; background: repeating-linear-gradient(135deg, rgba(5,6,8,0.75) 0 3px,
+  transparent 3px 6px); }
+.fight-hud .abilities.unable img { filter: grayscale(1) brightness(0.6) !important; }
+.fight-hud .abilities kbd { position: relative; box-sizing: border-box; padding: 0 4px; border: 1px solid;
   border-color: ${TONES.stoneLit} ${TONES.stoneDark} ${TONES.stoneDark} ${TONES.stoneLit}; border-bottom-width: 2px;
-  background: #16181d; font: inherit; font-size: 11px; line-height: 16px; text-align: center; color: ${TONES.word}; }
-@media (min-width: 1500px) and (min-height: 900px) {
-  .ability-bar { left: 378px; }
-  .ability-bar .anima { width: ${ANIMA_ROWS * WIDE_SCALE}px; height: ${ANIMA_ROWS * WIDE_SCALE}px; }
-  .ability-bar .tenet { width: 52px; height: 52px; }
-  .ability-bar .tenet img { width: 48px; height: 48px; }
-  .ability-bar kbd { min-width: 28px; font-size: 22px; line-height: 28px; }
-}
+  background: #16181d; font: inherit; text-align: center; color: ${TONES.word};
+  box-shadow: 0 0 0 1px ${TONES.outline}; }
+${stepCss('.fight-hud', ARMS_SIZES.base.cell, ARMS_SIZES.base.gap)}
+${stepCss('.fight-hud.wide', ARMS_SIZES.wide.cell, ARMS_SIZES.wide.gap)}
 @media (prefers-reduced-motion: no-preference) {
-  .ability-bar .anima.full .lit { animation: ability-full 1.6s steps(4, end) infinite alternate; }
+  .fight-hud .abilities .anima.full .frame { animation: ability-full 1.6s steps(4, end) infinite alternate; }
 }
-@keyframes ability-full { from { filter: drop-shadow(0 0 3px var(--art)); } to { filter: drop-shadow(0 0 9px var(--art)); } }
+@media (prefers-reduced-motion: reduce) {
+  .fight-hud .abilities .used .frame { animation: none; outline: 2px solid #fff; outline-offset: -2px; }
+}
+@keyframes ability-full { from { filter: drop-shadow(1px 1px 0 ${TONES.outline}) drop-shadow(0 0 3px var(--art)); }
+  to { filter: drop-shadow(1px 1px 0 ${TONES.outline}) drop-shadow(0 0 9px var(--art)); } }
 `;
 
 /** Lays the bar's sheet on `page`, once. */
@@ -137,79 +183,117 @@ function wearSheet(page: Document): void {
 
 const pictureUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 
-function part<K extends keyof HTMLElementTagNameMap>(name: K, className: string, parent: HTMLElement, text = '') {
-  const node = document.createElement(name);
-  node.className = className;
-  node.textContent = text;
-  parent.append(node);
-  return node;
-}
-
-/** One Tenet's well and what the bar last wrote in it. */
-interface TenetParts {
-  readonly well: HTMLElement;
+/** One ability's frame and icon, and what the bar last wrote in it. */
+interface Slot {
+  readonly root: HTMLElement;
+  readonly frame: HTMLImageElement;
   readonly icon: HTMLImageElement;
-  readonly seconds: HTMLElement;
+  used: number;
 }
 
 /** The bar on the HUD, written each frame from an `AbilityState`; only what changed reaches the page. */
 export class AbilityBar {
   readonly root: HTMLElement;
-  private readonly anima: HTMLElement;
   private readonly unlit: HTMLImageElement;
   private readonly outline: HTMLImageElement;
   private readonly lit: HTMLImageElement;
-  private readonly tenets: readonly [TenetParts, TenetParts];
+  private readonly slots: readonly [Slot, Slot, Slot];
+  private readonly seconds: readonly [HTMLElement, HTMLElement];
   private readonly pictures: (art: number) => ArtPictures | null;
   private shown: AbilityShown | null = null;
+  private state: AbilityState | null = null;
+  private unable = false;
 
   constructor(parent: HTMLElement, pictures: (art: number) => ArtPictures | null) {
     this.pictures = pictures;
     wearSheet(parent.ownerDocument);
-    this.root = part('div', `ability-bar ${ROLES.window}`, parent);
+    this.root = element('div', 'abilities', parent);
     this.root.hidden = true;
-    this.root.setAttribute('aria-hidden', 'true');
-    const animaSlot = part('div', 'slot', this.root);
-    this.anima = part('div', 'anima', animaSlot);
-    this.unlit = part('img', 'unlit', this.anima);
-    this.outline = part('img', 'outline', this.anima);
-    this.lit = part('img', 'lit', this.anima);
-    part('kbd', '', animaSlot, ABILITY_KEYS[0]);
-    const tenet = (key: string): TenetParts => {
-      const slot = part('div', 'slot', this.root);
-      const well = part('div', 'tenet', slot);
-      const icon = part('img', '', well);
-      part('span', 'sweep', well);
-      const seconds = part('span', 'seconds', well);
-      part('kbd', '', slot, key);
-      return { well, icon, seconds };
+    this.root.role = 'group';
+    this.root.ariaLabel = 'Your Art';
+    // Each ability: its frame, its icon (the Anima's three pictures, unlit, outlined and lit, one over another) and
+    // its key on a keycap under it.
+    const slot = (kind: string, key: string, icons: readonly string[]): Slot & { pictures: HTMLImageElement[] } => {
+      const holder = element('div', 'slot', this.root);
+      const root = element('div', kind, holder);
+      root.role = 'img';
+      const frame = element('img', 'frame', root) as HTMLImageElement;
+      const icon = element('div', 'icon', root);
+      const pictures = icons.map((name) => element('img', name, icon) as HTMLImageElement);
+      // The ability's name says all of it, its key too: its pictures and keycap are not read again.
+      for (const picture of [frame, ...pictures]) picture.alt = '';
+      element('kbd', '', holder, key).ariaHidden = 'true';
+      return { root, frame, icon: pictures[0] as HTMLImageElement, used: 0, pictures };
     };
-    this.tenets = [tenet(ABILITY_KEYS[1]), tenet(ABILITY_KEYS[2])];
+    const anima = slot('anima', ABILITY_KEYS[0], ['unlit', 'outline', 'lit']);
+    [this.unlit, this.outline, this.lit] = anima.pictures as [HTMLImageElement, HTMLImageElement, HTMLImageElement];
+    const first = slot('tenet', ABILITY_KEYS[1], ['']);
+    const second = slot('tenet', ABILITY_KEYS[2], ['']);
+    this.slots = [anima, first, second];
+    const counted = (tenet: Slot) => {
+      element('span', 'sweep', tenet.root);
+      return element('span', 'seconds', tenet.root);
+    };
+    this.seconds = [counted(first), counted(second)];
   }
 
-  /** Shows `state`, writing only what differs from what is shown. */
-  update(state: AbilityState): void {
+  /** Shows `state` `seconds` on, greyed while the player is `unable` to cast, writing only what differs. */
+  update(state: AbilityState, seconds = 0, unable = false): void {
     const next = abilityBarOf(state);
     const was = this.shown;
     this.shown = next;
+    const spent = spentBetween(this.state, state);
+    this.state = state;
     if (next.art !== was?.art) this.wear(next.art);
     if (next.animaRows !== was?.animaRows)
       this.lit.style.clipPath = `inset(${((ANIMA_ROWS - next.animaRows) / ANIMA_ROWS) * 100}% 0 0 0)`;
-    if (next.animaFull !== was?.animaFull) this.anima.classList.toggle('full', next.animaFull);
+    const [anima, ...tenets] = this.slots;
+    if (next.animaFull !== was?.animaFull) anima.root.classList.toggle('full', next.animaFull);
     next.tenets.forEach((tenet, index) => {
-      const parts = this.tenets[index as 0 | 1];
+      const slot = tenets[index] as Slot;
       const before = was?.tenets[index];
-      if (tenet.sweep !== before?.sweep) parts.well.style.setProperty('--done', `${360 - tenet.sweep}deg`);
-      if (tenet.seconds !== before?.seconds) parts.seconds.textContent = tenet.seconds;
-      if (tenet.ready !== before?.ready) parts.well.classList.toggle('ready', tenet.ready);
+      if (tenet.sweep !== before?.sweep) slot.root.style.setProperty('--done', `${360 - tenet.sweep}deg`);
+      const counted = this.seconds[index as 0 | 1];
+      if (tenet.seconds !== before?.seconds) {
+        counted.textContent = tenet.seconds;
+        slot.root.classList.toggle('counting', tenet.seconds !== '');
+      }
+      if (tenet.ready !== before?.ready) slot.root.classList.toggle('ready', tenet.ready);
     });
+    this.slots.forEach((slot, index) => {
+      slot.used = spent[index] ? USED_SECONDS : Math.max(0, slot.used - seconds);
+      slot.root.classList.toggle('used', slot.used > 0);
+    });
+    if (unable !== this.unable) this.root.classList.toggle('unable', unable);
+    this.unable = unable;
+    this.say(next, unable);
   }
 
   /** Hides the bar until it is next shown a state. */
   hide(): void {
     if (this.root.hidden && !this.shown) return;
     this.root.hidden = true;
-    this.shown = null;
+    [this.shown, this.state] = [null, null];
+  }
+
+  /** What a screen reader says of each ability: its name, then ready, charging with its share, or its seconds. */
+  private say(shown: AbilityShown, unable: boolean): void {
+    const art = arts.arts.find((each) => each.id === shown.art);
+    if (!art || !this.state) return;
+    const animaWords = shown.animaFull ? 'ready' : `charging, ${Math.floor(share(this.state.animaShare) * 100)}%`;
+    const words = [
+      `${art.anima.name} (${ABILITY_KEYS[0]}), ${unable ? 'cannot be cast now' : animaWords}`,
+      ...shown.tenets.map((tenet, index) => {
+        const name = art.tenets[index]?.name ?? '';
+        const left = Math.ceil((1 - share(this.state?.tenets[index] ?? 0)) * (art.tenets[index]?.rechargeS ?? 0));
+        const how = unable ? 'cannot be cast now' : tenet.ready ? 'ready' : `${left} s to recharge`;
+        return `${name} (${ABILITY_KEYS[index + 1]}), ${how}`;
+      }),
+    ];
+    this.slots.forEach((slot, index) => {
+      const said = words[index] ?? '';
+      if (slot.root.ariaLabel !== said) slot.root.ariaLabel = said;
+    });
   }
 
   /** Draws the bar in `art`'s pictures and colours; hidden with none. */
@@ -222,8 +306,12 @@ export class AbilityBar {
     this.root.style.setProperty('--art', element.colour);
     this.root.style.setProperty('--art-lit', lit);
     this.root.style.setProperty('--art-dark', dark);
+    const [anima, first, second] = this.slots;
+    anima.frame.src = pictureUrl(pictures.diamond);
+    first.frame.src = second.frame.src = pictureUrl(pictures.ring);
     this.unlit.src = this.lit.src = pictureUrl(pictures.anima);
     this.outline.src = pictureUrl(pictures.animaOutline);
-    this.tenets.forEach((parts, index) => (parts.icon.src = pictureUrl(pictures.tenets[index as 0 | 1])));
+    first.icon.src = pictureUrl(pictures.tenets[0]);
+    second.icon.src = pictureUrl(pictures.tenets[1]);
   }
 }

@@ -30,8 +30,9 @@ pub fn ground_at(blocks: &[Block], terrain: &dyn Terrain, x: f64, y: f64, z: f64
         .fold(terrain.height_at(x, y), |ground, block| if block.top > ground { block.top } else { ground })
 }
 
-/// The first block standing in the way at a point: one whose top is above a step over `z`.
-fn blocking_at(blocks: &[Block], x: f64, y: f64, z: f64) -> Option<&Block> {
+/// The first block standing in the way of a body at a point: one whose top is above a step over `z`.
+#[must_use]
+pub fn blocking_at(blocks: &[Block], x: f64, y: f64, z: f64) -> Option<&Block> {
     blocks.iter().find(|block| block.holds(x, y, TUNING.radius) && block.top > z + TUNING.step)
 }
 

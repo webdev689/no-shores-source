@@ -4,6 +4,7 @@ import { Hud } from '../combat/hud.ts';
 import { abilityPictures } from './artsCards.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
+import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { fromEyeMatrix, shifted } from './camera.ts';
 import type { Foot, FootFrame } from './foot.ts';
@@ -28,7 +29,8 @@ export class FootView {
   private readonly hud: Hud;
   private blood: { readonly foot: Foot; readonly drawn: FightBlood; readonly origin: Point } | null = null;
 
-  constructor(gpu: Gpu, hudRoot: HTMLElement) {
+  /** `beside`: the game's own pieces over the view (its hints), which the fight's display keeps clear of. */
+  constructor(gpu: Gpu, hudRoot: HTMLElement, forge: Cards, beside: readonly HTMLElement[] = []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
     this.swings = new SwingView(gpu);
@@ -36,7 +38,7 @@ export class FootView {
     this.root.className = 'fight';
     this.root.hidden = true;
     hudRoot.prepend(this.root);
-    this.hud = new Hud(this.root, abilityPictures);
+    this.hud = new Hud(this.root, abilityPictures, forge, beside);
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */

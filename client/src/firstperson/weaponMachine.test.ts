@@ -31,10 +31,10 @@ function run(machine: WeaponMachine, count: number, seconds: number, input: Atta
   return steps;
 }
 
-test('a strike frame lasts 0.199 s for a sword, quicker for a dagger, slower for a two-handed warhammer', () => {
-  assert.equal(swingFrameSeconds('sword').toFixed(3), '0.199');
+test('a strike frame lasts 0.149 s for a sword, quicker for a dagger, slower for a two-handed warhammer', () => {
+  assert.equal(swingFrameSeconds('sword').toFixed(3), '0.149', 'three quarters of the law’s 0.199');
   assert.ok(swingFrameSeconds('dagger') < swingFrameSeconds('sword'));
-  assert.equal(swingFrameSeconds('warhammer').toFixed(3), (0.199 * 1.06 * 1.06).toFixed(3));
+  assert.equal(swingFrameSeconds('warhammer').toFixed(3), (0.199 * 1.06 * 1.06 * 0.75).toFixed(3));
 });
 
 /** Plays a click's swing in small steps: each frame shown as it changes and when, when its blow landed, how many
@@ -83,6 +83,35 @@ test('the blow lands two frame-times after the click, whatever the frame rate', 
     if (machine.update(0.004, none).blow) landed = elapsed;
   }
   assert.ok(Math.abs(landed - 2 * tick) < 0.005, `landed at ${landed}`);
+});
+
+test("a strike the fight paces lands and ends as its rules have it: a greatsword's at its 20th tick of 50", () => {
+  // A greatsword's pictures are the sword's, whose own clock lands at 18 ticks and ends at 45.
+  const machine = new WeaponMachine('sword', always('down'));
+  const pace = { strike: 20 / 60, end: 50 / 60 };
+  machine.update(0, press, () => 0, pace);
+  const frames = [];
+  let [landed, ended] = [-1, -1];
+  for (let tick = 1; tick <= 60 && ended < 0; tick += 1) {
+    if (machine.update(1 / 60, none, () => 0, pace).blow) landed = tick;
+    frames.push(machine.frame);
+    if (!machine.busy) ended = tick;
+  }
+  assert.deepEqual([landed, ended], [20, 50]);
+  assert.equal(frames[19], 2, "the blow's frame as it lands");
+  assert.equal(frames[18], 1);
+  assert.ok(Math.abs(machine.lands - 0.4) < 1e-9);
+});
+
+test('a flurry the fight paces is drawn from its raised hand but lands when the rules land it', () => {
+  const machine = new WeaponMachine('dagger', always('down'));
+  const pace = { strike: 16 / 60, end: 40 / 60 };
+  machine.update(0, press, () => 1, pace);
+  assert.equal(machine.frame, 1, 'thrown from a hand already raised');
+  let landed = -1;
+  for (let tick = 1; tick <= 40 && landed < 0; tick += 1)
+    if (machine.update(1 / 60, none, () => 0, pace).blow) landed = tick;
+  assert.equal(landed, 16);
 });
 
 test('holding the button swings again as each blow ends, a fresh direction each time', () => {
@@ -169,10 +198,11 @@ function blowsWhenRulesBegin(machine: WeaponMachine, every: number, seconds: num
   return blows;
 }
 
-test('a swing the rules begin while the last strike follows through starts again: a mace held 20 s lands 20 blows', () => {
-  // The rules end a mace's swing on its 61st tick; its five strike frames last 61.5.
-  assert.ok(5 * swingFrameSeconds('mace') * 60 > 61);
-  assert.equal(blowsWhenRulesBegin(new WeaponMachine('mace', always('down')), 61, 20), 20);
+test('a swing the rules begin while the last strike follows through starts again: each mace swing lands its blow', () => {
+  // The rules end a mace's swing on its 46th tick; its five strike frames last 46.1. In 20 s the rules begin 27
+  // swings, the last landing after the 20 s are up.
+  assert.ok(5 * swingFrameSeconds('mace') * 60 > 46);
+  assert.equal(blowsWhenRulesBegin(new WeaponMachine('mace', always('down')), 46, 20), 26);
 });
 
 test('a press before the blow lands does not start the strike again', () => {

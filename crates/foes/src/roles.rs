@@ -2,6 +2,7 @@
 //! of the role. How much it takes, how quickly and how it answers a blow, and which telegraphed blows it throws; an
 //! enemy type (the roster) gives it its hands and its faction, and its rank scales it.
 
+use combat::arms::SWING_PACE;
 use combat::fighter::Weight;
 use combat::shapes::Shape;
 use core::ops::Deref;
@@ -194,5 +195,13 @@ impl Numbers {
     #[must_use]
     pub fn defends(&self) -> bool {
         self.guards() || self.dodge > 0.0
+    }
+
+    /// The ticks it takes to read a swing begun at it: its reaction at the fight's pace. Every swing takes this share of
+    /// the swing law's time (`SWING_PACE`), and so does reading one, so it answers a swing in time as often as at the
+    /// law's own pace; a shot is not sped up, and is read in its whole reaction.
+    #[must_use]
+    pub fn swing_reaction(&self) -> u64 {
+        (self.reaction as f64 * SWING_PACE + 0.5) as u64
     }
 }

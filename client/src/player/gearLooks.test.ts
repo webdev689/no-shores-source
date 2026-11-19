@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import type { Outfit } from '../forge/outfit.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { gearOutfit } from './gearLooks.ts';
+import { MELEE, RANGED_SLOT } from './gear.ts';
+import { gearOutfit, spareOutfit } from './gearLooks.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -89,6 +90,12 @@ test('the starting kit dresses the figure in plain clothes; its head and arms sh
   assert.deepEqual(outfit.dyes, { shirt_long_v: 'White', breeches: 'White', shoes: 'White' });
   assert.equal(outfit.right, 'sword_iron');
   assert.deepEqual(outfit.hair, plain.hair, 'the hair is the player’s own');
+});
+
+test("the spare outfit holds the other loadout's weapon, or is none with no weapon worn there", () => {
+  const kit = state([item({ id: 1, kind: 2, at: 2 })]);
+  assert.equal(spareOutfit(kit, wardrobe, plain, RANGED_SLOT)?.right, 'sword_iron', 'the Ranged drawn: the sword');
+  assert.equal(spareOutfit(kit, wardrobe, plain, MELEE), null, 'the sword drawn: no Ranged worn');
 });
 
 test('a Rare or finer piece is an armour set, the rarer the finer; Magic is tunic, leather and boots', () => {
