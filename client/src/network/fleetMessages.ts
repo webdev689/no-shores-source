@@ -116,6 +116,8 @@ export interface SeenVessel {
   readonly acknowledged: number;
   readonly faction: number;
   readonly rank: number;
+  /** Her hull: 0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate. */
+  readonly hull?: number;
 }
 
 /** A ball aloft: the ship that fired it, where and when (the fight's clock) it left its gun, its launch, its radius. */
@@ -209,6 +211,7 @@ export function fleetOf(snapshot: Snapshot): FleetPart {
       target: vessel.target(),
       runOut: vessel.runOut(),
       acknowledged: vessel.acknowledged(),
+      hull: vessel.hull(),
       ...(vessel.captain()
         ? commissionOf(vessel.faction(), vessel.rank())
         : { faction: vessel.faction(), rank: vessel.rank() }),

@@ -1,8 +1,9 @@
 //! A gun as it fires: DFO's swivel, the bore of the Sloop's six cannons, and the loads it takes.
 
 /// A gun: its muzzle speed (m/s), its carriage's lowest and highest elevation (degrees), its reload (seconds, a full
-/// crew's), its scatter left and right and up and down (degrees), its ball's radius (metres), and the harm one ball
-/// does to a hull, a canvas and a crew before the zone, the load and the ship's toughness weigh it.
+/// crew's), its scatter left and right and up and down (degrees), its ball's radius (metres), the harm one ball
+/// does to a hull, a canvas and a crew before the zone, the load and the ship's toughness weigh it, and the share of
+/// that harm and of each ball's chances a ball of hers takes (1 for the Sloop's; her side's guns split her broadside).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gun {
     pub speed: f64,
@@ -15,6 +16,7 @@ pub struct Gun {
     pub hull: f64,
     pub sail: f64,
     pub crew: f64,
+    pub share: f64,
 }
 
 /// DFO's swivel, the small boats' gun. Its carriage depresses to -10 degrees, so a ship alongside is still under fire.
@@ -29,6 +31,7 @@ pub const SWIVEL: Gun = Gun {
     hull: 5.0,
     sail: 2.0,
     crew: 2.0,
+    share: 1.0,
 };
 
 /// The chance a ball into a hull sets her alight, unless its load says otherwise.

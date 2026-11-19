@@ -4,6 +4,9 @@ status: planned
 code:
   - crates/sailing/src/hull.rs#Hull
   - crates/sailing/src/hull.rs#SLOOP
+  - crates/sailing/src/hull.rs#HullKind
+  - crates/naval/src/arms.rs#arms_of
+  - crates/naval/src/ranks.rs#Rank
   - client/src/ships/sails.ts#SailRig
   - tools/ships/build_ship.py#HULLS
   - tools/ships/build_cabin.py#build_cabin
@@ -15,7 +18,7 @@ code:
 The ships Overlook sails beyond the Sloop, chosen in her style for each rank of ship, the player's own hulls and the
 merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
 [[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]]).
-Only the Sloop is built ([[Sailing]]): until the others are, both factions' captains sail her at every rank
+The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]): each captain sails her rank's
 ([[Naval Combat]], "Ranks and factions").
 
 ## The Sloop's style
@@ -82,10 +85,22 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
 
 ## What the code needs
 
-- **Its numbers**: a `Hull` beside `SLOOP`, from its export, with its gain and its sails.
-- **Square sails**: the game bellies and swings only gaff sails and staysails. The hull rules already know square
-  and lateen sails.
-- **A ship's hull, everywhere**: the sailing and fight code, the rooms and the browser hold the Sloop alone, by
-  `SLOOP` in about 25 places outside tests; each must carry which hull a ship is.
-- **The ram**: a ram bow that strikes harder than a stem.
+Done for the Schooner, the Brig and the Frigate:
+
+- **Its numbers**: `SCHOONER`, `BRIG` and `FRIGATE` beside `SLOOP`, from their exports, each with DFO's gain for the
+  matching rig and her sails; `HullKind` names each by her manifest key. Her arms (`arms_of`): each side's mouths
+  fore to aft, her hull's box and each sail's.
+- **Square sails** in the rules: a square-rigged hull sails, tacks and turns as the Sloop does. Her way is the Sloop's
+  times her rank's, and her gain shapes her handling (how her way comes and goes, and her steerage).
+- **A ship's hull, everywhere** in the rules: every ship in a fight carries her hull and sails, fights, is struck and
+  rams as it; a captain's rank picks it (`Rank::hull`) and names her (the Pirate Brig, the Tithe Frigate); the
+  snapshots, a fight's view and the doors carry it.
+- **Never her strength**: her canvas drives her no harder than the Sloop's, and her side's broadside takes as much
+  from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
+
+Left:
+
+- **Drawing them**: the game draws every ship as the Sloop, and bellies and swings only gaff sails and staysails.
+- **The ram**: a ram bow that strikes harder than a stem, for the Tithe Ram.
+- **The Fluyt**: not yet modelled.
 - **Its drawn size on the [[Overworld]]**.

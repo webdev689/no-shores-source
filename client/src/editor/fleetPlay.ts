@@ -98,7 +98,7 @@ export class FleetSloop extends Afloat {
     );
     if (nearest) {
       const { hurts } = nearest;
-      const named = `${shipName(nearest.faction)} (${RANKS[nearest.rank - 1] ?? 'Major'})`;
+      const named = `${shipName(nearest.faction, nearest.hull)} (${RANKS[nearest.rank - 1] ?? 'Major'})`;
       lines.push(
         `${named}, ${Math.round(apart(nearest))} m off, ${nearest.state === 'afloat' ? nearest.mode : nearest.state}:` +
           ` hull ${whole(hurts.hull, hurts.maxHull)}, sails ${whole(hurts.sail, hurts.maxSail)}, ${Math.round(hurts.crew)} men.`,

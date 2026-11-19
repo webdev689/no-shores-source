@@ -6,6 +6,7 @@ code:
   - crates/sailing/src/helm.rs#steerage
   - crates/sailing/src/helm.rs#sail_power
   - crates/sailing/src/hull.rs#SLOOP
+  - crates/sailing/src/hull.rs#HullKind
   - crates/sailing/src/ship.rs#step_ship
   - crates/sailing/src/ship.rs#step_pulled
   - crates/sailing/src/pose.rs#pose_of
@@ -38,12 +39,15 @@ code:
 
 How a ship sails: the helm from oars to sails, her way and turn, her sails against the wind, her pose on the swell
 and where she takes the ground. It is DFO's port of Come Sail Away ([[Come Sail Away's Sailing Comes Over]]),
-rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop in the [[World Editor]].
+rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop in the [[World Editor]]; the captains
+sail the other hulls ([[Hulls]]) by the same laws.
 
 ## How it works
 
 - **The laws.** The `sailing` crate holds Come Sail Away's handling and its sails' curves, under DFO's responsive
-  helm. Her way under sail is her canvas (each sail at the crest of its curve) by the point of sail (0.9 running dead
+  helm, for any hull: her waterline, her draught, her sails and her rig's gain are her own. Her way under sail is her
+  canvas (each sail at the crest of its own curve: a gaff, a staysail or a lateen 135 degrees off the wind, a square
+  sail running dead before it) by the point of sail (0.9 running dead
   before the wind, 1 on the quarter, 0.55 in the wind's eye), in the sea's wind, a fifth again. Under sail her rudder
   swings her at her steerage, read at her way over her rig's gain: 3 degrees a second at no way, about 12 at her best
   way in the steady wind. On her oars she swings at 20.
@@ -68,9 +72,9 @@ rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop
   The swell rolls whole over any sea 15 m deep or more, so wherever a landmass's sea is that deep, its water is the
   open sea's to the bit.
 - **One crate, every machine.** The browser steps her through `land-wasm`'s door, over the open landmass, in ticks of
-  1/60 s, a second's at most a request. Its maths is exact or `libm`'s, so a voyage's fingerprint is the same natively
-  and as WebAssembly ([[Agree to the Bit]]). The door refuses numbers no ship could have: a way over 10 m/s, a swing
-  over 45 degrees a second, a time past the world's.
+  1/60 s, a second's at most a request, the Sloop unless the request names another hull. Its maths is exact or `libm`'s,
+  so a voyage's fingerprint is the same natively and as WebAssembly ([[Agree to the Bit]]). The door refuses numbers no
+  ship could have: a way over 10 m/s, a swing over 45 degrees a second, a time past the world's.
 
 ## The Sloop
 
@@ -99,6 +103,27 @@ mesh lives on R2 under its hash ([[Generated Files Stay Out of Git]]); its key a
 ([[Ship Models Live on R2]]). Her cannons are the objects named `Cannon` in it, three a side, fore to aft: the export
 reads each one's mouth and bore, and the boxes a ball can strike (her hull, and each sail's canvas), into `ships.json`
 for [[Naval Combat]].
+
+## The other hulls
+
+Each hull's waterline, draught and sails are her manifest's (`content/ships/ships.json`), every sail small as the
+Sloop's are, and a test holds each to it; her gain is DFO's for the Come Sail Away rig that matches hers. A hull is
+named by her key in the manifest (`HullKind`), numbered 0 to 3 on the wire.
+
+| Hull | Waterline | Draught | Sails | Gain (DFO's rig) |
+|---|---|---|---|---|
+| Sloop | 18.7 × 5.6 m | 1.8 m | a staysail, a gaff | 1.159 (Large Boat II) |
+| Schooner | 25.2 × 4.3 m | 2.0 m | a staysail, two gaffs | 1.233 (Large Boat V: a staysail and two gaffs) |
+| Brig | 30.7 × 5.3 m | 2.2 m | two staysails, six square sails, a gaff spanker | 1.643 (the galleon, a square-rigged two-master) |
+| Frigate | 38.1 × 6.2 m | 2.4 m | two staysails, eight square sails, a gaff spanker | 1.798 (the Carrack, a square-rigged three-master) |
+
+No hull's rig drives her harder than the Sloop's: her canvas drives her as the Sloop's does (`canvas_drive`), so every
+hull makes the Sloop's way on every point of sail, 2.4 m/s on a beam reach, and her rank's way alone makes her faster
+([[Naval Combat]]); her sails' kinds shape only how they are drawn and trimmed. Her square sails pull by the same law as the rest:
+under the responsive helm each draws at its crest (a square sail running dead before the wind), so the point of sail
+alone says how her heading takes it, and a Brig or a Frigate runs, reaches, beats and comes about through the wind's
+eye as the Sloop does, keeping her way. Her gain still shapes her: a bigger rig gathers and loses way faster and steers
+at her way over her gain. The game sets her square sails' trim only to draw them.
 
 ## Her look
 

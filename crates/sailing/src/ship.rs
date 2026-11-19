@@ -3,7 +3,9 @@
 //! move that would put her keel on it.
 
 use crate::Hull;
-use crate::helm::{COAST, HANDLING, PACE, SAIL_ACCEL, TURN_ACCEL_SAIL, canvas, point_of_sail, sea_wind, steerage};
+use crate::helm::{
+    COAST, HANDLING, PACE, SAIL_ACCEL, TURN_ACCEL_SAIL, canvas_drive, point_of_sail, sea_wind, steerage,
+};
 use crate::pose::{frame, keel_spots, shallower};
 use crate::waters::Waters;
 use std::f64::consts::TAU;
@@ -94,7 +96,7 @@ struct Asked {
 
 fn under_sail(helm: &Helm, hull: &Hull, way: f64, forward: [f64; 2], wind: [f64; 2]) -> Asked {
     let blowing = sea_wind(length(wind[0], wind[1]));
-    let drive = canvas(hull) * point_of_sail(off_run_deg(forward, wind)) * blowing * PACE;
+    let drive = canvas_drive(hull) * point_of_sail(off_run_deg(forward, wind)) * blowing * PACE;
     Asked {
         turn: helm.steer * steerage(way / hull.gain),
         way: [drive * HANDLING.move_speed_sail, 0.0],
@@ -211,3 +213,7 @@ pub fn step_pulled(
 #[cfg(test)]
 #[path = "ship_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "rig_tests.rs"]
+mod rig_tests;

@@ -174,7 +174,7 @@ fn her_ship_is_her_orders_stepped_by_the_rules_to_the_bit() {
     let mut ship =
         Ship { x: AT[0], y: AT[1], heading: AT[2], ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     for helm in std::iter::once(STANDING.helm).chain(std::iter::once(CLIMB)).chain(std::iter::repeat_n(ROWING, 120)) {
-        ship = sail_hurt(&ship, helm, whole, &waters, wind, 0.0).0;
+        ship = sail_hurt(&ship, &sailing::SLOOP, helm, whole, &waters, wind, 0.0).0;
     }
     let room = ship_of(&fleet, player).map(|ship| ship.to_floats().map(f64::to_bits));
     assert_eq!(room, Some(ship.to_floats().map(f64::to_bits)), "a browser predicting her agrees with the room");
@@ -261,6 +261,20 @@ fn a_captain_called_comes_of_the_faction_and_rank_asked_for() {
         .values()
         .filter_map(|vessel| vessel.command().map(|command| (command.her.commission, vessel.damage.max_hull)))
         .collect();
-    assert_eq!(called, [(boss, 264.0 * 5.0)], "a Boss of the Grey Tithe, her hull five times a Major's");
+    let frigates = (264.0 * 5.0 * naval::ranks::hull_exposure(Rank::Boss.hull())).round();
+    assert_eq!(called, [(boss, frigates)], "a Boss of the Grey Tithe, her hull five times a Major's in her Frigate's");
     assert_eq!(fleet.fight().ships.values().filter_map(|vessel| vessel.command()).count(), 1);
+}
+
+#[test]
+fn a_captain_of_each_rank_called_into_a_fleet_room_sails_her_ranks_hull() {
+    for rank in Rank::ALL {
+        let (mut fleet, player) = rowing(1);
+        let commission = Commission { faction: GREY_TITHE, rank };
+        assert_eq!(fleet.input(player, Input { call: Call::Captain(commission), ..orders(4, ROWING) }), Ok(()));
+        fleet.tick();
+        let hulls: Vec<_> =
+            fleet.fight().ships.values().map(|vessel| (vessel.command().is_some(), vessel.hull)).collect();
+        assert_eq!(hulls, [(false, sailing::HullKind::Sloop), (true, rank.hull())], "{rank:?}");
+    }
 }

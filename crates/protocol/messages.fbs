@@ -186,7 +186,8 @@ table Ship {
 }
 
 // A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
-// from north, her faction (1 the Grey Tithe, 2 pirates) and her rank (1 Minor to 5 Boss).
+// from north, her faction (1 the Grey Tithe, 2 pirates), her rank (1 Minor to 5 Boss) and the hull her rank sails (0
+// the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop).
 table Pirate {
   id: uint;
   x: double;
@@ -194,17 +195,20 @@ table Pirate {
   heading: double;
   faction: ubyte;
   rank: ubyte;
+  hull: ubyte;
 }
 
 // A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and
-// her captain's faction and rank, as Pirate numbers them. Then the other captains in the fight, their count and each
-// one's numbers (none when there are none), which the view leaves out so a page that knows one captain reads it whole.
+// her captain's faction, rank and hull, as Pirate numbers them. Then the other captains in the fight, their count and
+// each one's numbers (none when there are none), which the view leaves out so a page that knows one captain reads it
+// whole.
 table SeaFight {
   player: uint;
   view: [double];
   faction: ubyte;
   rank: ubyte;
   others: [double];
+  hull: ubyte;
 }
 
 // One ship in a fleet room: her number; whether a captain sails her; her helm's numbers in the sailing crate's order
@@ -213,7 +217,8 @@ table SeaFight {
 // to load, port then starboard, then how far each has loaded); her load (as Orders numbers it) and whether she is
 // braced; for a captain, her mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship she fights (0 none) and
 // her sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of her last orders taken; and the
-// faction she sails for (0 a player's, else as Pirate numbers them) and a captain's rank (1 Minor to 5 Boss, 0 none).
+// faction she sails for (0 a player's, else as Pirate numbers them), a captain's rank (1 Minor to 5 Boss, 0 none), and
+// her hull, as Pirate numbers them.
 table Vessel {
   id: uint;
   captain: bool;
@@ -231,6 +236,7 @@ table Vessel {
   acknowledged: uint;
   faction: ubyte;
   rank: ubyte;
+  hull: ubyte;
 }
 
 // A ball aloft in a fleet room: the ship that fired it, where it leaves its gun and when (seconds of the fight's

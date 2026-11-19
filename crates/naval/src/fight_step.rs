@@ -13,9 +13,9 @@ use crate::damage::{PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder,
 use crate::gunnery::{Lay, volley};
 use crate::guns::{fire_chance, rig_fire, shot_reach};
 use crate::shots::{Flag, ShipId, ShotEvent, step_balls};
+use sailing::TICK_SECONDS;
 use sailing::pose::{Pose, pose_of};
 use sailing::waters::Waters;
-use sailing::{SLOOP, TICK_SECONDS};
 
 impl Fight {
     /// One tick. `orders` are the players' in the order they are taken: each steps her ship once, so a player whose
@@ -80,16 +80,17 @@ impl Fight {
             {
                 events.push(Event::Load { ship: *id, shot });
             }
-            let (ship, refused) = sail_hurt(&player.ship, order.helm, Hurts::of(&player.damage), waters, wind, time);
+            let hurts = Hurts::of(&player.damage);
+            let (ship, refused) = sail_hurt(&player.ship, player.hull.hull(), order.helm, hurts, waters, wind, time);
             if let Some(wrecked) = refused {
                 events.push(Event::NoSail { ship: *id, wrecked });
             }
             player.ship = ship;
-            player.pose = pose_of(&player.ship, &SLOOP, waters, time);
+            player.pose = pose_of(&player.ship, player.hull.hull(), waters, time);
         }
         let ordered = |id: &ShipId| orders.iter().any(|(given, _)| given == id);
         for (_, player) in self.ships.iter_mut().filter(|(id, vessel)| vessel.command().is_none() && !ordered(id)) {
-            player.pose = pose_of(&player.ship, &SLOOP, waters, time);
+            player.pose = pose_of(&player.ship, player.hull.hull(), waters, time);
         }
     }
 
@@ -99,14 +100,15 @@ impl Fight {
         let (sightings, traffic) = (self.sightings(id), self.traffic(id));
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
-        let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
-        let is_water = |x, y| floats(waters, x, y, time);
+        let her = her_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+        let hull = vessel.hull.hull();
+        let is_water = |x, y| floats(waters, hull, x, y, time);
         let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
         // Her rank's way pulls her sails and her oars alike.
         let way = command.her.commission.rank.scale().way;
         let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way };
-        vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, &SLOOP, wind, waters, time, TICK_SECONDS, pull);
-        let afloat = pose_of(&vessel.ship, &SLOOP, waters, time);
+        vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull);
+        let afloat = pose_of(&vessel.ship, hull, waters, time);
         let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
         vessel.pose =
             Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat };
@@ -118,7 +120,7 @@ impl Fight {
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
         let enemy = command.her.target().and_then(|target| sightings.iter().find(|seen| seen.id == target));
-        let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+        let her = her_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
         let battery = command.her.aim(&her, enemy, &mut self.draws);
         if let Some(side) = battery.run_out {
             events.push(Event::RunOut { ship: id, side });
@@ -170,7 +172,9 @@ impl Fight {
         let roll = self.draws.draw();
         let mut hurt = shot_harm(&gun, zone, braced, roll, tough);
         let burns = zone == Zone::Hull || (zone == Zone::Rig && rig_fire(shot));
-        hurt.fire = burns && self.draws.draw() < fire_chance(shot);
+        // A ball of a side of many guns takes her share of a Sloop's ball's harm and of its chance to set her alight.
+        hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;
+        let hurt = vessel.damage.shared(hurt, gun.share);
         let state = vessel.damage.apply(hurt, clock, floor);
         if let Sailor::Captain(command) = &mut vessel.sailor {
             if state == Some(State::Struck) {
@@ -193,7 +197,7 @@ impl Fight {
             let hostile_near = captains.iter().any(|captain| {
                 let Some(vessel) = self.ships.get(captain) else { return false };
                 let Some(command) = vessel.command() else { return false };
-                let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+                let her = her_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
                 let would = command.her.would_take(&her, &sighting);
                 would && distance([vessel.ship.x, vessel.ship.y], [sighting.ship.x, sighting.ship.y]) < HOSTILE_NEAR_M
             });

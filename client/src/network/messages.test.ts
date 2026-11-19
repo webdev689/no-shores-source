@@ -124,10 +124,10 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
     ],
   ]);
   assert.deepEqual(sea?.kind === 'snapshot' ? sea.pirates : null, [
-    { id: 4, x: 1_000.5, y: 2_000.25, heading: 1.5, faction: 1, rank: 2 },
+    { id: 4, x: 1_000.5, y: 2_000.25, heading: 1.5, faction: 1, rank: 2, hull: 0 },
   ]);
   const fights = sea?.kind === 'snapshot' ? sea.fights : [];
-  assert.deepEqual([fights[0]?.player, fights[0]?.faction, fights[0]?.rank], [2, 1, 4]);
+  assert.deepEqual([fights[0]?.player, fights[0]?.faction, fights[0]?.rank, fights[0]?.hull], [2, 1, 4, 2]);
   const named = { name: 'Tithe Sloop', faction: fights[0]?.faction ?? 0, rank: fights[0]?.rank ?? 0 };
   const fight = fightViewOf(fights[0]?.view ?? [], named);
   assert.deepEqual([fight.captain.name, fight.captain.faction, fight.captain.rank], ['Tithe Sloop', 1, 4]);

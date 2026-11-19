@@ -93,7 +93,7 @@ impl Captain {
         };
         let want = heading_for(Some(present), present.side);
         self.present = Some(Present { lays: bend(Some(present), present.side) == 0.0, ..present });
-        let window = fire_window(me, lead, Some(enemy.ship.heading), her.arms, self.build.skill);
+        let window = fire_window(me, lead, Some(enemy.ship.heading), arms_of(enemy.hull), self.build.skill);
         let presented = her.guns.ready(present.side)
             && apart <= reach * PRESENT_WITHIN
             && wrap(want - ship.heading).abs() < 30.0 * DEG

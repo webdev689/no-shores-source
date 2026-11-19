@@ -9,7 +9,7 @@ pub mod pose;
 pub mod ship;
 pub mod waters;
 
-pub use hull::{Hull, SLOOP, Sail, SailKind, SailSize};
+pub use hull::{BRIG, FRIGATE, Hull, HullKind, SCHOONER, SLOOP, Sail, SailKind, SailSize};
 
 /// One tick, seconds: the room's, as a body's.
 pub const TICK_SECONDS: f64 = 1.0 / 60.0;

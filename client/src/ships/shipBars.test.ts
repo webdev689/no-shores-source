@@ -23,6 +23,16 @@ test('a bar is red for a Minor, orange for a Major and yellow for an Elite, a Mi
 
 test('a captain’s Sloop is named for her faction', () => {
   assert.deepEqual([shipName(1), shipName(2)], ['Tithe Sloop', 'Pirate Sloop']);
+  assert.deepEqual(
+    [0, 1, 2, 3].map((hull) => [shipName(1, hull), shipName(2, hull)]),
+    [
+      ['Tithe Sloop', 'Pirate Sloop'],
+      ['Tithe Schooner', 'Pirate Schooner'],
+      ['Tithe Brig', 'Pirate Brig'],
+      ['Tithe Frigate', 'Pirate Frigate'],
+    ],
+    'named for her faction and her hull, as the rules name her',
+  );
 });
 
 test('her bar carries her number and faction, for her emblem; a fight’s one captain is number 0', () => {

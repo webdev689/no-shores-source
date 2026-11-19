@@ -44,10 +44,10 @@ code:
 ---
 # Naval Combat
 
-Broadsides, and rams, between players' Sloops and the captains' Sloops of the enemy factions: DFO's naval combat,
-rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one captain
-alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. What the sea's fights become
-next, each ending in a sinking or a boarding, against a hull for each rank, is decided and not yet built
+Broadsides, and rams, between players' Sloops and the enemy factions' captains, each in her rank's hull: DFO's naval
+combat, rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one
+captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. What the sea's fights
+become next, each ending in a sinking or a boarding, is decided and not yet built
 ([[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[Hulls]],
 [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]).
 
@@ -100,10 +100,11 @@ is one pure function (`sail_hurt`), which a browser predicting her runs too.
 
 ## The captain
 
-She sails a Sloop under the player's own helm, so her pace is the player's. She sees every ship she may fight (each
-player's, and each afloat captain's of another faction) and keeps, for each, whether it struck her lately and whether
-she spares it. DFO's captain commands a swing and a share of sail; here the swing is a share of her rudder and the sail
-the rung whose way is nearest. Under the ladder's law the wind's eye costs her 0.55 of her way, so she never tacks.
+She sails her rank's hull under the player's own helm, so her pace is her hull's by the player's law. She sees every
+ship she may fight (each player's, and each afloat captain's of another faction) and keeps, for each, whether it struck
+her lately and whether she spares it. DFO's captain commands a swing and a share of sail; here the swing is a share of
+her rudder and the sail the rung whose way is nearest. Under the ladder's law the wind's eye costs her 0.55 of her way,
+so she never tacks.
 
 - **Whom she fights.** A captain is bold one time in four by her seed, an Elite and above always. A bold one takes on a
   ship she may fight within 750 m; a wary one only a wreck, a hull nearly gone, or a ship she outguns 5 to 4 by DFO's
@@ -112,11 +113,11 @@ the rung whose way is nearest. Under the ladder's law the wind's eye costs her 0
   spare, she takes the nearest, the one she already fights reckoned a fifth nearer (as DFO ranks them), and runs from
   the nearest that struck her within 320 m. What she remembers of a chase, a wreck, her mark's way and the side she
   presented is let go when she marks another ship.
-- **Her course.** She bends round every hull about her, the bends of each summed, as DFO's traffic does. Far off,
-  she steers to intercept. A ship running from her she runs down astern, then sheers out to
-  its beam. Otherwise she brings the side that costs least to bear on where her balls will meet him, bent off the beam
-  to open or close her range of 50 m, and once presented keeps station with sail. She bends round his hull and sounds
-  the land ahead, swinging off a foul course.
+- **Her course.** She bends round every hull about her that will pass within both their reaches (each half of half her
+  box's beam and length) and 15 m, the bends of each summed, as DFO's traffic does. Far off, she steers to intercept. A
+  ship running from her she runs down astern, then sheers out to its beam. Otherwise she brings the side that costs
+  least to bear on where her balls will meet him, bent off the beam to open or close her range of 50 m, and once
+  presented keeps station with sail. She bends round his hull and sounds the land ahead, swinging off a foul course.
 - **Her guns.** A side loaded, in reach, near her beam, bearing soon and whose lay would strike runs out: the tell.
   It fires no sooner than 1.3 s on, within her gunners' window, long or short by their want of skill. One run out too
   long unfired, or that loses its mark, is run in. She never fires on a wreck.
@@ -128,9 +129,10 @@ the rung whose way is nearest. Under the ladder's law the wind's eye costs her 0
 ## Ranks and factions
 
 Every captain sails for a faction at a rank ([[Enemies Come in Five Ranks, After Destiny]],
-[[Enemy Factions Start With the Grey Tithe]], [[Enemies]]): the Grey Tithe's ship is the Tithe Sloop, the pirates'
-the Pirate Sloop. Until the planned hulls are built every rank sails the Sloop's ([[Hulls]]). Her rank scales her, a
-Major at the numbers of the rest of this note:
+[[Enemy Factions Start With the Grey Tithe]], [[Enemies]]): she is named for her faction and her hull, on her plate
+and in the panel: the Tithe Sloop, Schooner, Brig or Frigate, or the Pirate Sloop, Schooner, Brig or Frigate. Her rank
+picks her hull ([[Hulls]]): a Minor and a Major sail the Sloop, an Elite the Schooner, a Miniboss the Brig and a Boss
+the Frigate. Her rank scales her, a Major at the numbers of the rest of this note:
 
 | Rank | Hull and men | Way | Gun damage | Reload | Aim error | Temper | Runs | Strikes |
 |---|---|---|---|---|---|---|---|---|
@@ -140,7 +142,7 @@ Major at the numbers of the rest of this note:
 | Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
 | Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
 
-Her men are as many as her hull makes them (6 to 50, whole men), so hull and men give out in the same proportion at
+Her men are as many as her hull makes them (6 to 94, whole men), so hull and men give out in the same proportion at
 every rank: a hull hit takes a man or two, and her men give out at about four fifths of her hull, as a Major's do. Her
 way pulls her canvas and her oars alike, so a higher rank runs down a lower one, and a Boss outlasts a Minor; two of one
 rank keep pace. Aim error scales both her lay's long and short and her volley's scatter. A captain sees every player's
@@ -149,6 +151,21 @@ player's; she never fights her own faction, and a struck ship is nobody's enemy.
 captain's ship in a fight stands her plate, as a foe's ([[Interface]]): her faction's emblem, and her name, with an
 Elite's or a Miniboss's mark, above a bar of her hull, red, orange or yellow by rank, her losses read as a foe's;
 no plate covers another. A Boss's stands across the top of the screen with her faction's name.
+
+A hull changes her size, her boxes, her sails, her handling, her stem and how many guns she carries, never her
+strength: the table above is the whole of it. A bigger box is struck more often, so her canvas and men are her class's
+times her rank's times her exposure: the fight's hit share on her box over the Sloop's, from the Sloop's guns at the
+duel's 110 m by a captain's gunners (the Schooner 1.44, the Brig 1.65, the Frigate 1.88). Her hull points take it too,
+less for a taller hull's hits holing her less often (the Schooner 1.39, the Brig 1.58, the Frigate 1.79), so the same
+fire takes as long to make any hull of one rank strike. Her canvas drives her no harder than the Sloop's, so her rank's way alone
+sets her speed ([[Sailing]], "The other hulls").
+A side's broadside weighs the Sloop's times her rank's gun damage, spread evenly over that side's guns (the Schooner's
+five, the Brig's seven, the Frigate's ten across her two gun decks): each ball is the Sloop's, rounded as hers, and the
+ship it strikes takes its share of it, three over the guns a side, carrying the parts of a point or a man until they
+make one; its chance to set her alight is that share of the Sloop's ball's. So every broadside of one rank takes as
+much hull, canvas, men and fire from her, whatever hull fires it. Each gun reloads and scatters as the Sloop's. Her
+balls fly from her own mouths, a ball meets her own hull's and sails' boxes, and she rams, is rammed and is kept apart
+by her own hull's box. A captain sizing up a ship reckons her hit share against that ship's hull.
 
 ## Ramming
 
@@ -174,12 +191,12 @@ whole bring the Pirate Sloop to strike.
 
 ## In the World Editor
 
-While sailing, `F` calls a pirate captain onto the ring 650 to 1000 m round the Sloop, where the water floats her,
-heading across her waters on a slant; `F` again sends her off. The fight then steps the Sloop in her helm's place.
-Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the look's bearing
-picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's lookReach), unless
-the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a left click holds
-fire, the wheel changes shot, and `C` braces.
+While sailing, `F` calls a pirate captain, a Major in her Sloop, onto the ring 650 to 1000 m round the Sloop, where the
+water floats her, heading across her waters on a slant; `F` again sends her off. The fight then steps the Sloop in her
+helm's place. Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the
+look's bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
+lookReach), unless the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a
+left click holds fire, the wheel changes shot, and `C` braces.
 
 Her Sloop is drawn darker from the same model, and the water cuts her footprint as it does the player's. The balls,
 the lay's arcs, and each event's flash and smoke, spray and ripples, splinters, dust, and fire aboard
@@ -246,15 +263,17 @@ browser by the same functions the room fires by (`preview`), among the ships the
 
 ## One crate, every machine
 
-Alone, the fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders
-(up to a second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. Its state
+Alone, the fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders (up
+to a second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. A begin may name
+her captain's rank (a Major's unless it does), and she sails its hull; each ship's answer names her hull. Its state
 never crosses, so requests and answers are JSON. A scripted fight's fingerprint at the end of each leg is pinned
-natively and through WebAssembly ([[Agree to the Bit]]). In a fleet room the room's crate holds the fight, and a
-browser predicts its own ship through `room-wasm` by the same steps.
+natively and through WebAssembly, and the same fight's against each hull ([[Agree to the Bit]]). In a fleet room the
+room's crate holds the fight, and a browser predicts its own ship through `room-wasm` by the same steps.
 
 ## Limits
 
-- Every captain sails a Sloop, of either faction at any rank; no other classes, and no ambient traffic.
+- Every captain sails her rank's hull, the Tithe's and the pirates' alike; there is no iron ram bow (the Tithe Ram)
+  and no Fluyt yet, no other classes, and no ambient traffic.
 - At sea a fight holds one player at most: a player joins only a fight among captains, and a ship at sea never joins
   a fight already under way. In the game's fight only the first captain's fires and DFO's messages show.
 - A captain's men give out at about four fifths of her hull at every rank, so her rank's run and strike shares of her

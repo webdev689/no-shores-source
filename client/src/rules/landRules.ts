@@ -157,8 +157,9 @@ export interface LandRules {
   cityPlan(): string | null;
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea, every chance drawn from `seed`. */
-  fightBegin(ship: ShipFloats, seed: number, time: number): FightView;
+  /** A fight begun round the ship: a pirate captain put to sea in her rank's hull (a Major's unless `rank` names one),
+   *  every chance drawn from `seed`. */
+  fightBegin(ship: ShipFloats, seed: number, time: number, rank?: number): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
   fightStep(orders: FightOrders, time: number, ticks: number): FightView;
   /** The fight ended. */
@@ -324,8 +325,8 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         exports.release(address, length);
       }
     },
-    fightBegin: (ship, seed, time) =>
-      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time)))),
+    fightBegin: (ship, seed, time, rank) =>
+      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, rank)))),
     fightStep: (orders, time, ticks) =>
       readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks)))),
     fightEnd: () => {

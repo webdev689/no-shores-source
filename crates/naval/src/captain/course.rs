@@ -102,17 +102,25 @@ pub fn flee_course(me: [f64; 2], from: [f64; 2], wind: [f64; 2]) -> f64 {
     best.0
 }
 
-/// A hull about her: where it is and its way, east and south.
-pub type Traffic = ([f64; 2], [f64; 2]);
+/// A hull about her: where it is and its way, east and south, and its pass reach (`pass_reach`).
+pub type Traffic = ([f64; 2], [f64; 2], f64);
 
-/// `want` bent clear of the hulls about her (`others`, each where it is and its way; hers `vel`, her heading
-/// `heading`), `reach` both their pass reaches: each that will pass near and soon bends it by its urgency, to
-/// starboard for a hull off her bow, else away from where it will lie, up to `AVOID_SHIP_SWING_DEG` in all.
+/// A hull's pass reach, metres: half of half her box's beam and half its length.
+#[must_use]
+pub fn pass_reach(arms: &crate::arms::Arms) -> f64 {
+    let [low, high] = arms.hull;
+    0.5 * ((high[1] - low[1]) / 2.0 + (high[0] - low[0]) / 2.0)
+}
+
+/// `want` bent clear of the hulls about her (`others`, each where it is, its way and its pass reach; hers `vel`, her
+/// heading `heading`, her pass reach `reach`): each that will pass within both reaches and `AVOID_SHIP_CLEAR` soon
+/// bends it by its urgency, to starboard for a hull off her bow, else away from where it will lie, up to
+/// `AVOID_SHIP_SWING_DEG` in all.
 #[must_use]
 pub fn traffic_course((me, heading, vel): ([f64; 2], f64, [f64; 2]), want: f64, others: &[Traffic], reach: f64) -> f64 {
     let most = AVOID_SHIP_SWING_DEG * DEG;
     let mut bend = None;
-    for &(other, other_vel) in others {
+    for &(other, other_vel, other_reach) in others {
         let gap = [other[0] - me[0], other[1] - me[1]];
         if length(gap[0], gap[1]) > AVOID_SHIP_RANGE {
             continue;
@@ -126,7 +134,7 @@ pub fn traffic_course((me, heading, vel): ([f64; 2], f64, [f64; 2]), want: f64, 
         }
         let then = [gap[0] + closing[0] * nearest, gap[1] + closing[1] * nearest];
         let pass = length(then[0], then[1]);
-        let room = reach + AVOID_SHIP_CLEAR;
+        let room = reach + other_reach + AVOID_SHIP_CLEAR;
         if pass >= room {
             continue;
         }

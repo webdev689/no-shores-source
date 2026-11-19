@@ -1,6 +1,6 @@
-//! A fight over the open landmass: the player's Sloop and one pirate captain's (the naval crate's `Fight`). It stays
-//! here between calls, as the open landmass does; a request begins one, steps it, or ends it. Requests and answers
-//! are JSON: the fight's own numbers never cross, so a request carries only the player's orders.
+//! A fight over the open landmass: the player's Sloop and one pirate captain in her rank's hull (the naval crate's
+//! `Fight`). It stays here between calls, as the open landmass does; a request begins one, steps it, or ends it.
+//! Requests and answers are JSON: the fight's own numbers never cross, so a request carries only the player's orders.
 
 use super::OPEN;
 use super::sail::{helm_from, ship_from, ticks_from};
@@ -12,6 +12,7 @@ use naval::captain::Mode;
 use naval::damage::{State, Zone};
 use naval::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use naval::guns::Shot;
+use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
 use sailing::waters::{LandWaters, Waters, steady_wind};
@@ -69,6 +70,7 @@ fn mode_name(mode: Mode) -> &'static str {
 fn vessel_json(vessel: &Vessel) -> Value {
     let (damage, guns) = (&vessel.damage, &vessel.guns);
     json!({
+        "hull_kind": vessel.hull.number(),
         "ship": vessel.ship.to_floats(),
         "pose": vessel.pose.to_floats(),
         "hull": damage.hull, "max_hull": damage.max_hull,
@@ -191,12 +193,22 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         .and_then(|seed| u32::try_from(seed).ok())
         .ok_or("a fight's seed is a whole number under 2^32")?;
     let (time, _) = ticks_from(number(&request["time"], "the time")?, 0.0)?;
+    // Her captain's rank, a Major's unless asked: she sails its hull.
+    let rank = match &request["rank"] {
+        Value::Null => Rank::Major,
+        asked => asked
+            .as_u64()
+            .and_then(|number| u8::try_from(number).ok())
+            .and_then(Rank::numbered)
+            .ok_or("a fight's rank is a whole number from 1 to 5")?,
+    };
+    let commission = Commission { rank, ..Commission::default() };
     OPEN.with(|open| {
         let open = open.borrow();
         let landmass = open.as_ref().ok_or("no landmass is open")?;
         let swell = Swell::default();
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
-        let fight = Fight::begin(ship, seed, &waters, time)?;
+        let fight = Fight::begin(ship, commission, seed, &waters, time)?;
         let answer = view(&fight, &[], None, &waters, time);
         FIGHT.with(|slot| *slot.borrow_mut() = Some(fight));
         Ok(answer)

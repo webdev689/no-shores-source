@@ -1,6 +1,6 @@
-//! A captain who fights, as DFO's: whom she takes on (bold, or wary of a stronger ship), when she runs, chases,
-//! gives up or leaves a wreck, the course that brings her broadside to bear or keeps her station, and her helm. She
-//! sails the Sloop under the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of her
+//! A captain who fights, as DFO's: whom she takes on (bold, or wary of a stronger ship), when she runs, chases, gives
+//! up or leaves a wreck, the course that brings her broadside to bear or keeps her station, and her helm. She sails her
+//! rank's hull under the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of her
 //! rudder, and its sail share the rung of her ladder whose way is nearest.
 
 pub mod aim;
@@ -9,7 +9,7 @@ mod engage;
 pub mod land;
 pub mod odds;
 
-use crate::arms::{Arms, Build, Side};
+use crate::arms::{Arms, Build, Side, arms_of};
 use crate::damage::{Damage, State};
 use crate::gunnery::{Guns, lay};
 use crate::random::Mulberry32;
@@ -17,14 +17,15 @@ use crate::ranks::Commission;
 use crate::shots::ShipId;
 use aim::{Aboard, Battery, Mark, RunOut, captain_guns, fire_window};
 use course::{
-    DEG, Traffic, distance, flee_course, heading_to, intercept, lead_point, traffic_course, velocity_of, wrap,
+    DEG, Traffic, distance, flee_course, heading_to, intercept, lead_point, pass_reach, traffic_course, velocity_of,
+    wrap,
 };
 use land::{Avoid, NAV_EVERY_S, avoid_land, course_clear};
 use odds::{Power, odds};
-use sailing::Hull;
-use sailing::helm::{HANDLING, PACE, canvas, point_of_sail, sea_wind, steerage};
+use sailing::helm::{HANDLING, PACE, canvas_drive, point_of_sail, sea_wind, steerage};
 use sailing::pose::{Pose, frame};
 use sailing::ship::{Helm, SAILS_SET, Ship, length, off_run_deg};
+use sailing::{Hull, HullKind};
 use std::collections::BTreeMap;
 
 /// Who she sees (metres) and keeps on fighting out to this many times as far; whom she runs from within.
@@ -119,11 +120,12 @@ struct Chase {
     marks: Vec<[f64; 2]>,
 }
 
-/// A ship she may fight as she sees her, a player's or another faction's: her number, where she is and how she lies,
-/// her hurts and her power.
+/// A ship she may fight as she sees her, a player's or another faction's: her number, her hull, where she is and how
+/// she lies, her hurts and her power.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sighting {
     pub id: ShipId,
+    pub hull: HullKind,
     pub ship: Ship,
     pub level: f64,
     pub hull_share: f64,
@@ -183,7 +185,7 @@ pub struct Captain {
 /// Her best way under sail with the wind on her quarter, left her by her canvas: the pace she reckons by.
 #[must_use]
 pub fn pace(hull: &Hull, wind: [f64; 2], way_share: f64) -> f64 {
-    canvas(hull) * sea_wind(length(wind[0], wind[1])) * PACE * HANDLING.move_speed_sail * way_share
+    canvas_drive(hull) * sea_wind(length(wind[0], wind[1])) * PACE * HANDLING.move_speed_sail * way_share
 }
 
 /// The most she swings at her way (degrees a second): her steerage under sail, her oars' swing on them.
@@ -312,7 +314,7 @@ impl Captain {
         if self.temper == Temper::Bold || enemy.wrecked || enemy.hull_share < GRAPPLE_HULL {
             return true;
         }
-        odds(&self.power(her.damage), &enemy.power, her.arms) >= WARY_ODDS
+        odds(&self.power(her.damage), &enemy.power, [her.arms, arms_of(enemy.hull)]) >= WARY_ODDS
     }
 
     /// The share of her way her canvas gives her: what her hurts leave it, by her rank's way.
@@ -464,7 +466,8 @@ impl Captain {
         }
         seen = seen && chosen.is_some_and(|(enemy, _)| self.wreck_on(enemy.wrecked, enemy.id));
         let threat = self.threat(her, sightings);
-        let outgunned = threat.is_some_and(|threat| odds(&threat.power, &self.power(her.damage), her.arms) > 1.0);
+        let outgunned = threat
+            .is_some_and(|threat| odds(&threat.power, &self.power(her.damage), [arms_of(threat.hull), her.arms]) > 1.0);
         let runs = (her.damage.hull_share() < self.commission.rank.scale().runs_at && (threat.is_some() || seen))
             || (self.temper == Temper::Wary && outgunned);
         let enemy = chosen.filter(|_| seen).map(|(enemy, _)| enemy);
@@ -485,11 +488,8 @@ impl Captain {
                 Plan { want: self.cruise, sails: 1.0, track: false }
             }
         };
-        // Both hulls' pass reaches: half of half her beam and half her length, each.
-        let [low, high] = her.arms.hull;
-        let passing = 2.0 * 0.5 * ((high[1] - low[1]) / 2.0 + (high[0] - low[0]) / 2.0);
         let own = (me, her.ship.heading, velocity_of(her.ship));
-        let want = traffic_course(own, plan.want, traffic, passing);
+        let want = traffic_course(own, plan.want, traffic, pass_reach(her.arms));
         let look = self.lookout(her);
         let want = avoid_land(&mut self.avoid, (self.clock, me, her.ship.heading), want, &look, is_water);
         let asked = if self.avoid.boxed() { plan.sails.min(BOXED_SAILS) } else { plan.sails };
@@ -563,6 +563,7 @@ impl Captain {
             velocity: velocity_of(&enemy.ship),
             smoothed: self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship)),
             level: enemy.level,
+            arms: arms_of(enemy.hull),
         };
         let (ship, pose, arms, guns, build) = (her.ship, her.pose, her.arms, her.guns, &self.build);
         let aboard = Aboard { ship, pose, arms, guns, build, aim_error: self.commission.rank.scale().aim_error };

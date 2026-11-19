@@ -1,10 +1,10 @@
-//! A fight at sea: players' Sloops and captains' Sloops of each faction, the balls between them, and the harm they
-//! do, stepped together a tick at a time. Each player orders her own helm, a lay (the look's bearing off her bow and
-//! its range), the fire, the brace and the load; each captain decides for herself whom she fights, a player or a
-//! captain of another faction. A ball strikes only a ship under another flag. One seeded stream decides every chance,
+//! A fight at sea: players' Sloops and captains of each faction in their ranks' hulls, the balls between them, and the
+//! harm they do, stepped together a tick at a time. Each player orders her own helm, a lay (the look's bearing off her
+//! bow and its range), the fire, the brace and the load; each captain decides for herself whom she fights, a player or
+//! a captain of another faction. A ball strikes only a ship under another flag. One seeded stream decides every chance,
 //! in a fixed order, so a fight is the same on every machine.
 
-use crate::arms::{LARGE_BOAT, SLOOP_ARMS, Side, posed};
+use crate::arms::{Arms, LARGE_BOAT, Side, arms_of, posed};
 use crate::ballistics::Ball;
 use crate::captain::odds::Power;
 use crate::captain::{Captain, Her, Sighting};
@@ -17,7 +17,7 @@ use crate::shots::{Flag, ShipId, ShotEvent};
 use sailing::pose::{Pose, pose_of, shallower};
 use sailing::ship::{Helm, Pull, SAILS_SET, Ship, step_pulled};
 use sailing::waters::Waters;
-use sailing::{SLOOP, TICK_SECONDS};
+use sailing::{Hull, HullKind, TICK_SECONDS};
 use std::collections::BTreeMap;
 use std::f64::consts::TAU;
 
@@ -34,9 +34,10 @@ pub const HOSTILE_NEAR_M: f64 = 700.0;
 /// The rest of the volley that made a ship strike, this long after (seconds), cannot sink her.
 pub const STRUCK_GRACE_S: f64 = 2.0;
 
-/// A ship in the fight: her helm's numbers, how she lies, her hurts and her guns, and who sails her.
+/// A ship in the fight: her hull, her helm's numbers, how she lies, her hurts and her guns, and who sails her.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Vessel {
+    pub hull: HullKind,
     pub ship: Ship,
     pub pose: Pose,
     pub damage: Damage,
@@ -76,6 +77,12 @@ impl Vessel {
             Sailor::Player => None,
             Sailor::Captain(command) => Some(command),
         }
+    }
+
+    /// Her arms: her hull's.
+    #[must_use]
+    pub fn arms(&self) -> &'static Arms {
+        arms_of(self.hull)
     }
 
     /// Whether she is still in the fight: a captain who has sunk or sailed off is not.
@@ -193,12 +200,13 @@ impl Hurts {
     }
 }
 
-/// A player's ship stepped a tick by her helm, as her hurts let her: no sail sets on a wreck or with her rigging shot
-/// away, and her sails' and oars' pull is held back. Answers her and, when her helm climbed for sail it could not set,
-/// whether that was for her being a wreck.
+/// A player's ship of `hull` stepped a tick by her helm, as her hurts let her: no sail sets on a wreck or with her
+/// rigging shot away, and her sails' and oars' pull is held back. Answers her and, when her helm climbed for sail it
+/// could not set, whether that was for her being a wreck.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,
+    hull: &Hull,
     helm: Helm,
     hurts: Hurts,
     waters: &impl Waters,
@@ -217,17 +225,16 @@ pub fn sail_hurt(
         sail: if hurts.wrecked { 0.0 } else { hurts.way_share },
         oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 },
     };
-    (step_pulled(ship, &helm, &SLOOP, wind, waters, time, TICK_SECONDS, pull), refused)
+    (step_pulled(ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull), refused)
 }
 
-/// Whether water at a point is deep enough to float a Sloop.
-fn floats(waters: &impl Waters, x: f64, y: f64, time: f64) -> bool {
-    !shallower(&waters.at(x, y, time), SLOOP.draught_m)
+/// Whether water at a point is deep enough to float `hull`.
+fn floats(waters: &impl Waters, hull: &Hull, x: f64, y: f64, time: f64) -> bool {
+    !shallower(&waters.at(x, y, time), hull.draught_m)
 }
 
-/// How deep she settles for her highest point to end `SINK_CLEAR_M` under at her last list and trim.
-fn sink_depth(seed: u32) -> f64 {
-    let arms = &SLOOP_ARMS;
+/// How deep a ship of `arms` settles for her highest point to end `SINK_CLEAR_M` under at her last list and trim.
+fn sink_depth(seed: u32, arms: &Arms) -> f64 {
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     let side = if seed & 1 == 1 { 1.0 } else { -1.0 };
     let end = if seed & 2 == 2 { -1.0 } else { 1.0 };
@@ -263,6 +270,7 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
     };
     Sighting {
         id,
+        hull: vessel.hull,
         ship: vessel.ship,
         level: vessel.pose.heave,
         hull_share: damage.hull_share(),
@@ -271,13 +279,14 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
     }
 }
 
-/// A captain's ship as she works it, in the wind, from its parts: her command is borrowed apart from them.
+/// A captain's ship of `hull` as she works it, in the wind, from its parts: her command is borrowed apart from them.
 fn her_of<'vessel>(
+    hull: HullKind,
     (ship, pose): (&'vessel Ship, &'vessel Pose),
     (damage, guns): (&'vessel Damage, &'vessel Guns),
     wind: [f64; 2],
 ) -> Her<'vessel> {
-    Her { ship, pose, damage, guns, arms: &SLOOP_ARMS, hull: &SLOOP, wind }
+    Her { ship, pose, damage, guns, arms: arms_of(hull), hull: hull.hull(), wind }
 }
 
 impl Fight {
@@ -288,24 +297,31 @@ impl Fight {
         Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls: Vec::new(), stems: BTreeMap::new() }
     }
 
-    /// A player's Sloop and one captain's, a Major of the pirates, put to sea on the ring round her, where the water
-    /// floats her, heading across the player's waters on a slant: `PLAYER` and `CAPTAIN`.
-    pub fn begin(ship: Ship, seed: u32, waters: &impl Waters, time: f64) -> Result<Fight, String> {
+    /// A player's Sloop and one captain of `commission` in her rank's hull, put to sea on the ring round her, where the
+    /// water floats her, heading across the player's waters on a slant: `PLAYER` and `CAPTAIN`.
+    pub fn begin(
+        ship: Ship,
+        commission: Commission,
+        seed: u32,
+        waters: &impl Waters,
+        time: f64,
+    ) -> Result<Fight, String> {
         let mut fight = Fight::new(seed);
         fight.put_to_sea(PLAYER, ship, waters, time);
-        fight.call_captain(CAPTAIN, &ship, Commission::default(), waters, time)?;
+        fight.call_captain(CAPTAIN, &ship, commission, waters, time)?;
         Ok(fight)
     }
 
     /// A player's Sloop, sound, put to sea as `ship` under number `id`.
     pub fn put_to_sea(&mut self, id: ShipId, ship: Ship, waters: &impl Waters, time: f64) {
-        let pose = pose_of(&ship, &SLOOP, waters, time);
+        let hull = HullKind::Sloop;
+        let pose = pose_of(&ship, hull.hull(), waters, time);
         let damage = Damage::new(&LARGE_BOAT, true);
-        self.ships.insert(id, Vessel { ship, pose, damage, guns: Guns::new(), sailor: Sailor::Player });
+        self.ships.insert(id, Vessel { hull, ship, pose, damage, guns: Guns::new(), sailor: Sailor::Player });
     }
 
-    /// A captain of `commission` under number `id` put to sea on the ring round `near`, where the water floats her,
-    /// heading across its waters on a slant; or why none comes.
+    /// A captain of `commission` in her rank's hull under number `id` put to sea on the ring round `near`, where the
+    /// water floats her, heading across its waters on a slant; or why none comes.
     pub fn call_captain(
         &mut self,
         id: ShipId,
@@ -320,7 +336,7 @@ impl Fight {
             let out = draws.between(SPAWN_RING[0], SPAWN_RING[1]);
             let (x, y) = (near.x + libm::sin(bearing) * out, near.y - libm::cos(bearing) * out);
             let at = Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-            if pose_of(&at, &SLOOP, waters, time).aground {
+            if pose_of(&at, commission.hull().hull(), waters, time).aground {
                 continue;
             }
             let to_near = crate::captain::course::heading_to([x, y], [near.x, near.y]);
@@ -350,7 +366,7 @@ impl Fight {
         fight
     }
 
-    /// A fight among captains already at sea, with no player in it: each of `captains` (her Sloop cruising on its
+    /// A fight among captains already at sea, with no player in it: each of `captains` (her ship cruising on its
     /// heading, her commission and her seed) under a number from `CAPTAIN` on, in turn, and every chance of the fight
     /// drawn from the first one's seed.
     pub fn among(captains: &[(Ship, Commission, u32)], waters: &impl Waters, time: f64) -> Fight {
@@ -361,14 +377,16 @@ impl Fight {
         fight
     }
 
-    /// A captain of `commission` under number `id` in her Sloop at `ship`, cruising on its heading, her temper drawn
-    /// from `seed`, her hull as strong as her rank makes it and striking where her rank strikes.
+    /// A captain of `commission` under number `id` in her rank's hull at `ship`, cruising on its heading, her temper
+    /// drawn from `seed`, her hull as strong as her rank makes it and striking where her rank strikes.
     fn enlist(&mut self, id: ShipId, ship: Ship, commission: Commission, seed: u32, waters: &impl Waters, time: f64) {
-        let her = Captain::new(commission, seed, ship.heading, &SLOOP_ARMS);
+        let hull = commission.hull();
+        let her = Captain::new(commission, seed, ship.heading, arms_of(hull));
         let damage = commission.damage();
-        let command = Command { her, under: sink_depth(seed), struck_at: None, gone: None };
+        let command = Command { her, under: sink_depth(seed, arms_of(hull)), struck_at: None, gone: None };
         let vessel = Vessel {
-            pose: pose_of(&ship, &SLOOP, waters, time),
+            hull,
+            pose: pose_of(&ship, hull.hull(), waters, time),
             ship,
             damage,
             guns: Guns::new(),
@@ -457,11 +475,12 @@ impl Fight {
         foes.map(|(id, vessel)| sighting_of(*id, vessel)).collect()
     }
 
-    /// Every hull in the fight but `except`'s: where it is and its way, for a captain to keep clear of.
+    /// Every hull in the fight but `except`'s: where it is, its way and its pass reach, for a captain to keep clear of.
     fn traffic(&self, except: ShipId) -> Vec<crate::captain::course::Traffic> {
+        use crate::captain::course::{pass_reach, velocity_of};
         let others = self.ships.iter().filter(|(id, vessel)| **id != except && vessel.in_fight());
         others
-            .map(|(_, vessel)| ([vessel.ship.x, vessel.ship.y], crate::captain::course::velocity_of(&vessel.ship)))
+            .map(|(_, vessel)| ([vessel.ship.x, vessel.ship.y], velocity_of(&vessel.ship), pass_reach(vessel.arms())))
             .collect()
     }
 }

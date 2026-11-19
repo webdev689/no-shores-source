@@ -14,7 +14,7 @@ use sailing::ship::Helm;
 use sailing::waters::Waters;
 
 pub const ORDERS: usize = 16;
-pub const VESSEL_NUMBERS: usize = 26;
+pub const VESSEL_NUMBERS: usize = 27;
 pub const STOP_NUMBERS: usize = 10;
 /// The farthest a look may lay, metres: past every gun's reach.
 const MOST_RANGE_M: f64 = 1e5;
@@ -109,6 +109,7 @@ fn vessel_numbers(vessel: &Vessel) -> Vec<f64> {
     numbers.extend([guns.left(Side::Port), guns.left(Side::Starboard)]);
     numbers.extend([guns.progress(Side::Port), guns.progress(Side::Starboard)]);
     numbers.extend([shot_number(guns.load), f64::from(u8::from(guns.braced))]);
+    numbers.push(f64::from(vessel.hull.number()));
     numbers
 }
 
@@ -169,8 +170,9 @@ fn captain_numbers(her: &Captain) -> [f64; 4] {
 }
 
 /// The fight as the browser shows it, after a tick whose events are `events`, its lay the look `aim` holds over
-/// `waters` at `time`: a fight of the player's Sloop and `CAPTAIN`'s (`Fight::meet`), then any other captains still
-/// in it, each with her faction and rank; none for a fight without both.
+/// `waters` at `time`: a fight of the player's Sloop and `CAPTAIN`'s ship (`Fight::meet`), then any other captains
+/// still in it, each with her faction and rank; none for a fight without both. Each ship's numbers end with her hull
+/// (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate).
 #[must_use]
 pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Vec<f64> {
     let (Some(player), Some(captain)) = (fight.vessel(PLAYER), fight.vessel(CAPTAIN)) else { return Vec::new() };
@@ -221,8 +223,8 @@ pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: 
     numbers
 }
 
-/// Where a view's other captains begin (after its clock, its end, the player's Sloop, the captain's and her mind), and
-/// each one's numbers (her faction and rank, her Sloop and her mind).
+/// Where a view's other captains begin (after its clock, its end, the player's Sloop, the captain's ship and her mind),
+/// and each one's numbers (her faction and rank, her ship and her mind).
 const OTHERS_AT: usize = 2 + 2 * VESSEL_NUMBERS + 4;
 const OTHER_NUMBERS: usize = 2 + VESSEL_NUMBERS + 4;
 

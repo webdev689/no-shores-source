@@ -44,6 +44,8 @@ export interface FleetVessel {
   readonly runOut: number;
   readonly faction: number;
   readonly rank: number;
+  /** Her hull: 0 the Sloop to 3 the Frigate. */
+  readonly hull?: number;
 }
 
 /** The Sloop's session in a fleet room, as the editor sees it: her number, why the room was lost and whether it is

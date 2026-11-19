@@ -234,6 +234,7 @@ pub fn fleet_snapshot_bytes(
                 acknowledged: acknowledged(id).unwrap_or(0),
                 faction: vessel.flag().number(),
                 rank: command.map_or(0, |command| command.her.commission.rank.number()),
+                hull: vessel.hull.number(),
             };
             messages::Vessel::create(&mut builder, &args)
         })

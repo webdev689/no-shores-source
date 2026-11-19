@@ -132,7 +132,7 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         let shown = fight.preview(player, &aim, &waters, time);
         let sighted = |ship: &naval::laying::Sighted| {
             let flag = f64::from(ship.flag.number());
-            [f64::from(ship.id), flag]
+            [f64::from(ship.id), flag, f64::from(ship.hull.number())]
                 .into_iter()
                 .chain(ship.ship.to_floats())
                 .chain(ship.pose.to_floats())

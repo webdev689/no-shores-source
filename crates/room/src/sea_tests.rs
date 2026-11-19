@@ -457,3 +457,18 @@ fn ships_of_one_faction_never_meet_at_sea() {
     assert!(sea.clashes().is_empty());
     assert_eq!(sea.pirates.sailing.len(), 2);
 }
+
+#[test]
+fn a_captain_of_each_rank_at_sea_meets_a_player_in_her_ranks_hull() {
+    for (rank, _) in crate::pirates::RANKS_AT_SEA {
+        let seed = (0..10_000).find(|seed| crate::pirates::commission_at_sea(*seed).rank == rank).expect("a seed");
+        let (mut sea, _) = met_at_sea(700.0);
+        sea.pirates.sailing[0].seed = seed;
+        sea.tick();
+        let (_, fought) = sea.fights().next().expect("a fight");
+        let hull = fought.fight.vessel(CAPTAIN).map(|vessel| vessel.hull);
+        assert_eq!(hull, Some(rank.hull()), "{rank:?}");
+        let shown: Vec<_> = sea.fight_views().map(|(_, _, commission)| commission.hull()).collect();
+        assert_eq!(shown, [rank.hull()], "{rank:?}: the snapshot names her hull");
+    }
+}

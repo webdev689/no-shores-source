@@ -60,7 +60,6 @@ pub fn sloop_deck() -> &'static Deck {
 /// guns take, in the order a gunner steps through them.
 #[must_use]
 pub fn sloop_build_json() -> String {
-    let starboard = SLOOP_ARMS.mouths.iter().filter(|mouth| mouth[1] > 0.0).count();
     let loads: Vec<String> = Shot::CYCLE.iter().map(|shot| format!("\"{}\"", shot.name())).collect();
     format!(
         r#"{{"name":"{}","hull":{},"sail":{},"crew":{},"guns":{{"port":{},"starboard":{}}},"loads":[{}]}}"#,
@@ -68,8 +67,8 @@ pub fn sloop_build_json() -> String {
         LARGE_BOAT.hull,
         LARGE_BOAT.sail,
         LARGE_BOAT.crew,
-        SLOOP_ARMS.mouths.len() - starboard,
-        starboard,
+        SLOOP_ARMS.port.len(),
+        SLOOP_ARMS.starboard.len(),
         loads.join(","),
     )
 }

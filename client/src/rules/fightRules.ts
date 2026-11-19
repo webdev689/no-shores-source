@@ -27,8 +27,10 @@ export interface FightOrders {
   readonly load: ShotName | null;
 }
 
-/** A ship in the fight: her numbers and pose, her hurts and her guns (port, then starboard). */
+/** A ship in the fight: her numbers and pose, her hurts and her guns (port, then starboard), and her hull (0 the
+ *  Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate) where the rules name it. */
 export interface FightVessel {
+  readonly hull_kind?: number;
   readonly ship: readonly number[];
   readonly pose: readonly number[];
   readonly hull: number;
@@ -118,8 +120,8 @@ export interface FightView {
 }
 
 /** A fight's begin request. */
-export function beginRequest(ship: ShipFloats, seed: number, time: number): string {
-  return JSON.stringify({ ship: [...ship], seed, time });
+export function beginRequest(ship: ShipFloats, seed: number, time: number, rank?: number): string {
+  return JSON.stringify({ ship: [...ship], seed, time, ...(rank === undefined ? {} : { rank }) });
 }
 
 /** A fight's step request. */

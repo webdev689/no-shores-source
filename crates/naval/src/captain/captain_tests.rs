@@ -2,7 +2,7 @@ use super::*;
 use crate::arms::{LARGE_BOAT, PIRATE_SLOOP, SLOOP_ARMS};
 use crate::damage::Hurt;
 use crate::ranks::{PIRATES, Rank};
-use sailing::SLOOP;
+use sailing::{HullKind, SLOOP};
 
 const LEVEL: Pose = Pose { heave: 0.0, pitch: 0.0, roll: 0.0, aground: false };
 const EAST_WIND: [f64; 2] = [1.5, 0.0];
@@ -39,12 +39,20 @@ impl Deck {
 
 fn player_at(x: f64, y: f64) -> Sighting {
     let ship = Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    Sighting { id: 0, ship, level: 0.0, hull_share: 1.0, wrecked: false, power: Power::player(&LARGE_BOAT, 1.0) }
+    Sighting {
+        id: 0,
+        hull: HullKind::Sloop,
+        ship,
+        level: 0.0,
+        hull_share: 1.0,
+        wrecked: false,
+        power: Power::player(&LARGE_BOAT, 1.0),
+    }
 }
 
 /// Her helm against one player's ship, the only hull about her.
 fn steer_against(her: &mut Captain, deck: &Deck, enemy: &Sighting, seconds: f64) -> Helm {
-    let traffic = [([enemy.ship.x, enemy.ship.y], velocity_of(&enemy.ship))];
+    let traffic = [([enemy.ship.x, enemy.ship.y], velocity_of(&enemy.ship), course::pass_reach(&SLOOP_ARMS))];
     her.steer(&deck.her(), (std::slice::from_ref(enemy), &traffic), seconds, &open)
 }
 

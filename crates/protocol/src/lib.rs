@@ -449,10 +449,10 @@ fn spells_vector<'built>(
     builder.create_vector(&each)
 }
 
-/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction and rank, each
-/// player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a field
-/// of their own) with its captain's commission, and each player off the helm with the number of their last step taken
-/// and their body on deck.
+/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction, rank and hull,
+/// each player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a
+/// field of their own) with its captain's commission and hull, and each player off the helm with the number of their
+/// last step taken and their body on deck.
 #[must_use]
 pub fn sea_snapshot_bytes(
     tick: u64,
@@ -485,7 +485,8 @@ pub fn sea_snapshot_bytes(
         .map(|pirate| {
             let Pirate { id, x, y, heading, .. } = *pirate;
             let Commission { faction, rank } = pirate.commission();
-            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number() };
+            let hull = rank.hull().number();
+            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull };
             messages::Pirate::create(&mut builder, &args)
         })
         .collect();
@@ -497,9 +498,10 @@ pub fn sea_snapshot_bytes(
             let (view, faction, rank) =
                 (Some(builder.create_vector(&view)), commission.faction, commission.rank.number());
             let others = (!others.is_empty()).then(|| builder.create_vector(&others));
+            let hull = commission.hull().number();
             messages::SeaFight::create(
                 &mut builder,
-                &messages::SeaFightArgs { player: *player, view, faction, rank, others },
+                &messages::SeaFightArgs { player: *player, view, faction, rank, others, hull },
             )
         })
         .collect();

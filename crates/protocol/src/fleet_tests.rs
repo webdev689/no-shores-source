@@ -143,6 +143,8 @@ fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
     assert_eq!((vessels[0].load(), vessels[2].mode()), (1, 0), "round shot, cruising");
     let colours: Vec<_> = vessels.iter().map(|vessel| (vessel.faction(), vessel.rank())).collect();
     assert_eq!(colours, [(0, 0), (0, 0), (1, 3)], "players' ships, then a Grey Tithe Elite");
+    let hulls: Vec<u8> = vessels.iter().map(messages::Vessel::hull).collect();
+    assert_eq!(hulls, [0, 0, 1], "players' Sloops, then the Elite's Schooner");
     let kinds: Vec<_> =
         read.naval().unwrap().iter().map(|event| (event.tick(), event.kind(), event.ship(), event.detail())).collect();
     assert_eq!(

@@ -131,6 +131,8 @@ pub struct Damage {
     /// The share of her hull she strikes at.
     pub struck_at: f64,
     player: bool,
+    /// The parts of a hull point, a canvas point and a man that balls taking a share of their blow left her owing.
+    owed: [f64; 3],
 }
 
 impl Damage {
@@ -152,6 +154,7 @@ impl Damage {
             list_deg: 0.0,
             struck_at: STRUCK_AT,
             player,
+            owed: [0.0; 3],
         }
     }
 
@@ -196,8 +199,23 @@ impl Damage {
         let mut numbers =
             vec![self.hull, self.sail, self.crew, self.crew_burn, self.wound, state, self.sink_t, self.last_hit_at];
         numbers.push(self.list_deg);
+        numbers.extend(self.owed);
         numbers.extend(self.fires.iter().flat_map(|fire| [fire.bite, fire.left]));
         numbers
+    }
+
+    /// A ball's blow as she takes `share` of it: its whole points and men now, the parts carried until they make one,
+    /// so a side of many guns takes from her what the Sloop's three would, however each ball's harm rounds.
+    #[must_use]
+    pub fn shared(&mut self, hurt: Hurt, share: f64) -> Hurt {
+        let mut whole = [hurt.hull, hurt.sail, hurt.crew];
+        for (taken, owed) in whole.iter_mut().zip(&mut self.owed) {
+            let due = *taken * share + *owed;
+            *taken = due.floor();
+            *owed = due - *taken;
+        }
+        let [hull, sail, crew] = whole;
+        Hurt { hull, sail, crew, fire: hurt.fire }
     }
 
     fn unmanned(&self) -> bool {

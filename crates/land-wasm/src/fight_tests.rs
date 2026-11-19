@@ -152,7 +152,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it, and her captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "f7ba7663f1a5a8f5 32cf95fe62a0a453 e4ab140683ed4d79 a3c91988b6f46a93 b6429b7c94d58b60 36f3fdf574d0a3bc 59a9408c4c2455d0 23017c1a3a61a784 3ffe4b1dc14aa2f2"
+        "8812bb5ddafb5fd5 023b7bcd4ce44333 810ca1f1d7deb0b9 39863872d3efd873 bc311f33cb17dfe0 6b63c754246fd09c fae3ac5bdff94730 1b52c20892c553c4 2c2186f7241fdcd2"
     );
 }
 
@@ -178,4 +178,47 @@ fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
     for bad in [r#"[5, 3, 6, 1, 0, "down"]"#, "[5, 3, 6, 1, 0, null]", "[5, 3, 6, 1, 0]", r#""up""#] {
         assert!(with_ray(bad).get("error").is_some(), "{bad}");
     }
+}
+
+/// The fight `FIGHT_LEGS` fights against a pirate captain of `rank`, in her rank's hull: each leg's fingerprint.
+fn fought_with(rank: u8) -> Vec<String> {
+    opened();
+    let begin = format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#);
+    let begun = answer(&fight_begin_json(begin.as_bytes()));
+    assert!(begun.get("error").is_none(), "{begun}");
+    assert_eq!(begun["captain"]["rank"], rank);
+    let mut time = 1000.0;
+    let mut prints = Vec::new();
+    for leg in FIGHT_LEGS {
+        let last = answer(&fight_step_json(step_request(leg, time).as_bytes()));
+        assert!(last.get("error").is_none(), "{last}");
+        prints.push(last["fingerprint"].as_str().unwrap_or("").to_string());
+        time += leg[7] / 60.0;
+    }
+    prints
+}
+
+/// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
+/// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
+pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
+    [(2, 0, "2c2186f7241fdcd2"), (3, 1, "722d64499ad08022"), (4, 2, "638e410d9f98a3b3"), (5, 3, "946a7b2983ac1495")];
+
+#[test]
+fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
+    for (rank, hull, print) in HULL_FIGHTS {
+        let prints = fought_with(rank);
+        let begun = answer(&fight_begin_json(
+            format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#)
+                .as_bytes(),
+        ));
+        assert_eq!(begun["captain"]["hull_kind"], hull, "a captain of rank {rank} sails her rank's hull");
+        assert_eq!(begun["player"]["hull_kind"], 0, "the player sails her Sloop");
+        assert_eq!(prints.last().map(String::as_str), Some(print), "rank {rank}: {prints:?}");
+    }
+    let refused = |rank: &str| {
+        let begin =
+            format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#);
+        answer(&fight_begin_json(begin.as_bytes())).get("error").is_some()
+    };
+    assert!(refused("0") && refused("6") && refused("2.5") && refused("\"boss\""));
 }

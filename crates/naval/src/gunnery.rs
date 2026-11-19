@@ -127,10 +127,10 @@ impl Guns {
 /// A side laid: its guns' mouths in the world (through her heel), their middle, the direction it fires (square to her
 /// upright hull, east and south), its elevation (radians), the gun as loaded with its load, and its longest throw from
 /// that middle over the water under her.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Lay {
     pub side: Side,
-    pub mouths: [[f64; 3]; 3],
+    pub mouths: Vec<[f64; 3]>,
     pub centre: [f64; 3],
     pub dir: [f64; 2],
     pub elevation: f64,
@@ -140,13 +140,13 @@ pub struct Lay {
 }
 
 /// `side` laid to throw `range` metres out along its fire, from her pose over still water at her heave: onto the
-/// water there, or onto a point `rise` metres above it.
+/// water there, or onto a point `rise` metres above it. Each of its guns throws its share of the Sloop's broadside.
 #[must_use]
 pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range: f64, rise: Option<f64>) -> Lay {
-    let gun = loaded(&SWIVEL, shot);
-    let battery = arms.battery(side);
-    let mouths = [0, 1, 2].map(|index| posed(ship, pose, battery[index]));
-    let centre = [0, 1, 2].map(|axis| mouths.iter().map(|mouth| mouth[axis]).sum::<f64>() / 3.0);
+    let gun = Gun { share: arms.gun_share(side), ..loaded(&SWIVEL, shot) };
+    let mouths: Vec<[f64; 3]> = arms.battery(side).iter().map(|mouth| posed(ship, pose, *mouth)).collect();
+    let guns = mouths.len().max(1) as f64;
+    let centre = [0, 1, 2].map(|axis| mouths.iter().map(|mouth| mouth[axis]).sum::<f64>() / guns);
     let (_, starboard) = frame(ship.heading);
     let dir = [starboard[0] * side.sign(), starboard[1] * side.sign()];
     let above = centre[2] - pose.heave;
@@ -180,7 +180,7 @@ pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, sho
                 lay.gun.pitch_spread_deg * widen,
                 &mut draws,
             );
-            aimed(&Lay { dir, elevation, ..*lay }, index, carry, clock, shooter)
+            aimed(&Lay { dir, elevation, ..lay.clone() }, index, carry, clock, shooter)
         })
         .collect()
 }
