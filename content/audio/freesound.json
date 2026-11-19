@@ -1111,6 +1111,33 @@
         30.0
       ],
       "picked": 559600
+    },
+    {
+      "id": "amb.rain.gutters",
+      "use": "Saltmere in the rain: water running off its roofs and dripping from its eaves",
+      "query": "rain gutter dripping",
+      "seconds": [
+        10.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.thunder.crack",
+      "use": "A strike to the ground within 3 km: the rip and crack of near thunder",
+      "query": "thunder crack close",
+      "seconds": [
+        2.0,
+        25.0
+      ]
+    },
+    {
+      "id": "amb.thunder.roll",
+      "use": "A strike farther off or in the cloud: a long low roll of thunder",
+      "query": "distant thunder rumble",
+      "seconds": [
+        5.0,
+        45.0
+      ]
     }
   ]
 }

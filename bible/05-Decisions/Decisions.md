@@ -124,6 +124,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Weather and Day and Night Come From DFO, Much Improved]]
 - [[A Day Lasts One Real Hour]]
 - [[Weather and Day as Claude Shapes It]]
+- [[The Weather's Gutters and Thunder Come From Freesound]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
