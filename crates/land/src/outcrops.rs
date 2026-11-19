@@ -141,16 +141,21 @@ impl Outcrop {
     pub(crate) fn stands(&self, seed: u32, x: f64, y: f64) -> f64 {
         let [middle_x, middle_y] = self.at;
         let (radius, tall) = (self.radius, self.tall);
-        // The edge wanders over a span of its size, so a broad outcrop's faces are no steeper than a small one's.
-        let span = 0.75 * radius;
-        let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(seed, x / span, y / span, 2));
         let form = self.shape.form();
         let (sine, cosine) = sin_cos(self.angle);
         let along = (x - middle_x) * sine - (y - middle_y) * cosine;
         let spine = radius * form.spine;
+        let (beyond, across) = (along - along.clamp(-spine, spine), (x - middle_x) * cosine + (y - middle_y) * sine);
+        // Past its footprint it stands nowhere however its edge wanders, so its noise is never asked there.
+        let footprint = radius * (1.0 + WANDER) * (1.0 + 1e-9);
+        if beyond * beyond + across * across > footprint * footprint {
+            return 0.0;
+        }
+        // The edge wanders over a span of its size, so a broad outcrop's faces are no steeper than a small one's.
+        let span = 0.75 * radius;
+        let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(seed, x / span, y / span, 2));
         // Off its spine's ends, and across it, in the shape's own measure, where its edge is a circle of its radius.
-        let (beyond, across) =
-            ((along - along.clamp(-spine, spine)) / wander, ((x - middle_x) * cosine + (y - middle_y) * sine) / wander);
+        let (beyond, across) = (beyond / wander, across / wander);
         let unleaned = (beyond * beyond + across * across).sqrt();
         // The higher up, the further along its angle its middle stands: its foot stays put, its stack leans.
         let leaned = beyond - form.lean * (radius - unleaned).max(0.0);
