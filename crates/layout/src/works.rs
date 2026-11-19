@@ -79,7 +79,7 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &
     let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, _, _))| distance(middle, run.1.0) > WORKS_APART_M);
     let viaduct_at = runs.iter().find(apart).copied();
     if let Some((tier, (middle, way, _))) = viaduct_at {
-        viaduct(kit, middle, way, tier, rise);
+        viaduct(kit, middle, way, tier, rise, paths);
     }
     // A natural arch over a third canyon, apart from both.
     let clear_of =
@@ -175,7 +175,7 @@ fn great_wall(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: 
 
 /// A viaduct: a deck from cliff top to cliff top across the canyon, on piers standing at the canyon's sides with
 /// arches between them, and one span fallen, its stones lying in the gorge beside the way.
-fn viaduct(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64) {
+fn viaduct(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64, paths: &[Path]) {
     let (half, run) = canyon(tier);
     let floor = kit.height(middle);
     let across = [-way[1], way[0]];
@@ -187,16 +187,16 @@ fn viaduct(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64
     for pier in 0..=spans {
         let along = -reach + f64::from(pier) * (2.0 * reach / f64::from(spans));
         let at = ahead(middle, across, along, 0.0);
-        if along.abs() > tier.width() / 2.0 + PIER_M {
-            kit.solid(
-                Solid::upright(
-                    Shape::Block,
-                    [at[0], at[1], floor - 2.0],
-                    [DECK_M, PIER_M, deck - floor + 2.0],
-                    Material::Stone,
-                )
-                .turned(turn),
-            );
+        let standing = Solid::upright(
+            Shape::Block,
+            [at[0], at[1], floor - 2.0],
+            [DECK_M, PIER_M, deck - floor + 2.0],
+            Material::Stone,
+        )
+        .turned(turn);
+        // A pier turned across the way reaches further than its middle: its box keeps off every way.
+        if along.abs() > tier.width() / 2.0 + PIER_M && clear_of_ways(&[standing], paths, floor) {
+            kit.solid(standing);
         }
         if pier < spans && pier != fallen {
             let next = ahead(middle, across, along + reach / f64::from(spans), 0.0);

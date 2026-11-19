@@ -116,7 +116,7 @@ export function cellCorner(plan: CityPlan, cell: { column: number; row: number }
 }
 
 /** How far a solid reaches from the middle of its base across the ground: round its base, and as far as its top
- *  swings out where it leans or rolls (the city crate's `Solid::bounds`). */
+ *  swings out where it leans or rolls: never less than the city crate's `Solid::bounds`. */
 export function solidReach(solid: Solid): number {
   const swing = Math.max(Math.abs(Math.sin(solid.lean)), Math.abs(Math.sin(solid.roll)));
   return Math.hypot(solid.size[0], solid.size[1]) / 2 + solid.size[2] * swing;

@@ -193,8 +193,14 @@ pub fn kerb(kit: &mut Kit, from: [f64; 2], to: [f64; 2], half: f64, carved: &Scu
             continue;
         }
         let base = carved_at(kit, carved, at) - 0.2;
-        let size = [0.6, 3.4, 0.75 + kit.draw() * 0.2];
-        kit.solid(Solid::upright(Shape::Block, [at[0], at[1], base], size, Material::Rubble).turned(turn_along(way)));
+        let high = 0.75 + kit.draw() * 0.2;
+        // In lengths whose boxes keep close to the kerb's line, off the climb's way.
+        let (start, end) = ([at[0] - way[0] * 1.7, at[1] - way[1] * 1.7], [at[0] + way[0] * 1.7, at[1] + way[1] * 1.7]);
+        let mut lengths = Vec::new();
+        crate::halls::wall(&mut lengths, start, end, base, base + high, 0.6, Material::Rubble);
+        for length in lengths {
+            kit.solid(length);
+        }
     }
 }
 

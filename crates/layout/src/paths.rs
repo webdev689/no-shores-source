@@ -351,4 +351,14 @@ mod tests {
         assert!(segments_cross([0.0, 0.0], [10.0, 10.0], [0.0, 10.0], [10.0, 0.0]));
         assert!(!segments_cross([0.0, 0.0], [10.0, 0.0], [10.0, 0.0], [10.0, 10.0]));
     }
+
+    #[test]
+    fn a_footprint_is_as_far_from_a_segment_as_their_nearest_points() {
+        let print = [0.0, 0.0, 4.0, 2.0];
+        assert_eq!(rect_off_line(print, [-5.0, 1.0], [10.0, 1.0]), 0.0, "through it");
+        assert!((rect_off_line(print, [-5.0, 5.0], [10.0, 5.0]) - 3.0).abs() < 1e-12, "past its south side");
+        // Passing its corner at a slant: nearest at the corner, not at either end.
+        let slant = rect_off_line(print, [6.0, 0.0], [4.0, -2.0]);
+        assert!((slant - 2.0_f64.sqrt()).abs() < 1e-12, "{slant}");
+    }
 }

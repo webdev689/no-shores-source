@@ -95,8 +95,13 @@ from the sea, fresh water and the claim's edge), then:
    along the ways within 70 m of a settlement (a hamlet, farm, keep, landing, camp, dock or mill), side to side; and
    drystone walls along both sides of the tracks within 170 m of a hamlet or farm, broken by gaps, with fallen stones.
    Each keeps clear of its own way all along it, not only where it was set, so none stands on a bend; and once the
-   ways are laid, the set pieces' props and small solids in a way's path (a lantern, a fire's stones) are left out,
-   with what stands on them.
+   ways are laid, every prop whose footprint reaches onto a way's width, the set pieces' small solids in a way's
+   path (a lantern, a fire's stones), with what stands on them, and each building not walked into that a way runs
+   through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner of
+   a building walked into rather than graze it. Cells a way may not cross are any reaching under what stands, so a
+   thin wall never slips between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose
+   boxes keep close to them, each kept off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and
+   the great wall are.
 6. **The land carved.** Each area becomes a basin 32 m wider than its reach and each path a canyon (15 m either side
    of a track, 11 of a footpath), their edges wandering outward with a noise; a gorge runs out of the claim from
    each gate toward its instance and from the landing toward the sea. Everything else in the claim is raised into a
@@ -188,14 +193,16 @@ file takes its section, spawns and boxes from its layout.
 
 ## Boxes
 
-What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs and stairs, the outdoor steps, each wing too low
-to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the ways,
-and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is never
-reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m, by
-any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's
-underside is its own, so a body walks under a viaduct's deck and a lintel. Boxes are written to the centimetre, grown
-out so none shrinks. A body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every
-upper floor, as the bake lays them (`crates/room/tests/rooms_walked.rs`).
+What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs and stairs, the outdoor steps, each wing
+too low to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the
+ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
+never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,
+by any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's
+underside is its own, so a body walks under a viaduct's deck and a lintel. A leaning or rolled solid's box is the box
+of its turned corners. Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or
+building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
+body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
+lays them (`crates/room/tests/rooms_walked.rs`).
 
 ## Gates
 

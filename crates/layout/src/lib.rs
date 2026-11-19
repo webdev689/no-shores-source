@@ -137,6 +137,7 @@ pub fn plan(
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
         end_at_rim(&mut paths, area.at, rim_of(&seating, area.at));
     }
+    round_rooms(&mut paths, &seating);
     keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
     for path in &paths {
@@ -330,8 +331,8 @@ fn unit(to: [f64; 2], from: [f64; 2], otherwise: [f64; 2]) -> [f64; 2] {
     }
 }
 
-/// The cells a path may not cross: under a building, a set piece's solid or a large prop, and a metre and a half
-/// round it.
+/// The cells a path may not cross: any reaching under a building, a set piece's solid or a large prop, or within
+/// a metre of it.
 fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
     let mut blocked = vec![false; field.columns * field.rows];
     let solids = seating.solids.iter().map(|solid| {
@@ -345,8 +346,11 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         .filter(|print| (print[2] - print[0]) * (print[3] - print[1]) > 6.0);
     let prints: Vec<[f64; 4]> =
         seating.buildings.iter().map(|building| building.footprint).chain(solids).chain(large_props).collect();
-    // A cell is blocked where its middle stands under something, or a metre from it.
+    // A cell is blocked where any of it stands under something, or a metre from it: a thin wall slips between the
+    // cells' middles.
+    let half = CELL_M / 2.0;
     for [west, north, east, south] in prints {
+        let [west, north, east, south] = [west - half, north - half, east + half, south + half];
         let column_of = |x: f64| ((x - field.west) / CELL_M - 0.5).ceil().max(0.0) as usize;
         let row_of = |y: f64| ((y - field.north) / CELL_M - 0.5).ceil().max(0.0) as usize;
         for row in row_of(north - 1.0)..=row_of(south + 1.0).min(field.rows) {
@@ -417,6 +421,36 @@ fn end_at_rim(paths: &mut [Path], at: [f64; 2], rim: f64) {
     }
 }
 
+/// Bends each way round the buildings walked into where it would graze one, as it may near its end's yard: where a
+/// segment passes within its half-width of one, a point pushed out to that width is put in at its nearest.
+fn round_rooms(paths: &mut [Path], seating: &Seating) {
+    let prints: Vec<[f64; 4]> =
+        seating.buildings.iter().filter(|building| building.open).map(|building| building.footprint).collect();
+    for path in paths {
+        let reach = path.tier.width() / 2.0 + 0.3;
+        let mut at = 0;
+        while at + 1 < path.points.len() {
+            let (from, to) = (path.points[at], path.points[at + 1]);
+            let grazed = prints.iter().find_map(|&[west, north, east, south]| {
+                // The segment's point nearest the footprint, in tenths along it.
+                (0..=10).map(|tenth| f64::from(tenth) / 10.0).find_map(|share| {
+                    let point = [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
+                    let nearest = [point[0].clamp(west, east), point[1].clamp(north, south)];
+                    let off = distance(point, nearest);
+                    (off > 1e-6 && off < reach && share > 0.0 && share < 1.0).then(|| {
+                        let push = reach / off;
+                        [nearest[0] + (point[0] - nearest[0]) * push, nearest[1] + (point[1] - nearest[1]) * push]
+                    })
+                })
+            });
+            match grazed {
+                Some(point) if path.points.len() < 4096 => path.points.insert(at + 1, point),
+                _ => at += 1,
+            }
+        }
+    }
+}
+
 /// Leaves out what a path runs over: a cart or a fence in the middle of a track, a lantern on its post.
 fn keep_off_paths(seating: &mut Seating, paths: &[Path], height: &dyn Fn(f64, f64) -> f64) {
     let clear = |at: [f64; 2], spread: f64| {
@@ -425,7 +459,31 @@ fn keep_off_paths(seating: &mut Seating, paths: &[Path], height: &dyn Fn(f64, f6
             path.points.windows(2).all(|pair| crate::paths::off_line(at, pair[0], pair[1]) > reach)
         })
     };
-    seating.props.retain(|prop| clear([prop.at[0], prop.at[1]], 0.0));
+    let off_ways = |print: [f64; 4]| {
+        paths.iter().all(|path| {
+            let reach = path.tier.width() / 2.0 + 0.3;
+            path.points.windows(2).all(|pair| crate::paths::rect_off_line(print, pair[0], pair[1]) > reach)
+        })
+    };
+    // A prop goes where any of its footprint reaches onto a way's width: a ship's hull as well as a lantern.
+    seating.props.retain(|prop| off_ways(prop.footprint));
+    // So does a building not walked into, as a yard's wall a way leaves its block through, with its pad and plinth.
+    let gone: Vec<[f64; 4]> = seating
+        .buildings
+        .iter()
+        .filter(|building| !building.open && !off_ways(building.footprint))
+        .map(|building| building.footprint)
+        .collect();
+    seating.buildings.retain(|building| !gone.contains(&building.footprint));
+    seating.pads.retain(|pad| !gone.contains(&pad.bounds));
+    seating.solids.retain(|solid| {
+        !gone.iter().any(|print| {
+            solid.material == city::solids::Material::Stone
+                && (solid.at[0] - (print[0] + print[2]) / 2.0).abs() < 1e-9
+                && (solid.at[1] - (print[1] + print[3]) / 2.0).abs() < 1e-9
+                && (solid.size[0] - (print[2] - print[0] + 0.3)).abs() < 1e-9
+        })
+    });
     // The set pieces' small solids standing on the ground in a way's path (a lantern, a fire's stones), and what stands
     // on them, go too: a deck, a pile in the water or a work's great stones keep their places.
     let place =

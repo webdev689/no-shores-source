@@ -7,7 +7,7 @@
 use crate::areas::Area;
 use crate::brief::AreaKind;
 use crate::field::distance;
-use crate::paths::{Path, Tier, off_line};
+use crate::paths::{Path, Tier, off_line, rect_off_line};
 use crate::pieces::{Kit, fire, lantern, model, turn_along, yaw_toward};
 use crate::rocks::stone;
 use city::solids::{Material, Shape};
@@ -129,7 +129,8 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
             for side in [-1.0, 1.0] {
                 let stretch = beside(at, way, (edge + WALL_OFF_M) * side);
                 if off_way(path, stretch, edge + WALL_OFF_M - 0.5) {
-                    drystone(kit, others, stretch, way);
+                    let ways: Vec<&Path> = others.iter().copied().chain(std::iter::once(path)).collect();
+                    drystone(kit, &ways, others, stretch, way);
                 }
             }
         }
@@ -165,12 +166,29 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
 }
 
 /// One stretch of drystone wall along a way, broken now and then by a gap, a field's gate or its fall.
-fn drystone(kit: &mut Kit, others: &[&Path], at: [f64; 2], way: [f64; 2]) {
+fn drystone(kit: &mut Kit, ways: &[&Path], others: &[&Path], at: [f64; 2], way: [f64; 2]) {
     if kit.draw() < 0.18 || !clear(kit, others, at, WALL_STRETCH_M / 2.0) {
         return;
     }
     let high = 1.0 + kit.draw() * 0.35;
-    kit.stand(Shape::Block, at, [0.8, WALL_STRETCH_M + 0.3, high], turn_along(way), Material::Rubble, 0.25);
+    // In lengths whose boxes keep close to the wall, each left out where its box would reach onto a way.
+    let reach = (WALL_STRETCH_M + 0.3) / 2.0;
+    let (from, to) =
+        ([at[0] - way[0] * reach, at[1] - way[1] * reach], [at[0] + way[0] * reach, at[1] + way[1] * reach]);
+    let base = kit.height(at) - 0.25;
+    let mut lengths = Vec::new();
+    crate::halls::wall(&mut lengths, from, to, base, base + high, 0.8, Material::Rubble);
+    for length in lengths {
+        let [west, north, east, south, ..] = length.bounds();
+        let clear = ways.iter().all(|path| {
+            path.points
+                .windows(2)
+                .all(|pair| rect_off_line([west, north, east, south], pair[0], pair[1]) > path.tier.width() / 2.0 + 0.3)
+        });
+        if clear {
+            kit.solid(length);
+        }
+    }
     if kit.draw() < 0.25 {
         let fallen = beside(at, way, 0.9);
         let size = [0.6 + kit.draw() * 0.4, 0.5 + kit.draw() * 0.3, 0.3 + kit.draw() * 0.1];

@@ -176,6 +176,27 @@ fn crossing(found: &[f64; 6], from: [f64; 2], to: [f64; 2], reach: f64) -> Optio
     })
 }
 
+/// What a box was made from, as far as its footprint tells: a solid, a prop, a building, or a room's lining.
+fn source(layout: &Layout, found: &[f64; 6]) -> String {
+    let same = |print: [f64; 4]| (0..4).all(|side| (print[side] - found[side]).abs() < 0.02);
+    if let Some(solid) = layout.seating.solids.iter().find(|solid| {
+        let [west, north, east, south, ..] = solid.bounds();
+        same([west, north, east, south])
+    }) {
+        return format!(
+            "{:?} {:?} {:?} lean {:.2} roll {:.2}",
+            solid.material, solid.shape, solid.size, solid.lean, solid.roll
+        );
+    }
+    if let Some(prop) = layout.seating.props.iter().find(|prop| same(prop.footprint)) {
+        return format!("prop {}", prop.model);
+    }
+    if let Some(building) = layout.seating.buildings.iter().find(|building| same(building.footprint)) {
+        return format!("building {} open {}", building.model, building.open);
+    }
+    "a room's lining".to_owned()
+}
+
 #[test]
 fn no_box_stands_across_a_ways_walked_width_under_head_height() {
     let laid = laid();
@@ -196,14 +217,21 @@ fn no_box_stands_across_a_ways_walked_width_under_head_height() {
                     let Some(at) = crossing(found, pair[0], pair[1], reach) else { continue };
                     let floor = laid.ground.height_at(at[0], at[1]);
                     if found[5] < floor + HEAD_M && found[4] > floor + STEPPED_OVER_M {
-                        failed.push(format!("{}: box {found:?} on the way at {:.1},{:.1}", layout.id, at[0], at[1]));
+                        failed.push(format!(
+                            "{}: {} {found:?} on a {:?} at {:.1},{:.1}",
+                            layout.id,
+                            source(layout, found),
+                            path.tier,
+                            at[0],
+                            at[1]
+                        ));
                     }
                 }
             }
         }
     }
     failed.dedup();
-    assert!(failed.is_empty(), "{} boxes in the ways: {:#?}", failed.len(), &failed[..failed.len().min(40)]);
+    assert!(failed.is_empty(), "{} boxes in the ways: {:#?}", failed.len(), &failed[..failed.len().min(4000)]);
 }
 
 #[test]
