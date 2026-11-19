@@ -51,7 +51,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             ];
             room(
                 &mut out,
-                &run.line,
+                &run.way(),
                 Room { middle, floor: floor(kit, middle), half: reach, height: 5.5, roofed: true },
                 Material::Stone,
             );
@@ -80,7 +80,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
                 };
                 let shape =
                     Room { middle: beat.at, floor: floor(kit, beat.at), half: [reach, reach], height, roofed: hall };
-                room(&mut out, &run.line, shape, Material::Stone);
+                room(&mut out, &run.way(), shape, Material::Stone);
             }
             let across = [-run.facing[1], run.facing[0]];
             for side in [1.0, -1.0] {
@@ -132,7 +132,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             let reach = [half + 5.0, half + 5.0];
             room(
                 &mut out,
-                &run.line,
+                &run.way(),
                 Room { middle: chapel, floor: floor(kit, chapel), half: reach, height: 5.0, roofed: false },
                 Material::Stone,
             );
@@ -158,7 +158,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
                     height: 5.5,
                     roofed: true,
                 };
-                room(&mut out, &run.line, shape, Material::Stone);
+                room(&mut out, &run.way(), shape, Material::Stone);
                 pillars(kit, &mut out, run, beat.at, beat.radius, carved, (Material::Stone, 1.3, 5.6));
             }
         }

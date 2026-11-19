@@ -232,13 +232,23 @@ pub fn plan(
         }));
         sites.push(sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named });
     }
-    works::retaining_walls(&mut kit, &areas, &paths, &carved);
+    // What comes after keeps off the ways, a run's on past its end beat's middle to its door too.
+    let ways: Vec<Path> = paths
+        .iter()
+        .cloned()
+        .chain(runs.iter().filter_map(|run| {
+            let end = *run.line.last()?;
+            let points = vec![end, run.door];
+            Some(paths::Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() })
+        }))
+        .collect();
+    works::retaining_walls(&mut kit, &areas, &ways, &carved);
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
     }
-    rocks::talus(&mut kit, &ring, &paths, &carved);
-    rocks::clad(&mut kit, &sculpt.outcrops, &paths, &carved);
-    skyline::rim(&mut kit, &ring, &paths, &carved);
+    rocks::talus(&mut kit, &ring, &ways, &carved);
+    rocks::clad(&mut kit, &sculpt.outcrops, &ways, &carved);
+    skyline::rim(&mut kit, &ring, &ways, &carved);
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off
     // them all again. A run keeps its own pieces off its line (run_kits.rs).
     keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));

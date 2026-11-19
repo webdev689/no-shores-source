@@ -53,7 +53,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     });
 }
 
-/// Whether a solid's box stands within 1.2 m of a run's line under head height (2.2 m over `floor`).
+/// Whether a solid's box stands within 1.2 m of a run's way (its line and on to its door) under head height (2.2 m over `floor`).
 fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     let [west, north, east, south, bottom, _] = solid.bounds();
     // An arch is boxed as its jambs and head (collide.rs), and the kits stand its jambs clear of the line.
@@ -62,7 +62,7 @@ fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     }
     let near =
         |at: [f64; 2]| at[0] >= west - 1.2 && at[0] <= east + 1.2 && at[1] >= north - 1.2 && at[1] <= south + 1.2;
-    run.line.windows(2).any(|pair| {
+    run.way().windows(2).any(|pair| {
         let length = distance(pair[0], pair[1]);
         let steps = (length / 0.5).ceil().max(1.0) as usize;
         (0..=steps).any(|step| {
@@ -72,9 +72,9 @@ fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     })
 }
 
-/// How far a point lies from a run's line, metres.
+/// How far a point lies from a run's way, its line and on to its door, metres.
 fn off_run(run: &Run, at: [f64; 2]) -> f64 {
-    run.line.windows(2).map(|pair| off_line(at, pair[0], pair[1])).fold(f64::INFINITY, f64::min)
+    run.way().windows(2).map(|pair| off_line(at, pair[0], pair[1])).fold(f64::INFINITY, f64::min)
 }
 
 fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
@@ -219,7 +219,7 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, raised: Option
 /// A point moved straight away from the run's line until it lies `clear` metres off it.
 fn away_from_line(run: &Run, at: [f64; 2], clear: f64) -> [f64; 2] {
     let nearest = run
-        .line
+        .way()
         .windows(2)
         .map(|pair| {
             let span = [pair[1][0] - pair[0][0], pair[1][1] - pair[0][1]];

@@ -73,7 +73,7 @@ fn every_run_is_walked_to_its_door_and_no_further() {
             let ticks = (600.0 / TICK_SECONDS) as usize;
             let (body, passed) = walked(zone, run.mouth, &waypoints, ticks);
             let to_door = layout::field::distance([body.x, body.y], run.door);
-            if passed + 1 < waypoints.len() && to_door > AT_DOOR_M {
+            if to_door > AT_DOOR_M {
                 let stuck = run.line.get(passed + 1).copied().unwrap_or(run.door);
                 failed.push(format!("{}: {} stops at {:.0},{:.0} before {stuck:?}", zone.id, run.name, body.x, body.y));
                 continue;

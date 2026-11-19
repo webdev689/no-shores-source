@@ -31,6 +31,14 @@ pub struct Run {
     pub facing: [f64; 2],
 }
 
+impl Run {
+    /// The way a body walks: the run's line from its mouth to its end beat's middle, then on to its door.
+    #[must_use]
+    pub fn way(&self) -> Vec<[f64; 2]> {
+        self.line.iter().copied().chain(std::iter::once(self.door)).collect()
+    }
+}
+
 /// What a zone's runs are found in: its land, its claim, its areas, its floors as carved before the runs, the climbs
 /// and runs already cut (`taken`, as the sculpt's capsules) and the other nodes' claims to keep clear of.
 #[derive(Debug, Clone, Copy)]

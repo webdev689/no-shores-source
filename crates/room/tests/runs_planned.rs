@@ -177,7 +177,8 @@ fn every_beat_has_a_raised_place() {
 #[test]
 fn nothing_stands_on_a_runs_line() {
     each_run(&|laid, run, floor| {
-        for pair in run.line.windows(2) {
+        // Its line, and on from its end beat's middle to its door.
+        for pair in run.way().windows(2) {
             let length = layout::field::distance(pair[0], pair[1]);
             let steps = (length / 2.0).ceil().max(1.0) as usize;
             for step in 0..=steps {

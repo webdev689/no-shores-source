@@ -175,8 +175,9 @@ out past its edge.
   pillared vaults and a slab of stone for its door. The door stands at the foot of the face behind the end arena, iron-
   banded timber in a stone arch for the rest. A building's rooms stand square to the world and open wherever the way
   crosses a wall; a slanted wall is laid in lengths short enough that each piece's box stays within half a metre of it.
-- **Kept clear**: no box of a run's pieces stands within 1.2 m of its line under head height; every ceiling over a
-  building run's way stands 2.6 m or more over its floor. A body walks every run from its mouth to its door, and no
+- **Kept clear**: a run's way is its line and on from its end beat's middle to its door. No box of a run's pieces
+  stands within 1.2 m of its way under head height, and the rock and walls laid after it keep off it; every ceiling over a
+  building run's way stands 2.6 m or more over its floor. A body walks every run from its mouth to within 3 m of its door, and no
   further (`crates/room/tests/runs_walked.rs`).
 
 ## Laid on the land
