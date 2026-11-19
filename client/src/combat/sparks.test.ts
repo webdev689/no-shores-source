@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightEvent } from '../network/messages.ts';
-import { EVENT } from './cues.ts';
+import { EVENT, HOW } from './cues.ts';
 import { SPARKS_LONGEST_S, Sparks } from './sparks.ts';
 
 const STRIKER = 40;
@@ -47,6 +47,19 @@ test('a clash between fighters the page does not know throws nothing', () => {
 });
 
 const landed = (striker: number): FightEvent => ({ ...clash(EVENT.hit), striker, amount: 5 });
+
+test("a spell that lands bursts in its caster's Art, never in the weapon drawn", () => {
+  const sparks = new Sparks(() => 0.5);
+  const spell = { ...landed(STRIKER), how: HOW.spell };
+  sparks.struck([spell], where, { player: STRIKER, look: 2 });
+  assert.equal(sparks.flying.length, 0, 'no Art known, no burst');
+  sparks.struck([spell], where, { player: STRIKER, look: 2, spellLook: () => 1 });
+  assert.equal(sparks.flying.length, 12);
+  assert.ok(
+    sparks.flying.every((spark) => spark.look === 1),
+    'in Blaze, though the sword drawn is Volt',
+  );
+});
 
 test("the player's own landed blow bursts in its element", () => {
   const sparks = new Sparks(() => 0.5);

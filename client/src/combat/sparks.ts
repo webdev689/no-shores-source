@@ -1,6 +1,6 @@
 import { GLOW_BURSTS, type GlowElement, type GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { EVENT } from './cues.ts';
+import { EVENT, HOW } from './cues.ts';
 
 type Vector = readonly [number, number, number];
 
@@ -42,15 +42,18 @@ export class Sparks {
   }
 
   /** Throws each clash's sparks, toward its striker and up; `where` is a fighter's feet, or null for one unknown. A
-   *  blow that lands for harm struck by the `own` player, their weapon in an element, bursts in it. */
+   *  blow that lands for harm struck by the `own` player, their weapon in an element, bursts in it; a spell that lands
+   *  bursts in its caster's Art's element (`spellLook`), whatever weapon is drawn. */
   struck(
     events: readonly FightEvent[],
     where: (id: number) => Vector | null,
-    own?: { readonly player: number; readonly look: GlowLook },
+    own?: { readonly player: number; readonly look: GlowLook; readonly spellLook?: (caster: number) => GlowLook },
   ): void {
     for (const event of events) {
-      const landed = event.kind === EVENT.hit && event.amount > 0 && event.striker === own?.player;
-      const look = landed ? own.look : 0;
+      const harms = event.kind === EVENT.hit && event.amount > 0;
+      const spell = harms && event.how === HOW.spell;
+      const landed = harms && !spell && event.striker === own?.player;
+      const look = spell ? (own?.spellLook?.(event.striker) ?? 0) : landed ? (own?.look ?? 0) : 0;
       const count = look ? GLOW_BURSTS[look].count : (THROWN[event.kind] ?? 0);
       const [defender, striker] = [where(event.defender), where(event.striker)];
       if (count === 0 || !defender || !striker) continue;
