@@ -1,6 +1,7 @@
 //! Answers to blows: a swordsman that sees a swing begin parries some in time, pressing its guard so the parry window
 //! spans the landing, and ripostes at once after a parry; one waiting its turn holds its shield up; a skirmisher hops
-//! aside, even out of its own swing; and none answers faster than its reaction time.
+//! aside, even out of its own swing; none answers faster than its reaction time, a swing's at the fight's pace; and so
+//! even a Minor answers a swing.
 
 mod common;
 
@@ -9,7 +10,7 @@ use combat::fighter::{Action, Swing};
 use combat::{Happening, Stroke, Verdict};
 use common::{BRUTE, Room, SKIRMISHER, SWORDSMAN, standing_still};
 use core::f64::consts::PI;
-use foes::Rank::Major;
+use foes::Rank::{self, Major, Minor};
 
 const PLAYER: u32 = 1;
 const COLLECTOR: u8 = 2;
@@ -27,7 +28,11 @@ fn one_swing(room: &Room, _me: u32) -> combat::Intent {
 /// The room after one swing at a foe of the type numbered `number`, a Major already alert, 1.5 m north of the player:
 /// the verdict on the swing, the tick the foe first pressed its guard or its dodge, and whether it then riposted.
 fn answered(number: u8, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
-    let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, Major, 0.0, -1.5, PI);
+    answered_as(number, Major, seed)
+}
+
+fn answered_as(number: u8, rank: Rank, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
+    let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -1.5, PI);
     let mut room = room.alert(10, PLAYER);
     room.run(120, &mut one_swing);
     let verdict =
@@ -46,11 +51,12 @@ fn answered(number: u8, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
 #[test]
 fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripostes_after() {
     let lands = SWINGS_AT + u64::from(swing_ticks(WeaponClass::Sword).0);
+    let reading = swing_reaction(SWORDSMAN, Major);
     let (mut parried, mut riposted) = (0, 0);
     for seed in 1..=60 {
         let (verdict, pressed, riposte) = answered(SWORDSMAN, seed);
         if let Some(pressed) = pressed {
-            assert!(pressed >= SWINGS_AT + 16, "never sooner than its reaction time: {pressed}");
+            assert!(pressed >= SWINGS_AT + reading, "never sooner than its reaction time: {pressed}");
         }
         if let Some(Verdict::Parried) = verdict {
             parried += 1;
@@ -83,7 +89,7 @@ fn a_swordsman_waiting_its_turn_holds_its_shield_up_and_blocks() {
 #[test]
 fn a_swordsman_waiting_on_its_answer_winds_up_no_blow_of_its_own() {
     // From seeing the swing begin to deciding its answer, its reaction time on.
-    let reaction = foes::foe_type(SWORDSMAN).expect("a type of the roster").numbers(Major, 1).reaction;
+    let reaction = swing_reaction(SWORDSMAN, Major);
     let (mut before, mut decided) = (0, 0);
     for seed in 1..=60 {
         let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -1.5, PI);
@@ -105,7 +111,7 @@ fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch(
             Some(Verdict::Dodged { perfect }) => {
                 dodged += 1;
                 assert!(perfect, "pressed late enough to be perfect");
-                assert!(pressed.is_some_and(|tick| tick >= SWINGS_AT + 15));
+                assert!(pressed.is_some_and(|tick| tick >= SWINGS_AT + swing_reaction(SKIRMISHER, Major)));
             }
             // Hopped clear of the blow's reach altogether: a dodge too.
             None if pressed.is_some() => dodged += 1,
@@ -115,12 +121,27 @@ fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch(
     assert!(dodged >= 8, "it dodges often: {dodged} of 30");
 }
 
+/// The ticks a foe of a type and rank takes to read a swing.
+fn swing_reaction(number: u8, rank: Rank) -> u64 {
+    foes::foe_type(number).expect("a type of the roster").numbers(rank, 1).swing_reaction()
+}
+
+#[test]
+fn a_minor_reads_a_swing_at_the_fights_pace_and_hops_aside_from_some() {
+    // A Minor skirmisher's reaction, 19 ticks, is longer than a sword's swing takes to land: read at the swings' own
+    // pace, 14, it is in time.
+    let reaction = foes::foe_type(SKIRMISHER).expect("a type of the roster").numbers(Minor, 1).reaction;
+    assert!(reaction > u64::from(swing_ticks(WeaponClass::Sword).0));
+    let dodged = (1..=60).filter(|seed| answered_as(SKIRMISHER, Minor, *seed).1.is_some()).count();
+    assert!(dodged >= 4, "about one swing in five: {dodged} of 60");
+}
+
 #[test]
 fn a_skirmisher_in_its_own_swing_still_dodges_a_blow_at_it() {
     // A pirate skirmisher and a Grey Tithe collector fight each other; neither flinches, so each swings into the
     // other's swing, and the skirmisher weighs the collector's blows while its own is under way.
     let mut dodged = 0;
-    for seed in 1..=20 {
+    for seed in 1..=100 {
         let room = Room::new(seed).foe(10, SKIRMISHER, Major, 0.0, -1.5, PI).foe(11, COLLECTOR, Major, 0.0, 0.0, 0.0);
         let mut room = room.alert(10, 11).alert(11, 10);
         let mut swinging = Vec::new();
@@ -133,7 +154,7 @@ fn a_skirmisher_in_its_own_swing_still_dodges_a_blow_at_it() {
         let mid_swing = |tick: &u64| swinging.contains(tick);
         dodged += room.foe_intents(10).iter().filter(|(tick, intent)| intent.combat.dodge && mid_swing(tick)).count();
     }
-    assert!(dodged >= 3, "it hops out of its own swing at times: {dodged} in 20 fights");
+    assert!(dodged >= 3, "it hops out of its own swing at times: {dodged} in 100 fights");
 }
 
 #[test]

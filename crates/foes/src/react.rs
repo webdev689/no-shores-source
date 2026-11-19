@@ -1,8 +1,8 @@
 //! A foe's answers to blows at it, the fight Overlook adds to DFO's brain. Seeing a swing begin or a shot loosed at
-//! it, a foe waits its reaction time, then parries (pressing its guard so the parry window spans the landing),
-//! blocks, dodges aside, or takes it, by its shares and what its stamina and its own action allow. And the
-//! openings a fight gives it: the riposte a parry earned, the counter a perfect dodge earned, and a target spent in its
-//! own swing's follow-through, staggered, down or drawing a bow.
+//! it, a foe waits its reaction time (a swing's at the fight's pace), then parries (pressing its guard so the parry
+//! window spans the landing), blocks, dodges aside, or takes it, by its shares and what its stamina and its own action
+//! allow. And the openings a fight gives it: the riposte a parry earned, the counter a perfect dodge earned, and a
+//! target spent in its own swing's follow-through, staggered, down or drawing a bow.
 
 use crate::brain::Brain;
 use crate::dice::Purpose;
@@ -165,8 +165,11 @@ fn defence(here: &Here<'_, '_>, answer: Answer, from: FighterId, press: u64, lan
 /// time has passed, then holding the guard, waiting to press it, or hopping aside.
 pub fn defend(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Ask> {
     let tick = here.tick();
+    let reaction = |threat: &Threat| {
+        if threat.lands.is_some() { here.numbers.swing_reaction() } else { here.numbers.reaction }
+    };
     if let Some(threat) = brain.reactions.threat
-        && tick >= threat.seen + here.numbers.reaction
+        && tick >= threat.seen + reaction(&threat)
     {
         brain.reactions.threat = None;
         let busy = brain.reactions.defence.is_some_and(|defence| defence.until >= tick);

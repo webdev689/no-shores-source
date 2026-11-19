@@ -78,7 +78,7 @@ pub const fn weapon(class: WeaponClass) -> Weapon {
 /// handling and a further 1.06 for a two-handed one, held between 0.09 and 0.4. A swing is five frames; its blow
 /// lands as the third begins. At the owner's word every swing then takes three quarters of that (`SWING_PACE`).
 const SWING_FRAME: f64 = 3.0 * (115.0 - 50.0) / 980.0;
-const SWING_PACE: f64 = 0.75;
+pub const SWING_PACE: f64 = 0.75;
 const STRIKE_FRAMES: f64 = 5.0;
 const HIT_FRAME: f64 = 2.0;
 
