@@ -1,6 +1,4 @@
 import { HULL_VECTORS, HULLS } from './hullMask.ts';
-import { STATIONS } from './hullLines.ts';
-import { HULL_NAMES } from '../ships/hulls.ts';
 import { FRESH_LEVEL_M, FRESH_SINK_M, SHORE } from './shore.ts';
 
 /** The most swell waves the GPU sums: crates/land/src/sea.rs's `MOST_WAVES`, two bearings' sets of ten at two
@@ -320,16 +318,15 @@ struct Frame {
   ripple_area: vec4f,
   swell_terms: vec4f,
   local: vec4f,
-  // The sea by weather: its state (0 calm to 1 storm), the shelter grid's north-west corner from the eye and its
-  // cell; then its cells a side and whether it is there.
+  // The sea by weather: the swell's height at the view's middle as a share of a moderate sea's, the shelter grid's
+  // north-west corner from the eye and its cell; then its cells a side and whether it is there.
   sea: vec4f,
   sea_grid: vec4f,
   waves: array<vec4f, ${MOST_WAVES * 2}>,
   chop: array<vec4f, ${CHOP_WAVES}>,
   // Each ship (hullValues): her middle from the eye and her heading's sine and cosine; her fitted half length and
-  // half beam, her way and her hull plus one (0 is none); her drawn size and her bow's spray. Then each hull's line.
+  // half beam, her way and 1 (0 is none); her drawn size and her bow's spray; then her line.
   hulls: array<vec4f, ${HULLS * HULL_VECTORS}>,
-  hull_lines: array<vec4f, ${(HULL_NAMES.length * STATIONS) / 4}>,
 };
 
 @group(0) @binding(0) var<uniform> frame: Frame;

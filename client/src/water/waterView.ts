@@ -2,7 +2,6 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { RippleField } from './ripples.ts';
 import { GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
-import { HULL_LINES } from './hullLines.ts';
 import { type HullMask, hullValues } from './hullMask.ts';
 import type { SeaGrid, SeaSwell } from './seaWeather.ts';
 import { ANCHOR_M, CHOP_WAVES, MOST_WAVES } from './waterCommon.ts';
@@ -69,7 +68,7 @@ export interface WaterScene {
 /** Where the waves begin in the frame's floats, after the camera's, the eye's and the sea by weather's. */
 const WAVES_AT = 72;
 const HULLS_AT = WAVES_AT + MOST_WAVES * 8 + CHOP_WAVES * 4;
-const FRAME_FLOATS = HULLS_AT + hullValues([], [0, 0], HULL_LINES.table()).length;
+const FRAME_FLOATS = HULLS_AT + hullValues([], [0, 0]).length;
 /** Samples taken of each pixel by the land and the water, so every edge between them is smooth. */
 export const SAMPLES = 4;
 /** The disc of water round the eye: rings out to the far plane, each this share wider than the last, and segments. */
@@ -242,10 +241,10 @@ export class WaterView {
     const sea = scene.swell && 'grid' in scene.swell ? (scene.swell as SeaSwell) : null;
     if (sea) {
       const corner = [sea.grid.corner[0] - scene.world[0] - eyeX, sea.grid.corner[1] - scene.world[1] - eyeY];
-      values.set([sea.state, corner[0] ?? 0, corner[1] ?? 0, sea.grid.cellM, sea.grid.cells, 1, 0, 0], 64);
+      values.set([sea.height, corner[0] ?? 0, corner[1] ?? 0, sea.grid.cellM, sea.grid.cells, 1, 0, 0], 64);
     } else {
-      // No weather: a moderate sea's state, its swell whole everywhere.
-      values.set([0.35, 0, 0, 1, 0, 0, 0, 0], 64);
+      // No weather: a moderate sea, its swell whole everywhere.
+      values.set([1, 0, 0, 1, 0, 0, 0, 0], 64);
     }
     const waves = scene.swell?.waves.slice(0, MOST_WAVES) ?? [];
     const breakerClock = scene.time % SHORE.periodS;
@@ -264,7 +263,7 @@ export class WaterView {
       this.chop && this.chop.swell === scene.swell ? this.chop : { swell: scene.swell, waves: chopWaves(scene.swell) };
     this.chop = chop;
     values.set(chop.waves, WAVES_AT + MOST_WAVES * 8);
-    values.set(hullValues(scene.hulls, [eyeX, eyeY], HULL_LINES.table()), HULLS_AT);
+    values.set(hullValues(scene.hulls, [eyeX, eyeY]), HULLS_AT);
     return values;
   }
 

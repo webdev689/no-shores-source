@@ -1,16 +1,9 @@
 // Each hull's own line at her waterline, read from her mesh: how wide she is there from her stern to her bow, so the
 // water keeps out of her and foams along her own sides rather than round an ellipse. Until her mesh has come, a fair
 // hull of her length and beam stands in.
-import { HULL_NAMES, hullName } from '../ships/hulls.ts';
-import { loadShip, type ShipMesh, VERTEX_BYTES } from '../ships/shipMesh.ts';
-
-/** The stations along her waterline, stern first, bow last, each her half beam there as a share of her widest. */
-export const STATIONS = 16;
-/** Her line before her mesh has come: full amidships, fining to a point at her bow and a narrow transom aft. */
-export const FAIR_LINE = Float32Array.from({ length: STATIONS }, (_value, station) => {
-  const along = (station / (STATIONS - 1)) * 2 - 1;
-  return along > 0 ? Math.sqrt(Math.max(0, 1 - along * along)) : 0.45 + 0.55 * Math.sqrt(1 - along * along * 0.8);
-});
+import { FAIR_LINE, STATIONS } from '../water/hullMask.ts';
+import { HULL_NAMES, hullName } from './hulls.ts';
+import { loadShip, type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 
 /** The station `along` (metres toward her bow from amidships, over her half length) falls nearest. */
 function stationOf(share: number): number {
@@ -66,14 +59,6 @@ function fillGaps(line: Float32Array): Float32Array {
   });
 }
 
-/** Her half beam at `share` of her half length toward her bow (-1 her stern, 1 her bow), as a share of her widest,
- *  between the stations. Mirrors WGSL hull_half_beam. */
-export function lineAt(line: Float32Array, share: number): number {
-  const place = ((Math.min(1, Math.max(-1, share)) + 1) / 2) * (STATIONS - 1);
-  const low = Math.min(STATIONS - 2, Math.floor(place));
-  return (line[low] ?? 0) + ((line[low + 1] ?? 0) - (line[low] ?? 0)) * (place - low);
-}
-
 /** Every hull's line, each read from her mesh once it is asked for. */
 export class HullLines {
   private readonly load: (name: string) => Promise<ShipMesh>;
@@ -98,13 +83,10 @@ export class HullLines {
     return FAIR_LINE;
   }
 
-  /** Every hull's line in hull order, as the water's frame holds them. */
+  /** Every hull's line in hull order. */
   table(): Float32Array {
     const out = new Float32Array(HULL_NAMES.length * STATIONS);
     HULL_NAMES.forEach((_name, hull) => out.set(this.lines.get(hull) ?? FAIR_LINE, hull * STATIONS));
     return out;
   }
 }
-
-/** The page's hull lines, shared by the ships that ask for them and the water that draws them. */
-export const HULL_LINES = new HullLines();

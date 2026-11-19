@@ -159,7 +159,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 - **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures, flying Overlook's blue at her masthead.
   Like the World Editor's, she rides the swell the sea draws and heels into her turns ([[Sailing]], "Drawn at sea").
-  Her sails are set while she is under way and furled at rest, filled by the steady wind along the swell's bearing.
+  Her sails are set while she is under way and furled at rest, filled by the weather's wind ([[World Map]]).
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times her length), so one reads from the raised
   view, and every hull the same four times her own, so a Frigate reads larger than a Sloop. Every other player's ship
   is the Sloop too. A captain's ship is drawn as the hull the wire carries for her, in her side's colours, and as the

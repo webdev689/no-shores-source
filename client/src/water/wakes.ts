@@ -118,11 +118,11 @@ fn wake_terms(along: f32, across: f32, half_length: f32, half_beam: f32, way: f3
 fn wake_at(offset: vec2f) -> Wake {
   var all: Wake;
   for (var index = 0u; index < HULLS; index++) {
-    let size = frame.hulls[index * 3u + 1u];
+    let size = frame.hulls[index * HULL_VECTORS + 1u];
     if (size.w < 0.5) { break; }
     if (size.z <= 0.0) { continue; }
-    let place = frame.hulls[index * 3u];
-    let drawn = frame.hulls[index * 3u + 2u];
+    let place = frame.hulls[index * HULL_VECTORS];
+    let drawn = frame.hulls[index * HULL_VECTORS + 2u];
     let from_middle = offset - place.xy;
     let along = dot(from_middle, vec2f(place.z, -place.w));
     // The wake reaches a minute of her drawn way aft, and as wide as its arms have spread.

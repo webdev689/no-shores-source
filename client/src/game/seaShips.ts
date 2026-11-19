@@ -12,6 +12,7 @@ import type { Waterline } from '../ships/shipMesh.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
 import { poseOnSwell, slams, sprayOf, turnHeel } from '../ships/swellPose.ts';
+import { HullLines } from '../ships/hullLines.ts';
 import { HULLS, type HullMask } from '../water/hullMask.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
@@ -100,8 +101,12 @@ export class SeaShips {
    *  spray now. */
   private readonly rides = new Map<string, { pitch: number; sinceSlamS: number; spray: number }>();
 
-  constructor(shown: (hull: number) => number = (hull) => hull) {
+  /** Each hull's own line at her waterline, read from her mesh. */
+  private readonly lines: Pick<HullLines, 'line'>;
+
+  constructor(shown: (hull: number) => number = (hull) => hull, lines: Pick<HullLines, 'line'> = new HullLines()) {
     this.shown = shown;
+    this.lines = lines;
   }
 
   /** Where the ship `who` is drawn, `scale` times her size, `seconds` on at `time`: on the swell at her hull's
@@ -207,7 +212,8 @@ export class SeaShips {
       const { lengthM, beamM } = hullWaterline(hull);
       const [halfLength, halfBeam] = [(lengthM / 2) * scale, (beamM / 2) * scale];
       const spray = this.rides.get(who)?.spray ?? 0;
-      return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0, hull, scale, spray };
+      const line = this.lines.line(hull);
+      return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0, line, scale, spray };
     };
     const near = round(others, pirates, this.shown).map((ship) => footprint(ship.who, ship.lies, ship.hull));
     const away = (mask: HullMask) => Math.hypot(mask.x - own.x, mask.y - own.y);

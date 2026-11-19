@@ -31,10 +31,10 @@ decision, made in the same change as its entry here.
 | `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
-| `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
+| `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving; the sea by weather round the view (`seaWeather.ts`), and every ship's wake, bow wave and spray (`wakes.ts`) |
 | `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display and its stylesheet, the ground's marks for telegraphed blows and shots, the shots' tracers, the drops lying for the player ([[Gear]], "Drops"), and [[Blood]]; the [[Arts]]' casting keys, ability bar and every spell's view; and a Sloop's session in a fleet room ([[Naval Combat]]), her orders sent and her ship predicted |
 | `client/src/nature/` | The nature layer: each biome's trees, plants and rocks, made in code, scattered over the ground round the eye and drawn on WebGPU ([[Nature]]). Imports `rules` and `water` |
-| `client/src/ships/` | The ships layer: each hull's mesh read from R2 by her wire number and drawn at her pose on the water in her side's colours, flying her flag, under her gaff, stay and square sails ([[Sailing]], [[Hulls]]), and a fight's balls and effects drawn as small spheres ([[Naval Combat]]) |
+| `client/src/ships/` | The ships layer: each hull's mesh read from R2 by her wire number and drawn at her pose on the water in her side's colours, flying her flag, under her gaff, stay and square sails ([[Sailing]], [[Hulls]]), her line at her waterline read from her mesh for the water (`hullLines.ts`, [[Water]]), and a fight's balls and effects drawn as small spheres ([[Naval Combat]]) |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] (with its door's sailing and naval fights), [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
 | `client/src/rules/watersRules.ts` | The waters' and the friendly traffic's doors for a page, on the room module ([[World Map]]) |
@@ -49,6 +49,7 @@ decision, made in the same change as its entry here.
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names, borders and seam; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |
+| `crates/world/src/weather.rs` | The weather over the whole world from world time and place: the wind, the sea state and the shelter of the open water upwind and of a roadstead ([[World Map]], "Weather and travel"; [[Water]]) |
 | `crates/world-wasm` | The world rules for the browser: a door crate, text in and text out |
 | `crates/land` | The [[Land]]: relief, erosion and water from the painted coasts, the owner's edits and places, and the ground anywhere to the metre |
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
@@ -64,6 +65,8 @@ decision, made in the same change as its entry here.
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
 | `crates/room-wasm/src/waters_door.rs` | The waters and the friendly traffic for the browser: the water at a point, the held map's grid as bytes, the ships near a point ([[World Map]]) |
+| `crates/room-wasm/src/sea_door.rs` | The sea by weather for the browser: the swell under the weather at a point, its height over a grid round the view, and its fingerprint ([[Water]]) |
+| `crates/room/src/sea_weather.rs` | The weather a room's fight is fought in, taken where and when it began, and the fight's waters made from the coasts ([[Sailing]]) |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick on its ground and judged against its section; the sea, its ships sailing their courses; and a fleet, its ships sailed by their helms and fighting at true scale |
 | `crates/city` | [[Cities]]: a port city's plan from its site, the same on the server and in every browser: its footprint, ways in, districts and terraces, its cells filled with Daggerfall's RMB blocks, its wall and harbour, its landmark and its social space |
 | `crates/bake` | The bake (`npm run bake`): each node's section, window of the ground and boxes, cut at build time for its room ([[Server]]) |

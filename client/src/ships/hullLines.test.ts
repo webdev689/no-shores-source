@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { VERTEX_BYTES, type ShipMesh } from '../ships/shipMesh.ts';
-import { FAIR_LINE, HullLines, lineAt, STATIONS, waterlineOf } from './hullLines.ts';
+import { FAIR_LINE, lineAt, STATIONS } from '../water/hullMask.ts';
+import { HullLines, waterlineOf } from './hullLines.ts';
+import { type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 
 /** A diamond hull 20 m long and 4 m wide at her waterline, 1 m deep and 1 m high: her widest amidships, pointed at
  *  both ends, each face crossing her waterline. */

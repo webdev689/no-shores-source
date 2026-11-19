@@ -1,7 +1,7 @@
 // The sea by weather as the page draws it: the swell under the weather at the view's middle, from the room module's
 // door (crates/room-wasm/src/sea_door.rs), and a grid of how high the swell stands round it, so the lee of land and a
 // roadstead lie calmer than the open sea. Asked again every few seconds, or once the view has moved or grown.
-import type { WatersRules, WeatherSwell } from '../rules/watersRules.ts';
+import { type PortInfo, startWatersRules, type WatersRules, type WeatherSwell } from '../rules/watersRules.ts';
 import type { ShelteredSwell } from './swell.ts';
 
 type Point = readonly [number, number];
@@ -22,10 +22,12 @@ export interface SeaGrid {
   readonly shares: Float32Array;
 }
 
-/** The swell the page draws: the weather's at the view's middle, its wind and sea state, and the grid round it. */
+/** The swell the page draws: the weather's at the view's middle, its wind, sea state and height there (a share of a
+ *  moderate sea's), and the grid round it. */
 export interface SeaSwell extends ShelteredSwell {
   readonly wind: Point;
   readonly state: number;
+  readonly height: number;
   readonly grid: SeaGrid;
 }
 
@@ -81,6 +83,24 @@ export class SeaWeather {
     const grid: SeaGrid = { corner, cellM, cells: SEA_GRID.cells, shares };
     return { ...middle, grid, shelterAt: (x, y) => gridShare(grid, x, y) };
   }
+}
+
+/** The sea by weather over the world `layoutText` round its `ports`, on the room module once it has compiled; null
+ *  until then, or if it never does. */
+export function seaWeatherOn(
+  module: Promise<WebAssembly.Module>,
+  layoutText: string,
+  ports: readonly PortInfo[],
+): () => SeaWeather | null {
+  let weather: SeaWeather | null = null;
+  void module
+    .then((compiled) => {
+      const rules = startWatersRules(compiled);
+      rules.open(layoutText, ports);
+      weather = new SeaWeather(rules);
+    })
+    .catch(() => undefined);
+  return () => weather;
 }
 
 /** The shelter grid's WGSL: how high the swell stands at a point from the eye against the view's middle (gridShare),
