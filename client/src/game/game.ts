@@ -29,7 +29,6 @@ import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
-import { ambushFrame } from './prologue/tryAmbush.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
@@ -90,18 +89,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     (compiled && sloopBuild === undefined ? (sloopBuild = sloopBuildOf(sloopBuildText(compiled))) : sloopBuild) ?? null;
   const land = startLandWorker();
   const scene = new GameScene(gpu);
-  // For trying the weather, birds and fire by hand in a development build: ?weather=storm, ?birds=1, ?flames=1.
-  if (import.meta.env.DEV && /[?&](weather|birds|flames)=/.test(location.search)) {
-    void import('../cinema/trying.ts').then(({ Trying }) => {
-      const trying = new Trying(gpu, location.search, (x, y) => scene.groundAt(x, y));
-      const draw = scene.draw.bind(scene);
-      scene.draw = (shot, size, time, seconds, drawers, more) => {
-        const tried = trying.shotOf(shot);
-        scene.weather = trying.weatherAt(seconds);
-        draw(tried, size, time, seconds, [...drawers, ...trying.drawers()], more);
-      };
-    });
-  }
   const figureView = new FigureView(gpu);
   const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const { continents } = world;
@@ -470,13 +457,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    // For trying the ambush, under `npm run dev` with `?ambush=1` only (game/prologue/tryAmbush.ts).
-    if (import.meta.env.DEV && flow.mode === 'sea' && new URLSearchParams(location.search).get('ambush') === '1') {
-      const [x, y] = here.position;
-      const needs = { land, gpu, scene, standing: () => standing([], []), sloop };
-      if (ambushFrame(needs, { x, y, heading: here.heading }, { clock, seconds, size, swell: scene.land?.swell }))
-        return;
-    }
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();

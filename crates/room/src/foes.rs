@@ -266,7 +266,10 @@ impl Room {
     /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the
     /// caller's foe stands: in pairs, one either side of it, or behind it and either side, each pair farther out.
     pub(crate) fn call(&mut self, caller: FighterId, call: Call) {
-        // A caller killed in the same step calls no one.
+        // A caller killed in the same step calls no one, nor one a page stood itself.
+        if self.quiet.contains(&caller) {
+            return;
+        }
         let caller_alive = self.fighter(caller).copied().filter(|at| !at.dead());
         let (Some(at), Some(called_type)) = (caller_alive, foe_type(call.foe_type)) else { return };
         let foe = self.foes.get(&caller).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));

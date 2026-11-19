@@ -81,6 +81,16 @@ export interface RoomDoor {
    *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
    *  first), and its right and left forge layers. */
   roster(): string;
+  /** A page playing a course alone, never a server: stands a foe of the roster (its `type`, `rank` and `level` as the
+   *  roster numbers them) on the top of the block under (x, y), facing `facing` (radians clockwise from north), its
+   *  post there; a Boss stood so calls no one. Its number, or 0 when none stood. */
+  standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
+  /** A page alone: sets where the next respawn stands the player, a checkpoint; false with no room on land. */
+  setSpawn(x: number, y: number): boolean;
+  /** A page alone: stands a player at once on the top under (x, y), keeping their health; false for no such player. */
+  putPlayer(player: number, x: number, y: number): boolean;
+  /** A page alone: stands a block on the course at once, as a way closing; false with no room on land. */
+  standBlock(block: CourseBlock): boolean;
 }
 
 interface RoomExports {
@@ -109,6 +119,10 @@ interface RoomExports {
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
   room_roster(): bigint;
+  room_stand_foe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
+  room_set_spawn(x: number, y: number): number;
+  room_put_player(player: number, x: number, y: number): number;
+  room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number): number;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -181,5 +195,9 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
+    standFoe: (type, rank, x, y, facing, level) => exports.room_stand_foe(type, rank, x, y, facing, level),
+    setSpawn: (x, y) => exports.room_set_spawn(x, y) === 1,
+    putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
+    standBlock: ({ minX, minY, maxX, maxY, top }) => exports.room_stand_block(minX, minY, maxX, maxY, top) === 1,
   };
 }
