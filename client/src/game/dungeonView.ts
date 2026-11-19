@@ -20,11 +20,8 @@ import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { PictureUse } from '../textures/picture.ts';
 import { SIDE_STEPS } from './dungeonLayout.ts';
-import { DUNGEON_SHADER, MOST_LIGHTS, MOST_LOOKS } from './dungeonShaders.ts';
+import { DUNGEON_SHADER, LIGHT_FLOATS, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
-const VIEW_BYTES = 96 + MOST_LOOKS * 16;
-/** A light's three vec4s: where it burns and its number, its colour and reach, and its flicker. */
-const LIGHT_FLOATS = 12;
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
 
@@ -160,7 +157,7 @@ export class DungeonView {
     };
     const painter = new CityPainter(this.gpu, book, () => undefined);
     const view = device.createBuffer({
-      size: VIEW_BYTES,
+      size: VIEW_FLOATS.all * 4,
       usage: CITY_BUFFER_USAGE.uniform | CITY_BUFFER_USAGE.copyDestination,
     });
     const lights = device.createBuffer({
@@ -274,12 +271,14 @@ export class DungeonView {
     );
     device.queue.writeBuffer(drawn.lights, 0, lights);
     const { layout } = drawn;
-    const view = new Float32Array(VIEW_BYTES / 4);
-    view.set(fromEye, 0);
-    view.set([...eye, time], 16);
-    view.set([nearest.length, drawn.shown?.open ? 1 : 0, 0, 0], 20);
-    view.set([layout.cell, layout.columns, layout.rows, 0], 24);
-    layout.looks.slice(0, MOST_LOOKS).forEach((look, index) => view.set([...MOODS[look.style], 0], 28 + index * 4));
+    const view = new Float32Array(VIEW_FLOATS.all);
+    view.set(fromEye, VIEW_FLOATS.fromEye);
+    view.set([...eye, time], VIEW_FLOATS.eye);
+    view.set([nearest.length, drawn.shown?.open ? 1 : 0, 0, 0], VIEW_FLOATS.lights);
+    view.set([layout.cell, layout.columns, layout.rows, 0], VIEW_FLOATS.grid);
+    layout.looks
+      .slice(0, MOST_LOOKS)
+      .forEach((look, index) => view.set([...MOODS[look.style], 0], VIEW_FLOATS.moods + index * 4));
     device.queue.writeBuffer(drawn.view, 0, view);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, drawn.group);

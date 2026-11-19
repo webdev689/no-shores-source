@@ -9,6 +9,10 @@ import { LIGHT_WGSL } from './dungeonLight.ts';
 export const MOST_LIGHTS = 32;
 /** The most looks one dungeon wears, each with its mood. */
 export const MOST_LOOKS = 8;
+/** Where each part of `View` starts in its uniform buffer, and how long it is in all, in floats. */
+export const VIEW_FLOATS = { fromEye: 0, eye: 16, lights: 20, grid: 24, moods: 28, all: 28 + MOST_LOOKS * 4 } as const;
+/** A light's three vec4s: where it burns and its number, its colour and reach, and its flicker. */
+export const LIGHT_FLOATS = 12;
 
 export const DUNGEON_SHADER = /* wgsl */ `
 struct View {
