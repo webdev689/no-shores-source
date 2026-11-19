@@ -131,6 +131,13 @@ impl Board {
         first && fight.due.is_none_or(|(by, at)| by == foe || lands >= at + beat)
     }
 
+    /// Whether no other foe waits, ready, for the beat at `target` to strike it hand to hand.
+    #[must_use]
+    pub fn first(&self, target: FighterId, foe: FighterId, tick: u64) -> bool {
+        let next = self.fights.get(&target).and_then(|fight| fight.next);
+        next.is_none_or(|(next, asked)| next == foe || asked + 1 < tick)
+    }
+
     /// A foe began a blow at `target` that lands at `lands`.
     pub fn struck(&mut self, target: FighterId, foe: FighterId, lands: u64) {
         let fight = self.fights.entry(target).or_default();
