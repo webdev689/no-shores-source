@@ -66,6 +66,27 @@ async function pickOf(cue) {
   };
 }
 
+/** A sound offered by its number, such as one DFO plays, read from its own page as a candidate; null if it is not
+ *  under an allowed licence or cannot be read. */
+async function offered(cue, id) {
+  const sound = await page(`${SITE}/s/${id}/`);
+  const author = sound?.match(new RegExp(`/people/([A-Za-z0-9_.@+-]{1,80})/sounds/${id}/`))?.[1];
+  const licence = author && licenceOf(sound);
+  const preview = licence && previewOf(sound, id);
+  const audio = preview && (await audioOf(preview));
+  if (!audio) return null;
+  writeFileSync(join(out, cue.id, `${id}.mp3`), audio);
+  const address = `${SITE}/people/${author}/sounds/${id}/`;
+  return {
+    freesound: Number(id),
+    name: titleOf(sound, id, author),
+    author,
+    licence,
+    page: address,
+    file: `${cue.id}/${id}.mp3`,
+  };
+}
+
 const picks = [];
 const report = [];
 for (const cue of wanted.cues) {
@@ -93,9 +114,16 @@ for (const cue of wanted.cues) {
   mkdirSync(join(out, 'pages'), { recursive: true });
   if (html) writeFileSync(join(out, 'pages', `${cue.id}.html`), html, { flag: 'w' });
   const candidates = [];
+  // The sounds the list offers by number come first, then the search's own.
+  const named = (cue.offer ?? []).map(String).filter((id) => !heard.has(id));
+  for (const id of named) {
+    const each = await offered(cue, id);
+    if (each) candidates.push(each);
+  }
+  const offers = candidates.length;
   for (const { author, id } of results.slice(0, LOOKED_AT)) {
-    if (candidates.length >= OFFERED) break;
-    if (heard.has(id)) continue;
+    if (candidates.length - offers >= OFFERED) break;
+    if (heard.has(id) || named.includes(id)) continue;
     const address = `${SITE}/people/${author}/sounds/${id}/`;
     const sound = await page(address);
     if (!sound) continue;

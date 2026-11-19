@@ -1,5 +1,5 @@
 {
-  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there.",
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there. `offer` names Freesound numbers shown as candidates before the search's own, such as the recordings DFO plays.",
   "cues": [
     {
       "id": "ui.hover",
@@ -291,6 +291,9 @@
       "seconds": [
         0.2,
         2.0
+      ],
+      "offer": [
+        473846
       ]
     },
     {
@@ -300,6 +303,10 @@
       "seconds": [
         0.3,
         2.5
+      ],
+      "offer": [
+        564480,
+        244345
       ]
     },
     {
@@ -309,6 +316,11 @@
       "seconds": [
         0.4,
         4.0
+      ],
+      "offer": [
+        679878,
+        108793,
+        383933
       ]
     },
     {
@@ -422,10 +434,10 @@
     {
       "id": "cast.charge",
       "use": "An Anima gathering as it is cast",
-      "query": "spell charge",
+      "query": "power up",
       "seconds": [
         0.3,
-        2.5
+        3.0
       ]
     },
     {

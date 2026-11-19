@@ -116,6 +116,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Attack Visuals Go Beyond the Limits]]
 - [[DFO's Blows on the Move Come Over Before the Merge]]
 - [[The World Sounds From the Sound Picker]]
+- [[DFO's Own Sounds Join the Sound Sheet]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
