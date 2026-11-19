@@ -112,6 +112,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]]
 - [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]
 - [[Foes Fight With Intelligence, Not by Rushing]]
+- [[Foes Spread Across the Players They Fight]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
