@@ -2,10 +2,13 @@
 // The game tells it each frame where the player stands and looks (`onFoot`, `atSea`) and steps it once (`frame`); it
 // plays the place's ambience through the Ambience volume, crossfading over a few seconds as the player moves on, and
 // lets every place fade to nothing while the game shows none, behind a loading veil. Its beds and calls are made in a
-// worker as the place is first heard; until they come it is silent. The game has no clock of its own and its sun
-// stands fixed in the afternoon, so every place sounds as it does by day.
+// worker as the place is first heard; until they come it is silent. Each frame it reads the sky (SKY_NOW): the sun's
+// height gives the hour's phases, the weather the wind, rain, snow and sand, and every strike near its thunder.
 
+import { stepsBetween } from '../../../combat/worldCues.ts';
 import { listen } from '../../../combat/worldSounds.ts';
+import { SKY_NOW } from '../../../sky/skyDriver.ts';
+import { WORLD_CLOCK, hourOf } from '../../../sky/worldClock.ts';
 import type { Landmass } from '../../landmass.ts';
 import { ambienceOutput } from '../../uiSounds.ts';
 import type { NodeInfo } from '../../worldData.ts';
@@ -17,9 +20,8 @@ import { type Lay, shoreOf } from './places.ts';
 import { type Heard, MOST_CALLS, ScapePlayer, jobsOf } from './player.ts';
 import { SCAPES } from './scapes.ts';
 import { jobName } from './sounds.ts';
+import { phasesOfSun, rainLevel, shelterOf, thunderOf, weatherOf } from './weatherLaw.ts';
 
-/** The hour every place is heard at: the sky's sun stands fixed at the afternoon's height. */
-export const GAME_HOUR = 15;
 /** The ear's height over her deck at sea, metres. */
 const DECK_EAR_M = 3;
 /** How the deck is heard from the raised view over her: a little way off. */
@@ -30,6 +32,12 @@ const DECK_FOLLOW_S = 1.5;
 /** The sea's nearness: whole within the first distance, none past the second; at sea, then on foot, metres. */
 const COAST_AT_SEA: readonly [number, number] = [600, 3000];
 const COAST_ON_FOOT: readonly [number, number] = [60, 500];
+/** Thunder is set playing this long before it arrives, seconds, and is let go if it is found this long late (a hidden
+ *  page's frames stop). */
+const THUNDER_AHEAD_S = 0.25;
+const THUNDER_LATE_S = 1.5;
+/** The feet moved farther than this in a frame, metres, were set down elsewhere rather than walked. */
+const STRIDE_MOST_M = 2;
 
 /** Where the ambience plays: a context and the node it goes into; null while it may not sound. */
 export type AmbienceOutput = () => { readonly audio: BaseAudioContext; readonly out: AudioNode } | null;
@@ -62,7 +70,13 @@ export class Ambience {
   private readonly output: AmbienceOutput;
   private readonly bank: Bank;
   private readonly random: Random;
-  private readonly hour: number;
+  /** A fixed hour, for the sound sheet and tests; else the sky's. */
+  private readonly hour: number | null;
+  /** The strikes whose thunder is set playing or let go. */
+  private thundered = new Set<string>();
+  /** The player's feet aboard, in her deck's frame, and the metres walked there. */
+  private feet: { x: number; y: number; walked: number } | null = null;
+  private stepped = false;
   private readonly lays = new WeakMap<Landmass, Lay>();
   private readonly calls = { count: 0 };
   private players: ScapePlayer[] = [];
@@ -85,7 +99,7 @@ export class Ambience {
     [this.continents, this.output] = [continents, output];
     this.bank = options.bank ?? new Bank();
     this.random = options.random ?? Math.random;
-    this.hour = options.hour ?? GAME_HOUR;
+    this.hour = options.hour ?? null;
     // A hidden page hears nothing: its frames stop, so the fade is the page's own event's.
     if (typeof document !== 'undefined')
       document.addEventListener('visibilitychange', () => {
@@ -106,14 +120,21 @@ export class Ambience {
   }
 
   /** The player's ship at sea at `ship` off `land`, the camera looking along `ear`'s yaw; under way at her pace or
-   *  not, and the view on her deck or over her. */
+   *  not, the view on her deck or over her, and the player's feet in her deck's frame, which step on her planks as
+   *  they walk her deck. */
   atSea(
     land: Landmass,
     ship: readonly [number, number],
     ear: Ear,
-    voyage: { readonly sailing: boolean; readonly pace: number; readonly deck: boolean },
+    voyage: {
+      readonly sailing: boolean;
+      readonly pace: number;
+      readonly deck: boolean;
+      readonly feet?: { readonly x: number; readonly y: number; readonly mode: string };
+    },
     seconds = 1 / 60,
   ): void {
+    this.walk(voyage.feet);
     const lay = this.layOf(land);
     const shore = shoreOf(ship, lay.outline);
     this.way += (wayOf(voyage.sailing, voyage.pace) - this.way) * Math.min(1, seconds / WAY_FOLLOW_S);
@@ -170,6 +191,10 @@ export class Ambience {
       player.gain.gain.setTargetAtTime(fadeGain(player.level) * player.scape.level, now, 0.05);
       if (still) player.frame(this.clock, still, player.target === 1 && heard !== null);
     }
+    const live = heard ? this.players.find((player) => player.key === heard.key) : undefined;
+    if (heard) this.thunder(heard, live);
+    if (heard && live && this.stepped && heard.key === 'sea') live.footstep(heard);
+    this.stepped = false;
     const gone = this.players.filter((player) => player.level === 0 && player.target === 0);
     if (gone.length === 0) return;
     for (const player of gone) player.stop();
@@ -212,16 +237,66 @@ export class Ambience {
   ): void {
     const way = place.kind === 'sea' ? this.way : 0;
     const deck = place.kind === 'sea' ? this.deck : 1;
+    const { reading } = SKY_NOW.current;
+    const phases =
+      this.hour !== null
+        ? phasesAt(this.hour)
+        : reading
+          ? phasesOfSun(reading.sun)
+          : phasesAt(hourOf(WORLD_CLOCK.seconds()));
+    const weather = weatherOf(reading);
     this.heard = {
       key: ambienceOf(place),
       ear,
       yaw,
       origin,
       lay,
-      phases: phasesAt(this.hour),
-      drives: { way, still: 1 - way, coast: more.coast, deck },
+      phases,
+      drives: {
+        way,
+        still: 1 - way,
+        coast: more.coast,
+        deck,
+        wind: weather.wind,
+        rain: rainLevel(weather.rain),
+        sand: weather.sand,
+      },
+      weather,
+      shelter: shelterOf(weather, phases),
       folk: more.folk,
     };
+  }
+
+  /** The player's feet aboard: each stride walked on her planks is a step, once the ambience is heard at sea. */
+  private walk(feet: { readonly x: number; readonly y: number; readonly mode: string } | undefined): void {
+    const kept = this.feet;
+    if (!feet) {
+      this.feet = null;
+      return;
+    }
+    const moved = kept ? Math.hypot(feet.x - kept.x, feet.y - kept.y) : Infinity;
+    const walked = (kept?.walked ?? 0) + (moved <= STRIDE_MOST_M && feet.mode === 'ground' ? moved : 0);
+    if (kept && stepsBetween(kept.walked, walked) > 0) this.stepped = true;
+    this.feet = { x: feet.x, y: feet.y, walked };
+  }
+
+  /** Each strike's thunder, set playing as it arrives at the ear through the place heard. */
+  private thunder(heard: Heard, player: ScapePlayer | undefined): void {
+    const { strikes, worldS } = SKY_NOW.current;
+    for (const strike of strikes) {
+      const name = `${strike.atS}:${strike.x}:${strike.y}`;
+      if (this.thundered.has(name)) continue;
+      const thunder = thunderOf(strike, [heard.ear[0], heard.ear[1]]);
+      const after = thunder ? thunder.arrivesS - worldS : -Infinity;
+      if (after > THUNDER_AHEAD_S) continue;
+      this.thundered.add(name);
+      if (thunder && player && after > -THUNDER_LATE_S) player.thunder(thunder, heard, Math.max(0, after));
+    }
+    // Only the strikes the sky still keeps are remembered; one still on its way is never forgotten.
+    if (this.thundered.size > strikes.length + 64) {
+      const kept = new Set(strikes.map((strike) => `${strike.atS}:${strike.x}:${strike.y}`));
+      this.thundered = new Set([...this.thundered].filter((name) => kept.has(name)));
+    }
   }
 
   private stopAll(): void {

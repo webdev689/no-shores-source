@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { mock, test } from 'node:test';
+import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import type { Landmass } from '../../landmass.ts';
 import type { NodeInfo } from '../../worldData.ts';
 import { Ambience } from './ambience.ts';
 import { Bank } from './bank.ts';
 import { seeded } from './dsp.ts';
 import { CROSSFADE_S } from './law.ts';
+import { ScapePlayer } from './player.ts';
 
 /** An audio parameter that keeps the last value it was set toward. */
 const param = () => {
@@ -132,4 +134,65 @@ test('a place fades in over the crossfade, the next crossfades over it, and the 
   live = false;
   step(0.2, () => ambience.onFoot(patrol, land, ear));
   assert.equal(ambience.stats.places, 0, 'silenced, it stops at once');
+});
+
+test('each strike thunders once, as its sound arrives; a strike past hearing never does', (context) => {
+  const thundered = mock.method(ScapePlayer.prototype, 'thunder', () => undefined);
+  context.after(() => {
+    thundered.mock.restore();
+    SKY_NOW.current = { ...SKY_NOW.current, strikes: [], worldS: 0 };
+  });
+  const fake = fakeAudio();
+  const ambience = new Ambience(world, () => fake, { random: seeded(3), bank: new Bank(() => null) });
+  const strikes = [
+    { x: 3430, y: 0, atS: 1000, toGround: true, power: 1 },
+    { x: 30_000, y: 0, atS: 1000, toGround: true, power: 1 },
+  ];
+  for (let worldS = 1000; worldS < 1030; worldS += 0.1) {
+    SKY_NOW.current = { ...SKY_NOW.current, strikes, worldS };
+    ambience.onFoot(patrol, land, ear);
+    ambience.frame(0.1);
+    if (worldS < 1009.7) assert.equal(thundered.mock.callCount(), 0, `nothing heard yet at ${worldS}`);
+  }
+  assert.equal(thundered.mock.callCount(), 1);
+  const [thunder] = thundered.mock.calls[0]?.arguments ?? [];
+  assert.equal(thunder?.sound, 'thunder.roll');
+});
+
+test("the player's own steps are heard on her deck as they walk it, a step a stride, none in the air", (context) => {
+  const stepped = mock.method(ScapePlayer.prototype, 'footstep', () => undefined);
+  context.after(() => stepped.mock.restore());
+  const fake = fakeAudio();
+  const ambience = new Ambience(world, () => fake, { random: seeded(4), bank: new Bank(() => null) });
+  const walk = (from: number, metres: number, mode: string) => {
+    for (let walked = 0; walked <= metres; walked += 0.5) {
+      const voyage = { sailing: true, pace: 60, deck: true, feet: { x: from + walked, y: 2, mode } };
+      ambience.atSea(land, [0, 4000], ear, voyage, 0.1);
+      ambience.frame(0.1);
+    }
+  };
+  walk(0, 10, 'ground');
+  assert.equal(stepped.mock.callCount(), 4, 'ten metres are four strides');
+  walk(10, 10, 'air');
+  assert.equal(stepped.mock.callCount(), 4, 'none while in the air');
+  walk(500, 0, 'ground');
+  assert.equal(stepped.mock.callCount(), 4, 'set down elsewhere, not walked');
+});
+
+test('a strike still on its way thunders though the strikes heard before it are let go', (context) => {
+  const thundered = mock.method(ScapePlayer.prototype, 'thunder', () => undefined);
+  context.after(() => {
+    thundered.mock.restore();
+    SKY_NOW.current = { ...SKY_NOW.current, strikes: [], worldS: 0 };
+  });
+  const fake = fakeAudio();
+  const ambience = new Ambience(world, () => fake, { random: seeded(5), bank: new Bank(() => null) });
+  const far = Array.from({ length: 100 }, (unused, nth) => ({ x: 30_000, y: nth, atS: 0, toGround: true, power: 1 }));
+  const coming = { x: 10_000, y: 0, atS: 1, toGround: false, power: 1 };
+  for (let worldS = 1; worldS < 40; worldS += 0.1) {
+    SKY_NOW.current = { ...SKY_NOW.current, strikes: worldS < 1.5 ? [...far, coming] : [coming], worldS };
+    ambience.onFoot(patrol, land, ear);
+    ambience.frame(0.1);
+  }
+  assert.equal(thundered.mock.callCount(), 1);
 });

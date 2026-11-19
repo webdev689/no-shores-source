@@ -2,8 +2,9 @@
 // the playing song's next bar line; a new song begins on it while the old fades over a bar; a fight that ends fades
 // over two bars, never cut. A sting (a boss waking or falling, a fight won or lost) begins on the bar line and holds
 // the next song until it has played. The ambience is lowered under the music as a fight grows and let back after.
-// A place whose score is not written is silent.
+// A sea song out of danger plays whole, once through. A place whose score is not written is silent.
 
+import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import { duckAmbience, musicOutput } from '../../uiSounds.ts';
 import { boardingScore } from './boardingScore.ts';
 import { coldScore } from './coldScore.ts';
@@ -17,12 +18,13 @@ import {
   MOOD_ROLES,
   type Memory,
   QUIET,
+  type SongClock,
   type Sting,
   hear,
 } from './directorLaw.ts';
 import { dryScore } from './dryScore.ts';
 import { greenScore } from './greenScore.ts';
-import { type FootHeard, type SeaHeard, hearNode, hearSea } from './hearing.ts';
+import { type FootHeard, type SeaHeard, hearNode, hearSea, heardSky } from './hearing.ts';
 import { reckoningScore } from './reckoningScore.ts';
 import { saltmereScore } from './saltmereScore.ts';
 import { ROLES, type Role, type Song, TICKS_PER_BEAT, songSeconds } from './score.ts';
@@ -140,6 +142,7 @@ export interface DirectorOptions {
   readonly timed?: boolean;
   readonly clock?: (audio: BaseAudioContext) => number;
   readonly scores?: () => Scores;
+  readonly random?: () => number;
 }
 
 /** The game's music, fed each frame with what the game hears. */
@@ -151,6 +154,7 @@ export class MusicDirector {
   private memory: Memory = QUIET;
   /** Every score, made as the game starts (some 50,000 notes, tens of milliseconds) rather than mid-fight. */
   private readonly scores: Scores;
+  private readonly songClock: SongClock;
   private bus: MusicOut | null = null;
   private players: SongPlayer[] = [];
   private stinger: SongPlayer | null = null;
@@ -159,6 +163,8 @@ export class MusicDirector {
   private holdUntil = -Infinity;
   private waking = false;
   private ducked = 1;
+  /** The sea song last begun once through: one already heard is never begun again over its own cue. */
+  private once: Song | null = null;
 
   constructor({
     output = musicOutput,
@@ -166,8 +172,12 @@ export class MusicDirector {
     timed = true,
     clock = (audio) => audio.currentTime,
     scores = overlookScores,
+    random = Math.random,
   }: DirectorOptions = {}) {
     [this.output, this.duckTo, this.timed, this.clockOf, this.scores] = [output, duck, timed, clock, scores()];
+    // A sea song ends once its last note has rung, a bar line after it is asked for.
+    const lengthOf = (song: SeaSong) => songTail(this.scores.sea[song]) + START_LEAD_S + barOf(this.scores.sea[song]);
+    this.songClock = { lengthOf, random };
     // A hidden page's timers are slowed to a wake a second, too few to keep a song whole: it falls silent instead.
     if (typeof document !== 'undefined')
       document.addEventListener('visibilitychange', () => {
@@ -177,7 +187,7 @@ export class MusicDirector {
 
   /** One frame, `seconds` after the last. */
   frame(hearing: Hearing, seconds: number): void {
-    const verdict = hear(this.memory, hearing, seconds);
+    const verdict = hear(this.memory, hearing, seconds, this.songClock);
     this.memory = verdict.memory;
     const bus = this.output();
     if (!bus) return this.hush();
@@ -186,11 +196,16 @@ export class MusicDirector {
     const { scores } = this;
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
     if (verdict.sting) this.sting(stingOf(scores, verdict.sting), verdict.sting.kind === 'wake', now);
-    const song = songOf(scores, verdict.cue);
-    const social = verdict.cue.kind === 'social';
-    const roles = social ? ALL_ROLES : MOOD_ROLES[verdict.mood];
-    this.follow(song, roles, social ? 1 : MOOD_LEVEL[verdict.mood], now);
-    const under = !song ? 1 : social ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
+    const asked = songOf(scores, verdict.cue);
+    const voyage = verdict.cue.kind === 'sea' && verdict.mood === 'silent';
+    // A hidden page cut it short: the law's clock stood while the page's ran on, so it is not played again.
+    const song = voyage && asked === this.once && !this.current ? null : asked;
+    this.once = voyage ? asked : null;
+    // The social space's theme and a sea song out of danger play whole, at their own level.
+    const whole = verdict.cue.kind === 'social' || voyage;
+    const roles = whole ? ALL_ROLES : MOOD_ROLES[verdict.mood];
+    this.follow(song, roles, whole ? 1 : MOOD_LEVEL[verdict.mood], now, !voyage);
+    const under = !song ? 1 : whole ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
     // A sting is music too: the ambience stays lowered under it.
     this.duck(now < this.holdUntil ? Math.min(under, MOOD_DUCK.combat) : under);
   }
@@ -205,9 +220,9 @@ export class MusicDirector {
     this.frame(hearNode(world, node, fight), seconds);
   }
 
-  /** A frame at sea. */
+  /** A frame at sea, under the sky as the page last drew it. */
   atSea(sea: SeaHeard, seconds: number): void {
-    this.frame(hearSea(sea), seconds);
+    this.frame(hearSea(sea, heardSky(SKY_NOW.current.reading)), seconds);
   }
 
   /** Pumps every player to `now`, for a render that runs no timers. */
@@ -235,8 +250,8 @@ export class MusicDirector {
     return fading[0] ?? this.players[0];
   }
 
-  /** Plays `song` in `roles` at `level`, on bar lines. */
-  private follow(song: Song | null, roles: ReadonlySet<Role>, level: number, now: number): void {
+  /** Plays `song` in `roles` at `level`, on bar lines, looping or once through. */
+  private follow(song: Song | null, roles: ReadonlySet<Role>, level: number, now: number, loop = true): void {
     // A new fight cuts a sting short on its bar line, but a wake runs into the song it leads to.
     const stinging = this.stinger?.song;
     if (song && roles.has('combat') && stinging && now < this.holdUntil && !this.waking && this.stinger) {
@@ -272,7 +287,7 @@ export class MusicDirector {
         : Math.max(now + START_LEAD_S, this.holdUntil);
     const player = waiting ?? this.free(now);
     if (playing && !waiting) playing.player.fade(0, when, beatOf(playing.song));
-    player.play(song, Math.max(when, this.holdUntil), { roles, level });
+    player.play(song, Math.max(when, this.holdUntil), { roles, level, loop });
     this.current = { player, song, roles, level };
   }
 

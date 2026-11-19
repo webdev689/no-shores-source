@@ -494,7 +494,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     });
     for (const stir of shown.stirs) scene.stir(stir);
     music.atSea(here, seconds);
-    const voyage = { sailing: shown.sailing, pace: shown.pace, deck: here.helmView || here.aboard.active };
+    const voyage = { ...shown, deck: here.helmView || here.aboard.active, feet: walker.player.body };
     ambience.atSea(landmass, here.position, shown.shot, voyage, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();

@@ -26,8 +26,8 @@ export type Spot =
   | 'ear';
 
 /** What scales a bed or a voice besides the hour: a ship's way, her stillness, the coast's nearness, the deck's
- *  nearness to the ear. */
-export type Drive = 'way' | 'still' | 'coast' | 'deck';
+ *  nearness to the ear, the wind's strength, how hard rain falls, and how hard sand blows. */
+export type Drive = 'way' | 'still' | 'coast' | 'deck' | 'wind' | 'rain' | 'sand';
 
 /** A bed: wide about the listener, or standing at a point (the sea's edge, the harbour, the nearest river, the city
  *  below) through a panner, and `breakers` where a shore's waves swell and crash on it. */
@@ -38,13 +38,16 @@ export interface BedLayer {
   /** How deep its slow breathing goes, 0 to 1. */
   readonly breath: number;
   readonly at: 'wide' | 'shore' | 'harbour' | 'river' | 'city';
-  readonly drive?: Drive;
+  /** What scales it; several scale it together. */
+  readonly drive?: Drive | readonly Drive[];
   /** Its gain rides the sea's swell. */
   readonly swell?: boolean;
   /** How deep the wind's gusts move it, 0 to 1: its gain, and its top opening as a gust blows. */
   readonly gust?: number;
   /** A hiss whose top stays open between gusts: blown sand or snow, which a gust swells but never darkens. */
   readonly bright?: boolean;
+  /** Rain: its top opens the harder it falls. */
+  readonly brightens?: boolean;
   readonly breakers?: boolean;
   /** How near a standing bed is heard whole, metres, where not its kind's own. */
   readonly near?: number;
@@ -152,6 +155,13 @@ const GULLS = (perMinute: number) =>
 /** The sea's edge on any island: its surf, breaking as the sea's swell runs in. */
 const SURF = (gain: number) => bed('shore.surf', gain, { at: 'shore', breakers: true, breath: 0 });
 const RIVER = (gain: number) => bed('water.brook', gain, { at: 'river', breath: 0.2 });
+/** Rain wherever it falls: its hiss all round and its patter near, both opening as it falls harder. */
+const RAIN = [
+  bed('rain.hiss', 0.75, { drive: 'rain', brightens: true, breath: 0.2 }),
+  bed('rain.patter', 0.7, { drive: 'rain', brightens: true, breath: 0.3 }),
+];
+/** A sandstorm's hiss over the ground, where the ground lifts sand. */
+const SANDSTORM = bed('wind.sand', 1.4, { drive: 'sand', bright: true, gust: 0.7, breath: 0.3 });
 const RAVEN = (perMinute: ByPhase) =>
   voice('raven', 'sky', perMinute, { recorded: 'amb.highland.raven', distance: [40, 160], lift: [20, 60], drift: 6 });
 
@@ -166,6 +176,8 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('wind.breeze', 0.3, { gust: 0.5, breath: 0.3 }),
       bed('sea.rigging', 0.35, { gust: 0.6, drive: 'deck', breath: 0.3 }),
       bed('deck.timbers', 0.55, { drive: 'deck', breath: 0.3 }),
+      bed('rain.hiss', 0.75, { drive: 'rain', brightens: true, breath: 0.2 }),
+      bed('rain.deck', 0.75, { drive: ['rain', 'deck'], brightens: true, breath: 0.25 }),
     ],
     voices: [
       voice('hull.creak', 'hull', always(7), { drive: 'deck', near: 3, gain: [0.4, 0.8] }),
@@ -199,6 +211,8 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       }),
       bed('sea.rigging', 0.6, { gust: 0.6, at: 'harbour', breath: 0.3 }),
       bed('insects.crickets', 0.35, { when: evening(1) }),
+      ...RAIN,
+      bed('rain.gutters', 1, { drive: 'rain', breath: 0.2 }),
     ],
     voices: [
       voice('gull', 'plaza', byDay(2), {
@@ -244,6 +258,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('wind.breeze', 0.9, { gust: 0.5, breath: 0.3 }),
       bed('grass', 0.55, { gust: 0.5, breath: 0.3 }),
       SURF(1),
+      ...RAIN,
       RIVER(0.9),
       bed('insects.crickets', 0.6, { when: { dusk: 1, night: 0.8, dawn: 0.1 } }),
     ],
@@ -277,10 +292,11 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('grass', 0.3, { gust: 0.5, breath: 0.3 }),
       RIVER(1),
       SURF(0.8),
+      ...RAIN,
     ],
     voices: [
-      voice('wind.gust', 'ridge', always(2), { distance: [40, 160], gain: [0.5, 0.9] }),
-      voice('rock.whistle', 'ridge', always(0.8), { distance: [30, 120], gain: [0.3, 0.6] }),
+      voice('wind.gust', 'ridge', always(2), { drive: 'wind', distance: [40, 160], gain: [0.5, 0.9] }),
+      voice('rock.whistle', 'ridge', always(0.8), { drive: 'wind', distance: [30, 120], gain: [0.3, 0.6] }),
       voice('rock.fall', 'ridge', always(0.4), { distance: [80, 300], gain: [0.5, 0.9] }),
       RAVEN(always(0.8)),
       voice('buzzard', 'sky', byDay(0.7)),
@@ -302,6 +318,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       RIVER(0.9),
       bed('insects.crickets', 0.55, { when: { dusk: 0.8, night: 0.6 } }),
       SURF(0.7),
+      ...RAIN,
     ],
     voices: [
       voice('song.warbler', 'canopy', dawnChorus(3), { gain: [0.3, 0.6] }),
@@ -320,7 +337,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('crow', 'canopy', byDay(0.6), { recorded: 'amb.woodland.crow', distance: [30, 120] }),
       voice('branch.creak', 'canopy', always(1), { gain: [0.3, 0.6] }),
       voice('twig.snap', 'ground', always(0.5), { distance: [6, 30], gain: [0.3, 0.6] }),
-      voice('leaf.gust', 'canopy', always(1.4), { distance: [10, 40], gain: [0.3, 0.6] }),
+      voice('leaf.gust', 'canopy', always(1.4), { drive: 'wind', distance: [10, 40], gain: [0.3, 0.6] }),
       voice('owl.tawny', 'canopy', byNight(1.2), { distance: [20, 80], gain: [0.4, 0.6] }),
       voice('owl.deep', 'canopy', byNight(0.35), { distance: [40, 120], gain: [0.4, 0.6] }),
       voice('wolf.howl', 'ridge', byNight(0.3), { gain: [0.5, 0.8] }),
@@ -337,10 +354,12 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('wind.whistle', 0.12, { gust: 0.8, breath: 0.3 }),
       bed('insects.crickets', 0.25, { when: byNight(1) }),
       SURF(0.7),
+      ...RAIN,
+      SANDSTORM,
     ],
     voices: [
-      voice('sand.gust', 'around', always(3), { distance: [6, 40], lift: [0, 0.5], gain: [0.5, 0.9] }),
-      voice('rock.whistle', 'ridge', always(0.7), { distance: [30, 120], gain: [0.3, 0.6] }),
+      voice('sand.gust', 'around', always(3), { drive: 'wind', distance: [6, 40], lift: [0, 0.5], gain: [0.5, 0.9] }),
+      voice('rock.whistle', 'ridge', always(0.7), { drive: 'wind', distance: [30, 120], gain: [0.3, 0.6] }),
       voice('rock.fall', 'ridge', always(0.25), { distance: [80, 300] }),
       voice('buzzard', 'sky', byDay(0.3)),
       RAVEN(byDay(0.3)),
@@ -362,6 +381,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('insects.crickets', 0.6, { when: { dusk: 0.8, night: 1 } }),
       RIVER(0.7),
       SURF(0.7),
+      ...RAIN,
     ],
     voices: [
       voice('song.weaver', 'canopy', byDay(2.5), { gain: [0.3, 0.6] }),
@@ -390,6 +410,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('leaves', 0.3, { gust: 0.5, breath: 0.3 }),
       RIVER(1),
       SURF(0.7),
+      ...RAIN,
     ],
     voices: [
       voice('song.fluter', 'canopy', dawnChorus(3), { gain: [0.3, 0.6] }),
@@ -417,12 +438,14 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('insects.crickets', 0.55, { when: { dusk: 0.9, night: 0.8 } }),
       RIVER(0.7),
       SURF(0.7),
+      ...RAIN,
+      SANDSTORM,
     ],
     voices: [
       voice('song.lark', 'sky', byDay(2.2), { distance: [30, 90], lift: [30, 70], gain: [0.4, 0.7] }),
       voice('marmot', 'around', byDay(1.2), { distance: [30, 150], bout: [1, 2], spacing: [2, 4] }),
       voice('buzzard', 'sky', byDay(0.8)),
-      voice('wind.gust', 'around', always(1.6), { distance: [20, 80], gain: [0.4, 0.8] }),
+      voice('wind.gust', 'around', always(1.6), { drive: 'wind', distance: [20, 80], gain: [0.4, 0.8] }),
       RAVEN(byDay(0.25)),
       voice('wolf.howl', 'ridge', byNight(0.6), { gain: [0.6, 0.9] }),
       voice('wolf.howl.low', 'ridge', byNight(0.4), { gain: [0.6, 0.9] }),
@@ -441,6 +464,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('wind.breeze', 0.25, { gust: 0.5, breath: 0.3 }),
       RIVER(0.5),
       SURF(0.6),
+      ...RAIN,
     ],
     voices: [
       voice('bubbles', 'ground', always(4), { distance: [3, 25], gain: [0.3, 0.6] }),
@@ -467,10 +491,11 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('wind.whistle', 0.45, { gust: 0.8, breath: 0.3 }),
       bed('wind.snow', 0.55, { bright: true, gust: 0.7, breath: 0.3 }),
       SURF(0.8),
+      ...RAIN,
     ],
     voices: [
-      voice('wind.gust', 'around', always(2.5), { distance: [20, 80], gain: [0.5, 0.9] }),
-      voice('rock.whistle', 'ridge', always(0.8), { distance: [30, 120], gain: [0.3, 0.6] }),
+      voice('wind.gust', 'around', always(2.5), { drive: 'wind', distance: [20, 80], gain: [0.5, 0.9] }),
+      voice('rock.whistle', 'ridge', always(0.8), { drive: 'wind', distance: [30, 120], gain: [0.3, 0.6] }),
       voice('ice.creak', 'ground', always(1), { distance: [30, 150], near: 10, gain: [0.5, 0.9] }),
       voice('ice.crack', 'ground', always(0.5), { distance: [40, 200], near: 15, gain: [0.5, 0.9] }),
       voice('ice.ping', 'ground', always(0.7), { distance: [30, 120], near: 10, gain: [0.3, 0.6] }),

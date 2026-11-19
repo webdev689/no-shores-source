@@ -7,9 +7,10 @@ import { CALLS } from './calls.ts';
 import { seeded } from './dsp.ts';
 import { NOISES } from './noises.ts';
 import { SONGS } from './songs.ts';
+import { THUNDER } from './weatherSounds.ts';
 
-/** Every call and noise a voice may sound. */
-export const SOUNDS = { ...CALLS, ...SONGS, ...NOISES };
+/** Every call and noise a voice may sound, and the thunder. */
+export const SOUNDS = { ...CALLS, ...SONGS, ...NOISES, ...THUNDER };
 export type SoundKey = keyof typeof SOUNDS;
 
 /** The rate calls and noises are made at: everything they hold lies under its half. */

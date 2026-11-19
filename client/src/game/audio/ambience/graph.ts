@@ -132,6 +132,8 @@ export interface CallShape {
   readonly drift: number;
   readonly seconds: number;
   readonly gain: number;
+  /** Its top, Hz, where its own distance darkens it rather than the air's: thunder. */
+  readonly corner?: number;
 }
 
 /** A call's chain: its level, the air, its panner (a drifting call's moves over its seconds), and its share of the
@@ -151,7 +153,7 @@ export function callChain(
   const level = audio.createGain();
   level.gain.value = shape.gain;
   const air = audio.createBiquadFilter();
-  [air.type, air.frequency.value] = ['lowpass', airCorner(distance)];
+  [air.type, air.frequency.value] = ['lowpass', shape.corner ?? airCorner(distance)];
   const panner = audio.createPanner();
   Object.assign(panner, {
     panningModel: distance <= HRTF_WITHIN_M ? 'HRTF' : 'equalpower',

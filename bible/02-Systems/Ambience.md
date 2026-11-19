@@ -3,7 +3,11 @@ type: system
 status: live
 code:
   - client/src/game/audio/ambience/ambience.ts#Ambience
-  - client/src/game/audio/ambience/ambience.ts#GAME_HOUR
+  - client/src/game/audio/ambience/weatherLaw.ts#phasesOfSun
+  - client/src/game/audio/ambience/weatherLaw.ts#weatherOf
+  - client/src/game/audio/ambience/weatherLaw.ts#thunderOf
+  - client/src/game/audio/ambience/weatherSounds.ts#RAIN_BEDS
+  - client/src/game/audio/ambience/weatherSounds.ts#THUNDER
   - client/src/game/audio/ambience/player.ts#ScapePlayer
   - client/src/game/audio/ambience/graph.ts#callChain
   - client/src/game/audio/ambience/scapes.ts#SCAPES
@@ -52,8 +56,23 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   creaking, halyards, a bell, gulls, the surf along the coast.
 - **The islands.** Each climate has its own beds and voices (the table below). Surf and gulls come only near a
   coast, a river's water only near a river.
-- **Time of day.** Every rate and bed is set for dawn, day, dusk and night. The game has no clock: its sun stands
-  fixed in the afternoon, so every place is heard at 15:00 (`GAME_HOUR`). Night is heard on the sound sheet.
+- **Time of day.** Every rate and bed is set for dawn, day, dusk and night, and the sky's sun says which it is
+  ([[Sky]]): dawn while it stands within a few degrees of the horizon rising in the east, dusk as it sets in the west,
+  day above, night below. The phases turn smoothly with the sun, so the dawn chorus, the crickets at dusk and every
+  night voice come and go in cross-fades. On foot in Saltmere by night the crowd and the work fall quiet; the harbour
+  keeps on.
+- **Wind.** The weather's wind ([[Weather]]) scales every gusty bed (wind, grass, leaves, rigging) and every gust's
+  call: near silent in a calm, as made at the usual 6 m/s, up to 2.5 times in a gale, its gusts deeper the wilder they
+  blow.
+- **Rain, snow and sand.** Rain is beds of its own: a hiss of many drops all round and a patter near, both louder and
+  brighter the harder it falls; in Saltmere its gutters drip, and at sea it drums on her canvas and planks. Snow
+  makes no sound of its own but softens every other bed. A sandstorm hisses over the desert and the steppe. Rain or
+  snow sends the day's birds and insects to shelter: in a downpour most fall silent, by night none.
+- **Thunder.** Each strike the sky reports within 25 km thunders once, arriving after its distance at 343 m/s, from
+  the way it lies. A ground strike near (under 3 km at full power) cracks and rips; any other rolls, long and low.
+  Its level and its top fall with distance. Thunder is the same in every place, its near crack well over the beds
+  (about -15 LUFS at its loudest) and never past 0.6 of full scale.
+- **Steps on her deck.** Walking the Sloop's deck, each stride is a step on wooden planks.
 - **Crossfades.** A new place fades in over 4 s as the last fades out, at equal power. Behind a loading veil the
   game shows no place, so the ambience fades to nothing and comes back with the next place. A hidden page fades out.
 - **Made off the page.** Beds and calls are made in a worker as a place is first heard, a place's whole set in about
@@ -81,6 +100,6 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
 ## Limits
 
 - Ridges, trees and hollows are read off the land's 1 km cells, so on flat ground a wolf's ridge is any far point.
-- The game has no clock and no weather, so the ambience never hears night, rain or a storm in play.
+- Thunder rolls from one point on its bearing; a long bolt's parts do not each come from their own place.
 - Townsfolk step only through Saltmere's plaza, the steps' recording once loaded, the synthesiser's until then.
 - Not tested in a running game with WebGPU: tested offline, through the same code, in an offline audio context.

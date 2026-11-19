@@ -70,8 +70,22 @@ test('at sea: the hostile ships within reach, and the fight by its hostile capta
       vessel: { hull: 30, max_hull: 120 },
     },
   } as unknown as SeaHeard;
-  assert.deepEqual(hearSea(sea).sea, { fighting: true, captains: 1, strongest: 3, hull: 0.25, hostilesNear: 1 });
+  assert.deepEqual(hearSea(sea).sea, {
+    fighting: true,
+    captains: 1,
+    strongest: 3,
+    hull: 0.25,
+    hostilesNear: 1,
+    landfall: false,
+  });
   const quiet = { position: [0, 0], sighted: null, fight: null } as unknown as SeaHeard;
-  assert.deepEqual(hearSea(quiet).sea, { fighting: false, captains: 0, strongest: 0, hull: 1, hostilesNear: 0 });
+  assert.deepEqual(hearSea(quiet).sea, {
+    fighting: false,
+    captains: 0,
+    strongest: 0,
+    hull: 1,
+    hostilesNear: 0,
+    landfall: false,
+  });
   assert.deepEqual(hearSea(quiet).place, { kind: 'sea' });
 });
