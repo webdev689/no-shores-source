@@ -32,6 +32,7 @@ test('every press answers the same way: brass under the pointer, sunk while held
     for (const state of [':hover', ':focus-visible', ':active:not(:disabled)', ':disabled'])
       assert.ok(css.includes(`.${name}${state}`), `${name}${state}`);
   }
+  assert.ok(css.includes(`.${ROLES.warn}:hover:not(:disabled)`), 'a warn lights in blood, never brass');
 });
 
 test('the window frame is a square picture used at 1:1 that lands its inner 2 px on the box border', () => {

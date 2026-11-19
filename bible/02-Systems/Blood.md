@@ -12,13 +12,15 @@ code:
   - client/src/combat/blood/marks.ts#BloodMarks
   - client/src/combat/blood/marks.ts#bloodOn
   - client/src/combat/blood/view.ts#BloodView
-  - client/src/testground/blood.ts#TestgroundBlood
-  - client/src/testground/blood.ts#surfacesOf
+  - client/src/combat/fightBlood.ts#FightBlood
+  - client/src/combat/fightBlood.ts#surfacesOf
 ---
 # Blood
 
 Blood that a blow leaves where it lands and that stays: DFO's blood marks, brought over exactly as DFO has them, its
-numbers, orderings and colours unchanged ([[Struck Figures Flash, and DFO's Blood Comes Over]], [[Pick - Blood]]). It is drawn in the [[Test Ground]]'s fight.
+numbers, orderings and colours unchanged ([[Struck Figures Flash, and DFO's Blood Comes Over]], [[Pick - Blood]]). It is
+drawn in every fight: the [[Test Ground]]'s, and the [[Game]]'s on foot, where it lies on the node's land and its city's
+boxes, kept from the node's first spawn so its marks keep their centimetres far out in the world.
 
 ## How it works
 

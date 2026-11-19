@@ -7,6 +7,7 @@ code:
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
   - crates/movement/src/near.rs#Blocks
+  - crates/movement/src/blocks.rs#pushed_out
   - crates/movement/src/terrain.rs#Terrain
   - crates/movement/src/heights.rs#Heights
   - crates/movement/src/floats.rs#fingerprint
@@ -35,11 +36,16 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
 - **Blocks.** A course is a list of blocks, each a footprint, a top and an underside (`bottom`): a block from the
   ground up has its underside at or below the ground where it stands; a floor, a bridge or a roof has it over the
-  ground. Each crosses as six numbers: west, north, east, south, top, bottom. The body, a circle of 0.35 m radius,
-  stands on the highest top within a step (0.5 m) of its feet and slides along a block's sides. A block is in the way
-  only where it overlaps the body's column: its top over a step above the feet and its underside below the head. A
-  body walks under a block whose underside is over its head, stands on an upper floor's top, and falls off its edge
-  as off any block.
+  ground. Each crosses as six numbers: west, north, east, south, top, bottom. The body, a square reaching 0.35 m each
+  way from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet and slides along
+  a block's sides. A block is in the way only where it overlaps the body's column: its top over a step above the feet
+  and its underside below the head. A move is judged where the feet end it: stepping down beside a taller block, the
+  body is held where the drop would leave it overlapping that block, and slides on. A body walks under a block whose
+  underside is over its head, stands on an upper floor's top, and falls off its edge as off any block.
+- **Never inside a block.** Falling past the top of a block beside it, too slowly to clear it, the body is pushed out
+  of it the shortest way, never past its far side. A body set down overlapping a block, as a blow's charge may leave
+  it, is pushed out the same way before it moves. So no edge or corner holds a body fast. A block overhead, clear of
+  the body's column, never pushes it.
 - **The blocks near a body.** A course is kept with a grid over it (`Blocks`, `near.rs`), built once when the
   blocks are set: in the movement door, in a room, and in the room door's course. Each cell lists, in the course's
   order, every block whose footprint grown by the body's radius reaches into it, so a rule asks only the blocks of the
@@ -89,7 +95,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
 | Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs |
 | Mantle | Rises first, then goes over onto the lip |
-| Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing beyond it |
+| Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 
 ## Tuning
 
@@ -131,5 +137,6 @@ every run over the list and over the grid and holds them equal at every tick.
   contour.
 - Stepping up onto a block, the head is not checked against a ceiling: a step can take it up to 0.5 m into an
   underside just over it.
+- Pushed out of a block it fell beside, a body moves up to 0.35 m sideways in one tick.
 - Whether the body is mounted is the client's to say; the rules take it as a control.
 - A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time.

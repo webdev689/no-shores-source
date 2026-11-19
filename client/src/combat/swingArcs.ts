@@ -1,7 +1,7 @@
-// A swing's arc: the streak of light a blade leaves through the air. It is laid from the fight's own blow (its stroke,
-// when it lands, how far it reaches and how wide it sweeps), so the eye follows where the blow goes rather than the
-// frames between. Each part of the streak fades by how long ago the blade passed it and burns by how fast it went.
-import { type StrokeDirection, directionOf } from '../rules/fighters.ts';
+// A swing's arc: the streak of light a blade leaves through the air. It is laid from the fight's own blow (when it
+// lands, how far it reaches and how wide it sweeps), the way its striker's figure is drawn swinging it, so the light
+// goes where the blade goes. Each part of the streak fades by how long ago the blade passed it and burns by how fast.
+import type { StrokeDirection } from '../rules/fighters.ts';
 
 export type Vector = readonly [number, number, number];
 export type Colour = readonly [number, number, number];
@@ -21,12 +21,14 @@ export interface Swing {
   readonly halfArc: number;
   /** Where it is aimed, radians clockwise from north. */
   readonly aim: number;
+  /** The way its blade goes, and the hand that swings it, as its striker's figure is drawn; and whether that figure is
+   *  drawn mirrored, which turns both about: a mirrored figure swings left-handed, the other way. */
+  readonly way: StrokeDirection;
   readonly leftHand: boolean;
+  readonly mirrored: boolean;
   /** A riposte or a counter: drawn in gold, and brighter. */
   readonly special: boolean;
   readonly tint: Colour;
-  /** Seen through the striker's own eyes: laid ahead of the eye, so it crosses the view. */
-  readonly firstPerson?: boolean;
 }
 
 /** How the arcs look, as the Test Ground's panel sets them: how bright, and how long a streak trails; 1 each as made. */
@@ -46,9 +48,6 @@ const DEGREE = Math.PI / 180;
 /** The pivot: the striking shoulder, this high over the feet and this far to the striking hand's side (metres). */
 const SHOULDER_M = 1.3;
 const SHOULDER_SIDE_M = 0.18;
-/** Seen through the striker's eyes, the pivot stands this far ahead and this much lower and the blade is this much
- *  shorter, so the streak crosses the view instead of passing the eye edge on. */
-const FIRST_PERSON = { ahead: 0.35, lower: 0.12, scale: 0.8 } as const;
 /** The blade within a stroke's reach: its tip this share of the reach less the body it strikes (held between these),
  *  in keeping with the figure that swings it; its band drawn this much past the tip for the tip's dark rim, and its
  *  hilt this share of the tip in. */
@@ -107,8 +106,15 @@ const PATHS: Readonly<Record<Exclude<StrokeDirection, 'up'>, Path>> = {
   left: { land: [1, 0, -0.12], travel: [0, -1, -0.2], before: 25 * DEGREE, after: 20 * DEGREE, widened: true },
   right: { land: [1, 0, -0.12], travel: [0, 1, -0.2], before: 25 * DEGREE, after: 20 * DEGREE, widened: true },
 };
-/** Seen through the eyes, an overhead slants this much more across, so it reads as a cut across the view. */
-const FIRST_PERSON_SLANT = 0.6;
+/** Each way as a mirror shows it. */
+const MIRRORED: Readonly<Record<StrokeDirection, StrokeDirection>> = {
+  down: 'down',
+  downLeft: 'downRight',
+  left: 'right',
+  right: 'left',
+  downRight: 'downLeft',
+  up: 'up',
+};
 /** A thrust drives along this, in the striker's frame. */
 const THRUST_ALONG: Vector = [1, 0, -0.1];
 
@@ -173,15 +179,14 @@ export interface Course {
 
 /** A blow's course, from the swing as seen. */
 export function courseOf(swing: Swing): Course {
-  const direction = directionOf(swing.stroke);
+  const direction = swing.mirrored ? MIRRORED[swing.way] : swing.way;
   const forward: Vector = [Math.sin(swing.aim), -Math.cos(swing.aim), 0];
   const right: Vector = [Math.cos(swing.aim), Math.sin(swing.aim), 0];
   const up: Vector = [0, 0, 1];
   const world = (local: Vector): Vector => add(add(scaled(forward, local[0]), right, local[1]), up, local[2]);
-  const hand = swing.leftHand ? -1 : 1;
-  const own = swing.firstPerson ? FIRST_PERSON : { ahead: 0, lower: 0, scale: 1 };
-  const offset = world([AHEAD_M + own.ahead, SHOULDER_SIDE_M * hand, SHOULDER_M - own.lower]);
-  const tip = Math.min(TIP_M[1], Math.max(TIP_M[0], (swing.reach - BODY_RADIUS_M) * TIP_SHARE)) * own.scale;
+  const hand = swing.leftHand !== swing.mirrored ? -1 : 1;
+  const offset = world([AHEAD_M, SHOULDER_SIDE_M * hand, SHOULDER_M]);
+  const tip = Math.min(TIP_M[1], Math.max(TIP_M[0], (swing.reach - BODY_RADIUS_M) * TIP_SHARE));
   const strike = Math.max(swing.strike, 1e-3);
   const timing = { from: strike * SWING_FROM, strike, to: strike + Math.max(swing.end - strike, 0) * SWEEP_ON };
   if (direction === 'up') {
@@ -190,9 +195,8 @@ export function courseOf(swing: Swing): Course {
   }
   const path = PATHS[direction];
   const land = unit(world(path.land));
-  // An overhead drifts toward the striking hand's far side; through the eyes it slants across the view.
-  const drift =
-    direction === 'down' ? (swing.firstPerson ? -FIRST_PERSON_SLANT : path.travel[1]) * hand : path.travel[1];
+  // An overhead drifts toward the striking hand's far side.
+  const drift = direction === 'down' ? path.travel[1] * hand : path.travel[1];
   const raw = world([path.travel[0], drift, path.travel[2]]);
   const travel = unit(add(raw, land, -dot(raw, land)));
   const widen = path.widened ? swing.halfArc : 0;
@@ -287,7 +291,9 @@ export class SwingArcs {
       if (same) {
         if (swing.elapsed > same.told) [same.told, same.toldAt] = [swing.elapsed, now];
         same.time = Math.max(same.time, Math.min(same.told + (now - same.toldAt), same.told + RUNS_ON_S));
-        [same.swing, same.course, same.clock] = [swing, courseOf(swing), now];
+        // It keeps the mirror it began with: an eye moving round its striker never turns it about mid-sweep.
+        const kept = { ...swing, mirrored: same.swing.mirrored };
+        [same.swing, same.course, same.clock] = [kept, courseOf(kept), now];
         struck.add(same);
         continue;
       }

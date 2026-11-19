@@ -2,10 +2,16 @@
 //! of the room it was seeing, and a foe to stand before it), the checks an input must pass, and what the room keeps of
 //! each to judge blows on it as it saw them.
 
+use crate::Room;
+use crate::asks::Asked;
 use combat::Fighter;
 use combat::fighter::FighterId;
+use gear::Character;
 use reach::Standing;
 use std::collections::VecDeque;
+
+/// How often, in ticks, a player's changed gear is sent: five times a second.
+pub const GEAR_EVERY_TICKS: u64 = 12;
 
 /// A player's number in a room, never reused while the room lives: one count with the foes'.
 pub type PlayerId = FighterId;
@@ -58,9 +64,9 @@ pub struct Shown {
 
 /// One input from a player: its number; one tick's intent (movement and the fight's buttons); what their figure
 /// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
-/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; and a foe's kind to stand
-/// before them, if they asked for one (the Test Ground's panel); and whether they ask to respawn, dead past a node's
-/// section.
+/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand before them,
+/// or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it fights by
+/// combat's own numbers); whether they ask to respawn, dead past a node's section; and an ask of their gear.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -69,8 +75,30 @@ pub struct Input {
     pub dress: Option<String>,
     pub arms: u32,
     pub seen: u64,
-    pub spawn: Option<u8>,
+    pub spawn: Option<SpawnAsk>,
     pub respawn: bool,
+    pub ask: Option<Asked>,
+    pub spawn_level: u8,
+}
+
+/// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
+/// does not come in, or none, takes the type's first), with a shield of an element (the gear crate's number, 0 for
+/// none), or every foe sent away.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SpawnAsk {
+    Foe { foe_type: u8, rank: u8, shield: u8 },
+    Clear,
+}
+
+impl SpawnAsk {
+    /// A foe asked for by its role alone (1 skirmisher to 5 captain, no type), as a page from before the roster asks:
+    /// the pirates' type in that role, a Major, or at its first rank if it comes in none (their Captain an Elite).
+    #[must_use]
+    pub fn by_role(role: u8, shield: u8) -> Option<Self> {
+        let foe_type = ::foes::in_role(::foes::factions::PIRATES, ::foes::Role::from_number(role)?)?;
+        let rank = foe_type.rank_or_first(Some(::foes::Rank::Major)) as u8;
+        Some(Self::Foe { foe_type: foe_type.number, rank, shield })
+    }
 }
 
 impl Input {
@@ -112,6 +140,30 @@ pub struct Player {
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
     pub dress_next: Option<String>,
     pub dressed_at: Option<u64>,
+    /// Their gear, and whether it changed since it was last sent to them.
+    pub character: Character,
+    pub gear_changed: bool,
+    /// Where they stood as their gear was last sent: at the Reader, and in a social space. Both ride the gear
+    /// message and change as they walk, so a change sends it again.
+    pub placed_sent: (bool, bool),
+    /// The tick their gear was last sent, and their last ask taken: a room sends one player's gear, and takes their
+    /// asks, only so often.
+    pub gear_sent: Option<u64>,
+    pub asked_at: Option<u64>,
+    /// Asks waiting their turn, oldest first; and whether their gear changes how they fight, so goes at once.
+    pub asks: VecDeque<crate::asks::Asked>,
+    pub gear_urgent: bool,
+    /// The answer to their last ask (0 done, else why not), the item a Vestige last opened to, and how many asks
+    /// have been answered.
+    pub answer: u8,
+    pub identified: u32,
+    pub answered: u32,
+    /// The room's resource nodes they have gathered from this turn, spent for them.
+    pub spent: Vec<u8>,
+    /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
+    pub owner: Option<String>,
+    /// What their worn gear trims of the fight's numbers, set whenever it may change.
+    pub trim: combat::Trim,
 }
 
 impl Player {
@@ -133,6 +185,19 @@ impl Player {
             graced: 0,
             dress_next: None,
             dressed_at: None,
+            character: Character::starting(),
+            gear_changed: true,
+            placed_sent: (false, false),
+            gear_sent: None,
+            asked_at: None,
+            asks: VecDeque::new(),
+            gear_urgent: false,
+            answer: 0,
+            identified: 0,
+            answered: 0,
+            spent: Vec::new(),
+            owner: None,
+            trim: combat::Trim::PLAIN,
         }
     }
 
@@ -150,5 +215,95 @@ impl Player {
     #[must_use]
     pub fn as_it_saw(&self, tick: u64) -> Option<&Fighter> {
         self.history.iter().find(|(seen, _)| *seen >= tick).map(|(_, fighter)| fighter)
+    }
+}
+
+impl Room {
+    /// Every player's dress, for one who joins; players who have sent none are left out.
+    pub fn dresses(&self) -> impl Iterator<Item = (PlayerId, &str)> + '_ {
+        self.players
+            .iter()
+            .filter(|(_, found)| !found.dress.is_empty())
+            .map(|(&player, found)| (player, found.dress.as_str()))
+    }
+
+    /// The dresses that changed since this was last asked, to send to everyone once.
+    pub fn take_dress_changes(&mut self) -> Vec<(PlayerId, String)> {
+        let changed = self.players.iter_mut().filter(|(_, found)| found.dress_changed);
+        changed
+            .map(|(&player, found)| {
+                found.dress_changed = false;
+                (player, found.dress.clone())
+            })
+            .collect()
+    }
+
+    /// Whether a player's gear changed since it was last sent and is due to be sent to them alone: at most every
+    /// `GEAR_EVERY_TICKS`, so a page that asks without end cannot flood its socket or slow the room; at once when it
+    /// changes how they fight.
+    pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
+        let clock = self.clock;
+        let placed = (self.at_reader(player), self.in_social_space(player));
+        let Some(found) = self.players.get_mut(&player) else { return false };
+        found.gear_changed |= placed != found.placed_sent;
+        let waiting = found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);
+        if !found.gear_changed || waiting && !found.gear_urgent {
+            return false;
+        }
+        found.placed_sent = placed;
+        found.gear_changed = false;
+        found.gear_urgent = false;
+        found.gear_sent = Some(clock);
+        true
+    }
+
+    /// A player's character as it is kept between sessions.
+    #[must_use]
+    pub fn kept_character(&self, player: PlayerId) -> Option<String> {
+        self.players.get(&player).map(|found| found.character.to_json())
+    }
+
+    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear; false if
+    /// they are not in the room or the text is not a character.
+    pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
+        let Some(character) = gear::Character::from_json(text) else { return false };
+        let Some(found) = self.players.get_mut(&player) else { return false };
+        found.character = character;
+        found.gear_changed = true;
+        self.retrim(player);
+        true
+    }
+
+    /// Sets the day, counted from the epoch, whose wares the room's vendors show; when it turns, every player is sent
+    /// the new day's wares, so none buys what they were not shown.
+    pub fn set_day(&mut self, day: u64) {
+        if self.day == day {
+            return;
+        }
+        self.day = day;
+        for found in self.players.values_mut() {
+            found.gear_changed = true;
+        }
+    }
+
+    /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
+    /// spent for them again, however often they rejoin.
+    pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
+        let gathered = self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
+        let Some(found) = self.players.get_mut(&player) else { return false };
+        found.owner = Some(owner.to_owned());
+        for node in gathered {
+            if !found.spent.contains(&node) {
+                found.spent.push(node);
+            }
+        }
+        found.gear_changed = true;
+        true
+    }
+
+    /// A player as the room keeps them.
+    #[must_use]
+    pub fn player(&self, player: PlayerId) -> Option<&Player> {
+        self.players.get(&player)
     }
 }

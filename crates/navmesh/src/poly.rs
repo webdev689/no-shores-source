@@ -4,7 +4,8 @@
 
 use crate::contours::Contour;
 use crate::geometry::{Point, left_on, merge_holes, triangulate};
-use std::collections::BTreeMap;
+use core::cmp::Ordering;
+use std::collections::{BTreeMap, BinaryHeap};
 
 /// The most corners a poly may have.
 const MAX_CORNERS: usize = 6;
@@ -218,6 +219,82 @@ fn merge(first: &[usize], second: &[usize]) -> Vec<usize> {
     out
 }
 
+/// A merge on offer: how good it is, and its two rings by the order they were made, the older first.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Offer {
+    value: f64,
+    older: usize,
+    newer: usize,
+}
+
+impl Eq for Offer {}
+
+impl Ord for Offer {
+    /// The better offer is the greater value, then the older pair: the one a scan of every pair of rings, in the order
+    /// they were made, comes to first.
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.value.total_cmp(&other.value).then(other.older.cmp(&self.older)).then(other.newer.cmp(&self.newer))
+    }
+}
+
+impl PartialOrd for Offer {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// Merges a region's rings, the best merge first, until none is left: the merged ring is made last, after every
+/// other. Only rings that share a corner can share an edge, so only those are offered, and an offer is good as long
+/// as both its rings are.
+fn merge_greedily(welder: &Welder, made: Vec<Vec<usize>>, max_area2: f64) -> Vec<Vec<usize>> {
+    let mut rings: Vec<Option<Vec<usize>>> = made.into_iter().map(Some).collect();
+    let mut by_corner: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+    let mut offers = BinaryHeap::new();
+    for newer in 0..rings.len() {
+        offer(welder, &rings, &mut by_corner, &mut offers, newer, max_area2);
+    }
+    while let Some(Offer { older, newer, .. }) = offers.pop() {
+        let (Some(first), Some(second)) = (&rings[older], &rings[newer]) else { continue };
+        let merged = merge(first, second);
+        for gone in [older, newer] {
+            for corner in rings[gone].take().into_iter().flatten() {
+                if let Some(owners) = by_corner.get_mut(&corner) {
+                    owners.retain(|&owner| owner != gone);
+                }
+            }
+        }
+        rings.push(Some(merged));
+        offer(welder, &rings, &mut by_corner, &mut offers, rings.len() - 1, max_area2);
+    }
+    rings.into_iter().flatten().collect()
+}
+
+/// Files a ring under its corners, and offers its merge with every older ring it shares a corner with.
+fn offer(
+    welder: &Welder,
+    rings: &[Option<Vec<usize>>],
+    by_corner: &mut BTreeMap<usize, Vec<usize>>,
+    offers: &mut BinaryHeap<Offer>,
+    newer: usize,
+    max_area2: f64,
+) {
+    let Some(ring) = &rings[newer] else { return };
+    let mut olders = Vec::new();
+    for &corner in ring {
+        let owners = by_corner.entry(corner).or_default();
+        olders.extend(owners.iter().copied().filter(|&owner| owner != newer));
+        owners.push(newer);
+    }
+    olders.sort_unstable();
+    olders.dedup();
+    for older in olders {
+        let Some(first) = &rings[older] else { continue };
+        if let Some(value) = merge_value(welder, first, ring, max_area2) {
+            offers.push(Offer { value, older, newer });
+        }
+    }
+}
+
 /// Builds the convex polys of every region and links them across their shared edges.
 pub(crate) fn build(contours: &[Contour], cell: f64, voxel: f64) -> (Vec<Corner>, Vec<Poly>) {
     let max_area2 = 2.0 * (MAX_AREA / (cell * cell));
@@ -242,23 +319,7 @@ pub(crate) fn build(contours: &[Contour], cell: f64, voxel: f64) -> (Vec<Corner>
         for triangle in triangulate(&outline) {
             rings.extend(slice_triangle(&mut welder, triangle, pitch));
         }
-        loop {
-            let mut best: Option<(f64, usize, usize)> = None;
-            for i in 0..rings.len() {
-                for j in i + 1..rings.len() {
-                    let Some(value) = merge_value(&welder, &rings[i], &rings[j], max_area2) else { continue };
-                    if best.is_none_or(|(kept, _, _)| value > kept) {
-                        best = Some((value, i, j));
-                    }
-                }
-            }
-            let Some((_, i, j)) = best else { break };
-            let merged = merge(&rings[i], &rings[j]);
-            rings.remove(j);
-            rings.remove(i);
-            rings.push(merged);
-        }
-        for ring in rings {
+        for ring in merge_greedily(&welder, rings, max_area2) {
             let neighbours = vec![None; ring.len()];
             polys.push(Poly { corners: ring, neighbours, region: contour.region });
         }

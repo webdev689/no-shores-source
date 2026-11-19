@@ -70,7 +70,21 @@ export interface FighterView {
 const COMBAT_AT = BODY_FLOATS;
 const ACTION_NUMBERS = 10;
 export const GLANCE_FLOATS = 17 + ACTION_NUMBERS;
-export const FIGHTER_FLOATS = BODY_FLOATS + 24 + ACTION_NUMBERS;
+/** A whole fighter: its body, the fight's numbers, its action's, then its gear's trim (combat's TRIM_FLOATS). */
+export const TRIM_FLOATS = 29;
+export const FIGHTER_FLOATS = BODY_FLOATS + 24 + ACTION_NUMBERS + TRIM_FLOATS;
+/** A fighter as a snapshot carries it: all but its trim, which only its own player has, in their gear. */
+export const UNTRIMMED_FLOATS = FIGHTER_FLOATS - TRIM_FLOATS;
+/** The trim of a fighter whose gear trims nothing (combat's `Trim::PLAIN`): every factor 1, nothing given back. */
+export const PLAIN_TRIM: readonly number[] = [...Array<number>(25).fill(1), 0, 0, 0, 0];
+
+/** A whole fighter from a snapshot's, its trim put back. */
+export function trimmed(untrimmed: ArrayLike<number>, trim: readonly number[] | null | undefined): Float64Array {
+  const whole = new Float64Array(FIGHTER_FLOATS);
+  whole.set(Array.from(untrimmed).slice(0, UNTRIMMED_FLOATS));
+  whole.set(trim?.length === TRIM_FLOATS ? trim : PLAIN_TRIM, UNTRIMMED_FLOATS);
+  return whole;
+}
 
 function actionOf(kind: number, numbers: ArrayLike<number>): Action {
   const valueAt = (index: number) => numbers[index] ?? 0;
@@ -158,7 +172,7 @@ export function glanceView(glance: ArrayLike<number>): FighterView {
     mode: MODES[valueAt(4)] ?? 'ground',
     crouched: valueAt(5) !== 0,
     aim: valueAt(6),
-    side: valueAt(7) === 1 ? 'foes' : 'players',
+    side: valueAt(7) === 0 ? 'players' : 'foes',
     arms: valueAt(8),
     health: valueAt(10),
     healthMax: valueAt(11),

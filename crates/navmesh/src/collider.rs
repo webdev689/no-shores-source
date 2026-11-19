@@ -1,7 +1,7 @@
-//! What a navmesh is baked from: blocks standing on the ground, and ramps. Their tops are also the heights a path
-//! rides.
+//! What a navmesh is baked from: blocks standing on the ground, and ramps. Their tops, and the ground between them,
+//! are also the heights a path rides.
 
-use movement::Block;
+use movement::{Block, Terrain};
 
 /// The way a ramp rises: from its footprint's west edge to its east edge, or from its north edge to its south.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -11,7 +11,7 @@ pub enum Rise {
 }
 
 /// A ramp: a footprint (x east, y south, metres) whose top rises in a plane from `low` at the footprint's minimum
-/// the way it `rises` to `high` at its maximum. It is solid from its lower end's height up to the plane.
+/// the way it `rises` to `high` at its maximum. It stands solid from the ground beneath it up to the plane.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Ramp {
     pub min_x: f64,
@@ -53,16 +53,6 @@ impl Collider {
         }
     }
 
-    /// Where it is solid from: a block from the ground (or the grid's floor, for a top below it), a ramp from its
-    /// lower end.
-    pub(crate) fn base(&self, floor: f64) -> f64 {
-        match self {
-            Self::Block(block) if block.top < 0.0 => floor,
-            Self::Block(_) => 0.0,
-            Self::Ramp(ramp) => ramp.low.min(ramp.high),
-        }
-    }
-
     /// Whether its top is shallow enough to walk: a block's always is, a ramp's within `max_slope` rise over run.
     pub(crate) fn walkable_top(&self, max_slope: f64) -> bool {
         match self {
@@ -99,29 +89,33 @@ impl Collider {
     }
 }
 
-/// The surface a body stands on at (x, y): of the tops over it, the one nearest `near` (a poly's own level, so a
-/// floor under an overhang is not taken for the one above it); the tallest when `near` is none; the ground (0) when
-/// no top is over it.
-pub(crate) fn surface_near(colliders: &[Collider], x: f64, y: f64, near: Option<f64>) -> f64 {
-    let Some(near) = near else { return surface_top(colliders, x, y) };
+/// The surface a body stands on at (x, y): of the tops over it and not under the ground, the one nearest `near` (a
+/// poly's own level, so a floor under an overhang is not taken for the one above it); the tallest when `near` is
+/// none; the ground when no top is over it.
+pub(crate) fn surface_near(colliders: &[Collider], ground: &dyn Terrain, x: f64, y: f64, near: Option<f64>) -> f64 {
+    let floor = ground.height_at(x, y);
+    let Some(near) = near else { return surface_top(colliders, floor, x, y) };
     let mut found = None;
     let mut best = f64::INFINITY;
     for collider in colliders.iter().filter(|collider| collider.covers(x, y)) {
         let top = collider.surface(x, y);
+        if top < floor {
+            continue;
+        }
         let off = (top - near).abs();
         if off < best {
             best = off;
             found = Some(top);
         }
     }
-    found.unwrap_or(0.0)
+    found.unwrap_or(floor)
 }
 
-/// The tallest top over (x, y), never below the ground at 0.
-fn surface_top(colliders: &[Collider], x: f64, y: f64) -> f64 {
+/// The tallest top over (x, y), never below the ground there, at `floor`.
+fn surface_top(colliders: &[Collider], floor: f64, x: f64, y: f64) -> f64 {
     let tallest = colliders
         .iter()
         .filter(|collider| collider.covers(x, y))
         .fold(f64::NEG_INFINITY, |tallest, collider| tallest.max(collider.surface(x, y)));
-    if tallest == f64::NEG_INFINITY { 0.0 } else { tallest.max(0.0) }
+    if tallest == f64::NEG_INFINITY { floor } else { tallest.max(floor) }
 }

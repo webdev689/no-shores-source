@@ -85,15 +85,16 @@ fn a_body_walks_in_at_every_door_and_up_to_every_upper_floor() {
                 ));
             }
         }
-        // An upper floor: some walk from the ground floor, on a metre's grid and each quarter, stands on it.
+        // An upper floor: some walk from the ground floor, on a metre's grid to half a metre inside the footprint and
+        // each quarter, stands on it.
         let eaves = measure.plan.iter().map(|wing| wing.eaves).fold(0.0, f64::max);
         if eaves < measure.min[1] + STOREY_M + LEAST_ROOM_M {
             continue;
         }
         upper += 1;
         let [west, north, east, south] = building.footprint;
-        let starts = (1..).map(|step| west + f64::from(step)).take_while(|&x| x < east - 1.0).flat_map(|x| {
-            (1..).map(move |step| [x, north + f64::from(step)]).take_while(move |point| point[1] < south - 1.0)
+        let starts = (1..).map(|step| west + f64::from(step)).take_while(|&x| x < east - 0.5).flat_map(|x| {
+            (1..).map(move |step| [x, north + f64::from(step)]).take_while(move |point| point[1] < south - 0.5)
         });
         let reached = starts.into_iter().any(|from| {
             (0..4).any(|quarter| {

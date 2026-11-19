@@ -12,6 +12,7 @@ code:
   - crates/city/src/landmarks.rs#landmark
   - crates/city/src/landmarks_inland.rs#sun_dome
   - crates/city/src/social.rs#plaza
+  - crates/city/src/stations.rs#stations
   - crates/city/src/courtyard.rs#courtyard
   - crates/city/src/articulation.rs#articulated
   - crates/city/src/collision.rs#boxes_within
@@ -86,7 +87,12 @@ city stands on it:
    a pediment) before a great timber door in an arch, and either side of it an arcade with a lamp in each alcove; in
    the middle a stepped plinth with an obelisk 18 m high capped in gold, a brazier either side and two toward the
    ends; lanterns on the seaward parapet and stone benches facing the sea, midway between the spawns; and bands of
-   stone in the paving, a processional way, a border and a ring round the plinth. Its node is
+   stone in the paving, a processional way, a border and a ring round the plinth. Its stations stand in the
+   arcades' alcoves, as the Tower's merchants stand in its booths (`stations`): in each alcove a counter under its
+   hung lamp, the keeper's place behind it facing the plaza, and shelves of their goods against the back wall. By the
+   portico, the Reader of Vestiges on one side and the Harbourmaster on the other; then a vault on each side, the
+   Quartermaster's armour stands, the Armsmith's racks, and the traders' stalls (a chandler, a fishmonger, a
+   cartographer, a tailor, a herbalist and a smith). Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep

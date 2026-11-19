@@ -4,7 +4,7 @@
 
 use crate::arms::Side;
 use crate::ballistics::flight;
-use crate::captain::Mode;
+use crate::captain::{Captain, Mode};
 use crate::damage::{State, Zone};
 use crate::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use crate::guns::Shot;
@@ -155,21 +155,8 @@ fn stop_numbers(stop: Option<&Stop>) -> [f64; STOP_NUMBERS] {
     [1.0, stop.time, x, y, z, water, struck, strike_x, strike_y, strike_z]
 }
 
-/// The fight as the browser shows it, after a tick whose events are `events`, its lay the look `aim` holds over
-/// `waters` at `time`: a fight of the player's Sloop and one captain's (`Fight::meet`), or none for any other.
-#[must_use]
-pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Vec<f64> {
-    let (Some(player), Some(captain)) = (fight.vessel(PLAYER), fight.vessel(CAPTAIN)) else { return Vec::new() };
-    let Sailor::Captain(command) = &captain.sailor else { return Vec::new() };
-    let her = &command.her;
-    let over = match fight.over() {
-        None => 0.0,
-        Some(End::Sunk) => 1.0,
-        Some(End::Gone) => 2.0,
-    };
-    let mut numbers = vec![fight.clock, over];
-    numbers.extend(vessel_numbers(player));
-    numbers.extend(vessel_numbers(captain));
+/// A captain's mind as the browser shows it: her mode, whether she is hostile to the player, and her sides run out.
+fn captain_numbers(her: &Captain) -> [f64; 4] {
     let mode = match her.mode {
         Mode::Cruise => 0.0,
         Mode::Engage => 1.0,
@@ -178,7 +165,37 @@ pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: 
         Mode::Sinking => 4.0,
     };
     let run_out = |side: Side| f64::from(u8::from(her.run.out(side).is_some()));
-    numbers.extend([mode, f64::from(u8::from(her.hostile_to(PLAYER))), run_out(Side::Port), run_out(Side::Starboard)]);
+    [mode, f64::from(u8::from(her.hostile_to(PLAYER))), run_out(Side::Port), run_out(Side::Starboard)]
+}
+
+/// The fight as the browser shows it, after a tick whose events are `events`, its lay the look `aim` holds over
+/// `waters` at `time`: a fight of the player's Sloop and `CAPTAIN`'s (`Fight::meet`), then any other captains still
+/// in it, each with her faction and rank; none for a fight without both.
+#[must_use]
+pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Vec<f64> {
+    let (Some(player), Some(captain)) = (fight.vessel(PLAYER), fight.vessel(CAPTAIN)) else { return Vec::new() };
+    let Sailor::Captain(command) = &captain.sailor else { return Vec::new() };
+    let over = match fight.over() {
+        None => 0.0,
+        Some(End::Sunk) => 1.0,
+        Some(End::Gone) => 2.0,
+    };
+    let mut numbers = vec![fight.clock, over];
+    numbers.extend(vessel_numbers(player));
+    numbers.extend(vessel_numbers(captain));
+    numbers.extend(captain_numbers(&command.her));
+    let others: Vec<(&Vessel, &Captain)> = fight
+        .ships
+        .iter()
+        .filter(|(id, vessel)| **id != CAPTAIN && vessel.in_fight())
+        .filter_map(|(_, vessel)| vessel.command().map(|command| (vessel, &command.her)))
+        .collect();
+    numbers.push(others.len() as f64);
+    for (vessel, her) in others {
+        numbers.extend([f64::from(her.commission.faction), f64::from(her.commission.rank.number())]);
+        numbers.extend(vessel_numbers(vessel));
+        numbers.extend(captain_numbers(her));
+    }
     let balls: Vec<&_> = fight.balls.iter().filter(|ball| ball.fired).collect();
     numbers.push(balls.len() as f64);
     for ball in balls {
@@ -202,6 +219,24 @@ pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: 
     numbers.push(shown.len() as f64);
     numbers.extend(shown.into_iter().flatten());
     numbers
+}
+
+/// Where a view's other captains begin (after its clock, its end, the player's Sloop, the captain's and her mind), and
+/// each one's numbers (her faction and rank, her Sloop and her mind).
+const OTHERS_AT: usize = 2 + 2 * VESSEL_NUMBERS + 4;
+const OTHER_NUMBERS: usize = 2 + VESSEL_NUMBERS + 4;
+
+/// A view (`view_numbers`) parted for the messages: the view without its other captains, as a page that knows one
+/// captain reads it, and the other captains (their count, then each one's numbers), empty when there are none, for a
+/// page that knows them to put back where they were.
+#[must_use]
+pub fn parted(view: &[f64]) -> (Vec<f64>, Vec<f64>) {
+    let Some(&count) = view.get(OTHERS_AT) else { return (view.to_vec(), Vec::new()) };
+    let end = (count as usize).saturating_mul(OTHER_NUMBERS).saturating_add(OTHERS_AT + 1).min(view.len());
+    let (head, rest) = view.split_at(OTHERS_AT);
+    let (others, tail) = rest.split_at(end - OTHERS_AT);
+    let others = if count > 0.0 { others.to_vec() } else { Vec::new() };
+    ([head, tail].concat(), others)
 }
 
 #[cfg(test)]

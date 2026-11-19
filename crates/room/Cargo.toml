@@ -7,6 +7,7 @@ publish.workspace = true
 description = "A shared space on the server: its players, each player's inputs taken in order, their bodies stepped tick by tick on its ground and judged against its section; the sea's ships sailing their courses among its pirates; and a fleet's ships sailed by their helms and fighting at true scale."
 
 [dependencies]
+gear = { path = "../gear" }
 combat = { path = "../combat" }
 foes = { path = "../foes" }
 land = { path = "../land" }

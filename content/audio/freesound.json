@@ -1,0 +1,135 @@
+{
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there.",
+  "cues": [
+    {
+      "id": "ui.hover",
+      "use": "The pointer or the keys reach a control",
+      "query": "ui hover",
+      "seconds": [
+        0.02,
+        0.4
+      ],
+      "picked": 871921
+    },
+    {
+      "id": "ui.press",
+      "use": "A button is pressed",
+      "query": "ui click button",
+      "seconds": [
+        0.03,
+        0.5
+      ],
+      "picked": 213148
+    },
+    {
+      "id": "ui.back",
+      "use": "A step back",
+      "query": "ui cancel",
+      "seconds": [
+        0.05,
+        0.8
+      ],
+      "picked": 872703
+    },
+    {
+      "id": "ui.tab",
+      "use": "A tab of the menu turned",
+      "query": "ui whoosh",
+      "seconds": [
+        0.1,
+        0.6
+      ],
+      "keep": true
+    },
+    {
+      "id": "ui.open",
+      "use": "The menu opens",
+      "query": "ui open",
+      "seconds": [
+        0.1,
+        1.5
+      ],
+      "picked": 467555
+    },
+    {
+      "id": "ui.close",
+      "use": "The menu shuts",
+      "query": "ui close",
+      "seconds": [
+        0.1,
+        1.5
+      ],
+      "keep": true
+    },
+    {
+      "id": "ui.refused",
+      "use": "The room refuses a press",
+      "query": "ui error",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "keep": true
+    },
+    {
+      "id": "hold.charge",
+      "use": "A hold charging, 0.6 to 1.8 seconds",
+      "query": "charging",
+      "seconds": [
+        0.6,
+        3.0
+      ],
+      "made": "synthesiser"
+    },
+    {
+      "id": "hold.dismantle",
+      "use": "A piece dismantled",
+      "query": "shatter",
+      "seconds": [
+        0.2,
+        2.0
+      ],
+      "picked": 686849
+    },
+    {
+      "id": "hold.feed",
+      "use": "A Fruit of Dagon fed to an item",
+      "query": "magic absorb",
+      "seconds": [
+        0.3,
+        2.5
+      ],
+      "picked": 875968
+    },
+    {
+      "id": "gain.common",
+      "use": "A Normal or Magic gain",
+      "query": "collect item",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "made": "synthesiser"
+    },
+    {
+      "id": "gain.rare",
+      "use": "A Rare gain",
+      "query": "achievement chime",
+      "seconds": [
+        0.3,
+        2.5
+      ],
+      "made": "synthesiser"
+    },
+    {
+      "id": "gain.legendary",
+      "use": "A Legendary or Atheric gain",
+      "query": "magic sparkle",
+      "seconds": [
+        0.5,
+        3.0
+      ],
+      "made": "synthesiser"
+    }
+  ]
+}

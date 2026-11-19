@@ -22,7 +22,7 @@ Each layer reads the one above it and owns its own data ([[Generated Files Stay 
 | The layout | The ocean frame, each continent's position and outline, each static isle's place and seed | Us, in the World Editor | In git, as a small authored file |
 | The land | Terrain, rivers, soil and biomes for each continent and isle, and the seabed around them | The land crate: relief, erosion, rivers and lakes from the layout, the climate and the owner's edits, the same on any machine ([[Land]]) | The owner's edits in git, in `content/world/land/`; baking to R2 by region is planned |
 | The settlements | Towns, ports, roads and buildings | Towns, ports, roads and carved rivers: drawn by the owner in the World Editor's Land mode. Buildings, and World 2.0's settlement generator, come later | In each landmass's edits file |
-| The persistent state | Who first discovered each isle; what players own and change | The server | PostgreSQL ([[PostgreSQL]]) |
+| The persistent state | Who first discovered each isle; what players own and change | The server | Cloudflare D1 ([[Accounts Start as Guests, on Cloudflare D1]]) |
 | The passing state | Discoveries, weather, sea state | The shared Rust rules, from seeds and world time | Nowhere: regenerated identically from the seed |
 
 ## The layout file

@@ -4,7 +4,6 @@ import { HeldMap } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
-import { wheelNotches } from '../overworld/overworldInput.ts';
 import type { CardAt } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
@@ -22,6 +21,8 @@ import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
+import { foesAsked } from './foesAsked.ts';
+import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
 import { KIND_WORDS, type Standing } from './hudLaw.ts';
@@ -31,14 +32,14 @@ import { loadLandTexts } from '../terrain/landTexts.ts';
 import { askedArrival, type GateWay, gateWay } from './gates.ts';
 import { openForge } from './openForge.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
-import { roomsFrom } from './rooms.ts';
+import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
+import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
+import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
-import { HINTS } from './hints.ts';
-import { type SloopBuild, sloopBuildOf } from './shipPanel.ts';
+import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
-import { fightControls } from './seaCombat.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 
@@ -73,6 +74,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   if (flow.mode === 'loading') hud.veil(flow.words);
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
+  const { link, session } = accountOf(location, localStorage, sessionStorage);
   // The sea room's own module, for playing alone; fetched now, compiled once.
   const roomModule = fetch(`${base}room.wasm`)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
@@ -133,25 +135,28 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     walker,
     forge,
     rooms,
+    roomModule,
     groundAt: (x, y) => scene.groundAt(x, y),
+    // Under `npm run dev` only, `?spawn=` asks a room in the page for foes to fight.
+    foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
+    session,
   };
+  const footView = new FootView(gpu, hudRoot);
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
+  /** The held map, made when it is first asked for, since its coasts are worked out then. */
+  let heldMap: HeldMap | null = null;
   let foot: Foot | null = null;
   let sea: Sea | null = null;
-  let ready = false;
-  let waited = 0;
+  let [ready, waited] = [false, 0];
   let wasDead = false;
   let wasWalking = false;
   let charting: string | null = null;
   let sinceChart = 0;
   /** Continents that would not open: not tried again this visit. */
   const unchartable = new Set<string>();
-  let last = performance.now();
-  let clock = 0;
+  let [last, clock] = [performance.now(), 0];
 
-  /** Travels through the veil: the flow moves into its loading, `work` readies the place, and the veil lifts once
-   *  its ground is in. A failure stays on the veil, in words. */
   /** A way that failed, tried again with Enter. */
   let retry: (() => void) | null = null;
   /** Runs `work` behind the veil showing `words`; the veil lifts once it is done and the ground has come. A failure
@@ -186,12 +191,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     wasDead = false;
   };
 
-  const goFoot = async (node: NodeInfo, facing: number) => {
+  const goFoot = async (node: NodeInfo, facing: number, seas = heldMap?.difficulty) => {
     leaveHere();
     foot?.leave();
     foot = null;
     sea?.leaveRoom();
-    foot = await Foot.enter(footContext, node, facing);
+    foot = await Foot.enter(footContext, node, facing, seas);
   };
 
   const goSea = async () => {
@@ -220,7 +225,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Online the server's sea room; playing alone, the same room in the page.
     await sea.enterRoom(
       rooms
-        ? (snapshot) => RoomConnection.open(rooms('sea'), snapshot)
+        ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session)
         : async (snapshot) => LocalRoom.openSea(await roomModule, world.layoutText, snapshot),
     );
   };
@@ -240,6 +245,26 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     travel({ kind: 'land', node: id, name: landing.name }, () =>
       goFoot(node, arrivalFacing(node, landmass.plan, from)),
     );
+  };
+
+  /** Joins a company member where they play: a node of this landmass at their seas, the ship left where she lies. */
+  const joinAt = (place: string): string | null => {
+    // Only on foot or on deck with nothing else under way: never under the map, on the way to the helm, walking the
+    // deck, landing, or while another landmass opens.
+    const free = (flow.mode === 'foot' || flow.mode === 'sea') && !flow.menu;
+    if (!free || heldMap?.shown || mapWanted || sea?.aboard.active || charting)
+      return 'You are in their company. Choose Go to them once nothing else is under way.';
+    // As other games keep travel out of a fight, and the fallen respawn before they go anywhere.
+    if (flow.mode === 'sea' && sea?.fight) return 'You are in their company. Go to them once the fight is over.';
+    if (flow.mode === 'foot' && foot?.fallen) return 'You are in their company. Go to them once you respawn.';
+    const where = nodeOfRoom(place);
+    const node = where && landmass.nodes.find((each) => each.id === where.id);
+    if (!where || !node)
+      return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
+    const facing = arrivalFacing(node, landmass.plan, null);
+    discovered.nodes([node.id]);
+    travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
+    return null;
   };
 
   const syncMenu = () => {
@@ -271,8 +296,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     discovered.nodes(sea.landings);
   };
 
-  /** The held map, made when it is first asked for, since its coasts are worked out then. */
-  let heldMap: HeldMap | null = null;
   /** The map is wanted: it is raised once the view stands at the helm. */
   let mapWanted = false;
   const mapOf = (): HeldMap => {
@@ -331,9 +354,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
   };
 
-  const respawn = () => {
-    if (foot?.standing.kind === 'dead' && foot.standing.canRespawn) foot.respawn();
-  };
+  const respawn = () => void (foot?.standing.kind === 'dead' && foot.standing.canRespawn && foot.respawn());
 
   hud.onMark(choose);
   hud.onRespawn(respawn);
@@ -344,6 +365,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onManage(manage);
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
+  // The Ship tab's papers: her voyage only while she is at sea.
+  const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
+  const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
+  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat) return;
@@ -370,7 +395,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'b') manage();
     else if (key === 'h') leaveHelm();
     else if (key === 'e' && sea?.aboard.walking) takeHelm();
-    else if (key === 'e' && flow.mode === 'foot' && !flow.menu) goThrough();
+    else if (key === 'e' && flow.mode === 'foot' && !flow.menu && through) goThrough();
+    else if (key === 'e' && flow.mode === 'foot') foot?.use();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
     else if (key === 'enter' && flow.mode === 'foot') respawn();
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
@@ -379,45 +405,20 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
     if (flow.mode === 'sea' && !flow.menu && sea?.aboard.walking && !input.locked) input.lock();
   });
-  const atSea = () => flow.mode === 'sea' && !flow.menu;
-  /** While the map is up, the pointer and the wheel are the map's. */
-  const mapUp = () => heldMap?.shown ?? false;
-  canvas.addEventListener('pointerdown', (event) => {
-    if (!atSea()) return;
-    // Held to the canvas, so a press let go over a mark or the bar still ends here; a locked pointer is held already.
-    if (!input.locked) canvas.setPointerCapture(event.pointerId);
-    if (mapUp()) heldMap?.pointerDown(event.offsetX, event.offsetY);
-    else sea?.pointerDown(event.offsetX, event.offsetY);
-  });
-  canvas.addEventListener('pointermove', (event) => {
-    if (!atSea()) return;
-    if (mapUp()) heldMap?.pointerMove(event.offsetX, event.offsetY);
-    else sea?.pointerMove(event.offsetX, event.offsetY);
-  });
-  /** A press is let go by whichever took it; neither keeps one after, where the map rose or fell in between. */
-  const forgetPresses = () => {
-    sea?.pointerCancel();
-    heldMap?.pointerCancel();
-  };
-  canvas.addEventListener('pointerup', (event) => {
-    if (atSea() && mapUp()) heldMap?.pointerUp(event.offsetX, event.offsetY);
-    else if (atSea()) sea?.pointerUp(event.offsetX, event.offsetY);
-    forgetPresses();
-  });
-  canvas.addEventListener('pointercancel', forgetPresses);
-  fightControls(canvas, () => sea?.fight ?? null);
-  canvas.addEventListener('wheel', (event) => {
-    if (!atSea()) return;
-    if (mapUp()) heldMap?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
-    else sea?.zoom(wheelNotches(event.deltaY, event.deltaMode, canvas.clientHeight));
+  seaPointer(canvas, input, {
+    atSea: () => flow.mode === 'sea' && !flow.menu,
+    sea: () => sea,
+    map: () => heldMap,
   });
 
-  /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides. */
-  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[]): Drawer[] => {
-    const found: (Drawer | null)[] = [
+  /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides; on foot
+   *  the fight's blood under the figures and its marks over them. */
+  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) => {
+    const found: (Drawer | null | undefined)[] = [
       drawers.city,
       drawers.layouts,
       drawers.nature,
+      fight?.under,
       {
         drawInto: (pass, fromEye, shot, time) => {
           const camera = { fromEye, eye: shot.eye };
@@ -431,8 +432,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         drawInto: (pass, fromEye, shot, _time, shadow) =>
           figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
       },
+      fight?.over,
     ];
-    return found.filter((drawer): drawer is Drawer => drawer !== null);
+    return found.filter((drawer): drawer is Drawer => !!drawer);
   };
 
   /** The way through the gate the player stands in, if any, and going through it to the node it leads to. */
@@ -444,20 +446,24 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onPassage(goThrough);
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    const paused = flow.mode !== 'foot' || flow.menu;
-    const shown = here.frame(controls, seconds, clock, paused);
+    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
+    const aspect = size.width / Math.max(1, size.height);
+    const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
     scene.keepMiddle([body.x, body.y], closeSource);
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
       : undefined;
-    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures), { after: hands });
+    const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
+    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
+    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
-    through = paused ? null : gateWay(landmass, here.node.id, [body.x, body.y]);
+    // As E's other use, a gate takes no one while a menu is up or the player is down.
+    through = paused || here.fallen ? null : gateWay(landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(through?.offer ?? null);
-    hud.hints(shown.standing.kind === 'dead' ? HINTS.dead : HINTS.foot);
+    hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);
     hud.note(here.roomNote);
@@ -475,10 +481,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const paused = flow.mode !== 'sea' || flow.menu;
+    const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     const swell = scene.land?.swell;
+    footView.hide();
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
-    if (!paused && !mapUp())
+    if (!paused && !heldMap?.shown)
       here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
     const shown = here.frame({
       seconds,
@@ -498,7 +505,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.mode === 'sea') discovered.lookout(here.position);
     if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
       mapWanted = false;
-      mapOf().open(viewport, here.position, dress.outfit.armour.gauntlets ?? null, discovered.discovery.charted);
+      const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
+      mapOf().open(viewport, here.position, hands, discovered.discovery.charted);
     }
     // The map's scene is gathered only while the map is up.
     const mapFrame = heldMap?.shown
@@ -581,8 +589,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         syncMenu();
       }
     }
-    // At most one frame waits on the GPU while the next is drawn: a GPU that falls behind slows the frames instead of
-    // queueing work without end, which stalls every tab and the browser itself.
+    // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
     const previous = inFlight;
     inFlight = gpu.device.queue.onSubmittedWorkDone();
     void previous.then(() => requestAnimationFrame(frame));

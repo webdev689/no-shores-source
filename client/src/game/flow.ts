@@ -1,8 +1,7 @@
 /**
- * Where the player is in the game's loop, after Destiny 1's: on foot in a node, back at their ship on the sea, or
- * over an island's side choosing where to land. Travel between them passes through a loading veil, as Destiny's
- * orbit does. On foot and at sea a menu may be open over the play. Pure: the page feeds it what happened and draws
- * what it answers.
+ * Where the player is in the game's loop: on foot in a node, back at their ship on the sea, or over an island's side
+ * choosing where to land. Travel between them passes through a loading veil. On foot and at sea a menu may be open
+ * over the play. Pure: the page feeds it what happened and draws what it answers.
  */
 export type Flow =
   | { readonly mode: 'loading'; readonly words: string; readonly then: Flow }
@@ -19,6 +18,7 @@ export type Happening =
   | { readonly kind: 'choose'; readonly node: string }
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
   | { readonly kind: 'pass'; readonly node: string; readonly name: string; readonly into: boolean }
+  | { readonly kind: 'join'; readonly node: string; readonly name: string }
   | { readonly kind: 'back' };
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
@@ -52,6 +52,14 @@ export function next(flow: Flow, happening: Happening): Flow {
       return {
         mode: 'loading',
         words: `${happening.into ? 'Entering' : 'Returning to'} ${happening.name}`,
+        then: { mode: 'foot', node: happening.node, menu: false },
+      };
+    case 'join':
+      // A company member is joined from wherever the player is, on foot or at sea, as Destiny's join brings them in.
+      if (flow.mode !== 'foot' && flow.mode !== 'sea') return flow;
+      return {
+        mode: 'loading',
+        words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node, menu: false },
       };
     case 'back':

@@ -44,11 +44,13 @@ jobs:
       id-token: write
     uses: ./.github/workflows/pages.yml
 
-  # Deploys the rooms from main, once this same commit has passed the check: the owner's yes to a merge covers it.
+  # Deploys the rooms from main, once this same commit has passed the check, when their code changed: the owner's yes
+  # to a merge covers it. Reading the deployments tells it what was deployed last.
   rooms:
     needs: check
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
+      deployments: read
     uses: ./.github/workflows/rooms.yml
     secrets: inherit

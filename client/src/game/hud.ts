@@ -1,4 +1,7 @@
 import { button, make } from '../editor/dom.ts';
+import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
+import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
+import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
@@ -50,7 +53,7 @@ const GLYPHS: Record<MarkKind, string> = {
   mission: '◆',
   dungeon: '▼',
   boss: '☠',
-  port: '⚓',
+  port: '⚓\uFE0E',
 };
 
 /** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
@@ -60,6 +63,11 @@ interface MarkNode {
   readonly name: HTMLElement;
   readonly note: HTMLElement;
   readonly arrow: HTMLElement;
+}
+
+/** Writes words only when they change: called every frame, the HUD would otherwise rebuild its text each time. */
+function say(node: HTMLElement, text: string): void {
+  if (node.textContent !== text) node.textContent = text;
 }
 
 /** The game's heads-up display: plain elements over the canvas, nothing drawn on the GPU. */
@@ -75,6 +83,12 @@ export class Hud {
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
+  /** The compass at sea, heading its column at the top; on foot the fight's display stands its own there. */
+  private readonly compassColumn = make('div', '', 'compass-column');
+  private readonly seaCompass = new Compass(this.compassColumn);
+  /** Each captain's bar over her ship in a fight, drawn afresh each frame. */
+  private readonly shipLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  private readonly shipPlates = new ShipPlates();
   private readonly marksShown = new Map<string, MarkNode>();
   private readonly menuNode = make('div', '', `menu ${ROLES.window}`);
   private readonly status = make('div', '', `status ${ROLES.chip}`);
@@ -104,6 +118,7 @@ export class Hud {
   constructor(root: HTMLElement) {
     root.classList.add('hud');
     wearKit(root.ownerDocument);
+    wearCompass(root.ownerDocument);
     const place = make('div', '', 'place');
     place.append(this.placeTitle, this.placeKind);
     this.warning.append(make('div', 'Return to the area', 'warning-words'), this.count);
@@ -140,9 +155,12 @@ export class Hud {
     // Each group after the first stands behind an engraved rail.
     for (const group of groups.slice(1)) group.classList.add(ROLES.rail);
     this.sea.append(...groups);
+    Object.assign(this.shipLayer.style, { position: 'absolute', inset: '0', width: '100%', height: '100%' });
     root.append(
       this.shade,
+      this.shipLayer,
       this.markLayer,
+      this.compassColumn,
       place,
       this.warning,
       this.hintList,
@@ -161,20 +179,22 @@ export class Hud {
     this.seaBar(null);
     this.shipPanel(null);
     this.wheelOffer(false);
+    this.compass(null);
     this.note('');
   }
 
   /** Names the place the player is in. */
   place(title: string, kind: string): void {
-    this.placeTitle.textContent = title;
-    this.placeKind.textContent = kind;
+    say(this.placeTitle, title);
+    say(this.placeKind, kind);
   }
 
   /** Shows the player's standing against their section's edge: the warning and its count, or death. */
   reach(standing: Standing): void {
-    this.shade.style.opacity = String(vignette(standing, WARNING_SECONDS));
+    const shade = String(vignette(standing, WARNING_SECONDS));
+    if (this.shade.style.opacity !== shade) this.shade.style.opacity = shade;
     this.warning.hidden = standing.kind !== 'warned';
-    if (standing.kind === 'warned') this.count.textContent = countdownText(standing.secondsLeft);
+    if (standing.kind === 'warned') say(this.count, countdownText(standing.secondsLeft));
     this.death.hidden = standing.kind !== 'dead';
     if (standing.kind === 'dead') {
       this.respawn.disabled = !standing.canRespawn;
@@ -201,10 +221,35 @@ export class Hud {
     this.status.hidden = text === '';
   }
 
+  /** Turns the compass to `view`'s heading (turns from north) and marks its ships round the player at `from`; null
+   *  hides it. */
+  compass(
+    view: {
+      readonly heading: number;
+      readonly from: readonly [number, number];
+      readonly ships: readonly ShipMark[];
+    } | null,
+  ): void {
+    this.compassColumn.hidden = view === null;
+    if (view) this.seaCompass.update(view.heading, view.from, view.ships);
+  }
+
   /** Covers the view with words while a place loads, or lifts the cover. */
   veil(text: string | null): void {
     this.veilNode.classList.toggle('shown', text !== null);
     if (text !== null) this.veilText.textContent = text;
+  }
+
+  /** Each captain's bar over her ship (world metres) as `pose` sees the picture; none out of a fight. */
+  shipBars(bars: readonly ShipBar[], pose: CameraPose): void {
+    this.shipLayer.replaceChildren();
+    if (bars.length === 0) return;
+    const viewport = { width: this.shipLayer.clientWidth, height: this.shipLayer.clientHeight };
+    const spot = (point: readonly [number, number, number]) => {
+      const seen = projectPoint(pose, viewport, [...point]);
+      return seen.front ? seen : null;
+    };
+    this.shipPlates.draw(this.shipLayer, bars, spot, viewport.width, performance.now() / 1000);
   }
 
   /** Places the marks on the screen; choosing one calls what `onMark` set. */
@@ -214,7 +259,7 @@ export class Hud {
       kept.add(mark.id);
       const shown = this.marksShown.get(mark.id) ?? this.markNode(mark.id);
       shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}`;
-      shown.root.style.transform = `translate(${mark.x.toFixed(1)}px, ${mark.y.toFixed(1)}px)`;
+      shown.root.style.transform = `translate(${Math.round(mark.x)}px, ${Math.round(mark.y)}px)`;
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
       shown.glyph.textContent = GLYPHS[mark.kind];

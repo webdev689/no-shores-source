@@ -47,8 +47,12 @@ export interface FightVessel {
   };
 }
 
+/** A captain's Sloop in a fight: her name, her faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
+ *  her mode, whether she is hostile to the player, and her sides run out. */
 export interface FightCaptain extends FightVessel {
   readonly name: string;
+  readonly faction: number;
+  readonly rank: number;
   readonly mode: CaptainMode;
   readonly hostile: boolean;
   readonly run_out: readonly SideName[];
@@ -100,11 +104,12 @@ export interface FightLay {
 }
 
 /** The fight as the rules answer it (crates/land-wasm/src/fight.rs). Ships are numbered 0 the player, 1 the captain;
- *  each ball aloft is its place and radius. */
+ *  at sea, any other captains in the fight follow (from 2); each ball aloft is its place and radius. */
 export interface FightView {
   readonly clock: number;
   readonly player: FightVessel;
   readonly captain: FightCaptain;
+  readonly others?: readonly FightCaptain[];
   readonly balls: readonly (readonly [number, number, number, number])[];
   readonly lay: FightLay | null;
   readonly events: readonly FightEvent[];

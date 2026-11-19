@@ -12,7 +12,7 @@ type: procedure
    in the code or the bible.
 7. **Ask the owner**, then squash-merge once CI is green on the branch's latest commit, and delete the branch. Every
    merge into `main` and every deploy waits for the owner's yes ([[Ask Before Deploying]]); a merge deploys the page
-   and the rooms, so its yes covers them ([[The Rooms Deploy on Each Merge]]).
+   and, when their code changed, the rooms, so its yes covers them ([[The Rooms Deploy When Their Code Changes]]).
 
 ## Done means
 

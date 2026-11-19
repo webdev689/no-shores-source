@@ -6,6 +6,7 @@ use super::*;
 use combat::arms::{OffHand, Ranged, Stroke, WeaponClass};
 use combat::{CombatInput, Intent};
 use movement::Controls;
+use std::collections::BTreeMap;
 
 const FISTS: u32 = 0;
 const WARHAMMER: u32 = 6;
@@ -19,10 +20,12 @@ fn asking(sequence: u32, seen: u64, arms: u32, combat: CombatInput, forward: f64
     Input { sequence, intent: Intent { controls, combat }, arms, seen, ..Input::default() }
 }
 
-fn stand(room: &mut Room, kind: ::foes::Kind, x: f64, y: f64) -> FighterId {
+fn stand(room: &mut Room, number: u8, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
-    let (fighter, brain) = ::foes::spawn(kind, x, y, core::f64::consts::PI);
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
+    let foe_type = ::foes::foe_type(number).expect("a type of the roster");
+    let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, core::f64::consts::PI);
+    room.foes
+        .insert(id, foes::Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
@@ -63,6 +66,7 @@ fn a_player_who_stops_sending_mid_dodge_does_not_stay_in_its_safe_stretch() {
 fn a_weapon_changes_only_at_rest_never_in_the_middle_of_a_swing() {
     let mut room = room();
     let player = room.join().expect("a room with space");
+    crate::power::hold(&mut room, player, gear::Kind::Warhammer);
     let jab = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
     room.input(player, asking(1, room.clock(), FISTS, jab, 0.0)).unwrap();
     room.tick();
@@ -104,7 +108,7 @@ fn the_tick_a_player_says_they_saw_moves_on_a_few_at_a_time_and_a_full_room_turn
 fn a_ball_is_judged_against_the_foe_where_the_shooters_screen_showed_it() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let foe = stand(&mut room, ::foes::Kind::Brute, 3.0, -5.0);
+    let foe = stand(&mut room, 15, 3.0, -5.0);
     let mut shooter = *room.fighter(player).expect("in");
     shooter.arms = combat::Arms { melee: WeaponClass::Fists, ranged: Some(Ranged::Pistolet), off_hand: OffHand::Empty };
     let mut seen_then = *room.fighter(foe).expect("in");
@@ -119,7 +123,7 @@ fn a_ball_is_judged_against_the_foe_where_the_shooters_screen_showed_it() {
 #[test]
 fn a_foes_guard_counts_as_it_stands_now_and_its_body_where_the_striker_saw_it() {
     let mut room = room();
-    let foe = stand(&mut room, ::foes::Kind::Swordsman, 5.0, -5.0);
+    let foe = stand(&mut room, 14, 5.0, -5.0);
     room.foes.get_mut(&foe).expect("stood").fighter.action = Action::Guard { elapsed: 2, window: 12 };
     let mut then = *room.fighter(foe).expect("stood");
     then.body = standing(0.0, -1.5);
@@ -133,7 +137,7 @@ fn a_foes_guard_counts_as_it_stands_now_and_its_body_where_the_striker_saw_it() 
 fn a_player_who_stands_again_is_left_be_until_they_strike() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    stand(&mut room, ::foes::Kind::Swordsman, 0.0, -1.5);
+    stand(&mut room, 14, 0.0, -1.5);
     room.players.get_mut(&player).expect("in").fighter.action = Action::Dead { elapsed: combat::tuning::RESPAWN };
     for sequence in 1..=150 {
         room.input(player, asking(sequence, room.clock(), FISTS, CombatInput::default(), 0.0)).unwrap();
@@ -152,7 +156,7 @@ fn a_player_who_stands_again_is_left_be_until_they_strike() {
 fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
     for ahead in [20.0, 45.0] {
         let mut room = room();
-        let archer = stand(&mut room, ::foes::Kind::Archer, 0.0, -ahead);
+        let archer = stand(&mut room, 16, 0.0, -ahead);
         let foe = *room.fighter(archer).expect("stood");
         let order = combat::shapes::TelegraphOrder {
             shape: combat::shapes::Shape::Aimed,
@@ -164,13 +168,35 @@ fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
         };
         let aimed = combat::shapes::Telegraph::begin(&order, [0.0, -ahead, 0.0]);
         room.telegraph_lands(archer, &foe, &aimed);
-        let mut shot = room.shots.pop().expect("an arrow leaves");
+        let (mut shot, _) = room.shots.pop().expect("an arrow leaves");
         let landed = loop {
-            match combat::shots::fly(&shot, &[], &[]) {
+            match combat::shots::fly(&shot, &[], &movement::Flat, &[]) {
                 combat::shots::Flight::Flying(next) => shot = next,
                 combat::shots::Flight::Stopped { at, .. } => break at,
             }
         };
         assert!(landed[1] >= -0.5, "at {ahead} m it carries to the end of its line: came down at {landed:?}");
     }
+}
+
+#[test]
+fn an_aimed_shot_leaves_from_the_foes_own_weapon_a_ball_straight_and_quick() {
+    let mut room = room();
+    let pistoleer = stand(&mut room, 9, 0.0, -20.0);
+    let foe = *room.fighter(pistoleer).expect("stood");
+    assert_eq!(foe.arms.ranged, Some(Ranged::Pistolet));
+    let order = combat::shapes::TelegraphOrder {
+        shape: combat::shapes::Shape::Aimed,
+        windup: 36,
+        iron: false,
+        feint_at: None,
+        bearing: core::f64::consts::PI,
+        ahead: 20.0,
+    };
+    room.telegraph_lands(pistoleer, &foe, &combat::shapes::Telegraph::begin(&order, [0.0, -20.0, 0.0]));
+    let (ball, _) = room.shots.pop().expect("a ball leaves");
+    let [east, south, up] = ball.velocity;
+    assert_eq!(ball.ranged, Ranged::Pistolet);
+    assert!(((east * east + south * south + up * up).sqrt() - 70.0 * 1.3).abs() < 1e-9 && up.abs() < 1e-12);
+    assert!((ball.damage - 30.0 * 1.4 * foe.might).abs() < 1e-9, "{ball:?}");
 }

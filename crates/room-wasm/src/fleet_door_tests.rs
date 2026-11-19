@@ -1,6 +1,7 @@
 use super::fleet_door::{lay, predict};
 use super::*;
 use naval::fight::{Aim, Orders};
+use naval::ranks::Commission;
 use protocol::fleet::orders_bytes;
 use protocol::wire::overlook::wire as messages;
 use room::fleet::{Call, Input, STANDING};
@@ -109,7 +110,7 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
 fn a_look_lays_through_the_door_as_the_fight_lays_it() {
     open_fleet();
     let player = room_join();
-    let called = Input { put_to_sea: Some(AT), call: Call::Captain, ..orders(1) };
+    let called = Input { put_to_sea: Some(AT), call: Call::Captain(Commission::default()), ..orders(1) };
     assert_eq!(send(player, called), TAKEN);
     for _ in 0..3 {
         room_tick();
@@ -130,7 +131,7 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         let waters = sailing::waters::OpenSea { swell: fleet.weather().0 };
         let shown = fight.preview(player, &aim, &waters, time);
         let sighted = |ship: &naval::laying::Sighted| {
-            let flag = if ship.flag == naval::shots::Flag::Player { 0.0 } else { 1.0 };
+            let flag = f64::from(ship.flag.number());
             [f64::from(ship.id), flag]
                 .into_iter()
                 .chain(ship.ship.to_floats())

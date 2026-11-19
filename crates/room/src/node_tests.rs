@@ -185,10 +185,54 @@ fn a_room_with_no_section_never_judges_its_bodies() {
 fn a_node_s_room_stands_no_foe_a_player_asks_for_where_a_course_s_room_does() {
     let foes_after_asking = |mut room: Room| {
         let player = room.join().unwrap();
-        room.input(player, Input { sequence: 1, spawn: Some(1), ..Input::default() }).unwrap();
+        let spawn = Some(SpawnAsk::Foe { foe_type: 13, rank: 2, shield: 0 });
+        room.input(player, Input { sequence: 1, spawn, ..Input::default() }).unwrap();
         room.tick();
         room.foes_seen().count()
     };
     assert_eq!(foes_after_asking(Room::node(land(), Vec::new(), section())), 0);
     assert_eq!(foes_after_asking(Room::new(Vec::new(), (0.0, 0.0))), 1);
+}
+
+#[test]
+fn a_node_s_room_told_to_take_asks_stands_each_foe_on_its_land_and_it_stays_there() {
+    let floor = land();
+    let mut room = Room::node(floor.clone(), Vec::new(), section());
+    room.take_foe_asks();
+    let mut asker = Driver::join(&mut room);
+    // Off the terrace, so the foe stands 5 m ahead on the land 10 m up.
+    for _ in 0..240 {
+        asker.play(&mut room, Controls { yaw: PI, ..RUN_NORTH }, false);
+    }
+    asker.sequence += 1;
+    let spawn = Some(SpawnAsk::Foe { foe_type: 2, rank: 1, shield: 0 });
+    let input = Input {
+        sequence: asker.sequence,
+        intent: combat::Intent { controls: STILL, ..combat::Intent::default() },
+        spawn,
+        ..Input::default()
+    };
+    room.input(asker.player, input).unwrap();
+    room.tick();
+    let foe = room.foes_seen().next().expect("the foe asked for").fighter.body;
+    assert_eq!(foe.z.to_bits(), floor.height_at(foe.x, foe.y).to_bits(), "stood on the land at {foe:?}");
+    for _ in 0..60 {
+        asker.play(&mut room, STILL, false);
+    }
+    let foe = room.foes_seen().next().expect("the foe still there").fighter.body;
+    assert!((foe.z - floor.height_at(foe.x, foe.y)).abs() < 1e-9, "still on the land at {foe:?}");
+}
+
+#[test]
+fn a_node_s_room_bakes_its_paths_and_firing_spots_on_its_land() {
+    use ::foes::Spots;
+    let floor = land();
+    let room = Room::node(floor.clone(), Vec::new(), section());
+    let on_land = |x: f64, y: f64| [x, y, floor.height_at(x, y)];
+    let route = room.nav.find_path(on_land(20.0, 20.0), on_land(-20.0, 15.0)).expect("a way across the land");
+    let spots = room.spots().near([20.0, 20.0, 0.0], 5.0);
+    assert!(!spots.is_empty(), "spots on the open land");
+    for [x, y, z] in route.iter().copied().chain(spots.iter().map(|spot| spot.point)) {
+        assert!((z - floor.height_at(x, y)).abs() < 0.05, "{x}, {y} at {z} m stands on the land");
+    }
 }

@@ -6,6 +6,7 @@
 use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard};
 use crate::landmarks::{Landmark, ahead};
 use crate::solids::{Material, Shape, Solid};
+use crate::stations::{Station, stations};
 use land::ground::Ground;
 use serde::Serialize;
 
@@ -18,8 +19,8 @@ const SPAWN_INSET_M: f64 = 4.0;
 /// A gap between the landmark's reach and the plaza, metres.
 const APART_M: f64 = 10.0;
 
-/// The social space: its plaza's bounds (west, north, east, south) and level, its section's ring, its spawns, and its
-/// parapets and retaining walls.
+/// The social space: its plaza's bounds (west, north, east, south) and level, its section's ring, its spawns, its
+/// parapets, retaining walls and courtyard, and its stations.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Social {
     pub bounds: [f64; 4],
@@ -27,6 +28,8 @@ pub struct Social {
     pub ring: Vec<[f64; 2]>,
     pub spawns: Vec<[f64; 2]>,
     pub solids: Vec<Solid>,
+    /// The stations in its arcades' alcoves (`stations`).
+    pub stations: Vec<Station>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -90,6 +93,9 @@ pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], l
         Material::Paving,
     ));
     let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
-    solids.extend(courtyard(&Frame { middle, seaward: along_seaward, depth, length, level }));
-    Social { bounds, level, ring, spawns, solids }
+    let frame = Frame { middle, seaward: along_seaward, depth, length, level };
+    solids.extend(courtyard(&frame));
+    let (stations, stalls) = stations(&frame);
+    solids.extend(stalls);
+    Social { bounds, level, ring, spawns, solids, stations }
 }

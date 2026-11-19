@@ -58,7 +58,7 @@ const DEPTH_COPY = /* wgsl */ `
  * as the terrain and the water read it; everything else is handed world metres.
  */
 export class GameScene {
-  private readonly gpu: Gpu;
+  readonly gpu: Gpu;
   private readonly water: WaterView;
   private readonly shadow: ShadowMap;
   private readonly copy: GPURenderPipeline;

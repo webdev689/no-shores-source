@@ -42,7 +42,7 @@ pub struct Mark {
     pub level: f64,
 }
 
-/// Her ship as her guns work it.
+/// Her ship as her guns work it, and how far her rank widens her gunners' error (1 a Major's).
 #[derive(Debug, Clone, Copy)]
 pub struct Aboard<'a> {
     pub ship: &'a Ship,
@@ -50,6 +50,7 @@ pub struct Aboard<'a> {
     pub arms: &'a Arms,
     pub guns: &'a Guns,
     pub build: &'a Build,
+    pub aim_error: f64,
 }
 
 /// The degrees off her beam she fires within at `at`: the miss her gunners allow on the mark's length across her
@@ -216,7 +217,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
         if clock - since < RUN_OUT_S || error > window || !strikes() {
             continue;
         }
-        battery.fire = Some(lay_k(1.0 + (draws.draw() - 0.5) * LAY_ERR * (1.0 - skill)));
+        battery.fire = Some(lay_k(1.0 + (draws.draw() - 0.5) * LAY_ERR * (1.0 - skill) * at.aim_error));
         run.out[side.index()] = None;
     }
     battery

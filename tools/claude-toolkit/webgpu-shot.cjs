@@ -9,17 +9,40 @@
 // checkout holds 5173, Vite on any port with "anyPort": true, and the driver fetches R2 for the page.
 //
 // steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "steps":
-// [ ... ] }, each step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "hold": ["w", seconds] },
-// { "click": [x, y] },
-// { "wheel": [x, y, deltaY, notches] }, { "clickText": "Return to ship" }, { "eval": "js" }, { "shot": "out.png" }.
-// The console's errors are printed. The game takes one wheel notch a frame, so a wheel step sends its notches (1
-// unless said) 0.1 s apart: from the arrival's 4.5 m, about 20 notches in (deltaY < 0) reach first person. To arrive
-// in a camera instead, the address asks for it as it asks for a spawn: `&view=first` or `&view=third,<metres>`.
+// [ ... ] }, each step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" },
+// { "click": [x, y] }, { "wheel": [x, y, deltaY, notches] }, { "hold": ["ArrowLeft", seconds] },
+// { "clickText": "Return to ship" }, { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow
+// headless frames: an arrow turns the player about 0.03 rad a second. { "frames": n } waits until the page has drawn n
+// more frames: read what a frame writes (a panel, a note) only after one has drawn. Every frame is paced from the
+// first: the page's next animation frame waits until the GPU has done the last one's work, so SwiftShader never builds
+// a backlog that a picture then waits minutes behind. The console's errors are printed. The game takes one wheel notch
+// a frame, so a wheel step sends its notches (1 unless said) 0.1 s apart: from the arrival's 4.5 m, about 20 notches in
+// (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks for a spawn:
+// `&view=first` or `&view=third,<metres>`.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
 
 const OWN_TEXTURE = () => {
   const kept = new WeakMap();
+  // A frame counts once it has given the GPU work: frames before the first draw (loading) do not.
+  let done = Promise.resolve();
+  let submitted = false;
+  window.__shotFrames = 0;
+  const submit = GPUQueue.prototype.submit;
+  GPUQueue.prototype.submit = function (buffers) {
+    submit.call(this, buffers);
+    submitted = true;
+    done = this.onSubmittedWorkDone();
+  };
+  const nextFrame = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (callback) =>
+    nextFrame(() =>
+      done.then(() => {
+        if (submitted) window.__shotFrames += 1;
+        submitted = false;
+        callback(performance.now());
+      }),
+    );
   const proto = GPUCanvasContext.prototype;
   proto.configure = function (config) {
     const usage = (config.usage ?? GPUTextureUsage.RENDER_ATTACHMENT) | GPUTextureUsage.COPY_SRC;
@@ -126,7 +149,10 @@ async function main() {
       }
     }
     else if (step.clickText) await page.getByText(step.clickText).first().click();
-    else if (step.eval) console.log('eval:', JSON.stringify(await page.evaluate(step.eval)));
+    else if (step.frames) {
+      const from = await page.evaluate(() => window.__shotFrames);
+      await page.waitForFunction((until) => window.__shotFrames >= until, from + step.frames, { timeout: 600_000 });
+    } else if (step.eval) console.log('eval:', JSON.stringify(await page.evaluate(step.eval)));
     else if (step.shot) {
       const why = await page.evaluate(() => window.__shotLay());
       if (why) console.log('shot:', why);

@@ -1,7 +1,9 @@
 //! What the foes of a room share: for each target, who holds the turns to fight it hand to hand and to shoot at it,
 //! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in
-//! whatever the count.
+//! whatever the count. And the posts shooters hold, so no two take one place, and the tick one last picked a post, so
+//! only one picks a tick.
 
+use crate::director::Caps;
 use combat::FighterId;
 use std::collections::BTreeMap;
 
@@ -26,15 +28,19 @@ impl Fight {
     }
 }
 
-/// What the foes of a room share: who holds the turns to fight each target, and since when each waits.
+/// What the foes of a room share: who holds the turns to fight each target, and since when each waits; and the spot
+/// each shooter holds as its post.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Board {
     fights: BTreeMap<FighterId, Fight>,
+    posts: BTreeMap<FighterId, [f64; 3]>,
+    picked: Option<u64>,
 }
 
 impl Board {
     /// A foe that died or left gives up any turn it held and stops waiting.
     pub fn forget(&mut self, foe: FighterId) {
+        self.posts.remove(&foe);
         for fight in self.fights.values_mut() {
             fight.melee.remove(&foe);
             fight.ranged.remove(&foe);
@@ -60,10 +66,19 @@ impl Board {
         fight.waiting.insert(foe, (since, ranged));
     }
 
-    /// Takes a token of its kind for a waiting foe if one is free and nobody of its kind has waited longer, or, past
-    /// `patience` ticks of waiting, whatever the count. Answers whether it holds one.
-    pub fn take(&mut self, target: FighterId, foe: FighterId, ranged: bool, tick: u64, patience: u64) -> bool {
-        let cap = if ranged { crate::tuning::RANGED_TOKENS } else { crate::tuning::MELEE_TOKENS };
+    /// Takes a token of its kind for a waiting foe if one is free under `caps` and nobody of its kind has waited
+    /// longer, or, past `patience` ticks of waiting, whatever the count. Answers whether it holds one. A holder keeps
+    /// its token when the caps drop, until it hands it on.
+    pub fn take(
+        &mut self,
+        target: FighterId,
+        foe: FighterId,
+        ranged: bool,
+        tick: u64,
+        patience: u64,
+        caps: Caps,
+    ) -> bool {
+        let cap = if ranged { caps.ranged } else { caps.melee };
         let fight = self.fights.entry(target).or_default();
         if fight.tokens(ranged).contains_key(&foe) {
             return true;
@@ -125,5 +140,27 @@ impl Board {
     #[must_use]
     pub fn tokens_out(&self, target: FighterId) -> (usize, usize) {
         self.fights.get(&target).map_or((0, 0), |fight| (fight.melee.len(), fight.ranged.len()))
+    }
+
+    /// A shooter holds the spot at `point` as its post.
+    pub fn claim(&mut self, foe: FighterId, point: [f64; 3]) {
+        self.posts.insert(foe, point);
+    }
+
+    /// Whether a shooter may pick a post this tick: one a tick in a room, so the work of picking spreads over ticks.
+    pub fn may_pick(&mut self, tick: u64) -> bool {
+        let may = self.picked != Some(tick);
+        self.picked = Some(tick);
+        may
+    }
+
+    /// A shooter gives its post up.
+    pub fn release(&mut self, foe: FighterId) {
+        self.posts.remove(&foe);
+    }
+
+    /// The posts every other shooter holds, in the order of their numbers.
+    pub fn posts_but(&self, foe: FighterId) -> impl Iterator<Item = [f64; 3]> + '_ {
+        self.posts.iter().filter(move |(other, _)| **other != foe).map(|(_, point)| *point)
     }
 }

@@ -7,10 +7,10 @@ import type { Snapshot } from '../network/roomConnection.ts';
 import { type Body, type Controls, floatsOf, floatsOfControls, startMovementRules } from '../rules/movementRules.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Walker } from '../player/walker.ts';
+import { IDLE } from '../player/input.ts';
 import { deckFloats, SLOOP_DECK } from '../ships/deck.ts';
 import { Aboard, type HelmRoom } from './aboard.ts';
 import { DeckWalk } from './deckWalk.ts';
-import { IDLE } from './foot.ts';
 import { STANDING_EYE_M } from './seaLaw.ts';
 
 const built = (name: string) =>

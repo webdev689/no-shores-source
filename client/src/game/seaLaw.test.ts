@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SHIP_SPEED, voyageOf } from '../overworld/voyage.ts';
 import { cellHeight, SLOOP_DECK } from '../ships/deck.ts';
+import { panShot, type Shot } from './camera.ts';
 import {
   continentToOpen,
   courseAhead,
@@ -11,14 +12,18 @@ import {
   heldNote,
   HELM,
   helmEye,
-  shownScale,
   landfallOf,
   namesShown,
   OFFSHORE,
   offshore,
+  pictureAt,
+  shownScale,
   STANDING_EYE_M,
   timeText,
 } from './seaLaw.ts';
+
+/** The Sloop drawn 75 m long on the sea's view. */
+const SEA_SCALE = 75 / 18.6775;
 
 /** Land west of x = 1000, the sea shelving away east of it: 1 m down a metre. */
 const shore = (x: number) => (x < 1000 ? 10 : 1000 - x);
@@ -101,10 +106,50 @@ test('off a coast the ship docks within reach of its harbour and goes ashore els
   assert.equal(landfallOf([100, 0], false, port), null);
 });
 
-test("ships are drawn at the Overworld's scale on the sea's view and shrink to their own size at the helm", () => {
-  assert.equal(shownScale(12, 0), 12);
-  assert.equal(shownScale(12, 1), 1, 'at the wheel the Sloop is her true size');
-  assert.equal(shownScale(12, 0.5), 6.5);
+test("ships are drawn at the Overworld's scale on the sea's view and at their own on the view near her", () => {
+  assert.equal(shownScale(SEA_SCALE, { seaM: 380, shownM: 380, nearM: 35, share: 0 }), SEA_SCALE);
+  assert.equal(shownScale(SEA_SCALE, { seaM: 380, shownM: 35, nearM: 35, share: 1 }), 1, 'close in, her own size');
+  assert.equal(shownScale(SEA_SCALE, { seaM: 240, shownM: 180, nearM: 180, share: 1 }), 1, 'a near view far off her');
+});
+
+test('coming in she never shrinks on the screen, nor looms past her size once her size shows her as large', () => {
+  for (const [seaM, nearM] of [
+    [380, 35],
+    [240, 35],
+    [240, 180],
+  ] as const) {
+    const ownSizeFrom = seaM / SEA_SCALE;
+    let last = SEA_SCALE / seaM;
+    for (let step = 0; step <= 100; step++) {
+      const share = step / 100;
+      const shownM = seaM + (nearM - seaM) * share;
+      const scale = shownScale(SEA_SCALE, { seaM, shownM, nearM, share });
+      const filled = scale / shownM;
+      assert.ok(scale >= 1 && scale <= SEA_SCALE, `${scale} times her size`);
+      if (nearM <= ownSizeFrom) assert.ok(filled >= last * (1 - 1e-12), `${seaM} m: shrank at ${share}`);
+      // A near view that shows her smaller at her own size than the sea's: she eases to it, never under her size.
+      else assert.ok(filled <= last * (1 + 1e-12) && filled >= 1 / shownM, `${seaM} m: grew at ${share}`);
+      if (shownM <= ownSizeFrom) assert.equal(scale, 1, `${shownM} m: her size shows her as large`);
+      last = filled;
+    }
+  }
+});
+
+test('down to the helm she is held at the size the sea shows her, then is her own size close by and at the wheel', () => {
+  const ship = { x: 1000, y: 2000, heading: 0.4, scale: 1, heave: 0, pitch: 0, roll: 0 };
+  const sea: Shot = { eye: [1150, 2260, 150], yaw: 2.6, pitch: 0.52, fov: 1.13, near: 2, far: 60_000 };
+  const helm: Shot = { eye: helmEye(ship), yaw: ship.heading, pitch: HELM.pitch, fov: 1.13, near: 0.3, far: 60_000 };
+  const her = [ship.x, ship.y, 0] as const;
+  const seaM = pictureAt(sea, her);
+  let last = SEA_SCALE / seaM;
+  for (let step = 0; step <= 50; step++) {
+    const shown = panShot(sea, helm, step / 50);
+    const shownM = pictureAt(shown, her);
+    const scale = shownScale(SEA_SCALE, { seaM, shownM, nearM: pictureAt(helm, her), share: step / 50 });
+    assert.ok(scale / shownM >= last * (1 - 1e-12), `shrank at ${step / 50}`);
+    if (shownM * SEA_SCALE <= seaM) assert.equal(scale, 1, `looms ${scale} times at ${shownM} m`);
+    last = scale / shownM;
+  }
 });
 
 test('at the helm the eye stands behind the wheel of the Sloop as she is drawn, riding the swell with her', () => {

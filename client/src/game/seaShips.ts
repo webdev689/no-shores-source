@@ -8,7 +8,7 @@ import { SailRig, type SailCorners, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
 import { poseOnSwell, turnHeel } from '../ships/swellPose.ts';
-import type { HullMask } from '../water/hullMask.ts';
+import { HULLS, type HullMask } from '../water/hullMask.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
 import { HELM_TURN } from './seaHelm.ts';
 
@@ -19,6 +19,8 @@ const UNDER_WAY = 4;
 /** How fast a ship's swing as drawn follows her heading's, a share a second; and the most it is taken to be, radians a
  *  second, so a voyage turning onto its next leg at once heels her as a hard turn of the helm would. */
 const SWING = { rate: 3, most: HELM_TURN } as const;
+/** Seconds a ship first seen is taken to have sailed as she is: past setting or furling her sails and trimming them. */
+const FIRST_SEEN_S = 5;
 
 /** The Sloop every ship at sea is, and what draws a fight's balls, arcs and effects. */
 export interface SeaHull {
@@ -98,12 +100,15 @@ export class SeaShips {
     water: SeaWater,
   ): SeaShip[] {
     const riding = (who: string, lies: Lies, place: ShipPlace | null, shade = 1): SeaShip => {
+      const wind = { offDeg: windOff(lies.heading, windBearing), set: lies.underWay };
       let rig = this.rigs.get(who);
       if (!rig) {
         rig = new SailRig(this.hull.sails);
+        // A ship coming into view sails under sails already set, or lies with them furled: none sets them as she comes.
+        rig.step(FIRST_SEEN_S, wind, time);
         this.rigs.set(who, rig);
       }
-      rig.step(seconds, { offDeg: windOff(lies.heading, windBearing), set: lies.underWay }, time);
+      rig.step(seconds, wind, time);
       return { place: place ?? this.placeOf(who, lies, scale, water, seconds, time), rig, shade };
     };
     const sailing = new Set([
@@ -120,13 +125,19 @@ export class SeaShips {
     ];
   }
 
-  /** Each ship's footprint on the water, the player's first, drawn `scale` times her size. */
-  hulls(own: Lies, others: readonly SeenShip[], scale: number): HullMask[] {
+  /** Each ship's footprint on the water, drawn `scale` times her size: the player's first, then every other player's
+   *  and every pirate's, nearest her first, as many as the water holds. */
+  hulls(own: Lies, others: readonly SeenShip[], pirates: readonly SeenPirate[], scale: number): HullMask[] {
     const [halfLength, halfBeam] = [(this.hull.waterline.lengthM / 2) * scale, (this.hull.waterline.beamM / 2) * scale];
     const hull = (lies: Lies): HullMask => {
       const { x, y, heading } = lies;
       return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0 };
     };
-    return [hull(own), ...others.map((ship) => hull({ ...ship, underWay: ship.pace > 0 }))];
+    const round = [
+      ...others.map((ship) => hull({ ...ship, underWay: ship.pace > 0 })),
+      ...pirates.map((pirate) => hull({ ...pirate, underWay: true })),
+    ];
+    const away = (mask: HullMask) => Math.hypot(mask.x - own.x, mask.y - own.y);
+    return [hull(own), ...round.sort((one, other) => away(one) - away(other))].slice(0, HULLS);
   }
 }

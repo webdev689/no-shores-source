@@ -3,6 +3,7 @@ use combat::arms::{OffHand, Stroke, WeaponClass};
 use combat::{CombatInput, Intent};
 use judging::{Check, How};
 use movement::Controls;
+use std::collections::BTreeMap;
 
 const SWORD: u32 = 2;
 
@@ -10,22 +11,24 @@ fn room() -> Room {
     Room::new(Vec::new(), (0.0, 0.0))
 }
 
-/// A foe of a kind standing at (x, y), facing south, put straight into the room.
-fn stand(room: &mut Room, kind: ::foes::Kind, x: f64, y: f64) -> FighterId {
+/// A Major of the type numbered `number` standing at (x, y), facing south, put straight into the room.
+fn stand(room: &mut Room, number: u8, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
-    let (fighter, brain) = ::foes::spawn(kind, x, y, core::f64::consts::PI);
-    room.foes.insert(id, Foe { fighter, kind: kind as u8, brain });
+    let foe_type = ::foes::foe_type(number).expect("a type of the roster");
+    let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, core::f64::consts::PI);
+    room.foes
+        .insert(id, foes::Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     id
 }
 
 /// A brute 1.5 m north of the origin: it never guards, parries or dodges.
 fn stand_foe(room: &mut Room) -> FighterId {
-    stand(room, ::foes::Kind::Brute, 0.0, -1.5)
+    stand(room, 15, 0.0, -1.5)
 }
 
 /// A swordsman far out of sight, and a copy of it as though it stood 1.5 m north of the origin, to strike from.
 fn far_foe(room: &mut Room) -> (FighterId, Fighter) {
-    let id = stand(room, ::foes::Kind::Swordsman, 0.0, -60.0);
+    let id = stand(room, 14, 0.0, -60.0);
     let mut near = *room.fighter(id).unwrap();
     near.body = standing(0.0, -1.5);
     near.aim = core::f64::consts::PI;
@@ -122,6 +125,7 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
     let mut room = room();
     let player = room.join().expect("a room with space");
     let foe = stand_foe(&mut room);
+    crate::power::hold(&mut room, player, gear::Kind::Pistolet);
     let mut archer = *room.fighter(player).unwrap();
     archer.arms =
         combat::Arms { melee: WeaponClass::Fists, ranged: Some(combat::Ranged::Pistolet), off_hand: OffHand::Empty };
@@ -137,11 +141,34 @@ fn a_shot_strikes_the_first_foe_on_its_line_and_never_a_player() {
             .iter()
             .any(|event| event.kind == EventKind::Hit && event.how == Some(How::Shot) && event.defender == foe)
     );
-    assert!(room.shots().is_empty());
+    assert!(room.shots().next().is_none());
     // Two ticks before the snapshot, as a late timer runs them: the ball's line is kept for it, and sent once.
     let lines = room.take_lines();
-    assert!(lines.len() == 1 && lines[0].owner == player, "{lines:?}");
+    assert!(lines.len() == 1 && lines[0].last.owner == player, "{lines:?}");
     assert!(room.take_lines().is_empty());
+}
+
+#[test]
+fn a_foes_ball_that_stops_is_sent_once_as_its_last_segment_and_its_muzzle() {
+    let mut room = room();
+    let foe = stand(&mut room, 9, 0.0, 0.0);
+    let muzzle = [0.5, -0.5, 1.3];
+    let aimed = combat::shots::loose(foe, combat::Ranged::Pistolet, [0.5, -0.1, 1.3], 0.0, 0.0, 1.0);
+    room.shots.push((combat::shots::by_foe(&combat::Shot { at: muzzle, ..aimed }), None));
+    let mut ticks = 0;
+    while room.shots().next().is_some() {
+        assert!(room.take_lines().is_empty(), "a ball still flying has no line");
+        room.tick();
+        ticks += 1;
+    }
+    let lines = room.take_lines();
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    let line = lines[0];
+    assert_eq!((line.last.owner, line.last.age), (foe, ticks - 1));
+    line.muzzle.iter().zip(muzzle).for_each(|(sent, true_muzzle)| assert!((sent - true_muzzle).abs() < 1e-9));
+    // It flew north its whole reach, and its last segment ends past it.
+    let end = line.last.at[1] + line.last.velocity[1] * movement::TICK_SECONDS;
+    assert!(end <= muzzle[1] - combat::shots::BALL_REACH, "{end}");
 }
 
 #[test]

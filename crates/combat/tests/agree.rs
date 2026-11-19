@@ -8,7 +8,7 @@ use combat::{CombatInput, Fighter, Intent, Stroke, player_tick};
 use movement::{Block, Controls, standing};
 
 /// Both tests hold this value; a change to the fight changes it in both, on purpose.
-pub const FIGHT_HASH: &str = "e8eae610b38fdb17";
+pub const FIGHT_HASH: &str = "ec98d3f42eaaa8ee";
 
 const COURSE: [Block; 1] = [Block { min_x: -3.0, min_y: -8.0, max_x: 3.0, max_y: -7.0, top: 1.2, bottom: 0.0 }];
 
@@ -33,7 +33,7 @@ const SCRIPT: [Phase; 10] = [
 /// The still foe the player fights, 3 m north of where it starts.
 pub fn foe() -> Fighter {
     let arms = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Empty };
-    fighter(Side::Foes, standing(0.0, -3.0), arms, Weight::Medium, 70.0, 35.0)
+    fighter(Side::Faction(1), standing(0.0, -3.0), arms, Weight::Medium, 70.0, 35.0)
 }
 
 pub fn run_script() -> Vec<Fighter> {

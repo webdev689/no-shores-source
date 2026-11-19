@@ -50,8 +50,9 @@ export function hullFoam(mask: HullMask, point: readonly [number, number]): numb
   return band * bow * Math.min(1, mask.way / HULL_FOAM_WAY);
 }
 
-/** How many ships' footprints the water holds: the player's and a captain's. */
-export const HULLS = 2;
+/** How many ships' footprints the water holds: the player's and the ships nearest her, other players', the pirates
+ *  round her and a fight's captains. */
+export const HULLS = 8;
 
 /** The footprints' WGSL, read from the water's frame (`hulls`: each ship's place, then her size). */
 export const HULL_WGSL = /* wgsl */ `

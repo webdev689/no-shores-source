@@ -1,9 +1,10 @@
 //! The blocks a body stands on and runs into, on the terrain under them: what is underfoot, what is in the way, and
 //! sliding along a side.
 
-use crate::body::{Body, TUNING};
+use crate::body::{Body, Mode, TUNING};
 use crate::near::Near;
 use crate::terrain::{Terrain, too_steep};
+use core::iter::once;
 
 /// A block: its footprint (x east, y south, metres), its top, and its underside.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -69,6 +70,29 @@ pub fn under_ceiling<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, from: f64, to
     to.min(highest.max(from))
 }
 
+/// Whether a block stands in the way at a point of a body `height` tall with its feet at `feet`, asked only beside a
+/// block, so open ground costs no look at the ground.
+fn in_way<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, height: f64, feet: impl FnOnce() -> f64) -> bool {
+    let mut beside = blocks.near(x, y).filter(|block| block.holds(x, y, TUNING.radius)).peekable();
+    if beside.peek().is_none() {
+        return false;
+    }
+    let z = feet();
+    beside.any(|block| in_the_way(block, z, height))
+}
+
+/// Where the feet of a body moved to (x, y) stand: on its feet, on the ground there when that is lower by no more
+/// than a step, as the feet follow it down; otherwise where they are, as a body that falls has not dropped yet. A
+/// move is judged there, so a block that is a step up from where the feet start, and a wall from where they end,
+/// stops it.
+pub(crate) fn feet_after<B: Near + ?Sized>(blocks: &B, terrain: &dyn Terrain, body: &Body, x: f64, y: f64) -> f64 {
+    if body.mode != Mode::Ground {
+        return body.z;
+    }
+    let ground = ground_at(blocks, terrain, x, y, body.z);
+    if ground < body.z && ground >= body.z - TUNING.step { ground } else { body.z }
+}
+
 /// A block ahead of a body, and how deep it runs the way the body faces.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct WallAhead {
@@ -91,26 +115,27 @@ pub fn wall_ahead<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64) -> Op
 /// walked whole; otherwise each axis is tried alone, so the body slides along the rise. Answers the new (x, y).
 #[must_use]
 pub fn slide<B: Near + ?Sized>(blocks: &B, terrain: &dyn Terrain, body: &Body, move_x: f64, move_y: f64) -> (f64, f64) {
-    let past_blocks = along_axes(blocks, None, body, move_x, move_y);
+    let past_blocks = along_axes(blocks, terrain, false, body, move_x, move_y);
     let (whole_x, whole_y) = (body.x + move_x, body.y + move_y);
     let run = (move_x * move_x + move_y * move_y).sqrt();
     if past_blocks == (whole_x, whole_y) && !too_steep(terrain, body.z, (body.x, body.y), (whole_x, whole_y), run) {
         return past_blocks;
     }
-    along_axes(blocks, Some(terrain), body, move_x, move_y)
+    along_axes(blocks, terrain, true, body, move_x, move_y)
 }
 
-/// The move an axis at a time, each axis taken where no block, nor the terrain if one is given, stops it.
+/// The move an axis at a time, each axis taken where no block stops it, nor, with `slopes`, the terrain.
 fn along_axes<B: Near + ?Sized>(
     blocks: &B,
-    terrain: Option<&dyn Terrain>,
+    terrain: &dyn Terrain,
+    slopes: bool,
     body: &Body,
     move_x: f64,
     move_y: f64,
 ) -> (f64, f64) {
     let open = |from: (f64, f64), to: (f64, f64), run: f64| {
-        blocking_at(blocks, to.0, to.1, body.z, body.height()).is_none()
-            && terrain.is_none_or(|terrain| !too_steep(terrain, body.z, from, to, run))
+        !in_way(blocks, to.0, to.1, body.height(), || feet_after(blocks, terrain, body, to.0, to.1))
+            && !(slopes && too_steep(terrain, body.z, from, to, run))
     };
     let (mut x, mut y) = (body.x, body.y);
     if open((x, y), (x + move_x, y), move_x.abs()) {
@@ -120,4 +145,41 @@ fn along_axes<B: Near + ?Sized>(
         y += move_y;
     }
     (x, y)
+}
+
+/// The nearest point to (x, y) clear of every block, for a body `height` tall with its feet standing at `feet` there:
+/// (x, y) itself when no block is in the way, else pushed straight out of those that are, along one axis or both, onto
+/// no terrain that stops a move. A body beside a block is never pushed out past its far side. Feet sinking past a
+/// block's top beside it leave the body overlapping it, stopped by it whichever way it walks, so it is pushed out;
+/// where nowhere near is clear, it stays.
+pub fn pushed_out<B: Near + ?Sized>(
+    blocks: &B,
+    terrain: &dyn Terrain,
+    x: f64,
+    y: f64,
+    height: f64,
+    feet: impl Fn(f64, f64) -> f64,
+) -> (f64, f64) {
+    if !in_way(blocks, x, y, height, || feet(x, y)) {
+        return (x, y);
+    }
+    let z = feet(x, y);
+    let pushing: Vec<&Block> =
+        blocks.near(x, y).filter(|block| block.holds(x, y, TUNING.radius) && in_the_way(block, z, height)).collect();
+    // Out past a block's near side, or past either side from within its footprint.
+    let exits = |at: f64, low: f64, high: f64| {
+        [(at >= low).then_some(high + TUNING.radius), (at <= high).then_some(low - TUNING.radius)]
+    };
+    let x_exits = pushing.iter().flat_map(|block| exits(x, block.min_x, block.max_x)).flatten();
+    let y_exits = pushing.iter().flat_map(|block| exits(y, block.min_y, block.max_y)).flatten();
+    let (xs, ys): (Vec<f64>, Vec<f64>) = (once(x).chain(x_exits).collect(), once(y).chain(y_exits).collect());
+    let open = |to: (f64, f64), push: f64| {
+        !in_way(blocks, to.0, to.1, height, || feet(to.0, to.1)) && !too_steep(terrain, z, (x, y), to, push)
+    };
+    xs.iter()
+        .flat_map(|&to_x| ys.iter().map(move |&to_y| (to_x, to_y)))
+        .map(|to| (to, ((to.0 - x) * (to.0 - x) + (to.1 - y) * (to.1 - y)).sqrt()))
+        .filter(|&(to, push)| push > 0.0 && open(to, push))
+        .min_by(|(_, one), (_, other)| one.total_cmp(other))
+        .map_or((x, y), |(to, _)| to)
 }

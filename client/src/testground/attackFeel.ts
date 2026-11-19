@@ -7,8 +7,9 @@ import { lungeOf } from '../combat/lunge.ts';
 import { type Swing, SwingArcs, type Vector, weaponTint } from '../combat/swingArcs.ts';
 import type { Orbit } from '../editor/orbit.ts';
 import type { FightEvent } from '../network/messages.ts';
+import { blowWay } from '../player/playerMoves.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
-import type { FighterView } from '../rules/fighters.ts';
+import { type FighterView, STROKE_DIRECTIONS, directionOf } from '../rules/fighters.ts';
 import { FEEL, type Feel, startFeelPanel } from './feelPanel.ts';
 
 /** How brightly a blow's arc flares as it meets something, by what came of it: a kill brightest, a block least. */
@@ -24,14 +25,19 @@ const ARC_FLARE: Readonly<Record<number, number | undefined>> = {
 const OWN_LUNGE_EYE = 0.5;
 const STILL = { yaw: 0, pitch: 0, ahead: 0, aside: 0, up: 0 } as const;
 
-/** A fighter whose blow may be struck: its number, its view as the rules have it, what its hands hold, and whether it
- *  is seen through its own eyes. */
+/** A fighter whose blow may be struck: its number, its view as the rules have it, and what its hands hold. */
 export interface Striker {
   readonly id: number;
   readonly view: FighterView | null;
   readonly right: string | null;
   readonly left: string | null;
-  readonly eyes?: boolean;
+}
+
+/** A fighter's figure as drawn this frame: where its feet are, its move, and whether it is drawn mirrored. */
+export interface DrawnFigure {
+  readonly feet: Vector;
+  readonly anim: string;
+  readonly flip: boolean;
 }
 
 /** The Test Ground's attack feel, as its panel sets it. */
@@ -154,13 +160,24 @@ export class AttackFeel {
   }
 
   /** The vertices of every blow's arc at `clock`, seen from `eye`: each striker's blow being struck begins or follows
-   *  its arc, at its feet as `feet` has them drawn. */
-  arcsMesh(clock: number, strikers: readonly Striker[], feet: ReadonlyMap<number, Vector>, eye: Vector): Float32Array {
+   *  its arc, at its figure in `drawn`, going the way that figure is drawn swinging it: a blow the way the forge draws
+   *  it, any other move the way the rules struck it. Through the eyes (`eyes`) none is drawn. */
+  arcsMesh(
+    clock: number,
+    strikers: readonly Striker[],
+    drawn: ReadonlyMap<number, DrawnFigure>,
+    eye: Vector,
+    eyes: boolean,
+  ): Float32Array {
     const { tick } = this;
     const swung: Swing[] = [];
-    for (const { id, view, right, left, eyes } of strikers) {
+    for (const { id, view, right, left } of eyes ? [] : strikers) {
       const action = view?.action;
-      if (!view || action?.kind !== 'attack') continue;
+      const figure = drawn.get(id);
+      if (!view || !figure || action?.kind !== 'attack') continue;
+      // A blow is drawn in the right hand; a pair's side cut with its right blade.
+      const blow = blowWay(figure.anim);
+      const way = blow ?? directionOf(action.stroke);
       swung.push({
         id,
         stroke: action.stroke,
@@ -168,16 +185,17 @@ export class AttackFeel {
         strike: action.strike * tick,
         end: action.end * tick,
         reach: this.rules.strokeReach(view.arms, action.stroke),
-        halfArc: this.rules.strokeArc(action.stroke),
+        halfArc: this.rules.strokeArc(STROKE_DIRECTIONS.indexOf(way) + 1),
         aim: view.aim,
-        leftHand: action.leftHand,
+        way,
+        leftHand: blow ? false : action.leftHand,
+        mirrored: figure.flip,
         special: action.swing !== 'plain',
         tint: weaponTint(action.leftHand ? left : right),
-        firstPerson: eyes ?? false,
       });
     }
-    this.arcs.seen(clock, swung, (id) => feet.get(id) ?? null);
-    const look = { brightness: this.feel.arc ? this.feel.arcBrightness : 0, trail: this.feel.arcTrail };
+    this.arcs.seen(clock, swung, (id) => drawn.get(id)?.feet ?? null);
+    const look = { brightness: this.feel.arc && !eyes ? this.feel.arcBrightness : 0, trail: this.feel.arcTrail };
     return this.arcs.mesh(eye, look, (id) => this.lag(id));
   }
 }

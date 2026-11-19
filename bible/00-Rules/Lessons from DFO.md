@@ -17,6 +17,7 @@ merges).
 | Branches lived long | 1,319 branches; the newest work 1,793 commits ahead of `main`; 31% of commits are merges | [[Short Branches, Green Main]] |
 | Generated art lived in git | 251 forge shard branches; deploy size guards at 900 MB and 1.8 GB | [[Generated Files Stay Out of Git]] |
 | Version counters collided | ~172 commits renumbering relay and database versions; relay at version 311; 215 migrations | [[Versions Are Not Counters]] |
+| Words grew long and were cut back later | ~240 commits cutting words; a word-count baseline that could only go down | [[Plain Text]], held in review from the first line |
 | Rules moved to the server after the fact | The server branch: 734 commits moving foes, loot and spells onto the server | The server is the authority from its first line, running one Rust rules crate ([[Server-Authoritative Multiplayer]]) |
 | Agreeing to the bit took discipline | World 2.0's exact kit bans `Math.sin` and hand-writes an arctangent | [[Agree to the Bit]], by construction |
 | Tests outgrew the code | 5,142 test files, 1.29 million lines | [[Tests Check Behaviour]]; [[Testing]] |
