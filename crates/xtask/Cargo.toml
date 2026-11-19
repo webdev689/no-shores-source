@@ -7,6 +7,7 @@ publish.workspace = true
 description = "The repository's own checks and chores, run as `cargo xtask <command>`."
 
 [dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true
