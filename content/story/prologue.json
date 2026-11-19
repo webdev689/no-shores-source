@@ -41,9 +41,9 @@
     ],
     "shore": [
       { "who": "stranger", "say": "You're breathing. Good.", "emote": "alert" },
-      { "who": "stranger", "say": "Easy now. You swallowed half the sea.", "emote": "fear" }
+      { "who": "stranger", "say": "Can you stand? Take my hand.", "emote": "question" }
     ],
-    "standing": [{ "who": "stranger", "say": "Overlook is just up the shore. Lean on me." }],
+    "standing": [{ "who": "stranger", "say": "Walk with me. You're shaking." }],
     "arrived": [{ "who": "stranger", "say": "Find your feet. Someone here will know what to do." }]
   }
 }

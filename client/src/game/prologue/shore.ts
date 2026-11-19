@@ -21,11 +21,18 @@ import { lidsAt } from './wake.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 export const STRANGER_ID = ACTOR_IDS + 80;
-/** The stranger: dressed as Overlook's townsfolk are, a woman of the town. */
+/** The stranger: dressed as Overlook's townsfolk are, a woman of the town, in the townsfolk's garments the forge draws
+ *  her in through every move she makes (walk, kneel and idle; shore.test.ts holds the forge's table to it). */
 export const STRANGER_DRESS: Dress = {
   ...plainDress('human', 0.6),
   body: 'female',
-  outfit: { ...plainDress('human', 0.6).outfit, right: null, hair: { style: 'braid', colour: 'auburn' } },
+  outfit: {
+    ...plainDress('human', 0.6).outfit,
+    garments: ['peasant_blouse', 'long_skirt', 'boots'],
+    dyes: { peasant_blouse: 'White', long_skirt: 'DarkBrown', boots: 'DarkBrown' },
+    right: null,
+    hair: { style: 'braid', colour: 'auburn' },
+  },
 };
 /** The beach searches: their squares round the plaza, sampled every so many metres; the wider one if the first finds
  *  no strand. */
@@ -43,12 +50,18 @@ const SIDE_M = 0.6;
 /** When she kneels by the player, and how long she is down before she speaks. */
 export const KNEELS_AT_S = COME_AFTER_S + (FROM_M - KNEEL_M) / WALK_M_S;
 const SPEAKS_AFTER_S = 0.8;
-/** Her head over the ground kneeling and standing, and the point over it that her words and feelings stand on. */
-const KNEEL_HEAD_M = 1.5;
-const STAND_HEAD_M = 1.7;
-const OVER_HEAD_M = 0.3;
-/** Getting up, and the walk up the shore together, and when it fades. */
+/** Her face and the crown of her head over her feet, kneeling and standing, in metres: the forge's own measures of the
+ *  female body (its points table's head and crown over the root, at 62 pixels a metre). The camera aims at her face;
+ *  her words and feelings stand on a point this far over her crown. */
+export const STRANGER_HEAD = {
+  kneeling: { face: 1.15, crown: 1.28 },
+  standing: { face: 1.63, crown: 1.76 },
+} as const;
+export const OVER_HEAD_M = 0.25;
+/** Getting up, and the walk up the shore together, and when it fades. She is drawn up at the rise's middle, where the
+ *  eye climbs fastest, as the forge draws nothing between kneeling and standing. */
 const RISE_S = 2.4;
+const RISEN_AT = 0.5;
 const TOGETHER_M_S = 1.15;
 const TOGETHER_S = 6.5;
 
@@ -190,18 +203,25 @@ export class Shore implements Beat {
       }
     }
     const [you, stranger] = this.people(beach);
-    const head = this.headM() + OVER_HEAD_M;
+    const head = STRANGER_HEAD[this.kneeling() ? 'kneeling' : 'standing'].crown + OVER_HEAD_M;
     const heads = new Map([['stranger', [stranger.x, stranger.y, stranger.z + head] as const]]);
     const actors: Actor[] = this.phase === 'walking' || this.phase === 'gone' ? [you, stranger] : [stranger];
     return { shot: this.shot(beach, you, stranger), actors, heads, focus: [beach.at[0], beach.at[1]] };
   }
 
-  /** How high her head stands: kneeling by the player, rising with them, then standing. */
-  private headM(): number {
-    if (this.phase === 'talking' || this.phase === 'asking' || (this.phase === 'waking' && this.since >= KNEELS_AT_S))
-      return KNEEL_HEAD_M;
-    if (this.phase === 'rising') return KNEEL_HEAD_M + (STAND_HEAD_M - KNEEL_HEAD_M) * eased(this.rose);
-    return STAND_HEAD_M;
+  /** Whether she is down on one knee: from reaching the player until the middle of the rise. */
+  private kneeling(): boolean {
+    if (this.phase === 'waking') return this.since >= KNEELS_AT_S;
+    if (this.phase === 'rising') return this.rose < RISEN_AT;
+    return this.phase === 'talking' || this.phase === 'asking';
+  }
+
+  /** How high her face stands, for the eye to look at: kneeling by the player, eased up with them as they rise, then
+   *  standing. */
+  private faceM(): number {
+    const { kneeling, standing } = STRANGER_HEAD;
+    if (this.phase === 'rising') return kneeling.face + (standing.face - kneeling.face) * eased(this.rose);
+    return this.kneeling() ? kneeling.face : standing.face;
   }
 
   /** The player and the stranger where they are now. */
@@ -228,11 +248,10 @@ export class Shore implements Beat {
     const away = KNEEL_M + coming + together;
     const strangerAt: [number, number] = [x + inlandX * away + sideX, y + inlandY * away + sideY];
     const knelt = this.since >= KNEELS_AT_S;
-    const kneeling = knelt && (this.phase === 'waking' || this.phase === 'talking' || this.phase === 'asking');
     const stranger: Actor = {
       id: STRANGER_ID,
       dress: STRANGER_DRESS,
-      anim: walking || !knelt ? 'walk' : kneeling ? 'kneel' : 'idle',
+      anim: walking || !knelt ? 'walk' : this.kneeling() ? 'kneel' : 'idle',
       x: strangerAt[0],
       y: strangerAt[1],
       z: this.ground(...strangerAt),
@@ -255,7 +274,7 @@ export class Shore implements Beat {
     }
     const lift = this.phase === 'leaning' ? 1 : this.phase === 'rising' ? this.rose : 0;
     const eye: Point3 = [beach.at[0], beach.at[1], this.ground(beach.at[0], beach.at[1]) + 0.3 + 1.35 * eased(lift)];
-    const toStranger = lookAt(eye, [stranger.x, stranger.y, stranger.z + this.headM()]);
+    const toStranger = lookAt(eye, [stranger.x, stranger.y, stranger.z + this.faceM()]);
     // Up at the sky at first; the head turns to the stranger as she comes near, and stays on her from then.
     const turned = eased(Math.min(1, Math.max(0, (this.since - 6) / 2.5)));
     const sky = { yaw: beach.inland + 0.3, pitch: -1.2 };

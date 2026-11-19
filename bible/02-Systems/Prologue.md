@@ -78,19 +78,25 @@ takes them straight to Overlook's social space. While the story plays the menu (
 
 **The shore.** The player wakes lying on the strand, looking up at the sky while the eyes blink open. The stranger
 sets off 3 s in, 12 m up the beach, and walks down to a place 1.1 m up from the player and 0.6 m to their side, where
-she kneels (about 11 s in); the head turns to her from 6 s. Once she is down she says her two lines, framed in the
+she kneels (about 11 s in); the head turns to her from 6 s. She wears a townswoman's peasant blouse, long skirt and
+boots, which the forge draws in every move she makes (walk, kneel and idle; her test reads the forge's own tables), and
+the eye looks at her face, 1.15 m over her feet kneeling and 1.63 m standing, the forge's own measures; her words and
+feelings stand 0.25 m over the crown of her head. Once she is down she says her two lines, framed in the
 view; then the screen asks the player to take her hand ("Click or press any key to take her hand", "Tap to take her
 hand" on a touch screen). Only a press, a click or a tap raises them: the view rises to standing over 2.4 s while she
-rises with it, she says one more line, and the camera goes behind the two as they walk up the shore from where they
+rises with it, drawn standing from the rise's middle, where the eye climbs fastest (the forge draws nothing between
+kneeling and standing), she says one more line, and the camera goes behind the two as they walk up the shore from where they
 stood, for 6.5 s, into black. If the coast has no strand, or the land's worker cannot answer the search, the player
-wakes on Overlook's plaza by its first spawn instead; if even that cannot be laid, the shore fails and the story ends
+wakes on Overlook's plaza by its first spawn instead, where her words, which name neither the sea nor the shore, hold as
+well; if even that cannot be laid, the shore fails and the story ends
 played.
 
 **After the shore** the flow's `story-ended` takes the player through the veil to Overlook's social space. The story's
 black holds until the veil has risen over it (0.7 s), then goes. The stranger waits behind the veil; she stands 2.2 m ahead of the
 player and 1 m to their right (their left where the right is water), facing them, and says her last line once the
 veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's middle on dry ground only (she stands where the next step is water or
-unknown), and is let go once she is out of the player's view. Leaving Overlook's social space before then ends her
+unknown), and is let go once none of her, feet to head, is on the player's view, or a minute after she set off if she
+still stands in sight, held at the water or at the town's middle. Leaving Overlook's social space before then ends her
 part at once, her words with it. The game is the player's from there.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the

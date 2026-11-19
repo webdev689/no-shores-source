@@ -4,7 +4,7 @@
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { actorCards, type Actor } from './actors.ts';
-import { STRANGER_DRESS, STRANGER_ID } from './shore.ts';
+import { OVER_HEAD_M, STRANGER_DRESS, STRANGER_HEAD, STRANGER_ID } from './shore.ts';
 import { headOnView, type Stage, HUD_VEIL_S } from './stage.ts';
 
 /** Where the stranger stands from the player, metres ahead and to their right, in front of the camera behind them. */
@@ -13,8 +13,14 @@ const RIGHT_M = 1;
 /** Her pace into the town, and how near its middle she stops. */
 const WALK_M_S = 1.3;
 const THERE_M = 2;
-/** Her head over the ground, with the point over it her words stand on. */
-const HEAD_M = 2;
+/** The point over her head her words stand on. */
+const HEAD_M = STRANGER_HEAD.standing.crown + OVER_HEAD_M;
+/** Her figure as the view sees it, this broad either side of her middle and sampled this often up from her feet. */
+const HALF_BROAD_M = 0.35;
+const SAMPLE_M = 0.2;
+/** How long she walks off before she is let go even in sight: held at the water or at the town's middle, she would
+ *  otherwise stand there for good. */
+const LET_GO_S = 60;
 
 type Standing = { x: number; y: number; z: number; facing: number };
 
@@ -25,6 +31,8 @@ export class Epilogue {
   /** Seconds since the veil over the arrival began to fall. */
   private lifted = 0;
   private phase: 'waiting' | 'speaking' | 'going' = 'waiting';
+  /** Seconds since she set off into the town. */
+  private going = 0;
   done = false;
 
   constructor(stage: Stage, forge: Cards) {
@@ -58,9 +66,12 @@ export class Epilogue {
         walkOff();
       });
     }
-    if (this.phase === 'going' && !head) {
-      this.leave();
-      return [];
+    if (this.phase === 'going') {
+      this.going += seconds;
+      if (this.going >= LET_GO_S || !inSight(shot, viewport, standing)) {
+        this.leave();
+        return [];
+      }
     }
     const walking = this.phase === 'going' && this.walk(standing, seconds);
     this.stage.tick(seconds);
@@ -112,4 +123,22 @@ export class Epilogue {
     Object.assign(standing, { x, y, z: ground });
     return true;
   }
+}
+
+/** Whether any of her figure, feet to the point over her head, is on the view: her head may have left its top while
+ *  the player stands close or looks down at her. */
+function inSight(
+  shot: Shot,
+  viewport: { readonly width: number; readonly height: number },
+  standing: Standing,
+): boolean {
+  const [awayX, awayY] = [standing.x - shot.eye[0], standing.y - shot.eye[1]];
+  const away = Math.hypot(awayX, awayY) || 1;
+  const [sideX, sideY] = [-awayY / away, awayX / away];
+  for (let up = 0; up <= HEAD_M; up += SAMPLE_M)
+    for (const side of [-HALF_BROAD_M, 0, HALF_BROAD_M]) {
+      const point = [standing.x + sideX * side, standing.y + sideY * side, standing.z + up] as const;
+      if (headOnView(onScreen(shot, viewport, point), viewport)) return true;
+    }
+  return false;
 }
