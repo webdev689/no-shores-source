@@ -236,6 +236,23 @@ pub fn off_line(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
     distance(point, [from[0] + span_x * along, from[1] + span_y * along])
 }
 
+/// How far a footprint square to the world (west, north, east, south) lies from the segment between two points: 0
+/// where the segment runs into it.
+#[must_use]
+pub fn rect_off_line([west, north, east, south]: [f64; 4], from: [f64; 2], to: [f64; 2]) -> f64 {
+    let inside = |[x, y]: [f64; 2]| x >= west && x <= east && y >= north && y <= south;
+    let corners = [[west, north], [east, north], [east, south], [west, south]];
+    let crosses = (0..4).any(|side| segments_cross(from, to, corners[side], corners[(side + 1) % 4]));
+    if inside(from) || inside(to) || crosses {
+        return 0.0;
+    }
+    let to_rect = |[x, y]: [f64; 2]| {
+        let (east_of, south_of) = ((west - x).max(x - east).max(0.0), (north - y).max(y - south).max(0.0));
+        (east_of * east_of + south_of * south_of).sqrt()
+    };
+    corners.iter().map(|&corner| off_line(corner, from, to)).fold(to_rect(from).min(to_rect(to)), f64::min)
+}
+
 /// Where a way of cells crosses a river: the last dry cell before the water and the first after it, each a point.
 #[must_use]
 pub fn crossings(field: &Field, cells: &[usize]) -> Vec<[[f64; 2]; 2]> {

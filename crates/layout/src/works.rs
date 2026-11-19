@@ -7,7 +7,7 @@
 use crate::areas::Area;
 use crate::brief::AreaKind;
 use crate::field::distance;
-use crate::paths::{Path, Tier, off_line, simplified};
+use crate::paths::{Path, Tier, off_line, rect_off_line, simplified};
 use crate::pieces::{Kit, ahead, turn_along};
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::Sculpts;
@@ -29,16 +29,32 @@ const FOOT: f64 = crate::rocks::FOOT_RISE_M;
 /// A straight run of a path: its middle, its way and its length.
 type Run = ([f64; 2], [f64; 2], f64);
 
-/// A path's longest straight run.
+/// A path's longest straight run: the point of the path itself nearest its middle, and the path's own way there, so
+/// a work square to it stands square to the way as it wanders, not to the run's chord.
 fn longest_run(path: &Path) -> Option<Run> {
-    simplified(&path.points, 6.0)
+    let points = &path.points;
+    let (middle, length) = simplified(points, 6.0)
         .windows(2)
-        .map(|pair| {
-            let length = distance(pair[0], pair[1]);
-            let way = [(pair[1][0] - pair[0][0]) / length.max(1e-9), (pair[1][1] - pair[0][1]) / length.max(1e-9)];
-            ([(pair[0][0] + pair[1][0]) / 2.0, (pair[0][1] + pair[1][1]) / 2.0], way, length)
+        .map(|pair| ([(pair[0][0] + pair[1][0]) / 2.0, (pair[0][1] + pair[1][1]) / 2.0], distance(pair[0], pair[1])))
+        .max_by(|first, second| first.1.total_cmp(&second.1))?;
+    let nearest = (0..points.len())
+        .min_by(|&first, &second| distance(points[first], middle).total_cmp(&distance(points[second], middle)))?;
+    let (back, ahead) = (points[nearest.saturating_sub(1)], points[(nearest + 1).min(points.len() - 1)]);
+    let span = distance(back, ahead).max(1e-9);
+    Some((points[nearest], [(ahead[0] - back[0]) / span, (ahead[1] - back[1]) / span], length))
+}
+
+/// Whether every one of a work's pieces that stands lower than a head over the floor keeps clear of every way's
+/// walked width: its box, square to the world, as a body meets it.
+fn clear_of_ways(pieces: &[Solid], paths: &[Path], floor: f64) -> bool {
+    pieces.iter().filter(|piece| piece.at[2] < floor + 2.0).all(|piece| {
+        let [west, north, east, south, ..] = piece.bounds();
+        paths.iter().all(|path| {
+            path.points
+                .windows(2)
+                .all(|pair| rect_off_line([west, north, east, south], pair[0], pair[1]) > path.tier.width() / 2.0 + 0.3)
         })
-        .max_by(|first, second| first.2.total_cmp(&second.2))
+    })
 }
 
 /// Whether a point stands clear of every area's reach, so a work is built in a canyon and not in a basin.
@@ -57,7 +73,7 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &
     runs.sort_by(|first, second| second.1.2.total_cmp(&first.1.2));
     let wall = runs.iter().find(|(tier, _)| *tier == Tier::Track).or(runs.first()).copied();
     if let Some((tier, (middle, way, _))) = wall {
-        great_wall(kit, middle, way, tier, rise);
+        great_wall(kit, middle, way, tier, rise, paths);
     }
     // The viaduct stands well away from the wall, so each is a place of its own.
     let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, _, _))| distance(middle, run.1.0) > WORKS_APART_M);
@@ -91,74 +107,69 @@ fn canyon(tier: Tier) -> (f64, f64) {
 
 /// The great wall: a dam of ashlar across the canyon square to its way, its ends sunk into the cliffs either side,
 /// buttressed on both faces, battlemented, and broken through where the track runs, the breach's sides stepped where
-/// its courses fell and their stones heaped below.
-fn great_wall(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64) {
+/// its courses fell and their stones heaped below. The breach opens until no piece stands on a way, and no fallen
+/// stone lies on one.
+fn great_wall(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64, paths: &[Path]) {
     let (half, run) = canyon(tier);
     let floor = kit.height(middle);
     let across = [-way[1], way[0]];
     let turn = turn_along(across);
     let reach = (half * 1.35 + run) + 26.0;
-    let breach = tier.width() / 2.0 + BREACH_SPARE_M;
     let top = floor + rise + WALL_OVER_M;
-    for side in [-1.0, 1.0] {
-        let length = reach - breach;
-        let centre = ahead(middle, across, side * (breach + length / 2.0), 0.0);
-        kit.solid(
-            Solid::upright(
-                Shape::Block,
-                [centre[0], centre[1], floor - 3.0],
-                [WALL_THICK_M, length, top - floor + 3.0],
-                Material::Stone,
-            )
-            .turned(turn),
-        );
-        // The breach's broken edge: courses stepping back from the gap, each lower than the last.
-        for course in 0..5 {
-            let at = ahead(middle, across, side * (breach + 1.5 + f64::from(course) * 1.6), 0.0);
-            let height = (top - floor) * (0.25 + 0.15 * f64::from(course));
-            kit.solid(
-                Solid::upright(
-                    Shape::Block,
-                    [at[0], at[1], floor - 1.0],
-                    [WALL_THICK_M + 0.6, 3.2, height],
-                    Material::Stone,
-                )
-                .turned(turn),
-            );
-        }
-        for buttress in 0..((length / 9.0) as u32) {
-            let along = breach + 6.0 + f64::from(buttress) * 9.0;
-            for face in [-1.0, 1.0] {
-                let at = ahead(ahead(middle, across, side * along, 0.0), way, face * (WALL_THICK_M / 2.0 + 1.0), 0.0);
-                kit.solid(
-                    Solid::upright(
-                        Shape::Block,
-                        [at[0], at[1], floor - 2.0],
-                        [2.2, 2.0, top - floor - 4.0],
-                        Material::Trim,
-                    )
-                    .turned(turn),
+    let pieces = |breach: f64| {
+        let mut pieces = Vec::new();
+        for side in [-1.0, 1.0] {
+            let length = reach - breach;
+            let (start, end) = (ahead(middle, across, side * breach, 0.0), ahead(middle, across, side * reach, 0.0));
+            crate::halls::wall(&mut pieces, start, end, floor - 3.0, top, WALL_THICK_M, Material::Stone);
+            // The breach's broken edge: courses stepping back from the gap, each lower than the last.
+            for course in 0..5 {
+                let at = ahead(middle, across, side * (breach + 1.5 + f64::from(course) * 1.6), 0.0);
+                let height = (top - floor) * (0.25 + 0.15 * f64::from(course));
+                let size = [WALL_THICK_M + 0.6, 3.2, height];
+                pieces.push(
+                    Solid::upright(Shape::Block, [at[0], at[1], floor - 1.0], size, Material::Stone).turned(turn),
                 );
             }
+            for buttress in 0..((length / 9.0) as u32) {
+                let along = breach + 6.0 + f64::from(buttress) * 9.0;
+                for face in [-1.0, 1.0] {
+                    let at =
+                        ahead(ahead(middle, across, side * along, 0.0), way, face * (WALL_THICK_M / 2.0 + 1.0), 0.0);
+                    let size = [2.2, 2.0, top - floor - 4.0];
+                    pieces.push(
+                        Solid::upright(Shape::Block, [at[0], at[1], floor - 2.0], size, Material::Trim).turned(turn),
+                    );
+                }
+            }
+            for merlon in 0..((length / 3.0) as u32) {
+                let at = ahead(middle, across, side * (breach + 6.0 + f64::from(merlon) * 3.0), 0.0);
+                let size = [WALL_THICK_M, 1.4, 1.8];
+                pieces.push(Solid::upright(Shape::Block, [at[0], at[1], top], size, Material::Stone).turned(turn));
+            }
         }
-        for merlon in 0..((length / 3.0) as u32) {
-            let at = ahead(middle, across, side * (breach + 6.0 + f64::from(merlon) * 3.0), 0.0);
-            kit.solid(
-                Solid::upright(Shape::Block, [at[0], at[1], top], [WALL_THICK_M, 1.4, 1.8], Material::Stone)
-                    .turned(turn),
-            );
-        }
+        pieces
+    };
+    let least = tier.width() / 2.0 + BREACH_SPARE_M;
+    let breach =
+        (0..12).map(|wider| least + f64::from(wider)).find(|&breach| clear_of_ways(&pieces(breach), paths, floor));
+    let breach = breach.unwrap_or(least + 12.0);
+    for piece in pieces(breach) {
+        kit.solid(piece);
     }
     for _ in 0..14 {
         let along = (kit.draw() - 0.5) * breach * 1.4;
         let out = (kit.draw() - 0.5) * 22.0;
         let at = ahead(ahead(middle, across, along, 0.0), way, out, 0.0);
-        if out.abs() < WALL_THICK_M / 2.0 + 2.0 && along.abs() < tier.width() {
-            continue;
-        }
         let size = [1.5 + kit.draw() * 2.5, 1.2 + kit.draw() * 2.0, 1.0 + kit.draw() * 1.8];
         let spin = kit.draw() * 3.0;
-        kit.stand(Shape::Block, at, size, spin, Material::Stone, 0.4);
+        let stone =
+            Solid::upright(Shape::Block, [at[0], at[1], kit.height(at) - 0.4], size, Material::Stone).turned(spin);
+        if (out.abs() >= WALL_THICK_M / 2.0 + 2.0 || along.abs() >= tier.width())
+            && clear_of_ways(&[stone], paths, floor)
+        {
+            kit.solid(stone);
+        }
     }
 }
 

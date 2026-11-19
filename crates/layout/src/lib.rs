@@ -193,7 +193,6 @@ pub fn plan(
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, rise, &carved);
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
-    let laid = paths.len();
     for pair in sculpt.climbs.chunks_exact(2) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
         let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
@@ -207,6 +206,7 @@ pub fn plan(
         skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
         skyline::kerb(&mut kit, [x1, y1], [x2, y2], pair[0][4], &carved);
     }
+    let walked = paths.len();
     // Each run is walked as a footpath, foes hold its beats, and its end and door are marked for the missions to come.
     for run in &runs {
         paths.push(paths::Path {
@@ -238,8 +238,9 @@ pub fn plan(
     rocks::talus(&mut kit, &ring, &paths, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &paths, &carved);
     skyline::rim(&mut kit, &ring, &paths, &carved);
-    // The climbs came after what stands was kept off the ways: keep it off them too.
-    keep_off_paths(&mut seating, &paths[laid..], &|x, y| ground.height_at(x, y));
+    // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off
+    // them all again. A run keeps its own pieces off its line (run_kits.rs).
+    keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));
     let spawns = spawns_round(&field, anchor);
     Layout {
         id: node.id.clone(),
