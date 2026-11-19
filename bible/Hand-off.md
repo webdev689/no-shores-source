@@ -342,17 +342,15 @@ Where the work stands now, for the next session. Each session rewrites this note
      Cutting each ramp along its way's own line (tried, not kept) fixed that way but stepped the way from the
      landing to the graves, which runs between two of the camp's ramps over their raised sides. So a ramp alone is
      not enough: the levels must be laid on the network of ways as a whole, the ground between ways that run near
-     each other graded to one level, and the walk switched on once they are. In progress on its own branch,
-     `ccr-0f4acf2e-wd3195-heights` (not merged into #63's): the brief's `heights` (the Vale's only, its Water Meadows
-     at the river's level), each area at its kind's level (`heights.rs`), every way's points graded between them as
-     one network, and the raised floors carved as the sculpt's `levels` (as climbs, but floor to all that asks for
-     floor); lookout climbs start at their floor's level; outcrops stand on the raised floor under their middle; the
-     floor's level follows the massif's local rise, as a climb's does. Still failing there: the node agreement's pin
-     (moved by the local rise: re-pin once the rest settles); the Hollow Undercroft no longer found in the Vale's rock
-     (four tests); outcrops burying stones by the raised floors; and three of the Vale's retaining walls 6.6 to 7.3 m
-     off their cliff's foot. Fixed there: the land is cut to its raised floors before its climbs, so a terrace stands
-     on a raised floor, and a ramp's foot meets the land under it. Then the bridges over the river, built before the carving
-     on the land's own heights, must span the ravine at the ways' level, and the masses' valleys join floors at theirs;
+     each other graded to one level, and the walk switched on once they are. Done on the Vale ([[Layouts]],
+     "Heights"): its places at their kinds' heights, every way graded between them as one network, the raised floors
+     carved as the sculpt's `levels` ([[Land]]), every way and climb walked without a step. Left for step 2: the
+     Downs and the Moors (the Moors' camp step waits on them taking the graded network), switchbacks where a way would
+     climb steeper than its tier, stairs for short rises, land bridges, bridges over a river a graded way crosses (none
+     in the Vale; built before the carving on the land's own heights, they must span at the ways' level), and the
+     masses' valleys joining floors at their levels. Two workers run beside it (`~/wt`, the toolkit's workers):
+     `ccr-0f4acf2e-wd3195-navmesh` for step 5, and `ccr-0f4acf2e-wd3195-rock` for the owner's real 3D rock (a cave
+     roof, an overhang, a natural arch, a tunnel mouth as solids, not yet placed);
   3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
      hollows and pits;
   4. gates and their palisades ending on rock or walls, with a check that each meets what it joins;
