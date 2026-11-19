@@ -66,6 +66,8 @@ function roomSource(room: SeaRoom, first: FightView): FightSource {
 
 export class SeaCombat {
   private readonly naval: Naval;
+  /** The hull a ship is drawn as: her own once her model has come. */
+  private readonly shown: (hull: number) => number;
   private readonly fought = new Fought();
   /** Each ship's rig, the player's first, one more as each other captain comes into the fight. */
   private readonly rigs: { readonly hull: number; readonly rig: SailRig }[] = [];
@@ -82,8 +84,15 @@ export class SeaCombat {
   private down = 0;
   private going: 1 | -1 = 1;
 
-  constructor(room: SeaRoom, first: FightView, marks: MarkDrawer, now: number) {
-    this.naval = new Naval(marks);
+  constructor(
+    room: SeaRoom,
+    first: FightView,
+    marks: MarkDrawer,
+    now: number,
+    shown: (hull: number) => number = (hull) => hull,
+  ) {
+    this.shown = shown;
+    this.naval = new Naval(marks, shown);
     this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
     this.last = first;
     const [x = 0, y = 0, heading = 0] = first.player.ship;
@@ -203,7 +212,7 @@ export class SeaCombat {
     const player = { vessel: this.last.player, hull: SLOOP_HULL, side: 'player' as const };
     const captains = this.captains.map((captain) => ({
       vessel: captain,
-      hull: hullOfCaptain(captain),
+      hull: this.shown(hullOfCaptain(captain)),
       side: factionSide(captain.faction),
     }));
     return [player, ...captains];
@@ -254,7 +263,7 @@ export class SeaCombat {
         { ...captain, maxHull: captain.max_hull },
         { leftM: 0, topM: 0 },
         scale,
-        plateOverM(hullOfCaptain(captain)),
+        plateOverM(this.shown(hullOfCaptain(captain))),
       );
     return this.captains.map(bar).filter((shown) => shown !== null);
   }

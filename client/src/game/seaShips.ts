@@ -26,6 +26,8 @@ const FIRST_SEEN_S = 5;
 /** The player's ship, the Sloop, and what draws a fight's balls, arcs and effects. */
 export interface SeaHull {
   readonly waterline: Waterline;
+  /** The hull a ship is drawn as: her own once her model has come, the Sloop until then. */
+  readonly shown: (hull: number) => number;
   readonly marks: MarkDrawer;
 }
 
@@ -46,6 +48,11 @@ export interface Lies {
   readonly underWay: boolean;
 }
 
+/** How far a hull heels into a turn as the Sloop does: a narrower hull more, a broader one less, by beam. */
+export function heelShare(hull: number): number {
+  return hullWaterline(SLOOP_HULL).beamM / hullWaterline(hull).beamM;
+}
+
 /** A ship at sea and whose she is: her hull, her side and who sails her. */
 interface Sailing {
   readonly who: string;
@@ -55,7 +62,11 @@ interface Sailing {
 }
 
 /** Every ship at sea but the player's: each other player's Sloop, then each captain's ship. */
-function round(others: readonly SeenShip[], pirates: readonly SeenPirate[]): Sailing[] {
+function round(
+  others: readonly SeenShip[],
+  pirates: readonly SeenPirate[],
+  shown: (hull: number) => number,
+): Sailing[] {
   return [
     ...others.map((ship) => ({
       who: `player-${ship.player}`,
@@ -66,7 +77,7 @@ function round(others: readonly SeenShip[], pirates: readonly SeenPirate[]): Sai
     ...pirates.map((pirate) => ({
       who: `pirate-${pirate.id}`,
       lies: { ...pirate, underWay: true },
-      hull: hullOfCaptain(pirate),
+      hull: shown(hullOfCaptain(pirate)),
       side: factionSide(pirate.faction),
     })),
   ];
@@ -75,8 +86,14 @@ function round(others: readonly SeenShip[], pirates: readonly SeenPirate[]): Sai
 /** The ships at sea, each one's rig kept from frame to frame so her sails ease from set to furled, and her swing so she
  *  heels into a turn. */
 export class SeaShips {
+  /** The hull a ship is drawn as: her own once her model has come (`ShipModels.shown`). */
+  private readonly shown: (hull: number) => number;
   private readonly rigs = new Map<string, { readonly hull: number; readonly rig: SailRig }>();
   private readonly swings = new Map<string, { heading: number; swing: number }>();
+
+  constructor(shown: (hull: number) => number = (hull) => hull) {
+    this.shown = shown;
+  }
 
   /** Where the ship `who` is drawn, `scale` times her size, `seconds` on at `time`: on the swell at her hull's
    *  waterline, heeled into her swing at a ship's own way while under way. Asked once a frame for each ship, so her
@@ -100,7 +117,7 @@ export class SeaShips {
     this.swings.set(who, { heading: lies.heading, swing });
     const { lengthM, beamM } = hullWaterline(hull);
     const pose = poseOnSwell(water.swell, water.depthAt, lies, (lengthM / 2) * scale, (beamM / 2) * scale, time);
-    const heel = turnHeel(swing, lies.underWay ? SHIP_SPEED : 0);
+    const heel = turnHeel(swing, lies.underWay ? SHIP_SPEED : 0) * heelShare(hull);
     return {
       x: lies.x,
       y: lies.y,
@@ -137,7 +154,7 @@ export class SeaShips {
       const placed = place ?? this.placeOf(who, lies, scale, water, seconds, time, hull);
       return { hull, place: placed, rig: rigged.rig, look: { side } };
     };
-    const ships = round(others, pirates);
+    const ships = round(others, pirates, this.shown);
     const sailing = new Set(['own', ...ships.map((ship) => ship.who)]);
     for (const who of this.rigs.keys()) if (!sailing.has(who)) this.rigs.delete(who);
     for (const who of this.swings.keys()) if (!sailing.has(who)) this.swings.delete(who);
@@ -154,7 +171,7 @@ export class SeaShips {
       const [halfLength, halfBeam] = [(lengthM / 2) * scale, (beamM / 2) * scale];
       return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0 };
     };
-    const near = round(others, pirates).map((ship) => footprint(ship.lies, ship.hull));
+    const near = round(others, pirates, this.shown).map((ship) => footprint(ship.lies, ship.hull));
     const away = (mask: HullMask) => Math.hypot(mask.x - own.x, mask.y - own.y);
     return [footprint(own, SLOOP_HULL), ...near.sort((one, other) => away(one) - away(other))].slice(0, HULLS);
   }

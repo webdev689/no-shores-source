@@ -167,7 +167,7 @@ export class Sea {
   ) {
     this.landmass = landmass;
     this.hull = hull;
-    this.drawn = new SeaShips();
+    this.drawn = new SeaShips(hull.shown);
     this.aboard = new Aboard(aboard, SLOOP_DECK);
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
     this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
@@ -557,7 +557,7 @@ export class Sea {
     this.aboard.drop();
     this.passage.stop();
     if (this.view.kind === 'helm') this.view = { kind: 'sail' };
-    this.combat = new SeaCombat(this.room, first, this.hull.marks, time);
+    this.combat = new SeaCombat(this.room, first, this.hull.marks, time, this.hull.shown);
   }
 
   /** The view coming down to the helm, there, or going back up, `seconds` on: how far down, eased. */

@@ -26,9 +26,10 @@ export function hullName(hull: number): HullName {
   return HULL_NAMES[hull] ?? 'sloop';
 }
 
-/** The hull a captain's ship sails, by the room's word on her: at sea, in a fight or in a fleet room.
- *  shortcut: the Sloop until the wire carries each ship's hull; read her `hull` number here once it does. */
-export function hullOfCaptain(_record: object): number {
+/** The hull a captain's ship sails, by the room's word on her: at sea her `Pirate`'s `hull`, in a fight's or a
+ *  fleet's view her captain's `hull_kind` (`hull` there is her hull points). shortcut: the Sloop until those fields
+ *  reach the page's records; the hostile ships' work reads them here. */
+export function hullOfCaptain(_pirateOrCaptain: object): number {
   return SLOOP_HULL;
 }
 

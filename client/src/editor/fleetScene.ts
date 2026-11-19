@@ -21,9 +21,6 @@ const OTHER_SHADE = 0.85;
 const BALL_DRAWN = 2;
 const BALL = [0.12, 0.12, 0.12] as const;
 
-/** The hull a ship the room shows sails: a captain's as the room names it, another player's the Sloop. */
-const hullOf = (vessel: FleetVessel): number => (vessel.captain ? hullOfCaptain(vessel) : SLOOP_HULL);
-
 /** A lay as the editor's arcs draw it. */
 function arcsLay(lay: FleetLay | null): FightLay | null {
   if (!lay) return null;
@@ -44,14 +41,21 @@ function placeOf(vessel: FleetVessel, view: LandView, shown: number): ShipPlace 
 export class FleetScene {
   readonly play: FleetSloop;
   private readonly marks: MarkDrawer;
+  private readonly shown: (hull: number) => number;
   private readonly effects = new Effects(7);
   private lay: FleetLay | null = null;
   /** Each other ship's rig by her number, for the hull she sails. */
   private readonly rigs = new Map<number, { readonly hull: number; readonly rig: SailRig }>();
 
-  constructor(play: FleetSloop, marks: MarkDrawer) {
+  constructor(play: FleetSloop, marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
     this.play = play;
     this.marks = marks;
+    this.shown = shown;
+  }
+
+  /** The hull a ship the room shows is drawn as: a captain's as the room names it, another player's the Sloop. */
+  private hullOf(vessel: FleetVessel): number {
+    return vessel.captain ? this.shown(hullOfCaptain(vessel)) : SLOOP_HULL;
   }
 
   /** The look the camera lays while aiming from her. */
@@ -89,7 +93,7 @@ export class FleetScene {
       .filter((vessel) => vessel.state !== 'sinking' && vessel.state !== 'sunk')
       .map((vessel) => {
         const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
-        const waterline = hullWaterline(hullOf(vessel));
+        const waterline = hullWaterline(this.hullOf(vessel));
         return {
           x: x - view.leftM,
           y: y - view.topM,
@@ -114,7 +118,7 @@ export class FleetScene {
     for (const id of this.rigs.keys()) if (!sailing.has(id)) this.rigs.delete(id);
     return others.flatMap((vessel) => {
       if (vessel.state === 'sunk') return [];
-      const hull = hullOf(vessel);
+      const hull = this.hullOf(vessel);
       let rigged = this.rigs.get(vessel.id);
       if (!rigged || rigged.hull !== hull) {
         rigged = { hull, rig: new SailRig(hullSails(hull)) };
@@ -149,7 +153,7 @@ export class FleetScene {
           { ...vessel, ...vessel.hurts, name: shipName(vessel.faction) },
           view,
           shown,
-          plateOverM(hullOf(vessel)),
+          plateOverM(this.hullOf(vessel)),
         ),
       )
       .filter((bar) => bar !== null);

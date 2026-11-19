@@ -6,7 +6,7 @@ import { MarkView } from '../ships/markView.ts';
 import { ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { PLAYER_LOOK } from '../ships/dress.ts';
-import { type DrawnShip, ShipModels } from '../ships/shipModels.ts';
+import { type DrawnShip, openHull, ShipModels } from '../ships/shipModels.ts';
 import type { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
@@ -162,10 +162,10 @@ export class LandScene {
     this.fail = fail;
     this.overlay = overlay;
     this.water = new WaterView(gpu);
-    this.models = new ShipModels(gpu, undefined, fail);
+    this.models = new ShipModels(openHull(gpu), fail);
     this.harbour = new Harbour(() => this.models.load(SLOOP_HULL), fail);
     this.marks = new MarkView(gpu);
-    this.naval = new Naval(this.marks);
+    this.naval = new Naval(this.marks, (hull) => this.models.shown(hull));
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -235,7 +235,8 @@ export class LandScene {
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
     const online = frame.sailing ? frame.fleet : null;
-    if (online !== (this.fleet?.play ?? null)) this.fleet = online ? new FleetScene(online, this.marks) : null;
+    if (online !== (this.fleet?.play ?? null))
+      this.fleet = online ? new FleetScene(online, this.marks, (hull) => this.models.shown(hull)) : null;
     const fleet = this.fleet;
     // Online, the ships ride the room's swell, so the water rolls by its clock.
     const time = fleet ? fleet.play.roomTime(now / 1000) : now / 1000;

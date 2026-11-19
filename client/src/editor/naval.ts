@@ -53,12 +53,15 @@ export class Naval {
   private adopted: FightView | null = null;
   private readonly effects = new Effects(1);
   private readonly marks: MarkDrawer;
+  /** The hull a ship is drawn as: her own once her model has come. */
+  private readonly shown: (hull: number) => number;
   private farewell: { readonly lines: string[]; readonly until: number } | null = null;
   /** Her captain's rig, for the hull she sails. */
   private rig: { readonly hull: number; readonly rig: SailRig } | null = null;
 
-  constructor(marks: MarkDrawer) {
+  constructor(marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
     this.marks = marks;
+    this.shown = shown;
   }
 
   /** Whether a fight is on: the fight steps her, not her own helm. */
@@ -166,7 +169,7 @@ export class Naval {
     const captain = this.fight?.view.captain;
     if (!captain || captain.state === 'sinking' || captain.state === 'sunk') return null;
     const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = captain.ship;
-    const waterline = hullWaterline(hullOfCaptain(captain));
+    const waterline = hullWaterline(this.shown(hullOfCaptain(captain)));
     return {
       x: x - view.leftM,
       y: y - view.topM,
@@ -180,7 +183,7 @@ export class Naval {
   /** Her captain's bar over her hull's masthead, heights as drawn, while one is on. */
   bars(view: Window, shown: number): ShipBar[] {
     const captain = this.fight?.view.captain;
-    const over = captain && plateOverM(hullOfCaptain(captain));
+    const over = captain && plateOverM(this.shown(hullOfCaptain(captain)));
     const bar = captain && barOver({ ...captain, maxHull: captain.max_hull }, view, shown, over);
     return bar ? [bar] : [];
   }
@@ -202,7 +205,7 @@ export class Naval {
   ): DrawnShip[] {
     const captain = this.fight?.view.captain;
     if (!captain || captain.state === 'sunk') return [];
-    const hull = hullOfCaptain(captain);
+    const hull = this.shown(hullOfCaptain(captain));
     if (this.rig?.hull !== hull) this.rig = { hull, rig: new SailRig(hullSails(hull)) };
     const [x = 0, y = 0, heading = 0] = captain.ship;
     const [heave = 0, pitch = 0, roll = 0] = captain.pose;

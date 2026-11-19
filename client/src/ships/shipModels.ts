@@ -1,8 +1,9 @@
 // Every hull's model on the GPU, fetched from R2 the first time a ship of that hull is drawn and kept, and a frame's
-// ships drawn by them: each in her own hull, her side's colours and her rig, a slot of her model each.
+// ships drawn by them: each in her own hull, her side's colours and her rig, a slot of her model each. A hull still
+// coming is drawn as the Sloop, so a ship is never a footprint with nothing over it.
 import type { Gpu } from '../gpu.ts';
 import type { ShipLook } from './dress.ts';
-import { type HullName, hullName, hullPaint, hullSails } from './hulls.ts';
+import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
 import type { SailRig } from './sails.ts';
 import { loadShip } from './shipMesh.ts';
 import { type ShipCamera, type ShipPlace, SHIP_SLOTS, ShipView } from './shipView.ts';
@@ -15,46 +16,78 @@ export interface DrawnShip {
   readonly look: ShipLook;
 }
 
+/** Opens a hull's model by her number. */
+export type OpenHull = (hull: number) => Promise<ShipView>;
+
+/** A hull's model from R2 by her manifest entry, on the device, `slots` ships of her a frame. */
+export function openHull(gpu: Gpu, slots = SHIP_SLOTS): OpenHull {
+  return async (hull) => ShipView.open(gpu, await loadShip(hullName(hull)), hullSails(hull), hullPaint(hull), slots);
+}
+
+/** A failed fetch is tried again from a frame this long after it failed, milliseconds, doubling each time to the
+ *  most. */
+export const RETRY_MS = { first: 5_000, most: 60_000 } as const;
+
 /** The hulls' models, each fetched once, by hull number. */
 export class ShipModels {
-  private readonly gpu: Gpu;
-  private readonly slots: number;
-  private readonly fetched = new Map<HullName, Promise<ShipView>>();
-  private readonly ready = new Map<HullName, ShipView>();
-  private readonly failed = new Set<HullName>();
+  private readonly open: OpenHull;
   private readonly fail: (error: unknown) => void;
+  private readonly now: () => number;
+  private readonly ready = new Map<HullName, ShipView>();
+  private readonly fetching = new Map<HullName, Promise<ShipView>>();
+  /** A hull whose fetch failed: when a frame may try again, how long it waited, and whether it has been said. */
+  private readonly failed = new Map<HullName, { at: number; waitMs: number; said: boolean }>();
 
-  constructor(gpu: Gpu, slots = SHIP_SLOTS, fail: (error: unknown) => void = console.error) {
-    [this.gpu, this.slots, this.fail] = [gpu, slots, fail];
+  constructor(open: OpenHull, fail: (error: unknown) => void = console.error, now = () => performance.now()) {
+    [this.open, this.fail, this.now] = [open, fail, now];
   }
 
-  /** A hull's model once it has come; asking for it first fetches it. A fetch a frame asked for that fails is said
-   *  once, and no frame asks again, so a missing model is not fetched every frame. */
+  /** A hull's model once it has come; asking for it first fetches it, and again after a failure once its wait is
+   *  over. A frame's failure is said once. */
   model(hull: number): ShipView | null {
     const name = hullName(hull);
-    if (!this.ready.has(name) && !this.fetched.has(name) && !this.failed.has(name))
-      this.load(hull).catch((error: unknown) => {
-        this.failed.add(name);
+    const ready = this.ready.get(name);
+    if (ready) return ready;
+    const failed = this.failed.get(name);
+    if (!this.fetching.has(name) && (!failed || this.now() >= failed.at))
+      this.fetch(hull).catch((error: unknown) => {
+        const said = this.failed.get(name);
+        if (!said || said.said) return;
+        said.said = true;
         this.fail(error);
       });
-    return this.ready.get(name) ?? null;
+    return null;
   }
 
-  /** A hull's model, fetched once (a number with no model of its own is the Sloop's); one that fails is fetched
-   *  again the next time it is loaded, and says why to the caller. */
+  /** The hull a ship is drawn as: her own once it has come, the Sloop while it is coming. */
+  shown(hull: number): number {
+    return this.model(hull) ? hull : SLOOP_HULL;
+  }
+
+  /** A hull's model, fetched now if it has not come (a number with no model of its own is the Sloop's); its failure
+   *  is the caller's to say. */
   load(hull: number): Promise<ShipView> {
+    const ready = this.ready.get(hullName(hull));
+    return ready ? Promise.resolve(ready) : (this.fetching.get(hullName(hull)) ?? this.fetch(hull));
+  }
+
+  private fetch(hull: number): Promise<ShipView> {
     const name = hullName(hull);
-    let fetching = this.fetched.get(name);
-    if (!fetching) {
-      this.failed.delete(name);
-      fetching = loadShip(name).then((mesh) => {
-        const view = new ShipView(this.gpu, mesh, hullSails(hull), this.slots, hullPaint(hull));
+    const fetching = this.open(hull).then(
+      (view) => {
+        [this.fetching, this.failed].forEach((each) => each.delete(name));
         this.ready.set(name, view);
         return view;
-      });
-      fetching.catch(() => this.fetched.delete(name));
-      this.fetched.set(name, fetching);
-    }
+      },
+      (error: unknown) => {
+        this.fetching.delete(name);
+        const last = this.failed.get(name);
+        const waitMs = last ? Math.min(RETRY_MS.most, last.waitMs * 2) : RETRY_MS.first;
+        this.failed.set(name, { at: this.now() + waitMs, waitMs, said: last?.said ?? false });
+        throw error;
+      },
+    );
+    this.fetching.set(name, fetching);
     return fetching;
   }
 

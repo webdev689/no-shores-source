@@ -208,9 +208,10 @@ export class SailRig {
   }
 
   /** Each sail's canvas now, its grid's points in her frame: set and furled mixed as they are being set, the poses
-   *  mixed by its wind, a gaff swung about its luff and a square sail's yard braced round its mast. */
-  canvas(): Float32Array[] {
-    return this.sails.map((sail) => {
+   *  mixed by its wind, a gaff swung about its luff and a square sail braced round its mast, about its yard's `pivots`
+   *  as her model measures them (under its head's middle without one). */
+  canvas(pivots: readonly (Point | null)[] = []): Float32Array[] {
+    return this.sails.map((sail, index) => {
       const { poses, corners } = sail;
       const wind = Math.min(1, Math.max(-1, sail.wind));
       let upper = 1;
@@ -226,8 +227,8 @@ export class SailRig {
       if (sail.trimDeg === 0) return points;
       if (corners.kind === 'gaff') swing(points, corners.tack, corners.throat, sail.trimDeg);
       else if (corners.kind === 'square') {
-        // Her mast stands under the middle of the yard; a leeward arm braced aft is the turn the other way.
-        const mast = lerp(corners.head_port, corners.head_starboard, 0.5);
+        // A leeward arm braced aft is the turn the other way.
+        const mast = pivots[index] ?? lerp(corners.head_port, corners.head_starboard, 0.5);
         swing(points, mast, [mast[0], mast[1], mast[2] + 1], -sail.trimDeg);
       }
       return points;

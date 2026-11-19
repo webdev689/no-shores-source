@@ -17,7 +17,7 @@ import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
-import { ShipModels } from '../ships/shipModels.ts';
+import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -90,7 +90,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const shipModels = new ShipModels(gpu, SEA_SHIPS);
+  const shipModels = new ShipModels(openHull(gpu, SEA_SHIPS));
   const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
     fetch(`${base}world/rmb/index.json`)
@@ -218,7 +218,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea = new Sea(
         landmass,
         continents.map((each) => each.outline),
-        { waterline: sloop.waterline, marks: new MarkView(gpu) },
+        { waterline: sloop.waterline, marks: new MarkView(gpu), shown: (hull) => shipModels.shown(hull) },
         anchorage,
         heading,
         { movement, walker, forge },
