@@ -74,12 +74,13 @@ export function markHelm(tab: Kept): void {
   }
 }
 
-/** Whether the player has come back from Discord to the helm; the mark is read once. */
-export function backAtHelm(tab: Kept): boolean {
+/** Whether the player has come back from Discord to the helm. The mark is read once and cleared, whatever it says,
+ *  and a story `played` through outranks it: a mark left by a sign-in never finished never begins the story again. */
+export function backAtHelm(tab: Kept, played: boolean): boolean {
   try {
     const marked = tab.getItem(HELM_KEY) !== null;
     tab.removeItem(HELM_KEY);
-    return marked;
+    return marked && !played;
   } catch {
     return false;
   }

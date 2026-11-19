@@ -146,7 +146,7 @@ export class Stage {
   }
 
   /** Gives the game back what the story laid over it: its own clear weather, silence from the story's sounds, its
-   *  HUD without a death or a fight's panel, and no birds, fire or prompt of the story's. */
+   *  HUD without a death or a fight's panel, and no birds, fire or prompt of the story's; its screen, once clear, goes. */
   leave(): void {
     this.hush();
     const { ambience, scene, birds, flames, objective, hud, footView, screen } = this.parts;
@@ -159,11 +159,17 @@ export class Stage {
     hud.reach({ kind: 'inside' });
     hud.hints([]);
     footView.hide();
-    // The game's veil rises over the story's black as the game takes over; the black is let go only once the veil is
-    // wholly up, so the story's last picture never shows through the crossing.
+    // The game's veil rises under the story's black (the screen stands over the HUD) as the game takes over; the black
+    // is let go only once the veil is wholly up, so the story's last picture never shows through the crossing.
     this.screenOpen = false;
     setTimeout(() => screen.clear(), HUD_VEIL_S * 1000);
-    setTimeout(() => (this.screenOpen = true), (HUD_VEIL_S + SCREEN_CLEAR_S) * 1000);
+    setTimeout(
+      () => {
+        this.screenOpen = true;
+        screen.remove();
+      },
+      (HUD_VEIL_S + SCREEN_CLEAR_S) * 1000,
+    );
   }
 
   get weather(): Weather {

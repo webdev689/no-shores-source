@@ -1,6 +1,8 @@
 // What a cutscene lays over the picture: a fade to black or white, the letterbox's bars, a flash, eyelids for waking,
 // a blur on the view, the game's title and a prompt that breathes. Plain elements over the canvas; each eases by its
-// own transition, so the page never steps them frame by frame except the eyelids and the blur, which the story drives.
+// own transition, so the page never steps them frame by frame except the eyelids and the blur, which the story drives
+// (the canvas's own ease, kept for the death's grey, is held off while the screen stands). While it stands, a touch on
+// the view is the story's alone: no drag pans the page or pulls it to reload, so a held touch is never cut short.
 
 const STYLE_ID = 'cinema-screen';
 
@@ -61,6 +63,7 @@ function made(page: Document, className: string, parent: HTMLElement, text = '')
 /** The screen's layers over a canvas, laid into `root`. */
 export class Screen {
   private readonly root: HTMLElement;
+  private readonly hudRoot: HTMLElement;
   private readonly canvas: HTMLElement;
   private readonly black: HTMLElement;
   private readonly white: HTMLElement;
@@ -80,6 +83,9 @@ export class Screen {
       page.head.append(sheet);
     }
     this.canvas = canvas;
+    this.hudRoot = root;
+    for (const surface of [canvas, root]) surface.style.touchAction = 'none';
+    canvas.style.transition = 'none';
     this.root = made(page, 'cinema', root);
     made(page, 'cinema-bar top', this.root);
     made(page, 'cinema-bar bottom', this.root);
@@ -159,8 +165,11 @@ export class Screen {
     this.showSkip(null);
   }
 
+  /** Takes the screen away, giving the canvas and the HUD back their own ease and touches. */
   remove(): void {
     this.blur(0);
+    for (const surface of [this.canvas, this.hudRoot]) surface.style.touchAction = '';
+    this.canvas.style.transition = '';
     this.root.remove();
   }
 }

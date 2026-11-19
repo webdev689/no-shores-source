@@ -138,9 +138,9 @@ export class Prologue {
     return this.carried.run;
   }
 
-  /** What the beat that ended leaves, and the beat after it; a played story ends at the title. */
-  /** The beat after the one that ended, made from what it left; a beat that cannot be made is passed over. */
-  private next(): void {
+  /** The beat after the one that ended, made from what it left; a beat that cannot be made is passed over. `before`
+   *  runs only if a beat follows, before each beat tried lays anything over the view. */
+  private next(before: () => void = () => undefined): void {
     const ended = this.beat;
     // A hold on Space belongs to the cutscene it began on: the next must be held for its own second.
     this.skipping.step(0, false);
@@ -153,6 +153,7 @@ export class Prologue {
     for (let index = BEATS.indexOf(ended.name) + 1; index < BEATS.length; index++) {
       const following = BEATS[index];
       if (!following) break;
+      before();
       try {
         this.beat = this.make(following);
         return;
@@ -268,12 +269,20 @@ export class Prologue {
     if (beat.done) this.next();
   }
 
-  /** A beat that cannot go on: what it said and laid over the view is cleared, and the story goes on past it. */
+  /** A beat that cannot go on: what it said is stopped, and the story goes on past it, what the beat laid over the
+   *  view cleared first. A story that ends there keeps its screen, so its black lifts only once the game's veil is
+   *  up under it. */
   private failed(beat: Beat, error: unknown): void {
     console.error(`the story's ${beat.name} could not go on:`, error);
     const { stage } = this.story;
     stage.hush();
-    stage.parts.screen.clear();
-    this.next();
+    this.next(() => stage.parts.screen.clear());
+  }
+
+  /** The story has ended: the wreck's drawing, if a beat after it never let it go, is let go now. */
+  leave(): void {
+    this.carried.scenery?.destroy();
+    this.carried.scenery = null;
+    this.carried.run = null;
   }
 }

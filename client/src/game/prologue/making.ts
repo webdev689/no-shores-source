@@ -4,7 +4,7 @@
 // leaves it, so a page started here plays as the story does.
 import type { Tick, Beat } from './beat.ts';
 import { accountStep, lookStep } from './creation.ts';
-import { creationShot, youAtHelm } from './helm.ts';
+import { creationShot, helmDeck, youAtHelm } from './helm.ts';
 import { armouredDress, keepLook, type Look } from './look.ts';
 import { storyCue } from './music.ts';
 import { STORM } from './skies.ts';
@@ -29,6 +29,8 @@ export class Making implements Beat {
   private turnTo = 0;
   /** What could not be done (a window that could not be made), thrown from the next frame. */
   private failure: { readonly error: unknown } | null = null;
+  /** Ends the helm's windows when the story moves on from it, so none stays over the beats after or acts there. */
+  private readonly left = new AbortController();
   done = false;
 
   constructor(story: Story, steps: MakingSteps = { account: accountStep, look: lookStep }) {
@@ -45,17 +47,26 @@ export class Making implements Beat {
     const { story } = this;
     const root = story.stage.parts.hudRoot;
     story.stage.parts.screen.bars(false);
-    await steps.account(root, story.link);
+    const { signal } = this.left;
+    await steps.account(root, story.link, signal);
     const chosen = await steps.look(
       root,
       story.look,
       (look) => this.dressAs(look),
       (step) => (this.turnTo += step * TURN_STEP),
+      signal,
     );
+    // A step that answers after the helm was left has no player left to dress.
+    if (signal.aborted) return;
     this.dressAs(chosen);
     keepLook(localStorage, chosen);
     this.turnTo = 0;
     this.done = true;
+  }
+
+  /** The story moves on from the helm: its windows go, and nothing pressed after redresses the player. */
+  leave(): void {
+    this.left.abort();
   }
 
   private dressAs(look: Look): void {
@@ -75,10 +86,8 @@ export class Making implements Beat {
     const own = ships[0]?.place;
     if (!own) throw new Error('the Brig is not sailing');
     this.turn += (this.turnTo - this.turn) * Math.min(1, tick.seconds * TURN_EASE);
-    // The camera keeps with her deck as she rides, but not her heel, so the figure holds still in the picture.
-    const steady = { ...own, roll: own.roll * 0.25, pitch: own.pitch * 0.25 };
     const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
-    const shot = creationShot(steady, this.turn, aspect);
+    const shot = creationShot(helmDeck(own), this.turn, aspect);
     return {
       shot,
       ships,

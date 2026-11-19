@@ -2,7 +2,8 @@
 // each island in turn (a highland in mist, a green one in rain, a desert town where a fight breaks out on the plaza, a
 // tundra town in snow), with ships sailing off each, and last to Saltmere, where gulls wheel over the harbour, the
 // title rises and a prompt to begin breathes. Holding Space flies straight to Saltmere. An island that will not open
-// is passed over for the next; a Saltmere that will not open is the beat's failure, thrown from its frame.
+// is passed over for the next; a Saltmere that will not open is the beat's failure, thrown from its frame. Left for
+// any reason, the intro lets its islands go and hands Saltmere back to the land.
 import { type RailKey, railLength, railShot } from '../../cinema/rail.ts';
 import { playedByTouch } from '../../cinema/screen.ts';
 import type { Weather } from '../../cinema/weather.ts';
@@ -70,6 +71,8 @@ export class Intro implements Beat {
   private passage = 0;
   /** What could not be done (Saltmere would not open), thrown from the next frame. */
   private failure: { readonly error: unknown } | null = null;
+  /** When, in the phase's own seconds, the cloud's white lifts off the island it hid; null while none waits. */
+  private liftAt: number | null = null;
   done = false;
 
   constructor(stage: Stage, islands: Islands, sailing: Sailing) {
@@ -153,7 +156,7 @@ export class Intro implements Beat {
     if (passage !== this.passage) return;
     const frame = islandFrame(this.islands.landmass);
     // The white has had its second to cover the swap before it lifts.
-    window.setTimeout(() => this.stage.parts.screen.fade(0, 1.6, 'white'), Math.max(0, 1100 - this.since * 1000));
+    const lift = Math.max(0, 1.1 - this.since);
     if (passing) {
       this.stage.weatherTowards(passing.weather, 2);
       const side = next % 2 === 0 ? 1 : -1;
@@ -166,6 +169,7 @@ export class Intro implements Beat {
         frame,
       });
     } else this.goHome(frame);
+    this.liftAt = lift;
   }
 
   private goHome(frame: IslandFrame): void {
@@ -197,11 +201,13 @@ export class Intro implements Beat {
   skip(): void {
     if (!this.skippable) return;
     this.enter({ kind: 'skipped' });
-    this.passage++;
+    const passage = ++this.passage;
+    this.liftAt = null;
     const { screen } = this.stage.parts;
     screen.fade(1, 0.4);
     void this.islands.home().then(
       () => {
+        if (passage !== this.passage) return;
         const frame = islandFrame(this.islands.landmass);
         this.goHome(frame);
         this.since = HOME_S;
@@ -210,6 +216,14 @@ export class Intro implements Beat {
       },
       (error: unknown) => (this.failure = { error }),
     );
+  }
+
+  /** The director moves on (the intro begun, or failed): no passage under way shows its island or sets its weather
+   *  and sound, and Saltmere is drawn and opened in the land's worker again, for every beat and game after. */
+  leave(): void {
+    this.passage++;
+    this.liftAt = null;
+    void this.islands.home().catch((error: unknown) => console.error('Saltmere would not open again:', error));
   }
 
   key(key: string, down: boolean): boolean {
@@ -240,6 +254,10 @@ export class Intro implements Beat {
   frame(tick: Tick): StoryFrame | null {
     if (this.failure) throw this.failure.error;
     this.since += tick.seconds;
+    if (this.liftAt !== null && this.since >= this.liftAt) {
+      this.liftAt = null;
+      this.stage.parts.screen.fade(0, 1.6, 'white');
+    }
     this.stage.stepWeather(tick.seconds);
     const shot = this.shotNow(tick);
     if (!shot) return null;

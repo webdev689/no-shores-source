@@ -72,15 +72,19 @@ export class Islands {
   }
 
   /** Saltmere back, drawn with the game's own drawers, and open in the worker again for the ground round the player;
-   *  it rejects if the worker cannot open it. */
+   *  it rejects if the worker cannot open it, Saltmere drawn all the same. */
   async home(): Promise<void> {
     this.asked += 1;
     const { home } = this.parts;
     const { id } = home.landmass;
-    await this.inTurn(async () => {
-      if (this.held !== id) await this.openNow(id);
-    });
-    if (this.shown.landmass !== home.landmass) this.swap({ ...home, own: false });
+    try {
+      await this.inTurn(async () => {
+        if (this.held !== id) await this.openNow(id);
+      });
+    } finally {
+      // Saltmere is drawn again even when the worker cannot open it, so no island the flight passed stays drawn.
+      if (this.shown.landmass !== home.landmass) this.swap({ ...home, own: false });
+    }
   }
 
   private swap(next: { landmass: Landmass; drawers: LandDrawers; own: boolean }): void {

@@ -2,10 +2,11 @@
 // at the right of the screen so the figure standing at the left stays clear.
 import './creation.css';
 import { make } from '../../editor/dom.ts';
-import type { Account, AccountLink } from '../../network/accounts.ts';
+import { type Account, type AccountLink, DISCORD_LINKED, DISCORD_SIGNED_IN } from '../../network/accounts.ts';
 import { ROLES } from '../../plus/kit.ts';
 import { type Race } from '../../player/dressing.ts';
 import { pressOf } from '../gearDom.ts';
+import { ACCOUNT_CHANGED } from '../gearScreen.ts';
 import {
   type AccountAsk,
   type AccountOutcome,
@@ -40,9 +41,26 @@ const BODY_WORDS: readonly (readonly [Look['body'], string])[] = [
 ];
 const capitalised = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
-/** A kit window at the right of the screen, named by its header; the window and the box its contents go in. */
-function windowIn(root: HTMLElement, title: string): [HTMLElement, HTMLElement] {
+/** A kit window at the right of the screen, named by its header; the window and the box its contents go in. Once
+ *  `signal` ends it (the story moved on), the window goes and its step's promise rejects with the signal's reason. */
+function windowIn(
+  root: HTMLElement,
+  title: string,
+  signal: AbortSignal | undefined,
+  reject: (reason: unknown) => void,
+  ended: () => void = () => undefined,
+): [HTMLElement, HTMLElement] {
   const frame = make('section', '', `creation ${ROLES.window}`);
+  if (signal?.aborted) reject(signal.reason);
+  signal?.addEventListener(
+    'abort',
+    () => {
+      ended();
+      frame.remove();
+      reject(signal.reason);
+    },
+    { once: true },
+  );
   frame.setAttribute('aria-label', title);
   const contents = make('div', '', 'creation-body');
   frame.append(make('h2', title, `creation-title ${ROLES.header}`), contents);
@@ -61,13 +79,20 @@ function field(label: string, type: 'text' | 'password', complete: string): [HTM
 /**
  * The first step: create an account, sign in, sign in with Discord, or play as a guest. A refusal shows in the
  * accounts' own words and the step stays. A player signed in already may go on as themselves; with the accounts out
- * of reach, without an account. With no accounts (playing alone) it says so and lets the player go on.
+ * of reach, without an account. With no accounts (playing alone) it says so and lets the player go on. Ending it,
+ * the page hears that the account changed, so the menu's mark and banner and the company follow the one chosen.
  */
-export function accountStep(root: HTMLElement, link: AccountLink | null): Promise<AccountOutcome> {
-  const [frame, contents] = windowIn(root, 'Your account');
-  return new Promise((resolve) => {
+export function accountStep(
+  root: HTMLElement,
+  link: AccountLink | null,
+  signal?: AbortSignal,
+): Promise<AccountOutcome> {
+  return new Promise((resolve, reject) => {
+    const [frame, contents] = windowIn(root, 'Your account', signal, reject);
     const done = (outcome: AccountOutcome) => {
       frame.remove();
+      // Going on without an account changed nothing, and asking again would only wait on accounts out of reach.
+      if (outcome.kind !== 'alone') dispatchEvent(new Event(ACCOUNT_CHANGED));
       resolve(outcome);
     };
     if (link === null) {
@@ -78,18 +103,20 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
     }
     const [nameRow, name] = field('Username', 'text', 'username');
     const [passwordRow, password] = field('Password', 'password', 'current-password');
-    const said = make('p', link.said ?? '', 'creation-said');
+    const said = make('p', '', 'creation-said');
     said.setAttribute('role', 'status');
     const presses: HTMLButtonElement[] = [];
     // Going on past the form is offered once, above it: as the account signed in, or without one out of reach.
     let offered: string | null = null;
-    const offer = (account: Account | null) => {
+    const offer = (account: Account | null, told: string | null) => {
       const going = goingOn(account);
       if (!going || offered !== null || !frame.isConnected) return;
       offered = going.words;
       const goOn = pressOf(going.press, () => done(going.outcome), 'primary');
       presses.push(goOn);
-      contents.prepend(make('p', going.words, 'creation-words'), goOn);
+      // Discord linked is news the offer does not say; a Discord sign-in is told by the offer's own words.
+      const words = told === DISCORD_LINKED ? `${told} ${going.words}` : going.words;
+      contents.prepend(make('p', words, 'creation-words'), goOn);
       // A player already typing on the form keeps their place in it.
       if (name.value === '' && password.value === '') goOn.focus();
     };
@@ -109,7 +136,7 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
     };
     const answered = (answer: AccountOutcome | string) => {
       if (typeof answer !== 'string') return done(answer);
-      if (answer === OUT_OF_REACH) offer(null);
+      if (answer === OUT_OF_REACH) offer(null, null);
       // Words the offer above already says are not said twice.
       said.textContent = answer === offered ? '' : answer;
     };
@@ -119,6 +146,8 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
       void waiting(async () => {
         const away = await discordAway(link, location.href);
         if (typeof away === 'string') return answered(away);
+        // A story that moved on while Discord was asked stays on the page.
+        if (!frame.isConnected) return;
         // The way back from Discord picks the story up here, at the helm, not from its start.
         markHelm(sessionStorage);
         location.assign(away.to);
@@ -140,9 +169,12 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
     );
     name.focus();
     void link.session().then((account) => {
-      // A Discord sign-in that came back is redeemed by now, and its words are the accounts' latest.
-      if (link.said && !said.textContent) said.textContent = link.said;
-      offer(account);
+      // A Discord sign-in that came back is redeemed by now, and its words are the accounts' latest: a sign-in that
+      // went through is said with the offer to go on, once; one that did not is said under the form, as a refusal is.
+      const told = link.said;
+      const through = told === DISCORD_SIGNED_IN || told === DISCORD_LINKED;
+      offer(account, through ? told : null);
+      if (told && !through && !said.textContent && told !== offered) said.textContent = told;
     });
   });
 }
@@ -178,10 +210,13 @@ export function lookStep(
   start: Look,
   changed: (look: Look) => void,
   turn: (step: -1 | 1) => void,
+  signal?: AbortSignal,
 ): Promise<Look> {
-  const [frame, contents] = windowIn(root, 'Your character');
   let look = start;
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    const [frame, contents] = windowIn(root, 'Your character', signal, reject, () =>
+      removeEventListener('keydown', onKey),
+    );
     // The slider is made once and kept, so redrawing the rest never breaks a drag.
     const tone = make('input', '', 'creation-tone');
     Object.assign(tone, { type: 'range', min: '0', max: '100', step: '1', value: String(Math.round(look.tone * 100)) });

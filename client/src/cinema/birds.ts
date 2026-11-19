@@ -160,6 +160,14 @@ export class Birds {
     this.flocks = [];
   }
 
+  /** Lets go of the flocks' buffers on the GPU; with no flock left, nothing is drawn again. */
+  destroy(): void {
+    this.flocks = [];
+    this.view.destroy();
+    this.instances?.destroy();
+    this.instances = null;
+  }
+
   /** The flocks at `time`, into the scene's pass, measured from the eye of `shot`. */
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: { readonly eye: Point }, time: number): void {
     const count = this.flocks.reduce((sum, flock) => sum + flock.birds.length, 0);
