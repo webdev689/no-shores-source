@@ -4,7 +4,7 @@ import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { SWING_FLOATS } from '../combat/swingArcs.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
-import { GlowCards } from '../player/glowCards.ts';
+import { GlowCards, STATUS_WGSL, statusClock } from '../player/glowCards.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { Block } from '../rules/movementRules.ts';
 
@@ -13,7 +13,7 @@ const SKY = [0.55, 0.66, 0.78] as const;
  *  it, so the ground is drawn as many small ones. */
 const TILES = 100;
 const SCENE_BYTES = 96;
-const CARD_BYTES = 48;
+const CARD_BYTES = 64;
 
 const SHADER = /* wgsl */ `
 struct Scene { viewProjection: mat4x4f, eye: vec4f, marker: vec4f }
@@ -150,7 +150,9 @@ struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f
   return vec4f(mix(stone * shade, SKY, fog * fog), 1.0);
 }
 
-struct Card { feet: vec4f, side: vec4f, root: vec4f }
+${STATUS_WGSL}
+
+struct Card { feet: vec4f, side: vec4f, root: vec4f, status: vec4f }
 @group(1) @binding(0) var<uniform> card: Card;
 @group(1) @binding(1) var picture: texture_2d<f32>;
 
@@ -174,10 +176,11 @@ struct CardOut { @builtin(position) position: vec4f, @location(0) corner: vec2f 
   let size = vec2f(textureDimensions(picture));
   var at = in.corner;
   if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
-  let texel = textureLoad(picture, vec2i(min(at * size, size - 1.0)), 0);
-  if (texel.a < 0.5) { discard; }
+  let place = vec2i(min(at * size, size - 1.0));
+  let texel = textureLoad(picture, place, 0);
+  if (texel.a < 0.5 || !status_kept(card.status, place)) { discard; }
   let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
-  return vec4f(mix(texel.rgb, flash, card.root.z), 1.0);
+  return vec4f(mix(status_colour(card.status, picture, place, texel.rgb), flash, card.root.z), 1.0);
 }
 `;
 
@@ -521,19 +524,22 @@ export class SceneView implements CardMaker {
     this.underCards?.(pass);
     pass.setPipeline(this.cards);
     pass.setBindGroup(0, this.sceneGroup);
-    drawn.forEach(({ card, x, y, z, flip, flash }, index) => {
+    const time = statusClock();
+    drawn.forEach(({ card, x, y, z, flip, flash, veiled, exposed }, index) => {
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
         ...[x, y, z, flip ? 1 : 0],
         ...[...right, card.width / PX_PER_M, card.height / PX_PER_M],
         ...[rootX, card.root[1] / PX_PER_M, flash?.share ?? 0, flash?.red ? 1 : 0],
+        ...[veiled ? 1 : 0, exposed ? 1 : 0, time, 0],
       ]);
       device.queue.writeBuffer(buffer, 0, cardValues);
       pass.setBindGroup(1, group);
       pass.draw(6);
     });
-    const glowing = drawn.filter(({ card }) => card.glow);
+    // A Veiled figure's weapon shows no outline: it is all but unseen.
+    const glowing = drawn.filter(({ card, veiled }) => card.glow && !veiled);
     const metres = 1 / PX_PER_M;
     const glows = glowing.map(({ card, x, y, z, flip }) => ({ card, x, y, z, flip, metres }));
     this.glows.draw(pass, seen, right, performance.now() / 1000, glows);

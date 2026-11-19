@@ -13,12 +13,15 @@ export interface KeptSpell extends SeenSpell {
  *  before, so a drawer can glide it between the two as the foes' figures glide. Gone from a snapshot, gone here. */
 export class SpellEffects {
   readonly spells = new Map<number, KeptSpell>();
+  /** The Art each caster last cast in, by the room's number for them: their next cast glows in it. */
+  readonly arts = new Map<number, number>();
 
   /** Takes a snapshot's spells, `ticks` room ticks after the last. */
   take(seen: readonly SeenSpell[], ticks: number): void {
     const present = new Set<number>();
     for (const spell of seen) {
       present.add(spell.id);
+      this.arts.set(spell.caster, spell.art);
       this.spells.set(spell.id, { ...spell, before: this.spells.get(spell.id)?.at ?? null, ticks });
     }
     for (const id of this.spells.keys()) if (!present.has(id)) this.spells.delete(id);
@@ -27,6 +30,7 @@ export class SpellEffects {
   /** Lets every spell go: the room left. */
   clear(): void {
     this.spells.clear();
+    this.arts.clear();
   }
 
   /** Where a spell is `share` of the way from the snapshot before to the last (0 to 1). */

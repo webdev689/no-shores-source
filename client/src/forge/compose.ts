@@ -64,7 +64,7 @@ export function ordersMeet(first: number, second: number): boolean {
  * laid on the figure's cell by its root; at each pixel the nearest texel, a layer drawn nearer by its order where it
  * meets another on one part, armour over the clothes under it by its cover, a worn weapon and a drape by `under`.
  * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp; the frame
- * is then snapped to the palette.
+ * is then snapped to the palette. The layers in `held` count as the weapon in its mask, whatever part they name.
  */
 export async function composeFrame(
   figure: Figure,
@@ -75,6 +75,7 @@ export async function composeFrame(
   colours: Colours,
   ramps: Readonly<Record<string, readonly Rgb[]>>,
   strip: (path: string) => Promise<Strip | null>,
+  held: ReadonlySet<string> = new Set(),
 ): Promise<Frame | null> {
   const box = lookCell(figure, anim, looks);
   if (!box) return null;
@@ -88,6 +89,7 @@ export async function composeFrame(
   const bestCover = new Int32Array(width * height);
   const bestUnder = new Int32Array(width * height);
   const bestPart = new Uint8Array(width * height);
+  const bestHeld = new Uint8Array(width * height);
   const worn = new Int32Array(width * height).fill(FAR);
   // From the side round to the back, a drape shows only its outside.
   const outside = view >= 2;
@@ -108,6 +110,7 @@ export async function composeFrame(
     const bias = weigh(looks.order, layer);
     const cover = weigh(looks.cover, layer);
     const under = weigh(looks.under, layer);
+    const holding = held.has(layer) ? 1 : 0;
     const hair =
       figure.hair?.layer === layer ? hairRamp(colours.hair, figure.body, figure.race, figure.hair.colour) : null;
     const ramp = hair ?? (dyeable.has(layer) ? (ramps[layer] ?? null) : null);
@@ -161,6 +164,7 @@ export async function composeFrame(
         bestCover[spot] = cover;
         bestUnder[spot] = under;
         bestPart[spot] = part;
+        bestHeld[spot] = holding;
         rgb[0] = colour.data[source] ?? 0;
         rgb[1] = colour.data[source + 1] ?? 0;
         rgb[2] = colour.data[source + 2] ?? 0;
@@ -178,6 +182,6 @@ export async function composeFrame(
   colours.snap?.snap(pixels);
   const base = looks.depth?.base ?? -3;
   const metres = Float32Array.from(best, (lies) => (lies === FAR ? Number.NaN : lies / scale + base));
-  const weapon = Uint8Array.from(bestPart, (part) => (part === PART.weapon ? 1 : 0));
+  const weapon = Uint8Array.from(bestPart, (part, spot) => (part === PART.weapon || bestHeld[spot] ? 1 : 0));
   return { width, height, root: box.root, pixels, depth: metres, weapon };
 }

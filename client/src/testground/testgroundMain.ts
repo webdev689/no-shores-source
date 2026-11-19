@@ -14,6 +14,7 @@ import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
+import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
@@ -295,7 +296,7 @@ async function start(): Promise<void> {
     const ownFlash = { share: effects.flashes.shareOf(fighting.player), red: true };
     const ownCard = player.figure(eye.x, eye.y, ownFlash, ownShift);
     if (ownCard) {
-      drawn.push(ownCard);
+      drawn.push({ ...ownCard, veiled: veiledIn(fighting, fighting.player) });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       figuresDrawn.set(fighting.player, { feet, anim: player.look.anim, flip: ownCard.flip });
     }
@@ -320,13 +321,17 @@ async function start(): Promise<void> {
       const moveFrames = forge.frames(placed.dress.body, placed.anim);
       const shownFrame =
         placed.frame === null ? frameAt(clock, moveFrames, fps) : Math.min(placed.frame, moveFrames - 1);
-      const card = forge.card(placed.id, placed.dress, placed.anim, view, shownFrame, flip);
       const number = numberOf.get(placed);
+      // Another player's cast's spark glows in their Art, as the player's own does.
+      const glow = number !== undefined && placed.anim === 'cast' ? castLookOf(fighting, number) : 0;
+      const card = forge.card(placed.id, placed.dress, placed.anim, view, shownFrame, flip, glow);
       const flash = { share: effects.flashes.shareOf(number ?? -1), red: false };
       const moved: Vector = number === undefined ? [0, 0, 0] : shift(number, otherViews.get(number) ?? null);
       const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       if (number !== undefined) figuresDrawn.set(number, { feet: drawnAt, anim: placed.anim, flip });
-      if (card) drawn.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
+      const veiled = number !== undefined && veiledIn(fighting, number);
+      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
+      if (card) drawn.push({ card, ...stand, z: drawnAt[2], flip, flash, veiled });
     }
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn };
     const { tickSeconds } = movement;

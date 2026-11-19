@@ -18,8 +18,9 @@ export interface Card {
 }
 
 /** One card to draw: where its feet stand (world metres), whether it is mirrored, how strongly it flashes, struck
- *  (white, or red for the player's own), and how many times life size it stands (1 unless said: a figure aboard a
- *  ship drawn larger than life is drawn as large as she is). */
+ *  (white, or red for the player's own), how many times life size it stands (1 unless said: a figure aboard a ship
+ *  drawn larger than life is drawn as large as she is), and its statuses that show: Veiled, drawn faint and
+ *  shimmering, and Exposed, edged faint purple. */
 export interface CardAt {
   readonly card: Card;
   readonly x: number;
@@ -28,6 +29,8 @@ export interface CardAt {
   readonly flip: boolean;
   readonly flash?: { readonly share: number; readonly red: boolean };
   readonly scale?: number;
+  readonly veiled?: boolean;
+  readonly exposed?: boolean;
 }
 
 /** Whatever turns a composed picture into a card it can draw, and an outline's field into a texture: the Test
@@ -59,8 +62,10 @@ const KEPT_CARDS = 4000;
 const KEPT_AFTER = 3000;
 /** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
 const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
-/** The move a cast plays, whose spark glows in its Art's element. */
+/** The move a cast plays, whose spark glows in its Art's element; the forge draws the spark as what hangs free, so it
+ *  is named to count as the weapon. */
 const CAST = 'cast';
+const SPARK: ReadonlySet<string> = new Set(['spark']);
 /** The forge's views of a figure. */
 const VIEWS = 5;
 /** Warming starts at most this many frames a tick, and none while this many are under way. */
@@ -157,7 +162,8 @@ export class Cards {
     if (kept !== undefined || this.composing.has(key)) return kept ?? null;
     this.composing.add(key);
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
-    composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, (path) => this.store.strip(path))
+    const strip = (path: string) => this.store.strip(path);
+    composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, strip, anim === CAST ? SPARK : undefined)
       .then((composed) => {
         // A cast's spark takes its Art's colour, as the weapon's glow takes the weapon's.
         if (composed && glow && anim === CAST) recolourToGlow(composed.pixels, glow, composed.weapon);
