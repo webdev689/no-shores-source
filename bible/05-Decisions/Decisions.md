@@ -74,7 +74,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bars and the Fight Wear the Plus Kit]]
 - [[Foes Leash to Their Posts and Fall With Their Boss]]
 - [[Plates Stay Light and Bars Do What Enhanced Plus Does]]
-- [[The Vitals Keep Their Panel Under DFO's Compass]]
 - [[The Player's Display Takes DFO's Compass and Bar Layout]]
 - [[The Sea Is Navigated From the Helm With the Held Map]]
 - [[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]
@@ -127,6 +126,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Locked-On Dodge Rolls the Way It Goes]]
 - [[A Tall Wall Is Climbed Within 45° of Square]]
 - [[A Click During a Weapon Swap Swings as It Ends]]
+- [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
+- [[The Display as Claude Lays It Out]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -140,3 +141,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
 - [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]
+- [[The Vitals Keep Their Panel Under DFO's Compass]], by [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
