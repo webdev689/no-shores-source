@@ -159,6 +159,8 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   one coming down over a head meets its top.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
   pistolet's 1.9, a thunderlock's 2.2. While it reloads, the weapon stays pointed where it fired.
+- **In an element.** The player's own shots, and the blows they land for harm, take their weapon's element
+  ([[Weapon Glow]]).
 
 | Weapon | Quick shot | Aimed in full |
 |---|---|---|
