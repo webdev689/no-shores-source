@@ -47,7 +47,8 @@ status: in force
 - **It touches the world.** Crystal grows and overtakes, and its horror is flesh and gore. From afar it is subtle; up
   close it is flesh.
 - **The call in the deep is not the Cube** ([[Overlook Is a Shared World After Destiny 1]]).
-- How the mystery is shown: [[The Mystery Shows in Its Effects, Never Its Cause]].
+- How the mystery is shown: [[The Mystery Shows in Its Effects, Never Its Cause]]. The crystal faction:
+  [[The Lattice Are the Ruined Ports' People, Overtaken]].
 
 ## Still open
 

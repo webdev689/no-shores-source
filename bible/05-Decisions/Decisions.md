@@ -123,6 +123,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Raum's Lore Is Adapted Into One Mystery]]
 - [[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]
 - [[The Mystery Shows in Its Effects, Never Its Cause]]
+- [[The Lattice Are the Ruined Ports' People, Overtaken]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

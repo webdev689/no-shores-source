@@ -12,6 +12,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **The Grey Tithe.** Its roster, its boss on land and where its garrisons stand are built as Claude chose them, to
   rename or change ([[The Enemies as Claude Builds Them]]). How deep the Covenant under them goes, and when the
   player learns it ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]).
+- **The Lattice.** Whether it comes to sea ([[The Lattice Are the Ruined Ports' People, Overtaken]]).
 - **The one mystery.** What the Cube is called, how long it stays unseen, and what calls in the deep
   ([[Raum's Lore Is Adapted Into One Mystery]]).
 - **Discoveries.** [[The World Map]] has them fading when nobody is near; the owner has since said islands do not
