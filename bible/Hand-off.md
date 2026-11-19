@@ -315,20 +315,30 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **Saltmere's detail pass ([[Saltmere's Detail Pass Goes Deep]]) is paused at its picture pass, at the owner's
-  usage limit.** Built and reviewed on PR #63: rock shapes by brief, basins by area kind, canyons that vary, dead rock
-  answered, the Gullwing Vale's river in its section, chalk on the Downs, the keep's stair, battlements, windows and
-  turrets, the mine's ribs, plantings. The picture pass committed its first fixes (mouth rooms off the face, rim
-  ruins on the settled ground, shot views in the open, folds, shrine rings, wilds cover, masonry cover, great works
-  off outcrops) but was stopped before its pictures' notes were finished or reviewed. To resume:
-  - finish the picture pass: picture every area and run beat of the three zones, note each against the design's
-    list (a focal point, cover, the zone's character, repeats, nothing floating or stuck), fix, re-picture, and send
-    the owner a before-and-after montage per zone; then review it;
-  - judge from the pictures: the keep's rooms at 0.7 of their beat, ribs over passage mouths, gorse in the wilds'
-    open half, the chalk's shaded faces reading grey under the world's ambient light (the owner's call);
-  - then the last task: budgets (continent 1's settle is about 1.47-1.6 s against 1.5 s; loose rock's keep-off
-    scales with stones times run solids), notes, the full check, the pull request's body;
-  - then the second audit of this branch's work the owner asked for ("This PR's work again") and one fix pass.
+- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is approved and not yet
+  built.** The owner found the land "lanes and circles": every area is a basin at the land's own level and every
+  way a canyon at that level, under one massif, so a zone has one floor. The design: areas on heights by kind (a
+  keep's citadel up high, a hamlet's terraces, a farm's low fields, a graveyard in a sunken hollow, a camp's
+  platform, a ruin's broken tiers, the wilds' rock platforms, a coven or cave in a cavern, a quarry's stepped pit);
+  ways that switch back down faces, climb stairs, cross land bridges and bridges over chasms, and run through roofed
+  tunnels; gates set in walls from cliff to cliff or clefts in the rock; each zone's map of its spaces and
+  connections for missions, events and raids; and foes fighting in tunnels and caverns. The order:
+  1. the map of spaces and connections in the layout, saved with it;
+  2. heights: an area's floor as level flats (a sculpt's climbs whose two levels are equal), ways between heights as
+     chains of climbs turned into switchbacks where one ramp would be too steep, stairs for short rises, land
+     bridges (a climb standing over a lower floor); the sculpt only raises, so on Saltmere (28 m) the deepest place
+     is the land's own level;
+  3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
+     hollows and pits;
+  4. gates and their palisades ending on rock or walls, with a check that each meets what it joins;
+  5. the [[Navmesh]]: floors under roofs, and a node's room baking its layout's boxes, so foes walk tunnels,
+     caverns, stairs and bridges;
+  6. the runs found again on the new land, every space pictured with a before-and-after montage per zone, budgets
+     (continent 1 settles in about 1.47-1.6 s against 1.5 s), and the second audit of this branch's work the owner
+     asked for ("This PR's work again").
+  The picture pass before it found and fixed five causes of floating pieces, with `held_planned.rs` following every
+  solid's support from the ground. A gorge run's fallen bridge is held now, set 1.5 m into its wall at 7.5 m, but
+  still reads as a slab in mid-face, where no way reaches: step 2's bridges between heights should replace it.
 - The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
   low enough to climb in places: its runs will need their end arenas cut deeper or walled.
 - The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
