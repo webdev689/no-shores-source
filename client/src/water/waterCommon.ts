@@ -46,8 +46,9 @@ export function wideTexels(
 }
 
 /**
- * Noise, the sky and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise (the
- * distances to the nearest two of one jittered point a cell), each point dancing on its own clock when `time` moves.
+ * Noise, the sky's uniform and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise
+ * (the distances to the nearest two of one jittered point a cell), each point dancing on its own clock when `time`
+ * moves.
  * Points are measured from the anchor (ANCHOR_M).
  */
 export const SHARED_WGSL = /* wgsl */ `
@@ -272,31 +273,6 @@ fn marked(marks: texture_2d<u32>, at: vec2f, first: u32, last: u32) -> f32 {
   return smoothstep(0.3, 0.7, cover);
 }
 
-// The sky along 'direction'. 'blur' is how far apart, in radians, the rays a pixel gathers are: a reflection off
-// waves too small to draw gathers a cone of them, so the clouds' detail finer than that averages out.
-fn sky(direction: vec3f, slow_time: f32, blur: f32) -> vec3f {
-  let up = direction.z;
-  let zenith = sky_state.zenith.rgb;
-  let horizon = sky_state.horizon.rgb;
-  var colour = mix(horizon, zenith, sqrt(clamp(up, 0.0, 1.0)));
-  colour = mix(colour, horizon * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
-  if (up > 0.0) {
-    let plane = direction.xy / (up + 0.08) * 0.9 + vec2f(slow_time * 0.004, slow_time * 0.0013);
-    // How far the blur moves a point on the clouds' plane, furthest near the horizon, and each octave's share kept.
-    let reach = blur * 0.9 / ((up + 0.08) * (up + 0.08));
-    let keep = vec3f(1.0) - smoothstep(vec3f(0.25), vec3f(1.0), reach * vec3f(1.0, 2.3, 5.1));
-    let weights = vec3f(0.55, 0.3, 0.15) * keep;
-    let octaves = vec3f(value_noise(plane), value_noise(plane * 2.3), value_noise(plane * 5.1)) - 0.5;
-    let puff = 0.5 + dot(weights, octaves);
-    // The detail averaged away softens the clouds' edge, so however blurred they keep their mean cover (a sixth).
-    let lost = length(vec3f(0.55, 0.3, 0.15) - weights) * 0.27;
-    let cover = smoothstep(0.52 - lost, 0.78 + lost, puff) * smoothstep(0.0, 0.25, up);
-    colour = mix(colour, vec3f(0.97, 0.97, 0.99) * (0.86 + 0.14 * puff), cover * 0.9);
-  }
-  let toward = max(dot(direction, sky_state.sun.xyz), 0.0);
-  let sun_light = select(vec3f(0.0), sky_state.key_light.rgb, sky_state.sun.z > -0.02);
-  return colour + sun_light * (pow(toward, 900.0) * 16.0 + pow(toward, 14.0) * 0.16);
-}
 `;
 
 /**
@@ -544,9 +520,21 @@ fn scene_distance(pixel: vec2f) -> f32 {
   return forward * length(ray_through(pixel));
 }
 
+// The haze between the eye and what it sees: the air's, toward the dome's colour, and the weather's fog, which lies
+// thickest low down (its density falls by e every 60 m up), toward the fog's colour.
 fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
-  let haze = 1.0 - exp(-distance_to / frame.view.z);
-  return mix(colour, sky(vec3f(direction.xy, max(direction.z, 0.02)), frame.eye.w, 0.0) * 0.95, haze);
+  let eye_height = frame.eye.z / frame.depth_terms.w;
+  let from_height = max(eye_height, 0.0);
+  let to_height = max(eye_height + direction.z * min(distance_to, 1e5) / frame.depth_terms.w, 0.0);
+  let rise = to_height - from_height;
+  let low_from = exp(-from_height / 60.0);
+  let low_to = exp(-to_height / 60.0);
+  let low = select(60.0 * (low_from - low_to) / rise, low_from, abs(rise) < 1.0);
+  let ground_fog = sky_state.fog.w * 1.5 * clamp(low, 0.0, 1.0) * distance_to;
+  let haze = 1.0 - exp(-distance_to / frame.view.z - ground_fog);
+  let foggy = clamp(sky_state.fog.w * frame.view.z + ground_fog * 0.2, 0.0, 1.0);
+  let air = mix(sky_haze(vec3f(direction.xy, max(direction.z, 0.02))) * 0.95, sky_state.fog.rgb, foggy);
+  return mix(colour, air, haze);
 }
 
 // Light seen through 'distance_to' metres of water 'below' metres under its surface: the light the water scatters

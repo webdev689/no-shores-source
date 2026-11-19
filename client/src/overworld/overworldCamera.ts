@@ -114,11 +114,27 @@ export function smooth01(t: number): number {
   return x * x * (3 - 2 * x);
 }
 
-/** The highest the camera may stand: a cloud deck's base less the margin, held inside the band's reach. No deck
- *  (null, or not a number) is the band's top. */
-export function ceilingFor(cloudBase: number | null): number {
-  if (cloudBase === null || !Number.isFinite(cloudBase)) return HEIGHT.highest;
-  return clamp(cloudBase - CLEARANCE.cloudM, HEIGHT.floor, HEIGHT.highest);
+/** The highest the camera may stand: the weather's cloud deck's base less the margin, held inside the band's reach.
+ *  No deck (no weather yet, or too little cloud) is the band's top. */
+export function ceilingFor(weather: CloudWeather | null): number {
+  const base = cloudBaseOf(weather);
+  if (base === null || !Number.isFinite(base)) return HEIGHT.highest;
+  return clamp(base - CLEARANCE.cloudM, HEIGHT.floor, HEIGHT.highest);
+}
+
+/** The weather a cloud deck's base is read from (a sky reading has it): cover, how hard rain falls and how stormy it
+ *  is, each 0 to 1. */
+export interface CloudWeather {
+  readonly cloud: number;
+  readonly falling: number;
+  readonly storm: number;
+}
+
+/** The cloud deck's base, metres over the sea: none under half cover, about 1150 m at half, lower as the cover
+ *  closes, lower still in rain and a storm. */
+export function cloudBaseOf(weather: CloudWeather | null): number | null {
+  if (weather === null || !(weather.cloud >= 0.5)) return null;
+  return 1700 - 1100 * weather.cloud - 400 * weather.falling - 50 * weather.storm;
 }
 
 /** The heights the camera may take under a ceiling, lowest and highest. */

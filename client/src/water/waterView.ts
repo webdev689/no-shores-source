@@ -72,10 +72,22 @@ export const SAMPLES = 4;
 const RINGS = 220;
 const SEGMENTS = 192;
 
-/** The wind's chop: twelve short waves about the wind, each a whole number of waves along ANCHOR_M so the pattern never
- *  jumps as the anchor moves. Each is (wavenumber east, south, frequency, phase). */
-function chopWaves(swell: Swell | undefined): Float32Array {
-  const [windX, windY] = swell?.waves[0]?.direction ?? [0, -1];
+/** The bearings the chop is laid along: the local wind's, to the nearest of sixteen, so a slowly turning wind sets the
+ *  pattern afresh only now and then. */
+const CHOP_BEARINGS = 16;
+
+/** The bearing step (of CHOP_BEARINGS) nearest a wind blowing `wind` (m/s east and south). */
+export function chopBearing(wind: readonly [number, number]): number {
+  if (!Number.isFinite(wind[0]) || !Number.isFinite(wind[1])) return 0;
+  const step = Math.round((Math.atan2(wind[1], wind[0]) / (2 * Math.PI)) * CHOP_BEARINGS);
+  return ((step % CHOP_BEARINGS) + CHOP_BEARINGS) % CHOP_BEARINGS;
+}
+
+/** The wind's chop: twelve short waves about a bearing step, each a whole number of waves along ANCHOR_M so the
+ *  pattern never jumps as the anchor moves. Each is (wavenumber east, south, frequency, phase). */
+export function chopWaves(bearing: number): Float32Array {
+  const angle = (bearing / CHOP_BEARINGS) * 2 * Math.PI;
+  const [windX, windY] = [Math.cos(angle), Math.sin(angle)];
   const out = new Float32Array(CHOP_WAVES * 4);
   for (let index = 0; index < CHOP_WAVES; index++) {
     // Lengths and courses are nudged off any even step (golden-ratio turns), so the waves never lock into a grid.
@@ -104,7 +116,7 @@ export class WaterView {
   private readonly sampler: GPUSampler;
   private readonly ripples: RippleField;
   private readonly empty: { readonly flat: GPUTexture; readonly shore: GPUTexture };
-  private chop: { readonly swell: Swell | undefined; readonly waves: Float32Array } | null = null;
+  private chop: { readonly bearing: number; readonly waves: Float32Array } | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -246,8 +258,8 @@ export class WaterView {
       values.set([wave.direction[0], wave.direction[1], wave.number, phase], 64 + index * 8);
       values.set([wave.amplitude, wave.shift, 0, 0], 68 + index * 8);
     }
-    const chop =
-      this.chop && this.chop.swell === scene.swell ? this.chop : { swell: scene.swell, waves: chopWaves(scene.swell) };
+    const bearing = chopBearing(skyUniformFor(this.gpu.device).look.wind);
+    const chop = this.chop?.bearing === bearing ? this.chop : { bearing, waves: chopWaves(bearing) };
     this.chop = chop;
     values.set(chop.waves, 64 + MOST_WAVES * 8);
     for (const [index, hull] of scene.hulls.slice(0, HULLS).entries()) {

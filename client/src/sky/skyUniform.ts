@@ -80,6 +80,10 @@ export interface SkyLook {
   readonly starTurn: number;
   /** The clouds' drift on their plane, in noise cells, wrapped where the pattern repeats. */
   readonly drift: readonly [number, number];
+  /** The place's latitude, radians: how high the pole the stars wheel about stands, due north. */
+  readonly latitude: number;
+  /** The moon's month, 0 new to a half full and back to 1. */
+  readonly moonPhase: number;
 }
 
 /** A lamp round the eye: where it is from the eye (metres east, south and up), how far it reaches, and its light. */
@@ -116,6 +120,8 @@ export const AFTERNOON: SkyLook = {
   stars: 0,
   starTurn: 0,
   drift: [0, 0],
+  latitude: 0.5,
+  moonPhase: 0.5,
 };
 
 const VEC4S = 13 + LAMPS_MOST * 2;
@@ -136,7 +142,7 @@ export function skyNumbers(look: SkyLook, lamps: readonly Lamp[]): Float32Array 
     [...look.fogColour, look.fogDensity],
     [...look.wind, look.gust, look.falling],
     [look.sand, look.flash, look.stars, look.starTurn],
-    [...look.drift, 0, 0],
+    [...look.drift, look.latitude, look.moonPhase],
     [shown.length, 0, 0, 0],
     ...shown.flatMap((lamp) => [
       [...lamp.fromEye, lamp.reachM],
