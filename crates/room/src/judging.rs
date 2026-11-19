@@ -137,6 +137,7 @@ impl Room {
             self.mark_struck(blow.striker, defender, hand);
         }
         self.perks_after(blow.striker, defender, &verdict, after.dead());
+        self.verbs_after(blow, defender, &verdict, after.dead());
         self.arts_after(blow, &before, &verdict, after.dead() && self.foes.contains_key(&defender));
         if after.dead() && self.foes.contains_key(&defender) {
             self.pay_kill(defender);

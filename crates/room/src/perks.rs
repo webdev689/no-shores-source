@@ -1,17 +1,77 @@
 //! Perks in the room: the trim a player's worn traits make of combat's numbers, which their fighter carries so their
 //! browser predicts it too; the perks a blow takes on as it is struck, which the room alone knows the moment of (Honed,
-//! Executioner, Undertow, Point Blank, Long Shot); and those a parry, a block or a kill sets off.
+//! Executioner, Undertow, Exploit, Attuned, Point Blank, Long Shot); those a parry, a block or a kill sets off; and the
+//! verbs, the perks that give a status as a blow lands or a foe falls, with what they count from blow to blow.
 
 use crate::{PlayerId, Room};
 use combat::fighter::{Action, FighterId};
 use combat::judge::Blow;
 use combat::tuning::STAMINA;
-use combat::{BlowKind, Trim, Verdict};
+use combat::{BlowKind, Fighter, Ranged, Status, Trim, Verdict, ticks};
 use gear::Character;
 
 /// A shot within this of its target is point blank; past this, a long shot (metres).
 const POINT_BLANK_M: f64 = 5.0;
 const LONG_SHOT_M: f64 = 20.0;
+/// Attuned's blows deal this much; Keen Eye's Crit lasts this long (seconds).
+const ATTUNED_TIMES: f64 = 1.1;
+const KEEN_EYE_S: f64 = 4.0;
+/// Exposing Strikes Exposes a foe at this many swings in a row landed on it; Shocking Rounds Charges at this many
+/// shots landed.
+const ROW_EXPOSES: u32 = 3;
+const SHOTS_CHARGE: u32 = 5;
+
+/// What a player's verbs count from blow to blow, kept by the room alone: the ticks of their last two swings that
+/// landed, and each foe struck in a row with how many and the tick of the last (Exposing Strikes); and their shots
+/// landed since Shocking Rounds last Charged.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PerkCounts {
+    swung: [u64; 2],
+    rows: Vec<(FighterId, u32, u64)>,
+    shots: u32,
+}
+
+impl PerkCounts {
+    /// Counts a swing's blow on a foe at a tick, answering whether it is the third of a row, which then begins again.
+    /// Landed, it carries on the foe's row if the player's last swing before this one landed on the foe too, so a
+    /// sweep that strikes it beside others keeps it; else it begins one. Parried or dodged, it ends the foe's row. A
+    /// swing that lands on no one leaves the other foes' rows as they were.
+    fn in_row(&mut self, foe: FighterId, landed: bool, tick: u64) -> bool {
+        let held = self.rows.iter().find(|row| row.0 == foe).copied();
+        self.rows.retain(|row| row.0 != foe);
+        if !landed {
+            return false;
+        }
+        if self.swung[1] != tick {
+            self.swung = [self.swung[1], tick];
+        }
+        let before = self.swung[0];
+        self.rows.retain(|row| row.2 >= before);
+        let count = held.filter(|row| row.2 == before).map_or(1, |row| row.1 + 1);
+        if count >= ROW_EXPOSES {
+            return true;
+        }
+        self.rows.push((foe, count, tick));
+        false
+    }
+
+    /// Counts a shot landed, answering whether it is the fifth, after which the count begins again.
+    fn shot_landed(&mut self) -> bool {
+        self.shots += 1;
+        let charges = self.shots >= SHOTS_CHARGE;
+        if charges {
+            self.shots = 0;
+        }
+        charges
+    }
+}
+
+/// Whether a player's shot came first after its weapon's reload: every shot of a weapon that reloads after each, and a
+/// double pistolet's right, which its left follows before the one reload of both. A ball is judged as it is loosed,
+/// so its striker has just fired it.
+fn after_reload(ranged: Ranged, striker: &Fighter) -> bool {
+    ranged != Ranged::DoublePistolet || striker.fired_right
+}
 
 /// The trim the traits a player's worn gear gives make: each trait's own, every one counted once however many pieces
 /// give it. Forager and Scholar trim nothing in a fight: the gear's own rules give their more.
@@ -74,15 +134,23 @@ impl Room {
     }
 
     /// The perks a player's blow on a foe takes on as it is struck: Honed on every blow, Executioner on a staggered
-    /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health.
+    /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health,
+    /// Exploit marking a swing on an Exposed foe a crit, and Attuned on a blow in the worn Art's element (a spell's
+    /// never: no weapon's perk touches it).
     pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, trim: &Trim) -> Blow {
         let Some(foe) = self.fighter(defender) else { return blow };
-        if !self.players.contains_key(&blow.striker) || !self.foes.contains_key(&defender) {
+        let Some(player) = self.players.get(&blow.striker).filter(|_| self.foes.contains_key(&defender)) else {
             return blow;
-        }
+        };
         let staggered = if foe.staggered() && !blow.riposte() { trim.on_staggered } else { 1.0 };
         let low = if foe.health < foe.health_max / 2.0 { trim.on_low } else { 1.0 };
-        Blow { damage: blow.damage * trim.damage * staggered * low, ..blow }
+        let wears = |id: &str| player.character.has_trait(id);
+        let swing = matches!(blow.kind, BlowKind::Swing(_));
+        let exploits = swing && foe.statuses.has(Status::Expose) && wears("exploit");
+        let in_element = blow.element != 0 && blow.element == player.character.art().element;
+        let attuned = in_element && !matches!(blow.kind, BlowKind::Spell(_)) && wears("attuned");
+        let attuned = if attuned { ATTUNED_TIMES } else { 1.0 };
+        Blow { damage: blow.damage * trim.damage * staggered * low * attuned, crit: blow.crit || exploits, ..blow }
     }
 
     /// A player's shot by the ground it covered to its mark and the trim it was loosed with: Point Blank within 5 m,
@@ -126,4 +194,49 @@ impl Room {
             }
         }
     }
+
+    /// What a player's blow on a foe sets off of their verbs, through the room's one door for statuses, so no browser
+    /// predicts them: Exposing Strikes on the third swing in a row landed on one foe, Thunderclap on a guard a swing
+    /// breaks, Marked Shot on a shot landed first after a reload, Shocking Rounds on every fifth shot landed, and Keen
+    /// Eye's Crit on a kill.
+    pub(crate) fn verbs_after(&mut self, blow: &Blow, defender: FighterId, verdict: &Verdict, killed: bool) {
+        if !self.foes.contains_key(&defender) {
+            return;
+        }
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&blow.striker) else { return };
+        let (character, counts, striker) = (&found.character, &mut found.counts, found.fighter);
+        let wears = |id: &str| character.has_trait(id);
+        let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
+        let mut given = Vec::new();
+        match blow.kind {
+            BlowKind::Swing(_) => {
+                if wears("exposing_strikes") && counts.in_row(defender, landed, clock) {
+                    given.push(Status::Expose);
+                }
+                if wears("thunderclap") && matches!(verdict, Verdict::GuardBroken { .. }) {
+                    given.push(Status::Charge);
+                }
+            }
+            BlowKind::Shot(ranged) if landed => {
+                if wears("marked_shot") && after_reload(ranged, &striker) {
+                    given.push(Status::Expose);
+                }
+                if wears("shocking_rounds") && counts.shot_landed() {
+                    given.push(Status::Charge);
+                }
+            }
+            _ => {}
+        }
+        if killed && wears("keen_eye") {
+            self.give(blow.striker, Status::Crit, Some(ticks(KEEN_EYE_S)), Some(blow.striker));
+        }
+        for status in given {
+            self.give(defender, status, None, Some(blow.striker));
+        }
+    }
 }
+
+#[cfg(test)]
+#[path = "verbs_tests.rs"]
+mod verbs_tests;

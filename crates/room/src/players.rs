@@ -168,6 +168,8 @@ pub struct Player {
     pub trim: combat::Trim,
     /// Their Anima's charge, their Tenets' recharge and a cast on its way, kept while they are in the room.
     pub casting: crate::arts::Casting,
+    /// What their perks count from blow to blow, kept while they are in the room.
+    pub(crate) counts: crate::perks::PerkCounts,
 }
 
 impl Player {
@@ -204,6 +206,7 @@ impl Player {
             owner: None,
             trim: combat::Trim::PLAIN,
             casting: crate::arts::Casting::default(),
+            counts: crate::perks::PerkCounts::default(),
         }
     }
 
