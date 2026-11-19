@@ -1,19 +1,21 @@
 // A port city's plan as the city crate serialises it, and the climate its pictures are drawn in. The land worker hands
 // the plan over as JSON; this layer only reads it.
+import type { RockShape } from '../rules/rockMesh.ts';
 import type { Climate, Season } from '../textures/picture.ts';
 
 /** A cell's side in metres: one RMB block. */
 export const CELL_M = 102.4;
 
 /** A solid's shape and what it takes: a column's faces round and its top's share of its base, a dome's faces round,
- *  a frustum's top share, an arch's opening as a share of its height. */
+ *  a frustum's top share, an arch's opening as a share of its height, a natural rock's seed (../rules/rockMesh.ts). */
 export type SolidShape =
   | { readonly shape: 'block' }
   | { readonly shape: 'column'; readonly sides: number; readonly top: number }
   | { readonly shape: 'dome'; readonly sides: number }
   | { readonly shape: 'pyramid'; readonly top: number }
   | { readonly shape: 'gable' }
-  | { readonly shape: 'arch'; readonly opening: number };
+  | { readonly shape: 'arch'; readonly opening: number }
+  | RockShape;
 
 export type SolidMaterial =
   'stone' | 'trim' | 'roof' | 'timber' | 'plaster' | 'paving' | 'gold' | 'iron' | 'bone' | 'glow' | 'rubble' | 'chalk';

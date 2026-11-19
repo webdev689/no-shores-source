@@ -87,7 +87,8 @@ struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f
 
 @fragment fn blockFragment(in: BlockOut) -> @location(0) vec4f {
   let light = normalize(vec3f(0.4, -0.3, 0.85));
-  let shade = 0.55 + 0.45 * max(dot(in.normal, light), 0.0);
+  // Wrapped round, so a face turned from the sun still shows the bumps of a rough rock's side.
+  let shade = 0.45 + 0.55 * (0.5 + 0.5 * dot(normalize(in.normal), light));
   // A darker line at each metre of height on the sides, to judge a lip's height by.
   let metre = 1.0 - min(abs(fract(in.world.z + 0.5) - 0.5) / max(fwidth(in.world.z), 1e-4), 1.0);
   let side = 1.0 - abs(in.normal.z);
@@ -328,8 +329,9 @@ export class SceneView implements CardMaker {
     return { buffer: slot.buffer, group: slot.group };
   }
 
-  /** The blocks the scene stands, each a box from its underside to its top. */
-  setBlocks(blocks: readonly Block[]): void {
+  /** The blocks the scene stands, each a box from its underside to its top, and other triangles drawn with them
+   *  (each vertex's position then its normal), as the natural rocks are. */
+  setBlocks(blocks: readonly Block[], triangles: readonly number[] = []): void {
     const faces: [number, number, number, number[][]][] = [];
     for (const { minX, minY, maxX, maxY, top, bottom } of blocks) {
       faces.push([
@@ -402,6 +404,7 @@ export class SceneView implements CardMaker {
     const values: number[] = [];
     for (const [normalX, normalY, normalZ, corners] of faces)
       for (const corner of [0, 1, 2, 0, 2, 3]) values.push(...(corners[corner] ?? []), normalX, normalY, normalZ);
+    for (const value of triangles) values.push(value);
     this.blockVertices?.buffer.destroy();
     const data = new Float32Array(values);
     const buffer = this.gpu.device.createBuffer({

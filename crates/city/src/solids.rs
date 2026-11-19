@@ -21,6 +21,14 @@ pub enum Shape {
     Gable,
     /// A half-round arch across its width (x), its opening `opening` of its height high, as thick as its depth.
     Arch { opening: f64 },
+    /// Natural rock (`rock`): a thick slab spanning a cavern, its underside rough, standing on its underside.
+    CaveRoof { seed: u32 },
+    /// Natural rock: a mass against a face at its -y end, its lip jutting toward +y over the ground.
+    Overhang { seed: u32 },
+    /// Natural rock: an arch across its width (x), heavier than the built one, its opening square-shouldered.
+    RockArch { seed: u32 },
+    /// Natural rock: a frame round an opening along y into rising rock, a brow jutting over it at its -y side.
+    TunnelMouth { seed: u32 },
 }
 
 /// What a solid is dressed in; the browser picks each one's picture from the city's climate.
@@ -73,35 +81,39 @@ impl Solid {
     /// leaning or rolled solid's box holds its turned corners, so no more than the whole of it.
     #[must_use]
     pub fn bounds(&self) -> [f64; 6] {
-        // The corners of the box the shape fills in its own frame, rolled about its y, leaned toward its +y and
-        // turned, as the browser draws it (client/src/city/solidMesh.ts solidTurn).
-        let (roll_sine, roll_cosine) = sin_cos(self.roll);
-        let (lean_sine, lean_cosine) = sin_cos(self.lean);
-        let (sine, cosine) = sin_cos(self.turn);
         let (half_width, half_depth) = (self.size[0] / 2.0, self.size[1] / 2.0);
+        self.bounds_of([-half_width, -half_depth, 0.0, half_width, half_depth, self.size[2]])
+    }
+
+    /// A box of the solid's own frame (its low x, y and z, then its high ones) as a box square to the world round
+    /// its turned corners: west, north, east, south, bottom, top.
+    #[must_use]
+    pub fn bounds_of(&self, own: [f64; 6]) -> [f64; 6] {
         let start =
             [f64::INFINITY, f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
         let mut found = start;
         for corner in 0..8 {
-            let x = if corner & 1 == 0 { -half_width } else { half_width };
-            let y = if corner & 2 == 0 { -half_depth } else { half_depth };
-            let z = if corner & 4 == 0 { 0.0 } else { self.size[2] };
-            let (x, z) = (x * roll_cosine + z * roll_sine, -x * roll_sine + z * roll_cosine);
-            let (y, z) = (y * lean_cosine + z * lean_sine, -y * lean_sine + z * lean_cosine);
-            let (east, south) = (x * cosine - y * sine, x * sine + y * cosine);
-            for (axis, value) in [east, south, z].into_iter().enumerate() {
+            let x = if corner & 1 == 0 { own[0] } else { own[3] };
+            let y = if corner & 2 == 0 { own[1] } else { own[4] };
+            let z = if corner & 4 == 0 { own[2] } else { own[5] };
+            for (axis, value) in self.place([x, y, z]).into_iter().enumerate() {
                 found[axis] = found[axis].min(value);
                 found[axis + 3] = found[axis + 3].max(value);
             }
         }
-        [
-            self.at[0] + found[0],
-            self.at[1] + found[1],
-            self.at[0] + found[3],
-            self.at[1] + found[4],
-            self.at[2] + found[2],
-            self.at[2] + found[5],
-        ]
+        [found[0], found[1], found[3], found[4], found[2], found[5]]
+    }
+
+    /// A point of the solid's own frame in the world: rolled about its y, leaned toward its +y, turned and stood at
+    /// its place, as the browser draws it (client/src/city/solidMesh.ts solidTurn).
+    #[must_use]
+    pub fn place(&self, [x, y, z]: [f64; 3]) -> [f64; 3] {
+        let (roll_sine, roll_cosine) = sin_cos(self.roll);
+        let (lean_sine, lean_cosine) = sin_cos(self.lean);
+        let (sine, cosine) = sin_cos(self.turn);
+        let (x, z) = (x * roll_cosine + z * roll_sine, -x * roll_sine + z * roll_cosine);
+        let (y, z) = (y * lean_cosine + z * lean_sine, -y * lean_sine + z * lean_cosine);
+        [self.at[0] + x * cosine - y * sine, self.at[1] + x * sine + y * cosine, self.at[2] + z]
     }
 }
 

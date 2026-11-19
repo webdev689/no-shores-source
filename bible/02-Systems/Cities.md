@@ -25,6 +25,9 @@ code:
   - client/src/city/tiers.ts#tierFades
   - client/src/city/cityMasses.ts#hullOf
   - client/src/city/solidMesh.ts#meshSolid
+  - crates/city/src/rock.rs#mesh
+  - crates/city/src/rock.rs#boxes
+  - client/src/rules/rockMesh.ts#rockMesh
   - client/src/city/cityGround.ts#groundPlates
   - client/src/city/cityGround.ts#clearedGround
   - client/src/city/pictures.ts#pictureBook
@@ -113,6 +116,22 @@ against ([[Server]]). A box keeps the solid's underside, so a roof, a lintel or 
 body walks under ([[Movement]]). A leaning or rolled solid's box reaches round its base and as far as its top swings
 out.
 
+**Natural rock** (`rock`) is four more shapes for what the ground cannot hold, since the land has one height a point
+and never overhangs ([[Zones Rise and Fall, Above and Below Ground]]): a cave roof, a thick slab spanning a cavern
+that stands on its underside; an overhang, a mass set against a face at its own -y end with a lip jutting toward +y
+from 55 % of its height; a rock arch across its width, two legs with broad feet and a head from 62 % of its height;
+and a tunnel mouth, two jambs and a head from 60 % of its height set into the rock at its +y end, with a brow jutting
+over the opening at its -y end. Each is made from its size and a seed alone. It is a few boxes of its own frame
+(`rock::parts`), and each box is drawn as a lump inside it: the box's sides cut into cells about 0.75 m across, each
+corner pulled onto the round-cornered body inside the box and then in along its normal by the land's exact noise
+(broad bulges 5 m across and crags 1.6 m across), by up to a quarter of the box's half each way and 1.2 m on its
+sides, up to 56 % and 2.8 m underneath; a side set against the ground, a face or the rock stays flat and full. So `rock::boxes`, each part's
+box turned and stood at the rock's place, holds every vertex drawn, and a body walks under a roof, through an arch or
+a tunnel mouth, and up an overhang's face only until its head meets the lip (`crates/city/tests/rock_walks.rs`). The
+browser makes the same vertices to the bit (`rules/rockMesh.ts` writes the exact noise again; both pin the same
+fingerprints). A city's boxes (`boxes_within`) take a rock's parts' boxes. No city or layout places rock yet, and a
+layout's own boxes (`crates/layout/src/collide.rs`) do not yet read them.
+
 ## How it is drawn
 
 `CityView` is a drawer for the game's scene, drawn into the scene's own pass. It is handed a plan, the continent's
@@ -140,7 +159,9 @@ tiers, and a 4 x 4 dither pattern gives each pixel to exactly one, so nothing po
 
 The landmark, the works and the plaza's solids are drawn at every distance, meshed from their specs, their
 pictures laid at 24 texels a metre, coarser than the forged models' 40, so their courses read as ashlar from the
-plaza and across the city. A block's model stands at its cell's corner plus its placement, at the cell's level,
+plaza and across the city. Natural rock is drawn as its lumps' triangles, each lit flat so it reads as faceted crags, its
+picture laid from the axis each triangle faces most; it wears its material's picture as any solid does, rubble for
+rock, which a layout's stone turns to its own (the Downs' chalk). A block's model stands at its cell's corner plus its placement, at the cell's level,
 turned by its yaw ([[RMB Blocks]]).
 
 **The ground.** Every levelled cell has a plate at its level at every distance, so the 1 km land's smoothing never

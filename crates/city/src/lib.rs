@@ -12,6 +12,7 @@ pub mod grid;
 pub mod landmarks;
 pub mod landmarks_inland;
 pub mod rmb;
+pub mod rock;
 pub mod social;
 pub mod solids;
 pub mod stations;
