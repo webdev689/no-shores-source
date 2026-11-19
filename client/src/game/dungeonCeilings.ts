@@ -5,13 +5,13 @@
 // machine draws the same.
 import type { MeshBuilder } from '../models/model.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
+import { TILE_M, uvOf } from './dungeonUv.ts';
 
 type Point = readonly [number, number, number];
 type Picture = readonly [number, number];
 type Height = (x: number, y: number) => number;
 
-/** Metres one picture covers; how many strips a curved cell's ceiling is cut into each way, and an edge's closing. */
-const TILE_M = 3.2;
+/** How many strips a curved cell's ceiling is cut into each way, and an edge's closing and a cave's wall. */
 const CUTS = 4;
 /** The highest a vault or a dome rises over its walls, and how much of its half span it rises at most. */
 const RISE_M = { vault: 1.6, dome: 2.2 };
@@ -137,11 +137,16 @@ export function curvedCeiling(
 }
 
 /** Closes a cell's side from `low` up to `high` along its edge, both heights over each point of it, facing into the
- *  cell; nothing where the two meet. */
+ *  cell; nothing where the two meet. Its picture runs down from the cell's own ceiling, `top`, as the wall under it. */
 export function closeEdge(
   mesh: MeshBuilder,
   picture: Picture,
-  edge: { readonly from: readonly [number, number]; readonly to: readonly [number, number]; readonly facing: Point },
+  edge: {
+    readonly from: readonly [number, number];
+    readonly to: readonly [number, number];
+    readonly facing: Point;
+    readonly top: number;
+  },
   low: Height,
   high: Height,
 ): void {
@@ -160,11 +165,7 @@ export function closeEdge(
       [secondX, secondY, Math.max(lowB, highB)],
       [firstX, firstY, Math.max(lowA, highA)],
     ];
-    const mapped = ([x, y, z]: Point): [number, number] => [
-      (Math.abs(edge.facing[0]) > 0.5 ? y : x) / TILE_M,
-      -z / TILE_M,
-    ];
-    mesh.quad(picture, corners, edge.facing, corners.map(mapped));
+    mesh.quad(picture, corners, edge.facing, corners.map(uvOf(edge.facing, edge.top)));
   }
 }
 
@@ -199,11 +200,7 @@ export function caveWall(
         point((column + 1) / CUTS, (row + 1) / CUTS),
         point(column / CUTS, (row + 1) / CUTS),
       ];
-      const mapped = ([x, y, z]: Point): [number, number] => [
-        (Math.abs(east) > 0.5 ? y : x) / TILE_M,
-        -(high - z) / TILE_M,
-      ];
-      mesh.quad(picture, corners, facing, corners.map(mapped));
+      mesh.quad(picture, corners, facing, corners.map(uvOf(facing, high)));
     }
 }
 

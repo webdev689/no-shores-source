@@ -7,9 +7,9 @@
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
+import { uvOf } from './dungeonUv.ts';
 
-/** Metres one picture covers, and the trim bands' heights at a wall's foot and head. */
-export const TILE_M = 3.2;
+/** The trim bands' heights at a wall's foot and head. */
 export const BASE_M = 0.4;
 export const HEAD_M = 0.3;
 /** The record each face takes in a dungeon set, by its role. */
@@ -31,14 +31,6 @@ const PLATE = { half: 0.06, low: -0.25, high: 0.05, thick: 0.03 };
 const ARM = { half: 0.02, low: -0.17, high: -0.13 };
 const CUP = { half: 0.06, low: -0.15, high: -0.07 };
 const FLAME = { half: 0.06, low: -0.07, waist: -0.01, high: 0.2 };
-
-/** A face's UV by its own plane: a floor or a ceiling by x and y, a wall along it and down from `top`. */
-function uvOf(normal: Point, top: number) {
-  return ([x, y, z]: Point): [number, number] =>
-    Math.abs(normal[2]) > 0.5
-      ? [x / TILE_M, y / TILE_M]
-      : [(Math.abs(normal[0]) > 0.5 ? y : x) / TILE_M, -(top - z) / TILE_M];
-}
 
 /** A quad by its corners round its edge, facing `normal`, its UVs by its plane. */
 function face(mesh: MeshBuilder, picture: Picture, corners: readonly Point[], normal: Point, top: number): void {
@@ -385,14 +377,14 @@ export function dungeonMesh(
           if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling);
           else wall(mesh, look, where, [0, ceiling], trims);
           // Over the wall's head, up to a vault, a dome or a cave's rock.
-          return closeEdge(mesh, [look.set, look.wall], edge, () => ceiling, height);
+          return closeEdge(mesh, [look.set, look.wall], { ...edge, top: ceiling }, () => ceiling, height);
         }
         if (!curved(index) && !curved(next)) {
           const lower = ceilings[next] ?? ceiling;
           if (lower < ceiling) wall(mesh, look, where, [lower, ceiling], { ...trims, foot: false });
           return;
         }
-        closeEdge(mesh, [look.set, look.wall], edge, heightOf(next), height);
+        closeEdge(mesh, [look.set, look.wall], { ...edge, top: ceiling }, heightOf(next), height);
       });
     }
   layout.frames.forEach(([frameCell, , height], index) => {

@@ -155,6 +155,22 @@ test('UVs run in world metres, one picture to 3.2 m', () => {
     });
 });
 
+test("a wall's picture stands upright: its top row at the wall's head, running down it", () => {
+  const walls = triangles.filter(({ picture, normal }) => picture.startsWith('123.') && Math.abs(normal[2]) < 0.5);
+  assert.ok(walls.length > 0);
+  for (const { corners, uvs } of walls)
+    corners.forEach(([, , z], higher) =>
+      corners.forEach(([, , lower], index) => {
+        if (z > lower + EPS) assert.ok((uvs[higher]?.[1] ?? 0) < (uvs[index]?.[1] ?? 0), 'higher is nearer the top');
+      }),
+    );
+  const heads = walls.flatMap(({ corners, uvs }) => corners.map(([, , z], index) => [z, uvs[index]?.[1] ?? -1]));
+  assert.ok(
+    heads.some(([z, down]) => near(z ?? 0, 4) && near(down ?? -1, 0)),
+    "the room's walls start their picture at 4 m",
+  );
+});
+
 test('the exit door wears the door picture once, on its wall facing into the room', () => {
   const door = where('56.2', () => true);
   assert.equal(door.length, 2);

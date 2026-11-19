@@ -54,7 +54,7 @@ test("a cave's ceiling stands a quarter to over a metre above its walls and vari
 
 test('an edge is closed only where one side stands higher than the other', () => {
   const mesh = meshBuilder();
-  const edge = { from: [0, 0] as const, to: [3.2, 0] as const, facing: [0, 1, 0] as const };
+  const edge = { from: [0, 0] as const, to: [3.2, 0] as const, facing: [0, 1, 0] as const, top: 4 };
   closeEdge(
     mesh,
     [123, 0],
@@ -78,6 +78,9 @@ test('an edge is closed only where one side stands higher than the other', () =>
     (empty, vertex) => model.positions[vertex * 3 + 2],
   );
   assert.ok(heights.every((z) => (z ?? 0) >= 4 - 1e-5 && (z ?? 0) <= 4.32 + 1e-5));
+  // Its picture runs on up from the wall under it: v 0 at that wall's head, less above it.
+  for (let vertex = 0; vertex < heights.length; vertex++)
+    assert.ok(Math.abs((model.uvs[vertex * 2 + 1] ?? 1) - (4 - (heights[vertex] ?? 0)) / 3.2) < 1e-5);
 });
 
 test("a cave's wall bulges inside its edges and meets them exactly, so nothing shows between", () => {
@@ -94,4 +97,7 @@ test("a cave's wall bulges inside its edges and meets them exactly, so nothing s
     assert.ok(Math.abs(y - 3.2) <= 0.22 + 1e-5);
   }
   assert.ok(bulged > 0.02, 'it bulges between its edges');
+  const { uvs } = mesh.model();
+  for (let vertex = 0; vertex < positions.length / 3; vertex++)
+    assert.ok(Math.abs((uvs[vertex * 2 + 1] ?? 1) - (4 - (positions[vertex * 3 + 2] ?? 0)) / 3.2) < 1e-5, 'upright');
 });
