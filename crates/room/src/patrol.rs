@@ -1,6 +1,7 @@
 //! A patrol's land: its island's resource at spots laid out from the node's own name, the same every time, a third of
 //! them holding a node at once and the next third after a while, so a player can plan a route through them. Each
-//! player may gather each node once while it stands. Its fights are its garrison's (`garrison.rs`).
+//! player may gather each node once while it stands. Its fights are its garrison's (`garrison.rs`), and its dungeons
+//! lie behind its entrances (`entrances.rs`).
 
 use crate::{ResourceNode, Room};
 use gear::Difficulty;
@@ -15,14 +16,16 @@ pub const ROTATE_TICKS: u64 = 60 * 180;
 const SPOTS_APART_M: f64 = 60.0;
 const SPOTS_FROM_SPAWNS_M: f64 = 25.0;
 
-/// A patrol: the nodes each account's character gathered this turn, kept past a player's leaving.
+/// A patrol: the nodes each account's character gathered this turn, kept past a player's leaving, and its dungeons'
+/// entrances (`entrances.rs`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Patrol {
     pub gathered: BTreeMap<String, Vec<u8>>,
+    pub entrances: Vec<crate::entrances::Entrance>,
 }
 
 /// A number for a name, the same every time: FNV-1a.
-fn named(name: &str) -> u64 {
+pub(crate) fn named(name: &str) -> u64 {
     name.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
 }
 
@@ -49,13 +52,15 @@ fn places(ring: &[[f64; 2]], spawns: &[[f64; 2]], dice: &Dice, count: usize, apa
 }
 
 impl Room {
-    /// Makes this node's room a patrol: `resource`'s nodes at places laid out from the node's name.
+    /// Makes this node's room a patrol: `resource`'s nodes at places laid out from the node's name, and its dungeons'
+    /// entrances, drawn apart from them.
     pub fn start_patrol(&mut self, node: &str, resource: u8) {
         let Some(section) = &self.section else { return };
         let spots = Dice { seed: named(node), tick: 0, player: 0 };
         let nodes = places(&section.ring, &section.spawns, &spots, SPOTS, [SPOTS_APART_M, SPOTS_FROM_SPAWNS_M]);
+        let entrances = crate::entrances::laid(node, &self.floor, &section.ring, &section.spawns, &nodes);
         self.resource_nodes = nodes.into_iter().map(|[x, y]| ResourceNode { x, y, resource }).collect();
-        self.patrol = Some(Patrol::default());
+        self.patrol = Some(Patrol { entrances, ..Patrol::default() });
     }
 
     /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it.

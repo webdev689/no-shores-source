@@ -191,6 +191,7 @@ dependencies = [
  "bake",
  "city",
  "combat",
+ "dungeon",
  "foes",
  "gear",
  "land",

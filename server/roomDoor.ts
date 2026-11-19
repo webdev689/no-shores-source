@@ -36,6 +36,9 @@ export interface RoomDoor {
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
+  /** Opens the room of a patrol's dungeon by its number (0 to 2), from the patrol's node file's text; false if the
+   *  text is not a patrol's or it has no such dungeon. */
+  openDungeon(nodeText: string, dungeon: number): boolean;
   /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; false if the
    *  text is not a layout. */
   openSea(layoutText: string, seed: number): boolean;
@@ -46,6 +49,9 @@ export interface RoomDoor {
   takeFoeAsks(): void;
   /** A new player's number, or 0 when the room is full. */
   join(): number;
+  /** A new player's number, standing before the door of the open patrol's entrance numbered `entrance`, facing away
+   *  from it; 0 when the room is no patrol, has no such entrance or is full. */
+  joinAt(entrance: number): number;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
@@ -93,10 +99,12 @@ interface RoomExports {
   room_tick_seconds(): number;
   room_open(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
+  room_open_dungeon(address: number, length: number, dungeon: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
   room_take_foe_asks(): void;
   room_join(): number;
+  room_join_at(entrance: number): number;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
@@ -151,11 +159,14 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
+    openDungeon: (nodeText, dungeon) =>
+      openWith((address, length) => exports.room_open_dungeon(address, length, dungeon >>> 0), nodeText),
     openSea: (layoutText, seed) =>
       openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
+    joinAt: (entrance) => exports.room_join_at(entrance >>> 0),
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
     input: (player, bytes) =>

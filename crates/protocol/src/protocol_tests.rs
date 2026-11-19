@@ -153,7 +153,7 @@ fn snapshot<'snapshot>(
     shots: &'snapshot [Shot],
     lines: &'snapshot [Line],
 ) -> Snapshot<'snapshot> {
-    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines }
+    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines, cache: &[] }
 }
 
 /// The dresses a message holds.
@@ -413,4 +413,17 @@ fn the_bytes_for_the_clients_test_are_written() {
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
+}
+
+#[test]
+fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
+    let plain = snapshot(&[], &[], &[], &[]);
+    let cache = [12.5, 30.0, 0.0, 1.25, 1.0];
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        let message = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message");
+        message.snapshot().expect("a snapshot").cache().map(|cache| cache.iter().collect::<Vec<f64>>())
+    };
+    assert_eq!(read(&plain), None);
+    assert_eq!(read(&Snapshot { cache: &cache, ..plain }), Some(cache.to_vec()));
 }

@@ -77,7 +77,7 @@ const PATROL: [(u8, Rank); 6] = [
     (CROSSBOWMAN, Minor),
     (CROSSBOWMAN, Major),
 ];
-const DUNGEON: [(u8, Rank); 6] = [
+pub(crate) const DUNGEON: [(u8, Rank); 6] = [
     (RUNNER, Major),
     (COLLECTOR, Major),
     (CROSSBOWMAN, Major),
@@ -97,12 +97,12 @@ pub(crate) fn node_seed(id: &str) -> u64 {
 }
 
 /// The stream a garrison is drawn from: the room's seed folded to the stream's 32 bits.
-fn draws_of(seed: u64) -> Mulberry32 {
+pub(crate) fn draws_of(seed: u64) -> Mulberry32 {
     Mulberry32::new((seed ^ (seed >> 32)) as u32)
 }
 
 /// An index into `count` things, drawn.
-fn index(draws: &mut Mulberry32, count: usize) -> usize {
+pub(crate) fn index(draws: &mut Mulberry32, count: usize) -> usize {
     ((draws.draw() * count as f64) as usize).min(count.saturating_sub(1))
 }
 
@@ -144,8 +144,11 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
 
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, and never over
 /// its city's boxes or its whole section, which would cost more time and memory than a room has; a course's room over
-/// its blocks and the open ground round them.
+/// its blocks and the open ground round them; a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
+    if let (Floor::Dungeon(_), Some(section)) = (floor, section) {
+        return crate::dungeon_room::baked(floor, blocks, first, section);
+    }
     let (walked, middle, around): (&[Block], (f64, f64), f64) = match section {
         Some(section) => (&[], ground_middle(section, first), NODE_AROUND),
         None => (blocks, first, GROUND_AROUND),
@@ -153,7 +156,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     let bounds = ground_around(walked, middle, around);
     match floor {
         Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
-        Floor::Land(_) => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
+        Floor::Land(_) | Floor::Dungeon(_) => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
     }
 }
 
@@ -246,6 +249,12 @@ impl Room {
                 }
             }
         }
+        self.gird_and_stand(levels);
+    }
+
+    /// Draws each posted foe's level from its island's band and its shield, in the order the posts were laid, and
+    /// stands every post.
+    pub(crate) fn gird_and_stand(&mut self, levels: Option<(u8, u8)>) {
         let (seed, mut nth) = (self.world_seed, 0_u32);
         for post in &mut self.garrison {
             for &(_, rank, _, _) in &post.members {
@@ -311,7 +320,7 @@ impl Room {
     }
 
     /// A garrison level raised by the room's seas; 0, none, stays none.
-    fn at_seas(&self, level: u8) -> u8 {
+    pub(crate) fn at_seas(&self, level: u8) -> u8 {
         if level == 0 { 0 } else { self.difficulty.raise(level) }
     }
 

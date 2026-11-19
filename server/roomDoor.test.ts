@@ -369,3 +369,29 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
   assert.equal(sea.openFleet(), true);
   assert.equal(sea.furnish(course.stall, course.resources), false, 'a fleet keeps no gear');
 });
+
+test('a patrol’s dungeon opens from the patrol’s node file, and a patrol’s room is joined before an entrance', () => {
+  const room = startRoomDoor(compiled);
+  const patrol = JSON.parse(nodeFile().text) as Record<string, unknown>;
+  assert.equal(room.openDungeon(JSON.stringify({ ...patrol, kind: 'mission' }), 0), false, 'a mission has none');
+  assert.equal(room.openDungeon(nodeFile().text, 3), false, 'a patrol has three');
+  assert.equal(room.openDungeon(nodeFile().text, 2), true);
+  assert.equal(room.difficulty(1), true, 'at the room name’s seas');
+  assert.equal(room.joinAt(0), 0, 'a dungeon has no entrances');
+  assert.notEqual(room.join(), 0);
+  const ring = [
+    [-800, -800],
+    [800, -800],
+    [800, 800],
+    [-800, 800],
+  ];
+  const wide = { ...patrol, continent: 'continent-1', ring, bounds: [-900, -900, 900, 900] };
+  assert.equal(room.openNode(JSON.stringify(wide)), true);
+  assert.equal(room.joinAt(3), 0, 'no such entrance');
+  const player = room.joinAt(0);
+  assert.notEqual(player, 0);
+  room.tick();
+  const snapshot = readFromRoom(room.snapshot());
+  const seen = snapshot?.kind === 'snapshot' ? snapshot.players.find((each) => each.player === player) : undefined;
+  assert.ok(seen, 'standing in the patrol');
+});

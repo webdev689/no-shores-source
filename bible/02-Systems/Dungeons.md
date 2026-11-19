@@ -10,6 +10,17 @@ code:
   - crates/dungeon/src/lane.rs#Lane
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
   - client/src/rules/dungeonRules.test.ts
+  - crates/room/src/dungeon_room.rs#dungeon
+  - crates/room/src/dungeon_room.rs#band_rooms
+  - crates/room/src/dungeon_room.rs#keep_cache
+  - crates/room/src/floor.rs#Floor
+  - crates/room/src/entrances.rs#laid
+  - crates/room/src/entrances.rs#MODELS
+  - crates/room/src/entrances.rs#join_at
+  - crates/navmesh/src/lib.rs#bake_anchored
+  - crates/room-wasm/src/dungeon_door.rs#open_dungeon
+  - crates/room-wasm/src/dungeon_door.rs#room_join_at
+  - server/roomNames.ts#nodeRoom
   - client/src/game/dungeonLayout.ts#askDungeon
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
@@ -69,6 +80,43 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   door, torches, frames, pillars and boxes. The room door's `dungeon` asks it. Three dungeons' answers are pinned by
   their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine.
 
+## In the rooms
+
+- **A room for each at each sea.** A patrol's dungeon is the room `node-<patrol id>--dungeon-<number>`, and
+  `node-<patrol id>--rough--dungeon-<number>` or `--storm--dungeon-<number>` at the harder seas ([[Server]]). It opens
+  from its patrol's node file, refused for a node that is no patrol, and its garrison stands at the patrol's island
+  band, raised by its seas.
+- **Its world is the dungeon's frame**: x east and y south from the north-west corner, the floor at 0 m. Every point
+  its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
+  arrival, where a body joins and the dead stand again, facing into the room.
+- **What a body stands on**: [[Movement]]'s grid of heights over the dungeon's cells, its rock a wall no body passes,
+  and its jambs and pillars as blocks.
+- **Its navmesh** is baked over the whole dungeon in cells of 0.4 m and kept to the floor joined to the arrival
+  ([[Navmesh]]), so the rock's flat tops are left out.
+- **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
+  two to four in each other room past the way in's, one foe for each ten of its cells, on its quiet cells nearest its
+  middle; when the bands and the Reeve would pass the room's 24 foes, the most rooms that fit, spread evenly along
+  the walk from the way in to the end.
+- **The cache** stands 1.6 m from the Reeve's post, the first of the eight ways round it, north first, that is open
+  floor clear of every jamb and pillar, facing the post. Shut while the Reeve stands; when he falls it opens and every
+  player then in the room finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot
+  carries it.
+- **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
+  the node's id, drawn apart from its resource spots. Each is the model its dungeon's seed draws of the four
+  Daggerfall's dungeon blocks stand, raised as those blocks raise it:
+
+| Model | Stood by | Raised (m) |
+|---|---|---|
+| 42000 | DUNGAA00 | 2.5 |
+| 42001 | DUNGAA01 | 4.8 |
+| 43601 | the other dungeon blocks | 0.775 |
+| 43602 | the other dungeon blocks | 0.475 |
+
+  Its yaw turns the model's +z as an RMB block's does, so its door (the forged props' `doors` quad) faces the ring's
+  middle. Every player of the patrol's room is sent them in their gear. A player joins the patrol's room 1.5 m before
+  an entrance's door, facing away from it, by `?entrance=<number>` on its address, or in a page playing alone by the
+  room's `room_join_at`.
+
 ## In the Game
 
 The page reads a dungeon from the room module's own `room_dungeon` (`askDungeon`) and plays it as [[Game]] says ("A
@@ -91,3 +139,5 @@ dungeon").
 - One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
   behind.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
+- Movement has no ceilings: a body pressed against a jamb or a pillar climbs it, as it climbs any block too high to
+  grab, and stands on its top at the ceiling's height.

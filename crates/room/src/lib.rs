@@ -7,7 +7,10 @@
 pub mod asks;
 pub mod clash;
 pub mod deck;
+mod dungeon_room;
+mod entrances;
 pub mod fleet;
+mod floor;
 mod foes;
 mod garrison;
 mod judging;
@@ -20,6 +23,8 @@ pub mod sea;
 pub mod threat;
 
 pub use asks::{Asked, Grant, ResourceNode};
+pub use entrances::Entrance;
+pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
 pub use perks::trim_of;
@@ -38,38 +43,13 @@ use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
-use land::ground::Ground;
 pub use land::sites::NodeKind;
-use movement::blocks::ground_at;
-use movement::{Block, Body, Terrain, standing};
+use movement::{Block, Body, standing};
 use players::Player;
 use reach::respawn_point;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, VecDeque};
-
-/// The ground a room's fighters stand on: open ground at 0 m, or a node's window of the land.
-#[derive(Clone, Debug, PartialEq)]
-pub enum Floor {
-    Flat,
-    Land(Box<Ground>),
-}
-
-impl Terrain for Floor {
-    fn height_at(&self, x: f64, y: f64) -> f64 {
-        match self {
-            Floor::Flat => 0.0,
-            Floor::Land(ground) => ground.height_at(x, y),
-        }
-    }
-}
-
-/// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within
-/// a step of it.
-#[must_use]
-pub fn standing_on(floor: &Floor, blocks: &[Block], x: f64, y: f64) -> Body {
-    Body { z: ground_at(blocks, floor, x, y, floor.height_at(x, y)), ..standing(x, y) }
-}
 
 /// A player as the room last stepped them: their fighter, where it stands with the room's section, what their figure
 /// showed with it, and the number of their last input it took.
@@ -142,6 +122,9 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
+    /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
+    pub(crate) facing: f64,
+    pub(crate) cache: Option<dungeon_room::Cache>,
     /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
     pub day: u64,
 }
@@ -203,6 +186,8 @@ impl Room {
             drops: Vec::new(),
             difficulty: gear::Difficulty::Calm,
             patrol: None,
+            facing: core::f64::consts::PI,
+            cache: None,
             day: 0,
         }
     }
@@ -215,7 +200,8 @@ impl Room {
 
     /// A body standing at a spawn or a foe's place: on the ground in a node's room, at 0 m on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
-        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { standing(x, y) }
+        let body = if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { standing(x, y) };
+        Body { facing: self.facing, ..body }
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
@@ -236,13 +222,17 @@ impl Room {
         if self.players.len() >= PLAYERS_MOST {
             return None;
         }
-        let id = self.next_id();
         let turn = self.joins % self.spawn_points.len().max(1);
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
-        let fighter = player(self.stand(spawn), BARE_HANDS);
-        self.players.insert(id, Player::new(fighter, self.clock));
-        Some(id)
+        Some(self.join_standing(self.stand(spawn)))
+    }
+
+    /// A new player standing as `body` stands, with nothing drawn.
+    pub(crate) fn join_standing(&mut self, body: Body) -> PlayerId {
+        let id = self.next_id();
+        self.players.insert(id, Player::new(player(body, BARE_HANDS), self.clock));
+        id
     }
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
@@ -300,6 +290,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_cache();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {

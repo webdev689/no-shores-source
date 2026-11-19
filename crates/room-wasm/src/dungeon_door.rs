@@ -1,7 +1,10 @@
 //! A patrol's dungeon for a browser: its layout as the `dungeon` crate lays it, so a page draws it and predicts a body
-//! on it from the rules rather than from a copy of them.
+//! on it from the rules rather than from a copy of them. And the dungeon's room: opened from its patrol's node file,
+//! and a patrol's room joined before one of its entrances.
 
+use crate::{NodeFile, Opened, keep, with_open};
 use dungeon::{Cell, Dungeon, Side};
+use room::{NodeKind, PlayerId, Room};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -75,6 +78,42 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "boxes": laid.boxes(),
     })
     .to_string()
+}
+
+/// Opens the room of a patrol's dungeon by its number, from the patrol's node file's text: its garrison at the patrol's
+/// island band. Answers whether the text was a patrol's and the number one of its dungeons.
+pub fn open_dungeon(text: &[u8], number: usize) -> bool {
+    let Ok(node) = serde_json::from_slice::<NodeFile>(text) else { return false };
+    if node.kind != NodeKind::Patrol {
+        return false;
+    }
+    let Some(room) = Room::dungeon(&node.id, number, gear::world::island_levels(&node.continent)) else { return false };
+    keep(Opened::Land { room: Box::new(room), node: None });
+    true
+}
+
+/// Opens a patrol's dungeon's room from the patrol's node file's text written at `address`, `length` bytes long, by
+/// its number; 1 if it opened, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_open_dungeon(address: *const u8, length: usize, number: u32) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let text = unsafe { std::slice::from_raw_parts(address, length) };
+    u32::from(usize::try_from(number).is_ok_and(|number| open_dungeon(text, number)))
+}
+
+/// A new player's number, standing before the door of the open patrol's entrance numbered `number`, facing away from
+/// it; 0 when the room is no patrol, has no such entrance or is full.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_join_at(number: u32) -> PlayerId {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => usize::try_from(number).ok().and_then(|number| room.join_at(number)),
+        Opened::Sea(_) | Opened::Fleet(_) => None,
+    })
+    .flatten()
+    .unwrap_or(0)
 }
 
 #[cfg(test)]

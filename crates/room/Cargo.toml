@@ -9,6 +9,7 @@ description = "A shared space on the server: its players, each player's inputs t
 [dependencies]
 gear = { path = "../gear" }
 combat = { path = "../combat" }
+dungeon = { path = "../dungeon" }
 foes = { path = "../foes" }
 land = { path = "../land" }
 libm.workspace = true

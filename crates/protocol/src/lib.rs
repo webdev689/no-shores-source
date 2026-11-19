@@ -304,6 +304,8 @@ pub struct Snapshot<'snapshot> {
     pub shots: &'snapshot [Shot],
     /// The balls that stopped since the last snapshot, each sent among the shots as its last segment and its muzzle.
     pub lines: &'snapshot [Line],
+    /// A dungeon's cache as `Room::cache` gives it; empty, and left out of the bytes, in any other room.
+    pub cache: &'snapshot [f64],
 }
 
 /// Every player as the room saw them after its tick, the dresses that changed since the last snapshot, every foe,
@@ -386,8 +388,17 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .collect();
     let shots = Some(builder.create_vector(&shots));
     let tick = snapshot.tick;
-    let args =
-        messages::SnapshotArgs { tick, players, dressed, foes, events, shots, ..messages::SnapshotArgs::default() };
+    let cache = (!snapshot.cache.is_empty()).then(|| builder.create_vector(snapshot.cache));
+    let args = messages::SnapshotArgs {
+        tick,
+        players,
+        dressed,
+        foes,
+        events,
+        shots,
+        cache,
+        ..messages::SnapshotArgs::default()
+    };
     finish_snapshot(builder, &args)
 }
 
