@@ -7,7 +7,7 @@
     {"id": "quick_hands", "name": "Quick Hands", "column": "handling", "fits": "ranged", "words": "Reloads 15% faster."},
     {"id": "steady_draw", "name": "Steady Draw", "column": "handling", "fits": "ranged", "words": "An aimed shot strikes 10% harder."},
     {"id": "light_stock", "name": "Light Stock", "column": "handling", "fits": "ranged", "words": "Aiming slows you less: two thirds of your pace, not half."},
-    {"id": "marked_shot", "name": "Marked Shot", "column": "handling", "fits": "ranged", "words": "The first shot after each reload Exposes the foe it strikes."},
+    {"id": "marked_shot", "name": "Marked Shot", "column": "handling", "fits": "ranged", "words": "Your first shot to land on a foe Exposes it."},
     {"id": "balanced", "name": "Balanced", "column": "finish", "fits": "weapon", "words": "While it is drawn, a dodge costs 10% less stamina."},
     {"id": "steady", "name": "Steady", "column": "finish", "fits": "weapon", "words": "While it is drawn, blows fill your poise 10% less."},
     {"id": "honed", "name": "Honed", "column": "finish", "fits": "weapon", "words": "Its blows and shots strike 5% harder."},

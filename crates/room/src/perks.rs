@@ -7,7 +7,7 @@ use crate::{PlayerId, Room};
 use combat::fighter::{Action, FighterId};
 use combat::judge::Blow;
 use combat::tuning::STAMINA;
-use combat::{BlowKind, Fighter, Ranged, Status, Trim, Verdict, ticks};
+use combat::{BlowKind, Status, Trim, Verdict, ticks};
 use gear::{Character, Slot};
 
 /// A shot within this of its target is point blank; past this, a long shot (metres).
@@ -22,12 +22,13 @@ const ROW_EXPOSES: u32 = 3;
 const SHOTS_CHARGE: u32 = 5;
 
 /// What a player's verbs count from blow to blow, kept by the room alone: the ticks of their last two swings that
-/// landed, and each foe struck in a row with how many and the tick of the last (Exposing Strikes); and their shots
-/// landed since Shocking Rounds last Charged.
+/// landed, and each foe struck in a row with how many and the tick of the last (Exposing Strikes); the living foes
+/// their shots have marked (Marked Shot); and their shots landed since Shocking Rounds last Charged.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PerkCounts {
     swung: [u64; 2],
     rows: Vec<(FighterId, u32, u64)>,
+    marked: Vec<FighterId>,
     shots: u32,
 }
 
@@ -55,6 +56,17 @@ impl PerkCounts {
         false
     }
 
+    /// Marks a foe a shot landed on, answering whether it is the first to: a foe is marked once. A foe dead or gone
+    /// from the room (`living` false) is forgotten.
+    fn marks(&mut self, foe: FighterId, living: impl Fn(FighterId) -> bool) -> bool {
+        self.marked.retain(|marked| living(*marked));
+        let first = !self.marked.contains(&foe);
+        if first {
+            self.marked.push(foe);
+        }
+        first
+    }
+
     /// Counts a shot landed, answering whether it is the fifth, after which the count begins again.
     fn shot_landed(&mut self) -> bool {
         self.shots += 1;
@@ -64,13 +76,6 @@ impl PerkCounts {
         }
         charges
     }
-}
-
-/// Whether a player's shot came first after its weapon's reload: every shot of a weapon that reloads after each, and a
-/// double pistolet's right, which its left follows before the one reload of both. A ball is judged as it is loosed,
-/// so its striker has just fired it.
-fn after_reload(ranged: Ranged, striker: &Fighter) -> bool {
-    ranged != Ranged::DoublePistolet || striker.fired_right
 }
 
 /// The trim the traits a player's worn gear gives make while a loadout is drawn: each trait's own, of the armour and
@@ -194,8 +199,8 @@ impl Room {
 
     /// What a player's blow on a foe sets off of their verbs, through the room's one door for statuses, so no browser
     /// predicts them: Exposing Strikes on the third swing in a row landed on one foe, Thunderclap on a guard a swing
-    /// breaks, Marked Shot on a shot landed first after a reload, Shocking Rounds on every fifth shot landed, and Keen
-    /// Eye's Crit on a kill; each the loadout's the blow came from (`perk_on`), none a spell's.
+    /// breaks, Marked Shot on the player's first shot to land on a foe, Shocking Rounds on every fifth shot landed, and
+    /// Keen Eye's Crit on a kill; each the loadout's the blow came from (`perk_on`), none a spell's.
     pub(crate) fn verbs_after(&mut self, blow: &Blow, defender: FighterId, verdict: &Verdict, killed: bool) {
         if !self.foes.contains_key(&defender) {
             return;
@@ -204,6 +209,8 @@ impl Room {
         let [rows, clap, marked, shocking, keen] =
             ["exposing_strikes", "thunderclap", "marked_shot", "shocking_rounds", "keen_eye"]
                 .map(|id| self.perk_on(blow, id));
+        let foes = &self.foes;
+        let living = |foe: FighterId| foes.get(&foe).is_some_and(|found| !found.fighter.dead());
         let Some(found) = self.players.get_mut(&blow.striker) else { return };
         let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
         let mut given = Vec::new();
@@ -216,8 +223,8 @@ impl Room {
                     given.push(Status::Charge);
                 }
             }
-            BlowKind::Shot(ranged) if landed => {
-                if marked && after_reload(ranged, &found.fighter) {
+            BlowKind::Shot(_) if landed => {
+                if marked && found.counts.marks(defender, living) {
                     given.push(Status::Expose);
                 }
                 if shocking && found.counts.shot_landed() {

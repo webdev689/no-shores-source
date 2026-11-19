@@ -201,24 +201,31 @@ fn blows_on_an_exposed_foe_crit_with_exploit() {
 }
 
 #[test]
-fn the_first_shot_after_each_reload_exposes_with_marked_shot() {
+fn a_players_first_shot_to_land_on_a_foe_exposes_it_with_marked_shot() {
+    let unexposed = |room: &mut Room, foe: FighterId| {
+        let fighter = *room.fighter(foe).expect("standing");
+        room.set_fighter(foe, Fighter { statuses: combat::status::Statuses::NONE, ..fighter });
+    };
     let (mut room, player, [first, second]) = room_wearing(Kind::Bow, "marked_shot");
     shoot(&mut room, player, Ranged::Bow, first, HIT);
-    assert!(has(&room, first, Status::Expose), "a bow reloads after every shot");
+    assert!(has(&room, first, Status::Expose), "the first shot to land on it");
+    unexposed(&mut room, first);
+    shoot(&mut room, player, Ranged::Bow, first, HIT);
+    assert!(!has(&room, first, Status::Expose), "a foe is marked once");
     shoot(&mut room, player, Ranged::Bow, second, Verdict::Dodged { perfect: false });
-    assert!(!has(&room, second, Status::Expose), "a shot that does not land");
+    assert!(!has(&room, second, Status::Expose), "a shot that does not land marks nothing");
+    shoot(&mut room, player, Ranged::Bow, second, HIT);
+    assert!(has(&room, second, Status::Expose), "so the next that lands is its first");
 
-    let (mut room, player, [first, second]) = room_wearing(Kind::DoublePistolet, "marked_shot");
-    let pistols = |room: &mut Room, right: bool| {
-        let fighter = *room.fighter(player).expect("in");
-        room.set_fighter(player, Fighter { fired_right: right, ..fighter });
-    };
-    pistols(&mut room, true);
-    shoot(&mut room, player, Ranged::DoublePistolet, first, HIT);
-    assert!(has(&room, first, Status::Expose), "the right, first after the reload");
-    pistols(&mut room, false);
-    shoot(&mut room, player, Ranged::DoublePistolet, second, HIT);
-    assert!(!has(&room, second, Status::Expose), "the left, before the next reload");
+    let other = room.join().expect("a room with space");
+    wear(&mut room, other, WORN, Kind::Bow, "marked_shot");
+    unexposed(&mut room, first);
+    shoot(&mut room, other, Ranged::Bow, first, HIT);
+    assert!(has(&room, first, Status::Expose), "each player marks a foe their own once");
+
+    shoot(&mut room, player, Ranged::Bow, second, Verdict::Hit { damage: 5_000.0, poise: 0.0 });
+    shoot(&mut room, player, Ranged::Bow, first, HIT);
+    assert_eq!(room.player(player).expect("in").counts.marked, [first], "a foe that fell is forgotten");
 
     let (mut room, player, [first, _]) = room_wearing(Kind::Bow, "quick_hands");
     shoot(&mut room, player, Ranged::Bow, first, HIT);

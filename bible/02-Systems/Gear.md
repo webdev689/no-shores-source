@@ -172,8 +172,8 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   a sweep that strikes it beside others keeps it. A swing that lands on no one leaves the other foes' rows as they
   were. Thunderclap (handling) Charges a foe whose guard a swing breaks. Exploit (perk) makes every swing on an
   Exposed foe a crit.
-- **Ranged**, on a shot that lands. Marked Shot (handling) Exposes the foe struck by the first shot after a reload:
-  every shot of a weapon that reloads after each one, and a double pistolet's right. Shocking Rounds (perk) Charges
+- **Ranged**, on a shot that lands. Marked Shot (handling) Exposes a foe on the player's first shot to land on it:
+  each player marks a foe once, and forgets it when it dies or leaves the room. Shocking Rounds (perk) Charges
   the foe struck by every fifth shot to land, on any foe; a shot that does not land is not counted.
 - **Either loadout.** Keen Eye (perk) gives Crit for 4 s on a kill. Attuned (finish) makes a blow or shot 10% harder
   while its element is the worn Art's. Spellfeed (finish) takes 3% off both Tenets' cooldowns on a kill. Each counts

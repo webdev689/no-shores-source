@@ -118,7 +118,7 @@ Melee and 4 to 6 for Ranged):
 | Exposing Strikes | Melee | Perk | A third swing in a row landed on one foe Exposes it, and the count starts again. A swing landing on others and not on it, or one it parries or dodges, ends the row; a sweep that strikes it beside others keeps it |
 | Thunderclap | Melee | Handling | A blow that breaks a guard Charges the foe |
 | Exploit | Melee | Perk | Blows on an Exposed foe crit |
-| Marked Shot | Ranged | Handling | The first shot after a reload Exposes: every shot of a weapon that reloads after each one, a double pistolet's right |
+| Marked Shot | Ranged | Handling | The player's first shot to land on a foe Exposes it: each player marks a foe once, forgotten when it dies or leaves |
 | Shocking Rounds | Ranged | Perk | Every fifth shot that lands Charges; a shot that does not land is not counted |
 | Keen Eye | Weapon | Perk | A kill with the weapon gives Crit for 4 s |
 | Attuned | Weapon | Finish | While the worn Art's element is the weapon's, it deals 10% more |
