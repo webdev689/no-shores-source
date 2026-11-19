@@ -136,17 +136,19 @@ phases) is [[Enemies]].
   longest goes next, and one that has waited 6 s goes in, one over the count at most, so a crowd's patience never
   piles it onto its target. A target who turns its back (more than 110 degrees) on a waiting foe in its place near the
   ring (the flanker, or one in the line), or walks in on one inside the ring's near edge, is open to it without a
-  turn, but to one such foe at a time. Like a holder it keeps to the ring, stepping back out to it, while another goes
-  in; then it goes in, and goes on fighting while the target stays that close. A back walking away is no such opening:
-  the one whose turn it is runs after it. A foe that blocks holds its guard up on the ring while it waits its turn, as
-  a shield-bearer does: it raises it within 0.3 m of the ring's line and keeps it up across the ring's give and the
-  step back in from just past it. A holder going in takes the shortest way.
+  turn, but to one such foe at a time. A foe walked in on fights back where it stands, though another goes in. One
+  open to a turned back keeps to the ring like a holder while another goes in, then goes in. Either goes on fighting
+  while the target stays that close. A back walking away is no such opening: the one whose turn it is runs after it.
+  A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: it raises it
+  within 0.3 m of the ring's line and keeps it up across the ring's give and the step back in from just past it. A
+  holder going in takes the shortest way.
 - **The beat.** Blows at one target land one at a time. A foe begins a swing, a telegraphed blow or a shot there only
   if it lands 1.2 s or more after the latest blow another foe has begun there lands, so a person can answer each
-  before the next. Of the foes ready in reach that the beat holds back, the first held strikes first. A shooter looses
-  only into a beat no foe ready in reach waits for, so its shots fill the gap while the next goes in. A foe's own last
-  blow never holds back its next, and its riposte and its counter are never held back, so one foe alone fights at its
-  own pace.
+  before the next. A shot lands after its flight from where it leaves, ahead of its shooter's chest, to the edge of
+  the body it strikes; an aimed shot leaves as its wind-up ends. Of the foes ready in reach that the beat holds back,
+  the first held strikes first. A shooter looses only into a beat no foe ready in reach waits for, so its shots fill
+  the gap while the next goes in. A foe's own last blow never holds back its next, and its riposte and its counter
+  are never held back, so one foe alone fights at its own pace.
 - **The line.** The waiting stand on a ring 1.5 m outside their reach, with 0.6 m of give, in a line before their
   group's side of the target: the bearing where the foes fighting it hand to hand stand round it, once the mean of
   their bearings leans a quarter of the way one way, else the way the target faces. A place more than 75 degrees off

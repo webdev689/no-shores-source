@@ -14,14 +14,14 @@ use crate::senses::{Here, Sight};
 use crate::steer::Ask;
 use crate::tell::{aim_ready, aimed};
 use crate::tuning::{
-    AIMED_SHARE, DRAW_BOW, DRAW_CROSSBOW, DRAW_PISTOLET, DRAW_THUNDERLOCK, KITE_CAUGHT, KITE_COOLDOWN, KITE_CORNERED,
-    KITE_IN, KITE_MAX, KITE_OUT, RANGED_LEASE, SHOT_GAP, SWING_FACE, WINDUP_LEAST,
+    AIMED_SHARE, AIMED_SPEED, DRAW_BOW, DRAW_CROSSBOW, DRAW_PISTOLET, DRAW_THUNDERLOCK, KITE_CAUGHT, KITE_COOLDOWN,
+    KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, RANGED_LEASE, SHOT_GAP, SWING_FACE, WINDUP_LEAST,
 };
 use combat::fighter::Action;
 use combat::lock::sees;
-use combat::shots::toward;
+use combat::shots::{FALL, Shot, by_foe, foe_speed, loose, shot_numbers, toward};
 use combat::sight::{apart, off};
-use combat::{FighterId, Ranged};
+use combat::{Fighter, FighterId, Ranged};
 use core::f64::consts::PI;
 
 /// What a shooter keeps: whether it is kiting and until when, when it may kite again, until when it fights close,
@@ -44,6 +44,20 @@ pub struct Bow {
     pub turn_at: u64,
     pub seek_at: u64,
     pub closing: bool,
+}
+
+/// An aimed shot as it leaves a foe's own weapon along `bearing`, its line `ahead` long: faster than a plain one, an
+/// arrow or a bolt aimed up for its fall over the line, a ball straight.
+#[must_use]
+pub fn aimed_shot(id: FighterId, foe: &Fighter, bearing: f64, ahead: f64) -> Shot {
+    let ranged = foe.arms.ranged.unwrap_or(Ranged::Bow);
+    let falls = shot_numbers(ranged).0 > 0.0;
+    let flight = ahead / (foe_speed(ranged) * AIMED_SPEED);
+    let rise = if falls { 0.5 * FALL * flight * flight } else { 0.0 };
+    let pitch = libm::atan2(rise, ahead.max(0.1));
+    let mut shot = by_foe(&loose(id, ranged, foe.chest(), bearing, pitch, 1.0));
+    shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
+    shot
 }
 
 /// The ticks a shooter draws its weapon before it looses.

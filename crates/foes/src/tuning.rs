@@ -207,8 +207,9 @@ pub const CHAIN_LEAST: f64 = 0.55;
 /// A wind-up ended, a foe waits this long at most for the room's word on whether its blow landed: the room judges
 /// each player as their own screen showed it, which may lag.
 pub const WORD_WAIT: f64 = 0.5;
-/// An archer's shots aimed, one in this.
+/// An archer's shots aimed, one in this; an aimed shot flies this many times as fast as a plain one.
 pub const AIMED_SHARE: f64 = 1.0 / 3.0;
+pub const AIMED_SPEED: f64 = 1.3;
 
 /// Into each new phase, a roar this long, as an iron ring.
 pub const ROAR: f64 = 1.2;
