@@ -259,18 +259,28 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate
-  have the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call
-  it there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her cabin in
-  the game yet, and the game sets no square sail ([[Hulls]], "What the code needs"). A change to the shared builder
-  is checked by rebuilding each published ship and comparing its dry-run mesh hash with the manifest's. The manifest
-  is 388 KB with the two new decks (77 KB on `main` before), and the client imports it and the room embeds it whole:
-  loading each ship's deck on its own may be wanted before more ships join. Then the
-  sea as the owner approved it: waters with owners and levels, ships sighted on the horizon, sea fights paying into
-  the gear loop, boarding, the opening voyage as the first sea strike, the ship as gear, then merchantmen, bounties,
-  public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]). Measured on the sea room as it is,
-  at a voyage's pace a fight began for 17% of players by 5 minutes and 28% by 10, and most hostile ships stayed in
-  sight under 3 seconds: the reason the sea felt empty.
+- **The waters, next** ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): the owner asked to hear more and was
+  shown Claude's proposal, not yet decided: a water is a named stretch of sea with an owner and a level band; its band
+  follows the islands' (`crates/gear/src/world.rs` ISLANDS), a ship's level from her water and her hull by rank
+  (Minor and Major the Sloop, Elite the Schooner, Miniboss the Brig, Boss the Frigate); Overlook's home waters hold no
+  hostile ship, the Grey Tithe's hold its patrols and its flagship's sea strike, the pirates' wait by wrecks and coves,
+  contested waters hold both fighting each other; each water keeps its own ships on their own courses, sighted
+  kilometres out, in place of today's rolls near the player; the held map tints each water with its name and level.
+  Waiting on the owner: whether they draw the waters in the World Editor (Claude's pick) or they are generated from
+  the islands. The prologue session (`claude/loving-darwin-sw4eae`) works in the sea room and draws ships: coordinate.
+- **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate have
+  the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call it
+  there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her
+  cabin in the game yet, and the game sets no square sail ([[Hulls]], "What the code needs"). Splitting each ship into
+  parts for upgrades (hull, cannons, sails and wheel), and the cabin's decoration from DFO's `decor/`, were raised and
+  set aside by the owner for now. A change to the shared builder is checked by rebuilding each published ship and
+  comparing its dry-run mesh hash with the manifest's. The manifest is 388 KB with the two new decks (77 KB on `main`
+  before), and the client imports it and the room embeds it whole: loading each ship's deck on its own may be wanted
+  before more ships join. Then the sea as the owner approved it: waters with owners and levels, ships sighted on the
+  horizon, sea fights paying into the gear loop, boarding, the opening voyage as the first sea strike, the ship as gear,
+  then merchantmen, bounties, public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]). Measured on
+  the sea room as it is, at a voyage's pace a fight began for 17% of players by 5 minutes and 28% by 10, and most
+  hostile ships stayed in sight under 3 seconds: the reason the sea felt empty.
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
