@@ -78,14 +78,15 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   through. Guarding, a fighter moves at under half its pace. Iron blows and shots are never parried, iron blows never
   blocked, and shots blocked only by a shield.
 - **The dodge.** A press dodges: a low, fast hop (3 m/s up, 10 m/s along) the way the keys point, or straight back with
-  none, landing about 3 m away. It costs 22 stamina, needs the ground under it, and is not taken on horseback. It
-  faces the soft lock's target if there is one, so a fighter hops aside still facing its foe. Blows pass through it
-  from 1 to 18 ticks after the press; one that lands within 12 is a perfect dodge, giving back 15 stamina and earning a
-  counter: the next swing within 48 ticks strikes half again as hard and twice as heavily. A dodge cancels a swing's
-  wind-up or its follow-through (never the blow's own tick), a bow's draw, and a flinch from its eighth tick; a swing,
-  a guard or another dodge may follow it 18 ticks after the press, as it lands. The
-  movement rules carry the hop with no steering, so it slides along a wall and falls off a ledge, and never catches a
-  lip.
+  none, landing about 3 m away. It costs 22 stamina, needs the ground under it, and is not taken on horseback. The
+  rules face it to the soft lock's target if there is one, so a fighter hops aside still facing its foe, its guard and
+  its back where they were; its figure is drawn facing the way it hops, so its roll goes that way
+  ([[A Locked-On Dodge Rolls the Way It Goes]]). Blows pass through it from 1 to 18 ticks after the press; one that
+  lands within 12 is a perfect dodge, giving back 15 stamina and earning a counter: the next swing within 48 ticks
+  strikes half again as hard and twice as heavily. A dodge cancels a swing's wind-up or its follow-through (never the
+  blow's own tick), a bow's draw, and a flinch from its eighth tick; a swing, a guard or another dodge may follow it 18
+  ticks after the press, as it lands. The movement rules carry the hop with no steering, so it slides along a wall and
+  falls off a ledge, and never catches a lip.
 - **Poise.** A blow that lands fills its fighter's poise meter by its weapon's weight times ten, by its stroke's share,
   half again from behind. Full, the fighter staggers (light 84 ticks, medium 72, heavy 60, massive 48), takes a quarter
   more from every blow, and no new poise stagger begins until three seconds after. The meter drains a quarter a second
@@ -124,8 +125,9 @@ clearly better, so it does not flick between neighbours; one that strikes a figh
 parry turns the lock on the parried. A blow that lands on several leaves the lock where it was. While it holds, and
 while the look is within 70 degrees of it, the fighter's swings turn after it in their wind-up (540 degrees a second, if
 it is within the weapon's reach and 2.5 m) and its guard turns to face it; turned to face another, the guard follows the
-look. The dodge faces it. It lets go when the foe dies, is past 15 m, has been out of sight for a second and a half, or
-the fighter's look leaves the 70 degrees it takes within, at once. The camera stays its player's.
+look. The dodge faces it, though its figure is drawn rolling the way it goes. It lets go when the foe dies, is past
+15 m, has been out of sight for a second and a half, or the fighter's look leaves the 70 degrees it takes within, at
+once. The camera stays its player's.
 
 ## Foes' telegraphed blows
 

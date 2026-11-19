@@ -104,3 +104,20 @@ test('the guard held stands the first person in its pose, and the figure faces w
   assert.notEqual(shown.at(-1)?.pose, null, 'posed');
   assert.equal(walker.you.facing, fighting.own?.aim);
 });
+
+test('locked on, a dodge is drawn rolling the way it goes, while the rules keep the fighter facing its foe', () => {
+  const { fighting, walker, frame } = fightingPlayer();
+  fighting.ask({ type: 14, rank: 2 });
+  for (let tick = 0; tick < 20; tick += 1) frame(controls());
+  frame(controls(['swing'], ['swing']));
+  for (let tick = 0; tick < 50; tick += 1) frame(controls());
+  assert.notEqual(fighting.own?.target ?? null, null, 'locked on a foe');
+  frame(controls(['dodge', 'right'], ['dodge']));
+  frame(controls(['right']));
+  const own = fighting.own;
+  assert.equal(own?.action.kind, 'dodge');
+  const east = Math.PI / 2;
+  assert.ok(Math.abs((own?.aim ?? east) - east) > 0.5, `the rules face the foe: ${own?.aim}`);
+  assert.ok(Math.abs(walker.you.facing - east) < 1e-9, `the figure rolls east: ${walker.you.facing}`);
+  assert.equal(walker.look.facing, walker.you.facing, 'the room is told it so');
+});

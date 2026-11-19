@@ -7,7 +7,7 @@ import type { Action, FighterView } from '../rules/fighters.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
-import { FIGHT_TICKS, fightOf } from './fightMoves.ts';
+import { FIGHT_TICKS, dodgeFacing, fightOf } from './fightMoves.ts';
 import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
@@ -177,14 +177,16 @@ export class Walker {
 
   /** Shows the frame stepped: the first person's weapon, and the move the figure shows. In a fight (`fight`), both
    *  follow the fight's rules: a swing as the rules begin one, a shot while they let one go, the guard and the parry
-   *  posed, and the figure held to what the fight holds it to, facing where its arms point. The hands zoom with the
+   *  posed, and the figure held to what the fight holds it to, facing where its arms point, or a dodge the way it
+   *  goes. The hands zoom with the
    *  view by `zoom`. */
   show(controls: InputFrame, seconds: number, clock: number, fight: FightShown | null = null, zoom = 1): void {
     const { you, forge, firstPerson, player } = this;
     const body = shownBody(player);
     const own = fight?.own ?? null;
     const fighting = own !== null && own.action.kind !== 'idle' && own.action.kind !== 'dead';
-    Object.assign(you, { x: body.x, y: body.y, z: body.z, facing: fighting ? own.aim : player.facing });
+    const facing = fighting ? (dodgeFacing(own.action) ?? own.aim) : player.facing;
+    Object.assign(you, { x: body.x, y: body.y, z: body.z, facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const dress = shownDress(you.dress, holding);
     const { outfit } = dress;

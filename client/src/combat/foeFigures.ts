@@ -1,7 +1,7 @@
 import type { GlowLook } from '../elementGlow.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
-import { FIGHT_TICKS, foeDoing, overProgress } from '../player/fightMoves.ts';
+import { FIGHT_TICKS, dodgeFacing, foeDoing, overProgress } from '../player/fightMoves.ts';
 import { cardStand, type Placed, viewOf } from '../player/figures.ts';
 import { foeDress } from '../player/foeDress.ts';
 import { Glides } from '../player/glide.ts';
@@ -127,7 +127,8 @@ export class FoeFigures {
         fight.roomTick,
         frameTicks,
       );
-      Object.assign(placed, { x, y, z, facing: view.facing, anim: move.anim, frame: frameShown });
+      const facing = dodgeFacing(view.action) ?? view.facing;
+      Object.assign(placed, { x, y, z, facing, anim: move.anim, frame: frameShown });
       const [right, left] = dress.outfit.drawn ? [dress.outfit.right, dress.outfit.left] : [null, null];
       // Its likeliest moves, the telegraphed blows' strokes and what a fight holds it to.
       forge.warm(dress, [...likelyMoves(right, left, draws), 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death']);

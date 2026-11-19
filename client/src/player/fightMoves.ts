@@ -1,12 +1,18 @@
 import type { Dress } from './dressing.ts';
 import type { Doing, Fight } from './playerMoves.ts';
-import { type FighterView, type Shape, actionProgress, directionOf } from '../rules/fighters.ts';
+import { type Action, type FighterView, type Shape, actionProgress, directionOf } from '../rules/fighters.ts';
 
 /** How long a dodge, a parry's deflect and a flinch last, and a death's fall, in ticks, as the combat crate times
  *  them. */
 export const FIGHT_TICKS = { dodge: 26, parry: 18, flinch: 15, death: 48, drawFull: 60 } as const;
 /** A stagger reels: its figure's hurt frames play forth and back over this many ticks while it lasts. */
 const REEL_TICKS = 24;
+
+/** The way a dodging figure faces: the way its hop goes, so its roll is drawn going that way, though the rules keep the
+ *  fighter facing its soft lock's target; null for any other action. */
+export function dodgeFacing(action: Action): number | null {
+  return action.kind === 'dodge' ? Math.atan2(action.toward[0], -action.toward[1]) : null;
+}
 
 /** How far through its hurt frames a struck figure is with `left` ticks of it to go: a flinch plays them once, a
  *  stagger reels through them forth and back; a Charge's holds it still. */
