@@ -186,9 +186,13 @@ are the story's; the wreck is the level they run.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.
+  Felled there, the player is never told they will rise: that prompt is for a death before the boss fight.
 - **The cries.** In the wake's flight the first staged pair the camera holds on the view for 2.4 s cries "For the
   Tithe!" and "Cut them down!"; in the fight the first Grey Tithe foe on the view cries "Survivor! Get that one!",
-  once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each.
+  once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each, and only
+  with his head on the view, so a cry unheard spends no gap; he tells the player to kneel again only once they have
+  struck him since. The throw overboard is framed so Thule and his crier stand on the view on any screen, a tall one
+  from further back.
 - **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the page's own on the
   layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the decks alone, so every wave fights
   and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is

@@ -55,8 +55,8 @@
     { "name": "the frigate's bow", "area": [-2.5, 4.2, 2.5, 9.6], "checkpoint": [0.8, 7.0],
       "gate": [-4.3, 9.6, 4.7, 10.1, 5.4],
       "wave": [
-        { "type": 11, "rank": 1, "at": [1.5, 7.8], "facing": 180 },
-        { "type": 17, "rank": 1, "at": [1.5, 9.0], "facing": 0 }
+        { "type": 11, "rank": 1, "at": [1.5, 7.6], "facing": 180 },
+        { "type": 17, "rank": 1, "at": [1.5, 8.8], "facing": 0 }
       ] },
     { "name": "the frigate's waist", "area": [-5.8, 9.85, 5.7, 28.55], "checkpoint": [2.95, 11.3],
       "gate": [-5.3, 27.6, 5.2, 28.55, 5.4],
