@@ -19,6 +19,7 @@ scale elsewhere: a player has 100 health, a sword's blow does 14 before power, a
 | Slots | `melee`, `ranged`, then head, torso, arms, legs, cloak. A loadout is one item: one Attack, one element, one set of perks |
 | How each fights | The pairs fight as the old pairs did (two daggers, swords or maces alternate hands); "& Shield" holds the weapon with a shield, which blocks as a shield did (80°, blocks shots); a single sword or mace leaves the left hand free; the great axe fights as the axe |
 | Greatsword | Its own class: reach 2.3 m, 24 damage, weight 1.3 x 1.15, stamina 21, handling 1.06, two-handed; drawn with the sword's pictures in the two-handed hilt blows, in first person with the sword's |
+| Bare fists | Reach 1.0 m in a player's hands as in a foe's: the owner's tenth further ([[A Player's Melee Weapon Reaches a Tenth Further]]) is for weapons |
 | Double pistolet | Two shots, one from each hand, before one reload 1.5 times a pistolet's; each shot 0.85 of a pistolet's damage |
 | Defense | Comes from armour alone; the share a shield had is spread over the four armour pieces |
 | Switching | Melee is drawn by default; `1` draws Melee, `2` Ranged (the mouse wheel stays the camera's, as [[The Player Plays as in DFO]] has it); a swap takes 24 ticks (0.4 s), in which no blow or shot starts, and begins once the fighter is at rest: never in a swing, a guard, a draw or a reload, so a swap never skips one. The room accepts the arms of either worn loadout |

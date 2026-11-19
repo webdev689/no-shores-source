@@ -7,6 +7,7 @@ use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, S
 use crate::shapes::Telegraph;
 use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
 use crate::sight::{apart, bearing, off, turned, wrap};
+use crate::strike::reach_of;
 use crate::tuning::{
     AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
     FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, POISE_REST, PRESS_KEPT, STAMINA,
@@ -543,7 +544,7 @@ fn aim(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) {
     };
     next.aim = match next.action {
         Action::Attack(attack) if attack.elapsed < attack.strike => {
-            let reach = weapon(next.arms.melee).reach + STEER_REACH;
+            let reach = reach_of(next) + STEER_REACH;
             turned(next.aim, in_reach(reach).unwrap_or(yaw), AIM_TURN)
         }
         Action::Guard { .. } | Action::Parry { .. } => {
