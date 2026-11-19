@@ -21,30 +21,38 @@ export class ShipModels {
   private readonly slots: number;
   private readonly fetched = new Map<HullName, Promise<ShipView>>();
   private readonly ready = new Map<HullName, ShipView>();
+  private readonly failed = new Set<HullName>();
   private readonly fail: (error: unknown) => void;
 
   constructor(gpu: Gpu, slots = SHIP_SLOTS, fail: (error: unknown) => void = console.error) {
     [this.gpu, this.slots, this.fail] = [gpu, slots, fail];
   }
 
-  /** A hull's model once it has come; asking for it first fetches it. */
+  /** A hull's model once it has come; asking for it first fetches it. A fetch a frame asked for that fails is said
+   *  once, and no frame asks again, so a missing model is not fetched every frame. */
   model(hull: number): ShipView | null {
-    void this.load(hull);
-    return this.ready.get(hullName(hull)) ?? null;
+    const name = hullName(hull);
+    if (!this.ready.has(name) && !this.fetched.has(name) && !this.failed.has(name))
+      this.load(hull).catch((error: unknown) => {
+        this.failed.add(name);
+        this.fail(error);
+      });
+    return this.ready.get(name) ?? null;
   }
 
-  /** A hull's model, fetched once (a number with no model of its own is the Sloop's): a fetch that fails is said
-   *  once, and not tried again. */
+  /** A hull's model, fetched once (a number with no model of its own is the Sloop's); one that fails is fetched
+   *  again the next time it is loaded, and says why to the caller. */
   load(hull: number): Promise<ShipView> {
     const name = hullName(hull);
     let fetching = this.fetched.get(name);
     if (!fetching) {
+      this.failed.delete(name);
       fetching = loadShip(name).then((mesh) => {
         const view = new ShipView(this.gpu, mesh, hullSails(hull), this.slots, hullPaint(hull));
         this.ready.set(name, view);
         return view;
       });
-      fetching.catch(this.fail);
+      fetching.catch(() => this.fetched.delete(name));
       this.fetched.set(name, fetching);
     }
     return fetching;
