@@ -182,3 +182,44 @@ fn a_foe_fighting_on_a_ledge_holds_at_its_edge_as_it_steps_back_from_its_blows()
     }
     assert!(struck && lowest == 2.3, "struck {struck}, and stood as low as {lowest} m");
 }
+
+#[test]
+fn foes_crowding_a_player_at_the_foot_of_a_tall_wall_never_take_hold_of_it() {
+    // Six foes come at a player walking back and forth along a 4 m wall; those waiting their turn stand by its face.
+    let wall = Block { min_x: -20.0, min_y: -1.0, max_x: 20.0, max_y: 1.0, top: 4.0 };
+    let types = [::foes::roster::COLLECTOR, ::foes::roster::RUNNER, ::foes::roster::ENFORCER];
+    let (mut grabs, mut blows) = (0, 0);
+    for run in 0..4_u32 {
+        let mut room = Room::new(vec![wall], (0.0, 1.6));
+        room.world_seed ^= u64::from(run).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+        let player = room.join().expect("a room with space");
+        let foes: Vec<FighterId> = (0..6_u32)
+            .map(|index| {
+                let turn = core::f64::consts::PI * (0.15 + 0.14 * f64::from(index)) + f64::from(run) * 0.05;
+                let at = [9.0 * libm::cos(turn), 1.6 + 9.0 * libm::sin(turn), 0.0];
+                let found = ::foes::foe_type(types[index as usize % 3]).expect("a type");
+                room.stand_foe(found, ::foes::Rank::Major, at, combat::sight::bearing([at[0], at[1]], [0.0, 1.6]), None)
+            })
+            .collect();
+        let mut climbing = vec![false; foes.len()];
+        for sequence in 1..=60 * 30 {
+            let east = (sequence / 300) % 2 == 0;
+            let yaw = if east { core::f64::consts::FRAC_PI_2 } else { -core::f64::consts::FRAC_PI_2 };
+            let intent =
+                Intent { controls: Controls { forward: 0.4, yaw, ..Controls::default() }, ..Intent::default() };
+            room.input(player, Input { sequence, intent, seen: room.clock(), ..Input::default() }).unwrap();
+            room.tick();
+            blows += room.take_events().iter().filter(|event| foes.contains(&event.striker)).count();
+            let whole = room.players[&player].fighter.health_max;
+            room.players.get_mut(&player).unwrap().fighter.health = whole;
+            for (was, foe) in climbing.iter_mut().zip(&foes) {
+                let now = room.foes.get(foe).is_some_and(|found| found.fighter.body.mode == Mode::Climb);
+                grabs += u32::from(now && !*was);
+                *was = now;
+            }
+        }
+    }
+    assert_eq!(grabs, 0, "foes took hold of the wall {grabs} times");
+    // And they fight on: four runs of 30 s land over a hundred blows.
+    assert!(blows >= 100, "foes struck {blows} times");
+}

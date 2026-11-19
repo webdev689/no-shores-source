@@ -26,7 +26,7 @@ use crate::tuning::{
 };
 use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
-use combat::sight::{apart, bearing, off, wrap};
+use combat::sight::{apart, bearing, clear_line, off, wrap};
 use combat::tuning::{ATTACK_PACE, BODY_RADIUS, guard_of};
 use combat::{CombatInput, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
@@ -456,7 +456,11 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
         let place = brain.slot.unwrap_or(away);
         let spot = sight.spot;
         let goal = [spot[0] + libm::sin(place) * ring, spot[1] - libm::cos(place) * ring, spot[2]];
-        let Some(way) = way_to(here, goal) else { return Ask::facing(sight.toward) };
+        // A place a block hides from its target, as beyond a wall the target stands against, is no place to fight
+        // from: it makes for its target instead, and comes onto the ring on its own side.
+        let chest = sight.fighter.chest();
+        let open = clear_line(here.world.blocks, chest, [goal[0], goal[1], chest[2]]);
+        let Some(way) = way_to(here, if open { goal } else { spot }) else { return Ask::facing(sight.toward) };
         return if sight.distance <= ring + RING_SLACK + 1.0 {
             Ask::stepping(way, 1.0, sight.toward).guarded(guarding)
         } else {
