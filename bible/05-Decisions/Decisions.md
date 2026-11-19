@@ -113,6 +113,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Arts Are Overlook's Subclasses]]
 - [[Arts and Loadouts as Claude Shapes Them]]
 - [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]]
+- [[Attack Visuals Go Beyond the Limits]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

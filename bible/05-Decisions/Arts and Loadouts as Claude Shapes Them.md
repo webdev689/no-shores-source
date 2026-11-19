@@ -110,6 +110,11 @@ one crackles.
 - **The HUD**: the Anima's diamond filling and the two Tenets' icons sweeping as they recharge, each with its key; the
   player's buffs in a row by their health; a foe's debuffs as icons on its plate, each with the time it has left.
 
+### How attacks look
+
+The owner asked that attack visuals go beyond the limits ([[Attack Visuals Go Beyond the Limits]]). What that comes to
+is written here as it is built.
+
 ## Perks
 
 Shields' block perks (Bulwark, Coral Guard) fit loadouts with a shield, and only those. New perks bring the verbs to
