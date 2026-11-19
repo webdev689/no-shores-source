@@ -60,6 +60,9 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   nor between two walls that meet at a corner. So a passage one cell wide is walked to its end. A body standing on it
   faces north (her bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
   none), the same numbers the sea room stands its walkers on.
+- **Foes move by the same rules.** A foe's brain asks for the controls a player's keys would, and its room steps its
+  body by them as it steps a player's ([[Foes]]); the [[Navmesh]] tries each of its climbs and drops by these rules,
+  with those controls, before it lays one.
 - **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
   order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;
   it leaves alone memory too short for a step.

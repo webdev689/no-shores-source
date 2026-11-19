@@ -27,6 +27,8 @@ code:
   - crates/foes/src/board.rs#claim
   - crates/foes/src/lib.rs#NoSpots
   - crates/foes/src/steer.rs#controls
+  - crates/foes/src/steer.rs#across
+  - crates/foes/src/tuning.rs#OFF_FLOOR_NEAR
   - crates/foes/src/tuning.rs#MELEE_TOKENS
   - crates/foes/src/tuning.rs#POST_SEEK
   - crates/room/src/foes.rs#step_foes
@@ -91,6 +93,14 @@ phases) is [[Enemies]].
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
   way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side steer
   apart inside 1.2 m of each other, pushed at up to 0.7 of a walk; nothing is moved but by its own controls.
+- **Climbing.** A foe climbs and drops by the [[Movement]] rules, as a player does, where its way crosses one of the
+  [[Navmesh]]'s links. At the link's start it turns square to the block's side, then walks on, neither running nor
+  steered apart, pressing jump where the link goes over: the rules vault it, mantle it, catch the lip it jumps for, or
+  climb it up a wall too high to grab, or walk it off an edge and drop it. On a wall, or in the air, it presses on
+  the way it faces, so it goes up and over whatever its thinking asks. Struck or set down short, it finds its way again
+  from where it stands. Its own steps, a hop back from its blow or its circling, hold at an edge more than a step high:
+  only a link drops it. A target within 4 m across but higher or lower than a blow reaches (1.4 m) is as far as the
+  walk to it, so a foe beneath a ledge goes up to it rather than swing at it from below.
 - **The leash.** A garrison foe ([[Enemies]]) is leashed to its place at its post
   ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands 50 m from that place, or off the
   room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up
@@ -211,3 +221,5 @@ more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]
   or a leash walks a garrison foe home.
 - Walking back to its post after a leash a foe heeds no one, so another player may walk beside it unopposed until they
   strike it.
+- On a wall or in the air a foe goes on up whatever it is asked; it never lets go of a climb to turn back.
+- A foe's dodge is the fight's own hop, not a step: by a ledge's edge it may drop the foe, which then climbs back.
