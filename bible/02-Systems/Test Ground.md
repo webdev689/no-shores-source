@@ -221,7 +221,9 @@ kept and sent again.
 The player's figure shows the move the forge draws for what the body does:
 
 - **On a wall or a ledge:** the mantle and vault by their progress; the hang, or the shimmy while moving along the
-  lip; the climb, held on its first frame while still.
+  lip; the climb, held on its first frame while still. A foe's glance carries no progress, so the page reckons it by
+  the movement rules' law from the time since its glances showed it begin and the height it has risen: a mantle's
+  exactly, a vault's a little ahead until the top of its arc.
 - **In the air:** the jump's rising, top or falling frame.
 - **Mounted:** the horse's rest, walk or gallop.
 - **Acting:** the cast. A swing strikes one of the owner's blows where the forge draws it with both hands' things: its
@@ -247,7 +249,9 @@ weapon keeps its own moves and the left hand's thing is worn.
 
 In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
-Walking frames last 0.25 s, running 0.125 s and crouching 0.5 s. A swing lasts 1 s. On a wall or a ledge the weapon is
+Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep
+to the ground; never shorter. Running frames last 0.125 s and crouching 0.5 s. Each figure plays its loops on from
+the frame it shows, so a walk that slows never jumps a frame. A swing lasts 1 s. On a wall or a ledge the weapon is
 worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While the soft lock
 holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
 ([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks.

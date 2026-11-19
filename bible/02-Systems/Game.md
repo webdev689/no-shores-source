@@ -98,8 +98,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
   plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
-  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
-  is found again only once they have walked a step. The fight never takes them for targets.
+  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step, the walk's frames at
+  the pace they stroll. The floor under each is found again only once they have walked a step. The fight never takes
+  them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
   player; at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
   patrol, so a route can be planned through them; and at each Vestige lying for them, a ring and a beam in its
