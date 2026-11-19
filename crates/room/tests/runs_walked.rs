@@ -16,6 +16,7 @@ struct Zone {
     floor: Floor,
     blocks: Blocks,
     runs: Vec<Run>,
+    ring: Vec<[f64; 2]>,
 }
 
 fn zones() -> Vec<Zone> {
@@ -40,6 +41,7 @@ fn zones() -> Vec<Zone> {
                 floor: Floor::Land(Box::new(node.ground.clone())),
                 blocks: Blocks::new(node.boxes.iter().map(Block::from_floats).collect()),
                 runs: laid.runs.clone(),
+                ring: laid.ring.clone(),
             }
         })
         .collect()
@@ -83,6 +85,44 @@ fn every_run_is_walked_to_its_door_and_no_further() {
             let past = (pressed.x - run.door[0]) * run.facing[0] + (pressed.y - run.door[1]) * run.facing[1];
             if past > 1.0 {
                 failed.push(format!("{}: {} lets a body {past:.1} m past its door", zone.id, run.name));
+            }
+        }
+    }
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
+/// How far a point lies outside a ring, metres (negative inside).
+fn outside(ring: &[[f64; 2]], at: [f64; 2]) -> f64 {
+    let edge = (0..ring.len())
+        .map(|side| layout::paths::off_line(at, ring[side], ring[(side + 1) % ring.len()]))
+        .fold(f64::INFINITY, f64::min);
+    if layout::field::ring_holds(ring, at[0], at[1]) { -edge } else { edge }
+}
+
+#[test]
+#[ignore = "the movement rules let a body climb any block, so no wall holds it on the massif's top: what bounds a rampart is the owner's call"]
+fn a_ramparts_top_holds_a_body_in_its_section() {
+    let zones = zones();
+    let mut failed = Vec::new();
+    for zone in &zones {
+        for run in zone.runs.iter().filter(|run| run.kind == layout::brief::RunKind::Rampart) {
+            // From each beat, and the middle of each passage between, out in sixteen headings across the top.
+            let middles =
+                run.line.windows(2).map(|pair| [(pair[0][0] + pair[1][0]) / 2.0, (pair[0][1] + pair[1][1]) / 2.0]);
+            let starts: Vec<[f64; 2]> = run.beats.iter().map(|beat| beat.at).chain(middles).collect();
+            for from in starts {
+                for heading in 0..16 {
+                    let (sine, cosine) = land::exact::sin_cos(f64::from(heading) * std::f64::consts::TAU / 16.0);
+                    let target = [from[0] + sine * 400.0, from[1] - cosine * 400.0];
+                    let (body, _) = walked(zone, from, &[target], (40.0 / TICK_SECONDS) as usize);
+                    let out = outside(&zone.ring, [body.x, body.y]);
+                    if out > 5.0 {
+                        failed.push(format!(
+                            "{}: {} lets a body {out:.0} m out of the section from {from:?}",
+                            zone.id, run.name
+                        ));
+                    }
+                }
             }
         }
     }
