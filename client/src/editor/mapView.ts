@@ -14,7 +14,7 @@ export interface MapScene {
 }
 
 /** One full-screen pass: the sea, each continent's colour, coasts, the grid, the frame's edge and the brush. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 struct View {
   centre: vec2f,
   viewport: vec2f,

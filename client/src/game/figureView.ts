@@ -54,7 +54,7 @@ fn picture_at(corner: vec2f) -> vec4f {
 `;
 
 /** The cards turned to the eye about their upright, lit through the sun's shadows, and their contact shades. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 ${CARD}
 ${SHADOW_WGSL}
 ${STATUS_WGSL}
@@ -132,7 +132,7 @@ struct Shade { @builtin(position) position: vec4f, @location(0) rim: f32, @locat
 
 /** A card's depth along the sun, for the near shadow map: turned square to the sun about its feet, the picture kept
  *  the way round the eye sees it, and anything clear cut away. */
-const CAST_SHADER = /* wgsl */ `
+export const CAST_SHADER = /* wgsl */ `
 ${CARD}
 ${SHADOW_CAST_WGSL}
 

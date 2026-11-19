@@ -42,7 +42,7 @@ export function shipTurn(heading: number, pitch: number, roll: number): Float32A
 /** A part's picture repeats at this many texels a metre over her, as a forged model's do. */
 const TEXELS_PER_METRE = 40;
 
-const SHIP_SHADER = /* wgsl */ `
+export const SHIP_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 // Her UVs are metres; a picture repeats every SHIP_PICTURE_TEXELS / TEXELS_PER_METRE of them, standing upright.
 const PICTURE_PER_M = vec2f(${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS}, -${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS});

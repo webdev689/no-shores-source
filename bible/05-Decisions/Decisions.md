@@ -125,6 +125,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Day Lasts One Real Hour]]
 - [[Weather and Day as Claude Shapes It]]
 - [[The Weather's Gutters and Thunder Come From Freesound]]
+- [[Every Shader Is Checked Offline]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

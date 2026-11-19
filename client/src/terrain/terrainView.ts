@@ -88,7 +88,7 @@ const DEFAULT_SNOW_M = 2300;
  * same point to the bit. It is the bed: the water is drawn over it afterwards, from the same splines. Points are
  * measured from the eye, and from the noise's anchor.
  */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
 

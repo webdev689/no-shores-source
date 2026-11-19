@@ -16,7 +16,7 @@ const DITHER_PERIOD_M = 4 * DITHER_M;
  *  its own plane (a glow round its core) stays behind it. */
 const SOLID_BIAS = { depthBias: 16, depthBiasSlopeScale: 1 } as const;
 
-const MARK_WGSL = /* wgsl */ `
+export const MARK_WGSL = /* wgsl */ `
 struct View { from_origin: mat4x4f, origin: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Out { @builtin(position) position: vec4f, @location(0) colour: vec4f, @location(1) world: vec2f }

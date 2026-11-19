@@ -25,7 +25,7 @@ export function fallingOf(look: SkyLook): Falling {
   return { rain: look.falling - snow, snow, sand: look.sand };
 }
 
-const FALL_WGSL = /* wgsl */ `
+export const FALL_WGSL = /* wgsl */ `
 struct Fall {
   from_eye: mat4x4f,
   // The eye's place within the box's lattice (world metres modulo the box), and the page's time, seconds.
