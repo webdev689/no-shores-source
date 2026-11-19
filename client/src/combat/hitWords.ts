@@ -183,7 +183,9 @@ export class Words {
     const number = element('span', 'number', rise, textOf(said));
     for (const tag of said.tags) element('small', 'tag', rise, tag);
     const line = place ? 0 : this.words.filter((word) => !word.at).length;
-    const across = place ? Math.round(side * WORD_THROW_PX + (scatter * 2 - 1) * WORD_SCATTER_PX) : 0;
+    // A crit's or a kill's number is thrown twice as far, clear of its larger star.
+    const thrown = WORD_THROW_PX * (said.crit || said.killed ? 2 : 1);
+    const across = place ? Math.round(side * thrown + (scatter * 2 - 1) * WORD_SCATTER_PX) : 0;
     const full: Said = { defender: -1, ...said };
     const word: Word = {
       element: made,

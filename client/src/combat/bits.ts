@@ -2,7 +2,7 @@
 // figure's pixels across, cooling down its ramp a stop at a time as it ages, falling or held up as it flies, and
 // coming to rest on the ground it was thrown over. Their number is capped, so a crowd of blows costs no more.
 import { type Ramp, layLine, layUpright } from './impactPixels.ts';
-import { CELL_M, DARK, GLINTS, HOT } from './spellPixels.ts';
+import { BODY, CELL_M, GLINTS, HOT } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
 
@@ -114,7 +114,8 @@ export class Bits {
   /** Every bit as mark vertices seen from `eye`, each in one stop of its ramp, fully opaque. */
   lay(out: number[], eye: Point): void {
     for (const bit of this.flying) {
-      const stop = bit.stop ?? Math.max(DARK, HOT - Math.floor((bit.age / bit.life) * 4));
+      // A cooling bit steps down to its ramp's body and no further: its dark would read as dirt, not light.
+      const stop = bit.stop ?? Math.max(BODY, HOT - Math.floor((bit.age / bit.life) * 3));
       const colour = bit.ramp[stop] ?? bit.ramp[0];
       const place: Point = [bit.x, bit.y, bit.z];
       const width = bit.cells * CELL_M;
