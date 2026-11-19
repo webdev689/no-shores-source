@@ -20,12 +20,6 @@ fn land_of(continent_id: &str) -> (land::landmass::Landmass, land::sites::City) 
     (landmass, city)
 }
 
-/// The plan of a continent's city, as a port city or as a ruin, with no RMB blocks.
-fn plan_of(continent_id: &str, ruined: bool) -> Plan {
-    let (landmass, city) = land_of(continent_id);
-    plan_as(&city, &landmass.surface, &city::rmb::Blocks::default(), ruined).expect("the city plans")
-}
-
 /// FNV-1a over the plan as JSON, leaving out what only a ruin has: its last two fields.
 fn fingerprint(plan: &Plan) -> String {
     let whole = serde_json::to_string(plan).expect("a plan serialises");
@@ -110,11 +104,7 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
         );
     }
     assert!(ruin.works.iter().all(|solid| !matches!(solid.shape, Shape::Arch { .. })), "every gate breached");
-}
-
-#[test]
-fn a_ruin_is_the_same_every_time() {
-    let first = plan_of("continent-6", true);
-    assert_eq!(first, plan_of("continent-6", true));
-    assert_eq!(fingerprint(&first), "922728626a411a2c");
+    // The same every time, and pinned, so every machine lays the same ruin.
+    assert_eq!(ruin, plan_as(&city, &landmass.surface, &blocks, true).expect("the ruin plans again"));
+    assert_eq!(fingerprint(&ruin), "922728626a411a2c");
 }
