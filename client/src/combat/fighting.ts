@@ -159,11 +159,13 @@ export class Fighting {
   }
 
   /** Follows the link into the room it joined again: a new player there, standing where the room puts them, with
-   *  nothing of the old room kept but what the hands hold and the dress, sent again. */
+   *  nothing of the old room kept but what the hands hold and the dress, sent again. A cast waiting for the old room
+   *  is never sent into the new one. */
   private follow(): void {
     if (this.link.joins === this.joined) return;
     this.joined = this.link.joins;
     [this.prediction, this.fighter, this.seen, this.view, this.sentDress] = [new Prediction(), null, 0n, [], ''];
+    [this.castQueued, this.artsTaken, this.artsAt] = [null, null, 0];
     this.foes.clear();
     this.others.clear();
     this.spells.clear();
@@ -171,6 +173,11 @@ export class Fighting {
 
   get player(): number {
     return this.link.player;
+  }
+
+  /** The rooms the fight has followed the link into: one more each time it joins its room again. */
+  get joins(): number {
+    return this.joined;
   }
 
   /** The room tick of the last snapshot taken. */

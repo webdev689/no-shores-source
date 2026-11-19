@@ -15,8 +15,10 @@ type Point = readonly [number, number, number];
 export const ABILITY_ACTIONS = ['anima', 'tenetOne', 'tenetTwo'] as const;
 /** Dusk Daggers' ability: Shadow's first Tenet. */
 export const DAGGERS = 1;
-/** After a cast is sent, none is sent again for this long (seconds): the room's word on it comes back first. */
+/** After a cast is sent, none is sent again until the room's word on the Arts has come since, nor before this long
+ *  (seconds); past the longest, the keys open again all the same, as a cast the room let fall sends no word. */
 export const CAST_LOCKOUT_S = 0.6;
+export const CAST_LOCKOUT_MOST_S = 2;
 /** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down, dead. */
 const UNABLE = new Set(['staggered', 'down', 'dead']);
 /** The ring's edge's width (metres), its fill's and its edge's opacity, the steps it is drawn in, and how far over
@@ -35,6 +37,8 @@ export interface AimRing {
 }
 
 const artOf = (id: number) => arts.arts.find((art) => art.id === id);
+const glowing = (element: number | undefined): element is GlowElement =>
+  element === 1 || element === 2 || element === 3;
 
 /** Whether a fragment, by its key, is set in the worn Art's Core. */
 export function coreHolds(state: ArtState, key: string): boolean {
@@ -59,14 +63,19 @@ export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number,
   };
 }
 
-/** Where Dusk Daggers aimed from `from` at `mark` whirl: the mark, drawn in across the ground to `reach`; with none,
- *  straight along the look at its reach. */
-export function daggersAim(from: Point, yaw: number, mark: Point | null, reach: number): Point {
-  const wanted: Point = mark ?? [from[0] + Math.sin(yaw) * reach, from[1] - Math.cos(yaw) * reach, from[2]];
-  const far = Math.hypot(wanted[0] - from[0], wanted[1] - from[1]);
-  if (far <= reach) return wanted;
-  const share = reach / far;
-  return [from[0] + (wanted[0] - from[0]) * share, from[1] + (wanted[1] - from[1]) * share, mark ? from[2] : wanted[2]];
+/** Where Dusk Daggers aimed from `from` at `mark` are asked to whirl: the mark as it is, or with none, straight
+ *  along the look at their reach. The room draws it in and lays it on the ground. */
+export function daggersAsked(from: Point, yaw: number, mark: Point | null, reach: number): Point {
+  return mark ?? [from[0] + Math.sin(yaw) * reach, from[1] - Math.cos(yaw) * reach, from[2]];
+}
+
+/** Where Dusk Daggers asked at `asked` from `from` whirl, as the room lays them: drawn in across the ground to
+ *  `reach`, on the ground's height there (`floorAt`). */
+export function daggersAim(from: Point, asked: Point, reach: number, floorAt: (x: number, y: number) => number): Point {
+  const far = Math.hypot(asked[0] - from[0], asked[1] - from[1]);
+  const share = far <= reach ? 1 : reach / far;
+  const [x, y] = [from[0] + (asked[0] - from[0]) * share, from[1] + (asked[1] - from[1]) * share];
+  return [x, y, floorAt(x, y)];
 }
 
 /** Dusk Daggers' ring on the ground, as the marks' vertices (`marksMesh`'s `more`): a faint disc edged in its
@@ -99,12 +108,18 @@ export interface CastFrame {
 /** The casting keys, frame by frame: a press casts its ability once the room's word has it ready; Dusk Daggers' key
  *  held aims its ring, and let go casts it there. */
 export class CastKeys {
-  private lockout = 0;
-  private aimed: Point | null = null;
+  /** The last cast sent: the room's word on the Arts as it was then, and the seconds since. */
+  private sent: { readonly state: ArtState; seconds: number } | null = null;
+  private aiming = false;
+
+  /** Forgets the last cast sent and any aim: the player joined a room afresh. */
+  reset(): void {
+    [this.sent, this.aiming] = [null, false];
+  }
 
   /** One frame, `seconds` long: the keys taken only while `hands` (the pointer held, the player on foot and free);
    *  `state` the room's word on the Arts, `abilities` as the bar shows them now; the ring laid on `markOf`'s point (the
-   *  crosshair's) from where `own` stands, looking along `yaw`. */
+   *  crosshair's) from where `own` stands, looking along `yaw`, on the ground `floorAt` gives. */
   frame(
     controls: InputFrame,
     seconds: number,
@@ -115,6 +130,7 @@ export class CastKeys {
       own,
       yaw,
       markOf,
+      floorAt,
     }: {
       hands: boolean;
       state: ArtState | null | undefined;
@@ -122,52 +138,74 @@ export class CastKeys {
       own: FighterView | null;
       yaw: number;
       markOf: () => Point | null;
+      floorAt: (x: number, y: number) => number;
     },
   ): CastFrame {
-    this.lockout = Math.max(0, this.lockout - seconds);
+    this.waited(state, seconds);
     const art = state && artOf(state.art);
     const element = art?.element;
-    const glows = element === 1 || element === 2 || element === 3;
-    if (!hands || !state || !art || !abilities || !own || !glows || UNABLE.has(own.action.kind)) {
-      this.aimed = null;
+    const unable = !hands || !state || !art || !abilities || !own || UNABLE.has(own.action.kind);
+    if (unable || !glowing(element)) {
+      this.aiming = false;
       return { cast: null, ring: null };
     }
-    if (this.aimed) return this.aim(controls, state, own, yaw, markOf(), element);
+    const aimed = { state, own, yaw, mark: markOf(), element, floorAt };
+    if (this.aiming) return this.aim(controls, aimed);
     const shares = [abilities.animaShare, ...abilities.tenets];
     const ability = ABILITY_ACTIONS.findIndex((action, index) => controls.pressed(action) && (shares[index] ?? 0) >= 1);
-    if (ability < 0 || this.lockout > 0) return { cast: null, ring: null };
+    if (ability < 0 || this.sent) return { cast: null, ring: null };
     const spell = spellNumber(art.id, ability);
     if (spell === SPELLS.duskDaggers) {
-      this.aimed = [own.x, own.y, own.z];
-      return this.aim(controls, state, own, yaw, markOf(), element);
+      this.aiming = true;
+      return this.aim(controls, aimed);
     }
-    this.lockout = CAST_LOCKOUT_S;
+    this.sent = { state, seconds: 0 };
     return { cast: { spell, aim: null }, ring: null };
   }
 
-  /** Dusk Daggers aimed: its ring where the mark is, drawn in to its reach, while its key is held; let go, cast
-   *  there. */
+  /** Runs the wait after a cast on by `seconds`, and ends it once `state`, the room's word, has come since the cast
+   *  and the shortest wait is over, or the longest is. */
+  private waited(state: ArtState | null | undefined, seconds: number): void {
+    if (!this.sent) return;
+    this.sent.seconds += seconds;
+    const heard = state !== this.sent.state && this.sent.seconds >= CAST_LOCKOUT_S;
+    if (heard || this.sent.seconds >= CAST_LOCKOUT_MOST_S) this.sent = null;
+  }
+
+  /** Dusk Daggers aimed from where `own` stands: the mark asked as it is while the key is held, the ring drawn where
+   *  the room will lay it; let go, cast there. */
   private aim(
     controls: InputFrame,
-    state: ArtState,
-    own: FighterView,
-    yaw: number,
-    mark: Point | null,
-    element: GlowElement,
+    {
+      state,
+      own,
+      yaw,
+      mark,
+      element,
+      floorAt,
+    }: {
+      state: ArtState;
+      own: FighterView;
+      yaw: number;
+      mark: Point | null;
+      element: GlowElement;
+      floorAt: (x: number, y: number) => number;
+    },
   ): CastFrame {
     const def: { readonly key: string; readonly reach?: number; readonly radius?: number } | undefined = artOf(
       state.art,
     )?.tenets[DAGGERS - 1];
     const reach = def?.reach ?? 0;
     const radius = (def?.radius ?? 0) + this.blades(state);
-    const spot = daggersAim([own.x, own.y, own.z], yaw, mark, reach);
+    const from: Point = [own.x, own.y, own.z];
+    const asked = daggersAsked(from, yaw, mark, reach);
     if (controls.held(ABILITY_ACTIONS[DAGGERS])) {
-      this.aimed = spot;
-      return { cast: { spell: 0, aim: spot }, ring: { at: spot, radius, element } };
+      const ring = { at: daggersAim(from, asked, reach, floorAt), radius, element };
+      return { cast: { spell: 0, aim: asked }, ring };
     }
-    this.aimed = null;
-    this.lockout = CAST_LOCKOUT_S;
-    return { cast: { spell: SPELLS.duskDaggers, aim: spot }, ring: null };
+    this.aiming = false;
+    this.sent = { state, seconds: 0 };
+    return { cast: { spell: SPELLS.duskDaggers, aim: asked }, ring: null };
   }
 
   /** How much further the ring reaches with Blades in the Core (metres). */
