@@ -383,3 +383,50 @@ fn no_other_node_is_raised_or_claimed_by_the_vales_wing() {
         }
     }
 }
+
+#[test]
+fn every_ruin_by_a_mass_lookout_stands_on_level_rock_clear_of_outcrops() {
+    let ground = &laid_one().2;
+    let (mut ruins, mut failed) = (0, Vec::new());
+    for id in ZONES {
+        let laid = zone(id);
+        let stumps: Vec<[f64; 2]> = laid
+            .seating
+            .solids
+            .iter()
+            .filter(|solid| {
+                solid.material == Material::Stone && matches!(solid.shape, SolidShape::Column { sides: 12, .. })
+            })
+            .map(|solid| [solid.at[0], solid.at[1]])
+            .collect();
+        for pair in layout::carve::lookouts(&laid.sculpt.climbs) {
+            let [x1, y1, x2, y2, ..] = pair[0];
+            let length = layout::field::distance([x1, y1], [x2, y2]);
+            let way = [(x2 - x1) / length, (y2 - y1) / length];
+            // A mass's ruin stands 24 m past its lookout, ahead or to either side.
+            let sites = [way, [-way[1], way[0]], [way[1], -way[0]]].map(|out| [x2 + out[0] * 24.0, y2 + out[1] * 24.0]);
+            for site in sites
+                .into_iter()
+                .filter(|site| stumps.iter().any(|stump| layout::field::distance(*stump, *site) < 1e-6))
+            {
+                ruins += 1;
+                // The rim's own tests: level within 1.5 m across 12 m, and 20 m clear of every outcrop's footprint.
+                let heights = [[6.0, 0.0], [-6.0, 0.0], [0.0, 6.0], [0.0, -6.0], [0.0, 0.0]]
+                    .map(|[east, south]| ground.height_at(site[0] + east, site[1] + south));
+                let uneven = heights.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+                    - heights.iter().copied().fold(f64::INFINITY, f64::min);
+                let by_rock = laid.sculpt.outcrops.iter().any(|outcrop| {
+                    let ([first, last], reach) = outcrop.footprint();
+                    off_line(site, first, last) < reach + 20.0
+                });
+                if uneven > 1.5 || by_rock {
+                    failed.push(format!(
+                        "{id}: the ruin at {site:?} stands on {uneven:.1} m of slope, by an outcrop {by_rock}"
+                    ));
+                }
+            }
+        }
+    }
+    assert!(ruins > 0, "Saltmere's mass lookouts have ruins");
+    assert!(failed.is_empty(), "{} of {ruins}: {failed:#?}", failed.len());
+}

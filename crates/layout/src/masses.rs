@@ -207,16 +207,18 @@ impl<'field> Islands<'field> {
     }
 }
 
-/// A ruined tower on the top beside a mass's lookout, past its parapet and off every floor and climb: what a body
-/// finds up there.
-pub fn ruin(kit: &mut Kit, climb: &[[f64; 7]; 2], carved: &Sculpts) {
+/// A ruined tower on the top beside a mass's lookout, past its parapet, off every floor and climb, on a top level
+/// enough and clear of the outcrops as the rim's ruins are: what a body finds up there. None where no side fits.
+pub fn ruin(kit: &mut Kit, climb: &[[f64; 7]; 2], carved: &Sculpts, outcrops: &[land::sculpts::Outcrop]) {
     let [[x1, y1, x2, y2, ..], _] = *climb;
     let length = distance([x1, y1], [x2, y2]).max(1e-9);
     let way = [(x2 - x1) / length, (y2 - y1) / length];
     // Ahead of the lookout, or to either side of it.
     for out in [way, [-way[1], way[0]], [way[1], -way[0]]] {
         let site = [x2 + out[0] * RUIN_OUT_M, y2 + out[1] * RUIN_OUT_M];
-        if carved.floor_distance(site[0], site[1]) >= RUIN_OFF_M {
+        if carved.floor_distance(site[0], site[1]) >= RUIN_OFF_M
+            && crate::skyline::holds_a_ruin(kit, carved, site, outcrops)
+        {
             crate::skyline::tower_stump(kit, carved, site);
             return;
         }

@@ -51,16 +51,11 @@ pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], (paths, outcrops): (&[Path], &[Outc
                 .any(|path| path.points.windows(2).any(|pair| off_line(site, pair[0], pair[1]) < WAY_CLEAR_M));
             // Only where the cliff stands: a ruin on low ground past a gorge's mouth would sit in plain view of nothing.
             let standing = carved_at(kit, carved, site) - kit.height(edge);
-            // Only on a top level enough to hold it: a ruin on a slope would stand in the hill, not on it.
-            let heights = [[6.0, 0.0], [-6.0, 0.0], [0.0, 6.0], [0.0, -6.0], [0.0, 0.0]]
-                .map(|[east, south]| carved_at(kit, carved, [site[0] + east, site[1] + south]));
-            let uneven = heights.iter().copied().fold(f64::NEG_INFINITY, f64::max)
-                - heights.iter().copied().fold(f64::INFINITY, f64::min);
-            let by_rock = outcrops.iter().any(|outcrop| {
-                let ([first, last], reach) = outcrop.footprint();
-                off_line(site, first, last) < reach + OUTCROP_CLEAR_M
-            });
-            if near_way || by_rock || ring_holds(ring, site[0], site[1]) || standing < 8.0 || uneven > UNEVEN_MOST_M {
+            if near_way
+                || !holds_a_ruin(kit, carved, site, outcrops)
+                || ring_holds(ring, site[0], site[1])
+                || standing < 8.0
+            {
                 continue;
             }
             if kit.draw() < 0.45 {
@@ -72,6 +67,20 @@ pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], (paths, outcrops): (&[Path], &[Outc
         carried = length - (step - RUIN_EVERY_M);
         carried = carried.clamp(0.0, RUIN_EVERY_M);
     }
+}
+
+/// Whether a site holds a ruin: a top level enough (a ruin on a slope would stand in the hill, not on it) and clear of
+/// every outcrop.
+pub(crate) fn holds_a_ruin(kit: &Kit, carved: &Sculpts, site: [f64; 2], outcrops: &[Outcrop]) -> bool {
+    let heights = [[6.0, 0.0], [-6.0, 0.0], [0.0, 6.0], [0.0, -6.0], [0.0, 0.0]]
+        .map(|[east, south]| carved_at(kit, carved, [site[0] + east, site[1] + south]));
+    let uneven = heights.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+        - heights.iter().copied().fold(f64::INFINITY, f64::min);
+    let by_rock = outcrops.iter().any(|outcrop| {
+        let ([first, last], reach) = outcrop.footprint();
+        off_line(site, first, last) < reach + OUTCROP_CLEAR_M
+    });
+    uneven <= UNEVEN_MOST_M && !by_rock
 }
 
 /// A round tower broken off at its top, its fallen courses round its foot.

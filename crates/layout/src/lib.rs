@@ -231,7 +231,7 @@ pub fn plan(
         skyline::kerb(&mut kit, [x1, y1], [x2, y2], pair[0][4], &carved);
     }
     for climb in &mass_climbs {
-        masses::ruin(&mut kit, climb, &carved);
+        masses::ruin(&mut kit, climb, &carved, &sculpt.outcrops);
     }
     let walked = paths.len();
     // Each run is walked as a footpath, foes hold its beats, and its end and door are marked for the missions to come.
