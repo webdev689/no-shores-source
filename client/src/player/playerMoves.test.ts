@@ -1,7 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { BOW_LOOSED } from '../firstperson/weaponMachine.ts';
+import type { Action, FighterView } from '../rules/fighters.ts';
 import { plainDress } from './dressing.ts';
+import { fightOf } from './fightMoves.ts';
 import type { Placed } from './figures.ts';
 import {
   blowFrame,
@@ -154,7 +156,7 @@ test("a shot plays its weapon's own move whole, then its reload; a brace fires r
   assert.deepEqual(shot('thunderlock', null, false, true, 0.99), { anim: 'gunshot', frame: 5, frameSeconds: 0 });
   assert.deepEqual(shot('thunderlock', null, true, false, 0.5), { anim: 'gunreload', frame: 2, frameSeconds: 0 });
   assert.equal(shot('pistolet', null, true, false, 0).anim, 'pistolreload');
-  assert.deepEqual(shot('pistolet', 'pistolet_l', false, true, 0), { anim: 'braceshot', frame: 3, frameSeconds: 0 });
+  assert.deepEqual(shot('pistolet', 'pistolet_l', false, true, 0.2), { anim: 'braceshot', frame: 3, frameSeconds: 0 });
   assert.equal(shot('crossbow_iron', null, false, false, 0.5).anim, 'bow');
   assert.equal(shot('crossbow_iron', null, true, false, 0.5).anim, 'idle_bow');
 });
@@ -222,15 +224,59 @@ test('running with a gun or a crossbow drawn plays its own run; put away, the pl
   assert.ok(likelyMoves('crossbow_iron', null, classic).includes('xbowrun'));
 });
 
-test('a gun aimed holds its shot at the frame it is aimed, before it fires; a crossbow raised, a bow at its full draw', () => {
-  const aimed = (right: string, left: string | null = null) =>
-    shownMove({ ...doing, right, left, fight: { kind: 'draw', progress: 1 } }, frames, classic);
-  assert.deepEqual(aimed('thunderlock_iron'), { anim: 'gunshot', frame: 1, frameSeconds: 0 });
-  assert.deepEqual(aimed('pistolet_iron'), { anim: 'pistolshot', frame: 1, frameSeconds: 0 });
-  assert.deepEqual(aimed('pistolet_iron', 'pistolet_iron_l'), { anim: 'braceshot', frame: 0, frameSeconds: 0 });
-  assert.deepEqual(aimed('crossbow_iron'), { anim: 'bow', frame: 0, frameSeconds: 0 }, 'a crossbow raised');
-  assert.deepEqual(aimed('bow_long_elven'), { anim: 'bow', frame: 1, frameSeconds: 0 }, 'a bow at its full draw');
+/** Each ranged kind as the figure holds it: its hands, its shot's move, the frame its shot leaves on (a gun's flash, a
+ *  bow's or a crossbow's loose, as the forge draws them) and how far through the first person's shot it leaves. */
+const RANGED = [
+  { kind: 'bow', right: 'bow_long_iron', left: null, shot: 'bow', loose: 2, leaves: BOW_LOOSED },
+  { kind: 'crossbow', right: 'crossbow_iron', left: null, shot: 'bow', loose: 2, leaves: 1 / 7 },
+  { kind: 'pistolet', right: 'pistolet', left: null, shot: 'pistolshot', loose: 2, leaves: 1 / 6 },
+  { kind: 'double pistolet', right: 'pistolet', left: 'pistolet_l', shot: 'braceshot', loose: 1, leaves: 1 / 6 },
+  { kind: 'thunderlock', right: 'thunderlock_gilded', left: null, shot: 'gunshot', loose: 2, leaves: 1 / 7 },
+] as const;
+/** A foe's aimed shot, its wind-up 40 ticks. */
+const aimedShot = (elapsed: number): Action => ({
+  kind: 'telegraph',
+  shape: 'aimed',
+  elapsed,
+  windup: 40,
+  origin: [0, 0, 0],
+  bearing: 0,
+  ahead: 0,
+  iron: false,
+  feintAt: null,
 });
+
+for (const { kind, right, left, shot, loose, leaves } of RANGED)
+  test(`a ${kind} aimed is held on the frame before its shot leaves, standing and walking; its shot plays on`, () => {
+    const hands: Doing = { ...doing, right, left };
+    const bow = kind === 'bow';
+    // As the walker asks: a bow's draw is the first person's, held at half its shot; any other the fight's draw.
+    const aimed = (moving: boolean) =>
+      shownMove(
+        bow
+          ? { ...hands, moving, blow: { direction: null, second: false, progress: 0.5 } }
+          : { ...hands, moving, fight: { kind: 'draw', progress: 1 } },
+        frames,
+        everything,
+        onTheMove,
+      );
+    assert.deepEqual(aimed(false), { anim: shot, frame: loose - 1, frameSeconds: 0 }, 'standing');
+    assert.deepEqual(aimed(true), { anim: onTheMove(shot), frame: loose - 1, frameSeconds: 0 }, 'walking');
+    const drawn = shownMove({ ...hands, fight: { kind: 'draw', progress: 1 } }, frames, everything);
+    assert.equal(drawn.frame, loose - 1, "a foe's full draw the same");
+    const fired = (progress: number, second = false) =>
+      shownMove({ ...hands, blow: { direction: null, second, progress } }, frames, everything).frame;
+    assert.deepEqual(
+      [fired(bow ? 0.5 : 0), fired(leaves - 0.001), fired(leaves), fired(0.999)],
+      [loose - 1, loose - 1, loose, frames(shot) / (left ? 2 : 1) - 1],
+      'loosed from the aim: held until the shot leaves, then its flash or loose, then the rest',
+    );
+    if (left) assert.deepEqual([fired(0, true), fired(leaves, true)], [2, 3], 'the left raised, then fired');
+    // A foe's aimed shot draws through its wind-up and holds its own weapon aimed, never the bow's move without a bow.
+    const foe = (elapsed: number) =>
+      shownMove({ ...hands, fight: fightOf({ action: aimedShot(elapsed) } as FighterView) }, frames, everything);
+    assert.deepEqual(foe(24), { anim: shot, frame: loose - 1, frameSeconds: 0 }, "a foe's aimed shot");
+  });
 
 test("the player's bow is held at its full draw while the first person's is drawn, and looses only as the arrow leaves", () => {
   const bow = (progress: number, moving = false) =>

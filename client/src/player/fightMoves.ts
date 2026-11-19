@@ -22,15 +22,14 @@ export function struckProgress(kind: 'flinch' | 'staggered', left: number, charg
   const phase = (((-left % REEL_TICKS) + REEL_TICKS) % REEL_TICKS) / REEL_TICKS;
   return Math.min(0.999, 1 - Math.abs(phase * 2 - 1));
 }
-/** The forge's stroke each telegraphed blow is struck with. */
-const TELEGRAPH_STROKE: Readonly<Record<Shape, string>> = {
+/** The forge's stroke each telegraphed blow is struck with; an aimed shot is a ranged weapon's own draw. */
+const TELEGRAPH_STROKE: Readonly<Record<Exclude<Shape, 'aimed'>, string>> = {
   lunge: 'thrust',
   sweep: 'swing2h',
   slam: 'chop',
   ring: 'swing2h',
   charge: 'thrust',
   leap: 'chop',
-  aimed: 'bow',
 };
 /** Faster than this on foot, a figure runs. */
 const RUNNING = 5.5;
@@ -71,6 +70,8 @@ export function fightOf(view: FighterView): Fight | null {
     case 'guard':
       return { kind: 'guard', progress: 0 };
     case 'telegraph':
+      // An aimed shot is drawn and held as the weapon is aimed, its wind-up the draw.
+      if (action.shape === 'aimed') return { kind: 'draw', progress: actionProgress(action, FIGHT_TICKS) };
       return { kind: 'windup', stroke: TELEGRAPH_STROKE[action.shape], progress: actionProgress(action, FIGHT_TICKS) };
     case 'overreach':
       return { kind: 'overreach', stroke: 'chop', progress: 1 };

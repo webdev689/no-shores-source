@@ -1,4 +1,5 @@
 import type { Mode } from '../rules/movementRules.ts';
+import { SHOOTER_FEEL, type ShooterFeel, type ShooterKind } from '../firstperson/shotMachine.ts';
 import { BOW_LOOSED, STRIKE_PACE } from '../firstperson/weaponMachine.ts';
 import type { StrokeDirection } from '../rules/fighters.ts';
 import type { Placed } from './figures.ts';
@@ -98,18 +99,31 @@ export class PlacedLoop {
     return Math.min(this.loop.frame(shown, frames, seconds, clock), frames - 1);
   }
 }
-/** Each gun's shot's frame where it is aimed, before it fires (the forge's gunplay.py): a long gun's and a pistol's
- *  second, a brace's first, the right pistol up. */
-const AIMED_FRAME: Readonly<Record<string, number>> = { gunshot: 1, pistolshot: 1, braceshot: 0 };
+/** The frame each ranged weapon's shot leaves on, as the forge draws it: a gun's flash (gunplay.py), a brace's right
+ *  and then its left, a bow's or a crossbow's loose (poses.py `BOW_KEYS`). Aimed, a weapon is held on the frame before:
+ *  drawn or aimed as it fires, without the flash or the slack string that are the shot's own. */
+const LOOSES: Readonly<Record<string, readonly number[]>> = {
+  gunshot: [2],
+  pistolshot: [2],
+  braceshot: [1, 3],
+  bow: [2],
+};
 
-/** A bow's shot's frame `progress` through it, as the first person counts it (its draw the first half, the arrow
- *  leaving at BOW_LOOSED): the forge's bow move draws over its first half's frames and is held fully drawn on the
- *  last of them, then looses and lowers over the rest. */
-export function bowFrame(progress: number, frames: number): number {
-  const drawn = Math.floor(frames / 2) - 1;
-  if (progress < BOW_LOOSED) return Math.max(0, Math.min(drawn, Math.floor(progress * frames)));
-  const loosing = (progress - BOW_LOOSED) / (1 - BOW_LOOSED);
-  return Math.min(frames - 1, drawn + 1 + Math.floor(loosing * (frames - drawn - 1)));
+/** How far through its shot, as the first person counts it, a ranged weapon's shot leaves: a gun's or a crossbow's
+ *  on its hit frame, a bow's arrow at BOW_LOOSED. */
+function leavesAt(right: string | null): number {
+  const feel = SHOOTER_FEEL[(right?.split('_')[0] ?? '') as ShooterKind] as ShooterFeel | undefined;
+  return feel ? feel.hitFrame / feel.frames : BOW_LOOSED;
+}
+
+/** A shot's frame `progress` through it, its frames `from` up to `to`, the shot leaving `leaves` through it on frame
+ *  `loose`: before then a bow's draw over the frames before `loose` as far as it has come (`drawn`), or any other
+ *  weapon on the frame before `loose`, aimed; `loose` as the shot leaves, and the rest over what is left of it. */
+export function shotFrame(progress: number, from: number, to: number, loose: number, leaves: number, drawn: boolean) {
+  if (progress < leaves)
+    return drawn ? Math.max(from, Math.min(loose - 1, from + Math.floor(progress * (to - from)))) : loose - 1;
+  const after = (progress - leaves) / (1 - leaves);
+  return Math.min(to - 1, loose + Math.floor(after * (to - loose)));
 }
 
 /** Whether the forge draws a held layer (null: the body alone) in a move. */
@@ -350,15 +364,16 @@ export function shownMove(
     const strokes = frames(anim) >= 6 && (blow.direction !== null || anim === 'braceshot') ? 2 : 1;
     const span = frames(anim) / strokes;
     const first = blow.second && strokes === 2 ? span : 0;
-    const bow = anim === 'bow' && !!doing.right?.startsWith('bow');
-    const through =
-      blow.direction !== null
-        ? strokeFrame(blow.progress, blow.lands, span)
-        : bow
-          ? bowFrame(blow.progress, span)
-          : blow.progress * span;
     // A shot (its weapon's own move) on the move keeps the shot's frames.
     const shown = blow.direction === null ? moved(anim) : anim;
+    // A ranged weapon's shot plays on from its aim, its flash or loose as the first person's shot leaves.
+    const loose = blow.direction === null ? LOOSES[anim]?.[first > 0 ? 1 : 0] : undefined;
+    if (loose !== undefined) {
+      const bow = anim === 'bow' && !!doing.right?.startsWith('bow');
+      const frame = shotFrame(blow.progress, first, first + span, loose, leavesAt(doing.right), bow);
+      return { anim: shown, frame, frameSeconds: 0 };
+    }
+    const through = blow.direction !== null ? strokeFrame(blow.progress, blow.lands, span) : blow.progress * span;
     return { anim: shown, frame: first + Math.min(span - 1, Math.floor(through)), frameSeconds: 0 };
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
@@ -377,8 +392,8 @@ export function shownMove(
  * through a dodge, or where the forge draws none, the jump's frames through the dodge's hop in the air by its rise
  * and fall, or the run where the forge does not draw what it holds in the jump; the parry through a deflect, a
  * shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised
- * through its wind-up and held at its end when it overreaches; and a ranged weapon aimed: the bow held at its full
- * draw (`bowFrame`), a gun at its shot's aimed frame (`AIMED_FRAME`), a crossbow raised as its shot's first frame.
+ * through its wind-up and held at its end when it overreaches; and a ranged weapon aimed: held on the frame before
+ * its shot leaves (`LOOSES`), a bow drawn to it.
  */
 function fightMove(
   doing: Doing,
@@ -421,9 +436,10 @@ function fightMove(
     case 'overreach':
       return still(fight.stroke, 2);
     case 'draw': {
-      if (right?.startsWith('bow')) return still(moved('bow'), bowFrame(fight.progress * 0.5, frames('bow')));
       const shot = kitOf(right, left, draws).attack;
-      return still(moved(shot), AIMED_FRAME[shot] ?? 0);
+      const loose = LOOSES[shot]?.[0] ?? 1;
+      if (!right?.startsWith('bow')) return still(moved(shot), loose - 1);
+      return still(moved(shot), shotFrame(fight.progress * 0.5, 0, frames(shot), loose, BOW_LOOSED, true));
     }
   }
 }
