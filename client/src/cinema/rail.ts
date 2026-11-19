@@ -57,19 +57,37 @@ function easedTime(keys: readonly RailKey[], time: number, ease: RailEase): numb
   return start * (1 - eased) + end * eased;
 }
 
-/** A Catmull-Rom point between `from` and `to` at `share`, `before` and `after` their neighbours (the ends doubled).
- *  On the Hermite basis, whose weights are exactly 0 or 1 at either end, so the curve passes through its keys. */
-function catmullRom(before: Point3, from: Point3, to: Point3, after: Point3, share: number): [number, number, number] {
+/** A key's slope on one axis from the steps into and out of it: Catmull-Rom's mean of the two, but none where the
+ *  way turns back or holds there, and never steeper than three times either step (Fritsch and Carlson's bound), so a
+ *  curve between two keys never passes either. A rail's first or last key has one step, and takes half of it. */
+function slope(into: number | null, outOf: number | null): number {
+  if (into === null) return (outOf ?? 0) / 2;
+  if (outOf === null) return into / 2;
+  if (into * outOf <= 0) return 0;
+  const mean = (into + outOf) / 2;
+  return Math.sign(mean) * Math.min(Math.abs(mean), 3 * Math.abs(into), 3 * Math.abs(outOf));
+}
+
+/** A point between `from` and `to` at `share`, `before` and `after` their neighbours (null past a rail's ends), on the
+ *  Hermite basis, whose weights are exactly 0 or 1 at either end, so the curve passes through its keys. */
+function railPoint(
+  before: Point3 | null,
+  from: Point3,
+  to: Point3,
+  after: Point3 | null,
+  share: number,
+): [number, number, number] {
   const [square, cube] = [share * share, share * share * share];
   const atFrom = 2 * cube - 3 * square + 1;
   const outOfFrom = cube - 2 * square + share;
   const atTo = 3 * square - 2 * cube;
   const intoTo = cube - square;
-  const along = (axis: 0 | 1 | 2) =>
-    atFrom * from[axis] +
-    outOfFrom * 0.5 * (to[axis] - before[axis]) +
-    atTo * to[axis] +
-    intoTo * 0.5 * (after[axis] - from[axis]);
+  const along = (axis: 0 | 1 | 2) => {
+    const step = to[axis] - from[axis];
+    const leaving = slope(before ? from[axis] - before[axis] : null, step);
+    const arriving = slope(step, after ? after[axis] - to[axis] : null);
+    return atFrom * from[axis] + outOfFrom * leaving + atTo * to[axis] + intoTo * arriving;
+  };
   return [along(0), along(1), along(2)];
 }
 
@@ -81,11 +99,12 @@ export function railShot(keys: readonly RailKey[], time: number, fov: number, ea
   let segment = 0;
   while (segment < keys.length - 2 && eased > (keys[segment + 1]?.at ?? Infinity)) segment++;
   const keyAt = (index: number): RailKey => keys[Math.min(keys.length - 1, Math.max(0, index))] ?? first;
-  const [before, from, to, after] = [keyAt(segment - 1), keyAt(segment), keyAt(segment + 1), keyAt(segment + 2)];
+  const [from, to] = [keyAt(segment), keyAt(segment + 1)];
+  const [before, after] = [keys[segment - 1] ?? null, keys[segment + 2] ?? null];
   const span = to.at - from.at;
   const share = span > 0 ? Math.min(1, Math.max(0, (eased - from.at) / span)) : 1;
-  const eye = catmullRom(before.eye, from.eye, to.eye, after.eye, share);
-  const look = catmullRom(before.look, from.look, to.look, after.look, share);
+  const eye = railPoint(before?.eye ?? null, from.eye, to.eye, after?.eye ?? null, share);
+  const look = railPoint(before?.look ?? null, from.look, to.look, after?.look ?? null, share);
   const lens = (key: RailKey) => key.fov ?? fov;
   return { eye, ...lookAt(eye, look), fov: lens(from) + (lens(to) - lens(from)) * smooth(share) };
 }

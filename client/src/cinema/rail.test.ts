@@ -61,3 +61,18 @@ test('a rail moves and delays whole, and its length is its keys', () => {
   assert.equal(smooth(-1), 0);
   assert.equal(smooth(0.5), 0.5);
 });
+
+test('a rail never passes its keys: after a long drop to a key it holds, the camera stays at or over it', () => {
+  // The ram's shape: high over the sea, down sharply to the deck, then held there while the larger ship strikes.
+  const drop: RailKey[] = [
+    { at: 0, eye: [-60, -75, 40], look: [0, 25, 5] },
+    { at: 1.2, eye: [-15, -2.4, 4.9], look: [0, 24, 9] },
+    { at: 5.6, eye: [-14.5, -2.2, 4.9], look: [0, 20, 8] },
+  ];
+  for (let time = 0; time <= 5.6; time += 0.02) {
+    const { eye } = railShot(drop, time, 0.85, 'none');
+    assert.ok(eye[2] >= 4.9 - 1e-9, `at ${time.toFixed(2)} s the eye is ${eye[2].toFixed(2)} m up`);
+    assert.ok(eye[2] <= 40 + 1e-9);
+    assert.ok(eye[0] >= -60 - 1e-9 && eye[0] <= -14.5 + 1e-9, `at ${time.toFixed(2)} s across ${eye[0].toFixed(2)}`);
+  }
+});
