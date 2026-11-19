@@ -166,6 +166,24 @@ function picturesTexture(device: GPUDevice): GPUTexture {
   return texture;
 }
 
+/** The pictures each device holds, and how many ships draw with them: every ship shares one upload, let go once the
+ *  last of them is. */
+const SHARED_PICTURES = new WeakMap<GPUDevice, { readonly texture: GPUTexture; holders: number }>();
+
+function holdPictures(device: GPUDevice): GPUTexture {
+  const held = SHARED_PICTURES.get(device) ?? { texture: picturesTexture(device), holders: 0 };
+  held.holders += 1;
+  SHARED_PICTURES.set(device, held);
+  return held.texture;
+}
+
+function releasePictures(device: GPUDevice): void {
+  const held = SHARED_PICTURES.get(device);
+  if (!held || --held.holders > 0) return;
+  held.texture.destroy();
+  SHARED_PICTURES.delete(device);
+}
+
 /** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
  *  captains'. */
 export const SHIP_SLOTS = 20;
@@ -187,7 +205,7 @@ export class ShipView {
   private readonly indexCount: number;
   private readonly canvasIndices: GPUBuffer | null;
   private readonly canvasIndexCount: number;
-  private readonly pictures: GPUTexture;
+  private pictures: GPUTexture | null;
   /** Her waterline, for her footprint on the water and her wake. */
   readonly waterline: Waterline;
   /** Her sails' corners, for each ship's rig. */
@@ -240,7 +258,7 @@ export class ShipView {
         })
       : null;
     if (this.canvasIndices) gpu.device.queue.writeBuffer(this.canvasIndices, 0, grid);
-    this.pictures = picturesTexture(gpu.device);
+    this.pictures = holdPictures(gpu.device);
     const pictures = this.pictures.createView({ dimension: '2d-array' });
     const pictured = gpu.device.createSampler({
       addressModeU: 'repeat',
@@ -312,14 +330,15 @@ export class ShipView {
     pass.drawIndexed(this.canvasIndexCount);
   }
 
-  /** Lets go of her buffers and pictures on the GPU; she is never drawn again. */
+  /** Lets go of her buffers on the GPU, and of the pictures she shares; she is never drawn again. */
   destroy(): void {
     for (const buffer of [this.vertices, this.indices, this.canvasIndices]) buffer?.destroy();
     for (const slot of this.slots) {
       slot.uniforms.destroy();
       slot.canvas?.destroy();
     }
-    this.pictures.destroy();
+    if (this.pictures) releasePictures(this.device);
+    this.pictures = null;
   }
 }
 
