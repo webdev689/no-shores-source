@@ -39,6 +39,8 @@ export interface ScreenMark {
   readonly named: boolean;
   /** Held at the picture's edge: the way its arrow points, degrees clockwise from up. */
   readonly arrowDegrees: number | null;
+  /** Its node is locked: greyed, with a lock for its glyph. */
+  readonly locked: boolean;
 }
 
 /** One choice of a menu. */
@@ -55,6 +57,8 @@ const GLYPHS: Record<MarkKind, string> = {
   boss: '☠',
   port: '⚓\uFE0E',
 };
+/** A locked node's glyph, in the place of its kind's. */
+const LOCK_GLYPH = '🔒\uFE0E';
 
 /** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
 interface MarkNode {
@@ -258,11 +262,11 @@ export class Hud {
     marks.forEach((mark, order) => {
       kept.add(mark.id);
       const shown = this.marksShown.get(mark.id) ?? this.markNode(mark.id);
-      shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}`;
+      shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}${mark.locked ? ' locked' : ''}`;
       shown.root.style.transform = `translate(${Math.round(mark.x)}px, ${Math.round(mark.y)}px)`;
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
-      shown.glyph.textContent = GLYPHS[mark.kind];
+      shown.glyph.textContent = mark.locked ? LOCK_GLYPH : GLYPHS[mark.kind];
       shown.name.textContent = mark.name;
       const note = `${KIND_WORDS[mark.kind]} · ${mark.note}`;
       if (shown.note.textContent !== note) shown.note.textContent = note;

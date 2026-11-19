@@ -1,4 +1,4 @@
-import type { Point2, Vec3 } from '../overworld/ground.ts';
+import type { Point2 } from '../overworld/ground.ts';
 import { flyRig, frameSide, nearestIsland, ringCentre, SIDE, sideNodes } from '../overworld/islandView.ts';
 import {
   type CameraPose,
@@ -33,7 +33,7 @@ import type { HullMask } from '../water/hullMask.ts';
 import { Aboard, type AboardContext } from './aboard.ts';
 import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
-import { seaMarks } from './seaMarks.ts';
+import { islandMarks, landingChoice, seaMarks } from './seaMarks.ts';
 import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
@@ -50,8 +50,6 @@ const FLY_BACK_SECONDS = 1.4;
 const WAKE = { mostScale: 1.5, everyS: 1 / 60 } as const;
 /** Seconds the view takes to come down to the helm, or go back up from it. */
 const HELM_SECONDS = 1.1;
-/** A mark stands this far over the ground it marks, metres. */
-const MARK_RISE_M = 2;
 
 /** Where the view is: over the ship, flying to or from an island's side, or over that side choosing a landing. */
 type SeaView =
@@ -155,6 +153,8 @@ export class Sea {
     },
   };
   chosen: string | null = null;
+  /** What the view over an island's side says of the mark last clicked: that its node is locked. */
+  private said = '';
 
   constructor(
     landmass: Landmass,
@@ -183,18 +183,7 @@ export class Sea {
   /** The landmass drawn and charted from now on. */
   setLandmass(landmass: Landmass): void {
     this.landmass = landmass;
-    const marks: Mark[] = landmass.nodes.map((node) => {
-      const ground =
-        node.kind === 'social' && landmass.plan ? landmass.plan.social.level : landmass.heightAt(...node.centre);
-      const place: Vec3 = [node.centre[0], node.centre[1], Math.max(0, ground) + MARK_RISE_M];
-      return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true };
-    });
-    const harbour = landmass.plan?.harbour;
-    if (landmass.plan && harbour) {
-      const port = { id: `${landmass.plan.id}-port`, kind: 'port', name: landmass.plan.name, edge: true } as const;
-      marks.push({ ...port, at: [harbour[0], harbour[1], MARK_RISE_M] });
-    }
-    this.islandMarks = marks;
+    this.islandMarks = islandMarks(landmass);
   }
 
   /** Joins the sea room `open` makes, a server's or the page's own, the ship put to sea where it lies. */
@@ -353,7 +342,7 @@ export class Sea {
       this.landmass.heightAt,
     );
     this.passage.stop();
-    this.chosen = null;
+    [this.chosen, this.said] = [null, ''];
     this.close.release();
     this.view = { kind: 'fly', from: this.seaRig, to: this.sideRig, t: 0, seconds: SIDE.flySeconds, then: 'landing' };
     return true;
@@ -376,6 +365,15 @@ export class Sea {
     this.chosen = null;
     if (!this.sideRig) return;
     this.view = { kind: 'fly', from: this.sideRig, to: this.seaRig, t: 0, seconds: FLY_BACK_SECONDS, then: 'sail' };
+  }
+
+  /** A click on a mark over the side in view, `chosen` the landing chosen before (`landingChoice`): its landing is
+   *  chosen, or landed at once it was; a locked node is neither, and the view says so. */
+  choose(id: string, chosen: string | null): 'choose' | 'land' | null {
+    const choice = landingChoice(this.side, chosen, id);
+    this.said = choice?.kind === 'locked' ? choice.words : '';
+    if (choice?.kind === 'choose') this.chosen = id;
+    return choice?.kind === 'locked' ? null : (choice?.kind ?? null);
   }
 
   /** The id and name of a landing on the side in view, or null. */
@@ -581,7 +579,7 @@ export class Sea {
     const joined = this.room?.rejoining ? ' · Reconnecting…' : ` · In the sea room as player ${this.room?.own}`;
     const room = this.room ? joined : lost;
     if (this.combat) return `Fighting${room}`;
-    if (this.view.kind !== 'sail') return room.slice(3);
+    if (this.view.kind !== 'sail') return (this.view.kind === 'landing' && this.said) || room.slice(3);
     // Off the helm, her helmsman has her while she sails on.
     const helmsman = this.aboard.walking && this.passage.sailing ? ' · Her helmsman has the helm' : '';
     return this.passage.note + helmsman + room;

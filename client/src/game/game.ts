@@ -349,11 +349,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const choose = (id: string) => {
     if (flow.mode === 'sea' && !flow.menu) sea?.sailToMark(id);
     if (flow.mode !== 'landing' || !sea) return;
-    if (flow.chosen === id) landAt(id);
-    else if (sea.landingOf(id)) {
-      change({ kind: 'choose', node: id });
-      sea.chosen = id;
-    }
+    const choice = sea.choose(id, flow.chosen);
+    if (choice === 'land') landAt(id);
+    else if (choice === 'choose') change({ kind: 'choose', node: id });
   };
 
   const respawn = () => void (foot?.standing.kind === 'dead' && foot.standing.canRespawn && foot.respawn());
