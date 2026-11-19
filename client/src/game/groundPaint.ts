@@ -303,10 +303,11 @@ function paintChalk(
         Math.floor(Math.max(0, ((column - first[0] + 0.5) * whole.texelM) / cell - 0.5)),
       );
       const right = Math.min(lastColumn, left + 1);
+      // A run's end can round onto its own start, so it reaches at least one texel on.
       const end =
         left >= lastColumn
           ? last[0]
-          : Math.min(last[0], first[0] + Math.ceil(((left + 1.5) * cell) / whole.texelM - 0.5));
+          : Math.min(last[0], Math.max(column + 1, first[0] + Math.ceil(((left + 1.5) * cell) / whole.texelM - 0.5)));
       const [northWest, northEast] = [values[upper + left], values[upper + right]];
       const [southWest, southEast] = [values[lower + left], values[lower + right]];
       const least = Math.min(northWest, northEast, southWest, southEast);
