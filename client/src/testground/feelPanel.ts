@@ -1,39 +1,10 @@
 // The Test Ground's attack feel: each effect laid over the fight's blows switched on or off and set stronger or weaker,
 // kept in this browser, with its numbers shown to copy into the game's own.
+import { FEEL, type Feel } from '../combat/attackFeel.ts';
 import { button, make } from '../editor/dom.ts';
 import { choice, labelled } from './dressPanel.ts';
 
 const KEPT_KEY = 'overlook.testground.feel';
-
-/** Each effect on or off, and its sliders: 1 each as made. The weapon's glow shows the gear's own element (`glowLook`
- *  0) or the element chosen in its place. */
-export interface Feel {
-  readonly arc: boolean;
-  readonly arcBrightness: number;
-  readonly arcTrail: number;
-  readonly stop: boolean;
-  readonly stopLength: number;
-  readonly kick: boolean;
-  readonly kickStrength: number;
-  readonly lunge: boolean;
-  readonly lungeDistance: number;
-  readonly glow: boolean;
-  readonly glowLook: number;
-}
-
-export const FEEL: Feel = {
-  arc: true,
-  arcBrightness: 1,
-  arcTrail: 1,
-  stop: true,
-  stopLength: 1,
-  kick: true,
-  kickStrength: 1,
-  lunge: true,
-  lungeDistance: 1,
-  glow: true,
-  glowLook: 0,
-};
 
 /** What the glow may show: the gear's own element, or one chosen, by the gear crate's numbers. */
 const GLOW_CHOICES = ['Own gear', 'Blaze', 'Volt', 'Cosmic'] as const;

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { FEEL, feelLine, feelOf } from './feelPanel.ts';
+import { FEEL } from '../combat/attackFeel.ts';
+import { feelLine, feelOf } from './feelPanel.ts';
 
 test('the kept feel reads back, each number held to its slider and each switch a switch; anything else is as made', () => {
   assert.deepEqual(

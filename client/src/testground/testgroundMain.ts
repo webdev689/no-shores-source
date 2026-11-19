@@ -10,6 +10,7 @@ import { rosterOf } from '../rules/roster.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { Glides } from '../player/glide.ts';
 import { pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
@@ -42,11 +43,11 @@ import { AIM, type AimPlace } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
 import { startAimPanel } from './aimPanel.ts';
-import { AttackFeel, type DrawnFigure } from './attackFeel.ts';
 import { startPanel } from './panel.ts';
 import { startStatusPanel } from './statusPanel.ts';
 import { startArtsPanel } from './artsPanel.ts';
 import { SceneView } from './sceneView.ts';
+import { startFeelPanel } from './feelPanel.ts';
 
 /** How fast a figure set turning round turns, in radians a second: a full turn in 8 seconds. */
 const SPIN = (2 * Math.PI) / 8;
@@ -164,7 +165,8 @@ async function start(): Promise<void> {
   });
   startStatusPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
   const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
-  const feel = new AttackFeel(element<HTMLElement>('#panel'), combatRules, movement.tickSeconds);
+  const feel = new AttackFeel(combatRules, movement.tickSeconds);
+  startFeelPanel(element<HTMLElement>('#panel'), (set) => feel.set(set));
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: Player) =>
     aboveGround(playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, COURSE, aimPlace));

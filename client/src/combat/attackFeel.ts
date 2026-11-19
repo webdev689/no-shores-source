@@ -1,17 +1,48 @@
-// The attack feel over the Test Ground's fight: the swings' arcs, the hit-stops, the camera's kick and the lunge, each
-// switched and set in the panel's Attack feel. Only the drawing moves: the fight's rules and their clock never do.
-import { CameraKick, kicksOf, leanOf } from '../combat/cameraKick.ts';
-import { EVENT } from '../combat/cues.ts';
-import { HitStops, heldBack } from '../combat/hitStop.ts';
-import { lungeOf } from '../combat/lunge.ts';
-import { type Smear, type Swing, SwingArcs, type Vector, weaponTint } from '../combat/swingArcs.ts';
+// The attack feel over a fight, the game's and the Test Ground's alike: the swings' arcs, the hit-stops, the camera's
+// kick and the lunge, each at its default here and switched and set in the Test Ground's panel. Only the drawing moves:
+// the fight's rules and their clock never do.
+import { CameraKick, kicksOf, leanOf } from './cameraKick.ts';
+import { EVENT } from './cues.ts';
+import { HitStops, heldBack } from './hitStop.ts';
+import { lungeOf } from './lunge.ts';
+import { type Smear, type Swing, SwingArcs, type Vector, weaponTint } from './swingArcs.ts';
 import type { Orbit } from '../editor/orbit.ts';
 import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { blowWay } from '../player/playerMoves.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import { type FighterView, STROKE_DIRECTIONS, directionOf } from '../rules/fighters.ts';
-import { FEEL, type Feel, startFeelPanel } from './feelPanel.ts';
+
+/** Each effect on or off, and its sliders: 1 each as made. The weapon's glow shows the gear's own element (`glowLook`
+ *  0) or the element chosen in its place. */
+export interface Feel {
+  readonly arc: boolean;
+  readonly arcBrightness: number;
+  readonly arcTrail: number;
+  readonly stop: boolean;
+  readonly stopLength: number;
+  readonly kick: boolean;
+  readonly kickStrength: number;
+  readonly lunge: boolean;
+  readonly lungeDistance: number;
+  readonly glow: boolean;
+  readonly glowLook: number;
+}
+
+/** The feel as made: what the game plays with, and the Test Ground's panel starts from. */
+export const FEEL: Feel = {
+  arc: true,
+  arcBrightness: 1,
+  arcTrail: 1,
+  stop: true,
+  stopLength: 1,
+  kick: true,
+  kickStrength: 1,
+  lunge: true,
+  lungeDistance: 1,
+  glow: true,
+  glowLook: 0,
+};
 
 /** How brightly a blow's arc flares as it meets something, by what came of it: a kill brightest, a block least. */
 const ARC_FLARE: Readonly<Record<number, number | undefined>> = {
@@ -43,7 +74,7 @@ export interface DrawnFigure {
   readonly flip: boolean;
 }
 
-/** The Test Ground's attack feel, as its panel sets it. */
+/** A fight's attack feel, as made or as the Test Ground's panel sets it. */
 export class AttackFeel {
   private feel: Feel = FEEL;
   private readonly arcs = new SwingArcs();
@@ -59,13 +90,15 @@ export class AttackFeel {
   /** Fighters whose drawing is not this page's to hold (other players, drawn from their own looks). */
   private unheld: ReadonlySet<number> = new Set();
 
-  /** Adds the feel's panel to `panel`; `rules` reach and width each stroke, and a tick is `tickSeconds`. */
-  constructor(panel: HTMLElement, rules: CombatRules, tickSeconds: number) {
+  /** `rules` reach and width each stroke, and a tick is `tickSeconds`. */
+  constructor(rules: CombatRules, tickSeconds: number) {
     this.rules = rules;
     this.tick = tickSeconds;
-    startFeelPanel(panel, (set) => {
-      this.feel = set;
-    });
+  }
+
+  /** Plays with `feel` from the next frame. */
+  set(feel: Feel): void {
+    this.feel = feel;
   }
 
   /** Takes a frame of `seconds`: each blow landing holds its fighters still from the next frame (so its landing is what

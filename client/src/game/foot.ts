@@ -1,4 +1,5 @@
 import { pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
@@ -6,6 +7,7 @@ import { FoeFigures } from '../combat/foeFigures.ts';
 import type { HudFrame } from '../combat/hud.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
 import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
+import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
@@ -14,6 +16,7 @@ import type { FoeAsk } from '../network/messages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
@@ -25,6 +28,7 @@ import { OtherPlayers, type Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
 import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
 import { FIGHT_TICKS } from '../player/fightMoves.ts';
+import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import { type FoeType, rosterOf } from '../rules/roster.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
@@ -89,13 +93,14 @@ const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster
 export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost'>;
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
- *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams, and what its
- *  display shows), and the keys listed. */
+ *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
+ *  of its blows, in world metres; and what its display shows), and the keys listed. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
   readonly standing: Standing;
   readonly marks: Float32Array;
+  readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly string[];
 }
@@ -143,6 +148,8 @@ export class Foot {
   private readonly otherGlides = new Glides();
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
+  /** The attack feel as made: the blows' arcs, hit-stops, the camera's kick and the lunge. */
+  private readonly feel: AttackFeel;
   private readonly drops = new DropsShown();
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
@@ -172,6 +179,7 @@ export class Foot {
     this.steps = parts.fight.steps(context.movement);
     [this.otherPlayers, this.gearHeld, this.folk] = [people.otherPlayers, people.gear, people.folk];
     this.foes = new FoeFigures(parts.roster);
+    this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     const hud = document.querySelector<HTMLElement>('#hud');
     this.prompt = hud ? new UsePrompt(hud) : null;
     const floor = (x: number, y: number) => context.movement.standing(x, y).z;
@@ -317,30 +325,52 @@ export class Foot {
     }
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
-    const camera = () => pushedIn(playerCamera(walker.player, movement, this.boxes), effects.anima.push);
+    const { feel } = this;
+    const aimed = () => playerCamera(walker.player, movement, this.boxes);
+    const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
       hands: hands && !paused,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
       zoomOf: () => camera().zoom ?? 1,
+      handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds);
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
-    const shot = shotOfOrbit(camera(), LENS, groundAt, CAMERA_CLEARANCE_M);
+    feel.frame(events, fight.own, fight.player, seconds, new Set(fight.others.keys()));
+    const firstPerson = walker.inFirstPerson;
+    // While a crosshair shows, the kick moves the view but never turns it, so the crosshair stays where shots land.
+    const sights = shown.aiming || (shown.ranged && firstPerson);
+    const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
+    const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
     const frameTicks = seconds / movement.tickSeconds;
+    // Each figure drawn off where it stands by the attack feel, and kept as drawn, which its blow's arc follows.
+    const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
+    const right = [Math.cos(shot.yaw), Math.sin(shot.yaw)] as const;
+    const smear = (id: number) => feel.smearOf(id, right);
+    const drawnAt = new Map<number, DrawnFigure>();
+    const otherViews = new Map<number, FighterView>();
+    for (const [number, seen] of fight.others) if (seen.fighter) otherViews.set(number, fighterView(seen.fighter));
     const figures: CardAt[] = [];
-    const own = walker.figure(eyeX, eyeY, effects.flashes.flashOf(fight.player));
+    const body = shownBody(walker.player);
+    const ownShift = shift(fight.player, fight.own);
+    const own = walker.figure(eyeX, eyeY, effects.flashes.flashOf(fight.player), ownShift);
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
-    if (own) figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed });
-    figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks));
+    if (own) {
+      figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) });
+      const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
+      drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
+    }
+    figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks, { shift, drawnAt, otherViews }));
+    const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
+    const { tickSeconds } = movement;
     figures.push(
-      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, movement.tickSeconds, effects.flashes),
+      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
     );
-    const body = shownBody(walker.player);
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const marks = effects.marks(fight, seconds, {
@@ -349,7 +379,7 @@ export class Foot {
       bodies,
       muzzleOf: (fired) =>
         muzzle
-          ? screenMuzzle(camera(), aspect, muzzle)
+          ? screenMuzzle(kicked, aspect, muzzle)
           : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
       origin: shot.eye,
       groundAt,
@@ -360,6 +390,21 @@ export class Foot {
         ...foes.overheads(shot.eye, clock),
       ],
     });
+    // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
+    const handsOf = (dress: Dress | null | undefined) => ({
+      right: dress?.outfit.right ?? null,
+      left: dress?.outfit.left ?? null,
+    });
+    const strikers = [
+      { id: fight.player, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
+      ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
+      ...[...otherViews].map(([number, view]) => ({
+        id: number,
+        view,
+        ...handsOf(this.otherPlayers.placed.get(number)?.dress),
+      })),
+    ];
+    const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson);
     showAnimaEdge(effects.anima);
     // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
     const able = !paused && !this.fallen;
@@ -373,7 +418,6 @@ export class Foot {
       const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const firstPerson = walker.inFirstPerson;
     const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
     const fought: FootFight = {
       own: ownView,
@@ -395,7 +439,7 @@ export class Foot {
     };
     const edge = this.standing;
     const hints = edge.kind === 'dead' ? HINTS.dead : HINTS.foot;
-    return { shot, figures, standing: edge, marks, fight: fought, hints };
+    return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 
   /** The drops lying for the player, flying and standing, seen from `eye`; a Rare or finer chimes as it comes to rest. */
@@ -406,9 +450,19 @@ export class Foot {
     return marks;
   }
 
-  /** Every other player's figure, gliding toward where the room last saw them, flashing as it is struck, faint while
-   *  Veiled, and its cast's spark in its Art's colour. */
-  private otherCards(eyeX: number, eyeY: number, clock: number, frameTicks: number): CardAt[] {
+  /** Every other player's figure, gliding toward where the room last saw them, drawn off it by the attack `feel` (and
+   *  kept as drawn there), flashing as it is struck, faint while Veiled, and its cast's spark in its Art's colour. */
+  private otherCards(
+    eyeX: number,
+    eyeY: number,
+    clock: number,
+    frameTicks: number,
+    feel: {
+      shift: (id: number, view: FighterView | null) => Vector;
+      drawnAt: Map<number, DrawnFigure>;
+      otherViews: ReadonlyMap<number, FighterView>;
+    },
+  ): CardAt[] {
     const { forge } = this.context;
     const { fight, effects, otherGlides } = this;
     const cards: CardAt[] = [];
@@ -429,7 +483,10 @@ export class Foot {
       const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow);
       const flash = effects.flashes.flashOf(number);
       const veiled = veiledIn(fight, number);
-      if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip, flash, veiled });
+      const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
+      const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
+      feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
+      if (card) cards.push({ card, ...cardStand(atFeet[0], atFeet[1], eyeX, eyeY), z: atFeet[2], flip, flash, veiled });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
     // A social space's people, each keeping a step of its own.

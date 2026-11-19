@@ -7,7 +7,7 @@ code:
   - client/src/testground/aimPanel.ts
   - client/src/testground/statusPanel.ts#startStatusPanel
   - client/src/testground/artsPanel.ts#startArtsPanel
-  - client/src/testground/attackFeel.ts#AttackFeel
+  - client/src/combat/attackFeel.ts#AttackFeel
   - client/src/testground/feelPanel.ts#startFeelPanel
   - client/src/combat/swingArcs.ts#SwingArcs
   - client/src/combat/swingCourse.ts#courseOf
@@ -131,7 +131,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
 - **The attack feel.** Four effects over the fight's blows, each switched on or off and set by a slider in the panel's
   **Attack feel**, kept in the browser with its numbers shown to copy
   ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never
-  do.
+  do. The game plays the same four at the panel's defaults ([[Game]]).
   - *Swing arc.* A streak of light along each blow's path, laid from the rules' own landing, reach and width, going the
     way the striker's figure is drawn swinging
     ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). A blow goes its own way, whatever

@@ -66,6 +66,8 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
   let offset = card_point(corner, view.right.xy);
   var out: Out;
   out.position = view.from_eye * vec4f(offset, 1.0);
+  // A smear stands a hair behind its figure (depth is reversed), so the figure is drawn over it.
+  if (card.tint.w > 0.5) { out.position.z = out.position.z * 0.999; }
   out.corner = corner;
   out.from_eye = offset;
   return out;
@@ -268,16 +270,21 @@ export class FigureView implements CardMaker {
     values.set([Math.cos(yaw), Math.sin(yaw), 0, 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
     const time = statusClock();
-    const groups = figures.map((shown, index) => {
+    // Each card, then again as its smear where its own swing leaves one: its shape above the hips, shifted back
+    // along the stroke and standing behind it.
+    const smeared = figures.filter((shown) => shown.smear);
+    const groups = [...figures, ...smeared].map((shown, index) => {
       const { card, x, y, z, flip, scale = 1 } = shown;
       const { buffer, group } = this.slot(index, card.texture);
       const metres = scale / PX_PER_M;
+      const smear = index >= figures.length ? shown.smear : null;
+      const [across, up] = smear ? [smear.across * metres, smear.up * metres] : [0, 0];
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
       const cardValues = new Float32Array([
-        ...[x - eye[0], y - eye[1], z - eye[2], flip ? 1 : 0],
+        ...[x - eye[0] + Math.cos(yaw) * across, y - eye[1] + Math.sin(yaw) * across, z - eye[2] + up, flip ? 1 : 0],
         ...[card.width * metres, card.height * metres, 0, 0],
         ...[rootX, card.root[1] * metres, 0, 0],
-        ...cardLookValues(shown, time),
+        ...cardLookValues(shown, time, !!smear),
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;
@@ -303,7 +310,7 @@ export class FigureView implements CardMaker {
     pass.setBindGroup(1, shadow.casterGroup(this.cast));
     // A Veiled figure is all but unseen, so it throws no shadow and has no contact shade.
     groups.forEach((group, index) => {
-      if (figures[index]?.veiled) return;
+      if (index >= figures.length || figures[index]?.veiled) return;
       pass.setBindGroup(2, group);
       pass.draw(6);
     });
@@ -326,7 +333,7 @@ export class FigureView implements CardMaker {
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);
     groups.forEach((group, index) => {
-      if (figures[index]?.veiled) return;
+      if (index >= figures.length || figures[index]?.veiled) return;
       pass.setBindGroup(2, group);
       pass.draw(36);
     });

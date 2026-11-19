@@ -119,7 +119,7 @@ is written here as it is built.
 Everything is the game's own pixel art: whole figure pixels, the four stops of a ramp (an element's, a metal's made
 from its light, gold `#4a2a06 #c8901e #ffd95a #fff6d0`), held steps, no soft fades.
 
-- **The swing's arc** (the [[Test Ground]]'s attack feel until it moves into the game): drawn over its own striker,
+- **The swing's arc** (the attack feel's, in the game and the [[Test Ground]]): drawn over its own striker,
   so overheads, slants and thrusts show from the default camera; its cutting edge white-hot over a dark rim, its
   sweep in lanes, its oldest fifth dithered out; in the blade's element where the hand glows, gold for a riposte.
   Blaze sheds 18 embers a second off its head, Volt jolts it and throws two 0.3 m forks each strike, Cosmic leaves a

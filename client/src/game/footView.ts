@@ -8,6 +8,7 @@ import { SAMPLES } from '../water/waterView.ts';
 import { fromEyeMatrix, shifted } from './camera.ts';
 import type { Foot, FootFrame } from './foot.ts';
 import type { Drawer } from './scene.ts';
+import { SwingView } from './swingView.ts';
 
 type Point = readonly [number, number, number];
 
@@ -108,6 +109,7 @@ class FightMarks {
 export class FootView {
   private readonly gpu: Gpu;
   private readonly marks: FightMarks;
+  private readonly swings: SwingView;
   private readonly root: HTMLElement;
   private readonly hud: Hud;
   private blood: { readonly foot: Foot; readonly drawn: FightBlood; readonly origin: Point } | null = null;
@@ -115,6 +117,7 @@ export class FootView {
   constructor(gpu: Gpu, hudRoot: HTMLElement) {
     this.gpu = gpu;
     this.marks = new FightMarks(gpu);
+    this.swings = new SwingView(gpu);
     this.root = document.createElement('div');
     this.root.className = 'fight';
     this.root.hidden = true;
@@ -166,6 +169,7 @@ export class FootView {
       right: [Math.cos(shot.yaw), Math.sin(shot.yaw), 0],
     });
     this.marks.set(shown.marks);
+    this.swings.set(shown.swings, shot.eye);
     const matrix = shifted(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
       { ...fight, matrix, width: viewport.width, height: viewport.height, lost: null, rejoining: foot.rejoining },
@@ -174,7 +178,12 @@ export class FootView {
     const drawn = blood.drawn;
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },
-      over: { drawInto: (pass, eyeMatrix) => this.marks.drawInto(pass, shifted(eyeMatrix, [0, 0, OVER_THE_LAND_M])) },
+      over: {
+        drawInto: (pass, eyeMatrix) => {
+          this.marks.drawInto(pass, shifted(eyeMatrix, [0, 0, OVER_THE_LAND_M]));
+          this.swings.drawInto(pass, eyeMatrix);
+        },
+      },
     };
   }
 
