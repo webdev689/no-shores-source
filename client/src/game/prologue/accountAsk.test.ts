@@ -94,10 +94,10 @@ test('a player who left for Discord comes back to the helm once, and a store tha
     setItem: (key: string, value: string) => void kept.set(key, value),
     removeItem: (key: string) => void kept.delete(key),
   };
-  assert.equal(backAtHelm(tab), false);
+  assert.equal(backAtHelm(tab, false), false);
   markHelm(tab);
-  assert.equal(backAtHelm(tab), true);
-  assert.equal(backAtHelm(tab), false, 'read once');
+  assert.equal(backAtHelm(tab, false), true);
+  assert.equal(backAtHelm(tab, false), false, 'read once');
   const broken = {
     getItem: () => {
       throw new Error('denied');
@@ -107,6 +107,9 @@ test('a player who left for Discord comes back to the helm once, and a store tha
     },
     removeItem: () => undefined,
   };
+  markHelm(tab);
+  assert.equal(backAtHelm(tab, true), false, 'a story played through is never begun again from the helm');
+  assert.equal(backAtHelm(tab, false), false, 'and the mark is cleared all the same');
   assert.doesNotThrow(() => markHelm(broken));
-  assert.equal(backAtHelm(broken), false);
+  assert.equal(backAtHelm(broken, false), false);
 });

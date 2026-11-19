@@ -76,7 +76,10 @@ they play in holds it while they are there.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
   rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
   kept apart from any other's. A room reads the session's token as it connects, so a sign-in made after the page
-  opened (at the story's helm) is the one the rooms use.
+  opened (at the story's helm) is the one the rooms use; the helm's account step tells the page the account changed
+  as it ends, so the menu's mark and banner and the company HUD ask again and show that account.
+- **An ask is given up.** An ask the accounts leave unanswered for 10 s is given up, and answered as the accounts out
+  of reach, so nothing waiting on them (the helm's account step) is held.
 
 ## The character, kept
 

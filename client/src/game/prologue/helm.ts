@@ -66,6 +66,12 @@ export function creationEye(turn: number, aspect = WIDE): { readonly eye: Point3
   return { eye, look };
 }
 
+/** The Brig's deck as the helm's camera rides it: all of her rise and fall but a quarter of her pitch and roll, so the
+ *  figure holds still in the picture. The storm's run ends on this same frame, so the helm takes its shot up whole. */
+export function helmDeck(place: ShipPlace): ShipPlace {
+  return { ...place, pitch: place.pitch * 0.25, roll: place.roll * 0.25 };
+}
+
 /** The creation camera in the world, with the Brig at `place`, turned `turn` round the player. */
 export function creationShot(place: ShipPlace, turn: number, aspect: number): Shot {
   const { eye, look } = creationEye(turn, aspect);

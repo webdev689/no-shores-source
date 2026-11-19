@@ -85,3 +85,22 @@ test('a step that fails is thrown from the frame, so the story goes on past the 
   await settle();
   assert.throws(() => making.frame(tick), /the window could not be made/);
 });
+
+test('the story moving on from the helm ends its windows, and the step ending then dresses nobody', async () => {
+  const { story: helm } = story();
+  const signals: AbortSignal[] = [];
+  const making = new Making(helm, {
+    account: async (_root, _link, signal) => {
+      if (signal) signals.push(signal);
+      return { kind: 'alone' };
+    },
+    look: (_root, _start, _changed, _turn, signal) =>
+      new Promise((_resolve, reject) => signal?.addEventListener('abort', () => reject(signal.reason))),
+  });
+  await settle();
+  making.leave();
+  await settle();
+  assert.equal(signals[0]?.aborted, true, 'the windows are told the helm is left');
+  assert.equal(making.done, false);
+  assert.equal(helm.look, FIRST_LOOK);
+});
