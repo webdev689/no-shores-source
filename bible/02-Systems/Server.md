@@ -348,8 +348,11 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
 The same two pages in a patrol node's room, nine of its eleven foes walking their beats each tick, and on the course
 with a swordsman climbing the ledge after one page's player and fighting both, held the same foes to the centimetre,
 with the same levels, health, alertness and actions, at all of the 2,582 and 2,997 room ticks they both kept (tested
-live, locally). On the course, the room's word on each page's own fighter matched for 99% of inputs, the rest blows
-that landed and stands again: no swing snapped, and the lock changed only where the room knew of a blow.
+live, locally). On the course, each page swinging some 45 times, the room's word on its own fighter matched for 98%
+of inputs. The rest were blows that landed, stands again, and ticks the room stood a page still for its slow frames,
+which set a swing under way on by those ticks; the lock changed only where the room knew of a blow. Played offline
+at a steady 60 inputs a second with 2 to 8 ticks of lag each way, the same fight matched for 91 to 98% of inputs and
+set no swing on: every difference came within 2 s of a blow by or on the player, a death or a stand again.
 
 ## Limits
 
