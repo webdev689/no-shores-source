@@ -243,7 +243,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Next
 
 - **The ships, one at a time** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner first, then the
-  Longboat, the Brig, the Frigate, the Tithe Ram and the Fluyt, each built in Blender (`bpy`, as the `ships` workflow
+  Brig, the Frigate, the Tithe Ram and the Fluyt, each built in Blender (`bpy`, as the `ships` workflow
   installs it) in the Sloop's style, rendered from four sides for the owner's yes, then UV-mapped and painted. Then the
   sea as the owner approved it: waters with owners and levels, ships sighted on the horizon, sea fights paying into
   the gear loop, boarding, the opening voyage as the first sea strike, the ship as gear, then merchantmen, bounties,

@@ -109,6 +109,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Garrisons Take the Gear Loop's Levels and Shields]]
 - [[The Sea Is a Patrol Zone, and the Ship Is Gear]]
 - [[The Ships as Claude Shapes Them]]
+- [[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
