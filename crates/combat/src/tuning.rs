@@ -94,14 +94,11 @@ pub const PUNISH_TAKEN: f64 = 1.3;
 pub const PUNISH_PERFECT: f64 = 1.5;
 pub const PUNISH_IRON: u32 = 18;
 
-/// The soft lock: how far it takes a target, how far it holds one, the arc it looks in, how far turned away it lets
-/// go, and for how long turned away or out of sight. At the owner's word it lets go the tick the look leaves the arc
-/// it takes in.
+/// The soft lock: how far it takes a target, how far it holds one, the arc it looks in (it lets go the tick the look
+/// leaves it, at the owner's word), and for how long out of sight.
 pub const LOCK_RANGE: f64 = 9.0;
 pub const LOCK_BREAK: f64 = 15.0;
 pub const LOCK_ARC: f64 = 70.0 * DEGREES;
-pub const LOCK_AWAY: f64 = LOCK_ARC;
-pub const LOCK_AWAY_TICKS: u32 = 0;
 pub const LOCK_UNSEEN_TICKS: u32 = 90;
 /// A swing or a guard keeps its lock's target over a better one unless that one is better by this much (in the score
 /// `choose` ranks by), so the lock does not flick between two foes side by side.

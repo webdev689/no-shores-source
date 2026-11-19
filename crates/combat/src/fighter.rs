@@ -176,9 +176,8 @@ pub struct Fighter {
     pub action: Action,
     /// The bearing its arms point: where it swings and guards. Its body faces it while it fights.
     pub aim: f64,
-    /// The foe its soft lock holds, and for how long the lock has been turned away from it or lost sight of it.
+    /// The foe its soft lock holds, and for how long the lock has lost sight of it.
     pub target: Option<FighterId>,
-    pub lock_away: u32,
     pub lock_unseen: u32,
     /// A staggered foe open to this fighter's riposte, and the ticks left to strike it.
     pub riposte: Option<(FighterId, u32)>,
@@ -241,7 +240,6 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         action: Action::Idle,
         aim: body.facing,
         target: None,
-        lock_away: 0,
         lock_unseen: 0,
         riposte: None,
         counter: 0,

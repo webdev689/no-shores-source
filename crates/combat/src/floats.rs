@@ -214,7 +214,8 @@ impl Fighter {
             f64::from(self.poise_immune),
             self.aim,
             none_or_id(self.target),
-            f64::from(self.lock_away),
+            // A slot pages already deployed read; the lock no longer counts a look turned away.
+            0.0,
             f64::from(self.lock_unseen),
             riposte.0,
             riposte.1,
@@ -260,7 +261,6 @@ impl Fighter {
             action: action_from(at(23), &combat[24..COMBAT_FLOATS]),
             aim: at(11),
             target: id_or_none(at(12)),
-            lock_away: count(at(13)),
             lock_unseen: count(at(14)),
             riposte: id_or_none(at(15)).map(|foe| (foe, count(at(16)))),
             counter: count(at(17)),

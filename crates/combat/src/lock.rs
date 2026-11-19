@@ -5,7 +5,7 @@
 
 use crate::fighter::{Fighter, FighterId};
 use crate::sight::{apart, bearing, clear_line, off};
-use crate::tuning::{LOCK_ARC, LOCK_AWAY, LOCK_AWAY_TICKS, LOCK_BREAK, LOCK_KEEP, LOCK_RANGE, LOCK_UNSEEN_TICKS};
+use crate::tuning::{LOCK_ARC, LOCK_BREAK, LOCK_KEEP, LOCK_RANGE, LOCK_UNSEEN_TICKS};
 use movement::Block;
 
 /// Whether one fighter sees another's chest, nothing between.
@@ -41,8 +41,8 @@ pub fn choose(
         .map(|(_, id)| id)
 }
 
-/// The lock carried a tick: kept while its foe lives, stays within range and in sight, and the look does not stay
-/// turned away; let go otherwise.
+/// The lock carried a tick: kept while its foe lives, stays within range and in sight, and the look keeps it within
+/// the arc a lock is taken in; let go otherwise.
 #[must_use]
 pub fn hold(me: &Fighter, yaw: f64, fighters: &[(FighterId, Fighter)], blocks: &[Block]) -> Fighter {
     let Some(target) = me.target else { return *me };
@@ -53,17 +53,16 @@ pub fn hold(me: &Fighter, yaw: f64, fighters: &[(FighterId, Fighter)], blocks: &
         return let_go(me);
     }
     let lock_unseen = if sees(blocks, me, other) { 0 } else { me.lock_unseen + 1 };
-    let lock_away = if off(yaw, bearing(at, there)) > LOCK_AWAY { me.lock_away + 1 } else { 0 };
-    if lock_unseen > LOCK_UNSEEN_TICKS || lock_away > LOCK_AWAY_TICKS {
+    if lock_unseen > LOCK_UNSEEN_TICKS || off(yaw, bearing(at, there)) > LOCK_ARC {
         return let_go(me);
     }
-    Fighter { lock_unseen, lock_away, ..*me }
+    Fighter { lock_unseen, ..*me }
 }
 
 /// The lock let go.
 #[must_use]
 pub fn let_go(me: &Fighter) -> Fighter {
-    Fighter { target: None, lock_away: 0, lock_unseen: 0, ..*me }
+    Fighter { target: None, lock_unseen: 0, ..*me }
 }
 
 /// The lock as a swing or a guard begins: it takes the foe it would choose now, but keeps the one it holds while that
@@ -83,5 +82,5 @@ pub fn take(me_id: FighterId, me: &Fighter, yaw: f64, fighters: &[(FighterId, Fi
     if me.target == Some(target) {
         return *me;
     }
-    Fighter { target: Some(target), lock_away: 0, lock_unseen: 0, ..*me }
+    Fighter { target: Some(target), lock_unseen: 0, ..*me }
 }
