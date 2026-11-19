@@ -40,6 +40,9 @@ pub const LEASH: f64 = 50.0;
 pub const HOME_REACHED: f64 = 0.3;
 pub const HOME_FACED: f64 = 0.01;
 pub const SQUARING_PACE: f64 = 0.001;
+/// A foe keeping up with its place as its group walks on walks at the share of a walk its distance behind is of this,
+/// at most a full walk: at a group's stroll it walks a little behind its place, and catches up when farther.
+pub const KEEP_UP: f64 = 2.0;
 /// Noises: the awareness each adds where it is made, falling away to nothing at its reach. A gun alerts outright
 /// within half its reach; a bow or a crossbow only stirs; a swing, or a blow landing, alerts only at a fighter's elbow;
 /// a runner's feet stir once each RUN_EVERY.
@@ -67,12 +70,19 @@ pub const RING_SLACK: f64 = 0.6;
 pub const CIRCLE_PACE: f64 = 0.4;
 pub const SLOT_TURN: f64 = 0.4;
 pub const FLANK_ARC: f64 = 100.0 * DEGREES;
+/// The room each waiting foe takes round its ring: a little more than the longest reach of a foe's weapon and a body,
+/// so the waiting stand clear of each other. A ring holds as many as fit this far apart; the rest wait on a ring this
+/// much farther out, and so on.
+pub const RING_ROOM: f64 = 2.5;
+pub const RANK_GAP: f64 = RING_ROOM;
+/// A waiting foe this near its place on its ring stands there.
+pub const SETTLED: f64 = 0.15;
 /// Stepping back out of reach, at this share of a walk.
 pub const STEP_PACE: f64 = 0.7;
 /// After its blow a foe hops back at most this long, then holds its ground for between these before it waits again.
 pub const RECOVER_HOP: f64 = 0.4;
 pub const RECOVER: (f64, f64) = (0.8, 1.6);
-/// A foe that has waited this long goes in, whatever the tokens say.
+/// A foe that has waited this long goes in, one over the tokens' cap at most.
 pub const PATIENCE: f64 = 6.0;
 
 /// This share of its health lost inside the window, a foe backs off to a farther ring for a while, at most once a
@@ -148,9 +158,11 @@ pub const CLOSING: f64 = 0.5;
 pub const TURN: f64 = 0.35 * 16.0 / 60.0;
 /// A foe runs to a spot farther than this.
 pub const RUN_FROM: f64 = 5.0;
-/// Foes steer apart inside this, by up to this share of a walk: DFO's push of 3 m/s, as steering.
+/// Foes steer apart inside this, by up to this share of a walk: DFO's push of 3 m/s, as steering. Nearer than CLEAR,
+/// a little more than a body's width, a foe's move into an ally turns wholly aside round it.
 pub const SPACING: f64 = 1.2;
 pub const SPACING_PACE: f64 = 0.7;
+pub const CLEAR: f64 = 0.8;
 
 /// A swing begins only with the foe's aim this near its target; in reach it waits between these first, which gives a
 /// holder the moment DFO's motor gave it to wind up a telegraphed blow instead.

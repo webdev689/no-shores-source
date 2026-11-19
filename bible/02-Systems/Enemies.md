@@ -19,6 +19,8 @@ code:
   - crates/room/src/garrison.rs#keep_garrison
   - crates/room/src/garrison.rs#gird_of
   - crates/room/src/garrison.rs#raise_garrison
+  - crates/room/src/garrison.rs#walk_beats
+  - crates/room/src/beat.rs#Beat
   - crates/room-wasm/src/roster_door.rs#roster_json
   - client/src/rules/roster.ts#rankBand
   - client/src/rules/roster.ts#rankMark
@@ -156,13 +158,26 @@ WebAssembly, so names, factions and weapons are read in one place.
   any foe's does ([[Gear]], "In the rooms").
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
-  farthest from the nearest spawn. A group stands 2.5 m round its post, each foe facing outward, a leader in the
-  middle facing the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+  farthest from the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+- **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
+  fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
+  post and three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other, drawn
+  from the room's seed apart from the posts, so every machine walks the same beats and the posts stand where they
+  did. The way between points is the navmesh's, and each metre of it stays inside the section, 2.5 m inside its
+  edge, and 27.5 m from every spawn; a point with no such way is given up, and a group with no second point holds
+  its post. The group walks its beat at a stroll, 0.35 of a walk, its first foe leading on the way and the rest on a
+  half ring 2.5 m behind it, each finding its way to its place by the room's routes. It pauses 4 s at each point,
+  its foes facing out from their leader and the leader the way on, then walks to the next, and from the last back to
+  its post and round again. It halts while any of its foes is stirred, fights or walks back to its place, and waits
+  for one more than 4 m from its place. A group that holds its post stands 2.5 m round it, each foe facing outward,
+  a leader in the middle facing the nearest spawn.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
-  place at its post or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
-  whose search finds no one walks back the same way ([[Foes]]). It is still its group's: a walk home never clears a
-  group or stands it again.
-- **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places, 120 s later, once
+  place in its group or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
+  whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight began, so it walks
+  back to its place round that spot, and the group walks its beat on once all its foes are idle in their places. It
+  is still its group's: a walk home never clears a group or stands it again.
+- **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
+  its beat begun again from there, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
