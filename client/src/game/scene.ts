@@ -1,5 +1,8 @@
+import { Atmosphere } from '../cinema/atmosphere.ts';
+import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
@@ -58,6 +61,10 @@ export class GameScene {
   private readonly shadow: ShadowMap;
   private readonly copy: GPURenderPipeline;
   private readonly light: LightLayer;
+  private readonly atmosphere: Atmosphere;
+  /** What the sky and sea are doing, read each frame: the water drawn on its gained swell, its weather laid over the
+   *  finished picture before the first person's hands. Clear draws the picture exactly as without it. */
+  weather: Weather = CLEAR;
   private terrain: { view: LandView; drawn: TerrainView } | null = null;
   private close: CloseUp | null = null;
   private shownClose: CloseUp | null = null;
@@ -70,6 +77,7 @@ export class GameScene {
     this.water = new WaterView(gpu);
     this.shadow = new ShadowMap(gpu);
     this.light = new LightLayer(gpu, 'float');
+    this.atmosphere = new Atmosphere(gpu);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.copy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -245,7 +253,7 @@ export class GameScene {
       exaggeration: 1,
       fogM: Math.max(25_000, above * 60),
       world: [...origin],
-      swell: view.swell,
+      swell: view.swell && swellGained(view.swell, this.weather.seaGain),
       coarse: drawn.cells,
       patch: near?.water ?? null,
       eyeWater,
@@ -260,6 +268,14 @@ export class GameScene {
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye);
       });
+    this.atmosphere.encode(encoder, target, targets.depth, {
+      weather: this.weather,
+      camera: { ...camera, eye: shot.eye },
+      tanHalfView: Math.tan(shot.fov / 2),
+      size: [size.width, size.height],
+      time: seconds,
+      motionReduced: motionReduced(),
+    });
     more.after?.(encoder, target);
     this.gpu.device.queue.submit([encoder.finish()]);
   }

@@ -89,6 +89,18 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     (compiled && sloopBuild === undefined ? (sloopBuild = sloopBuildOf(sloopBuildText(compiled))) : sloopBuild) ?? null;
   const land = startLandWorker();
   const scene = new GameScene(gpu);
+  // For trying the weather, birds and fire by hand in a development build: ?weather=storm, ?birds=1, ?flames=1.
+  if (import.meta.env.DEV && /[?&](weather|birds|flames)=/.test(location.search)) {
+    void import('../cinema/trying.ts').then(({ Trying }) => {
+      const trying = new Trying(gpu, location.search, (x, y) => scene.groundAt(x, y));
+      const draw = scene.draw.bind(scene);
+      scene.draw = (shot, size, time, seconds, drawers, more) => {
+        const tried = trying.shotOf(shot);
+        scene.weather = trying.weatherAt(seconds);
+        draw(tried, size, time, seconds, [...drawers, ...trying.drawers()], more);
+      };
+    });
+  }
   const figureView = new FigureView(gpu);
   const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
