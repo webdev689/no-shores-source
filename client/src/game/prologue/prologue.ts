@@ -131,7 +131,8 @@ export class Prologue {
       return;
     }
     if (ended instanceof Overboard) void this.carried.run?.then((run) => run.leave());
-    if (ended instanceof Deep) void this.islands.home();
+    if (ended instanceof Deep)
+      this.islands.home().catch((error: unknown) => console.error('Saltmere would not open:', error));
     if (ended instanceof Shore) {
       keepProloguePlayed(localStorage);
       this.end = 'played';

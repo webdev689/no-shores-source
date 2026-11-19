@@ -12,7 +12,7 @@ import { onDeck } from './sailing.ts';
 import { STORM } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
-import { creationEye, youAtHelm } from './helm.ts';
+import { CREATION_LENS, creationEye, youAtHelm } from './helm.ts';
 
 const LENS = { fov: 0.9, near: 0.3, far: 30_000 } as const;
 /** The pull away from the title, then the leap, then the run to the Brig and over her. */
@@ -31,7 +31,8 @@ function runKeys(aspect: number): RailKey[] {
     { at: 12.5, eye: [14, -9, 8], look: [16, 0, 3] },
     { at: 15, eye: [4, -5.5, 7.5], look: [-4, 1, 3] },
     { at: 17.5, eye: [-7, -4.5, 6.8], look: [-11, 0, 4] },
-    { at: RUN_S, eye: creation.eye, look: creation.look },
+    // It ends in the creation's own lens, so the helm takes the shot up without a jump.
+    { at: RUN_S, eye: creation.eye, look: creation.look, fov: CREATION_LENS.fov },
   ];
 }
 

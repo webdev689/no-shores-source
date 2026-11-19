@@ -13,7 +13,7 @@ import type { Story } from './story.ts';
 /** The player's own id among the placed figures, apart from every fighter's and hand's. */
 export const YOU_ID = ACTOR_IDS + 99;
 /** The creation camera's lens, its least distance from the player, and how high over their feet its eye stands. */
-const LENS = { fov: 0.75, near: 0.2, far: 30_000 } as const;
+export const CREATION_LENS = { fov: 0.75, near: 0.2, far: 30_000 } as const;
 const NEAREST_M = 3.4;
 /** The view a shot is framed for when none is given: a wide screen's. */
 const WIDE = 16 / 9;
@@ -41,7 +41,7 @@ export function helmInShip(): Point3 {
 export function creationEye(turn: number, aspect = WIDE): { readonly eye: Point3; readonly look: Point3 } {
   const [forward, starboard, up] = helmInShip();
   const clear = aspect <= 1 ? CLEAR.tall : CLEAR.wide;
-  const half = Math.tan(LENS.fov / 2);
+  const half = Math.tan(CREATION_LENS.fov / 2);
   const aside = Math.atan(((clear.left + clear.right) / 2) * half * aspect);
   const above = Math.atan(((clear.bottom + clear.top) / 2) * half);
   // The figure's nearest part, not its feet, is what must fit, at its depth along the camera's look, off to one side.
@@ -72,7 +72,7 @@ export function creationShot(place: ShipPlace, turn: number, aspect: number): Sh
   const [eyeWorld, lookWorld] = [onDeck(place, ...eye), onDeck(place, ...look)];
   const [east, south, up] = [lookWorld[0] - eyeWorld[0], lookWorld[1] - eyeWorld[1], lookWorld[2] - eyeWorld[2]];
   return {
-    ...LENS,
+    ...CREATION_LENS,
     eye: eyeWorld,
     yaw: Math.atan2(east, -south),
     pitch: -Math.asin(up / (Math.hypot(east, south, up) || 1)),

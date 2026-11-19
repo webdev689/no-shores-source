@@ -82,17 +82,19 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
     said.setAttribute('role', 'status');
     const presses: HTMLButtonElement[] = [];
     // Going on past the form is offered once, above it: as the account signed in, or without one out of reach.
-    let offered = false;
+    let offered: string | null = null;
     const offer = (account: Account | null) => {
       const going = goingOn(account);
-      if (!going || offered || !frame.isConnected) return;
-      offered = true;
+      if (!going || offered !== null || !frame.isConnected) return;
+      offered = going.words;
       const goOn = pressOf(going.press, () => done(going.outcome), 'primary');
+      presses.push(goOn);
       contents.prepend(make('p', going.words, 'creation-words'), goOn);
       // A player already typing on the form keeps their place in it.
       if (name.value === '' && password.value === '') goOn.focus();
     };
-    // One ask at a time: every press waits while the accounts answer, and the focus comes back to the one pressed.
+    // One ask at a time: every press waits while the accounts answer, and the focus comes back to the one pressed,
+    // unless the answer offered going on and that press took it.
     const waiting = async (asking: () => Promise<void>) => {
       const pressed = document.activeElement;
       for (const press of presses) press.disabled = true;
@@ -101,13 +103,15 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
         await asking();
       } finally {
         for (const press of presses) press.disabled = false;
-        if (pressed instanceof HTMLElement && frame.isConnected) pressed.focus();
+        const kept = document.activeElement !== pressed && frame.contains(document.activeElement);
+        if (pressed instanceof HTMLElement && frame.isConnected && !kept) pressed.focus();
       }
     };
     const answered = (answer: AccountOutcome | string) => {
       if (typeof answer !== 'string') return done(answer);
-      said.textContent = answer;
       if (answer === OUT_OF_REACH) offer(null);
+      // Words the offer above already says are not said twice.
+      said.textContent = answer === offered ? '' : answer;
     };
     const ask = (what: AccountAsk) =>
       void waiting(async () => answered(await askAccounts(link, what, name.value, password.value)));

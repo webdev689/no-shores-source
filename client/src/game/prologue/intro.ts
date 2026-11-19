@@ -69,7 +69,7 @@ export class Intro implements Beat {
   /** Counts the passages begun: an island that opens after a later passage (or a skip) began is not shown. */
   private passage = 0;
   /** What could not be done (Saltmere would not open), thrown from the next frame. */
-  private failure: unknown = null;
+  private failure: { readonly error: unknown } | null = null;
   done = false;
 
   constructor(stage: Stage, islands: Islands, sailing: Sailing) {
@@ -77,6 +77,7 @@ export class Intro implements Beat {
     this.islands = islands;
     this.sailing = sailing;
     stage.parts.screen.fade(1, 0);
+    storyCue('title');
     void this.openFirst();
   }
 
@@ -101,7 +102,6 @@ export class Intro implements Beat {
     if (passage !== this.passage) return;
     this.stage.weatherTowards(OVER_CLOUD, 0);
     this.stage.parts.ambience.set({ wind: 0.35, waves: 0, rain: 0, gulls: 0, fire: 0, deep: 0, creak: 0 }, 0.5);
-    storyCue('title');
     this.enter({ kind: 'dawn' });
     this.stage.parts.screen.fade(0, 3);
   }
@@ -132,7 +132,7 @@ export class Intro implements Beat {
       () => this.cleared(next, !opened, passage),
       (error: unknown) => {
         if (passage !== this.passage) return;
-        if (!passing) this.failure = error;
+        if (!passing) this.failure = { error };
         else {
           this.passOver(passing.id, error);
           this.openPassage(next + 1);
@@ -208,7 +208,7 @@ export class Intro implements Beat {
         screen.fade(0, 0, 'white');
         screen.fade(0, 1.2);
       },
-      (error: unknown) => (this.failure = error),
+      (error: unknown) => (this.failure = { error }),
     );
   }
 
@@ -238,7 +238,7 @@ export class Intro implements Beat {
   }
 
   frame(tick: Tick): StoryFrame | null {
-    if (this.failure) throw this.failure;
+    if (this.failure) throw this.failure.error;
     this.since += tick.seconds;
     this.stage.stepWeather(tick.seconds);
     const shot = this.shotNow(tick);

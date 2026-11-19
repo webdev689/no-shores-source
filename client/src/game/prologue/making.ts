@@ -28,7 +28,7 @@ export class Making implements Beat {
   private turn = 0;
   private turnTo = 0;
   /** What could not be done (a window that could not be made), thrown from the next frame. */
-  private failure: unknown = null;
+  private failure: { readonly error: unknown } | null = null;
   done = false;
 
   constructor(story: Story, steps: MakingSteps = { account: accountStep, look: lookStep }) {
@@ -38,7 +38,7 @@ export class Making implements Beat {
     stage.weatherTowards(STORM, 0);
     stage.parts.ambience.set({ wind: 1, rain: 1, waves: 1, creak: 0.5, gulls: 0 }, 1.5);
     lightning.striking = true;
-    void this.steps(steps).catch((error: unknown) => (this.failure = error));
+    void this.steps(steps).catch((error: unknown) => (this.failure = { error }));
   }
 
   private async steps(steps: MakingSteps): Promise<void> {
@@ -65,7 +65,7 @@ export class Making implements Beat {
   }
 
   frame(tick: Tick): StoryFrame {
-    if (this.failure) throw this.failure;
+    if (this.failure) throw this.failure.error;
     const { story } = this;
     const { stage, brig, lightning, sailing } = story;
     brig.step(tick.seconds);
