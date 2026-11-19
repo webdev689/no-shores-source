@@ -238,3 +238,19 @@ fn one_foe_alone_fights_as_it_always_did() {
 }
 
 const LONE_HASH: u64 = 0x74df_28e1_ce8e_dc6d;
+
+#[test]
+fn a_foe_throws_no_blow_of_reach_at_a_target_walking_out_of_it() {
+    // A brute in its turn after a player walking away: whatever it winds up still reaches where the player will be.
+    let walking_away = |_: &Room, _: u32| combat::Intent {
+        controls: movement::Controls { forward: 1.0, yaw: PI, ..movement::Controls::default() },
+        ..combat::Intent::default()
+    };
+    for seed in 1..=6 {
+        let room = Room::new(seed).player(PLAYER, 0.0, 0.0, PI).foe(10, BRUTE, Major, 0.0, -3.0, PI);
+        let mut room = room.alert(10, PLAYER);
+        room.run(900, &mut { walking_away });
+        let reaching = room.orders(10).iter().filter(|(_, order)| order.shape != combat::shapes::Shape::Charge).count();
+        assert_eq!(reaching, 0, "seed {seed}: a slam or a sweep wound up at a player walking out of it");
+    }
+}
