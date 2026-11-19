@@ -8,18 +8,22 @@ const KEYS: RailKey[] = [
   { at: 10, eye: [100, 0, 10], look: [100, -100, 0] },
 ];
 
-test('a rail passes through every key at its time', () => {
-  for (const key of KEYS) {
-    const shot = railShot(KEYS, key.at, 0.9, 'none');
-    assert.ok(Math.hypot(shot.eye[0] - key.eye[0], shot.eye[1] - key.eye[1], shot.eye[2] - key.eye[2]) < 1e-9);
-  }
+test('a rail passes through every key at its time, exactly', () => {
+  const late = railMoved(KEYS, [0.1, 0.2, 0.3], 7.3);
+  for (const rail of [KEYS, late])
+    for (const key of rail) assert.deepEqual(railShot(rail, key.at, 0.9, 'none').eye, key.eye);
   assert.equal(railShot(KEYS, 4, 0.9, 'none').fov, 0.6);
   assert.equal(railShot(KEYS, 10, 0.9, 'none').fov, 0.9, "a key's own lens, or the rail's");
 });
 
-test('before its first key and after its last a rail holds still', () => {
+test('before its first key and after its last a rail holds still, on that key exactly', () => {
   assert.deepEqual(railShot(KEYS, -3, 0.9).eye, railShot(KEYS, 0, 0.9).eye);
   assert.deepEqual(railShot(KEYS, 30, 0.9).eye, railShot(KEYS, 10, 0.9).eye);
+  const late = railMoved(KEYS, [0.1, 0.2, 0.3], 7.3);
+  for (const ease of ['both', 'in', 'out', 'none'] as const) {
+    assert.deepEqual(railShot(late, 999, 0.9, ease).eye, late[late.length - 1]?.eye, ease);
+    assert.deepEqual(railShot(late, -999, 0.9, ease).eye, late[0]?.eye, ease);
+  }
 });
 
 test('an eased rail starts and ends at rest, and still reaches each end', () => {

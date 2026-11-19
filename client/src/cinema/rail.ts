@@ -53,18 +53,23 @@ function easedTime(keys: readonly RailKey[], time: number, ease: RailEase): numb
   const slopeEnd = easeOut ? 0 : 1;
   const [square, cube] = [share * share, share * share * share];
   const eased = (cube - 2 * square + share) * slopeStart + (-2 * cube + 3 * square) + (cube - square) * slopeEnd;
-  return start + eased * length;
+  // A blend of the two ends, not `start + eased * length`, so an end lands on its key's time exactly.
+  return start * (1 - eased) + end * eased;
 }
 
-/** A Catmull-Rom point between `b` and `c` at `share`, `a` and `d` their neighbours (the ends doubled). */
-function catmullRom(a: Point3, b: Point3, c: Point3, d: Point3, share: number): [number, number, number] {
+/** A Catmull-Rom point between `from` and `to` at `share`, `before` and `after` their neighbours (the ends doubled).
+ *  On the Hermite basis, whose weights are exactly 0 or 1 at either end, so the curve passes through its keys. */
+function catmullRom(before: Point3, from: Point3, to: Point3, after: Point3, share: number): [number, number, number] {
   const [square, cube] = [share * share, share * share * share];
+  const atFrom = 2 * cube - 3 * square + 1;
+  const outOfFrom = cube - 2 * square + share;
+  const atTo = 3 * square - 2 * cube;
+  const intoTo = cube - square;
   const along = (axis: 0 | 1 | 2) =>
-    0.5 *
-    (2 * b[axis] +
-      (c[axis] - a[axis]) * share +
-      (2 * a[axis] - 5 * b[axis] + 4 * c[axis] - d[axis]) * square +
-      (3 * b[axis] - a[axis] - 3 * c[axis] + d[axis]) * cube);
+    atFrom * from[axis] +
+    outOfFrom * 0.5 * (to[axis] - before[axis]) +
+    atTo * to[axis] +
+    intoTo * 0.5 * (after[axis] - from[axis]);
   return [along(0), along(1), along(2)];
 }
 
@@ -75,8 +80,8 @@ export function railShot(keys: readonly RailKey[], time: number, fov: number, ea
   const eased = easedTime(keys, time, ease);
   let segment = 0;
   while (segment < keys.length - 2 && eased > (keys[segment + 1]?.at ?? Infinity)) segment++;
-  const at = (index: number): RailKey => keys[Math.min(keys.length - 1, Math.max(0, index))] ?? first;
-  const [before, from, to, after] = [at(segment - 1), at(segment), at(segment + 1), at(segment + 2)];
+  const keyAt = (index: number): RailKey => keys[Math.min(keys.length - 1, Math.max(0, index))] ?? first;
+  const [before, from, to, after] = [keyAt(segment - 1), keyAt(segment), keyAt(segment + 1), keyAt(segment + 2)];
   const span = to.at - from.at;
   const share = span > 0 ? Math.min(1, Math.max(0, (eased - from.at) / span)) : 1;
   const eye = catmullRom(before.eye, from.eye, to.eye, after.eye, share);
