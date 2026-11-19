@@ -13,6 +13,7 @@ code:
   - client/src/combat/swingCourse.ts#courseOf
   - client/src/combat/swingMesh.ts#layStreak
   - client/src/combat/swingLook.ts#SWING_WGSL
+  - client/src/combat/lightLayer.ts#LightLayer
   - client/src/combat/hitStop.ts#HitStops
   - client/src/combat/cameraKick.ts#CameraKick
   - client/src/combat/lunge.ts#lungeOf
@@ -191,6 +192,14 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     but never turns it, so the crosshair stays where shots land. Its strength is set.
   - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
+  - *Light.* The brightest effects light what stands round them, stepped like the figures. The marks and the arcs are
+    drawn again into a picture a quarter of the view's size each way, hidden where the scene stands more than 3%
+    nearer. A colour gives light only past a brightness (luma) of 0.7, the more the brighter: an element's light and
+    white-hot stops, a metal's white edge, gold's light. A dark or body stop gives none, and so does a mark lying on the
+    ground (a telegraphed blow's), a drop's line, a muzzle's pool and a heavy blow's dust. That picture is blurred twice
+    by a 3 by 3 box, tripled, cut to none, half or all of each colour, and added over the view in blocks of 4 screen
+    pixels, 0.35 at most, before the first person's hands. A white-hot effect's halo is a block of full light past its
+    edge, a light stop's a block of half; a lone spark lights nothing. On as made, as the game plays it.
 - **The crosshair.** While a ranged weapon aims, and whenever the Ranged loadout is drawn in first person (read from
   the outfit shown, the pointer held or not), a crosshair marks the view's middle, where an aimed shot lands; a bow
   aiming rings it with its draw, gold once at full power. The shots left stand beside it while it shows ([[Interface]]).

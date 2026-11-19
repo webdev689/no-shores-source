@@ -41,10 +41,11 @@ test('a telegraphed blow is marked on the ground where its shape lies, filling a
   const iron = [...Float32Array.from(IRON[2])].join();
   assert.ok(colourSet(late).has(iron), 'iron is the iron red');
   assert.ok(!colourSet(early).has(iron), 'a plain blow is gold');
-  // The fill is dithered whole on the ground: an opacity above 1, keeping more of its cells in its last stretch.
-  const fill = (mesh: Float32Array) => Math.max(...vertices(mesh).map((vertex) => vertex[6] ?? 0));
-  assert.equal(fill(early), ditherCode(0.25));
-  assert.equal(fill(late), ditherCode(0.5));
+  // The fill is dithered whole on the ground: an opacity above 1, keeping more of its cells in its last stretch; its
+  // edge is on the ground too, every cell kept.
+  const codes = (mesh: Float32Array) => new Set(vertices(mesh).map((vertex) => vertex[6] ?? 0));
+  assert.deepEqual(codes(early), new Set([ditherCode(0.25), ditherCode(1)]));
+  assert.deepEqual(codes(late), new Set([ditherCode(0.5), ditherCode(1)]));
   assert.ok(
     vertices(late).every((vertex) => (vertex[6] ?? 0) >= 1),
     'every part of it solid',

@@ -5,7 +5,16 @@
 import type { GlowLook } from '../elementGlow.ts';
 import { type Colour, type Course, type Swing, type Vector, courseOf, tipAt } from './swingCourse.ts';
 import { RAMP, swingRampColour } from './swingLook.ts';
-import { type ArcShape, TRAIL_S, layElement, layGround, layStreak, layStruck, layerFor } from './swingMesh.ts';
+import {
+  type ArcShape,
+  SWING_FLOATS,
+  TRAIL_S,
+  layElement,
+  layGround,
+  layStreak,
+  layStruck,
+  layerFor,
+} from './swingMesh.ts';
 
 export {
   type Colour,
@@ -154,9 +163,10 @@ export class SwingArcs {
     return { across: -Math.sign(across) * SMEAR.pixels, up: 0, colour };
   }
 
-  /** The vertices of every arc, seen from `eye`, as `look` sets them; `lagOf` is the seconds each striker's drawing is
-   *  held back (a hit-stop). Arcs whose streaks, embers and strikes have faded are let go. */
-  mesh(eye: Vector, look: ArcLook, lagOf: (id: number) => number = () => 0): Float32Array {
+  /** The vertices of every arc, seen from `eye`, as `look` sets them, each place measured from `origin` (the world's
+   *  own by default; the eye's keeps an arc exact far out in the world); `lagOf` is the seconds each striker's drawing
+   *  is held back (a hit-stop). Arcs whose streaks, embers and strikes have faded are let go. */
+  mesh(eye: Vector, look: ArcLook, lagOf: (id: number) => number = () => 0, origin: Vector = [0, 0, 0]): Float32Array {
     const out: number[] = [];
     this.arcs = this.arcs.filter((arc) => {
       const { course, swing } = arc;
@@ -187,6 +197,8 @@ export class SwingArcs {
       }
       return true;
     });
+    for (let start = 0; start < out.length; start += SWING_FLOATS)
+      for (let axis = 0; axis < 3; axis += 1) out[start + axis] = (out[start + axis] ?? 0) - (origin[axis] ?? 0);
     return new Float32Array(out);
   }
 }

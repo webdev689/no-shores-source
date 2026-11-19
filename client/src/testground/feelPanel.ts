@@ -9,7 +9,7 @@ const KEPT_KEY = 'overlook.testground.feel';
 /** What the glow may show: the gear's own element, or one chosen, by the gear crate's numbers. */
 const GLOW_CHOICES = ['Own gear', 'Blaze', 'Volt', 'Cosmic'] as const;
 
-type Switch = 'arc' | 'stop' | 'kick' | 'lunge' | 'glow';
+type Switch = 'arc' | 'stop' | 'kick' | 'lunge' | 'glow' | 'light';
 type Slider = Exclude<keyof Feel, Switch | 'glowLook'>;
 
 /** Each effect: its switch and name, and its sliders' names, labels, least and most. */
@@ -26,6 +26,7 @@ const EFFECTS: readonly (readonly [Switch, string, readonly (readonly [Slider, s
   ['kick', 'Camera kick', [['kickStrength', 'Strength', 0, 2.5]]],
   ['lunge', 'Lunge', [['lungeDistance', 'Distance', 0, 2.5]]],
   ['glow', 'Element glow', []],
+  ['light', 'Light', []],
 ];
 
 /** The feel kept as `text`, each number held to its slider's range; as made where anything is missing. */
@@ -58,7 +59,9 @@ export const feelLine = (feel: Feel): string =>
       ? `${label}: off`
       : name === 'glow'
         ? `${label}: ${(GLOW_CHOICES[feel.glowLook] ?? '').toLowerCase()}`
-        : `${label}: ${sliders.map(([key, slider]) => `${slider.toLowerCase()} ${feel[key]}`).join(', ')}`,
+        : sliders.length === 0
+          ? `${label}: on`
+          : `${label}: ${sliders.map(([key, slider]) => `${slider.toLowerCase()} ${feel[key]}`).join(', ')}`,
   ).join('; ');
 
 function kept(): Feel {

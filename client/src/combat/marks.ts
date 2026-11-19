@@ -93,9 +93,10 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
   const now = left <= NOW_TICKS;
   const hot = now && left > NOW_TICKS - NOW_HOT_TICKS;
   const ramp = telegraph.iron ? IRON : GOLD;
+  // Every part is a mark on the ground, its edge dithered whole, so none of it lights the world (`LightLayer`).
   const fill = [...ramp[2], ditherCode(now ? FILL_NOW : FILL)] as const;
-  const bright = [...ramp[hot ? 3 : 2], 1] as const;
-  const dark = [...ramp[0], 1] as const;
+  const bright = [...ramp[hot ? 3 : 2], ditherCode(1)] as const;
+  const dark = [...ramp[0], ditherCode(1)] as const;
   const [originX, originY, originZ] = telegraph.origin;
   const forward: Point = [Math.sin(telegraph.bearing), -Math.cos(telegraph.bearing)];
   const across: Point = [-forward[1], forward[0]];

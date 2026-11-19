@@ -404,7 +404,8 @@ export class Foot {
         ...handsOf(this.otherPlayers.placed.get(number)?.dress),
       })),
     ];
-    const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson);
+    // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
+    const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
     showAnimaEdge(effects.anima);
     // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
     const able = !paused && !this.fallen;

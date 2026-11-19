@@ -1,3 +1,4 @@
+import { FEEL } from '../combat/attackFeel.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { Hud } from '../combat/hud.ts';
 import { abilityPictures } from './artsCards.ts';
@@ -52,7 +53,8 @@ export class FootView {
   /**
    * One frame of the fight on foot: its blood run on by `seconds`, its marks taken, and its display shown over a canvas
    * `viewport` CSS pixels big, drawn `size` device pixels. Answers the drawers that lie under the figures (the blood)
-   * and over them (the marks, their see-through ones over the water too).
+   * and over them (the marks; the arcs and the see-through marks over the water; and the light of marks and arcs while
+   * the attack feel's light is on and there are any).
    */
   frame(
     foot: Foot,
@@ -83,7 +85,7 @@ export class FootView {
     });
     // The marks are measured from the eye: it stands at their origin.
     this.marks.set(shown.marks, [0, 0, 0], shot.eye);
-    this.swings.set(shown.swings, shot.eye);
+    this.swings.set(shown.swings);
     const matrix = shifted(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
       { ...fight, matrix, width: viewport.width, height: viewport.height, lost: null, rejoining: foot.rejoining },
@@ -92,17 +94,22 @@ export class FootView {
     const drawn = blood.drawn;
     const marks = this.marks;
     const raised = (eyeMatrix: Float32Array) => shifted(eyeMatrix, [0, 0, OVER_THE_LAND_M]);
+    const lit = FEEL.light && (shown.marks.length > 0 || shown.swings.length > 0);
+    const lightInto = (pass: GPURenderPassEncoder, eyeMatrix: Float32Array) => {
+      marks.drawLight(pass, raised(eyeMatrix));
+      this.swings.drawLight(pass, eyeMatrix);
+    };
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },
-      // The solid marks and the blows' arcs with the figures; the see-through marks over the water, so it never
-      // covers them.
+      // The solid marks with the figures; the blows' arcs and the see-through marks over the water, so its sky and
+      // surface never cover them.
       over: {
-        drawInto: (pass, eyeMatrix) => {
-          marks.drawSolid(pass, raised(eyeMatrix));
-          this.swings.drawInto(pass, eyeMatrix);
+        drawInto: (pass, eyeMatrix) => marks.drawSolid(pass, raised(eyeMatrix)),
+        overWater: (encoder, target, eyeMatrix, depth) => {
+          this.swings.drawOver(encoder, target, depth, eyeMatrix);
+          marks.drawClearOver(encoder, target, depth, raised(eyeMatrix));
         },
-        overWater: (encoder, target, eyeMatrix, depth) =>
-          marks.drawClearOver(encoder, target, depth, raised(eyeMatrix)),
+        ...(lit ? { lightInto } : {}),
       },
     };
   }

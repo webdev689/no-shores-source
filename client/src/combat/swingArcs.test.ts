@@ -370,3 +370,25 @@ test('a smear trails its striker’s card for the first frames of its strike, ba
   play(arcs, [[0.1, 0.5]]);
   assert.equal(arcs.smearOf(7, [1, 0]), null, 'gone two frames on');
 });
+
+test('an arc laid far out in the world, measured from its eye, keeps its centimetres', () => {
+  const far: Vector = [3_000_000, 3_000_000, 0];
+  const laidFrom = (shift: Vector) => {
+    const arcs = new SwingArcs();
+    const feet: Vector = [FEET[0] + shift[0], FEET[1] + shift[1], FEET[2] + shift[2]];
+    const eye: Vector = [EYE[0] + shift[0], EYE[1] + shift[1], EYE[2] + shift[2]];
+    for (const [now, elapsed] of [
+      [5, 0.2],
+      [5.2, 0.4],
+    ] as const)
+      arcs.seen(now, [swing({ elapsed })], () => feet);
+    return arcs.mesh(eye, LOOK, () => 0, eye);
+  };
+  const [near, out] = [laidFrom([0, 0, 0]), laidFrom(far)];
+  assert.ok(near.length > 0 && near.length === out.length);
+  let worst = 0;
+  for (let vertex = 0; vertex < near.length; vertex += SWING_FLOATS)
+    for (let axis = 0; axis < 3; axis++)
+      worst = Math.max(worst, Math.abs((near[vertex + axis] ?? 0) - (out[vertex + axis] ?? 0)));
+  assert.ok(worst < 0.01, `off by ${worst} m`);
+});

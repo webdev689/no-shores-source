@@ -2,6 +2,7 @@
 // blend between stops, so the arc is pixel art beside the figures. Any page's scene can draw it with its own vertex
 // stage: SWING_WGSL holds the vertex's output and the fragment.
 import { GLOW_RAMPS, type Rgb, wgslRgb } from '../elementGlow.ts';
+import { LIGHT_WGSL } from './lightLayer.ts';
 import type { Colour } from './swingCourse.ts';
 
 /** The ramps an arc burns in: its weapon's metal (made from its tint), an element's, a riposte's gold, and the dust a
@@ -46,7 +47,7 @@ export const SWING_ATTRIBUTES = [
  * and how many figure pixels it spans across. Each part is cut into whole figure pixels and lit in one stop: a band's
  * cutting edge white-hot over a dark rim, its body in lanes that each trail their own length; a strip hot along its
  * middle; a flare a star of four rays, or a blunt head's square; the oldest fifth of a streak dithered out in a 4 by 4
- * order. A stronger arc burns a stop hotter, a dim one a stop darker.
+ * order. A stronger arc burns a stop hotter, a dim one a stop darker. `swingLight` is its light for the light layer.
  */
 export const SWING_WGSL = /* wgsl */ `
 const SWING_ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
@@ -134,7 +135,7 @@ fn swing_flare(corner: vec2f, cells: f32, strength: f32, blunt: bool) -> f32 {
   return -1.0;
 }
 
-@fragment fn swingFragment(in: SwingOut) -> @location(0) vec4f {
+fn swing_shade(in: SwingOut) -> vec4f {
   let part = u32(round(in.shape.w));
   let ramp = u32(round(in.extra.x));
   let cells = max(in.extra.y, 1.0);
@@ -153,5 +154,17 @@ fn swing_flare(corner: vec2f, cells: f32, strength: f32, blunt: bool) -> f32 {
   if (part != 3u && stop >= 0.0) { stop = min(3.0, stop + clamp(round((strength - 1.0) * 2.0), -3.0, 2.0)); }
   if (stop < 0.0 || swing_dither(in.position.xy, per) >= shown.y) { discard; }
   return vec4f(swing_ramp(ramp, stop, in.tint.rgb), 1.0);
+}
+
+@fragment fn swingFragment(in: SwingOut) -> @location(0) vec4f {
+  return swing_shade(in);
+}
+
+${LIGHT_WGSL}
+// Its light, for the light layer: none from the dust a heavy blow throws.
+@fragment fn swingLight(in: SwingOut) -> @location(0) vec4f {
+  let shown = swing_shade(in);
+  if (u32(round(in.extra.x)) == ${RAMP.dust}u) { discard; }
+  return light_of(shown.rgb, 1.0);
 }
 `;

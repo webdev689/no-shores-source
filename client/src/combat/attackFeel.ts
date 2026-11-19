@@ -14,7 +14,8 @@ import type { CombatRules } from '../rules/combatRules.ts';
 import { type FighterView, STROKE_DIRECTIONS, directionOf } from '../rules/fighters.ts';
 
 /** Each effect on or off, and its sliders: 1 each as made. The weapon's glow shows the gear's own element (`glowLook`
- *  0) or the element chosen in its place. */
+ *  0) or the element chosen in its place. The light is the light layer's: the brightest effects lighting what stands
+ *  round them (`LightLayer`). */
 export interface Feel {
   readonly arc: boolean;
   readonly arcBrightness: number;
@@ -27,6 +28,7 @@ export interface Feel {
   readonly lungeDistance: number;
   readonly glow: boolean;
   readonly glowLook: number;
+  readonly light: boolean;
 }
 
 /** The feel as made: what the game plays with, and the Test Ground's panel starts from. */
@@ -42,6 +44,7 @@ export const FEEL: Feel = {
   lungeDistance: 1,
   glow: true,
   glowLook: 0,
+  light: true,
 };
 
 /** How brightly a blow's arc flares as it meets something, by what came of it: a kill brightest, a block least. */
@@ -213,6 +216,7 @@ export class AttackFeel {
     drawn: ReadonlyMap<number, DrawnFigure>,
     eye: Vector,
     eyes: boolean,
+    origin: Vector = [0, 0, 0],
   ): Float32Array {
     const { tick } = this;
     const swung: Swing[] = [];
@@ -243,7 +247,7 @@ export class AttackFeel {
     }
     this.arcs.seen(clock, swung, (id) => drawn.get(id)?.feet ?? null);
     const look = { brightness: this.feel.arc && !eyes ? this.feel.arcBrightness : 0, trail: this.feel.arcTrail };
-    return this.arcs.mesh(eye, look, (id) => this.lag(id));
+    return this.arcs.mesh(eye, look, (id) => this.lag(id), origin);
   }
 
   /** The smear behind a striker's card as its strike is first drawn, for an eye whose right is `right`; none while the

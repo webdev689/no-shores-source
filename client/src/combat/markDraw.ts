@@ -4,6 +4,7 @@
 // laid over the land near a coast never covers a mark that stands above it.
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
+import { LIGHT_DEPTH, LIGHT_TARGET, LIGHT_WGSL } from './lightLayer.ts';
 import { DITHER_M, MARK_FLOATS } from './marks.ts';
 import { MarkOrder } from './markOrder.ts';
 
@@ -60,6 +61,14 @@ fn see_through(colour: vec4f) -> vec4f {
   if (in.position.z < textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
   return see_through(in.colour);
 }
+
+${LIGHT_WGSL}
+// Its light: only what stands in the air gives any. A mark on the ground (a dither's code) and light already added
+// (a drop's line, a muzzle's pool) give none.
+@fragment fn light_fragment(in: Out) -> @location(0) vec4f {
+  if (in.colour.a > 1.0 || in.colour.a < 0.0) { discard; }
+  return light_of(in.colour.rgb, in.colour.a);
+}
 `;
 
 const VERTEX_LAYOUT: GPUVertexBufferLayout = {
@@ -83,6 +92,7 @@ export class MarkDraw {
   private readonly module: GPUShaderModule;
   private readonly solid: GPURenderPipeline;
   private readonly clear: GPURenderPipeline;
+  private readonly light: GPURenderPipeline;
   private over: {
     layout: GPUBindGroupLayout;
     pipeline: GPURenderPipeline;
@@ -124,6 +134,13 @@ export class MarkDraw {
       });
     this.solid = pipeline('solid_fragment', true);
     this.clear = pipeline('clear_fragment', false);
+    this.light = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
+      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
+      fragment: { module: this.module, entryPoint: 'light_fragment', targets: [LIGHT_TARGET] },
+      primitive: { topology: 'triangle-list' },
+      depthStencil: LIGHT_DEPTH,
+    });
     this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer: this.view } }] });
   }
@@ -175,6 +192,16 @@ export class MarkDraw {
     pass.setVertexBuffer(0, this.buffer);
     pass.draw(this.counts.clear, 1, this.counts.solid);
     pass.end();
+  }
+
+  /** Every mark's light, into the light layer's pass (`LightLayer.encode`). */
+  drawLight(pass: GPURenderPassEncoder, matrix: Float32Array): void {
+    if (!this.buffer || this.counts.solid + this.counts.clear === 0) return;
+    this.writeView(matrix);
+    pass.setPipeline(this.light);
+    pass.setBindGroup(0, this.group);
+    pass.setVertexBuffer(0, this.buffer);
+    pass.draw(this.counts.solid + this.counts.clear);
   }
 
   private writeView(matrix: Float32Array): void {
