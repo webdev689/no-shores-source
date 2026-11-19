@@ -2,21 +2,14 @@
 //! to the foe's level and falls away below it, and a foe's blow on a player falls short of their Defense. A foe of
 //! level 0 fights by combat's own numbers. A player holds only what a loadout they wear puts in their hands. A foe's
 //! kill pays
-//! everyone who struck it in its last seconds, each their own XP, Aurem and maybe a Vestige, laid where it fell for
-//! them alone; walked over, it is picked up.
+//! everyone who struck it in its last seconds, each their own XP, Aurem and what it drops for them alone (`drops.rs`).
 
 use crate::{Foe, PlayerId, Room};
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
 use combat::fighter::FighterId;
 use combat::judge::Blow;
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
-use gear::{Character, Kind, Slot, Vestige};
-
-/// How long a Vestige lies for its player, in the room's ticks of 1/60 s: two minutes.
-pub const DROP_TICKS: u64 = 7_200;
-/// How near a player walks to a Vestige to pick it up, across and up, in metres.
-pub const PICK_UP_REACH: f64 = 1.5;
-const PICK_UP_HEIGHT: f64 = 2.0;
+use gear::{Character, Kind, Slot};
 
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
 /// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
@@ -25,15 +18,6 @@ pub struct Loosed {
     pub attack: u32,
     pub element: Option<gear::Element>,
     pub trim: combat::Trim,
-}
-
-/// A Vestige lying for one player.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Drop {
-    pub player: PlayerId,
-    pub vestige: Vestige,
-    pub at: [f64; 3],
-    pub until: u64,
 }
 
 /// What a loadout puts in a player's hands, drawn: a pair's second blade or mace and an "& Shield"'s shield in the
@@ -164,8 +148,8 @@ impl Room {
         }
     }
 
-    /// Pays a foe's kill to every player who struck it within its last ten seconds, laying each one's Vestige where
-    /// it fell.
+    /// Pays a foe's kill to every player who struck it within its last ten seconds, throwing out what it drops for
+    /// each.
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
@@ -178,36 +162,8 @@ impl Room {
             let Some(found) = self.players.get_mut(&player) else { continue };
             let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
             found.gear_changed = true;
-            if let Some(vestige) = reward.vestige {
-                self.lay_drop(player, vestige, at);
-            }
+            self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
         }
-    }
-
-    /// Picks up every Vestige a player has walked over, and lets go of those that have lain their time.
-    pub(crate) fn pick_up_drops(&mut self) {
-        let clock = self.clock;
-        let mut kept = Vec::with_capacity(self.drops.len());
-        for drop in std::mem::take(&mut self.drops) {
-            if clock >= drop.until {
-                continue;
-            }
-            let Some(found) = self.players.get_mut(&drop.player) else { continue };
-            let body = found.fighter.body;
-            let near = libm::hypot(body.x - drop.at[0], body.y - drop.at[1]) <= PICK_UP_REACH
-                && (body.z - drop.at[2]).abs() <= PICK_UP_HEIGHT;
-            if near && found.character.pick_up(drop.vestige) {
-                found.gear_changed = true;
-            } else {
-                kept.push(drop);
-            }
-        }
-        self.drops = kept;
-    }
-
-    /// The Vestiges lying for a player.
-    pub fn drops_for(&self, player: PlayerId) -> impl Iterator<Item = &Drop> {
-        self.drops.iter().filter(move |drop| drop.player == player)
     }
 }
 
@@ -221,11 +177,4 @@ pub(crate) fn hold(room: &mut Room, player: PlayerId, kind: Kind) {
     let dice = gear::dice::Dice { seed: 0, tick: 0, player };
     let worn = character.ask(gear::Ask::Wear { item: id, slot: kind.slot() }, gear::Here::default(), &dice);
     assert_eq!(worn, Ok(gear::Done::Done));
-}
-
-impl Room {
-    /// Lays a Vestige for a player where it fell, for its time.
-    pub fn lay_drop(&mut self, player: PlayerId, vestige: Vestige, at: [f64; 3]) {
-        self.drops.push(Drop { player, vestige, at, until: self.clock + DROP_TICKS });
-    }
 }

@@ -4,6 +4,7 @@
 //! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems; and everything a player
 //! holds.
 
+pub mod ammo;
 pub mod asks;
 pub mod catalogue;
 pub mod character;
@@ -30,6 +31,8 @@ pub use kinds::{Kind, Slot};
 pub use rarity::Rarity;
 pub use world::Difficulty;
 
+#[cfg(test)]
+mod ammo_tests;
 #[cfg(test)]
 mod asks_tests;
 #[cfg(test)]

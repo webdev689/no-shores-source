@@ -135,14 +135,17 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     let lying: Vec<Drop> = room.drops_for(player).copied().collect();
-    assert_eq!(lying.len(), 1, "a captain always leaves a Vestige");
+    let vestige = lying.iter().find(|drop| matches!(drop.what, Dropped::Vestige(_)));
+    let at = vestige.expect("a captain always leaves a Vestige").at;
     assert_eq!(room.drops_for(onlooker).count(), 0);
     room.tick();
-    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0, "it lies 8 m away");
-    move_to(&mut room, player, 0.0, -7.0);
-    room.tick();
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0, "it lies 6 m away");
+    move_to(&mut room, player, at[0], at[1]);
+    for _ in 0..REST_TICKS {
+        room.tick();
+    }
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 1, "walked over, it is taken");
-    assert_eq!(room.drops_for(player).count(), 0);
+    assert!(room.drops_for(player).all(|drop| !matches!(drop.what, Dropped::Vestige(_))));
 }
 
 #[test]
@@ -152,7 +155,7 @@ fn a_vestige_left_lying_is_gone_after_two_minutes() {
     let captain = stand(&mut room, ::foes::Role::Captain, 0, -30.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
-    for _ in 0..crate::power::DROP_TICKS {
+    for _ in 0..DROP_TICKS {
         room.tick();
     }
     assert_eq!(room.drops_for(player).count(), 0);
