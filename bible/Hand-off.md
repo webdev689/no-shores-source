@@ -180,17 +180,17 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- #68, a draft with the owner's asks, built, audited deeply with a design pass, and tested offline, waits on the
-  owner's yes to merge: foes show their level, patrol beats, climb by the navmesh's links, spread out, answer at the
-  fight's pace, chase a target walking away, and fight as a group (one blow at a target each 1.2 s beat, one going
-  in, a line on their side, one flanker); melee swings a quarter faster and strikes every foe in reach; the soft lock
-  lets go past 70 degrees; a slot's grid closes off hover; and the inventory holds Aurem alone and its stacks in
-  Destiny's grid ([[Foes Fight With Intelligence, Not by Rushing]] and the round's other decisions). Its open
-  choices, each in #68's description: the group's numbers (the beat, the line's arc, the flanker's reach); crossbows
-  weighing heavily in mixed groups; walking away punished harder; ripostes not held to the beat; patience at one
-  over the cap; sixteen foes about 1.4 m apart; node rooms baking no boxes; no height cap on climbs; and smaller rule
-  and display choices. `tools/install-flatc.sh` is missing from the rooms' deploy filter, a workflow edit for the
-  owner.
+- #68, a draft with the owner's asks, built and audited three times (a deep audit with a design pass, then a last
+  audit), tested offline, waits on the owner's yes to merge: foes show their level, patrol beats, climb by the
+  navmesh's links, spread out, answer at the fight's pace, chase a target walking away, and fight as a group (one
+  blow at a target each 1.2 s beat, one going in, a line on their side, one flanker); melee swings a quarter faster
+  and strikes every foe in reach; the soft lock lets go past 70 degrees; a slot's grid closes off hover; and the
+  inventory holds Aurem alone and its stacks in Destiny's grid ([[Foes Fight With Intelligence, Not by Rushing]] and
+  the round's other decisions). Its open choices, each in #68's description: the group's numbers; foes never
+  changing target while they see theirs; starving foes in a crowd of sixteen; a lone crossbowman drawn long; the
+  parry ring among the line's plates; a foe under a ledge; a flanker changing hands; ripostes not held to the beat;
+  patience at one over the cap; sixteen foes about 1.4 m apart; node rooms baking no boxes; no height cap on climbs.
+  `tools/install-flatc.sh` is missing from the rooms' deploy filter, a workflow edit for the owner.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
