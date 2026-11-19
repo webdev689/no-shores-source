@@ -11,13 +11,24 @@ const built = (name: string) =>
   });
 const content = (path: string) => readFile(new URL(`../../../content/world/${path}`, import.meta.url), 'utf8');
 
-/** The room crate's agreement test holds the same fingerprint, nodes, rects and scripts (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = '5e455ad43a5647e7';
+/** The room crate's agreement test holds the same fingerprint, nodes, rects, starts and scripts
+ *  (crates/room/tests/agree_node.rs). */
+const NODE_RUN_HASH = '08ba821f39a745e0';
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];
 
-const RUNS: readonly { continent: string; node: string; bounds: Rect; script: readonly Phase[] }[] = [
+/** Where the run over a whaleback of the Saltgrass Downs starts, and the bearing it runs on, across the whaleback. */
+const OVER_A_WHALEBACK = { from: [2_807_220, 1_207_580], bearing: 1.5 } as const;
+
+/** Each run starts at `from`, or at its node's first spawn where none is given. */
+const RUNS: readonly {
+  continent: string;
+  node: string;
+  bounds: Rect;
+  from?: readonly [number, number];
+  script: readonly Phase[];
+}[] = [
   {
     continent: 'continent-6',
     node: 'mistfall-social',
@@ -51,6 +62,13 @@ const RUNS: readonly { continent: string; node: string; bounds: Rect; script: re
       [60, 1, 0, 0, false, true],
       [900, 1, 0.2, Math.PI / 2, true, false],
     ],
+  },
+  {
+    continent: 'continent-1',
+    node: 'saltgrass-downs',
+    bounds: [2_806_393, 1_206_627.5, 2_808_235.5, 1_208_296],
+    from: OVER_A_WHALEBACK.from,
+    script: [[600, 1, 0, OVER_A_WHALEBACK.bearing, true, false]],
   },
 ];
 
@@ -110,10 +128,10 @@ test('the runs over three nodes’ windows, cut by the land’s door, move to th
     opened = continent;
   };
   const bodies: Body[] = [];
-  for (const { continent, node, bounds, script } of RUNS) {
+  for (const { continent, node, bounds, from, script } of RUNS) {
     if (continent !== opened) await open(continent);
     assert.equal(standOnNode(land, movement, bounds), true, `${node}'s window`);
-    const [x, y] = spawnOf(node) ?? [0, 0];
+    const [x, y] = from ?? spawnOf(node) ?? [0, 0];
     let body = movement.standing(x, y);
     bodies.push(body);
     for (const [ticks, forward, sideways, yaw, run, jump] of script)
