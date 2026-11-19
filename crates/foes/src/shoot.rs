@@ -185,11 +185,10 @@ pub fn fire(
         && aim_ready(brain, here, sight)
         && roll < AIMED_SHARE
         && pace::may_shoot(here, board, sight.id, tick + Here::ticks(WINDUP_LEAST))
-        && let Some(order) = aimed(brain, here, sight, roll)
     {
         board.hand_on(sight.id, here.me, tick);
         let mut ask = Ask::facing(sight.toward);
-        ask.combat.telegraph = Some(order);
+        ask.combat.telegraph = Some(aimed(brain, here, sight));
         return ask;
     }
     let drawn = draw_ticks(here.fighter.arms.ranged.unwrap_or(Ranged::Bow));

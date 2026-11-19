@@ -225,7 +225,7 @@ fn same(a: (f64, f64), b: (f64, f64)) -> bool {
 /// along the edge itself would point both ways at once, and turn back to the end behind the walker.
 fn on_edge(point: (f64, f64), portal: Portal) -> bool {
     let (along_x, along_y) = (portal.left.0 - portal.right.0, portal.left.1 - portal.right.1);
-    let length = (along_x * along_x + along_y * along_y).sqrt();
+    let length = libm::sqrt(along_x * along_x + along_y * along_y);
     if length < 1e-6 {
         return false;
     }

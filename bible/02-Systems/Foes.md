@@ -136,15 +136,17 @@ phases) is [[Enemies]].
   longest goes next, and one that has waited 6 s goes in, one over the count at most, so a crowd's patience never
   piles it onto its target. A target who turns its back (more than 110 degrees) on a waiting foe in its place near the
   ring (the flanker, or one in the line), or walks in on one inside the ring's near edge, is open to it without a
-  turn, but to one such foe at a time, and it goes on fighting while the target stays that close. A back walking away
-  is no such opening: the one whose turn it is runs after it. A foe that blocks holds its guard up on the ring while
-  it waits its turn, as a shield-bearer does: it raises it within 0.3 m of the ring's line and keeps it up across the
-  ring's give and the step back in from just past it. A holder going in takes the shortest way.
+  turn, but to one such foe at a time. Like a holder it keeps to the ring, stepping back out to it, while another goes
+  in; then it goes in, and goes on fighting while the target stays that close. A back walking away is no such opening:
+  the one whose turn it is runs after it. A foe that blocks holds its guard up on the ring while it waits its turn, as
+  a shield-bearer does: it raises it within 0.3 m of the ring's line and keeps it up across the ring's give and the
+  step back in from just past it. A holder going in takes the shortest way.
 - **The beat.** Blows at one target land one at a time. A foe begins a swing, a telegraphed blow or a shot there only
-  if it lands 1.2 s or more after the latest another foe has begun there, so a person can answer each before the
-  next. Of the foes ready in reach that the beat holds back, the first held strikes first. A shooter looses only into
-  a beat no foe ready in reach waits for, so its shots fill the gap while the next goes in. A foe's own blows, its
-  riposte and its counter are never held back, so one foe alone fights at its own pace.
+  if it lands 1.2 s or more after the latest blow another foe has begun there lands, so a person can answer each
+  before the next. Of the foes ready in reach that the beat holds back, the first held strikes first. A shooter looses
+  only into a beat no foe ready in reach waits for, so its shots fill the gap while the next goes in. A foe's own last
+  blow never holds back its next, and its riposte and its counter are never held back, so one foe alone fights at its
+  own pace.
 - **The line.** The waiting stand on a ring 1.5 m outside their reach, with 0.6 m of give, in a line before their
   group's side of the target: the bearing where the foes fighting it hand to hand stand round it, once the mean of
   their bearings leans a quarter of the way one way, else the way the target faces. A place more than 75 degrees off
@@ -157,12 +159,12 @@ phases) is [[Enemies]].
   turn. A foe alone at its target keeps no line: its place flanks the same way, stopping 2.5 m short of the next foe on
   the ring (dead ahead, it takes a side by its number).
 - **Room on the ring.** The waiting keep apart. The nearest ring holds as many as stand 2.5 m apart along the line;
-  the rest, in the order they wait, stand on a ring 2.5 m farther out, holding as many again along its own line, and
+  the rest, in the order they wait, stand on a ring 2.5 m farther out, holding as many as fit along its own line, and
   so on, so the next to go in stand nearest; the flanker stands on the nearest. Nearer than 2.5 m to the next on its
   ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring evens out. A
-  waiting foe stands on its ring's own line, not merely within its give: inside the ring once the beat after its blow
-  is over, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather than for its
-  target, so the waiting come in spread round it.
+  waiting foe stands on its ring's own line, not merely within its give: inside the ring once it has held its ground
+  after its blow, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather than for
+  its target, so the waiting come in spread round it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
   the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each

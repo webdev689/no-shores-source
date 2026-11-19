@@ -1,7 +1,7 @@
 //! Foes in numbers fight as a group, not a rush: their blows at one target land a beat apart, the first held back by
 //! the beat going first and a shot taking only a beat no blow waits for; while one waits in reach the rest keep to the
 //! ring; the waiting hold a line before their group's side, one foe at a time, a skirmisher before others, working
-//! round to the flank; and only a foe in its place strikes a back turned to it. One foe alone fights as it did.
+//! round to the flank; and only a foe in its place strikes a back turned to it. One foe alone fights at its own pace.
 
 mod common;
 
@@ -209,9 +209,9 @@ fn only_a_foe_in_its_place_strikes_a_back_turned_to_it() {
 }
 
 #[test]
-fn one_foe_alone_fights_as_it_always_did() {
+fn one_foe_alone_fights_at_its_own_pace() {
     // A lone foe of each melee role at a still player, its whole fight's controls and buttons folded into one number:
-    // the same as before foes fought as a group.
+    // no ally's blow, line or flank touches it.
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for number in [SKIRMISHER, SWORDSMAN, BRUTE, CAPTAIN] {
         let mut room = Room::new(7).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, Major, 0.0, -8.0, PI);

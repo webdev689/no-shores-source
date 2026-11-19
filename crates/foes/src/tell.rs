@@ -7,7 +7,7 @@ use crate::dice::Purpose;
 use crate::ranks::Phase;
 use crate::senses::{Here, Sight};
 use crate::tuning::{
-    AIMED_SHARE, BLOW_CHANCE, BLOW_NEAR, CHAIN_CHANCE, CHAIN_LEAST, CHAIN_WINDUP, CLASSIC_TICKS_A_TICK, COOLDOWN_ELITE,
+    BLOW_CHANCE, BLOW_NEAR, CHAIN_CHANCE, CHAIN_LEAST, CHAIN_WINDUP, CLASSIC_TICKS_A_TICK, COOLDOWN_ELITE,
     COOLDOWN_ORDINARY, FEINT_AT, FEINT_CHANCE, FEINT_GAP, IRON_ELITE, ROAR, WINDUP_ELITE, WINDUP_LEAST, WINDUP_VARY,
     WORD_WAIT,
 };
@@ -207,10 +207,9 @@ pub fn aim_ready(brain: &Brain, here: &Here<'_, '_>, sight: &Sight) -> bool {
         && !windup_near(here, sight.spot)
 }
 
-/// An archer's aimed shot in place of a plain one, one in three by `roll`, when it may throw.
-pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, roll: f64) -> Option<TelegraphOrder> {
-    (aim_ready(brain, here, sight) && roll < AIMED_SHARE)
-        .then(|| order(brain, here, Shape::Aimed, sight.toward, sight.distance, false))
+/// An archer's aimed shot in place of a plain one, once its shooting has found it ready and rolled for one.
+pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight) -> TelegraphOrder {
+    order(brain, here, Shape::Aimed, sight.toward, sight.distance, false)
 }
 
 /// What follows a wind-up that has ended: a feint's swing at once; once the room says whether the blow landed (it

@@ -162,9 +162,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   farthest from the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
-  post and three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other, drawn
-  from the room's seed apart from the posts, so every machine walks the same beats and the posts stand where they
-  did. The way between points is the navmesh's, and each metre of it stays inside the section, 2.5 m inside its
+  post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
+  drawn from the room's seed apart from the posts, so every machine walks the same beats and drawing them moves no
+  post. The way between points is the navmesh's, and each metre of it stays inside the section, 2.5 m inside its
   edge, and 27.5 m from every spawn; a point with no such way is given up, and a group with no second point holds
   its post. The group walks its beat at a stroll, 0.35 of a walk, its first foe leading on the way and the rest on a
   half ring 2.5 m behind it, each finding its way to its place by the room's routes. It pauses 4 s at each point,

@@ -198,8 +198,8 @@ impl Numbers {
     }
 
     /// The ticks it takes to read a swing begun at it: its reaction at the fight's pace. Every swing takes this share of
-    /// the time it once did (`SWING_PACE`), and so does reading one, so it answers a swing as often as it did; a shot
-    /// flies as fast as ever, and is read in its whole reaction.
+    /// the swing law's time (`SWING_PACE`), and so does reading one, so it answers a swing in time as often as at the
+    /// law's own pace; a shot is not sped up, and is read in its whole reaction.
     #[must_use]
     pub fn swing_reaction(&self) -> u64 {
         (self.reaction as f64 * SWING_PACE + 0.5) as u64

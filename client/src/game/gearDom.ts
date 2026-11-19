@@ -183,8 +183,8 @@ let aimed: HTMLElement | null = null;
 let keyHeld: HTMLElement | null = null;
 let listening = false;
 
-/** Closes an open slot's grid once the mouse is off the slot and the grid, at the owner's word; a touch, a click and
- *  Escape close it as before. */
+/** Closes an open slot's grid once the mouse is off the slot and the grid, at the owner's word; a touch has no hover
+ *  to leave, so a touch, a click and Escape close it as they close any grid. */
 export function closeOffHover(holder: HTMLElement, close: () => void): void {
   holder.addEventListener('pointerleave', (event) => {
     if (event.pointerType === 'mouse') close();

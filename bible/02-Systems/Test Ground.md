@@ -251,9 +251,9 @@ In any move, a weapon or shield the forge does not draw in hand is worn on the b
 
 Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep
 to the ground; never shorter. Running frames last 0.125 s and crouching 0.5 s. Each figure plays its loops on from
-the frame it shows, so a walk that slows never jumps a frame. A swing lasts 1 s. On a wall or a ledge the weapon is
-worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While the soft lock
-holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
+the frame it shows, so a walk that slows never jumps a frame. A sword's swing lasts 0.75 s. On a wall or a ledge the
+weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While the
+soft lock holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
 ([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks.
 
 ## Dressing

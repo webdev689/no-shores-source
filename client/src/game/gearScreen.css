@@ -1270,9 +1270,6 @@ img.gear-glyph {
   grid-template-columns: repeat(auto-fill, 64px);
   gap: 6px;
 }
-.gear-grid > .gear-empty {
-  grid-column: 1 / -1;
-}
 /* A shelf's rows are ten long at every width, so its empty places end each row, as its page lays them. */
 .gear-inventory .gear-grid {
   grid-template-columns: repeat(10, 64px);

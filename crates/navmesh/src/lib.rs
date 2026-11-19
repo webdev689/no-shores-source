@@ -214,7 +214,7 @@ impl NavMesh {
         let points = self.walk(&corridor, from, to)?;
         let across = |one: [f64; 3], other: [f64; 3]| {
             let (east, south) = (other[0] - one[0], other[1] - one[1]);
-            (east * east + south * south).sqrt()
+            libm::sqrt(east * east + south * south)
         };
         let legs: f64 = points.windows(2).map(|pair| across(pair[0], pair[1])).sum();
         let links = corridor.iter().filter_map(|&node| self.mesh.link_of(node));

@@ -1,7 +1,7 @@
 //! The pace of a fight in numbers. Foes at one target land their blows one at a time: a foe begins a blow there only
 //! if it lands a beat after the latest another foe has begun there, so a player meets one blow, reads it and answers
 //! before the next, however many stand round them. Each foe's own blows keep their own rhythm, so one foe alone
-//! fights as it always did. project-final's strike token, one blow in flight at a time, kept by when each lands.
+//! fights at its own pace. project-final's strike token, one blow in flight at a time, kept by when each lands.
 
 use crate::board::Board;
 use crate::brain::Brain;
