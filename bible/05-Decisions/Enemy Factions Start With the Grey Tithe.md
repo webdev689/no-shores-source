@@ -41,5 +41,6 @@ status: in force
 ## Still open
 
 - Whether a faction's presence shifts over time.
-- Whether project-final's crystal faction comes over ([[Pick List - project-final]]).
 - Where each faction is present, and what sets one faction apart from another.
+
+The crystal faction comes over, adapted: [[Raum's Lore Is Adapted Into One Mystery]].

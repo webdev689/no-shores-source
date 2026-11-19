@@ -119,6 +119,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[DFO's Own Sounds Join the Sound Sheet]]
 - [[The Duskraven Sounds With Fire Under Its Raven]]
 - [[Exposed, Charged and Haste Make No Sound]]
+- [[The World Is Ageless, With Quiet Nods to DFO and Daggerfall]]
+- [[Raum's Lore Is Adapted Into One Mystery]]
+- [[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]
+- [[The Mystery Shows in Its Effects, Never Its Cause]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

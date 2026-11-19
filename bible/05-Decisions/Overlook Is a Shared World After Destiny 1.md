@@ -101,3 +101,5 @@ status: in force
 ## Still open
 
 - Ship building and progression, and the rest the owner has yet to discuss.
+
+The world's lore: [[The World Is Ageless, With Quiet Nods to DFO and Daggerfall]].
