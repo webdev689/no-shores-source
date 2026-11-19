@@ -212,7 +212,8 @@ test('a magazine run dry reads as a large 0 in the loss colour, with No ammo sai
     assert.ok(hand);
     const words = (name: string) => findAll(hand as unknown as HTMLElement, name)[0]?.textContent;
     assert.deepEqual([words('shots'), words('most'), hand.classList.contains('empty')], ['0', 'No ammo', true]);
-    assert.equal(hand.ariaLabel?.endsWith('no ammo'), true, 'a screen reader is still told it has none');
+    const said = (hand as unknown as { ariaLabel: string }).ariaLabel;
+    assert.equal(said.endsWith('no ammo'), true, 'a screen reader is still told it has none');
   }));
 
 test('a loadout pressed while the fighter is busy waits, as the rules do, until they rest to take it up', () =>
