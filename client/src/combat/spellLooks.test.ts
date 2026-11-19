@@ -7,17 +7,8 @@ import type { Fighting } from './fighting.ts';
 import { MARK_FLOATS } from './marks.ts';
 import { Sparks } from './sparks.ts';
 import { SpellEffects } from './spellEffects.ts';
-import {
-  SpellLooks,
-  beamEnd,
-  castLookOf,
-  elementOfArt,
-  facesLeft,
-  lashEnd,
-  onBody,
-  shoulderOf,
-  veiledIn,
-} from './spellLooks.ts';
+import { SpellLooks, castLookOf, elementOfArt, veiledIn } from './spellLooks.ts';
+import { facesLeft, lashEnd, lashed, onBody, shoulderOf } from './spellPlaces.ts';
 
 type Point = readonly [number, number, number];
 
@@ -58,15 +49,24 @@ function fightOf({
   tick?: number;
 } = {}): Fighting {
   const [x, y, z] = feet;
-  const fight = { roomTick: tick, spells, player: OWN, own: { x, y, z, aim: 0, statuses: own }, others, foes };
+  const fight = {
+    roomTick: tick,
+    spells,
+    player: OWN,
+    own: { x, y, z, aim: 0, statuses: own },
+    others,
+    foes,
+    castSent: null,
+  };
   return fight as unknown as Fighting;
 }
 
 const withSpells = (...seen: SeenSpell[]) => {
   const spells = new SpellEffects();
-  spells.take(seen, 1);
+  spells.take(seen);
   return spells;
 };
+const TICK = 1 / 60;
 const stopsOf = (look: GlowElement) => new Set(GLOW_RAMPS[look].map((colour) => colour.join(',')));
 const coloursIn = (out: readonly number[]) => {
   const found = new Set<string>();
@@ -119,11 +119,17 @@ test("a Charged foe's crackle stands just in front of its figure's card, across 
   assert.ok(Math.abs(top[2] - 1.7) < 1e-9);
 });
 
-test("a beam ends at its player's chest, or short of it near the eye", () => {
-  const sun: Point = [0, 0, 4];
-  assert.deepEqual(beamEnd(sun, [0, 5, 1], [0, 10, 1]), [0, 5, 1]);
-  const end = beamEnd(sun, [0, 0, 1.2], [0, 0.1, 1.6]);
-  assert.ok(Math.hypot(end[0], end[1] - 0.1, end[2] - 1.6) >= 0.8 - 1e-9);
+test("Arc Lash's bolts find the foes in its cone and reach, nearest first", () => {
+  const foes = [
+    { id: 1, feet: [0, -5, 0] as Point },
+    { id: 2, feet: [0, -2, 0] as Point },
+    { id: 3, feet: [5, 0, 0] as Point },
+    { id: 4, feet: [0, -9, 0] as Point },
+  ];
+  assert.deepEqual(
+    lashed(foes, [0, 0, 1.1], 0, 7).map((foe) => foe.id),
+    [2, 1],
+  );
 });
 
 test("every spell is drawn, each in its element's own stops alone", () => {
@@ -162,19 +168,52 @@ test('Dusk Daggers lies as a ring on the ground with its blades whirling over it
   );
 });
 
-test('a spell is drawn gliding between its last two snapshots as the frames run on', () => {
-  const spells = new SpellEffects();
+test('a spell is drawn gliding between its snapshots as the figures glide, never jumping to the newest', () => {
   const flare = (x: number) => spellOf(SPELLS.dawnflare, 2, { at: [x, 0, 1], heads: [10, 0, 1] });
-  spells.take([flare(0)], 6);
-  spells.take([flare(1)], 6);
   const eye: Point = [0.5, 1000, 1];
   const leftmost = (out: readonly number[]) =>
     Math.min(...Array.from({ length: out.length / MARK_FLOATS }, (unused, index) => out[index * MARK_FLOATS] ?? 0));
   const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
-  const fight = fightOf({ spells, feet: [50, 50, 0] });
-  const atBefore = leftmost(looks.marks(fight, eye, 0, 2));
-  const halfway = leftmost(looks.marks(fight, eye, 0.05, 2));
-  assert.ok(Math.abs(halfway - atBefore - 0.5) < 0.01, 'half the snapshots apart, half the way');
+  const spells = withSpells(flare(0));
+  const atFirst = leftmost(looks.marks(fightOf({ spells, tick: 100, feet: [50, 50, 0] }), eye, 0, 2));
+  const placed: number[] = [];
+  for (let tick = 101; tick <= 106; tick++) {
+    spells.take([flare(tick - 100)]);
+    placed.push(leftmost(looks.marks(fightOf({ spells, tick, feet: [50, 50, 0] }), eye, TICK, 2)) - atFirst);
+  }
+  for (let index = 1; index < placed.length; index++)
+    assert.ok((placed[index] ?? 0) >= (placed[index - 1] ?? 0) - 1e-9, 'it moves on, never back');
+  const last = placed.at(-1) ?? 0;
+  assert.ok(last > 1 && last < 6, `behind the newest, as the figures are: ${last}`);
+});
+
+test('spells are drawn no longer once the room stops sending snapshots', () => {
+  const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+  const fight = fightOf({ spells: withSpells(spellOf(SPELLS.sunwell, 2, { radius: 10 })) });
+  assert.ok(looks.marks(fight, EYE, 0.1, 1).length > 0);
+  looks.marks(fight, EYE, 0.1, 1.1);
+  assert.ok(looks.marks(fight, EYE, 0.1, 1.2).length > 0, 'a moment late');
+  assert.equal(looks.marks(fight, EYE, 0.1, 1.3).length, 0, 'past a quarter of a second, gone');
+});
+
+test("the Sunwell's sun stands ahead of its caster, high in their view, never over their head", () => {
+  const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+  const well = spellOf(SPELLS.sunwell, 2, { at: [0, 0, 0], radius: 10, age: 60, life: 720 });
+  const out = looks.marks(fightOf({ spells: withSpells(well) }), [0, 3, 1.9], 0, 3);
+  let highest = { y: 0, z: 0 };
+  for (let start = 0; start < out.length; start += MARK_FLOATS)
+    if ((out[start + 2] ?? 0) > highest.z) highest = { y: out[start + 1] ?? 0, z: out[start + 2] ?? 0 };
+  assert.ok(highest.z > 3.5 && highest.z < 4.5, `the sun stands about 3.5 m up: ${highest.z}`);
+  assert.ok(highest.y < -0.8, 'ahead of its caster (north, the way they aim)');
+});
+
+test('an orb that ends before its time bursts where it struck; the frame after, its nova is drawn', () => {
+  const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+  const orb = spellOf(SPELLS.tempest, 1, { at: [0, -6, 1.1], age: 40, life: 240 });
+  looks.marks(fightOf({ spells: withSpells(orb), tick: 100 }), EYE, TICK, 1);
+  const after = looks.marks(fightOf({ spells: withSpells(), tick: 101 }), EYE, TICK, 1 + TICK);
+  assert.ok(after.length > 0, 'its nova');
+  for (const colour of coloursIn(after)) assert.ok(stopsOf(2).has(colour), 'in Volt');
 });
 
 test('Mend bursts in embers the frame it is first seen, and only then', () => {
@@ -195,7 +234,7 @@ test('a Charged foe crackles, throwing sparks while the fight runs', () => {
   const fight = fightOf({ foes: new Map([[50, foe]]) });
   assert.ok(looks.marks(fight, EYE, 0, 1).length > 0, 'its arcs');
   assert.equal(sparks.flying.length, 0, 'none thrown while the fight waits');
-  looks.marks(fight, EYE, 0.5, 1.5);
+  looks.marks(fightOf({ foes: new Map([[50, foe]]), tick: 101 }), EYE, 0.5, 1.5);
   assert.ok(sparks.flying.length > 0);
 });
 
@@ -228,7 +267,43 @@ test('a Veiled player is known as one, the player and the others alike', () => {
 test("a player's cast glows in the Art of the last spell of theirs the room sent", () => {
   const spells = withSpells(spellOf(SPELLS.quicken, 1, { caster: OTHER }));
   assert.equal(castLookOf(fightOf({ spells }), OTHER), 2);
-  spells.take([], 1);
+  spells.take([]);
   assert.equal(castLookOf(fightOf({ spells }), OTHER), 2, 'kept once the spell has gone');
   assert.equal(castLookOf(fightOf({ spells }), 9), 0, 'none before a spell');
+});
+
+test("the player's own Anima takes their screen as it is released: an edge frame and a push in, then quiet", () => {
+  const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+  const fight = fightOf({ spells: withSpells(spellOf(SPELLS.duskraven, 3, { age: 2, life: 720 })) });
+  looks.marks(fight, EYE, TICK, 1);
+  assert.equal(looks.screen.look, 3);
+  assert.ok(looks.screen.edge > 0 && looks.screen.edge <= 0.25, 'a faint frame, never a flash');
+  assert.ok(looks.screen.push > 0 && looks.screen.push <= 0.05);
+  for (let frame = 1; frame <= 20; frame++) looks.marks(fight, EYE, 0, 1 + frame * TICK);
+  assert.deepEqual(looks.screen, { look: 0, edge: 0, push: 0 }, 'a third of a second on, quiet');
+});
+
+test("an Anima come upon after its cast has no moment; another player's takes no screen", () => {
+  const late = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+  const well = spellOf(SPELLS.sunwell, 2, { age: 300, life: 720, radius: 10 });
+  late.marks(fightOf({ spells: withSpells(well) }), EYE, TICK, 1);
+  assert.equal(late.screen.look, 0);
+  const others = new Map([[OTHER, { body: { x: 3, y: 0, z: 0, facing: 0 }, fighter: null }]]);
+  const theirs = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+  const cast = spellOf(SPELLS.tempest, 1, { caster: OTHER, age: 1 });
+  const out = theirs.marks(fightOf({ spells: withSpells(cast), others }), EYE, TICK, 1);
+  assert.equal(theirs.screen.look, 0);
+  assert.ok(out.length > 0, 'its ring and flourish are seen');
+});
+
+test("the player's own Anima cast lays its sigil at their feet as it charges", () => {
+  const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+  const fight = fightOf({ feet: [0, 0, 0] });
+  (fight as unknown as { castSent: { spell: number; tick: number } }).castSent = { spell: SPELLS.sunwell, tick: 100 };
+  const out = looks.marks(fight, EYE, TICK, 1);
+  assert.ok(out.length > 0);
+  for (let start = 0; start < out.length; start += MARK_FLOATS) {
+    assert.ok(Math.hypot(out[start] ?? 0, out[start + 1] ?? 0) <= 1.6, 'within 3 m across its feet');
+    assert.ok((out[start + 2] ?? 0) < 0.1, 'on the ground');
+  }
 });

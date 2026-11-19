@@ -2,12 +2,13 @@
 // ready and the player may act; Dusk Daggers aimed while its key is held, a ring on the ground where it will whirl,
 // and cast as the key is let go. The room decides: a cast it refuses costs nothing, and the bar shows its word.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import { type GlowElement, glowRampAt } from '../elementGlow.ts';
+import type { GlowElement } from '../elementGlow.ts';
 import { type ArtState, type CastAsk, SPELLS, spellNumber } from '../network/artMessages.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { AbilityState } from './abilityBar.ts';
-import { MARK_FLOATS } from './marks.ts';
+import { runeRing } from './spellLines.ts';
+import { Laid } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
 
@@ -21,13 +22,6 @@ export const CAST_LOCKOUT_S = 0.6;
 export const CAST_LOCKOUT_MOST_S = 2;
 /** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down, dead. */
 const UNABLE = new Set(['staggered', 'down', 'dead']);
-/** The ring's edge's width (metres), its fill's and its edge's opacity, the steps it is drawn in, and how far over
- *  the ground it lies. */
-const RING_EDGE_M = 0.1;
-const RING_FILL = 0.16;
-const RING_EDGE = 0.85;
-const RING_STEPS = 48;
-const RING_LIFT = 0.04;
 
 /** Dusk Daggers aimed: the middle of the ring where they will whirl, its radius, and its Art's element. */
 export interface AimRing {
@@ -78,25 +72,14 @@ export function daggersAim(from: Point, asked: Point, reach: number, floorAt: (x
   return [x, y, floorAt(x, y)];
 }
 
-/** Dusk Daggers' ring on the ground, as the marks' vertices (`marksMesh`'s `more`): a faint disc edged in its
- *  element. */
+const AIMED = new Laid();
+
+/** Dusk Daggers' ring on the ground, as the marks' vertices (`marksMesh`'s `more`): the rune ring it will whirl over,
+ *  in its element. The answer is kept and laid over by the next call. */
 export function aimRingMesh(ring: AimRing): number[] {
-  const out: number[] = [];
-  const [x, y, z] = ring.at;
-  const colour = glowRampAt(ring.element, 0.35);
-  const point = (radius: number, step: number) => {
-    const angle = (step / RING_STEPS) * Math.PI * 2;
-    return [x + Math.cos(angle) * radius, y + Math.sin(angle) * radius, z + RING_LIFT];
-  };
-  const band = (inner: number, outer: number, opacity: number) => {
-    for (let step = 0; step < RING_STEPS; step += 1) {
-      const corners = [point(inner, step), point(outer, step), point(outer, step + 1), point(inner, step + 1)];
-      for (const corner of [0, 1, 2, 0, 2, 3]) out.push(...(corners[corner] ?? []), ...colour, opacity);
-    }
-  };
-  band(0, ring.radius - RING_EDGE_M, RING_FILL);
-  band(ring.radius - RING_EDGE_M, ring.radius, RING_EDGE);
-  return out.length % MARK_FLOATS === 0 ? out : [];
+  AIMED.clear();
+  runeRing(AIMED, ring.at, ring.radius, ring.element);
+  return AIMED.laid();
 }
 
 /** What a frame of casting asks: the cast to send (none for none), and Dusk Daggers' ring while it is aimed. */

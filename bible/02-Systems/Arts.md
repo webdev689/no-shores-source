@@ -30,6 +30,12 @@ code:
   - client/src/combat/spellLooks.ts#SpellLooks
   - client/src/combat/spellLooks.ts#veiledIn
   - client/src/combat/spellLooks.ts#castLookOf
+  - client/src/combat/spellDrawers.ts#DRAWERS
+  - client/src/combat/spellLands.ts#Lands
+  - client/src/combat/animaMoment.ts#AnimaMoments
+  - client/src/combat/animaMoment.ts#showAnimaEdge
+  - client/src/combat/spellPictures.ts#sigilSprite
+  - client/src/combat/spellLines.ts#runeRing
   - client/src/combat/spellPixels.ts#billboard
   - client/src/combat/spellPixels.ts#birdSprite
   - client/src/combat/spellLines.ts#boltLine
@@ -160,15 +166,17 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   wide as the ring will be. Let go, it casts there.
 - **The cast's look.** A cast sent plays the cast move: from outside the forge's `cast` with its `spark`, the spark
   recoloured by its brightness to the Art's element and glowing in it (the forge draws the spark as hanging free, so
-  the compositor is told to count it as the weapon); in first person both casting hands, under the Art's light
+  the compositor is told to count it as the weapon, and only the spark is recoloured, never a weapon in the hand);
+  in first person both casting hands, under the Art's light
   (Divine fire, Storm shock, Shadow magic) recoloured the same way. Another player's cast plays the same, in the Art
   of the last spell of theirs the room sent.
 - **A room joined afresh** forgets a cast still waiting to be sent, the room's word on the Arts, the keys' wait and
   any aim: nothing from the old room goes to the new one.
 - **The bar** is the fight display's, in the game and the Test Ground alike, written each frame from the room's word
   on the Arts. The game layer hands the combat layer its pictures.
-- **The spells' view.** Every spell in the snapshot is kept, each with where it was the snapshot before, and drawn
-  gliding between the two (below).
+- **The spells' view.** Every spell in the snapshot is kept and drawn gliding between the snapshots as the figures
+  do (below). The fight keeps the last spell the player cast, with the room tick it was asked at, so an Anima's sigil
+  starts as it is asked.
 - **The Test Ground** has an Arts panel: the Art worn, each Core slot, and a button that fills the Anima and readies
   the Tenets, so every spell can be tried at once ([[Test Ground]]).
 
@@ -176,34 +184,81 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 
 - **Drawn as marks.** Every spell is drawn with the fight's marks, in its Art's element: Storm's in Volt, Divine's in
   Blaze, Shadow's in Cosmic, in the Test Ground and the Game alike. Its pictures are made cell by cell, a cell two of
-  a figure's pixels across, each cell one of the element's four colours with nothing between, stood upright and
-  turned to the eye as a figure's card is. Its lines are flat colours too: lightning is a glow in the element's body
-  under a white-hot core, struck afresh 12 times a second. What bursts or trails throws the fight's sparks in the
-  element. A picture nearer the eye than 0.6 m is left out.
-- **Tempest.** Each orb is a white-hot heart in Volt's steps, its rim broken and three arcs thrown off it at each
-  strike, trailing a line that narrows and darkens in three steps over a quarter of a second, and Volt motes.
-- **Quicken.** A jagged ring of lightning on the ground at the caster's feet, swelling in three steps over its half
-  second, and a burst of sparks. A Hasted player leaves three streaks behind them as they move, each 0.3 s long.
-- **Arc Lash.** Five bolts fanned through the cone, reaching out over 0.1 s and thinning in three steps, with sparks
-  where they end.
-- **Sunwell.** A sun 6 m over its middle, clear of the view of a player standing in it, bobbing a cell at a time, its
-  eight rays turning; twelve dashes on the ground at its radius, turning; and a beam from the sun to each Linked player
-  inside it. A Linked player has six motes rising off them, cooling a step as they rise.
-- **Mend.** Over the caster's chest, a white-hot flash with a cross through it, then a ring swelling and cooling in
-  four steps, and a burst of embers.
-- **Dawnflare.** A bird of fire facing the way it flies, its wings beating in four steps ten times a second, its
-  outline flickering, embers trailing behind it.
+  a figure's pixels across (three for the Dawnflare and the sigils), each cell one of the element's four colours with
+  nothing between, stood upright and turned to the eye as a figure's card is. Its lines are flat colours too:
+  lightning is a glow in the element's body under a white-hot core, struck afresh 12 times a second. What bursts or
+  trails throws the fight's sparks in the element. A picture nearer the eye than 0.6 m is left out.
+- **Read from afar.** A line is never drawn thinner than about a pixel and a half at 720p for its core and three for
+  its glow, however far off; a line or ring on the ground is widened where it is seen aslant, up to 1 m, so a spell
+  20 m away still reads.
+- **Where it is drawn.** Each spell glides between the room's snapshots as the figures do, a tick behind the newest,
+  and what a spell lays on a figure (a crackle, a slash, a beam, a raven) is laid where that figure is drawn. What
+  lies on the ground is drawn first, then what stands, the farthest first. With no snapshot for a quarter of a second
+  (the link lost, or the player sent away), no spell is drawn.
+- **Start, life and end.** Every spell shows as it starts, while it lasts and as it ends: what lasts (the Sunwell,
+  the Duskraven, Dusk Daggers) blinks every other four frames over its last half second, and each leaves a mark the
+  frame after the room lets it go. A burst or puff left nearer the eye than 1.2 m for each of its sizes is not drawn,
+  so none fills the view in first person.
+- **Tempest.** Each orb is 21 cells, a white-hot heart in Volt's steps, its rim broken and three arcs thrown off it
+  at each strike, with an afterimage of itself on every other row three frames behind, trailing a line that narrows
+  and darkens in three steps over a quarter of a second, and Volt motes. It pops as it leaves the chest. An orb that
+  ends early has struck: a nova bursts there (a star for 3 frames, a ring for 3, a broken ring for 4, 1.2 m across)
+  with eight forks of lightning; one spent at its time pops.
+- **Quicken.** A jagged ring of lightning on the ground at the caster's feet, swelling in three steps from 0.8 m to
+  2 m over its half second, three bolts climbing the caster's front from the ground to the chest for eight frames,
+  and a burst of sparks. A Hasted player leaves three
+  streaks behind them as they move, each 0.3 s long and three of a figure's pixels across at its newest.
+- **Arc Lash.** Five bolts reaching out over 0.1 s and thinning in three steps: one to the chest of each foe in its
+  cone and reach, nearest first, the rest fanned through it. A flash at the caster's hand; as they reach, an impact
+  star on each foe struck and sparks at each end; a zigzag scorch in the element's dark under each bolt, breaking up
+  over 1.2 s.
+- **Sunwell.** A sun 3.5 m over the ground, 1.5 m along where its caster aimed as it was cast, high in their view
+  and never over their head, bobbing a cell at a time, its eight rays turning; a white-hot flash as it comes, and a
+  burst as it goes. Twelve dashes on the ground at its radius, turning, and inside them three bands 0.2 m wide
+  pulsing in four steps a second. Every other Linked player inside it has a beam a metre long falling onto their
+  head (never the player's own, which would stand in the middle of their view), and each Linked player six motes
+  rising off them, cooling a step as they rise.
+- **Mend.** Over the caster's chest and nearer the eye than their cast, a white-hot flash with a cross through it,
+  then a ring swelling and cooling in four steps, 33 cells across; eight crosses of light rising off the caster; a
+  burst of embers.
+- **Dawnflare.** A bird of fire 1.5 m over the ground, its cells three of a figure's pixels, facing the way it flies,
+  its wings beating in four steps ten times a second, its outline flickering, embers trailing behind it; within 2 m
+  of the eye, as it flies out past the camera, only its embers show. The ground burns where it passed: a lane 1.5 m
+  wide, a core of light flaring white-hot between broken tongues of the element's body, flickering 12 times a second
+  and cooling to its dark over 1.5 s. A foe it burns bursts in three tongues of flame with an impact star; at its flight's end the
+  bird bursts in flame and embers.
 - **Duskraven.** A raven of Cosmic light off its caster's right shoulder, its cells a figure's own pixels, its wings
-  beating six times a second; the player's own sits on their figure as the page predicts it. Each bolt is a star of
-  four points trailing glinting stars and Cosmic motes.
-- **Dusk Daggers.** The aiming ring stays on the ground where it was cast, lit for 4 ticks at each strike, with eight
-  blades whirling over it, each turning over in sixteenth-turns.
-- **Vanish.** A puff of dusk where the roll began, swelling and thinning in four steps, and a burst of Cosmic motes.
+  beating six times a second; the player's own sits on their figure as the page predicts it, and is not drawn
+  within a metre of the eye, as in first person. It comes in a pop and
+  goes in a pop and smoke. While a bolt flies, a diamond broken at its corners blinks over the foe it seeks. Each bolt
+  is a star of four points trailing a line of light 0.1 s long, glinting stars and Cosmic motes, and it ends in an
+  impact star.
+- **Dusk Daggers.** Its ring, as it is aimed and where it lies, is a rune ring: a floor dithered an eighth in the
+  element's dark, a dotted circle in its body 0.35 m in, and an edge in its light, white-hot for two ticks at each
+  strike, when a slash crosses each foe inside it (white-hot one frame, light two). Eight blades whirl over it, each
+  turning over in sixteenth-turns, the farthest drawn first. It ends in a pop.
+- **Vanish.** A puff of dusk where the roll began, half again as large, swelling and thinning in four steps, a burst
+  of Cosmic motes, and six small puffs of smoke left round it that rise and thin over a second.
+- **Landing.** A spell that lands on a foe bursts in its caster's Art's element, whatever weapon is drawn
+  ([[Weapon Glow]]), with an impact star where the orbs', bolts', lash's and slashes' own marks are not.
+- **An Anima's moment.** While the player's own Anima charges (its 18 ticks), its Art's sigil lies 3 m across at
+  their feet: four rings lighting from the outside in, the newest white-hot, then its figure (Storm's eight spokes,
+  Divine's sun, Shadow's crescent). As it is released, on every screen: the sigil white-hot for two frames, then
+  cooling and breaking up in three steps of four frames; a ring bursting out across the ground, white-hot, light, then
+  body, 4 m to 7.2 m across over six frames; and the Art's flourish: lightning from 9 m up onto the caster, the sun's
+  shaft falling to the ground under it, or a pop at the raven's shoulder with smoke round the caster (none of it
+  through the caster's own eyes, nor sparks thrown within 2 m of the eye). The caster's own
+  screen takes a frame of the element round its edge, bands of 8 pixels in its light outside its body, at a quarter
+  opacity for two frames, then a sixth, then a tenth, gone after six, and the view pushes in 5% and eases back in
+  held steps over 20 frames, in third person and first. No flash fills the screen.
 - **Statuses.** An Exposed foe's figure has its outline lit a faint purple. A Veiled player's figure, their own from
   outside and every other's, keeps 5 pixels of each 4 by 4, the kept ones moving on 8 times a second, tinted dusk,
   and shows no weapon outline. A Charged foe crackles: two arcs across its figure struck afresh 12 times a second, and
   24 Volt sparks a second.
-- **Hits.** A spell that lands bursts in its caster's Art's element, whatever weapon is drawn ([[Weapon Glow]]).
+- **What it costs.** Each picture is made once for each of its steps (the sun's 32 turns, the blades' 16, the orb's
+  16 crackles, the birds' four beats each in eight flickers) and each run of its cells worked out once, and a frame's
+  marks are written over the last frame's in place. With every spell up at once, a frame of them takes under a
+  millisecond in Node and leaves about a quarter of a megabyte to collect.
 
 ## Limits
 
@@ -216,3 +271,5 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - A cast is refused on horseback only as it is asked: one taken on foot still releases if the player mounts within
   its 0.3 s.
 - A spell looks through walls: an orb, a bolt or an area finds a foe behind a block, and an orb flies through one.
+- Another player's Anima shows no charging sigil, only its release: the room sends no cast until it is out.
+- What a spell leaves as it lands is laid at a foe's figure as drawn, not as the attack feel shifts it.

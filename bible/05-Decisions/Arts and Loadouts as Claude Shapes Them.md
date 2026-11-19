@@ -97,8 +97,8 @@ each Art keeps its own Core.
 
 Each spell is drawn from the elements' colours ([[Your Weapon Glows in Its Element]]): Tempest's orbs crackling Volt
 blue with trails; Quicken a ring of lightning at the feet and streaks behind those it quickens; Arc Lash bolts fanning
-through the cone, Charged foes crackling; the Sunwell a floating sun over a turning ring, beams to those Linked, motes
-rising as they heal; Mend a burst of gold; the Dawnflare a bird of fire, wings beating, embers behind it; the
+through the cone, Charged foes crackling; the Sunwell a floating sun over a turning ring, a short beam onto each
+Linked head, motes rising as they heal; Mend a burst of gold; the Dawnflare a bird of fire, wings beating, embers behind it; the
 Duskraven a raven of purple light at the shoulder, its bolts trailing stars; Dusk Daggers blades turning over a purple
 ring; Vanish a puff of dusk, the player drawn faint and shimmering. An Exposed foe has a faint purple edge; a Charged
 one crackles.
@@ -115,6 +115,20 @@ one crackles.
 
 The owner asked that attack visuals go beyond the limits ([[Attack Visuals Go Beyond the Limits]]). What that comes to
 is written here as it is built.
+
+- **Spells.** Every spell has a start, a life and an end, and lands where it lands, in the game's own stepped pixels:
+  the element's four stops, whole cells, frames held. A Tempest orb that strikes bursts in a nova and forks; Arc Lash
+  finds the foes in its cone, flares on each and scorches the ground; the Dawnflare burns a lane 1.5 m wide behind
+  it and bursts in flame on what it burns; Dusk Daggers slash each foe in their rune ring as they strike; the
+  Duskraven marks the foe its bolt seeks. The Sunwell's sun stands 3.5 m up, 1.5 m along its caster's aim, and
+  another Linked player's beam is a metre falling onto their head, never a line through the view. Sizes: orbs 21 cells, the
+  Mend's ring 33, Vanish's puff half again as large, the Dawnflare's cells three figure pixels. Far off, lines keep
+  a pixel and a half on the screen and rings on the ground are widened. Full list: [[Arts]], "How they look".
+- **The Anima's moment**, as a Super is cast: its Art's sigil, 3 m across, lighting ring by ring at the caster's feet
+  over the cast's 0.3 s; at the release a ring bursting across the ground, the sigil flaring and fading, the Art's
+  flourish (lightning from the sky, the sun's shaft, the raven's dusk), and on the caster's own screen a frame of 8
+  pixel bands in the element at a quarter opacity at most, for six frames, and a 5% push in eased back over 20.
+  Nothing fills the screen or flashes faster than an Anima can be cast.
 
 ## Perks
 

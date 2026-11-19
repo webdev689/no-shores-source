@@ -78,7 +78,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
   there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
   as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
-- **The camera** is the player's, held 0.3 m over the ground, with the Test Ground's 50-degree view.
+- **The camera** is the player's, held 0.3 m over the ground, with the Test Ground's 50-degree view. The player's
+  own Anima pushes it in as it is released, with a frame of its element round the screen ([[Arts]]).
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
   with nothing pressed. Click the view to look round with the mouse.
 - **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,

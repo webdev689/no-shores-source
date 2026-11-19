@@ -9,6 +9,7 @@ import { type FighterView, fighterView } from '../rules/fighters.ts';
 import { rosterOf } from '../rules/roster.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { Glides } from '../player/glide.ts';
+import { pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
@@ -285,7 +286,8 @@ async function start(): Promise<void> {
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
     const inFirstPerson = player.inFirstPerson;
     const sights = shown.aiming || aimHeld || (shown.ranged && inFirstPerson);
-    const camera = feel.camera(aimView(player.player), fighting.player, own, inFirstPerson, sights);
+    const feltCamera = feel.camera(aimView(player.player), fighting.player, own, inFirstPerson, sights);
+    const camera = pushedIn(feltCamera, effects.anima.push);
     const eye = eyeOf(camera);
     // Each figure drawn off where it stands by the attack feel; each fighter's figure as drawn, which its arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, camera.yaw);
@@ -350,7 +352,9 @@ async function start(): Promise<void> {
         ...gearRings(STALL, RESOURCE_NODES, gear, clock),
         ...dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye).marks,
       ],
+      drawn: { foes: foes.placed, others },
     });
+    showAnimaEdge(effects.anima);
     scene.setMarks(marks);
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({

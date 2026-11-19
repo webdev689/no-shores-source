@@ -16,15 +16,12 @@ const orb = (id: number, x: number): SeenSpell => ({
   radius: 30,
 });
 
-test('each spell is kept with where it was the snapshot before, glides between the two, and goes when the room drops it', () => {
+test('each spell is kept as the room last sent it, and goes when the room drops it', () => {
   const effects = new SpellEffects();
-  effects.take([orb(1, 0)], 1);
-  assert.equal(effects.spells.get(1)?.before, null, 'new: nowhere before');
-  effects.take([orb(1, 2), orb(3, 5)], 2);
-  const kept = effects.spells.get(1);
-  assert.ok(kept);
-  assert.deepEqual([kept.before, kept.ticks], [[0, 0, 1], 2]);
-  assert.deepEqual(SpellEffects.glided(kept, 0.5), [1, 0, 1]);
-  effects.take([orb(3, 6)], 1);
+  effects.take([orb(1, 0)]);
+  effects.take([orb(1, 2), orb(3, 5)]);
+  assert.deepEqual(effects.spells.get(1)?.at, [2, 0, 1]);
+  effects.take([orb(3, 6)]);
   assert.deepEqual([...effects.spells.keys()], [3]);
+  assert.equal(effects.arts.get(2), 1, 'its caster keeps the Art it last cast in');
 });

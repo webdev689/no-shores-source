@@ -148,6 +148,8 @@ export class Fighting {
   readonly spells = new SpellEffects();
   /** Dusk Daggers' ring while it is aimed, for the marks on the ground. */
   aimRing: AimRing | null = null;
+  /** The last spell the player cast, with the room tick it was asked at: its look begins as it is asked. */
+  castSent: { readonly spell: number; readonly tick: number } | null = null;
   private shotsReceived: FlyingShot[] = [];
 
   constructor(rules: CombatRules, link: RoomLink, random: () => number = Math.random) {
@@ -165,7 +167,7 @@ export class Fighting {
     if (this.link.joins === this.joined) return;
     this.joined = this.link.joins;
     [this.prediction, this.fighter, this.seen, this.view, this.sentDress] = [new Prediction(), null, 0n, [], ''];
-    [this.castQueued, this.artsTaken, this.artsAt] = [null, null, 0];
+    [this.castQueued, this.castSent, this.artsTaken, this.artsAt] = [null, null, null, 0];
     this.foes.clear();
     this.others.clear();
     this.spells.clear();
@@ -213,6 +215,7 @@ export class Fighting {
   /** Casts a spell with the next tick's input (spell 0 carries only Dusk Daggers' aim, while it is held). */
   cast(ask: CastAsk): void {
     if (ask.spell > 0 || this.castQueued === null) this.castQueued = ask;
+    if (ask.spell > 0) this.castSent = { spell: ask.spell, tick: this.roomTick };
   }
 
   /** The room's last word on the player's Arts; none before it. */
@@ -384,7 +387,7 @@ export class Fighting {
     }
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);
     this.view = view;
-    this.spells.take(snapshot.spells, ticks);
+    this.spells.take(snapshot.spells);
     // The room's word on the Arts holds from the snapshot it came with: a share runs on from that tick.
     if (this.link.arts && this.link.arts !== this.artsTaken)
       [this.artsTaken, this.artsAt] = [this.link.arts, this.roomTick];

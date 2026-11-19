@@ -7,7 +7,8 @@ import { Flashes } from './flashes.ts';
 import { aimRingMesh } from './casting.ts';
 import { type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
-import { SpellLooks, castLookOf } from './spellLooks.ts';
+import type { AnimaScreen } from './animaMoment.ts';
+import { type Drawn, SpellLooks, castLookOf } from './spellLooks.ts';
 import { IMPACT_SPARKS, Tracers, othersArrows } from './tracers.ts';
 
 type Point = readonly [number, number, number];
@@ -41,7 +42,13 @@ export class FightEffects {
     };
     const spellLook = (caster: number) => castLookOf(fight, caster);
     this.sparks.struck(events, where, { player: fight.player, look: this.ownLook, spellLook });
+    this.spellLooks.struck(events);
     return events;
+  }
+
+  /** The player's own screen as their Anima's release takes it: its edge frame and the view's push in. */
+  get anima(): AnimaScreen {
+    return this.spellLooks.screen;
   }
 
   /**
@@ -49,7 +56,7 @@ export class FightEffects {
    * else's arrows, the sparks and the tracers. The player's own shots leave the weapon at `muzzleOf`'s point; the
    * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground or one of
    * `bodies` (their feet) throwing sparks where it comes to rest; Dusk Daggers' ring while it is aimed; and every
-   * spell in the room, with the statuses that show on the world.
+   * spell in the room, with the statuses that show on the world, laid at the figures where `drawn` has them.
    */
   marks(
     fight: Fighting,
@@ -62,12 +69,13 @@ export class FightEffects {
       readonly origin?: Point;
       readonly groundAt?: (x: number, y: number) => number | null;
       readonly more?: readonly number[];
+      readonly drawn?: Drawn;
     },
   ): Float32Array {
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
-    const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [] } = where;
+    const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [], drawn = null } = where;
     this.tracers.fired(fight.fired.splice(0), muzzleOf);
     this.tracers.seen(fight.takeShots(), fight.player);
     for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt))
@@ -77,7 +85,7 @@ export class FightEffects {
     const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock);
     const arrows = othersArrows(fight.shots, fight.player);
     const ring = fight.aimRing ? aimRingMesh(fight.aimRing) : [];
-    const spells = this.spellLooks.marks(fight, eye, seconds, this.clock);
+    const spells = this.spellLooks.marks(fight, eye, seconds, this.clock, drawn);
     return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...ring, ...spells, ...more], origin);
   }
 }
