@@ -83,6 +83,37 @@ fn a_settled_blow_is_weighed_by_crit_linked_and_the_veil_on_its_striker_and_expo
 }
 
 #[test]
+fn a_settled_blow_tells_whether_it_was_a_crit_and_the_element_it_carried() {
+    let (mut room, player, foe) = room_with_foe(Rank::Major);
+    let told = |room: &mut Room, element: u8| {
+        room.take_events();
+        let blow = Blow {
+            striker: player,
+            kind: BlowKind::Swing(Stroke::Down),
+            from: [0.0, -3.0],
+            damage: 10.0,
+            poise: 0.0,
+            guard: 0.0,
+            parryable: true,
+            blockable: true,
+            knocks_down: false,
+            through: 1.0,
+            stagger: 1.0,
+            element,
+            crit: false,
+        };
+        room.settle(&blow, How::Swing, foe, Verdict::Hit { damage: 10.0, poise: 0.0 }, None);
+        room.take_events().iter().map(|event| (event.crit, event.element)).collect::<Vec<_>>()
+    };
+    assert_eq!(told(&mut room, 0), vec![(false, 0)], "a plain blow");
+    room.give(player, Status::Crit, None, None);
+    assert_eq!(told(&mut room, 2), vec![(true, 2)], "a crit in Volt");
+    let fighter = room.fighter(foe).copied().expect("standing");
+    room.set_fighter(foe, Fighter { health: 1.0, ..fighter });
+    assert_eq!(told(&mut room, 1), vec![(true, 1), (true, 1)], "its kill carries the blow's crit and element too");
+}
+
+#[test]
 fn linked_heals_each_second_and_foes_statuses_run_down_as_they_step() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");

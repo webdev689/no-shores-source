@@ -76,6 +76,8 @@ pub const EVENTS: [Event; 2] = [
         defender: 9,
         amount: 0.0,
         stroke: None,
+        crit: false,
+        element: 0,
     },
     Event {
         tick: 1234,
@@ -85,6 +87,8 @@ pub const EVENTS: [Event; 2] = [
         defender: 12,
         amount: 35.0,
         stroke: Some(Stroke::Left),
+        crit: true,
+        element: 2,
     },
 ];
 
@@ -345,6 +349,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);
+    let marked: Vec<_> = read.events().unwrap().iter().map(|event| (event.crit(), event.element())).collect();
+    assert_eq!(marked, vec![(false, 0), (true, 2)], "a crit and a blow's element cross");
     let flying = read.shots().unwrap().get(0);
     assert_eq!((flying.owner(), flying.ranged()), (12, 1));
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());

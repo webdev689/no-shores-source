@@ -9,6 +9,7 @@ import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 import { statusCss } from './statusIcons.ts';
+import { wordsCss } from './wordsSheet.ts';
 
 const SHEET_ID = 'fight-hud';
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
@@ -209,36 +210,7 @@ function cuesCss(): string {
 .fight-hud .parry.now::before, .fight-hud .parry.now::after { border-color: #ffd95a; box-shadow: 0 0 8px #ffd95a; }
 .fight-hud .parry.iron::before { background: #e0281c; border-color: #fff; }
 .fight-hud .parry.iron::after { display: none; }
-/* A word rises and fades as the sheet says, from where the display sets it; a great turn's pops larger and rises
-   farther. With reduced motion asked for it stands where it happened and fades. */
-.fight-hud .word { white-space: nowrap; translate: -50% 0; }
-.fight-hud .word .rise { display: inline-block; font-size: 15px; padding: 1px 7px; border-radius: 4px;
-  background: #000b; text-shadow: none; text-align: center;
-  animation: fight-word-rise 0.95s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
-.fight-hud .word .tag { display: block; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
-  color: #ffd95a; }
-.fight-hud .word.dealt .rise { color: #f2f2f2; }
-.fight-hud .word.taken .rise { color: #ff7468; }
-.fight-hud .word.great .rise { color: #ffd95a; font-size: 18px; animation-name: fight-word-great; }
-.fight-hud .word.good .rise { color: #ffd95a; }
-.fight-hud .word.warn .rise { color: #fff; font-size: 18px; background: #a0140ccc; border: 2px solid #fff; }
-.fight-hud .word.plain .rise { color: #bfc8d2; }
 ${shieldWords}
-@keyframes fight-word-rise {
-  0% { opacity: 0; transform: translateY(10px) scale(0.9); }
-  12% { opacity: 1; transform: translateY(0) scale(1); }
-  70% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-64px) scale(1); } }
-@keyframes fight-word-great {
-  0% { opacity: 0; transform: translateY(10px) scale(0.6); }
-  14% { opacity: 1; transform: translateY(-4px) scale(1.18); }
-  30% { transform: translateY(-8px) scale(1); }
-  72% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-80px) scale(1); } }
-@keyframes fight-word-still { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) {
-  .fight-hud .word .rise, .fight-hud .word.great .rise { animation-name: fight-word-still; }
-}
 .fight-hud .arrow { width: 0; height: 0; margin: -12px 0 0 -10px; border-top: 12px solid transparent;
   border-bottom: 12px solid transparent; border-left: 22px solid #ff5a4a; transform-origin: 10px 12px;
   filter: drop-shadow(0 0 2px #000) drop-shadow(0 0 2px #000); }
@@ -253,7 +225,7 @@ ${shieldWords}
 
 /** The whole sheet. */
 export function fightSheetCss(): string {
-  return cuesCss() + platesCss() + vitalsCss() + statusCss();
+  return cuesCss() + platesCss() + vitalsCss() + statusCss() + wordsCss();
 }
 
 /** Lays the kit's sheet, the compass's and then the display's on `page`, once each. */

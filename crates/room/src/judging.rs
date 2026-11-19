@@ -8,6 +8,7 @@ use combat::fighter::{Action, Attack, FighterId};
 use combat::judge::{answered, overreached, suffer};
 use combat::shapes::{LATE, Telegraph};
 use combat::shots::{Flight, fly, stopped_line};
+use combat::status::crits;
 use combat::strike::reaches;
 use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 use gear::Slot;
@@ -55,6 +56,10 @@ pub struct Event {
     pub amount: f64,
     /// The stroke a swing came by, so a screen throws its blood the way the blade went; none for anything else.
     pub stroke: Option<Stroke>,
+    /// Whether the blow that did it was a crit, and the element it carried (the gear's number, 0 for none), so a
+    /// screen can mark the one and burn the other.
+    pub crit: bool,
+    pub element: u8,
 }
 
 /// What a waiting blow must still ask of its defender when it is judged: a swing whether it reaches them, a
@@ -120,6 +125,8 @@ impl Room {
         if before.dead() {
             return;
         }
+        let harms = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
+        let crit = harms && crits(blow, self.fighter(blow.striker), &before);
         let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = suffer(&before, blow, &verdict);
@@ -179,6 +186,8 @@ impl Room {
                 defender,
                 amount,
                 stroke,
+                crit,
+                element: blow.element,
             });
         };
         if let Some((took, broke)) = shielded {
@@ -235,7 +244,9 @@ impl Room {
         defender: FighterId,
         amount: f64,
     ) {
-        self.events.push(Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None });
+        let event =
+            Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None, crit: false, element: 0 };
+        self.events.push(event);
     }
 
     /// Judges every waiting blow whose defender's view has reached it, or that has waited as long as a blow may.

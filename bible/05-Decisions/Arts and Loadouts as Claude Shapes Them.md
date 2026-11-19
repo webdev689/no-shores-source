@@ -162,6 +162,36 @@ from its light, gold `#4a2a06 #c8901e #ffd95a #fff6d0`), held steps, no soft fad
   flourish (lightning from the sky, the sun's shaft, the raven's dusk), and on the caster's own screen a frame of 8
   pixel bands in the element at a quarter opacity at most, for six frames, and a 5% push in eased back over 20.
   Nothing fills the screen or flashes faster than an Anima can be cast.
+- **Where a blow lands**, in the Test Ground and the game alike, at the struck chest's front, drawn 0.45 m nearer the
+  eye than it, or past the striker's card when the striker stands nearer the eye (its cells shrunk to keep its size), so
+  neither figure hides it; through the striker's own eyes at 0.45 of its size, and none on the eyes' own body. A
+  four-ray star 0.55 m across, white-hot at its heart and rimmed a cell round in the ramp's dark, for 1 frame; a ring
+  0.8 m in the ramp's light for 1; a broken ring 1 m for 1; and a slash 1.2 m long and 2 figure pixels thick across the
+  figure along the stroke, white-hot then light (none for a thrust). In the blow's element, else bare steel `#2a3340
+  #8fa6c8 #cfe0ff #ffffff`, gold for a riposte or a counter; 0.8 times as large for a blow under a tenth of its foe's
+  health, 1.3 over three tenths. A plain blow throws 6 steel sparks, an elemental one its motes (Blaze 18, Volt 15,
+  Cosmic 21) and its own shape for 6 to 8 frames: three tongues of flame climbing and cooling, four forks 0.5 m struck
+  afresh every 2 frames, a six-pointed star turning in sixteenths. Every bit is 2 figure pixels, cooling a stop each
+  third of its life down to its body.
+- **A crit** (the room says which blows are): a gold four-ray star 1 m over the blow for 3 frames, 6 gold sparks, the
+  struck figure's outline gold for 4 frames after its two white ones, its number stamped Crit, and a 0.11 s hold.
+- **A kill**: the blow's star 1.2 m with each step held 2 frames and its rings 1.5 times as large; a ring of dust on the
+  ground swelling 0.4, 0.8, 1.2, 1.6 m, 3 frames each; 12 dark chips thrown 2 to 4 m/s that come to rest; the 0.6 m
+  slide; a 0.16 s hold; its number stamped Slain. The chips are a dark leather ramp, not the body's own colours.
+- **Finishers**, when the killing blow carried an element (visuals only): the body dissolves in it at once. Blaze sheds
+  an ember every 2 frames as its heat climbs for 24 frames, then bursts in a 1.6 m ring (white-hot 3 frames, light 3,
+  body 4) that throws 20 embers, and leaves a 1.4 m ash scorch smouldering 2 embers a second for 10 s. Volt leaps in a
+  bolt to the nearest foe within 6 m and on to one more, 8 frames each, restruck 12 times a second, with a fork and 10
+  sparks where each lands. Cosmic draws a dark ring in from 0.75 m over its 10 frames, then pops in 16 glints and a 1.2
+  m ring and leaves a swirl turning for 3 s. Marks on the ground are drawn in 4-pixel cells, 4 at most at once, and
+  shrink away in four steps; the ash is charred `#16110e` with its edge in Blaze's body.
+- **Steel on steel**: a parry's gold cross 0.8 m for 2 frames, then its ring for 2, a gold shockwave on the ground at
+  0.3, 0.85 and 1.4 m for 3 frames each, and 14 gold sparks; a block's steel star 0.5 m and 8 sparks; a guard broken's
+  steel star 1 m, 10 sparks and a cracked shield beside the head for half a second, thinning out over its last 8 frames.
+- **Words**: the face at 22 px, a crit's and a kill's 33 in gold, no box, a hard 2 px outline; popped 1.4 times for 2
+  frames and 1.15 for 2, rising 4 px every 4 frames, blinking out over the last 6; standing at the blow, its near edge
+  thrown 28 px the way the stroke went (a crit's or a kill's 56), 24 px clear of every plate and clear of each other; a
+  foe's blows within 0.6 s add up.
 
 ## Perks
 

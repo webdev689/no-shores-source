@@ -54,9 +54,11 @@ the menu's pictures stay plain.
   leaves only as a blow lands, as a burst: a ring of its pixels flying out to the field's edge over a fifth of a
   second, cooling a stop each quarter of it, never a trail.
 - **Shots and blows.** The player's own tracers take the element's colours at the plain tracers' opacities, a Volt one
-  jumping up to 0.04 m twelve times a second, and leave about 30 motes a second. A blow the player lands for harm
-  bursts in the element where it lands: Blaze 12 embers that float, Volt 10 quick sparks, Cosmic 14 motes that hang.
-  A spell's hit bursts in its caster's Art's element instead, never the weapon's ([[Arts]]).
+  jumping up to 0.04 m twelve times a second, and leave about 30 motes a second. A blow that lands for harm bursts
+  in the element it carried where it lands (the player's own in their glow as their page shows it), two figure pixels
+  a mote: Blaze 18 embers that float under three tongues of flame, Volt 15 quick sparks under four forks, Cosmic 21
+  glints that hang under a six-pointed star ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). A
+  spell's hit bursts in its caster's Art's element instead, never the weapon's ([[Arts]]).
 - **The Test Ground.** Its Attack feel's Element glow row turns the glow off, or shows the gear's own element or one
   chosen in its place.
 

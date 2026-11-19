@@ -383,6 +383,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 defender: event.defender,
                 amount: event.amount,
                 stroke: event.stroke.map_or(0, |stroke| stroke as u8),
+                crit: event.crit,
+                element: event.element,
             };
             messages::Event::create(&mut builder, &args)
         })

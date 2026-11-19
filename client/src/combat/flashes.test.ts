@@ -39,6 +39,16 @@ test('a struck foe flashes whole for two frames, its outline white for two, then
   assert.deepEqual(shown.slice(5), ['off', 'off'], 'then off: never a fading ghost');
 });
 
+test('a crit’s struck foe keeps the whole white frames, then its outline in gold for four frames', () => {
+  const flashes = new Flashes();
+  flashes.update([blow(EVENT.hit, 1, 14, { crit: true })], 0, { player: 40, look: 0 });
+  const shown = frames(flashes, 1, 8);
+  assert.deepEqual(shown.slice(0, 2), [`${FLASH.whole}:1,1,1`, `${FLASH.whole}:1,1,1`]);
+  assert.deepEqual(new Set(shown.slice(2, 6)), new Set([`${FLASH.outline}:1,0.85,0.35`]), 'gold, four frames');
+  assert.ok(shown[6]?.startsWith(`${FLASH.outline}:`), 'then steel');
+  assert.equal(shown[7], 'off');
+});
+
 test('the player’s own flash is their outline in red, whole first only for a blow over a quarter of their health', () => {
   const light = flashAt(0, { own: true, whole: false, look: 0 });
   assert.equal(light?.stage, FLASH.outline);

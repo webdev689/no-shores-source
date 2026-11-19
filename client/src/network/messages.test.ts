@@ -83,10 +83,12 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
       event.defender,
       event.amount,
       event.stroke,
+      event.crit,
+      event.element,
     ]),
     [
-      [1233n, 3, 1, 12, 9, 0, 0],
-      [1234n, 1, 2, 9, 12, 35, 3],
+      [1233n, 3, 1, 12, 9, 0, 0, false, 0],
+      [1234n, 1, 2, 9, 12, 35, 3, true, 2],
     ],
   );
   const [arrow] = snapshot.shots;

@@ -6,15 +6,16 @@ import type { FighterView } from '../rules/fighters.ts';
 import { EVENT, HOW } from './cues.ts';
 
 /** How long each meeting holds both still (seconds): a blow that harms, a kill, a guard broken, a stagger, a parry
- *  and a block. A kill holds longest, so it lands hardest. */
+ *  and a block; and a crit landing. A kill holds longest, so it lands hardest. */
 const HOLD: Readonly<Record<number, number | undefined>> = {
   [EVENT.hit]: 0.075,
-  [EVENT.killed]: 0.14,
+  [EVENT.killed]: 0.16,
   [EVENT.guardBroken]: 0.11,
   [EVENT.staggered]: 0.09,
   [EVENT.parried]: 0.08,
   [EVENT.blocked]: 0.05,
 };
+const CRIT_HOLD = 0.11;
 /** After a hold, the drawing runs this share faster than the rules until it has caught up; however many blows land, it
  *  is never more than this far behind (seconds). */
 const CATCH_UP = 0.6;
@@ -43,7 +44,8 @@ export class HitStops {
    *  nothing holds nothing, and nor does a shot or a spell: the feel is the blows'. */
   struck(events: readonly FightEvent[], length = 1): void {
     for (const event of events) {
-      const hold = (HOLD[event.kind] ?? 0) * length;
+      const crit = event.kind === EVENT.hit && event.crit ? CRIT_HOLD : 0;
+      const hold = Math.max(HOLD[event.kind] ?? 0, crit) * length;
       const notABlow = event.how === HOW.shot || event.how === HOW.spell;
       if (hold <= 0 || notABlow || (event.kind === EVENT.hit && event.amount <= 0)) continue;
       for (const [id, struck] of [

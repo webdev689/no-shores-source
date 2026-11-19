@@ -127,8 +127,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
 - **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
   throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
   `?blood=off` draws none.
-- **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
-  the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
+- **Where blows land.** Every blow that lands, every clash of steel and every kill shows where it happened, as the
+  [[Game]] shows it: a star, a ring, a slash, sparks and bursts, a crit's gold, a kill's dust and chips, and an
+  elemental kill's finisher ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look").
 - **The attack feel.** Four effects over the fight's blows, each switched on or off and set by a slider in the panel's
   **Attack feel**, kept in the browser with its numbers shown to copy
   ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never
@@ -161,8 +162,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     something, stops where a flinch or a dodge cuts it short, and waits while the fight waits. None is drawn through
     the eyes. Brightness and trail are set.
   - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
-    0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing, or a shot, holds
-    nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch
+    0.08 s, a stagger 0.09 s, a guard broken or a crit 0.11 s, a kill 0.16 s; a blow that harms nothing, or a shot,
+    holds nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch
     up at 1.6 times, never more than 0.2 s behind, and the player's hands go back to the rules' clock as what they do
     changes. Other players' figures, drawn from their own looks, are not held. Its length is set.
   - *Camera kick.* The player's blow landing punches the view down and along the stroke and shakes it a little, harder
@@ -184,8 +185,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by rank, a "?" while it is
   suspicious or searching and a "!" for a second as it turns alert, no plate over another's; under the compass, for the
   nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and its health in
-  yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
-  came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
+  yellow marked at 2/3 and 1/3 ([[Enemies]]); words where each blow met the body for each blow and what it came to
+  (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Crit, Slain, a foe's Feint),
   gold or green when it is good for the player and red when bad; in first person, words about the player under the
   crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a
   foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once

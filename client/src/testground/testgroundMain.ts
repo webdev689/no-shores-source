@@ -280,7 +280,7 @@ async function start(): Promise<void> {
     });
     const own = fighting.own;
     effects.ownLook = player.glowing[0];
-    const events = effects.events(fighting, seconds);
+    const events = effects.events(fighting, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
     const ownFought = effects.flashes.ownOf(own);
     player.fought(ownFought.surge, ownFought.contact);
     feel.frame(events, own, fighting.player, seconds, new Set(fighting.others.keys()));
