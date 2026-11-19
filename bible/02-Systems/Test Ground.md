@@ -117,10 +117,13 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
   rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the jump);
   the parry's deflect, or a shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed
-  blow's stroke raised through its wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame,
-  before it fires; a crossbow aimed, raised as its shot's first frame; a bow aimed, drawn over the first half of its
-  shot's frames and held fully drawn on the last of them, loosing and lowering over the rest only as its arrow leaves.
-  A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
+  blow's stroke raised through its wind-up and held at its end when it overreaches. A ranged weapon aimed, standing or
+  walking, is held on the frame before the one its shot leaves on, aimed or drawn as it fires but without the flash or
+  the slack string: a thunderlock's or a pistolet's second frame, a brace's first (its right pistol aimed), a bow's or a
+  crossbow's second, a bow drawn to it over its first. Loosed, the shot plays on from that frame, its flash or loose
+  shown as the first person's shot leaves, a brace's left raised and then fired. A foe's aimed shot is drawn through
+  its wind-up and held the same way, in its own weapon. A foe's swings are its stroke's frames, by its weapon, landing
+  their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
   drawn at once, four figure pixels wide with a dark line outside it, and its fill growing with the wind-up, a
   quarter of its cells dithered whole on the ground, each cell four figure pixels square. In its last fifth of a second the fill keeps half its cells, and for its first
