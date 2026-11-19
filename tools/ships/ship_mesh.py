@@ -80,6 +80,36 @@ class Piece:
             self.orient(low, part, [-value for value in along])
             self.orient(high, part, along)
 
+    def slab(self, corner, edges, part):
+        """A box at any angle: from `corner`, spanned by its three edge vectors."""
+        first, second, third = edges
+        at = lambda a, b, c: tuple(corner[axis] + a * first[axis] + b * second[axis] + c * third[axis]  # noqa: E731
+                                   for axis in range(3))
+        middle = at(0.5, 0.5, 0.5)
+        for fixed in range(3):
+            for level in (0, 1):
+                corners = []
+                for one, other in ((0, 0), (1, 0), (1, 1), (0, 1)):
+                    weights = [one, other]
+                    weights.insert(fixed, level)
+                    corners.append(at(*weights))
+                centre = [sum(point[axis] for point in corners) / 4 for axis in range(3)]
+                self.quad(corners, part, [centre[axis] - middle[axis] for axis in range(3)])
+
+    def ring(self, centre, axis, radius, thickness, part, segments=12):
+        """A hoop round `axis` through `centre`: a band, `thickness` across, of `segments` prisms."""
+        along = normalised(axis)
+        helper = (0.0, 0.0, 1.0) if abs(along[2]) < 0.9 else (1.0, 0.0, 0.0)
+        first = normalised(cross(along, helper))
+        second = cross(along, first)
+        points = []
+        for step in range(segments + 1):
+            angle = 2 * math.pi * step / segments
+            points.append(tuple(centre[index] + radius * (math.cos(angle) * first[index] + math.sin(angle)
+                                                          * second[index]) for index in range(3)))
+        for start, end in zip(points, points[1:]):
+            self.prism(start, end, thickness / 2, part, sides=4)
+
     def orient(self, indices, part, facing):
         """A face through points already made, wound so its normal leans the way of `facing`."""
         normal = face_normal([self.points[index] for index in indices])

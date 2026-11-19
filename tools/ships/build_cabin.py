@@ -1,6 +1,6 @@
 """Builds the one cabin every ship opens into: a captain's cabin with walls leaning out as a ship's sides do, beams
-across its ceiling, stairs down from a hatch at its forward end, windows across its stern, and a table with a chart
-under a hanging lantern, chairs, a bunk, a sea chest and a desk.
+across its ceiling, stairs down from a hatch at its forward end, and windows across its stern, furnished by
+tools/ships/cabin_props.py along its walls and stern.
 
     <python with bpy> tools/ships/build_cabin.py <out.blend>
 
@@ -15,6 +15,7 @@ import sys
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cabin_props import furnish  # noqa: E402
 from ship_fittings import TREAD_RISE_M  # noqa: E402
 from ship_mesh import Piece  # noqa: E402
 
@@ -59,7 +60,8 @@ def build_cabin(collection):
     beams(piece, aft, hatch_aft)
     foot = stairs(piece, fore, hatch_aft)
     windows(piece, aft)
-    furniture(piece, aft)
+    furnish(piece, {'aft': aft, 'fore': fore, 'hatch_aft': hatch_aft, 'hatch_half': hatch_half, 'height': HEIGHT_M,
+                    'floor_half': FLOOR_HALF_M, 'ceiling_half': CEILING_HALF_M, 'beam_every': BEAM_EVERY_M})
     item = piece.build('Cabin', collection)
     for name, place in (('Cabin.Inside', (foot - 0.6, 0.0, 0.0)), ('Cabin.Exit', (foot - 0.1, 0.0, 0.0))):
         marker = bpy.data.objects.new(name, None)
@@ -91,9 +93,28 @@ def stairs(piece, fore, hatch_aft):
         piece.box((x, -0.55, max(0.0, z - 0.05)), (x + run + 0.03, 0.55, max(0.05, z)), 'deck')
     bottom = top - treads * run
     for side in (1, -1):
-        piece.prism((top, side * 0.6, HEIGHT_M), (bottom, side * 0.6, 0.0), 0.05, 'spar', sides=4)
-        piece.prism((top, side * 0.6, HEIGHT_M + 0.9), (bottom, side * 0.6, 0.9), 0.03, 'spar', sides=6)
+        piece.slab((bottom, side * 0.55, -0.1), ((top - bottom, 0, HEIGHT_M), (0, side * 0.06, 0), (0, 0, 0.32)),
+                   'spar')
+        handrail(piece, (bottom, top), side * 0.6)
     return bottom
+
+
+def handrail(piece, run, y):
+    """A rail up one side of the stairs: a newel post at their foot, balusters standing on the stringer, and the
+    rail rising with the treads until a post ties it into the hatch's coaming."""
+    bottom, top = run
+    rail_at = lambda share: (bottom + share * (top - bottom), y, 0.95 + share * HEIGHT_M)  # noqa: E731
+    end = (HEIGHT_M - 0.25 - 0.95) / HEIGHT_M
+    piece.box((bottom - 0.07, y - 0.07, 0.0), (bottom + 0.07, y + 0.07, 1.05), 'spar')
+    piece.box((bottom - 0.09, y - 0.09, 1.05), (bottom + 0.09, y + 0.09, 1.12), 'spar')
+    piece.prism(rail_at(0.0), rail_at(end), 0.035, 'spar', sides=6)
+    share = 0.1
+    while share < end:
+        x, _, rail_z = rail_at(share)
+        piece.prism((x, y, 0.22 + share * HEIGHT_M), (x, y, rail_z), 0.018, 'spar', sides=4, caps=False)
+        share += 0.09
+    x, _, rail_z = rail_at(end)
+    piece.box((x - 0.05, y - 0.05, rail_z - 0.05), (x + 0.05, y + 0.05, HEIGHT_M - 0.2), 'spar')
 
 
 def windows(piece, aft):
@@ -112,47 +133,6 @@ def windows(piece, aft):
         piece.box((aft + 0.06, y - half + 0.06, z0 + tall / 2 - 0.02), (aft + 0.09, y + half - 0.06,
                   z0 + tall / 2 + 0.02), 'spar')
         piece.box((aft + 0.02, y - half - 0.05, z0 - 0.14), (aft + 0.28, y + half + 0.05, z0 - 0.08), 'deck')
-
-
-def furniture(piece, aft):
-    """A captain's: a table with a chart under a lantern, two chairs, a bunk, a sea chest and a desk."""
-    table_x = aft + 2.4
-    top = 0.76
-    piece.box((table_x - 0.85, -0.5, top - 0.06), (table_x + 0.85, 0.5, top), 'deck')
-    for dx in (-0.75, 0.75):
-        for dy in (-0.4, 0.4):
-            piece.box((table_x + dx - 0.05, dy - 0.05, 0), (table_x + dx + 0.05, dy + 0.05, top - 0.06), 'spar')
-    piece.box((table_x - 0.45, -0.3, top), (table_x + 0.35, 0.3, top + 0.01), 'sail')
-    for side in (1, -1):
-        chair(piece, table_x + 0.1, side * 0.85, side)
-    lantern_top = HEIGHT_M - 0.16
-    piece.prism((table_x, 0.0, lantern_top), (table_x, 0.0, lantern_top - 0.45), 0.012, 'iron', sides=4)
-    piece.prism((table_x, 0.0, lantern_top - 0.45), (table_x, 0.0, lantern_top - 0.75), 0.11, 'iron', sides=6,
-                end_radius=0.09)
-    wall = FLOOR_HALF_M
-    bunk_x = aft + 1.3
-    piece.box((bunk_x - 1.0, -wall, 0), (bunk_x + 1.0, -wall + 0.9, 0.45), 'spar')
-    piece.box((bunk_x - 0.95, -wall + 0.05, 0.45), (bunk_x + 0.95, -wall + 0.85, 0.6), 'sail')
-    piece.box((bunk_x - 1.0, -wall + 0.82, 0.45), (bunk_x + 1.0, -wall + 0.9, 0.7), 'spar')
-    chest_x = bunk_x + 1.55
-    piece.box((chest_x - 0.4, -wall + 0.1, 0), (chest_x + 0.4, -wall + 0.65, 0.5), 'hull')
-    for dx in (-0.25, 0.25):
-        piece.box((chest_x + dx - 0.03, -wall + 0.08, 0), (chest_x + dx + 0.03, -wall + 0.67, 0.52), 'iron')
-    desk_x = aft + 1.0
-    piece.box((desk_x - 0.7, wall - 0.6, 0), (desk_x + 0.7, wall, 0.8), 'spar')
-    for z in (0.2, 0.5):
-        piece.box((desk_x - 0.6, wall - 0.62, z), (desk_x + 0.6, wall - 0.6, z + 0.22), 'deck')
-    piece.box((desk_x - 0.65, wall - 0.55, 0.8), (desk_x + 0.65, wall - 0.05, 1.25), 'deck', skip=('bottom',))
-
-
-def chair(piece, x, y, side):
-    seat = 0.45
-    piece.box((x - 0.22, y - 0.22, seat - 0.05), (x + 0.22, y + 0.22, seat), 'deck')
-    for dx in (-0.18, 0.18):
-        for dy in (-0.18, 0.18):
-            piece.box((x + dx - 0.03, y + dy - 0.03, 0), (x + dx + 0.03, y + dy + 0.03, seat - 0.05), 'spar')
-    back = y + side * 0.2
-    piece.box((x - 0.22, back - 0.03, seat), (x + 0.22, back + 0.03, seat + 0.5), 'spar')
 
 
 def main():

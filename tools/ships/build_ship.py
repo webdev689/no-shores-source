@@ -12,6 +12,7 @@ import sys
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ship_details import build_details  # noqa: E402
 from ship_fittings import build_fittings, place_guns  # noqa: E402
 from ship_hull import Hull, build_hull  # noqa: E402
 from ship_rig import build_rig  # noqa: E402
@@ -46,7 +47,8 @@ HULLS = {
         'bowsprit': {'from_x_m': 10.4, 'to_x_m': 20.5, 'rise_m': 2.2, 'radius_m': 0.22},
         'staysail': {'head_m': 13.4, 'clew_m': 2.2, 'clew_ahead_m': 1.0},
         'helm_x_m': -11.0,
-        'hatch_x_m': 1.6,
+        'hatch_x_m': 3.7,
+        'boat_x_m': 0.6,
         'stern_windows': ((-12.35, 1), (-12.35, -1), (-12.85, 1), (-12.85, -1)),
     },
 }
@@ -64,6 +66,7 @@ def main():
     build_hull(hull, collection)
     build_rig(hull, collection)
     build_fittings(hull, collection)
+    build_details(hull, collection)
     place_guns(hull, collection, os.path.abspath(given.sloop))
     bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(given.out))
 

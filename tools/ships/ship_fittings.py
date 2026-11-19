@@ -8,13 +8,13 @@ open them.
 import math
 
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
+from mathutils import Euler, Matrix
 
 from ship_hull import BODY_ROWS, inner
 from ship_mesh import Piece, part_materials
 
-# The Sloop's guns stand this far inboard of her bulwark's inner face and this high over her deck.
-GUN_INBOARD_M = 0.51
-GUN_OVER_DECK_M = 0.35
+# How far a gun's muzzle stands out past her planks, as the Sloop's do.
+MUZZLE_OUT_M = 0.25
 # A tread of her steps rises this much, as the Sloop's (tools/ships/deck.py walks 13 cm).
 TREAD_RISE_M = 0.13
 
@@ -107,10 +107,10 @@ def rail_posts(piece, hull):
 
 
 def bow(piece, hull):
-    """Her stem rising over her rail at the bow, and the bitts the bowsprit seats between."""
+    """Her stem, from where her keel meets her bow to over her rail, and the bitts the bowsprit seats between."""
     fore = hull.fore
     rail = hull.section(fore - 0.3)[-1][1]
-    piece.box((fore - 0.35, -0.14, rail - 1.2), (fore + 0.12, 0.14, rail + 0.55), 'hull')
+    piece.box((fore - 0.35, -0.16, hull.keel(fore) - 0.05), (fore + 0.12, 0.16, rail + 0.55), 'hull')
     sprit = hull.numbers['bowsprit']['from_x_m']
     deck = hull.deck(sprit)
     for side in (1, -1):
@@ -215,13 +215,32 @@ def place_guns(hull, collection, sloop):
         for slot, material in enumerate(mesh.materials):
             # Her materials come in as `iron.001` and the like beside this file's own parts; each is one of them.
             mesh.materials[slot] = parts[material.name.split('.')[0]]
-        models[item.name.split('.')[1].lower()] = (mesh, tuple(item.rotation_euler), tuple(item.scale))
+        side = 1 if 'Port' in item.name else -1
+        models[side] = (mesh, tuple(item.rotation_euler), tuple(item.scale), muzzle_of(item, side))
         bpy.data.objects.remove(item)
-    for side_name, side in (('port', 1), ('starboard', -1)):
-        mesh, rotation, scale = models[side_name]
+    for side, side_name in ((1, 'Port'), (-1, 'Starboard')):
+        mesh, rotation, scale, (muzzle, bottom) = models[side]
         for number, x in enumerate(sorted(hull.numbers['ports'], reverse=True), start=1):
-            gun = bpy.data.objects.new(f'Cannon.{side_name.title()}.{number}', mesh.copy())
+            gun = bpy.data.objects.new(f'Cannon.{side_name}.{number}', mesh.copy())
             gun.rotation_euler = rotation
             gun.scale = scale
-            gun.location = (x, side * (inside(hull, x) - GUN_INBOARD_M), hull.deck(x) + GUN_OVER_DECK_M)
+            deck = hull.deck(x)
+            (_, out_y, _), _ = hull.surface(x, deck + bottom_to_muzzle(muzzle, bottom))
+            gun.location = (x - muzzle[0], side * (out_y + MUZZLE_OUT_M) - muzzle[1], deck - bottom)
             collection.objects.link(gun)
+
+
+def muzzle_of(item, side):
+    """A gun's muzzle, the middle of its mouth, from its origin as placed and turned; and its lowest point, its wheels
+    on the deck, below its origin."""
+    # Loaded from the Sloop's file without a scene, its world matrix is not kept: its turn and size are.
+    shape = Euler(item.rotation_euler).to_matrix() @ Matrix.Diagonal(item.scale)
+    points = [shape @ vertex.co for vertex in item.data.vertices]
+    outermost = max(side * point.y for point in points)
+    mouth = [point for point in points if side * point.y > outermost - 0.03]
+    centre = [sum(point[axis] for point in mouth) / len(mouth) for axis in range(3)]
+    return centre, min(point.z for point in points)
+
+
+def bottom_to_muzzle(muzzle, bottom):
+    return muzzle[2] - bottom

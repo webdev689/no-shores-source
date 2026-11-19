@@ -13,9 +13,10 @@ from ship_mesh import Piece
 BODY_ROWS = ((0.0, 0.0), (0.45, 0.25), (0.8, 0.55), (0.97, 0.82), (1.0, 1.0))
 KEEL_HALF_M = 0.14
 BULWARK_THICK_M = 0.18
-# A gunport's sill and lintel over the deck, and its half width.
-PORT_SILL_M = 0.3
-PORT_LINTEL_M = 0.95
+# A gunport's sill and lintel over the deck, and its half width: round the Sloop's gun's muzzle, which stands 0.33 m
+# over the deck its wheels are on, and is 0.4 m across at its swell.
+PORT_SILL_M = 0.06
+PORT_LINTEL_M = 0.66
 PORT_HALF_M = 0.36
 # How the bulwark leans in toward the rail (her tumblehome), as shares of her half-beam at the sill, lintel and rail.
 BULWARK_LEAN = (0.99, 0.97, 0.95)
@@ -137,7 +138,19 @@ def build_hull(hull, collection):
                        (x, -rows[row + 1][0], rows[row + 1][1]), (x, -rows[row][0], rows[row][1])]
             piece.quad(corners, 'hull', (1 if x > 0 else -1, 0, 0))
     quarterdeck_front(piece, hull)
+    ends(piece, hull)
     return piece.build('Hull', collection)
+
+
+def ends(piece, hull):
+    """Solid timber where her bulwarks meet at her stem and her stern, each thicker than she is wide there, so no
+    gap between their inner faces opens to the sky. It stays inside her narrowest planks, so none of it shows."""
+    rise = hull.numbers['quarterdeck_m'][1]
+    half = KEEL_HALF_M - 0.01
+    for x0, x1, floor_rise in ((hull.fore - 0.8, hull.fore, 0.0), (hull.aft, hull.aft + 0.45, rise)):
+        middle = (x0 + x1) / 2
+        top = hull.section(middle)[-1][1] + 0.08
+        piece.box((x0, -half, hull.deck(middle) + floor_rise), (x1, half, top), 'hull')
 
 
 def strip(x0, x1, a, b, row, side):
