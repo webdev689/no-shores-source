@@ -178,8 +178,31 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
+- The first story mission, the [[Prologue]], on pull request #74 (stacked on #71, whose ships it uses), as the owner
+  set it ([[The Game Opens With a Story Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]].
+  The default page opens on it: a tap to start; the intro over four islands to Saltmere's title; the storm and the
+  Brig; creation at her helm; the sighting, the sea fight won by beating all three pirates, the calm, and Thule's
+  Frigate ramming her; waking in the wreck and fighting through it, a heap of debris opening as each wave falls, to
+  Thule and the fight that cannot be won; overboard, the deep, and the shore, where a stranger helps the player up and
+  walks them into Overlook. Its layers are the [[Cinema]] (camera rails, weather, lightning, birds, fire, sound made in
+  the browser) and [[Speech]] (voices, the dialogue box, barks and marks over heads), and the [[Dialogue]] rule with
+  its check. Tested offline: the full check; headless pictures of every beat at 960x540, each started on its own with
+  `?prologue=<beat>`, since a frame there takes seconds.
+
 ## Waiting on the owner
 
+- **#74, the prologue**, waits on #71 and then the owner's yes to merge, which deploys the page and the rooms. Every
+  call inside the beats is in [[The Prologue as Claude Shapes It]], the owner's to change: among them Thule's ship as
+  the Frigate (the Tithe Ram is not built), the sea fight won once all three are beaten, a heap per wave in the wreck,
+  and the crew's and the stranger's words.
+- Music in the story: `storyCue` plays nothing yet. #73's music director would take a story beat as a new cue; the
+  pull request that reaches `main` second wires it.
+- fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
+  session that finished the prologue, so the likeness is unchecked.
+- Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
+  layer yet"). A touch player can start the story but not play its fights.
+- Without `?room=` the page has no accounts, so creation's account step only says accounts are kept online. The online
+  default is the owner's.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
@@ -259,6 +282,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **The prologue, not yet seen**: on a real GPU, and heard (its ambience, voices and their levels have never been
+  listened to); played through in one run in a browser (headless, each beat was started on its own); the wreck's frame
+  time, now that its decks are 760 blocks.
 - **The waters, next** ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): the owner asked to hear more and was
   shown Claude's proposal, not yet decided: a water is a named stretch of sea with an owner and a level band; its band
   follows the islands' (`crates/gear/src/world.rs` ISLANDS), a ship's level from her water and her hull by rank
