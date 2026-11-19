@@ -14,6 +14,7 @@ import {
   type HoverCard,
   DISMANTLE_KEY,
   cardNode,
+  closeOffHover,
   dismantleOnHold,
   glyphImage,
   itemIcon,
@@ -152,6 +153,7 @@ export function characterPage(
       if (filled === 0) flyout.append(make('p', 'Nothing carried for this slot yet.', 'gear-hint'));
       flyout.append(grid);
       holder.append(flyout);
+      closeOffHover(holder, () => choose(null));
     }
     return holder;
   };

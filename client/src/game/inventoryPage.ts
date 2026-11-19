@@ -1,8 +1,8 @@
-// The inventory page, after Destiny's: the currencies along its head, each named under its count; then the Vestiges
-// carried, ten places in two rows of five as Destiny 2's engrams stand, an empty place a dark Vestige; then shelves to
-// switch between the consumables and the materials, each counting what it holds and dimmed while it holds nothing. The
-// gear itself is on the Character page. The materials are a list, each named beside its count, so nine alike are told
-// apart; the rest are a grid of cells, each its glyph in a well of its rarity, its count at its foot and its pips
+// The inventory page, after Destiny's: Aurem, the one currency, along its head, named under its count; then the
+// Vestiges carried, ten places in two rows of five as Destiny 2's engrams stand, an empty place a dark Vestige; then
+// shelves to switch between the consumables and the materials, each counting what it holds and dimmed while it holds
+// nothing, a stack of none not shown. The gear itself is on the Character page. The materials are a list, the
+// fragments and Essence then the islands' resources, each named beside its count, so nine alike are told apart; the rest are a grid of cells, each its glyph in a well of its rarity, its count at its foot and its pips
 // beside it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
 // Vestige opened at the Reader); a right-click its other use.
 
@@ -108,7 +108,6 @@ function materialRow(context: PageContext, cell: Cell): HTMLElement {
   row.setAttribute('role', 'listitem');
   row.tabIndex = 0;
   row.dataset['key'] = `cell-${cell.key}`;
-  row.classList.toggle('gear-none', !holds(cell));
   const icon = glyphImage(cell.glyph === 'item' ? 'empty' : cell.glyph, cell.rarity, cell.tint);
   icon.width = icon.height = ROW_PX;
   row.append(icon, make('span', cell.name, 'gear-material-name'), make('b', (cell.count ?? 0).toLocaleString()));

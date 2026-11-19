@@ -183,6 +183,14 @@ let aimed: HTMLElement | null = null;
 let keyHeld: HTMLElement | null = null;
 let listening = false;
 
+/** Closes an open slot's grid once the mouse is off the slot and the grid, at the owner's word; a touch, a click and
+ *  Escape close it as before. */
+export function closeOffHover(holder: HTMLElement, close: () => void): void {
+  holder.addEventListener('pointerleave', (event) => {
+    if (event.pointerType === 'mouse') close();
+  });
+}
+
 /** Lets `tile`, a carried piece's, be dismantled by holding F while the pointer is over it or it has the focus, as
  *  long as its rarity asks, its picture charging and breaking apart once it acts. */
 export function dismantleOnHold(tile: HTMLElement, rarity: number, dismantle: () => void): void {

@@ -233,7 +233,9 @@ never while a press is held. Each press is an ask the room answers.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
   Attack, Defense, Prestige and Fruit of Dagon. The weapons, the cloak and the emblem stand to its left, the armour to
   its right, each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its
-  flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. The emblem's flyout holds every emblem, five a row: those
+  flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. A flyout closes once
+  the mouse is off its slot and itself, a strip over the gap between them keeping it while the mouse crosses, or on a
+  click or Escape. The emblem's flyout holds every emblem, five a row: those
   kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
@@ -245,10 +247,11 @@ never while a press is held. Each press is an ask the room answers.
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** The currencies along the top; under them the Vestiges carried, "Vestiges 3/10" over ten places in
+- **Inventory.** Aurem, the one currency, along the top; under it the Vestiges carried, "Vestiges 3/10" over ten places in
   two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
-  then shelves, each counting what it holds: Consumables, and Materials, a list by name and count. The gear is on the
-  Character page alone.
+  then shelves, each counting what it holds: Consumables, and Materials, a list by name and count, the Weapon and
+  Armor Fragments and Essence first, then the islands' resources. Each is a stack, shown only while one is held. The
+  gear is on the Character page alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks

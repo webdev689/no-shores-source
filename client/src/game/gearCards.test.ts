@@ -76,22 +76,28 @@ test('a slot’s flyout holds its nine places, and a carried blade is worn in th
   assert.deepEqual(wearIn(blade, 1)?.ask, { kind: ASKS.wear, item: 3, slot: 1 });
 });
 
-test('the inventory shows its currencies, and Vestiges open only in a social space; it has no vault', () => {
+test('the inventory: Aurem its one currency, stacks shown only while held, and Vestiges open only in a social space', () => {
   const vestige = { id: 9, rarity: 3, slot: 3, level: 20, vaulted: false };
-  const away = inventoryPageOf(state({ aurem: 900, stocks: [4, 5, 6, 7, 2], vestiges: [vestige] }));
+  const resources = [0, 3, 0, 0, 0, 0, 0, 0, 0];
+  const away = inventoryPageOf(state({ aurem: 900, stocks: [4, 0, 6, 7, 2], resources, vestiges: [vestige] }));
   assert.deepEqual(
     away.currencies.map((each) => [each.name, each.count]),
-    [
-      ['Aurem', 900],
-      ['Weapon Fragments', 4],
-      ['Armor Fragments', 5],
-      ['Weapon Essence', 6],
-      ['Armor Essence', 7],
-    ],
+    [['Aurem', 900]],
   );
   const tab = (page: typeof away, id: string) => page.tabs.find((each) => each.id === id)?.cells ?? [];
   assert.equal(tab(away, 'consumables')[0]?.count, 2, 'the Fruit of Dagon');
-  assert.equal(tab(away, 'materials').length, 9, 'every island’s resource');
+  assert.deepEqual(
+    tab(away, 'materials').map((each) => [each.glyph, each.count]),
+    [
+      ['weapon-fragments', 4],
+      ['weapon-essence', 6],
+      ['armor-essence', 7],
+      ['resource', 3],
+    ],
+    'the stocks then the resources, as stacks; none of what is not held',
+  );
+  const none = inventoryPageOf(state({ stocks: [0, 0, 0, 0, 0] }));
+  assert.deepEqual([tab(none, 'consumables'), tab(none, 'materials')], [[], []], 'nothing held, nothing shown');
   const vestiges = away.vestiges;
   assert.equal(vestiges.cells.length, 10, 'ten places');
   assert.deepEqual([vestiges.held, vestiges.most], [1, 10]);

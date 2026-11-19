@@ -491,8 +491,7 @@ img.gear-glyph {
   width: 24px;
   height: 24px;
 }
-.gear-cell.gear-none,
-.gear-material.gear-none {
+.gear-cell.gear-none {
   opacity: 0.6;
 }
 .gear-count {
@@ -592,6 +591,20 @@ img.gear-glyph {
   padding: 10px;
   border: 2px solid transparent;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+/* A strip over the 10 px between a slot and its grid, so the mouse crossing it stays on the grid. */
+.gear-flyout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+}
+.gear-character > .gear-side:first-child .gear-flyout::before {
+  right: 100%;
+}
+.gear-character > .gear-side:last-child .gear-flyout::before {
+  left: 100%;
 }
 .gear-side > .gear-slot-holder:last-child .gear-flyout {
   top: auto;
