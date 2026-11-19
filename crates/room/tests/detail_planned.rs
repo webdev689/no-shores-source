@@ -337,12 +337,36 @@ fn the_vales_river_lies_in_its_section() {
 fn no_other_node_is_raised_or_claimed_by_the_vales_wing() {
     let (with, _, with_ground) = laid_one();
     let (without, _, without_ground) = settled_by("continent-1", &|briefs| {
-        if let Some(vale) = briefs.0.get_mut("gullwing-vale") {
-            vale.river = false;
-        }
+        briefs.0.get_mut("gullwing-vale").expect("the vale has a brief").river = false;
     });
-    assert!(zone("gullwing-vale").sculpt.wings.len() > 1, "the vale's river has its wings");
-    for (now, was) in with.iter().zip(&without).filter(|(now, _)| now.id != "gullwing-vale") {
+    let vale = zone("gullwing-vale");
+    let bare = without.iter().find(|laid| laid.id == "gullwing-vale").expect("the vale lays out without its river");
+    assert!(
+        vale.sculpt.wings.len() > bare.sculpt.wings.len(),
+        "the river's wings: {} with it, {} without",
+        vale.sculpt.wings.len(),
+        bare.sculpt.wings.len()
+    );
+    // No wing of the vale reaches another node's claim.
+    for laid in with.iter().filter(|laid| laid.id != vale.id) {
+        let claim = &laid.sculpt.claim;
+        for &[x1, y1, x2, y2, half] in &vale.sculpt.wings {
+            let line = [[x1, y1], [x2, y2]];
+            let apart =
+                (0..claim.len()).map(|edge| segments_apart(line, [claim[edge], claim[(edge + 1) % claim.len()]]));
+            let apart = apart.fold(f64::INFINITY, f64::min);
+            let inside = layout::field::ring_holds(claim, x1, y1);
+            assert!(
+                !inside && apart > half,
+                "the vale's wing {:?} reaches {}'s claim",
+                [x1, y1, x2, y2, half],
+                laid.id
+            );
+        }
+    }
+    let ids = |layouts: &[Layout]| layouts.iter().map(|laid| laid.id.clone()).collect::<Vec<_>>();
+    assert_eq!(ids(with), ids(&without), "the same nodes, in the same order");
+    for (now, was) in with.iter().zip(&without).filter(|(now, _)| now.id != vale.id) {
         assert_eq!(now.ring, was.ring, "{}'s section", now.id);
         let points = was
             .sculpt
