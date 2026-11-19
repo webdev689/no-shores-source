@@ -48,8 +48,8 @@ const WATERLINE = { lengthM: 18.6775, beamM: 5.5684, draughtM: 1.8 };
 /** The Sloop drawn 75 m long on the sea's view. */
 const SEA_SCALE = 75 / WATERLINE.lengthM;
 
-test('a fight draws every Sloop, her footprint, everyone aboard and each bar at the size the view shows her', () => {
-  const fight = new SeaCombat(ROOM, FIRST, MARKS, [], 0);
+test('a fight draws every ship, her footprint, everyone aboard and each bar at the size the view shows her', () => {
+  const fight = new SeaCombat(ROOM, FIRST, MARKS, 0);
   const ships = fight.ships(0.1, 0, 0, 3);
   assert.deepEqual(
     ships.map(({ place }) => [place.x, place.y, place.scale]),
@@ -59,15 +59,23 @@ test('a fight draws every Sloop, her footprint, everyone aboard and each bar at 
     ],
   );
   assert.deepEqual(
-    fight.hulls(WATERLINE, 3).map((hull) => [hull.halfLength, hull.halfBeam]),
+    fight.hulls(3).map((hull) => [hull.halfLength, hull.halfBeam]),
     Array.from({ length: 2 }, () => [(WATERLINE.lengthM / 2) * 3, (WATERLINE.beamM / 2) * 3]),
+  );
+  assert.deepEqual(
+    ships.map(({ hull, look }) => [hull, look.side]),
+    [
+      [0, 'player'],
+      [0, 'pirate'],
+    ],
+    "the player's Sloop as she is, the pirate's in the pirates' colours",
   );
   assert.equal(fight.ownAt(3)?.scale, 3);
   assert.deepEqual(fight.bars(3)[0]?.over, [5400, 5500, (0.2 + BAR_OVER_M) * 3]);
 });
 
 test("a fight begun at the sea's view keeps the size she is drawn at, and eases to her true size as it comes down", () => {
-  const fight = new SeaCombat(ROOM, FIRST, MARKS, [], 0);
+  const fight = new SeaCombat(ROOM, FIRST, MARKS, 0);
   const her = [5000, 6000, 0] as const;
   const { eye } = eyeFor(her, 2.6, (30 * Math.PI) / 180, HEIGHT.lowest);
   const sea: Shot = { eye, yaw: 2.6, pitch: (30 * Math.PI) / 180, fov: FIELD_OF_VIEW, near: 2, far: 60_000 };

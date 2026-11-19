@@ -23,6 +23,16 @@ code:
   - client/src/ships/sails.ts#SailRig
   - client/src/ships/sails.ts#sailWind
   - client/src/ships/sails.ts#gaffTrim
+  - client/src/ships/sails.ts#squareBrace
+  - client/src/ships/shipModels.ts#ShipModels
+  - client/src/ships/shipTags.ts#tagShip
+  - client/src/ships/shipShader.ts#shipKit
+  - client/src/game/seaShips.ts#heelShare
+  - client/src/ships/hulls.ts#hullName
+  - client/src/ships/hulls.ts#hullPaint
+  - client/src/ships/dress.ts#DRESSES
+  - client/src/ships/flag.ts#flagGrid
+  - client/src/ships/flagPictures.ts#flagPictures
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -131,10 +141,47 @@ Each part wears a picture of the [[Procedural Textures]], repeating at 40 texels
 her hull's strakes and her deck's boards are Daggerfall's ship archive (50) as the painter files it, her spars one
 length of grain, her canvas 0.8 m cloths over a faint weave, her guns mottled iron (`shipPictures`).
 
+Every hull of [[Hulls]] is one model, fetched from R2 by her manifest entry the first time a ship of hers is drawn
+and kept (`ShipModels`), and dressed in her side's colours as she is drawn (`dress.ts`). Every hull's view on a
+device shares one pipeline, built off the frame, and one set of pictures and sampler (`shipKit`). While her model is
+still coming a ship is drawn as the Sloop, her footprint, foam and plate the Sloop's too. A fetch that fails is said
+once and tried again from a frame 5 s later, the wait doubling each time to 60 s. A colour is laid over the
+picture's grain, the picture's lightness about its mean kept:
+
+| Side | Hull | Stripe | Canvas | Flag |
+|---|---|---|---|---|
+| A player's | As painted | None | As painted | Overlook's blue |
+| A friendly ship (merchantmen) | Natural timber, as painted | Overlook's blue | White | Overlook's blue |
+| The Grey Tithe | Slate grey | Bone | Grey | Dark slate, the balance |
+| The pirates | Black | Red | Dark | Black, the skull |
+
+- **Her hull's paint** covers the outside of her shell, tagged when her model loads (`tagShip`). Her breadth is
+  sampled across her hull's faces in slices 0.25 m along her and 0.1 m deep, taken from her planks and wales (her
+  hull's pieces 5 m long or more) where a slice has them, so her channels, chainplates and catheads do not set it.
+  A vertex of her hull facing outboard within 0.15 m of the narrowest breadth round its slice is her side, where
+  that slice is at least 0.6 of her greatest breadth at or below it at that station: a deckhouse standing above her
+  rail is not her side, and her bow flaring out over her forefoot is. Her stem and transom are her shell the same way
+  along her, facing fore or aft within 0.15 m of how far she reaches in their slice across her, and within 0.6 m of
+  how far she reaches at that height. A face modelled inside out, facing inboard on her outside, counts only within
+  3 cm of her breadth in its own slice, where the inside of a bulwark never lies. A face whose corners differ is
+  painted to the halfway between them. Her deck,
+  its fittings and the insides of her bulwarks keep their timber.
+- **Her stripe** is 0.6 m deep along the line through the mouths of her upper tier of guns, rising with her sheer.
+- **Her flag** flies at the head of her tallest mast (the highest point of her spars), a tenth of her waterline's
+  length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its
+  length, a crest and a half on it, running at 1.4 a second. Its picture is `flagPictures`, bearing the faction's
+  emblem where the [[Interface]]'s plates have one.
+
+Which hull a ship sails is the wire's word, a number (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate,
+`hullName`): a `Pirate`'s `hull` at sea, a captain's `hull_kind` in a fight's or a fleet's view. A number with no
+model is drawn as the Sloop. Until the page's records carry those fields, every captain is the Sloop
+(`hullOfCaptain`).
+
 ## Her sails
 
-DFO's sails ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), on her own corners (`SailRig`). Each
-canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large Boat's sizes:
+DFO's sails ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), on her own corners (`SailRig`), each
+hull's from her manifest entry. Each canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large
+Boat's sizes; a spanker is a gaff sail:
 
 - **Filled.** A sail's wind walks one a second toward where the wind draws it (Come Sail Away's `sailWind`): a gaff
   fullest with the wind square across it, a staysail with it astern, to the side it blows toward. Full, the gaff
@@ -142,7 +189,17 @@ canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large
 - **Luffing.** A sail more than 150 degrees off the wind flaps on a sine of the clock, a quarter full each way.
 - **Trimmed.** The gaff swings about its luff to leeward (`gaffTrim`): square off with the wind astern, 45 degrees
   with it abeam, home by 150 off it, at 100 degrees a second (300 by DFO's rule for the swing).
-- **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, the gaff home.
+- **Square sails.** A square sail is laid on its four corners, its columns from port to starboard. It bellies forward
+  as a gaff does sideways, 1.1 m full and 0.12 hanging, most a little under its middle, its head bent straight to its
+  yard; its wind is the cosine of the wind's way off its yard's face: full with the wind astern of it, empty along
+  it, aback past that. Its yard is braced round its mast (`squareBrace`), its leeward arm aft: square with the wind
+  astern, 45 degrees with it abeam and held there closer to it, at the gaff's 100 degrees a second. The yard is drawn
+  turning with it: when her model loads, the round spar pieces lying across her within 0.8 m of the line through each
+  sail's head are its yard, and a bare one across a mast with no sail on it turns with that mast's lowest sail. Each
+  yard and its canvas turn by the same angle about the same upright line through the middle of the yard, so the
+  sail's head stays on its yard at every brace.
+- **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, a square sail
+  gathered in a bundle half a metre deep along its yard, the gaff and the yards home.
 
 In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
 along the swell's bearing.
@@ -161,13 +218,15 @@ rides the wave drawn under her ([[Naval Combat]]).
 ## Drawn at sea
 
 The Overworld's ships are drawn by the page, not stepped by the rules (`swellPose.ts`, `seaShips.ts`), with the World
-Editor's motion ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]):
+Editor's motion ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]), each in her own hull and her
+side's colours, her pose, her heel and her footprint on the water taken from her own hull's waterline:
 
 - **On the swell.** Each takes her pose as `pose_of` does, from the swell the page draws: the mean of the water under
   her bow, stern, sides and middle at her drawn size, and its slope along and across her. Off the charts the sea is
   deep; over shallows the swell fades as the water's does.
-- **Into a turn.** She heels as `turn_heel` has it, by her swing and a ship's own way under way, 12 m/s: 3 degrees
-  with the helm hard over. Her swing is her heading's turn a second, followed at 3 a second and taken at most as the
+- **Into a turn.** She heels as `turn_heel` has it, by her swing and a ship's own way under way, 12 m/s: the Sloop 3
+  degrees with the helm hard over, and every other hull by the Sloop's beam over her own (`heelShare`), so the narrow
+  Schooner heels more and the broad Frigate less. Her pose on the swell is her own hull's, from her waterline. Her swing is her heading's turn a second, followed at 3 a second and taken at most as the
   helm's 10 degrees, so a voyage turning onto its next leg heels her as a hard turn would.
 - **Her wake.** Under way the player's ship stirs the water's ripples at her bow and quarters each frame, as the
   editor's does.

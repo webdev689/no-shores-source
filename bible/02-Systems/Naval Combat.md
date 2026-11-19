@@ -198,7 +198,8 @@ look's bearing picks the side, and where it meets the water is the range, on at 
 lookReach), unless the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, and `C` braces.
 
-Her Sloop is drawn darker from the same model, and the water cuts her footprint as it does the player's. The balls,
+Her ship is drawn in her hull and her faction's colours ([[Sailing]], "Her look"), and the water cuts her footprint
+as it does the player's. The balls,
 the lay's arcs, and each event's flash and smoke, spray and ripples, splinters, dust, and fire aboard
 are small lit spheres. The panel shows both ships' hull, canvas and men, the guns' reload and load, DFO's messages,
 and "BROADSIDE! Brace (C)." while her guns stand run out. Each arc of the lay starts where its ball leaves, a
@@ -249,8 +250,9 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   the size the sea draws her to her true size as on the sea's other views near her ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
-  Every captain in it is drawn with her name over a bar of her hull. Then the view pans back up. Hostile ships at sea
-  are drawn as the Overworld's ships are, darker, each with her footprint on the water, those fighting each other where
+  Every captain in it is drawn with her name over a bar of her hull, her plate as far over her highest sail as the
+  Sloop's stands over hers (`plateOverM`). Then the view pans back up. Hostile ships at sea
+  are drawn as the Overworld's ships are, each in her hull and her faction's colours with her footprint on the water, those fighting each other where
   the room has them. A ship that comes into view is drawn under the sails she sails by, already set (`seaShips.ts`).
 
 ## In a fleet room

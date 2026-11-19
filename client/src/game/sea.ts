@@ -39,7 +39,8 @@ import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
 import { HELM, helmEye, type Landfall, landfallOf, pictureAt, shownScale } from './seaLaw.ts';
 
-/** The Overworld is not to scale: a ship is drawn this long, metres, so one reads from the raised view. */
+/** The Overworld is not to scale: the Sloop is drawn this long, metres, so one reads from the raised view, and every
+ *  hull as many times her own length. */
 const SHIP_DRAWN_M = 75;
 /** The view the ship first comes to: lower than DFO's, so the island it lies off stands in it. */
 const FIRST_TILT = (30 * Math.PI) / 180;
@@ -117,7 +118,7 @@ export interface SeaFrame {
  */
 export class Sea {
   private landmass: Landmass;
-  /** Her waterline and sails, and what draws a fight's marks; how many times her size she is drawn on the sea's view;
+  /** Her waterline, and what draws a fight's marks; how many times her size every ship is drawn on the sea's view;
    *  each ship's rig by who sails her. */
   private readonly hull: SeaHull;
   private readonly scale: number;
@@ -166,7 +167,7 @@ export class Sea {
   ) {
     this.landmass = landmass;
     this.hull = hull;
-    this.drawn = new SeaShips(hull);
+    this.drawn = new SeaShips(hull.shown);
     this.aboard = new Aboard(aboard, SLOOP_DECK);
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
     this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
@@ -511,7 +512,7 @@ export class Sea {
       ships: combat
         ? combat.ships(dt, time, windBearing, scale)
         : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, pirates, scale, this.water),
-      hulls: combat ? combat.hulls(this.hull.waterline, scale) : this.drawn.hulls(own, others, pirates, scale),
+      hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, pirates, scale),
       bars: combat?.bars(scale) ?? [],
       marks: marks.shown,
       figures: aboard
@@ -556,7 +557,7 @@ export class Sea {
     this.aboard.drop();
     this.passage.stop();
     if (this.view.kind === 'helm') this.view = { kind: 'sail' };
-    this.combat = new SeaCombat(this.room, first, this.hull.marks, this.hull.sails, time);
+    this.combat = new SeaCombat(this.room, first, this.hull.marks, time, this.hull.shown);
   }
 
   /** The view coming down to the helm, there, or going back up, `seconds` on: how far down, eased. */

@@ -1,11 +1,13 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import { loadShip, shipSails } from '../ships/shipMesh.ts';
+import { SLOOP_HULL } from '../ships/hulls.ts';
 import { MarkView } from '../ships/markView.ts';
 import { ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
-import { ShipView } from '../ships/shipView.ts';
+import { PLAYER_LOOK } from '../ships/dress.ts';
+import { type DrawnShip, openHull, ShipModels } from '../ships/shipModels.ts';
+import type { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
@@ -141,8 +143,9 @@ export class LandScene {
   private lastFrame = performance.now();
   /** The Sloop and her model; and whether she may still sail (the rules have not refused her). */
   private readonly harbour: Harbour<ShipView>;
-  /** Her sails' rig and a captain's, once her model has come; and when they were last stepped. */
-  private rigs: [SailRig, SailRig] | null = null;
+  /** Every hull's model; her sails' rig, once her model has come; and when the rigs were last stepped. */
+  private readonly models: ShipModels;
+  private rig: SailRig | null = null;
   private sailedAt = 0;
   private mayStillSail = true;
   /** A captain's fight round the Sloop; or, online, the fleet she sails in. */
@@ -159,12 +162,10 @@ export class LandScene {
     this.fail = fail;
     this.overlay = overlay;
     this.water = new WaterView(gpu);
-    this.harbour = new Harbour(
-      () => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'))),
-      fail,
-    );
+    this.models = new ShipModels(openHull(gpu), fail);
+    this.harbour = new Harbour(() => this.models.load(SLOOP_HULL), fail);
     this.marks = new MarkView(gpu);
-    this.naval = new Naval(this.marks);
+    this.naval = new Naval(this.marks, (hull) => this.models.shown(hull));
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -234,7 +235,8 @@ export class LandScene {
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
     const online = frame.sailing ? frame.fleet : null;
-    if (online !== (this.fleet?.play ?? null)) this.fleet = online ? new FleetScene(online, this.marks) : null;
+    if (online !== (this.fleet?.play ?? null))
+      this.fleet = online ? new FleetScene(online, this.marks, (hull) => this.models.shown(hull)) : null;
     const fleet = this.fleet;
     // Online, the ships ride the room's swell, so the water rolls by its clock.
     const time = fleet ? fleet.play.roomTime(now / 1000) : now / 1000;
@@ -311,22 +313,25 @@ export class LandScene {
     });
     terrain.drawInto(pass);
     const ship = this.ship;
-    // Her rig and a captain's, once her model has come.
-    if (ship && !this.rigs) this.rigs = [new SailRig(ship.sails), new SailRig(ship.sails)];
-    const sails = this.rigs && {
-      rig: this.rigs[1],
+    // Her rig, once her model has come.
+    if (ship && !this.rig) this.rig = new SailRig(ship.sails);
+    const wind = {
       bearing: view.swell?.bearing ?? 0,
       seconds: Math.min(MOST_SAIL_STEP_S, Math.max(0, time - this.sailedAt)),
     };
     this.sailedAt = time;
-    if (this.sailing && ship && sails && this.rigs) {
+    const ships: DrawnShip[] = [];
+    if (this.sailing && this.rig) {
       const place = this.sailing.place(view, shown);
-      const wind = { offDeg: windOff(place.heading, sails.bearing), set: this.sailing.sailsSet };
-      this.rigs[0].step(sails.seconds, wind, time);
-      ship.drawInto(pass, place, { fromEye, eye: camera.eye }, 0, 1, this.rigs[0]);
+      const set = this.sailing.sailsSet;
+      this.rig.step(wind.seconds, { offDeg: windOff(place.heading, wind.bearing), set }, time);
+      ships.push({ hull: SLOOP_HULL, place, rig: this.rig, look: PLAYER_LOOK });
     }
-    if (fleet) fleet.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, now / 1000);
-    else this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, time, sails);
+    ships.push(...(fleet ? fleet.ships(view, shown, wind, time) : this.naval.ships(view, shown, wind, time)));
+    const shipCamera = { fromEye, eye: camera.eye };
+    this.models.draw(pass, ships, shipCamera);
+    if (fleet) fleet.draw(pass, view, shown, shipCamera, now / 1000);
+    else this.naval.draw(pass, view, shown, shipCamera, time);
     const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
     if (bars.length > 0) {
       const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
@@ -441,7 +446,7 @@ export class LandScene {
   private hulls(view: LandView): HullMask[] {
     const waterline = this.ship?.waterline;
     if (!waterline || !this.sailing) return [];
-    const others = this.fleet ? this.fleet.hulls(view, waterline) : [this.naval.hull(view, waterline)];
+    const others = this.fleet ? this.fleet.hulls(view) : [this.naval.hull(view)];
     return [this.sailing.hull(view, waterline), ...others.filter((hull) => hull !== null)];
   }
 

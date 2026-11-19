@@ -7,7 +7,14 @@ type Point = readonly [number, number, number];
 /** A sail's corners as her export measured them, in her frame (x to her bow, y to starboard, z up), metres. */
 export type SailCorners =
   | { readonly kind: 'gaff'; readonly tack: Point; readonly clew: Point; readonly throat: Point; readonly peak: Point }
-  | { readonly kind: 'stay'; readonly tack: Point; readonly clew: Point; readonly head: Point };
+  | { readonly kind: 'stay'; readonly tack: Point; readonly clew: Point; readonly head: Point }
+  | {
+      readonly kind: 'square';
+      readonly foot_port: Point;
+      readonly foot_starboard: Point;
+      readonly head_port: Point;
+      readonly head_starboard: Point;
+    };
 
 /** A canvas's grid: points along its foot, and rows from its foot to its head. */
 export const SAIL_COLUMNS = 8;
@@ -90,9 +97,33 @@ function stayPose(sail: Extract<SailCorners, { kind: 'stay' }>, pose: number | '
   return points;
 }
 
+/** A square sail's grid in a pose: its belly forward at `pose` of full (-1 aback, 1 full), furled up to its yard, or
+ *  flat between its corners (null). Its columns run from port to starboard, as its yard does. */
+function squarePose(sail: Extract<SailCorners, { kind: 'square' }>, pose: number | 'stowed' | null): Float32Array {
+  const points = new Float32Array(SAIL_COLUMNS * SAIL_ROWS * 3);
+  for (let row = 0; row < SAIL_ROWS; row++)
+    for (let column = 0; column < SAIL_COLUMNS; column++) {
+      const [along, up] = [column / (SAIL_COLUMNS - 1), row / (SAIL_ROWS - 1)];
+      const yard = lerp(sail.head_port, sail.head_starboard, along);
+      let point = lerp(lerp(sail.foot_port, sail.foot_starboard, along), yard, up);
+      // Bent to its yard along its head, it bellies most a little under its middle.
+      const arch = Math.sin(Math.PI * along) * Math.sin(Math.PI * 0.85 * (1 - up));
+      if (pose === 'stowed') {
+        // Gathered in a bundle along its yard, half a metre deep, lying a little forward of it.
+        point = lerp(yard, point, 0.06 + 0.02 * Math.sin(along * Math.PI * 4));
+        point[0] += 0.15 + 0.06 * Math.sin(along * 7 + up * 2);
+        point[2] += 0.15;
+      } else if (pose !== null) point[0] += pose === 0 ? GAFF_HANGING_M * arch : pose * GAFF_BELLY_M * arch;
+      points.set(point, (row * SAIL_COLUMNS + column) * 3);
+    }
+  return points;
+}
+
 /** Where a sail's wind is drawn toward, `offDeg` from its own forward to the wind (Come Sail Away's sailWind): a gaff
- *  fullest with the wind square across it, a staysail fullest with the wind astern. */
+ *  fullest with the wind square across it, a staysail fullest with the wind astern; a square sail full forward with
+ *  the wind astern of its yard, empty with it along the yard, and aback past that. */
 export function sailWind(kind: SailCorners['kind'], offDeg: number): number {
+  if (kind === 'square') return Math.cos((offDeg * Math.PI) / 180);
   const off = Math.abs(offDeg);
   const side = offDeg > 0 ? 1 : -1;
   if (off === 0) return 0;
@@ -107,6 +138,15 @@ export function gaffTrim(offDeg: number): number {
   const side = offDeg > 0 ? 1 : -1;
   if (off === 0) return 0;
   return side * (off <= 90 ? 90 - 45 * (off / 90) : 45 * (1 - clamp01((off - 90) / 60)));
+}
+
+/** Where a square sail's yard is braced, degrees round her mast its leeward arm going aft: square before the wind, 45
+ *  with it abeam, and held braced there closer to it, as far round as a gaff swings abeam. */
+export function squareBrace(offDeg: number): number {
+  const off = Math.abs(offDeg);
+  const side = offDeg > 0 ? 1 : -1;
+  if (off === 0) return 0;
+  return side * 45 * Math.min(1, off / 90);
 }
 
 interface Rigged {
@@ -125,12 +165,19 @@ export class SailRig {
   readonly sails: readonly Rigged[];
   /** 1 with her sails set, 0 furled, between while they are set or furled. */
   private setShare = 0;
+  /** The wind's way off her bow and the clock at her last step, which her flag streams by. */
+  offDeg = 0;
+  time = 0;
 
   constructor(corners: readonly SailCorners[]) {
     this.sails = corners.map((sail) => {
       const poseOf = (pose: number | 'stowed' | null) =>
-        sail.kind === 'gaff' ? gaffPose(sail, pose) : stayPose(sail, pose);
-      const winds = sail.kind === 'gaff' ? [-1, 0, 1] : [-1, -0.5, 0, 0.5, 1];
+        sail.kind === 'gaff'
+          ? gaffPose(sail, pose)
+          : sail.kind === 'stay'
+            ? stayPose(sail, pose)
+            : squarePose(sail, pose);
+      const winds = sail.kind === 'stay' ? [-1, -0.5, 0, 0.5, 1] : [-1, 0, 1];
       const poses = winds.map((wind) => [wind, poseOf(wind)] as const);
       return { corners: sail, flat: poseOf(null), stowed: poseOf('stowed'), poses, wind: 0, trimDeg: 0 };
     });
@@ -138,19 +185,22 @@ export class SailRig {
 
   /** One step of `seconds` at `time` (seconds, for a luff's flapping). */
   step(seconds: number, wind: SailWind, time: number): void {
+    [this.offDeg, this.time] = [wind.offDeg, time];
     this.setShare = toward(this.setShare, wind.set ? 1 : 0, seconds / SET_S);
     this.sails.forEach((sail, index) => {
-      const gaff = sail.corners.kind === 'gaff';
+      const { kind } = sail.corners;
+      const gaff = kind === 'gaff';
       if (gaff) {
         const target = wind.set ? gaffTrim(wind.offDeg) : 0;
         const now = sail.trimDeg;
         // DFO's rule for the faster swing, as its trim compares the boom's angle with its mark.
         const fast = wind.set && ((now < 0 && now < -target) || (now > 0 && now > -target));
         sail.trimDeg = toward(now, target, (fast ? TRIM_FAST_DEG_S : TRIM_DEG_S) * seconds);
-      }
-      // The boom swung to starboard turns the sail's forward to port.
-      const off = wrap(wind.offDeg + (gaff ? sail.trimDeg : 0));
-      const pull = sailWind(sail.corners.kind, off);
+      } else if (kind === 'square')
+        sail.trimDeg = toward(sail.trimDeg, wind.set ? squareBrace(wind.offDeg) : 0, TRIM_DEG_S * seconds);
+      // The boom swung to starboard turns the sail's forward to port; a yard braced round turns its face with it.
+      const off = wrap(wind.offDeg + (gaff ? sail.trimDeg : kind === 'square' ? -sail.trimDeg : 0));
+      const pull = sailWind(kind, off);
       const target =
         Math.abs(off) > LUFF_DEG ? Math.sin((time + index) * 2) * 0.25 : gaff ? (pull >= 0 ? 1 : -1) : pull;
       sail.wind = toward(sail.wind, target, WIND_PER_S * seconds);
@@ -158,10 +208,11 @@ export class SailRig {
   }
 
   /** Each sail's canvas now, its grid's points in her frame: set and furled mixed as they are being set, the poses
-   *  mixed by its wind, a gaff swung about its luff. */
-  canvas(): Float32Array[] {
-    return this.sails.map((sail) => {
-      const { poses } = sail;
+   *  mixed by its wind, a gaff swung about its luff and a square sail braced round its mast, about its yard's `pivots`
+   *  as her model measures them (under its head's middle without one). */
+  canvas(pivots: readonly (Point | null)[] = []): Float32Array[] {
+    return this.sails.map((sail, index) => {
+      const { poses, corners } = sail;
       const wind = Math.min(1, Math.max(-1, sail.wind));
       let upper = 1;
       while (upper < poses.length - 1 && (poses[upper]?.[0] ?? 1) < wind) upper++;
@@ -173,8 +224,13 @@ export class SailRig {
         const set = (low[1][index] ?? 0) * (1 - share) + (high[1][index] ?? 0) * share;
         points[index] = (sail.stowed[index] ?? 0) * (1 - this.setShare) + set * this.setShare;
       }
-      if (sail.corners.kind === 'gaff' && sail.trimDeg !== 0)
-        swing(points, sail.corners.tack, sail.corners.throat, sail.trimDeg);
+      if (sail.trimDeg === 0) return points;
+      if (corners.kind === 'gaff') swing(points, corners.tack, corners.throat, sail.trimDeg);
+      else if (corners.kind === 'square') {
+        // A leeward arm braced aft is the turn the other way.
+        const mast = pivots[index] ?? lerp(corners.head_port, corners.head_starboard, 0.5);
+        swing(points, mast, [mast[0], mast[1], mast[2] + 1], -sail.trimDeg);
+      }
       return points;
     });
   }

@@ -16,8 +16,8 @@ import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
-import { loadShip, shipSails } from '../ships/shipMesh.ts';
-import { ShipView } from '../ships/shipView.ts';
+import { SLOOP_HULL } from '../ships/hulls.ts';
+import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -43,7 +43,7 @@ import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
 const FIRST_NODE = 'overlook-social';
-/** The most ships drawn at sea in a frame: the player's and those near it. */
+/** The most ships of one hull drawn at sea in a frame: the player's and those near her. */
 const SEA_SHIPS = 16;
 /** The islands' names the owner has given, by continent. */
 const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
@@ -90,6 +90,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
+  const shipModels = new ShipModels(openHull(gpu, SEA_SHIPS));
   const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
     fetch(`${base}world/rmb/index.json`)
@@ -102,7 +103,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       })
       .then(startMovementRules),
     openForge(gpu, figureView),
-    loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'), SEA_SHIPS)),
+    shipModels.load(SLOOP_HULL),
   ]);
   const { continents } = world;
   const cityAssets = loadCityAssets(base);
@@ -217,7 +218,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea = new Sea(
         landmass,
         continents.map((each) => each.outline),
-        { waterline: sloop.waterline, sails: sloop.sails, marks: new MarkView(gpu) },
+        { waterline: sloop.waterline, marks: new MarkView(gpu), shown: (hull) => shipModels.shown(hull) },
         anchorage,
         heading,
         { movement, walker, forge },
@@ -423,7 +424,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       {
         drawInto: (pass, fromEye, shot, time) => {
           const camera = { fromEye, eye: shot.eye };
-          ships.forEach((ship, slot) => sloop.drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig));
+          shipModels.draw(pass, ships, camera);
           sea?.fight?.draw(pass, camera, time);
         },
       },
