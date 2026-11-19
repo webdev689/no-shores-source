@@ -81,6 +81,9 @@ export interface RoomDoor {
    *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
    *  first), and its right and left forge layers. */
   roster(): string;
+  /** A patrol's dungeon by its patrol's id and name and its number, as JSON (crates/room-wasm/src/dungeon_door.rs),
+   *  or "null" for an ask that does not read. */
+  dungeon(patrol: string, name: string, number: number): string;
 }
 
 interface RoomExports {
@@ -109,6 +112,7 @@ interface RoomExports {
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
   room_roster(): bigint;
+  room_dungeon(address: number, length: number): bigint;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -181,5 +185,9 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
+    dungeon: (patrol, name, number) => {
+      const bytes = new TextEncoder().encode(JSON.stringify({ patrol, name, number }));
+      return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_dungeon(address, bytes.length))));
+    },
   };
 }

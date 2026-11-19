@@ -95,6 +95,24 @@ mod tests {
         assert!(laid["cells"][way_in].as_i64().unwrap() >= 0, "the way in is a room's cell");
     }
 
+    /// The asks the browser's agreement test makes too (client/src/rules/dungeonRules.test.ts), and the FNV-1a hash of
+    /// their answers' text, one after another: a dungeon laid anywhere is these bytes.
+    const AGREED_ASKS: [&[u8]; 3] = [
+        br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#,
+        br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
+        br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
+    ];
+    const AGREED_HASH: u64 = 0x07fe_bb82_28aa_ee0e;
+
+    #[test]
+    fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
+        let hash = AGREED_ASKS
+            .iter()
+            .flat_map(|ask| dungeon_json(ask).into_bytes())
+            .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
+        assert_eq!(format!("{hash:016x}"), format!("{AGREED_HASH:016x}"));
+    }
+
     #[test]
     fn an_ask_that_does_not_read_is_null() {
         assert_eq!(dungeon_json(b"not json"), "null");
