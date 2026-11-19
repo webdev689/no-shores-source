@@ -1,6 +1,5 @@
-//! The outcrops a sculpt raises on its floor, each of a shape. Every shape but the mesa stands in bands whose faces
-//! rise over at least `BAND_M`, so the close-up, which samples the ground every 4 m, draws its faces and never a
-//! point; the mesa keeps the profile old sculpts were written with, so they raise the land as they did.
+//! The outcrops a sculpt raises on its floor, each of a shape. Every shape stands in bands whose faces rise over at
+//! least `BAND_M`, so the close-up, which samples the ground every 4 m, draws its faces and never a point.
 
 use crate::exact::{fbm, sin_cos, smooth};
 use crate::sculpts::WANDER;
@@ -13,7 +12,7 @@ pub const BAND_M: f64 = 8.0;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Shape {
-    /// Three steep bands in its rim's last three tenths, its top flat over the rest.
+    /// Up to four terraced faces under a flat top over a little more than half its width.
     Mesa,
     /// A rounded stack of up to three domes, leaning along its angle.
     Tor,
@@ -28,7 +27,7 @@ pub enum Shape {
 }
 
 /// An outcrop on a sculpt's floor: its middle, its radius and tall, metres, its shape, and its angle, radians clockwise
-/// from north (the way a whaleback runs and a tor or crag leans). Written `[x, y, radius, tall, shape, angle]`, and
+/// from north (the way a whaleback runs and a tor leans). Written `[x, y, radius, tall, shape, angle]`, and
 /// read from that or from four numbers, `[x, y, radius, tall]`, as a mesa.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(from = "Written", into = "Written")]
@@ -78,7 +77,7 @@ struct Form {
 impl Shape {
     fn form(self) -> Form {
         let (top, most, face, lean, spine) = match self {
-            Self::Mesa => (0.7, 3.0, 0.4, 0.0, 0.0),
+            Self::Mesa => (0.55, 4.0, 1.0, 0.0, 0.0),
             Self::Tor => (0.0, 3.0, 1.0, 0.25, 0.0),
             Self::Whaleback => (0.0, 1.0, 1.0, 0.0, 2.5),
             Self::Crag => (0.25, 4.0, 0.75, 0.0, 0.0),
@@ -95,9 +94,6 @@ impl Outcrop {
     /// outcrop; one too small for a single such band stands in one all the same.
     fn terraces(&self) -> (f64, f64) {
         let form = self.shape.form();
-        if self.shape == Shape::Mesa {
-            return (form.most, self.radius * form.top);
-        }
         let band = BAND_M / form.face * (1.0 + form.lean);
         let top = (self.radius * form.top).min(self.radius - band).max(0.0);
         (((self.radius - top) / band).floor().clamp(1.0, form.most), top)
@@ -111,7 +107,8 @@ impl Outcrop {
 
     /// Its bounds (west, north, east, south), past which it never raises the land: its spine's ends and its radius,
     /// wandered out.
-    pub(crate) fn reach(&self) -> [f64; 4] {
+    #[must_use]
+    pub fn reach(&self) -> [f64; 4] {
         let (sine, cosine) = sin_cos(self.angle);
         let spine = self.radius * self.shape.form().spine;
         let (along_x, along_y) = ((sine * spine).abs(), (cosine * spine).abs());
@@ -123,16 +120,9 @@ impl Outcrop {
     pub(crate) fn stands(&self, seed: u32, x: f64, y: f64) -> f64 {
         let [middle_x, middle_y] = self.at;
         let (radius, tall) = (self.radius, self.tall);
-        // The edge wanders over a span of its size, so a broad outcrop's faces are no steeper than a small one's;
-        // the mesa's, as it was, over 9 m.
-        let span = if self.shape == Shape::Mesa { 9.0 } else { 0.75 * radius };
+        // The edge wanders over a span of its size, so a broad outcrop's faces are no steeper than a small one's.
+        let span = 0.75 * radius;
         let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(seed, x / span, y / span, 2));
-        if self.shape == Shape::Mesa {
-            let out = ((x - middle_x) * (x - middle_x) + (y - middle_y) * (y - middle_y)).sqrt() / wander;
-            let mesa = 1.0 - smooth(radius * 0.7, radius, out);
-            let band = (mesa * 3.0).floor();
-            return tall * (band + smooth(0.6, 1.0, mesa * 3.0 - band)) / 3.0;
-        }
         let form = self.shape.form();
         let (sine, cosine) = sin_cos(self.angle);
         let along = (x - middle_x) * sine - (y - middle_y) * cosine;

@@ -270,36 +270,37 @@ fn line_through(sculpts: &Sculpts, outcrop: &Outcrop, across: bool) -> (f64, f64
 #[test]
 fn every_shape_holds_its_bands_on_the_close_up_grid() {
     for shape in SHAPES {
-        for radius in [12.0, 30.0] {
+        for radius in [12.0, 30.0, 40.0] {
             let outcrop = Outcrop { at: [3.3, -2.1], radius, tall: 10.0, shape, angle: 0.7 };
             let sculpts = standing(outcrop);
             let band = outcrop.tall / f64::from(outcrop.bands());
-            if radius > 20.0 && matches!(shape, Shape::Tor | Shape::Crag | Shape::Knoll) {
-                assert!(outcrop.bands() >= 2, "a broad {shape:?} stands in bands");
-            }
-            // The mesa keeps the profile old sculpts were written with, its whole rise in its rim's last three tenths:
-            // old_sculpts.rs holds it to the bit, and its bands are narrower than the close-up's. Every other shape's
-            // faces are `BAND_M` across, two samples, so no step between neighbours climbs near a whole band.
-            if shape != Shape::Mesa {
-                let [west, north, east, south] = outcrop.reach();
-                let height = |column: i32, row: i32| {
-                    sculpts.raise(west + 1.3 + f64::from(column) * 4.0, north + 0.7 + f64::from(row) * 4.0, 1000.0)
-                };
-                let (columns, rows) = (((east - west) / 4.0) as i32 + 1, ((south - north) / 4.0) as i32 + 1);
-                for column in 0..columns {
-                    for row in 0..rows {
-                        let here = height(column, row);
-                        for there in [height(column + 1, row), height(column, row + 1)] {
-                            let step = (there - here).abs();
-                            assert!(step < band * 0.8, "{shape:?} {radius}: {step:.2} m over 4 m, its band {band:.2}");
-                        }
+            let broad = match shape {
+                Shape::Tor | Shape::Crag | Shape::Knoll => radius > 20.0,
+                Shape::Mesa => radius > 35.0,
+                Shape::Whaleback | Shape::Hummock => false,
+            };
+            assert!(!broad || outcrop.bands() >= 2, "a broad {shape:?} stands in bands");
+            // Every shape's faces are `BAND_M` across, two samples, so no step between neighbours climbs near a whole
+            // band.
+            let [west, north, east, south] = outcrop.reach();
+            let height = |column: i32, row: i32| {
+                sculpts.raise(west + 1.3 + f64::from(column) * 4.0, north + 0.7 + f64::from(row) * 4.0, 1000.0)
+            };
+            let (columns, rows) = (((east - west) / 4.0) as i32 + 1, ((south - north) / 4.0) as i32 + 1);
+            for column in 0..columns {
+                for row in 0..rows {
+                    let here = height(column, row);
+                    for there in [height(column + 1, row), height(column, row + 1)] {
+                        let step = (there - here).abs();
+                        assert!(step < band * 0.8, "{shape:?} {radius}: {step:.2} m over 4 m, its band {band:.2}");
                     }
                 }
             }
             let (along, along_top, _) = line_through(&sculpts, &outcrop, false);
             let (wide, across_top, flat) = line_through(&sculpts, &outcrop, true);
             match shape {
-                Shape::Mesa => {
+                // Once it has room for its face beside such a top.
+                Shape::Mesa if radius > 20.0 => {
                     assert!(flat >= wide * 0.5, "a mesa's top is flat over half its width: {flat} of {wide}")
                 }
                 Shape::Tor | Shape::Knoll => {
@@ -310,7 +311,9 @@ fn every_shape_holds_its_bands_on_the_close_up_grid() {
                     assert!(along_top >= 2.5 * 2.0 * radius, "a whaleback's top runs long: {along_top} by {wide}");
                     assert!(along > 2.5 * wide, "and it is long along its angle: {along} by {wide}");
                 }
-                Shape::Crag | Shape::Hummock => assert!(flat >= 4.0, "{shape:?}: its top flat over a sample: {flat}"),
+                Shape::Mesa | Shape::Crag | Shape::Hummock => {
+                    assert!(flat >= 4.0, "{shape:?}: its top flat over a sample: {flat}")
+                }
             }
         }
     }
