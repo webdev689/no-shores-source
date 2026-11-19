@@ -29,6 +29,11 @@ code:
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
   - client/src/game/dungeonLight.ts#lightAt
+  - client/src/game/dungeonLight.ts#LIGHT_KINDS
+  - client/src/game/dungeonLight.ts#MOODS
+  - client/src/game/dungeonCeilings.ts#ceilingHeights
+  - client/src/game/dungeonFixtures.ts#fixtureMesh
+  - client/src/game/footTrips.ts#roomNameAt
   - client/src/game/dungeonChest.ts#chestMesh
   - client/src/game/dungeonScene.ts#DungeonScene
   - client/src/game/entrances.ts#doorOf
@@ -172,16 +177,26 @@ dungeon").
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
-  layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Pictures by role from the
-  style's two sets, turned to the island's climate (`smallBook`) and painted by the city's painter.
-- **Its light** (`dungeonLight.ts`): each torch warm to `torchReach`, flickering, and a dim cold light everywhere,
-  enough that a room past every torch's reach still shows its walls; the shader and the figures sum the same
-  light (`lightAt`).
+  layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Each cell
+  wears its look (`cellLooks`): the style of its floor of the dungeon, with that style's two sets of pictures by role.
+- **Its ceilings** (`dungeonCeilings.ts`): a room's ceiling is flat, a barrel vault across its narrower side, a dome
+  over its middle, or rough rock over a cave. A vault rises up to 1.6 m and a dome up to 2.2 m, each at most 0.6 of
+  its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m.
+  Where two cells' ceilings differ along an edge, the higher one's side is closed up to it.
+- **Its light** (`dungeonLight.ts`): each torch and fixture burns in its own colour, reach and flicker (`LIGHT_KINDS`):
+  a torch to `torchReach`, a brazier, candles, crystals, a lantern and a hearth. Each look has its own faint light,
+  its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
+  lights nearest the eye, and the shader and the figures sum the same light (`lightAt`).
+- **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
+  candles, five to eight glowing crystals, a lantern on its chain, and a hearth's fire. Each is shaped by where it
+  stands, so no two are alike.
+- **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
+  (`roomNameAt`, `placeWords`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.
 - **The props** (`layout.props`): each forged prop laid by `layModel` as the city lays one, lit by the torches; the
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.
-- **Its pictures**, every one painted by the procedural textures: the style's sets (122, 123, 124, records 0 to 4,
-  each turned to 22, 122, 322 or 422 and so on by the island's climate), the textures' ironwork (93, record 0), the
+- **Its pictures**, every one painted by the procedural textures: each look's sets (records 0 to 4, each turned by
+  the island's climate), the textures' ironwork (93, record 0), the
   entrance's door picture (56 or 331, record 2), the climate's timber and the props' own.
 - **The entrances** (`entrances.ts`, `EntranceView`): the model each entrance names of the forged 42000, 42001, 43601
   and 43602 (the rooms lay only the two mounds), lifted 2.5 m, 4.8 m, 0.775 m and 0.475 m as Daggerfall's blocks stand
