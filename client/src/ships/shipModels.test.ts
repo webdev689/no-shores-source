@@ -73,3 +73,22 @@ test("the ships of one hull take that model's slots in turn", async () => {
     ],
   );
 });
+
+test("a failure a caller of load waited on is the caller's to say, never said again by a frame", async () => {
+  let clock = 0;
+  const said: unknown[] = [];
+  const models = new ShipModels(
+    () => Promise.reject(new Error('no mesh')),
+    (error) => said.push(error),
+    () => clock,
+  );
+  models.model(1);
+  await assert.rejects(models.load(1));
+  await settled();
+  clock = RETRY_MS.first;
+  models.model(1);
+  await settled();
+  await assert.rejects(models.load(1));
+  await settled();
+  assert.equal(said.length, 0);
+});

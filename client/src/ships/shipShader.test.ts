@@ -29,3 +29,18 @@ test('every hull on a device shares one pipeline, one set of pictures and one sa
   await shipKit(second.gpu);
   assert.equal(second.made.pipelines, 1, 'another device makes its own');
 });
+
+test('a kit whose pipeline failed is made afresh next time', async () => {
+  const { gpu, made } = countingGpu();
+  let failing = true;
+  const device = gpu.device as unknown as { createRenderPipelineAsync: () => Promise<object> };
+  device.createRenderPipelineAsync = async () => {
+    made.pipelines++;
+    if (failing) throw new Error('the pipeline was not made');
+    return {};
+  };
+  await assert.rejects(shipKit(gpu));
+  failing = false;
+  await shipKit(gpu);
+  assert.equal(made.pipelines, 2);
+});

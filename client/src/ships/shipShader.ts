@@ -213,6 +213,8 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
           mipmapFilter: 'linear',
         }),
       }));
+    // A kit that failed is made afresh the next time a hull is opened.
+    kit.catch(() => kits.delete(gpu.device));
     kits.set(gpu.device, kit);
   }
   return kit;

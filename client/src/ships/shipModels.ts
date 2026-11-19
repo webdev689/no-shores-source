@@ -37,6 +37,8 @@ export class ShipModels {
   private readonly fetching = new Map<HullName, Promise<ShipView>>();
   /** A hull whose fetch failed: when a frame may try again, how long it waited, and whether it has been said. */
   private readonly failed = new Map<HullName, { at: number; waitMs: number; said: boolean }>();
+  /** Hulls a caller of `load` waits on. */
+  private readonly loading = new Set<HullName>();
 
   constructor(open: OpenHull, fail: (error: unknown) => void = console.error, now = () => performance.now()) {
     [this.open, this.fail, this.now] = [open, fail, now];
@@ -54,7 +56,8 @@ export class ShipModels {
         const said = this.failed.get(name);
         if (!said || said.said) return;
         said.said = true;
-        this.fail(error);
+        // A caller of `load` who waited on the same fetch says it.
+        if (!this.loading.has(name)) this.fail(error);
       });
     return null;
   }
@@ -67,8 +70,21 @@ export class ShipModels {
   /** A hull's model, fetched now if it has not come (a number with no model of its own is the Sloop's); its failure
    *  is the caller's to say. */
   load(hull: number): Promise<ShipView> {
-    const ready = this.ready.get(hullName(hull));
-    return ready ? Promise.resolve(ready) : (this.fetching.get(hullName(hull)) ?? this.fetch(hull));
+    const name = hullName(hull);
+    const ready = this.ready.get(name);
+    if (ready) return Promise.resolve(ready);
+    const fetching = this.fetching.get(name) ?? this.fetch(hull);
+    this.loading.add(name);
+    // Its failure is said by the caller, so no frame says it again.
+    fetching.then(
+      () => this.loading.delete(name),
+      () => {
+        this.loading.delete(name);
+        const said = this.failed.get(name);
+        if (said) said.said = true;
+      },
+    );
+    return fetching;
   }
 
   private fetch(hull: number): Promise<ShipView> {
