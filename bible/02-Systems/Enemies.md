@@ -25,6 +25,7 @@ code:
   - client/src/rules/roster.ts#rankBand
   - client/src/rules/roster.ts#rankMark
   - client/src/combat/foePlate.ts#FoePlate
+  - client/src/combat/statusIcons.ts#foeDebuffs
   - client/src/combat/foeBars.ts#FoeBars
   - client/src/combat/foeBars.ts#bossInFight
   - client/src/player/foeDress.ts#foeDress
@@ -198,6 +199,10 @@ WebAssembly, so names, factions and weapons are read in one place.
   exchange ([[Interface]]).
 - **A blow's harm reads** on the target plate and the boss bar as a strip held where the bar stood and a piece
   breaking off and falling; a blow's number carries what it did besides ([[Interface]]).
+- **Its debuffs** stand beside the bar of every plate of it, over its head, on the target plate and on the boss bar:
+  an icon for its Expose in Cosmic purple and its Charge in Volt blue, and once a Charge ends, a faded Charge while it
+  cannot be Charged again, each over a thin line that shrinks as its time runs out ([[Combat]], "Statuses";
+  [[Interface]]). A Charged foe's poise track says "Charged". A Veiled player is no foe's target ([[Foes]]).
 - **Their dress**: the Grey Tithe in grey over leather or iron by role (Runner and Deckhand in leather; Crossbowman
   and Pistoleer women in leather; the Marksman under a grey hooded cloak; Collector and Tithe-Mate iron under a grey
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with

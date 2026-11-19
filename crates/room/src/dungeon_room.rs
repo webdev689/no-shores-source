@@ -205,7 +205,8 @@ impl Room {
         found.gear_changed = true;
         let (east, south) = (libm::sin(cache.facing), -libm::cos(cache.facing));
         let at = [cache.at[0] + east * VESTIGE_BEFORE_M, cache.at[1] + south * VESTIGE_BEFORE_M, cache.at[2]];
-        self.lay_drop(player, vestige, at);
+        // Thrown out of the cache onto the floor before it, which `cache_by` keeps clear, as a kill throws its drops.
+        self.lay(player, crate::Dropped::Vestige(vestige), at, cache.at);
     }
 
     /// The cache of a dungeon's room, as the snapshot carries it: x, y, z, the way it faces, and 1 open or 0 shut.

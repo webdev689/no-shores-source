@@ -4,9 +4,11 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees.
 
+mod arts;
 pub mod asks;
 pub mod clash;
 pub mod deck;
+mod drops;
 pub mod dungeon_ground;
 mod dungeon_room;
 mod entrances;
@@ -21,9 +23,13 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+mod spells;
+mod statuses;
 pub mod threat;
 
+pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
+pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
 pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
@@ -33,7 +39,8 @@ pub use players::{
     CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
-pub use power::{Drop, allowed_arms, arms_allowed, gear_arms};
+pub use power::{allowed_arms, arms_allowed, loadout_arms};
+pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
@@ -120,6 +127,7 @@ pub struct Room {
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
     pub(crate) drops: Vec<Drop>,
+    pub(crate) spells: spells::Spells,
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
@@ -185,6 +193,7 @@ impl Room {
             stall: None,
             resource_nodes: Vec::new(),
             drops: Vec::new(),
+            spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Calm,
             patrol: None,
             facing: core::f64::consts::PI,
@@ -238,7 +247,7 @@ impl Room {
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
-        self.players.remove(&player);
+        self.part(player);
         self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
             std::mem::take(&mut self.pending).into_iter().partition(|pending| pending.defender == player);
@@ -286,7 +295,9 @@ impl Room {
         self.keep_patrol();
         self.step_foes();
         self.fly_shots();
+        self.step_arts();
         self.judge_waiting();
+        self.heal_linked();
         self.tell_brains();
         self.fall_with_callers();
         self.raise_the_dead();
@@ -318,6 +329,7 @@ impl Room {
                 if let Some(asked) = input.ask.take() {
                     self.take_ask(id, asked);
                 }
+                self.ask_cast(id, input.cast.filter(|_| !input.intent.controls.mounted));
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
@@ -329,7 +341,7 @@ impl Room {
                         let body = self.stand_again(fallen.body.x, fallen.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = Fighter { trim: found.trim, ..player(body, fallen.arms) };
+                            found.fighter = found.armed(player(body, fallen.arms));
                             found.standing = Standing::Inside;
                             found.graced = graced;
                         }
@@ -337,7 +349,7 @@ impl Room {
                     continue;
                 }
                 let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
-                let fighter = Fighter { trim: found.trim, ..held };
+                let fighter = found.armed(held);
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
                 found.fighter = next;
                 found.shown = input.shown;
@@ -436,26 +448,27 @@ impl Room {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
                 for defender in struck(id, fighter, &attack, view, &self.blocks) {
-                    let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender, attack.left_hand);
+                    let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {
                         let check = Check::Swing { striker: Box::new(*fighter), attack };
                         self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
                     } else if let Some(then) = self.as_seen(defender, view) {
-                        let hand = if attack.left_hand { gear::Slot::OffHand } else { gear::Slot::MainHand };
-                        self.judge_now(&blow, how, defender, &then, Some(hand));
+                        let loadout = self.striking(id);
+                        self.judge_now(&blow, how, defender, &then, Some(loadout));
                     }
                 }
             }
             Some(Happening::Loosed(shot)) => {
                 let shot = Shot { owner: id, ..shot };
                 self.loosed.push(id);
+                self.spent_shot(id);
                 // A player's ball reaches its mark at once: judged among the foes as the player's screen showed them.
                 if self.players.contains_key(&id) && combat::shots::shot_numbers(shot.ranged).0 <= 0.0 {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    let loosed = self.held(id, gear::Slot::MainHand);
+                    let loosed = self.held(id, gear::Slot::Ranged);
                     self.shots.push((shot, loosed));
                 }
             }
@@ -478,7 +491,7 @@ impl Room {
             let body = self.stand_again(fighter.body.x, fighter.body.y);
             let graced = self.clock + GRACE;
             if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = Fighter { trim: found.trim, ..player(body, fighter.arms) };
+                found.fighter = found.armed(player(body, fighter.arms));
                 found.graced = graced;
                 raised.push(id);
             }
@@ -570,6 +583,8 @@ mod fight_tests;
 mod foe_tests;
 #[cfg(test)]
 mod gear_tests;
+#[cfg(test)]
+mod loadout_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]

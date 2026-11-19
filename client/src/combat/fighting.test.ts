@@ -5,6 +5,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startRoomDoor } from '../../../server/roomDoor.ts';
+import { SPELLS } from '../network/artMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { readFromRoom } from '../network/messages.ts';
 import type { FlyingShot } from '../network/messages.ts';
@@ -193,6 +194,7 @@ function fightByHand() {
       foes: [],
       events: [],
       shots,
+      spells: [],
     } as unknown as Snapshot);
   };
   const steps = fighting.steps(movement);
@@ -323,6 +325,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     balls: [],
     naval: [],
     fightClock: 0,
+    spells: [],
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));
@@ -336,6 +339,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   let door = before;
   const answers = new Set<string>();
   const dressed: string[] = [];
+  const casts: number[] = [];
   let fight: Fighting | null = null;
   const link = {
     player: door.join(),
@@ -343,7 +347,10 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
     joins: 1,
     rejoining: false,
     lost: null,
-    send: (bytes: Uint8Array<ArrayBuffer>) => void answers.add(door.input(link.player, bytes)),
+    send: (bytes: Uint8Array<ArrayBuffer>) => {
+      casts.push(Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).cast());
+      answers.add(door.input(link.player, bytes));
+    },
     pump: () => {
       door.tick();
       const message = readFromRoom(door.snapshot());
@@ -366,8 +373,10 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   };
   walk(60, { ...STILL, forward: 1 });
   const walked = fighting.own;
+  // A cast pressed as the old room went: it was that room's, and never goes to the new one.
+  fighting.cast({ spell: SPELLS.quicken, aim: null });
   // A deploy: the room starts afresh, and the link joins it as its second player.
-  [door, dressed.length] = [after, 0];
+  [door, dressed.length, casts.length] = [after, 0, 0];
   after.join();
   Object.assign(link, { player: door.join(), joins: 2 });
   answers.clear();
@@ -377,6 +386,8 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   walk(10, STILL);
   assert.deepEqual([...answers], ['taken'], 'every input numbered anew, from 1');
   assert.deepEqual(dressed, ['{"short":1}'], 'the dress sent again');
+  assert.ok(casts.length > 0 && casts.every((cast) => cast === 0), 'the old room’s cast is not sent');
+  assert.equal(fighting.joins, 2);
   const [x, y] = [fighting.own?.x ?? 0, fighting.own?.y ?? 0];
   assert.ok(Math.hypot(x - course.start.x, y - course.start.y) < 0.01, `at the new room's spawn: ${x}, ${y}`);
   assert.ok(Math.hypot((walked?.x ?? 0) - course.start.x, (walked?.y ?? 0) - course.start.y) > 1, 'it had walked');

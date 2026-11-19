@@ -41,7 +41,7 @@ export function dungeonTrips(game: Game): { enter(number: number, name: string):
       const from = game.foot();
       if (!from || from.dungeon) return;
       const [patrol, text, seas] = [from.node, from.text, game.seas()];
-      const entrance = from.entrances.entrances[number];
+      const entrance = from.held.entrances.entrances[number];
       game.travel({ kind: 'enter', node: `${patrol.id}--dungeon-${number}`, name }, async () => {
         const layout = askDungeon(await game.module, patrol.id, patrol.name, number);
         await game.goInto(() => Foot.enterDungeon(game.context, { node: patrol, text }, number, layout, seas));
@@ -93,7 +93,7 @@ export class DungeonDrawers {
    *  patrol or before the props' table has come. */
   entrancesOf(foot: Foot): Drawer | null {
     if (foot.node.kind !== 'patrol' || !this.props) return null;
-    const now = foot.entrances.entrances;
+    const now = foot.held.entrances.entrances;
     if (now !== this.shownEntrances) {
       this.shownEntrances = now;
       this.entranceView.set(now, this.props, this.climateOf(foot.node));
@@ -127,7 +127,7 @@ export class DungeonDrawers {
     fight: { under: Drawer; over: Drawer },
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
   ): void {
-    this.view.setCache(foot.cache);
+    this.view.setCache(foot.held.cache);
     const { figures } = shown;
     const light = (point: readonly [number, number, number]) => this.view.lightAt(point, time);
     const drawers: Drawer[] = [

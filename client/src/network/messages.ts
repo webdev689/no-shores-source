@@ -4,6 +4,7 @@ import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dress
 import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import { type FleetPart, commissionOf, fleetOf, heldIn, point, whole, wholeIn } from './fleetMessages.ts';
 import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.ts';
+import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { withOthers } from './seaFight.ts';
 
@@ -93,6 +94,16 @@ export interface SeenFoe {
   readonly level: number;
   /** Its shield, if it stands with one: its element (the gear crate's numbers), what it holds still and held whole. */
   readonly shield: FoeShield | null;
+  /** Its debuffs; none for a foe made by hand. */
+  readonly statuses?: FoeStatuses;
+}
+
+/** A foe's debuffs as the room keeps them: the ticks left of its Expose and its Charge, and of the immunity a Charge
+ *  leaves after it. */
+export interface FoeStatuses {
+  readonly expose: number;
+  readonly charge: number;
+  readonly chargeImmune: number;
 }
 
 /** A foe's shield: its element, what it holds still, and what it held whole. */
@@ -122,6 +133,10 @@ export interface FightEvent {
   readonly amount: number;
   /** The stroke a swing came by, the combat crate's 1 to 6; 0 for anything else. */
   readonly stroke: number;
+  /** Whether the blow was a crit, and the element it carried (the gear's 1 to 3, 0 for none); a room that does not
+   *  say leaves them out. */
+  readonly crit?: boolean;
+  readonly element?: number;
 }
 
 /** A shot in flight, or a gun's ball in the tick it stopped: `age` is the ticks it has flown. A stopped ball's last
@@ -159,6 +174,8 @@ export type FromRoomMessage =
       readonly ships: readonly SeenShip[];
       readonly pirates: readonly SeenPirate[];
       readonly fights: readonly SeenSeaFight[];
+      /** Every spell in a room on land, which every player sees. */
+      readonly spells: readonly SeenSpell[];
       /** In a dungeon's room, its cache: x, y, z, the way it faces and 1 open or 0 shut; empty in any other. */
       readonly cache: readonly number[];
     } & FleetPart)
@@ -167,7 +184,7 @@ export type FromRoomMessage =
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
  *  shows, their dress when it changed, what their hands hold, the room tick their screen showed, what they ask of the
  *  foes (none if nothing) and the foe's level (0 for none), whether they ask to respawn, dead past a node's section,
- *  and an ask of their gear. */
+ *  an ask of their gear, and a spell cast (spell 0 carries only Dusk Daggers' aim while it is held). */
 export interface InputParts {
   readonly intent: Float64Array;
   readonly look: Look;
@@ -178,6 +195,7 @@ export interface InputParts {
   readonly spawnLevel?: number;
   readonly respawn?: boolean;
   readonly ask?: GearAsk;
+  readonly cast?: CastAsk;
 }
 
 /** The most a ulong field holds. */
@@ -193,6 +211,7 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
   const anim = builder.createString(parts.look.anim);
   const dressed = parts.dress === undefined ? 0 : builder.createString(parts.dress);
   const ask = parts.ask === undefined ? 0 : askOffset(builder, parts.ask);
+  const aim = parts.cast?.aim ? Input.createCastAimVector(builder, [...parts.cast.aim]) : 0;
   Input.startInput(builder);
   Input.addSequence(builder, wholeIn(sequence, 0, 0xffff_ffff, "the input's number"));
   Input.addControls(builder, controls);
@@ -213,6 +232,8 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
     Input.addSpawnType(builder, wholeIn(spawn.type, 0, 0xff, "the foe's type"));
     Input.addSpawnRank(builder, Math.round(heldIn(spawn.rank, 1, 5, "the foe's rank")));
   }
+  if (parts.cast) Input.addCast(builder, wholeIn(parts.cast.spell, 0, 0xff, 'the spell'));
+  if (aim) Input.addCastAim(builder, aim);
   builder.finish(Input.endInput(builder));
   return builder.asUint8Array().slice();
 }
@@ -311,7 +332,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const element = foe.shieldElement();
       const shield = element > 0 ? { element, left: foe.shield(), most: foe.shieldMost() } : null;
       const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
-      return { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
+      const statuses = { expose: foe.expose(), charge: foe.charge(), chargeImmune: foe.chargeImmune() };
+      const read = { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
+      return { ...read, statuses };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);
@@ -323,6 +346,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         defender: event?.defender() ?? 0,
         amount: event?.amount() ?? 0,
         stroke: event?.stroke() ?? 0,
+        crit: event?.crit() ?? false,
+        element: event?.element() ?? 0,
       };
     });
     const shots = Array.from({ length: snapshot.shotsLength() }, (unused, index) => {
@@ -365,6 +390,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       ships,
       pirates,
       fights,
+      spells: spellsOf(snapshot),
       cache: Array.from(snapshot.cacheArray() ?? []),
       ...fleetOf(snapshot),
     };

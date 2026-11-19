@@ -1,67 +1,67 @@
+import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
+import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import type { HudFrame } from '../combat/hud.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
+import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
+import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
+import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { GearState } from '../network/gearMessages.ts';
-import type { FoeAsk } from '../network/messages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
-import type { CardAt, Cards } from '../player/cards.ts';
+import type { CardAt } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
+import { heldElements } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
-import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import { playerCamera, shownBody } from '../player/player.ts';
 import { OtherPlayers, type Others } from '../player/others.ts';
-import type { Walker } from '../player/walker.ts';
-import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
+import type { CombatRules } from '../rules/combatRules.ts';
 import { FIGHT_TICKS } from '../player/fightMoves.ts';
+import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
-import { type FoeType, rosterOf } from '../rules/roster.ts';
-import type { LandWorker } from '../terrain/landClient.ts';
+import type { FoeType } from '../rules/roster.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
-import { HINTS } from './hints.ts';
+import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
-import { type Rect, windowRect } from './nodes.ts';
+import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { dungeonRoom, nodeRoom } from './rooms.ts';
-import { dungeonPlace, Entrances, type InDungeon, standInDungeon, tripAt, type Trips } from './footTrips.ts';
-import { type Cache, cacheOf } from './dungeonChest.ts';
+import { dungeonPlace, Entrances, type InDungeon, standInDungeon, tripAt } from './footTrips.ts';
+import { cacheOf } from './dungeonChest.ts';
 import { type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
+import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
-import type { NodeInfo } from './worldData.ts';
+import {
+  type AtEntrance,
+  type FootContext,
+  type Heard,
+  type Held,
+  nodeText,
+  type Opened,
+  rulesOf,
+  stand,
+  standOn,
+} from './footPlace.ts';
 
-/** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
- *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
- *  ask a room in the page for (none but under `npm run dev`), the session's token the rooms keep the player's
- *  character by (null for none), and the ways into a patrol's dungeons and out. */
-export interface FootContext {
-  readonly movement: MovementRules;
-  readonly land: LandWorker;
-  readonly walker: Walker;
-  readonly forge: Cards;
-  readonly rooms: ((name: string) => string) | null;
-  readonly roomModule: Promise<WebAssembly.Module>;
-  readonly groundAt: (x: number, y: number) => number | null;
-  readonly foesAsked: readonly FoeAsk[];
-  readonly session: Promise<string | null>;
-  readonly trips: Trips;
-}
+export type { AtEntrance, FootContext } from './footPlace.ts';
+import type { NodeInfo } from './worldData.ts';
 
 /** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 /** How far over the ground the third-person camera is held. */
 const CAMERA_CLEARANCE_M = 0.3;
-/** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
- *  arrival looks out over the City. */
-const OVER_THE_PARAPET = 0.3;
 /** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
 const OTHERS_FPS = 6;
 /** How far apart in time two figures' steps are, by their numbers, in seconds: a crowd never walks in step. */
@@ -80,92 +80,21 @@ export const IDLE: InputFrame = {
   locked: true,
 };
 
-/** The fight's rules and roster on the room's module, made once. */
-const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster: readonly FoeType[] }>();
-
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
 export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost'>;
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
- *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams, and what its
- *  display shows), and the keys listed. */
+ *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
+ *  of its blows, in world metres; and what its display shows), and the keys listed. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
   readonly standing: Standing;
   readonly marks: Float32Array;
+  readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly string[];
-}
-
-/** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
- *  fight's on them as its room stands its bodies. Answers the boxes and the window's text. */
-async function standOn(
-  context: FootContext,
-  combat: CombatRules,
-  rect: Rect,
-): Promise<{ boxes: readonly Block[]; ground: string }> {
-  const [ground, boxes] = await Promise.all([context.land.window(rect), context.land.boxes(rect)]);
-  context.movement.setCourse(boxes);
-  combat.setCourse(boxes);
-  if (!context.movement.setGround(ground) || !combat.setGround(ground))
-    throw new Error('the ground of this place did not load');
-  return { boxes, ground };
-}
-
-/** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
- *  cut there, and its boxes. */
-function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[]): string {
-  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]);
-  const { id, kind, continent, ring, spawns } = node;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
-}
-
-/** The fight's rules and roster on the context's room module, made once, and the module. */
-async function rulesOf(context: FootContext) {
-  const module = await context.roomModule;
-  const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
-  fightRules.set(module, rules);
-  return { module, rules };
-}
-
-/** Stands the player's body at (x, y) facing `facing`, keeping how they hold the camera; in a social space looking
- *  over the parapet. */
-function stand(context: FootContext, x: number, y: number, facing: number, social: boolean): void {
-  const { walker, movement } = context;
-  const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
-  walker.player = social ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
-}
-
-/** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out. */
-export interface AtEntrance {
-  readonly number: number;
-  readonly x: number;
-  readonly y: number;
-  readonly facing: number;
-}
-
-/** What the page hears of a room it joins: its snapshots, the player's gear, and whether it takes asks for foes. */
-interface Heard {
-  readonly snapshot: (snapshot: Snapshot) => void;
-  readonly gear: (gear: GearState) => void;
-  readonly asks: boolean;
-}
-
-/** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, and the dungeon. */
-interface Opened {
-  readonly link: RoomLink;
-  readonly boxes: readonly Block[];
-  readonly text: string;
-  readonly dungeon: InDungeon | null;
-}
-
-/** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache. */
-interface Held {
-  gear: GearState | null;
-  readonly entrances: Entrances;
-  cache: Cache | null;
 }
 
 /**
@@ -196,11 +125,16 @@ export class Foot {
   private readonly otherGlides = new Glides();
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
+  /** The attack feel as made: the blows' arcs, hit-stops, the camera's kick and the lunge. */
+  private readonly feel: AttackFeel;
+  private readonly drops = new DropsShown();
+  private readonly sounds = new WorldSounds(worldOutput);
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
   /** What the room last said of the player's gear and the place, and the gear the figure was last dressed in. */
-  private readonly held: Held;
+  readonly held: Held;
   private dressedIn: GearState | null = null;
+  private dressedLoadout = 0;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
   private readonly folk: Placed[];
@@ -227,6 +161,7 @@ export class Foot {
     this.steps = parts.fight.steps(context.movement);
     [this.otherPlayers, this.held, this.folk] = [people.otherPlayers, people.held, people.folk];
     this.foes = new FoeFigures(parts.roster);
+    this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     const hud = document.querySelector<HTMLElement>('#hud');
     this.prompt = hud ? new UsePrompt(hud) : null;
     const floor = (x: number, y: number) => context.movement.standing(x, y).z;
@@ -361,15 +296,20 @@ export class Foot {
     );
   }
 
-  /** Dresses the player's figure in their gear as their room last sent it, once it changes. */
+  /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
+   *  changes, its weapons glowing in their element. */
   private dressInGear(): void {
     const gear = this.held.gear;
-    if (!gear || gear === this.dressedIn) return;
-    this.dressedIn = gear;
     const { walker, forge } = this.context;
+    const { loadout } = walker.player;
+    if (!gear || (gear === this.dressedIn && loadout === this.dressedLoadout)) return;
+    [this.dressedIn, this.dressedLoadout] = [gear, loadout];
     const wardrobe = forge.wardrobe(walker.you.dress.body);
-    if (wardrobe)
-      walker.you.dress = { ...walker.you.dress, outfit: gearOutfit(gear, wardrobe, walker.you.dress.outfit) };
+    if (wardrobe) {
+      const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
+      walker.you.dress = { ...walker.you.dress, outfit };
+    }
+    walker.glow = heldElements(gear, loadout);
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
@@ -383,16 +323,6 @@ export class Foot {
   /** Whether the player has fallen and waits to respawn. */
   get fallen(): boolean {
     return this.standing.kind === 'dead' || this.fight.own?.action.kind === 'dead';
-  }
-
-  /** A dungeon's cache as its room last said, or null where there is none. */
-  get cache(): Cache | null {
-    return this.held.cache;
-  }
-
-  /** A patrol's entrances as its room last gave them. */
-  get entrances(): Entrances {
-    return this.held.entrances;
   }
 
   /** Does what E does where the player stands, if anything is within reach. */
@@ -433,39 +363,111 @@ export class Foot {
     }
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
-    const camera = () => playerCamera(walker.player, movement, this.boxes);
+    const { feel } = this;
+    const aimed = () => playerCamera(walker.player, movement, this.boxes);
+    const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
       hands: hands && !paused,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
       zoomOf: () => camera().zoom ?? 1,
+      handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
-    const events = effects.events(fight, seconds);
-    const shot = shotOfOrbit(camera(), LENS, groundAt, CAMERA_CLEARANCE_M);
+    effects.ownLook = walker.glowing[0];
+    const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
+    const ownWeapon = effects.flashes.ownOf(fight.own);
+    walker.fought(ownWeapon.surge, ownWeapon.contact);
+    feel.frame(events, fight.own, fight.player, seconds, new Set(fight.others.keys()));
+    const firstPerson = walker.inFirstPerson;
+    // The crosshair shows while a ranged weapon aims, and whenever the Ranged loadout is drawn in first person (a bow's
+    // draw rings it); while it shows, the kick moves the view but never turns it, so it stays where shots land.
+    const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
+    const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
+    const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
     const frameTicks = seconds / movement.tickSeconds;
+    // Each figure drawn off where it stands by the attack feel, and kept as drawn, which its blow's arc follows.
+    const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
+    const right = [Math.cos(shot.yaw), Math.sin(shot.yaw)] as const;
+    const smear = (id: number) => feel.smearOf(id, right);
+    const drawnAt = new Map<number, DrawnFigure>();
+    const otherViews = new Map<number, FighterView>();
+    for (const [number, seen] of fight.others) if (seen.fighter) otherViews.set(number, fighterView(seen.fighter));
     const figures: CardAt[] = [];
-    const own = walker.figure(eyeX, eyeY, { share: effects.flashes.shareOf(fight.player), red: true });
-    if (own) figures.push(own);
-    figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks));
-    figures.push(
-      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, movement.tickSeconds, effects.flashes),
-    );
     const body = shownBody(walker.player);
+    const ownShift = shift(fight.player, fight.own);
+    const own = walker.figure(eyeX, eyeY, effects.flashes.flashOf(fight.player), ownShift);
+    const statuses = fight.own?.statuses;
+    const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
+    if (own) {
+      figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) });
+      const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
+      drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
+    }
+    figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks, { shift, drawnAt, otherViews }));
+    const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
+    const { tickSeconds } = movement;
+    figures.push(
+      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
+    );
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
+    const dropped = this.dropMarks(clock, shot.eye, [
+      ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+      ...foes.overheads(shot.eye, clock),
+    ]);
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
       blocks: this.boxes,
       bodies,
       muzzleOf: (fired) =>
         muzzle
-          ? screenMuzzle(camera(), aspect, muzzle)
+          ? screenMuzzle(kicked, aspect, muzzle)
           : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
       origin: shot.eye,
       groundAt,
-      more: groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+      drawn: { foes: foes.placed, others: this.otherPlayers.placed },
+      more: dropped.marks,
     });
+    this.sounds.frame({
+      seconds,
+      quiet: paused,
+      fight,
+      events,
+      shots: effects.shotsHeard,
+      eye: shot.eye,
+      yaw: shot.yaw,
+      walker: {
+        feet: [body.x, body.y, body.z],
+        walked: walker.walked,
+        drawn: walker.you.dress.outfit.drawn,
+        mounted: walker.player.mounted,
+        look: effects.ownLook,
+        pulled: shown.pulled,
+      },
+      others: this.otherPlayers.placed,
+      foes: foes.placed,
+      ground: { blocks: this.boxes, groundAt },
+      landed: dropped.landed,
+      crates: this.held.gear?.crates ?? null,
+    });
+    // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
+    const handsOf = (dress: Dress | null | undefined) => ({
+      right: dress?.outfit.right ?? null,
+      left: dress?.outfit.left ?? null,
+    });
+    const strikers = [
+      { id: fight.player, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
+      ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
+      ...[...otherViews].map(([number, view]) => ({
+        id: number,
+        view,
+        ...handsOf(this.otherPlayers.placed.get(number)?.dress),
+      })),
+    ];
+    // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
+    const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
+    showAnimaEdge(effects.anima);
     // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
     const able = !paused && !this.fallen;
     const gear = this.gear;
@@ -488,7 +490,6 @@ export class Foot {
       const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const firstPerson = walker.inFirstPerson;
     const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
     const fought: FootFight = {
       own: ownView,
@@ -500,19 +501,41 @@ export class Foot {
       firstPerson,
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
-      // While a ranged weapon aims, and whenever one is drawn in first person; a bow's draw rings it.
-      crosshair:
-        shown.aiming || (shown.ranged && firstPerson)
-          ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
-          : null,
+      abilities: fight.abilities,
+      // The shots left stand beside the crosshair, wherever it shows.
+      ammo: sights ? (ownView?.ammo ?? null) : null,
+      ammoMost: this.gear?.gear?.ammoMost ?? null,
+      crosshair: sights
+        ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
+        : null,
     };
     const edge = this.standing;
-    const hints = edge.kind === 'dead' ? HINTS.dead : HINTS.foot;
-    return { shot, figures, standing: edge, marks, fight: fought, hints };
+    const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);
+    return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 
-  /** Every other player's figure, gliding toward where the room last saw them and flashing as it is struck. */
-  private otherCards(eyeX: number, eyeY: number, clock: number, frameTicks: number): CardAt[] {
+  /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
+   *  each came to rest this frame; a Rare or finer chimes as it comes to rest. */
+  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]) {
+    const shown = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye, out);
+    const rarest = Math.max(-1, ...shown.rested);
+    if (rarest >= 2) chime(rarest);
+    return shown;
+  }
+
+  /** Every other player's figure, gliding toward where the room last saw them, drawn off it by the attack `feel` (and
+   *  kept as drawn there), flashing as it is struck, faint while Veiled, and its cast's spark in its Art's colour. */
+  private otherCards(
+    eyeX: number,
+    eyeY: number,
+    clock: number,
+    frameTicks: number,
+    feel: {
+      shift: (id: number, view: FighterView | null) => Vector;
+      drawnAt: Map<number, DrawnFigure>;
+      otherViews: ReadonlyMap<number, FighterView>;
+    },
+  ): CardAt[] {
     const { forge } = this.context;
     const { fight, effects, otherGlides } = this;
     const cards: CardAt[] = [];
@@ -528,9 +551,15 @@ export class Foot {
       const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eyeX, eyeY);
       const frames = forge.frames(placed.dress.body, placed.anim);
       const frame = placed.frame === null ? frameAt(clock, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
-      const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip);
-      const flash = { share: effects.flashes.shareOf(number), red: false };
-      if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip, flash });
+      // A cast's spark glows in the caster's Art, as the player's own does.
+      const glow = placed.anim === 'cast' ? castLookOf(fight, number) : 0;
+      const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow);
+      const flash = effects.flashes.flashOf(number);
+      const veiled = veiledIn(fight, number);
+      const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
+      const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
+      feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
+      if (card) cards.push({ card, ...cardStand(atFeet[0], atFeet[1], eyeX, eyeY), z: atFeet[2], flip, flash, veiled });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
     // A social space's people, each keeping a step of its own.
@@ -563,5 +592,7 @@ export class Foot {
     this.otherPlayers.clear();
     this.plaza?.close();
     this.prompt?.remove();
+    // An Anima's edge frame cast just before leaving must not stay over the next place.
+    showAnimaEdge(QUIET);
   }
 }

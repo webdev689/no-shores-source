@@ -109,7 +109,7 @@
   padding: 3px 0;
 }
 
-/* The interface's volume, under the account: its name, a slider in brass and the level it stands at. */
+/* The volumes, under the account: each one's name, a slider in brass and the level it stands at, the sliders in line. */
 .gear-sound {
   margin-top: 18px;
 }
@@ -117,6 +117,12 @@
   display: flex;
   align-items: center;
   gap: 14px;
+}
+.gear-sound-row > span {
+  min-width: 9em;
+}
+.gear-sound-row + .gear-sound-row {
+  margin-top: 6px;
 }
 #hud .gear-volume {
   flex: 1;

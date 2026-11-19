@@ -191,7 +191,13 @@ fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_sh
     for player in &players {
         let drops: Vec<&crate::Drop> = room.drops_for(*player).collect();
         assert_eq!(drops.len(), 1, "one Vestige for each player in the room");
-        assert!(apart([drops[0].at[0], drops[0].at[1]], [x, y]) < 1.0 && drops[0].vestige.level == level);
+        let sure = matches!(drops[0].what, crate::Dropped::Vestige(vestige) if vestige.level == level);
+        assert!(apart([drops[0].at[0], drops[0].at[1]], [x, y]) < 1.0 && sure, "a Vestige at the Reeve's level");
+        assert_eq!(
+            drops[0].from,
+            room.cache().map(|cache| [cache[0], cache[1], cache[2]]).unwrap(),
+            "thrown out of it"
+        );
     }
     let later = room.join().expect("room");
     run(&mut room, 1);

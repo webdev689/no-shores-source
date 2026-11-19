@@ -73,6 +73,52 @@ test('the nearest texel is drawn, armour over the clothes it lies on by its orde
   assert.ok(Math.abs((bare.depth[0] ?? 0) - (117 * 256 + 40) / 10000 + 3) < 1e-4);
 });
 
+test('a frame says which pixels are the weapon', async () => {
+  const armed: ForgeLooks = {
+    bodies: { male: { anims: { idle: cell }, layers: { body: ['idle'], sword: ['idle'] } } },
+  };
+  const sword: Record<string, Strip> = {
+    'forge/layers/male/sword_idle.png': strip([[180, 190, 210], null, null, null]),
+    'forge/layers/male/sword_idle_z.png': strip([[117, 30, PART.weapon], null, null, null]),
+  };
+  const withSword = (path: string) => Promise.resolve(sword[path] ?? strips[path] ?? null);
+  const frame = await composeFrame({ ...figure, gear: ['sword'] }, 'idle', 0, 0, armed, colours, {}, withSword);
+  assert.deepEqual([...(frame?.weapon ?? [])], [1, 0]);
+});
+
+test("a layer held counts as the weapon, whatever part the forge names: a cast's spark", async () => {
+  const casting: ForgeLooks = {
+    bodies: { male: { anims: { idle: cell }, layers: { body: ['idle'], spark: ['idle'] } } },
+  };
+  const spark: Record<string, Strip> = {
+    'forge/layers/male/spark_idle.png': strip([null, [250, 240, 100], null, null]),
+    'forge/layers/male/spark_idle_z.png': strip([null, [117, 30, PART.drape], null, null]),
+  };
+  const withSpark = (path: string) => Promise.resolve(spark[path] ?? strips[path] ?? null);
+  const sparked = { ...figure, gear: ['spark'] };
+  const plain = await composeFrame(sparked, 'idle', 0, 0, casting, colours, {}, withSpark);
+  assert.deepEqual([...(plain?.weapon ?? [])], [0, 0], 'it hangs free');
+  const held = await composeFrame(sparked, 'idle', 0, 0, casting, colours, {}, withSpark, new Set(['spark']));
+  assert.deepEqual([...(held?.weapon ?? [])], [0, 1]);
+});
+
+test("a cast's held layer is marked apart from the weapon in its hand, so only the spark takes the cast's colour", async () => {
+  const casting: ForgeLooks = {
+    bodies: { male: { anims: { idle: cell }, layers: { body: ['idle'], sword: ['idle'], spark: ['idle'] } } },
+  };
+  const layers: Record<string, Strip> = {
+    'forge/layers/male/sword_idle.png': strip([[180, 190, 210], null, null, null]),
+    'forge/layers/male/sword_idle_z.png': strip([[117, 30, PART.weapon], null, null, null]),
+    'forge/layers/male/spark_idle.png': strip([null, [250, 240, 100], null, null]),
+    'forge/layers/male/spark_idle_z.png': strip([null, [117, 30, PART.drape], null, null]),
+  };
+  const read = (path: string) => Promise.resolve(layers[path] ?? strips[path] ?? null);
+  const gear = { ...figure, gear: ['sword', 'spark'] };
+  const frame = await composeFrame(gear, 'idle', 0, 0, casting, colours, {}, read, new Set(['spark']));
+  assert.deepEqual([...(frame?.weapon ?? [])], [1, 1], 'the sword and the spark are the weapon');
+  assert.deepEqual([...(frame?.held ?? [])], [0, 1], 'the spark alone is held');
+});
+
 test('orders weigh on one part and for a drape over what it hangs on, never for a weapon or a horse', () => {
   assert.ok(ordersMeet(PART.torso, PART.torso));
   assert.ok(ordersMeet(PART.drape, PART.torso));

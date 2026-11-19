@@ -1,4 +1,5 @@
 import { type CourseBlock, type CourseNode, type RoomDoor, startRoomDoor } from '../../../server/roomDoor.ts';
+import type { ArtState } from './artMessages.ts';
 import { readFromRoom } from './messages.ts';
 import type { GearMessage, RoomLink, Snapshot } from './roomConnection.ts';
 
@@ -24,6 +25,7 @@ export class LocalRoom implements RoomLink {
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
+  arts: ArtState | null = null;
 
   private constructor(
     door: RoomDoor,
@@ -114,6 +116,7 @@ export class LocalRoom implements RoomLink {
       if (gear?.kind === 'gear') {
         if (gear.trim) this.trim = gear.trim;
         if (gear.arms) this.arms = gear.arms;
+        if (gear.arts) this.arts = gear.arts;
         this.gear(gear);
       }
       const message = readFromRoom(this.door.snapshot());
