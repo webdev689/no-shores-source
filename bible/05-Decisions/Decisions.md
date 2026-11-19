@@ -118,6 +118,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The World Sounds From the Sound Picker]]
 - [[DFO's Own Sounds Join the Sound Sheet]]
 - [[The Duskraven Sounds With Fire Under Its Raven]]
+- [[Exposed, Charged and Haste Make No Sound]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -171,11 +171,9 @@ test('a footstep on wood, stone, in water or on the ground', () => {
   assert.equal(stepCue([-8, 0, 0], { blocks: [] }), 'step.ground', 'no land is open ground at 0 m');
 });
 
-test('a status as it is given, not while it lasts', () => {
-  assert.deepEqual(statusCues({}, { expose: 30, haste: 0 }), ['status.expose']);
-  assert.deepEqual(statusCues({ expose: 30 }, { expose: 29, veiled: 5, linked: 2, charge: 1, crit: 4 }), [
-    'status.charge',
-    'status.linked',
+test('a status as it is given, not while it lasts, and Exposed, Charged and Haste with no sound', () => {
+  assert.deepEqual(statusCues({}, { linked: 30, haste: 0 }), ['status.linked']);
+  assert.deepEqual(statusCues({ linked: 30 }, { linked: 29, veiled: 5, expose: 2, charge: 1, haste: 4 }), [
     'status.veil',
   ]);
 });

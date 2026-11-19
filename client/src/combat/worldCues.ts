@@ -190,10 +190,8 @@ export interface StepGround {
   readonly groundAt?: (x: number, y: number) => number | null;
 }
 
+// Exposed, Charged and Haste make no sound, as the owner chose.
 const STATUS_CUES: readonly (readonly [StatusName, string])[] = [
-  ['expose', 'status.expose'],
-  ['charge', 'status.charge'],
-  ['haste', 'status.haste'],
   ['linked', 'status.linked'],
   ['veiled', 'status.veil'],
 ];

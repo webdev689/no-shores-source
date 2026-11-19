@@ -355,8 +355,8 @@ played last. The Duskraven plays its raven with a fire of its own under it
   Ground's crate), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
-  Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; each status as it is
-  given.
+  Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
+  they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).
 - **The rest.** A drop coming to rest, an Ammo crate used, a foe turning alert, and the player standing again.
 
 Each is heard through a panner (equal power, fading with distance past 2 m, none past 40 m), the listener at the eye

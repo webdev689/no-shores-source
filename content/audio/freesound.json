@@ -456,7 +456,8 @@
         554595,
         841834,
         872596
-      ]
+      ],
+      "picked": 404829
     },
     {
       "id": "step.ground",
@@ -625,7 +626,8 @@
         350812,
         363194,
         592668
-      ]
+      ],
+      "picked": 649360
     },
     {
       "id": "spell.sunwell",
@@ -646,7 +648,7 @@
     {
       "id": "spell.mend",
       "use": "Mend: a burst of healing",
-      "query": "heal",
+      "query": "healing spell",
       "seconds": [
         0.3,
         2.0
@@ -654,8 +656,12 @@
       "skip": [
         530488,
         562292,
+        664265,
         794532,
         827665,
+        833035,
+        871892,
+        872577,
         878312
       ]
     },
@@ -705,17 +711,21 @@
     {
       "id": "spell.daggers",
       "use": "Dusk Daggers strike in their ring",
-      "query": "blade whoosh",
+      "query": "dark magic burst",
       "seconds": [
         0.1,
         1.2
       ],
       "skip": [
         147288,
+        209127,
         385966,
         423281,
+        427823,
         475136,
-        727592
+        525166,
+        727592,
+        877976
       ]
     },
     {
@@ -742,7 +752,8 @@
         592676,
         807391,
         815095
-      ]
+      ],
+      "picked": 871778
     },
     {
       "id": "anima.divine",
@@ -778,7 +789,8 @@
         636024,
         683178,
         854644
-      ]
+      ],
+      "picked": 541478
     },
     {
       "id": "element.volt",
@@ -797,7 +809,8 @@
         512471,
         643861,
         878329
-      ]
+      ],
+      "picked": 541480
     },
     {
       "id": "element.cosmic",
@@ -813,7 +826,7 @@
         446111,
         473762
       ],
-      "picked": 541480
+      "picked": 541479
     },
     {
       "id": "finish.blaze",
@@ -832,7 +845,8 @@
         753847,
         787500,
         872842
-      ]
+      ],
+      "picked": 431174
     },
     {
       "id": "finish.volt",
@@ -862,56 +876,6 @@
         2.0
       ],
       "dfo": "fx-kill-voidrend"
-    },
-    {
-      "id": "status.expose",
-      "use": "A foe Exposed",
-      "query": "negative spell",
-      "seconds": [
-        0.1,
-        1.0
-      ],
-      "skip": [
-        179220,
-        343461,
-        343997,
-        788603,
-        827664,
-        855417
-      ]
-    },
-    {
-      "id": "status.charge",
-      "use": "A foe Charged and held",
-      "query": "static",
-      "seconds": [
-        0.2,
-        1.5
-      ],
-      "skip": [
-        18825,
-        87040,
-        264779,
-        340908,
-        477807,
-        582631
-      ]
-    },
-    {
-      "id": "status.haste",
-      "use": "Haste given",
-      "query": "speed up",
-      "seconds": [
-        0.2,
-        1.2
-      ],
-      "skip": [
-        219571,
-        546281,
-        752035,
-        810777,
-        814916
-      ]
     },
     {
       "id": "status.linked",
@@ -999,22 +963,26 @@
       "query": "growl",
       "seconds": [
         0.1,
-        1.0
+        0.6
       ],
       "skip": [
         72126,
         75143,
         262430,
         323018,
+        360545,
+        372534,
         375980,
+        432751,
         483795,
+        556879,
         856777
       ]
     },
     {
       "id": "respawn",
       "use": "Standing again at a spawn",
-      "query": "magic appear",
+      "query": "holy spell",
       "seconds": [
         0.3,
         2.0
@@ -1023,8 +991,12 @@
         83301,
         234804,
         252081,
+        422730,
+        442873,
         474179,
         474180,
+        478179,
+        714258,
         812521,
         831718,
         838027
