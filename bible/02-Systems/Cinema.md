@@ -126,3 +126,4 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
   the water's highlights, only dimmed.
 - Rain and snow are drawn round the eye only; they do not wet or whiten the ground.
 - A fire's light is the light layer's, so it is stepped and screen-wide, not cast onto the deck as a shadowed lamp.
+- Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.

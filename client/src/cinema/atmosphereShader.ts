@@ -36,11 +36,11 @@ fn mixed(value: u32) -> u32 {
 fn unit(value: u32) -> f32 { return f32(mixed(value)) / 4294967296.0; }
 fn cell_unit(cell: vec2f, salt: u32) -> f32 {
   let whole = vec2i(cell);
-  return unit(bitcast<u32>(whole.x) * 1597334677u ^ mixed(bitcast<u32>(whole.y) ^ salt));
+  return unit((bitcast<u32>(whole.x) * 1597334677u) ^ mixed(bitcast<u32>(whole.y) ^ salt));
 }
 fn corner3(cell: vec3f) -> f32 {
   let whole = vec3i(cell);
-  return unit(bitcast<u32>(whole.x) * 1597334677u ^ mixed(bitcast<u32>(whole.y) * 3812015801u ^ mixed(bitcast<u32>(whole.z))));
+  return unit((bitcast<u32>(whole.x) * 1597334677u) ^ mixed((bitcast<u32>(whole.y) * 3812015801u) ^ mixed(bitcast<u32>(whole.z))));
 }
 fn noise3(point: vec3f) -> f32 {
   let base = floor(point);
@@ -71,7 +71,8 @@ fn falling(ray: vec3f, radius: f32, fall: f32, density: f32, stretch: f32, salt:
   let across = dot(frame.wind.xy, vec2f(-sin(bearing), cos(bearing)));
   let pixel_m = radius * 2.0 * frame.up.w / frame.screen.y;
   let spacing = vec2f(radius * 0.02, radius * 0.16);
-  var place = vec2f(bearing * radius + across * height / fall, height + fall * frame.eye.w);
+  let shear = across / fall;
+  var place = vec2f(bearing * radius + shear * height, height + fall * frame.eye.w);
   if (round) { place.x += sin(frame.eye.w * 1.3 + floor(place.y / spacing.y) * 2.1) * spacing.x * 0.3; }
   let cell = floor(place / spacing);
   if (cell_unit(cell, salt) > density) { return 0.0; }
@@ -79,7 +80,8 @@ fn falling(ray: vec3f, radius: f32, fall: f32, density: f32, stretch: f32, salt:
   let off = place - centre;
   if (round) {
     let size = max(pixel_m * 1.2, radius * 0.004);
-    return smoothstep(size, size * 0.4, length(off));
+    // A flake is round on the screen, not in the wind-sheared space its fall is laid out in.
+    return smoothstep(size, size * 0.4, length(vec2f(off.x - shear * off.y, off.y)));
   }
   let width = pixel_m * 0.8;
   let along = abs(off.y) / (spacing.y * 0.5 * stretch);
@@ -112,14 +114,10 @@ fn on_screen(offset: vec3f) -> vec3f {
     + frame.up.xyz * screen.y * frame.up.w);
   let eye = frame.eye.xyz;
   let depth = textureLoad(depths, vec2i(position.xy), 0).r;
+  // The water writes no depth, so what lies under the sea's surface is seen only as far as the surface.
   var distance = NO_HIT;
-  if (depth > 0.0) {
-    distance = frame.right.w / (depth + frame.forward.w) / max(dot(ray, frame.forward.xyz), 0.01);
-  } else if (eye.z > 0.0 && ray.z < 0.0) {
-    distance = eye.z / -ray.z;
-  } else if (eye.z < 0.0 && ray.z > 0.0) {
-    distance = -eye.z / ray.z;
-  }
+  if (depth > 0.0) { distance = frame.right.w / (depth + frame.forward.w) / max(dot(ray, frame.forward.xyz), 0.01); }
+  if (eye.z * ray.z < 0.0) { distance = min(distance, -eye.z / ray.z); }
   let sky = distance >= NO_HIT;
   let overcast = frame.amounts.x;
   let flash = frame.screen.z;
@@ -152,7 +150,7 @@ fn on_screen(offset: vec3f) -> vec3f {
     let enter = (frame.cloud.x - eye.z) / rise;
     let leave = (frame.cloud.y - eye.z) / rise;
     let start = max(min(enter, leave), 0.0);
-    let end = min(max(enter, leave), min(distance, 6000.0));
+    let end = min(max(enter, leave), min(distance, 3000.0));
     if (end > start) {
       let step = (end - start) / 16.0;
       var through = 1.0;
@@ -160,7 +158,7 @@ fn on_screen(offset: vec3f) -> vec3f {
       for (var index = 0; index < 16; index++) {
         let point = eye + ray * (start + step * (f32(index) + 0.5)) - drift;
         let thick = smoothstep(1.0 - cover, 1.0 - cover + 0.2, billows(point * vec3f(0.006, 0.006, 0.012)));
-        through *= exp(-thick * step * 0.035);
+        through *= exp(-thick * step * 0.012);
       }
       let lit = mix(vec3f(0.93, 0.94, 0.96), ceiling_colour * 1.6, overcast);
       laid = over(laid, lit * (1.0 - through), through);
@@ -170,13 +168,14 @@ fn on_screen(offset: vec3f) -> vec3f {
   // The deep: the sea's dark blue closing in, motes drifting, and fire above flickering through the surface.
   if (deep > 0.0) {
     let sunk = 1.0 - exp(-0.06 * min(distance, 400.0));
-    laid = over(laid, vec3f(0.004, 0.03, 0.06) * sunk * deep, 1.0 - deep * (0.55 + 0.45 * sunk));
+    laid = over(laid, vec3f(0.006, 0.035, 0.09) * sunk * deep, 1.0 - deep * (0.7 + 0.3 * sunk));
     let upward = max(ray.z, 0.0);
     if (frame.glow.w > 0.0 && upward > 0.0) {
       let surface = eye.xy + ray.xy * max(-eye.z, 1.0) / max(ray.z, 0.05);
-      let flicker = 0.6 + 0.4 * noise3(vec3f(surface * 0.08, frame.eye.w * 2.6))
-        * (0.7 + 0.3 * sin(frame.eye.w * 11.0 + surface.x * 0.3));
-      let light = frame.glow.rgb * frame.glow.w * flicker * pow(upward, 1.4) * deep;
+      // The fire's light comes through the surface in patches that the waves break up and the flames flicker.
+      let patches = smoothstep(0.35, 0.8, noise3(vec3f(surface * 0.18, frame.eye.w * 1.4)));
+      let flicker = (0.3 + 0.7 * patches) * (0.75 + 0.25 * noise3(vec3f(frame.eye.w * 9.0, 3.0, 0.0)));
+      let light = frame.glow.rgb * frame.glow.w * flicker * pow(upward, 2.5) * deep;
       laid = over(laid, light * 0.9, 1.0);
     }
     var motes = 0.0;
@@ -193,10 +192,10 @@ fn on_screen(offset: vec3f) -> vec3f {
     var streaks = 0.0;
     for (var layer = 0u; layer < 4u; layer++) {
       let radius = 2.0 * pow(2.2, f32(layer));
-      if (distance > radius) { streaks += falling(ray, radius, 9.0, rain * 0.55, 0.9, 10u + layer * 5u, false); }
+      if (distance > radius) { streaks += falling(ray, radius, 9.0, rain * 0.45, 0.3, 10u + layer * 5u, false); }
     }
     let wet = mix(vec3f(0.55, 0.6, 0.66), vec3f(0.3, 0.33, 0.38), overcast) + vec3f(0.5) * flash;
-    laid = over(laid, wet * min(streaks, 1.0) * 0.6, 1.0 - min(streaks, 1.0) * 0.25);
+    laid = over(laid, wet * min(streaks, 1.0) * 0.4, 1.0 - min(streaks, 1.0) * 0.2);
   }
   let snow = frame.amounts.z;
   if (snow > 0.0) {
@@ -211,7 +210,7 @@ fn on_screen(offset: vec3f) -> vec3f {
   // The bolt, forking twice, behind whatever is drawn nearer than it; and the flash lights the whole scene.
   if (frame.bolt.w > 0.0 && flash > 0.0) {
     let foot = vec3f(frame.bolt.xy, -eye.z);
-    let head = foot + vec3f(0.0, 0.0, 900.0);
+    let head = foot + vec3f(0.0, 0.0, 450.0);
     let low = on_screen(foot);
     let high = on_screen(head);
     let bolt_m = length(frame.bolt.xy);
@@ -221,8 +220,8 @@ fn on_screen(offset: vec3f) -> vec3f {
       var near_px = crooked(pixel, high.xy, low.xy, seed);
       let span = low.xy - high.xy;
       let side = vec2f(-span.y, span.x);
-      let first = mix(high.xy, low.xy, 0.3);
-      let second = mix(high.xy, low.xy, 0.55);
+      let first = mix(high.xy, low.xy, 0.45);
+      let second = mix(high.xy, low.xy, 0.7);
       let branch_one = crooked(pixel, first, first + span * 0.35 + side * 0.25, seed + 11.0);
       let branch_two = crooked(pixel, second, second + span * 0.25 - side * 0.2, seed + 23.0);
       near_px = min(near_px, min(branch_one + 0.6, branch_two + 0.9));
@@ -231,8 +230,8 @@ fn on_screen(offset: vec3f) -> vec3f {
     }
   }
   if (flash > 0.0) {
-    laid = over(laid, vec3f(0.42, 0.46, 0.6) * flash * (0.25 + overcast * 0.35), 1.0);
-    laid.keep = mix(laid.keep, 1.0, flash * 0.7);
+    laid = over(laid, vec3f(0.42, 0.46, 0.6) * flash * (0.1 + overcast * 0.15), 1.0);
+    laid.keep = mix(laid.keep, 1.0, flash * 0.45);
   }
   return vec4f(laid.add, laid.keep);
 }

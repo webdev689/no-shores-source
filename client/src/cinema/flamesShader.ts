@@ -33,7 +33,7 @@ fn mixed(value: u32) -> u32 {
 }
 fn corner_value(cell: vec2f, seed: f32) -> f32 {
   let whole = vec2i(cell);
-  return f32(mixed(bitcast<u32>(whole.x) * 1597334677u ^ mixed(bitcast<u32>(whole.y) ^ u32(seed)))) / 4294967296.0;
+  return f32(mixed((bitcast<u32>(whole.x) * 1597334677u) ^ mixed(bitcast<u32>(whole.y) ^ u32(seed)))) / 4294967296.0;
 }
 fn noise2(point: vec2f, seed: f32) -> f32 {
   let base = floor(point);
