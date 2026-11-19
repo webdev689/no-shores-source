@@ -112,6 +112,16 @@
       "page": "https://freesound.org/people/EminYILDIRIM/sounds/536068/",
       "changes": "Unchanged."
     },
+    "cast.charge": {
+      "key": "sounds/db61cbe39bb5729687c277bcdaff340088869eba657ac59532ffc82a5c15e0e7.mp3",
+      "freesound": 511872,
+      "name": "Riser Hit sfx 025.wav",
+      "author": "AudioPapkin",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/AudioPapkin/sounds/511872/",
+      "changes": "Unchanged."
+    },
     "crit": {
       "key": "sounds/c08eae995c85fbd62f13fd4cd42d1af64ab4bbc35abf225c30e51ae84688919d.mp3",
       "freesound": 791953,
@@ -401,6 +411,16 @@
       "page": "https://freesound.org/people/SonoFxAudio/sounds/649360/",
       "changes": "Unchanged."
     },
+    "spell.daggers": {
+      "key": "sounds/868bd6cdbc0fed34ae656110c7a1f111635de0aa63825ac86bf5172473de0baf.mp3",
+      "freesound": 714258,
+      "name": "Cloud Poof",
+      "author": "qubodup",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/714258/",
+      "changes": "Unchanged."
+    },
     "spell.dawnflare": {
       "key": "sounds/6efe2948027044a596512af15d94d45be0304a05ed12c4400bc70ba376a1585b.mp3",
       "freesound": 426208,
@@ -429,6 +449,26 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/kev_durr/sounds/426208/",
+      "changes": "Unchanged."
+    },
+    "spell.mend": {
+      "key": "sounds/0618489002365ed531ea406ce47585482c0f53162c2f31442511fb082e9f6191.mp3",
+      "freesound": 387722,
+      "name": "Metal Drum 2",
+      "author": "Jagadamba",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Jagadamba/sounds/387722/",
+      "changes": "Unchanged."
+    },
+    "spell.orb": {
+      "key": "sounds/f688db9fe7820467ab0d1567b36cb86f4d2cbbdab6d19f34e67e0821eb4bba42.mp3",
+      "freesound": 872155,
+      "name": "Sound Design Impact 2",
+      "author": "CAT-FOX_ALEX",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/CAT-FOX_ALEX/sounds/872155/",
       "changes": "Unchanged."
     },
     "spell.quicken": {
@@ -479,6 +519,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/qubodup/sounds/714257/",
+      "changes": "Unchanged."
+    },
+    "status.linked": {
+      "key": "sounds/f419cfcbe88516521e5943cdb75ae5d641b0e47651ecdae0277da1875d17262c.mp3",
+      "freesound": 855451,
+      "name": "MAGSpel_Wand Spell Cast Dark Quick 008_GMcM_FS1DM",
+      "author": "Bisqo",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Bisqo/sounds/855451/",
       "changes": "Unchanged."
     },
     "status.veil": {
