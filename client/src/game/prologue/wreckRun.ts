@@ -31,7 +31,8 @@ import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckScenery } from './wreckScenery.ts';
 
 /** What the wreck needs of the game: the movement rules, the walker, the forge's cards, the room's compiled module,
- *  the ground as the scene draws it, the GPU, and the Brig's mesh the story loaded, to draw both ships with. */
+ *  the ground as the scene draws it, the GPU, and the meshes the story loaded by their names in the ships' manifest,
+ *  to draw each ship the wreck lays with her own. */
 export interface WreckContext {
   readonly movement: MovementRules;
   readonly walker: Walker;
@@ -39,7 +40,7 @@ export interface WreckContext {
   readonly roomModule: Promise<WebAssembly.Module>;
   readonly groundAt: (x: number, y: number) => number | null;
   readonly gpu: Gpu;
-  readonly hull: ShipMesh;
+  readonly hulls: Readonly<Record<string, ShipMesh>>;
 }
 
 /** Thule's place in the roster, the rank he comes in, and how many levels over the player he fights. */

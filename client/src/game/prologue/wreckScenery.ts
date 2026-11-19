@@ -141,22 +141,30 @@ export function sceneryMesh(scenery: readonly Scenery[], origin: readonly [numbe
 const SQUARE_TO_THE_WORLD = Math.PI / 2;
 
 /**
- * The wreck as drawn: both ships from one published mesh (`hull`, the Brig's), each where she lies and the rammer at
- * her size, her canvas struck; the blocks that show, in timber from the ships' own pictures; and each zone's heap of
- * debris across the way on, drawn while it stands. Every heap stands until the level opens it.
+ * The wreck as drawn: each ship by her own published mesh (`hulls`, by her name in the ships' manifest), where she
+ * lies and at her size, her canvas struck; the blocks that show, in timber from the ships' own pictures; and each
+ * zone's heap of debris across the way on, drawn while it stands. Every heap stands until the level opens it.
  */
 export class WreckScenery {
-  private readonly ships: ShipView;
-  private readonly places: readonly ShipPlace[];
+  private readonly ships: readonly { readonly view: ShipView; readonly place: ShipPlace }[];
   private readonly pieces: ShipView;
   private readonly gates: ReadonlyMap<number, ShipView>;
   private readonly placed: ShipPlace;
   /** The zones whose heaps stand. */
   readonly standing = new Set<number>();
 
-  constructor(gpu: Gpu, hull: ShipMesh, layout: WreckLayout, origin: readonly [number, number]) {
-    this.ships = new ShipView(gpu, hull, [], layout.ships.length);
-    this.places = layout.ships.map(({ lying }) => ({ ...lying, z: lying.heave }));
+  /** Throws on a ship the wreck lays whose mesh is not among `hulls`. */
+  constructor(
+    gpu: Gpu,
+    hulls: Readonly<Record<string, ShipMesh>>,
+    layout: WreckLayout,
+    origin: readonly [number, number],
+  ) {
+    this.ships = layout.ships.map(({ ship, lying }) => {
+      const mesh = hulls[ship];
+      if (!mesh) throw new Error(`the wreck lays the ${ship}, whose mesh the story has not loaded`);
+      return { view: new ShipView(gpu, mesh, [], 1), place: { ...lying, z: lying.heave } };
+    });
     this.pieces = new ShipView(gpu, sceneryMesh(layout.scenery, origin), [], 1);
     const heap = (block: Scenery['block']) =>
       new ShipView(gpu, sceneryMesh([{ kind: 'debris', block }], origin), [], 1);
@@ -170,7 +178,7 @@ export class WreckScenery {
     return {
       drawInto: (pass, fromEye, shot) => {
         const camera = { fromEye, eye: shot.eye };
-        this.places.forEach((place, slot) => this.ships.drawInto(pass, place, camera, slot));
+        for (const { view, place } of this.ships) view.drawInto(pass, place, camera);
         this.pieces.drawInto(pass, this.placed, camera);
         for (const zone of this.standing) this.gates.get(zone)?.drawInto(pass, this.placed, camera);
       },
@@ -179,6 +187,6 @@ export class WreckScenery {
 
   /** Lets go of everything it holds on the GPU; it is never drawn again. */
   destroy(): void {
-    for (const view of [this.ships, this.pieces, ...this.gates.values()]) view.destroy();
+    for (const view of [...this.ships.map((ship) => ship.view), this.pieces, ...this.gates.values()]) view.destroy();
   }
 }

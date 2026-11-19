@@ -193,7 +193,7 @@ export class Stage {
     const cards = [...actorCards(frame.actors ?? [], forge, shot.eye, clock), ...(frame.cards ?? [])];
     const ships = frame.ships ?? [];
     const sailed = (pass: GPURenderPassEncoder, camera: ShipCamera) => {
-      const slots: Record<Hull, number> = { brig: 0, sloop: 0 };
+      const slots: Record<Hull, number> = { brig: 0, sloop: 0, frigate: 0 };
       for (const ship of ships) {
         const slot = slots[ship.hull]++;
         if (slot < SLOTS_A_HULL) hulls[ship.hull].drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig);
