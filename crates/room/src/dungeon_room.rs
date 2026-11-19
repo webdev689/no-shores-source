@@ -34,7 +34,12 @@ pub(crate) struct Cache {
     pub open: bool,
 }
 
-/// A dungeon room's navmesh: over the whole dungeon and its jambs and pillars, kept to the floor the way in stands on.
+/// The navmesh's cell in a dungeon: an eighth of the Forge's, so every wall lies on a cell's edge, and the bake holds
+/// about a third of the columns the land's 0.25 m would over the dungeon's whole rectangle.
+const NAV_CELL_M: f64 = CELL_M / 8.0;
+
+/// A dungeon room's navmesh: over the whole dungeon and its jambs and pillars, kept to the floor the way in stands on,
+/// in cells of NAV_CELL_M.
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: &Section) -> NavMesh {
     let fold = |pick: fn(f64, f64) -> f64, start: f64, axis: usize| {
         section.ring.iter().fold(start, |kept, corner| pick(kept, corner[axis]))
@@ -45,13 +50,8 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
         max_x: fold(f64::max, f64::NEG_INFINITY, 0),
         max_y: fold(f64::max, f64::NEG_INFINITY, 1),
     };
-    NavMesh::bake_anchored(
-        blocks,
-        floor,
-        bounds,
-        &navmesh::AGENT,
-        [first.0, first.1, floor.height_at(first.0, first.1)],
-    )
+    let agent = navmesh::Agent { cell_size: NAV_CELL_M, ..navmesh::AGENT };
+    NavMesh::bake_anchored(blocks, floor, bounds, &agent, [first.0, first.1, floor.height_at(first.0, first.1)])
 }
 
 /// A room's cells nearest its middle, its quiet cells (none of whose sides meets a corridor) when it has `count` of
@@ -86,7 +86,8 @@ fn band_rooms(dungeon: &Dungeon, most: usize) -> Vec<usize> {
     for count in (0..=rooms.len()).rev() {
         // The middle of each of `count` equal stretches of the walk.
         let spread: Vec<usize> = (0..count).map(|nth| rooms[(2 * nth + 1) * rooms.len() / (2 * count)]).collect();
-        if 1 + spread.iter().map(size).sum::<usize>() <= most {
+        // The Reeve stands too: the bands take what is left of the room's most.
+        if spread.iter().map(size).sum::<usize>() < most {
             return spread;
         }
     }

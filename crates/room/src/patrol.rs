@@ -1,6 +1,7 @@
 //! A patrol's land: its island's resource at spots laid out from the node's own name, the same every time, a third of
 //! them holding a node at once and the next third after a while, so a player can plan a route through them. Each
-//! player may gather each node once while it stands. Its fights are its garrison's (`garrison.rs`).
+//! player may gather each node once while it stands. Its fights are its garrison's (`garrison.rs`), and its dungeons
+//! lie behind its entrances (`entrances.rs`).
 
 use crate::{ResourceNode, Room};
 use gear::Difficulty;

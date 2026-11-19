@@ -139,9 +139,10 @@ export class RoomHost extends DurableObject<Env> {
     const named = nodeRoom(node);
     if (!named) return false;
     const file = await this.env.NODES.fetch(`https://nodes/${named.id}.json`);
-    const text = file.ok ? await file.text() : '';
-    const room = named.dungeon === null ? this.room.openNode(text) : this.room.openDungeon(text, named.dungeon);
-    const opened = file.ok && room && this.room.difficulty(named.seas);
+    const text = file.ok ? await file.text() : null;
+    const ready =
+      text !== null && (named.dungeon === null ? this.room.openNode(text) : this.room.openDungeon(text, named.dungeon));
+    const opened = ready && this.room.difficulty(named.seas);
     return opened && this.room.reseed(seeds) && this.room.day(Math.floor(Date.now() / DAY_MS));
   }
 

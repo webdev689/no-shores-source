@@ -1,9 +1,6 @@
 //! A bake anchored at a point keeps the walkable part joined to the floor under that point, where an ordinary bake
 //! keeps the largest part: a floor walled in by a larger raised plateau, as a dungeon's rooms are by its rock.
 
-mod common;
-
-use common::path;
 use movement::Terrain;
 use navmesh::{AGENT, Bounds, NavMesh};
 
@@ -29,7 +26,7 @@ fn an_ordinary_bake_keeps_the_larger_plateau() {
 #[test]
 fn an_anchored_bake_keeps_the_floor_under_the_anchor() {
     let navmesh = NavMesh::bake_anchored(&[], &Pit, FIELD, &AGENT, [-2.0, 0.0, 0.0]);
-    let route = path(&navmesh, [-2.0, -2.0, 0.0], [2.0, 2.0, 0.0]);
+    let route = navmesh.find_path([-2.0, -2.0, 0.0], [2.0, 2.0, 0.0]).expect("a path over the floor");
     assert!(route.iter().all(|point| point[2].abs() < 0.05), "the floor is walked at 0 m: {route:?}");
     assert!(navmesh.find_path([-15.0, -15.0, 10.0], [15.0, 15.0, 10.0]).is_none(), "the plateau is left out");
     let nearest = navmesh.nearest_point([5.0, 0.0, 0.0]).expect("the floor is on the mesh");

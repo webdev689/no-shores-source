@@ -90,7 +90,7 @@ fn bands_past_the_rooms_most_are_spread_evenly_along_the_walk() {
     assert_eq!(all.len(), dungeon.rooms.len() - 2, "every room but the way in's and the end");
     let few = band_rooms(&dungeon, 7);
     let size = |room: &usize| band_size(dungeon.rooms[*room].cells.len());
-    assert!(!few.is_empty() && 1 + few.iter().map(size).sum::<usize>() <= 7);
+    assert!(!few.is_empty() && few.iter().map(size).sum::<usize>() < 7, "with the Reeve, seven at most");
     let walks: Vec<u32> = few.iter().map(|&room| dungeon.rooms[room].walk).collect();
     assert!(walks.is_sorted() && few.len() < all.len(), "{walks:?}");
     assert!(few[0] != all[0] && few[few.len() - 1] != all[all.len() - 1], "spread, not the first nor the last");

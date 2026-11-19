@@ -35,6 +35,7 @@ pub struct Model {
 }
 
 /// The four entrances Daggerfall's dungeon blocks stand: DUNGAA00's and DUNGAA01's, and the two the other blocks do.
+#[allow(clippy::approx_constant, reason = "the forged props' own numbers, as they are written there")]
 pub const MODELS: [Model; 4] = [
     Model {
         id: 42000,

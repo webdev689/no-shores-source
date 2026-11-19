@@ -15,6 +15,7 @@ code:
   - crates/gear/src/character.rs#Character
   - crates/gear/src/asks.rs#Ask
   - crates/gear/src/vestige.rs#dropped
+  - crates/room/src/dungeon_room.rs#keep_cache
   - crates/gear/src/vestige.rs#opens_to
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
@@ -102,6 +103,9 @@ number is one of [[Gear as Claude Shapes It]].
   levels below, a blow does nothing and shares nothing), and lays each one's
   Vestige where it fell, seen by them alone, for two minutes, under a beam in its rarity's colour ([[Game]], "On
   foot"). Walking within 1.5 m picks it up.
+- **A dungeon's cache.** When a dungeon's Reeve falls, its cache opens, and every player then in the dungeon's room
+  finds a Vestige lying before it, theirs alone, whoever struck him: sure, at the Reeve's level, in the colours a
+  Reeve's kill leaves (a boss's), and lying and picked up as a kill's does ([[Dungeons]], "In the rooms").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner
   and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a

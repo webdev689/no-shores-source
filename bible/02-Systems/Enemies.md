@@ -18,6 +18,8 @@ code:
   - crates/room/src/garrison.rs#stand_garrison
   - crates/room/src/garrison.rs#keep_garrison
   - crates/room/src/garrison.rs#gird_of
+  - crates/room/src/dungeon_room.rs#stand_dungeon_garrison
+  - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/garrison.rs#raise_garrison
   - crates/room-wasm/src/roster_door.rs#roster_json
   - client/src/rules/roster.ts#rankBand
@@ -158,6 +160,13 @@ WebAssembly, so names, factions and weapons are read in one place.
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
   farthest from the nearest spawn. A group stands 2.5 m round its post, each foe facing outward, a leader in the
   middle facing the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+- **A forged dungeon's garrison** ([[Dungeons]], "In the rooms") stands where the Forge puts foes rather than on the
+  lattice: the Reeve, a Miniboss, alone in the end room, facing the way in; in each other room past the way in's, a
+  band drawn from the dungeon's foes above, one for each ten of the room's cells, rounded, two to four, each on one of
+  the room's quiet cells nearest its middle (any of its cells when it has too few), facing out from the middle. When
+  the bands and the Reeve would pass the room's 24, the rooms that stand one are the most that fit, spread evenly
+  along the walk from the way in to the end. Its levels, shields, leash and standing again are any garrison's, at its
+  patrol's island band.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
   place at its post or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
   whose search finds no one walks back the same way ([[Foes]]). It is still its group's: a walk home never clears a

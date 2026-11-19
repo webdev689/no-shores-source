@@ -141,8 +141,8 @@ impl NavMesh {
             Some(heights) => heights,
             None => &Flat,
         };
-        let solid = raster::voxelise(colliders, floor, bounds, agent);
-        let mut field = compact::build(&solid, agent);
+        // The solid is let go of once the open surface is built: the two at once would double the bake's memory.
+        let mut field = compact::build(&raster::voxelise(colliders, floor, bounds, agent), agent);
         regions::partition(&mut field, anchor);
         let spots = spots::bake(&field, colliders, ground.as_ref(), floor, bounds);
         let outlines = contours::build(&field);
