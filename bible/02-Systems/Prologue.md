@@ -151,13 +151,13 @@ are the story's; the wreck is the level they run.
   in from each end of a row) left out, so a body over her rail falls to the sea; runs of one height joined into one
   block. Where the Frigate's bow stands in the Brig, the Brig's deck gives way to hers. These blocks are hidden under
   the ships as drawn, and both ships are drawn whole, so what is drawn is what holds a body.
-- **The layout** is `content/prologue/wreck.json`: where each ship lies, the blocks that show (the Brig's main yard
-  fallen across her deck, a stair of planks up from her fore deck over her bulwark and out over the water to the
+- **The layout** is `content/prologue/wreck.json`: where each ship lies, the blocks that show (a spar fallen from
+  aloft across the Brig's deck, a stair of planks up from her fore deck over her bulwark and out over the water to the
   Frigate's starboard rail, the last laid over the rail, crates, broken spars, heaps of rail and tackle, planks up
   over the Frigate's quarterdeck's breast rail beside her skylight), where the player wakes, the path, the zones, the
   arena and the fires. Fires are places and sizes, for the fire's drawing.
 - **The path** runs from the Brig's quarterdeck, where the player wakes facing forward clear of her wheel, forward
-  along her port side past the fallen yard, across her fore deck, up the stair and over the Frigate's rail onto the
+  along her port side past the fallen spar, across her fore deck, up the stair and over the Frigate's rail onto the
   head of her waist, aft along her starboard side and up the planks onto her quarterdeck. A step takes every rise on
   it but the lips a jump takes, and every lane of it is a body wide: nothing stands within a body's radius of it but
   the lips it climbs or drops. Every figure the level stands (the player waking, each checkpoint, each foe, Thule)

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
+import ships from '../../../../content/ships/ships.json' with { type: 'json' };
+import { deckToWorld } from '../../ships/deck.ts';
 import { courseOf, inArea, layoutAt, readWreck, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
@@ -196,6 +198,23 @@ test('every figure stands clear of what stands on the deck: nothing a step over 
       const beside = topAt(course, x + Math.sin(bearing) * BODY_IN_M, y - Math.cos(bearing) * BODY_IN_M);
       assert.ok(beside <= top + STEP_M, `a figure at ${x}, ${y} stands against ${beside.toFixed(2)} m`);
     }
+  }
+});
+
+test("the player wakes facing the way on, the Brig's wheel clear of the look from behind them down it", () => {
+  const brig = layout.ships.find((shown) => shown.ship === 'brig');
+  assert.ok(brig);
+  const [helmX = 0, helmY = 0] = ships.ships.brig.deck.helm;
+  // The wheel stands just forward of the spot its helmsman keeps.
+  const [wheelX, wheelY] = deckToWorld(brig.lying, helmX, helmY - 0.4, 0);
+  const [x, y] = layout.wake.at;
+  const { facing } = layout.wake;
+  const [aheadX, aheadY] = [Math.sin(facing), -Math.cos(facing)];
+  const [first = [0, 0], second = [0, 0]] = layout.path;
+  assert.ok(Math.abs(Math.atan2(second[0] - first[0], first[1] - second[1]) - facing) < 0.01, 'facing down the path');
+  for (let along = -6; along <= 10; along += 0.1) {
+    const [lookX, lookY] = [x + aheadX * along, y + aheadY * along];
+    assert.ok(Math.hypot(wheelX - lookX, wheelY - lookY) > 1.5, `the wheel stands in the look at ${along} m`);
   }
 });
 
