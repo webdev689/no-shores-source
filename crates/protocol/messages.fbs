@@ -187,7 +187,8 @@ table Ship {
 
 // A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
 // from north, her faction (1 the Grey Tithe, 2 pirates), her rank (1 Minor to 5 Boss) and the hull her rank sails (0
-// the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop).
+// the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop); then her level (0
+// none) and the distance she is sighted from, metres (0 from a room that sends none).
 table Pirate {
   id: uint;
   x: double;
@@ -196,6 +197,8 @@ table Pirate {
   faction: ubyte;
   rank: ubyte;
   hull: ubyte;
+  level: ubyte;
+  sight: double;
 }
 
 // A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and

@@ -4,6 +4,7 @@
 
 use crate::pirates::PIRATE_WAY_M_S;
 use crate::sea::SHIP_SPEED_M_S;
+use crate::sighting::FASTEST_WAY;
 use naval::captain::ENGAGE_RANGE;
 use naval::fight::HOSTILE_NEAR_M;
 
@@ -45,7 +46,8 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
         return 0;
     }
     let way = [libm::sin(heading), -libm::cos(heading)];
-    let closing = SHIP_SPEED_M_S + PIRATE_WAY_M_S;
+    // The fastest rank's way, so the warning holds whoever comes.
+    let closing = SHIP_SPEED_M_S + PIRATE_WAY_M_S * FASTEST_WAY;
     let (mut ratio, mut held) = (f64::INFINITY, false);
     for [x, y] in pirates {
         let (east, south) = (x - at[0], y - at[1]);

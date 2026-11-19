@@ -1,5 +1,4 @@
 use super::*;
-use crate::pirates::commission_at_sea;
 use naval::captain::{Temper, temper_for};
 use naval::damage::State;
 use naval::ranks::{Commission, GREY_TITHE, PIRATES, Rank};
@@ -14,15 +13,15 @@ impl Waters for Open {
     }
 }
 
-/// The first seed whose ship sails at sea under `commission`, bold or not as asked.
+/// The first seed whose ship of `commission` is bold or not, as asked.
 pub fn seed_for(commission: Commission, bold: bool) -> u32 {
     let temper = |seed| matches!(temper_for(commission, seed), Temper::Bold);
-    (1..).find(|&seed| commission_at_sea(seed) == commission && temper(seed) == bold).unwrap_or(0)
+    (1..).find(|&seed| temper(seed) == bold).unwrap_or(0)
 }
 
 /// A ship at sea of `commission`, numbered `id`, at `x` on the line y = 0, heading north.
 pub fn at_sea(id: u32, commission: Commission, x: f64, bold: bool) -> Pirate {
-    Pirate { id, seed: seed_for(commission, bold), x, y: 0.0, heading: 0.0, bold }
+    Pirate::standing(id, seed_for(commission, bold), commission, [x, 0.0], 0.0, bold)
 }
 
 #[test]
@@ -88,8 +87,10 @@ fn a_clash_no_player_is_near_leaves_the_sea_and_one_a_player_sights_is_theirs() 
     let wind = steady_wind(&land::sea::Swell::default());
     let mut clashes = vec![Clash::begin(met, &Open, 0.0)];
     let mut pirates = Pirates::default();
-    step_clashes(&mut clashes, &mut pirates, &[[3_000.0, 0.0]], (&Open, wind, 0.0));
-    assert!(clashes.is_empty() && pirates.sailing.is_empty(), "past every player, gone");
+    step_clashes(&mut clashes, &mut pirates, &[[5_900.0, 0.0]], (&Open, wind, 0.0));
+    assert_eq!(clashes.len(), 1, "within 1.1 times her sight of a player, she stays");
+    step_clashes(&mut clashes, &mut pirates, &[[6_000.0, 0.0]], (&Open, wind, 0.0));
+    assert!(clashes.is_empty() && pirates.sailing.is_empty(), "past it from every player, gone");
     let mut clashes = vec![Clash::begin(met, &Open, 0.0)];
     assert!(sighted(&mut clashes, [1_200.0, 0.0]).is_none(), "800 m from the nearest: out of sight");
     assert!(sighted(&mut clashes, [1_100.0, 0.0]).is_some_and(|clash| clash.fight.ships.len() == 2));

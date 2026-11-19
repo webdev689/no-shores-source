@@ -86,6 +86,13 @@ test('ships are marked within 900 m of the player, and none farther', () => {
   assert.deepEqual(SHIP_MARK_COLOURS, { hostile: '#ee5745', ship: '#ebe0c2', struck: '#8f8f8f' });
 });
 
+test('a hostile ship is marked as far off as she is sighted, and no farther', () => {
+  const from: [number, number] = [0, 0];
+  const far = { x: 12_000, y: 0, kind: 'hostile', rangeM: 25_920 } as const;
+  const past = { x: 30_000, y: 0, kind: 'hostile', rangeM: 25_920 } as const;
+  assert.deepEqual(shipsMarked([far, past, { x: 1_000, y: 0, kind: 'ship' }], from), [far]);
+});
+
 test('the compass stands 18 px down, 520 px wide or 60% of a narrower screen, and what stands under it 10 px under its rule', () => {
   assert.equal(UNDER_COMPASS, COMPASS.top + COMPASS.height + COMPASS.rule + COMPASS.gap);
   assert.equal(UNDER_COMPASS, 56);

@@ -4,6 +4,7 @@ import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
+import type { HostileLook } from './seaHostiles.ts';
 import type { Landfall } from './seaLaw.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
@@ -25,7 +26,8 @@ function seaGroup(label: string, ...controls: HTMLElement[]): HTMLElement {
   return group;
 }
 
-/** A mark on the screen: a node or a port, where it stands in CSS pixels, its size there, and what it says. */
+/** A mark on the screen: a node, a port or a hostile ship, where it stands in CSS pixels, its size there, and what it
+ *  says. */
 export interface ScreenMark {
   readonly id: string;
   readonly kind: MarkKind;
@@ -39,6 +41,8 @@ export interface ScreenMark {
   readonly named: boolean;
   /** Held at the picture's edge: the way its arrow points, degrees clockwise from up. */
   readonly arrowDegrees: number | null;
+  /** A hostile ship's emblem, rank colour and rank mark. */
+  readonly hostile?: HostileLook;
 }
 
 /** One choice of a menu. */
@@ -54,6 +58,7 @@ const GLYPHS: Record<MarkKind, string> = {
   dungeon: '▼',
   boss: '☠',
   port: '⚓\uFE0E',
+  hostile: '',
 };
 
 /** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
@@ -63,6 +68,28 @@ interface MarkNode {
   readonly name: HTMLElement;
   readonly note: HTMLElement;
   readonly arrow: HTMLElement;
+  readonly badge: HTMLElement;
+}
+
+/** Dresses a mark as a hostile ship, or undresses it: her rank's colour on its ring and arrow, her faction's emblem in
+ *  it, and over it a Miniboss's mark, the plates' own. */
+function dressHostile(shown: MarkNode, look: HostileLook | undefined): void {
+  shown.root.style.setProperty('--kind', look?.colour ?? '');
+  const emblem = look?.emblem ? `url("${look.emblem}") center / 62% no-repeat, rgba(10, 13, 17, 0.6)` : '';
+  if (shown.glyph.style.background !== emblem) shown.glyph.style.background = emblem;
+  shown.glyph.style.imageRendering = look ? 'pixelated' : '';
+  shown.badge.hidden = !look?.badge;
+  if (look?.badge) {
+    Object.assign(shown.badge.style, {
+      position: 'absolute',
+      left: '-7px',
+      top: 'calc(var(--size) / -2 - 12px)',
+      width: '14px',
+      height: '8px',
+      background: `url("${look.badge}") center / contain no-repeat`,
+      imageRendering: 'pixelated',
+    });
+  }
 }
 
 /** Writes words only when they change: called every frame, the HUD would otherwise rebuild its text each time. */
@@ -257,6 +284,7 @@ export class Hud {
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
       shown.glyph.textContent = GLYPHS[mark.kind];
+      dressHostile(shown, mark.hostile);
       shown.name.textContent = mark.name;
       const note = `${KIND_WORDS[mark.kind]} · ${mark.note}`;
       if (shown.note.textContent !== note) shown.note.textContent = note;
@@ -276,12 +304,13 @@ export class Hud {
     root.type = 'button';
     const [glyph, name, note] = [make('span', '', 'glyph'), make('span', '', 'name'), make('span', '', 'note')];
     const arrow = make('span', '▲', 'arrow');
-    root.append(arrow, glyph, name, note);
+    const badge = make('span', '', 'badge');
+    root.append(arrow, glyph, name, note, badge);
     root.addEventListener('click', (event) => {
       event.stopPropagation();
       this.markChosen(id);
     });
-    const shown = { root, glyph, name, note, arrow };
+    const shown = { root, glyph, name, note, arrow, badge };
     this.markLayer.append(root);
     this.marksShown.set(id, shown);
     return shown;

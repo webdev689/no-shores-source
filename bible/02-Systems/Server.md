@@ -152,11 +152,21 @@ will take it, by the room's own tick.
   meets a player fights them in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a ship of
   another faction fights her with no player (`clash.rs`): the room steps that fight each tick, the snapshot shows its
   ships among the others at sea where the fight has them, and a player who comes within 750 m joins it. Each captain
-  sails her rank's hull ([[Hulls]]). The sea's snapshot carries each hostile ship's faction, rank and hull, and each
-  player's fight its captain's faction, rank and hull; a fight's view carries every ship's hull. While a player fights,
+  sails her rank's hull ([[Hulls]]). Who comes, at which rank and level, how far out and where, is the water's at the
+  player's ship (`sighting.rs`, on the room's chart of its coasts, waters and lanes, `chart.rs`). The sea's snapshot
+  carries each hostile ship's faction, rank, hull, level and the distance she is sighted from, and each player's fight
+  its captain's faction, rank and hull; a fight's view carries every ship's hull. While a player fights,
   the room takes their orders and no course, and their ship is where the fight has her, at rest on the room's word. A
   ship sails at her pace held down as a pirate comes near, and the snapshot's pace for her is the one she sailed at. The
-  sea opens on a seed for its pirates, from the runtime's random numbers (`room_open_sea`'s third number).
+  sea opens on a seed for its pirates, from the runtime's random numbers (`room_open_sea`'s third number), round a
+  layout file's text, or `{ "layout", "ports" }` with the ports as the waters' door takes them, whose lanes between the
+  port cities the Grey Tithe patrols; with a layout alone it has no lanes.
+- **Measured** (`measure_tests.rs`, by hand in release): 20 players in each kind of water of the world's layout, each
+  voyaging at ×60 straight out 150 km and back for ten minutes. The first hostile ship is
+  sighted within the ten minutes by 17 of 20 in the pirates' waters (median 120 s), 17 in the Grey Tithe's (139 s), 15
+  in contested ones (191 s) and 9 in home waters (313 s, a ship of the waters beside them). A ship stays in sight 50
+  to 58 s on average, 86 to 93% of them 30 s and over (64% from home waters, seen across the border). No player met a
+  fight by 5 minutes or by 10: ships keep their courses, so few come within 750 m ([[Naval Combat]], "Limits").
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused

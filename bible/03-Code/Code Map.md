@@ -37,6 +37,7 @@ decision, made in the same change as its entry here.
 | `client/src/ships/` | The ships layer: each hull's mesh read from R2 by her wire number and drawn at her pose on the water in her side's colours, flying her flag, under her gaff, stay and square sails ([[Sailing]], [[Hulls]]), and a fight's balls and effects drawn as small spheres ([[Naval Combat]]) |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] (with its door's sailing and naval fights), [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
+| `client/src/game/seaHostiles.ts` | The hostile ships the sea's view marks, the voyage's line on each first sighted and on other waters entered, and the water named for the status line ([[Game]], "At sea") |
 | `client/src/rules/watersRules.ts` | The waters' and the friendly traffic's doors for a page, on the room module ([[World Map]]) |
 | `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, panned, zoomed and clicked for a destination ([[Held Map]]) |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
@@ -65,6 +66,7 @@ decision, made in the same change as its entry here.
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
 | `crates/room-wasm/src/waters_door.rs` | The waters and the friendly traffic for the browser: the water at a point, the held map's grid as bytes, the ships near a point ([[World Map]]) |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick on its ground and judged against its section; the sea, its ships sailing their courses; and a fleet, its ships sailed by their helms and fighting at true scale |
+| `crates/room/src/sighting.rs`, `chart.rs` | The sea's hostile ships by its waters: who a roll sends, at which rank and level, how far she is sighted from and where she comes; and the chart they read, the coasts, the nine waters and the friendly lanes ([[Naval Combat]], "At sea") |
 | `crates/city` | [[Cities]]: a port city's plan from its site, the same on the server and in every browser: its footprint, ways in, districts and terraces, its cells filled with Daggerfall's RMB blocks, its wall and harbour, its landmark and its social space |
 | `crates/bake` | The bake (`npm run bake`): each node's section, window of the ground and boxes, cut at build time for its room ([[Server]]) |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |

@@ -8,10 +8,14 @@ const captain = (x: number, y: number, state: ShipState, hostile: boolean): Figh
 
 test('out of a fight the compass marks every other player’s ship in bone and every hostile one in red', () => {
   const others = [{ player: 4, x: 10, y: -20, heading: 0, pace: 1 }];
-  const pirates = [{ id: 7, x: -300, y: 40, heading: 1, faction: 2, rank: 3 }];
+  const pirates = [
+    { id: 7, x: -300, y: 40, heading: 1, faction: 2, rank: 3 },
+    { id: 8, x: 9_000, y: 0, heading: 1, faction: 1, rank: 2, sight: 25_920 },
+  ];
   assert.deepEqual(seaShipMarks(null, { others, pirates }), [
     { x: 10, y: -20, kind: 'ship' },
-    { x: -300, y: 40, kind: 'hostile' },
+    { x: -300, y: 40, kind: 'hostile', rangeM: 5_000 },
+    { x: 9_000, y: 0, kind: 'hostile', rangeM: 25_920 },
   ]);
   assert.deepEqual(seaShipMarks(null, null), [], 'out of a room, none');
 });

@@ -272,12 +272,15 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     [200_000, 200_000],
     [100_000, 200_000],
   ];
-  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 51), true);
+  // The second island's waters are contested, so both factions come; on this seed two meet near the player.
+  const contested = { continents: [{ id: 'continent-2', outline: square }], isles: [] };
+  assert.equal(room.openSea(JSON.stringify(contested), 66), true);
   const player = room.join();
   assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
   let hash = 0xcbf2_9ce4_8422_2325n;
   let others = 0;
   for (let tick = 1; tick <= 16_000; tick++) {
+    if (tick === 6_100) assert.equal(room.input(player, courseBytes([[53_350, 53_617]], 10)), 'taken');
     room.tick();
     if (tick % 60 !== 0) continue;
     const bytes = room.snapshot();
@@ -287,7 +290,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), '82ff30e55b0eb369');
+  assert.equal(hash.toString(16).padStart(16, '0'), '6d42ddd76628caf3');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {

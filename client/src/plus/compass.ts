@@ -36,14 +36,16 @@ export const SHIP_MARK_COLOURS: Readonly<Record<ShipMarkKind, string>> = {
   ship: '#ebe0c2',
   struck: '#8f8f8f',
 };
-/** Ships farther off than this, in metres, have no mark. */
+/** Ships farther off than this, in metres, have no mark, but one that names her own range. */
 export const SHIP_MARK_RANGE_M = 900;
 
-/** A ship the compass marks: where she lies (metres, x east and y south) and what she is to the player. */
+/** A ship the compass marks: where she lies (metres, x east and y south), what she is to the player, and how far off
+ *  she is marked from (a hostile ship's sight; `SHIP_MARK_RANGE_M` where none is named). */
 export interface ShipMark {
   readonly x: number;
   readonly y: number;
   readonly kind: ShipMarkKind;
+  readonly rangeM?: number;
 }
 
 const turnsOf = (radians: number) => {
@@ -80,9 +82,9 @@ export function markPlace(
   return Math.min(1, Math.max(0, apart / span + 0.5));
 }
 
-/** The ships the compass marks of `ships` round a player at `from`: those within `SHIP_MARK_RANGE_M`. */
+/** The ships the compass marks of `ships` round a player at `from`: those within their range. */
 export function shipsMarked(ships: readonly ShipMark[], from: readonly [number, number]): ShipMark[] {
-  return ships.filter((ship) => Math.hypot(ship.x - from[0], ship.y - from[1]) <= SHIP_MARK_RANGE_M);
+  return ships.filter((ship) => Math.hypot(ship.x - from[0], ship.y - from[1]) <= (ship.rangeM ?? SHIP_MARK_RANGE_M));
 }
 
 const percent = (share: number) => `${(share * 100).toFixed(1)}%`;

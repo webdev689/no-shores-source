@@ -140,13 +140,24 @@ pub fn open_node(text: &[u8]) -> bool {
     true
 }
 
-/// Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; answers whether
-/// the text was a layout.
+/// The sea's opening text with its ports: `{ "layout": <layout file>, "ports": [{ "id", "name", "continent",
+/// "centre": [x, y] }] }`, the ports as the waters' door takes them.
+#[derive(Deserialize)]
+struct SeaRequest {
+    layout: world::layout::Layout,
+    ports: Vec<world::traffic::Port>,
+}
+
+/// Opens the sea round the continents of a layout, its pirates' chances drawn from `seed`: the text is a layout file,
+/// or a layout with its ports (`SeaRequest`), whose lanes the Grey Tithe patrols. Answers whether the text was either.
 pub fn open_sea(text: &[u8], seed: u32) -> bool {
-    let Some(layout) = std::str::from_utf8(text).ok().and_then(|text| world::layout::parse(text).ok()) else {
-        return false;
+    let Ok(text) = std::str::from_utf8(text) else { return false };
+    let opened = match serde_json::from_str::<SeaRequest>(text) {
+        Ok(request) => Some((request.layout, request.ports)),
+        Err(_) => world::layout::parse(text).ok().map(|layout| (layout, Vec::new())),
     };
-    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone(), seed))));
+    let Some((layout, ports)) = opened else { return false };
+    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports))));
     true
 }
 

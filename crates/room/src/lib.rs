@@ -6,6 +6,7 @@
 
 mod arts;
 pub mod asks;
+pub mod chart;
 pub mod clash;
 pub mod deck;
 mod drops;
@@ -20,6 +21,7 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+pub mod sighting;
 mod spells;
 mod statuses;
 pub mod threat;
@@ -570,6 +572,8 @@ mod foe_tests;
 mod gear_tests;
 #[cfg(test)]
 mod loadout_tests;
+#[cfg(test)]
+mod measure_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]

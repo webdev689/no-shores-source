@@ -163,7 +163,10 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times her length), so one reads from the raised
   view, and every hull the same four times her own, so a Frigate reads larger than a Sloop. Every other player's ship
   is the Sloop too. A captain's ship is drawn as the hull the wire carries for her, in her side's colours, and as the
-  Sloop until the wire carries one ([[Sailing]], "Her look"). At the helm every
+  Sloop until the wire carries one ([[Sailing]], "Her look"); in a fight and in a fleet room too, each read through
+  `hullOfCaptain` (at sea and in a fleet her `hull`, in a fight's view her `hull_kind`). Every hull's model and its
+  shell tags are made ready behind the sea's veil (`SeaHull.warm`), so the first of each seen holds no frame. At the
+  helm every
   ship is her true size ([[Held Map]]).
 - **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's, the walk's and a fight's)
   is laid on her at her true size, and the view eases down to it from the sea's. On the way every ship is drawn as large
@@ -215,11 +218,19 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   about her deck. The player stands at her wheel, but at the helm, where the eye is theirs. Off the helm the player
   walks her deck, with her helmsman at the wheel under way. In a fight they all stand on her as the fight lies her.
   Each figure stands where her deck lies on the swell, drawn as large as she is.
-- **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
-  ship is within 60 km of it; it is held at the picture's edge when off it, its arrow pointing the way.
+- **No nodes are marked at sea.** A port has an icon, over its harbour, with its name and distance, once the ship is
+  within 60 km of it, and every hostile ship within her own sight of the ship has a mark (`seaHostiles.ts`): her
+  faction's emblem in a ring of her rank's colour, her name as her plate gives it (Pirate Brig, Tithe Schooner, ...),
+  her level and her distance, a Miniboss's mark over it. Each is held at the picture's edge when off it, its arrow
+  pointing the way; ports too near each other on the picture are thinned to the nearest, a hostile ship's mark never.
 - **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
-  It marks each ship within 900 m of hers: the hostile red, other players' bone, a fight's struck captains grey
-  ([[Interface]]). It hides while the held map is up at the helm.
+  It marks each hostile ship within her sight of hers in red, other players' within 900 m in bone, a fight's struck
+  captains grey ([[Interface]]). It hides while the held map is up at the helm.
+- **The waters.** Once the page has opened the waters (`Sea.waterAt`), the place's line at sea and at the helm names
+  the water she is in, its band and holder ("The Fen Deeps, levels 22-26, Grey Tithe"; "The Lantern Sea, Overlook's
+  home waters"; a contested one or the seam "contested"). The voyage's line says for 6 s when she enters another
+  water ("Entering The Mistwrack, levels 16-19, Pirates.") and when a hostile ship is first sighted ("A Tithe Brig
+  sighted, 12 km off."), the nearest first.
 - **Pirates and the Grey Tithe** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at her
   voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of her, and the voyage's line says so;
   the page sails its ship at the pace the room sailed her at, drawn to where the room has her. A bold one that comes

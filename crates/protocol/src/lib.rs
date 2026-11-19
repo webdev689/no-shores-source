@@ -483,10 +483,10 @@ pub fn sea_snapshot_bytes(
     let each: Vec<_> = pirates
         .iter()
         .map(|pirate| {
-            let Pirate { id, x, y, heading, .. } = *pirate;
-            let Commission { faction, rank } = pirate.commission();
+            let Pirate { id, x, y, heading, level, sight_m: sight, commission: Commission { faction, rank }, .. } =
+                *pirate;
             let hull = rank.hull().number();
-            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull };
+            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight };
             messages::Pirate::create(&mut builder, &args)
         })
         .collect();

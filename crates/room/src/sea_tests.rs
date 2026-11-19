@@ -9,10 +9,11 @@ fn sailed(fight: &Fight, id: naval::shots::ShipId) -> sailing::ship::Ship {
     fight.vessel(id).map(|vessel| vessel.ship).expect("a ship of the fight")
 }
 
-/// One square continent, 100 km a side, its north-west corner 100 km from the frame's.
+/// One square continent, 100 km a side, its north-west corner 100 km from the frame's: the fourth island, so the sea
+/// round it is the pirates'.
 fn sea() -> Sea {
-    let text = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7)
+    let text = r#"{ "continents": [{ "id": "continent-4", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[])
 }
 
 fn ship(sea: &Sea, player: PlayerId) -> Ship {
@@ -166,7 +167,7 @@ fn met_at_sea(out: f64) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
-    let bold = Pirate { id: 1, seed: 7, x: 50_000.0, y: 50_000.0 - out, heading: 0.0, bold: true };
+    let bold = Pirate::standing(1, 7, Commission::default(), [50_000.0, 50_000.0 - out], 0.0, true);
     sea.pirates.sailing.push(bold);
     (sea, player)
 }
@@ -176,7 +177,7 @@ fn voyage_on(ahead: f64, bold: bool) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 90_000.0], [50_000.0, 10_000.0]], 60).unwrap();
-    let pirate = Pirate { id: 1, seed: 7, x: 50_000.0, y: 90_000.0 - ahead, heading: 0.0, bold };
+    let pirate = Pirate::standing(1, 7, Commission::default(), [50_000.0, 90_000.0 - ahead], 0.0, bold);
     sea.pirates.sailing.push(pirate);
     (sea, player)
 }
@@ -212,7 +213,7 @@ fn a_course_that_zigzags_toward_a_pirate_or_turns_toward_her_at_once_is_held_as_
         .map(|leg| [50_000.0 + f64::from(leg / 2) * 10.0, 90_000.0 - f64::from((leg + 1) / 2) * 10.0])
         .collect();
     sea.course(player, &zigzag, 100).unwrap();
-    let pirate = Pirate { id: 1, seed: 7, x: 50_000.0, y: 88_360.0, heading: std::f64::consts::PI, bold: false };
+    let pirate = Pirate::standing(1, 7, Commission::default(), [50_000.0, 88_360.0], std::f64::consts::PI, false);
     sea.pirates.sailing.push(pirate);
     let mut rates = Vec::new();
     for _ in 0..30 {
@@ -230,7 +231,7 @@ fn a_course_turned_toward_a_pirate_is_held_on_its_first_tick() {
     let player = sea.join();
     sea.course(player, &[[50_000.0, 90_000.0]], 100).unwrap();
     ticks(&mut sea, COURSE_EVERY_TICKS as usize);
-    sea.pirates.sailing.push(Pirate { id: 1, seed: 7, x: 50_000.0, y: 91_000.0, heading: 0.0, bold: false });
+    sea.pirates.sailing.push(Pirate::standing(1, 7, Commission::default(), [50_000.0, 91_000.0], 0.0, false));
     sea.course(player, &[[50_000.0, 99_000.0]], 100).unwrap();
     sea.tick();
     assert!(ship(&sea, player).rate < 100, "held on the first tick: x{}", ship(&sea, player).rate);
@@ -379,7 +380,7 @@ fn a_player_who_leaves_the_room_leaves_her_deck_too() {
 #[test]
 fn a_ship_met_at_sea_fights_under_her_own_faction_and_rank() {
     let (mut sea, _) = met_at_sea(700.0);
-    let commission = sea.pirates()[0].commission();
+    let commission = sea.pirates()[0].commission;
     sea.tick();
     let (_, fought) = sea.fights().next().expect("a fight");
     let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
@@ -460,10 +461,9 @@ fn ships_of_one_faction_never_meet_at_sea() {
 
 #[test]
 fn a_captain_of_each_rank_at_sea_meets_a_player_in_her_ranks_hull() {
-    for (rank, _) in crate::pirates::RANKS_AT_SEA {
-        let seed = (0..10_000).find(|seed| crate::pirates::commission_at_sea(*seed).rank == rank).expect("a seed");
+    for rank in crate::sighting::RANKS_AT_SEA {
         let (mut sea, _) = met_at_sea(700.0);
-        sea.pirates.sailing[0].seed = seed;
+        sea.pirates.sailing[0].commission.rank = rank;
         sea.tick();
         let (_, fought) = sea.fights().next().expect("a fight");
         let hull = fought.fight.vessel(CAPTAIN).map(|vessel| vessel.hull);
@@ -471,4 +471,59 @@ fn a_captain_of_each_rank_at_sea_meets_a_player_in_her_ranks_hull() {
         let shown: Vec<_> = sea.fight_views().map(|(_, _, commission)| commission.hull()).collect();
         assert_eq!(shown, [rank.hull()], "{rank:?}: the snapshot names her hull");
     }
+}
+
+/// A ship at sea at x60, north from (50 km, 400 km), and a ship of the pirates ahead heading south at her: as far out
+/// as one comes for that pace, and sighted from that far.
+fn met_head_on(bold: bool) -> (Sea, PlayerId) {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], 60).unwrap();
+    let sight = crate::sighting::sight_for(60.0);
+    let ahead = [50_000.0, 400_000.0 - 0.9 * sight];
+    let pirate = Pirate { sight_m: sight, ..Pirate::standing(1, 7, Commission::default(), ahead, PI, bold) };
+    sea.pirates.sailing.push(pirate);
+    (sea, player)
+}
+
+#[test]
+fn a_ship_met_head_on_on_a_voyage_stays_in_sight_half_a_minute_and_more() {
+    let (mut sea, player) = met_head_on(false);
+    let mut in_sight = 0;
+    for _ in 0..10 * 60 * 60 {
+        sea.tick();
+        let at = ship(&sea, player);
+        let Some(pirate) = sea.pirates().first().copied() else { break };
+        if pirate.sees([at.x, at.y]) {
+            in_sight += 1;
+        }
+    }
+    assert!(in_sight >= 30 * 60, "in sight {} s", in_sight / 60);
+}
+
+#[test]
+fn a_bold_ship_met_head_on_holds_the_voyage_down_before_she_takes_the_player_on() {
+    let (mut sea, player) = met_head_on(true);
+    let mut last = 60;
+    for _ in 0..10 * 60 * 60 {
+        sea.tick();
+        if sea.fights().next().is_some() {
+            break;
+        }
+        last = ship(&sea, player).rate;
+    }
+    assert_eq!(sea.fights().next().map(|(fighting, _)| fighting), Some(player), "she took the player on");
+    assert!(last <= 5, "the voyage came to her at x{last}");
+}
+
+#[test]
+fn rivals_that_come_by_their_waters_still_meet() {
+    // On the seam's like: a bold Tithe Elite and a pirate 500 m apart, 20 km from a player at rest.
+    let (mut sea, _) = rivals_at_sea(Commission::default(), false);
+    for pirate in &mut sea.pirates.sailing {
+        pirate.y = 30_000.0;
+        pirate.sight_m = crate::sighting::sight_for(60.0);
+    }
+    sea.tick();
+    assert_eq!(sea.clashes().len(), 1, "kept at sea by her sight, they meet as before");
 }

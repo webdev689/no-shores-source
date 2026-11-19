@@ -158,17 +158,39 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     assert!(ships[0].1.y < 150_000.0);
 }
 
+#[test]
+fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
+    let layout = include_str!("../../../content/world/layout.json");
+    let ports: Vec<serde_json::Value> = (1..=9)
+        .map(|n| {
+            let path = format!("{}/../../content/world/land/continent-{n}.json", env!("CARGO_MANIFEST_DIR"));
+            let file: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+            let city = &file["city"];
+            json!({ "id": city["id"], "name": city["name"], "continent": format!("continent-{n}"), "centre": city["centre"] })
+        })
+        .collect();
+    let request = format!(r#"{{"layout":{layout},"ports":{}}}"#, serde_json::Value::Array(ports));
+    assert!(open_sea(request.as_bytes(), 7));
+    assert!(!open_sea(format!(r#"{{"layout":{layout}}}"#).as_bytes(), 7), "a layout wrapped with no ports");
+    assert!(open_sea(layout.as_bytes(), 7), "a layout alone, with no lanes");
+}
+
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "82ff30e55b0eb369";
+pub const SEA_CLASH_HASH: &str = "6d42ddd76628caf3";
 
 #[test]
 fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
-    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    assert!(open_sea(layout.as_bytes(), 51));
+    // The second island's waters are contested, so both factions come; on this seed two of them meet about 5 km from
+    // the player by tick 6099, and the player sails there.
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
     let player = room_join();
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
     for tick in 1..=16_000 {
+        if tick == 6_100 {
+            assert_eq!(input(player, &protocol::course_bytes(&[[53_350.0, 53_617.0]], 10)), TAKEN);
+        }
         room_tick();
         with_open(|opened| {
             if let Opened::Sea(sea) = opened {
