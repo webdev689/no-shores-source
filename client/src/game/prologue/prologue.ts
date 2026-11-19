@@ -16,7 +16,6 @@ import { Calm } from './calm.ts';
 import { Ram } from './ram.ts';
 import type { Sailed } from './sailing.ts';
 import { Shore } from './shore.ts';
-import type { StoryFrame } from './stage.ts';
 import { inboundAt, Sighted } from './sighted.ts';
 import { StormDive } from './storm.ts';
 import type { Story } from './story.ts';
@@ -140,8 +139,33 @@ export class Prologue {
   }
 
   /** What the beat that ended leaves, and the beat after it; a played story ends at the title. */
+  /** The beat after the one that ended, made from what it left; a beat that cannot be made is passed over. */
   private next(): void {
     const ended = this.beat;
+    // A hold on Space belongs to the cutscene it began on: the next must be held for its own second.
+    this.skipping.step(0, false);
+    try {
+      this.carry(ended);
+    } catch (error) {
+      console.error(`what the story's ${ended.name} left could not be carried on:`, error);
+    }
+    if (this.end) return;
+    for (let index = BEATS.indexOf(ended.name) + 1; index < BEATS.length; index++) {
+      const following = BEATS[index];
+      if (!following) break;
+      try {
+        this.beat = this.make(following);
+        return;
+      } catch (error) {
+        console.error(`the story's ${following} could not begin:`, error);
+      }
+    }
+    // Nothing after it could begin: the game is the player's.
+    this.end = 'played';
+  }
+
+  /** What the beat that ended leaves for those after it; a played story ends at the title, and the story at the shore. */
+  private carry(ended: Beat): void {
     ended.leave?.();
     if (ended instanceof Sighted) this.carried.inbound = ended.inbound;
     if (ended instanceof Battle) this.carried.wrecks = ended.wrecks;
@@ -161,11 +185,7 @@ export class Prologue {
     if (ended instanceof Shore) {
       keepProloguePlayed(localStorage);
       this.end = 'played';
-      return;
     }
-    const index = BEATS.indexOf(ended.name);
-    const following = BEATS[index + 1];
-    if (following) this.beat = this.make(following);
   }
 
   /** The beat being played, for the page to ask what it takes. */
@@ -207,6 +227,19 @@ export class Prologue {
     viewport: { width: number; height: number },
   ): void {
     if (this.end) return;
+    try {
+      this.play(controls, seconds, size, viewport);
+    } catch (error) {
+      this.failed(this.beat, error);
+    }
+  }
+
+  private play(
+    controls: InputFrame,
+    seconds: number,
+    size: { width: number; height: number },
+    viewport: { width: number; height: number },
+  ): void {
     this.clock += seconds;
     const { stage } = this.story;
     stage.step(seconds);
@@ -222,14 +255,12 @@ export class Prologue {
         stage.hush();
         this.skipping.step(0, false);
       }
-    } else stage.parts.screen.showSkip(null);
-    let shown: StoryFrame | null;
-    try {
-      shown = beat.frame({ seconds, clock: this.clock, controls, size, viewport });
-    } catch (error) {
-      this.failed(beat, error);
-      return;
+    } else {
+      // A hold begun on a beat that could be skipped never carries over to skip one after it.
+      this.skipping.step(0, false);
+      stage.parts.screen.showSkip(null);
     }
+    const shown = beat.frame({ seconds, clock: this.clock, controls, size, viewport });
     if (shown) {
       this.carried.shot = shown.shot;
       stage.draw(shown, size, this.clock, seconds);

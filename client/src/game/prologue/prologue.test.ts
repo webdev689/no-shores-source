@@ -125,3 +125,69 @@ test('a touch held on the screen for a second skips a cutscene, as Space does', 
   for (let frame = 0; frame < 11; frame++) director.frame(controls(false), 0.1, SIZE, SIZE);
   assert.ok(made.get('ram')?.skipped);
 });
+
+test('a throw anywhere in a frame, not only in the beat, moves the story on, and the page keeps going', () => {
+  const made = new Map<BeatName, Played>();
+  const { director, asked } = directed(made, 'calm');
+  const story = (director as unknown as { story: { stage: { draw: () => void } } }).story;
+  story.stage.draw = () => {
+    throw new Error('the GPU refused the frame');
+  };
+  const logged = console.error;
+  console.error = () => undefined;
+  try {
+    director.frame(controls(false), 0.1, SIZE, SIZE);
+  } finally {
+    console.error = logged;
+  }
+  assert.equal(director.now.name, 'ram');
+  assert.ok(asked.includes('hush'));
+});
+
+test('a beat that cannot even be made is passed over for the one after it', () => {
+  const made = new Map<BeatName, Played>();
+  const asked: string[] = [];
+  const stage = {
+    step: () => undefined,
+    hush: () => asked.push('hush'),
+    draw: () => undefined,
+    parts: { screen: { showSkip: () => undefined, clear: () => undefined } },
+  };
+  Object.assign(globalThis, { localStorage: { getItem: () => null, setItem: () => undefined } });
+  class Unmade extends Prologue {
+    protected override make(name: BeatName): Beat {
+      if (name === 'wake') throw new Error('no wreck to wake in');
+      const beat = made.get(name) ?? new Played(name);
+      made.set(name, beat);
+      return beat;
+    }
+  }
+  const director = new Unmade({ stage } as unknown as Story, {} as Islands, {} as Nameplate, {} as WreckContext, 'ram');
+  const ram = made.get('ram');
+  assert.ok(ram);
+  ram.done = true;
+  const logged = console.error;
+  console.error = () => undefined;
+  try {
+    director.frame(controls(false), 0.1, SIZE, SIZE);
+  } finally {
+    console.error = logged;
+  }
+  assert.equal(director.now.name, 'wreck');
+});
+
+test('a hold on Space begun on a cutscene that ends by itself does not carry over to skip the next', () => {
+  const made = new Map<BeatName, Played>([
+    ['ram', new Played('ram', true)],
+    ['wake', new Played('wake', true)],
+  ]);
+  const { director } = directed(made, 'ram');
+  for (let frame = 0; frame < 8; frame++) director.frame(controls(true), 0.1, SIZE, SIZE);
+  const ram = made.get('ram');
+  assert.ok(ram && !ram.skipped, 'eight tenths held is not yet a skip');
+  ram.done = true;
+  director.frame(controls(true), 0.1, SIZE, SIZE);
+  assert.equal(director.now.name, 'wake');
+  for (let frame = 0; frame < 3; frame++) director.frame(controls(true), 0.1, SIZE, SIZE);
+  assert.equal(made.get('wake')?.skipped, false, 'three tenths more is not a skip of the next cutscene');
+});
