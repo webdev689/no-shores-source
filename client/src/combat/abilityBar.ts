@@ -192,6 +192,13 @@ export class AbilityBar {
     });
   }
 
+  /** Hides the bar until it is next shown a state. */
+  hide(): void {
+    if (this.root.hidden && !this.shown) return;
+    this.root.hidden = true;
+    this.shown = null;
+  }
+
   /** Draws the bar in `art`'s pictures and colours; hidden with none. */
   private wear(art: number): void {
     const pictures = this.pictures(art);

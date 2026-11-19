@@ -1,3 +1,4 @@
+import { type GlowElement, recolourToGlow } from '../elementGlow.ts';
 import type { Strip } from '../forge/compose.ts';
 import type { DyeTable, PaletteSnap, Rgb } from '../forge/dyes.ts';
 import type { WeaponKind } from './weaponMachine.ts';
@@ -366,7 +367,16 @@ export const CAST_LIGHTS = ['fire', 'frost', 'poison', 'shock', 'magic'] as cons
 /** The casting arm's garments under the light, in order. */
 const CAST_GARMENTS = ['linen', 'gauntlet'] as const;
 
-/** The casting hand's record `record` lit by `element`: its sleeve, its glove and the light, laid in order; in a set's
+/** The light each Art casts with, by its element (the gear crate's numbers): Divine's fire, Storm's shock and
+ *  Shadow's magic, each recoloured to its element's glow. */
+export const ART_LIGHTS: Readonly<Record<GlowElement, (typeof CAST_LIGHTS)[number]>> = {
+  1: 'fire',
+  2: 'shock',
+  3: 'magic',
+};
+
+/** The casting hand's record `record` lit by `element` (its light recoloured to `glow`'s, if given): its sleeve, its
+ *  glove and the light, laid in order; in a set's
  *  gauntlets (`hands`) the set's whole arm under the light, else the sleeve and glove. Placed by the caller, as a
  *  casting hand is placed by its record. */
 export async function castPicture(
@@ -374,14 +384,20 @@ export async function castPicture(
   element: string,
   record: number,
   hands: string | null = null,
+  glow: GlowElement | null = null,
 ): Promise<Picture | null> {
   const layers = hands ? [hands, element] : [...CAST_GARMENTS, element];
   const strips = await Promise.all(layers.map((layer) => source.strip(castPath(layer, record))));
   const [base, ...over] = strips;
   if (!base || over.some((strip) => strip?.width !== base.width || strip.height !== base.height))
-    return hands ? castPicture(source, element, record) : null;
+    return hands ? castPicture(source, element, record, null, glow) : null;
   // A set's arm is dyed as its fists are.
   const pixels = source.painter.paint(base, hands ? setRamp(source.dyes, hands, 'Iron') : null);
-  for (const strip of over) if (strip) layOver(pixels, source.painter.paint(strip, null));
+  over.forEach((strip, index) => {
+    if (!strip) return;
+    const painted = source.painter.paint(strip, null);
+    if (glow && index === over.length - 1) recolourToGlow(painted, glow);
+    layOver(pixels, painted);
+  });
   return { width: base.width, height: base.height, pixels, at: [0, 0] };
 }

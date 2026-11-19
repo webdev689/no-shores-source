@@ -40,11 +40,12 @@ export class HitStops {
   private clock = 0;
 
   /** Holds each blow's striker and the one it met, `length` times as long as made (0 holds none). A blow that harms
-   *  nothing holds nothing, and nor does a shot: the feel is the blows'. */
+   *  nothing holds nothing, and nor does a shot or a spell: the feel is the blows'. */
   struck(events: readonly FightEvent[], length = 1): void {
     for (const event of events) {
       const hold = (HOLD[event.kind] ?? 0) * length;
-      if (hold <= 0 || event.how === HOW.shot || (event.kind === EVENT.hit && event.amount <= 0)) continue;
+      const notABlow = event.how === HOW.shot || event.how === HOW.spell;
+      if (hold <= 0 || notABlow || (event.kind === EVENT.hit && event.amount <= 0)) continue;
       for (const [id, struck] of [
         [event.striker, false],
         [event.defender, true],

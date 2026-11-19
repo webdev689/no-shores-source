@@ -68,7 +68,7 @@ test('the mouse turns the view; the figure faces where it walks and keeps facing
   player = updatePlayer(player, frame(), movement, TICK);
   assert.equal(player.facing, walkingFacing);
   // Casting turns it to the view.
-  player = updatePlayer(player, frame([], ['cast']), movement, TICK);
+  player = updatePlayer({ ...player, cast: 0 }, frame(), movement, TICK);
   assert.equal(player.facing, player.yaw);
 });
 

@@ -84,8 +84,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,
   on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
-  weapon, the right button swings or aims, the left button or F guards, parries or fires, V or Mouse5 dodges, and the
-  soft lock holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
+  weapon, the right button swings or aims, the left button guards, parries or fires, V or Mouse5 dodges, F, Q and C
+  cast the worn Art's spells ([[Arts]]), and the soft lock holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
   name the fight's.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's

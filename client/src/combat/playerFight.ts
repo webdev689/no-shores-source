@@ -1,7 +1,9 @@
+import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { InputFrame } from '../player/input.ts';
 import { SHOOTERS, type Walker } from '../player/walker.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
+import { CastKeys } from './casting.ts';
 import type { Fighting } from './fighting.ts';
 
 type Point = readonly [number, number, number];
@@ -24,6 +26,7 @@ export class PlayerFight {
   readonly fight: Fighting;
   private readonly rules: CombatRules;
   private readonly walker: Walker;
+  private readonly castKeys = new CastKeys();
   private armsKey = '';
 
   constructor(fight: Fighting, rules: CombatRules, walker: Walker) {
@@ -81,6 +84,7 @@ export class PlayerFight {
       shootPressed: ranged && controls.pressed('guard'),
       guardPressed: guards && controls.pressed('guard'),
     });
+    this.castFrame(controls, seconds, hands && free && !player.mounted, markOf);
     const foe = fight.targetAt;
     const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
     walker.step(controls, steps, seconds, toward, aiming);
@@ -104,5 +108,25 @@ export class PlayerFight {
     fight.dress = walker.lookDress;
     const pressed = (armed && !shooter && controls.pressed('swing')) || (hands && controls.pressed('dodge'));
     return { shooter, ranged, aiming, pressed };
+  }
+
+  /** The casting keys: a cast sent to the room plays its move in its Art's colour, and Dusk Daggers' ring is laid while
+   *  it is aimed. */
+  private castFrame(controls: InputFrame, seconds: number, hands: boolean, markOf: () => Point | null): void {
+    const { fight, walker } = this;
+    const state = fight.arts;
+    const { cast, ring } = this.castKeys.frame(controls, seconds, {
+      hands,
+      state,
+      abilities: fight.abilities,
+      own: fight.own,
+      yaw: walker.player.yaw,
+      markOf,
+    });
+    fight.aimRing = ring;
+    if (!cast) return;
+    fight.cast(cast);
+    const element = arts.arts.find((art) => art.id === state?.art)?.element ?? 0;
+    if (cast.spell > 0 && (element === 1 || element === 2 || element === 3)) walker.beginCast(element);
   }
 }

@@ -366,6 +366,7 @@ export class Foot {
       firstPerson,
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
+      abilities: fight.abilities,
       // While a ranged weapon aims, and whenever one is drawn in first person; a bow's draw rings it.
       crosshair:
         shown.aiming || (shown.ranged && firstPerson)

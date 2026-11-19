@@ -1,6 +1,24 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GLOW_PAD, GLOW_RAMPS, GLOW_WGSL, type GlowField, glowField, glowRampAt } from './elementGlow.ts';
+import {
+  GLOW_PAD,
+  GLOW_RAMPS,
+  GLOW_WGSL,
+  type GlowField,
+  glowField,
+  glowRampAt,
+  recolourToGlow,
+} from './elementGlow.ts';
+
+test('a cast’s light is recoloured by its brightness into its element: white to white-hot, black to its dark', () => {
+  const pixels = new Uint8Array([255, 255, 255, 255, 0, 0, 0, 255, 90, 90, 90, 0, 255, 255, 255, 255]);
+  recolourToGlow(pixels, 3, new Uint8Array([1, 1, 1, 0]));
+  const byte = (rgb: readonly number[]) => rgb.map((channel) => Math.round(channel * 255));
+  assert.deepEqual([...pixels.slice(0, 3)], byte(GLOW_RAMPS[3][3]));
+  assert.deepEqual([...pixels.slice(4, 7)], byte(GLOW_RAMPS[3][0]));
+  assert.deepEqual([...pixels.slice(8, 12)], [90, 90, 90, 0], 'clear stays clear');
+  assert.deepEqual([...pixels.slice(12, 16)], [255, 255, 255, 255], 'one the mask leaves out stays');
+});
 
 const whole = (width: number, height: number) => new Uint8Array(width * height).fill(1);
 /** A field's texel at (x, y) from the mask's own top left corner: red, green, blue, alpha. */

@@ -11,12 +11,15 @@ export const BINDINGS = {
   lookDown: ['delete'],
   run: ['shift'],
   jump: [' '],
-  crouch: ['c'],
+  crouch: ['x'],
   ready: ['z'],
   swing: ['mouse2'],
-  guard: ['mouse0', 'f'],
+  guard: ['mouse0'],
   dodge: ['v', 'mouse4'],
-  cast: ['q'],
+  // The Art's abilities, as Destiny's keys are on a computer: the Anima on F, the Tenets on Q and C.
+  anima: ['f'],
+  tenetOne: ['q'],
+  tenetTwo: ['c'],
   perspective: ['mouse3'],
   mount: [','],
 } as const;

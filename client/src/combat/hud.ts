@@ -3,6 +3,7 @@ import { rayHit } from '../player/playerCamera.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { Compass, headingOf } from '../plus/compass.ts';
+import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
 import { edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
@@ -36,6 +37,8 @@ export interface HudFrame {
   readonly parryOpen?: boolean;
   /** The blocks of the place, which no plate over a figure is seen through. */
   readonly blocks?: readonly Block[];
+  /** The Art's abilities as the bar shows them (Fighting's abilities); none hides the bar. */
+  readonly abilities?: AbilityState | null;
 }
 
 /** A foe winding up an iron blow this near is told to be dodged. */
@@ -125,6 +128,7 @@ export class Hud {
   private readonly foeBars: FoeBars;
   private readonly foeTarget = new FoeTarget();
   private readonly words: Words;
+  private readonly abilities: AbilityBar | null;
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
@@ -132,7 +136,8 @@ export class Hud {
   private staminaFlash = 0;
   private hurtFlash = 0;
 
-  constructor(root: HTMLElement) {
+  /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's ability bar stands by the vitals. */
+  constructor(root: HTMLElement, pictures: ((art: number) => ArtPictures | null) | null = null) {
     wearFightSheet(root.ownerDocument);
     root.classList.add('fight-hud');
     this.root = root;
@@ -150,6 +155,7 @@ export class Hud {
     this.foeBars = new FoeBars(root, this.over, column);
     this.target = new FoePlate(column, 'target', { poise: true, remembers: 'whole' });
     this.words = new Words(this.over);
+    this.abilities = pictures && new AbilityBar(root, pictures);
     this.veil = element('div', 'veil', root);
   }
 
@@ -184,6 +190,8 @@ export class Hud {
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
+    if (frame.abilities) this.abilities?.update(frame.abilities);
+    else this.abilities?.hide();
     this.pointAtThreats(frame);
     this.ringParries(frame);
     this.floatWords(frame, seconds);

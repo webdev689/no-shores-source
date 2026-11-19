@@ -3,9 +3,9 @@
 // pictures the HUD draws an Art with, and the asks the screen sends the room. Nothing changes until the room answers.
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import { ABILITY_KEYS, type ArtPictures } from '../combat/abilityBar.ts';
+import { ABILITY_KEYS } from '../combat/abilityBar.ts';
 import { FRAGMENT_MAPS } from './artFragments.ts';
-import { EMBLEM_MAPS, SPELL_MAPS, mapSvg } from './artGlyphs.ts';
+import { EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
 import type { Card } from './gearCards.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
@@ -180,9 +180,4 @@ export const spellSvg = (art: Art, spell: Spell): string => mapSvg(SPELL_MAPS[sp
 export const fragmentSvg = (art: Art, fragment: Fragment): string => mapSvg(FRAGMENT_MAPS[fragment.key], art.element);
 
 /** The pictures the HUD's ability bar draws an Art with; null for no Art. */
-export function abilityPictures(id: number): ArtPictures | null {
-  const art = artOf(id);
-  const [first, second] = art?.tenets ?? [];
-  if (!art || !first || !second) return null;
-  return { diamond: emblemSvg(art), tenets: [spellSvg(art, first), spellSvg(art, second)] };
-}
+export { abilityPictures } from '../player/artGlyphs.ts';
