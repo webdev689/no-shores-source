@@ -23,6 +23,7 @@ mod fighter_door;
 mod fleet_door;
 mod gear_door;
 mod roster_door;
+mod waters_door;
 
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
