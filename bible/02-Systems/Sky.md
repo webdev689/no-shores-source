@@ -88,5 +88,6 @@ what show the ground there.
 ## Limits
 
 - There are no seasons: the year stands in its summer.
+- The World Editor and the Test Ground keep a clear afternoon: only the game reads the clock and the weather.
 - Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.

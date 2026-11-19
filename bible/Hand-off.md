@@ -251,6 +251,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   the Wrath; the climates' families and each family's key, metre and tempo; Saltmere's theme as written; the sounds
   nearest "no glass" (wet's kalimba drips, cold's high tremolo, Landfall's soft bell, the fights' reverse-cymbal
   risers).
+- **#76, the weather and day and night, waits on the owner's yes to merge**, stacked on #73
+  ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]], [[Sky]], [[Weather]]).
+  Claude made the calls the owner left open ([[Weather and Day as Claude Shapes It]]), the owner's to change. The
+  owner judged the weather's first sounds and picked the gutters and both thunders from Freesound
+  ([[The Weather's Gutters and Thunder Come From Freesound]]); those picks are on R2.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -265,13 +270,20 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **The weather and day and night (#76)**, tested offline: the full check, the weather's statistics per climate and
+  its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under cloud, at sunset
+  and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to compile. Not
+  yet: lightning's bolts seen in a picture (no strike falls near Saltmere by day in 60 world days, and the page always
+  arrives there), ships and marks under the lamps, snow, a real GPU's frame time (the sky reads some ten noise lookups
+  a pixel, twice while one cloud pattern fades into the next), and a person playing through an hour's day. An offline
+  WGSL check in `cargo xtask` (naga) would have caught the bolts' shader that never compiled; adding it is the
+  owner's call.
 - **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
   in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
   as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left
   open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as a new cue kind,
-  by whichever reaches `main` second; the night ambiences wait for the game to have a time of day; the crowd
-  recording's level against the synthesised crowd; four sea songs (the still sea, the open sea, the night, Landfall)
-  play nowhere while sailing is ambience alone.
+  by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four sea songs while
+  sailing, and sets each recording at the loudness of the synthesised sound it replaces.
 - **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
   its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
@@ -405,7 +417,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
   crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
   which boarding needs, is the `movement` crate's grid of heights, walked on the player's own Sloop.
-- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
+- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell (on #76 the weather's
+  wind drives the sails, the chop and the whitecaps; the long swell is still one swell).
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
 - The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm. Whether players may harm one another
