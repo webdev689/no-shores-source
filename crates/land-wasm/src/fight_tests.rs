@@ -201,7 +201,7 @@ fn fought_with(rank: u8) -> Vec<String> {
 /// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
 /// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
 pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
-    [(2, 0, "2c2186f7241fdcd2"), (3, 1, "279b7d96a1d2a59a"), (4, 2, "7cdf7b4890b0c5f4"), (5, 3, "683fd9e8aa26ed17")];
+    [(2, 0, "2c2186f7241fdcd2"), (3, 1, "5745bdfe1de37803"), (4, 2, "4fdc10ebd78e07e8"), (5, 3, "053e49b86f18f86a")];
 
 #[test]
 fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {

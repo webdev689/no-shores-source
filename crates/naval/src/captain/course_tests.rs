@@ -48,8 +48,27 @@ fn running_she_takes_the_best_wind_within_sixty_degrees_of_dead_away() {
 #[test]
 fn a_hull_on_a_collision_course_bends_her_away() {
     // Head on: both heading at each other 60 m apart, each at 2 m/s.
-    let bent = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, &[([0.0, -60.0], [0.0, 2.0])], 4.5);
+    let bent = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, &[([0.0, -60.0], [0.0, 2.0], 2.25)], 2.25);
     assert!(bent > 0.0, "she turns to starboard for a hull ahead");
-    let clear = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, &[([200.0, -60.0], [0.0, 2.0])], 4.5);
+    let clear = traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, &[([200.0, -60.0], [0.0, 2.0], 2.25)], 2.25);
     assert!(near(clear, 0.0));
+}
+
+#[test]
+fn a_sloop_and_a_frigate_passing_each_other_keep_the_same_clearance() {
+    use crate::arms::{FRIGATE_ARMS, SLOOP_ARMS};
+    let (sloop, frigate) = (pass_reach(&SLOOP_ARMS), pass_reach(&FRIGATE_ARMS));
+    assert!((sloop - 6.83).abs() < 0.01 && (frigate - 13.13).abs() < 0.01, "{sloop} {frigate}");
+    // Head on, each heading at the other's line `abeam` metres to one side: each bends exactly when the other does.
+    let bends = |abeam: f64| {
+        let sloops =
+            traffic_course(([0.0, 0.0], 0.0, [0.0, -2.0]), 0.0, &[([abeam, -60.0], [0.0, 2.0], frigate)], sloop);
+        let frigates =
+            traffic_course(([abeam, -60.0], PI, [0.0, 2.0]), PI, &[([0.0, 0.0], [0.0, -2.0], sloop)], frigate);
+        (!near(sloops, 0.0), !near(frigates, PI))
+    };
+    let clearance = sloop + frigate + AVOID_SHIP_CLEAR;
+    assert!((clearance - 34.96).abs() < 0.01, "{clearance}");
+    assert_eq!(bends(clearance - 0.5), (true, true), "both bend inside it");
+    assert_eq!(bends(clearance + 0.5), (false, false), "neither outside it");
 }

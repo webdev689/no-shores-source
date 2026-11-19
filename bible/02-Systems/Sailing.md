@@ -117,9 +117,9 @@ named by her key in the manifest (`HullKind`), numbered 0 to 3 on the wire.
 | Brig | 30.7 × 5.3 m | 2.2 m | two staysails, six square sails, a gaff spanker | 1.643 (the galleon, a square-rigged two-master) |
 | Frigate | 38.1 × 6.2 m | 2.4 m | two staysails, eight square sails, a gaff spanker | 1.798 (the Carrack, a square-rigged three-master) |
 
-No hull's rig drives her harder at its best than the Sloop's: her canvas is scaled by the Sloop's over her own, each
-sail at its crest (`canvas_drive`), so every hull makes the Sloop's way on every point of sail, 2.4 m/s on a beam
-reach, and her rank's way alone makes her faster ([[Naval Combat]]). Her square sails pull by the same law as the rest:
+No hull's rig drives her harder than the Sloop's: her canvas drives her as the Sloop's does (`canvas_drive`), so every
+hull makes the Sloop's way on every point of sail, 2.4 m/s on a beam reach, and her rank's way alone makes her faster
+([[Naval Combat]]); her sails' kinds shape only how they are drawn and trimmed. Her square sails pull by the same law as the rest:
 under the responsive helm each draws at its crest (a square sail running dead before the wind), so the point of sail
 alone says how her heading takes it, and a Brig or a Frigate runs, reaches, beats and comes about through the wind's
 eye as the Sloop does, keeping her way. Her gain still shapes her: a bigger rig gathers and loses way faster and steers

@@ -90,7 +90,8 @@ Done for the Schooner, the Brig and the Frigate:
 - **Its numbers**: `SCHOONER`, `BRIG` and `FRIGATE` beside `SLOOP`, from their exports, each with DFO's gain for the
   matching rig and her sails; `HullKind` names each by her manifest key. Her arms (`arms_of`): each side's mouths
   fore to aft, her hull's box and each sail's.
-- **Square sails** in the rules: a square-rigged hull sails, tacks and turns by her sails' kinds.
+- **Square sails** in the rules: a square-rigged hull sails, tacks and turns as the Sloop does. Her way is the Sloop's
+  times her rank's, and her gain shapes her handling (how her way comes and goes, and her steerage).
 - **A ship's hull, everywhere** in the rules: every ship in a fight carries her hull and sails, fights, is struck and
   rams as it; a captain's rank picks it (`Rank::hull`) and names her (the Pirate Brig, the Tithe Frigate); the
   snapshots, a fight's view and the doors carry it.

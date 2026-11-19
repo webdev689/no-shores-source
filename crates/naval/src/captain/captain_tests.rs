@@ -52,7 +52,7 @@ fn player_at(x: f64, y: f64) -> Sighting {
 
 /// Her helm against one player's ship, the only hull about her.
 fn steer_against(her: &mut Captain, deck: &Deck, enemy: &Sighting, seconds: f64) -> Helm {
-    let traffic = [([enemy.ship.x, enemy.ship.y], velocity_of(&enemy.ship))];
+    let traffic = [([enemy.ship.x, enemy.ship.y], velocity_of(&enemy.ship), course::pass_reach(&SLOOP_ARMS))];
     her.steer(&deck.her(), (std::slice::from_ref(enemy), &traffic), seconds, &open)
 }
 

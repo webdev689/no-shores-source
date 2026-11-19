@@ -13,7 +13,7 @@ use sailing::waters::Waters;
 /// A ship at sea at a point, on a heading, at a rung of her ladder, lying still: her hull is her captain's or the
 /// player's Sloop.
 #[must_use]
-pub fn sloop(x: f64, y: f64, heading: f64, rung: i8) -> Ship {
+pub fn ship_at(x: f64, y: f64, heading: f64, rung: i8) -> Ship {
     Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung }
 }
 
@@ -32,7 +32,9 @@ impl Clash {
         let crews: Vec<(ShipId, Pirate)> = (CAPTAIN..).zip(met).collect();
         let captains: Vec<_> = crews
             .iter()
-            .map(|(_, pirate)| (sloop(pirate.x, pirate.y, pirate.heading, SAILS_SET), pirate.commission(), pirate.seed))
+            .map(|(_, pirate)| {
+                (ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET), pirate.commission(), pirate.seed)
+            })
             .collect();
         Clash { fight: Fight::among(&captains, waters, time), crews }
     }

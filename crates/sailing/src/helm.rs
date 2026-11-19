@@ -122,14 +122,13 @@ pub fn canvas(hull: &Hull) -> f64 {
         .sum()
 }
 
-/// Her canvas as it drives her: her own, scaled by the Sloop's over hers at the crest, so no hull's rig drives her
-/// harder at its best than the Sloop's does (her rank's way, not her hull, sets her speed). Under the responsive helm
-/// each sail draws at its crest and the point of sail alone takes her heading, so every hull makes the Sloop's way on
-/// every point of sail; her gain still sets how her way comes and goes. None with no sails.
+/// Her canvas as it drives her: the Sloop's, whatever her rig, so no hull sails faster than the Sloop (her rank's
+/// way, not her hull, sets her speed); 0 with no sails. Under the responsive helm each sail draws at its crest and the
+/// point of sail alone takes her heading, so her sails' kinds shape only how they are drawn and trimmed; her gain still
+/// sets how her way comes and goes.
 #[must_use]
 pub fn canvas_drive(hull: &Hull) -> f64 {
-    let own = canvas(hull);
-    if own > 0.0 { own * (canvas(&SLOOP) / own) } else { 0.0 }
+    if hull.sails.is_empty() { 0.0 } else { canvas(&SLOOP) }
 }
 
 #[cfg(test)]

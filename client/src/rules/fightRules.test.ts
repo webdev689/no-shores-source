@@ -80,9 +80,9 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
 // sails, and the last leg's fingerprint.
 const HULL_FIGHTS = [
   [2, 0, '2c2186f7241fdcd2'],
-  [3, 1, '279b7d96a1d2a59a'],
-  [4, 2, '7cdf7b4890b0c5f4'],
-  [5, 3, '683fd9e8aa26ed17'],
+  [3, 1, '5745bdfe1de37803'],
+  [4, 2, '4fdc10ebd78e07e8'],
+  [5, 3, '053e49b86f18f86a'],
 ] as const;
 
 test('a fight against each hull through WebAssembly fights to the same fingerprint as the door natively', async () => {

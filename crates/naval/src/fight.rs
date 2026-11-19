@@ -475,11 +475,12 @@ impl Fight {
         foes.map(|(id, vessel)| sighting_of(*id, vessel)).collect()
     }
 
-    /// Every hull in the fight but `except`'s: where it is and its way, for a captain to keep clear of.
+    /// Every hull in the fight but `except`'s: where it is, its way and its pass reach, for a captain to keep clear of.
     fn traffic(&self, except: ShipId) -> Vec<crate::captain::course::Traffic> {
+        use crate::captain::course::{pass_reach, velocity_of};
         let others = self.ships.iter().filter(|(id, vessel)| **id != except && vessel.in_fight());
         others
-            .map(|(_, vessel)| ([vessel.ship.x, vessel.ship.y], crate::captain::course::velocity_of(&vessel.ship)))
+            .map(|(_, vessel)| ([vessel.ship.x, vessel.ship.y], velocity_of(&vessel.ship), pass_reach(vessel.arms())))
             .collect()
     }
 }

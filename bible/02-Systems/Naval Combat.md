@@ -112,11 +112,11 @@ so she never tacks.
   spare, she takes the nearest, the one she already fights reckoned a fifth nearer (as DFO ranks them), and runs from
   the nearest that struck her within 320 m. What she remembers of a chase, a wreck, her mark's way and the side she
   presented is let go when she marks another ship.
-- **Her course.** She bends round every hull about her, the bends of each summed, as DFO's traffic does. Far off,
-  she steers to intercept. A ship running from her she runs down astern, then sheers out to
-  its beam. Otherwise she brings the side that costs least to bear on where her balls will meet him, bent off the beam
-  to open or close her range of 50 m, and once presented keeps station with sail. She bends round his hull and sounds
-  the land ahead, swinging off a foul course.
+- **Her course.** She bends round every hull about her that will pass within both their reaches (each half of half her
+  box's beam and length) and 15 m, the bends of each summed, as DFO's traffic does. Far off, she steers to intercept. A
+  ship running from her she runs down astern, then sheers out to its beam. Otherwise she brings the side that costs
+  least to bear on where her balls will meet him, bent off the beam to open or close her range of 50 m, and once
+  presented keeps station with sail. She bends round his hull and sounds the land ahead, swinging off a foul course.
 - **Her guns.** A side loaded, in reach, near her beam, bearing soon and whose lay would strike runs out: the tell.
   It fires no sooner than 1.3 s on, within her gunners' window, long or short by their want of skill. One run out too
   long unfired, or that loses its mark, is run in. She never fires on a wreck.
@@ -141,7 +141,7 @@ the Frigate. Her rank scales her, a Major at the numbers of the rest of this not
 | Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
 | Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
 
-Her men are as many as her hull makes them (6 to 50, whole men), so hull and men give out in the same proportion at
+Her men are as many as her hull makes them (6 to 94, whole men), so hull and men give out in the same proportion at
 every rank: a hull hit takes a man or two, and her men give out at about four fifths of her hull, as a Major's do. Her
 way pulls her canvas and her oars alike, so a higher rank runs down a lower one, and a Boss outlasts a Minor; two of one
 rank keep pace. Aim error scales both her lay's long and short and her volley's scatter. A captain sees every player's
@@ -152,8 +152,11 @@ Elite's or a Miniboss's mark, above a bar of her hull, red, orange or yellow by 
 no plate covers another. A Boss's stands across the top of the screen with her faction's name.
 
 A hull changes her size, her boxes, her sails, her handling, her stem and how many guns she carries, never her
-strength: the table above is the whole of it. Her hull and men are her class's times her rank's at every hull, and her
-canvas drives her no harder than the Sloop's, so her rank's way alone sets her speed ([[Sailing]], "The other hulls").
+strength: the table above is the whole of it. A bigger box is struck more often, so her hull, canvas and men are her
+class's times her rank's times her exposure: the fight's hit share on her box over the Sloop's, from the Sloop's guns
+at the duel's 110 m by a captain's gunners (the Schooner 1.44, the Brig 1.65, the Frigate 1.88), and the same fire takes
+as long to make any hull of one rank strike. Her canvas drives her no harder than the Sloop's, so her rank's way alone
+sets her speed ([[Sailing]], "The other hulls").
 A side's broadside weighs the Sloop's times her rank's gun damage, spread evenly over that side's guns (the Schooner's
 five, the Brig's seven, the Frigate's ten across her two gun decks): each ball is the Sloop's, rounded as hers, and the
 ship it strikes takes its share of it, three over the guns a side, carrying the parts of a point or a man until they
@@ -269,7 +272,6 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 
 - Every captain sails her rank's hull, the Tithe's and the pirates' alike; there is no iron ram bow (the Tithe Ram)
   and no Fluyt yet, no other classes, and no ambient traffic.
-- A captain bends round other hulls as if each were as long and broad as her own.
 - At sea a fight holds one player at most: a player joins only a fight among captains, and a ship at sea never joins
   a fight already under way. In the game's fight only the first captain's fires and DFO's messages show.
 - A captain's men give out at about four fifths of her hull at every rank, so her rank's run and strike shares of her

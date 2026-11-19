@@ -73,22 +73,29 @@ impl Power {
 }
 
 /// The share of a broadside's balls from a ship of `shooter`'s arms that strike one of `target`'s at `DUEL_RANGE`,
+/// from gunners of `skill`.
+#[must_use]
+pub fn hit_share(shooter: &Arms, target: &Arms, skill: f64) -> f64 {
+    hit_share_at(shooter, target, skill, DUEL_RANGE)
+}
+
+/// The share of a broadside's balls from a ship of `shooter`'s arms that strike one of `target`'s `range` metres off,
 /// from gunners of `skill`: how much of the fall her hull's height and beam take, against the scatter and the lay's
 /// error, and how much of her length against the scatter and the miss a gunner allows.
 #[must_use]
-pub fn hit_share(shooter: &Arms, target: &Arms, skill: f64) -> f64 {
+pub fn hit_share_at(shooter: &Arms, target: &Arms, skill: f64, range: f64) -> f64 {
     let gun = SWIVEL;
     let widen = (1.5 - skill).clamp(0.4, 1.5);
     let [low, high] = target.hull;
     let (top, half_beam, half_length) = (high[2], (high[1] - low[1]) / 2.0, (high[0] - low[0]) / 2.0);
     let muzzle = shooter.battery(Side::Starboard)[0][2];
-    let flight = DUEL_RANGE / gun.speed;
+    let flight = range / gun.speed;
     let fall = ((0.5 * GRAVITY * flight + (muzzle - top * AIM_FREEBOARD) / flight) / gun.speed).max(0.02);
     let deep = top / fall + 2.0 * half_beam;
     let lay = 0.5 * LAY_ERR * (1.0 - skill);
     let pitch = libm::tan(gun.pitch_spread_deg * widen * PI / 180.0) / fall;
-    let error = DUEL_RANGE * (lay * lay + pitch * pitch).sqrt();
-    let across = DUEL_RANGE * libm::tan(gun.yaw_spread_deg * widen * PI / 180.0)
+    let error = range * (lay * lay + pitch * pitch).sqrt();
+    let across = range * libm::tan(gun.yaw_spread_deg * widen * PI / 180.0)
         + half_length * (FIRE_EXTENT_K + FIRE_EXTENT_SKILL * (1.0 - skill));
     (deep / (2.0 * error)).min(1.0) * (half_length / across).min(1.0)
 }

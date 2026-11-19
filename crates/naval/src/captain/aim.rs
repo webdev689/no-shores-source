@@ -106,8 +106,8 @@ pub fn lay_passes(lay: &Lay, carry: [f64; 3], at: [f64; 2], band: [f64; 2]) -> b
     (band[0] - 0.25..=band[1]).contains(&height)
 }
 
-/// The nearest range, in whole metres, at which her broadside laid on a ship like hers passes through her: inside it
-/// her carriage cannot depress onto her.
+/// The nearest range, in whole metres, at which her broadside laid on a mark of her own height passes through it,
+/// set by her own gun mouths and hull box: inside it her carriage cannot depress onto her mark.
 #[must_use]
 pub fn dead_zone(arms: &Arms) -> f64 {
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };

@@ -2,8 +2,9 @@
 //! each rank makes of her ship over a Major's (her hull and men, her way, her guns' harm and reload, her gunners' aim,
 //! her boldness), kept in one table.
 
-use crate::arms::{Build, PIRATE_SLOOP, TITHE_SLOOP};
+use crate::arms::{Arms, Build, PIRATE_SLOOP, SLOOP_ARMS, TITHE_SLOOP, arms_of};
 use crate::captain::PIRATE_RUNS_AT;
+use crate::captain::odds::hit_share;
 use crate::damage::{Damage, STRUCK_AT};
 use crate::guns::Gun;
 use sailing::HullKind;
@@ -129,6 +130,15 @@ impl Rank {
     }
 }
 
+/// How much more often a broadside strikes her hull than the Sloop's: the fight's hit share on her box over the
+/// Sloop's, from the Sloop's guns at the duel's range by a captain's gunners. Her hull, canvas and men are this many
+/// times her class's, so the same fire takes as long to make any hull of one rank strike; the Sloop's is 1.
+#[must_use]
+pub fn exposure(hull: HullKind) -> f64 {
+    let at = |arms: &Arms| hit_share(&SLOOP_ARMS, arms, PIRATE_SLOOP.skill);
+    at(arms_of(hull)) / at(&SLOOP_ARMS)
+}
+
 /// A captain's ship's name, by her faction and her hull: the Tithe's or the pirates' Sloop, Schooner, Brig or Frigate.
 #[must_use]
 pub fn ship_name(faction: u8, hull: HullKind) -> &'static str {
@@ -178,9 +188,10 @@ impl Commission {
     pub fn build(&self) -> Build {
         let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };
         let scale = self.rank.scale().hull;
-        let name = ship_name(self.faction, self.hull());
+        let (name, exposed) = (ship_name(self.faction, self.hull()), exposure(self.hull()));
         // Whole points and whole men, as every blow takes, so neither ever shows a fraction left.
-        Build { name, hull: (base.hull * scale).round(), crew: (base.crew * scale).round(), ..base }
+        let (hull, crew) = ((base.hull * scale * exposed).round(), (base.crew * scale * exposed).round());
+        Build { name, hull, sail: (base.sail * exposed).round(), crew, ..base }
     }
 
     /// Her ship's hurts, sound: her hull as strong as her rank makes it, striking where her rank strikes.

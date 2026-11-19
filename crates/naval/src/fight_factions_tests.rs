@@ -95,7 +95,8 @@ fn her_rank_sets_her_hull_arms_her_volley_and_paces_her_reload() {
     for rank in Rank::ALL {
         let fight = two_captains(Commission { faction: GREY_TITHE, rank }, elite(PIRATES));
         let hull = fight.vessel(FIRST).map(|vessel| vessel.damage.max_hull);
-        assert_eq!(hull, Some((264.0 * rank.scale().hull).round()), "{rank:?}");
+        let exposed = crate::ranks::exposure(rank.hull());
+        assert_eq!(hull, Some((264.0 * rank.scale().hull * exposed).round()), "{rank:?}");
     }
     let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
     let mut fight = two_captains(minor, elite(PIRATES));
@@ -203,7 +204,7 @@ fn fought_out(fight: &mut Fight) -> Option<(ShipId, f64)> {
 fn her_men_are_as_many_as_her_hull_makes_them_so_a_boss_outlasts_a_minor() {
     for rank in Rank::ALL {
         let build = Commission { faction: PIRATES, rank }.build();
-        assert_eq!(build.crew, (10.0 * rank.scale().hull).round(), "{rank:?}");
+        assert_eq!(build.crew, (10.0 * rank.scale().hull * crate::ranks::exposure(rank.hull())).round(), "{rank:?}");
     }
     let (boss, minor) = (Rank::Boss, Rank::Minor);
     for (first, second, beaten) in [(boss, minor, SECOND), (minor, boss, FIRST)] {

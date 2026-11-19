@@ -8,7 +8,7 @@
 //! wheel.
 
 use crate::PlayerId;
-use crate::clash::{Clash, sighted, sloop, step_clashes};
+use crate::clash::{Clash, ship_at, sighted, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates};
 use crate::threat::held_pace;
@@ -394,7 +394,7 @@ impl Sea {
         for (player, pirate) in met {
             let Some(own) = heave_to(&mut self.berths, &mut self.aboard, player) else { continue };
             // She has hove to: the player sets her sails; the pirate comes on under hers.
-            let captain = sloop(pirate.x, pirate.y, pirate.heading, SAILS_SET);
+            let captain = ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
             let fight = Fight::meet(own, captain, pirate.commission(), pirate.seed, &waters, time);
             self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
         }
@@ -470,7 +470,7 @@ fn heave_to(
     sailing.course.clear();
     (sailing.ship.pace, sailing.ship.rate) = (0, 0);
     aboard.remove(&player);
-    Some(sloop(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0))
+    Some(ship_at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0))
 }
 
 /// Whether a point lies on a continent.

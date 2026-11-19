@@ -17,7 +17,8 @@ use crate::ranks::Commission;
 use crate::shots::ShipId;
 use aim::{Aboard, Battery, Mark, RunOut, captain_guns, fire_window};
 use course::{
-    DEG, Traffic, distance, flee_course, heading_to, intercept, lead_point, traffic_course, velocity_of, wrap,
+    DEG, Traffic, distance, flee_course, heading_to, intercept, lead_point, pass_reach, traffic_course, velocity_of,
+    wrap,
 };
 use land::{Avoid, NAV_EVERY_S, avoid_land, course_clear};
 use odds::{Power, odds};
@@ -487,11 +488,8 @@ impl Captain {
                 Plan { want: self.cruise, sails: 1.0, track: false }
             }
         };
-        // Both hulls' pass reaches: half of half her beam and half her length, each.
-        let [low, high] = her.arms.hull;
-        let passing = 2.0 * 0.5 * ((high[1] - low[1]) / 2.0 + (high[0] - low[0]) / 2.0);
         let own = (me, her.ship.heading, velocity_of(her.ship));
-        let want = traffic_course(own, plan.want, traffic, passing);
+        let want = traffic_course(own, plan.want, traffic, pass_reach(her.arms));
         let look = self.lookout(her);
         let want = avoid_land(&mut self.avoid, (self.clock, me, her.ship.heading), want, &look, is_water);
         let asked = if self.avoid.boxed() { plan.sails.min(BOXED_SAILS) } else { plan.sails };
