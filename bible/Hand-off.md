@@ -259,11 +259,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The ships, one at a time** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin and the
-  Brig have the owner's yes, and the Schooner and the Brig are published; the Frigate is built and rendered, waiting
-  for the owner's yes, which publishes her the same way (add her to the `ships` workflow's loop, then her manifest
-  entry and `tools/ships/deck.py frigate`). The owner asked for the Frigate as one more model "and call it there", so
-  the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her cabin in
+- **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate
+  have the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call
+  it there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her cabin in
   the game yet, and the game sets no square sail ([[Hulls]], "What the code needs"). A change to the shared builder
   is checked by rebuilding each published ship and comparing its dry-run mesh hash with the manifest's. The manifest
   is 388 KB with the two new decks (77 KB on `main` before), and the client imports it and the room embeds it whole:
