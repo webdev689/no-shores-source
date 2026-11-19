@@ -301,10 +301,12 @@ export class FigureView implements CardMaker {
     pass.setPipeline(this.cast);
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(1, shadow.casterGroup(this.cast));
-    for (const group of groups) {
+    // A Veiled figure is all but unseen, so it throws no shadow and has no contact shade.
+    groups.forEach((group, index) => {
+      if (figures[index]?.veiled) return;
       pass.setBindGroup(2, group);
       pass.draw(6);
-    }
+    });
   }
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
@@ -323,10 +325,11 @@ export class FigureView implements CardMaker {
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);
-    for (const group of groups) {
+    groups.forEach((group, index) => {
+      if (figures[index]?.veiled) return;
       pass.setBindGroup(2, group);
       pass.draw(36);
-    }
+    });
     pass.setPipeline(this.pipeline);
     for (const group of groups) {
       pass.setBindGroup(2, group);

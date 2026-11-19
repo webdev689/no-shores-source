@@ -202,9 +202,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **Statuses.** Each shows in the figure's own pixels, on the player's figure as on a foe's. Exposed edges the
   figure two pixels thick, stepping between Cosmic's body and light four times a second, with a cracked diamond of
   nine cells beside a foe's head, clear of its plate. Veiled keeps the figure's outline in Cosmic's light, an eighth
-  of its inside in dusk and a band of shimmer crossing it every 0.8 s; it shows no weapon outline. Charged strikes three jagged Volt arcs
-  inside the figure, never past its edge, 12 times a second, edges it on alternate strikes and shakes it a pixel
-  either way, and a foe throws 24 Volt sparks a second.
+  of its inside in dusk and a band of shimmer crossing it every 0.8 s; it shows no weapon outline, throws no shadow
+  and has no contact shade. Charged strikes three jagged Volt arcs inside the figure, never past its edge, 12 times a
+  second, edges it on alternate strikes and shakes it a pixel either way, and a foe throws 24 Volt sparks a second.
 - **Hits.** A spell that lands bursts in its caster's Art's element, whatever weapon is drawn ([[Weapon Glow]]).
 
 ## Limits
