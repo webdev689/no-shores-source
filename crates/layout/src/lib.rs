@@ -41,7 +41,7 @@ use crate::areas::{Area, place, radius_of};
 use crate::book::Book;
 use crate::brief::{AreaKind, Brief};
 use crate::field::{CELL_M, Field, distance};
-use crate::paths::{Blocked, Path, Tier, crossings, find, network, smoothed};
+use crate::paths::{Blocked, Path, Tier};
 use crate::seat::{Seating, hub};
 use land::exact::seed_of;
 use land::ground::Ground;
@@ -161,7 +161,7 @@ pub fn plan(
         .map(|(area, &blocks)| if blocks > 0 { hub(&seating, area.at) } else { area.at })
         .collect();
     let blocked = blocked_by(&field, &seating);
-    let (mut paths, joined) = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
+    let (mut paths, joined) = paths::lay(&field, &areas, &hubs, &blocked, patrol, seed);
     // A way ending at an area's middle stops at what stands there: its set piece, tower or hull.
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
         clearing::end_at_rim(&mut paths, area.at, clearing::rim_of(&seating, area.at));
@@ -467,96 +467,6 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         }
     }
     Blocked(blocked)
-}
-
-/// The paths joining a layout's areas. A patrol area's areas are joined by tracks along a tree of the shortest links
-/// and footpaths closing a loop or two; its gates by a footpath from the nearest area. An instance's run in a chain.
-fn lay_paths(
-    field: &Field,
-    areas: &[Area],
-    hubs: &[[f64; 2]],
-    blocked: &Blocked,
-    patrol: bool,
-    seed: u32,
-) -> (Vec<Path>, Vec<[usize; 2]>) {
-    let mut laid = vec![false; field.columns * field.rows];
-    let mut joined = Vec::new();
-    let mut links: Vec<(usize, usize, Tier)> = Vec::new();
-    if patrol {
-        let open: Vec<usize> = (0..areas.len()).filter(|&at| areas[at].kind != AreaKind::Gate).collect();
-        let points: Vec<[f64; 2]> = open.iter().map(|&at| areas[at].at).collect();
-        let loops = if open.len() >= 6 { 2 } else { usize::from(open.len() >= 4) };
-        let (tree, closing) = network(&points, loops);
-        links.extend(tree.iter().map(|&(first, second)| (open[first], open[second], Tier::Track)));
-        links.extend(closing.iter().map(|&(first, second)| (open[first], open[second], Tier::Footpath)));
-        for gate in (0..areas.len()).filter(|&at| areas[at].kind == AreaKind::Gate) {
-            let nearest = open.iter().copied().min_by(|&first, &second| {
-                distance(areas[first].at, areas[gate].at).total_cmp(&distance(areas[second].at, areas[gate].at))
-            });
-            if let Some(nearest) = nearest {
-                links.push((nearest, gate, Tier::Footpath));
-            }
-        }
-    } else {
-        links.extend((1..areas.len()).map(|at| (at - 1, at, Tier::Footpath)));
-    }
-    let mut paths = Vec::new();
-    let mut group: Vec<usize> = (0..areas.len()).collect();
-    let root = |group: &[usize], mut at: usize| {
-        while group[at] != at {
-            at = group[at];
-        }
-        at
-    };
-    let lay = |from: usize, to: usize, tier: Tier, laid: &mut Vec<bool>, paths: &mut Vec<Path>| {
-        let (start, end) = (hubs[from], hubs[to]);
-        // A way too steep for its tier is laid as a footpath, then as a stepped way, rather than not at all.
-        let tries = [
-            (tier, tier.steepest()),
-            (Tier::Footpath, Tier::Footpath.steepest()),
-            (Tier::Footpath, crate::paths::STEPPED),
-        ];
-        let found = tries.iter().find_map(|&(tier, steepest)| {
-            find(field, [start, end], steepest, laid, blocked, seed).map(|cells| (tier, cells))
-        });
-        let Some((tier, cells)) = found else { return false };
-        for &cell in &cells {
-            laid[cell] = true;
-        }
-        paths.push(Path {
-            tier,
-            points: smoothed(field, &cells, start, end),
-            crossings: crossings(field, &cells),
-            heights: Vec::new(),
-        });
-        true
-    };
-    for (from, to, tier) in links {
-        if lay(from, to, tier, &mut laid, &mut paths) {
-            joined.push([from, to]);
-            let (first, second) = (root(&group, from), root(&group, to));
-            group[first] = second;
-        }
-    }
-    // An area no way reached is joined to the nearest one that is joined to the first.
-    for area in 1..areas.len() {
-        if root(&group, area) == root(&group, 0) {
-            continue;
-        }
-        let mut others: Vec<usize> = (0..areas.len()).filter(|&other| root(&group, other) == root(&group, 0)).collect();
-        others.sort_by(|&first, &second| {
-            distance(areas[first].at, areas[area].at).total_cmp(&distance(areas[second].at, areas[area].at))
-        });
-        for other in others {
-            if lay(other, area, Tier::Footpath, &mut laid, &mut paths) {
-                joined.push([other, area]);
-                let (first, second) = (root(&group, area), root(&group, other));
-                group[first] = second;
-                break;
-            }
-        }
-    }
-    (paths, joined)
 }
 
 /// Three spawns round a landing or an entrance, a few metres apart on walkable ground.
