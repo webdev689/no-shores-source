@@ -273,10 +273,11 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
 
 /**
  * The move a fight holds a figure to, from the forge's own moves: the death, then lying fallen; fallen while knocked
- * down; hurt while staggered or flinching (its bow's or staff's own); the roll through a dodge, or where the forge draws
- * none, the jump's frames through the dodge's hop in the air by its rise and fall, or the run where the forge does not
- * draw what it holds in the jump; the parry through a deflect, a shield's block; the
- * guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its wind-up
+ * down; hurt while staggered or flinching (its bow's or staff's own), played by how far through it is; the roll
+ * through a dodge, or where the forge draws none, the jump's frames through the dodge's hop in the air by its rise
+ * and fall, or the run where the forge does not draw what it holds in the jump; the parry through a deflect, a
+ * shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised
+ * through its wind-up
  * and held at its end when it overreaches; and a ranged weapon aimed: the bow drawn, a gun held at its shot's aimed
  * frame (`AIMED_FRAME`), a crossbow raised as the first frame of its shot.
  */
@@ -308,7 +309,7 @@ function fightMove(
     case 'down':
       return still('fallen');
     case 'struck':
-      return still(own('hurt'));
+      return byProgress(own('hurt'), fight.progress);
     case 'dodge':
       // The roll draws no weapon, held or worn: none is seen through it.
       if (draws('roll', null)) return byProgress('roll', fight.progress);

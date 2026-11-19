@@ -35,7 +35,7 @@ code:
   - client/src/combat/spellLines.ts#boltLine
   - client/src/combat/spellLines.ts#Tails
   - client/src/combat/casting.ts#daggersAim
-  - client/src/player/glowCards.ts#STATUS_WGSL
+  - client/src/player/cardLooks.ts#STATUS_WGSL
   - client/src/forge/compose.ts#composeFrame
   - client/src/testground/artsPanel.ts#startArtsPanel
 ---
@@ -199,10 +199,12 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **Dusk Daggers.** The aiming ring stays on the ground where it was cast, lit for 4 ticks at each strike, with eight
   blades whirling over it, each turning over in sixteenth-turns.
 - **Vanish.** A puff of dusk where the roll began, swelling and thinning in four steps, and a burst of Cosmic motes.
-- **Statuses.** An Exposed foe's figure has its outline lit a faint purple. A Veiled player's figure, their own from
-  outside and every other's, keeps 5 pixels of each 4 by 4, the kept ones moving on 8 times a second, tinted dusk,
-  and shows no weapon outline. A Charged foe crackles: two arcs across its figure struck afresh 12 times a second, and
-  24 Volt sparks a second.
+- **Statuses.** Each shows in the figure's own pixels, on the player's figure as on a foe's. Exposed edges the
+  figure two pixels thick, stepping between Cosmic's body and light four times a second, with a cracked diamond of
+  nine cells beside a foe's head, clear of its plate. Veiled keeps the figure's outline in Cosmic's light, an eighth
+  of its inside in dusk and a band of shimmer crossing it every 0.8 s; it shows no weapon outline. Charged strikes three jagged Volt arcs
+  inside the figure, never past its edge, 12 times a second, edges it on alternate strikes and shakes it a pixel
+  either way, and a foe throws 24 Volt sparks a second.
 - **Hits.** A spell that lands bursts in its caster's Art's element, whatever weapon is drawn ([[Weapon Glow]]).
 
 ## Limits

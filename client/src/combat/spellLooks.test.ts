@@ -188,12 +188,12 @@ test('Mend bursts in embers the frame it is first seen, and only then', () => {
   assert.equal(sparks.flying.length, burst);
 });
 
-test('a Charged foe crackles, throwing sparks while the fight runs', () => {
+test('a Charged foe crackles, throwing sparks while the fight runs; its arcs are its card’s own', () => {
   const sparks = new Sparks(() => 0.5);
   const looks = new SpellLooks(sparks, () => 0.5);
   const foe = { id: 50, view: { x: 3, y: 0, z: 0 }, statuses: { expose: 0, charge: 60, chargeImmune: 0 } };
   const fight = fightOf({ foes: new Map([[50, foe]]) });
-  assert.ok(looks.marks(fight, EYE, 0, 1).length > 0, 'its arcs');
+  assert.equal(looks.marks(fight, EYE, 0, 1).length, 0, 'no arcs in the air round it');
   assert.equal(sparks.flying.length, 0, 'none thrown while the fight waits');
   looks.marks(fight, EYE, 0.5, 1.5);
   assert.ok(sparks.flying.length > 0);

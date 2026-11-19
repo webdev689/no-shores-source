@@ -1,11 +1,12 @@
-import { GLOW_PAD, GLOW_WGSL, type GlowElement, type GlowField } from '../elementGlow.ts';
+import { GLOW_PAD, GLOW_WGSL, type GlowField, type GlowLook } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 
 /** A picture on the screen: its texture and its rectangle on the 320 by 200 design screen, mirrored or not. `part`
  *  draws only that share of the picture across (one frame of a strip); `reach` runs the rectangle that many times the
  *  picture's height down it, its last row carried down past its foot. A weapon that glows carries its outline's field
- *  and element, and is drawn whole. */
+ *  and element (none for a plain one taking a blow's rim), how hard it surges (1 at rest), whether a blow's white rim
+ *  lights it, and the seconds since a blow it landed threw its element off it (none unless said); it is drawn whole. */
 export interface ScreenQuad {
   readonly texture: GPUTexture;
   readonly x: number;
@@ -15,10 +16,17 @@ export interface ScreenQuad {
   readonly flip: boolean;
   readonly part?: readonly [left: number, right: number];
   readonly reach?: number;
-  readonly glow?: { readonly texture: GPUTexture; readonly look: GlowElement };
+  readonly glow?: {
+    readonly texture: GPUTexture;
+    readonly look: GlowLook;
+    readonly surge?: number;
+    readonly rim?: boolean;
+    readonly burst?: number | null;
+  };
 }
 
 const QUAD_BYTES = 32;
+const GLOW_BYTES = 48;
 /** The glow's clock wraps here, every rate in its shader whole over it. */
 const CLOCK_WRAP_S = 240;
 
@@ -27,8 +35,9 @@ const CLOCK_WRAP_S = 240;
 const GLOW_SHADER = /* wgsl */ `
 ${GLOW_WGSL}
 
-// The corners in clip space; whether it is mirrored, its element and the glow's clock.
-struct Glow { corners: vec4f, drawn: vec4f }
+// The corners in clip space; whether it is mirrored, its element and the glow's clock; its surge, whether a blow's rim
+// lights it, and the seconds since a blow threw its element off it (below none for none).
+struct Glow { corners: vec4f, drawn: vec4f, more: vec4f }
 @group(0) @binding(0) var<uniform> glow: Glow;
 @group(0) @binding(1) var glow_field: texture_2d<f32>;
 
@@ -49,7 +58,15 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
   if (glow.drawn.x > 0.5) { across = 1.0 - across; }
   let texel = min(floor(vec2f(across, in.corner.y) * size), size - 1.0);
   let field = textureLoad(glow_field, vec2i(texel), 0);
-  let colour = glow_colour(u32(glow.drawn.y), field, texel - floor(size / 2.0), glow.drawn.z);
+  let look = u32(glow.drawn.y);
+  let cell = texel - floor(size / 2.0);
+  var colour = glow_colour(look, field, cell, glow.drawn.z, max(glow.more.x, 1.0));
+  let burst = glow_burst(look, field, cell, glow.more.z);
+  if (burst.a > colour.a) { colour = burst; }
+  if (glow.more.y > 0.5) {
+    let rim = glow_contact(field);
+    if (rim.a > 0.0) { colour = rim; }
+  }
   if (colour.a <= 0.0) { discard; }
   return colour;
 }
@@ -148,12 +165,18 @@ export class FirstPersonView {
     return this.glowPipeline;
   }
 
-  /** The uniform slot of the `index`th quad drawn (of `slots`), its bind group remade only for a new texture. */
-  private slot(index: number, texture: GPUTexture, slots = this.slots): { buffer: GPUBuffer; group: GPUBindGroup } {
+  /** The uniform slot of the `index`th quad drawn (of `slots`, each `bytes` long), its bind group remade only for a new
+   *  texture. */
+  private slot(
+    index: number,
+    texture: GPUTexture,
+    slots = this.slots,
+    bytes = QUAD_BYTES,
+  ): { buffer: GPUBuffer; group: GPUBindGroup } {
     let slot = slots[index];
     if (!slot) {
       const usage = BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination;
-      slot = { buffer: this.gpu.device.createBuffer({ size: QUAD_BYTES, usage }), texture: null, group: null };
+      slot = { buffer: this.gpu.device.createBuffer({ size: bytes, usage }), texture: null, group: null };
       slots[index] = slot;
     }
     if (slot.texture !== texture || !slot.group) {
@@ -215,7 +238,7 @@ export class FirstPersonView {
       // The pad in design pixels: a texel of the picture is this much of the screen.
       const padX = (GLOW_PAD * quad.width) / quad.texture.width;
       const padY = (GLOW_PAD * quad.height) / quad.texture.height;
-      const glow = this.slot(glows++, quad.glow.texture, this.glowSlots);
+      const glow = this.slot(glows++, quad.glow.texture, this.glowSlots, GLOW_BYTES);
       const glowValues = new Float32Array([
         clipX(quad.x - padX),
         clipY(quad.y - padY),
@@ -224,6 +247,10 @@ export class FirstPersonView {
         quad.flip ? 1 : 0,
         quad.glow.look,
         time,
+        0,
+        quad.glow.surge ?? 1,
+        quad.glow.rim ? 1 : 0,
+        quad.glow.burst ?? -1,
         0,
       ]);
       this.gpu.device.queue.writeBuffer(glow.buffer, 0, glowValues);

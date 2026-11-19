@@ -278,6 +278,8 @@ async function start(): Promise<void> {
     const own = fighting.own;
     effects.ownLook = player.glowing[0];
     const events = effects.events(fighting, seconds);
+    const ownFought = effects.flashes.ownOf(own);
+    player.fought(ownFought.surge, ownFought.contact);
     feel.frame(events, own, fighting.player, seconds, new Set(fighting.others.keys()));
     const frameTicks = seconds / movement.tickSeconds;
     const body = shownBody(player.player);
@@ -290,13 +292,17 @@ async function start(): Promise<void> {
     // Each figure drawn off where it stands by the attack feel; each fighter's figure as drawn, which its arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, camera.yaw);
     const figuresDrawn = new Map<number, DrawnFigure>();
+    const right = [Math.cos(camera.yaw), Math.sin(camera.yaw)] as const;
+    const smear = (id: number) => feel.smearOf(id, right);
 
     const drawn: CardAt[] = [];
     const ownShift = shift(fighting.player, own);
-    const ownFlash = { share: effects.flashes.shareOf(fighting.player), red: true };
-    const ownCard = player.figure(eye.x, eye.y, ownFlash, ownShift);
+    const ownCard = player.figure(eye.x, eye.y, effects.flashes.flashOf(fighting.player), ownShift);
     if (ownCard) {
-      drawn.push({ ...ownCard, veiled: veiledIn(fighting, fighting.player) });
+      const statuses = own?.statuses;
+      const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
+      const veiled = veiledIn(fighting, fighting.player);
+      drawn.push({ ...ownCard, veiled, charged, exposed, smear: smear(fighting.player) });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       figuresDrawn.set(fighting.player, { feet, anim: player.look.anim, flip: ownCard.flip });
     }
@@ -325,7 +331,7 @@ async function start(): Promise<void> {
       // Another player's cast's spark glows in their Art, as the player's own does.
       const glow = number !== undefined && placed.anim === 'cast' ? castLookOf(fighting, number) : 0;
       const card = forge.card(placed.id, placed.dress, placed.anim, view, shownFrame, flip, glow);
-      const flash = { share: effects.flashes.shareOf(number ?? -1), red: false };
+      const flash = effects.flashes.flashOf(number ?? -1);
       const moved: Vector = number === undefined ? [0, 0, 0] : shift(number, otherViews.get(number) ?? null);
       const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       if (number !== undefined) figuresDrawn.set(number, { feet: drawnAt, anim: placed.anim, flip });
@@ -333,7 +339,7 @@ async function start(): Promise<void> {
       const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
       if (card) drawn.push({ card, ...stand, z: drawnAt[2], flip, flash, veiled });
     }
-    const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn };
+    const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn, smear };
     const { tickSeconds } = movement;
     drawn.push(...foes.cards(fighting, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
@@ -349,6 +355,7 @@ async function start(): Promise<void> {
       more: [
         ...gearRings(STALL, RESOURCE_NODES, gear, clock),
         ...dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye).marks,
+        ...foes.overheads(cameraOf(camera).eye, clock),
       ],
     });
     scene.setMarks(marks);
@@ -358,7 +365,7 @@ async function start(): Promise<void> {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fighting.player, view: own, ...handsOf(you.dress) },
+      { id: fighting.player, view: own, ...handsOf(you.dress), looks: player.glowing },
       ...[...fighting.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({ id: number, view, ...handsOf(others.get(number)?.dress) })),
     ];

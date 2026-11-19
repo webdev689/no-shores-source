@@ -1,9 +1,9 @@
-import { GLOW_PAD, GLOW_RAMPS, GLOW_WGSL, wgslRgb } from '../elementGlow.ts';
+import { GLOW_PAD, GLOW_WGSL } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, type Gpu } from '../gpu.ts';
 import type { Card } from './cards.ts';
 
-/** A glowing card to draw: its card, where its feet stand in the view's own space, whether it is mirrored, and how
- *  many metres a pixel of its picture is. */
+/** A glowing card to draw: its card, where its feet stand in the view's own space, whether it is mirrored, how
+ *  many metres a pixel of its picture is, and how hard its glow surges (1 at rest unless said). */
 export interface GlowCardAt {
   readonly card: Card;
   readonly x: number;
@@ -11,6 +11,7 @@ export interface GlowCardAt {
   readonly z: number;
   readonly flip: boolean;
   readonly metres: number;
+  readonly surge?: number;
 }
 
 /** A glowing card's quad: its picture grown by GLOW_PAD pixels a side, in metres, and its feet on it. */
@@ -29,49 +30,6 @@ const VIEW_BYTES = 80;
 const CARD_BYTES = 48;
 /** The glow's clock wraps here, every rate in its shader whole over it. */
 const CLOCK_WRAP_S = 240;
-
-const [, COSMIC_BODY = [0, 0, 0], COSMIC_LIGHT = [0, 0, 0]] = GLOW_RAMPS[3];
-
-/** The clock the statuses' look runs on, as the outlines' does: the page's seconds, wrapped. */
-export const statusClock = (): number => (performance.now() / 1000) % CLOCK_WRAP_S;
-
-/**
- * A figure's statuses as its card shows them, on a texel of its picture that is drawn, `status` x 1 for Veiled, y 1
- * for Exposed and z the status clock: `status_kept` says whether the texel is drawn at all, `status_colour` its
- * colour. Veiled keeps 5 pixels of each 4 by 4 in an order that moves on 8 times a second, tinted dusk: faint, and
- * shimmering as the kept pixels move. Exposed lights each pixel on the picture's outline faint purple.
- */
-export const STATUS_WGSL = /* wgsl */ `
-const STATUS_ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
-const STATUS_DUSK = ${wgslRgb(COSMIC_BODY)};
-const STATUS_EDGE = ${wgslRgb(COSMIC_LIGHT)};
-
-fn status_kept(status: vec4f, texel: vec2i) -> bool {
-  if (status.x < 0.5) { return true; }
-  let step = i32(floor(status.z * 8.0));
-  let cell = vec2u(texel + vec2i(step, step * 3)) % 4u;
-  return STATUS_ORDER[cell.y * 4u + cell.x] < 5.0;
-}
-
-// Whether a drawn texel stands on its picture's outline: a side of it clear, or off the picture.
-fn status_edge(picture: texture_2d<f32>, texel: vec2i) -> bool {
-  let size = vec2i(textureDimensions(picture));
-  var sides = array(vec2i(1, 0), vec2i(-1, 0), vec2i(0, 1), vec2i(0, -1));
-  for (var side = 0; side < 4; side++) {
-    let at = texel + sides[side];
-    if (any(at < vec2i(0)) || any(at >= size)) { return true; }
-    if (textureLoad(picture, at, 0).a < 0.5) { return true; }
-  }
-  return false;
-}
-
-fn status_colour(status: vec4f, picture: texture_2d<f32>, texel: vec2i, colour: vec3f) -> vec3f {
-  var out = colour;
-  if (status.x > 0.5) { out = mix(out, STATUS_DUSK, 0.45); }
-  if (status.y > 0.5 && status_edge(picture, texel)) { out = mix(out, STATUS_EDGE, 0.6); }
-  return out;
-}
-`;
 
 /** The outline round a card's weapon: the card's quad grown by the pad, upright and turned along the view's right as
  *  the cards are, each texel of its field lit by `glow_colour` at the picture's own pixel. */
@@ -106,7 +64,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
   if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
   let texel = min(floor(at * size), size - 1.0);
   let field = textureLoad(glow_field, vec2i(texel), 0);
-  let colour = glow_colour(u32(card.size.z), field, texel - floor(size / 2.0), view.right.z);
+  let colour = glow_colour(u32(card.size.z), field, texel - floor(size / 2.0), view.right.z, max(card.size.w, 1.0));
   if (colour.a <= 0.0) { discard; }
   return colour;
 }
@@ -195,12 +153,12 @@ export class GlowCards {
     queue.writeBuffer(this.viewBuffer, 0, view);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.viewGroup);
-    glowing.forEach(({ card, x, y, z, flip, metres }, index) => {
+    glowing.forEach(({ card, x, y, z, flip, metres, surge = 1 }, index) => {
       if (!card.glow) return;
       const quad = glowQuad(card, metres);
       const rootX = flip ? quad.width - quad.root[0] : quad.root[0];
       const { buffer, group } = this.slot(index, card.glow.texture);
-      const values = [x, y, z, flip ? 1 : 0, quad.width, quad.height, card.glow.look, 0, rootX, quad.root[1], 0, 0];
+      const values = [x, y, z, flip ? 1 : 0, quad.width, quad.height, card.glow.look, surge, rootX, quad.root[1], 0, 0];
       queue.writeBuffer(buffer, 0, new Float32Array(values));
       pass.setBindGroup(1, group);
       pass.draw(6);

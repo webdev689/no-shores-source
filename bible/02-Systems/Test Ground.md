@@ -10,6 +10,9 @@ code:
   - client/src/testground/attackFeel.ts#AttackFeel
   - client/src/testground/feelPanel.ts#startFeelPanel
   - client/src/combat/swingArcs.ts#SwingArcs
+  - client/src/combat/swingCourse.ts#courseOf
+  - client/src/combat/swingMesh.ts#layStreak
+  - client/src/combat/swingLook.ts#SWING_WGSL
   - client/src/combat/hitStop.ts#HitStops
   - client/src/combat/cameraKick.ts#CameraKick
   - client/src/combat/lunge.ts#lungeOf
@@ -136,12 +139,26 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     the left with a hilt or a haft. Any other move goes the rules' stroke. A figure drawn mirrored swings left-handed,
     so its arc is mirrored too, as it was when the swing began.
     An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
-    cuts down and across, and a thrust drives out and flares where it lands. Each part fades by how long ago the blade
-    passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut
-    seen edge on still shows, and a dark rim keeps it clear against the sky. It burns in the weapon's metal (daedric
-    red, steel blue, dwarven gold), gold for a riposte or a counter; it follows the blow's aim as the rules turn it,
-    flares where the blow meets something, stops where a flinch or a dodge cuts it short, and waits while the fight
-    waits. None is drawn through the eyes. Brightness and trail are set.
+    cuts down and across, and a thrust drives out and flares where it lands. It is pixel art: whole figure pixels in
+    the four stops of a ramp, never blended. Each part steps down its ramp by how long ago the blade passed it and is
+    drawn only where the blade went fast, so only the cut shows: the cutting edge white-hot over a dark rim, the
+    blade's sweep in lanes that each trail their own length, the oldest fifth dithered out in a 4 by 4 order; a ribbon
+    along the tip turns to the eye, so a cut seen edge on still shows; the head is a four-rayed star, a square block
+    for a blunt weapon. It is drawn over its own striker's figure (brought along the eye's line to stand just before
+    the striker's card, so it stays where it is on the screen), so an overhead, a slant or a thrust shows from behind;
+    walls and figures nearer the eye still hide it. Its ramp is the blade's element where the hand glows, gold for a
+    riposte or a counter (`#4a2a06`, `#c8901e`, `#ffd95a`, `#fff6d0`), else its metal's, made from the metal's light
+    (daedric red, steel blue, dwarven gold), and the element leaves the blade along it ([[Weapon Glow]]). Its weight
+    is the weapon's class: a dagger's sweep 0.7 times a sword's wide and long, a mace's 1.2, a flail's 1.4, an axe's,
+    a warhammer's and a greatsword's 1.6 wide and 1.4 long with a 0.25 m head, its ribbon widened by the root of that
+    (seen edge on, a heavy one would fill the view); and an overhead of a flail, an axe, a
+    warhammer or a greatsword strikes the ground where its head meets it in the follow-through: a crack of three rays
+    stepping 4, 3 and 2 pixels wide, 0.6 m each, lit in the arc's ramp for its first frames, then dark until it thins
+    away at 0.9 s, and 12 chips of dust thrown out. For the first two frames of its strike, the striker's own figure
+    above its hips is drawn again 4 pixels back against the blade's way, behind it, in the ramp's second stop: a smear
+    that trails the swinging arm. It follows the blow's aim as the rules turn it, flares where the blow meets
+    something, stops where a flinch or a dodge cuts it short, and waits while the fight waits. None is drawn through
+    the eyes. Brightness and trail are set.
   - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
     0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing, or a shot, holds
     nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch
@@ -172,8 +189,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once
   a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or
   hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red
-  mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
-  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player
+  mark with no ring; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the
+  [[Game]] has it; a red edge when the player is struck; and, while the player
   lies dead, how long until they stand again at the start, or, with `?room=`, "Reconnecting…" while the page joins its
   room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a

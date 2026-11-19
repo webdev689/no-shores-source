@@ -33,13 +33,14 @@ export class FightEffects {
   events(fight: Fighting, seconds: number): FightEvent[] {
     const events = fight.takeEvents();
     this.clock += seconds;
-    this.flashes.update(events, seconds);
     this.sparks.update(seconds);
     const where = (id: number) => {
       const fighter = id === fight.player ? fight.own : (fight.foes.get(id)?.view ?? fight.others.get(id)?.body);
       return fighter ? ([fighter.x, fighter.y, fighter.z] as const) : null;
     };
     const spellLook = (caster: number) => castLookOf(fight, caster);
+    const healthMax = fight.own?.healthMax ?? 0;
+    this.flashes.update(events, seconds, { player: fight.player, look: this.ownLook, spellLook, healthMax, where });
     this.sparks.struck(events, where, { player: fight.player, look: this.ownLook, spellLook });
     return events;
   }

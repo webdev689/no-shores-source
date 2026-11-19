@@ -20,7 +20,7 @@ export const GLOW_RAMPS: Readonly<Record<GlowElement, readonly [Rgb, Rgb, Rgb, R
 };
 
 /** How far an outline reaches off its weapon at most, in the picture's own pixels: every field is padded by it. */
-export const GLOW_PAD = 5;
+export const GLOW_PAD = 9;
 /** A flame reaches this much farther up than across, and this share of it down. */
 const BLAZE_UP = 1.8;
 const BLAZE_DOWN = 0.6;
@@ -123,17 +123,29 @@ export const GLOW_BURSTS: Readonly<
   3: { count: 14, speed: [0.6, 1.6], life: [0.6, 1.1], lift: 9.81 },
 };
 
+/** How hard a weapon's glow surges, as a share of its reach at rest: through a swing's fast part, for a moment after
+ *  a blow it lands, and longer after a kill (seconds since each, null for none). */
+export const GLOW_SURGE = { swing: 1.5, hit: 2, hitFor: 6 / 60, kill: 2.5, killFor: 10 / 60 } as const;
+
+/** The surge of a glow now: the kill's while it lasts, else the landed blow's, else the swing's while it is fast. */
+export function glowSurge(sinceHit: number | null, sinceKill: number | null, swinging: boolean): number {
+  if (sinceKill !== null && sinceKill >= 0 && sinceKill < GLOW_SURGE.killFor) return GLOW_SURGE.kill;
+  if (sinceHit !== null && sinceHit >= 0 && sinceHit < GLOW_SURGE.hitFor) return GLOW_SURGE.hit;
+  return swinging ? GLOW_SURGE.swing : 1;
+}
+
 /** A colour as WGSL writes it. */
 export const wgslRgb = ([red, green, blue]: Rgb): string =>
   `vec3f(${red.toFixed(4)}, ${green.toFixed(4)}, ${blue.toFixed(4)})`;
 
 /**
- * The outline's colour at a texel, premultiplied: `glow_colour(look, field, cell, time)` with `field` the texel of
- * glowField's picture, `cell` its place from the field's middle (x right, y down) and `time` the page's seconds.
- * A band round the weapon, hottest at its edge and cooling in four hard steps, whose reach moves by its look, and a
- * light on the weapon's own edge. Blaze climbs in tongues and throws embers; Volt crackles in Manhattan arcs struck
- * again twelve times a second, surging; Cosmic breathes a halo turned by a slow swirl, with star glints. Every rate
- * is whole over the 240 s the clock wraps at, so the wrap never jumps.
+ * The outline's colour at a texel, premultiplied: `glow_colour(look, field, cell, time, surge)` with `field` the
+ * texel of glowField's picture, `cell` its place from the field's middle (x right, y down), `time` the page's seconds
+ * and `surge` how hard it surges (1 at rest). A band round the weapon, hottest at its edge and cooling in four hard
+ * steps, whose reach moves by its look and grows with the surge, and a light on the weapon's own edge. Blaze climbs
+ * in tongues and throws embers; Volt crackles in Manhattan arcs struck again twelve times a second; Cosmic breathes a
+ * halo turned by a slow swirl, with star glints. Every rate is whole over the 240 s the clock wraps at. Beside it,
+ * `glow_contact` is a blow's white rim round the weapon, and `glow_burst` the element thrown off it as a blow lands.
  */
 export const GLOW_WGSL = /* wgsl */ `
 const GLOW_TAU = 6.2831853;
@@ -142,6 +154,8 @@ const GLOW_RAMP = array<vec3f, 12>(
 );
 const GLOW_PAD = ${GLOW_PAD.toFixed(1)};
 const GLOW_BLAZE_MOST = ${(GLOW_PAD / BLAZE_UP - 0.05).toFixed(3)};
+// A flame at rest reaches this far across at most: six pixels up.
+const GLOW_BLAZE_REST = ${(6 / BLAZE_UP).toFixed(3)};
 
 fn glow_ramp(look: u32, stop: u32) -> vec3f {
   return GLOW_RAMP[(look - 1u) * 4u + min(stop, 3u)];
@@ -169,23 +183,23 @@ fn glow_noise(place: vec2f, rows: f32) -> f32 {
   return mix(below, above, ease.y);
 }
 
-// How far the band stands off the edge at a cell (y up) now, never past the field's pad.
-fn glow_reach(look: u32, cell: vec2f, time: f32) -> f32 {
+// How far the band stands off the edge at a cell (y up) now, grown by the surge, never past the field's pad.
+fn glow_reach(look: u32, cell: vec2f, time: f32, surge: f32) -> f32 {
   if (look == 1u) {
     let slow = glow_noise(vec2f(cell.x * 0.45, cell.y * 0.3 - time * 2.0), 480.0);
     let quick = glow_noise(vec2f(cell.x * 0.9 + 17.0, cell.y * 0.6 - time * 4.0), 960.0);
-    return min(1.6 * (0.5 + slow * (0.75 + 0.5 * quick)), GLOW_BLAZE_MOST);
+    let rest = min(2.0 * (0.5 + slow * (0.75 + 0.5 * quick)), GLOW_BLAZE_REST);
+    return min(rest * surge, GLOW_BLAZE_MOST);
   }
   if (look == 2u) {
     let strike = floor(time * 12.0);
     let arc = glow_noise(floor(cell * 0.5) * 0.9 + vec2f(strike * 3.7, strike * 1.3), 4096.0);
-    let surge = select(0.0, 1.0, glow_hash(vec2f(floor(time * 3.0), 7.0)) > 0.8);
-    return min(3.0 + smoothstep(0.55, 0.85, arc) * 2.0 + surge, GLOW_PAD);
+    return min((3.0 + smoothstep(0.55, 0.85, arc) * 4.0) * surge, GLOW_PAD);
   }
   let breath = 0.7 + 0.3 * sin(time * GLOW_TAU / 4.0);
   let turn = atan2(cell.y, cell.x) / GLOW_TAU - time / 8.0;
   let swirl = glow_noise(vec2f(length(cell) * 0.35, turn * 12.0), 12.0);
-  return (1.6 + 0.6 * breath) * (0.75 + 0.5 * swirl);
+  return min((2.2 + 0.8 * breath) * (0.75 + 0.5 * swirl) * surge, GLOW_PAD - 1.0);
 }
 
 // How strongly the weapon's own edge takes its element's light.
@@ -210,7 +224,7 @@ fn glow_star(cell: vec2f, time: f32) -> bool {
   return glow_hash(cell * 1.37 + vec2f(slot * 5.13, slot * 2.71)) < 0.012;
 }
 
-fn glow_colour(look: u32, field: vec4f, cell: vec2f, time: f32) -> vec4f {
+fn glow_colour(look: u32, field: vec4f, cell: vec2f, time: f32, surge: f32) -> vec4f {
   if (look == 0u || look > 3u) { return vec4f(0.0); }
   let clock = glow_wrap(time, 240.0);
   let at = vec2f(cell.x, -cell.y);
@@ -221,7 +235,7 @@ fn glow_colour(look: u32, field: vec4f, cell: vec2f, time: f32) -> vec4f {
   }
   let apart = round(field.r * 255.0) / 4.0;
   if (apart > 63.0) { return vec4f(0.0); }
-  let reach = glow_reach(look, at, clock);
+  let reach = glow_reach(look, at, clock, surge);
   let hot = 1.0 - apart / max(reach, 0.25);
   var out = vec4f(0.0);
   if (hot > 0.0) {
@@ -232,7 +246,7 @@ fn glow_colour(look: u32, field: vec4f, cell: vec2f, time: f32) -> vec4f {
   } else if (look == 1u && field.g > 0.5 && glow_ember(at, clock)) {
     out = vec4f(glow_ramp(look, 2u), 1.0);
   }
-  if (look == 3u && apart < reach + 1.0) {
+  if (look == 3u && apart < 8.0) {
     var near = 0.0;
     if (glow_star(at + vec2f(1.0, 0.0), clock) || glow_star(at - vec2f(1.0, 0.0), clock)
       || glow_star(at + vec2f(0.0, 1.0), clock) || glow_star(at - vec2f(0.0, 1.0), clock)) { near = 0.5; }
@@ -240,5 +254,30 @@ fn glow_colour(look: u32, field: vec4f, cell: vec2f, time: f32) -> vec4f {
     if (star > out.a) { out = vec4f(glow_ramp(look, 3u) * star, star); }
   }
   return out;
+}
+
+// A blow's rim: the weapon's edge and a pixel and a half round it, white.
+fn glow_contact(field: vec4f) -> vec4f {
+  if (field.b > 0.75) { return vec4f(0.0); }
+  let apart = select(round(field.r * 255.0) / 4.0, 0.0, field.b > 0.25);
+  return select(vec4f(0.0), vec4f(1.0), apart <= 1.5);
+}
+
+// The element thrown off the weapon 'age' seconds after a blow lands: a ring of its pixels flying out to the pad over a
+// fifth of a second, cooling a stop each quarter of it; Blaze's rising, Volt's sparse and quick, Cosmic's in crosses.
+fn glow_burst(look: u32, field: vec4f, cell: vec2f, age: f32) -> vec4f {
+  if (look == 0u || look > 3u || age < 0.0 || age >= 0.2 || field.b > 0.25) { return vec4f(0.0); }
+  let share = age / 0.2;
+  let apart = round(field.r * 255.0) / 4.0;
+  let front = 1.5 + (GLOW_PAD - 1.5) * share;
+  let at = floor(vec2f(cell.x, -cell.y - select(0.0, share * 4.0, look == 1u)));
+  let density = select(select(0.14, 0.22, look == 2u), 0.4, look == 1u);
+  var lit = abs(apart - front) < 1.2 && glow_hash(at * 1.31 + 3.0) < density;
+  if (look == 3u) {
+    let arm = glow_hash((at + vec2f(1.0, 0.0)) * 1.31 + 3.0) < density || glow_hash((at - vec2f(0.0, 1.0)) * 1.31 + 3.0) < density;
+    lit = lit || (abs(apart - front) < 2.0 && arm);
+  }
+  if (!lit) { return vec4f(0.0); }
+  return vec4f(glow_ramp(look, 3u - u32(floor(share * 4.0))), 1.0);
 }
 `;

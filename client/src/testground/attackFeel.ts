@@ -4,7 +4,7 @@ import { CameraKick, kicksOf, leanOf } from '../combat/cameraKick.ts';
 import { EVENT } from '../combat/cues.ts';
 import { HitStops, heldBack } from '../combat/hitStop.ts';
 import { lungeOf } from '../combat/lunge.ts';
-import { type Swing, SwingArcs, type Vector, weaponTint } from '../combat/swingArcs.ts';
+import { type Smear, type Swing, SwingArcs, type Vector, weaponTint } from '../combat/swingArcs.ts';
 import type { Orbit } from '../editor/orbit.ts';
 import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
@@ -26,12 +26,14 @@ const ARC_FLARE: Readonly<Record<number, number | undefined>> = {
 const OWN_LUNGE_EYE = 0.5;
 const STILL = { yaw: 0, pitch: 0, ahead: 0, aside: 0, up: 0 } as const;
 
-/** A fighter whose blow may be struck: its number, its view as the rules have it, and what its hands hold. */
+/** A fighter whose blow may be struck: its number, its view as the rules have it, what its hands hold, and the
+ *  element each hand's weapon glows in (none unless said). */
 export interface Striker {
   readonly id: number;
   readonly view: FighterView | null;
   readonly right: string | null;
   readonly left: string | null;
+  readonly looks?: readonly [GlowLook, GlowLook];
 }
 
 /** A fighter's figure as drawn this frame: where its feet are, its move, and whether it is drawn mirrored. */
@@ -181,7 +183,7 @@ export class AttackFeel {
   ): Float32Array {
     const { tick } = this;
     const swung: Swing[] = [];
-    for (const { id, view, right, left } of eyes ? [] : strikers) {
+    for (const { id, view, right, left, looks } of eyes ? [] : strikers) {
       const action = view?.action;
       const figure = drawn.get(id);
       if (!view || !figure || action?.kind !== 'attack') continue;
@@ -202,10 +204,18 @@ export class AttackFeel {
         mirrored: figure.flip,
         special: action.swing !== 'plain',
         tint: weaponTint(action.leftHand ? left : right),
+        look: looks?.[action.leftHand ? 1 : 0] ?? 0,
+        arms: view.arms,
       });
     }
     this.arcs.seen(clock, swung, (id) => drawn.get(id)?.feet ?? null);
     const look = { brightness: this.feel.arc && !eyes ? this.feel.arcBrightness : 0, trail: this.feel.arcTrail };
     return this.arcs.mesh(eye, look, (id) => this.lag(id));
+  }
+
+  /** The smear behind a striker's card as its strike is first drawn, for an eye whose right is `right`; none while the
+   *  arcs are off. */
+  smearOf(id: number, right: readonly [number, number]): Smear | null {
+    return this.feel.arc ? this.arcs.smearOf(id, right, this.lag(id)) : null;
   }
 }

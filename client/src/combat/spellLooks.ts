@@ -99,9 +99,7 @@ const BLADE_UP_M = 0.9;
 const BLADE_ORBIT = 3;
 const BLADE_SPIN = 9;
 const STRUCK_TICKS = 4;
-/** A Charged foe's arcs, their lines, and the sparks it throws a second. */
-const CRACKLE_ARCS = 2;
-const CRACKLE = { core: 0.02, glow: 0.06, opacity: 0.9 } as const;
+/** The sparks a Charged foe throws a second. */
 const CRACKLE_SPARKS = 24;
 
 const tenetOf = (art: string, key: string) =>
@@ -361,14 +359,9 @@ function streaks(frame: Frame, tail: readonly { readonly at: Point; readonly age
   }
 }
 
-/** A Charged foe crackling where its feet stand: arcs across its body struck afresh, and Volt's sparks thrown off. */
-function crackle(frame: Frame, id: number, feet: Point): void {
-  const strike = Math.floor(frame.clock * STRIKE_HZ);
-  for (let arc = 0; arc < CRACKLE_ARCS; arc++) {
-    const from = onBody(feet, frame.eye, hashOf(id, strike, arc, 1), hashOf(id, strike, arc, 2));
-    const to = onBody(feet, frame.eye, hashOf(id, strike, arc, 3), hashOf(id, strike, arc, 4));
-    boltLine(frame.out, frame.eye, jagged(from, to, 4, 0.08, strike * 13 + arc + id), VOLT, CRACKLE);
-  }
+/** A Charged foe crackling where its feet stand: Volt's sparks thrown off it. Its arcs are its card's own, inside
+ *  its figure (player/cardLooks.ts). */
+function crackle(frame: Frame, feet: Point): void {
   const thrown = Math.floor(CRACKLE_SPARKS * frame.seconds + frame.random());
   for (let spark = 0; spark < thrown; spark++)
     frame.sparks.burst(onBody(feet, frame.eye, frame.random(), frame.random()), [0, 0], 1, VOLT, 0.5);
@@ -432,7 +425,7 @@ export class SpellLooks {
     }
     this.streaks.keep(hasted);
     for (const kept of fight.foes.values())
-      if ((kept.statuses?.charge ?? 0) > 0) crackle(frame, kept.id, [kept.view.x, kept.view.y, kept.view.z]);
+      if ((kept.statuses?.charge ?? 0) > 0) crackle(frame, [kept.view.x, kept.view.y, kept.view.z]);
     return frame.out;
   }
 }

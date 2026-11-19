@@ -76,6 +76,12 @@ export interface FirstPersonState {
   readonly zoom?: number;
 }
 
+/** What a blow of the player's own met, as the first person shows it: it landed, or it was blocked (or blocked one). */
+export type Contact = 'landed' | 'blocked';
+/** A landed blow jolts the hands down this many design pixels, a block this many, for this many frames; a landed
+ *  blow's white rim lights the weapon for this many. */
+const JOLT = { landed: 2, blocked: 4, frames: 3, rim: 1 } as const;
+
 /** What the first person draws with: a texture a picture or an outline's field, and the quads over the scene. */
 export type QuadDrawer = Pick<FirstPersonView, 'texture' | 'glow' | 'forget' | 'draw'>;
 
@@ -199,6 +205,13 @@ export class FirstPerson {
   strokes: () => number;
   /** The element each hand's weapon glows in (the right, then the left), as the one who sees it sets it. */
   glow: readonly [GlowLook, GlowLook] = [0, 0];
+  /** How hard the weapons' glow surges (1 at rest), as the one who sees it sets it each frame. */
+  surge = 1;
+  /** The hands' jolt from the last contact (design pixels, and the frames it has left), the frames the weapon's rim
+   *  has left, and when (page seconds) a landed blow last threw the element off the blade. */
+  private jolt = { pixels: 0, frames: 0 };
+  private rimFrames = 0;
+  private burstAt: number | null = null;
 
   constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random, strokes = random) {
     this.view = view;
@@ -220,6 +233,14 @@ export class FirstPerson {
    *  threw it and whether the hands take turns as a pair; null at rest. */
   get swing(): Swing | null {
     return this.hands.swing;
+  }
+
+  /** A blow of the player's own met something: landed, the weapon takes a white rim for a frame and throws its
+   *  element off as a burst, and the hands jolt down 2 design pixels for 3 frames; blocked, they jolt 4. Never a
+   *  trail: the first person strikes without one. */
+  contact(kind: Contact): void {
+    this.jolt = { pixels: JOLT[kind], frames: JOLT.frames };
+    if (kind === 'landed') [this.rimFrames, this.burstAt] = [JOLT.rim, performance.now() / 1000];
   }
 
   /** Ends any swing or draw under way at once, with no blow and no arrow: the fight's rules ended it (a dodge, a
@@ -455,23 +476,30 @@ export class FirstPerson {
     const quads: ScreenQuad[] = [];
     let ready = true;
     let muzzle: readonly [number, number] | null = null;
+    const rim = this.rimFrames > 0;
+    const burst = this.burstAt === null ? null : performance.now() / 1000 - this.burstAt;
     for (const wanted of this.wanted) {
       const kept = this.kept.get(wanted.key);
       if (kept === undefined) ready = false;
       else if (kept) {
         const quad = wanted.place(kept.picture);
         const look = wanted.hand ? this.glow[wanted.hand === 'right' ? 0 : 1] : 0;
-        const glow = look ? { texture: this.glowOf(kept, look), look } : null;
+        // A plain weapon takes a blow's rim on an outline measured round, as Cosmic's is.
+        const lit = !!wanted.hand && (look !== 0 || rim);
+        const glow = lit ? { texture: this.glowOf(kept, look || 3), look, surge: this.surge, rim, burst } : null;
         quads.push({ texture: kept.texture, ...quad, ...(glow ? { glow } : {}) });
         if (wanted.tip) muzzle = [quad.x + wanted.tip[0], quad.y + wanted.tip[1]];
       }
     }
     if (ready) [this.shown, this.drawnMuzzle] = [quads, muzzle];
     const zoom = this.zoom;
+    const jolt = this.jolt.frames > 0 ? this.jolt.pixels : 0;
     const zoomed = this.shown.map((quad) => {
-      const [x, y] = zoomedOnScreen(quad.x, quad.y, zoom);
+      const [x, y] = zoomedOnScreen(quad.x, quad.y + jolt, zoom);
       return { ...quad, x, y, width: quad.width * zoom, height: quad.height * zoom };
     });
     this.view.draw(encoder, colourView, width, height, zoomed);
+    this.jolt.frames = Math.max(0, this.jolt.frames - 1);
+    this.rimFrames = Math.max(0, this.rimFrames - 1);
   }
 }

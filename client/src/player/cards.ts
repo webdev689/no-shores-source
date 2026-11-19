@@ -17,20 +17,31 @@ export interface Card {
   readonly glow?: { readonly texture: GPUTexture; readonly look: GlowElement };
 }
 
-/** One card to draw: where its feet stand (world metres), whether it is mirrored, how strongly it flashes, struck
- *  (white, or red for the player's own), how many times life size it stands (1 unless said: a figure aboard a ship
- *  drawn larger than life is drawn as large as she is), and its statuses that show: Veiled, drawn faint and
- *  shimmering, and Exposed, edged faint purple. */
+/** One card to draw: where its feet stand (world metres), whether it is mirrored, its flash as it is struck (its
+ *  stage, `FLASH` in cardLooks.ts, and colour), how many times life size it stands (1 unless said: a figure aboard a
+ *  ship drawn larger than life is drawn as large as she is), its statuses that show (Veiled, Exposed, Charged), how
+ *  many pixels it is shaken across, how far it has dissolved as it dies and in which element, the smear its own
+ *  swing leaves behind it (figure pixels across the eye's right and up, and its colour; only the Test Ground draws
+ *  one), and how hard its weapon's glow surges (1 at rest). */
 export interface CardAt {
   readonly card: Card;
   readonly x: number;
   readonly y: number;
   readonly z: number;
   readonly flip: boolean;
-  readonly flash?: { readonly share: number; readonly red: boolean };
+  readonly flash?: { readonly stage: number; readonly colour: readonly [number, number, number] };
   readonly scale?: number;
   readonly veiled?: boolean;
   readonly exposed?: boolean;
+  readonly charged?: boolean;
+  readonly jitter?: number;
+  readonly dissolve?: { readonly share: number; readonly look: GlowLook };
+  readonly smear?: {
+    readonly across: number;
+    readonly up: number;
+    readonly colour: readonly [number, number, number];
+  } | null;
+  readonly surge?: number;
 }
 
 /** Whatever turns a composed picture into a card it can draw, and an outline's field into a texture: the Test

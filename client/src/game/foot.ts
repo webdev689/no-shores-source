@@ -325,12 +325,16 @@ export class Foot {
     });
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds);
+    const ownWeapon = effects.flashes.ownOf(fight.own);
+    walker.fought(ownWeapon.surge, ownWeapon.contact);
     const shot = shotOfOrbit(camera(), LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
     const frameTicks = seconds / movement.tickSeconds;
     const figures: CardAt[] = [];
-    const own = walker.figure(eyeX, eyeY, { share: effects.flashes.shareOf(fight.player), red: true });
-    if (own) figures.push({ ...own, veiled: veiledIn(fight, fight.player) });
+    const own = walker.figure(eyeX, eyeY, effects.flashes.flashOf(fight.player));
+    const statuses = fight.own?.statuses;
+    const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
+    if (own) figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed });
     figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks));
     figures.push(
       ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, movement.tickSeconds, effects.flashes),
@@ -351,6 +355,7 @@ export class Foot {
       more: [
         ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
         ...this.dropMarks(clock, shot.eye),
+        ...foes.overheads(shot.eye, clock),
       ],
     });
     // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
@@ -419,7 +424,7 @@ export class Foot {
       // A cast's spark glows in the caster's Art, as the player's own does.
       const glow = placed.anim === 'cast' ? castLookOf(fight, number) : 0;
       const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow);
-      const flash = { share: effects.flashes.shareOf(number), red: false };
+      const flash = effects.flashes.flashOf(number);
       const veiled = veiledIn(fight, number);
       if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip, flash, veiled });
     }

@@ -1,5 +1,5 @@
 import type { GlowLook } from '../elementGlow.ts';
-import type { FirstPerson } from '../firstperson/firstPerson.ts';
+import type { Contact, FirstPerson } from '../firstperson/firstPerson.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Look } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
@@ -76,6 +76,8 @@ export class Walker {
   lookDress: string;
   private readonly firstPerson: FirstPerson;
   private readonly forge: Cards;
+  /** How hard the weapon's glow surges (1 at rest), on the figure and in first person, as the page last said. */
+  private surge = 1;
   /** How far the player has walked, for the first person's bob and stride; and the swings struck, each the other
    *  stroke. */
   private stride = 0;
@@ -114,6 +116,14 @@ export class Walker {
   /** The dress the figure shows this frame: the weapon worn while the hands hold a wall or a ledge. */
   get shownDress(): Dress {
     return this.dress;
+  }
+
+  /** How the player's own weapon fights this frame: its glow surging by `surge`, and what their blow met (`contact`,
+   *  null for nothing), which the first person shows. */
+  fought(surge: number, contact: Contact | null): void {
+    this.surge = surge;
+    this.firstPerson.surge = surge;
+    if (contact) this.firstPerson.contact(contact);
   }
 
   /** Plays a cast in `glow`, its Art's element: the figure's cast move, its spark in that colour, and the first
@@ -279,6 +289,6 @@ export class Walker {
     const { view, flip } = viewOf(you.facing, x, y, eyeX, eyeY);
     const glow = this.look.anim === 'cast' ? this.castGlow : this.glowing[0];
     const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip, glow);
-    return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, ...(flash ? { flash } : {}) };
+    return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, surge: this.surge, ...(flash ? { flash } : {}) };
   }
 }

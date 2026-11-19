@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/firstperson/firstPerson.ts#FirstPerson
+  - client/src/firstperson/firstPerson.ts#contact
   - client/src/firstperson/hands.ts#Hands
   - client/src/firstperson/handsLaw.ts#handsPlan
   - client/src/firstperson/weaponMachine.ts#WeaponMachine
@@ -65,6 +66,13 @@ looses it the same way; letting the aim go lowers it unloosed. The bow then relo
 
 While the guard is held, a weapon stands upright across the middle of the view, its left stroke's third frame held; a
 parry's deflect plays its right stroke's second to fourth frames over the deflect. A shield is raised whole for both.
+
+### A blow that meets something
+
+A blow of the player's own that lands lights the weapon's picture with a white rim for one frame, bursts its element
+off it ([[Weapon Glow]]) and jolts the hands 2 design pixels down for 3 frames; a blow of theirs blocked or parried,
+or one they block, jolts them 4. Never a trail ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn
+Blow]]).
 
 ### A pair
 

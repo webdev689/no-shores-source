@@ -3,8 +3,10 @@ import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { SWING_FLOATS } from '../combat/swingArcs.ts';
+import { SWING_ATTRIBUTES, SWING_WGSL } from '../combat/swingLook.ts';
+import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../player/cardLooks.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
-import { GlowCards, STATUS_WGSL, statusClock } from '../player/glowCards.ts';
+import { GlowCards } from '../player/glowCards.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { Block } from '../rules/movementRules.ts';
 
@@ -13,7 +15,7 @@ const SKY = [0.55, 0.66, 0.78] as const;
  *  it, so the ground is drawn as many small ones. */
 const TILES = 100;
 const SCENE_BYTES = 96;
-const CARD_BYTES = 64;
+const CARD_BYTES = 48 + CARD_LOOK_FLOATS * 4;
 
 const SHADER = /* wgsl */ `
 struct Scene { viewProjection: mat4x4f, eye: vec4f, marker: vec4f }
@@ -72,61 +74,18 @@ struct MarkOut { @builtin(position) position: vec4f, @location(0) colour: vec4f 
   return vec4f(in.colour.rgb * in.colour.a, in.colour.a);
 }
 
-struct SwingOut { @builtin(position) position: vec4f, @location(0) shape: vec4f, @location(1) tint: vec4f }
-
-@vertex fn swingVertex(@location(0) position: vec3f, @location(1) shape: vec4f, @location(2) tint: vec4f) -> SwingOut {
+@vertex fn swingVertex(
+  @location(0) position: vec3f,
+  @location(1) shape: vec4f,
+  @location(2) tint: vec4f,
+  @location(3) extra: vec2f,
+) -> SwingOut {
   var out: SwingOut;
   out.position = scene.viewProjection * vec4f(position, 1.0);
   out.shape = shape;
   out.tint = tint;
+  out.extra = extra;
   return out;
-}
-
-fn hash(n: f32) -> f32 {
-  return fract(sin(n * 127.1 + 311.7) * 43758.5453);
-}
-
-// A swing's streak (its shape: age along it, 0 at the head; across it; the blade's speed there; its part), in light
-// added over the scene with a little cover, so it shows over a bright sky too.
-@fragment fn swingFragment(in: SwingOut) -> @location(0) vec4f {
-  let age = clamp(in.shape.x, 0.0, 1.0);
-  let across = clamp(in.shape.y, 0.0, 1.0);
-  let speed = clamp(in.shape.z, 0.0, 1.0);
-  var light = 0.0;
-  var hot = 0.0;
-  var cover = 0.0;
-  if (in.shape.w < 0.5) {
-    // The blade's band, hilt to past the tip: the tip's edge a bright line, the blade behind it a glow in streaks
-    // that each trail their own length, and a dark rim just past the tip.
-    let fade = pow(1.0 - age, 1.6);
-    let edge = exp(-pow((across - 0.9) / 0.05, 2.0));
-    let lane = floor(across * 30.0);
-    let reach = mix(0.3, 1.0, hash(lane));
-    let streak = mix(0.45, 1.0, hash(lane + 17.0)) * (1.0 - smoothstep(reach * 0.55, reach, age));
-    let body = smoothstep(0.1, 0.85, across) * (1.0 - smoothstep(0.9, 0.95, across));
-    light = (edge * 1.3 + body * 0.95 * streak) * fade;
-    hot = edge * pow(1.0 - age, 3.0);
-    cover = exp(-pow((across - 0.975) / 0.022, 2.0)) * 0.3 * fade;
-  } else if (in.shape.w < 1.5) {
-    // A strip across the tip or a thrust's streak: brightest along its middle.
-    let middle = 1.0 - abs(across * 2.0 - 1.0);
-    let fade = pow(1.0 - age, 1.4);
-    light = pow(middle, 1.6) * fade * 1.2;
-    hot = pow(middle, 6.0) * pow(1.0 - age, 2.5);
-  } else {
-    // A flare (its age and across are its corner): a soft round glow with four thin rays, hottest at its heart.
-    let at = vec2f(age, across) * 2.0 - 1.0;
-    let radius = length(at);
-    let rays = max(0.0, 1.0 - abs(at.x) * 9.0) * max(0.0, 1.0 - abs(at.y))
-      + max(0.0, 1.0 - abs(at.y) * 9.0) * max(0.0, 1.0 - abs(at.x));
-    light = exp(-radius * radius * 7.0) + rays * 0.6 * (1.0 - smoothstep(0.6, 1.0, radius));
-    hot = exp(-radius * radius * 30.0);
-  }
-  // A streak burns by the blade's speed where it passed, so only the cut itself glows, not the slow wind-up.
-  let quick = select(smoothstep(0.03, 0.45, speed), 1.0, in.shape.w > 1.5);
-  let shine = light * in.tint.a * quick;
-  let colour = mix(in.tint.rgb, vec3f(1.0, 0.98, 0.94), clamp(hot * 1.3 + speed * 0.2 * light, 0.0, 1.0));
-  return vec4f(colour * shine, clamp(shine * 0.3 + cover * in.tint.a, 0.0, 1.0));
 }
 
 struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) world: vec3f }
@@ -150,9 +109,10 @@ struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f
   return vec4f(mix(stone * shade, SKY, fog * fog), 1.0);
 }
 
+${SWING_WGSL}
 ${STATUS_WGSL}
 
-struct Card { feet: vec4f, side: vec4f, root: vec4f, status: vec4f }
+struct Card { feet: vec4f, side: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f }
 @group(1) @binding(0) var<uniform> card: Card;
 @group(1) @binding(1) var picture: texture_2d<f32>;
 
@@ -168,19 +128,26 @@ struct CardOut { @builtin(position) position: vec4f, @location(0) corner: vec2f 
   let world = vec3f(card.feet.xy + card.side.xy * across, card.feet.z + up);
   var out: CardOut;
   out.position = scene.viewProjection * vec4f(world, 1.0);
+  // A smear stands a hair behind its figure (depth is reversed), so the figure is drawn over it.
+  if (card.tint.w > 0.5) { out.position.z = out.position.z * 0.999; }
   out.corner = corner;
   return out;
 }
 
 @fragment fn cardFragment(in: CardOut) -> @location(0) vec4f {
   let size = vec2f(textureDimensions(picture));
+  let flipped = card.feet.w > 0.5;
   var at = in.corner;
-  if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
-  let place = vec2i(min(at * size, size - 1.0));
+  if (flipped) { at.x = 1.0 - at.x; }
+  let rootAcross = card.root.x / card.side.z;
+  let root = vec2f(select(rootAcross, 1.0 - rootAcross, flipped), card.root.y / card.side.w) * size;
+  let place = card_texel(card.status, card.look, vec2i(min(at * size, size - 1.0)), vec2i(size), root);
+  if (place.x < 0) { discard; }
   let texel = textureLoad(picture, place, 0);
-  if (texel.a < 0.5 || !status_kept(card.status, place)) { discard; }
-  let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
-  return vec4f(mix(status_colour(card.status, picture, place, texel.rgb), flash, card.root.z), 1.0);
+  if (texel.a < 0.5) { discard; }
+  let shown = card_shade(card.status, card.look, card.tint, picture, place, texel.rgb, root);
+  if (shown.a < 0.5) { discard; }
+  return vec4f(shown.rgb, 1.0);
 }
 `;
 
@@ -286,7 +253,7 @@ export class SceneView implements CardMaker {
       primitive: { topology: 'triangle-list' },
       depthStencil: { ...depthStencil, depthWriteEnabled: false },
     });
-    // Swings' streaks the same way, over everything, light added with a little cover.
+    // Swings' streaks the same way, over everything, each pixel of them solid.
     this.swingPipeline = device.createRenderPipeline({
       layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
       vertex: {
@@ -295,11 +262,7 @@ export class SceneView implements CardMaker {
         buffers: [
           {
             arrayStride: SWING_FLOATS * 4,
-            attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' },
-              { shaderLocation: 1, offset: 12, format: 'float32x4' },
-              { shaderLocation: 2, offset: 28, format: 'float32x4' },
-            ],
+            attributes: [...SWING_ATTRIBUTES],
           },
         ],
       },
@@ -525,14 +488,20 @@ export class SceneView implements CardMaker {
     pass.setPipeline(this.cards);
     pass.setBindGroup(0, this.sceneGroup);
     const time = statusClock();
-    drawn.forEach(({ card, x, y, z, flip, flash, veiled, exposed }, index) => {
+    // Each card, then again as its smear where its own swing leaves one: its shape above the hips, shifted back
+    // along the stroke and standing behind it.
+    const smeared = drawn.flatMap((shown) => (shown.smear ? [shown] : []));
+    [...drawn, ...smeared].forEach((shown, index) => {
+      const { card, x, y, z, flip } = shown;
+      const smear = index >= drawn.length ? shown.smear : null;
+      const [across, up] = smear ? [smear.across / PX_PER_M, smear.up / PX_PER_M] : [0, 0];
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
-        ...[x, y, z, flip ? 1 : 0],
+        ...[x + right[0] * across, y + right[1] * across, z + up, flip ? 1 : 0],
         ...[...right, card.width / PX_PER_M, card.height / PX_PER_M],
-        ...[rootX, card.root[1] / PX_PER_M, flash?.share ?? 0, flash?.red ? 1 : 0],
-        ...[veiled ? 1 : 0, exposed ? 1 : 0, time, 0],
+        ...[rootX, card.root[1] / PX_PER_M, 0, 0],
+        ...cardLookValues(shown, time, !!smear),
       ]);
       device.queue.writeBuffer(buffer, 0, cardValues);
       pass.setBindGroup(1, group);
@@ -541,7 +510,7 @@ export class SceneView implements CardMaker {
     // A Veiled figure's weapon shows no outline: it is all but unseen.
     const glowing = drawn.filter(({ card, veiled }) => card.glow && !veiled);
     const metres = 1 / PX_PER_M;
-    const glows = glowing.map(({ card, x, y, z, flip }) => ({ card, x, y, z, flip, metres }));
+    const glows = glowing.map(({ card, x, y, z, flip, surge }) => ({ card, x, y, z, flip, metres, surge }));
     this.glows.draw(pass, seen, right, performance.now() / 1000, glows);
     if (this.markBuffer && this.markCount > 0) {
       pass.setPipeline(this.markPipeline);

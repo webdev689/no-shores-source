@@ -100,8 +100,8 @@ blue with trails; Quicken a ring of lightning at the feet and streaks behind tho
 through the cone, Charged foes crackling; the Sunwell a floating sun over a turning ring, beams to those Linked, motes
 rising as they heal; Mend a burst of gold; the Dawnflare a bird of fire, wings beating, embers behind it; the
 Duskraven a raven of purple light at the shoulder, its bolts trailing stars; Dusk Daggers blades turning over a purple
-ring; Vanish a puff of dusk, the player drawn faint and shimmering. An Exposed foe has a faint purple edge; a Charged
-one crackles.
+ring; Vanish a puff of dusk, the player drawn as an outline with a shimmer crossing it. An Exposed figure is edged in
+Cosmic two pixels thick, a Charged one crackles inside its own outline.
 
 ### Where they are seen
 
@@ -115,6 +115,30 @@ one crackles.
 
 The owner asked that attack visuals go beyond the limits ([[Attack Visuals Go Beyond the Limits]]). What that comes to
 is written here as it is built.
+
+Everything is the game's own pixel art: whole figure pixels, the four stops of a ramp (an element's, a metal's made
+from its light, gold `#4a2a06 #c8901e #ffd95a #fff6d0`), held steps, no soft fades.
+
+- **The swing's arc** (the [[Test Ground]]'s attack feel until it moves into the game): drawn over its own striker,
+  so overheads, slants and thrusts show from the default camera; its cutting edge white-hot over a dark rim, its
+  sweep in lanes, its oldest fifth dithered out; in the blade's element where the hand glows, gold for a riposte.
+  Blaze sheds 18 embers a second off its head, Volt jolts it and throws two 0.3 m forks each strike, Cosmic leaves a
+  star every 0.08 s. Weight by class: a dagger 0.7 times a sword's width and trail, a mace 1.2, a flail 1.4, an axe,
+  a warhammer and a greatsword 1.6 wide and 1.4 long; their overheads (and a flail's) crack the ground with three
+  0.6 m rays and throw 12 chips of dust. The striker's figure smears 4 pixels back for the strike's first two frames.
+- **A struck figure**: a foe flashes whole white for 2 frames, its outline white for 2, its outline in the blow's
+  element (steel for a plain one) for 1, then nothing; the player's outline red for 4, whole only for a blow over a
+  quarter of their health. A foe slides along the blow in whole pixels: 0.12 m a hit, 0.35 m a stagger (out over 6
+  frames, back over 10), 0.6 m a kill. A stagger shakes it a pixel for 6 frames, reels its hurt frames every 0.4 s
+  and circles three gold stars round its head. A foe slain dissolves: plain, crumbling from the head down over 0.6 s
+  once its fall is over; in an element at once (Blaze 44 frames, Volt 18, Cosmic 10).
+- **Statuses**: Exposed a two-pixel Cosmic edge stepping at 4 Hz and a cracked diamond by the head; Charged three
+  arcs inside the figure at 12 Hz, its edge lit on alternate strikes, shaken a pixel; Veiled its outline in Cosmic's
+  light, an eighth of its inside, a shimmer crossing it every 0.8 s.
+- **The weapon's glow**: reaches 9 pixels (Blaze 6 up at rest, Volt 7, Cosmic's stars 8) and surges 1.5 times
+  through a swing, twice for 6 frames after a landed blow, 2.5 times for 10 after a kill.
+- **First person**: a landed blow lights the weapon with a white rim for 1 frame, bursts its element off it and
+  jolts the hands 2 design pixels for 3 frames; a block jolts them 4. No trail.
 
 ## Perks
 

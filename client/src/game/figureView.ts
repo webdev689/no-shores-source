@@ -2,20 +2,21 @@ import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { PX_PER_M } from '../player/figures.ts';
+import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../player/cardLooks.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
-import { GlowCards, STATUS_WGSL, statusClock } from '../player/glowCards.ts';
+import { GlowCards } from '../player/glowCards.ts';
 import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
 const VIEW_BYTES = 80;
-const CARD_BYTES = 64;
+const CARD_BYTES = 48 + CARD_LOOK_FLOATS * 4;
 
 /** A figure's card stands upright on its feet, measured from the eye as the land is; the forge's pixels are drawn
  *  texel for texel and anything clear is cut away. Shared by the figures' pass and their shadow's. */
 const CARD = /* wgsl */ `
 struct View { from_eye: mat4x4f, right: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
-struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f }
+struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f }
 @group(2) @binding(0) var<uniform> card: Card;
 @group(2) @binding(1) var picture: texture_2d<f32>;
 
@@ -38,6 +39,13 @@ fn texel_at(corner: vec2f) -> vec2i {
   var at = corner;
   if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
   return vec2i(min(at * size, size - 1.0));
+}
+
+// The picture's texel its feet stand on.
+fn root_texel() -> vec2f {
+  let size = vec2f(textureDimensions(picture));
+  let across = card.root.x / card.size.x;
+  return vec2f(select(across, 1.0 - across, card.feet.w > 0.5), card.root.y / card.size.y) * size;
 }
 
 fn picture_at(corner: vec2f) -> vec4f {
@@ -70,17 +78,19 @@ const LIGHT_ACROSS = vec2f(0.7071068, -0.7071068);
 const SUN_ACROSS = 0.766;
 
 @fragment fn card_fragment(in: Out) -> @location(0) vec4f {
-  let at = texel_at(in.corner);
+  let root = root_texel();
+  let at = card_texel(card.status, card.look, texel_at(in.corner), vec2i(textureDimensions(picture)), root);
+  if (at.x < 0) { discard; }
   let texel = textureLoad(picture, at, 0);
-  if (texel.a < 0.5 || !status_kept(card.status, at)) { discard; }
+  if (texel.a < 0.5) { discard; }
   // A figure's shadow is drawn from its card turned square to the sun about its feet. A point of the card the eye sees
   // that lies behind that one from the sun is asked of the map from past it, so a figure never shades itself.
   let behind = max(across_of(in.corner) * dot(view.right.xy, LIGHT_ACROSS), 0.0);
   let sun = sunlit(in.from_eye + SUN * (behind / SUN_ACROSS + 0.15), SUN);
-  // A figure a blow harms flashes white, the player red, for its share of a flash.
-  let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
-  let lit = status_colour(card.status, picture, at, texel.rgb * mix(SHADED, 1.0, sun));
-  return vec4f(mix(lit, flash, card.root.z), 1.0);
+  // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
+  let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * mix(SHADED, 1.0, sun), root);
+  if (shown.a < 0.5) { discard; }
+  return vec4f(shown.rgb, 1.0);
 }
 
 // A figure's contact shade: a soft dark disc on the ground at its feet. Where the near shadow map holds the figure's
@@ -258,15 +268,16 @@ export class FigureView implements CardMaker {
     values.set([Math.cos(yaw), Math.sin(yaw), 0, 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
     const time = statusClock();
-    const groups = figures.map(({ card, x, y, z, flip, scale = 1, flash, veiled, exposed }, index) => {
+    const groups = figures.map((shown, index) => {
+      const { card, x, y, z, flip, scale = 1 } = shown;
       const { buffer, group } = this.slot(index, card.texture);
       const metres = scale / PX_PER_M;
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
       const cardValues = new Float32Array([
         ...[x - eye[0], y - eye[1], z - eye[2], flip ? 1 : 0],
         ...[card.width * metres, card.height * metres, 0, 0],
-        ...[rootX, card.root[1] * metres, flash?.share ?? 0, flash?.red ? 1 : 0],
-        ...[veiled ? 1 : 0, exposed ? 1 : 0, time, 0],
+        ...[rootX, card.root[1] * metres, 0, 0],
+        ...cardLookValues(shown, time),
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;
@@ -328,9 +339,9 @@ export class FigureView implements CardMaker {
       fromEye,
       [Math.cos(yaw), Math.sin(yaw)],
       performance.now() / 1000,
-      glowing.map(({ card, x, y, z, flip, scale = 1 }) => {
+      glowing.map(({ card, x, y, z, flip, scale = 1, surge }) => {
         const [fromX, fromY, fromZ] = [x - eye[0], y - eye[1], z - eye[2]];
-        return { card, x: fromX, y: fromY, z: fromZ, flip, metres: scale / PX_PER_M };
+        return { card, x: fromX, y: fromY, z: fromZ, flip, metres: scale / PX_PER_M, surge };
       }),
     );
   }

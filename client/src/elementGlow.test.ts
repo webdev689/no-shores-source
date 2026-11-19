@@ -3,10 +3,12 @@ import { test } from 'node:test';
 import {
   GLOW_PAD,
   GLOW_RAMPS,
+  GLOW_SURGE,
   GLOW_WGSL,
   type GlowField,
   glowField,
   glowRampAt,
+  glowSurge,
   recolourToGlow,
 } from './elementGlow.ts';
 
@@ -75,8 +77,21 @@ test('the ramps run dark to hot', () => {
 });
 
 test('the shader is whole', () => {
-  assert.ok(GLOW_WGSL.includes('fn glow_colour(look: u32, field: vec4f, cell: vec2f, time: f32) -> vec4f'));
+  assert.ok(GLOW_WGSL.includes('fn glow_colour(look: u32, field: vec4f, cell: vec2f, time: f32, surge: f32) -> vec4f'));
+  assert.ok(GLOW_WGSL.includes('fn glow_contact(field: vec4f) -> vec4f'));
+  assert.ok(GLOW_WGSL.includes('fn glow_burst(look: u32, field: vec4f, cell: vec2f, age: f32) -> vec4f'));
   assert.ok(!GLOW_WGSL.includes('${'));
   assert.equal(GLOW_WGSL.split('{').length, GLOW_WGSL.split('}').length);
   assert.ok(!/NaN|undefined/.test(GLOW_WGSL));
+});
+
+test('a glow surges through a swing, harder after a blow it lands, hardest after a kill, and only for a moment', () => {
+  assert.equal(glowSurge(null, null, false), 1);
+  assert.equal(glowSurge(null, null, true), GLOW_SURGE.swing);
+  assert.equal(glowSurge(0, null, true), GLOW_SURGE.hit);
+  assert.equal(glowSurge(5 / 60, null, false), GLOW_SURGE.hit, 'six frames after the blow');
+  assert.equal(glowSurge(7 / 60, null, false), 1, 'and no longer');
+  assert.equal(glowSurge(0, 0, false), GLOW_SURGE.kill);
+  assert.equal(glowSurge(0, 9 / 60, false), GLOW_SURGE.kill, 'ten frames after the kill');
+  assert.equal(glowSurge(0.5, 11 / 60, true), GLOW_SURGE.swing);
 });

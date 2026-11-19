@@ -1,3 +1,4 @@
+import type { GlowLook } from '../elementGlow.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import { foeDoing } from '../player/fightMoves.ts';
@@ -8,18 +9,24 @@ import { likelyMoves, shownMove } from '../player/playerMoves.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { type FoeType, shownType } from '../rules/roster.ts';
 import type { Fighting, KeptFoe } from './fighting.ts';
-import type { Flashes } from './flashes.ts';
+import { FIGHT_TICKS } from '../player/fightMoves.ts';
+import { type Flashes, dissolveShare } from './flashes.ts';
 import type { MarkedFoe } from './foeBars.ts';
+import { overheadMarks } from './overheads.ts';
 
 type Point = readonly [number, number, number];
 
 /** How a page's attack feel draws a fighter (the Test Ground's): its view held back while a blow landing holds it, its
- *  figure shifted off where it stands, and each figure as drawn kept for its blow's arc. */
+ *  figure shifted off where it stands, each figure as drawn kept for its blow's arc, and the smear its swing leaves. */
 export interface FoeFeel {
   held(id: number, view: FighterView): FighterView;
   shift(id: number, view: FighterView): Point;
   readonly drawn: Map<number, { readonly feet: Point; readonly anim: string; readonly flip: boolean }>;
+  smear?(id: number): CardAt['smear'];
 }
+
+/** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
+const PLAIN_DISSOLVE_AFTER_S = (FIGHT_TICKS.death + 6) / 60;
 
 /** Foes' figures are numbered down from here, never twice in the page's life: the forge keeps each figure's last card
  *  by its number, so a number used again would first show another foe. */
@@ -34,6 +41,10 @@ export class FoeFigures {
   private readonly dresses: ReadonlyMap<number, Dress | null>;
   private readonly figures = new Map<number, Placed>();
   private readonly glides = new Glides();
+  /** Each dying foe's dissolve: its element, and when it begins (page seconds). */
+  private readonly dissolves = new Map<number, { readonly look: GlowLook; readonly start: number }>();
+  /** What stands over each foe drawn last: where its feet were drawn, and whether it is staggered or Exposed. */
+  private readonly over = new Map<number, { feet: Point; staggered: boolean; exposed: boolean }>();
 
   /** Each type's dress, from the rules' roster, is made once. */
   constructor(roster: readonly FoeType[]) {
@@ -44,6 +55,13 @@ export class FoeFigures {
   /** Each foe's figure where it was last drawn, by the room's number. */
   get placed(): ReadonlyMap<number, Placed> {
     return this.figures;
+  }
+
+  /** Dissolves the foe the room numbers `id` as it dies, in `look` (none for plain), from `start` seconds on the page's
+   *  clock: Blaze burns it away from the feet, Volt blinks it out, Cosmic draws it in. Once dissolved it is not drawn;
+   *  standing again, it is whole. */
+  dissolveFoe(id: number, look: GlowLook, start: number): void {
+    this.dissolves.set(id, { look, start });
   }
 
   /** The dress a foe's figure is drawn in, its type's; none for a type the roster does not know. */
@@ -92,18 +110,71 @@ export class FoeFigures {
       // Its likeliest moves, the telegraphed blows' strokes and what a fight holds it to.
       forge.warm(dress, [...likelyMoves(right, left, draws), 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death']);
       const moved = feel ? feel.shift(kept.id, kept.view) : ([0, 0, 0] as const);
-      const drawnAt = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]] as const;
+      const alive = kept.view.action.kind !== 'dead';
+      const knocked = flashes.knockOf(kept.id, alive);
+      const drawnAt = [
+        placed.x + moved[0] + knocked[0],
+        placed.y + moved[1] + knocked[1],
+        placed.z + moved[2],
+      ] as const;
       const { view: side, flip } = viewOf(placed.facing, drawnAt[0], drawnAt[1], eye.x, eye.y);
       feel?.drawn.set(kept.id, { feet: drawnAt, anim: move.anim, flip });
-      const card = forge.card(placed.id, dress, move.anim, side, frameShown, flip);
-      const flash = { share: flashes.shareOf(kept.id), red: false };
+      const dissolve = this.dissolving(kept.id, alive, clock);
       const exposed = (kept.statuses?.expose ?? 0) > 0;
+      const action = kept.view.action;
+      const staggered = action.kind === 'staggered' && action.cause !== 'charged';
+      this.over.set(kept.id, { feet: drawnAt, staggered, exposed: exposed && alive });
+      if (dissolve && dissolve.share >= 1) continue;
+      const card = forge.card(placed.id, dress, move.anim, side, frameShown, flip);
       const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
-      if (card) cards.push({ card, ...stand, z: drawnAt[2], flip, flash, exposed });
+      if (card)
+        cards.push({
+          card,
+          ...stand,
+          z: drawnAt[2],
+          flip,
+          flash: flashes.flashOf(kept.id),
+          exposed,
+          charged: (kept.statuses?.charge ?? 0) > 0,
+          jitter: flashes.shakeOf(kept.id),
+          dissolve,
+          smear: feel?.smear?.(kept.id) ?? null,
+        });
     }
     for (const id of this.figures.keys()) if (!fight.foes.has(id)) this.figures.delete(id);
+    for (const id of [...this.dissolves.keys(), ...this.over.keys()]) {
+      if (fight.foes.has(id)) continue;
+      this.dissolves.delete(id);
+      this.over.delete(id);
+    }
     this.glides.keep(new Set(fight.foes.keys()));
     return cards;
+  }
+
+  /** How far a foe has dissolved at `clock`, or nothing while it lives or before its dissolve begins; a death no one
+   *  gave an element dissolves plain once its fall is over. */
+  private dissolving(id: number, alive: boolean, clock: number): CardAt['dissolve'] {
+    if (alive) {
+      // One standing again is whole; a dissolve asked just as it falls waits for its death.
+      const asked = this.dissolves.get(id);
+      if (asked && clock > asked.start + 1) this.dissolves.delete(id);
+      return undefined;
+    }
+    let dissolve = this.dissolves.get(id);
+    if (!dissolve) {
+      dissolve = { look: 0, start: clock + PLAIN_DISSOLVE_AFTER_S };
+      this.dissolves.set(id, dissolve);
+    }
+    const share = dissolveShare(dissolve.look, clock - dissolve.start);
+    return clock < dissolve.start ? undefined : { share: Math.max(share, 1e-3), look: dissolve.look };
+  }
+
+  /** The marks over the foes as last drawn, seen from `eye` at `clock`: a staggered one's circling stars and an
+   *  Exposed one's cracked diamond. */
+  overheads(eye: Point, clock: number): number[] {
+    const out: number[] = [];
+    for (const shown of this.over.values()) overheadMarks(out, shown.feet, eye, clock, shown);
+    return out;
   }
 
   /** Each foe as the display marks it: its type's name and faction from the roster, where its figure is drawn. */
