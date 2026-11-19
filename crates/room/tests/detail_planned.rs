@@ -443,56 +443,78 @@ fn outside([west, north, east, south]: [f64; 4], margin: f64, [x, y]: [f64; 2]) 
     x < west - margin || x > east + margin || y < north - margin || y > south + margin
 }
 
-/// Why a planted point stands where nothing may: off its section's floor or on a face, a way, a run, a yard, a building,
-/// a prop or a solid; none when it stands clear.
-fn misplanted(laid: &Layout, ground: &Ground, at: [f64; 2]) -> Option<&'static str> {
+/// How far round its foot a planted kind reaches: its trunk and crown, or its bush.
+fn reach_of(kind: &str) -> f64 {
+    match kind {
+        "oak" => 4.0,
+        "gorse" => 1.6,
+        other => panic!("no reach is known for a planted {other}"),
+    }
+}
+
+/// How far a point lies past an upright solid's turned footprint, metres: 0 inside it.
+fn off_footprint(solid: &city::solids::Solid, [x, y]: [f64; 2]) -> f64 {
+    let (sine, cosine) = land::exact::sin_cos(solid.turn);
+    let (east, south) = (x - solid.at[0], y - solid.at[1]);
+    let across = ((east * cosine + south * sine).abs() - solid.size[0] / 2.0).max(0.0);
+    let along = ((south * cosine - east * sine).abs() - solid.size[1] / 2.0).max(0.0);
+    (across * across + along * along).sqrt()
+}
+
+/// Why a planted point stands where nothing may, by its kind's `reach` round it: off its section's floor or on a face,
+/// a way, a run, a yard, a building, a prop or a solid; none when it stands clear.
+fn misplanted(laid: &Layout, ground: &Ground, at: [f64; 2], reach: f64) -> Option<&'static str> {
     let [x, y] = at;
     let sculpt = &laid.sculpt;
     let off_capsule = |capsule: &[f64]| off_line(at, [capsule[0], capsule[1]], [capsule[2], capsule[3]]) - capsule[4];
     let rise = |east: f64, south: f64| ground.height_at(x + east, y + south);
     let (east, south) = (rise(1.0, 0.0) - rise(-1.0, 0.0), rise(0.0, 1.0) - rise(0.0, -1.0));
     let slope = (east * east + south * south).sqrt() / 2.0;
-    // The client's yard round a building (layoutPlan.ts YARD_CLEAR_M).
-    let yards = laid.seating.buildings.iter().map(|building| (building.footprint, 10.0));
+    // The client's yard round a building and its clearing round a run's way and beats (layoutPlan.ts YARD_CLEAR_M,
+    // RUN_CLEAR_M and a beat's radius and 2 m).
+    let (yard, run_clear, beat_clear) = (10.0, 6.0, 2.0);
+    let yards = laid.seating.buildings.iter().map(|building| building.footprint).map(|print| (print, yard + reach));
     let half_tile = layout::seat::TILE_M / 2.0;
     let tiles = laid.seating.tiles.iter().map(|tile| {
         let [x, y] = tile.at;
-        ([x - half_tile, y - half_tile, x + half_tile, y + half_tile], 0.0)
+        ([x - half_tile, y - half_tile, x + half_tile, y + half_tile], reach)
     });
-    let pads = laid.seating.pads.iter().map(|pad| (pad.bounds, 0.0));
-    let props = laid.seating.props.iter().map(|prop| (prop.footprint, 0.0));
-    let solids = laid.seating.solids.iter().map(|solid| {
+    let pads = laid.seating.pads.iter().map(|pad| (pad.bounds, reach));
+    let props = laid.seating.props.iter().map(|prop| (prop.footprint, reach));
+    // A leaning or rolled solid by its box; an upright one by its own footprint (below).
+    let leaning = laid.seating.solids.iter().filter(|solid| solid.lean != 0.0 || solid.roll != 0.0).map(|solid| {
         let [west, north, east, south, ..] = solid.bounds();
-        ([west, north, east, south], 0.0)
+        ([west, north, east, south], reach)
     });
-    let mut prints = yards.chain(tiles).chain(pads).chain(props).chain(solids);
+    let mut prints = yards.chain(tiles).chain(pads).chain(props).chain(leaning);
+    let mut upright = laid.seating.solids.iter().filter(|solid| solid.lean == 0.0 && solid.roll == 0.0);
     if !layout::field::ring_holds(&laid.ring, x, y) {
         Some("outside its section")
-    } else if !sculpt.floors.iter().any(|floor| off_capsule(floor) <= 0.0) {
+    } else if !sculpt.floors.iter().any(|floor| off_capsule(floor) <= -reach) {
         Some("off its floor")
-    } else if sculpt.climbs.iter().chain(&sculpt.runs).any(|climb| off_capsule(climb) <= 0.0) {
+    } else if sculpt.climbs.iter().chain(&sculpt.runs).any(|climb| off_capsule(climb) <= reach) {
         Some("on a climb or a run's rock")
     } else if sculpt.outcrops.iter().any(|outcrop| {
-        let ([first, last], reach) = outcrop.footprint();
-        off_line(at, first, last) <= reach
+        let ([first, last], out) = outcrop.footprint();
+        off_line(at, first, last) <= out + reach
     }) {
         Some("on an outcrop")
     } else if slope > 0.6 || ground.water_at(x, y) != land::ground::WaterAt::Dry {
         Some("on a face or in water")
-    } else if laid
-        .paths
-        .iter()
-        .any(|path| path.points.windows(2).any(|pair| off_line(at, pair[0], pair[1]) <= path.tier.width() / 2.0))
-    {
+    } else if laid.paths.iter().any(|path| {
+        path.points.windows(2).any(|pair| off_line(at, pair[0], pair[1]) <= path.tier.width() / 2.0 + reach)
+    }) {
         Some("on a way")
     } else if laid.runs.iter().any(|run| {
-        let passage = layout::runs::half_of(run.kind);
-        run.beats.iter().any(|beat| layout::field::distance(beat.at, at) <= beat.radius)
+        let passage = layout::runs::half_of(run.kind).max(run_clear) + reach;
+        run.beats.iter().any(|beat| layout::field::distance(beat.at, at) <= beat.radius + beat_clear + reach)
             || run.way().windows(2).any(|pair| off_line(at, pair[0], pair[1]) <= passage)
     }) {
         Some("in a run")
     } else if !prints.all(|(print, margin)| outside(print, margin, at)) {
-        Some("in a yard, a building, a prop or a solid")
+        Some("in a yard, a building, a prop or a leaning solid")
+    } else if upright.any(|solid| off_footprint(solid, at) <= reach) {
+        Some("in a solid")
     } else {
         None
     }
@@ -513,7 +535,7 @@ fn plantings_stand_off_ways_yards_runs_and_buildings() {
             assert!(grown.get(&planting.kind).is_some(), "{}: {} is no kind its nature grows", laid.id, planting.kind);
             for &at in &planting.points {
                 planted += 1;
-                if let Some(why) = misplanted(laid, ground, at) {
+                if let Some(why) = misplanted(laid, ground, at, reach_of(&planting.kind)) {
                     failed.push(format!("{}: a {} at {at:.1?} stands {why}", laid.id, planting.kind));
                 }
             }
