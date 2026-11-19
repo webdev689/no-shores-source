@@ -242,14 +242,15 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 The prologue's ambush ([[The Game Opens With a Story Mission at Sea]]) is the same fight, begun as `Fight::ambush`:
 the player's Sloop put to sea as she lies, and each captain set where and how the story gives her, numbered from 1
 on, her temper drawn from her own seed. Every one comes to fight her at once: bold whatever her temper, and cruising
-straight for her until she is in sight (750 m). The land door's begin takes an optional `captains` list (each one's
-`x`, `y`, heading, faction and rank); its view carries every captain after the first in `others`, as the sea room's
-wire does. The game's `SeaCombat` steps a fight on any `FightSource`, the sea room's or the land door's, so the
-story's fight (`StoryFight`) is the sea's own: its aim, lay, effects, panel and bars. The story places each captain
-by her bearing off the player's bow and her distance, heading for her unless told; hears from each step a ball
-striking her, hers striking a captain, a captain going down and one sunk; and is over once every captain has sunk.
-It draws the player's ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a
-storm's too), for the drawing only. By the rules every ship in it is still a Sloop.
+straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
+land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank); its view
+carries every captain after the first in `others`, as the sea room's wire does. The game's `SeaCombat` steps a fight
+on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
+aim, lay, effects, panel and bars. The story places each captain by her bearing off the player's bow and her
+distance, heading for her unless told; hears from each step a ball striking her, hers striking a captain, a captain
+going down and one sunk; and is over once every captain has sunk or sailed off out of it. It draws the player's
+ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a storm's too), for the drawing
+only; a ship going down settles as the rules have her. By the rules every ship in it is still a Sloop.
 
 ## In a fleet room
 
@@ -271,8 +272,8 @@ browser predicts its own ship through `room-wasm` by the same steps.
 
 - Every captain sails a Sloop, of either faction at any rank; no other classes, and no ambient traffic. In the
   ambush the player's ship is drawn as the Brig but sails and fights as a Sloop.
-- An ambush is over only once every captain has sunk: one who sails off out of it, or strikes and is left, keeps it
-  on.
+- An ambush is over once every captain has sunk or sailed off: one who strikes and is left keeps it on. The
+  player's own sinking is not among what the story hears.
 - At sea a fight holds one player at most: a player joins only a fight among captains, and a ship at sea never joins
   a fight already under way. In the game's fight only the first captain's fires and DFO's messages show.
 - A captain's men give out at about four fifths of her hull at every rank, so her rank's run and strike shares of her

@@ -364,23 +364,28 @@ impl Fight {
     /// The player's Sloop, as `put_to_sea` puts her, set upon by `captains` (each where and how she is given, under a
     /// number from `CAPTAIN` on, her temper drawn from her own seed), and every chance of the fight drawn from `seed`.
     /// Each comes to fight her at once: bold, whatever her temper, and cruising straight for her when out of sight.
+    /// A captain set where the water does not float her is refused: aground, she could never close nor sink.
     pub fn ambush(
         ship: Ship,
         captains: &[(Ship, Commission, u32)],
         seed: u32,
         waters: &impl Waters,
         time: f64,
-    ) -> Fight {
+    ) -> Result<Fight, String> {
         let mut fight = Fight::new(seed);
         fight.put_to_sea(PLAYER, ship, waters, time);
         for (&(captain, commission, her_seed), id) in captains.iter().zip(CAPTAIN..) {
+            if pose_of(&captain, &SLOOP, waters, time).aground {
+                return Err(format!("Captain {id} is set where the water does not float her."));
+            }
             fight.enlist(id, captain, commission, her_seed, waters, time);
             if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&id).map(|vessel| &mut vessel.sailor) {
                 command.her.temper = crate::captain::Temper::Bold;
-                command.her.cruise = crate::captain::course::heading_to([captain.x, captain.y], [ship.x, ship.y]);
+                let toward = crate::captain::course::heading_to([captain.x, captain.y], [ship.x, ship.y]);
+                command.her.cruise = toward.rem_euclid(TAU);
             }
         }
-        fight
+        Ok(fight)
     }
 
     /// A captain of `commission` under number `id` in her Sloop at `ship`, cruising on its heading, her temper drawn

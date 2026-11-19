@@ -53,6 +53,7 @@ const vessel: FightVessel = {
 };
 const captainAt = (x: number, state: FightVessel['state']): FightCaptain => ({
   ...vessel,
+  pose: [state === 'sinking' ? -3 : 0, 0, 0.4, 0],
   ship: [x, 5600, 2, 0, 0, 0, 0, 2],
   state,
   name: 'Pirate Sloop',
@@ -73,20 +74,21 @@ const viewOf = (states: readonly FightVessel['state'][], events: FightEvent[] = 
     balls: [],
     lay: null,
     events,
-    over: null,
+    over: states.every((state) => state === 'sunk') ? 'sunk' : null,
     fingerprint: '',
   };
 };
 
 test('the story fight begins on the land door with its captains, draws them, hears its steps and is over once all sink', async () => {
   let begun: readonly CaptainAt[] = [];
+  let heading = Number.NaN;
   const steps = [
     viewOf(['afloat', 'sinking', 'afloat'], [{ kind: 'state', ship: 2, state: 'sinking' }]),
     viewOf(['sunk', 'sunk', 'sunk'], [{ kind: 'state', ship: 1, state: 'sunk' }]),
   ];
   const land = {
-    fightBegin: (_ship: Float64Array, _seed: number, _time: number, captains: readonly CaptainAt[]) => {
-      begun = captains;
+    fightBegin: (ship: Float64Array, _seed: number, _time: number, captains: readonly CaptainAt[]) => {
+      [begun, heading] = [captains, ship[2] ?? Number.NaN];
       return Promise.resolve(viewOf(['afloat', 'afloat', 'afloat']));
     },
     fightStep: () => Promise.resolve(steps.shift() ?? viewOf(['sunk', 'sunk', 'sunk'])),
@@ -95,8 +97,15 @@ test('the story fight begins on the land door with its captains, draws them, hea
   const marks = { drawInto: () => undefined } as unknown as MarkDrawer;
   const pirate = { distanceM: 300, faction: 2, rank: 1 } as const;
   const ambushers = [0, 2, 4].map((bearing) => ({ ...pirate, bearing }));
-  const fight = await StoryFight.begin(land, { x: 5000, y: 6000, heading: 0 }, ambushers, { sails: [], marks }, 0);
+  const fight = await StoryFight.begin(
+    land,
+    { x: 5000, y: 6000, heading: -Math.PI / 2 },
+    ambushers,
+    { sails: [], marks },
+    0,
+  );
   assert.equal(begun.length, 3);
+  assert.ok(Math.abs(heading - (3 * Math.PI) / 2) < 1e-9, 'a heading past either end is wrapped for the rules');
   const input = { seconds: 0.1, time: 0, far: 1000, swell: undefined };
   const first = fight.frame(input);
   assert.deepEqual(
@@ -118,6 +127,12 @@ test('the story fight begins on the land door with its captains, draws them, hea
     await new Promise((settle) => setTimeout(settle, 0));
     frame = fight.frame({ ...input, time: step * 0.1 });
     heard.push(...frame.happened);
+    // A captain going down settles and lists as the rules have her, not on the story's swell.
+    if (frame.happened.includes('sinking')) {
+      const going = frame.ships[2]?.place;
+      assert.ok(going && going.z === -3 && going.roll === 0.4, JSON.stringify(going));
+      assert.equal(frame.afloat, 2);
+    }
   }
   assert.deepEqual(heard, ['sinking', 'sunk']);
   assert.equal(frame.afloat, 0);

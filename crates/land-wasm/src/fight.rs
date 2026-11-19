@@ -204,6 +204,8 @@ fn captains_of(request: &Value, seed: u32) -> Result<Option<Vec<Enlisted>>, Stri
         let x = number(&captain["x"], "a captain's x")?;
         let y = number(&captain["y"], "a captain's y")?;
         let heading = number(&captain["heading"], "a captain's heading")?.rem_euclid(TAU);
+        // A heading a hair under none wraps to a whole turn: the ship's own heading stays in [0, 2π).
+        let heading = if heading < TAU { heading } else { 0.0 };
         let whole = |name: &str| captain[name].as_u64().and_then(|value| u8::try_from(value).ok());
         let rank = whole("rank").and_then(Rank::numbered).ok_or("a captain's rank is 1 to 5")?;
         let commission = whole("faction")
@@ -238,7 +240,7 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         let swell = Swell::default();
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
         let fight = match &captains {
-            Some(captains) => Fight::ambush(ship, captains, seed, &waters, time),
+            Some(captains) => Fight::ambush(ship, captains, seed, &waters, time)?,
             None => Fight::begin(ship, seed, &waters, time)?,
         };
         let answer = view(&fight, &[], None, &waters, time);
