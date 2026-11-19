@@ -113,20 +113,7 @@ impl Field {
                 field.claimed.push(ring_holds(claim, x, y));
             }
         }
-        for row in 0..rows {
-            for column in 0..columns {
-                let across =
-                    |from: usize, to: usize| (field.height[to] - field.height[from]) / (CELL_M * (to - from) as f64);
-                let rise = |low: usize, high: usize, at: usize, step: usize| {
-                    let (back, ahead) = (at.saturating_sub(step).max(low), (at + step).min(high));
-                    if ahead > back { across(back, ahead) * step as f64 } else { 0.0 }
-                };
-                let at = field.index(column, row);
-                let east = rise(row * columns, row * columns + columns - 1, at, 1);
-                let south = rise(column, column + (rows - 1) * columns, at, columns) / columns as f64;
-                field.slope[at] = (east * east + south * south).sqrt();
-            }
-        }
+        field.slope = slopes(&field.height, columns, rows);
         field.to_sea = chamfer(columns, rows, |at| field.water[at] == Water::Sea);
         field.to_fresh = chamfer(columns, rows, |at| matches!(field.water[at], Water::Lake | Water::River));
         field.inside = chamfer(columns, rows, |at| !field.claimed[at]);
@@ -232,6 +219,25 @@ pub fn chamfer(columns: usize, rows: usize, from: impl Fn(usize) -> bool) -> Vec
     steps.into_iter().map(|step| if step >= FAR_M { FAR_M } else { step / straight * CELL_M }).collect()
 }
 
+/// Each cell's slope, its rise a metre, from the heights of a grid of cells `columns` wide, row by row: the
+/// gradient east and south between its neighbours either side, or itself and its one neighbour at an edge.
+fn slopes(height: &[f64], columns: usize, rows: usize) -> Vec<f64> {
+    let across =
+        |from: usize, to: usize, step: usize| (height[to] - height[from]) / (CELL_M * ((to - from) / step) as f64);
+    let rise = |low: usize, high: usize, at: usize, step: usize| {
+        let (back, ahead) = (at.saturating_sub(step).max(low), (at + step).min(high));
+        if ahead > back { across(back, ahead, step) } else { 0.0 }
+    };
+    (0..rows * columns)
+        .map(|at| {
+            let (row, column) = (at / columns, at % columns);
+            let east = rise(row * columns, row * columns + columns - 1, at, 1);
+            let south = rise(column, column + (rows - 1) * columns, at, columns);
+            (east * east + south * south).sqrt()
+        })
+        .collect()
+}
+
 /// The steepest ground a layout treats as walked: a little under the body's 50 degrees, so a path never hugs a slope
 /// a body slides on.
 pub const WALKED_SLOPE: f64 = 1.0;
@@ -246,5 +252,17 @@ mod tests {
         assert!(ring_holds(&ring, 5.0, 5.0));
         assert!(!ring_holds(&ring, 15.0, 5.0));
         assert_eq!(bounds_of(&ring), [0.0, 0.0, 10.0, 10.0]);
+    }
+
+    #[test]
+    fn a_planes_slope_is_its_gradient_both_ways() {
+        let (columns, rows) = (7, 5);
+        // Rising 0.3 a metre east and 0.4 south: a slope of 0.5 everywhere, at the edges too.
+        let height: Vec<f64> = (0..rows * columns)
+            .map(|at| 0.3 * CELL_M * (at % columns) as f64 + 0.4 * CELL_M * (at / columns) as f64)
+            .collect();
+        for slope in slopes(&height, columns, rows) {
+            assert!((slope - 0.5).abs() < 1e-12, "{slope}");
+        }
     }
 }
