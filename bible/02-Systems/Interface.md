@@ -21,6 +21,12 @@ code:
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
+  - client/src/combat/hudLayout.ts#hudLayout
+  - client/src/combat/hudLayout.ts#barLength
+  - client/src/plus/barFrame.ts#barFrameSvg
+  - client/src/combat/weapons.ts#WeaponRows
+  - client/src/combat/weapons.ts#weaponsOf
+  - client/src/combat/weaponPicture.ts#lengthwise
   - client/src/combat/statusIcons.ts#StatusRow
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/plus/barLoss.ts#stepLoss
@@ -110,37 +116,54 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   the status line is a chip; the menu is a window under a header.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
-  way while they show. On foot the status line stands under the place's name, and under a boss's bar while one
-  shows; at sea it stands under the compass, and in a sea fight under a Boss ship's plate. On foot the hints stand
-  over the vitals; at sea they rise above the offer to dock or go ashore. The edge's warning stands under the
-  compass's column.
+  way while they show. On foot the vitals hold the top left, so the place's name and the status line under it stand
+  at the top right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
+  and in a sea fight under a Boss ship's plate. On foot the company stands under the vitals, and the prompt for E
+  and the hints stand over the Arts and weapons; at sea the hints rise above the offer to dock or go ashore. The
+  line of keys wraps short of the Acquired feed. The edge's warning stands under the compass's column.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
-  the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does, and keeps the vitals
-  in their own window at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]). Its bars do what DFO's
-  Enhanced UI Plus does with them ([[Pick - Enhanced Plus UI]]).
-- **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower screen) and 26 px tall over
+  the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does; the vitals at the
+  top left; and the Arts and weapons at the bottom left
+  ([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]], with Claude's choices in
+  [[The Display as Claude Lays It Out]]). Its bars do what DFO's Enhanced UI Plus does with them
+  ([[Pick - Enhanced Plus UI]]). It takes a larger step where the view is 1500 by 900 or more, and stands at twice
+  its first size past 1440p (2400 by 1300), as the rest of the display does (`combat/hudLayout.ts`).
+- **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower view) and 26 px tall over
   a 2 px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals
   larger) stand by the bearing the view looks at, the shortest way round; one off the strip is hidden, never held at
   an end. A brass needle marks its middle. Its column stands what comes under it 10 px under its rule, 56 px down:
-  a boss's bar, then the target's plate. At sea it marks each ship within 900 m on its top edge, a bow pointing up,
+  a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px long beside the compass
+  stands the whole column under the vitals instead. At sea it marks each ship within 900 m on its top edge, a bow pointing up,
   at her bearing on the same quarter turn, so one north-east stands under NE; one off the strip is held at the end
   on the side to turn toward. She is red while she would take the player (a hostile ship, or a hostile captain in
   the fight), bone for another player's or a captain who is not hostile, and grey once her colours are down; one
   going down has no mark. The compass hides with the view while the held map is up at the helm.
-- **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
-  writing its percentage inside: never 0% while anything is left. Where the HUD is wide (1500 by 900 and up) the window
-  is 330 px wide, health and stamina 33 px tall and their words at 22, and the ability bar beside it grows with it. Health at a quarter or less flashes its edge to blood;
-  the stamina flashes white for a swing or a dodge asked with none. Whole and untouched for 4 s (health and stamina
-  short of no whole point, no poise taken), with no buff and no foe on the target plate or the boss bar, the window
-  rests out of sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
+- **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
+  over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),
+  drawn pixel for pixel and never scaled. Health is 12 px tall, stamina 10 and poise 8, 4 px apart (16, 14 and 10, 5
+  apart, at the larger step). Health's bar is 26% of the view's width, 150 to 600 px, kept 16 px clear of the
+  compass; stamina's and poise's are as long as what they hold beside health's most. No words stand on health or
+  stamina; poise says Iron, Staggered or Open beside its bar, and a screen reader reads each bar as a meter. Health at
+  a quarter or less flashes its frame to blood; stamina's lights white for a swing or a dodge asked with none; poise's
+  turns brass while open. Whole and untouched for 4 s (health and stamina short of no whole point, no poise taken),
+  with no buff and no foe on the target plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s;
+  the first point lost or spent brings them back in two.
+- **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
+  ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
+  picture in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or muzzle to the right
+  (`combat/weaponPicture.ts`). A Ranged weapon's shots stand large over its capacity ("18 / 24", "No ammo" at none);
+  a Melee one's name is in its rarity's colour. Under it stands the other loadout's weapon, in an 80 by 22 px box
+  (112 by 32), with its key (1 or 2) and its own shots. A swap trades the two rows over its 0.4 s, a reload fills a
+  line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys (`combat/weapons.ts`).
 - **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
   colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
   give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
   in the element's colour that shrinks from the most time it held since it began or was refreshed. Each tells a screen
   reader what it is and the whole seconds it has left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row
-  over the vitals' health, 24 px each and 6 apart, and keep the window awake while one holds. A foe's debuffs (Expose,
-  then Charge, or the Charge's immunity as a faded Charge) stand beside the bar of each of its plates, 24 px each: over
-  a figure the row is scaled back up as the plate shrinks with distance, so it never reads smaller.
+  under the vitals, 24 px each (36 at the larger step) and 6 apart, and keep the vitals awake while one holds. A
+  foe's debuffs (Expose, then Charge, or the Charge's immunity as a faded Charge) stand beside the bar of each of its
+  plates, 24 px each: over a figure the row is scaled back up as the plate shrinks with distance, so it never reads
+  smaller.
 - **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
   keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
   ship's, pale. A frame that takes a real bite (1.5% of a vital, 0.5% of a foe's health, 1% of a hull) breaks the
@@ -186,7 +209,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
   rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
   the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
-  the page's own windows. An arrow to a threat off the screen that would fall on the vitals stands just above them.
+  the page's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
+  and one that would fall on the Arts and weapons just above them.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky. The
   [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.

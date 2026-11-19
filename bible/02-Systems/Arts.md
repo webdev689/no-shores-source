@@ -115,14 +115,16 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle as a diamond and its glow swells
   once, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
   its emblem again. The Anima's tile breathes. With less motion asked for, none of it plays.
-- **The ability bar** stands at the bottom left, right of the vitals, in a carved window of its own. The Anima is its
-  own icon, the one the Art's screen shows, unlit but for its outline, filling with colour a row of cells at a time
-  from the bottom as it charges; full, it glows in steps. Each Tenet is a sunk square well with its icon, dimmed while
-  it recharges, under a dark wedge that sweeps away clockwise from the top in 6-degree steps; under ten seconds left,
-  the seconds stand in it, rounded up. Ready, its well is edged and lit in the element. Each key stands on a keycap
-  under its icon, the three on one line. Where the HUD is wide (1500 by 900 and up) the Anima stands at 4 times its
-  cells, the Tenets' icons at 4 in 52 px wells, and the keycaps at 22. The bar is worked out from the Art worn, the
-  Anima's charge and each Tenet's recharge, as shares, and each frame writes only what changed.
+- **The ability bar** stands at the bottom left, left of the weapons, after Destiny's abilities ([[Interface]], "The
+  Arts and weapons"). The Anima's own icon, the one the Art's screen shows, stands in a diamond 68 px across: unlit
+  but for its outline, it fills with colour a row of cells at a time from the bottom as it charges, and full, the
+  diamond glows in the Art's colour. Each Tenet's icon stands in a ring 44 px across, dimmed while it recharges, under
+  a dark wedge that sweeps away clockwise from the top in 6-degree steps; under ten seconds left, the seconds stand
+  in it, rounded up, the icon stepping back so they read. Ready, its ring is lit in the element. Each key (R, Q, G)
+  stands on a keycap under its icon. A spell just cast flashes its frame white for 0.5 s; while the player cannot
+  cast (staggered, down or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and up)
+  the diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge
+  and each Tenet's recharge, as shares, and each frame writes only what changed.
 
 ## In the rules
 

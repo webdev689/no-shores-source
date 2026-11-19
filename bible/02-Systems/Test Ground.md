@@ -106,12 +106,12 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   each kind were dressed before.
 - **Statuses.** The panel gives any status ([[Combat]], "Statuses") to the player or to every foe, from the player,
   for its own time or for as many seconds as asked (ten minutes at most), through the room's own door, as a spell or a
-  perk will: the icons show on the foes' plates and over the vitals, and the rules act on them. Only a course's room
+  perk will: the icons show on the foes' plates and under the vitals, and the rules act on them. Only a course's room
   grants them; a node's refuses.
 - **Arts.** The panel wears an Art and sets each slot of its Core, showing the room's word on both, and a button fills
   the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). After each ask the room's
   next word sets every list back to what it holds, so a choice it refused does not stay shown. The ability bar stands
-  by the vitals. An Anima's release pushes the view in and frames the screen in its element, as in the game.
+  at the bottom left, beside the weapons. An Anima's release pushes the view in and frames the screen in its element, as in the game.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
   knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
@@ -215,9 +215,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   the outfit shown, the pointer held or not), a crosshair marks the view's middle, where an aimed shot lands; a bow
   aiming rings it with its draw, gold once at full power. The shots left stand beside it while it shows ([[Interface]]).
 - **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
-  the view; health, stamina and poise in one window at the bottom left, each bar naming itself with its percentage
-  inside, a faint strip holding what a loss took before it drains, the health's edge flashing blood at a quarter or less
-  and the stamina flashing when a swing or a dodge is pressed with none; the soft lock's target marked at its chest; the
+  the view; health, stamina and poise as long thin pointed bars at the top left, a faint strip holding what a loss
+  took before it drains, the health's frame flashing blood at a quarter or less and the stamina's flashing when a swing
+  or a dodge is pressed with none; the Arts and the weapons in hand and in the other loadout at the bottom left; the soft lock's target marked at its chest; the
   target's plate (level, name, health and poise track) under the compass (below the boss bar while one shows); over
   each living foe but a Boss, near the crosshair or fought in the last minute, its plate: its level, its
   type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by rank, a "?" while it is

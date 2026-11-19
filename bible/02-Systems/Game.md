@@ -99,13 +99,13 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
   name the fight's, the Arts' line ("R Anima · Q G Tenets") adding how to aim Dusk Daggers only while Shadow is worn.
   Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), the keys stand at 22 px a line,
-  over the vitals and the buffs above them.
+  over the Arts and weapons.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
-  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
-  foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
-  tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
-  place, the keys (over the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the
-  top of the screen, and the status line stands under the place's name, under the boss's bar ([[Interface]]).
+  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
+  Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of
+  view, the marks of telegraphed blows, the tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
+  place's name and the status line at the top right, the keys (over the Arts and weapons), the menus and the veil;
+  while a boss's bar shows, the status line stands under it ([[Interface]]).
 - **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
   swing arc over its striker (none through the eyes), with the smear its strike leaves behind the striker's card; the
   hit-stop holding the fighters a blow lands on; the camera's kick (moving the view but never turning it while a
