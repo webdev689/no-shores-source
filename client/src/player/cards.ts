@@ -1,10 +1,11 @@
 import { type GlowElement, type GlowField, type GlowLook, glowField, recolourToGlow } from '../elementGlow.ts';
 import { type Colours, composeFrame } from '../forge/compose.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
-import { type ForgeLooks, mirroredGear } from '../forge/looks.ts';
+import { type ForgeLooks, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
+import { onTheMove } from './playerMoves.ts';
 import type { Picture } from './picture.ts';
 
 /** A figure's picture as a scene draws it: its texture, its size in pixels, its feet on it, and for a weapon that
@@ -144,6 +145,16 @@ export class Cards {
   /** The frames an animation has on a body. */
   frames(body: string, anim: string): number {
     return this.looks.bodies[body]?.anims[anim]?.frames ?? 1;
+  }
+
+  /** `action`'s own on the move, where `dress` draws it whole: every layer it stacks in the action drawn walking too,
+   *  so no piece of it drops out; else null. */
+  walking(dress: Dress, action: string): string | null {
+    const layers = this.looks.bodies[dress.body]?.layers ?? {};
+    const walk = onTheMove(action);
+    if (!this.looks.bodies[dress.body]?.anims[walk]) return null;
+    const stacked = layersOf(figureOf(dress, layers, action), action, this.looks);
+    return stacked.length > 0 && stacked.every((layer) => !!layers[layer]?.includes(walk)) ? walk : null;
   }
 
   /** Whether a body draws an animation, and the weapon in hand draws it too. */

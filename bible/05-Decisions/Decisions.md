@@ -114,6 +114,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Arts and Loadouts as Claude Shapes Them]]
 - [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]]
 - [[Attack Visuals Go Beyond the Limits]]
+- [[DFO's Blows on the Move Come Over Before the Merge]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -64,6 +64,12 @@ const AIMED_FRAME: Readonly<Record<string, number>> = { gunshot: 1, pistolshot: 
 
 /** Whether the forge draws a held layer (null: the body alone) in a move. */
 export type Draws = (anim: string, held: string | null) => boolean;
+/** An action's own move on the move (the forge's onthemove.py: a blow's `over1hwalk`, the bow's `bowshotwalk`, the
+ *  cast's `castwalk`), where the figure draws it whole: every layer it stacks in the action drawn walking too; else
+ *  null. */
+export type Walking = (action: string) => string | null;
+/** The name the forge gives an action's own on the move. */
+export const onTheMove = (action: string): string => (action === 'bow' ? 'bowshotwalk' : `${action}walk`);
 
 interface Kit {
   readonly idle: string;
@@ -149,8 +155,9 @@ function woundUp(progress: number, lands: number): number {
   const start = lands * (1 - STRIKE_PACE.windup);
   return Math.max(0, (progress - start) / Math.max(lands - start, 1e-6));
 }
-/** The hold each weapon strikes in alone: one hand, or both on a haft. */
+/** The hold each weapon strikes in alone: one hand, both on a haft, or a staff in both hands. */
 const HOLD_OF: Readonly<Record<string, string>> = {
+  staff: 'staff',
   sword: '1h',
   dagger: '1h',
   mace: '1h',
@@ -162,8 +169,8 @@ const HOLD_OF: Readonly<Record<string, string>> = {
 /** The blow a swing in `direction` strikes with these hands, where the forge draws it with both: its stroke (down the
  *  overhead, up the thrust, any other the side cut) and its hold (a blade or mace in each hand as a pair, else the
  *  weapon's own). Null where none is drawn. */
-/** One of the owner's blows by name: its stroke and its hold. */
-const BLOW_NAME = /^(over|side|thrust)(1h|haft|hilt|pair)$/;
+/** One of the owner's blows by name: its stroke and its hold, standing or on the move. */
+const BLOW_NAME = /^(over|side|thrust)(1h|haft|hilt|pair|staff)(walk)?$/;
 
 /** The way a blow's blade goes as the forge draws it, for the striker's right hand: the overhead down and the thrust
  *  out; the side cut to the right with one hand or a pair (its right blade), to the left with a hilt or a haft, whatever
@@ -219,9 +226,15 @@ export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): num
  * and the weapon's hold where drawn, else one stroke of the weapon's attack (frames 0-2, the next blow 3-5), up a
  * thrust, down a chop, left or right a two-handed swing where the weapon draws them; a shot, its weapon's own move,
  * then its reload where drawn; crouching; running; else the weapon's own walk and rest, a bow's in its own holds.
- * `draws` says whether the forge draws a held thing in a move.
+ * `draws` says whether the forge draws a held thing in a move. While the body moves, a blow, a shot, a reload, a
+ * ranged weapon aimed and the cast play their own on the move where the figure draws it whole (`walking`).
  */
-export function shownMove(doing: Doing, frames: (anim: string) => number, draws: Draws): Shown {
+export function shownMove(
+  doing: Doing,
+  frames: (anim: string) => number,
+  draws: Draws,
+  walking: Walking = () => null,
+): Shown {
   const byProgress = (anim: string, progress: number): Shown => ({
     anim,
     frame: Math.min(frames(anim) - 1, Math.floor(progress * frames(anim))),
@@ -233,7 +246,9 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
   const rolls = draws('roll', null);
   const fight =
     doing.fight?.kind === 'dodge' && (doing.mounted || (doing.mode !== 'air' && !rolls)) ? null : doing.fight;
-  if (fight) return fightMove(doing, fight, frames, draws, byProgress, loop);
+  // Moving, an action plays its own on the move where the figure draws it whole; standing, the action's own.
+  const moved = (anim: string): string => (doing.moving && doing.mode === 'ground' && walking(anim)) || anim;
+  if (fight) return fightMove(doing, fight, frames, draws, byProgress, loop, moved);
   if (doing.act) return byProgress(doing.act.anim, doing.act.progress);
   if (doing.mode === 'mantle' || doing.mode === 'vault') return byProgress(doing.mode, doing.over);
   if (doing.mode === 'hang') return doing.moving ? loop('shimmy', 1 / frames('shimmy')) : byProgress('hang', 0);
@@ -244,14 +259,15 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     if (!doing.moving) return loop('horseidle', WALK_FRAME);
     return doing.speed > 10 ? loop('horsegallop', WALK_FRAME / 4) : loop('horsewalk', WALK_FRAME / 2);
   }
-  if (doing.cast !== null) return byProgress('cast', doing.cast);
+  if (doing.cast !== null) return byProgress(moved('cast'), doing.cast);
   const kit = kitOf(doing.drawn ? doing.right : null, doing.drawn ? doing.left : null, draws);
   const { blow } = doing;
-  if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(kit.reload, blow.progress);
+  if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(moved(kit.reload), blow.progress);
   if (blow && !blow.reload) {
     const struck =
       blow.direction && doing.drawn && blowOf(blow.direction, doing.right, doing.left, draws, doing.grip ?? null);
-    if (struck) return { anim: struck, frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
+    if (struck)
+      return { anim: moved(struck), frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
     const stroke = blow.direction && STROKE_OF[blow.direction];
     // The owner's strokes for a weapon held alone: an off hand's blade, shield or torch is drawn in none of them.
     const anim = stroke && doing.right && !doing.left && draws(stroke, doing.right) ? stroke : kit.attack;
@@ -260,7 +276,9 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     const span = frames(anim) / strokes;
     const first = blow.second && strokes === 2 ? span : 0;
     const through = blow.direction === null ? blow.progress * span : strokeFrame(blow.progress, blow.lands, span);
-    return { anim, frame: first + Math.min(span - 1, Math.floor(through)), frameSeconds: 0 };
+    // A shot (its weapon's own move) on the move keeps the shot's frames.
+    const shown = blow.direction === null ? moved(anim) : anim;
+    return { anim: shown, frame: first + Math.min(span - 1, Math.floor(through)), frameSeconds: 0 };
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
   if (doing.running && doing.moving) {
@@ -288,6 +306,7 @@ function fightMove(
   draws: Draws,
   byProgress: (anim: string, progress: number) => Shown,
   loop: (anim: string, frameSeconds: number) => Shown,
+  moved: (anim: string) => string,
 ): Shown {
   const right = doing.drawn ? doing.right : null;
   const left = doing.drawn ? doing.left : null;
@@ -325,9 +344,9 @@ function fightMove(
     case 'overreach':
       return still(fight.stroke, 2);
     case 'draw': {
-      if (right?.startsWith('bow')) return byProgress('bow', fight.progress * 0.5);
+      if (right?.startsWith('bow')) return byProgress(moved('bow'), fight.progress * 0.5);
       const shot = kitOf(right, left, draws).attack;
-      return still(shot, AIMED_FRAME[shot] ?? 0);
+      return still(moved(shot), AIMED_FRAME[shot] ?? 0);
     }
   }
 }

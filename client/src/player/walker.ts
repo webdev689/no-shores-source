@@ -234,6 +234,7 @@ export class Walker {
       },
       (anim) => forge.frames(dress.body, anim),
       (anim, drawn) => forge.draws(dress.body, anim, drawn),
+      (action) => forge.walking(dress, action),
     );
     const hands = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
     forge.warm(

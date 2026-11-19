@@ -97,7 +97,8 @@ export class FoeFigures {
       const view = feel ? feel.held(kept.id, kept.view) : kept.view;
       const doing = foeDoing(view, kept.before, dress, kept.ticks * tickSeconds);
       const draws = (anim: string, held: string | null) => forge.draws(dress.body, anim, held);
-      const move = shownMove(doing, (anim) => forge.frames(dress.body, anim), draws);
+      const walking = (action: string) => forge.walking(dress, action);
+      const move = shownMove(doing, (anim) => forge.frames(dress.body, anim), draws, walking);
       const moveFrames = forge.frames(dress.body, move.anim);
       const frameShown = move.frame ?? Math.floor(clock / Math.max(move.frameSeconds, 0.01)) % moveFrames;
       const [x, y, z] = this.glides.follow(

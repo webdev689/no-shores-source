@@ -281,16 +281,19 @@ The player's figure shows the move the forge draws for what the body does:
 - **Mounted:** the horse's rest, walk or gallop.
 - **Acting:** the cast. A swing strikes one of the owner's blows where the forge draws it with both hands' things: its
   stroke by the swing (down the overhead, up the thrust, any other the side cut) and its hold by the weapon (a sword,
-  dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair). A blow's
-  nine frames hold the first until a quarter of the way to the blow, run the first four through the last three
-  quarters of that time, show the fifth as it lands, and run the rest over a little over half that time after
-  ([[Third-Person Strikes Run Faster Than DFO's]]). Where no blow
-  is drawn, a swing plays one stroke of the weapon's attack, frames 0 to 2, and the next swing frames 3
-  to 5. The stroke's frames run through the last three quarters of the swing's wind-up so its last lands with the
-  blow, two fifths of the way through a swing by DFO's swing law (a sword's in 0.4 s), and it is held through the
-  follow-through: the figure strikes fast and shows itself open while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when swung down, and swings two-handed when swung left or
-  right, where the forge draws it in those. A pair's blows are its two hands' strokes. A shot plays the weapon's own
-  move whole, a brace's right then left, then its reload where the forge draws one.
+  dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair; a staff in
+  both hands). A blow's nine frames hold the first until a quarter of the way to the blow, run the first four through
+  the last three quarters of that time, show the fifth as it lands, and run the rest over a little over half that time
+  after ([[Third-Person Strikes Run Faster Than DFO's]]). Where no blow is drawn, a swing plays one stroke of the
+  weapon's attack, frames 0 to 2, and the next swing frames 3 to 5. The stroke's frames run through the last three
+  quarters of the swing's wind-up so its last lands with the blow, two fifths of the way through a swing by DFO's swing
+  law (a sword's in 0.4 s), and it is held through the follow-through: the figure strikes fast and shows itself open
+  while it recovers. A foe's and another player's do the same. A weapon held alone thrusts when swung up, chops when
+  swung down, and swings two-handed when swung left or right, where the forge draws it in those. A pair's blows are its
+  two hands' strokes. A shot plays the weapon's own move whole, a brace's right then left, then its reload where the
+  forge draws one. While the body moves on the ground, a blow, a shot, a reload, a ranged weapon aimed and the cast play
+  their own on the move, the legs walking under the action, wherever every layer the figure stacks in the action is
+  drawn walking too; standing, or where any is not, the action's own. A foe's and another player's do the same.
 - **Otherwise:** crouching, running, or the weapon's own walk and rest. A bow, a crossbow, a staff and the guns each
   have their own. A gun or a crossbow drawn runs with its own run, held at port arms. A bow drawn stands, walks and
   sprints in its own holds, both hands on it, where the forge draws them; else it rests in the left fist.
