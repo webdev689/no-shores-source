@@ -58,7 +58,8 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 - **Stamina.** 100. It comes back at 45 a second once it has rested half a second since it was last spent, slower
   behind a guard. A fighter with none cannot swing or dodge; spending never takes it below none.
 - **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a fifth of a second
-  (12 ticks), which stays open for its whole length even if the button is let go at once, so a tap parries. A blow
+  (12 ticks; a foe's three quarters of that, 9, as it reads a swing at the fight's pace, [[Foes]]), which stays open
+  for its whole length even if the button is let go at once, so a tap parries. A blow
   that lands in the window, from within the guard's arc, is parried: it does nothing, its striker staggers for 54
   ticks, the parrier's lock turns on it, and the parrier's next swing at it within that time is a riposte, twice as
   hard, which no guard stops (it does not also count the stagger's quarter more). A press within half a second of a
@@ -184,7 +185,7 @@ The timings are set against shipped games and what a person can do, measured or 
 
 A person reacts to what they see in 200 to 250 ms at best, more with a choice to make. Each blow is judged against
 the defender as their own screen showed it, so a player's lag never shortens these windows. Foes are held to the same
-human limits ([[Foes]]).
+human limits, read at the swings' pace ([[Foes]]).
 
 ## Limits
 

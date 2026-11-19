@@ -92,11 +92,13 @@ phases) is [[Enemies]].
   already stands nearer it, within 1.2 m. The foe's soft lock holds its target, but while it answers a blow, the
   striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
-  steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
-  way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side steer
-  apart inside 1.2 m of each other, pushed at up to 0.7 of a walk, and the part of a foe's move that walks into an ally
-  turns aside round it, all of it within 0.8 m, so a foe going in slips past an ally rather than through it. Nothing
-  is moved but by its own controls.
+  steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off, and, in its
+  turn, after a target walking away from it faster than 0.5 m/s, which at a walk it would never close on: it closes in
+  by as far as the target walks on while its blow comes round, and follows it through its swing at a swing's pace, so
+  the blow lands. Foes without a turn keep their places on the ring. It finds its way by the room's routes, and stops by
+  its distance to the target, never to a route's corner. Foes of one side steer apart inside 1.2 m of each other, pushed
+  at up to 0.7 of a walk, and the part of a foe's move that walks into an ally turns aside round it, all of it within
+  0.8 m, so a foe going in slips past an ally rather than through it. Nothing is moved but by its own controls.
 - **Climbing.** A foe climbs and drops by the [[Movement]] rules, as a player does, where its way crosses one of the
   [[Navmesh]]'s links. At the link's start it turns square to the block's side, then walks on, neither running nor
   steered apart, pressing jump where the link goes over: the rules vault it, mantle it, catch the lip it jumps for, or
@@ -193,20 +195,22 @@ phases) is [[Enemies]].
 
 ## Answers to blows
 
-A foe answers as a person would, no faster and no surer. Alert and seeing a swing begin at it (the striker within its
-reach and a metre, aiming at it, and in front of it: a blow from more than 110 degrees off its facing is not seen
-coming), it waits its reaction time (13 to 22 ticks by its role and rank, a person's 220 to 370 ms), then decides once,
-by its own shares and what it is doing. A parry presses the guard 2 to 14 ticks before the blow lands, by the dice, as a
-person's timing wanders: within 12 the window spans the landing, earlier it has closed and the guard only blocks; never
-later than 2 ticks before. A block raises the guard only if its window will have closed before the blow lands (raised
-later it would parry, which a block is not), or keeps one already held; too late for that, it takes the blow. A dodge
-hops aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing it can only
-dodge. A shot loosed at it is timed by its distance and the speed the room says it flies at (an aimed shot's
-faster than its weapon's plain one): a shield-bearer blocks it, others may dodge it. Only the swing or
-shot of a fighter of another side is weighed, never an ally's. Waiting on an answer, a foe neither swings nor winds up
-a telegraphed blow; while it answers, it faces the striker. The room judges a player's blow against a foe where the
-player's screen showed it but guarding and dodging as it is now ([[Server]]), so these answers count the same at any
-lag.
+A foe answers as a person would, no faster and no surer, at the fight's pace. Alert and seeing a swing begin at it (the
+striker within its reach and a metre, aiming at it, and in front of it: a blow from more than 110 degrees off its facing
+is not seen coming), it waits its reaction time (13 to 22 ticks by its role and rank, a person's 220 to 370 ms) at the
+swings' pace: every swing takes three quarters of its old time ([[Combat]]), and so does reading one, 10 to 17 ticks, so
+a foe answers a swing about as often as it did. Then it decides once, by its own shares and what it is doing. A parry
+presses the guard 2 to 14 ticks before the blow lands, by the dice, as a person's timing wanders: within 9 (a foe's
+parry window, three quarters of a player's) the window spans the landing, earlier it has closed and the guard only
+blocks; never later than 2 ticks before. A block raises the guard only if its window will have closed before the blow
+lands (raised later it would parry, which a block is not), or keeps one already held; too late for that, it takes the
+blow. A dodge hops aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing
+it can only dodge. A shot, which flies as fast as ever, is read in the whole reaction time, and timed by its distance
+and the speed the room says it flies at (an aimed shot's faster than its weapon's plain one): a shield-bearer blocks it,
+others may dodge it. Only the swing or shot of a fighter of another side is weighed, never an ally's. Waiting on an
+answer, a foe neither swings nor winds up a telegraphed blow; while it answers, it faces the striker. The room judges a
+player's blow against a foe where the player's screen showed it but guarding and dodging as it is now ([[Server]]), so
+these answers count the same at any lag.
 
 ## Telegraphed blows
 
