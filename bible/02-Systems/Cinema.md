@@ -22,7 +22,6 @@ code:
   - client/src/cinema/flames.ts#fireParts
   - client/src/cinema/flamesShader.ts#FLAMES_WGSL
   - client/src/cinema/seeded.ts#hashUnit
-  - client/src/cinema/trying.ts#Trying
   - client/src/game/scene.ts#GameScene
 ---
 # Cinema
@@ -118,9 +117,8 @@ which lights what stands round it in the game's stepped halo.
 
 ### Trying it
 
-In a development build, `?weather=storm|rain|snow|mist|clouds|deep`, `?birds=1` and `?flames=1` set the weather,
-two flocks and three fires up round the arrival; `?shot=sea` (and the deep, always) moves the camera out over the
-nearest open sea. A storm strikes lightning every five seconds.
+Under `npm run dev` (or a build made with `NODE_ENV=development npx vite build --mode development`), the story
+starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weather.
 
 ## Limits
 
