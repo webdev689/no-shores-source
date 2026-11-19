@@ -208,6 +208,17 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
 });
 
+test('a locked node’s room takes no player and says why, so the host turns every join away; any other takes them', () => {
+  const { text } = nodeFile();
+  const locked = startRoomDoor(compiled);
+  assert.equal(locked.openNode(JSON.stringify({ ...(JSON.parse(text) as object), locked: true })), true);
+  assert.deepEqual([locked.join(), locked.refusal()], [0, 'The Glade is locked']);
+  const open = startRoomDoor(compiled);
+  assert.equal(open.openNode(text), true);
+  assert.notEqual(open.join(), 0);
+  assert.equal(open.refusal(), null);
+});
+
 test('a node’s room stands the foes a player asks for only once a page playing alone tells it to', () => {
   const foesAfterAsking = (told: boolean) => {
     const room = startRoomDoor(compiled);

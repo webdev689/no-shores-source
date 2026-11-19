@@ -45,8 +45,10 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** A new player's number, or 0 when the room is full. */
+  /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
+  /** Why the room takes no player, a locked node's words; null for a room that takes them. */
+  refusal(): string | null;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
@@ -95,6 +97,7 @@ interface RoomExports {
   room_open_fleet(): number;
   room_take_foe_asks(): void;
   room_join(): number;
+  room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
@@ -153,6 +156,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openFleet: () => exports.room_open_fleet() === 1,
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
+    refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
     input: (player, bytes) =>

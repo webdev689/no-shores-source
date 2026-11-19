@@ -27,10 +27,11 @@ mod roster_door;
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
-/// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
+/// The room an instance keeps: on land, with its node's id and window rect when it is a node's, and why it takes no
+/// player when its node is locked; the sea; or a fleet.
 #[derive(Debug)]
 enum Opened {
-    Land { room: Box<Room>, node: Option<(String, [f64; 4])> },
+    Land { room: Box<Room>, node: Option<(String, [f64; 4])>, refusal: Option<String> },
     Sea(Box<Sea>),
     Fleet(Box<Fleet>),
 }
@@ -49,11 +50,16 @@ pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
-/// A node's file as the bake writes it; the room reads its id, kind, section, window, rect and boxes.
+/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, and whether
+/// it is locked. A page playing alone writes its own, never locked.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
     kind: NodeKind,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    locked: bool,
     #[serde(default)]
     continent: String,
     ring: Vec<[f64; 2]>,
@@ -109,7 +115,7 @@ pub fn open(bytes: &[u8]) -> bool {
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
     fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone().into());
-    keep(Opened::Land { room: Box::new(Room::new(blocks, (spawn[0], spawn[1]))), node: None });
+    keep(Opened::Land { room: Box::new(Room::new(blocks, (spawn[0], spawn[1]))), node: None, refusal: None });
     true
 }
 
@@ -135,8 +141,18 @@ pub fn open_node(text: &[u8]) -> bool {
     {
         room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
     }
-    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
+    let refusal = node.locked.then(|| format!("{} is locked", node.name));
+    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal });
     true
+}
+
+/// Why the open room takes no player: a locked node's says so; None for any other room.
+pub fn refusal() -> Option<String> {
+    with_open(|opened| match opened {
+        Opened::Land { refusal, .. } => refusal.clone(),
+        Opened::Sea(_) | Opened::Fleet(_) => None,
+    })
+    .flatten()
 }
 
 /// Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; answers whether
@@ -271,7 +287,7 @@ pub fn snapshot() -> Vec<u8> {
 #[must_use]
 pub fn joined(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {
-        Opened::Land { room, node } => {
+        Opened::Land { room, node, .. } => {
             let node = node.as_ref().map(|(id, bounds)| (id.as_str(), *bounds));
             protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>(), node)
         }
@@ -349,16 +365,23 @@ pub extern "C" fn room_tick_seconds() -> f64 {
     movement::TICK_SECONDS
 }
 
-/// A new player's number, or 0 with no room open or the room full.
+/// A new player's number, or 0 with no room open, the room full or its node locked (`room_refusal` says which).
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join() -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, .. } => room.join(),
+        Opened::Land { room, refusal: None, .. } => room.join(),
+        Opened::Land { .. } => None,
         Opened::Sea(sea) => Some(sea.join()),
         Opened::Fleet(fleet) => fleet.join(),
     })
     .flatten()
     .unwrap_or(0)
+}
+
+/// Why the open room takes no player (`refusal`), as UTF-8; empty when it takes them.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_refusal() -> u64 {
+    hand_over(refusal().unwrap_or_default().into_bytes())
 }
 
 /// The welcome's bytes for a player.

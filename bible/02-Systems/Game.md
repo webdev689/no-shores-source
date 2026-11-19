@@ -59,6 +59,9 @@ it answers. `game.ts` wires the rest and keeps the flow; each mode is its own mo
 | Over the side | Escape | At sea |
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
 
+A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at or entered: its mark and its gate
+only say it is locked.
+
 The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
 A way that fails stays on the veil, saying why, and Enter tries it again.
 
