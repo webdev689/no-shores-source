@@ -53,6 +53,7 @@ test('nothing kept, or anything malformed, is no look', () => {
     { ...felid, hair: { style: 'braid', colour: 'purple' } },
     { ...felid, hair: 'braid' },
     { ...felid, race: 'anole' },
+    { ...felid, hair: null },
     { body: 'male', race: 'human', tone: 0.5 },
   ];
   for (const value of refused) {
@@ -69,6 +70,7 @@ test('the first look is a human with hair the body can wear', () => {
 
 test('the prologue dress is steel armour with no helm, sword right and kite shield left, drawn', () => {
   const dress = armouredDress(felid);
+  assert.ok(!('helm' in dress.outfit.armour));
   assert.deepEqual(dress.outfit.armour, {
     pauldrons: 'steel',
     cuirass: 'steel',
@@ -76,7 +78,6 @@ test('the prologue dress is steel armour with no helm, sword right and kite shie
     greaves: 'steel',
     boots: 'steel',
   });
-  assert.equal(dress.outfit.armour.helm, undefined);
   assert.equal(dress.outfit.right, 'sword_steel');
   assert.equal(dress.outfit.left, 'shield_kite_steel');
   assert.equal(dress.outfit.drawn, true);
@@ -110,6 +111,7 @@ test('the skin tone is chosen for humans only, and kept through a race change', 
 });
 
 test('a body change keeps the hair colour but takes a style that body has', () => {
+  assert.equal(withBody(felid, 'female'), felid);
   const male = withBody(felid, 'male');
   assert.equal(male.body, 'male');
   assert.ok(male.hair && hairStylesOf('male').includes(male.hair.style));

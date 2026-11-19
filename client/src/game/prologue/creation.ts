@@ -72,19 +72,32 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
     const said = make('p', link.said ?? '', 'creation-said');
     said.setAttribute('role', 'status');
     const presses: HTMLButtonElement[] = [];
-    const ask = (what: AccountAsk) => async () => {
+    // One ask at a time: every press waits while the accounts answer, and the focus comes back to the one pressed.
+    const waiting = async (asking: () => Promise<void>) => {
+      const pressed = document.activeElement;
       for (const press of presses) press.disabled = true;
       said.textContent = '';
-      const answer = await askAccounts(link, what, name.value, password.value);
-      for (const press of presses) press.disabled = false;
-      if (typeof answer === 'string') said.textContent = answer;
-      else done(answer);
+      try {
+        await asking();
+      } finally {
+        for (const press of presses) press.disabled = false;
+        if (pressed instanceof HTMLElement && frame.isConnected) pressed.focus();
+      }
     };
+    const ask = (what: AccountAsk) =>
+      void waiting(async () => {
+        const answer = await askAccounts(link, what, name.value, password.value);
+        if (typeof answer === 'string') said.textContent = answer;
+        else done(answer);
+      });
     presses.push(
-      pressOf('Create an account', () => void ask('create')(), 'primary'),
-      pressOf('Sign in', () => void ask('sign in')()),
-      pressOf('Sign in with Discord', () => void link.discord(location.href).then((to) => location.assign(to))),
-      pressOf('Play as a guest', () => void ask('guest')()),
+      pressOf('Create an account', () => ask('create'), 'primary'),
+      pressOf('Sign in', () => ask('sign in')),
+      pressOf(
+        'Sign in with Discord',
+        () => void waiting(async () => location.assign(await link.discord(location.href))),
+      ),
+      pressOf('Play as a guest', () => ask('guest')),
     );
     const row = make('div', '', 'creation-presses');
     row.append(...presses);
@@ -111,7 +124,7 @@ function choices<T extends string>(
   group.setAttribute('aria-label', label);
   const row = make('div', '', 'creation-presses');
   for (const [value, words] of options) {
-    const press = pressOf(words, () => pick(value));
+    const press = pressOf(words, () => value !== chosen && pick(value));
     press.dataset['choice'] = `${label}:${value}`;
     press.classList.toggle('on', value === chosen);
     press.setAttribute('aria-pressed', String(value === chosen));
@@ -152,7 +165,10 @@ export function lookStep(
       draw();
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement && event.target.type !== 'range') return;
+      const target = event.target;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (target instanceof HTMLInputElement && target.type !== 'range') return;
+      if (target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable)) return;
       if (event.code === 'KeyA') turn(-1);
       else if (event.code === 'KeyD') turn(1);
     };
@@ -189,10 +205,10 @@ export function lookStep(
           (colour) => set(withHair(look, { ...hair, colour })),
         );
         colours.classList.add('creation-swatches');
-        for (const swatch of colours.querySelectorAll<HTMLButtonElement>('button')) {
-          const colour = swatch.dataset['choice']?.split(':')[1] ?? '';
-          swatch.style.setProperty('--swatch', SWATCHES[colour] ?? '#000');
-        }
+        // The presses stand in the colours' order.
+        colours.querySelectorAll<HTMLButtonElement>('button').forEach((swatch, place) => {
+          swatch.style.setProperty('--swatch', SWATCHES[HAIR_COLOURS[place] ?? ''] ?? '#000');
+        });
         parts.push(colours);
       }
       parts.push(turning, done);

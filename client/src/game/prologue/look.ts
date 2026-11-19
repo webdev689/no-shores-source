@@ -3,7 +3,7 @@ import { type Dress, RACES, type Race, plainDress } from '../../player/dressing.
 type Hair = { readonly style: string; readonly colour: string };
 
 /** The look a player chose at the helm: a body, a race, a human's skin tone and hair. It is kept in this browser
- *  until the accounts keep it. An Anole has no hair. */
+ *  and nowhere else. An Anole has no hair. */
 export interface Look {
   readonly body: 'male' | 'female';
   readonly race: Race;
@@ -43,7 +43,7 @@ export function keptLook(kept: Pick<Storage, 'getItem'>): Look | null {
   if (body !== 'male' && body !== 'female') return null;
   if (typeof race !== 'string' || !Object.hasOwn(RACES, race)) return null;
   if (typeof tone !== 'number' || !(tone >= 0 && tone <= 1)) return null;
-  if (hair === null) return { body, race: race as Race, tone, hair };
+  if (hair === null) return race === 'anole' ? { body, race, tone, hair } : null;
   if (!isRecord(hair) || race === 'anole') return null;
   const { style, colour } = hair;
   if (typeof style !== 'string' || !HAIR_STYLES[body].includes(style)) return null;
@@ -57,6 +57,7 @@ export function keepLook(kept: Pick<Storage, 'setItem'>, look: Look): void {
 
 /** The look on another body: the hair keeps its colour and takes that body's first style. */
 export function withBody(look: Look, body: Look['body']): Look {
+  if (body === look.body) return look;
   const style = HAIR_STYLES[body][0] ?? 'crop';
   return { ...look, body, hair: look.hair && { style, colour: look.hair.colour } };
 }
