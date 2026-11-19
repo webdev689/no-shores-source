@@ -407,13 +407,13 @@
       }
     },
     "schooner": {
-      "mesh": "ships/0ebb87ba62c7417ee645adb4c02e2c512188423fc3d93f9fedfa50da73fec3d4.mesh",
-      "source": "sources/a52d7d825601d739a670cdb9a043439d8f0a7c95fc09d7069a79ac8b067f15c4.blend",
+      "mesh": "ships/2f7031179ce4276701f5e3b5a0679f6b140b21a0eae01d1fa61a432848f20201.mesh",
+      "source": "sources/ec53423c86f6850e2a9de7dbe8740a878f0761b6b625a9fa5afd0b618bad1ac3.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 25.1942,
         "beam_m": 4.2756,
-        "draught_m": 2
+        "draught_m": 2.0
       },
       "guns": [
         {
@@ -425,7 +425,7 @@
             2.5298
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -439,7 +439,7 @@
             2.444
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -453,7 +453,7 @@
             2.4284
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -467,7 +467,7 @@
             2.4575
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -481,7 +481,7 @@
             2.5226
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -495,7 +495,7 @@
             2.5298
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -509,7 +509,7 @@
             2.444
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -523,7 +523,7 @@
             2.4284
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -537,7 +537,7 @@
             2.4575
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -551,7 +551,7 @@
             2.5226
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -562,7 +562,7 @@
           [
             -12.7002,
             -3.8436,
-            -2
+            -2.0
           ],
           [
             14.3698,
@@ -574,37 +574,37 @@
           [
             [
               6.0628,
-              0,
-              4.2553
+              0.0,
+              4.8553
             ],
             [
-              21.1498,
-              0,
+              20.7498,
+              0.0,
               15.4553
             ]
           ],
           [
             [
               0.3498,
-              0,
+              0.0,
               4.2053
             ],
             [
               6.1769,
-              0,
-              17.0053
+              0.0,
+              16.2522
             ]
           ],
           [
             [
               -12.6502,
-              0,
+              0.0,
               4.9129
             ],
             [
               -1.5608,
-              0,
-              18.6629
+              0.0,
+              18.5123
             ]
           ]
         ]
@@ -613,18 +613,18 @@
         {
           "kind": "stay",
           "tack": [
-            21.1498,
-            0,
-            4.9
+            20.7498,
+            0.0,
+            5.35
           ],
           "clew": [
             7.6498,
-            0,
-            4.2553
+            0.0,
+            4.8553
           ],
           "head": [
             6.0628,
-            0,
+            0.0,
             15.4553
           ]
         },
@@ -632,46 +632,46 @@
           "kind": "gaff",
           "tack": [
             6.1769,
-            0,
+            0.0,
             4.2053
           ],
           "clew": [
             0.3498,
-            0,
+            0.0,
             4.4553
           ],
           "throat": [
             5.4287,
-            0,
+            0.0,
             14.4053
           ],
           "peak": [
             2.1498,
-            0,
-            17.0053
+            0.0,
+            16.2522
           ]
         },
         {
           "kind": "gaff",
           "tack": [
             -1.5608,
-            0,
+            0.0,
             4.9129
           ],
           "clew": [
             -12.6502,
-            0,
+            0.0,
             5.1629
           ],
           "throat": [
             -2.5451,
-            0,
+            0.0,
             15.6629
           ],
           "peak": [
             -7.8502,
-            0,
-            18.6629
+            0.0,
+            18.5123
           ]
         }
       ],
@@ -749,31 +749,31 @@
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 213, null, 373, null, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, null, 373, null, 213, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 213, null, 372, null, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, 214, null, 372, null, 213, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 371, 371, null, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, null, 371, 371, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 211, null, 371, null, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, null, null, null, null, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, null, 371, null, 211, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 210, null, 370, null, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, null, null, null, null, null, null, null, null, null, null, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, null, 370, null, 210, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 210, null, 369, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, null, null, null, null, null, null, null, null, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, 369, null, 210, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, null, null, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, 208, null, null, null, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, null, null, null, 208, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, 344, 344, 344, 344, null, 367, 367, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, 367, 367, null, 344, 344, 344, 344, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, 344, 344, 344, 344, 344, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 344, 344, 344, 344, 344, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, null, null, null, 208, 208, 208, 208, 208, 208, 208, 208, null, null, null, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, 344, 352, 360, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, null, 207, 207, 207, 207, 207, 207, 207, 207, null, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, 360, 352, 344, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, null, 207, 207, null, null, null, null, 207, 207, null, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, null, null, null, null, null, null, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, 344, 344, null, 211, null, 371, null, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, null, null, null, null, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, null, 371, null, 211, null, 344, 344, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, 344, 344, null, 210, null, 370, null, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, null, null, null, null, null, null, null, null, null, null, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, null, 370, null, 210, null, 344, 344, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, null, null, null, 344, 344, null, 369, 369, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, null, null, null, null, null, null, null, null, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, 369, 369, null, 344, 344, null, null, null, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, null, null, null, null, 344, null, null, null, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, null, null, null, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, 211, null, null, null, null, 344, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, 210, null, null, null, null, null, null, null, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, 209, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, null, null, null, 208, 208, 208, 208, 208, 208, 208, 208, null, null, null, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, 208, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, 365, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, null, 207, 207, 207, 207, 207, 207, 207, 207, null, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, 365, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 365, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, null, 207, 207, null, null, null, null, 207, 207, null, null, null, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, 207, null, null, 365, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 364, null, null, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, null, null, null, 206, null, null, null, null, null, null, 206, null, null, null, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, null, null, 364, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, null, null, null, 206, null, null, null, null, null, null, 206, null, null, null, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, 364, null, null, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, null, null, null, 206, null, null, null, null, null, null, 206, null, null, null, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, 206, null, null, 364, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, null, null, null, 205, null, null, null, null, null, null, 205, null, null, null, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, null, null, null, 204, null, null, null, null, null, null, 204, null, null, null, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, null, null, null, 204, null, null, null, null, null, null, 204, null, null, null, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, 203, 203, null, null, null, null, 203, 203, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, null, null, 344, 344, null, null, null, 203, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, 203, 203, 203, null, null, 203, 203, 203, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, 203, null, null, null, 344, 344, null, null, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, 289, 284, null, 344, null, null, null, 202, null, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, null, 202, 202, 202, null, null, 202, 202, 202, null, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, null, 202, null, null, null, 344, null, 284, 289, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, 289, 284, null, 344, null, null, null, null, null, null, null, null, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, null, null, null, null, null, null, null, null, 344, null, 284, 289, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, 289, 284, null, 344, null, null, null, null, null, null, null, null, null, null, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, null, null, null, null, null, null, null, null, null, 344, null, 284, 289, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, 289, null, 344, 344, null, null, null, null, null, null, null, null, null, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, null, null, null, null, null, null, null, null, null, 344, 344, null, 289, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, 289, null, null, null, null, null, null, null, null, null, null, null, null, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 208, 208, 208, 208, 208, null, null, null, null, 208, 208, 208, 208, 208, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, null, null, null, null, null, null, null, null, null, null, null, null, 289, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, 289, null, null, null, null, null, null, null, null, null, null, null, null, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, null, null, null, null, null, null, null, null, null, null, null, null, 289, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, 302, 298, 293, 289, null, 344, 352, 357, 352, 344, null, null, null, null, null, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, null, null, null, null, null, null, 344, 352, 357, 352, 344, null, 289, 293, 298, 302, null, null, null, null],
-          [null, null, null, null, null, 298, 293, 289, null, null, 357, 357, null, null, null, null, null, null, null, null, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, null, null, null, null, null, null, null, null, 357, 357, null, null, 289, 293, 298, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, null, null, null, 204, null, null, null, null, null, null, 204, null, null, null, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, 204, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, 203, 203, null, null, null, null, 203, 203, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, null, null, null, null, 344, 344, null, null, null, null, null, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, null, null, null, null, null, null, null, 203, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, 203, 203, 203, null, null, 203, 203, 203, null, null, null, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, 203, null, null, null, 203, null, null, null, null, null, null, null, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, 289, null, null, null, null, null, null, 202, null, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, null, 202, 202, 202, null, null, 202, 202, 202, null, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, null, 202, null, null, null, null, null, null, 289, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, 289, 284, null, 344, 352, 360, 360, null, null, null, null, null, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, 202, null, null, null, null, null, null, null, 360, 360, 352, 344, null, 284, 289, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, 289, 284, null, null, 359, 359, 359, null, null, null, null, null, null, null, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, null, null, null, null, null, null, 359, 359, 359, null, null, 284, 289, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, 289, 284, 280, 275, null, 359, null, null, null, null, null, null, null, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, 201, null, null, null, null, null, null, null, 359, null, 275, 280, 284, 289, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, 289, 284, 280, null, 358, 358, null, null, null, null, null, null, null, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 208, 208, 208, 208, 208, null, null, null, null, 208, 208, 208, 208, 208, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, null, null, null, null, null, null, null, 358, 358, null, 280, 284, 289, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, 289, 284, 280, null, 358, 358, null, null, null, null, null, null, null, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, null, null, null, null, null, null, null, 358, 358, null, 280, 284, 289, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, 302, 298, 293, 289, 284, 280, null, 357, null, null, null, null, null, null, null, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, null, null, null, null, null, null, null, null, 357, null, 280, 284, 289, 293, 298, 302, null, null, null, null],
+          [null, null, null, null, null, 298, 293, 289, null, 280, null, null, 199, 199, null, null, null, null, null, null, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, null, null, null, null, null, null, 199, 199, null, null, 280, null, 289, 293, 298, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, 197, null, 357, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, 199, null, 357, null, 197, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, 197, null, 356, null, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, null, 356, null, 197, null, null, null, null, null, null, null, null],
           [null, null, null, null, null, null, null, null, null, 356, 356, null, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, 198, null, 356, 356, null, null, null, null, null, null, null, null, null],
@@ -827,30 +827,30 @@
           [null, 290, 285, 281, 277, 272, null, 348, 348, 348, null, null, null, null, null, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, null, null, null, null, null, null, 348, 348, 348, null, 272, 277, 281, 285, 290, null],
           [null, 290, 285, 281, 277, 272, null, 348, 348, 348, null, null, null, null, null, null, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, null, null, null, null, null, null, 348, 348, 348, null, 272, 277, 281, 285, 290, null],
           [null, 290, 285, 281, 277, 272, 268, null, 348, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, 348, null, 268, 272, 277, 281, 285, 290, null],
-          [null, null, null, null, null, null, null, 348, 348, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, 348, 348, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, 349, 349, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 349, 349, null, null, null, null, null, null, null],
-          [null, null, null, null, null, null, null, 345, 349, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 349, 345, null, null, null, null, null, null, null],
-          [null, null, null, 329, 329, 329, 329, 337, 345, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 345, 337, 329, 329, 329, 329, null, null, null],
-          [null, null, null, 329, 329, 329, 329, 337, 345, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 345, 337, 329, 329, 329, 329, null, null, null],
-          [null, null, null, 329, null, null, 329, 337, 345, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 345, 337, 329, null, null, 329, null, null, null],
-          [null, null, null, 329, null, null, null, null, null, 349, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, null, null, null, null, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, 349, null, null, null, null, null, 329, null, null, null],
-          [null, null, null, 329, 329, null, null, null, null, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, null, null, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, null, null, null, null, 329, 329, null, null, null],
-          [null, null, null, 329, 329, null, null, null, null, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, null, null, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, null, null, null, null, 329, 329, null, null, null],
-          [null, null, null, 329, 329, null, null, null, null, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, null, null, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, null, null, null, null, 329, 329, null, null, null],
-          [null, null, null, 329, 329, null, null, null, null, 349, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, 191, 191, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, 349, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, null, null, null, null, 345, 348, null, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, 190, null, 348, 345, null, null, null, null, null, null, null],
+          [null, null, null, 329, 329, 329, 329, 337, 345, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 345, 337, 329, 329, 329, 329, null, null, null],
+          [null, null, null, 329, null, null, 329, 337, 345, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 345, 337, 329, null, null, 329, null, null, null],
+          [null, null, null, 329, null, null, null, null, 349, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, 349, null, null, null, null, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, 191, null, null, null, null, 191, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, 349, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, null, null, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, 349, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, 349, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, null, null, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, 349, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, 329, null, null, null, null, null, 349, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, null, null, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, 349, null, null, null, null, null, 329, null, null, null],
+          [null, null, null, 329, null, null, null, null, null, 349, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, null, 191, null, null, 191, 191, null, null, 191, null, null, null, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, 191, null, null, 349, null, null, null, null, null, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, null, null, null, null, null, null, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, null, null, null, null, null, null, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, null, null, null, null, 329, 329, null, null, null],
           [null, null, null, 329, 329, null, null, null, null, 350, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, null, null, null, null, null, null, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, 350, null, null, null, null, 329, 329, null, null, null],
-          [null, null, null, 329, null, null, null, null, null, 350, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, null, null, null, null, null, null, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, 350, null, null, null, null, null, 329, null, null, null],
-          [null, null, null, 329, null, null, null, null, null, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, null, null, null, null, null, null, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, null, null, null, null, null, 329, null, null, null],
-          [null, null, null, 329, 329, null, null, null, null, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, 192, null, null, null, null, 192, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, null, null, null, null, 329, 329, null, null, null],
+          [null, null, null, 329, 329, null, null, null, null, 350, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, 192, null, null, null, null, 192, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, 350, null, null, null, null, 329, 329, null, null, null],
           [null, null, null, 329, 329, null, null, null, null, 350, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, 350, null, null, null, null, 329, 329, null, null, null],
-          [null, null, null, 329, 329, null, null, null, null, 350, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, 350, null, null, null, null, 329, 329, null, null, null],
-          [null, 293, 288, null, 329, null, null, null, null, 350, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, 350, null, null, null, null, 329, null, 288, 293, null],
-          [null, 293, 288, null, 329, null, null, null, null, 351, null, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, null, 351, null, null, null, null, 329, null, 288, 293, null],
-          [null, 293, 288, null, null, null, null, null, null, 351, null, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, 351, null, null, null, null, null, null, 288, 293, null],
-          [null, 293, 288, null, null, null, null, null, null, null, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, null, null, null, null, null, null, null, 288, 293, null],
-          [null, 293, 288, null, 329, 329, 329, 337, 345, 351, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, 351, 345, 337, 329, 329, 329, null, 288, 293, null],
-          [null, 293, 288, null, null, null, 329, 337, 345, 351, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, 351, 345, 337, 329, null, null, null, 288, 293, null],
-          [null, 293, 288, 284, 280, 275, null, 345, 351, 351, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, null, 351, 351, 345, null, 275, 280, 284, 288, 293, null],
+          [null, null, null, 329, null, null, null, null, null, 350, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, 350, null, null, null, null, null, 329, null, null, null],
+          [null, 293, 288, null, null, null, null, null, null, null, null, null, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, 192, null, null, null, null, null, null, null, null, null, 288, 293, null],
+          [null, 293, 288, null, 329, 329, 329, 337, null, null, null, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, null, null, null, 337, 329, 329, 329, null, 288, 293, null],
+          [null, 293, 288, null, null, null, null, 345, 351, 351, null, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, 351, 351, 345, null, null, null, null, 288, 293, null],
+          [null, 293, 288, 284, 280, 275, 271, null, 351, 351, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, 351, 351, null, 271, 275, 280, 284, 288, 293, null],
+          [null, 293, 288, 284, 280, 275, 271, null, 351, 351, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, 351, 351, null, 271, 275, 280, 284, 288, 293, null],
+          [null, 293, 288, 284, 280, 275, 271, null, 351, 351, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, 351, 351, null, 271, 275, 280, 284, 288, 293, null],
+          [null, 293, 288, 284, 280, 275, null, 351, 351, 351, null, null, null, null, null, null, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, null, null, null, null, null, null, null, 351, 351, 351, null, 275, 280, 284, 288, 293, null],
           [null, 293, 288, 284, 280, 275, null, 352, 352, 352, null, null, null, null, null, null, null, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, null, null, null, null, null, null, null, 352, 352, 352, null, 275, 280, 284, 288, 293, null],
           [null, 293, 288, 284, 280, 275, 271, null, 352, null, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, null, 352, null, 271, 275, 280, 284, 288, 293, null],
           [null, null, null, null, null, null, null, 352, 352, null, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, 194, null, 352, 352, null, null, null, null, null, null, null],
@@ -958,8 +958,8 @@
       }
     },
     "brig": {
-      "mesh": "ships/906f4b7be11095005c33669bd456a9ee17f9c1464c8ed02f7fc3a2b827f75bd4.mesh",
-      "source": "sources/0ddb27384be942d1c246dad58203a5d2bd8ad8c91cdb573d9714224a62258241.blend",
+      "mesh": "ships/a74ed0e31e9b48be92ecce189bb844e0cc9478f4fb7fde334ceaea714500cfc0.mesh",
+      "source": "sources/5f2334d93cf692b1993c452960bff2c7932a2af9940b241c2eee715f6d12269a.blend",
       "waterline": {
         "level_m": 1.2,
         "length_m": 30.7446,
@@ -976,7 +976,7 @@
             2.9644
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -990,7 +990,7 @@
             2.8323
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -1004,7 +1004,7 @@
             2.7531
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -1018,7 +1018,7 @@
             2.7267
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -1032,7 +1032,7 @@
             2.7399
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -1046,7 +1046,7 @@
             2.7795
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -1060,7 +1060,7 @@
             2.8455
           ],
           "bore": [
-            0,
+            0.0,
             -0.9234,
             0.3838
           ]
@@ -1074,7 +1074,7 @@
             2.9644
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -1088,7 +1088,7 @@
             2.8323
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -1102,7 +1102,7 @@
             2.7531
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -1116,7 +1116,7 @@
             2.7267
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -1130,7 +1130,7 @@
             2.7399
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -1144,7 +1144,7 @@
             2.7795
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -1158,7 +1158,7 @@
             2.8455
           ],
           "bore": [
-            0,
+            0.0,
             0.9234,
             0.3838
           ]
@@ -1187,7 +1187,7 @@
             [
               29.6847,
               0.15,
-              16.2196
+              15.9452
             ]
           ],
           [
@@ -1277,13 +1277,13 @@
           [
             [
               -15.8153,
-              0,
+              0.0,
               5.8746
             ],
             [
               -2.723,
-              0,
-              15.2746
+              0.0,
+              15.167
             ]
           ]
         ]
@@ -1294,7 +1294,7 @@
           "tack": [
             29.6847,
             0.15,
-            7.4844
+            7.47
           ],
           "clew": [
             19.9847,
@@ -1304,7 +1304,7 @@
           "head": [
             16.4847,
             0.15,
-            16.2196
+            15.9452
           ]
         },
         {
@@ -1467,23 +1467,23 @@
           "kind": "gaff",
           "tack": [
             -2.723,
-            0,
+            0.0,
             5.8746
           ],
           "clew": [
             -15.8153,
-            0,
+            0.0,
             6.1246
           ],
           "throat": [
             -3.2475,
-            0,
+            0.0,
             12.8746
           ],
           "peak": [
             -9.2153,
-            0,
-            15.2746
+            0.0,
+            15.167
           ]
         }
       ],
