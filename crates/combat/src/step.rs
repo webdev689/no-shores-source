@@ -9,8 +9,8 @@ use crate::shots::{DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, to
 use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::tuning::{
     AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
-    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, PARRY_WINDOW, POISE_REST, PRESS_KEPT,
-    STAMINA, STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH,
+    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, POISE_REST, PRESS_KEPT, STAMINA,
+    STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, pushed_out, slide};
@@ -301,9 +301,9 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     swing(next, intent)
 }
 
-/// The guard raised: a press opens a parry window, unless it comes hard on the heels of one left unused.
+/// The guard raised: a press opens its side's parry window, unless it comes hard on the heels of one left unused.
 fn raise_guard(next: &mut Fighter) -> Happening {
-    let window = if next.kept.guard > 0 && next.missed_parry == 0 { PARRY_WINDOW } else { 0 };
+    let window = if next.kept.guard > 0 && next.missed_parry == 0 { parry_window(next.side) } else { 0 };
     next.kept.guard = 0;
     next.action = Action::Guard { elapsed: 0, window };
     Happening::Guarded { window: window > 0 }

@@ -1,16 +1,17 @@
 //! Answers to blows: a swordsman that sees a swing begin parries some in time, pressing its guard so the parry window
 //! spans the landing, and ripostes at once after a parry; one waiting its turn holds its shield up; a skirmisher hops
 //! aside, even out of its own swing; none answers faster than its reaction time, a swing's at the fight's pace; and so
-//! even a Minor answers a swing.
+//! even a Minor answers a swing, and the quickest still raise a guard that blocks a heavy blow.
 
 mod common;
 
 use combat::arms::{WeaponClass, swing_ticks};
 use combat::fighter::{Action, Swing};
+use combat::tuning::parry_window;
 use combat::{Happening, Stroke, Verdict};
-use common::{BRUTE, Room, SKIRMISHER, SWORDSMAN, standing_still};
+use common::{BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, standing_still};
 use core::f64::consts::PI;
-use foes::Rank::{self, Major, Minor};
+use foes::Rank::{self, Elite, Major, Minor};
 
 const PLAYER: u32 = 1;
 const COLLECTOR: u8 = 2;
@@ -32,8 +33,14 @@ fn answered(number: u8, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
 }
 
 fn answered_as(number: u8, rank: Rank, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
+    answered_with(number, rank, "sword_steel", seed)
+}
+
+/// The same, the player's swing made with the weapon of a forge layer.
+fn answered_with(number: u8, rank: Rank, layer: &str, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
     let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, rank, 0.0, -1.5, PI);
     let mut room = room.alert(10, PLAYER);
+    room.set(PLAYER, |fighter| fighter.arms = combat::arms_of(layer, "", true));
     room.run(120, &mut one_swing);
     let verdict =
         room.verdicts.iter().find(|(_, by, on, _)| *by == PLAYER && *on == 10).map(|(_, _, _, verdict)| *verdict);
@@ -61,7 +68,8 @@ fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripost
         if let Some(Verdict::Parried) = verdict {
             parried += 1;
             let pressed = pressed.expect("a parry was pressed");
-            assert!(lands - pressed <= 12, "its window spans the landing: pressed {pressed}, lands {lands}");
+            let window = u64::from(parry_window(combat::Side::Faction(1)));
+            assert!(lands - pressed < window, "its window spans the landing: pressed {pressed}, lands {lands}");
             riposted += usize::from(riposte);
         }
         // Too late to raise a guard that would only block, it takes the blow rather than parry by accident.
@@ -134,6 +142,18 @@ fn a_minor_reads_a_swing_at_the_fights_pace_and_hops_aside_from_some() {
     assert!(reaction > u64::from(swing_ticks(WeaponClass::Sword).0));
     let dodged = (1..=60).filter(|seed| answered_as(SKIRMISHER, Minor, *seed).1.is_some()).count();
     assert!(dodged >= 4, "about one swing in five: {dodged} of 60");
+}
+
+#[test]
+fn the_quickest_still_block_a_heavy_blow_at_the_fights_pace() {
+    // A captain as an Elite reads a swing in 10 ticks; a warhammer's lands 20 after it begins: time to raise a guard
+    // whose window, a foe's three quarters of a player's, closes before the blow, so it blocks rather than parries.
+    let blocked = (1..=60)
+        .filter(|seed| {
+            matches!(answered_with(CAPTAIN, Elite, "warhammer_iron", *seed).0, Some(Verdict::Blocked { .. }))
+        })
+        .count();
+    assert!(blocked >= 10, "a block share of 0.3, and parries pressed early: {blocked} of 60");
 }
 
 #[test]

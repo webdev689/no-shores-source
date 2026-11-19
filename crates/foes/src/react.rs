@@ -13,7 +13,7 @@ use combat::arms::{OffHand, stroke_shape, weapon};
 use combat::fighter::{Action, Attack};
 use combat::shots::{foe_speed, shot_numbers};
 use combat::sight::{apart, bearing, off};
-use combat::tuning::{BODY_RADIUS, DODGE_STAMINA, PARRY_WINDOW};
+use combat::tuning::{BODY_RADIUS, DODGE_STAMINA, parry_window};
 use combat::{CombatInput, FighterId, Stroke};
 use core::f64::consts::FRAC_PI_2;
 
@@ -148,7 +148,7 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let press = match answer {
         // A block is a guard raised so its parry window has closed before the blow lands, or one already held; raised
         // any later it would parry, which this answer is not.
-        Answer::Guard if held || lands > tick + u64::from(PARRY_WINDOW) => tick,
+        Answer::Guard if held || lands > tick + u64::from(parry_window(fighter.side)) => tick,
         Answer::Parry | Answer::Dodge if press + PRESS_LATEST <= lands => press,
         _ => return None,
     };
