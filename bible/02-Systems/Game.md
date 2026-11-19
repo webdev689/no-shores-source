@@ -95,7 +95,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
   foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
-  tracers, the sparks, the blood and the flashes. The game's own display stands over it: the place, the keys (over
+  tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the place, the keys (over
   the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the top of the screen, and
   the status line stands under the place's name, under the boss's bar ([[Interface]]).
 - **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole
@@ -107,8 +107,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   through its hurt frames forth and back every 0.4 s (a flinch plays them once), and circles three gold stars round its
   head in eighth-turns, once a second; a Charge's stagger holds it still. A foe slain dissolves once its fall is
   over: plain, it greys and crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in
-  an element dissolves at once in it (Blaze burning up from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn
-  in to the chest in four steps). The statuses show on the figures as in [[Arts]], and the weapon's glow surges
+  an element (the one its killing blow carried, as the room tells it) dissolves at once in it (Blaze burning up from
+  the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it. A
+  crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in [[Arts]], and the weapon's glow surges
   ([[Weapon Glow]]).
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.

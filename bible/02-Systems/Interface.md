@@ -164,11 +164,16 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   for no foe farther than 60 m across the ground, nor one whose head the place's blocks have hidden for 0.15 s; seen
   again it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does
   farther off, never growing, its name never under 9 px.
-- **A blow's words** over the world rise and fade over 0.95 s from where each thing happened, fanning up to 36 px
-  either side so a flurry does not stack; a great turn's pops larger and rises farther. What a blow did besides
-  (Staggered, Slain) rides on its number as a small word under it, and the player's blow on a foe winding up that
-  does not break it says "Holds".
-- **Reduced motion.** With it asked for, no piece falls, no word rises (each stands and fades), no edge blinks (it
+- **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
+  thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
+  no stroke one side and the other in turn), and kept on the screen. Each pops
+  1.4 times for 2 frames and 1.15 for 2, rises 4 px every 4 frames and blinks out over its last 6, standing 0.95 s; a
+  crit's and a kill's stand 1.2 s at 33 px in gold, stamped Crit or Slain beside the number. A number pushes itself
+  down to stand 24 px clear of any foe's plate and clear of the words already shown. Blows by one striker on one
+  foe within 0.6 s add into one number, which pops again. A number dealt in an element is in its light. What a blow
+  did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
+  not break it says "Holds".
+- **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge blinks (it
   holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
