@@ -32,8 +32,9 @@ const ANSWERS: readonly InputAnswer[] = [
 export interface RoomDoor {
   /** How long one tick is, in seconds: the room is ticked that often. */
   readonly tickSeconds: number;
-  /** Opens the room on a course, its players standing at the spawn when they join; false if the course is not one. */
-  open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
+  /** Opens the room on a course, its players standing at the spawn when they join; false if the course is not one.
+   *  A course laid `overSea` has no ground to walk under it: its foes walk its blocks alone. */
+  open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[], overSea?: boolean): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
   /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; false if the
@@ -103,6 +104,7 @@ interface RoomExports {
   release(address: number, length: number): void;
   room_tick_seconds(): number;
   room_open(address: number, length: number): number;
+  room_open_over_sea(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
@@ -157,14 +159,15 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
   };
   return {
     tickSeconds: exports.room_tick_seconds(),
-    open: (spawn, blocks) => {
+    open: (spawn, blocks, overSea = false) => {
       const numbers = [
         spawn.x,
         spawn.y,
         ...blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
       ];
       const bytes = new Uint8Array(new Float64Array(numbers).buffer);
-      return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;
+      const entry = overSea ? exports.room_open_over_sea : exports.room_open;
+      return lend(bytes, (address) => entry(address, bytes.length)) === 1;
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
     openSea: (layoutText, seed) =>

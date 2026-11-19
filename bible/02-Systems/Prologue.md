@@ -79,7 +79,7 @@ makes it.
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round her; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side at 6 m/s (about 12 knots), lightning striking past her at 2.3 s and 4.8 s so her masts and sails stand against it: Captain Brannoc Thule's Frigate at her own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of her stem first touches the Brig's side where her hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
 | `wreck` | Fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
-| `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and dancing on the drawn wreck | shown |
+| `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck | shown |
 | `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the eyes; a flash; a voice; black | shown |
 | `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
 
@@ -172,32 +172,34 @@ are the story's; the wreck is the level they run.
   the sea, her forecastle about 4 m and her quarterdeck, aft of a breast rail, about 3.6 to 3.9 m. Both lie square to
   the world's axes, so every block is too.
 - **Their decks** are blocks made from each ship's own deck grid in the ships manifest (`deckBlocks`): her cells
-  taken in squares half a metre across, each the highest of her cells there, so her rails and bulwarks stand as
-  walls; a gap inside a row (a hatch, a mast, a gun) filled level, so no one falls into her hold; runs of one height
-  joined into one block. These blocks are hidden under the ships as drawn. The layout cuts away what the ram broke:
-  the Brig's deck under the Frigate's bow and a stretch across her beam forward of her waist, and the Frigate's
-  starboard rail on her forecastle where the ramp lands.
-- **The layout** is `content/prologue/wreck.json`: where each ship lies and what is cut from her, the blocks that
-  show (a fallen mast as a bridge over the broken deck, a ramp of planks up from the Brig onto the Frigate's bow in
-  even rises, the last laid level with her deck over her broken rail, crates, broken spars, heaps of rail and tackle,
-  planks up over her quarterdeck's breast rail beside her skylight), where the player wakes, the path, the zones, the
+  taken in squares 0.3 m across, each the highest of her cells there, so her rails and bulwarks stand as walls; a
+  square inside a row her grid has no height in (a mast, a gun, a spar, an opening into her hold) a wall a jump does
+  not top, as her deck walks at sea; her channels outboard of her rails (her rail the highest of the five squares
+  in from each end of a row, a step over its lowest) left out, so a body over her rail falls to the sea; runs of one
+  height joined into one block. Where the Frigate's bow stands in the Brig, the Brig's deck gives way to hers. These blocks are hidden under
+  the ships as drawn, and both ships are drawn whole, so what is drawn is what holds a body.
+- **The layout** is `content/prologue/wreck.json`: where each ship lies, the blocks that show (a spar fallen from
+  aloft across the Brig's deck, a stair of planks up from her fore deck over her bulwark and out over the water to the
+  Frigate's starboard rail, the last laid over the rail, crates, broken spars, heaps of rail and tackle, planks up
+  over the Frigate's quarterdeck's breast rail beside her skylight), where the player wakes, the path, the zones, the
   arena and the fires. Fires are places and sizes, for the fire's drawing.
-- **The path** runs from the Brig's quarterdeck aft, where the player wakes, forward along her deck, across the fallen
-  mast, up the planks onto the Frigate's forecastle, down into her waist, aft along her starboard side and up the
-  planks onto her quarterdeck. A step takes every rise on it but one lip on the Brig, which a jump takes. Where the
-  Frigate's deck is cut for planks, the planks reach the squares the cut takes, so no gap is left a body's centre
-  could drop through.
+- **The path** runs from the Brig's quarterdeck, where the player wakes facing forward clear of her wheel, forward
+  along her port side past the fallen spar, across her fore deck, up the stair and over the Frigate's rail onto the
+  head of her waist, aft along her starboard side and up the planks onto her quarterdeck. A step takes every rise on
+  it but the lips a jump takes, and every lane of it is a body wide: nothing stands within a body's radius of it but
+  the lips it climbs or drops. Every figure the level stands (the player waking, each checkpoint, each foe, Thule)
+  stands a body's radius clear of anything a step over its feet.
 - **Zones.** Six along the path (the Brig's quarterdeck, waist and fore deck; the Frigate's bow, waist and
   quarterdeck), each an area with a checkpoint: entered, its checkpoint is where the next respawn
   stands the player. Each but the arena holds a wave of Grey Tithe deck crew and pirates, Minor and Major, placed
   facing each other so they are already fighting when the player comes: a zone's wave stands as the player reaches
   the zone before it. At most 6 of the wreck's foes are alive at once; the rest wait their turn.
 - **Heaps across the way.** Each zone but the arena has a heap of debris across the way on from it, standing from the
-  start, more than a jump over the way under it; on the Frigate each runs across her deck from rail to rail, her
-  rails under it. It is cleared once its zone's wave has stood whole and every foe of
-  it has fallen; the room and the page's movement take it from the course together. A player who climbs over a heap
-  still standing, into a zone beyond it, is brought back to their last checkpoint. The last heap is the arena's: it
-  stands again behind the player when the boss fight begins.
+  start, more than a jump over the way under it; across the Brig's waist and the Frigate's deck each runs from rail to
+  rail, her rails under it, and the fore deck's stands on the stair. It is cleared once its zone's wave has stood whole
+  and every foe of it has fallen; the room and the page's movement take it from the course together. A player who climbs
+  over a heap still standing, into a zone beyond it, is brought back to their last checkpoint. The last heap is the
+  arena's: it stands again behind the player when the boss fight begins.
 - **The sea.** A body that falls off the decks (lower than 1.5 m over the sea) is brought back to its last checkpoint
   after 1.2 s, as it was, never killed.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
@@ -205,24 +207,30 @@ are the story's; the wreck is the level they run.
 - **The arena** is the Frigate's quarterdeck and the end of her waist, 11.15 m by 9.5 m, from the heap across her
   waist to her stern and between her rails' inner faces, no wave in it. When the boss fight
   begins, its heap closes the way in behind the player, every other foe is sent away, and Captain Brannoc Thule stands
-  on the quarterdeck facing the player, three levels over them: their blows land at 0.47 of their worth. A player who
-  leaves it, over the heap into the waist or over her rails onto the channels outside them, is brought back in;
+  on the quarterdeck facing the player, three levels over them: their blows land at 0.47 of their worth. A player back
+  over the heap into the waist is brought back in, and one over her rails falls to the sea, which brings them back;
   anywhere from the heap's face aft, on her deck or up on her rails, is never brought back.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.
+  Felled there, the player is never told they will rise: that prompt is for a death before the boss fight.
 - **The cries.** In the wake's flight the first staged pair the camera holds on the view for 2.4 s cries "For the
   Tithe!" and "Cut them down!"; in the fight the first Grey Tithe foe on the view cries "Survivor! Get that one!",
-  once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each.
+  once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each, and only
+  with his head on the view, so a cry unheard spends no gap; he tells the player to kneel again only once they have
+  struck him since. The throw overboard is framed so Thule and his crier stand on the view on any screen, a tall one
+  from further back.
 - **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the page's own on the
-  layout's blocks over open sea, the fight's marks drawn by the view on foot. It tells the story whether the arena is
+  layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the decks alone, so every wave fights
+  and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is
   entered, Thule's health, how the fight ended, the points over every head for barks and emotes (by crew), and the
   shot its camera takes of the player standing, where the wake's flight ends. A cutscene holds it still. Its room is
   let go as the wreck's fight ends. The hints are foot's, without the menu: the story has none.
 - **Drawn** by `WreckScenery`, made once from the meshes the story loaded (the Brig's and the Frigate's, each ship by
-  her own) and shown by the wake, the fight, the throw overboard and, from below, the deep: both ships with their
-  canvas struck, the blocks that show in the ships' own timber, and each heap while it stands. The fires burn in all four. It lets go of its GPU
-  buffers once the deep ends.
+  her own) and shown by the wake, the fight, the throw overboard and, from below, the deep: both ships with their canvas
+  struck, the blocks that show in the ships' own timber, and each heap while it stands. The fires burn in all four.
+  Every figure the wake, the throw and the deep stand makes a move the forge draws its clothes in: the deep's fallen
+  crew lie in `fallen`, Thule's crew leap and cry out. It lets go of its GPU buffers once the deep ends.
 - **Each beat sets its world** at its start (the wreck's storm, fires and sounds, no lightning; the deep's water), so
   under `npm run dev`, `?prologue=wake`, `?prologue=wreck`, `?prologue=overboard` or `?prologue=deep` plays as the
   story does. Leaving the fight hands the HUD back clean (no death, hints, prompt, nameplate or fight's display) and

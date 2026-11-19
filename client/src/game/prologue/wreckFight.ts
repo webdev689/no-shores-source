@@ -41,6 +41,8 @@ export class WreckFight implements Beat {
   private coming: { since: number; cues: Cues; from: Shot } | null = null;
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
+  /** Whether the player has struck Thule since he last told them to kneel: he says it again only then. */
+  private struckSinceKneel = true;
   private clock = 0;
   private lastHealth: { boss: number; you: number } | null = null;
   /** Whether a Tithe hand has cried out at the player, and whether the player lay dead last frame. */
@@ -146,11 +148,12 @@ export class WreckFight implements Beat {
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;
     stage.stepWeather(tick.seconds);
-    const coming = this.coming;
-    if (coming) {
-      coming.since += tick.seconds;
-      coming.cues.step(coming.since);
+    if (this.coming) {
+      this.coming.since += tick.seconds;
+      this.coming.cues.step(this.coming.since);
     }
+    // Read after its cues: the last of them begins the fight, and the push in is over.
+    const coming = this.coming;
     const held = !!coming || this.ending !== null;
     const aspect = tick.size.width / Math.max(1, tick.size.height);
     const shown = run.frame(tick.controls, tick.seconds, tick.clock, {
@@ -160,7 +163,6 @@ export class WreckFight implements Beat {
       held,
     });
     if (run.arena && !this.fought && !coming) this.bossComes(shown.shot);
-    this.barks(shown.fight.own?.health ?? 0);
     this.fallen(shown.fight.own?.action.kind === 'dead');
     this.end(tick.seconds, !!run.outcome);
     const { footView, hud, scene } = stage.parts;
@@ -179,6 +181,11 @@ export class WreckFight implements Beat {
         : undefined;
     const heads = new Map([...run.heads(), ...(thule ? [['thule', [thule.x, thule.y, thule.z + 2.2]] as const] : [])]);
     const shot = coming ? this.comingShot() : shown.shot;
+    const thuleHead = heads.get('thule');
+    this.barks(
+      shown.fight.own?.health ?? 0,
+      !!thuleHead && !!headOnView(onScreen(shot, tick.viewport, thuleHead), tick.viewport),
+    );
     if (!held) this.spot(shot, heads, tick.viewport);
     return {
       shot,
@@ -206,9 +213,10 @@ export class WreckFight implements Beat {
     }
   }
 
-  /** A death before the arena's end says what happens: the room raises the player at the last checkpoint. */
+  /** A death before the boss fight says what happens: the room raises the player at the last checkpoint. Felled in
+   *  the boss fight, the fight ends, though the run learns it a frame later. */
   private fallen(dead: boolean): void {
-    if (dead && !this.wasDead && !this.run?.outcome)
+    if (dead && !this.wasDead && !this.fought)
       this.story.stage.parts.objective.show('Fallen', 'You will rise at the last checkpoint.', 4);
     this.wasDead = dead;
   }
@@ -225,19 +233,24 @@ export class WreckFight implements Beat {
     if (this.ending >= END_S) this.done = true;
   }
 
-  /** Thule's barks as the fight goes: when the player's blows land, and when his land on them. */
-  private barks(yours: number): void {
+  /** Thule's barks as the fight goes: when the player's blows land, and when his land on them. Only a cry `heard`,
+   *  his head on the view, counts toward the gap before the next; and he tells the player to kneel again only once
+   *  they have struck him since. */
+  private barks(yours: number, heard: boolean): void {
     const boss = this.run?.boss;
     if (!boss) return;
     const health = { boss: boss.health, you: yours };
     const last = this.lastHealth;
     this.lastHealth = health;
     if (!last) return;
+    if (health.boss < last.boss) this.struckSinceKneel = true;
+    if (!heard) return;
     if (health.boss < last.boss && this.clock - this.barked.struck > BARK_GAP_S) {
       this.barked.struck = this.clock;
       void this.story.stage.play('bossStruck', true, { thule: 'thule' });
-    } else if (health.you < last.you && this.clock - this.barked.strikes > BARK_GAP_S) {
+    } else if (health.you < last.you && this.struckSinceKneel && this.clock - this.barked.strikes > BARK_GAP_S) {
       this.barked.strikes = this.clock;
+      this.struckSinceKneel = false;
       void this.story.stage.play('bossStrikes', true, { thule: 'thule' });
     }
   }

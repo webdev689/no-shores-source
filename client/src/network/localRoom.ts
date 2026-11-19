@@ -51,6 +51,21 @@ export class LocalRoom implements RoomLink {
     return new LocalRoom(door, snapshot, gear);
   }
 
+  /** Opens a room on a course laid over the open sea, as a wreck's decks are (`LocalRoom.open`, with no stall or
+   *  nodes): its foes walk the blocks alone, as the sea under them is no ground. */
+  static openOverSea(
+    module: WebAssembly.Module,
+    spawn: { readonly x: number; readonly y: number },
+    blocks: readonly CourseBlock[],
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.open(spawn, blocks, true)) throw new Error('the course is not one a room can stand on');
+    door.day(Math.floor(Date.now() / 86_400_000));
+    return new LocalRoom(door, snapshot, gear);
+  }
+
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
    *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
   static openNode(

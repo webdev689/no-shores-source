@@ -1,5 +1,5 @@
 // The owner's eleventh beat: the screen, faded out on the fight, fades back in on the player thrown over the rammer's
-// rail, Thule and his crew crying out and dancing on her quarterdeck as the body arcs into the sea; a splash, and the
+// rail, Thule and his crew crying out and leaping on her quarterdeck as the body arcs into the sea; a splash, and the
 // fade again.
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
@@ -14,6 +14,8 @@ import { topAt, type WreckLayout } from './wreckLayout.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
 
 const LENS = { fov: 0.85, near: 0.2, far: 20_000 } as const;
+/** The widest a view is framed for as it is: a narrower one is framed from further back. */
+const FRAMED_ASPECT = 16 / 9;
 /** The crew who celebrate by the boss: their roster types, their moves, and where they stand from him (east, south). */
 const CELEBRANTS: readonly {
   readonly type: number;
@@ -21,9 +23,9 @@ const CELEBRANTS: readonly {
   readonly from: readonly [number, number];
 }[] = [
   { type: 12, anim: 'warcry', from: [0, 0] },
-  { type: 7, anim: 'dance', from: [-2.4, -1.6] },
+  { type: 7, anim: 'jump', from: [-2.4, -1.6] },
   { type: 8, anim: 'warcry', from: [-2.1, 1.8] },
-  { type: 10, anim: 'dance', from: [1.2, 2.6] },
+  { type: 10, anim: 'jump', from: [1.0, 1.8] },
 ];
 /** The throw: when it starts, how long the body is in the air, how far it is thrown east over the rail and how high. */
 const THROW_AT_S = 1.6;
@@ -92,11 +94,12 @@ export class Overboard implements Beat {
     const actors: Actor[] = [];
     const heads = new Map<string, readonly [number, number, number]>();
     CELEBRANTS.forEach((one, index) => {
+      const [standX, standY] = [x + one.from[0], y + one.from[1]];
+      const stand = topAt(this.layout.decks, standX, standY);
+      heads.set(index === 0 ? 'thule' : `celebrant-${index}`, [standX, standY, stand + 2.2]);
       const kind = stage.parts.roster.find((each) => each.type === one.type);
       const dress = kind && foeDress(kind);
       if (!dress) return;
-      const [standX, standY] = [x + one.from[0], y + one.from[1]];
-      const stand = topAt(this.layout.decks, standX, standY);
       actors.push({
         id: ACTOR_IDS + 60 + index,
         dress,
@@ -107,7 +110,6 @@ export class Overboard implements Beat {
         facing: Math.PI / 2,
         since: index * 0.3,
       });
-      heads.set(index === 0 ? 'thule' : `celebrant-${index}`, [standX, standY, stand + 2.2]);
     });
     const thrown = this.since >= THROW_AT_S ? thrownAt([x + 1.6, y, z + 0.9], this.since - THROW_AT_S) : null;
     if (thrown && thrown[2] > -0.8)
@@ -120,13 +122,17 @@ export class Overboard implements Beat {
         z: thrown[2],
         facing: -Math.PI / 2,
       });
-    return { shot: this.shot([x, y, z]), actors, drawers: [this.scenery.drawer], heads, focus: [x, y] };
+    const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
+    return { shot: this.shot([x, y, z], aspect), actors, drawers: [this.scenery.drawer], heads, focus: [x, y] };
   }
 
-  /** From off the rammer's other side and a little astern, watching the deck and the rail the body goes over. */
-  private shot(thule: Point3): Shot {
-    const eye: Point3 = [thule[0] - 7.5, thule[1] + 6.5, thule[2] + 3.2];
+  /** From off the rammer's other side and a little astern, watching the deck and the rail the body goes over; on a
+   *  view narrower than `FRAMED_ASPECT`, as much further back as it is narrower, so the same crew stand on it. */
+  private shot(thule: Point3, aspect: number): Shot {
     const target: Point3 = [thule[0] + 3 + Math.min(1, this.since / 4) * 2.5, thule[1], thule[2] + 1.2];
+    const back = Math.max(1, FRAMED_ASPECT / aspect);
+    const from: Point3 = [-7.5 - 3 - Math.min(1, this.since / 4) * 2.5, 6.5, 2];
+    const eye: Point3 = [target[0] + from[0] * back, target[1] + from[1] * back, target[2] + from[2] * back];
     return { ...LENS, eye: [...eye], ...lookAt(eye, target) };
   }
 }

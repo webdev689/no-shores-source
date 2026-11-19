@@ -159,17 +159,27 @@ export class Wake implements Beat {
     const along = path.map(([x, y], index): RailKey => {
       const next = path[Math.min(path.length - 1, index + 1)] ?? [x, y];
       const deck = topAt(this.layout.decks, x, y);
+      // East of the path and behind it: the path keeps to the Frigate's starboard side, her masts on her middle.
       return {
-        at: LEAVE_S + 2 + (index / Math.max(1, path.length - 1)) * 7,
-        eye: [x - 1.5, y - 1.5, deck + 5.5],
+        at: LEAVE_S + 2 + (index / Math.max(1, path.length - 1)) * 6,
+        eye: [x + 1.5, y - 1.5, deck + 5.5],
         look: [next[0] + (next[0] - x) * 2, next[1] + (next[1] - y) * 2, deck + 1.5],
       };
     });
     const back = rest ? restingKey(rest) : { eye: behind, look: ahead(stand), fov: 0.9 };
+    // Back to the player out past the Frigate's starboard side and the Brig's bow, clear of both ships' masts.
+    const [fore = [0, 0], waist = [0, 0]] = [2, 1].map((zone) => this.layout.zones[zone]?.checkpoint);
+    const outside = (time: number, [x, y]: readonly [number, number], east: number, south: number): RailKey => ({
+      at: time,
+      eye: [x + east, y + south, stand[2] + 6],
+      look: stand,
+    });
     return [
       { at: LEAVE_S, eye: stand, look: ahead(stand), fov: LENS.fov },
       { at: LEAVE_S + 1.4, eye: behind, look: ahead(stand), fov: 0.9 },
       ...along,
+      outside(CONTROL_S - 3.2, fore, 2.5, 7),
+      outside(CONTROL_S - 2.4, waist, 2, -4.5),
       { at: CONTROL_S - 1.6, ...back },
       { at: CONTROL_S, ...back },
     ];

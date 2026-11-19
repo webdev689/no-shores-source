@@ -1,16 +1,23 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
+import { type FoeType, rosterOf } from '../../rules/roster.ts';
+import { figureOf } from '../../player/dressing.ts';
+import type { Actor } from './actors.ts';
+import { armouredDress, FIRST_LOOK } from './look.ts';
 import { deckToWorld } from '../../ships/deck.ts';
 import { shipSails } from '../../ships/shipMesh.ts';
-import type { Shot } from '../camera.ts';
+import { onScreen, type Shot } from '../camera.ts';
 import { Deep } from './deep.ts';
 import { YOU_ID } from './helm.ts';
 import type { Nameplate } from './nameplate.ts';
 import { Overboard } from './overboard.ts';
+import { headOnView } from './stage.ts';
 import type { Story } from './story.ts';
-import { Wake } from './wake.ts';
-import { readWreck } from './wreckLayout.ts';
+import { stagedFights, Wake } from './wake.ts';
+import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { WreckFight } from './wreckFight.ts';
 import type { WreckScenery } from './wreckScenery.ts';
@@ -18,19 +25,27 @@ import type { WreckScenery } from './wreckScenery.ts';
 const layout = readWreck();
 const SIZE = { width: 960, height: 540 };
 
-/** A story whose every part takes any call and writes it down, by its path and what it was handed. */
-function recorded(): { story: Story; calls: string[] } {
+/** A story whose every part takes any call and writes it down, by its path and what it was handed; a call whose path
+ *  `answers` names gives back what it holds there, and a part `values` names is what it holds. Its player wears
+ *  `dress`. */
+function recorded(
+  answers: Readonly<Record<string, unknown>> = {},
+  values: Readonly<Record<string, unknown>> = {},
+  dress: unknown = { body: 'female' },
+): { story: Story; calls: string[] } {
   const calls: string[] = [];
   const part = (path: string): unknown =>
-    new Proxy(() => undefined, {
-      get: (target, key) => (key === 'then' ? undefined : part(`${path}.${String(key)}`)),
-      set: () => true,
-      apply: (target, self, args: unknown[]) => {
-        calls.push(`${path}(${args.filter((arg) => typeof arg !== 'object').join(', ')})`);
-        return undefined;
-      },
-    });
-  const story = new Proxy({ dress: { body: 'female' } } as object, {
+    path in values
+      ? values[path]
+      : new Proxy(() => undefined, {
+          get: (target, key) => (key === 'then' ? undefined : part(`${path}.${String(key)}`)),
+          set: () => true,
+          apply: (target, self, args: unknown[]) => {
+            calls.push(`${path}(${args.filter((arg) => typeof arg !== 'object').join(', ')})`);
+            return answers[path];
+          },
+        });
+  const story = new Proxy({ dress } as object, {
     get: (target, key) => (key === 'dress' ? Reflect.get(target, key) : part(String(key))),
   });
   return { story: story as Story, calls };
@@ -159,4 +174,186 @@ test('the wake cut short leaves the eyes open, though the director frames it onc
   beat.skip();
   beat.frame(tick(0.016));
   assert.equal(calls.filter((call) => call.startsWith('stage.parts.screen.lids')).at(-1), 'stage.parts.screen.lids(0)');
+});
+
+/** A run of the wreck that plays nothing: the player alive or dead as `own` says (their health as it holds), in the
+ *  arena or not, Thule's health and head as `boss` holds them. */
+function stillRun(
+  own: { dead: boolean; health?: number },
+  arena: boolean,
+  boss: { health: number; head: readonly [number, number, number] } | null = null,
+): WreckRun {
+  const shot = { eye: [0, 0, 5], yaw: 0, pitch: 0, fov: 1, near: 0.1, far: 500 } as unknown as Shot;
+  return {
+    frame: () => ({
+      fight: { own: { action: { kind: own.dead ? 'dead' : 'idle' }, health: own.dead ? 0 : (own.health ?? 100) } },
+      shot,
+      hints: [],
+      standing: { kind: 'inside' },
+      figures: [],
+    }),
+    arena,
+    get boss() {
+      return boss && { health: boss.health, healthMax: 1000 };
+    },
+    outcome: null,
+    heads: () => new Map(boss ? [['thule', boss.head]] : []),
+    beginBoss: () => undefined,
+  } as unknown as WreckRun;
+}
+
+const FOOT_VIEW = { 'stage.parts.footView.frame': { under: {}, over: {} } };
+
+test('a death on the way through the wreck says the player will rise at the last checkpoint', async () => {
+  const { story, calls } = recorded(FOOT_VIEW);
+  const own = { dead: false };
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun(own, false)), {} as Nameplate);
+  await Promise.resolve();
+  fight.frame(tick(0.016));
+  own.dead = true;
+  fight.frame(tick(0.016));
+  assert.ok(calls.includes('stage.parts.objective.show(Fallen, You will rise at the last checkpoint., 4)'));
+});
+
+test('the player felled by Thule is never told they will rise: the boss fight ends there', async () => {
+  const { story, calls } = recorded(FOOT_VIEW);
+  const own = { dead: false };
+  const plate = { show: () => undefined, hide: () => undefined } as unknown as Nameplate;
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun(own, true)), plate);
+  await Promise.resolve();
+  // The push in to Thule plays out, then the boss fight is fought.
+  for (let since = 0; since < 7; since += 0.05) fight.frame(tick(0.05));
+  own.dead = true;
+  fight.frame(tick(0.016));
+  assert.ok(!calls.some((call) => call.includes('Fallen')), 'no death words over the fade');
+});
+
+test('the crew celebrating the throw overboard stand clear of what stands on her deck', () => {
+  const { story } = recorded();
+  const course = courseOf(layout);
+  const heads = new Overboard(story, layout, scenery).frame(tick(0.05)).heads ?? new Map();
+  assert.equal(heads.size, 4, 'Thule and three of his crew');
+  for (const [name, [x, y]] of heads) {
+    const top = topAt(course, x, y);
+    for (let bearing = 0; bearing < 2 * Math.PI; bearing += Math.PI / 16)
+      assert.ok(topAt(course, x + Math.sin(bearing) * 0.34, y - Math.cos(bearing) * 0.34) <= top + 0.5, name);
+  }
+});
+
+test('the throw overboard holds every crier on the view as they cry, on a wide screen and a tall one', () => {
+  const speakers = ['thule', 'celebrant-1'];
+  for (const size of [SIZE, { width: 540, height: 960 }]) {
+    const { story } = recorded();
+    const beat = new Overboard(story, layout, scenery);
+    for (let since = 0; since < 4; since += 0.05) {
+      const frame = beat.frame({ ...tick(0.05), size, viewport: size });
+      for (const name of speakers) {
+        const head = frame.heads?.get(name);
+        assert.ok(head, `${name} has a head`);
+        assert.ok(
+          headOnView(onScreen(frame.shot, size, head), size),
+          `${name} off a ${size.width} by ${size.height} view`,
+        );
+      }
+    }
+  }
+});
+
+/** Where Thule's head is before the eye of `stillRun`'s shot, and behind it. */
+const BEFORE: readonly [number, number, number] = [0, -10, 5];
+const BEHIND: readonly [number, number, number] = [0, 10, 5];
+
+test('Thule tells a player who stands still to kneel once, and again only once they have struck him', async () => {
+  const { story, calls } = recorded(FOOT_VIEW);
+  const own = { dead: false, health: 1000 };
+  const boss = { health: 1000, head: BEFORE };
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun(own, false, boss)), {} as Nameplate);
+  await Promise.resolve();
+  const kneels = () => calls.filter((call) => call === 'stage.play(bossStrikes, true)').length;
+  for (let second = 0; second < 40; second++) {
+    own.health -= 5;
+    fight.frame(tick(1));
+  }
+  assert.equal(kneels(), 1, 'his blows land for 40 s, and he says it once');
+  boss.health -= 50;
+  fight.frame(tick(1));
+  assert.ok(calls.includes('stage.play(bossStruck, true)'), 'struck, he answers it');
+  own.health -= 5;
+  fight.frame(tick(1));
+  assert.equal(kneels(), 2, 'and once struck, he says it again');
+});
+
+test("Thule's cry with his head off the view is not counted: he cries once it is on it", async () => {
+  const { story, calls } = recorded(FOOT_VIEW);
+  const own = { dead: false, health: 1000 };
+  const boss = { health: 1000, head: BEHIND };
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun(own, false, boss)), {} as Nameplate);
+  await Promise.resolve();
+  for (let frame = 0; frame < 3; frame++) {
+    own.health -= 5;
+    fight.frame(tick(1));
+  }
+  assert.ok(!calls.includes('stage.play(bossStrikes, true)'), 'unheard behind the eye');
+  boss.head = BEFORE;
+  own.health -= 5;
+  fight.frame(tick(1));
+  assert.ok(calls.includes('stage.play(bossStrikes, true)'), 'heard at once, no gap spent');
+});
+
+test("the wake's staged fighters stand clear of what stands on the deck, its heaps among them", () => {
+  const roster = Array.from({ length: 20 }, (unused, type) => ({ type }) as unknown as FoeType);
+  const pairs = stagedFights(layout, roster);
+  assert.ok(pairs.length >= 4, `${pairs.length} pairs`);
+  const standing = [...courseOf(layout), ...layout.zones.flatMap((zone) => (zone.gate ? [zone.gate] : []))];
+  for (const { at, facing } of pairs)
+    for (const side of [-1, 1]) {
+      const [x, y] = [at[0] + side * Math.sin(facing) * 0.9, at[1] - side * Math.cos(facing) * 0.9];
+      const top = topAt(standing, x, y);
+      for (let bearing = 0; bearing < 2 * Math.PI; bearing += Math.PI / 16) {
+        const beside = topAt(standing, x + Math.sin(bearing) * 0.34, y - Math.cos(bearing) * 0.34);
+        assert.ok(beside <= top + 0.5, `a fighter at ${x.toFixed(2)}, ${y.toFixed(2)} against ${beside.toFixed(2)} m`);
+      }
+    }
+});
+
+/** The layers the forge draws in each move, by body, from its keys (`<layer>_<move>`). */
+function drawnIn(body: string, moves: ReadonlySet<string>): Record<string, string[]> {
+  const keys = JSON.parse(
+    readFileSync(new URL(`../../../../tools/forge/tools/sprite-forge/keys/keys-${body}.json`, import.meta.url), 'utf8'),
+  ) as Record<string, unknown>;
+  const drawn: Record<string, string[]> = {};
+  for (const key of Object.keys(keys))
+    for (const move of moves) if (key.endsWith(`_${move}`)) (drawn[key.slice(0, -move.length - 1)] ??= []).push(move);
+  return drawn;
+}
+
+test('every figure the wake, the throw overboard and the deep stand is drawn clothed in the move it makes', async () => {
+  const compiled = new WebAssembly.Module(
+    await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
+  );
+  const roster = rosterOf(compiled);
+  const { story } = recorded(FOOT_VIEW, { 'stage.parts.roster': roster }, armouredDress(FIRST_LOOK));
+  const actors: Actor[] = [];
+  const wake = new Wake(story, layout, scenery, new Promise<WreckRun>(() => undefined));
+  for (let since = 0; since < 24; since += 0.5) actors.push(...(wake.frame(tick(0.5)).actors ?? []));
+  const overboard = new Overboard(story, layout, scenery);
+  for (let since = 0; since < 6; since += 0.25) actors.push(...(overboard.frame(tick(0.25)).actors ?? []));
+  const deep = new Deep(story, layout, scenery);
+  for (let since = 0; since < 8; since += 0.25) actors.push(...(deep.frame(tick(0.25)).actors ?? []));
+  assert.ok(actors.length > 20, `${actors.length} figures`);
+  const moves = new Set(actors.map((actor) => actor.anim));
+  const drawn: Readonly<Record<string, Record<string, string[]>>> = {
+    male: drawnIn('male', moves),
+    female: drawnIn('female', moves),
+  };
+  for (const actor of actors) {
+    const layers = drawn[actor.dress.body] ?? {};
+    const { gear } = figureOf(actor.dress, layers, actor.anim);
+    const { garments, armour } = actor.dress.outfit;
+    const clothes = [...garments, ...Object.entries(armour).map(([piece, set]) => `${piece}_${set}`)];
+    const worn = gear.filter((layer) => clothes.some((cloth) => layer === cloth || layer.startsWith(`${cloth}_`)));
+    assert.ok(worn.length > 0, `figure ${actor.id} wears clothes in "${actor.anim}"`);
+    for (const layer of worn)
+      assert.ok(layers[layer]?.includes(actor.anim), `figure ${actor.id}'s ${layer} is not drawn in "${actor.anim}"`);
+  }
 });

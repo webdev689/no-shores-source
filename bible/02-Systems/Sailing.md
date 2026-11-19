@@ -125,7 +125,8 @@ canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large
   (0.15 m) with the wind ahead, never aback. Furled, it is gathered up to its yard in loose folds.
 
 Any published hull is drawn by her name (`shipViewNamed`: her mesh and her sails' corners from `ships.json`), the
-Brig under her staysails, square sails and gaff, the Sloop as before.
+Brig under her staysails, square sails and gaff, the Sloop as before. Every ship drawn on one GPU shares one upload
+of the ships' pictures, let go with the last ship drawn with it.
 
 In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
 along the swell's bearing.

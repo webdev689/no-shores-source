@@ -132,7 +132,7 @@ export class WreckRun {
     walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
     const level = { value: 1 };
     let fight: Fighting | null = null;
-    const room = LocalRoom.open(
+    const room = LocalRoom.openOverSea(
       module,
       { x, y },
       course,

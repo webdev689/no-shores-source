@@ -144,6 +144,13 @@ impl Room {
         Self::on(Floor::Flat, blocks, vec![spawn], None)
     }
 
+    /// An empty room on a course of blocks laid over the open sea, as a wreck's decks are: a body that falls off them
+    /// stands in the sea at 0, and its foes' navmesh is the blocks' tops alone.
+    #[must_use]
+    pub fn over_sea(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
+        Self::on(Floor::Sea, blocks, vec![spawn], None)
+    }
+
     /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
     /// turn and come back to.
     #[must_use]
