@@ -1,12 +1,10 @@
 import { DurableObject } from 'cloudflare:workers';
 import course from '../content/testground/course.json' with { type: 'json' };
 import layout from '../content/world/layout.json' with { type: 'json' };
-import openList from '../content/world/open.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
-import { lockedReason } from './locked.ts';
 import { nodeRoom } from './roomNames.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
@@ -55,8 +53,6 @@ function roomName(request: Request): string | null {
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);
   private opened: Promise<boolean> | null = null;
-  /** Why a locked node's room turns every player away; null for a room anyone may join. */
-  private refusal: string | null = null;
   private ticking: ReturnType<typeof setInterval> | null = null;
   /** Each player's socket, by its player's number, and their messages in the second they last sent in (`budget.ts`);
    *  a player let go of is gone from it, though their socket may still be closing. */
@@ -82,11 +78,12 @@ export class RoomHost extends DurableObject<Env> {
     }
     if (this.players.size >= MAX_PLAYERS) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
-    const player = this.refusal === null ? this.guarded(() => this.room.join(), 0) : 0;
+    const player = this.guarded(() => this.room.join(), 0);
     if (player === 0) {
       // A full room, or a locked node's, still takes the socket, to say why it closes.
+      const locked = this.guarded(() => this.room.refusal(), null);
       server.accept();
-      server.close(this.refusal === null ? 1013 : LOCKED, this.refusal ?? 'the room is full');
+      server.close(locked === null ? 1013 : LOCKED, locked ?? 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
     server.binaryType = 'arraybuffer';
@@ -136,12 +133,7 @@ export class RoomHost extends DurableObject<Env> {
     const named = nodeRoom(node);
     if (!named) return false;
     const file = await this.env.NODES.fetch(`https://nodes/${named.id}.json`);
-    if (!file.ok) return false;
-    const text = await file.text();
-    // A locked node's room is never opened: it only says why no one may join it.
-    this.refusal = lockedReason(text, openList);
-    if (this.refusal !== null) return true;
-    const opened = this.room.openNode(text) && this.room.difficulty(named.seas);
+    const opened = file.ok && this.room.openNode(await file.text()) && this.room.difficulty(named.seas);
     return opened && this.room.reseed(seeds) && this.room.day(Math.floor(Date.now() / DAY_MS));
   }
 

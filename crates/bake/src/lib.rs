@@ -36,6 +36,8 @@ pub struct NodeFile {
     pub boxes: Vec<city::collision::Box2>,
     /// In a social space, the counters that answer a player's gear, which the room serves only at each.
     pub counters: Vec<Counter>,
+    /// Whether its room takes no player until a pass is done on it ([`lock`]).
+    pub locked: bool,
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -131,7 +133,7 @@ pub fn nodes_of(
         let mut boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
         boxes.extend(layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
         let continent = continent.id.clone();
-        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new() }
+        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new(), locked: false }
     };
     let whole =
         |points: &[world::geometry::Point]| points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
@@ -152,6 +154,13 @@ pub fn nodes_of(
         }
     });
     Ok(drawn.chain(social).collect())
+}
+
+/// Locks every node that `open`, the ids in `content/world/open.json`, leaves locked ([`land::sites::locked`]).
+pub fn lock(nodes: &mut [NodeFile], open: &[String]) {
+    for node in nodes {
+        node.locked = land::sites::locked(node.kind, &node.id, open);
+    }
 }
 
 /// What the layouts are built with: every RMB block file beside the index, the forged models' boxes and the briefs,
@@ -246,5 +255,16 @@ mod tests {
         assert!(ids_problem(&[called("index")]).is_some());
         assert_eq!(ids_problem(&[called(&"a".repeat(35))]), None, "node- and 35 make 40");
         assert!(ids_problem(&[called(&"a".repeat(36))]).is_some());
+    }
+
+    #[test]
+    fn a_patrol_area_the_open_list_does_not_name_is_written_locked() {
+        let (node, _) = glade();
+        let mut nodes = vec![node];
+        lock(&mut nodes, &[]);
+        assert!(nodes[0].locked);
+        assert!(serde_json::to_string(&nodes[0]).unwrap().contains(r#""locked":true"#));
+        lock(&mut nodes, &["glade".to_owned()]);
+        assert!(!nodes[0].locked);
     }
 }

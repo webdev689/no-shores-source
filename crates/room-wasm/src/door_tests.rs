@@ -116,6 +116,18 @@ fn every_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
 }
 
 #[test]
+fn a_locked_nodes_room_takes_no_player_and_says_why_and_any_other_takes_them() {
+    let mut locked = node_file();
+    locked["locked"] = json!(true);
+    assert!(open_node(locked.to_string().as_bytes()));
+    assert_eq!(room_join(), 0, "no player joins a locked node");
+    assert_eq!(refusal().as_deref(), Some("The Glade is locked"));
+    assert!(open_node(node_file().to_string().as_bytes()));
+    assert_ne!(room_join(), 0);
+    assert_eq!(refusal(), None);
+}
+
+#[test]
 fn a_node_with_no_spawn_or_text_that_is_no_node_does_not_open() {
     let mut no_spawn = node_file();
     no_spawn["spawns"] = json!([]);

@@ -1,9 +1,10 @@
 //! The bake, run as `npm run bake` before the server runs or is bundled. It reads `content/world/layout.json`, each
-//! landmass's edits in `content/world/land/` and the RMB index in `content/world/rmb/index.json` if there is one, and
-//! writes each node's file and the index of them into `generated/nodes/`, which git leaves out.
+//! landmass's edits in `content/world/land/`, the RMB index in `content/world/rmb/index.json` if there is one and the
+//! open list in `content/world/open.json`, and writes each node's file and the index of them into `generated/nodes/`,
+//! which git leaves out.
 #![allow(clippy::print_stdout, reason = "a command-line tool reports to the terminal")]
 
-use bake::{Builders, Listed, NodeFile, builders, ids_problem, nodes_of};
+use bake::{Builders, Listed, NodeFile, builders, ids_problem, lock, nodes_of};
 use city::rmb::Blocks;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -109,10 +110,14 @@ fn bake() -> Result<String, String> {
         }
     }
     let landmasses = continents.len();
-    let nodes = every_node(continents, &blocks, &builders)?;
+    let mut nodes = every_node(continents, &blocks, &builders)?;
     if let Some(problem) = ids_problem(&nodes) {
         return Err(problem);
     }
+    let open = content.join("open.json");
+    let open: Vec<String> =
+        serde_json::from_str(&read(&open)?).map_err(|error| format!("{}: {error}", open.display()))?;
+    lock(&mut nodes, &open);
     let folder = root.join("generated/nodes");
     if folder.is_dir() {
         std::fs::remove_dir_all(&folder).map_err(|error| format!("{}: {error}", folder.display()))?;
