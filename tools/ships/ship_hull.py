@@ -48,6 +48,17 @@ class Hull:
         aft_sheer, fore_sheer = self.numbers['sheer_m']
         return self.numbers['deck_m'] + (fore_sheer if x > 0 else aft_sheer) * (2 * x / self.numbers['length_m']) ** 2
 
+    def floor_at(self, x):
+        """The height of what she stands on at `x`: her quarterdeck aft of its front, her forecastle (where she has one)
+        forward of its back, her main deck between."""
+        front, rise = self.numbers['quarterdeck_m']
+        if x < front:
+            return self.deck(x) + rise
+        forecastle = self.numbers.get('forecastle_m')
+        if forecastle and x > forecastle[0]:
+            return self.deck(x) + forecastle[1]
+        return self.deck(x)
+
     def plan_out(self, x):
         """The way out from her port side in plan at `x`, square to her outline there: aft round her stern."""
         rise = (self.half_beam(x + 0.05) - self.half_beam(x - 0.05)) / 0.1
@@ -86,9 +97,11 @@ class Hull:
                   range(count + 1)]
         edges = [edge for port in self.numbers['ports'] for edge in (port - PORT_HALF_M, port + PORT_HALF_M)]
         inside = lambda x: any(abs(x - port) < PORT_HALF_M + 0.15 for port in self.numbers['ports'])  # noqa: E731
-        front = self.numbers['quarterdeck_m'][0]
-        kept = [place for place in places if not inside(place) and abs(place - front) > step / 3]
-        return sorted(kept + edges + [front])
+        raised = [self.numbers['quarterdeck_m'][0]]
+        if self.numbers.get('forecastle_m'):
+            raised.append(self.numbers['forecastle_m'][0])
+        kept = [place for place in places if not inside(place) and all(abs(place - x) > step / 3 for x in raised)]
+        return sorted(kept + edges + raised)
 
     def in_port(self, x0, x1):
         return any(abs(x0 - (port - PORT_HALF_M)) < 1e-9 and abs(x1 - (port + PORT_HALF_M)) < 1e-9
@@ -138,19 +151,30 @@ def build_hull(hull, collection):
                        (x, -rows[row + 1][0], rows[row + 1][1]), (x, -rows[row][0], rows[row][1])]
             piece.quad(corners, 'hull', (1 if x > 0 else -1, 0, 0))
     quarterdeck_front(piece, hull)
+    forecastle_back(piece, hull)
     ends(piece, hull)
     return piece.build('Hull', collection)
+
+
+def forecastle_back(piece, hull):
+    """The step down from her forecastle to her main deck, across her from bulwark to bulwark, where she has one."""
+    if not hull.numbers.get('forecastle_m'):
+        return
+    back, rise = hull.numbers['forecastle_m']
+    deck = hull.deck(back)
+    half = inner(hull.section(back), len(BODY_ROWS))[0][0]
+    piece.quad([(back, -half, deck), (back, half, deck), (back, half, deck + rise), (back, -half, deck + rise)],
+               'hull', (-1, 0, 0))
 
 
 def ends(piece, hull):
     """Solid timber where her bulwarks meet at her stem and her stern, each thicker than she is wide there, so no
     gap between their inner faces opens to the sky. It stays inside her narrowest planks, so none of it shows."""
-    rise = hull.numbers['quarterdeck_m'][1]
     half = KEEL_HALF_M - 0.01
-    for x0, x1, floor_rise in ((hull.fore - 0.8, hull.fore, 0.0), (hull.aft, hull.aft + 0.45, rise)):
+    for x0, x1 in ((hull.fore - 0.8, hull.fore), (hull.aft, hull.aft + 0.45)):
         middle = (x0 + x1) / 2
         top = hull.section(middle)[-1][1] + 0.08
-        piece.box((x0, -half, hull.deck(middle) + floor_rise), (x1, half, top), 'hull')
+        piece.box((x0, -half, hull.floor_at(middle)), (x1, half, top), 'hull')
 
 
 def strip(x0, x1, a, b, row, side):
@@ -193,10 +217,14 @@ def cap(piece, start, end, side):
 
 
 def floor(piece, hull, start, end):
-    """Her main deck between two stations forward of her quarterdeck, and her quarterdeck's planks aft of its front."""
+    """Her deck between two stations: her main deck, her quarterdeck's planks aft of its front, and her forecastle's
+    forward of its back."""
     (x0, (y0, z0)), (x1, (y1, z1)) = start, end
     front, rise = hull.numbers['quarterdeck_m']
+    forecastle = hull.numbers.get('forecastle_m')
     lift = rise if x1 <= front + 1e-9 else 0.0
+    if forecastle and x0 >= forecastle[0] - 1e-9:
+        lift = forecastle[1]
     piece.quad([(x0, -y0, z0 + lift), (x1, -y1, z1 + lift), (x1, y1, z1 + lift), (x0, y0, z0 + lift)], 'deck',
                (0, 0, 1))
 
