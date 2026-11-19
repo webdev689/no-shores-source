@@ -301,3 +301,20 @@ fn isles_are_land_and_keep_their_own_clearance() {
     let (centre, _) = isles[0];
     assert_eq!(waters.water_at([centre[0].floor(), centre[1].floor()]), None, "inside an isle is land");
 }
+
+#[test]
+fn sea_off_a_sharp_corner_between_uneven_edges_is_sea() {
+    let corner = |x: i64, y: i64| crate::geometry::Point::new(1_000_000 + x * 1_000, 1_000_000 + y * 1_000);
+    let outline = vec![corner(0, 0), corner(100, 0), corner(866, 500)];
+    for ring in [outline.clone(), outline.into_iter().rev().collect()] {
+        let layout = Layout {
+            continents: vec![crate::layout::Continent { id: "spit".to_owned(), outline: ring, climate: None }],
+            isles: Vec::new(),
+        };
+        let waters = Waters::new(&layout);
+        // 10 km out from the 30-degree corner, at 240 degrees: behind the corner, where only the corner is nearest.
+        let point = [1_000_000.0 - 5_000.0, 1_000_000.0 - 8_660.254];
+        assert!(waters.water_at(point).is_some(), "sea off the sharp corner");
+        assert!((waters.clearance(point) - 10_000.0).abs() < 1.0);
+    }
+}

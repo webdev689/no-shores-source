@@ -289,7 +289,8 @@ impl Waters {
 
     /// Whether a point off the coast lies on the land side of its nearest edge. Where the nearest coast is a corner, the
     /// point lies in the corner's outward or inward wedge, where both edges' lines agree; on the line running on from
-    /// one edge that edge says nothing, so the two are summed and the other decides.
+    /// one edge that edge says nothing, so the two signed distances from the edges' lines are summed and the other
+    /// decides.
     fn on_land(&self, point: [f64; 2], fraction: f64, edge: Edge) -> bool {
         let sign = self.orientation[edge.continent];
         if fraction > 0.0 && fraction < 1.0 {
@@ -299,7 +300,10 @@ impl Waters {
         let corner = if fraction <= 0.0 { edge.index } else { (edge.index + 1) % ring.len() };
         let (before, at, after) =
             (ring[(corner + ring.len() - 1) % ring.len()], ring[corner], ring[(corner + 1) % ring.len()]);
-        (cross(before, at, point) + cross(at, after, point)) * sign > 0.0
+        let length = |from: [f64; 2], to: [f64; 2]| {
+            ((to[0] - from[0]) * (to[0] - from[0]) + (to[1] - from[1]) * (to[1] - from[1])).sqrt()
+        };
+        (cross(before, at, point) / length(before, at) + cross(at, after, point) / length(at, after)) * sign > 0.0
     }
 
     /// The distance from a point to the nearest of these isles' coasts, 0 inside one; infinite for none.

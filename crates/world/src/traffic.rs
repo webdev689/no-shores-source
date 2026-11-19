@@ -1,7 +1,8 @@
 //! Friendly traffic: ships sailing between the port cities all the time. One route joins every pair of them, planned
-//! round land, so each port trades with both others and the lanes cross the most waters. On each route a ship leaves each end every 1,200 s of world time, sails at 5 m/s and is
-//! gone when she arrives. World time is seconds since the Unix epoch, so every machine computes the same ships for the
-//! same time, and a ship's place comes in closed form from her departure, never by stepping her.
+//! round land, so each port trades with both others and the lanes cross the most waters. On each route a ship leaves
+//! each end every 1,200 s of world time, sails at 5 m/s and is gone when she arrives. World time is seconds since the
+//! Unix epoch, so every machine computes the same ships for the same time, and a ship's place comes in closed form
+//! from her departure, never by stepping her.
 
 use crate::geometry::Point;
 use crate::layout::Layout;
@@ -126,6 +127,7 @@ pub struct TrafficShip {
 /// A ship's id from her route, her direction (0 from the route's first port, 1 back) and her departure number.
 #[must_use]
 pub fn ship_id(route: usize, direction: u8, departure: u64) -> u64 {
+    debug_assert!(route as u64 <= ROUTE_BITS, "a route number fits in its seven bits");
     (departure << DEPARTURE_SHIFT) | ((route as u64) << 1) | u64::from(direction & 1)
 }
 
@@ -153,7 +155,7 @@ pub struct Traffic {
 }
 
 impl Traffic {
-    /// Keeps the ports that are port cities (`ports::is_main_port`), on a continent the layout holds and with a clear
+    /// Keeps the first port of each id that is a port city (`ports::is_main_port`), on a continent the layout holds and with a clear
     /// roadstead, in the order given, then plans a route between every pair of them, first with second, first with
     /// third, second with third. A pair no path joins gets none.
     #[must_use]
@@ -161,7 +163,11 @@ impl Traffic {
         let continent_of = |port: &Port| layout.continents.iter().position(|continent| continent.id == port.continent);
         let (kept, roadsteads): (Vec<Port>, Vec<Point>) = ports
             .iter()
-            .filter(|port| is_main_port(&port.id))
+            .enumerate()
+            .filter(|&(index, port)| {
+                is_main_port(&port.id) && ports[..index].iter().all(|earlier| earlier.id != port.id)
+            })
+            .map(|(_, port)| port)
             .filter_map(|port| Some((port.clone(), routes::roadstead(waters, continent_of(port)?, port.centre)?)))
             .unzip();
         let land = routes::Land::new(layout);
@@ -207,7 +213,8 @@ impl Traffic {
     /// Every ship within `radius_m` of `centre` at this world time, by id. Per route, the stretches of its path within
     /// the radius give the distances sailed that put a ship there, and those give the departures: never a walk over
     /// every departure since 1970. Each candidate is then placed and judged exactly, as `ship` places her. A time or
-    /// radius that is not a finite number, a negative radius, or a time past the last departure an id holds, finds none.
+    /// radius that is not a finite number, a negative radius, or a time past the last departure an id holds, finds
+    /// none.
     #[must_use]
     pub fn ships_near(&self, centre: [f64; 2], radius_m: f64, time_s: f64) -> Vec<TrafficShip> {
         let most_departures = (1_u64 << (64 - DEPARTURE_SHIFT)) as f64;

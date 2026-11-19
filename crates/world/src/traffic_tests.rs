@@ -257,3 +257,13 @@ fn a_time_that_is_no_number_finds_no_ship() {
         "nor a negative radius"
     );
 }
+
+#[test]
+fn a_port_listed_twice_sails_once() {
+    let (layout, waters, _) = world();
+    let mut ports = world_ports();
+    ports.extend(world_ports());
+    let traffic = Traffic::new(layout, waters, &ports);
+    assert_eq!(traffic.ports.len(), 3);
+    assert_eq!(traffic.routes.len(), 3);
+}
