@@ -25,6 +25,7 @@ code:
   - crates/layout/src/marks.rs#build
   - crates/layout/src/ring.rs#traced
   - crates/layout/src/collide.rs#boxes_of
+  - crates/layout/src/spaces.rs#map
   - content/world/briefs.json
   - client/src/layout/layoutPlan.ts#planOfLayouts
   - client/src/game/groundPaint.ts#paintOfLayouts
@@ -318,6 +319,18 @@ of its turned corners. Boxes are written to the centimetre, grown out so none sh
 building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
 body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
 lays them (`crates/room/tests/rooms_walked.rs`).
+
+## The map
+
+Each layout keeps a map (`spaces`) of the spaces a body stands in and the connections between them, read off what was
+laid, for missions, events and raids to place their fights, checkpoints and bosses on. Its first spaces are its areas
+in their order; then the lookout at each climb's top; then each run's beats. Each space has its middle and reach, its
+floor's level as a share of the massif's height (0 the land's own level, 1 the massif's top), and whether it is
+roofed: five of its middle and eight points half its reach out under a solid at least 1.8 m over the floor, so a
+tower on an open area's middle does not roof it. A gate's space names the node it leads to. The connections are its
+ways (each joining the two areas it was laid between), its climbs (from the nearest area to the lookout) and its runs'
+passages (from the area nearest the mouth into the first beat, then beat to beat), each with its walked width and its
+line. On continent 1 every space is reached from the first (`crates/room/tests/map_planned.rs`).
 
 ## Gates
 

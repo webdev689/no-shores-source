@@ -33,6 +33,7 @@ pub mod seat;
 pub mod settle;
 pub mod sites;
 pub mod skyline;
+pub mod spaces;
 pub mod works;
 
 use crate::areas::{Area, place, radius_of};
@@ -89,6 +90,8 @@ pub struct Layout {
     /// The kinds of its climate's nature it plants, and where.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub plantings: Vec<plantings::Planting>,
+    /// Its spaces and the connections between them.
+    pub map: spaces::Map,
 }
 
 /// A claim's ring in world metres.
@@ -157,7 +160,7 @@ pub fn plan(
         .map(|(area, &blocks)| if blocks > 0 { hub(&seating, area.at) } else { area.at })
         .collect();
     let blocked = blocked_by(&field, &seating);
-    let mut paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
+    let (mut paths, joined) = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
     // A way ending at an area's middle stops at what stands there: its set piece, tower or hull.
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
         clearing::end_at_rim(&mut paths, area.at, clearing::rim_of(&seating, area.at));
@@ -310,6 +313,12 @@ pub fn plan(
     let zone = plantings::Zone { biome, seed, takes: &takes };
     let plantings = plantings::plantings(&areas, &basins, &paths, &seating, &runs, &zone);
     let spawns = spawns_round(&field, anchor);
+    let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined).collect();
+    let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
+    let land = spaces::Land { floor: &|at| ground.height_at(at[0], at[1]) + raise(at), level: &|at| raise(at) / rise };
+    let climbs: Vec<&[[f64; 7]]> = carve::lookouts(&sculpt.climbs).collect();
+    let drawn = spaces::Drawn { areas: &areas, ways: &ways, climbs: &climbs, runs: &runs, solids: &seating.solids };
+    let map = spaces::map(&drawn, &land);
     Layout {
         id: node.id.clone(),
         kind: node.kind,
@@ -327,6 +336,7 @@ pub fn plan(
         basins,
         boxes: Vec::new(),
         plantings,
+        map,
     }
 }
 
@@ -456,8 +466,9 @@ fn lay_paths(
     blocked: &Blocked,
     patrol: bool,
     seed: u32,
-) -> Vec<Path> {
+) -> (Vec<Path>, Vec<[usize; 2]>) {
     let mut laid = vec![false; field.columns * field.rows];
+    let mut joined = Vec::new();
     let mut links: Vec<(usize, usize, Tier)> = Vec::new();
     if patrol {
         let open: Vec<usize> = (0..areas.len()).filter(|&at| areas[at].kind != AreaKind::Gate).collect();
@@ -510,6 +521,7 @@ fn lay_paths(
     };
     for (from, to, tier) in links {
         if lay(from, to, tier, &mut laid, &mut paths) {
+            joined.push([from, to]);
             let (first, second) = (root(&group, from), root(&group, to));
             group[first] = second;
         }
@@ -525,13 +537,14 @@ fn lay_paths(
         });
         for other in others {
             if lay(other, area, Tier::Footpath, &mut laid, &mut paths) {
+                joined.push([other, area]);
                 let (first, second) = (root(&group, area), root(&group, other));
                 group[first] = second;
                 break;
             }
         }
     }
-    paths
+    (paths, joined)
 }
 
 /// Three spawns round a landing or an entrance, a few metres apart on walkable ground.
