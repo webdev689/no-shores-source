@@ -2,7 +2,7 @@ import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
-import { HOW } from './cues.ts';
+import { blowLook } from './cues.ts';
 import type { Fighting } from './fighting.ts';
 import { Flashes } from './flashes.ts';
 import { foeGlints } from './glints.ts';
@@ -16,22 +16,6 @@ import { type Drawn, SpellLooks, castLookOf } from './spellLooks.ts';
 import { IMPACT_SPARKS, Tracers, othersArrows } from './tracers.ts';
 
 type Point = readonly [number, number, number];
-
-/** The element a blow burns in where it lands: a spell's in its caster's Art's, the player's own blow or shot in their
- *  weapon's glow as their page shows it, and any other in what the room says it carried. */
-export function blowLook(
-  event: FightEvent,
-  {
-    player,
-    own,
-    spellLook,
-  }: { readonly player: number; readonly own: GlowLook; readonly spellLook?: (id: number) => GlowLook },
-): GlowLook {
-  const carried = event.element === 1 || event.element === 2 || event.element === 3 ? event.element : 0;
-  if (event.how === HOW.spell) return carried || (spellLook?.(event.striker) ?? 0);
-  if (event.striker === player && own) return own;
-  return carried;
-}
 
 /**
  * What a fight throws up round its fighters, on any page: the struck figures' flashes, the frame each blow lands on

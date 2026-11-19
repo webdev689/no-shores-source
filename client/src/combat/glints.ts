@@ -4,7 +4,7 @@
 import type { Rgb } from '../elementGlow.ts';
 import { FLASH } from '../player/cardLooks.ts';
 import { type FighterView, type Shape, directionOf } from '../rules/fighters.ts';
-import { IRON, type Ramp, STEEL, layPicture, starSprite } from './markSprites.ts';
+import { IRON, type Ramp, STEEL, layPicture, crossStar } from './markSprites.ts';
 import { CELL_M, HOT, LIGHT } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
@@ -18,7 +18,7 @@ const IRON_TELL_TICKS = 12;
 const GLINT_CELL_M = 2 * CELL_M;
 const TOWARD_EYE_M = 0.45;
 /** The arms of a glint white-hot, then cooled a stop, cell by cell. */
-const STARS = [starSprite(2), starSprite(2)].map((picture, stage) => ({
+const STARS = [crossStar(2), crossStar(2)].map((picture, stage) => ({
   ...picture,
   cells: picture.cells.map((stop) =>
     stage === 1 && stop === HOT ? LIGHT : stage === 1 && stop >= 0 ? stop - 1 : stop,
@@ -95,7 +95,7 @@ export function foeGlints(foes: Iterable<{ readonly view: FighterView }>, eye: P
     const pull = Math.min(TOWARD_EYE_M, toEye / 2) / toEye;
     for (let axis = 0; axis < 3; axis++)
       place[axis] = (place[axis] ?? 0) + ((eye[axis] ?? 0) - (place[axis] ?? 0)) * pull;
-    const picture = STARS[glint.stage] ?? starSprite(2);
+    const picture = STARS[glint.stage] ?? crossStar(2);
     layPicture(out, picture, glint.ramp, place, eye, { cell: GLINT_CELL_M });
   }
   return out;

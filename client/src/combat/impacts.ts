@@ -73,7 +73,7 @@ const SHOCKWAVE = { radii: [0.3, 0.85, 1.4], frames: 3 } as const;
 /** A guard broken's cracked shield: how long it stands (frames), the last of them thinning out, and where (metres:
  *  this high over the defender's feet and this far to the eye's left, clear of an Exposed foe's diamond). */
 const GUARD_GLYPH = { frames: 30, thinning: 8, high: 1.6, aside: 0.42 } as const;
-/** How a landed blow's element bursts: the frames its shape shows, and its motes a half again as many as before. */
+/** How a landed blow's element bursts: the frames its shape shows, and 1.5 times the glow's own burst of motes. */
 const BURST_FRAMES = { 1: 6, 2: 6, 3: 8 } as const;
 const MOTES_MORE = 1.5;
 /** The blow's sparks: steel's speeds (m/s) and lives (s), and how many a plain blow throws. */

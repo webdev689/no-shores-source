@@ -188,11 +188,12 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 
 ## In the browser
 
-- **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows
-  its ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent
-  until the room's word shows that ability spent (its share under full) or another Art worn, 2 s at most (a cast the
-  room lets fall sends no word). Any other word from the room in between leaves the keys waiting. Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them. With the menu
-  open the game takes no keys, so `F` still dismantles a piece there.
+- **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows its
+  ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent until the
+  room's word shows that ability spent (its share under full) or another Art worn, 2 s at most (a cast the room lets
+  fall sends no word). Any other word from the room in between leaves the keys waiting. Crouching stays on `C`, and the
+  guard on the left button or `F`, as DFO has them. With the menu open the game takes no keys, so `F` still dismantles a
+  piece there.
 - **Dusk Daggers.** Pressed, `Q` aims: the input asks for the crosshair's point as it is, and a faint ring in
   Shadow's purple lies where the room will lay it: that point drawn in to 16 m, on the ground's height there, as
   wide as the ring will be. Let go, it casts there.
@@ -289,9 +290,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   of its inside in dusk and a band of shimmer crossing it every 0.8 s; it shows no weapon outline, throws no shadow
   and has no contact shade. Charged strikes three jagged Volt arcs inside the figure, never past its edge, 12 times a
   second, edges it on alternate strikes and shakes it a pixel either way, and a foe throws 24 Volt sparks a second.
-- **What it costs.** Each picture is made once for each of its steps (the sun's 32 turns, the blades' 16, the orb's
-  16 crackles, the birds' four beats each in eight flickers) and each run of its cells worked out once, and a frame's
-  marks are written over the last frame's in place. With every spell up at once, a frame of them takes under a
+- **What it costs.** Each picture is made once for each of its steps (the sun's 32 turns, the blades' 16, the orb's 16
+  crackles, the birds' four beats each in eight flickers) and each run of its cells worked out once, and the spells' own
+  layers are written over the last frame's in place. With every spell up at once, a frame of them takes under a
   millisecond in Node and leaves about a quarter of a megabyte to collect.
 
 ## Limits

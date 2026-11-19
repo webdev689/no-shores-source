@@ -2,31 +2,21 @@
 // forks and glyphs in four hard stops of a ramp, laid upright to the eye or flat on the ground as mark vertices. Each
 // shape is made once for its inputs and kept, so a frame only lays what it already has.
 import { GLOW_RAMPS, type GlowLook, type Rgb } from '../elementGlow.ts';
+import { GOLD, STEEL, type Ramp, layRuns, quadOut, rampOf, rgb } from './markSprites.ts';
 import { RAMP, swingRampColour } from './swingLook.ts';
 import { BODY, CELL_M, CLEAR, DARK, HOT, LIGHT, type Sprite, hashOf, sprite, stopOf } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
-/** A ramp's four stops, dark to white-hot. */
-export type Ramp = readonly [Rgb, Rgb, Rgb, Rgb];
-
-const hex = (code: string): Rgb => [
-  Number.parseInt(code.slice(1, 3), 16) / 255,
-  Number.parseInt(code.slice(3, 5), 16) / 255,
-  Number.parseInt(code.slice(5, 7), 16) / 255,
-];
-const rampOf = (codes: readonly [string, string, string, string]): Ramp =>
-  codes.map(hex) as unknown as readonly [Rgb, Rgb, Rgb, Rgb];
 const swingRamp = (code: number): Ramp =>
   [0, 1, 2, 3].map((stop) => swingRampColour(code, stop, [1, 1, 1]) as unknown as Rgb) as unknown as Ramp;
 
 /** Bare steel where a plain blow lands; the gold of a crit, a parry and a riposte; the dust a body throws up; and the
  *  chips a body breaks into, its darks. */
-export const STEEL: Ramp = rampOf(['#2a3340', '#8fa6c8', '#cfe0ff', '#ffffff']);
-export const GOLD: Ramp = swingRamp(RAMP.gold);
+export { GOLD, STEEL, type Ramp };
 export const DUST: Ramp = swingRamp(RAMP.dust);
-export const CHIPS: Ramp = rampOf(['#1c1712', '#3a3026', '#57493a', '#7a6852']);
+export const CHIPS: Ramp = rampOf('#1c1712', '#3a3026', '#57493a', '#7a6852');
 /** Blaze's ash on the ground: charred black, its edge still glowing in Blaze's stops. */
-export const ASH: Ramp = [hex('#16110e'), GLOW_RAMPS[1][1], GLOW_RAMPS[1][2], GLOW_RAMPS[1][3]];
+export const ASH: Ramp = [rgb('#16110e'), GLOW_RAMPS[1][1], GLOW_RAMPS[1][2], GLOW_RAMPS[1][3]];
 
 /** The ramp a blow burns in: its element's, else steel. */
 export const rampFor = (look: GlowLook): Ramp => (look ? GLOW_RAMPS[look] : STEEL);
@@ -35,12 +25,6 @@ export const rampFor = (look: GlowLook): Ramp => (look ? GLOW_RAMPS[look] : STEE
 const LIFT = 0.035;
 /** A picture nearer the eye than this (metres) is not laid: it would fill the view. */
 const NEAR_M = 0.6;
-/** A 4 by 4 ordered dither's order, for thinning a picture in steps. */
-const ORDER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const;
-
-/** Whether a cell at a column and a row is kept when a picture keeps `share` of its cells (0 none, 1 all). */
-export const kept = (column: number, row: number, share: number): boolean =>
-  (ORDER[(row & 3) * 4 + (column & 3)] ?? 0) < share * 16;
 
 /** A shape lit as pixel art: a cell in it with a side off it at `edge`, its heart white-hot, the rest `fill`. */
 function shaded(
@@ -295,79 +279,6 @@ export function layFlat(out: number[], picture: Sprite, ramp: Ramp, centre: Poin
   layRuns(out, picture, ramp, share, [centre[0], centre[1], centre[2] + LIFT], [cell, 0, 0], [0, -cell, 0]);
 }
 
-/** Each sprite's runs, made once: for each row's run of one stop, its row, first column, end and stop. */
-const madeRuns = new WeakMap<Sprite, Int16Array>();
-function runsOf(picture: Sprite, share: number): Int16Array {
-  const whole = share >= 1;
-  const known = whole ? madeRuns.get(picture) : undefined;
-  if (known) return known;
-  const runs: number[] = [];
-  const stopAt = (column: number, row: number) =>
-    whole || kept(column, row, share) ? stopOf(picture, column, row) : CLEAR;
-  for (let row = 0; row < picture.height; row++)
-    for (let column = 0; column < picture.width;) {
-      const stop = stopAt(column, row);
-      let end = column + 1;
-      while (end < picture.width && stopAt(end, row) === stop) end++;
-      if (stop !== CLEAR) runs.push(row, column, end, stop);
-      column = end;
-    }
-  const made = Int16Array.from(runs);
-  if (whole) madeRuns.set(picture, made);
-  return made;
-}
-
-/** Each run of `picture` as a quad about `middle`, a column `across` and a row `up` apart (metres, as vectors). */
-function layRuns(
-  out: number[],
-  picture: Sprite,
-  ramp: Ramp,
-  share: number,
-  middle: Point,
-  across: Point,
-  up: Point,
-): void {
-  const runs = runsOf(picture, share);
-  const halfWidth = picture.width / 2;
-  const halfHeight = picture.height / 2;
-  for (let index = 0; index < runs.length; index += 4) {
-    const colour = ramp[runs[index + 3] ?? 0];
-    if (!colour) continue;
-    const top = halfHeight - (runs[index] ?? 0);
-    const left = (runs[index + 1] ?? 0) - halfWidth;
-    const right = (runs[index + 2] ?? 0) - halfWidth;
-    quadOut(out, middle, across, up, left, right, top, top - 1, colour);
-  }
-}
-
-/** One quad about `middle` from column `left` to `right` and row `top` to `bottom`, each a step of `across` and `up`. */
-function quadOut(
-  out: number[],
-  middle: Point,
-  across: Point,
-  up: Point,
-  left: number,
-  right: number,
-  top: number,
-  bottom: number,
-  colour: Rgb,
-): void {
-  for (let corner = 0; corner < 6; corner++) {
-    // The corners in turn: left top, right top, right bottom; left top, right bottom, left bottom.
-    const column = corner === 1 || corner === 2 || corner === 4 ? right : left;
-    const height = corner === 0 || corner === 1 || corner === 3 ? top : bottom;
-    out.push(
-      middle[0] + across[0] * column + up[0] * height,
-      middle[1] + across[1] * column + up[1] * height,
-      middle[2] + across[2] * column + up[2] * height,
-      colour[0],
-      colour[1],
-      colour[2],
-      1,
-    );
-  }
-}
-
 /** A line from `from` to `to`, `width` metres across, turned to face `eye`, in one opaque colour. */
 export function layLine(out: number[], eye: Point, from: Point, to: Point, width: number, colour: Rgb): void {
   const [alongX, alongY, alongZ] = [to[0] - from[0], to[1] - from[1], to[2] - from[2]];
@@ -379,5 +290,5 @@ export function layLine(out: number[], eye: Point, from: Point, to: Point, width
   if (length < 1e-9) return;
   const half = width / 2 / length;
   // A quad whose columns run along the side and whose one row runs from `from` to `to`.
-  quadOut(out, from, [sideX * half, sideY * half, sideZ * half], [alongX, alongY, alongZ], -1, 1, 1, 0, colour);
+  quadOut(out, from, [sideX * half, sideY * half, sideZ * half], [alongX, alongY, alongZ], [-1, 1, 1, 0], colour);
 }

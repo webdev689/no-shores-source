@@ -3,7 +3,7 @@
 // that rise and drift the shot's way, thinning by an ordered dither in four steps. Every size is held to a share of
 // the eye's view, so a shot fired in first person, its muzzle an arm's length off, flashes without filling the screen.
 import { CELL_M, CLEAR, DARK, BODY, LIGHT, HOT, type Sprite, hashOf, sprite } from './spellPixels.ts';
-import { POWDER, SMOKE, layPicture, starSprite } from './markSprites.ts';
+import { POWDER, SMOKE, layPicture, crossStar } from './markSprites.ts';
 import { markRing } from './marks.ts';
 
 type Point = readonly [number, number, number];
@@ -58,7 +58,7 @@ interface Shot {
 
 /** The flash's star at each of its first two frames: white-hot, then a stop cooler. */
 const FLASH_STARS: readonly Sprite[] = [0, 1].map((cooled) => {
-  const star = starSprite(STAR_REACH);
+  const star = crossStar(STAR_REACH);
   return { ...star, cells: star.cells.map((stop) => (stop >= 0 ? Math.max(DARK, stop - cooled) : stop)) };
 });
 

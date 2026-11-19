@@ -13,13 +13,16 @@ test('sparks fall as they fly and are gone once their life is over', () => {
 });
 
 test('embers rise and motes hang', () => {
-  const still = [0, 0, 0] as const;
+  // Each spark owns its numbers: they fly on in place.
+  const still = (look?: 1 | 3) => ({
+    at: [0, 0, 0] as const,
+    velocity: [0, 0, 0] as const,
+    age: 0,
+    life: 1,
+    ...(look ? { look } : {}),
+  });
   const sparks = new Sparks(() => 0.5);
-  sparks.flying = [
-    { at: still, velocity: still, age: 0, life: 1 },
-    { at: still, velocity: still, age: 0, life: 1, look: 1 },
-    { at: still, velocity: still, age: 0, life: 1, look: 3 },
-  ];
+  sparks.flying = [still(), still(1), still(3)];
   sparks.update(0.1);
   const [plain, ember, mote] = sparks.flying;
   assert.ok((ember?.velocity[2] ?? 0) > (plain?.velocity[2] ?? 0), 'an ember is held up');

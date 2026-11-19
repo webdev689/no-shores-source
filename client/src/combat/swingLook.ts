@@ -3,6 +3,7 @@
 // stage: SWING_WGSL holds the vertex's output and the fragment.
 import { GLOW_RAMPS, type Rgb, wgslRgb } from '../elementGlow.ts';
 import type { Colour } from './swingCourse.ts';
+import { GOLD } from './markSprites.ts';
 
 /** The ramps an arc burns in: its weapon's metal (made from its tint), an element's, a riposte's gold, and the dust a
  *  heavy blow throws off the ground. */
@@ -13,8 +14,7 @@ const hex = (code: string): Rgb => [
   Number.parseInt(code.slice(3, 5), 16) / 255,
   Number.parseInt(code.slice(5, 7), 16) / 255,
 ];
-/** Gold, the HUD's #ffd95a its light; and dust, dark to light. */
-const GOLD: readonly Rgb[] = ['#4a2a06', '#c8901e', '#ffd95a', '#fff6d0'].map(hex);
+/** Dust, dark to light (gold is the marks' own). */
 const DUST: readonly Rgb[] = ['#3a3226', '#6b5d48', '#9c8b6e', '#c9b996'].map(hex);
 /** A metal's stops from its tint: each the tint dimmed by the first share, then lifted toward white by the second. */
 const METAL_DIM = [0.24, 0.76, 1, 1] as const;

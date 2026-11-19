@@ -2,11 +2,12 @@
 // kick and the lunge, each at its default here and switched and set in the Test Ground's panel. Only the drawing moves:
 // the fight's rules and their clock never do.
 import { CameraKick, kicksOf, leanOf } from './cameraKick.ts';
-import { EVENT } from './cues.ts';
+import { EVENT, HOW } from './cues.ts';
 import { HitStops, heldBack } from './hitStop.ts';
 import { lungeOf } from './lunge.ts';
 import { type Smear, type Swing, SwingArcs, type Vector, weaponTint } from './swingArcs.ts';
 import type { Orbit } from '../editor/orbit.ts';
+import { motionReduced } from '../plus/kit.ts';
 import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { blowWay } from '../player/playerMoves.ts';
@@ -123,6 +124,8 @@ export class AttackFeel {
     [this.ownKind, this.ownClock] = [kind, clock];
     this.stops.struck(events, feel.stop ? feel.stopLength : 0);
     for (const event of events) {
+      // Only a blade's own blow flares its arc: a spell or a shot landing mid-swing never touched it.
+      if (event.how === HOW.shot || event.how === HOW.spell) continue;
       const flare = event.kind === EVENT.hit && event.amount <= 0 ? 0 : (ARC_FLARE[event.kind] ?? 0);
       if (flare > 0) this.arcs.struck(event.striker, flare, this.lag(event.striker));
     }
@@ -185,8 +188,10 @@ export class AttackFeel {
     eyes: boolean,
     aiming: boolean,
   ): Seen {
-    const push = this.feel.kick ? this.kick.now : STILL;
-    const lunge = eyes ? this.lunge(player, own).ahead * OWN_LUNGE_EYE : 0;
+    // A player who asked for reduced motion keeps a still view: no kick, no shake, no lunge carrying the eye.
+    const still = motionReduced();
+    const push = this.feel.kick && !still ? this.kick.now : STILL;
+    const lunge = eyes && !still ? this.lunge(player, own).ahead * OWN_LUNGE_EYE : 0;
     const turn = aiming ? { yaw: 0, pitch: 0 } : {};
     return this.kick.kicked(orbit, { ...push, ...turn, ahead: push.ahead + lunge });
   }

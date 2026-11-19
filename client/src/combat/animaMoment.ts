@@ -9,6 +9,7 @@ import type { Lands } from './spellLands.ts';
 import { BLAZE, COSMIC, type Frame, type Point, VOLT, apartFrom, seenFrom, shoulderOf } from './spellPlaces.ts';
 import { sigilSprite, sigilState } from './spellPictures.ts';
 import { BODY, CELL_M, LIGHT, groundSprite } from './spellPixels.ts';
+import { motionReduced } from '../plus/kit.ts';
 
 /** Each Anima's Art (1 Storm, 2 Divine, 3 Shadow) and element, by its spell. */
 const ANIMAS: ReadonlyMap<number, { readonly art: number; readonly look: GlowElement }> = new Map([
@@ -65,7 +66,8 @@ export function animaScreen(look: GlowLook, seconds: number): AnimaScreen {
 
 /** A view pushed in by `push`, a share of its zoom. */
 export function pushedIn<View extends { readonly zoom?: number }>(view: View, push: number): View {
-  return push > 0 ? { ...view, zoom: (view.zoom ?? 1) * (1 + push) } : view;
+  // Reduced motion keeps the view still; the edge frame still tells of the release.
+  return push > 0 && !motionReduced() ? { ...view, zoom: (view.zoom ?? 1) * (1 + push) } : view;
 }
 
 /** The Anima moments of every caster in a fight, frame by frame. */

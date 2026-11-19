@@ -108,19 +108,20 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   swing arc over its striker (none through the eyes), with the smear its strike leaves behind the striker's card; the
   hit-stop holding the fighters a blow lands on; the camera's kick (moving the view but never turning it while a
   crosshair shows); and the lunge driving a striker's figure into its blow. Only the drawing moves, never the rules or
-  their clock (`combat/attackFeel.ts`).
-- **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole
-  figure white for two, its outline white for two, then its outline for one in the blow's element's light (steel
-  `#cfe0ff` for a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames
-  only for a blow of more than a quarter of their health. A foe struck slides along the blow, away from its striker,
-  in whole pixels: 0.12 m for a hit, 0.35 m for a stagger, out over 6 frames and back over 10 to where the room has
-  it; 0.6 m for a kill, which stays. A stagger shakes the figure a pixel either way for its first 6 frames, reels it
-  through its hurt frames forth and back every 0.4 s (a flinch plays them once), and circles three gold stars round its
-  head in eighth-turns, once a second; a Charge's stagger holds it still. A foe slain dissolves once its fall is
-  over: plain, it greys and crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in
-  an element (the one its killing blow carried, as the room tells it) dissolves at once in it (Blaze burning up from
-  the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it. A
-  crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
+  their clock (`combat/attackFeel.ts`). A player who asks for reduced motion keeps a still view: no kick, no shake, no
+  lunge carrying the eye and no Anima push-in; the Anima's edge frame still shows.
+- **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole figure
+  white for two, its outline white for two, then its outline for one in the blow's element's light (steel `#cfe0ff` for
+  a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames only for a blow of
+  more than a quarter of their health. A foe struck slides along the blow, away from its striker, in whole pixels: 0.12
+  m for a hit, 0.35 m for a stagger, out over 6 frames and back over 10 to where the room has it; 0.6 m for a kill,
+  which stays. A stagger shakes the figure a pixel either way for its first 6 frames, reels it through its hurt frames
+  forth and back every 0.4 s (a flinch plays them once), and circles three gold stars round its head in eighth-turns,
+  once a second; a Charge's stagger holds it still. A foe slain dissolves once its fall is over: plain, it greys and
+  crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in an element (the player's own in
+  their weapon's glow as their page shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
+  from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
+  A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
   [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.

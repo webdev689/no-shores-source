@@ -2,16 +2,10 @@
 // circling it in held steps, and an Exposed foe's cracked diamond beside it; its plate stands over the head.
 import { GLOW_RAMPS, type Rgb } from '../elementGlow.ts';
 import { CELL_M, CLEAR, STAR, type Sprite, sprite, stopOf } from './spellPixels.ts';
+import { GOLD } from './markSprites.ts';
 
 type Point = readonly [number, number, number];
 
-/** Gold, dark to white-hot, as a riposte's arc burns. */
-const GOLD: readonly Rgb[] = [
-  [0.29, 0.16, 0.02],
-  [0.78, 0.56, 0.12],
-  [1, 0.85, 0.35],
-  [1, 0.96, 0.82],
-];
 /** A staggered foe's stars: this many, this far round its head (metres), this high over its feet, going round once
  *  in this long (s) in this many held steps. */
 const DAZE = { stars: 3, radius: 0.35, high: 1.85, turn: 1, steps: 8 } as const;

@@ -5,7 +5,6 @@ import {
   CRACKED_SHIELD,
   STEEL,
   forksSprite,
-  kept,
   layFlat,
   layUpright,
   ringSprite,
@@ -14,6 +13,7 @@ import {
   starSprite,
   tonguesSprite,
 } from './impactPixels.ts';
+import { ditherKeeps } from './markSprites.ts';
 import { CLEAR, HOT, stopOf } from './spellPixels.ts';
 
 const middleOf = (picture: { width: number; height: number }) => [(picture.width - 1) / 2, (picture.height - 1) / 2];
@@ -46,7 +46,8 @@ test('every shape is drawn in the four stops and nothing between', () => {
 
 test('the ordered dither keeps its share of the cells', () => {
   let keptCells = 0;
-  for (let row = 0; row < 8; row++) for (let column = 0; column < 8; column++) if (kept(column, row, 0.5)) keptCells++;
+  for (let row = 0; row < 8; row++)
+    for (let column = 0; column < 8; column++) if (ditherKeeps(column, row, 0.5)) keptCells++;
   assert.equal(keptCells, 32);
 });
 

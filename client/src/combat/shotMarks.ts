@@ -3,7 +3,7 @@
 // the fight's own), and water throws a splash and rings. A ball also flashes where it stops.
 import type { Block } from '../rules/movementRules.ts';
 import { markRing, markStuckArrow } from './marks.ts';
-import { POWDER, STEEL, WATER, type Ramp, layPicture, rampOf, starSprite } from './markSprites.ts';
+import { POWDER, STEEL, WATER, type Ramp, layPicture, rampOf, crossStar } from './markSprites.ts';
 import { CELL_M, CLEAR, DARK, BODY, LIGHT, HOT, type Sprite, hashOf, sprite } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
@@ -98,7 +98,7 @@ interface Left {
 }
 
 const BODY_STARS: readonly Sprite[] = [0, 1, 2].map((cooled) => {
-  const star = starSprite(3);
+  const star = crossStar(3);
   return { ...star, cells: star.cells.map((stop) => (stop >= 0 ? Math.max(DARK, stop - cooled) : stop)) };
 });
 const HOLE: Sprite = sprite(HOLE_CELLS, HOLE_CELLS, (across, up) => {

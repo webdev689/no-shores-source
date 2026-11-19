@@ -12,6 +12,15 @@ export interface Spark {
   readonly look?: GlowElement;
 }
 
+/** A spark as it flies here: the same numbers, moved on in place each frame. */
+interface Flying {
+  at: [number, number, number];
+  velocity: [number, number, number];
+  age: number;
+  life: number;
+  readonly look?: GlowElement;
+}
+
 /** A spark's speed (metres a second) and its life (seconds), each between these. */
 const SPEED = [2.5, 6] as const;
 const LIFE = [0.2, 0.45] as const;
@@ -40,8 +49,13 @@ export class Sparks {
       const way = [toward[0] + spread[0], toward[1] + spread[1], spread[2]] as const;
       const length = Math.hypot(...way) || 1;
       const speed = between(speeds) * slow;
-      const velocity: Vector = [(way[0] / length) * speed, (way[1] / length) * speed, (way[2] / length) * speed];
-      this.flying.push({ at: from, velocity, age: 0, life: between(lives), ...(look ? { look } : {}) });
+      const velocity: [number, number, number] = [
+        (way[0] / length) * speed,
+        (way[1] / length) * speed,
+        (way[2] / length) * speed,
+      ];
+      const spark: Flying = { at: [from[0], from[1], from[2]], velocity, age: 0, life: between(lives) };
+      this.flying.push(look ? { ...spark, look } : spark);
     }
   }
 
@@ -51,23 +65,18 @@ export class Sparks {
   }
 
   /** Flies every spark on by `seconds`, falling as it goes (an element's motes held up by its lift), and lets go of
-   *  those burnt out. */
+   *  those burnt out, in place: a busy fight makes no new sparks to fly the old ones. */
   update(seconds: number): void {
-    this.flying = this.flying
-      .map((spark) => {
-        const { at: place, velocity, age, look } = spark;
-        const fall = GRAVITY - (look ? GLOW_BURSTS[look].lift : 0);
-        return {
-          ...spark,
-          at: [
-            place[0] + velocity[0] * seconds,
-            place[1] + velocity[1] * seconds,
-            place[2] + velocity[2] * seconds,
-          ] as const,
-          velocity: [velocity[0], velocity[1], velocity[2] - fall * seconds] as const,
-          age: age + seconds,
-        };
-      })
-      .filter((spark) => spark.age < spark.life);
+    const flying = this.flying as Flying[];
+    let kept = 0;
+    for (const spark of flying) {
+      const fall = GRAVITY - (spark.look ? GLOW_BURSTS[spark.look].lift : 0);
+      const [place, velocity] = [spark.at, spark.velocity];
+      for (let axis = 0; axis < 3; axis++) place[axis] = (place[axis] ?? 0) + (velocity[axis] ?? 0) * seconds;
+      velocity[2] -= fall * seconds;
+      spark.age += seconds;
+      if (spark.age < spark.life) flying[kept++] = spark;
+    }
+    flying.length = kept;
   }
 }

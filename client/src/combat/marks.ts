@@ -3,7 +3,7 @@ import type { FlyingShot } from '../network/messages.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { Spark } from './sparks.ts';
 import type { Action, Shape } from '../rules/fighters.ts';
-import { IRON, rampOf } from './markSprites.ts';
+import { GOLD, IRON, rampOf } from './markSprites.ts';
 
 /** A telegraphed blow's mark: its shape where it stands, how far its wind-up has run, and whether it is iron. */
 export type TelegraphMark = Extract<Action, { kind: 'telegraph' }>;
@@ -20,7 +20,6 @@ const GROUND: Readonly<Record<Shape, { length: number; width: number; inner: num
   aimed: { length: 0, width: 0.25, inner: 0, halfArc: 0 },
 };
 /** A plain blow's mark's ramp, dark to white-hot (an iron one's is the display's iron red, `IRON`). */
-const GOLD = rampOf('#4a2a06', '#c8901e', '#ffd95a', '#fff6d0');
 /** The ground's cells a mark is dithered in: four of a figure's pixels, so its dots read as dots across a fight. */
 export const DITHER_M = 4 / PX_PER_M;
 /** A mark's fill is this share of its cells, and this share in its last stretch (the last 12 ticks, 0.2 s, as the

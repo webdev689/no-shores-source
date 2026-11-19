@@ -6,7 +6,8 @@ import type { FightEvent } from '../network/messages.ts';
 import { FLASH } from '../player/cardLooks.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { EVENT, HOW } from './cues.ts';
+import { EVENT, HOW, blowLook } from './cues.ts';
+import { GOLD } from './markSprites.ts';
 
 type Point = readonly [number, number, number];
 type Rgb = readonly [number, number, number];
@@ -27,7 +28,6 @@ export const FLASH_FRAMES = {
 } as const;
 const WHITE: Rgb = [1, 1, 1];
 /** A crit's gold, the HUD's #ffd95a. */
-const GOLD: Rgb = [1, 0.85, 0.35];
 const RED: Rgb = [1, 0.16, 0.1];
 const STEEL: Rgb = [0.81, 0.88, 1];
 /** How far a struck figure slides along the blow (metres): a hit, a stagger, a kill; out over this many frames, back
@@ -62,7 +62,7 @@ export function flashAt(
   const { whole: full, coloured } = FLASH_FRAMES;
   const outline = crit ? FLASH_FRAMES.critOutline : FLASH_FRAMES.outline;
   if (frame < full) return { stage: FLASH.whole, colour: WHITE };
-  if (frame < full + outline) return { stage: FLASH.outline, colour: crit ? GOLD : WHITE };
+  if (frame < full + outline) return { stage: FLASH.outline, colour: crit ? GOLD[2] : WHITE };
   if (frame < full + outline + coloured) return { stage: FLASH.outline, colour: look ? GLOW_RAMPS[look][2] : STEEL };
   return null;
 }
@@ -99,6 +99,10 @@ export interface StruckBy {
   readonly where?: (id: number) => Point | null;
 }
 
+/** A kill's slide is kept until its fighter stands again, or this long (seconds), so a foe gone from the fight is let
+ *  go too. */
+const KILL_KNOCK_KEPT_S = 20;
+
 interface Flash {
   since: number;
   readonly own: boolean;
@@ -130,7 +134,9 @@ export class Flashes {
     }
     for (const [id, knock] of this.knocks) {
       knock.since += seconds;
-      if (knock.kind !== 'killed' && knock.since / FRAME_S > KNOCK.out + KNOCK.back) this.knocks.delete(id);
+      const over =
+        knock.kind === 'killed' ? knock.since > KILL_KNOCK_KEPT_S : knock.since / FRAME_S > KNOCK.out + KNOCK.back;
+      if (over) this.knocks.delete(id);
     }
     for (const [id, since] of this.shakes) {
       if (since + seconds >= SHAKE_FRAMES * FRAME_S - 1e-9) this.shakes.delete(id);
@@ -148,8 +154,7 @@ export class Flashes {
     const melee = event.how !== HOW.shot && event.how !== HOW.spell;
     if (harms) {
       const own = event.defender === player;
-      const spell = event.how === HOW.spell;
-      const look = spell ? (told?.spellLook?.(event.striker) ?? 0) : event.striker === player ? (told?.look ?? 0) : 0;
+      const look = blowLook(event, { player: player ?? -1, own: told?.look ?? 0, spellLook: told?.spellLook });
       const whole = own && event.amount > (told?.healthMax ?? Infinity) * FLASH_FRAMES.heavy;
       this.flashes.set(event.defender, { since: 0, own, whole, look, crit: !!event.crit });
     }

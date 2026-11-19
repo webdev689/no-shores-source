@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightEvent } from '../network/messages.ts';
 import { EVENT, HOW } from './cues.ts';
-import { blowLook } from './fightEffects.ts';
+import { blowLook } from './cues.ts';
 import { CRIT, HIT, Impacts, contactOf, hitScale, strokeTravel } from './impacts.ts';
 import { GOLD, STEEL } from './impactPixels.ts';
 

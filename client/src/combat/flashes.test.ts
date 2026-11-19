@@ -6,6 +6,7 @@ import { PX_PER_M } from '../player/figures.ts';
 import { glanceView, GLANCE_FLOATS } from '../rules/fighters.ts';
 import { EVENT, HOW } from './cues.ts';
 import { DISSOLVE_FRAMES, Flashes, KNOCK, dissolveShare, flashAt, knockAt } from './flashes.ts';
+import { GOLD } from './markSprites.ts';
 
 const FRAME = 1 / 60;
 const blow = (kind: number, defender: number, amount: number, over: Partial<FightEvent> = {}): FightEvent => ({
@@ -44,7 +45,7 @@ test('a crit’s struck foe keeps the whole white frames, then its outline in go
   flashes.update([blow(EVENT.hit, 1, 14, { crit: true })], 0, { player: 40, look: 0 });
   const shown = frames(flashes, 1, 8);
   assert.deepEqual(shown.slice(0, 2), [`${FLASH.whole}:1,1,1`, `${FLASH.whole}:1,1,1`]);
-  assert.deepEqual(new Set(shown.slice(2, 6)), new Set([`${FLASH.outline}:1,0.85,0.35`]), 'gold, four frames');
+  assert.deepEqual(new Set(shown.slice(2, 6)), new Set([`${FLASH.outline}:${GOLD[2].join(',')}`]), 'gold, four frames');
   assert.ok(shown[6]?.startsWith(`${FLASH.outline}:`), 'then steel');
   assert.equal(shown[7], 'off');
 });

@@ -47,7 +47,8 @@ the menu's pictures stay plain.
 - **In first person.** A sword or a dagger laid over its hand glows on its blade only; every other weapon's picture
   glows whole. Each hand glows in its own weapon's element, each outline drawn just after its picture. A picture
   standing on the screen's foot takes no light along it.
-- **Leaving the blade.** On the figure, the element leaves the blade along its swing's arc in the [[Test Ground]]:
+- **Leaving the blade.** On the figure, the element leaves the blade along its swing's arc, in the [[Game]] and the
+  [[Test Ground]] alike:
   Blaze sheds 18 embers a second off the arc's head, two pixels each, rising and cooling through its stops for half a
   second or so; Volt jolts the arc 12 times a second and throws two forks of three legs, 0.3 m, off the head at each
   strike while it is fast; Cosmic leaves a star every 0.08 s along the path, fading over 0.4 s. In first person it

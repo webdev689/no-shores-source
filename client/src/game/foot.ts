@@ -1,4 +1,4 @@
-import { pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
@@ -520,5 +520,7 @@ export class Foot {
     this.otherPlayers.clear();
     this.plaza?.close();
     this.prompt?.remove();
+    // An Anima's edge frame cast just before leaving must not stay over the next place.
+    showAnimaEdge(QUIET);
   }
 }

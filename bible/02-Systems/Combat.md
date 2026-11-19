@@ -29,11 +29,11 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 
 ## How it works
 
-- **One crate for every machine.** The `combat` crate holds the rules, beside [[Movement]]'s, and steps a fighter in
-  the same whole ticks of 1/60 s. A fighter is a body and everything a fight keeps for it: what it holds, health,
-  stamina, poise, what it is doing, its aim and its soft lock's target, and its side: the players', or an enemy
-  faction's by its number ([[Enemies]]); fighters of different sides are each other's foes. What a fighter does to
-  others is the host's to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
+- **One crate for every machine.** The `combat` crate holds the rules, beside [[Movement]]'s, and steps a fighter in the
+  same whole ticks of 1/60 s. A fighter is a body and everything a fight keeps for it: what it holds, health, stamina,
+  poise, what it is doing, its aim and its soft lock's target, and its side: the players', or an enemy faction's by its
+  number ([[Enemies]]); fighters of different sides are each other's foes. What a fighter does to others is the host's
+  to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
 - **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer,
   staff or greatsword (a sword with both hands on its hilt), fists with nothing drawn, or a bow, crossbow, pistolet,
   double pistolet (a pistolet in each hand) or thunderlock. The left hand holds a shield, a second blade or mace (the
@@ -65,16 +65,16 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   it faces), near the striker's height, with no block between them; the soft lock's target first, then the nearest.
 - **Stamina.** 100. It comes back at 45 a second once it has rested half a second since it was last spent, slower
   behind a guard. A fighter with none cannot swing or dodge; spending never takes it below none.
-- **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a fifth of a second
-  (12 ticks), which stays open for its whole length even if the button is let go at once, so a tap parries. A blow
-  that lands in the window, from within the guard's arc, is parried: it does nothing, its striker staggers for 54
-  ticks, the parrier's lock turns on it, and the parrier's next swing at it within that time is a riposte, twice as
-  hard, which no guard stops (it does not also count the stagger's quarter more). A press within half a second of a
-  window left unused opens none, so mashing the button does not parry. After the window the guard blocks: a blade's guard covers 60 degrees either side, a shield's 80; a
-  blade lets a fifth of the blow through, a shield a twentieth; the guard pays the blow's weight in stamina (a shield
-  six tenths of it), and a blow it cannot pay for breaks it, staggering the fighter for 48 ticks with half the blow
-  through. Guarding, a fighter moves at under half its pace. Iron blows and shots are never parried, iron blows never
-  blocked, and shots blocked only by a shield.
+- **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a fifth of a second (12
+  ticks), which stays open for its whole length even if the button is let go at once, so a tap parries. A blow that
+  lands in the window, from within the guard's arc, is parried: it does nothing, its striker staggers for 54 ticks, the
+  parrier's lock turns on it, and the parrier's next swing at it within that time is a riposte, twice as hard, which no
+  guard stops (it does not also count the stagger's quarter more). A press within half a second of a window left unused
+  opens none, so mashing the button does not parry. After the window the guard blocks: a blade's guard covers 60 degrees
+  either side, a shield's 80; a blade lets a fifth of the blow through, a shield a twentieth; the guard pays the blow's
+  weight in stamina (a shield six tenths of it), and a blow it cannot pay for breaks it, staggering the fighter for 48
+  ticks with half the blow through. Guarding, a fighter moves at under half its pace. Iron blows and shots are never
+  parried, iron blows never blocked, and shots blocked only by a shield.
 - **The dodge.** A press dodges: a low, fast hop (3 m/s up, 10 m/s along) the way the keys point, or straight back with
   none, landing about 3 m away. It costs 22 stamina, needs the ground under it, and is not taken on horseback. It
   faces the soft lock's target if there is one, so a fighter hops aside still facing its foe. Blows pass through it
@@ -102,15 +102,14 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
   at once, but a swap begun as another was put away runs on.
 - **Gear's trim.** A fighter carries what its armour and the loadout it has drawn trim of these numbers ([[Gear]],
-  "Perks"; the other loadout trims nothing until it is drawn): what a swing, a dodge (and a
-  dodge with a weapon drawn) and a guard's blow cost; how fast stamina comes back, and again below half health; a
-  reload's time, a bow's draw to full power and the pace kept while aiming; what its blows do (a riposte, a counter,
-  an aimed shot, the poise they fill, what a guard lets through and pays, how long a stagger they cause lasts); and how
-  blows land on it (the poise they fill, and again with a weapon drawn; from behind; telegraphed, through a guard as
-  well). Nothing trimmed is these numbers; a foe's never are. A riposte is the stagger's own answer: the stagger's
-  extra harm, and a striker's trim on a staggered foe, never count in it. A snapshot leaves the trim out of each fighter; the room sends a player theirs
-  with their gear, and their browser puts it back before it predicts them. A fighter stood again after death keeps
-  its trim.
+  "Perks"; the other loadout trims nothing until it is drawn): what a swing, a dodge (and a dodge with a weapon drawn)
+  and a guard's blow cost; how fast stamina comes back, and again below half health; a reload's time, a bow's draw to
+  full power and the pace kept while aiming; what its blows do (a riposte, a counter, an aimed shot, the poise they
+  fill, what a guard lets through and pays, how long a stagger they cause lasts); and how blows land on it (the poise
+  they fill, and again with a weapon drawn; from behind; telegraphed, through a guard as well). Nothing trimmed is these
+  numbers; a foe's never are. A riposte is the stagger's own answer: the stagger's extra harm, and a striker's trim on a
+  staggered foe, never count in it. A snapshot leaves the trim out of each fighter; the room sends a player theirs with
+  their gear, and their browser puts it back before it predicts them. A fighter stood again after death keeps its trim.
 - **Numbers that are none.** A look, a push or a pitch that is not a number is never taken: the look keeps the aim.
 - **Death.** At no health a fighter dies and lies where it fell.
 
@@ -207,7 +206,9 @@ gives every one through one door, `Room::give`, for the status's own time unless
 
 - **Weighing a blow.** The room weighs a blow's damage as it settles it, whatever struck it: a crit's 1.5, its
   striker's Linked (as the striker stands then) and its defender's Expose, each multiplying the others, before a foe's
-  shield takes its share. Only a swing makes a Veiled backstab.
+  shield takes its share. Only a swing makes a Veiled backstab. The event it tells says whether the blow was a crit
+  (for a hit, a block or a guard broken) and the element it carried: a weapon's own, a spell's Art's, none for a fist;
+  a kill's event carries the killing blow's ([[Server]]).
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
   fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
 - **A foe walking home** sheds its Expose and its Charge, with the Charge's stagger and the immunity after one, as it
@@ -243,7 +244,8 @@ human limits ([[Foes]]).
 
 ## Limits
 
-- Gear's power and the rest of its perks reach a blow in the rooms ([[Gear]]): a fight stepped alone, with no room, has its trims but not those.
+- Gear's power and the rest of its perks reach a blow in the rooms ([[Gear]]): a fight stepped alone, with no room, has
+  its trims but not those.
 - Running costs no stamina.
 - A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).
 - Statuses run down as their fighter steps, a tick for each of its player's inputs, not by the room's clock: inputs
