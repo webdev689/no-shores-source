@@ -43,6 +43,13 @@ impl Ask {
     pub fn stepping(way: f64, pace: f64, face: f64) -> Self {
         Ask { way: Some((way, pace)), face: Some(face), ..Ask::default() }
     }
+
+    /// The same, its guard held up or not.
+    #[must_use]
+    pub fn guarded(mut self, guard: bool) -> Self {
+        self.combat.guard = guard;
+        self
+    }
 }
 
 /// The bearing to walk to reach a spot by the room's routes, or none when there is no way. A route's corner underfoot
@@ -53,6 +60,19 @@ pub fn way_to(here: &Here<'_, '_>, spot: [f64; 3]) -> Option<f64> {
     let point = here.world.routes.next_point(from, spot)?;
     let point = if apart([from[0], from[1]], [point[0], point[1]]) < 0.05 { spot } else { point };
     Some(bearing([from[0], from[1]], [point[0], point[1]]))
+}
+
+/// Whether an ally of its side already stands nearer a place than it does, within SPACING of it: walking on for the
+/// place would only press into that ally, so foes making for one place stand behind the first there.
+#[must_use]
+pub fn taken(here: &Here<'_, '_>, place: [f64; 3]) -> bool {
+    let (at, to) = (here.at(), [place[0], place[1]]);
+    let mine = apart(at, to);
+    here.world.fighters.iter().any(|(id, other)| {
+        let there = [other.body.x, other.body.y];
+        let ally = *id != here.me && other.side == here.fighter.side && !other.dead();
+        ally && apart(there, at) < SPACING && apart(there, to) < mine
+    })
 }
 
 /// Its move, as shares of a walk east and south, steered clear of the foes of its side standing too near: inside

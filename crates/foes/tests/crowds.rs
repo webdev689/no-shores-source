@@ -1,6 +1,7 @@
 //! Melee foes in numbers keep apart: a foe going in slips round an ally rather than through it, a waiting foe inside
 //! its ring steps back out onto it, a crowded ring evens out, and past a ring's room the waiting stand on a ring
-//! farther out.
+//! farther out. A shield-bearer waiting on its ring keeps its guard up while its target walks about, and foes hunting
+//! and searching one place stand behind the first there rather than shove it.
 
 mod common;
 
@@ -66,14 +67,24 @@ fn a_waiting_foe_inside_its_ring_steps_back_out_onto_it() {
 
 #[test]
 fn foes_bunched_on_their_ring_spread_round_it() {
-    let (mut room, ids) = ringed(cold(8), RING, &[170.0, 175.0, 180.0, 185.0, 190.0, 195.0]);
-    room.run(300, &mut still(0.0));
-    let at = |id: &u32| [room.fighter(*id).body.x, room.fighter(*id).body.y];
-    let waiting: Vec<u32> = ids.into_iter().filter(|id| waiting(&room, *id)).collect();
-    let pairs =
-        waiting.iter().flat_map(|id| waiting.iter().filter(move |other| *other != id).map(move |other| (id, other)));
-    let nearest = pairs.map(|(id, other)| apart(at(id), at(other))).fold(f64::MAX, f64::min);
-    assert!(waiting.len() >= 3 && nearest >= 0.8 * RING_ROOM, "{} waiting stand well apart: {nearest}", waiting.len());
+    // Six stood 5 degrees apart on the ring, 0.3 m from each other; the turns pass among them as they spread, so the
+    // gap is taken over the last two seconds of each of a few fights.
+    let mut spread = 0.0;
+    for seed in 1..=8 {
+        let (mut room, ids) = ringed(cold(seed), RING, &[170.0, 175.0, 180.0, 185.0, 190.0, 195.0]);
+        room.run(240, &mut still(0.0));
+        for _ in 0..120 {
+            room.step(&mut still(0.0));
+            let at = |id: &u32| [room.fighter(*id).body.x, room.fighter(*id).body.y];
+            let waiting: Vec<u32> = ids.iter().copied().filter(|id| waiting(&room, *id)).collect();
+            let pairs = waiting
+                .iter()
+                .flat_map(|id| waiting.iter().filter(move |other| *other != id).map(move |other| (id, other)));
+            let nearest = pairs.map(|(id, other)| apart(at(id), at(other))).fold(f64::MAX, f64::min);
+            spread += nearest.min(TAU * RING) / (8.0 * 120.0);
+        }
+    }
+    assert!(spread >= 0.8 * RING_ROOM, "the waiting stand well apart: {spread} m from the nearest, on average");
 }
 
 #[test]
@@ -95,4 +106,60 @@ fn past_a_ring_s_room_the_waiting_stand_on_a_ring_farther_out() {
     let room_on_first = (TAU * RING / RING_ROOM) as usize;
     assert!(first <= room_on_first, "no more on the first ring than it has room for: {first}");
     assert!(farther >= 2, "the rest a ring farther out: {farther}");
+}
+
+#[test]
+fn a_shield_bearer_waiting_on_its_ring_keeps_its_guard_up_while_its_target_walks_about() {
+    let degrees: Vec<f64> = (0..8).map(|index| f64::from(index) * 45.0).collect();
+    let (mut room, ids) = ringed(Room::new(4).player(PLAYER, 0.0, 0.0, 0.0), 6.0, &degrees);
+    // The player strolls round a wide circle, as one sizing up a crowd does.
+    let mut strolling = |room: &Room, _me: u32| {
+        let mut intent = common::standing_still(room.tick as f64 * 0.004);
+        intent.controls.forward = 0.3;
+        intent
+    };
+    // A guard let fall and raised again within three ticks, by a foe waiting its turn.
+    let (mut flickers, mut dropped) = (0, std::collections::BTreeMap::new());
+    for _ in 0..1800 {
+        let tick = room.tick;
+        room.step(&mut strolling);
+        for (_, id, intent) in room.intents.iter().filter(|(at, id, _)| *at == tick && ids.contains(id)) {
+            if !waiting(&room, *id) {
+                continue;
+            }
+            if !intent.combat.guard {
+                dropped.entry(*id).or_insert(tick);
+            } else if let Some(at) = dropped.remove(id) {
+                flickers += usize::from(tick <= at + 3);
+            }
+        }
+    }
+    assert!(flickers <= 2, "the waiting shields stay up, not dropped and raised tick by tick: {flickers}");
+}
+
+#[test]
+fn foes_hunting_and_searching_one_place_stand_behind_the_first_there_rather_than_shove_it() {
+    // Four foes fight the player, who steps behind a wall out of their sight: each runs to where it last saw them.
+    let wall = movement::Block { min_x: -10.0, min_y: 2.0, max_x: 10.0, max_y: 3.0, top: 3.0 };
+    let room = Room::new(12).course(vec![wall]).player(PLAYER, 0.0, 0.0, 0.0);
+    let (mut room, ids) = ringed(room, 5.0, &[-60.0, -20.0, 20.0, 60.0]);
+    room.run(30, &mut still(0.0));
+    room.set(PLAYER, |player| player.body = movement::standing(0.0, 8.0));
+    // Each foe's turns about of more than 150 degrees between ticks it moved, through its hunt and its search.
+    let mut last: std::collections::BTreeMap<u32, ([f64; 2], Option<f64>)> = std::collections::BTreeMap::new();
+    let mut reversals = 0;
+    for _ in 0..600 {
+        room.step(&mut still(0.0));
+        for id in &ids {
+            let body = room.fighter(*id).body;
+            let (before, walked) = last.get(id).copied().unwrap_or(([body.x, body.y], None));
+            let step = [body.x - before[0], body.y - before[1]];
+            let way = (libm::hypot(step[0], step[1]) > 0.004).then(|| libm::atan2(step[0], -step[1]));
+            if let (Some(now), Some(then)) = (way, walked) {
+                reversals += usize::from(combat::sight::off(now, then) > 150.0_f64.to_radians());
+            }
+            last.insert(*id, ([body.x, body.y], way.or(walked)));
+        }
+    }
+    assert!(reversals <= 20, "they stand, not jostle at the place: {reversals} turns about");
 }

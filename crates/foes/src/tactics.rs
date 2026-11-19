@@ -15,7 +15,7 @@ use crate::leash::{leash, unoccupied};
 use crate::react::{defend, opening};
 use crate::senses::{Here, Sight, sense};
 use crate::shoot::{ranged, shooting};
-use crate::steer::{Ask, way_to};
+use crate::steer::{Ask, taken, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
@@ -95,7 +95,8 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         if here.tick() > brain.seen_at + Here::ticks(STALE) {
             board.forget(me);
         }
-        if sight.distance < 0.5 {
+        // It hunts where it last saw its target, and stands behind an ally already there rather than shove it.
+        if sight.distance < 0.5 || taken(here, sight.spot) {
             return Ask::default();
         }
         return way_to(here, sight.spot).map_or_else(Ask::default, |way| Ask::walking(way, 1.0, true));
@@ -387,6 +388,11 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
 fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -> Ask {
     let tick = here.tick();
     let away = sight.toward + PI;
+    // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: raised near the
+    // ring's line, and kept up across the ring's give and the step back in from just past it, so a target swaying about
+    // the ring's edge never has it drop and rise again tick by tick.
+    let shield = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
+    let guarding = shield && matches!(here.fighter.action, Action::Guard { .. });
     if brain.plan == Plan::Backoff && sight.distance >= ring - RING_SLACK {
         // Out at its farther ring its walk out is over: a target that follows it turns it to face them, not back.
         brain.hop_until = brain.hop_until.min(tick);
@@ -412,7 +418,7 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
         let goal = [spot[0] + libm::sin(place) * ring, spot[1] - libm::cos(place) * ring, spot[2]];
         let Some(way) = way_to(here, goal) else { return Ask::facing(sight.toward) };
         return if sight.distance <= ring + RING_SLACK + 1.0 {
-            Ask::stepping(way, 1.0, sight.toward)
+            Ask::stepping(way, 1.0, sight.toward).guarded(guarding)
         } else {
             Ask::walking(way, 1.0, sight.distance - ring > RUN_FROM)
         };
@@ -421,12 +427,10 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     brain.slot = Some(slot);
     // Round the ring to its place and out or in to the ring's own line, not merely inside its give.
     let (round, out) = (wrap(slot - away) * ring, ring - sight.distance);
-    let mut ask = if round.abs() < SETTLED && out.abs() < SETTLED {
+    let ask = if round.abs() < SETTLED && out.abs() < SETTLED {
         Ask::facing(sight.toward)
     } else {
         Ask::stepping(away + libm::atan2(round, out), CIRCLE_PACE, sight.toward)
     };
-    // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does.
-    ask.combat.guard = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
-    ask
+    ask.guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
 }
