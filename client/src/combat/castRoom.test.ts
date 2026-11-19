@@ -48,8 +48,8 @@ test('a cast sent from the page is taken by the room, empties its share on the b
   const quicken = fighting.abilities?.tenets[0] ?? 1;
   assert.ok(quicken < 0.01, `spent: ${quicken}`);
   assert.ok((fighting.own?.statuses?.haste ?? 0) > 0, 'the caster Hasted');
-  // The Test Ground fills the Anima; Shadow worn, Dusk Daggers whirl where they were aimed.
-  for (const ask of [{ kind: ASKS.grantArts }, { kind: ASKS.wearArt, column: 3 }]) {
+  // Shadow worn (a new Art starts empty), then the Test Ground fills it; Dusk Daggers whirl where they were aimed.
+  for (const ask of [{ kind: ASKS.wearArt, column: 3 }, { kind: ASKS.grantArts }]) {
     fighting.askGear(ask);
     tick(15);
   }
