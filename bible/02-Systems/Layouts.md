@@ -161,7 +161,8 @@ out past its edge.
   other node's claim by the land's fade, read on a field 456 m wider than the claim's.
 - **Its land**: cut into the sculpt as levelled capsules ([[Land]]), its beats flat and its passages climbing between
   their rims. A ledge climbs to 0.55 of the massif's height; a rampart climbs to the top in its first two fifths,
-  keeps to it and drops to 0.55 into its end arena; the rest keep to the floor. A climbing run ends at 0.55 so the face
+  or longer where a slope of 0.6 needs it, keeps to it and drops to 0.55 into its end arena; on a massif under 27 m
+  both end lower, so the face behind the door stands at least 12 m (on the swamp's they end on the floor); the rest keep to the floor. A climbing run ends at 0.55 so the face
   behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
   it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
   road. Foes hold its beats; its end arena is an objective's site and its door a door's.

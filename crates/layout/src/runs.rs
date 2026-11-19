@@ -4,7 +4,7 @@
 
 use crate::areas::Area;
 use crate::brief::{RunBrief, RunKind, RunPlace};
-use crate::field::Field;
+use crate::field::{Field, distance};
 use land::sculpts::Sculpts;
 use serde::Serialize;
 
@@ -49,6 +49,8 @@ pub struct Setting<'a> {
     pub bare: &'a Sculpts,
     pub taken: &'a [[f64; 7]],
     pub avoid: &'a [Vec<[f64; 2]>],
+    /// The massif's height, metres.
+    pub rise: f64,
 }
 
 /// How far either side of its line a run of a kind is cut, metres: a gorge widest, a ledge and a gallery narrowest.
@@ -112,7 +114,7 @@ pub fn find(setting: &Setting, wanted: &[RunBrief], seed: u32) -> Vec<Run> {
                 let (sine, cosine) = land::exact::sin_cos(turn);
                 let mouth = mouth_of(setting, &setting.areas[start], [sine, -cosine])?;
                 (0..3).find_map(|variant| {
-                    let run = shaped(brief, mouth, [sine, -cosine], &|key| {
+                    let run = shaped(brief, mouth, [sine, -cosine], setting.rise, &|key| {
                         draw(&[start as i64, i64::from(heading), variant, key])
                     });
                     fits(setting, &run, &taken).then_some((start, run))
@@ -159,7 +161,7 @@ fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
 
 /// A run's shape from its mouth along `way`: three to five beats, each passage bent at its middle and turned back,
 /// so the line wanders either side of its heading; the passages' lengths chosen so the whole is 200 to 400 m.
-fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], draw: &dyn Fn(i64) -> f64) -> Run {
+fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], rise: f64, draw: &dyn Fn(i64) -> f64) -> Run {
     let between = |range: [f64; 2], key: i64| range[0] + (range[1] - range[0]) * draw(key);
     let count = 3 + (draw(1) * 3.0).floor().min(2.0) as usize;
     // Fewer beats are larger, so a run of three is still long enough.
@@ -195,7 +197,7 @@ fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], draw: &dyn Fn(i64) -
         flat.extend([true, false, false, true]);
         beats.push(Beat { at, radius: pair[1], level: 0.0 });
     }
-    let levels = levels_of(brief.kind, &line, &flat);
+    let levels = levels_of(brief.kind, &line, &flat, rise);
     for beat in &mut beats {
         beat.level = line.iter().position(|point| *point == beat.at).map_or(0.0, |at| levels[at]);
     }
@@ -214,28 +216,37 @@ fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], draw: &dyn Fn(i64) -
     }
 }
 
-/// The level a climbing run's end arena is cut at: far enough below the massif's top that the face behind its door
-/// rises in ledges too steep to climb (a lower face's ledges can be walked up).
+/// The level a climbing run's end arena is cut at, as a share of the massif's height, at the most: far enough below
+/// the massif's top that the face behind its door rises in ledges too steep to climb (a lower face's ledges can be
+/// walked up).
 const END_LEVEL: f64 = 0.55;
+/// The least height of the face behind a climbing run's door, metres: on a low massif the end arena is cut lower,
+/// down to its floor.
+const DOOR_FACE_M: f64 = 12.0;
+/// The steepest a rampart climbs to the massif's top, rise a metre along its passages: well inside what a body walks.
+const RAMPART_STEEPEST: f64 = 0.6;
 
-/// Each line point's level, a share of the massif's height, by how far along the passages (not the beats, which are
-/// flat: `flat` marks a segment ending in a beat) it lies: a ledge climbs the whole way to a little over half the
-/// massif's height, a rampart climbs to the top in its first two fifths, keeps to it and drops into a cut at its end;
-/// the rest keep to the floor.
-fn levels_of(kind: RunKind, line: &[[f64; 2]], flat: &[bool]) -> Vec<f64> {
+/// Each line point's level, a share of the massif's height (`rise` metres), by how far along the passages (not the
+/// beats, which are flat: `flat` marks a segment ending in a beat) it lies: a ledge climbs the whole way to its end
+/// level, a rampart climbs to the top no steeper than `RAMPART_STEEPEST` (in its first two fifths at the least),
+/// keeps to it and drops into a cut at its end; the rest keep to the floor.
+fn levels_of(kind: RunKind, line: &[[f64; 2]], flat: &[bool], rise: f64) -> Vec<f64> {
     let mut climbed = vec![0.0];
     for (pair, &level) in line.windows(2).zip(&flat[1..]) {
         let length = if level { 0.0 } else { crate::field::distance(pair[0], pair[1]) };
         climbed.push(climbed.last().copied().unwrap_or(0.0) + length);
     }
     let whole = climbed.last().copied().unwrap_or(0.0).max(1e-9);
+    let end = END_LEVEL.min(1.0 - DOOR_FACE_M / rise.max(1e-9)).max(0.0);
+    // The massif's top stands up to 1.15 of its height (the land crate's sculpts).
+    let up = (rise * 1.15 / RAMPART_STEEPEST).clamp(0.4 * whole, 0.75 * whole);
     climbed
         .iter()
         .map(|along| match kind {
-            RunKind::Ledge => END_LEVEL * along / whole,
+            RunKind::Ledge => end * along / whole,
             RunKind::Rampart => {
                 let down = ((along / whole - 0.8) / 0.2).clamp(0.0, 1.0);
-                (along / (0.4 * whole)).min(1.0) - (1.0 - END_LEVEL) * down
+                (along / up).min(1.0) - (1.0 - end) * down
             }
             _ => 0.0,
         })
@@ -295,6 +306,30 @@ fn fits(setting: &Setting, run: &Run, taken: &[[f64; 7]]) -> bool {
         along += length;
     }
     let field = setting.field;
+    // Every beat's floor and the wing's rock past the claim stand on dry land, not only the line's points.
+    let wet = |at: [f64; 2]| {
+        field
+            .cell_of(at[0], at[1])
+            .is_some_and(|(column, row)| field.water[field.index(column, row)] != crate::field::Water::Dry)
+    };
+    let beat_wet = run.beats.iter().any(|beat| {
+        let reach = (beat.radius / 4.0).ceil() as i32;
+        (-reach..=reach).flat_map(|east| (-reach..=reach).map(move |south| (east, south))).any(|(east, south)| {
+            let at = [beat.at[0] + f64::from(east) * 4.0, beat.at[1] + f64::from(south) * 4.0];
+            distance(at, beat.at) <= beat.radius && wet(at)
+        })
+    });
+    let wing_wet = wing(run, setting.claim).is_some_and(|[x1, y1, x2, y2, half]| {
+        let length = distance([x1, y1], [x2, y2]).max(1e-9);
+        let across = [-(y2 - y1) / length * half, (x2 - x1) / length * half];
+        (0..=40).flat_map(|along| (-8..=8).map(move |out| (along, out))).any(|(along, out)| {
+            let (share, side) = (f64::from(along) / 40.0, f64::from(out) / 8.0);
+            wet([x1 + (x2 - x1) * share + across[0] * side, y1 + (y2 - y1) * share + across[1] * side])
+        })
+    });
+    if beat_wet || wing_wet {
+        return false;
+    }
     points.iter().all(|&(at, half, along)| {
         let Some((column, row)) = field.cell_of(at[0], at[1]) else { return false };
         let cell = field.index(column, row);
@@ -344,7 +379,13 @@ pub fn wing(run: &Run, claim: &[[f64; 2]]) -> Option<[f64; 5]> {
     let from = run.line.iter().rev().find(|at| off_ring(claim, **at) < 0.0).copied().unwrap_or(run.mouth);
     let to = ahead(run.door, run.facing, 20.0);
     let widest = run.beats.iter().map(|beat| beat.radius).fold(0.0, f64::max);
-    let spread = run.line.iter().map(|at| crate::paths::off_line(*at, from, to)).fold(0.0, f64::max);
+    // How far the line strays from the wing's axis past the claim: inside the ring the claim holds it already.
+    let spread = run
+        .line
+        .iter()
+        .filter(|at| off_ring(claim, **at) >= 0.0)
+        .map(|at| crate::paths::off_line(*at, from, to))
+        .fold(0.0, f64::max);
     Some([from[0], from[1], to[0], to[1], spread + widest + 30.0])
 }
 
@@ -445,7 +486,7 @@ mod tests {
 
     fn one(kind: RunKind, place: RunPlace, field: &Field, avoid: &[Vec<[f64; 2]>]) -> Run {
         let (claim, areas, bare) = basin();
-        let setting = Setting { field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid };
+        let setting = Setting { field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid, rise: 28.0 };
         let mut runs = find(&setting, &[brief(kind, place)], 9);
         assert_eq!(runs.len(), 1, "one run found");
         runs.remove(0)
@@ -513,7 +554,8 @@ mod tests {
     fn two_runs_never_cross() {
         let field = made_field(60.0);
         let (claim, areas, bare) = basin();
-        let setting = Setting { field: &field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid: &[] };
+        let setting =
+            Setting { field: &field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid: &[], rise: 28.0 };
         let wanted = [
             brief(RunKind::Gorge, RunPlace::Rock),
             brief(RunKind::Keep, RunPlace::Rock),

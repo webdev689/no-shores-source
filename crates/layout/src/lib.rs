@@ -175,7 +175,8 @@ pub fn plan(
     let runs = if patrol && !brief.runs.is_empty() {
         let bare = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
         let field = wide.as_ref().unwrap_or(&field);
-        let setting = runs::Setting { field, claim: &claim, areas: &areas, bare: &bare, taken: &sculpt.climbs, avoid };
+        let setting =
+            runs::Setting { field, claim: &claim, areas: &areas, bare: &bare, taken: &sculpt.climbs, avoid, rise };
         runs::find(&setting, &brief.runs, seed)
     } else {
         Vec::new()
