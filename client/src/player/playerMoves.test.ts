@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
+import { BOW_LOOSED } from '../firstperson/weaponMachine.ts';
 import { plainDress } from './dressing.ts';
 import type { Placed } from './figures.ts';
 import {
@@ -221,13 +222,45 @@ test('running with a gun or a crossbow drawn plays its own run; put away, the pl
   assert.ok(likelyMoves('crossbow_iron', null, classic).includes('xbowrun'));
 });
 
-test('a gun aimed holds its shot at the frame it is aimed, before it fires; a bow is drawn through its draw', () => {
+test('a gun aimed holds its shot at the frame it is aimed, before it fires; a crossbow raised, a bow at its full draw', () => {
   const aimed = (right: string, left: string | null = null) =>
-    shownMove({ ...doing, right, left, fight: { kind: 'draw', progress: 0.5 } }, frames, classic);
+    shownMove({ ...doing, right, left, fight: { kind: 'draw', progress: 1 } }, frames, classic);
   assert.deepEqual(aimed('thunderlock_iron'), { anim: 'gunshot', frame: 1, frameSeconds: 0 });
   assert.deepEqual(aimed('pistolet_iron'), { anim: 'pistolshot', frame: 1, frameSeconds: 0 });
   assert.deepEqual(aimed('pistolet_iron', 'pistolet_iron_l'), { anim: 'braceshot', frame: 0, frameSeconds: 0 });
-  assert.equal(aimed('bow_long_elven').anim, 'bow');
+  assert.deepEqual(aimed('crossbow_iron'), { anim: 'bow', frame: 0, frameSeconds: 0 }, 'a crossbow raised');
+  assert.deepEqual(aimed('bow_long_elven'), { anim: 'bow', frame: 1, frameSeconds: 0 }, 'a bow at its full draw');
+});
+
+test("the player's bow is held at its full draw while the first person's is drawn, and looses only as the arrow leaves", () => {
+  const bow = (progress: number, moving = false) =>
+    shownMove(
+      { ...doing, right: 'bow_long_iron', moving, blow: { direction: null, second: false, progress } },
+      frames,
+      everything,
+      onTheMove,
+    );
+  // The forge's bow move: drawing, fully drawn, loosed, lowered.
+  assert.deepEqual(
+    [0, 0.25, 0.5, 0.6].map((share) => bow(share).frame),
+    [0, 1, 1, 1],
+    'drawn, then held fully drawn',
+  );
+  assert.deepEqual(
+    [BOW_LOOSED, 0.9].map((share) => bow(share).frame),
+    [2, 3],
+    'loosed, then lowered',
+  );
+  assert.deepEqual(bow(0.5, true), { anim: 'bowshotwalk', frame: 1, frameSeconds: 0 }, 'on the move too');
+  assert.equal(
+    shownMove(
+      { ...doing, right: 'crossbow_iron', blow: { direction: null, second: false, progress: 0.5 } },
+      frames,
+      classic,
+    ).frame,
+    2,
+    "a crossbow's shot plays its frames straight through",
+  );
 });
 
 test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, landing on the fifth", () => {

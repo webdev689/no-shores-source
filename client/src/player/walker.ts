@@ -34,12 +34,14 @@ const guardPose = (action: Action) => {
 const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
 
 /** What a fight holds the player to this frame, for the walker to show: their fighter as the page predicts it, whether
- *  the rules began a swing or lowered an aimed weapon unfired since the last frame, whether a ranged weapon aims, and
- *  how far the first person's hands move on this frame (less while a page's attack feel holds a blow landing). */
+ *  the rules began a swing, lowered an aimed weapon unfired or let a shot go since the last frame, whether a ranged
+ *  weapon aims, and how far the first person's hands move on this frame (less while a page's attack feel holds a blow
+ *  landing). */
 export interface FightShown {
   readonly own: FighterView | null;
   readonly begun: boolean;
   readonly dropped: boolean;
+  readonly loosed: boolean;
   readonly aiming: boolean;
   readonly handsSeconds?: number;
 }
@@ -262,8 +264,8 @@ export class Walker {
   }
 
   /** The first person's weapon button: the swing's own while it may swing; in a fight, a swing as the rules begin one,
-   *  or a ranged weapon's trigger and aim (aiming, the rules fire only on a fresh pull, so a trigger held through a
-   *  reload fires nothing). */
+   *  or a ranged weapon's aim and a shot as the rules let one go, so a pull they refuse (no ammunition, a reload, a
+   *  swap) plays nothing. */
   private button(controls: InputFrame, swings: boolean, shooter: boolean, fight: FightShown | null) {
     if (!swings) return STILL;
     if (!fight)
@@ -273,12 +275,7 @@ export class Walker {
         attackReleased: controls.released('swing'),
       };
     if (!shooter) return { attackHeld: false, attackPressed: fight.begun, attackReleased: false };
-    return {
-      attackHeld: !fight.aiming && controls.held('guard'),
-      attackPressed: controls.pressed('guard'),
-      attackReleased: controls.released('guard'),
-      aimHeld: fight.aiming,
-    };
+    return { attackHeld: false, attackPressed: fight.loosed, attackReleased: false, aimHeld: fight.aiming };
   }
 
   /** The player's own figure as an eye at (eyeX, eyeY) sees it, or null in first person or before its first frame is
