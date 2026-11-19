@@ -2,7 +2,7 @@
 // timpani: the still sea (6/8, D Dorian, the raised sixth the sea's colour, the harp rolling the chord over a drone),
 // the open sea (G with its flat seventh borrowed, the fiddle over the accordion's off-beats), the storm (D Aeolian,
 // the low strings driving in eighths under stabs in open fifths: tense, never a villain's), the sea at night (3/4,
-// A Dorian, sparse), landfall (a jig in D) and the sea fight (D minor, a snare's march, a swashbuckler's turns on the
+// A Dorian, sparse), landfall (3/4, D Mixolydian, broad: the fiddle over held strings and horn) and the sea fight (D minor, a snare's march, a swashbuckler's turns on the
 // minor four and the falling i-VII-VI-V). Each loops on its bar line; each track has its own layer in each song.
 
 import { type Role, type Song, type Tune, type Voice, type Writer, lay, makeSong, tune } from './score.ts';
@@ -23,7 +23,7 @@ type Track =
   | 'timpani'
   | 'bells'
   | 'drive';
-type Drum = 'kick' | 'snare' | 'bodhran' | 'bodhranTop' | 'tom' | 'crash' | 'ride' | 'tambourine';
+type Drum = 'kick' | 'snare' | 'bodhran' | 'bodhranTop' | 'tom' | 'crash' | 'ride';
 type Write = Writer<Track, Drum>;
 export type SeaSong = 'calm' | 'open' | 'storm' | 'night' | 'landfall' | 'fight';
 
@@ -35,7 +35,7 @@ const SHAPE: Readonly<Record<SeaSong, { bpm: number; bars: number; beats: number
   open: { bpm: 100, bars: 48, beats: 4, level: 2 * LIFT },
   storm: { bpm: 126, bars: 48, beats: 4, level: 2.1 * LIFT },
   night: { bpm: 66, bars: 32, beats: 3, level: 2.4 * LIFT },
-  landfall: { bpm: 156, bars: 64, beats: 3, level: 2.1 * LIFT },
+  landfall: { bpm: 88, bars: 48, beats: 3, level: 2.4 * LIFT },
   fight: { bpm: 144, bars: 48, beats: 4, level: 1.95 * LIFT },
 };
 
@@ -91,7 +91,10 @@ const ROLES: Readonly<Record<SeaSong, { readonly kit: Role; readonly tracks: Par
     tracks: { drive: 'tension', choir: 'tension', timpani: 'combat', horn: 'lead', strings: 'lead', brass: 'peak' },
   },
   night: { kit: 'pulse', tracks: { cello: 'tension', bells: 'tension', flute: 'lead' } },
-  landfall: { kit: 'pulse', tracks: { accordion: 'pulse', fiddle: 'lead', whistle: 'lead' } },
+  landfall: {
+    kit: 'pulse',
+    tracks: { horn: 'tension', fiddle: 'lead', whistle: 'lead', flute: 'peak', choir: 'peak' },
+  },
   fight: {
     kit: 'combat',
     tracks: { drive: 'tension', timpani: 'tension', brass: 'lead', fiddle: 'lead', choir: 'peak', horn: 'peak' },
@@ -106,7 +109,6 @@ const KEYS: Readonly<Record<Drum, number>> = {
   tom: 47,
   crash: 49,
   ride: 51,
-  tambourine: 54,
 };
 
 /** The bodhran's low skin and its top, a kick, a snare with a body under its crack. */
@@ -163,16 +165,6 @@ function voicing(name: ChordName, low: number): number[] {
   for (let n = low; tones.length < 3; n++) if (classes.includes(((n % 12) + 12) % 12)) tones.push(n);
   return tones;
 }
-/** The note `steps` degrees of `scale` under `note`: a diatonic third under is two. */
-function under(note: number, steps: number, scale: readonly number[]): number {
-  let n = note;
-  for (let left = steps; left > 0;) {
-    n--;
-    if (scale.includes(((n % 12) + 12) % 12)) left--;
-  }
-  return n;
-}
-const D_MAJOR = [2, 4, 6, 7, 9, 11, 1];
 /** A bass note under E1, the contrabass's lowest string, is played an octave up. */
 const floored = (n: number): number => (n < 28 ? n + 12 : n);
 const rootOf = (name: ChordName): number => CHORD[name][0];
@@ -202,13 +194,17 @@ const TUNES = {
     'E5:2 D5:1 | B4:3 | A4:1.5 B4:.5 A4:1 | E4:3 | G4:2 A4:1 | B4:1 D5:2 | E5:1.5 D5:.5 B4:1 | A4:3' +
       ' | C5:2 B4:1 | D5:3 | E5:2 A5:1 | G5:1.5 F#5:.5 E5:1 | F#5:2 E5:1 | D5:1 C5:1 B4:1 | B4:1.5 A4:.5 G4:1 | A4:3',
   ),
-  portA: tune(
-    'A4:.5 F#4:.5 A4:.5 D5:1 A4:.5 | B4:.5 G4:.5 B4:.5 D5:.5 B4:.5 G4:.5 | A4:.5 F#4:.5 A4:.5 D5:.5 E5:.5 F#5:.5 | E5:1 C#5:.5 A4:1.5' +
-      ' | A4:.5 F#4:.5 A4:.5 D5:1 A4:.5 | B4:.5 G4:.5 B4:.5 D5:.5 E5:.5 F#5:.5 | E5:.5 F#5:.5 E5:.5 C#5:.5 A4:.5 C#5:.5 | D5:1 F#4:.5 D4:1.5',
+  landA: tune(
+    'D5:2 E5:1 | E5:1.5 D5:.5 C5:1 | B4:2 D5:1 | A4:3 | F#5:2 E5:1 | E5:1.5 G5:.5 E5:1 | D5:2 B4:1 | E5:3' +
+      ' | D5:2 E5:1 | G5:2 E5:1 | D5:1.5 B4:.5 G4:1 | B4:2 A4:1 | G4:1 B4:1 D5:1 | E5:2 C5:1 | D5:1.5 C5:.5 A4:1 | D5:3',
   ),
-  portB: tune(
-    'F#5:1 E5:.5 F#5:.5 A5:.5 F#5:.5 | G5:1 F#5:.5 E5:.5 D5:.5 B4:.5 | A4:.5 D5:.5 F#5:.5 A5:1 F#5:.5 | E5:1 D5:.5 C#5:1 A4:.5' +
-      ' | B4:.5 D5:.5 F#5:.5 B5:1 A5:.5 | G5:.5 F#5:.5 E5:.5 D5:.5 E5:.5 F#5:.5 | E5:.5 C#5:.5 A4:.5 B4:.5 C#5:.5 E5:.5 | D5:1.5 D4:1.5',
+  landB: tune(
+    'B5:2 A5:1 | F#5:2 D5:1 | E5:1.5 G5:.5 E5:1 | D5:3 | G5:2 E5:1 | F#5:2 D5:1 | E5:1 G5:1 C6:1 | A5:3' +
+      ' | B5:2 A5:1 | F#5:2 A5:1 | G5:1.5 E5:.5 G5:1 | E5:2 A5:1 | G5:2 E5:1 | D5:2 G5:1 | F#5:2 E5:1 | D5:3',
+  ),
+  landUnder: tune(
+    'G4:3 | F#4:2 A4:1 | G4:2 E4:1 | D4:3 | E4:3 | D4:2 F#4:1 | G4:3 | F#4:3' +
+      ' | G4:3 | A4:2 F#4:1 | E4:2 G4:1 | A4:2 E4:1 | C5:2 G4:1 | B4:2 G4:1 | A4:3 | F#4:3',
   ),
   fightA: tune(
     'D4:1 A4:1.5 A4:.5 A4:1 | G4:.5 A4:.5 Bb4:1 A4:1 G4:1 | F4:1 D4:1 F4:1 Bb4:1 | A4:3 r:1' +
@@ -230,8 +226,8 @@ const HARMONY = {
   storm: chords('Dm Bb C Dm Dm Gm Bb A'),
   stormB: chords('F C Dm Bb Gm Dm A A'),
   night: chords('Am G D Am C G Em Am C G Am Em D C Em Am'),
-  portA: chords('D G D A D G A D'),
-  portB: chords('D G D A Bm G A D'),
+  landA: chords('D C G D Bm C G A D C G Em G C D D'),
+  landB: chords('G D C G Em Bm C D G D C Am C G D D'),
   fightA: chords('Dm C Bb A Dm C Bb A'),
   fightB: chords('F C Gm A Dm Bb A Dm'),
 };
@@ -377,42 +373,36 @@ const night = () =>
     w.note('bells', 16, 0, 6, 'E4', 36);
   });
 
-/** The jig's boom-chick: the bass on one and four, the accordion's chord on the eighths after; the bodhran's six. */
-function jigBar(w: Write, bar: number, name: ChordName, loud: boolean): void {
-  const [root = 0, , fifth = 0] = stack(name, 2);
-  w.note('bass', bar, 0, 0.9, root, loud ? 92 : 84);
-  w.note('bass', bar, 1.5, 0.9, fifth, loud ? 84 : 76);
-  for (const n of voicing(name, 62))
-    for (const [beat, velocity] of [
-      [0.5, 66],
-      [1, 58],
-      [2, 66],
-      [2.5, 58],
-    ])
-      w.note('accordion', bar, beat ?? 0, 0.4, n, velocity ?? 0);
-  const strength = loud ? 100 : 92;
-  w.hit('bodhran', bar, 0, strength);
-  w.hit('bodhranTop', bar, 0.5, strength - 36);
-  w.hit('bodhranTop', bar, 1, strength - 30);
-  w.hit('bodhran', bar, 1.5, strength - 10);
-  w.hit('bodhranTop', bar, 2, strength - 36);
-  w.hit('bodhranTop', bar, 2.5, strength - 30);
-  w.hit('tambourine', bar, 1.5, loud ? 52 : 42);
-}
-
-/** Landfall's jig, AABB twice: the fiddle leads the first time and the whistle the second, the fiddle a third under
- *  it; the whistle over the B parts the first time. */
+/** Landfall, the coast sighted and home: broad, in D with its flat seventh. The fiddle's tune over held strings, cello
+ *  and horn, the harp rolling each chord up, the bodhran soft on the bar; the whistle's tune over the fiddle's; the
+ *  first tune again with the flute on it, the horn an octave under, the choir, and the harbour's bell. */
 const landfall = () =>
   seaSong('landfall', (w) => {
-    const progression = [...HARMONY.portA, ...HARMONY.portA, ...HARMONY.portB, ...HARMONY.portB];
-    [...progression, ...progression].forEach((name, bar) => jigBar(w, bar, name, bar >= 32));
-    [TUNES.portA, TUNES.portA, TUNES.portB, TUNES.portB].forEach((part, i) => {
-      tunes(w, 'fiddle', i * 8, part, 96, { legato: 0.82, accent: 10 });
-      if (i >= 2) tunes(w, 'whistle', i * 8, part, 70, { legato: 0.7, accent: 6 });
-      tunes(w, 'whistle', 32 + i * 8, part, 96, { legato: 0.78, accent: 10 });
-      tunes(w, 'fiddle', 32 + i * 8, part, 82, { legato: 0.82, accent: 8, map: (n: number) => under(n, 2, D_MAJOR) });
+    [...HARMONY.landA, ...HARMONY.landB, ...HARMONY.landA].forEach((name, bar) => {
+      const [root = 0, , fifth = 0, octave = 0, tenth = 0] = stack(name, 3);
+      const home = bar >= 32;
+      w.note('bass', bar, 0, 2.9, floored(root - 12), 58);
+      w.note('cello', bar, 0, 2.9, root, 58);
+      for (const n of voicing(name, 57)) w.note('strings', bar, 0, 2.9, n, home ? 62 : 54);
+      if (!home) for (const n of voicing(name, 57).slice(0, 2)) w.note('horn', bar, 0, 2.9, n, 48);
+      if (home) for (const n of voicing(name, 57)) w.note('choir', bar, 0, 2.9, n, 46);
+      w.note('harp', bar, 0, 2.8, root, 66);
+      w.note('harp', bar, 1, 1.8, fifth, 52);
+      w.note('harp', bar, 1, 1.8, tenth, 50);
+      w.note('harp', bar, 2, 0.9, octave, 48);
+      w.hit('bodhran', bar, 0, home ? 84 : 74);
+      w.hit('bodhranTop', bar, 2, home ? 46 : 38);
+      if (bar % 16 === 15) for (let i = 0; i < 8; i++) w.note('timpani', bar, 1 + i * 0.25, 0.24, 'D2', 40 + i * 6);
     });
-    w.hit('crash', 32, 0, 72);
+    tunes(w, 'fiddle', 0, TUNES.landA, 88, { legato: 0.97, accent: 4 });
+    tunes(w, 'whistle', 16, TUNES.landB, 92, { legato: 0.96, accent: 4 });
+    tunes(w, 'fiddle', 16, TUNES.landUnder, 70, { legato: 0.98, accent: 2 });
+    tunes(w, 'fiddle', 32, TUNES.landA, 92, { legato: 0.97, accent: 4 });
+    tunes(w, 'flute', 32, TUNES.landA, 74, { legato: 0.97, accent: 2 });
+    tunes(w, 'horn', 32, TUNES.landA, 72, { octave: -1, legato: 0.97, accent: 2 });
+    w.note('timpani', 32, 0, 0.9, 'D2', 88);
+    w.note('bells', 32, 0, 6, 'D4', 74);
+    w.note('bells', 0, 0, 6, 'A3', 62);
   });
 
 /** A sea fight: the drums and the drive; the brass's theme, A and B; the strings and the fiddle on it with the choir;

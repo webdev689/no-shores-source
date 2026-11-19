@@ -1,17 +1,26 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { boardingScore } from './boardingScore.ts';
+import { coldScore } from './coldScore.ts';
 import { MOOD_ROLES } from './directorLaw.ts';
+import { dryScore } from './dryScore.ts';
 import { PERCUSSION_CHANNEL } from './fmBank.ts';
+import { greenScore } from './greenScore.ts';
 import { reckoningScore } from './reckoningScore.ts';
-import { ROLES, type Song, TICKS_PER_BEAT, lay, makeSong, midiNote, tune } from './score.ts';
+import { saltmereScore } from './saltmereScore.ts';
+import { ROLES, type Song, TICKS_PER_BEAT, lay, makeSong, midiNote, songSeconds, tune } from './score.ts';
 import { seaSongs } from './seaScore.ts';
+import { wetScore } from './wetScore.ts';
 import { wrathScore } from './wrathScore.ts';
 
 const sea = seaSongs();
 const wrath = wrathScore();
 const reckoning = reckoningScore();
 const boarding = boardingScore();
+const families = { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() };
+const familySongs = Object.values(families).map((score) => score.song);
+const stings = Object.values(families).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
+const saltmere = saltmereScore();
 const looped: readonly Song[] = [
   ...Object.values(sea),
   ...wrath.phases,
@@ -19,10 +28,19 @@ const looped: readonly Song[] = [
   reckoning.last,
   ...boarding.phases,
   boarding.last,
+  ...familySongs,
+  saltmere,
 ];
-const once: readonly Song[] = [wrath.fallen, reckoning.fallen, boarding.wake, boarding.fallen, boarding.end];
+const once: readonly Song[] = [wrath.fallen, reckoning.fallen, boarding.wake, boarding.fallen, boarding.end, ...stings];
 /** The songs the director plays as danger nears and in a fight: each must grow from its tension to its peak. */
-const fights: readonly Song[] = [sea.storm, sea.fight, ...wrath.phases, ...reckoning.phases, ...boarding.phases];
+const fights: readonly Song[] = [
+  sea.storm,
+  sea.fight,
+  ...wrath.phases,
+  ...reckoning.phases,
+  ...boarding.phases,
+  ...familySongs,
+];
 
 test('a note is read by name, middle C 60, and a tune by its bars', () => {
   assert.equal(midiNote('C4'), 60);
@@ -108,6 +126,8 @@ test('every layer a score names plays somewhere in it, and each fight song grows
     [...wrath.phases, wrath.fallen],
     [...reckoning.phases, reckoning.last, reckoning.fallen],
     [...boarding.phases, boarding.last, boarding.wake, boarding.fallen, boarding.end],
+    ...Object.values(families).map(({ song, cadence, victory, defeat }) => [song, cadence, victory, defeat]),
+    [saltmere],
   ]) {
     const named = new Set(score.flatMap((song) => song.tracks.map((track) => track.role)));
     for (const role of named)
@@ -140,4 +160,84 @@ test('the scores keep their tempos and lengths: phases drive harder, the sea in 
   assert.equal(sea.fight.ticksPerBar, 4 * TICKS_PER_BEAT);
   // The wake is two bars: the first phase begins as it ends.
   assert.equal(boarding.wake.durationTicks, 2 * boarding.wake.ticksPerBar);
+});
+
+/** Where each program the family scores and Saltmere's theme play is at home, its lowest and highest key. */
+const RANGES: Readonly<Record<number, readonly [number, number]>> = {
+  12: [41, 96], // marimba
+  21: [41, 93], // accordion
+  24: [40, 83], // nylon guitar: the lute and the oud
+  32: [28, 60], // acoustic bass
+  35: [28, 60], // fretless bass
+  40: [55, 96], // violin: the fiddle
+  42: [36, 81], // cello
+  43: [28, 60], // contrabass
+  44: [36, 96], // tremolo strings
+  45: [28, 96], // pizzicato strings
+  46: [24, 96], // harp
+  47: [36, 57], // timpani
+  48: [28, 96], // strings
+  49: [28, 96], // slow strings
+  52: [40, 84], // choir
+  53: [40, 84], // voices
+  57: [34, 77], // trombone, the bass trombone's low notes with it
+  60: [35, 77], // horn
+  61: [40, 84], // brass
+  68: [58, 93], // oboe
+  70: [34, 76], // bassoon
+  71: [50, 94], // clarinet
+  73: [60, 96], // flute
+  75: [60, 96], // pan flute
+  78: [74, 96], // whistle
+  89: [36, 96], // warm pad
+  108: [60, 96], // kalimba
+  119: [24, 96], // reverse cymbal
+};
+
+test("every note of the family scores and Saltmere's theme lies where its instrument plays", () => {
+  for (const song of [...familySongs, ...stings, saltmere]) {
+    const programs = new Map(song.tracks.map((track) => [track.channel, track.program]));
+    for (const note of song.notes) {
+      if (note.channel === PERCUSSION_CHANNEL) continue;
+      const program = programs.get(note.channel) ?? -1;
+      const [low, high] = RANGES[program] ?? [Infinity, -Infinity];
+      assert.ok(note.note >= low && note.note <= high, `${song.name}: note ${note.note} on program ${program}`);
+    }
+  }
+});
+
+test('each family fight plays all six layers in a metre and tempo of its own', () => {
+  for (const song of familySongs)
+    for (const role of ROLES)
+      assert.ok(
+        song.notes.some((note) => note.role === role),
+        `${song.name}: the ${role} layer plays`,
+      );
+  const metres = familySongs.map((song) => `${song.ticksPerBar} ticks at ${song.beatsPerMinute}`);
+  assert.equal(new Set(metres).size, familySongs.length, metres.join(', '));
+});
+
+test("each family's cadence, victory and defeat is two to eight bars of its fight's metre, played once and done", () => {
+  for (const score of Object.values(families))
+    for (const sting of [score.cadence, score.victory, score.defeat]) {
+      const bars = sting.durationTicks / sting.ticksPerBar;
+      assert.ok(bars >= 2 && bars <= 8, `${sting.name} is ${bars} bars`);
+      assert.equal(sting.ticksPerBar, score.song.ticksPerBar, `${sting.name} keeps its fight's metre`);
+      assert.equal(sting.beatsPerMinute, score.song.beatsPerMinute, `${sting.name} keeps its fight's tempo`);
+      assert.ok(
+        sting.notes.some((note) => note.tick === 0),
+        `${sting.name} speaks on its first beat`,
+      );
+      for (const note of sting.notes)
+        assert.ok(note.tick + note.duration <= sting.durationTicks, `${sting.name}: nothing runs round its end`);
+    }
+});
+
+test("Saltmere's theme runs three minutes before it comes round, and every instrument has its turn", () => {
+  assert.ok(songSeconds(saltmere) >= 180, `${songSeconds(saltmere)} s`);
+  for (const track of saltmere.tracks)
+    assert.ok(
+      saltmere.notes.some((note) => note.channel === track.channel),
+      `program ${track.program} plays`,
+    );
 });

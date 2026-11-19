@@ -4,6 +4,8 @@ import { type Scores, MusicDirector, overlookScores, songOf, stingOf } from './d
 import type { HeardFoe, Hearing } from './directorLaw.ts';
 
 const scores = overlookScores();
+/** The scores with the green family's fight and Saltmere's theme unwritten. */
+const unwritten: Scores = { ...scores, families: { ...scores.families, green: null }, social: null };
 
 /** An audio context that builds nothing, keeping when each source was asked to start. */
 function fakeAudio() {
@@ -77,9 +79,14 @@ const brute = (more: Partial<HeardFoe>): HeardFoe => ({
   ...more,
 });
 
-test("a cue's song: a family with no score yet is silent, a boss score with no last stand plays its last phase", () => {
-  assert.equal(songOf(scores, { kind: 'family', family: 'green' }), null);
-  assert.equal(songOf(scores, { kind: 'social' }), null);
+test("a cue's song: a family's fight, Saltmere's theme, a boss score's last phase for its last stand", () => {
+  assert.equal(songOf(scores, { kind: 'family', family: 'green' })?.name, 'green-fight');
+  assert.equal(songOf(scores, { kind: 'family', family: 'dry' })?.name, 'dry-fight');
+  assert.equal(songOf(scores, { kind: 'family', family: 'wet' })?.name, 'wet-fight');
+  assert.equal(songOf(scores, { kind: 'family', family: 'cold' })?.name, 'cold-fight');
+  assert.equal(songOf(scores, { kind: 'social' })?.name, 'saltmere');
+  assert.equal(songOf(unwritten, { kind: 'family', family: 'green' }), null, 'a score not written is silence');
+  assert.equal(songOf(unwritten, { kind: 'social' }), null);
   assert.equal(songOf(scores, { kind: 'none' }), null);
   assert.equal(songOf(scores, { kind: 'sea', song: 'storm' })?.name, 'sea-storm');
   assert.equal(songOf(scores, { kind: 'boss', boss: 'reckoning', part: 2 })?.name, 'reckoning-2');
@@ -95,26 +102,25 @@ test("a sting's song: a boss's wake, fall and the player's end where its score h
   const boarding = { kind: 'boss', boss: 'boarding', part: 2 } as const;
   assert.equal(stingOf(scores, { kind: 'defeat', cue: boarding })?.name, 'boarding-end');
   assert.equal(stingOf(scores, { kind: 'victory', cue: boarding }), null);
-  assert.equal(stingOf(scores, { kind: 'defeat', cue: { kind: 'family', family: 'dry' } }), null);
+  const dry = { kind: 'family', family: 'dry' } as const;
+  assert.equal(stingOf(scores, { kind: 'defeat', cue: dry })?.name, 'dry-defeat');
+  assert.equal(stingOf(scores, { kind: 'victory', cue: dry })?.name, 'dry-victory');
+  assert.equal(stingOf(scores, { kind: 'cadence', cue: dry })?.name, 'dry-cadence');
   const [song, cadence] = scores.bosses.wrath.phases;
   const written = { ...scores, families: { ...scores.families, dry: song && cadence ? { song, cadence } : null } };
-  assert.equal(stingOf(written, { kind: 'cadence', cue: { kind: 'family', family: 'dry' } }), cadence);
-  assert.equal(stingOf(written, { kind: 'victory', cue: { kind: 'family', family: 'dry' } }), null);
+  assert.equal(stingOf(written, { kind: 'cadence', cue: dry }), cadence);
+  assert.equal(stingOf(written, { kind: 'victory', cue: dry }), null);
 });
 
-test('with no fight score for the family yet, a fight on an island is silent and the ambience left whole', () => {
-  const { frames, starts, ducks } = directed();
+test('with no fight score for the family, a fight on an island is silent and the ambience left whole', () => {
+  const { frames, starts, ducks } = directed(() => unwritten);
   frames({ ...island, foes: [brute({ engaged: true })], struck: true }, 3);
   assert.equal(starts.length, 0);
   assert.deepEqual(ducks, []);
 });
 
 test('a family score leads into the fight: its tension quietly, its fight on the bar line, the ambience lowered', () => {
-  const standIn = () => ({
-    ...scores,
-    families: { ...scores.families, green: { song: scores.bosses.wrath.phases[0] } },
-  });
-  const { frames, starts, ducks, clock } = directed(standIn as () => Scores);
+  const { frames, starts, ducks, clock } = directed();
   frames(island, 1);
   assert.equal(starts.length, 0, 'roaming is silent');
   frames({ ...island, foes: [brute({})] }, 2);
@@ -124,11 +130,18 @@ test('a family score leads into the fight: its tension quietly, its fight on the
   frames({ ...island, foes: [brute({ engaged: true })], struck: true }, 4);
   assert.ok(starts.length > before);
   assert.deepEqual(ducks, [0.85, 0.6]);
-  frames(island, 12);
-  assert.deepEqual(ducks, [0.85, 0.6, 1], 'resolved: the ambience let back');
+  frames(island, 16);
+  assert.deepEqual(ducks, [0.85, 0.6, 1], 'resolved, its cadence played: the ambience let back');
   const quiet = starts.length;
   frames(island, 6);
   assert.ok(starts.filter((when) => when > clock() - 3).length === 0 && starts.length === quiet, 'and silence after');
+});
+
+test("Saltmere's theme plays in the social space while nothing threatens, the ambience a little under it", () => {
+  const { frames, starts, ducks } = directed();
+  frames({ ...island, place: { kind: 'social', climate: 'temperate-coast' } }, 2);
+  assert.ok(starts.length > 0);
+  assert.deepEqual(ducks, [0.8]);
 });
 
 test("a boss plays its own score from its wake, lowering the ambience most, and its fall's sting after", () => {

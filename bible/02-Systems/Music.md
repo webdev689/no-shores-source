@@ -17,6 +17,12 @@ code:
   - client/src/game/audio/music/wrathScore.ts#wrathScore
   - client/src/game/audio/music/reckoningScore.ts#reckoningScore
   - client/src/game/audio/music/boardingScore.ts#boardingScore
+  - client/src/game/audio/music/craft.ts#progression
+  - client/src/game/audio/music/greenScore.ts#greenScore
+  - client/src/game/audio/music/dryScore.ts#dryScore
+  - client/src/game/audio/music/wetScore.ts#wetScore
+  - client/src/game/audio/music/coldScore.ts#coldScore
+  - client/src/game/audio/music/saltmereScore.ts#saltmereScore
 ---
 # Music
 
@@ -39,14 +45,17 @@ as danger nears, grows into the fight a layer at a time on the bar line, and fal
   `hit(drum, bar, beat, velocity)`, beats in quarter notes. `tune` reads a line as text (`'A4:1.5 D5:.5 | r:1'`).
   Each track names its program, level, place and layer role, and may name its own voice. A drum may have a role of
   its own. One note a key a moment: a note laid on one already struck is that note, its loudest and longest.
-- **A score, written.** A fight score for the green family is a song like this, set in `overlookScores` as
-  `green: { song }`:
+- **Writing helps** (`craft.ts`). A score names its plan of sections; writes its harmony a bar at a time
+  (`'Em | C/D'`), a bar's chords split where its metre says; holds a chord that follows itself as one note; and
+  checks each tune's bars against its metre, so a slip in one note's length cannot shift the rest.
+- **A score, written.** A fight score is a song like this, set in `overlookScores` as a family's
+  `{ song, cadence, victory, defeat }`:
 
 ```ts
 const theme = tune('E4:1 G4:1 A4:2 | B4:3 r:1');
 const song = makeSong(
   {
-    name: 'green-fight',
+    name: 'example-fight',
     bpm: 120,
     bars: 8,
     tracks: {
@@ -91,8 +100,8 @@ ships within 1,000 m and the fight.
   over a beat, so two tempos never sound together for long; a song still fading out is brought back where it stands.
   A boss's fall ends its fight: only a foe still engaged keeps the music going.
 - **Fight scores.** Each island's climate is in a family: green (temperate coast, highland, woodland), dry (desert,
-  savanna, steppe), wet (rainforest, swamp) and cold (tundra). Each family's fight score is one song in layers, and
-  may carry a cadence, a victory and a defeat. None is written yet, so a fight on an island is silent.
+  savanna, steppe), wet (rainforest, swamp) and cold (tundra). Each family's fight score is one song in layers, with
+  a cadence, a victory and a defeat. A family with no score is silent.
 - **Bosses.** Captain Brannoc Thule plays the Boarding; High Assessor Corvane plays the Reckoning; any other Boss
   plays the Wrath. The phase is the boss's health: a phase a third, the last stand in its last tenth (the Wrath, with
   none, keeps its third phase). A new phase begins on the bar line.
@@ -103,15 +112,15 @@ ships within 1,000 m and the fight.
 - **The sea.** Sailing is silent. A hostile ship closing brings in a sea song's tension; the fight, its fight. The
   song is chosen as the encounter begins and kept to its end: the storm for two hostile ships or one of Elite rank or
   over, else the sea fight.
-- **The social space.** Saltmere's theme plays whole there while nothing threatens, the ambience at 0.8. It is not
-  written yet, so the social space is silent.
+- **The social space.** Saltmere's theme plays whole there while nothing threatens, the ambience at 0.8.
 - **A hidden page** falls silent at once; the music starts again from the song's top when the page is seen.
 
 ## The scores
 
 - **The sea**: six songs for a band of fiddle, flute, whistle, accordion, harp and bodhran over strings, horns and
   timpani: the still sea (6/8, D Dorian), the open sea (G), the storm (D Aeolian), the sea at night (3/4, A Dorian),
-  landfall (a jig in D) and the sea fight (D minor).
+  landfall (3/4 at 88, D Mixolydian: a homecoming, the fiddle's tune and the whistle's over held strings and horn,
+  the harp rolling each chord, the harbour's bell) and the sea fight (D minor).
 - **The Wrath**: D minor on low brass, organ, choir, a tolled bell and low drums; three phases at 132, 138 and 150,
   the third on the Neapolitan; its fall turns to D major.
 - **The Reckoning**: C minor and a clock: a broken quarter chime, a harpsichord's escapement, wood blocks ticking;
@@ -120,13 +129,48 @@ ships within 1,000 m and the fight.
 - **The Boarding**: E Phrygian: a broken fanfare on the horn over a crew's drums, low strings, a chant and shrieking
   strings; a two-bar wake, phases at 138, 144 and 152, a last stand at 160, a hymn in E major for the boss's fall,
   and the end for the player's.
+- **Green**, the coast, the highland and the woodland: E Dorian in 6/8 at a dotted quarter of 104, a war jig. A
+  fiddle's tune runs over the cellos' gallop, a horn's counter-line under it, a bodhran and a big drum; then the
+  horn's own broad tune under the fiddle's descant, and a break of horn calls. Its tension is strings gated in
+  sixteenths over a heartbeat; its peak puts the whistle an octave over the tune, the choir and the low brass's
+  stabs under it. The cadence turns the tune's hemiola home, the victory ends in E major, the defeat lets the call
+  fall to the low strings. 80 bars, 92 s round.
+- **Dry**, the desert, the savanna and the steppe: A Phrygian with its major third, in 7/8 (two, two, three) at 150.
+  An oboe's tune over an oud's ostinato and a darbuka's doum and tek, the strings' counter-line slow under it; then
+  the steppe's gallop, repeated notes rising F, G, A. Its tension is cellos rubbing A against B flat in sixteenths
+  over a frame drum and a hiss of sand; its peak lays the brass under the tune, the choir in open fifths and stabs on
+  the bar. The cadence falls D, C, B flat, A; the victory rises F, G, A into A major; the defeat leaves the oboe
+  alone. 64 bars, 90 s round.
+- **Wet**, the rainforest and the swamp: F sharp Aeolian in 4/4 at 104, the sixteenths grouped three, three, three,
+  three and four. A pan flute's tune over a marimba in that grouping, a clarinet's counter-line low under it,
+  congas, log drums and a deep drum; then the clarinet's own tune under the flute's long notes. Its tension is a
+  kalimba dripping in dotted eighths, a log drum's heartbeat, insects in a shaker and a bassoon creeping a half
+  step; its peak sets the strings an octave over the tune, the voices' oohs and the horns swelling. The cadence
+  turns G, C sharp, F sharp minor; the victory rises into F sharp major; the defeat sinks on the clarinet. 48 bars,
+  111 s round.
+- **Cold**, the tundra: B Aeolian with its flat second borrowed, in 5/4 (three and two) at 120. A horn calls the tune
+  over the low strings' ostinato and a taiko, a fiddle's counter-line above, the harmony spaced wide: a low bass and
+  open fifths high. Then the fiddle's own tune over the horns. Its tension is high strings shivering in fifths,
+  gusts of wind, the strings' wood ticking and the taiko's slow heart; its peak doubles the horn with the brass and
+  sets the choir high. The cadence closes on the low B, the victory rises into B major, the defeat falls through C.
+  40 bars, 100 s round.
+- **Saltmere's theme**: G major in 3/4 at 126, a folk waltz with the lilt on its second beat, 183 s round. Its tune
+  climbs G, A, B, D in a dotted step and leans on the sixth. It passes from the flute to the fiddle with the cello
+  under it, to the accordion's second tune under the fiddle's descant, to the cello in E minor over the harp for a
+  quiet passage, a tide of harp and flute alone, a dance the whistle, fiddle, flute and accordion trade two bars at a
+  time, the second tune on the fiddle and flute with the horn under it, and the whole band. A lute strums the waltz
+  over a plucked bass and a warm pad; hand drums keep it light under the harbour's sounds.
 
 Loudness at the full Music volume, measured: the boss scores' first phases -18 to -18.5 dBFS, their later phases
-rising to -16, peaks -4 to -8 dBFS under a soft ceiling at -3; the sea's fights -20 to -22 dBFS, peaks -2 to -6; a
-tension 4 to 6 dB under its fight.
+rising to -16, peaks -4 to -8 dBFS under a soft ceiling at -3; the families' fights -17.5 to -18 dBFS, peaks about
+-5 dBFS under a soft ceiling at -3, their peak layers half a decibel over the fight; the sea's fights -20 to -22
+dBFS, peaks -2 to -6; a tension 4 to 6 dB under its fight; Saltmere's theme -21.7 dBFS, 3.7 dB under a fight.
 
 ## Limits
 
-- The families' fight scores and Saltmere's theme wait on the composer; until then those places are silent.
+- One fight score serves every climate of its family: the coast and the highland share green's.
+- Saltmere's theme begins from its top each time the player comes into the social space.
 - The still sea, the open sea, the sea at night and landfall play nowhere yet: sailing is ambience alone.
 - A boss's score is chosen by the name over its bar.
+- At its peak a family's fight renders 12 to 15 times faster than it plays in headless Chromium: under a tenth of one
+  audio core.

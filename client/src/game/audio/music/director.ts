@@ -2,10 +2,11 @@
 // the playing song's next bar line; a new song begins on it while the old fades over a bar; a fight that ends fades
 // over two bars, never cut. A sting (a boss waking or falling, a fight won or lost) begins on the bar line and holds
 // the next song until it has played. The ambience is lowered under the music as a fight grows and let back after.
-// The families' fight scores and Saltmere's theme are the composer's to write: until each comes, its place is silent.
+// A place whose score is not written is silent.
 
 import { duckAmbience, musicOutput } from '../../uiSounds.ts';
 import { boardingScore } from './boardingScore.ts';
+import { coldScore } from './coldScore.ts';
 import {
   type Boss,
   type Cue,
@@ -19,11 +20,15 @@ import {
   type Sting,
   hear,
 } from './directorLaw.ts';
+import { dryScore } from './dryScore.ts';
+import { greenScore } from './greenScore.ts';
 import { type FootHeard, type SeaHeard, hearNode, hearSea } from './hearing.ts';
 import { reckoningScore } from './reckoningScore.ts';
+import { saltmereScore } from './saltmereScore.ts';
 import { ROLES, type Role, type Song, TICKS_PER_BEAT, songSeconds } from './score.ts';
 import { type SeaSong, seaSongs } from './seaScore.ts';
 import { START_LEAD_S, SongPlayer, songTail } from './songPlayer.ts';
+import { wetScore } from './wetScore.ts';
 import { wrathScore } from './wrathScore.ts';
 
 /** A family's fight score: one song in layers for every mood, and its moments: the cadence a fight ends on, a fight
@@ -55,8 +60,8 @@ export interface Scores {
 export function overlookScores(): Scores {
   const boarding = boardingScore();
   return {
-    families: { green: null, dry: null, wet: null, cold: null },
-    social: null,
+    families: { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() },
+    social: saltmereScore(),
     sea: seaSongs(),
     bosses: { boarding: { ...boarding, defeat: boarding.end }, reckoning: reckoningScore(), wrath: wrathScore() },
   };
@@ -144,7 +149,7 @@ export class MusicDirector {
   private readonly timed: boolean;
   private readonly clockOf: (audio: BaseAudioContext) => number;
   private memory: Memory = QUIET;
-  /** Every score, made as the game starts (some 30,000 notes, tens of milliseconds) rather than mid-fight. */
+  /** Every score, made as the game starts (some 50,000 notes, tens of milliseconds) rather than mid-fight. */
   private readonly scores: Scores;
   private bus: MusicOut | null = null;
   private players: SongPlayer[] = [];
