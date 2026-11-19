@@ -18,6 +18,8 @@ status: in force
 
 > As the parts were being weighed: "Dont adapt things just to adapt them. It needs to fit into what we are building"
 
+> Once the work was under way: "I want you to build out everything and return when this is 100% finished"
+
 ## What it settles
 
 - **Dungeons 2.0 comes over** as far as it fits what Overlook is building: the Forge, DFO's own dungeon generator, and
@@ -26,7 +28,8 @@ status: in force
   "our own propritarty dungeon generation".
 - **Forged dungeons stand within the patrol areas**, the "procedural dungeons" the owner's Patrol already holds
   ([[Gear and Power Follow Destiny 1 Vanilla]]).
-- **Done properly, with time taken.** How it works in Overlook is Claude's to build, as the world is
+- **Done properly, with time taken, and built out in full** before it comes back to the owner. How it works in
+  Overlook is Claude's to build, as the world is
   ([[The World Is Claude's to Mold]]); Claude's choices are in [[Dungeons as Claude Builds Them]], and the owner can
   change any of them.
 - The [[Rules]] hold. The Forge's pictures are the procedural textures' dungeon sets and its entrances are forged
