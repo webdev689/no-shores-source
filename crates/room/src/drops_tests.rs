@@ -70,6 +70,28 @@ fn a_miniboss_or_a_boss_gives_a_crate_into_the_five_or_lays_it_when_they_are_ful
 }
 
 #[test]
+fn a_drop_stays_where_it_was_thrown_from_behind_a_thin_wall_off_a_drop_or_past_the_ring() {
+    use movement::Block;
+    let from = [0.0, 0.0, 0.0];
+    let north = 0.0;
+    let wall = Block { min_x: -5.0, min_y: -1.1, max_x: 5.0, max_y: -0.9, top: 3.0 };
+    let room = Room::new(vec![wall], (0.0, 0.0));
+    assert_eq!(room.rest_at(from, north), from, "not through a thin wall");
+    let south = room.rest_at(from, core::f64::consts::PI);
+    assert!((south[1] - THROW_M).abs() < 1e-9, "the open side is open: {south:?}");
+    let ledge = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 3.0 };
+    let room = Room::new(vec![ledge], (0.0, 0.0));
+    assert_eq!(room.rest_at([0.0, 0.0, 3.0], north), [0.0, 0.0, 3.0], "not off a ledge");
+    let step = Block { top: 0.2, ..ledge };
+    let room = Room::new(vec![step], (0.0, 0.0));
+    assert!((room.rest_at([0.0, 0.0, 0.2], north)[1] + THROW_M).abs() < 1e-9, "but down a step");
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.section =
+        Some(crate::Section { ring: vec![[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]], spawns: vec![] });
+    assert_eq!(room.rest_at(from, north), from, "not past the section's ring");
+}
+
+#[test]
 fn a_kills_drops_are_thrown_out_in_a_fan_toward_the_player_and_taken_at_rest() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
