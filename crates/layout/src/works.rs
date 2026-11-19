@@ -150,7 +150,9 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, rise: f64, 
                     );
                 }
             }
-            for merlon in 0..((length / 3.0) as u32) {
+            // From 6 m past the breach to the wall's end, each merlon (1.4 m along the wall) wholly on its top.
+            let merlons = ((length - 6.0 - 0.7) / 3.0).floor() + 1.0;
+            for merlon in 0..merlons.max(0.0) as u32 {
                 let at = ahead(middle, across, side * (breach + 6.0 + f64::from(merlon) * 3.0), 0.0);
                 let size = [WALL_THICK_M, 1.4, 1.8];
                 pieces.push(Solid::upright(Shape::Block, [at[0], at[1], top], size, Material::Stone).turned(turn));
@@ -191,55 +193,54 @@ fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, rise: f64, pat
     let deck = floor + rise * 0.92;
     let reach = half * 1.35 + run + 10.0;
     let spans = ((2.0 * reach) / SPAN_M).ceil() as i32;
-    let fallen = spans / 2 + 1;
-    for pier in 0..=spans {
-        let along = -reach + f64::from(pier) * (2.0 * reach / f64::from(spans));
+    let span = 2.0 * reach / f64::from(spans);
+    let pier = |along: f64| {
         let at = ahead(middle, across, along, 0.0);
-        let standing = Solid::upright(
-            Shape::Block,
-            [at[0], at[1], floor - 2.0],
-            [DECK_M, PIER_M, deck - floor + 2.0],
-            Material::Stone,
-        )
-        .turned(turn);
-        // A pier turned across the way reaches further than its middle: its box keeps off every way.
-        if along.abs() > tier.width() / 2.0 + PIER_M && clear_of_ways(&[standing], paths, floor) {
-            kit.solid(standing);
+        let size = [DECK_M, PIER_M, deck - floor + 2.0];
+        Solid::upright(Shape::Block, [at[0], at[1], floor - 2.0], size, Material::Stone).turned(turn)
+    };
+    // A pier turned across the way reaches further than its middle: its box keeps off every way. One that would stand
+    // on a way is moved out from the middle until it stands clear, by half a span at most, or left out (the middle's
+    // own pier is only left out); each span then runs between two piers that stand, so no arch hangs over the way.
+    let clear = |along: f64| along.abs() > tier.width() / 2.0 + PIER_M && clear_of_ways(&[pier(along)], paths, floor);
+    let piers: Vec<f64> = (0..=spans)
+        .filter_map(|number| {
+            let along = -reach + f64::from(number) * span;
+            let out = if along.abs() < span / 4.0 { 0.0 } else { along.signum() };
+            (0..=(span / 2.0 / 0.5) as i32).map(|step| along + out * f64::from(step) * 0.5).find(|&at| clear(at))
+        })
+        .collect();
+    // The fallen span is the one holding the point a span and a half past the middle's, as it was before any pier moved.
+    let fallen = -reach + (f64::from(spans / 2 + 1) + 0.5) * span;
+    for &along in &piers {
+        kit.solid(pier(along));
+    }
+    for pair in piers.windows(2) {
+        let (from, to) = (pair[0], pair[1]);
+        if (from..to).contains(&fallen) {
+            continue;
         }
-        if pier < spans && pier != fallen {
-            let next = ahead(middle, across, along + reach / f64::from(spans), 0.0);
-            let arch_rise = (deck - floor) * 0.45;
-            let arch = Solid::upright(
-                Shape::Arch { opening: 0.7 },
-                [next[0], next[1], deck - arch_rise],
-                [2.0 * reach / f64::from(spans), DECK_M, arch_rise],
-                Material::Stone,
-            );
-            kit.solid(arch.turned(turn + std::f64::consts::FRAC_PI_2));
-            kit.solid(
-                Solid::upright(
-                    Shape::Block,
-                    [next[0], next[1], deck - 0.8],
-                    [DECK_M + 0.8, 2.0 * reach / f64::from(spans), 0.8],
-                    Material::Paving,
-                )
+        let (next, length) = (ahead(middle, across, (from + to) / 2.0, 0.0), to - from);
+        let arch_rise = (deck - floor) * 0.45;
+        let arch = Solid::upright(
+            Shape::Arch { opening: 0.7 },
+            [next[0], next[1], deck - arch_rise],
+            [length, DECK_M, arch_rise],
+            Material::Stone,
+        );
+        kit.solid(arch.turned(turn + std::f64::consts::FRAC_PI_2));
+        kit.solid(
+            Solid::upright(Shape::Block, [next[0], next[1], deck - 0.8], [DECK_M + 0.8, length, 0.8], Material::Paving)
                 .turned(turn),
+        );
+        for side in [-1.0, 1.0] {
+            let rail = ahead(next, way, side * (DECK_M / 2.0 + 0.2), 0.0);
+            kit.solid(
+                Solid::upright(Shape::Block, [rail[0], rail[1], deck], [0.5, length, 1.1], Material::Trim).turned(turn),
             );
-            for side in [-1.0, 1.0] {
-                let rail = ahead(next, way, side * (DECK_M / 2.0 + 0.2), 0.0);
-                kit.solid(
-                    Solid::upright(
-                        Shape::Block,
-                        [rail[0], rail[1], deck],
-                        [0.5, 2.0 * reach / f64::from(spans), 1.1],
-                        Material::Trim,
-                    )
-                    .turned(turn),
-                );
-            }
         }
     }
-    let gap = ahead(middle, across, -reach + (f64::from(fallen) + 0.5) * (2.0 * reach / f64::from(spans)), 0.0);
+    let gap = ahead(middle, across, fallen, 0.0);
     for stone in 0..8 {
         let at = ahead(gap, way, (kit.draw() - 0.5) * 14.0, kit.draw() - 0.5);
         if distance(at, middle) < tier.width() {

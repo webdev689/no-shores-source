@@ -252,8 +252,7 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, kept: (Option<
                 let end = ahead(at, way, across * 0.25 * if kit.draw() < 0.5 { 1.0 } else { -1.0 });
                 let course = [0.9, across * 0.45, 0.5];
                 kit.solid(
-                    Solid::upright(Shape::Block, [end[0], end[1], base + tall + 0.3], course, Material::Stone)
-                        .turned(turn),
+                    Solid::upright(Shape::Block, [end[0], end[1], base + tall], course, Material::Stone).turned(turn),
                 );
             } else if form < 2.0 * WALL_SHARE {
                 let size = [across, 0.9, tall];
@@ -298,10 +297,19 @@ fn middle_piece(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts) {
     let floor = carved_at(kit, carved, beat.at);
     match run.kind {
         RunKind::Gorge => {
+            // Each end stands out of its wall where the wall reaches over the deck: the carved face leans back and
+            // steps, so that is found by walking out across the gorge, not taken at its rim. A side lower than the
+            // deck keeps no end.
+            let (bottom, size) = (floor + 7.5, [3.0, 6.0, 1.2]);
             for side in [1.0, -1.0] {
-                let stub = ahead(beat.at, across, side * (beat.radius - 1.0));
-                let size = [3.0, 6.0, 1.2];
-                let deck = Solid::upright(Shape::Block, [stub[0], stub[1], floor + 7.5], size, Material::Stone);
+                let rock = |out: f64| carved_at(kit, carved, ahead(beat.at, across, side * out)) >= bottom + size[2];
+                let Some(face) = (0..=80).map(|step| beat.radius * 0.5 + f64::from(step) * 0.5).find(|&out| rock(out))
+                else {
+                    continue;
+                };
+                // Set 1.5 m into the rock, reaching 4.5 m out over the gorge.
+                let stub = ahead(beat.at, across, side * (face + 1.5 - size[1] / 2.0));
+                let deck = Solid::upright(Shape::Block, [stub[0], stub[1], bottom], size, Material::Stone);
                 kit.solid(deck.turned(turn_along(across)));
             }
             for _ in 0..3 {

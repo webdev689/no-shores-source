@@ -161,8 +161,10 @@ from the sea, fresh water and the claim's edge), then:
    the basin's floor really ends, a straight way 7 m wide turned out from along its edge, rising at most 0.3 a metre,
    boring into the rock as it climbs so its face stands over it and its drop falls to the floor, clear of every
    other floor and well inside the claim; at its top a flat 22 m across, with a broken parapet but where the climb
-   arrives and a brazier glowing on a plinth; a low drystone kerb runs along the climb's drop, broken here and there. Each climb is walked as a footpath, and the section takes in the climbs
-   and the lookouts, so a patrol area has its heights as well as its floor.
+   arrives and a brazier glowing on a plinth; a low drystone kerb runs along the climb's drop, broken here and
+   there, each length seated into the ground at its lower end and standing its height over the higher, as the climb
+   rises under it. Each climb is walked as a footpath, and the section takes in the climbs and the lookouts, so a
+   patrol area has its heights as well as its floor.
    A brief with `river` carries its claim along the river it holds most of, where the river runs between the
    claim's north and south bounds: a wing 24 m either side of each stretch of the river's course (160 m at most),
    any stretch whose wing would reach another node's claim or come within 50 m of the sea and its own width left out,
@@ -183,7 +185,9 @@ from the sea, fresh water and the claim's edge), then:
    as the great wall would keep 12 m off every outcrop (the outcrops are placed first): a colossal
    ruined wall of ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed
    and battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from
-   cliff top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing
+   cliff top to cliff top on piers and arches, one span fallen into the gorge, a pier that would stand on a way moved
+   out from the middle until it stands clear (half a span at most) or left out, so each arch spans two piers that
+   stand; a natural arch of rock left standing
    over a third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and
    retaining walls along part of the wider basins' feet, each length where the cliff really rises from the floor and
    clear of every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every
@@ -253,7 +257,9 @@ out past its edge.
   arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
   chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone
   coffins; a ledge's and a rampart's masonry in three forms, about a third each: lengths of wall along the way with a
-  course fallen from one end, squared blocks, and heaps of rubble), and a stone shelf 1.6 m high with steps along the rim up to it; a gorge's fallen bridge, a ledge's broken
+  course left on one end of its top, squared blocks, and heaps of rubble), and a stone shelf 1.6 m high with steps
+  along the rim up to it; a gorge's fallen bridge, each of its ends
+  set 1.5 m into its wall where the wall reaches its deck's height (none on a side lower than that), a ledge's broken
   watch post, a rampart's wall along its drop. A keep has walled courts and roofed great halls over its beats in turn,
   roofed passages and two towers at its door; a mine has timbered galleries boarded over, caverns roofed with rubble
   slabs on rock ribs and an iron grate; an undercroft has vaulted passages,

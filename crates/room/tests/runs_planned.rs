@@ -410,6 +410,32 @@ fn overlapping(first: &[f64], second: &[f64]) -> bool {
 }
 
 #[test]
+fn a_gorges_fallen_bridge_stands_out_of_both_its_walls() {
+    each_run(&|laid, run, floor| {
+        if run.kind != layout::brief::RunKind::Gorge {
+            return;
+        }
+        let beat = &run.beats[run.beats.len() / 2];
+        let bottom = floor(beat.at) + 7.5;
+        // The bridge's two ends: its deck's stone, 1.2 m thick, standing at the deck's height over the beat.
+        let ends: Vec<[f64; 6]> = solids_of(laid)
+            .into_iter()
+            .filter(|b| (b[5] - bottom).abs() < 0.01 && (b[4] - b[5] - 1.2).abs() < 0.01)
+            .filter(|b| off_box(beat.at, b) < beat.radius + 40.0)
+            .collect();
+        let bridge = format!("{}: {}'s bridge at {:?}", laid.id, run.name, beat.at);
+        assert_eq!(ends.len(), 2, "{bridge} keeps both its ends: {ends:?}");
+        for end in ends {
+            // Rock as high as its top somewhere under it, every half metre over its footprint.
+            let steps =
+                |low: f64, high: f64| (0..=((high - low) / 0.5) as i32).map(move |step| low + f64::from(step) * 0.5);
+            let set = steps(end[0], end[2]).any(|x| steps(end[1], end[3]).any(|y| floor([x, y]) >= end[4]));
+            assert!(set, "{bridge}: the end {end:?} is set into no rock");
+        }
+    });
+}
+
+#[test]
 fn every_cavern_slab_is_carried() {
     each_run(&|laid, run, floor| {
         if run.kind != layout::brief::RunKind::Mine {
