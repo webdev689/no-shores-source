@@ -1,0 +1,216 @@
+/* The Art's screen and its diamond on the Character page (client/src/game/artsPage.ts), in the menu's own look
+   (gearScreen.css): its tiles are the gear's tiles, framed and lit in the Art's element where the gear's are in a
+   rarity, its words keep the face's grid, and its pixel pictures stand at whole multiples of their cells. */
+
+.arts-page {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(264px, auto) minmax(0, 1fr);
+  gap: 44px;
+  align-items: center;
+  padding: 22px 44px;
+  overflow: auto;
+  border: 2px solid transparent;
+  background:
+    var(--wash) right 44px center / 480px 480px no-repeat,
+    radial-gradient(ellipse 40% 70% at 16% 50%, rgba(var(--rar-rgb), 0.26), transparent 72%),
+    linear-gradient(90deg, rgba(var(--rar-rgb), 0.12), transparent 75%),
+    var(--ground);
+  image-rendering: pixelated;
+}
+.arts-glyph,
+.arts-emblem-img,
+.arts-pick-img,
+.arts-diamond-img,
+.arts-card-icon {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* The worn Art: its name over its diamond, as Destiny names a subclass, then its words and the three Arts. */
+.arts-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+}
+.arts-name {
+  margin: 0;
+  font-size: var(--type-xl);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: round(up, calc(5em / 22), 1px);
+  text-transform: uppercase;
+}
+#hud .arts-name:focus {
+  outline: none;
+}
+.arts-kind {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--rar-hi);
+}
+.arts-emblem-img {
+  width: 192px;
+  height: 192px;
+  filter: drop-shadow(0 0 12px rgba(var(--rar-rgb), 0.45));
+}
+.arts-blurb {
+  margin: 0;
+  max-width: 264px;
+  text-align: center;
+  color: var(--faint);
+}
+.arts-picks {
+  display: flex;
+  gap: 11px;
+  margin-top: 11px;
+}
+/* An Art's diamond is pressed in its own shape: the white focus and the worn Art's brass follow its edge. */
+#hud .arts-pick,
+#hud .arts-diamond {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+#hud .arts-pick {
+  opacity: 0.55;
+}
+.arts-pick-img {
+  width: 48px;
+  height: 48px;
+}
+#hud .arts-pick:hover,
+#hud .arts-pick.arts-worn {
+  opacity: 1;
+}
+#hud .arts-pick.arts-worn {
+  cursor: default;
+  filter: drop-shadow(1px 0 0 var(--brass-lit)) drop-shadow(-1px 0 0 var(--brass-lit))
+    drop-shadow(0 1px 0 var(--brass-lit)) drop-shadow(0 -1px 0 var(--brass-lit));
+}
+#hud .gear-screen .arts-pick:focus-visible,
+#hud .gear-screen .arts-diamond:focus-visible {
+  outline: none;
+  opacity: 1;
+  filter: drop-shadow(1px 0 0 #f2efe6) drop-shadow(-1px 0 0 #f2efe6) drop-shadow(0 1px 0 #f2efe6)
+    drop-shadow(0 -1px 0 #f2efe6);
+}
+
+/* Its abilities, after Destiny's rows: the Anima and the Tenets on one line, the Core under them. */
+.arts-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  min-width: 0;
+}
+.arts-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 22px 44px;
+}
+.arts-group {
+  min-width: 220px;
+}
+.arts-tiles {
+  display: flex;
+  align-items: flex-end;
+  gap: 11px;
+}
+#hud .arts-page .gear-cell .arts-glyph {
+  width: 48px;
+  height: 48px;
+}
+#hud .arts-page .gear-slot .arts-glyph {
+  width: 72px;
+  height: 72px;
+}
+#hud .arts-page kbd.arts-key {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  margin: 0;
+}
+/* The Core's flyout opens beside its slots, over nothing the screen needs. */
+.arts-core .arts-tiles {
+  position: relative;
+  width: max-content;
+}
+#hud .arts-flyout {
+  top: -8px;
+  left: calc(100% + 11px);
+  background: var(--ground);
+}
+/* The open slot, and the fragment set in it, are set in brass, as an open gear slot is. */
+#hud .arts-page .gear-cell.gear-open {
+  border-color: var(--brass-lit) var(--brass) var(--brass) var(--brass-lit);
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 12px rgba(var(--rar-rgb), 0.55),
+    inset 0 0 0 1px rgba(var(--rar-rgb), 0.45);
+}
+#hud .arts-page .arts-taken {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.arts-card-icon {
+  width: 72px;
+  height: 72px;
+}
+
+/* On the Character page, the Art's diamond stands with the slots, its name beside it. */
+.arts-diamond-img {
+  width: 96px;
+  height: 96px;
+}
+#hud .arts-diamond:hover .arts-diamond-img {
+  filter: drop-shadow(0 0 8px rgba(var(--rar-rgb), 0.7));
+}
+@media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
+  .arts-diamond-img {
+    width: 72px;
+    height: 72px;
+  }
+  .arts-emblem-img {
+    width: 168px;
+    height: 168px;
+  }
+}
+/* Where the menu is wide, the screen's labels and words stand at the names' size and the diamonds grow a step. */
+@media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+  (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+  .arts-page .gear-heading,
+  .arts-page .gear-flyout-head,
+  .arts-kind,
+  .arts-blurb {
+    font-size: var(--type-l);
+  }
+  .arts-blurb {
+    max-width: 352px;
+  }
+  .arts-emblem-img {
+    width: 264px;
+    height: 264px;
+  }
+  .arts-pick-img {
+    width: 72px;
+    height: 72px;
+  }
+  .arts-page {
+    grid-template-columns: minmax(352px, auto) minmax(0, 1fr);
+    padding: 33px 88px;
+  }
+  .arts-page .arts-group {
+    min-width: 330px;
+  }
+}
