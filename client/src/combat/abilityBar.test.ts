@@ -73,3 +73,21 @@ test('on the display a spell just cast flashes, a Tenet counting its last second
     assert.equal((arcLash as unknown as Record<string, string>)['ariaLabel'], 'Arc Lash (G), cannot be cast now');
   });
 });
+
+test('a screen reader hears each ability once, by its name and state: its pictures and its keycap say nothing more', () =>
+  onFakePage((root) => {
+    new AbilityBar(root, () => ({ anima: '', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' }));
+    const all = findAll(root);
+    const property = (node: (typeof all)[number], name: string) => (node as unknown as Record<string, unknown>)[name];
+    const pictures = all.filter((node) => node.tagName === 'IMG');
+    const keycaps = all.filter((node) => node.tagName === 'KBD');
+    assert.deepEqual([pictures.length, keycaps.length], [8, 3]);
+    assert.ok(
+      pictures.every((node) => property(node, 'alt') === ''),
+      'every picture is decoration',
+    );
+    assert.ok(
+      keycaps.every((node) => property(node, 'ariaHidden') === 'true'),
+      'the key is in the ability’s name',
+    );
+  }));

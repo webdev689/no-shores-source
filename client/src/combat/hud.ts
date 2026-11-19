@@ -12,7 +12,7 @@ import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { wearFightSheet } from './hudSheet.ts';
-import { element } from './meter.ts';
+import { element, setStyle, showNode } from './meter.ts';
 import { cameraOf, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
@@ -160,6 +160,9 @@ export class Hud {
   private readonly abilities: AbilityBar | null;
   private readonly weapons: WeaponRows;
   private layout: HudLayout | null = null;
+  /** Where the vitals and the Arts and weapons stand, read from the page once and again only after they change size or
+   *  the display is laid again, never each frame. */
+  private corners: Box[] | null = null;
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
@@ -196,6 +199,10 @@ export class Hud {
     this.target = new FoePlate(this.column, 'target', { poise: true, remembers: 'whole' });
     this.words = new Words(this.over);
     this.veil = element('div', 'veil', root);
+    if (typeof ResizeObserver === 'undefined') return;
+    const resized = new ResizeObserver(() => (this.corners = null));
+    resized.observe(this.vitals.root);
+    resized.observe(this.arms);
   }
 
   /** Lays the corner pieces for a view `width` by `height`, only when that changes what they need. */
@@ -205,6 +212,7 @@ export class Hud {
     const same = was?.wide === next.wide && was.zoom === next.zoom && was.length === next.length;
     if (same && was?.compassTop === next.compassTop) return;
     this.layout = next;
+    this.corners = null;
     this.root.classList.toggle('wide', next.wide);
     this.root.classList.toggle('double', next.zoom === 2);
     this.root.classList.toggle('stacked', next.stacked);
@@ -218,16 +226,16 @@ export class Hud {
     this.lay(frame.width, frame.height);
     this.flash(frame, seconds);
     const veil = veilOf(frame);
-    this.veil.hidden = !veil;
+    showNode(this.veil, !!veil);
     if (veil) {
       if (this.veil.textContent !== veil.words) this.veil.textContent = veil.words;
       this.veil.classList.toggle('link', veil.link);
     }
     const charge = frame.crosshair?.charge ?? null;
-    this.crosshair.hidden = !frame.crosshair;
+    showNode(this.crosshair, !!frame.crosshair);
     this.crosshair.classList.toggle('charging', charge !== null);
     this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
-    this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
+    setStyle(this.crosshair, '--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
     this.ammo.update(frame.ammo, frame.ammoMost);
     const overHead = (view: FighterView) => {
       const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
@@ -269,8 +277,8 @@ export class Hud {
       ring.classList.toggle('iron', iron);
       ring.classList.toggle('now', !iron && cue.now);
       const span = iron ? RING_CLOSED : RING_CLOSED + (RING_WIDEST - RING_CLOSED) * cue.share;
-      ring.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
-      ring.style.setProperty('--span', `${span}px`);
+      setStyle(ring, 'transform', `translate(${spot.x}px, ${spot.y}px)`);
+      setStyle(ring, '--span', `${span}px`);
     }
     for (const [id, ring] of this.rings) {
       if (shown.has(id)) continue;
@@ -287,7 +295,7 @@ export class Hud {
     if (struck) this.hurtFlash = FLASH_SECONDS;
     this.staminaFlash = Math.max(0, this.staminaFlash - seconds);
     this.hurtFlash = Math.max(0, this.hurtFlash - seconds);
-    this.hurt.style.opacity = String(this.hurtFlash / FLASH_SECONDS);
+    setStyle(this.hurt, 'opacity', String(this.hurtFlash / FLASH_SECONDS));
   }
 
   /** The soft lock's mark at its foe's chest, and the target's plate at the top as much as it shows (`chosen`),
@@ -302,37 +310,36 @@ export class Hud {
     const locked = frame.foes.find((each) => each.id === lock);
     const spot =
       locked && project(frame.matrix, [locked.view.x, locked.view.y, locked.view.z + 1.1], frame.width, frame.height);
-    this.mark.hidden = !spot;
-    if (spot) this.mark.style.transform = `translate(${spot.x}px, ${spot.y}px)`;
+    showNode(this.mark, !!spot);
+    if (spot) setStyle(this.mark, 'transform', `translate(${spot.x}px, ${spot.y}px)`);
     const foe = chosen && chosen.id !== boss?.id ? frame.foes.find((each) => each.id === chosen.id) : undefined;
-    this.target.root.hidden = !foe;
+    showNode(this.target.root, !!foe);
     this.target.keep(new Set(frame.foes.map((each) => each.id)));
     if (!foe || !chosen) return;
     this.target.show(foe, seconds);
-    this.target.root.style.opacity = chosen.share < 1 ? chosen.share.toFixed(2) : '';
+    setStyle(this.target.root, 'opacity', chosen.share < 1 ? chosen.share.toFixed(2) : '');
   }
 
   /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
    *  ends, standing below the vitals and above the Arts and weapons where it would fall on them. */
   private pointAtThreats(frame: HudFrame): void {
     const shown = new Set<number>();
-    let corners: { left: number; top: number; right: number; bottom: number }[] | null = null;
     for (const { id, view } of frame.foes) {
       if (!threatens(view, frame.player)) continue;
       const clip = clipOf(frame.matrix, [view.x, view.y, view.z + 1.1]);
       const edge = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
       if (!edge) continue;
-      corners ??= [this.vitals.root, this.arms].map((node) => {
+      this.corners ??= [this.vitals.root, this.arms].map((node) => {
         const [box, origin] = [node.getBoundingClientRect(), this.root.getBoundingClientRect()];
         const [left, top] = [box.left - origin.left, box.top - origin.top];
         return { left, top, right: left + box.width, bottom: top + box.height };
       });
-      const [vitals, arms] = corners;
+      const [vitals, arms] = this.corners;
       const spot = arms && vitals ? clearOf(clearOf(edge, vitals, ARROW_CLEAR, true), arms, ARROW_CLEAR) : edge;
       shown.add(id);
       const arrow = this.arrows.get(id) ?? element('div', 'arrow', this.over);
       this.arrows.set(id, arrow);
-      arrow.style.transform = `translate(${spot.x}px, ${spot.y}px) rotate(${spot.angle}rad)`;
+      setStyle(arrow, 'transform', `translate(${spot.x}px, ${spot.y}px) rotate(${spot.angle}rad)`);
     }
     for (const [id, arrow] of this.arrows) {
       if (shown.has(id)) continue;

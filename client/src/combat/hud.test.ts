@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PLATES } from '../plus/barLayout.ts';
-import { Compass, SHIP_MARK_COLOURS, UNDER_COMPASS } from '../plus/compass.ts';
+import { Compass, compassCss, SHIP_MARK_COLOURS, UNDER_COMPASS } from '../plus/compass.ts';
 import { HALO, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { blockedBy, clearOf, veilOf } from './hud.ts';
+import { blockedBy, clearOf, Hud, type HudFrame, veilOf } from './hud.ts';
 import { Words } from './hitWords.ts';
 import { fightSheetCss } from './hudSheet.ts';
-import { findAll, onFakePage } from './page.test.ts';
+import { countWrites, findAll, onFakePage } from './page.test.ts';
 
 const standing: FighterView = {
   x: 0,
@@ -206,3 +206,88 @@ test('a shield’s ward and the words of what it took are drawn in its element�
     assert.equal(findAll(root, 'word', 'shield')[0]?.dataset['element'], '3');
   });
 });
+
+test('a settled display writes nothing more to the page and reads no layout, with a threat’s arrow at the edge', () =>
+  onFakePage((root) => {
+    const hud = new Hud(root);
+    const statuses = { crit: 0, expose: 0, charge: 0, haste: 600, linked: 0, veiled: 300, chargeImmune: 0 };
+    const own: FighterView = { ...standing, health: 60, stamina: 50, ammo: 7, statuses };
+    // A foe off the view's right edge drawing on the player: an arrow points at it.
+    const foe: FighterView = { ...standing, x: 5, side: 'foes', target: 1, action: { kind: 'draw', elapsed: 3 } };
+    const frame: HudFrame = {
+      own,
+      foes: [{ id: 2, name: 'Runner', view: foe, rank: 0, faction: '', phase: 0, alert: 0 }],
+      where: () => [0, 0, 0],
+      matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      width: 1280,
+      height: 720,
+      events: [],
+      player: 1,
+      firstPerson: false,
+      pressed: false,
+      lost: null,
+      ammo: 7,
+      ammoMost: 24,
+      crosshair: { charge: null },
+    };
+    for (let step = 0; step < 300; step++) hud.update(frame, 1 / 60);
+    assert.equal(findAll(root, 'arrow').length, 1, 'the arrow shows');
+    assert.equal(findAll(root, 'status').length, 2, 'two buffs show');
+    const counted = countWrites(root);
+    for (let step = 0; step < 3; step++) hud.update(frame, 1 / 60);
+    // The plates over figures are the foe bars' own, which lay themselves each frame.
+    const ours = counted.writes.filter((write) => !/^(plate overhead|plate boss|ward)/.test(write));
+    assert.deepEqual(ours, [], 'nothing written that did not change');
+    assert.equal(counted.reads, 0, 'no layout read');
+  }));
+
+test('every word the display stands still on the screen is a whole step of the face’s 11 px grid, so it draws sharp', () => {
+  const css = fightSheetCss() + compassCss();
+  const sizes = [...css.matchAll(/([^{}]*)\{[^}]*font-size: ([\d.]+)px/g)].map(([, selector, size]) => ({
+    selector: (selector ?? '').trim().split('\n').at(-1) ?? '',
+    size: Number(size),
+  }));
+  // A plate over a figure is scaled with its distance, so no size of its own is sharp.
+  const still = sizes.filter(({ selector }) => !selector.includes('.overhead'));
+  assert.ok(still.length > 20, 'the sheet’s words were read');
+  assert.deepEqual(
+    still.filter(({ size }) => size % 11 !== 0),
+    [],
+  );
+});
+
+test('a screen reader is not told the shots beside the crosshair, or the compass’s letters, twice or out of order', () =>
+  onFakePage((root) => {
+    new Hud(root);
+    const hidden = (name: string) => (findAll(root, name)[0] as unknown as Record<string, unknown>)['ariaHidden'];
+    assert.equal(hidden('ammo'), 'true', 'the weapon’s row says its shots');
+    assert.equal(hidden('compass'), 'true');
+  }));
+
+test('a resize across the display’s steps lays its corners again each way, and the narrow view stacks them', () =>
+  onFakePage((root) => {
+    const hud = new Hud(root);
+    const frame = (width: number, height: number): HudFrame => ({
+      own: standing,
+      foes: [],
+      where: () => null,
+      matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      width,
+      height,
+      events: [],
+      player: 1,
+      firstPerson: false,
+      pressed: false,
+      lost: null,
+    });
+    const laid = (width: number, height: number) => {
+      hud.update(frame(width, height), 1 / 60);
+      const classes = ['wide', 'double', 'stacked'].filter((name) => root.classList.contains(name));
+      return [classes, findAll(root, 'vital', 'health')[0]?.style['width']];
+    };
+    assert.deepEqual(laid(1280, 720), [[], '333px']);
+    assert.deepEqual(laid(1920, 1080), [['wide'], '499px']);
+    assert.deepEqual(laid(2560, 1440), [['double'], '333px']);
+    assert.deepEqual(laid(692, 720), [['stacked'], '346px'], 'the Test Ground’s view between its panels');
+    assert.deepEqual(laid(1280, 720), [[], '333px'], 'and back');
+  }));

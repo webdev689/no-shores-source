@@ -130,7 +130,7 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   its first size past 1440p (2400 by 1300), as the rest of the display does (`combat/hudLayout.ts`).
 - **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower view) and 26 px tall over
   a 2 px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals
-  larger) stand by the bearing the view looks at, the shortest way round; one off the strip is hidden, never held at
+  at 22 px and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the strip is hidden, never held at
   an end. A brass needle marks its middle. Its column stands what comes under it 10 px under its rule, 56 px down:
   a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px long beside the compass
   stands the whole column under the vitals instead. At sea it marks each ship within 900 m on its top edge, a bow pointing up,
@@ -151,10 +151,16 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
   ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
   picture in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or muzzle to the right
-  (`combat/weaponPicture.ts`). A Ranged weapon's shots stand large over its capacity ("18 / 24", "No ammo" at none);
-  a Melee one's name is in its rarity's colour. Under it stands the other loadout's weapon, in an 80 by 22 px box
-  (112 by 32), with its key (1 or 2) and its own shots. A swap trades the two rows over its 0.4 s, a reload fills a
-  line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys (`combat/weapons.ts`).
+  (`combat/weaponPicture.ts`), drawn again when the screen's pixel ratio changes. A Ranged weapon's shots stand large
+  over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
+  name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
+  name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
+  and its own shots. A swap trades the two rows over its 0.4 s, and a swap pressed during one trades them again from
+  the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys
+  its picture and words over the row's own dark band. In a view too narrow for the vitals beside the compass, the
+  weapons stand over the Arts, so the corner keeps clear of the view's middle and the hands drawn there
+  (`combat/weapons.ts`). A frame that changes nothing writes nothing to the page, and the display reads where its
+  corners stand only after they change size, never each frame.
 - **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
   colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
   give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
@@ -215,11 +221,13 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky. The
   [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.
 - **A foe's plate**, after the owner's reference: its level in a chip square at the left, the number half the square
-  high, the square empty for a foe of no level; to its right its name above a long thin track, the meter in its rank's
+  high (over a figure; on the soft lock's and the boss bar's, 22 px on the face's grid), the square empty for a foe of
+  no level; to its right its name above a long thin track, the meter in its rank's
   colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at
   three sizes. Ships' plates are drawn alike on an SVG, at the same sizes (`PLATES`): 140 by 26 px over a figure,
   and the boss bar 640 px wide at most, three quarters of a narrower screen, its faction after its name. The soft
-  lock's is 340 px wide at most, and never wider than three quarters of the view. A ship's hull reads its losses as a
+  lock's is 340 px wide at most, and never wider than three quarters of the view. Its name stands at 11 px and the
+  boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
   foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
   seen starts whole at her bar.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part

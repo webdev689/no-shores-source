@@ -22,6 +22,10 @@ export interface FakeElement {
   append(...children: FakeElement[]): void;
   replaceChildren(...children: FakeElement[]): void;
   remove(): void;
+  /** No layout: every box is empty at the page's corner. */
+  getBoundingClientRect(): { left: number; top: number; width: number; height: number; right: number; bottom: number };
+  /** No drawing: a canvas has no context. */
+  getContext(kind: string): null;
 }
 
 function fakeElement(tag: string): FakeElement {
@@ -43,6 +47,7 @@ function fakeElement(tag: string): FakeElement {
       toggle(name, wanted) {
         const now = classes(made);
         const shown = wanted ?? !now.has(name);
+        if (shown === now.has(name)) return shown;
         if (shown) now.add(name);
         else now.delete(name);
         made.className = [...now].join(' ');
@@ -63,6 +68,8 @@ function fakeElement(tag: string): FakeElement {
       for (const child of [...made.children]) child.remove();
       made.append(...children);
     },
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 }),
+    getContext: () => null,
     remove() {
       if (!made.parent) return;
       made.parent.children.splice(made.parent.children.indexOf(made), 1);
@@ -89,6 +96,52 @@ export function findAll(root: HTMLElement, ...names: string[]): FakeElement[] {
   const fake = root as unknown as FakeElement;
   const here = names.every((name) => fake.classList.contains(name)) ? [fake] : [];
   return [...here, ...fake.children.flatMap((child) => findAll(child as unknown as HTMLElement, ...names))];
+}
+
+/** Counts from now every write `root` and what stands under it take: a style, a class, words, `hidden` or an aria
+ *  property set, even to the value it had; and every layout read (`getBoundingClientRect`). A real page re-styles
+ *  for each, so a display that has settled should take none. */
+export function countWrites(root: HTMLElement): { writes: string[]; reads: number } {
+  const counted = { writes: [] as string[], reads: 0 };
+  const watch = (fake: FakeElement) => {
+    const own = fake as unknown as Record<string, unknown>;
+    for (const name of ['className', 'textContent', 'hidden', 'ariaLabel', 'ariaValueNow', 'ariaValueText']) {
+      let value = own[name];
+      Object.defineProperty(own, name, {
+        get: () => value,
+        set: (next: unknown) => {
+          counted.writes.push(`${fake.className}.${name}`);
+          value = next;
+        },
+      });
+    }
+    const style: Record<string, string> = { ...fake.style };
+    own['style'] = new Proxy(style, {
+      set: (target, name, next) => {
+        counted.writes.push(`${fake.className}.style.${String(name)}`);
+        return Reflect.set(target, name, next);
+      },
+      get: (target, name) =>
+        name === 'setProperty'
+          ? (property: string, next: string) => {
+              counted.writes.push(`${fake.className}.style.${property}`);
+              target[property] = next;
+            }
+          : Reflect.get(target, name),
+    });
+    own['getBoundingClientRect'] = () => {
+      counted.reads += 1;
+      return { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
+    };
+    const append = fake.append.bind(fake);
+    fake.append = (...children) => {
+      for (const child of children) watch(child);
+      append(...children);
+    };
+    for (const child of fake.children) watch(child);
+  };
+  watch(root as unknown as FakeElement);
+  return counted;
 }
 
 /** Asks for reduced motion, or not, while `run` goes. */
