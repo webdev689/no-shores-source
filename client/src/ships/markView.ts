@@ -86,12 +86,14 @@ struct Drawn {
   @builtin(position) clip: vec4f,
   @location(0) normal: vec3f,
   @location(1) colour: vec3f,
+  @location(2) from_eye: vec3f,
 };
 
 @vertex
 fn vertex_main(@location(0) corner: vec3f, @location(1) place: vec4f, @location(2) colour: vec4f) -> Drawn {
   var drawn: Drawn;
-  drawn.clip = camera.from_eye * vec4f(place.xyz - camera.eye.xyz + corner * place.w, 1.0);
+  drawn.from_eye = place.xyz - camera.eye.xyz + corner * place.w;
+  drawn.clip = camera.from_eye * vec4f(drawn.from_eye, 1.0);
   drawn.normal = corner;
   drawn.colour = colour.rgb;
   return drawn;
@@ -101,7 +103,8 @@ fn vertex_main(@location(0) corner: vec3f, @location(1) place: vec4f, @location(
 fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
   let normal = normalize(drawn.normal);
   // Marks were lit a little brighter than the land: AMBIENT against the land's 0.35.
-  let light = sky_ambient(normal) * (AMBIENT / 0.35) + sky_direct(normal, 1.0) * ((1.0 - AMBIENT) / 0.65);
+  let direct = sky_direct(normal, sky_dapple(drawn.from_eye)) * ((1.0 - AMBIENT) / 0.65);
+  let light = sky_ambient(normal) * (AMBIENT / 0.35) + direct + sky_lamps(drawn.from_eye, normal);
   return vec4f(drawn.colour * light, 1.0);
 }
 `;

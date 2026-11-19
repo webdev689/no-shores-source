@@ -89,9 +89,13 @@ const SHADED = 0.55;
   let toward = key_toward();
   let light_across = -normalize(toward.xy + vec2f(1e-6, 0.0));
   let behind = max(across_of(in.corner) * dot(view.right.xy, light_across), 0.0);
-  let sun = sunlit(in.from_eye + toward * (behind / max(length(toward.xy), 0.05) + 0.15), toward);
+  let lifted = in.from_eye + toward * (behind / max(length(toward.xy), 0.05) + 0.15);
+  let sun = sunlit(lifted, toward) * sky_dapple(in.from_eye);
   let shaded_light = sky_ambient(vec3f(0.0)) * (SHADED / 0.35);
-  let light = mix(shaded_light, shaded_light + sky_state.key_light.rgb * (1.0 - SHADED), sun);
+  // The card faces the eye: a lamp before it lights it, one behind it hardly.
+  let facing = normalize(vec3f(-in.from_eye.xy, 0.0) + vec3f(1e-4, 0.0, 0.0));
+  let lamps = sky_lamps(in.from_eye, facing);
+  let light = mix(shaded_light, shaded_light + sky_state.key_light.rgb * (1.0 - SHADED), sun) + lamps;
   // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
   let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * light, root);
   if (shown.a < 0.5) { discard; }

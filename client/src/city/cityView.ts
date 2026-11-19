@@ -1,6 +1,7 @@
 // A port city drawn with the land: its blocks' forged models near the eye, its buildings' masses further out and
 // their hulls far off, dithered into each other; its landmark, works and plaza always; its ground plates at every
 // distance. A Drawer the game's scene draws into its own pass.
+import { CITY_LAMPS } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
@@ -10,7 +11,7 @@ import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines } from './cityGpu.
 import { MODEL_FLOATS } from './cityModels.ts';
 import { CityPainter, type PaintProgress } from './painter.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
-import type { CityClimate, CityPlan } from './plan.ts';
+import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
 import { boxReach, boxSeen, NEAR_M, tiersReached, viewPlanes } from './tiers.ts';
 
 /** What the scene hands a drawer each frame: the eye in world metres, and how it looks. */
@@ -93,6 +94,7 @@ export class CityView implements CityDrawer {
   /** Draws this city from now on, in its climate's pictures; the blocks by name, the forged tables parsed. */
   setCity(plan: CityPlan, climate: CityClimate, blocks: ReadonlyMap<string, RmbBlock>, tables: CityTables): void {
     this.clear();
+    CITY_LAMPS.current = glowLamps(plan);
     const started = performance.now();
     const data = buildCity(plan, climate, blocks, tables);
     this.frame.buildMs = performance.now() - started;
@@ -182,6 +184,7 @@ export class CityView implements CityDrawer {
   clear(): void {
     const drawn = this.drawn;
     if (!drawn) return;
+    CITY_LAMPS.current = [];
     drawn.painter.destroy();
     drawn.tiles.destroy();
     for (const buffer of [...drawn.buffers, ...Object.values(drawn.instances).map((held) => held.buffer)])

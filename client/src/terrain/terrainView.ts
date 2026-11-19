@@ -316,11 +316,21 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let port = select(marked(wide_marks, wide, 5u, 5u), marked(close_marks, close, 5u, 5u), in_close);
   dry = mix(mix(mix(dry, ROAD, road), TOWN, 0.6 * town), PORT, port);
 
-  var colour = mix(dry, wet, under);
-  let direct = max(dot(normal, sky_state.key.xyz), 0.0);
   let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
-  let sun = select(1.0, sunlit(on_ground, normal), direct > 0.0);
-  colour *= sky_ambient(normal) + sky_direct(normal, sun);
+  // Fresh snow whitens the flat tops where snow lies already; rain darkens the dry ground and pools in its hollows,
+  // above the swash and below the snow.
+  let snow_band = smoothstep(view.ground.w - 250.0, view.ground.w - 50.0, bed) * (1.0 - smoothstep(0.15, 0.35, slope));
+  dry = mix(dry, SNOW, 0.6 * sky_state.ambient_ground.w * snow_band);
+  let open_ground = (1.0 - under) * smoothstep(0.5, 1.5, bed) * (1.0 - snow_band);
+  let puddle = sky_puddle(on_ground, slope) * open_ground;
+  let soaked = max(sky_state.ambient_sky.w * open_ground * 0.8, puddle);
+  dry = sky_soaked(dry, soaked);
+  var colour = mix(dry, wet, under);
+  let lit_normal = normalize(mix(normal, vec3f(0.0, 0.0, 1.0), puddle));
+  let direct = max(dot(lit_normal, sky_state.key.xyz), 0.0);
+  let sun = select(1.0, sunlit(on_ground, lit_normal), direct > 0.0) * sky_dapple(on_ground);
+  colour *= sky_ambient(lit_normal) + sky_direct(lit_normal, sun) + sky_lamps(on_ground, lit_normal);
+  colour += sky_sheen(lit_normal, on_ground, soaked * (0.4 + 0.6 * puddle));
   let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));
   colour = mix(colour, RING, select(0.0, ring, view.brush.z > 0.0));
 

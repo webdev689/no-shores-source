@@ -70,7 +70,7 @@ export class SkyDriver {
       ),
     );
     const look = lookOf(reading, worldS, flash);
-    this.uniform.write(look, lamps);
+    this.uniform.write(look, lamps, [eye[0], eye[1]]);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes };
     return SKY_NOW.current;
   }

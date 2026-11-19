@@ -93,17 +93,22 @@ fn colour_of(layer: u32, sampled: vec3f) -> vec3f {
 }
 
 // The land's light, and the light the ground throws back onto a wall, so a wall in shade still reads. The sun reaches
-// a point at 'from_eye' as the shadow map says.
+// a point at 'from_eye' as the shadow map says, through the clouds' shadows; the lamps light it at night, and the
+// weather wets it. A glowing solid is a flame: brighter when the night round it is dark.
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
-    return vec3f(1.0, 0.72, 0.36) * 1.4;
+    return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w);
   }
   let facing = normalize(normal);
   // A clear noon's ambient was AMBIENT, more on a wall by the bounce, the sun lighting the rest.
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
-  let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0);
-  return albedo * (sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65));
+  let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
+  // The plaza's flat stone holds puddles; walls and roofs are only darkened and sheened.
+  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95);
+  let wet = max(sky_state.ambient_sky.w * 0.7, puddle);
+  let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
+  return sky_soaked(albedo, wet) * (light + sky_lamps(from_eye, facing)) + sky_sheen(facing, from_eye, wet);
 }
 
 struct Surface {

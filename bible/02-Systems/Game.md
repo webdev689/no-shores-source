@@ -273,8 +273,9 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 
 ## Drawing
 
-`GameScene` draws the open landmass in rings round the eye, the exact ground round the player or the ship, every
-drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then what a drawer
+`GameScene` reads the sky over the eye each frame with the lamps lit round it, a torch or lantern in the player's
+left hand among them ([[Sky]]), then draws the open landmass in rings round the eye, the exact ground round the
+player or the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then what a drawer
 draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each tested by hand
 against the scene's depth, so the water's sky and its surface near a coast never cover them. The fight's solid marks
 write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the marks and arcs give

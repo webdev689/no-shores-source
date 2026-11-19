@@ -1,7 +1,8 @@
 import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
-import { SkyDriver } from '../sky/skyDriver.ts';
+import { CITY_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
@@ -181,6 +182,8 @@ export class GameScene {
       readonly hulls?: readonly HullMask[];
       readonly focus?: readonly [number, number];
       readonly atSea?: boolean;
+      /** The layer the player's left hand carries (`torch_l`, `lantern`): a light there lights round the eye. */
+      readonly carried?: string | null;
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -204,7 +207,15 @@ export class GameScene {
     );
     const targets = this.targetsOf(size.width, size.height);
     const encoder = this.gpu.device.createCommandEncoder();
-    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'));
+    // The lamps follow the daylight the sky last showed: a frame behind, which no eye can tell.
+    const lamps = lampsRound(
+      shot.eye,
+      CITY_LAMPS.current,
+      carriedLight(more.carried),
+      SKY_NOW.current.look.daylight,
+      time,
+    );
+    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
     this.shadow.update(shot.eye, shot.yaw, above, look.key);
     this.shadow.cast(encoder, (cast) => {
