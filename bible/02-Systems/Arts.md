@@ -60,10 +60,10 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
   `{ kind: 'setCore', art, slot, fragment }`, and shows the Art and Core the room last sent.
 - **Keys.** The arrows move to the nearest tile that way, and within an open flyout only among its fragments. Enter
   chooses. Escape closes the flyout, then the screen, and the focus goes back to what opened it.
-- **Sizes.** The face keeps its grid: 11 for words, 22 for headings where the menu is wide, 33 for the Art's name.
-  The pictures stand at whole multiples of their cells: the large diamond at 8 (7 on a short screen, 11 on a wide
-  one), the three Arts' at 2 (3 wide), the Character page's at 4 (2 on a short screen), the Anima's icon at 3, and
-  the Tenets' and fragments' at 4. Past 1440p the menu doubles, the screen with it.
+- **Sizes.** The face keeps its grid: 11 for words, 22 for headings where the menu is wide, 33 for the Art's name. The
+  pictures stand at whole multiples of their cells: the large diamond at 8 (7 on a short screen, 11 on a wide one), the
+  three Arts' at 2 (3 wide), the Character page's at 4 (2 on a short screen and where the menu doubles), the Anima's
+  icon at 3, and the Tenets' and fragments' at 4. Past 1440p the menu doubles, the screen with it.
 - **Pictures** are drawn pixel by pixel in the Art's element: its outline, a deep shade, the body, its light and a
   white heat. The emblems are 24 cells square in a diamond: Storm a forked bolt, Divine a sun with wings, Shadow a
   crescent holding a raven's eye. An Anima's icon is 24 square, a Tenet's and a fragment's 12. Fragments share three
@@ -93,11 +93,11 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
   its share is full, no other cast is on its way, and the player is not staggered, Charged, dead or dead past a
   section's edge. It releases 18 ticks (0.3 s) after the tick that took it. If the player is staggered, Charged or
   dead by then, it is lost and costs nothing; else its share empties and the spell is cast.
-- **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from
-  a matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the
-  Ranged one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is ([[Combat]]). No weapon's
-  perk touches it. It is never parried or guarded; a dodge passes it whole, the status it would give too. Its kills pay the caster as a weapon's do, to
-  the weapon whose Attack it struck with.
+- **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from a
+  matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the Ranged
+  one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is
+  ([[Combat]]). No weapon's perk touches it. It is never parried or guarded; a dodge passes it whole, the status it
+  would give too. Its kills pay the caster as a weapon's do, to the weapon whose Attack it struck with.
 - **Gives back.** A Volt kill with Recharge set takes 4% off both Tenets; a Blaze kill while Linked, with Zeal, 5%.
   A crit landed out of Vanish's veil, with Hunt, gives back half of Vanish's cooldown, once a Vanish. A Cosmic kill on
   an Exposed foe, with Dread, keeps the player's Duskraven 2 s longer. With Cruelty, the player's crits on Exposed
@@ -134,10 +134,10 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
 
 ## In the browser
 
-- **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows
-  its ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent for
-  0.6 s, while the room's word comes back. Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them. With the
-  menu open the game takes no keys, so `F` still dismantles a piece there.
+- **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows its
+  ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent for 0.6 s,
+  while the room's word comes back. Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them.
+  With the menu open the game takes no keys, so `F` still dismantles a piece there.
 - **Dusk Daggers.** Pressed, `Q` aims: a faint ring in Shadow's purple lies on the ground at the crosshair's point,
   drawn in to 16 m, as wide as the ring will be. Let go, it casts there.
 - **The cast's look.** A cast sent plays the cast move: from outside the forge's `cast` with its `spark`, the spark

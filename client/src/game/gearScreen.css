@@ -522,10 +522,11 @@ img.gear-glyph {
   color: var(--rar-hi, var(--word));
 }
 
-/* The character page: the weapons and cloak, the figure, the armour, their headings level. */
+/* The character page: the weapons and cloak, the figure, the armour, their headings level. The figure's column takes
+   the room its five stats need in one row. */
 .gear-character {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.25fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.6fr) minmax(220px, 1fr);
   gap: 24px;
   align-items: start;
   align-content: center;

@@ -176,21 +176,16 @@
 #hud .arts-diamond:hover .arts-diamond-img {
   filter: drop-shadow(0 0 8px rgba(var(--rar-rgb), 0.7));
 }
+/* On a short screen, and where the menu doubles, the Character page's diamond takes two steps less, so the Emblem's
+   slot stays above the foot. */
 @media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
   .arts-diamond-img {
-    width: 72px;
-    height: 72px;
+    width: 48px;
+    height: 48px;
   }
   .arts-emblem-img {
     width: 168px;
     height: 168px;
-  }
-}
-/* On a short screen the Character page's diamond takes a step less, so the Emblem's slot stays above the foot. */
-@media (max-height: 800px) {
-  .arts-diamond-img {
-    width: 48px;
-    height: 48px;
   }
 }
 /* Where the menu is wide, the screen's labels and words stand at the names' size and the diamonds grow a step. */
